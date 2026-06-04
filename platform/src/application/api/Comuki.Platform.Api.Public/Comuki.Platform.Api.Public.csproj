@@ -3,6 +3,12 @@
   <PropertyGroup>
     <RootNamespace>Comuki.Platform.Api.Public</RootNamespace>
     <AssemblyName>Comuki.Platform.Api.Public</AssemblyName>
+    <!-- Build-time OpenAPI: write the spec next to the .csproj (not to obj/).
+         Per docs: OpenApiDocumentsDirectory is relative to the project file.
+         Single document named 'v1', file name fixed so client codegen
+         (Kubb etc.) can reference a stable path. -->
+    <OpenApiDocumentsDirectory>.</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocumentsOptions>--file-name openapi-v1</OpenApiGenerateDocumentsOptions>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +20,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
+    <!-- PrivateAssets=all keeps this MSBuild tooling out of the runtime output. -->
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

@@ -8,18 +8,23 @@ import { pluginTs } from "@kubb/plugin-ts"
  * Kubb generates a typed TypeScript API client + React Query hooks from
  * the OpenAPI spec produced by Comuki.Platform.Api.Public.
  *
- * Workflow:
- *   1. dotnet run --project platform/src/application/api/Comuki.Platform.Api.Public
- *   2. curl http://localhost:5000/openapi/v1.json > dashboard/openapi.v1.json
- *   3. bun run generate-api       (this file + the script in package.json)
+ * The spec is written next to the .csproj at build-time via
+ * Microsoft.Extensions.ApiDescription.Server (see Comuki.Platform.Api.Public.csproj
+ * — OpenApiDocumentsDirectory=., --file-name openapi-v1).
  *
- * Output: src/api/{models,client,hooks}/* + index barrel.
- * Used by: dashboard pages from Phase 7 onward (intake, runs, approvals, etc.).
+ * Workflow:
+ *   bun run generate-api
+ *     → dotnet build comuki.slnx (regenerates openapi-v1.json if API changed)
+ *     → kubb generate (emits 15 TS files into src/api/)
+ *
+ * The same openapi-v1.json is also consumed by any future TS / C# / external
+ * SDK that wants a typed client — it's the single source of truth for
+ * Comuki.Platform.Api.Public's surface.
  */
 export default defineConfig({
   root: ".",
   input: {
-    path: "./openapi.v1.json",
+    path: "../platform/src/application/api/Comuki.Platform.Api.Public/openapi-v1.json",
   },
   output: {
     path: "./src/api",
@@ -32,3 +37,4 @@ export default defineConfig({
     pluginReactQuery({ client: "fetch" }),
   ],
 })
+

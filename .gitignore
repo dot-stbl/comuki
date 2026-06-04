@@ -22,6 +22,11 @@ Thumbs.db
 # soly runtime cache (rules hot-reload state, not source)
 .soly/rule-mtimes.json
 
+# Generated OpenAPI spec from Microsoft.Extensions.ApiDescription.Server.
+# Lives next to the .csproj (OpenApiDocumentsDirectory=.) on `dotnet build`
+# — single source of truth for any client codegen (Kubb, future TS/C# SDKs).
+**/openapi-*.json
+
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json

@@ -9,8 +9,15 @@
   </ItemGroup>
   <ItemGroup>
     <!-- OpenAPI runtime spec generation (built-in .NET 9+, replaces Swashbuckle). -->
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     <!-- Modern API reference UI (replaces Swagger UI). -->
     <PackageVersion Include="Scalar.AspNetCore" Version="2.6.4" />
+    <!-- Build-time OpenAPI doc generation (per learn.microsoft.com/aspnetcore/openapi).
+         Wraps the app's entry point in a mock server and writes the spec to disk
+         during 'dotnet build'. Default output: obj/{ProjectName}.json. We override
+         to write to the project root via OpenApiDocumentsDirectory.
+         Pinned to 10.0.0 to match net10.0 — the 9.x package ships
+         GetDocument.Insider.dll only for net9.0 and fails the MSBuild step. -->
+    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.0" />
   </ItemGroup>
 </Project>

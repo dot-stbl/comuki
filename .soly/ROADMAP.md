@@ -1,203 +1,215 @@
 # Roadmap
 
-> 8 phases. Each phase is a coherent chunk of value; plans inside a phase may run in
-> waves. Granularity chosen per request: "мельче" — each slice from `comuki-slice-0.md`
-> gets its own phase, polish is its own phase.
+> **9 phases.** Phase 3 was re-scoped from the original Slice 0
+> vertical slice to "design system + testing infrastructure" —
+> they're load-bearing before any runtime ships (anti-slop contract
+> for Phase 6+, quality gate for every later phase). Slice 0
+> moved to Phase 4. The numbering after Slice 0 also shifts +1.
 
 ## Phase 1 — Bootstrap (`01-bootstrap`)
 
-**Goal:** polyglot monorepo skeleton with a compiling C# solution. No business code
-yet — just enough that the next phase can land on solid ground.
+**Goal:** polyglot monorepo skeleton with a compiling C# solution.
+No business code yet — just enough that the next phase can land
+on solid ground.
 
 **Scope**
 - Top-level folders: `platform/`, `agents/`, `dashboard/`, `control-plane/`, `deploy/`
-- `comuki.slnx` at repo root with 5 base projects (see `phases/01-bootstrap/CONTEXT.md`)
+- `comuki.slnx` at repo root with 5 base projects
 - `Directory.Build.props` (net10.0, warnings-as-errors, latest analyzers)
 - `.gitignore`, initial `git init`
 - `dotnet build` → 0 warnings, 0 errors
 
-**Out of scope**
-- TS packages in `agents/`, React app in `dashboard/`, `deploy/docker-compose.yml` —
-  deferred to Phase 2 (stack foundation) once the C# graph is stable
-- Tests project — added in the slice that needs it first
-- EF Core / Npgsql wiring — added in Phase 3 (Slice 0 Step 1) when Postgres first
-  appears
+**Out of scope** — TS packages, React app, docker-compose, EF Core
+wiring, test projects, CI.
 
 **Depends on:** —
 
 ## Phase 2 — Stack Foundation (`02-stack-foundation`)
 
-**Goal:** concrete stack for the two remaining top-level areas. Decide tooling
-("потом определятся со стеком") and commit it.
+**Goal:** commit the concrete stack for `agents/` (TS), `dashboard/`
+(React), `deploy/` (Docker), and CI.
 
 **Scope**
-- `agents/comuki-agent-core` (TS package) — placeholder for shared event types
-- `dashboard/` (React + Vite + shadcn) — empty app with a "Comuki" landing
-- `deploy/docker-compose.yml` — self-hosted infra: postgres, minio, nexus, victoria
-- `deploy/worker.Dockerfile` — pi + Translator skeleton (not yet run end-to-end)
-- Centralized decision: package manager (bun vs pnpm), Node version, Vite vs Next,
-  shadcn version, docker-compose compose-spec version
-- CI scaffolding (build verification for both stacks)
+- BE: `Microsoft.AspNetCore.OpenApi` + `Scalar.AspNetCore` +
+  `Microsoft.Extensions.ApiDescription.Server` for build-time
+  OpenAPI codegen
+- FE: `bun` workspace, `Vite 8` + `React 19` + `TypeScript strict`
+- FE: `Tailwind v4` via `@tailwindcss/vite`
+- FE: shadcn/ui (Radix UI base) — 56 components, all installed
+- FE: `Kubb` → typed React Query hooks from `openapi-v1.json`
+- FE: `Storybook 8.6` (dark default, theme toggle)
+- `deploy/docker-compose.yml` — postgres+pgvector, minio, nexus,
+  victoria-metrics, victoria-logs
+- `deploy/worker.Dockerfile` — sentinel for Phase 3 Slice 0
+- `.gitlab-ci.yml` — 2 jobs (build-be, build-fe) + cache
 
-**Out of scope**
-- Real Translator / pi integration — that's Phase 3
-- Real dashboard features — Phase 7
+**Out of scope** — real worker image, real test projects (Phase 3),
+actual MCP client (Phase 5).
 
 **Depends on:** Phase 1
 
-## Phase 3 — Slice 0 Vertical Slice (`03-slice-0-vertical`)
+## Phase 3 — Design System & Testing Infrastructure (`03-design-system`)
 
-**Goal:** one trivial ticket flows through the whole platform end-to-end. Per
-`comuki-slice-0.md`: prove pull-model, Translator/gRPC, and pi-as-headless-agent.
+> **Re-scoped.** Was originally "Slice 0 vertical slice" but the
+> design system + testing infra are load-bearing before any runtime
+> — they form the contract agents get told to follow (Phase 6+
+> anti-slop) and the gate that holds quality (Phase 6 verification).
+> Pushing them in front of the vertical slice means every later
+> phase ships against a real test suite and a real visual contract.
+
+**Scope**
+- **3.1 — Testing infrastructure (BE + FE):** xUnit v3 + Shouldly +
+  NSubstitute + Testcontainers + Respawn + Bogus + coverlet (70%
+  line gate) on BE; Vitest + Testing Library + jsdom + Playwright
+  config (placeholder) on FE; `test-be` + `test-fe` jobs added to
+  GitLab CI; NetArchTest layer enforcer.
+- **3.2 — Design tokens:** CSS variables + Tailwind v4 theme from
+  `docs/design-system/tokens.md`; replace shadcn defaults
+  (`radix-mira` + `mauve`) with Comuki's accent/terracotta + warm-black
+  surfaces.
+- **3.3 — Design system stories + component customization:**
+  Storybook stories for every token (palette, type, radius, status
+  semantics) + Comuki-specific components (`StatusBadge`, `RunCard`,
+  `StagePipeline`, `RunTimeline`, `ApprovalCard`, etc. per
+  `comuki-dashboard-designspec.md` § 4–5); StatusBadge
+  component with semantic `<StatusBadge status="running" />` API;
+  Storybook interaction tests; Playwright smoke test (boots landing
+  page, asserts h1 contains "Comuki").
+
+**Out of scope** — worker agents actually using the design system
+(Phase 6+), real visual-regression baselines (Phase 7).
+
+**Depends on:** Phase 2; `docs/design-system/tokens.md` from user.
+
+## Phase 4 — Slice 0 Vertical Slice (`04-slice-0-vertical`)
+
+**Goal:** one trivial ticket flows through the system end-to-end.
+Per `comuki-slice-0.md`: prove pull-model, Translator/gRPC, and
+pi-as-headless-agent.
 
 **Scope** (5 sub-steps, 5 plans)
-- **3.1** Sanity-check `pi` headless: launch pi manually with a trivial prompt, parse
-  stream-json output, confirm Anthropic-compatible endpoint reachable (Step 0 of slice-0).
-- **3.2** Postgres + claim primitive: `runs` / `tasks` tables, `FOR UPDATE SKIP LOCKED`
-  claim with lease, two-claimer race test, lease reaper (Step 1 of slice-0).
-- **3.3** Translator (C# AOT) launches pi, parses stream-json into typed events
-  (`StageReport`, `StageActivity`), prints them. No gRPC yet (Step 2 of slice-0).
-- **3.4** gRPC bidirectional stream between Translator and Orchestrator; orchestrator
-  can send `Stop` (Step 3 of slice-0).
-- **3.5** Container loop: insert task → spin container → Translator claims + runs pi on
-  trivial brief → streams events → orchestrator logs final `StageReport` → container
-  dies → lease released (Step 4 of slice-0).
+- **4.1** Sanity-check `pi` headless: launch pi manually with a
+  trivial prompt, parse stream-json output, confirm Anthropic-
+  compatible endpoint reachable (Step 0 of slice-0).
+- **4.2** Postgres + claim primitive: `runs` / `tasks` tables,
+  `FOR UPDATE SKIP LOCKED` claim with lease, two-claimer race test,
+  lease reaper (Step 1 of slice-0).
+- **4.3** Translator (C# AOT) launches pi, parses stream-json into
+  typed events (`StageReport`, `StageActivity`), prints them. No
+  gRPC yet (Step 2 of slice-0).
+- **4.4** gRPC bidirectional stream between Translator and
+  Orchestrator; orchestrator can send `Stop` (Step 3 of slice-0).
+- **4.5** Container loop: insert task → spin container → Translator
+  claims + runs pi on trivial brief → streams events → orchestrator
+  logs final `StageReport` → container dies → lease released
+  (Step 4 of slice-0).
 
-**Out of scope**
-- Proxy / virtual keys (Phase 4)
-- Knowledge retrieval (Phase 5)
-- Verification gate beyond "did pi report done" (Phase 6)
-- DAG, multi-stage, real worktrees (Phase 7)
+**Out of scope** — proxy / virtual keys (Phase 5), knowledge
+retrieval (Phase 6), real verification (Phase 7), DAG, multi-stage,
+real worktrees (Phase 8).
 
-**Depends on:** Phase 2
+**Depends on:** Phase 3.
 
-## Phase 4 — Slice 1: Proxy & Virtual Keys (`04-slice-1-proxy`)
+## Phase 5 — Slice 1: Proxy & Virtual Keys (`05-slice-1-proxy`)
 
-**Goal:** workers stop holding real model keys. The proxy mediates everything;
-container knows only a virtual URL + capability-scoped key.
+**Goal:** workers stop holding real model keys. Everything through
+`Comuki.Platform.Proxy` on YARP; container knows only virtual URL +
+capability-scoped key.
 
 **Scope**
 - `Comuki.Platform.Proxy` (ASP.NET Core + YARP) — thin pass-through
-- `Comuki.Platform.Routing` feature — role→physical-model resolution table
-- Virtual key format: signed, short-lived, carries route/budget/scope/TTL
-- Secret-manager integration stub (real provider TBD by deployment)
-- Egress allowlist
-- Priority rule "people > swarm" enforced by the proxy
-- Metricing: per-app, per-stage, per-agent cost attribution
+- `Comuki.Platform.Routing` — role→physical-model, capability key,
+  metering, budgets
+- Secret-manager integration stub
+- Egress allowlist; priority "people > swarm"
+- Cost-per-app, per-stage, per-agent metrics
 
-**Out of scope**
-- Qdrant vs pgvector — locked to pgvector for now (Phase 5 can re-evaluate)
-- Per-key policies UI — Phase 7 dashboard
+**Depends on:** Phase 4 (real worker traffic to route).
 
-**Depends on:** Phase 3 (real worker traffic to route)
+## Phase 6 — Slice 2: Knowledge & MCP (`06-slice-2-knowledge`)
 
-## Phase 5 — Slice 2: Knowledge & MCP (`05-slice-2-knowledge`)
-
-**Goal:** `comuki-mcp` server exposes retrieval over MCP. Briefs are assembled by a
-context manager, not inlined by humans.
+**Goal:** `comuki-mcp` server exposes retrieval over MCP. Briefs
+assembled by context manager, not inline.
 
 **Scope**
 - `Comuki.Platform.Knowledge` + `Comuki.Platform.Database.Knowledge` (pgvector)
-- `Comuki.Platform.Mcp` — official C# MCP SDK, exposes retrieval
-- Context manager in Orchestration: gathers repo map + relevant docs + convention
-  digest for a brief
-- Seed the knowledge base with project rules + design system + onboarding docs
-- Doc ingestion path (manual for now; doc-agent automated in Phase 6+)
+- `Comuki.Platform.Mcp` — official C# MCP SDK
+- Context manager in Orchestration
+- Seed knowledge base from project rules + design system
+- `comuki-agent-core` (TS) — MCP client + types (filled in here)
 
-**Out of scope**
-- Auto doc-update on feature merge — doc-agent in Phase 6
-- Qdrant migration — only if pgvector chokes under load
+**Depends on:** Phase 5.
 
-**Depends on:** Phase 4
+## Phase 7 — Slice 3: Verification Gate & Rules (`07-slice-3-verification`)
 
-## Phase 6 — Slice 3: Verification Gate & Rules (`06-slice-3-verification`)
-
-**Goal:** the platform refuses to merge work that didn't pass a deterministic gate.
-Anti-slop hardening: hooks, not vibes.
+**Goal:** gate refuses to merge work that didn't pass deterministic
+checks. Anti-slop hardening.
 
 **Scope**
-- Verification stage: types / lint / unit / build (Roslyn warnings-as-errors are
-  non-negotiable per architecture.md §01)
-- `Comuki.Platform.Rules` — rule engine: scope (global / app / stage / task-type),
-  version, conflict detection
-- Worker-side enforcement: `comuki-worker-sdk` pi-extensions that block test-file
-  edits, install commands, main-branch push
-- Escalation policy: N failed retries on cheap model → switch to leading model
-- Budget caps per task / per app / global + kill-switch
-- Cost-per-successful-task metric (cheap retries can flip the economics)
+- Verification stage: types / lint / unit / build (warnings-as-errors)
+- `Comuki.Platform.Rules` — rule engine: scope, versioning, conflicts
+- `comuki-worker-sdk` — pi-extensions blocking test edits, install, push
+- Escalation policy: N failed retries → leading model
+- Budget caps + kill-switch
+- Cost-per-successful-task metric
 
-**Out of scope**
-- Visual review layer (Storybook + vision model) — defer until dashboard phase
-- Playwright E2E — defer until UI exists
+**Depends on:** Phase 6.
 
-**Depends on:** Phase 5
+## Phase 8 — Slice 4: DAG & Dashboard (`08-slice-4-workflow`)
 
-## Phase 7 — Slice 4: DAG & Dashboard (`07-slice-4-workflow`)
-
-**Goal:** multi-stage workflows with a contract-first seam and a live operations UI.
+**Goal:** multi-stage workflows with contract-first seam and live
+operations UI.
 
 **Scope**
-- DAG engine in Orchestration: stage types from a fixed catalogue (study, contract,
-  backend, frontend, migrate, tests, deploy, doc), planner assembles from facts
-  produced by the studier — not from ticket text
-- OpenAPI contract as the first artifact of a backend-feature stage; front∥back
-  on the contract, sync on real schema
-- Preview environments: per-stage, schema-seeded (not data/secret-seeded); prod
-  touched only by the last stage behind the gate
-- `comuki-dashboard` operational UI per `comuki-dashboard-designspec.md`:
-  intake, runs, approvals, trace, cost — React + shadcn, dark default
-- SignalR real-time stream from Orchestrator to dashboard
-- Human-in-the-loop approvals wired through the dashboard queue
+- DAG engine in Orchestration; planner from fixed catalogue
+- OpenAPI contract as the first artifact; front∥back, sync on real schema
+- Per-stage environments (schema-seeded, not data/secret-seeded);
+  prod touched only behind the gate
+- `comuki-dashboard` — operational UI per
+  `comuki-dashboard-designspec.md` (intake, runs, approvals, trace,
+  cost) with all Comuki-specific components from Phase 3
+- SignalR real-time stream
+- Worker rules in `control-plane/`, git-ref pinned per run
 
-**Out of scope**
-- External tracker (Jira / Linear) integration — "далекое потом"
-- Auto-deploy to prod without approval — explicit non-goal for v1
-- Custom user auth on the dashboard — local-only for v1
+**Depends on:** Phase 7.
 
-**Depends on:** Phase 6
+## Phase 9 — MVP Polish (`09-mvp-polish`)
 
-## Phase 8 — MVP Polish (`08-mvp-polish`)
-
-**Goal:** the system survives its own mistakes. At-least-once durability, three-layer
-observability, eviction of the worst "the gate passed but it's broken" cases.
+**Goal:** the system survives its own mistakes.
 
 **Scope**
-- OTel instrumentation everywhere (business + tech metrics share one time-series)
-- VictoriaMetrics + VictoriaLogs deploy
-- Append-only event log: trace-id = run-id; the log is the debug interface
-- Idempotency keys on dispatch / merge / deploy; "did I already do this?" check
-  before every irreversible step
-- Reaper for orphaned containers + reconciliation on Orchestrator restart
-- Eval harness scaffolding: golden tasks derived from shipped skills
-- Acceptance: 70% line coverage target, 0 critical/high risks unresolved
-- Onboarding doc: how a new dev runs the whole loop on a fresh checkout
+- OTel instrumentation everywhere; VictoriaMetrics + VictoriaLogs
+- Append-only event log: trace-id = run-id
+- Idempotency keys on dispatch / merge / deploy
+- Reaper for orphaned containers + reconciliation on restart
+- Eval harness scaffolding: golden tasks from shipped skills
+- 70% line coverage target across BE + FE
+- Onboarding doc: new dev runs the loop on a fresh checkout in ≤30 min
 
-**Out of scope**
-- Temporal upgrade — Postgres-only was a deliberate MVP choice; revisit only if
-  durable logic outgrows what we can hold in one DB transaction
-- Public product design system — lives in the product repo, not here
-
-**Depends on:** Phase 7
+**Depends on:** Phase 8.
 
 ---
 
 ## Phase graph
 
 ```
-1 Bootstrap ──► 2 Stack Foundation ──► 3 Slice 0 (3.1→3.2→3.3→3.4→3.5)
+1 Bootstrap ──► 2 Stack Foundation ──► 3 Design System & Testing
                                               │
                                               ▼
-                                         4 Slice 1 Proxy
+                                        4 Slice 0 Vertical Slice
                                               │
                                               ▼
-                                         5 Slice 2 Knowledge & MCP
+                                        5 Slice 1 Proxy & Virtual Keys
                                               │
                                               ▼
-                                         6 Slice 3 Verification & Rules
+                                        6 Slice 2 Knowledge & MCP
                                               │
                                               ▼
-                                         7 Slice 4 DAG & Dashboard
+                                        7 Slice 3 Verification & Rules
                                               │
                                               ▼
-                                         8 MVP Polish
+                                        8 Slice 4 DAG & Dashboard
+                                              │
+                                              ▼
+                                        9 MVP Polish
 ```

@@ -14,18 +14,33 @@ progress:
 
 ## Current Position
 
-Phase: 2
+Phase: 3
 Plan: — of —
-Status: ready to plan
+Status: waiting on user (design-system docs)
 
 ## Active Phase
 
 Phase 1: Bootstrap — **DONE** (2026-06-04).
   - `dotnet build comuki.slnx` → 0 warnings, 0 errors.
   - `GET /health` → 200 `{"status":"ok"}`.
-  - Initial commit `chore: bootstrap monorepo skeleton`.
-Phase 2: Stack Foundation — next. Pick TS package manager, React stack (Vite+shadcn),
-`deploy/docker-compose.yml` (postgres+minio+nexus+victoria), CI scaffolding.
+Phase 2: Stack Foundation — **DONE** (2026-06-04).
+  - bun + Vite 8 + React 19 + TS strict + Tailwind v4
+  - shadcn/ui (56 components, Radix base) + Storybook 8.6
+  - BE: OpenAPI runtime + Scalar + build-time codegen via
+    `Microsoft.Extensions.ApiDescription.Server` (openapi-v1.json
+    written next to the .csproj; Kubb reads it; single source of
+    truth for FE and any future SDK)
+  - GitLab CI (.gitlab-ci.yml, 2 jobs)
+  - deploy/ for local dev (postgres+pgvector, minio, nexus, victoria)
+  - `agents/` + `control-plane/` directory skeletons (real TS
+    packages land in Phase 4)
+Phase 3: Design System & Testing Infrastructure — **WAITING**.
+  - User is finishing `docs/design-system/*.md` (tokens,
+    components, patterns, voice).
+  - When they land: `soly plan 3` emits 3 plans
+    (3.1 test infra, 3.2 tokens, 3.3 stories+components).
+  - Slice 0 vertical slice moved to Phase 4 (was Phase 3 in the
+    original plan).
 
 ## Goal (milestone v1)
 

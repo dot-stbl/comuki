@@ -29,8 +29,6 @@ Phase 2: Stack Foundation — next. Pick TS package manager, React stack (Vite+s
 
 ## Goal (milestone v1)
 
-## Goal (milestone v1)
-
 Vertical slice through the platform (Slice 0 from `comuki-slice-0.md`): one ticket runs
 end-to-end through a single worker — pull-claim, Translator/gRPC bridge, container
 lifecycle. After that, Slice 1 (proxy) → 2 (knowledge) → 3 (verification) → 4 (DAG +
@@ -38,20 +36,23 @@ dashboard) → MVP polish.
 
 ## Progress
 
-0 / 8 phases, 0 / 0 plans — 0 %
+1 / 8 phases, 0 / 0 plans — 12 %
 
 ## Decisions
 
 | Decision | Rationale | Phase |
 |----------|-----------|-------|
+| Use **Conventional Commits 1.0.0** in this repo — no `[stbl]` prefix. See `.soly/rules/process/commit-format.md`. | The `[stbl]` prefix from `~/.claude/rules/git.md` is an anlytra-project convention, not a comuki one. The user (this is a hybrid repo) prefers Conventional Commits here. Per-rule hierarchy: `.soly/rules/` overrides `.claude/rules/`. | 1 |
+| Apply commit-format rule **forward only** — do not rewrite the 3 pre-rule commits (`229d1dc`, `e36bda4`, `1be5302`). | History rewriting for cosmetic reasons is not worth the risk. New commits are in scope; old ones stay as-is and document the bootstrap era. | 1 |
 | Polyglot monorepo split by stack (`platform/` C#, `agents/` TS, `dashboard/` React) | Per `comuki-project-structure.md` §1: each stack keeps its own manifest, lockfile, toolchain. | 1 |
 | `comuki.slnx` at repo root, not inside `platform/` | Root entry matches the polyglot layout; future `agents.sln` / `dashboard` workspaces stay siblings, not nested. | 1 |
 | Phase 1 ships 5 of 17 projects (Api.Public, Orchestration, Entity.Core, Api.Contracts, Database.Runs) | Minimal compile graph; the other 12 land in the slice that first needs them (Translator, Proxy, Knowledge, …). | 1 |
 | `net10.0` target, `TreatWarningsAsErrors=true`, analyzers at `latest` | Per architecture.md §01 — verification is a load-bearing wall; Roslyn warnings-as-errors are non-negotiable. | 1 |
 | `Directory.Build.props` at repo root, not inside `platform/` | One place to tune C# defaults; future non-C# stacks (TS, React) live in their own folders and won't be touched. | 1 |
-| .editorconfig already on disk, supplied by the user | Code below must respect the existing rules — `dotnet build` will fail loudly otherwise. | 1 |
+| `.editorconfig` already on disk, supplied by the user | Code below must respect the existing rules — `dotnet build` will fail loudly otherwise. | 1 |
 | `.soly/rules/` (C# style/framework/testing) carries over as-is | These rules are explicitly referenced by `comuki-project-structure.md` (`PROJECT-RULES.md`); they apply to the `platform/` solution unchanged. | 1 |
 | Soly state files (STATE.md, ROADMAP.md, phases/) are committed, not gitignored | Next developer / next soly session must see the same context; only the runtime cache `rule-mtimes.json` is gitignored. | 1 |
-| `dotnet build comuki.slnx` produced 0 warnings/0 errors on first try after fixing two path mistakes (3 `..\` levels instead of 2 in two csproj) | Self-inflicted; both `Orchestration.csproj` and `Database.Runs.csproj` live in `src/feature/` and `src/database/`, not `src/feature/Comuki.Platform.Orchestration/`. Fixed in-place; no scope change. | 1 |
-| `Program.cs` uses `using` directives + `MapGet` minimal-API style, with `NoOpOrchestrationService` co-located in `IOrchestrationService.cs` | Trying to define a placeholder implementation in `Program.cs` hit IDE0065 (`using` inside namespace) — co-locating the marker class with its interface is cleaner and avoids the issue. | 1 |
-| `comuki.slnx` rewritten with `<Folder>` elements matching physical paths, not a flat list. `dotnet sln add --solution-folder` was tried first but on .NET 10 SDK it collapsed all projects into a single folder on Windows — known path-handling quirk. Bootstrap commits are an exception to the "руками не редактируем" rule. Future projects: still use `dotnet sln add --solution-folder` and re-check `.slnx`; fall back to `write` if the same bug recurs. | PROJECT-STRUCTURE.md §7 requires `Solution folder = physical path`. Flat list was a rule violation caught by user on review. | 1 |
+| Two path mistakes in initial csproj (3 `..\` levels instead of 2) | Self-inflicted; both `Orchestration.csproj` and `Database.Runs.csproj` live in `src/feature/` and `src/database/`, not nested. Fixed in same commit. | 1 |
+| `NoOpOrchestrationService` co-located in `IOrchestrationService.cs`, not in `Program.cs` | Trying to define a placeholder implementation in `Program.cs` hit IDE0065 (`using` inside namespace) — co-locating the marker class with its interface is cleaner. | 1 |
+| `comuki.slnx` rewritten with `<Folder>` elements matching physical paths | PROJECT-STRUCTURE.md §7 requires `Solution folder = physical path`. Flat list was a rule violation caught on user review. | 1 |
+| `dotnet sln add --solution-folder` collapsed all projects on .NET 10 SDK (Windows path quirk) — wrote `.slnx` directly instead | `dotnet sln` and `--solution-folder` is the canonical path, but the .NET 10 SDK mishandles `path-with-slashes` on Windows. Bootstrap is an exception to the "руками не редактируем" rule. Future projects: still use `dotnet sln add --solution-folder` with a `.slnx` re-check. | 1 |

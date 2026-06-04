@@ -10,7 +10,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "generate-api": "kubb generate",
+    "generate-api": "bun run scripts/generate-openapi.ts && kubb generate",
     "predev": "bun run generate-api",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"

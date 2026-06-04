@@ -1,0 +1,23 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Node / TypeScript
+node_modules/
+bun.lock
+bun.lockb
+dist/
+.vite/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# soly runtime cache (rules hot-reload state, not source)
+.soly/rule-mtimes.json

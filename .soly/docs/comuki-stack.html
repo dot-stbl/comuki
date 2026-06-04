@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comuki — технический стек</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Spectral:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF7F0; --panel:#F4F0E6; --ink:#26241E; --muted:#6B6557;
+    --line:#E4DCCB; --line-strong:#D2C8B2;
+    --accent:#B0472F; --accent2:#3E7C66;
+    --mono:'IBM Plex Mono',monospace; --serif:'Spectral',Georgia,serif; --disp:'Fraunces',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-weight:400;font-size:18px;line-height:1.72;
+    -webkit-font-smoothing:antialiased;background-image:radial-gradient(circle at 1px 1px, rgba(0,0,0,0.018) 1px, transparent 0);background-size:22px 22px;}
+  .wrap{max-width:840px;margin:0 auto;padding:72px 28px 120px}
+  .doc-head{border-bottom:1px solid var(--line-strong);padding-bottom:34px;margin-bottom:48px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 18px}
+  h1{font-family:var(--disp);font-weight:500;font-size:46px;line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+  .lede{font-size:20px;color:#403c33;max-width:62ch;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:26px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .meta b{color:var(--ink);font-weight:500}
+  h2{font-family:var(--disp);font-weight:500;font-size:30px;letter-spacing:-.01em;margin:64px 0 8px;padding-top:18px}
+  .sec-num{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.1em;display:block;margin-bottom:2px}
+  h3{font-family:var(--disp);font-weight:500;font-size:21px;margin:38px 0 6px}
+  p{margin:14px 0;max-width:68ch}
+  strong{font-weight:600}
+  code{font-family:var(--mono);font-size:.84em;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  figure{margin:34px 0;padding:26px 18px 14px;background:#fff;border:1px solid var(--line);border-radius:10px}
+  figure svg{display:block;width:100%;height:auto}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;margin-top:14px;letter-spacing:.02em}
+  .dt{font-family:var(--serif);font-weight:600;font-size:14px;fill:#2C2A24}
+  .ds{font-family:var(--serif);font-weight:400;font-size:12px;fill:#6B6557}
+  .bx-neutral{fill:#ECE7DD;stroke:#9A917F;stroke-width:1}
+  .bx-agent{fill:#DDEDE6;stroke:#4F8C76;stroke-width:1}
+  .bx-reason{fill:#E7E3F1;stroke:#6E63A6;stroke-width:1}
+  .bx-infra{fill:#E0E9F1;stroke:#4E7BA6;stroke-width:1}
+  .bx-store{fill:#F3EAD4;stroke:#B0893A;stroke-width:1}
+  .ar{stroke:#8A8275;stroke-width:1.4;fill:none}
+  td.yes{color:#2f6a4f;font-weight:600;font-family:var(--mono);font-size:13px}
+  td.no{color:#A53D2A;font-weight:600;font-family:var(--mono);font-size:13px}
+  td.maybe{color:#9C7430;font-weight:600;font-family:var(--mono);font-size:13px}
+  table{width:100%;border-collapse:collapse;margin:24px 0;font-size:15.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);border-bottom:1px solid var(--line-strong)}
+  td b{font-family:var(--disp);font-weight:600}
+  td code{font-size:.8em}
+  .svc-list{list-style:none;padding:0;margin:22px 0;counter-reset:svc}
+  .svc-list li{position:relative;padding:16px 18px 16px 56px;border:1px solid var(--line);border-radius:8px;margin:10px 0;background:#fff}
+  .svc-list li::before{counter-increment:svc;content:counter(svc);position:absolute;left:16px;top:16px;font-family:var(--mono);font-size:13px;color:#fff;background:var(--ink);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .svc-list b{font-family:var(--disp);font-weight:600}
+  .note{border-left:3px solid var(--accent2);background:#fff;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 20px;margin:18px 0;border-radius:0 8px 8px 0}
+  .note h4{font-family:var(--disp);font-weight:600;font-size:17px;margin:0 0 6px}
+  .note p{margin:6px 0;font-size:16px;line-height:1.6}
+  .pill{font-family:var(--mono);font-size:11px;padding:2px 9px;border-radius:20px;border:1px solid var(--accent2);color:var(--accent2);display:inline-block}
+  .grp{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:40px 0 4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .foot{margin-top:80px;padding-top:28px;border-top:1px solid var(--line-strong);font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  @media(max-width:600px){body{font-size:16.5px}h1{font-size:34px}h2{font-size:25px}.wrap{padding:48px 18px 80px}table{font-size:14px}th,td{padding:8px 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-head">
+    <p class="eyebrow">Технический стек · черновик для обсуждения</p>
+    <h1>Comuki — стек репозитория</h1>
+    <p class="lede">Из чего собрана платформа: языки, сервисы, хранилища, наблюдаемость. Дополняет архитектурный документ — там «что система делает», здесь «из чего сделана».</p>
+    <div class="meta">
+      <span><b>Платформа:</b> C# / .NET</span>
+      <span><b>Агенты:</b> pi + GSD (TS)</span>
+      <span><b>Дашборд:</b> React + shadcn</span>
+      <span><b>Развёртывание:</b> self-hosted</span>
+    </div>
+  </header>
+
+  <!-- 1. ПРИНЦИПЫ СТЕКА -->
+  <h2><span class="sec-num">01</span>Принципы выбора</h2>
+  <p>Стек выбран под три ограничения из архитектуры: платформа целиком self-hosted (своё облако, ничего не уходит наружу), команда — C#-разработчики, а воркеры провайдер-агностичны и тупы. Из этого следуют два правила, по которым отбирались инструменты.</p>
+  <p><strong>Минимум движущихся частей, но не в ущерб гарантиям.</strong> Не разводим по разным системам то, что должно меняться согласованно (состояние и очередь — одна транзакционная граница), но и не пихаем в одно вещи с разным профилем нагрузки (метрики и логи — не в транзакционную БД). Граница проходит по природе данных, а не по удобству.</p>
+  <p><strong>Тупой одинаковый воркер, вся специфика по API.</strong> Контейнер-воркер один и тот же для любой стадии, продукта и модели — он стартует пустым и сам идёт за работой (pull-модель). Это развязывает платформу от механизма запуска: один <code>Dockerfile</code>, неважно Docker или k8s.</p>
+
+  <!-- 2. КАРТА КОМПОНЕНТОВ -->
+  <h2><span class="sec-num">02</span>Компоненты репозитория</h2>
+  <p>Платформа целиком на C#, плагин на TS, дашборд на React. Слои связаны протоколами (MCP, HTTP), а не общим языком.</p>
+  <ul class="svc-list">
+    <li><b>comuki-orchestrator</b> — C# / ASP.NET Core. Control plane: машина состояний DAG, pull-очередь задач, расписание, ретраи, диспетчинг воркеров, вызовы ведущей модели. Владеет источником правды и журналом.</li>
+    <li><b>comuki-proxy</b> — C# / YARP. Модельный прокси: виртуальные URL+ключи, маршрутизация роль → физическая модель, метринг, бюджеты, приоритет «люди &gt; рой».</li>
+    <li><b>comuki-mcp</b> — C# (официальный MCP C# SDK). Сервер знаний и правил: retrieval, движок правил. Единый рантайм с оркестратором.</li>
+    <li><b>comuki-agent-core</b> — TS. Общее ядро обоих sdk: типы событий, MCP-доступ, чтение декларативных правил, формат брифа/отчёта. Единый код — дрейфу негде взяться.</li>
+    <li><b>comuki-worker-sdk</b> — TS. Воркеры: pi (контроль, наблюдаемость) + pi-расширения принуждения.</li>
+    <li><b>comuki-dev-sdk</b> — TS. Разрабы: Claude Code (UX) + наши хуки. Форк GSD по происхождению, имя по роли.</li>
+    <li><b>comuki-dashboard</b> — React + shadcn/ui. Наблюдение и настройка; та же дизайн-система, что принуждает воркеров.</li>
+  </ul>
+
+  <figure>
+    <svg viewBox="0 0 680 430" role="img" aria-label="Карта технического стека">
+      <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#8A8275" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <g><rect class="bx-agent" x="40" y="30" width="180" height="50" rx="8"/><text class="dt" x="130" y="50" text-anchor="middle">Воркер (контейнер)</text><text class="ds" x="130" y="67" text-anchor="middle">claude + Translator (gRPC)</text></g>
+      <g><rect class="bx-agent" x="240" y="30" width="180" height="50" rx="8"/><text class="dt" x="330" y="50" text-anchor="middle">Локальный Claude Code</text></g>
+      <g><rect class="bx-infra" x="500" y="30" width="140" height="50" rx="8"/><text class="dt" x="570" y="50" text-anchor="middle">Дашборд</text><text class="ds" x="570" y="67" text-anchor="middle">React + shadcn</text></g>
+
+      <g><rect class="bx-infra" x="40" y="130" width="175" height="54" rx="8"/><text class="dt" x="127" y="151" text-anchor="middle">orchestrator</text><text class="ds" x="127" y="168" text-anchor="middle">C# · ASP.NET</text></g>
+      <g><rect class="bx-infra" x="252" y="130" width="175" height="54" rx="8"/><text class="dt" x="339" y="151" text-anchor="middle">proxy</text><text class="ds" x="339" y="168" text-anchor="middle">C# · YARP</text></g>
+      <g><rect class="bx-infra" x="464" y="130" width="175" height="54" rx="8"/><text class="dt" x="551" y="151" text-anchor="middle">mcp</text><text class="ds" x="551" y="168" text-anchor="middle">C# · MCP SDK</text></g>
+
+      <line class="ar" x1="130" y1="80" x2="127" y2="128" marker-end="url(#a)"/>
+      <line class="ar" x1="330" y1="80" x2="200" y2="128" marker-end="url(#a)"/>
+      <line class="ar" x1="345" y1="80" x2="540" y2="128" marker-end="url(#a)"/>
+      <line class="ar" x1="570" y1="80" x2="180" y2="128" marker-end="url(#a)"/>
+
+      <text class="ds" x="40" y="232" font-family="IBM Plex Mono">— хранилища (self-hosted) —</text>
+      <g><rect class="bx-store" x="40" y="244" width="190" height="58" rx="8"/><text class="dt" x="135" y="266" text-anchor="middle">PostgreSQL</text><text class="ds" x="135" y="284" text-anchor="middle">состояние · очередь · pgvector</text></g>
+      <g><rect class="bx-store" x="245" y="244" width="190" height="58" rx="8"/><text class="dt" x="340" y="266" text-anchor="middle">MinIO (S3)</text><text class="ds" x="340" y="284" text-anchor="middle">артефакты прогонов</text></g>
+      <g><rect class="bx-store" x="450" y="244" width="190" height="58" rx="8"/><text class="dt" x="545" y="266" text-anchor="middle">Nexus</text><text class="ds" x="545" y="284" text-anchor="middle">пакеты · образы</text></g>
+
+      <line class="ar" x1="127" y1="184" x2="130" y2="242" marker-end="url(#a)"/>
+      <line class="ar" x1="339" y1="184" x2="335" y2="242" marker-end="url(#a)"/>
+      <line class="ar" x1="551" y1="184" x2="180" y2="242" marker-end="url(#a)"/>
+
+      <text class="ds" x="40" y="346" font-family="IBM Plex Mono">— наблюдаемость —</text>
+      <g><rect class="bx-neutral" x="40" y="358" width="280" height="50" rx="8"/><text class="dt" x="180" y="378" text-anchor="middle">OpenTelemetry → VictoriaMetrics/Logs</text><text class="ds" x="180" y="395" text-anchor="middle">метрики · логи · трейсы</text></g>
+      <g><rect class="bx-store" x="360" y="358" width="280" height="50" rx="8"/><text class="dt" x="500" y="378" text-anchor="middle">PostgreSQL — бизнес-данные</text><text class="ds" x="500" y="395" text-anchor="middle">стоимость · аудит · отчёты</text></g>
+    </svg>
+    <figcaption>Рис. 1 — Сервисы, хранилища и слой наблюдаемости</figcaption>
+  </figure>
+
+  <!-- 3. РАНТАЙМ ВОРКЕРОВ -->
+  <h2><span class="sec-num">03</span>Запуск воркеров: pull-модель</h2>
+  <p>Воркер стартует «пустым» — в образе нет ничего про конкретную задачу. Он сам стучит в оркестратор за работой. Это делает контейнер тупым и одинаковым, а платформу — независимой от механизма запуска.</p>
+  <p>Полный цикл — не просто «спросил и ушёл», а <strong>claim → lease → heartbeat</strong>: воркер клеймит задачу, получает бриф, роль модели, виртуальный ключ и git-ref правил, затем периодически шлёт heartbeat «я жив». Перестал стучать (упал, завис, OOM) — аренда истекает, оркестратор переназначает задачу. Без heartbeat pull-модель не отличит «думает» от «сдох»; с ним — это самовосстанавливающаяся очередь.</p>
+  <p>Внутри контейнера связь держит <strong>Translator</strong> (<code>Comuki.Platform.Worker.Translator</code>, AOT) — двунаправленный мост Claude Code ↔ оркестратор. Запускает <code>claude -p</code> дочерним процессом, держит его stdout, переводит stream-json в типизированные события и шлёт оркестратору; обратно принимает команды (<code>Stop</code>, <code>InjectContext</code>). Переводит и исполняет, <strong>не решает</strong> — ретрай/эскалация/стоп у оркестратора (у него состояние задачи и бюджет; у Translator'а нет). Канал — <strong>gRPC</strong> (сервис-сервис, двунаправленный типизированный стрим, общие proto). Дашборд ↔ оркестратор — <strong>SignalR</strong> (браузеры). Разные швы — разный транспорт.</p>
+  <div class="note">
+    <h4>Почему не привязываемся к k8s/Docker напрямую</h4>
+    <p>Абстракция запуска — тонкий интерфейс «дай ещё воркер», за которым может быть <code>docker run</code>, k8s Job или под из пула. Оркестратор не настраивает контейнер под задачу — он ждёт, когда тот сам придёт за работой. Можно начать на голом Docker API и переехать в k8s, не трогая логику оркестрации.</p>
+  </div>
+
+  <!-- 4. ХРАНИЛИЩА -->
+  <h2><span class="sec-num">04</span>Хранилища</h2>
+  <p>Граница проходит по природе данных. То, что должно быть транзакционно согласовано, живёт вместе; то, что отличается профилем нагрузки, разводится.</p>
+  <table>
+    <tr><th>Что</th><th>Чем</th><th>Почему</th></tr>
+    <tr><td><b>Состояние + очередь</b><br>DAG, статусы, pull-очередь</td><td>PostgreSQL<br><code>FOR UPDATE SKIP LOCKED</code></td><td>Одна транзакционная граница: «задача взята» и «состояние обновилось» — в одной транзакции. Разнести = распределённая транзакция на ровном месте.</td></tr>
+    <tr><td><b>Журнал событий</b><br>append-only, реал-тайм</td><td>PostgreSQL<br><code>LISTEN/NOTIFY</code></td><td>Источник правды и пуш в дашборд из той же БД.</td></tr>
+    <tr><td><b>Знания (вектора)</b><br>доки, рецепты, правила</td><td>pgvector<br>(или Qdrant)</td><td>Справочные, не обязаны быть согласованы с прогоном в одной транзакции — единственное место, где вынос в отдельный движок оправдан по вкусу.</td></tr>
+    <tr><td><b>Артефакты прогонов</b><br>дифы, скриншоты, summary, логи</td><td>MinIO (S3)</td><td>Тяжёлые immutable-блобы под <code>run-id/</code>. Метаданные в Postgres с указателем на объект.</td></tr>
+    <tr><td><b>Пакеты и образы</b><br>NuGet, npm, базовый образ</td><td>Nexus</td><td>Приватный реестр + supply-chain-щит: воркер тянет зависимости только отсюда.</td></tr>
+  </table>
+
+  <div class="note">
+    <h4>MinIO и Nexus — разные звери, оба нужны</h4>
+    <p><strong>MinIO</strong> — объектное хранилище под артефакты <em>выполнения</em> (что рождается в прогоне). <strong>Nexus</strong> — репозиторий <em>зависимостей</em> (откуда тянутся библиотеки и образы при сборке). Не альтернатива друг другу.</p>
+    <p>Nexus заодно закрывает supply-chain двойной защитой: хук не даёт <em>попросить</em> новый пакет, а Nexus не даёт его <em>достать</em> из публичного реестра, даже если попросили. Slopsquatting перекрыт на уровне инфраструктуры, а не только правилом.</p>
+  </div>
+
+  <!-- 5. DURABLE -->
+  <h2><span class="sec-num">05</span>Durable-выполнение: развилка</h2>
+  <p>Workflow фичи живёт долго (часы) и должен переживать падения оркестратора — это требование из рисков (at-least-once, идемпотентность). Два пути, и выбор зависит от того, сколько механики надёжности писать самим против администрировать.</p>
+  <table>
+    <tr><th>Путь</th><th>Плюс</th><th>Минус</th></tr>
+    <tr><td><b>Postgres-only</b><br>claim/lease/heartbeat руками</td><td>Минимум инфраструктуры, всё в одной БД, полный контроль</td><td>Ретраи, таймауты, переживание падений пишете и отвечаете сами</td></tr>
+    <tr><td><b>+ Temporal</b><br>durable-движок</td><td>Надёжность, версионирование и наблюдаемость из коробки; заточен под agentic-нагрузки</td><td>+1 серьёзный сервис в своём облаке; self-hosted Temporal надо администрировать</td></tr>
+  </table>
+  <p><strong>Рекомендация для MVP: Postgres-only.</strong> claim/lease/heartbeat — это немного кода, а инфраструктуры на порядок меньше; для self-hosted старта это меньше операционной боли. Temporal — как «потом», если durable-логика разрастётся (сложное версионирование workflow, высокая пропускная способность). Версионирование управляющей плоскости (P7) при этом всё равно держится на git-ref, а не на движке.</p>
+
+  <!-- 6. НАБЛЮДАЕМОСТЬ -->
+  <h2><span class="sec-num">06</span>Наблюдаемость: три слоя</h2>
+  <p>У нодетерминированного роя наблюдаемость — несущая, а не приятная. Три слоя отвечают на три разных вопроса, поэтому это три инструмента, а не один раздутый.</p>
+  <table>
+    <tr><th>Вопрос</th><th>Слой</th><th>Чем</th></tr>
+    <tr><td><b>Сколько / как часто</b><br>стоимость, токены, фейлы, латентность</td><td>Метрики</td><td>OpenTelemetry → VictoriaMetrics</td></tr>
+    <tr><td><b>Что писали сервисы</b><br>логи прогонов и платформы</td><td>Логи</td><td>VictoriaLogs</td></tr>
+    <tr><td><b>Где застряло</b><br>трасса прогона по стадиям</td><td>Трейсы</td><td>OpenTelemetry (trace-id = run-id)</td></tr>
+    <tr><td><b>Что именно сделал агент</b><br>дифы, скриншоты, summary</td><td>Артефакты</td><td>MinIO (см. §04)</td></tr>
+  </table>
+  <p>Связка: метрики говорят «прогон дорогой и фейлит», трейс — «завис на шаге X», артефакт — «вот что агент там написал». <span class="pill">сколько · где · что</span></p>
+  <p>OpenTelemetry-инструментирование закладывается с первого дня — .NET поддерживает его нативно, на старте дёшево, а когда надо понять «почему фича уехала сломанной» — бесценно. Бизнес-метрики (стоимость на успешную фичу, доля задач с первого прохода) идут туда же, что и технические — это один time-series с разными лейблами, разводить их незачем.</p>
+
+  <!-- 7. API -->
+  <h2><span class="sec-num">07</span>API и контракты</h2>
+  <p>Три разных стиля общения по трём разным границам — каждый под свою задачу.</p>
+  <table>
+    <tr><th>Граница</th><th>Стиль</th><th>Зачем</th></tr>
+    <tr><td>Воркер ↔ оркестратор</td><td>HTTP/REST (claim, heartbeat, отчёт)</td><td>Простой pull-контракт; воркер тупой, ему нужен минимум</td></tr>
+    <tr><td>Дашборд ↔ оркестратор</td><td>REST + поток (SignalR/SSE)</td><td>Запросы + живые обновления прогонов в реал-тайме</td></tr>
+    <tr><td>Агент ↔ comuki-mcp</td><td>MCP</td><td>Знания и правила; единый протокол для воркеров (pi) и разрабов (GSD)</td></tr>
+    <tr><td>Сервисы → модели</td><td>через comuki-proxy (Anthropic Messages)</td><td>Виртуальные ключи, метринг, маршрутизация роли</td></tr>
+  </table>
+  <div class="note">
+    <h4>Один источник правды для контрактов</h4>
+    <p>Формат брифа/отчёта между Translator и оркестратором — C#↔C# (один язык, компилятор ловит рассогласование). Стык с TS-агентом (pi) уже: бриф/отчёт как JSON. На старте описываем в <code>Api.Contracts</code>; разрастётся — единый JSON Schema на обе стороны.</p>
+  </div>
+
+  <!-- 8. .NET AI -->
+  <h2><span class="sec-num">08</span>Семейство .NET AI: что берём</h2>
+  <p>«.NET AI» от Microsoft — это не один пакет, а семейство (Microsoft.Extensions.AI, VectorData, Agent Framework, MCP SDK, Evaluation). Берём из него выборочно — лакмус один: <strong>библиотека решает проблему, которую мы ещё не решили, или ту, что уже закрыта дизайном?</strong> Прокси и GSD закрыли два больших куска, поэтому дублирующие их библиотеки избыточны.</p>
+  <table>
+    <tr><th>Пакет</th><th>Решение</th><th>Почему</th></tr>
+    <tr><td><b>MCP C# SDK</b></td><td class="yes">Берём</td><td>Основа <code>comuki-mcp</code>. Уже в стеке.</td></tr>
+    <tr><td><b>Extensions.AI.Evaluation</b></td><td class="yes">Берём (потом)</td><td>Готовый каркас под эвал-харнес: прогон golden-задач, кеш ответов, хранение результатов, отчёты. Не писать с нуля. Пост-MVP.</td></tr>
+    <tr><td><b>Extensions.VectorData</b></td><td class="maybe">Опционально</td><td>Абстракция над вектор-стором — только если хочешь оставить дверь под смену pgvector → Qdrant. Иначе прямой клиент проще.</td></tr>
+    <tr><td><b>Extensions.AI (IChatClient)</b></td><td class="no">Не берём</td><td>Абстракция над провайдерами — но это <em>уже</em> делает прокси (развязка на уровне сети). Второй слой абстракции поверх того же.</td></tr>
+    <tr><td><b>Agent Framework</b></td><td class="no">Не берём</td><td>Многошаговые agentic workflow — дублирует оркестратор + GSD. Третий дирижёр в системе, где уже два. Категорически мимо.</td></tr>
+  </table>
+  <div class="note">
+    <h4>Принцип на будущее</h4>
+    <p>Каждый раз, глядя на готовую библиотеку (особенно «от Microsoft, вроде в тему»): закрывает ли она <em>незакрытое</em> (оценка, вектор-абстракция) или дублирует уже решённое дизайном (провайдеры → прокси, оркестрация → GSD)? Берём только первое.</p>
+  </div>
+
+  <!-- 9. СВОДКА -->
+  <h2><span class="sec-num">09</span>Сводка стека</h2>
+  <div class="grp">Платформа</div>
+  <table>
+    <tr><td><b>Язык платформы</b></td><td>C# / .NET (ASP.NET Core)</td></tr>
+    <tr><td><b>Прокси</b></td><td>YARP</td></tr>
+    <tr><td><b>MCP-сервер</b></td><td>C# MCP SDK</td></tr>
+    <tr><td><b>Агенты</b></td><td>agent-core + worker-sdk (pi) + dev-sdk (Claude Code), TS</td></tr>
+    <tr><td><b>Дашборд</b></td><td>React + shadcn/ui, поток через SignalR</td></tr>
+  </table>
+  <div class="grp">Данные</div>
+  <table>
+    <tr><td><b>Состояние · очередь · журнал</b></td><td>PostgreSQL</td></tr>
+    <tr><td><b>Вектора знаний</b></td><td>pgvector (опц. Qdrant)</td></tr>
+    <tr><td><b>Артефакты прогонов</b></td><td>MinIO (S3)</td></tr>
+    <tr><td><b>Пакеты и образы</b></td><td>Nexus</td></tr>
+    <tr><td><b>Durable-выполнение</b></td><td>Postgres-only → Temporal (потом)</td></tr>
+  </table>
+  <div class="grp">Наблюдаемость</div>
+  <table>
+    <tr><td><b>Сбор</b></td><td>OpenTelemetry</td></tr>
+    <tr><td><b>Метрики (тех + бизнес)</b></td><td>VictoriaMetrics</td></tr>
+    <tr><td><b>Логи</b></td><td>VictoriaLogs</td></tr>
+    <tr><td><b>Трейсы</b></td><td>OTel, trace-id = run-id</td></tr>
+  </table>
+
+  <div class="foot">
+    Технический черновик · дополняет архитектурный документ Comuki. Версии быстро движущихся библиотек (MCP SDK, durable-движок) пиновать жёстко.
+  </div>
+
+</div>
+</body>
+</html>

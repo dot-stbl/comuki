@@ -1,0 +1,5 @@
+<Project>
+  <!-- Central Package Management. Phase 1 ships no external deps. -->
+  <ItemGroup>
+  </ItemGroup>
+</Project>

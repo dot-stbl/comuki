@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Platform.Orchestration</RootNamespace>
+    <AssemblyName>Comuki.Platform.Orchestration</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\models\Comuki.Platform.Entity.Core\Comuki.Platform.Entity.Core.csproj" />
+  </ItemGroup>
+
+</Project>

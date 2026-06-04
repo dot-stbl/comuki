@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Platform.Entity.Core</RootNamespace>
+    <AssemblyName>Comuki.Platform.Entity.Core</AssemblyName>
+  </PropertyGroup>
+
+</Project>

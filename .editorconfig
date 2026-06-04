@@ -1,0 +1,376 @@
+# =====================================================================
+# .editorconfig — C# / .NET Coding Rules
+# Companion file to CODING-RULES.md
+# =====================================================================
+# Severity legend:
+#   error    — build fails. Use for non-negotiable rules.
+#   warning  — visible in IDE and build log, doesn't fail build.
+#   suggestion / silent — hint, hidden in build log.
+#
+# Required analyzers (add to Directory.Packages.props or csproj):
+#   Microsoft.CodeAnalysis.NetAnalyzers          (CA rules)
+#   Microsoft.VisualStudio.Threading.Analyzers   (VSTHRD rules)
+#   Meziantou.Analyzer                           (MA rules)
+#   Roslynator.Analyzers                         (RCS rules)
+#
+# Cross-platform note:
+#   end_of_line = lf для всего репозитория.
+#   Windows-разработчики должны иметь .gitattributes в корне:
+#       * text=auto eol=lf
+#   и `git config --global core.autocrlf input`.
+# =====================================================================
+
+root = true
+
+# ---------------------------------------------------------------------
+# Base — все файлы
+# ---------------------------------------------------------------------
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,yml,yaml,xml,csproj,props,targets}]
+indent_size = 2
+
+[{*.yaml,*.yml}]
+indent_size = 2
+
+[{*.bash,*.sh,*.zsh}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+# =====================================================================
+# C# rules
+# =====================================================================
+[*.cs]
+
+#---------------------------------------------------------------------
+# Indentation
+#---------------------------------------------------------------------
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+
+#---------------------------------------------------------------------
+# Using directives — System.* первым
+#---------------------------------------------------------------------
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:error
+
+#---------------------------------------------------------------------
+# Section 7: var — всегда, когда тип очевиден (ERROR)
+#---------------------------------------------------------------------
+csharp_style_var_for_built_in_types = true:error
+csharp_style_var_when_type_is_apparent = true:error
+csharp_style_var_elsewhere = true:error
+dotnet_diagnostic.IDE0007.severity = error   # use var
+dotnet_diagnostic.IDE0008.severity = none    # use explicit type — отключено
+
+#---------------------------------------------------------------------
+# Section 8: File-scoped namespaces — обязательно
+#---------------------------------------------------------------------
+csharp_style_namespace_declarations = file_scoped:error
+dotnet_diagnostic.IDE0161.severity = error
+
+#---------------------------------------------------------------------
+# Section 9: Braces — всегда и везде (ERROR)
+#---------------------------------------------------------------------
+csharp_prefer_braces = true:error
+dotnet_diagnostic.IDE0011.severity = error
+
+#---------------------------------------------------------------------
+# Section 5: Pattern matching & minimal code
+#---------------------------------------------------------------------
+csharp_style_pattern_matching_over_is_with_cast_check = true:error
+csharp_style_pattern_matching_over_as_with_null_check = true:error
+csharp_style_prefer_switch_expression = true:warning
+csharp_style_prefer_pattern_matching = true:warning
+csharp_style_prefer_not_pattern = true:warning
+csharp_style_prefer_extended_property_pattern = true:warning
+
+# Conditional expressions (ternary)
+dotnet_style_prefer_conditional_expression_over_assignment = true:warning
+dotnet_style_prefer_conditional_expression_over_return = true:warning
+
+# Inline variable declarations
+csharp_style_inlined_variable_declaration = true:error
+
+# Использовать pattern matching вместо null-check
+dotnet_diagnostic.IDE0078.severity = warning
+dotnet_diagnostic.IDE0083.severity = warning
+
+#---------------------------------------------------------------------
+# Section 6: Async / await
+#---------------------------------------------------------------------
+# Async suffix mandatory
+dotnet_diagnostic.VSTHRD200.severity = error
+
+# No .Result / .Wait() / .GetAwaiter().GetResult()
+dotnet_diagnostic.VSTHRD002.severity = error
+dotnet_diagnostic.VSTHRD103.severity = error
+dotnet_diagnostic.VSTHRD104.severity = error
+dotnet_diagnostic.VSTHRD110.severity = warning  # observe awaited result
+
+# Forget ConfigureAwait — для library code; в app можно отключить
+dotnet_diagnostic.MA0004.severity = none
+
+#---------------------------------------------------------------------
+# Section 2: sealed по умолчанию
+#---------------------------------------------------------------------
+dotnet_diagnostic.CA1852.severity = warning  # seal internal types
+
+#---------------------------------------------------------------------
+# Section 12: Structured logging
+#---------------------------------------------------------------------
+dotnet_diagnostic.CA2254.severity = error    # template should be static expression
+dotnet_diagnostic.CA1727.severity = warning  # PascalCase placeholders
+dotnet_diagnostic.CA1848.severity = none     # LoggerMessage source-gen (не обязательно)
+
+#---------------------------------------------------------------------
+# Section 1: Naming
+#---------------------------------------------------------------------
+# Стиль: camelCase без префикса
+dotnet_naming_style.camel_case.capitalization = camel_case
+
+# Private/protected/internal fields — camelCase без _
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private, protected, internal, private_protected
+dotnet_naming_symbols.private_fields.required_modifiers =
+
+dotnet_naming_rule.private_fields_camel_case.symbols = private_fields
+dotnet_naming_rule.private_fields_camel_case.style = camel_case
+dotnet_naming_rule.private_fields_camel_case.severity = error
+
+# Interfaces — I prefix
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = *
+
+dotnet_naming_style.i_prefix.required_prefix = I
+dotnet_naming_style.i_prefix.capitalization = pascal_case
+
+dotnet_naming_rule.interfaces_must_start_with_i.symbols = interfaces
+dotnet_naming_rule.interfaces_must_start_with_i.style = i_prefix
+dotnet_naming_rule.interfaces_must_start_with_i.severity = error
+
+# Async methods — Async suffix
+dotnet_naming_symbols.async_methods.applicable_kinds = method
+dotnet_naming_symbols.async_methods.applicable_accessibilities = *
+dotnet_naming_symbols.async_methods.required_modifiers = async
+
+dotnet_naming_style.async_suffix.required_suffix = Async
+dotnet_naming_style.async_suffix.capitalization = pascal_case
+
+dotnet_naming_rule.async_methods_end_with_async.symbols = async_methods
+dotnet_naming_rule.async_methods_end_with_async.style = async_suffix
+dotnet_naming_rule.async_methods_end_with_async.severity = error
+
+# Public members — PascalCase
+dotnet_naming_symbols.public_members.applicable_kinds = property, method, field, event, namespace, class, struct, interface, enum, delegate
+dotnet_naming_symbols.public_members.applicable_accessibilities = public
+
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+dotnet_naming_rule.public_members_pascal.symbols = public_members
+dotnet_naming_rule.public_members_pascal.style = pascal
+dotnet_naming_rule.public_members_pascal.severity = error
+
+# Constants — PascalCase
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.applicable_accessibilities = *
+dotnet_naming_symbols.constants.required_modifiers = const
+
+dotnet_naming_rule.constants_pascal.symbols = constants
+dotnet_naming_rule.constants_pascal.style = pascal
+dotnet_naming_rule.constants_pascal.severity = error
+
+#---------------------------------------------------------------------
+# Section 3: Primary constructors — поощряем
+#---------------------------------------------------------------------
+csharp_style_prefer_primary_constructors = true:suggestion
+
+#---------------------------------------------------------------------
+# Modifier order — Microsoft default (ERROR)
+#---------------------------------------------------------------------
+csharp_preferred_modifier_order = public, private, protected, internal, file, static, extern, new, virtual, abstract, sealed, override, readonly, unsafe, required, volatile, async:error
+dotnet_diagnostic.IDE0036.severity = error
+
+#---------------------------------------------------------------------
+# Accessibility modifiers — always (ERROR, включая интерфейсы)
+#---------------------------------------------------------------------
+dotnet_style_require_accessibility_modifiers = always:error
+dotnet_diagnostic.IDE0040.severity = error
+
+#---------------------------------------------------------------------
+# Expression-bodied members
+#---------------------------------------------------------------------
+csharp_style_expression_bodied_methods = when_on_single_line:silent
+csharp_style_expression_bodied_constructors = false:silent
+csharp_style_expression_bodied_operators = when_on_single_line:silent
+csharp_style_expression_bodied_properties = true:silent
+csharp_style_expression_bodied_indexers = true:silent
+csharp_style_expression_bodied_accessors = true:silent
+csharp_style_expression_bodied_lambdas = true:silent
+csharp_style_expression_bodied_local_functions = when_on_single_line:silent
+
+# Using
+csharp_prefer_simple_using_statement = true:warning
+csharp_style_prefer_method_group_conversion = true:silent
+csharp_style_prefer_top_level_statements = true:silent
+
+# UTF-8 string literals (.NET 7+)
+csharp_style_prefer_utf8_string_literals = true:warning
+
+# this. qualification — НЕ требуется
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+dotnet_style_qualification_for_event = false:warning
+
+# Predefined types (int vs Int32)
+dotnet_style_predefined_type_for_locals_parameters_members = true:warning
+dotnet_style_predefined_type_for_member_access = true:warning
+
+# Parentheses
+dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary:warning
+dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:warning
+dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary:warning
+
+# Object initializers — новая строка
+csharp_new_line_before_members_in_object_initializers = false
+
+#---------------------------------------------------------------------
+# Roslynator — упрощение кода и минимальность
+#---------------------------------------------------------------------
+dotnet_diagnostic.RCS1124.severity = warning   # inline local variable
+dotnet_diagnostic.RCS1173.severity = warning   # simplify if-else to ternary
+dotnet_diagnostic.RCS1206.severity = warning   # conditional access vs if
+dotnet_diagnostic.RCS1208.severity = warning   # reduce if nesting
+dotnet_diagnostic.RCS1218.severity = warning   # simplify code branching
+dotnet_diagnostic.RCS1238.severity = warning   # avoid nested ternary
+
+#---------------------------------------------------------------------
+# Meziantou — дополнительные best practices
+#---------------------------------------------------------------------
+dotnet_diagnostic.MA0006.severity = warning    # use String.Equals with StringComparison
+dotnet_diagnostic.MA0011.severity = warning    # IFormatProvider missing
+dotnet_diagnostic.MA0016.severity = warning    # prefer returning collection abstraction
+dotnet_diagnostic.MA0040.severity = warning    # forward CancellationToken
+dotnet_diagnostic.MA0042.severity = error      # do not use blocking calls in async method
+dotnet_diagnostic.MA0045.severity = warning    # do not use blocking calls
+dotnet_diagnostic.MA0080.severity = warning    # use a cancellation token
+dotnet_diagnostic.MA0099.severity = warning    # use Explicit enum value
+
+#---------------------------------------------------------------------
+# Microsoft.CodeAnalysis.NetAnalyzers — отдельные
+#---------------------------------------------------------------------
+dotnet_diagnostic.CA1031.severity = none       # do not catch general exception types — иногда оправдано
+dotnet_diagnostic.CA1062.severity = none       # validate arguments — слишком шумно с required
+dotnet_diagnostic.CA1303.severity = none       # localize strings — не нужно
+dotnet_diagnostic.CA1305.severity = warning    # specify IFormatProvider
+dotnet_diagnostic.CA1707.severity = none       # identifier should not contain underscore (test methods)
+dotnet_diagnostic.CA1716.severity = none       # identifier should not match keyword
+dotnet_diagnostic.CA1720.severity = none       # identifier contains type name
+dotnet_diagnostic.CA1812.severity = none       # avoid uninstantiated internal classes (DI)
+dotnet_diagnostic.CA1822.severity = warning    # mark members as static
+dotnet_diagnostic.CA1860.severity = warning    # avoid using Enumerable.Any() — use .Count != 0
+dotnet_diagnostic.CA1862.severity = warning    # use StringComparison method overloads
+dotnet_diagnostic.CA2007.severity = none       # ConfigureAwait — не нужно в app code
+dotnet_diagnostic.CA2008.severity = warning    # do not create tasks without TaskScheduler
+
+# =====================================================================
+# ReSharper / Rider properties
+# =====================================================================
+[*.cs]
+resharper_align_multiline_parameter = true
+resharper_align_ternary = none
+resharper_autodetect_indent_settings = true
+resharper_blank_lines_after_control_transfer_statements = 1
+resharper_blank_lines_after_multiline_statements = 1
+resharper_blank_lines_before_block_statements = 1
+resharper_braces_for_for = required
+resharper_braces_for_foreach = required
+resharper_braces_for_ifelse = required
+resharper_braces_for_while = required
+resharper_braces_redundant = false
+resharper_csharp_blank_lines_around_single_line_invocable = 1
+resharper_csharp_continuous_indent_multiplier = 2
+resharper_csharp_empty_block_style = together_same_line
+resharper_csharp_keep_blank_lines_in_code = 1
+resharper_csharp_max_line_length = 179
+resharper_csharp_wrap_arguments_style = chop_if_long
+resharper_csharp_wrap_parameters_style = chop_if_long
+resharper_formatter_off_tag = @formatter:off
+resharper_formatter_on_tag = @formatter:on
+resharper_formatter_tags_enabled = true
+resharper_indent_nested_fixed_stmt = true
+resharper_indent_nested_foreach_stmt = true
+resharper_indent_nested_for_stmt = true
+resharper_indent_nested_lock_stmt = true
+resharper_indent_nested_usings_stmt = true
+resharper_indent_nested_while_stmt = true
+resharper_keep_existing_attribute_arrangement = true
+resharper_keep_existing_embedded_block_arrangement = true
+resharper_max_attribute_length_for_same_line = 80
+resharper_max_formal_parameters_on_line = 1000
+resharper_max_invocation_arguments_on_line = 6
+resharper_new_line_before_while = true
+resharper_outdent_statement_labels = true
+resharper_parentheses_redundancy_style = remove
+resharper_place_accessorholder_attribute_on_same_line = false
+resharper_place_accessor_attribute_on_same_line = false
+resharper_place_expr_property_on_single_line = true
+resharper_place_field_attribute_on_same_line = if_owner_is_single_line
+resharper_place_simple_anonymousmethod_on_single_line = false
+resharper_place_simple_embedded_statement_on_same_line = false
+resharper_place_simple_initializer_on_single_line = false
+resharper_place_simple_list_pattern_on_single_line = false
+resharper_show_autodetect_configure_formatting_tip = false
+resharper_use_continuous_indent_inside_initializer_braces = false
+resharper_use_continuous_indent_inside_parens = false
+resharper_use_indent_from_vs = false
+resharper_wrap_after_primary_constructor_declaration_lpar = false
+resharper_wrap_list_pattern = chop_if_long
+resharper_wrap_object_and_collection_initializer_style = chop_always
+resharper_xmldoc_linebreak_before_elements = summary,response,remarks,example,returns,param,typeparam,value,para
+
+# ReSharper inspection severities
+resharper_arrange_redundant_parentheses_highlighting = hint
+resharper_arrange_this_qualifier_highlighting = hint
+resharper_arrange_type_member_modifiers_highlighting = hint
+resharper_arrange_type_modifiers_highlighting = hint
+resharper_built_in_type_reference_style_for_member_access_highlighting = hint
+resharper_built_in_type_reference_style_highlighting = hint
+resharper_class_never_instantiated_global_highlighting = none
+resharper_class_never_instantiated_local_highlighting = none
+resharper_convert_to_using_declaration_highlighting = hint
+resharper_explicit_caller_info_argument_highlighting = none
+resharper_inconsistent_naming_highlighting = hint
+resharper_invalid_xml_doc_comment_highlighting = hint
+resharper_member_can_be_private_global_highlighting = none
+resharper_member_can_be_private_local_highlighting = none
+resharper_method_has_async_overload_with_cancellation_highlighting = hint
+resharper_mvc_action_not_resolved_highlighting = warning
+resharper_mvc_area_not_resolved_highlighting = warning
+resharper_mvc_controller_not_resolved_highlighting = warning
+resharper_redundant_base_qualifier_highlighting = warning
+resharper_suggest_var_or_type_built_in_types_highlighting = hint
+resharper_suggest_var_or_type_elsewhere_highlighting = hint
+resharper_suggest_var_or_type_simple_types_highlighting = hint
+resharper_unused_auto_property_accessor_global_highlighting = hint
+resharper_unused_auto_property_accessor_local_highlighting = hint
+resharper_unused_method_return_value_global_highlighting = none
+resharper_unused_method_return_value_local_highlighting = none
+
+#---------------------------------------------------------------------
+# Build properties
+#---------------------------------------------------------------------
+# Чтобы analyzer warnings ломали build в CI — в csproj/Directory.Build.props:
+#   <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+#   <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+#   <AnalysisLevel>latest-recommended</AnalysisLevel>

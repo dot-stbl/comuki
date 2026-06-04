@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Solution>
+  <Project Path="platform/src/application/api/Comuki.Platform.Api.Public/Comuki.Platform.Api.Public.csproj" />
+  <Project Path="platform/src/database/Comuki.Platform.Database.Runs/Comuki.Platform.Database.Runs.csproj" />
+  <Project Path="platform/src/feature/Comuki.Platform.Orchestration/Comuki.Platform.Orchestration.csproj" />
+  <Project Path="platform/src/models/Comuki.Platform.Api.Contracts/Comuki.Platform.Api.Contracts.csproj" />
+  <Project Path="platform/src/models/Comuki.Platform.Entity.Core/Comuki.Platform.Entity.Core.csproj" />
+</Solution>

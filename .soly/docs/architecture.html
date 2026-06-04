@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comuki — архитектура</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Spectral:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF7F0; --panel:#F4F0E6; --ink:#26241E; --muted:#6B6557;
+    --line:#E4DCCB; --line-strong:#D2C8B2;
+    --accent:#B0472F; --accent2:#3E7C66;
+    --crit:#A53D2A; --high:#9C7430; --med:#6E6A5C;
+    --mono:'IBM Plex Mono',monospace; --serif:'Spectral',Georgia,serif; --disp:'Fraunces',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-weight:400;font-size:18px;line-height:1.72;
+    -webkit-font-smoothing:antialiased;background-image:radial-gradient(circle at 1px 1px, rgba(0,0,0,0.018) 1px, transparent 0);background-size:22px 22px;}
+  .wrap{max-width:840px;margin:0 auto;padding:72px 28px 120px}
+  .doc-head{border-bottom:1px solid var(--line-strong);padding-bottom:34px;margin-bottom:48px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 18px}
+  h1{font-family:var(--disp);font-weight:500;font-size:46px;line-height:1.08;letter-spacing:-.015em;margin:0 0 18px}
+  .lede{font-size:20px;color:#403c33;max-width:62ch;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:26px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .meta b{color:var(--ink);font-weight:500}
+  h2{font-family:var(--disp);font-weight:500;font-size:30px;letter-spacing:-.01em;margin:64px 0 8px;padding-top:18px}
+  .sec-num{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.1em;display:block;margin-bottom:2px}
+  h3{font-family:var(--disp);font-weight:500;font-size:21px;margin:38px 0 6px}
+  p{margin:14px 0;max-width:68ch}
+  strong{font-weight:600}
+  code{font-family:var(--mono);font-size:.84em;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(176,71,47,.3)}
+  .principle{display:grid;grid-template-columns:28px 1fr;gap:14px;margin:18px 0;align-items:start}
+  .principle .n{font-family:var(--mono);font-size:13px;color:var(--accent);padding-top:5px}
+  .principle p{margin:0}
+  .principle b{font-family:var(--disp);font-weight:600;font-size:18px}
+  figure{margin:34px 0;padding:26px 18px 14px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 0 rgba(0,0,0,.02)}
+  figure svg{display:block;width:100%;height:auto}
+  figcaption{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;margin-top:14px;letter-spacing:.02em}
+  .dt{font-family:var(--serif);font-weight:600;font-size:14px;fill:#2C2A24}
+  .ds{font-family:var(--serif);font-weight:400;font-size:12px;fill:#6B6557}
+  .bx-neutral{fill:#ECE7DD;stroke:#9A917F;stroke-width:1}
+  .bx-agent{fill:#DDEDE6;stroke:#4F8C76;stroke-width:1}
+  .bx-reason{fill:#E7E3F1;stroke:#6E63A6;stroke-width:1}
+  .bx-infra{fill:#E0E9F1;stroke:#4E7BA6;stroke-width:1}
+  .bx-verify{fill:#F3EAD4;stroke:#B0893A;stroke-width:1}
+  .ar{stroke:#8A8275;stroke-width:1.4;fill:none}
+  .svc-list{list-style:none;padding:0;margin:22px 0;counter-reset:svc}
+  .svc-list li{position:relative;padding:16px 18px 16px 56px;border:1px solid var(--line);border-radius:8px;margin:10px 0;background:#fff}
+  .svc-list li::before{counter-increment:svc;content:counter(svc);position:absolute;left:16px;top:16px;font-family:var(--mono);font-size:13px;color:#fff;background:var(--ink);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .svc-list b{font-family:var(--disp);font-weight:600}
+  .tag{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border-radius:20px;border:1px solid currentColor;display:inline-block;vertical-align:middle}
+  .risk{border-left:3px solid var(--med);background:#fff;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:18px 22px;margin:16px 0;border-radius:0 8px 8px 0}
+  .risk.crit{border-left-color:var(--crit)}
+  .risk.high{border-left-color:var(--high)}
+  .risk .rhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .risk h4{font-family:var(--disp);font-weight:600;font-size:18px;margin:0}
+  .risk .tag.crit{color:var(--crit)}
+  .risk .tag.high{color:var(--high)}
+  .risk .tag.med{color:var(--med)}
+  .risk p{margin:8px 0;font-size:16.5px;line-height:1.62}
+  .risk .fix{color:#2f4a3e}
+  .risk .fix b{color:var(--accent2);font-weight:600}
+  .grp{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:40px 0 4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .open{display:grid;grid-template-columns:auto 1fr;gap:10px 16px;margin:18px 0}
+  .open .q{font-family:var(--mono);font-size:13px;color:var(--accent);white-space:nowrap;padding-top:3px}
+  .open p{margin:0 0 10px}
+  .foot{margin-top:80px;padding-top:28px;border-top:1px solid var(--line-strong);font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  @media (prefers-reduced-motion: no-preference){
+    .reveal{opacity:0;transform:translateY(12px);animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards}
+    @keyframes rise{to{opacity:1;transform:none}}
+  }
+  @media(max-width:600px){body{font-size:16.5px}h1{font-size:34px}h2{font-size:25px}.wrap{padding:48px 18px 80px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-head reveal">
+    <p class="eyebrow">Архитектурный документ · черновик для обсуждения</p>
+    <h1>Comuki</h1>
+    <p class="lede">Comuki — платформа, где умный «мозг» декомпозирует задачи и управляет роем дешёвых эфемерных агентов, которые пишут, тестируют и выкатывают фичи в контейнерах — с общей базой знаний, правилами на лету и помощью локальному Claude&nbsp;Code.</p>
+    <div class="meta">
+      <span><b>Статус:</b> до реализации</span>
+      <span><b>Фаза:</b> MVP — человек в петле</span>
+      <span><b>Сервисов в v1:</b> 2–3</span>
+      <span><b>Мозг:</b> ведущая модель</span>
+      <span><b>Воркеры:</b> рабочая модель</span>
+    </div>
+  </header>
+
+  <!-- 1. ПРИНЦИПЫ -->
+  <h2 class="reveal"><span class="sec-num">01</span>Принципы</h2>
+  <p>Вся система держится на нескольких решениях. Если их нарушить, она перестаёт работать — поэтому их стоит зафиксировать до кода.</p>
+
+  <div class="principle"><div class="n">P1</div><p><b>Агенты — stateless, состояние живёт в мозге.</b> Каждый агент это чистая функция: <code>(бриф + снапшот кода) → (дифф + отчёт + статус)</code>. Никакой памяти между запусками. Весь durable-слой — DAG задач, журнал, знания, состояние кода — снаружи агента. Тогда любой агент перезапускается без последствий.</p></div>
+  <div class="principle"><div class="n">P2</div><p><b>Мозг думает, но не является позвоночником.</b> ведущая модель принимает решения — план, бриф, вердикт, ремонт — но источник правды и управляющий цикл живут в детерминированном коде, а не в контексте сессии. «LLM предлагает — система распоряжается».</p></div>
+  <div class="principle"><div class="n">P3</div><p><b>Контекст не наследуется, а собирается.</b> Качество выхлопа агента ≈ качеству брифа. Контекст-менеджер выдаёт минимально достаточный срез: карта репозитория, релевантные файлы, конвенции, дайджест предыдущих шагов.</p></div>
+  <div class="principle"><div class="n">P4</div><p><b>Верификация — детерминированная в первую очередь.</b> Сначала объективные проверки (компиляция, тесты, типы, линт), и только потом LLM-ревью. Гейт нельзя строить на вопросе модели «ты всё сделал правильно?». Чем жёстче этот гейт, тем надёжнее держится дешёвая модель — драконовские анализаторы (Roslyn, warnings-as-errors), которые физически не дают собрать кривой код, это <strong>несущая опора качества</strong>, а не придирка. Ослабить их «чтобы быстрее собиралось» = тихо выбить главную опору.</p></div>
+  <div class="principle"><div class="n">P5</div><p><b>Всё — событие в append-only журнале.</b> Это даёт дебаг, реплей и материал для дайджестов контекста. Журнал — «чёрный ящик» системы.</p></div>
+  <div class="principle"><div class="n">P6</div><p><b>Эфемерность — это фича.</b> Контейнер отработал и снесён; свежий контекст на каждую задачу убивает деградацию длинных сессий. Единственное обязательное условие — извлечь результат до сноса.</p></div>
+  <div class="principle"><div class="n">P7</div><p><b>Управляющая плоскость — это код.</b> Правила, скиллы, агенты, брифы версионируются как код: правятся через дебаг → ревью → эвал-харнес → новая версия. Их свод и версия SDK берутся по зафиксированному реферу, который пинится на прогон. Человек всегда замыкает петлю — авто-самоизменения нет.</p></div>
+
+  <!-- 2. СЕРВИСЫ -->
+  <h2><span class="sec-num">02</span>Карта сервисов</h2>
+  <p>Внешне это «много коробок», но если заметить, что часть из них — не сервисы, остаётся 2–3 вещи, которые реально надо написать. Мозг — это вызов ведущей модели по API изнутри оркестратора. Dashboard — read-only вьюха поверх БД. Секреты — готовый Vault. Оба потребителя (автономные воркеры и локальный Claude&nbsp;Code разработчиков) подключаются через единый MCP-шлюз.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 470" role="img" aria-label="Карта микросервисов платформы">
+      <defs><marker id="ar1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#8A8275" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <g><rect class="bx-agent" x="70" y="50" width="240" height="56" rx="8"/><text class="dt" x="190" y="74" text-anchor="middle">Воркеры (контейнеры)</text><text class="ds" x="190" y="92" text-anchor="middle">автономные, эфемерные</text></g>
+      <g><rect class="bx-agent" x="370" y="50" width="240" height="56" rx="8"/><text class="dt" x="490" y="74" text-anchor="middle">Локальный Claude Code</text><text class="ds" x="490" y="92" text-anchor="middle">разработчики</text></g>
+      <line class="ar" x1="190" y1="106" x2="190" y2="183" marker-end="url(#ar1)"/>
+      <line class="ar" x1="490" y1="106" x2="490" y2="183" marker-end="url(#ar1)"/>
+      <rect x="40" y="150" width="600" height="300" rx="18" fill="none" stroke="#B6AD98" stroke-width="1" stroke-dasharray="6 4"/>
+      <text class="dt" x="60" y="174">Платформа оркестрации</text>
+      <g><rect class="bx-infra" x="60" y="185" width="560" height="46" rx="8"/><text class="dt" x="340" y="205" text-anchor="middle">MCP-шлюз</text><text class="ds" x="340" y="221" text-anchor="middle">единая точка для знаний и правил</text></g>
+      <g><rect class="bx-infra" x="60" y="247" width="270" height="52" rx="8"/><text class="dt" x="195" y="269" text-anchor="middle">Оркестратор</text><text class="ds" x="195" y="287" text-anchor="middle">состояние · расписание · ретраи</text></g>
+      <g><rect class="bx-reason" x="350" y="247" width="270" height="52" rx="8"/><text class="dt" x="485" y="269" text-anchor="middle">Мозг (ведущая модель)</text><text class="ds" x="485" y="287" text-anchor="middle">план · бриф · ревью · ремонт</text></g>
+      <g><rect class="bx-reason" x="60" y="315" width="270" height="52" rx="8"/><text class="dt" x="195" y="337" text-anchor="middle">База знаний + правила</text><text class="ds" x="195" y="355" text-anchor="middle">RAG + hot-reload правил</text></g>
+      <g><rect class="bx-infra" x="350" y="315" width="270" height="52" rx="8"/><text class="dt" x="485" y="337" text-anchor="middle">Модельный прокси</text><text class="ds" x="485" y="355" text-anchor="middle">маршрутизация · ключи · учёт</text></g>
+      <g><rect class="bx-infra" x="60" y="383" width="270" height="52" rx="8"/><text class="dt" x="195" y="405" text-anchor="middle">Состояние / журнал</text><text class="ds" x="195" y="423" text-anchor="middle">источник правды, durable</text></g>
+      <g><rect class="bx-infra" x="350" y="383" width="270" height="52" rx="8"/><text class="dt" x="485" y="405" text-anchor="middle">Dashboard</text><text class="ds" x="485" y="423" text-anchor="middle">что бежит · фейлы · стоимость</text></g>
+    </svg>
+    <figcaption>Рис. 1 — Сервисы платформы и две точки входа через MCP</figcaption>
+  </figure>
+
+  <p>Что реально пишется:</p>
+  <ul class="svc-list">
+    <li><b>Оркестратор.</b> Control plane: машина состояний DAG, расписание, конкурентность, ретраи, диспетчинг контейнеров, вызовы мозга. Владеет журналом и источником правды.</li>
+    <li><b>MCP-сервер знаний и правил.</b> Вектор-база, движок правил, retrieval. Единая поверхность для автономных воркеров и локального Claude&nbsp;Code.</li>
+    <li><b>Сервис ключей</b> (опционально). Если не берёшь managed-vault — выдача, ротация, скоупы и атрибуция стоимости по продукту/агенту.</li>
+  </ul>
+
+  <!-- 3. УПРАВЛЯЮЩИЙ ЦИКЛ -->
+  <h2><span class="sec-num">03</span>Управляющий цикл</h2>
+  <p>Опус планирует и собирает бриф, контейнер с агентом выполняет, верификатор проверяет. Зелёный — мердж и разблокировка зависимых задач; красный — бриф пересобирается с ошибкой. Эта петля «не прошло → новый бриф» — основной механизм качества, а не аварийный режим: дешёвые модели чаще выдают красный, а не падают.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 590" role="img" aria-label="Управляющий цикл оркестратора">
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#8A8275" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <marker id="ar2r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#B0472F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <g><rect class="bx-neutral" x="290" y="20" width="100" height="30" rx="8"/><text class="dt" x="340" y="39" text-anchor="middle">Цель</text></g>
+      <line class="ar" x1="340" y1="50" x2="340" y2="68" marker-end="url(#ar2)"/>
+      <g><rect class="bx-reason" x="235" y="70" width="210" height="56" rx="8"/><text class="dt" x="340" y="94" text-anchor="middle">Планировщик</text><text class="ds" x="340" y="112" text-anchor="middle">цель → DAG задач</text></g>
+      <line class="ar" x1="340" y1="126" x2="340" y2="170" marker-end="url(#ar2)"/>
+      <g><rect class="bx-reason" x="235" y="172" width="210" height="56" rx="8"/><text class="dt" x="340" y="196" text-anchor="middle">Контекст-менеджер</text><text class="ds" x="340" y="214" text-anchor="middle">бриф под задачу</text></g>
+      <line class="ar" x1="340" y1="228" x2="340" y2="272" marker-end="url(#ar2)"/>
+      <g><rect class="bx-agent" x="235" y="274" width="210" height="56" rx="8"/><text class="dt" x="340" y="298" text-anchor="middle">Контейнер + агент</text><text class="ds" x="340" y="316" text-anchor="middle">Claude Agent SDK</text></g>
+      <line class="ar" x1="340" y1="330" x2="340" y2="374" marker-end="url(#ar2)"/>
+      <g><rect class="bx-verify" x="235" y="376" width="210" height="56" rx="8"/><text class="dt" x="340" y="400" text-anchor="middle">Верификатор</text><text class="ds" x="340" y="418" text-anchor="middle">тесты · типы · линт</text></g>
+      <line class="ar" x1="340" y1="432" x2="340" y2="476" marker-end="url(#ar2)"/>
+      <text class="ds" x="352" y="458">ок</text>
+      <g><rect class="bx-reason" x="235" y="478" width="210" height="56" rx="8"/><text class="dt" x="340" y="502" text-anchor="middle">Мердж + разблокировка</text><text class="ds" x="340" y="520" text-anchor="middle">только на зелёном</text></g>
+      <path d="M235 404 L180 404 L180 200 L233 200" fill="none" stroke="#B0472F" stroke-width="1.4" marker-end="url(#ar2r)"/>
+      <text class="ds" x="170" y="296" text-anchor="end">не прошло →</text>
+      <text class="ds" x="170" y="312" text-anchor="end">бриф с ошибкой</text>
+      <rect class="bx-reason" x="110" y="556" width="13" height="13" rx="3"/><text class="ds" x="129" y="567">мозг (durable)</text>
+      <rect class="bx-agent" x="288" y="556" width="13" height="13" rx="3"/><text class="ds" x="307" y="567">агент (эфемерный)</text>
+      <rect class="bx-verify" x="498" y="556" width="13" height="13" rx="3"/><text class="ds" x="517" y="567">проверка</text>
+    </svg>
+    <figcaption>Рис. 2 — Петля план → бриф → исполнение → проверка → мердж</figcaption>
+  </figure>
+
+  <p>Контейнер — это скот, а не питомец, но <strong>результат надо вытащить до сноса</strong>. «Готово» для агента = закоммитил в свою git-ветку (worktree) И отдал структурированный отчёт. Диспетчер соблюдает порядок: запустил → дождался результата → сохранил → снёс.</p>
+
+  <!-- 4. МОДЕЛИ -->
+  <h2><span class="sec-num">04</span>Модели: ведущая и рабочая</h2>
+  <p>Архитектура оперирует не вендорами, а двумя ролями: <strong>ведущая модель</strong> за «мозгом» (план, контракт, ревью, ремонт) и <strong>рабочая модель</strong> за стадийными воркерами. Какая физическая модель стоит за ролью — это маппинг в проксе, а не часть архитектуры. Сейчас за ролями: ведущая — Opus, рабочая — GLM (z.ai) и MiniMax; все они отдают Anthropic-совместимый эндпоинт, поэтому обвязка остаётся одна — Claude&nbsp;Code / Agent&nbsp;SDK для всех.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 340" role="img" aria-label="Распределение моделей по ролям">
+      <defs><marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#8A8275" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <rect x="20" y="30" width="640" height="290" rx="16" fill="none" stroke="#B6AD98" stroke-width="1" stroke-dasharray="6 4"/>
+      <text class="dt" x="40" y="58">Один рантайм: Claude Code / Agent SDK</text>
+      <g><rect class="bx-reason" x="200" y="74" width="280" height="60" rx="8"/><text class="dt" x="340" y="100" text-anchor="middle">Мозг (ведущая модель)</text><text class="ds" x="340" y="118" text-anchor="middle">план · контекст · ревью</text></g>
+      <line class="ar" x1="340" y1="134" x2="140" y2="206" marker-end="url(#ar3)"/>
+      <line class="ar" x1="340" y1="134" x2="340" y2="206" marker-end="url(#ar3)"/>
+      <line class="ar" x1="340" y1="134" x2="540" y2="206" marker-end="url(#ar3)"/>
+      <g><rect class="bx-agent" x="50" y="208" width="170" height="58" rx="8"/><text class="dt" x="135" y="232" text-anchor="middle">Воркер</text><text class="ds" x="135" y="250" text-anchor="middle">рабочая модель</text></g>
+      <g><rect class="bx-agent" x="255" y="208" width="170" height="58" rx="8"/><text class="dt" x="340" y="232" text-anchor="middle">Воркер</text><text class="ds" x="340" y="250" text-anchor="middle">рабочая модель</text></g>
+      <g><rect class="bx-agent" x="460" y="208" width="170" height="58" rx="8"/><text class="dt" x="545" y="232" text-anchor="middle">Воркер ×N</text><text class="ds" x="545" y="250" text-anchor="middle">пул масштабируется</text></g>
+      <text class="ds" x="340" y="298" text-anchor="middle">роль воркера = виртуальный ключ; физическую модель резолвит прокси</text>
+    </svg>
+    <figcaption>Рис. 3 — Один рантайм; роль резолвится в физическую модель через прокси</figcaption>
+  </figure>
+
+  <p>Раз рабочая модель слабее ведущей, качество держится на брифе (его пишет ведущая) и на гейте верификации. Рабочей модели дают меньше свободы: жёсткий <code>allowedTools</code>, ригидный контракт вывода, мелкая нарезка задач. Ведущую держат и как ремонтную бригаду — после N провалов задача эскалируется на её проход, а не крутится бесконечно на дешёвых ретраях.</p>
+
+  <h3>Модельный прокси</h3>
+  <p>Контейнер знает только <code>ANTHROPIC_BASE_URL</code> и <code>ANTHROPIC_AUTH_TOKEN</code> — поэтому ему подсовывают <strong>виртуальный URL</strong> (смотрит на прокси) и <strong>виртуальный ключ</strong>, который понимает только прокси. По этому ключу прокси резолвит физического провайдера, реальный ключ, модель, бюджет и скоуп — подменяет url+ключ и форвардит на настоящую апишку. Контейнер полностью провайдер-агностичен: он не знает, какую физическую модель за ролью дёрнул прокси. Перевести workflow с одной модели на другую — это поменять маппинг ключа в прокси, контейнер не трогаем. Так маршрутизация моделей переезжает на сервер и становится одной таблицей, а не env, размазанным по контейнерам.</p>
+  <p>Протокол на обоих концах один — Anthropic Messages внутрь, Anthropic-совместимый наружу, — поэтому в типовом случае прокси не транслирует, а пробрасывает поток, подменив url+ключ. Это и позволяет держать его тонким, что важно: через него идёт каждый вызов и людей, и роя. Тот же прокси обслуживает локальный Claude&nbsp;Code разработчика — со своим виртуальным ключом, идентичностью, бюджетом и приоритетом, — и тогда правило «люди &gt; рой» становится принуждаемым.</p>
+
+  <!-- 5. ЗНАНИЯ И ПРАВИЛА -->
+  <h2><span class="sec-num">05</span>Знания и правила</h2>
+  <p><strong>Код и документацию разделяем.</strong> Код в RAG не индексируем — агент грепает прямо в worktree (нативная сила Claude&nbsp;Code; RAG по коду быстро устаревает). А документацию, спеки, прошлые решения и правила кладём в retrieval-стор и отдаём через MCP. Мозг при этом ничего не хранит — просто ищет в вектор-базе по MCP.</p>
+  <p>Документирование — последняя стадия пайплайна, которую дёргает событие: фича дошла до прода → оркестратор ставит doc-задачу дешёвому агенту, у которого весь вход уже есть (дифф, бриф, тесты). База обновляется сама.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 442" role="img" aria-label="Петля самообновляющейся документации">
+      <defs><marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#8A8275" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      <marker id="ar4g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#3E8C6E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <g><rect class="bx-neutral" x="235" y="50" width="210" height="56" rx="8"/><text class="dt" x="340" y="74" text-anchor="middle">Фича выкатилась в прод</text><text class="ds" x="340" y="92" text-anchor="middle">событие в журнале</text></g>
+      <line class="ar" x1="340" y1="106" x2="340" y2="150" marker-end="url(#ar4)"/>
+      <g><rect class="bx-agent" x="235" y="152" width="210" height="56" rx="8"/><text class="dt" x="340" y="176" text-anchor="middle">Doc-агент (дешёвый)</text><text class="ds" x="340" y="194" text-anchor="middle">вход: дифф · бриф · тесты</text></g>
+      <line class="ar" x1="340" y1="208" x2="340" y2="252" marker-end="url(#ar4)"/>
+      <g><rect class="bx-reason" x="235" y="254" width="210" height="56" rx="8"/><text class="dt" x="340" y="278" text-anchor="middle">Вектор-база</text><text class="ds" x="340" y="296" text-anchor="middle">upsert по ключу фичи</text></g>
+      <line class="ar" x1="340" y1="310" x2="340" y2="354" marker-end="url(#ar4)"/>
+      <g><rect class="bx-reason" x="235" y="356" width="210" height="56" rx="8"/><text class="dt" x="340" y="380" text-anchor="middle">Retrieval по MCP</text><text class="ds" x="340" y="398" text-anchor="middle">только current-версии</text></g>
+      <path d="M235 384 L180 384 L180 78 L233 78" fill="none" stroke="#3E8C6E" stroke-width="1.4" marker-end="url(#ar4g)"/>
+      <text class="ds" x="170" y="224" text-anchor="end">знание питает</text>
+      <text class="ds" x="170" y="240" text-anchor="end">следующие брифы</text>
+    </svg>
+    <figcaption>Рис. 4 — Самообновляющаяся база знаний как стадия пайплайна</figcaption>
+  </figure>
+
+  <p><strong>Правила делим на мягкие и жёсткие.</strong> Мягкие (конвенции, стиль) идут в бриф/<code>CLAUDE.md</code> — это контекст. Жёсткие (запреты) принуждаются хуками, которые перехватывают поведение агента в ключевых точках, плюс гейтом верификации. Правила версионируем и скоупим: глобальные / на продукт / на тип задачи. «На лету» означает, что оркестратор читает правила из стора в момент сборки брифа, а не на деплое.</p>
+
+  <!-- 6. WORKFLOW -->
+  <h2><span class="sec-num">06</span>Workflow на примере</h2>
+  <p>Два приложения — <strong>Магазин</strong> (витрина) и <strong>Админка</strong> (внутренняя панель). Прилетает тикет: «добавить избранное в Магазин». Сначала <strong>изучатор</strong> в режиме read-only исследует код и базу знаний и спрашивает мозг «такого ещё нет?» — чтобы не плодить дубль: если фича уже есть, тикет коротко замыкается, если частично — план расширяет существующее. Дальше планировщик декомпозирует задачу, и первым артефактом рождается не код, а контракт API (OpenAPI) — шов, по которому фронт и бек идут параллельно. Каждая стадия — отдельный контейнер-воркер со своим брифом, моделью и <code>allowedTools</code>.</p>
+
+  <p><strong>DAG строится под задачу, а не разворачивается из шаблона.</strong> Граф стадий — подмножество из каталога известных типов (изучение, контракт, миграция, бек, фронт, тесты, деплой, доки), которое планировщик выбирает по <strong>фактам изучателя</strong>, а не по тексту тикета. Чисто фронтовая фича (изучатель подтвердил: данные уже приходят с бека) даёт короткий граф — фронт → тесты → деплой, без контракта, бека и миграции. Если «фронтовая» задача на деле требует нового эндпоинта — добавляется лейн бека. Состав и число воркеров — производная графа: меньше узлов → меньше воркеров. Ключевое: «фронт-онли» определяется фактами из кода (изучатель ходил двумя линзами), а не формулировкой — иначе граф выйдет неполным, фронт позеленеет на моках, интеграция сломётся. Поэтому состав графа — часть плана и валидируется как план (ведущая модель / человек), а планировщик не выдумывает новых типов стадий — собирает из каталога и расставляет зависимости.</p>
+
+  <figure>
+    <svg viewBox="0 0 680 700" role="img" aria-label="Contract-first DAG разработки фичи">
+      <defs><marker id="ar6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#8A8275" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <g><rect class="bx-reason" x="230" y="30" width="220" height="52" rx="8"/><text class="dt" x="340" y="52" text-anchor="middle">Изучатор</text><text class="ds" x="340" y="70" text-anchor="middle">read-only: код + знания</text></g>
+      <line class="ar" x1="340" y1="82" x2="340" y2="110" marker-end="url(#ar6)"/>
+      <g><rect class="bx-reason" x="230" y="112" width="220" height="52" rx="8"/><text class="dt" x="340" y="134" text-anchor="middle">Планировщик</text><text class="ds" x="340" y="152" text-anchor="middle">контракт + два брифа</text></g>
+      <line class="ar" x1="340" y1="164" x2="340" y2="192" marker-end="url(#ar6)"/>
+      <g><rect class="bx-verify" x="230" y="194" width="220" height="52" rx="8"/><text class="dt" x="340" y="216" text-anchor="middle">Контракт (OpenAPI)</text><text class="ds" x="340" y="234" text-anchor="middle">шов фронт ↔ бек</text></g>
+      <line class="ar" x1="320" y1="246" x2="190" y2="274" marker-end="url(#ar6)"/>
+      <line class="ar" x1="360" y1="246" x2="490" y2="274" marker-end="url(#ar6)"/>
+      <text class="ds" x="340" y="302" text-anchor="middle">параллельно</text>
+      <g><rect class="bx-agent" x="60" y="276" width="220" height="52" rx="8"/><text class="dt" x="170" y="298" text-anchor="middle">Backend</text><text class="ds" x="170" y="316" text-anchor="middle">миграция + ручки</text></g>
+      <g><rect class="bx-agent" x="400" y="276" width="220" height="52" rx="8"/><text class="dt" x="510" y="298" text-anchor="middle">Frontend</text><text class="ds" x="510" y="316" text-anchor="middle">верстает на mock</text></g>
+      <line class="ar" x1="170" y1="328" x2="300" y2="356" marker-end="url(#ar6)"/>
+      <line class="ar" x1="510" y1="328" x2="380" y2="356" marker-end="url(#ar6)"/>
+      <g><rect class="bx-agent" x="230" y="358" width="220" height="52" rx="8"/><text class="dt" x="340" y="380" text-anchor="middle">Синхронизация</text><text class="ds" x="340" y="398" text-anchor="middle">фронт ← реальный OpenAPI</text></g>
+      <line class="ar" x1="340" y1="410" x2="340" y2="438" marker-end="url(#ar6)"/>
+      <g><rect class="bx-verify" x="230" y="440" width="220" height="52" rx="8"/><text class="dt" x="340" y="462" text-anchor="middle">Тесты</text><text class="ds" x="340" y="480" text-anchor="middle">Storybook + Playwright</text></g>
+      <line class="ar" x1="340" y1="492" x2="340" y2="520" marker-end="url(#ar6)"/>
+      <g><rect class="bx-verify" x="230" y="522" width="220" height="52" rx="8"/><text class="dt" x="340" y="544" text-anchor="middle">Деплой</text><text class="ds" x="340" y="562" text-anchor="middle">staging → аппрув → prod</text></g>
+      <text class="ds" x="478" y="544">прод —</text>
+      <text class="ds" x="478" y="560">только здесь</text>
+      <line class="ar" x1="340" y1="574" x2="340" y2="602" marker-end="url(#ar6)"/>
+      <g><rect class="bx-reason" x="230" y="604" width="220" height="52" rx="8"/><text class="dt" x="340" y="626" text-anchor="middle">Doc-агент</text><text class="ds" x="340" y="644" text-anchor="middle">upsert в базу знаний</text></g>
+      <rect class="bx-reason" x="120" y="668" width="13" height="13" rx="3"/><text class="ds" x="139" y="678">мозг / знания</text>
+      <rect class="bx-agent" x="290" y="668" width="13" height="13" rx="3"/><text class="ds" x="309" y="678">разработка (свой env)</text>
+      <rect class="bx-verify" x="500" y="668" width="13" height="13" rx="3"/><text class="ds" x="519" y="678">гейт / контракт</text>
+    </svg>
+    <figcaption>Рис. 5 — Contract-first DAG: изучатор → план → контракт → параллельные фронт и бек → синхронизация → тесты → прод за гейтом. Красный с тестов возвращает на стадию (см. §03)</figcaption>
+  </figure>
+
+  <h3>Окружения по этапам</h3>
+  <p>Изоляция от прода — по конструкции, а не по дисциплине. Каждая стадия получает одноразовое окружение, засеянное из <strong>схемы и конфига</strong> прода, но никогда из его данных и секретов. В лейне бека сначала миграция на эфемерной БД, затем ручки против неё; фронт параллельно собирается против mock-сервера, сгенерированного из контракта, а на синхронизации переключается на реальный backend; на стадии тестов всё поднимается вместе как preview-окружение на ветку. Прод касается только последняя стадия за гейтом — поэтому «сломать прод» невозможно по конструкции.</p>
+
+  <h3>Агенты и правила против слопа</h3>
+  <p>Воркеры используют <strong>pi</strong> (контроль, наблюдаемость), разрабы — <strong>форк GSD под Claude&nbsp;Code</strong> (интерактивный UX). Оба агента правил не хранят — получают извне. Жёсткие правила (запрет править тесты, пушить в main, прогон линт/типов) принуждаются механикой каждого агента: pi-расширения у воркеров, Claude&nbsp;Code hooks у разрабов — маленький фиксированный набор, реализуется дважды. Мягкие правила и скиллы — единый текст, оба читают одинаково. Два свода по природе: проектные (в репе продукта, для всех) и воркер-правила (в dashboard, только рою).</p>
+
+  <p>Сильнейшее правило против слопа — <strong>дизайн-система в репозитории</strong>. Токены и компоненты как единственный источник, а правило «строй только из DS-компонентов и токенов» принуждаемо: линт/хук ловит сырые hex-цвета, отступы мимо токенов и не-DS-компоненты, плюс правило «нет компонента без story». Дизайн-система получается сразу и ограничителем генерации, и поверхностью визуальных тестов — это на порядок надёжнее, чем просить модель «быть консистентной».</p>
+
+  <p>И сильнее всего против слопа работает то, что система <strong>применяет проверенные рецепты, а не изобретает подходы</strong>. «Как создать рекламную кампанию», «как сделать пагинацию», «как сделать фильтрацию» — это скиллы Claude&nbsp;Code, которые вы пишете и обкатываете локально на обычном Claude&nbsp;Code <em>до</em> того, как доверить рою. Принцип: новый тип работы сначала становится проверенным скиллом, потом — доступным оркестратору. Агент идёт по заранее обкатанным рельсам, а не сочиняет с нуля — и те же скиллы становятся кандидатами в golden-задачи эвал-харнеса.</p>
+
+  <h3>Внутренний цикл воркера</h3>
+  <p>Агент-воркер (pi) гоняет внутри контейнера цикл одной задачи: <strong>изучение → план → сверка плана → исполнение</strong>. К <code>comuki-mcp</code> воркер обращается дважды и за разным. На входе — <em>retrieval</em>: «дай рецепты, правила и доки под эту задачу» (материал, не оценка). После плана — <em>проверка фактов</em>: «что из этого уже есть и не нарушает ли правил» — то есть MCP отвечает не «хорош ли план», а «уже ли».</p>
+  <p>Поэтому изучатор смотрит две линзы сразу: <code>comuki-mcp</code> знает <strong>задокументированные фичи</strong> (их пишет doc-агент), а <strong>сырое состояние кода</strong> — это агентный grep по worktree. Вместе они закрывают «уже сделано?»: «построено ли это как фича» — к MCP, «написана ли уже такая функция» — к grep; остаток ловят мердж и человек.</p>
+  <p>Качество плана агент <strong>не судит сам</strong> — самооценка дешёвой модели всегда «да». Техническую сторону ведёт ведущая модель, и в структурированном проекте это лёгкий проход «впиши в существующее по правилам», а не «придумай с нуля». На локальном Claude&nbsp;Code второй вопрос естественно становится человеком; у headless-воркера — уровнем Comuki.</p>
+  <p>Контейнер каждый раз чистый и тянет правила, скиллы и SDK свежими — поэтому версия управляющей плоскости <strong>пинится на прогон</strong>: при старте оркестратор резолвит ревизию (свод правил + версия агента) и пишет её в артефакт, а все контейнеры прогона берут именно её. Так прогон внутренне согласован — собран из одного свода, а не из «правил до правки» и «правил после». Правка вступает в силу со <em>следующих</em> запусков; перезапуск застрявшего — это новый прогон на новой ревизии, а не доигрывание старого с подменёнными правилами. Агенты и контент (правила/скиллы) версионируются раздельно — у них разный ритм изменений.</p>
+  <p><strong>Debug-агент.</strong> Когда пайплайн застрял (N раз не проходит) или проблему увидели перед продом, человек запускает debug-агента: тот читает артефакты прогонов и ищет, чего не хватает в правиле, скилле или брифе. Это и есть «управляющая плоскость как код» в действии — дебаг → предложение правки → ревью человеком → прогон через эвал-харнес → новая версия → перезапуск и проверка. Менять и одобрять — человек; debug-агент лишь помогает найти причину.</p>
+
+  <h3>Тест-фреймворк</h3>
+  <p>Это гейт верификации, разложенный по слоям. Детерминированное (типы, линт, юнит, сборка) → визуальный слой по компонентам: каждый компонент рендерится изолированно в Storybook, скриншот-диф против baseline плюс проход vision-модели, которая <em>смотрит</em> на рендер и ловит кривую вёрстку (переполнения, разъезды, сломанный респонсив) — дешевле и точнее, чем гонять весь E2E → Playwright E2E по живому preview (агент сам пишет и гоняет сценарий «добавил в избранное → видно в списке»). Находки уходят структурно обратно на стадию frontend со скриншотами. Связка с рисками: раз агенты сами пишут тесты, тесты по умолчанию слабые, поэтому визуальный ревью и человеческие приёмочные тесты на критичных путях обязательны, а хук на запрет правки тестов закрывает читерство.</p>
+
+  <h3>Таск-трекер</h3>
+  <p>Трекер — это intake и поверхность статуса (Linear / Jira / Asana / monday). Тикет в состоянии «ready for agent» триггерит подхват. Поля мапятся в конфиг прогона: лейбл приложения → репозиторий/окружение/правила; критерии приёмки → спека верификации; приоритет → расписание. Оркестратор двигает тикет по статусам и комментит артефакты — PR, preview-URL, результаты тестов, стоимость. Человеческий аппрув на деплой — переход статуса, завязанный на очередь аппрувов в dashboard.</p>
+
+  <p>Два приложения почти ничего не усложняют: всё, что их разделяет, — лейбл на тикете и скоуп через всю модель данных (репо, окружения, правила, знания, бюджет, ключи у каждого свои). Это та самая мультиарендность из раздела рисков — её закладываем с первого дня.</p>
+
+  <!-- 7. DASHBOARD -->
+  <h2><span class="sec-num">07</span>Dashboard</h2>
+  <p>Три функции: ставить задачи, настраивать поведение системы и наблюдать за роем.</p>
+  <p><strong>Постановка задач (intake).</strong> Вход системы в MVP — человек накидывает задачу прямо в дашборде (на старте — тестовые задачи на тестовых репозиториях), она падает в очередь оркестратора. Внешнего трекера (Jira/Linear) на старте нет — коннектор далёкое «потом»; intake живёт внутри Comuki. Продуктовое «что делать» — в постановке человеком; техсторону дальше ведёт ведущая модель.</p>
+
+  <div class="grp">Настройка</div>
+  <div class="open">
+    <div class="q">Apps</div><p>Реестр приложений: репозитории, стек, окружения, цели деплоя.</p>
+    <div class="q">Правила</div><p>Добавление на лету, скоуп (глобально / приложение / стадия / тип задачи), мягкие vs жёсткие, версии, детект конфликтов.</p>
+    <div class="q">Автономия</div><p>Границы по классам изменений: правка копирайта → авто в прод, миграция → всегда аппрув.</p>
+    <div class="q">Модели</div><p>Маршрутизация по стадиям и политика эскалации на ведущую модель.</p>
+    <div class="q">Бюджет</div><p>Кэпы на задачу / приложение / глобально и kill-switch.</p>
+    <div class="q">Ключи</div><p>Провайдеры, скоупы, ротация или конфиг модельного прокси.</p>
+    <div class="q">Трекер</div><p>Привязка таск-трекера и маппинг статусов на переходы.</p>
+    <div class="q">Агенты</div><p>Пин версии агента (pi/GSD) и свода правил на прогон.</p>
+  </div>
+
+  <div class="grp">Наблюдение</div>
+  <div class="open">
+    <div class="q">Прогоны</div><p>Что бежит сейчас, на какой стадии, в каком окружении.</p>
+    <div class="q">Трейс</div><p>На задачу: бриф, версии правил, модель, токены, стоимость, результаты Playwright/визуала, дифф.</p>
+    <div class="q">Аппрувы</div><p>Очередь того, что ждёт человеческого гейта.</p>
+    <div class="q">Стоимость</div><p>Атрибуция по приложению / стадии / агенту и тренды.</p>
+    <div class="q">Фейлы</div><p>Где падают стадии, частота ретраев, стоимость на успешную задачу.</p>
+    <div class="q">Знания</div><p>Браузер базы: текущие доки и история supersede.</p>
+  </div>
+
+  <!-- 8. ПРОБЛЕМНЫЕ МЕСТА -->
+  <h2><span class="sec-num">08</span>Проблемные места и риски</h2>
+  <p>Здесь самое важное. Система автономная, нодетерминированная и с правом выката в прод — то есть права на ошибку у неё мало. Ниже — где она треснет и что с этим делать. Тег показывает остроту.</p>
+
+  <div class="grp">Управляющий цикл и состояние</div>
+
+  <div class="risk crit">
+    <div class="rhead"><h4>Необратимые действия при падении оркестратора</h4><span class="tag crit">критично</span></div>
+    <p>Если оркестратор упал между «выкатил в прод» и «записал, что выкатил», после рестарта он может выкатить повторно. Откатить прод нельзя.</p>
+    <p class="fix"><b>Лечение:</b> проектируй на at-least-once, а не exactly-once. Перед каждым необратимым шагом пиши намерение в журнал, после — исход, в одной транзакции с действием там, где возможно. Идемпотентные ключи на дисптач, мердж и деплой. Любой шаг должен уметь спросить «я это уже сделал?» прежде чем делать.</p>
+  </div>
+
+  <div class="risk crit">
+    <div class="rhead"><h4>Утечка ключей через агента</h4><span class="tag crit">критично</span></div>
+    <p>В контейнер с агентом, который выполняет сгенерированный LLM bash, инъектится API-ключ модели. Агент (или промпт-инъекция из репозитория/доков) может вывести ключ наружу.</p>
+    <p class="fix"><b>Лечение:</b> контейнер не видит настоящий ключ — ему дают виртуальный URL (на прокси) и виртуальный ключ, который понимает только прокси; реальные ключи провайдеров живут в секрет-менеджере, который прокси читает. Виртуальный ключ — это capability: подписанный, короткоживущий на задачу, несёт маршрут, бюджет, модели и скоуп. Тогда даже утёкший ключ почти бесполезен — умирает с задачей, ограничен бюджетом одного workflow и ходит только в прокси. Плюс egress-allowlist: наружу только на прокси и реестры пакетов.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Брошенные контейнеры и реконсиляция при рестарте</h4><span class="tag high">высокий</span></div>
+    <p>Оркестратор упал после спавна — контейнер живёт, жжёт деньги, держит worktree. После рестарта оркестратор не знает, что бежит.</p>
+    <p class="fix"><b>Лечение:</b> TTL/таймаут внутри самого контейнера (а не только в оркестраторе), reaper, который сверяет живые контейнеры с известными задачами, и процедура реконсиляции состояния на старте.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Мозг в критическом пути и недетерминирован</h4><span class="tag high">высокий</span></div>
+    <p>Малформный ответ, галлюцинированный план, недоступность или лимиты API Anthropic — и петля встаёт. Мозг может и зациклиться на перепланировании.</p>
+    <p class="fix"><b>Лечение:</b> валидация структурированного ответа мозга по схеме, ретраи, бюджет на число задач/глубину плана, и явный путь эскалации на человека, когда мозг не может выдать валидное решение.</p>
+  </div>
+
+  <div class="grp">Верификация — несущая стена</div>
+
+  <div class="risk crit">
+    <div class="rhead"><h4>Агент «обыгрывает» тесты</h4><span class="tag crit">критично</span></div>
+    <p>Гейт «тесты зелёные → правильно» хорош ровно настолько, насколько хороши тесты. Агент может удалить падающий тест, захардкодить ожидаемое значение или ослабить ассерты — и гейт станет зелёным на сломанной фиче. Это типовой режим отказа агентов.</p>
+    <p class="fix"><b>Лечение:</b> хук, запрещающий агенту править тест-файлы (если задача — не «написать тесты»); приёмочные тесты, написанные человеком, для критичных путей; гейты на покрытие и мутационное тестирование; ревью диффа на предмет «решил или обыграл». Тесты, сгенерированные дешёвой моделью, считай слабыми по умолчанию.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Экономика дешёвых ретраев может перевернуться</h4><span class="tag high">высокий</span></div>
+    <p>Если воркер фейлит 30–40% задач, а ты ретраишь 3× и потом эскалируешь на ведущую модель, фактическая стоимость успешной задачи может приблизиться к «просто взять модель получше». Дешёвая модель не равно дешёвая система.</p>
+    <p class="fix"><b>Лечение:</b> меряй стоимость на успешную задачу, а не на вызов. Бюджет-кэп на задачу. Маршрутизируй по типу задачи: тривиальное — дешёвым, склонное к фейлам — сразу мозгу.</p>
+  </div>
+
+  <div class="grp">Знания и авто-доки</div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>База знаний как эхо-камера</h4><span class="tag high">высокий</span></div>
+    <p>Фича уехала с тонким недопониманием → doc-агент задокументировал неверное поведение как истину → этот документ извлекается для следующей задачи → ошибка размножается. База уверенно повторяет собственные заблуждения.</p>
+    <p class="fix"><b>Лечение:</b> доки заземляй на фактический дифф и тесты, а не на интерпретацию агента. Ревью доков человеком на критичных областях. Метаданные происхождения на каждом куске (из какой задачи/коммита).</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Устаревание и противоречия в вектор-базе</h4><span class="tag high">высокий</span></div>
+    <p>Фичи меняются и удаляются. Если doc-агент только дописывает, база накопит куски про старое и новое поведение одной фичи, и retrieval будет отдавать оба.</p>
+    <p class="fix"><b>Лечение:</b> upsert по ключу фичи (старое → superseded, не удалять); retrieval по умолчанию только current; doc-задача на ретайр при удалении фичи; учёт отката деплоя (фича откатилась — доку отозвать).</p>
+  </div>
+
+  <div class="grp">Правила</div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Конфликты и приоритет правил</h4><span class="tag high">высокий</span></div>
+    <p>Много правил, добавляемых на лету, в трёх скоупах → конфликты неизбежны (глобальное говорит X, продуктовое — не-X). Мозг получает противоречивые инструкции.</p>
+    <p class="fix"><b>Лечение:</b> детерминированная модель приоритета (например, продукт перебивает глобальное), детект конфликтов в момент записи правила, и фиксация версии правил на задачу при дисптаче (для аудита и реплея).</p>
+  </div>
+
+  <div class="risk med">
+    <div class="rhead"><h4>Мягкие правила не обязывают</h4><span class="tag med">средний</span></div>
+    <p>Инъекция правила в бриф ≠ его соблюдение, особенно дешёвой моделью. Чем больше правил инъектишь, тем сильнее они размывают внимание и жгут контекст. У числа реально работающих мягких правил есть потолок.</p>
+    <p class="fix"><b>Лечение:</b> триаж — что обязано быть хуком/гейтом, а что остаётся советом. Не пытайся словами заменить принуждение для критичных запретов.</p>
+  </div>
+
+  <div class="risk med">
+    <div class="rhead"><h4>Разрастание правил без жизненного цикла</h4><span class="tag med">средний</span></div>
+    <p>«Добавлять на лету» без ретайра → сотни правил, многие устаревшие или противоречивые, никто не знает, какие применяются.</p>
+    <p class="fix"><b>Лечение:</b> владелец у каждого правила, срок пересмотра, и наблюдаемость — какие правила сработали, какие нарушались.</p>
+  </div>
+
+  <div class="grp">Исполнение и безопасность</div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Промпт-инъекция и песочница воркера</h4><span class="tag high">высокий</span></div>
+    <p>Воркер исполняет сгенерированный LLM код с доступом к Bash. Вредоносная инструкция может прийти из содержимого репозитория или из извлечённых доков и увести агента в деструктивные команды или эксфильтрацию.</p>
+    <p class="fix"><b>Лечение:</b> жёсткая песочница — без доступа к Docker-сокету, read-only монтирования где можно, лимиты ресурсов, egress-политика, и принцип «контейнер не хранит ничего ценного». Считай весь внешний текст недоверенным.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Автономный выкат в прод = радиус поражения</h4><span class="tag high">высокий</span></div>
+    <p>Самое страшное место — давать дешёвому агенту катить в прод без человека.</p>
+    <p class="fix"><b>Лечение:</b> прогрессивная доставка (canary), автооткат по метрикам, и обязательный человеческий аппрув на рискованных изменениях. Полностью без рук — только для заведомо безопасных классов задач.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Неконтролируемая стоимость</h4><span class="tag high">высокий</span></div>
+    <p>Автономные агенты + ретраи + эскалация на ведущую модель = неограниченные траты, если задача залипла в цикле.</p>
+    <p class="fix"><b>Лечение:</b> жёсткие бюджет-кэпы на задачу / продукт / глобально, kill-switch, и атрибуция стоимости (она же нужна для circuit breaker, а не только для биллинга). Конкретно: модельный прокси выдаёт виртуальный токен на workflow с бюджетом и набором моделей — отсюда точное «сколько и когда» и автоматический обрыв по достижении кэпа. Учёт денег требует прайс-таблицы по физической модели — токен ведущей и токен рабочей модели стоят по-разному, поэтому метр умножает usage на цену конкретного провайдера.</p>
+  </div>
+
+  <div class="risk crit">
+    <div class="rhead"><h4>Прокси — единая точка отказа и поражения</h4><span class="tag crit">критично</span></div>
+    <p>Через прокси идёт каждый модельный вызов — и людей, и роя, — а в нём же сходятся реальные ключи. Упал прокси — встало всё; скомпрометировали — утекли все ключи разом.</p>
+    <p class="fix"><b>Лечение:</b> держать его тонким (умный форвардер с учётом, не место для бизнес-логики), закладывать доступность раньше остальных сервисов, реальные ключи — в секрет-менеджере, а не в БД прокси открытым текстом. Харденинг прокси важнее, чем у прочих сервисов.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Дрейф совместимости провайдеров</h4><span class="tag high">высокий</span></div>
+    <p>«Anthropic-совместимый» совпадает на ~95%, но края разные: стриминг (SSE), tool-use блоки, prompt caching, <code>count_tokens</code>, формы ошибок и коды статусов — а на коды завязана retry-логика Claude&nbsp;Code. Незаметное расхождение тихо ломает воркеров.</p>
+    <p class="fix"><b>Лечение:</b> начать с тонкого прозрачного форвардера и добавлять нормализацию точечно, где конкретный провайдер реально укусил, — иначе горячий путь распухнет. Различия отслеживать в журнале.</p>
+  </div>
+
+  <div class="risk crit">
+    <div class="rhead"><h4>Миграции: снапшот скрывает масштаб</h4><span class="tag crit">критично</span></div>
+    <p>Подготовленный срез прода покрывает <em>сценарии</em>, но не <em>объём</em>. Запрос без индекса летает на 10к строк и ложит прод на 10М; <code>ALTER</code> мгновенный на маленькой таблице держит её минутами на большой. Снапшот это не ловит by design, смоук-тесты — тоже; видно только под объёмом. Цена ошибки — не красный тест, а прод-данные.</p>
+    <p class="fix"><b>Лечение:</b> статический линтер миграций (ловит небезопасные паттерны без данных), правило expand-contract (схему меняем обратносовместимо, в два релиза, отдельно от кода), деструктивные и блокирующие миграции — всегда через человеческий гейт.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Цепочка зависимостей</h4><span class="tag high">высокий</span></div>
+    <p>Агент свободно ставит пакеты, а модели галлюцинируют имена; атакующие эти имена заранее регистрируют (slopsquatting) — автономный агент сам притащит малварь. Плюс уязвимые версии и несовместимые лицензии.</p>
+    <p class="fix"><b>Лечение:</b> новые пакеты — только через человека, принуждено хуком (блок <code>npm/pip install</code> неизвестного) как один из гейтов автономии. Проекты приходят уже настроенными под быстрые фичи, так что новый пакет — редкое событие. SCA-скан в верификации, дисциплина lock-файла.</p>
+  </div>
+
+  <div class="risk med">
+    <div class="rhead"><h4>Дрейф моков от реальных сервисов</h4><span class="tag med">низкий</span></div>
+    <p>Тесты гоняются против мока соседнего сервиса; если реальный сервис уехал — всё зелёное, а на проде падает интеграция. Для CRM с кучей внутренних связей это была бы зона риска, но сервисы вы делаете сами и знаете, так что ситуация редкая.</p>
+    <p class="fix"><b>Лечение:</b> регенерить мок из контракта сервиса в CI, чтобы он не мог тихо разойтись с реальностью.</p>
+  </div>
+
+  <div class="grp">Мультипродукт, люди и наблюдаемость</div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Оркестратор на незрелом продукте</h4><span class="tag high">высокий</span></div>
+    <p>Сила Comuki — езда по рельсам (готовая архитектура, проверенные скиллы, жёсткие правила). Новый продукт рельсов ещё не имеет — он сам ищет форму. Натравить оркестратор на чистый лист = он генерит слоп быстрее, чем вы кладёте рельсы, и чистки больше, чем экономии.</p>
+    <p class="fix"><b>Лечение — последовательность:</b> рельсы кладутся до оркестратора, но «рельсы» это не «дописанный продукт», а свод правил (у вас уже есть md-конвенции C#) + драконовские анализаторы с первого дня. Comuki приходит на готовые правила, а скиллы вырастают из сделанного: удачная фича → скилл «как делать похожее» → следующая задача класса едет по нему. Тяжёлое — в оркестратор, мелочь (кнопку) — локально руками; решает человек.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Изоляция между продуктами</h4><span class="tag high">высокий</span></div>
+    <p>Продукты делят платформу, но их код, секреты, правила, знания и стоимость должны быть изолированы. Баг или атака в агенте одного продукта не должны доставать другой.</p>
+    <p class="fix"><b>Лечение:</b> модель арендности с первого дня — даже внутри монолита из 2–3 сервисов гоняй скоуп продукта через всю модель данных.</p>
+  </div>
+
+  <div class="risk med">
+    <div class="rhead"><h4>Сосуществование людей и агентов в одном коде</h4><span class="tag med">средний</span></div>
+    <p>Локальный Claude&nbsp;Code разработчика и автономный агент правят один репозиторий. Чей коммит победит, как разруливать конфликт автономного PR и человеческого.</p>
+    <p class="fix"><b>Лечение:</b> автономная система работает через PR, которые ревьюит человек, а не пушит в main напрямую. Понятное владение веткой/задачей.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Штамповка при сплошном ревью</h4><span class="tag high">высокий</span></div>
+    <p>Если человек обязан аппрувить всё, наступает усталость от аппрувов — он перестаёт реально смотреть, и гейт превращается в театр, дающий ложную уверенность. Это хуже, чем отсутствие гейта. Та же болезнь — у визуальных baseline (Q7).</p>
+    <p class="fix"><b>Лечение:</b> концентрировать ревью на немногих высокорисковых изменениях (по классу), делать его асинхронным и дешёвым (summary + дифф по требованию), снижать частоту по мере доверия (выборка вместо сплошного). Внимание человека — дефицитный ресурс.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Эвал-харнес — система оценки самой оркестрации</h4><span class="tag med">желательно</span></div>
+    <p>Правка правила/скилла/промпта или апгрейд модели влияет на все задачи сразу — как узнать, что починив одно, не сломал три других? Это регрессионные тесты не для кода продукта, а для самой Comuki: набор эталонных задач с известным правильным результатом, прогон после каждой правки управляющей плоскости — «было 19/20, стало 16/20 → откатить».</p>
+    <p class="fix"><b>Желательный функционал, не обязательный для MVP.</b> На старте свод правил мал и правки видны глазами, а грубую регрессию ловят те же анализаторы (сломал правило → проект не собрался). Ценность растёт вместе с размером свода — нужен, когда правил сотни и в голове уже не удержать. Бесплатное условие сейчас: каждый скилл, формируемый из удачной фичи, помечать как кандидат в эталонную задачу — тогда набор соберётся сам собой. Один артефакт, два применения: рельса и экзаменационный билет.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Артефакт прогона как единая запись</h4><span class="tag high">высокий</span></div>
+    <p>Контейнер сносится — и работа умрёт с ним, если её не вынуть. Нужна не только потоковая запись в журнал, но и рабочая папка прогона: что просили, план мозга, summary воркеров, дифы, скриншоты, результаты тестов, пины версий.</p>
+    <p class="fix"><b>Лечение:</b> на прогон — уникальный <code>run-id</code> (= trace-id журнала, не плодить второй) и артефакт в объектном хранилище (S3): тяжёлое и immutable там, метаданные и журнал в БД с указателем. Это разом аудит решений, сырьё для doc-агента и материал для debug-агента. Заложить retention (тысячи прогонов × тяжёлые дифы) и скоуп по продукту в ключе (артефакт Магазина не достаётся из-под Админки).</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Смешанная ревизия правил в одном прогоне</h4><span class="tag high">высокий</span></div>
+    <p>Контейнеры тянут правила/скиллы свежими. Если поправить их посреди летящего пайплайна, ранние стадии сделаны по старому своду, поздние — по новому. Прогон собран из двух разных сводов, отладка врёт.</p>
+    <p class="fix"><b>Лечение:</b> пин ревизии управляющей плоскости на старте прогона (рефер в артефакте), все контейнеры берут именно его; правка действует со следующих запусков. Git управляющей плоскости становится зависимостью горячего пути запуска — держать живым/зеркалить, как прокси.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Наблюдаемость нодетерминированной распределённой системы</h4><span class="tag high">высокий</span></div>
+    <p>Когда фича уехала сломанной, проследить причину через решения мозга + прогоны воркеров + правила + извлечённый контекст — тяжело. Без этого ты слеп.</p>
+    <p class="fix"><b>Лечение:</b> trace-id на каждую задачу; журнал фиксирует бриф, версии правил, модель, токены, стоимость, результаты верификации и дифф. Это «бортовой самописец» — без него отладка автономного роя невозможна.</p>
+  </div>
+
+  <h3>Дыры на стыках компонентов</h3>
+  <p>Отдельный класс: не внутри компонентов, а на швах. Закономерность — «описано действие, не назначен актёр / назван поток без контракта». Решения одного рода: назначить актёра и привязать к существующему состоянию (lease, git-коммит, строка в Postgres), а не плодить сущности.</p>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Где бежит верификация</h4><span class="tag high">высокий</span></div>
+    <p>Воркер не судит себя сам, но и оркестратору не нужен харнес у себя.</p>
+    <p class="fix"><b>Решение по природе:</b> воркер <em>запускает</em> проверки и репортит <strong>сырьё</strong> (exit code, вывод линтера, passed/failed, JSON Playwright) — факты, не самооценка. Оркестратор <strong>детерминированно</strong> выносит green/red над сырьём, без модели. Достаточность тестов — внешний слой (хук на тест-файлы + человеческая приёмка). Окружения/фреймворки/линтеры — вход от разрабов; оркестратор их запускает. <code>StageReport</code> несёт сырьё, не <code>status:green</code>.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Вердикт по фиче</h4><span class="tag high">высокий</span></div>
+    <p>Объективное судит оркестратор. «Сделано ли то, что просили» в MVP — <strong>человек:</strong> выкатка в тестовый контур → смотрит → да/нет → оркестратор исполняет вердикт (двигает/останавливает DAG). Автономного «модель сама решила» в MVP нет — согласовано с ручным выкатом в прод.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Heartbeat доказывает жизнь, не прогресс</h4><span class="tag high">высокий</span></div>
+    <p>pi завис на медленном провайдере → контейнер жив, heartbeat идёт, работа стоит — зомби с lease.</p>
+    <p class="fix"><b>Решение:</b> два таймера. <em>Liveness</em> (контейнер/Translator жив) ловит краш/OOM. <em>Progress</em> (когда было последнее событие от pi) — Translator привязывает к потоку stdout; тишина дольше порога → <strong>stall</strong>. Прогресс меряется потоком событий, не таймером.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Гонка знаний при параллельных фичах</h4><span class="tag high">высокий</span></div>
+    <p>doc-агент пишет после прода → окно, где фича выкачена, но не задокументирована → пересекающиеся фичи не видят друг друга → дубль.</p>
+    <p class="fix"><b>Решение:</b> изучатель смотрит <strong>две вещи</strong> — базу знаний (задокументировано) И <strong>состояние активных прогонов</strong> у оркестратора (что в работе, какие области трогает). Это знание о текущих работах, живёт в состоянии оркестратора (Postgres), не в Knowledge. Окно схлопывается с часов до секунд; мердж/человек — backstop.</p>
+  </div>
+
+  <div class="risk med">
+    <div class="rhead"><h4>Приоритет правил, два источника</h4><span class="tag med">средний</span></div>
+    <p>Проектные (репо) и воркер-правила (dashboard) — про разные плоскости (стиль кода vs разрешения), конфликта почти нет.</p>
+    <p class="fix"><b>Решение:</b> на замках воркер-правила — <strong>потолок</strong>, проектные под ним (проектное не ослабляет safety-рейл). В «как делать» специфичное (проектное) бьёт общее. Сливает <code>comuki-agent-core</code>.</p>
+  </div>
+
+  <div class="risk med">
+    <div class="rhead"><h4>Общий контракт между параллельными контейнерами</h4><span class="tag med">средний</span></div>
+    <p>Бек и фронт в разных worktree читают один OpenAPI — где он, чтобы видели одну версию?</p>
+    <p class="fix"><b>Решение:</b> контракт — код; стадия «контракт» <strong>коммитит OpenAPI в ветку фичи</strong>, worktree бека/фронта ответвляются от этого коммита → идентичный контракт у обоих. «Одна версия» = один коммит. Тайминг — зависимостью в DAG.</p>
+  </div>
+
+  <div class="risk med">
+    <div class="rhead"><h4>TTL ключа против длительности стадии</h4><span class="tag med">средний</span></div>
+    <p>Ключ с настенным TTL протухает под долгой стадией.</p>
+    <p class="fix"><b>Решение:</b> прокси <strong>тупой и независимый</strong> (проверяет ключ локально, без БД на горячем пути), <strong>оркестратор отзывает ключ событийно</strong> по факту смерти воркера/lease. Жизнь ключа = жизнь работы; мёртвый воркер теряет ключ сразу. TTL — грубый backstop.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Схема событий C# ↔ TS</h4><span class="tag high">высокий</span></div>
+    <p>Бриф (оркестратор → агент) и payload отчёта (агент → Translator) пересекают C#↔TS и текут постоянно — рассогласование молча ломает всё. Comuki-события Translator↔оркестратор — C#↔C# (компилятор ловит); формат pi — не наш.</p>
+    <p class="fix"><b>Решение:</b> C# первичен, TS-типы <strong>генерятся из C#</strong> (C#→TS эмиттер), не нейтральная схема. Кодоген — <strong>после стабилизации</strong>; в Slice 0 руками. Узкий шов: только бриф + payload отчёта.</p>
+  </div>
+
+  <div class="risk med">
+    <div class="rhead"><h4>Гонка стоп против завершения</h4><span class="tag med">средний</span></div>
+    <p>Человек жмёт стоп (4 хопа), а воркер тем временем закончил.</p>
+    <p class="fix"><b>Решение:</b> арбитр — машина состояний в Postgres; стоп и завершение — переходы одной строки, БД сериализует, первый коммит выигрывает. Стоп после завершения не выбрасывает артефакт (стопит продвижение по DAG); завершение после стопа архивируется, не мёржится. Одна строка, атомарный переход.</p>
+  </div>
+
+  <div class="risk high">
+    <div class="rhead"><h4>Контракт ведущая ↔ оркестратор (Q1)</h4><span class="tag high">высокий</span></div>
+    <p>Главный шов, первый код. Модель stateless — оркестратор передаёт срез состояния под каждый вызов.</p>
+    <p class="fix"><b>Форма:</b> четыре типизированных решения, каждое со своим срезом — <strong>план</strong> (факты изучателя + каталог стадий + summary правил → DAG); <strong>бриф</strong> (спека + отобранный контекст + стадия); <strong>вердикт</strong> (сырьё + критерии → green/red, в автономии); <strong>ремонт</strong> (артефакт провала + история → стратегия фикса). Каждый вызов schema-валидируется; вывод модели не идёт в действие без валидации. Конкретные схемы — первый код.</p>
+  </div>
+
+  <!-- 9. ТЕХНОЛОГИЧЕСКИЙ СТЕК -->
+  <h2><span class="sec-num">09</span>Технологический стек</h2>
+  <p>Имя платформы — <strong>Comuki</strong>. Слои связаны не общим языком, а протоколами (MCP, HTTP, контейнеры, structured JSON), поэтому полиглот здесь <em>by design</em>, а не запах: каждый слой на своём языке, разговаривают по контракту.</p>
+
+  <ul class="svc-list">
+    <li><b>comuki-orchestrator</b> — C#. Control plane: durable-workflow (Temporal / Dapr), состояние, диспетчинг контейнеров, вызовы ведущей модели.</li>
+    <li><b>comuki-proxy</b> — C#. Модельный прокси на YARP: виртуальные ключи, маршрутизация роль → физическая модель, метринг и бюджеты.</li>
+    <li><b>comuki-mcp</b> — C#. MCP-сервер знаний и правил (официальный C# SDK для MCP). Единый платформенный рантайм с оркестратором.</li>
+    <li><b>agents (3 пакета)</b> — TypeScript. <code>comuki-agent-core</code> (общее: типы событий, MCP, декларативные правила, формат брифа/отчёта) + <code>comuki-worker-sdk</code> (pi, воркеры) + <code>comuki-dev-sdk</code> (Claude&nbsp;Code, разрабы; форк GSD по происхождению). Принуждение — механикой каждого sdk; остальное — в ядре.</li>
+    <li><b>comuki-dashboard</b> — React + shadcn/ui. Наблюдение и настройка; та же дизайн-система, что принуждает воркеров (§06).</li>
+  </ul>
+
+  <p>Платформа целиком на C# по трём причинам, и все три бьют в дизайн. Перформанс и ресурсы — .NET кратно экономичнее на горячих путях (стриминг в проксе, сотни одновременных workflow в оркестраторе), это прямая экономия на железе. Durable-workflow, YARP и async-стек закрывают тяжёлые места из §08 (надёжность оркестратора, hot-path прокси) выбором движка, а не кодом. И команда — C#-разработчики: на родном стеке человеческий гейт из MVP острее, тонкий баг ловится в ревью, который на чужом языке проскочил бы. Плагин остаётся на TS — это домашний язык экосистемы Claude&nbsp;Code, и шов «платформа ↔ плагин» проходит ровно по MCP.</p>
+
+  <p>Агентов два под две ситуации. <strong>Воркеры → pi</strong> (<code>pi-coding-agent</code>): контроль процесса, дерево сессий, малый контекст, наблюдаемость — чего не хватало в Claude&nbsp;Code. <strong>Разрабы → форк GSD под Claude&nbsp;Code</strong>: зрелый интерактивный UX. Comuki держит внешний цикл (оркестрация, расписание, гейты, durable), агент — внутренний цикл задачи. Оба правил не хранят: проектные из репо, воркер-правила от оркестратора. Дыра «разные правила у воркеров и людей» закрыта природой (декларативное — единый текст; принуждающее — маленький набор замков механикой каждого агента). GSD форкаем без upstream (был rug-pull); research-фазу — на <code>comuki-mcp</code>.</p>
+
+  <p>Довод «модель плохо знает свежую библиотеку» снимается не языком, а подготовкой: агент пишет не под капризный API по памяти, а по вашему обкатанному скиллу. Подготовленная экосистема превращает незнакомую модели либу в знакомый агенту паттерн — поэтому агенту «проще на всём», если архитектура и обёртки готовы заранее.</p>
+
+  <div class="risk med">
+    <div class="rhead"><h4>Условие, на котором держится выбор</h4><span class="tag med">следить</span></div>
+    <p>Подготовленная экосистема скиллов — это <strong>обязательство, а не данность</strong>: скилл на каждый типовой кусок платформенной работы, обёртки над движущимися либами (MCP SDK, durable-движок), обкатанные локально до того, как их увидит рой.</p>
+    <p class="fix"><b>Иначе:</b> если экосистема отстанет от того, что агенты пытаются делать, вернётся галлюцинация по сырым API. Риск новизны либ не исчезает — он переносится в дисциплину поддержки скиллов. Версии движущихся библиотек пиновать жёстко (тот же дрейф версий, что у моделей, только в зависимостях).</p>
+  </div>
+
+  <p>И граница, которую стек не размывает: <strong>Comuki дирижирует, агенты — это Claude&nbsp;Code в контейнерах</strong>. Платформа их не реализует, а запускает, передаёт бриф и читает структурированный результат. Поэтому язык платформы и язык агентов независимы — видят друг друга только через MCP, HTTP и процессы.</p>
+
+  <!-- 10. ПРИНЯТЫЕ РЕШЕНИЯ -->
+  <h2><span class="sec-num">10</span>Принятые решения</h2>
+  <p>По ходу проработки все архитектурные развилки дозрели до решения. Сначала — что входит в MVP, а что отложено (MVP — ассистируемый пайплайн, а не автономный рой), затем зафиксированные решения и то, что остаётся выбором реализации.</p>
+
+  <div class="grp">Объём MVP</div>
+  <div class="open">
+    <div class="q">В MVP</div><p>Задачи ставите вы руками — продуктовое решение «то ли это» живёт в самой постановке, отдельного гейта не нужно. Техническую сторону ведёт ведущая модель по готовым правилам проекта (архитектура и структура уже есть, изобретать почти нечего). Человек видит мысли агента, план, дифф и действия и может вмешаться, но не обязан судить каждый план. Система применяет проверенные скиллы-рецепты, обкатанные локально. Окружения — готовые шаблоны от девопсов, агент трогает только свою базу. Эвал-харнес — желательный, не обязательный (на старте прикрыт анализаторами). Новые пакеты и деструктивные миграции — только через человека.</p>
+    <div class="q">Отложено</div><p>Полная автономия с классами изменений и храповиком доверия; merge-queue для многих фич сразу; большие фичи (их пока делаем руками). Доменный пользователь (знает предметную область, не код) — отдельная фаза со своим слоем intake и приёмки, включается после MVP продукта и покрытия ~80% правилами и скиллами. Это фаза «потом», а не выпавшие из дизайна куски.</p>
+  </div>
+
+  <div class="grp">Решено</div>
+  <div class="open">
+    <div class="q">Q1</div><p><b>Контракт «оркестратор ↔ мозг».</b> Четыре типа решений, каждый — строгая валидируемая схема: синтез изучателя, план (DAG + контракт OpenAPI + брифы), вердикт, эскалация/ремонт. Вход — срез состояния с запиненными правилами; между вызовами мозг stateless, loop держит не он.</p>
+    <div class="q">Q2</div><p><b>Гранулярность.</b> Единица = стадия = контейнер = один проверяемый артефакт. Параллелизм — фронт/бек split на контракте. Стабильный фейл стадии → планировщик режет бриф мельче (адаптивно).</p>
+    <div class="q">Q3</div><p><b>Граница автономии.</b> Матрица по классам изменений плюс два гейта: аппрув плана (после изучателя) и аппрув деплоя. Старт консервативный, расширение авто-классов по аналитике фейлов.</p>
+    <div class="q">Q4</div><p><b>Ключи.</b> Свой модельный прокси: контейнеру дают виртуальный URL и виртуальный ключ (capability — маршрут, бюджет, модели, скоуп, TTL), реальные ключи живут в прокси, маршрутизация моделей — серверная. Закрывает утечку, egress-контроль и атрибуцию стоимости в одной точке.</p>
+    <div class="q">Q5</div><p><b>Ветвление.</b> Фича = базовая ветка от main; лейны (бек+миграция, фронт) — worktree от базы фичи; синхронизация мерджит лейны в ветку фичи → PR в main. Лейны ребейзятся на базу фичи, не на main.</p>
+    <div class="q">Q8</div><p><b>Потолок стоимости на фичу.</b> Виртуальный токен на workflow несёт бюджет и circuit-breaker; кэп считается на всю фичу, а не только на стадию.</p>
+    <div class="q">Надзор</div><p><b>Человек — обработчик исключений, не вахтёр.</b> Надзор концентрированный (по классу риска), асинхронный (ревью staged-результата, не блок пайплайна), дешёвый (summary + дифф по требованию) и убывающий (храповик доверия → выборка).</p>
+    <div class="q">Q6</div><p><b>Соответствие контракту.</b> Структурно — кодоген из OpenAPI (типизированные стабы для бека, клиент + mock для фронта): дрейф формы становится ошибкой компиляции. Поведенчески сверху — schema-валидация в preview. Спека версионируется и входит в план-аппрув, ведь её пишет агент.</p>
+    <div class="q">Q7</div><p><b>Жизненный цикл визуальных baseline.</b> Агент предлагает обновление, апрувит человек (асинхронно, before/after в той же поверхности ревью). Диф на нетронутом компоненте — жёсткая регрессия; на тронутом — предложение обновить baseline; новый компонент — эталон после vision-проверки на дизайн-систему. Baseline в репозитории, апдейт через тот же PR.</p>
+    <div class="q">Q9</div><p><b>Бюджеты прокси.</b> Гибрид: гарантированная партиция ёмкости для людей и критичных workflow, овербукнутый общий пул для терпеливого роя с бэкпрешером. Развести две кнопки — бюджет-кэп (деньги, circuit-breaker) и политику ёмкости (throughput). Scheduling — единственное место, где прокси легитимно умнеет.</p>
+  </div>
+
+  <div class="grp">Уровень реализации</div>
+  <p>Архитектурных развилок не осталось — дальше это выборы реализации, а не структуры: какой именно кодоген из OpenAPI, strict-priority против weighted-fair-queue в планировщике прокси, конкретные версии библиотек. Они решаются при написании и не меняют форму системы. Эволюция управляющей плоскости (дебаг → PR → эвал-харнес → новый рефер) — это пост-MVP dev-loop поверх той же модели; где физически живёт git правил и SDK — тоже выбор реализации.</p>
+
+  <div class="foot">
+    Черновик для обсуждения · архитектурные развилки сведены, уточнения — на уровне реализации.
+  </div>
+
+</div>
+<script>
+  document.querySelectorAll('h2, figure, .principle, .risk, .svc-list, .grp, .open').forEach((el,i)=>{
+    el.classList.add('reveal'); el.style.animationDelay=(Math.min(i,8)*0.04)+'s';
+  });
+</script>
+</body>
+</html>

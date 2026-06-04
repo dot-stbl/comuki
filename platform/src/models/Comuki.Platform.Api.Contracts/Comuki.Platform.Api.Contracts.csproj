@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Platform.Api.Contracts</RootNamespace>
+    <AssemblyName>Comuki.Platform.Api.Contracts</AssemblyName>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Platform.Api.Public</RootNamespace>
+    <AssemblyName>Comuki.Platform.Api.Public</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\feature\Comuki.Platform.Orchestration\Comuki.Platform.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\models\Comuki.Platform.Api.Contracts\Comuki.Platform.Api.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\models\Comuki.Platform.Entity.Core\Comuki.Platform.Entity.Core.csproj" />
+  </ItemGroup>
+
+</Project>

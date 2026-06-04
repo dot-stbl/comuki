@@ -51,28 +51,47 @@ Per `.soly/rules/coding/TESTING-RULES.md` (already in rules):
 - Coverage artifacts uploaded (GitLab `cobertura` formatter)
 
 ### 3.2 — Design tokens
-From `docs/design-system/tokens.md` (when user lands them):
-- CSS variables in `dashboard/src/index.css` (`@theme inline { --color-bg: #1A1815; --color-accent: #C75D43; … }`)
+From `.soly/docs/design-system/Comuki Design System.md` (already
+landed):
+- CSS variables in `dashboard/src/index.css` (`@theme inline { --color-bg: #15171B; --color-accent: #83A1DC; … }`)
 - Tailwind v4 theme mapped to those variables
 - Replace shadcn defaults (currently `radix-mira` + `mauve` base
-  color) with Comuki's accent/terracotta + warm-black surfaces
-- Light theme per `comuki-dashboard-designspec.md` § 3 light variant
+  color) with Comuki's slate-blue accent + cool-black surfaces
+- Light theme per `Comuki Design System.md` § 3 (light variant:
+  `#FBFBFA` bg, `#3C5A86` accent)
+- Status tokens `--st-running`, `--st-success`, `--st-failed`,
+  `--st-waiting`, `--st-queued`, `--st-escalated` per § 3
+- Mono font everywhere: **IBM Plex Mono** (replace current
+  Geist Mono Variable). Add `@fontsource/ibm-plex-mono` dep
+- Theme switching already wired: `theme-provider.tsx` (170
+  lines, dark/light/system, localStorage, shortcut `D`, system
+  media query) — do NOT replace with `next-themes`. `next-themes`
+  stays as a dep only for `sonner.tsx` (`useTheme` import there
+  is shadcn-official).
 
 ### 3.3 — Design system stories + component customization
-- Storybook story per design token (palette, typography, radius)
-  — visual smoke test, "did the tokens land?"
-- Per-component stories for the Comuki-specific components that
-  shadcn doesn't ship: `StatusBadge`, `RunIdChip`, `CostTag`,
-  `ModelBadge`, `DurationLabel`, `RiskTag`, `VersionRef`,
-  `RunCard`, `StagePipeline`, `LiveRunsBoard`, `WorkerIndicator`,
-  `RunTimeline`, `BriefViewer`, `ApprovalCard` (per
-  `comuki-dashboard-designspec.md` § 4–5)
-- Status colors with semantic names baked into the
-  `StatusBadge` component (`<StatusBadge status="running" />`)
+- Storybook story per design token (palette, typography, radius,
+  status colors) — visual smoke test, "did the tokens land?"
+- Stories for **all 55 shadcn/ui components** already in
+  `src/components/ui/` (button, card, dialog, input, select,
+  badge, …) — each with Default, Loading, Disabled, Error,
+  Empty, WithLongText states per `frontend-construct-rules.md` § 2
+- Three Comuki-specific components (custom, not from shadcn):
+  - `StatusBadge` — pill with semantic status (`<StatusBadge
+    status="running" />`), color from `--st-*` tokens,
+    `running` pulses, icon carries meaning
+  - `RunIdChip` — mono chip with run-id, copy-to-clipboard
+  - `ModeToggle` — sun/moon/system theme switcher UI
+    (consumes our `theme-provider.tsx` `useTheme`)
+- All custom components live in `src/components/ui/` (next to
+  shadcn, per project convention — not a `comuki/` subdir)
 - Storybook interaction tests (`@storybook/test`) for clickable
   primitives
-- Snapshot/visual regression scaffolding (Chromatic or reg-suit
-  TBD — install + configure, real runs in Phase 7)
+- Visual regression scaffolding TBD (Chromatic or reg-suit —
+  install + configure, real baselines in Phase 7)
+- Browser-mode component tests via `@storybook/addon-vitest`
+  + `@storybook/addon-a11y` (axe) — Definition of Done per
+  `frontend-construct-rules.md` § 5
 
 ## Что НЕ входит
 

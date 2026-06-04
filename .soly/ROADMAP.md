@@ -64,17 +64,24 @@ actual MCP client (Phase 5).
   config (placeholder) on FE; `test-be` + `test-fe` jobs added to
   GitLab CI; NetArchTest layer enforcer.
 - **3.2 — Design tokens:** CSS variables + Tailwind v4 theme from
-  `docs/design-system/tokens.md`; replace shadcn defaults
-  (`radix-mira` + `mauve`) with Comuki's accent/terracotta + warm-black
-  surfaces.
+  `.soly/docs/design-system/Comuki Design System.md`; replace shadcn
+  defaults (`radix-mira` + `mauve`) with Comuki's slate-blue accent
+  (`#83A1DC` dark / `#3C5A86` light) + cool-black surfaces
+  (`#15171B` / `#FBFBFA`); IBM Plex Mono everywhere; status tokens
+  (`--st-running`, `--st-success`, `--st-failed`, `--st-waiting`,
+  `--st-queued`, `--st-escalated`); theme-provider already wired.
 - **3.3 — Design system stories + component customization:**
   Storybook stories for every token (palette, type, radius, status
-  semantics) + Comuki-specific components (`StatusBadge`, `RunCard`,
-  `StagePipeline`, `RunTimeline`, `ApprovalCard`, etc. per
-  `comuki-dashboard-designspec.md` § 4–5); StatusBadge
-  component with semantic `<StatusBadge status="running" />` API;
-  Storybook interaction tests; Playwright smoke test (boots landing
-  page, asserts h1 contains "Comuki").
+  semantics); stories for **all 55 shadcn/ui components** in
+  `src/components/ui/` (each with Default, Loading, Disabled, Error,
+  Empty, WithLongText states); three Comuki-specific custom
+  components — `StatusBadge` (with `<StatusBadge status="running" />`
+  API), `RunIdChip` (mono chip with copy-to-clipboard), `ModeToggle`
+  (sun/moon/system theme switcher using existing
+  `theme-provider.tsx`); Storybook interaction tests
+  (`@storybook/test`); browser-mode component tests via
+  `@storybook/addon-vitest` + `@storybook/addon-a11y` (axe); Playwright
+  smoke test (boots landing page, asserts h1 contains "Comuki").
 
 **Out of scope** — worker agents actually using the design system
 (Phase 6+), real visual-regression baselines (Phase 7).

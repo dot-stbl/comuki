@@ -70,17 +70,29 @@ always: false                                # true = обходить glob-пр
 
 ## Где лежит что (текущее состояние)
 
+> **Замечание про comuki.orchestrator:** исторически большие manual-файлы
+> лежат в `.soly/rules/coding/` (а не в `.claude/rules/` как описано в §1
+> выше). Формат — с soly frontmatter и `always: true`, потому что агенты
+> ссылаются на них в любом контексте. Если видишь `.claude/rules/` в
+> старых ссылках — это устаревшее, актуальные правила — в `.soly/rules/coding/`.
+
 ```
-.claude/rules/
+.soly/rules/coding/
 ├── CODING-RULES.md          # C# code style (naming, primary ctor, sealed, async, var, braces)
 ├── FRAMEWORK-RULES.md       # EF Core, ASP.NET Core, MS.Ext.Logging, Gridify
 ├── PROJECT-STRUCTURE.md     # layers, naming, layout, testing structure
+├── DI-RULES.md              # DI, IOptions, configuration validation, composition root, lifetimes
 ├── TESTING-RULES.md         # xUnit v3 + Shouldly + NSubstitute + Testcontainers
+├── ANALYZERS.md             # Roslynator, Meziantou, NetAnalyzers wiring & severity
 └── RULES-FORMAT.md          # ← этот файл
 
 .soly/rules/
+├── coding/                  # (см. выше)
 └── process/
     ├── build-verification.md    # когда и как билдить BE/FE, dual-build, pre-existing errors
+    ├── commit-format.md         # Conventional Commits 1.0.0 для comuki (override ~/.claude/rules/git.md)
+    ├── pre-commit.md            # git hook — dotnet format whitespace
+    ├── worker-audit.md          # self-audit gate для worker subagents
     └── allowed-scripts.md       # запрет Python, Node.js/bun only
 ```
 
@@ -95,6 +107,7 @@ always: false                                # true = обходить glob-пр
 | Короткое, контекстное, "когда касается X — делай Y" | `.soly/rules/<category>/` |
 | Бланкетный запрет / обязанность, должен быть в эффекте всегда | `.soly/rules/<category>/` с `always: true` |
 | Большое + должно быть в эффекте при касании конкретных файлов | TL;DR в `.soly/rules/`, полная версия в `.claude/rules/` |
+| Большое + всегда нужно в контексте (comuki convention) | `.soly/rules/coding/` с `always: true` (НЕ `.claude/rules/`) |
 
 ## Как добавить новое правило
 

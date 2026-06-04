@@ -27,6 +27,10 @@ Thumbs.db
 # — single source of truth for any client codegen (Kubb, future TS/C# SDKs).
 **/openapi-*.json
 
+# Local credentials — copy deploy/.env.example, never commit the real one
+deploy/.env
+
+
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json

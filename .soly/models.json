@@ -1,0 +1,9 @@
+{
+  "orchestrator": "minimax-m3/MiniMax-M3",
+  "defaultWorker": "minimax-m3/MiniMax-M2.7",
+  "agents": {
+    "scout": "minimax-m3/MiniMax-M2.7",
+    "reviewer": "minimax-m3/MiniMax-M3"
+  },
+  "override": "smart"
+}

@@ -1,3 +1,4 @@
+using Comuki.Platform.Api.Contracts;
 using Comuki.Platform.Orchestration;
 using Comuki.Platform.Orchestration.Interfaces;
 using Scalar.AspNetCore;
@@ -18,5 +19,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
+// Typed endpoint — gives Kubb a schema to generate. Real routes land in Phase 3+.
+app.MapGet("/api/v1/info", () => Results.Ok(new InfoResponse("Comuki", "1.0.0", "Phase 2 — Stack Foundation")))
+    .Produces<InfoResponse>();
 
 await app.RunAsync();

@@ -1,0 +1,10 @@
+{
+  "required": ["name", "version", "phase"],
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "version": { "type": "string" },
+    "phase": { "type": "string" }
+  },
+  "x-readme-ref-name": "InfoResponse"
+}

@@ -11,7 +11,7 @@
     <!-- OpenAPI runtime spec generation (built-in .NET 9+, replaces Swashbuckle). -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     <!-- Modern API reference UI (replaces Swagger UI). -->
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.6.4" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.7.0" />
     <!-- Build-time OpenAPI doc generation (per learn.microsoft.com/aspnetcore/openapi).
          Wraps the app's entry point in a mock server and writes the spec to disk
          during 'dotnet build'. Default output: obj/{ProjectName}.json. We override

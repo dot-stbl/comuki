@@ -1,25 +1,25 @@
 ---
-description: Comuki repo uses Conventional Commits 1.0.0 — no [stbl] prefix
+description: Comuki repo uses [hybrid] prefix on Conventional Commits 1.0.0
 priority: high
 always: true
 ---
 
 # Commit format — Comuki
 
-В репозитории `comuki.orchestrator` коммиты **не** используют префикс `[stbl]`.
-Применяется **Conventional Commits 1.0.0** во всю ширину — включая соло-разработчика
-(нет смысла в `WIP`/`wip`/`tmp`).
+В репозитории `comuki.orchestrator` коммиты используют префикс `[hybrid]`.
+Тип и scope — по **Conventional Commits 1.0.0**. Применяется во всю ширину
+— включая соло-разработчика (нет смысла в `WIP`/`wip`/`tmp`).
 
 ## Формат
 
 ```
-<type>(<scope>): <description>
+[hybrid] <type>: <description>
 ```
 
-или без scope:
+или с scope:
 
 ```
-<type>: <description>
+[hybrid] <type>(<scope>): <description>
 ```
 
 Опционально — тело и footer через пустую строку.
@@ -59,6 +59,7 @@ always: true
 - **Без точки** в конце (Conventional Commits convention).
 - **≤72 символа** (рекомендация).
 - **Lowercase** для type/scope (Conventional Commits convention).
+- **Префикс `[hybrid]`** — обязателен, с пробелом перед type.
 
 ## Body (опционально)
 
@@ -70,7 +71,7 @@ always: true
 Для breaking changes, ссылок на тикеты, и т.д.
 
 ```
-feat(api): change /tasks response shape
+[hybrid] feat(api): change /tasks response shape
 
 BREAKING CHANGE: /tasks now returns { items, total } instead of array.
 Migration: clients must read .items.
@@ -81,36 +82,39 @@ Refs: COM-142
 ## Good
 
 ```
-feat(orchestration): add claim/lease loop for pull-queue
-fix(database): correct cascade delete on runs table
-docs(roadmap): clarify Slice 0 DoD with idempotency check
-chore(deps): bump dotnet to 10.0.108
-chore(rules): add Conventional Commits rule for comuki
-refactor(translator): extract stream-json parser into separate file
-test(orchestration): cover two-claimer race for FOR UPDATE SKIP LOCKED
-ci(be): enforce extended analyzer rules in build-verification
+[hybrid] feat(orchestration): add claim/lease loop for pull-queue
+[hybrid] fix(database): correct cascade delete on runs table
+[hybrid] docs(roadmap): clarify Slice 0 DoD with idempotency check
+[hybrid] chore(deps): bump dotnet to 10.0.108
+[hybrid] chore(rules): adopt [hybrid] prefix for comuki commits
+[hybrid] refactor(translator): extract stream-json parser into separate file
+[hybrid] test(orchestration): cover two-claimer race for FOR UPDATE SKIP LOCKED
+[hybrid] ci(be): enforce extended analyzer rules in build-verification
 ```
 
 ## Bad
 
 ```
-[stbl](feat): add claim/lease loop             ← запрещён в comuki
-(stbl)(feat): add claim/lease loop             ← вариация, тоже запрещена
-feat: Added new endpoint.                      ← прошедшее время + точка
-WIP                                            ← без type
-feat add foo                                   ← нет `:` после type
-update stuff                                   ← не описательно
+feat(orchestration): add foo                 ← нет [hybrid] префикса
+feat: add foo                                ← нет [hybrid] префикса
+[stbl](feat): add foo                        ← старый префикс, запрещён
+[hybrid](feat): add foo                      ← вариант с parens вокруг type, не наш формат
+feat: Added new endpoint.                    ← прошедшее время + точка
+WIP                                         ← без type
+feat add foo                                 ← нет `:` после type
+update stuff                                 ← не описательно
 ```
 
 ## Overrides
 
-Это правило overrides `~/.claude/rules/git.md`, которая требует формат
-`[stbl](<type>): <description>`. По иерархии (`.soly/rules/` >
-`.claude/rules/`) это правило выигрывает в comuki.orchestrator.
+Раньше глобальный `~/.claude/rules/git.md` требовал формат
+`[stbl](<type>): <description>`. Этот файл удалён (см. `git log` для истории),
+и теперь `.soly/rules/process/commit-format.md` — единственный source of truth
+для формата коммитов в comuki.orchestrator.
 
 Применяется **forward** — коммиты до этого правила не переписываются.
-Если видишь `[stbl]` в `git log` — это начальный bootstrap, до принятия
-этого правила. Не правь историю ради единообразия.
+Если видишь в `git log` коммиты без `[hybrid]` префикса — это до принятия
+текущего правила. Не правь историю ради единообразия.
 
 ## Commit body когда есть что сказать
 
@@ -118,7 +122,7 @@ update stuff                                   ← не описательно
 Body — контекст, риск, trade-off.
 
 ```
-fix(orchestration): make claim transaction atomic with lease insert
+[hybrid] fix(orchestration): make claim transaction atomic with lease insert
 
 Раньше claim читал task, потом отдельным UPDATE ставил lease —
 между ними другой worker мог взять ту же задачу. Склеили в одну

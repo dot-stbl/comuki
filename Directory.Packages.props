@@ -6,6 +6,9 @@
   <ItemGroup>
     <PackageVersion Include="Meziantou.Analyzer" Version="3.0.98" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
+    <!-- Дополнительные formatting-only правила (RCS0xxx), не вошедшие в основной
+         Roslynator.Analyzers. Ловятся только в dotnet format, не в dotnet build. -->
+    <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="4.15.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- OpenAPI runtime spec generation (built-in .NET 9+, replaces Swashbuckle). -->

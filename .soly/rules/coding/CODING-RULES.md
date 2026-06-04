@@ -970,6 +970,43 @@ public void Interfaces_should_live_in_Interfaces_folder()
 }
 ```
 
+## 16. Type references — без redundant namespace prefix
+
+Если тип уже в скоупе (текущий namespace или `using`-директива), **не** дублируй
+namespace-prefix в type-references. Пиши bare-имя.
+
+```csharp
+namespace Comuki.Platform.Orchestration;  // parent namespace
+
+using Comuki.Platform.Orchestration.Interfaces;
+
+// ❌ Wrong — префикс избыточен, IOrchestrationService уже в скоупе
+public sealed class NoOpOrchestrationService : Interfaces.IOrchestrationService
+
+// ✅ Correct
+public sealed class NoOpOrchestrationService : IOrchestrationService
+```
+
+**Применимо** ко всем type-references:
+
+- Сигнатуры классов и интерфейсов: `class X : Y.IFoo`
+- Параметры primary constructors: `class X(IY.IFoo foo)`
+- Generic-аргументы: `List<Y.IFoo>`
+- Возвращаемые типы методов/свойств: `IFoo GetFoo()`
+- Field/property types: `public IFoo Foo { get; }`
+
+**Префикс остаётся** (не redundant), когда:
+
+- Тип НЕ в скоупе (другой namespace, не импортирован) — тогда либо добавь
+  `using`, либо используй полный путь.
+- `Type.Member` — статический member access, не namespace.type (`String.Empty`).
+- Вложенный тип — `MyClass.NestedType` standalone не доступен.
+- Disambiguation — в текущем скоупе есть другой тип с тем же именем.
+
+**Перед коммитом** — quick self-review пройдись по новым/изменённым файлам
+и поищи паттерн `<Имя>` где `<Имя>` — namespace из текущего проекта.
+Агент должен поймать это при написании, а не после.
+
 ---
 
 ## Quick reference: что куда

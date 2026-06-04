@@ -62,13 +62,29 @@ Pre-commit hook (`scripts/hooks/pre-commit`) ловит только whitespace 
 ### Backend (обязательно с extended analyzer rules)
 
 ```bash
-dotnet build anlytra.sln -c Debug -p:EnforceExtendedAnalyzerRules=true --nologo
+# 1. Format + style + naming check (IDE0007, IDE1006 и т.п. — то, что
+#    НЕ ловит dotnet build, ловит dotnet format --verify-no-changes).
+#    Exit ≠ 0 = задача не готова.
+dotnet format comuki.slnx --verify-no-changes --severity warn
+
+# 2. Build с extended analyzer rules (CA*, RCS*, MA*, кастомный CMK*).
+#    Exit ≠ 0 = задача не готова.
+dotnet build comuki.slnx -c Debug -p:EnforceExtendedAnalyzerRules=true --nologo
 ```
 
 **Требования к выходу:**
-- Exit code = `0`
-- **0 warnings, 0 errors**
-- Время выполнения — ожидаемо 30–120 секунд после warm-up
+- `dotnet format`: Exit code = `0`. Любой non-zero (даже warning) = задача не готова.
+- `dotnet build`: Exit code = `0`, **0 warnings, 0 errors**.
+- Время выполнения обоих шагов — ожидаемо 30–120 секунд после warm-up.
+
+**Что ловит `dotnet format`, но НЕ ловит `dotnet build`** (даже при
+`EnforceCodeStyleInBuild=true` + `TreatWarningsAsErrors=true`):
+- **Naming rules** (IDE1006) — camelCase private fields, `I`-prefix на interfaces,
+  `Async`-суффикс, и т.д. Настраиваются через `dotnet_naming_*` в `.editorconfig`.
+- **Style rules** с severity ниже `error` (`silent`, `suggestion`).
+
+Без `dotnet format --verify-no-changes` эти правила не enforce-ятся, и IDE1006
+проходит мимо `dotnet build`.
 
 **Глобально suppressed** (см. `directory.build.props`):
 - `RMG012` (Mapperly)
@@ -111,8 +127,9 @@ BE + новая страница на FE, изменение контракта 
 отражающейся в FE) — прогнать **обе** сборки:
 
 ```bash
-# 1. Backend
-dotnet build anlytra.sln -c Debug -p:EnforceExtendedAnalyzerRules=true --nologo
+# 1. Backend — сначала format (IDE1006 и прочие naming/style), потом build
+dotnet format comuki.slnx --verify-no-changes --severity warn
+dotnet build comuki.slnx -c Debug -p:EnforceExtendedAnalyzerRules=true --nologo
 
 # 2. Frontend
 cd src/client-side && bun run build
@@ -159,11 +176,11 @@ cd src/client-side && bun run build   # пересобрать после regen
    ↓
 2. По списку файлов определить затронутые стороны (BE / FE / обе)
    ↓
-3. Если BE  → dotnet build ... (см. выше)
+3. Если BE  → dotnet format + dotnet build (см. выше)
    Если FE  → cd src/client-side && bun run build
    Если обе → ОБА
    ↓
-4. Оба exit 0?  ── Нет → починить, goto 3
+4. Все exit 0?  ── Нет → починить, goto 3
                   ↓ Да
 5. git add + commit
 ```
@@ -171,15 +188,16 @@ cd src/client-side && bun run build   # пересобрать после regen
 ## Good / Bad
 
 ```bash
-# ✅ Correct — затронут только BE, проверен только BE
+# ✅ Correct — затронут только BE, проверены и format, и build
 $ git diff --stat
  src/application/api/Foo/Bar.cs | 12 ++++++----
 
-$ dotnet build anlytra.sln -c Debug -p:EnforceExtendedAnalyzerRules=true --nologo
+$ dotnet format comuki.slnx --verify-no-changes --severity warn
+$ dotnet build comuki.slnx -c Debug -p:EnforceExtendedAnalyzerRules=true --nologo
  ... Build succeeded. 0 Warning(s) 0 Error(s)
 
 $ git add src/application/api/Foo/Bar.cs
-$ git commit -m "[stbl](feat): add Bar endpoint"
+$ git commit -m "feat(api): add Bar endpoint"
 ```
 
 ```bash

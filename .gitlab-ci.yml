@@ -1,0 +1,66 @@
+# GitLab CI for comuki.orchestrator
+#
+# Stages: build (BE + FE in parallel).
+# Image: mcr.microsoft.com/dotnet/sdk:10.0 — has both .NET 10 SDK and apt
+# for bun installation. Single shared image keeps the cache hit-rate
+# high (sdk layer is ~600MB but reused for every job).
+#
+# Why one stage, not test/verify/etc.: Phase 2 ships no tests yet
+# (test projects land in the slice that first needs them — Slice 0
+# Step 1 in Phase 3 brings Postgres+claim, with xUnit fixtures).
+# For now 'build clean' is the gate; expand stages as we add coverage.
+
+stages:
+  - build
+
+default:
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  before_script:
+    # Bun — for the dashboard pipeline (generate-api, vite build, storybook)
+    - apt-get update -qq && apt-get install -y -qq curl unzip
+    - curl -fsSL https://bun.sh/install | bash
+    - export PATH="$HOME/.bun/bin:$PATH"
+    - bun --version
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .nuget/packages/
+      - dashboard/node_modules/
+
+build-backend:
+  stage: build
+  script:
+    - dotnet build comuki.slnx -c Release --nologo
+    # Sanity: build-time OpenAPI codegen must produce the spec file.
+    # (Microsoft.Extensions.ApiDescription.Server runs as a MSBuild target
+    #  inside 'dotnet build' — if the spec is missing the codegen step
+    #  silently failed.)
+    - test -f platform/src/application/api/Comuki.Platform.Api.Public/openapi-v1.json
+    - head -c 200 platform/src/application/api/Comuki.Platform.Api.Public/openapi-v1.json
+  artifacts:
+    when: always
+    expire_in: 1 day
+    paths:
+      - platform/src/application/api/Comuki.Platform.Api.Public/openapi-v1.json
+
+build-frontend:
+  stage: build
+  needs: []  # parallel with build-backend; FE rebuilds the spec itself
+  script:
+    - cd dashboard
+    # install --frozen-lockfile is mandatory in CI — bails if package.json
+    # drifted from bun.lock (forces a deliberate regeneration).
+    - bun install --frozen-lockfile
+    # generate-api = 'dotnet build comuki.slnx && kubb generate' (Phase 2 plan).
+    # Re-runs the BE build to refresh openapi-v1.json, then emits
+    # 15 TS files into src/api/ via Kubb.
+    - bun run generate-api
+    - bun run build
+    - bun run build-storybook
+  artifacts:
+    when: always
+    expire_in: 1 day
+    paths:
+      - dashboard/dist/
+      - dashboard/storybook-static/
+      - dashboard/src/api/

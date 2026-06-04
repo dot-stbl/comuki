@@ -3,6 +3,7 @@ description: Когда и как прогонять build+verify на backend (
 globs: ["**/*.cs", "**/*.csproj", "**/*.sln", "**/*.slnx", "**/*.ts", "**/*.tsx", "**/package.json", "**/tsconfig*.json", "**/vite.config.*"]
 priority: high
 interactive: false
+always: true
 ---
 
 # Build & Verification
@@ -13,6 +14,27 @@ frontend (React/TypeScript), какие состояния считаются fa
 
 Сокращённая версия есть в `AGENTS.md` § Critical Non-Obvious Patterns.
 Здесь — полная.
+
+## Agent contract — Definition of Done
+
+Перед тем как сказать «готово» — **обязательно** прогнать полный набор. Без сокращений:
+
+```bash
+# 1. Full format check (whitespace + style + analyzer fixes)
+dotnet format comuki.slnx --verify-no-changes --severity warn
+
+# 2. Build with extended analyzer rules
+dotnet build comuki.slnx -c Debug -p:EnforceExtendedAnalyzerRules=true --nologo
+
+# 3. Frontend — если затронут (см. раздел "Команды / Frontend")
+cd dashboard && bun run build
+```
+
+**Правило:** exit ≠ 0 от **любой** команды = задача **не готова**. Чинить и повторить.
+
+Pre-commit hook (`scripts/hooks/pre-commit`) ловит только whitespace — он **не** покрывает style-rules и analyzer-fixes, поэтому полный прогон нужен перед тем, как сказать «готово», а не только перед коммитом.
+
+**Исключение (только при горячем hotfix):** если коммит блокирует прод, а полный verify занимает слишком долго — прогнать хотя бы `dotnet build` без `-p:EnforceExtendedAnalyzerRules` и починить style в следующем коммите. **Не норма**, оправдано только явной срочностью. Обязательно отметить в commit message (см. `commit-format.md`).
 
 ## Когда применять
 

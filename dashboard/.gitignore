@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Kubb debug state — generated alongside src/api, not source of truth
+src/api/.kubb/
+

@@ -1,10 +1,16 @@
 <Project>
-  <!-- Central Package Management. Phase 1 ships no external deps. -->
+  <!-- Central Package Management. -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Meziantou.Analyzer" Version="3.0.98" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- OpenAPI runtime spec generation (built-in .NET 9+, replaces Swashbuckle). -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+    <!-- Modern API reference UI (replaces Swagger UI). -->
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.6.4" />
   </ItemGroup>
 </Project>

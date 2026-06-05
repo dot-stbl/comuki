@@ -1,11 +1,13 @@
+using Comuki.Platform.Worker.Translator.Interfaces;
+
 namespace Comuki.Platform.Worker.Translator;
 
 /// <summary>
-/// Placeholder BackgroundService. The real work — Process.Start(pi) +
-/// stream-json parsing + gRPC bidi stream to Orchestrator — lands in plan 04-03
-/// (gRPC impl) and 04-04 (handshake). This stub exists so the worker project
-/// compiles and the host can boot, which is what 04-01 needs to prove the
-/// project structure is wired.
+/// Hosted entry point for the worker. For 04-01 it just logs the wiring —
+/// real task dispatch (claim from Postgres, then <see cref="ITranslator.TranslateAsync"/>)
+/// lands in 04-03. The point of this stub is to prove the DI graph (PiRunner →
+/// Translator → hosted service) boots and the process stays alive long enough
+/// for the podman-compose / docker-compose healthcheck to pass.
 /// </summary>
 public sealed class TranslatorHostedService(ILogger<TranslatorHostedService> logger) : BackgroundService
 {

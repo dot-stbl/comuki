@@ -1,22 +1,21 @@
 # GitLab CI for comuki.orchestrator
 #
-# Stages: build (BE + FE in parallel).
+# Stages: build (BE + FE in parallel), then test.
 # Image: mcr.microsoft.com/dotnet/sdk:10.0 — has both .NET 10 SDK and apt
 # for bun installation. Single shared image keeps the cache hit-rate
 # high (sdk layer is ~600MB but reused for every job).
 #
-# Why one stage, not test/verify/etc.: Phase 2 ships no tests yet
-# (test projects land in the slice that first needs them — Slice 0
-# Step 1 in Phase 3 brings Postgres+claim, with xUnit fixtures).
-# For now 'build clean' is the gate; expand stages as we add coverage.
+# xUnit v3 uses Microsoft Testing Platform — tests run via 'dotnet run'
+# not 'dotnet test' (VSTest doesn't support xUnit v3 discovery).
 
 stages:
   - build
+  - test
 
 default:
   image: mcr.microsoft.com/dotnet/sdk:10.0
   before_script:
-    # Bun — for the dashboard pipeline (generate-api, vite build, storybook)
+    # Bun — for the dashboard pipeline (generate-api, vite build, storybook, tests)
     - apt-get update -qq && apt-get install -y -qq curl unzip
     - curl -fsSL https://bun.sh/install | bash
     - export PATH="$HOME/.bun/bin:$PATH"
@@ -64,3 +63,25 @@ build-frontend:
       - dashboard/dist/
       - dashboard/storybook-static/
       - dashboard/src/api/
+
+# xUnit v3 tests: each test project is self-executable via 'dotnet run'.
+# 'dotnet test' does NOT work with xUnit v3 (uses VSTest which lacks v3 support).
+# Coverage from coverlet is emitted as cobertura XML per project.
+test-backend:
+  stage: test
+  needs: [build-backend]
+  script:
+    # Architecture tests
+    - dotnet run --project tests/Comuki.Platform.Architecture.Tests/Comuki.Platform.Architecture.Tests.csproj -c Debug --no-build --nologo
+    # Unit tests (each project individually via dotnet run)
+    - dotnet run --project tests/Comuki.Platform.Orchestration.Unit.Lease/Comuki.Platform.Orchestration.Unit.Lease.csproj -c Debug --no-build --nologo
+  coverage: '/Total:\s+(\d+\.\d+)/'
+
+test-frontend:
+  stage: test
+  needs: [build-frontend]
+  script:
+    - cd dashboard
+    - bun run test:coverage
+    - bun run test:e2e
+  coverage: '/All files[^|]*\|[^|]*\|[^|]*\|[^|]*\s+([\d.]+)/'

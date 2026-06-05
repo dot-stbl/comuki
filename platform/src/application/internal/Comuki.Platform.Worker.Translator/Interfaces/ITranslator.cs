@@ -1,4 +1,4 @@
-namespace Comuki.Platform.Translator.Interfaces;
+namespace Comuki.Platform.Worker.Translator.Interfaces;
 
 /// <summary>
 /// Top-level contract for the Translator: turns a brief + a snapshot of code

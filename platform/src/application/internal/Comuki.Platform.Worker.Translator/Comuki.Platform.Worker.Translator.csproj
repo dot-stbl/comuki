@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <RootNamespace>Comuki.Platform.Translator</RootNamespace>
-    <AssemblyName>Comuki.Platform.Translator</AssemblyName>
+    <RootNamespace>Comuki.Platform.Worker.Translator</RootNamespace>
+    <AssemblyName>Comuki.Platform.Worker.Translator</AssemblyName>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-Comuki.Platform.Translator-142179d2-4e4f-4d6a-8ae8-4a35e2cb7357</UserSecretsId>
+    <UserSecretsId>dotnet-Comuki.Platform.Worker.Translator-142179d2-4e4f-4d6a-8ae8-4a35e2cb7357</UserSecretsId>
 
     <!-- AOT-deferred: regular self-contained .NET 10 worker is fine for Slice 0
          ephemeral workers (30s–30min per task). Revisit in Phase 5+ if
@@ -18,7 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\models\Comuki.Platform.Entity.Core\Comuki.Platform.Entity.Core.csproj" />
+    <ProjectReference Include="..\..\..\feature\Comuki.Platform.Orchestration\Comuki.Platform.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\models\Comuki.Platform.Entity.Core\Comuki.Platform.Entity.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="protobuf-net.Grpc" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\models\Comuki.Platform.Entity.Core\Comuki.Platform.Entity.Core.csproj" />
   </ItemGroup>
 

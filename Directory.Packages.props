@@ -29,6 +29,9 @@
   <ItemGroup>
     <!-- Worker host (used by Comuki.Platform.Translator, future hosted services). -->
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
+    <!-- Contract-first gRPC via reflection (no .proto, no protoc). Used by
+         Comuki.Platform.Orchestration (owns the worker protocol contract). -->
+    <PackageVersion Include="protobuf-net.Grpc" Version="1.2.2" />
   </ItemGroup>
   <ItemGroup>
     <!-- OpenAPI runtime spec generation (built-in .NET 9+, replaces Swashbuckle). -->

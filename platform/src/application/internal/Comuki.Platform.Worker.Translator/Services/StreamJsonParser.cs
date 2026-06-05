@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Comuki.Platform.Translator.Services;
+namespace Comuki.Platform.Worker.Translator.Services;
 
 /// <summary>
 /// Pure parser for <c>pi</c>'s stream-json output: one JSON object per line, no I/O.

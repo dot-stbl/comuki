@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Comuki.Platform.Translator.Services;
+namespace Comuki.Platform.Worker.Translator.Services;
 
 /// <summary>
 /// Typed events emitted by <see cref="StreamJsonParser"/> as it consumes

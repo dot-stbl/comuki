@@ -1,9 +1,9 @@
 using System.Text.Json;
-using Comuki.Platform.Translator.Services;
+using Comuki.Platform.Worker.Translator.Services;
 using Shouldly;
 using Xunit;
 
-namespace Comuki.Platform.Translator.Unit.StreamJson;
+namespace Comuki.Platform.Worker.Translator.Unit.StreamJson;
 
 /// <summary>
 /// Unit tests for <see cref="StreamJsonParser"/> against recorded pi stream-json

@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <RootNamespace>Comuki.Platform.Worker.Translator.Unit.StreamJson</RootNamespace>
+    <AssemblyName>Comuki.Platform.Worker.Translator.Unit.StreamJson</AssemblyName>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
@@ -14,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\platform\src\feature\Comuki.Platform.Translator\Comuki.Platform.Translator.csproj" />
+    <ProjectReference Include="..\..\platform\src\application\internal\Comuki.Platform.Worker.Translator\Comuki.Platform.Worker.Translator.csproj" />
   </ItemGroup>
 
   <ItemGroup>

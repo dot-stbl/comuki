@@ -1,4 +1,4 @@
-namespace Comuki.Platform.Translator.Interfaces;
+namespace Comuki.Platform.Worker.Translator.Interfaces;
 
 /// <summary>
 /// Abstraction over <c>Process.Start(pi)</c> — the seam that lets unit tests

@@ -14,7 +14,7 @@ export function AppShell({ navItems, children }: AppShellProps) {
       <AppShellTopbar />
       <div className="flex flex-1 overflow-hidden">
         <AppShellSidebar items={navItems} />
-        <main className="flex-1 overflow-auto bg-background p-6">
+        <main className="flex-1 overflow-auto bg-background p-4">
           {children}
         </main>
       </div>

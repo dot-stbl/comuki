@@ -232,7 +232,12 @@ public void ReturnZeroForEmptyOrders()
 
 ### Нейминг тестов
 
-**BDD-стиль**: классы — `<ClassUnderTest>Should`, методы — PascalCase,
+**В проекте два стиля именования**, выбираются **per-class, не per-method**.
+Класс обязан быть выдержан в одном стиле до конца.
+
+#### 1. BDD-стиль — для unit-тестов одного класса
+
+Класс — `<ClassUnderTest>Should`, метод — `PascalCase` без подчёркиваний,
 человекочитаемое описание — в `[Fact(DisplayName = "...")]` /
 `[Theory(DisplayName = "...")]`.
 
@@ -260,13 +265,76 @@ public sealed class SpreadCalculatorShould
 }
 ```
 
-Почему так:
+Почему:
 
 - **Метод PascalCase** — консистентно с CODING-RULES §1 (no snake_case).
 - **`<Subject>Should`** — класс читается как «`SpreadCalculator` should
   `ReturnZeroForEmptyOrders`». Не нужен суффикс `Tests`.
 - **`DisplayName` в Given/When/Then** — runner покажет осмысленное описание
   с предусловиями. CI-логи и failure-reports становятся документацией.
+
+#### 2. Assertion (sentence) — для архитектурных / constraint тестов
+
+Класс — `<Concern>Tests` (например `LayerDependencyTests`),
+метод — **`PascalCase_With_Underscores`** (C# стиль, каждое слово
+с заглавной, разделитель `_`). Метод читается как законченное предложение
+без `DisplayName`:
+
+```csharp
+// ✅ Correct
+public sealed class LayerDependencyTests
+{
+    /// <summary>
+    /// Api layer must not reach into Database directly.
+    /// All persistence goes through feature/Orchestration or models/Contracts.
+    /// </summary>
+    [Fact]
+    public void ApiPublic_Must_Not_Reference_Database() { ... }
+
+    [Fact]
+    public void Models_Must_Not_Reference_Database() { ... }
+
+    [Fact]
+    public void Feature_Must_Not_Reference_Api() { ... }
+}
+```
+
+Почему:
+
+- **Sentence-форма** читается сама по себе, без `DisplayName` —
+  имя метода и есть документация архитектурного правила.
+- **PascalCase_With_Underscores** — C# convention для многословных имён
+  в `public` API (CODING-RULES §1 «Имена методов»). `_` разрешён как
+  разделитель, в отличие от snake_case, который запрещён (`lower_with_under`).
+- Каждое слово с заглавной — `Models_Must_Not_Reference_Database`,
+  НЕ `Models_must_not_reference_Database`.
+- `<Concern>Tests` — стандартный .NET convention для **архитектурных /
+  инфраструктурных** тестов (NetArchTest, contract tests, smoke tests
+  без конкретного Subject).
+
+#### Стиль выбирается per-class, не per-method
+
+```csharp
+// ✅ Correct — единый стиль в классе
+public sealed class SpreadCalculatorShould   // BDD
+{
+    public void ReturnZeroForEmptyOrders() { }      // BDD
+    public void ThrowWhenNegative() { }              // BDD
+}
+
+public sealed class LayerDependencyTests  // assertion
+{
+    public void Models_Must_Not_Reference_Database() { }       // assertion
+    public void ApiPublic_Must_Not_Reference_Database() { }    // assertion
+}
+
+// ❌ Wrong — микс в одном классе
+public sealed class CalculatorTests
+{
+    public void ReturnZeroForEmptyOrders() { }                  // BDD
+    public void Models_Must_Not_Reference_Database() { }       // assertion — нарушение
+}
+```
 
 ### Имя метода: только «что должно произойти»
 

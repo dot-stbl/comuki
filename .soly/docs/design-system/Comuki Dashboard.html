@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comuki — Dashboard</title>
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="dashboard/dashboard.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="dashboard/data.js"></script>
+<script src="dashboard/config-data.js"></script>
+<script type="text/babel" src="dashboard/ui.jsx"></script>
+<script type="text/babel" src="dashboard/screens.jsx"></script>
+<script type="text/babel" src="dashboard/settings.jsx"></script>
+<script type="text/babel" src="dashboard/tasks.jsx"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+const { LiveRunsBoard, RunTrace, ApprovalQueue, CostScreen, Placeholder, SettingsScreen, KnowledgeScreen, TasksScreen, Icon, Glyph } = window;
+
+const NAV_GROUPS = [
+  { label: 'Intake', items: [
+    { route: 'tasks', icon: 'layers', label: 'Tasks' }
+  ] },
+  { label: 'Observe', items: [
+    { route: 'runs', icon: 'activity', label: 'Live runs' },
+    { route: 'approvals', icon: 'inbox', label: 'Approvals' },
+    { route: 'cost', icon: 'bar-chart', label: 'Cost' }
+  ] },
+  { label: 'Configure', items: [
+    { route: 'knowledge', icon: 'database', label: 'Knowledge' },
+    { route: 'settings', icon: 'settings', label: 'Settings' }
+  ] }
+];
+const SWARM_VIEW = [
+  ['running', 'Running'], ['waiting', 'Waiting'], ['escalated', 'Escalated'], ['queued', 'Queued'], ['failed', 'Failed']
+];
+
+function SwarmPanel({ swarm, paused, onToggle }) {
+  const total = SWARM_VIEW.reduce((n, [k]) => n + (swarm[k] || 0), 0);
+  return (
+    <div className="nav__panel">
+      <div className="swarm-head">
+        <span className="swarm-head__lbl">Swarm</span>
+        <span className="swarm-head__total">{total} active</span>
+        <span className={'swarm-live' + (paused ? ' swarm-live--paused' : '')}>{paused ? 'paused' : 'live'}</span>
+      </div>
+      <div className="swarm-rows">
+        {SWARM_VIEW.map(([k, label]) => (
+          <div className="swarm-row" data-st={k} key={k}>
+            <Glyph st={k} /><span className="swarm-row__lbl">{label}</span><b className="swarm-row__n">{swarm[k]}</b>
+          </div>
+        ))}
+      </div>
+      <button className={'kill' + (paused ? ' kill--paused' : '')} onClick={onToggle}>
+        <Icon name={paused ? 'play' : 'power'} />{paused ? 'Resume swarm' : 'Pause swarm'}
+      </button>
+    </div>
+  );
+}
+
+function App() {
+  const [view, setView] = useState({ route: 'runs', sel: null });
+  const hist = useRef([]);
+  const route = view.route, sel = view.sel;
+  const [tick, setTick] = useState(0);
+  const [approvals, setApprovals] = useState(window.APPROVALS);
+  const [paused, setPaused] = useState(false);
+  const [swarm, setSwarm] = useState(window.SWARM);
+  const [toasts, setToasts] = useState([]);
+  const [, force] = useState(0);
+  const [theme, setTheme] = useState(localStorage.getItem('comuki-theme') || 'dark');
+  const [navOpen, setNavOpen] = useState(localStorage.getItem('comuki-nav') !== 'closed');
+  const tickRef = useRef(0);
+
+  useEffect(() => { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('comuki-theme', theme); }, [theme]);
+  useEffect(() => { localStorage.setItem('comuki-nav', navOpen ? 'open' : 'closed'); }, [navOpen]);
+
+  useEffect(() => { const id = setInterval(() => setTick(t => { tickRef.current = t + 1; return t + 1; }), 1000); return () => clearInterval(id); }, []);
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (paused) return;
+      setSwarm(s => ({ ...s, running: Math.max(5, Math.min(9, s.running + (Math.random() < 0.5 ? -1 : 1))) }));
+    }, 3400);
+    return () => clearInterval(id);
+  }, [paused]);
+  useEffect(() => {
+    const pool = [
+      ['running', 'git-commit', 'Промежуточный коммит · 3 файла'],
+      ['waiting', 'rotate-ccw', 'Retry юнит-теста test_replay (2/3)'],
+      ['running', 'cpu', 'Контекст обновлён · +2.1k токенов'],
+      ['success', 'check', 'Линт прошёл на изменённых файлах']
+    ];
+    const id = setInterval(() => {
+      if (paused) return;
+      const tr = window.TRACE['8f3c2a91'];
+      if (tr && tr.events.length < 15) {
+        const p = pool[Math.floor(Math.random() * pool.length)];
+        const sec = 252 + tickRef.current;
+        const mm = String(Math.floor(sec / 60)).padStart(2, '0'), ss = String(sec % 60).padStart(2, '0');
+        tr.events.push({ t: mm + ':' + ss, st: p[0], ic: p[1], text: p[2] });
+        force(x => x + 1);
+      }
+    }, 7000);
+    return () => clearInterval(id);
+  }, [paused]);
+
+  function toast(cfg) {
+    const id = Date.now() + Math.random();
+    setToasts(t => [...t, { ...cfg, id }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3200);
+  }
+  function onAction(id, kind) {
+    const a = approvals.find(x => x.id === id);
+    setApprovals(list => list.filter(x => x.id !== id));
+    const map = {
+      approve: ['', 'check', 'Approved', a ? a.app + ' · queued' : ''],
+      reject: ['ui-toast--destructive', 'x', 'Rejected', a ? a.app + ' · returned to worker' : ''],
+      review: ['', 'eye', 'Pulled for review', a ? a.app : '']
+    }[kind];
+    toast({ c: map[0], ic: map[1], t: map[2], d: map[3] });
+  }
+  function toggleKill() {
+    setPaused(p => {
+      const np = !p;
+      toast({ c: np ? 'ui-toast--destructive' : '', ic: np ? 'pause' : 'play', t: np ? 'Swarm paused' : 'Swarm resumed', d: np ? "New runs won't start" : 'Workers are picking up tasks again' });
+      return np;
+    });
+  }
+  function navTo(v) { hist.current = [...hist.current, view]; setView(v); }
+  function goBack() { if (hist.current.length) { const h = [...hist.current]; const prev = h.pop(); hist.current = h; setView(prev); } }
+  const canBack = hist.current.length > 0;
+  const back = canBack ? goBack : null;
+  function go(r) { if (r === route && !sel) return; navTo({ route: r, sel: null }); }
+  const openRun = id => navTo({ route: 'runs', sel: id });
+
+  const runById = id => window.RUNS.find(r => r.id === id);
+  let screen;
+  if (route === 'runs') screen = sel ? <RunTrace run={runById(sel)} onBack={goBack} tick={tick} /> : <LiveRunsBoard runs={window.RUNS} onOpenRun={openRun} tick={tick} back={back} />;
+  else if (route === 'approvals') screen = <ApprovalQueue approvals={approvals} onAction={onAction} back={back} />;
+  else if (route === 'cost') screen = <CostScreen back={back} />;
+  else if (route === 'tasks') screen = <TasksScreen back={back} toast={toast} />;
+  else if (route === 'knowledge') screen = <KnowledgeScreen back={back} />;
+  else screen = <SettingsScreen back={back} toast={toast} />;
+
+  return (
+    <div className={'shell' + (navOpen ? '' : ' shell--nav-collapsed')}>
+      <nav className="nav">
+        <div className="nav__brand">
+          <span className="brand-badge" aria-hidden="true">
+            <svg viewBox="0 0 28 28" fill="none">
+              <path d="M14 5 L6 21 M14 5 L22 21 M6 21 L22 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity=".45" />
+              <circle cx="14" cy="5" r="3" fill="currentColor" />
+              <circle cx="6" cy="21" r="3" fill="currentColor" />
+              <circle cx="22" cy="21" r="3" fill="currentColor" />
+            </svg>
+          </span>
+          <span className="brand-word"><b>COMUKI</b><span className="brand-sub">control plane</span></span>
+          <span className="tag">ops</span>
+        </div>
+        {NAV_GROUPS.map(g => (
+          <div className="nav__group" key={g.label}>
+            <span className="lbl">{g.label}</span>
+            {g.items.map(n => (
+              <button key={n.route} className={'nav__item' + (route === n.route ? ' nav__item--active' : '')} onClick={() => go(n.route)}>
+                <Icon name={n.icon} /><span className="txt">{n.label}</span>
+                {n.route === 'approvals' && approvals.length > 0 && <span className="nav__count nav__count--alert">{approvals.length}</span>}
+              </button>
+            ))}
+          </div>
+        ))}
+        <div className="nav__spacer" />
+
+        <SwarmPanel swarm={swarm} paused={paused} onToggle={toggleKill} />
+
+        <div className="nav__foot">
+          <div className="nav__foot-meta">
+            <span className="status-pulse" />rules@a1b9e0 · sdk@2.4.1
+          </div>
+          <div className="nav__foot-ctrls">
+            <button className="ctrl-icon" onClick={() => setNavOpen(o => !o)} title={navOpen ? 'Collapse sidebar' : 'Expand sidebar'}>
+              <Icon name={navOpen ? 'chevron-left' : 'chevron-right'} />
+            </button>
+            <button className="ctrl-icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}>
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main className="main">{screen}</main>
+
+      <div className="ui-toaster">
+        {toasts.map(t => (
+          <div key={t.id} className={'ui-toast ' + (t.c || '')}>
+            <Icon name={t.ic} />
+            <div><div className="ui-toast__t">{t.t}</div>{t.d && <div className="ui-toast__d">{t.d}</div>}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

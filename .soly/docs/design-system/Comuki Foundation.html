@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comuki — Foundation</title>
+<link rel="stylesheet" href="styles/tokens.css">
+<style>
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 var(--s6); }
+
+  /* ---- masthead ---- */
+  .masthead { border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 20; }
+  .masthead .wrap { display:flex; align-items:center; gap: var(--s5); height: 40px; }
+  .wordmark { display:flex; align-items:center; gap: var(--s2); }
+  .wordmark b { font-family: var(--font-display); font-weight: 800; font-size: 13px; letter-spacing: 0.04em; color: var(--text); }
+  .wordmark .dot { width:7px; height:7px; background: var(--accent); }
+  .mast-sub { font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing:0.14em; text-transform:uppercase; color: var(--text-faint); }
+  .mast-spacer { flex:1; }
+
+  /* swarm status strip */
+  .swarm { display:flex; align-items:center; gap: var(--s2); }
+  .swarm .ct { display:flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:var(--t-xs); color:var(--text-muted); padding: 2px 7px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--surface-sunk); }
+  .swarm .ct b { color: var(--text); font-weight:600; }
+  .theme-toggle { display:flex; gap: 4px; }
+  .accent-pick { display:flex; gap: 4px; }
+  .accent-pick button { width:20px; height:20px; padding:0; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--sw); cursor:pointer; transition: box-shadow var(--dur); }
+  .accent-pick button[aria-pressed="true"] { border-color: var(--text); box-shadow: inset 0 0 0 2px var(--surface); }
+
+  /* ---- hero / reasoning ---- */
+  .hero { padding: var(--s8) 0; border-bottom:1px solid var(--border); }
+  .hero h1 { font-family: var(--font-display); font-weight:700; font-size: var(--t-display); line-height:1.14; margin:var(--s4) 0 0; letter-spacing:-0.01em; max-width: 24ch; }
+  .hero h1 em { color: var(--accent); font-style: normal; }
+  .reasoning { display:grid; grid-template-columns: repeat(3,1fr); gap: var(--s6); margin-top: var(--s6); }
+  .reasoning .col p { margin: var(--s2) 0 0; color: var(--text-muted); font-size: var(--t-body); max-width: 36ch; }
+  .reasoning .col p strong { color: var(--text); font-weight:600; }
+
+  /* ---- section scaffold ---- */
+  section.block { padding: var(--s8) 0; border-bottom: 1px solid var(--border); }
+  .sec-head { display:flex; align-items:baseline; gap: var(--s4); margin-bottom: var(--s5); }
+  .sec-head .num { font-family:var(--font-mono); font-size:var(--t-sm); color:var(--accent); font-weight:600; }
+  .sec-head h2 { font-family: var(--font-display); font-weight:600; font-size: var(--t-h1); margin:0; letter-spacing:0.01em; }
+  .sec-head .note { margin-left:auto; color: var(--text-muted); font-size: var(--t-sm); max-width: 50ch; text-align:right; }
+
+  /* ---- swatches ---- */
+  .swatches { display:grid; grid-template-columns: repeat(auto-fill, minmax(132px,1fr)); gap: var(--s3); }
+  .swatch { border:1px solid var(--border); border-radius: var(--r-card); overflow:hidden; background: var(--surface); }
+  .swatch .chip-color { height: 38px; border-bottom:1px solid var(--border); }
+  .swatch .meta { padding: var(--s3); }
+  .swatch .meta .role { font-family:var(--font-mono); font-weight:600; font-size: var(--t-sm); }
+  .swatch .meta .hex { font-family:var(--font-mono); font-size: var(--t-xs); color:var(--text-muted); margin-top:2px; }
+  .swatch .meta .use { font-size: var(--t-xs); color:var(--text-faint); margin-top:4px; line-height:1.4; }
+
+  /* ---- status semantics ---- */
+  .status-grid { display:grid; grid-template-columns: repeat(3,1fr); gap: var(--s3); }
+  .status-cell { border:1px solid var(--border); border-radius: var(--r-card); padding: var(--s4); background: var(--surface); display:flex; flex-direction:column; gap: var(--s3); }
+  .status-cell .top { display:flex; align-items:center; justify-content:space-between; }
+  .status-cell .big-glyph { width:30px; height:30px; display:grid; place-items:center; border:1px solid var(--border); border-radius: var(--r-sm); background: var(--surface-sunk); }
+  .status-cell .big-glyph .ic { width:18px; height:18px; }
+  .status-cell .desc { color: var(--text-muted); font-size: var(--t-sm); }
+  .status-cell .meta-line { font-family:var(--font-mono); font-size:var(--t-xs); color:var(--text-faint); }
+  .status-cell .meta-line code { color:var(--text-muted); }
+
+  /* peripheral readout */
+  .periph { margin-top: var(--s5); border:1px dashed var(--border-strong); border-radius:var(--r-card); padding: var(--s4); background: var(--surface-sunk); }
+  .periph .row { display:flex; align-items:center; gap: var(--s6); flex-wrap:wrap; }
+  .periph .g { display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .periph .g .ic { width:18px; height:18px; }
+  .periph .g span { font-family:var(--font-mono); font-size:var(--t-micro); color:var(--text-faint); letter-spacing:0.1em; text-transform:uppercase; }
+
+  /* ---- typography ---- */
+  .type-stack { display:grid; gap: var(--s3); }
+  .type-row { border:1px solid var(--border); border-radius:var(--r-card); padding: var(--s4); background:var(--surface); display:grid; grid-template-columns: 150px 1fr; gap: var(--s5); align-items:center; }
+  .type-row .meta .fam { font-weight:600; font-size: var(--t-body); }
+  .type-row .meta .role { font-family:var(--font-mono); font-size:var(--t-xs); color:var(--text-muted); margin-top:4px; }
+  .type-row .meta .use { font-size: var(--t-xs); color: var(--text-faint); margin-top: var(--s2); line-height:1.45; }
+  .spec-display { font-family:var(--font-display); font-weight:700; font-size:24px; letter-spacing:-0.01em; }
+  .spec-ui { font-family:var(--font-ui); font-size:16px; }
+  .spec-mono { font-family:var(--font-mono); font-size:15px; }
+  .spec-sub { font-family:var(--font-mono); font-size: var(--t-xs); color: var(--text-faint); margin-top:5px; }
+
+  /* ---- metrics ---- */
+  .metric-grid { display:grid; grid-template-columns: repeat(4,1fr); gap: var(--s3); }
+  .metric-card { border:1px solid var(--border); border-radius:var(--r-card); padding: var(--s4); background: var(--surface); }
+  .metric-card h3 { font-family:var(--font-mono); font-size:var(--t-xs); letter-spacing:0.1em; text-transform:uppercase; color: var(--text-muted); margin:0 0 var(--s4); font-weight:500; }
+  .radius-demo { display:flex; gap: var(--s3); align-items:flex-end; }
+  .radius-demo .b { background: var(--surface-raised); border:1px solid var(--border-strong); width:40px; height:40px; display:grid; place-items:end; }
+  .radius-demo .b span { font-family:var(--font-mono); font-size:9px; color:var(--text-faint); padding:2px; }
+  .space-demo { display:flex; flex-direction:column; gap:5px; }
+  .space-demo .s { display:flex; align-items:center; gap:8px; }
+  .space-demo .s i { background: var(--accent); height: 7px; display:block; }
+  .space-demo .s span { font-family:var(--font-mono); font-size:9px; color:var(--text-faint); }
+  .depth-demo { display:flex; flex-direction:column; gap:5px; }
+  .depth-demo .d { padding:6px 9px; border:1px solid var(--border); border-radius:var(--r-sm); font-family:var(--font-mono); font-size:var(--t-xs); color:var(--text-muted); }
+  .motion-demo { display:flex; align-items:center; gap: var(--s4); }
+  .motion-demo .glyph { width:18px; height:18px; }
+  .motion-demo .glyph .ic { width:18px; height:18px; }
+
+  /* ---- atoms gallery ---- */
+  .atoms-grid { display:grid; grid-template-columns: repeat(2,1fr); gap: var(--s3); }
+  .atom-card { border:1px solid var(--border); border-radius:var(--r-card); background: var(--surface); overflow:hidden; }
+  .atom-card .head { display:flex; align-items:baseline; justify-content:space-between; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom:1px solid var(--border); }
+  .atom-card .head .nm { font-family:var(--font-mono); font-size: var(--t-sm); font-weight:600; color: var(--text); }
+  .atom-card .head .tag { font-size:var(--t-xs); color: var(--text-faint); text-align:right; }
+  .atom-card .body { padding: var(--s4); display:flex; flex-wrap:wrap; gap: var(--s3); align-items:center; min-height: 50px; }
+  .atom-card .body .note { width:100%; color:var(--text-faint); font-size:var(--t-xs); margin-top: 2px; line-height:1.45; }
+
+  .costtag { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:var(--t-xs); color:var(--text); padding:2px 7px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--surface-sunk); }
+  .costtag .ic { color: var(--text-faint); }
+  .modelbadge { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:var(--t-xs); padding:2px 7px; border-radius:var(--r-sm); border:1px solid var(--border); color:var(--text-muted); background:var(--surface-sunk); }
+  .modelbadge .ic { color: var(--text-faint); }
+  .duration { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:var(--t-xs); color:var(--text-muted); }
+  .duration .ic { color: var(--text-faint); }
+  .duration.live { color: var(--text); }
+  .duration.live .ic { color: var(--text); }
+  .risktag { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:var(--t-micro); letter-spacing:0.08em; text-transform:uppercase; padding:2px 7px; border-radius:var(--r-sm); border:1px solid; }
+  .risktag .ic { width:11px; height:11px; }
+  .risktag[data-r="critical"] { color:var(--danger); border-color:color-mix(in oklab,var(--danger) 40%,transparent); background:color-mix(in oklab,var(--danger) 12%,transparent); }
+  .risktag[data-r="high"]     { color:var(--text-muted); border-color:var(--border-strong); background:var(--surface-sunk); }
+  .risktag[data-r="medium"]   { color:var(--text-faint); border-color:var(--border); background:var(--surface-sunk); }
+  .versionref { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:var(--t-xs); color:var(--text-muted); padding:2px 7px; border:1px solid var(--border); border-radius:var(--r-sm); cursor:pointer; transition:border-color var(--dur); }
+  .versionref:hover { border-color: var(--border-strong); color: var(--text); }
+  .versionref .ic { color: var(--text-faint); }
+  .copied { color: var(--st-success) !important; }
+  .iconbtn-row { display:flex; gap: var(--s2); align-items:center; flex-wrap:wrap; }
+
+  /* ---- in-context teaser ---- */
+  .ctx-grid { display:grid; grid-template-columns: 1.25fr 1fr; gap: var(--s4); align-items:start; }
+  .pipe { border:1px solid var(--border); border-radius:var(--r-card); background:var(--surface); padding: var(--s5) var(--s4); overflow-x:auto; }
+  .pipe-flow { display:flex; align-items:center; gap:0; min-width: max-content; }
+  .stage { display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .stage .node { width:30px; height:30px; display:grid; place-items:center; border:1.5px solid var(--border); border-radius:var(--r-sm); background:var(--surface-sunk); }
+  .stage .node .ic { width:15px; height:15px; }
+  .stage .node[data-st="success"]   { border-color: var(--border-strong); }
+  .stage .node[data-st="running"]   { border-color: var(--text-faint); background: color-mix(in oklab, var(--text) 7%, var(--surface-sunk)); }
+  .stage .node[data-st="queued"]    { border-color: var(--border); }
+  .stage .node[data-st="failed"]    { border-color: var(--danger); background: color-mix(in oklab, var(--danger) 12%, transparent); }
+  .stage .nm { font-family:var(--font-mono); font-size:9px; letter-spacing:0.04em; text-transform:uppercase; color: var(--text-faint); }
+  .stage .node[data-st="running"] + .nm { color: var(--text); }
+  .conn { width: 22px; height:1.5px; background: var(--border); flex:0 0 auto; align-self:flex-start; margin-top: 15px; }
+  .conn.done { background: var(--border-strong); }
+  .lanes { display:flex; flex-direction:column; gap: 8px; }
+  .lane { display:flex; align-items:center; }
+
+  .runcard { border:1px solid var(--border); border-radius:var(--r-card); background:var(--surface); overflow:hidden; }
+  .runcard .rc-top { display:flex; align-items:center; gap: var(--s2); padding: var(--s3) var(--s4); border-bottom:1px solid var(--border); }
+  .runcard .applabel { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:var(--t-xs); color:var(--text); }
+  .runcard .applabel .tick { width:3px; height:12px; border-radius:1px; background: var(--text-faint); }
+  .runcard .rc-title { padding: var(--s4) var(--s4) var(--s3); font-size: var(--t-body); color: var(--text); line-height:1.4; }
+  .runcard .rc-meta { display:flex; align-items:center; gap: var(--s3); padding: 0 var(--s4) var(--s4); flex-wrap:wrap; }
+  .runcard .rc-stage { display:flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:var(--t-xs); color:var(--text-muted); }
+  .runcard .rc-stage .glyph { width:13px; height:13px; }
+  .runcard .rc-stage .glyph .ic { width:13px; height:13px; }
+
+  .footer { padding: var(--s8) 0 var(--s10); }
+  .footer .next { display:grid; grid-template-columns: repeat(3,1fr); gap: var(--s4); margin-top: var(--s5); }
+  .footer .next .n { border:1px solid var(--border); border-left: 2px solid var(--accent); border-radius:var(--r-sm); padding: var(--s4); }
+  .footer .next .n b { font-size: var(--t-body); }
+  .footer .next .n p { margin: var(--s2) 0 0; color: var(--text-muted); font-size: var(--t-sm); }
+
+  @media (max-width: 880px) {
+    .reasoning, .status-grid, .metric-grid, .atoms-grid, .ctx-grid, .footer .next { grid-template-columns: 1fr; }
+    .wrap { padding: 0 var(--s5); }
+    .sec-head .note { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ MASTHEAD ============ -->
+<header class="masthead">
+  <div class="wrap">
+    <div class="wordmark"><span class="dot"></span><b>COMUKI</b></div>
+    <span class="mast-sub">Operational DS · v0.1</span>
+    <a href="Comuki shadcn Components.html" class="mast-sub" style="text-decoration:none">Components →</a>
+    <a href="Comuki Dashboard.html" class="mast-sub" style="text-decoration:none">Dashboard →</a>
+    <span class="mast-spacer"></span>
+    <div class="swarm" id="swarm">
+      <div class="ct"><span class="glyph" data-st="running"></span><b id="sw-run">7</b></div>
+      <div class="ct"><span class="glyph" data-st="waiting"></span><b id="sw-wait">3</b></div>
+      <div class="ct"><span class="glyph" data-st="failed"></span><b id="sw-fail">1</b></div>
+    </div>
+    <div class="theme-toggle" role="group" aria-label="Theme">
+      <button class="iconbtn" data-set-theme="light" data-ic="sun" title="Светлая тема" aria-label="Светлая тема"></button>
+      <button class="iconbtn" data-set-theme="dark" data-ic="moon" title="Тёмная тема" aria-label="Тёмная тема"></button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<div class="hero">
+  <div class="wrap">
+    <span class="label">Foundation — fix this first, it permeates everything</span>
+    <h1>Пульт управления роем агентов. <em>Статус читается формой-иконой</em> — без чтения текста.</h1>
+    <div class="reasoning">
+      <div class="col">
+        <span class="label">Что это</span>
+        <p>Наблюдательный интерфейс под нодетерминированный рой — ближе к <strong>Grafana / Linear / Temporal</strong>, чем к CRM. Плотный, информационный, на долгий просмотр.</p>
+      </div>
+      <div class="col">
+        <span class="label">Характер</span>
+        <p><strong>Монохром + акцент.</strong> Нейтральная шкала плюс один слейт-синий акцент на действиях и danger-красный на сбоях. Моно для машинного, иконы вместо текста. Спокойно, воздушно, премиально-сдержанно.</p>
+      </div>
+      <div class="col">
+        <span class="label">Дифференциатор</span>
+        <p>У каждого статуса — <strong>своя икона, а не цвет</strong>. Состояние роя видно периферийным зрением и не теряется при дальтонизме и в монохроме.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <!-- ============ 01 — STATUS SEMANTICS ============ -->
+  <section class="block">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="num">01</span>
+        <h2>Status semantics</h2>
+        <span class="note">Монохром. Несёт форма-икона; значение помогает (running ярче, queued тусклее). Единственный цвет в статусах — danger-красный на failed.</span>
+      </div>
+      <div class="status-grid" id="status-grid"></div>
+
+      <div class="periph">
+        <span class="label" style="display:block;margin-bottom:var(--s4)">Периферийный читаемый ряд — только иконы, без цвета. Различимы формой.</span>
+        <div class="row" id="periph-row"></div>
+      </div>
+
+      <div style="margin-top:var(--s6)">
+        <span class="label" style="display:block;margin-bottom:var(--s3)">Risk severity — для инцидентов и рисков</span>
+        <div style="display:flex;gap:var(--s3);flex-wrap:wrap">
+          <span class="risktag" data-r="critical" data-ic="triangle-alert">Critical</span>
+          <span class="risktag" data-r="high" data-ic="triangle-alert">High</span>
+          <span class="risktag" data-r="medium" data-ic="triangle-alert">Medium</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 — COLOR ============ -->
+  <section class="block">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="num">02</span>
+        <h2>Color</h2>
+        <span class="note">Монохром: нейтральная шкала + два действующих цвета — accent (действия) и danger (сбои). Глубина через surface и border, не тени.</span>
+      </div>
+      <span class="label" style="display:block;margin-bottom:var(--s4)">Нейтральная шкала — текущая тема</span>
+      <div class="swatches" id="sw-ramp"></div>
+      <span class="label" style="display:block;margin:var(--s6) 0 var(--s4)">Действующие цвета — accent + danger</span>
+      <div class="swatches" id="sw-accent"></div>
+    </div>
+  </section>
+
+  <!-- ============ 03 — TYPOGRAPHY ============ -->
+  <section class="block">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="num">03</span>
+        <h2>Typography</h2>
+        <span class="note">Машинного текста — половина дашборда: id, токены, версии, время. Всё это — моно.</span>
+      </div>
+      <div class="type-stack">
+        <div class="type-row">
+          <div class="meta"><div class="fam">Martian Mono</div><div class="role">display / headers</div><div class="use">Квадратный технический моно. Заголовки, крупные числа, бренд-голос.</div></div>
+          <div><div class="spec-display">SWARM CONTROL 0824</div><div class="spec-sub">600 / 700 / 800 · tracked, часто uppercase</div></div>
+        </div>
+        <div class="type-row">
+          <div class="meta"><div class="fam">IBM Plex Sans</div><div class="role">body / UI</div><div class="use">Читаемый интерфейсный текст: подписи, абзацы, описания.</div></div>
+          <div><div class="spec-ui">Воркер получил бриф на стадию «контракт» и применил три правила из свода.</div><div class="spec-sub">400 / 500 / 600</div></div>
+        </div>
+        <div class="type-row">
+          <div class="meta"><div class="fam">IBM Plex Mono</div><div class="role">machine — обязателен</div><div class="use">run-id, trace, токены, стоимость, версии, git-ref, время, длительности.</div></div>
+          <div><div class="spec-mono">run_8f3c2a · $0.42 · 18.4k tok · rules@a1b9e0 · 04:12</div><div class="spec-sub">tabular nums · zero-slash · 400 / 500 / 600</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 — FORM & METRIC ============ -->
+  <section class="block">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="num">04</span>
+        <h2>Form &amp; metric</h2>
+        <span class="note">Сдержанно и воздушно. Радиус ~6px, спокойная сетка, мягкие тени, моушн без пульсаций.</span>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-card">
+          <h3>Radius</h3>
+          <div class="radius-demo">
+            <div class="b" style="border-radius:3px"><span>3 card</span></div>
+            <div class="b" style="border-radius:2px"><span>2 sm</span></div>
+            <div class="b" style="border-radius:2px;width:28px;height:28px"><span>2 pill</span></div>
+          </div>
+        </div>
+        <div class="metric-card">
+          <h3>Spacing · 2px base</h3>
+          <div class="space-demo">
+            <div class="s"><i style="width:4px"></i><span>4</span></div>
+            <div class="s"><i style="width:8px"></i><span>8</span></div>
+            <div class="s"><i style="width:12px"></i><span>12</span></div>
+            <div class="s"><i style="width:16px"></i><span>16</span></div>
+            <div class="s"><i style="width:24px"></i><span>24</span></div>
+          </div>
+        </div>
+        <div class="metric-card">
+          <h3>Depth · via surface</h3>
+          <div class="depth-demo">
+            <div class="d" style="background:var(--bg)">bg</div>
+            <div class="d" style="background:var(--surface)">surface</div>
+            <div class="d" style="background:var(--surface-raised)">surface-raised</div>
+          </div>
+        </div>
+        <div class="metric-card">
+          <h3>Motion · restrained</h3>
+          <div class="motion-demo">
+            <span class="glyph" data-st="running"></span>
+            <span style="font-family:var(--font-mono);font-size:var(--t-xs);color:var(--text-muted)">без пульсаций;<br>только тикающие<br>числа и лента</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 — ATOMS ============ -->
+  <section class="block">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="num">05</span>
+        <h2>Atoms</h2>
+        <span class="note">Кликни RunIdChip / VersionRef — копируется. Длительность тикает вживую.</span>
+      </div>
+      <div class="atoms-grid">
+        <div class="atom-card">
+          <div class="head"><span class="nm">StatusBadge</span><span class="tag">икона + текст</span></div>
+          <div class="body" id="atom-badges"></div>
+        </div>
+        <div class="atom-card">
+          <div class="head"><span class="nm">IconButton</span><span class="tag">кнопки = иконы; текст — роскошь</span></div>
+          <div class="body">
+            <div class="iconbtn-row">
+              <button class="iconbtn iconbtn--accent" data-ic="check" title="Одобрить — primary"></button>
+              <button class="iconbtn iconbtn--danger" data-ic="x" title="Отклонить — destructive"></button>
+              <button class="iconbtn" data-ic="eye" title="На ревью — нейтрально"></button>
+              <button class="iconbtn" data-ic="rotate-ccw" title="Retry — нейтрально"></button>
+              <button class="iconbtn" data-ic="external-link" title="Артефакт — нейтрально"></button>
+              <button class="iconbtn" data-ic="sliders" title="Фильтр — нейтрально"></button>
+            </div>
+            <span class="note">Важность читается цветом: <b style="color:var(--accent)">accent</b> = главное действие, <b style="color:var(--danger)">danger</b> = деструктивное, нейтральные — рутина.</span>
+            <div class="iconbtn-row" style="margin-top:2px">
+              <button class="btn btn--accent" data-ic="check">Approve</button>
+              <button class="btn btn--danger" data-ic="x">Reject</button>
+              <button class="btn btn--ghost" data-ic="eye">Details</button>
+            </div>
+            <span class="note">Текст-лейбл — только для весомых действий; рутину закрывают иконы.</span>
+          </div>
+        </div>
+        <div class="atom-card">
+          <div class="head"><span class="nm">RunIdChip</span><span class="tag">моно · copy-to-clipboard</span></div>
+          <div class="body">
+            <span class="chip chip--btn" data-copy="run_8f3c2a91" data-ic="copy"><span style="color:var(--text-faint)">run</span> 8f3c2a91</span>
+            <span class="chip chip--btn" data-copy="run_5b1d7e40" data-ic="copy"><span style="color:var(--text-faint)">run</span> 5b1d7e40</span>
+            <span class="chip chip--btn" data-copy="trace_c40aa2" data-ic="copy"><span style="color:var(--text-faint)">trace</span> c40aa2</span>
+          </div>
+        </div>
+        <div class="atom-card">
+          <div class="head"><span class="nm">CostTag</span><span class="tag">стоимость / токены</span></div>
+          <div class="body">
+            <span class="costtag" data-ic="dollar-sign">0.42 <span style="color:var(--text-faint)">· 18.4k tok</span></span>
+            <span class="costtag" data-ic="dollar-sign">0.08 <span style="color:var(--text-faint)">· 3.1k tok</span></span>
+            <span class="costtag" data-ic="dollar-sign">2.17 <span style="color:var(--text-faint)">· 96k tok</span></span>
+          </div>
+        </div>
+        <div class="atom-card">
+          <div class="head"><span class="nm">ModelBadge</span><span class="tag">роль, не физ. модель</span></div>
+          <div class="body">
+            <span class="modelbadge" data-ic="cpu" title="физическая модель — в tooltip">lead</span>
+            <span class="modelbadge" data-ic="cpu" title="физическая модель — в tooltip">worker</span>
+            <span class="note">Архитектурно говорим ролями; физическую модель показываем тонко (tooltip).</span>
+          </div>
+        </div>
+        <div class="atom-card">
+          <div class="head"><span class="nm">DurationLabel</span><span class="tag">моно · тикает на running</span></div>
+          <div class="body">
+            <span class="duration live" data-ic="timer" id="dur-live">00:00</span>
+            <span class="duration" data-ic="timer">04:12 <span style="color:var(--text-faint)">завершено</span></span>
+          </div>
+        </div>
+        <div class="atom-card">
+          <div class="head"><span class="nm">RiskTag · VersionRef</span><span class="tag">острота · git-ref control plane</span></div>
+          <div class="body">
+            <span class="risktag" data-r="critical" data-ic="triangle-alert">Critical</span>
+            <span class="versionref" data-copy="rules@a1b9e0 sdk@2.4.1" data-ic="git-branch">rules@a1b9e0 · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5724333c176579637966">[email&#160;protected]</a></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 06 — IN CONTEXT ============ -->
+  <section class="block">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="num">06</span>
+        <h2>In context</h2>
+        <span class="note">Атомы в сборе. Превью фирменного StagePipeline (DAG с параллельными лейнами) и RunCard.</span>
+      </div>
+      <div class="ctx-grid">
+        <div>
+          <span class="label" style="display:block;margin-bottom:var(--s3)">StagePipeline — DAG с ветвлением бек ∥ фронт</span>
+          <div class="pipe">
+            <div class="pipe-flow">
+              <div class="stage"><div class="node" data-st="success"><span class="glyph" data-st="success"></span></div><span class="nm">изучатор</span></div>
+              <div class="conn done"></div>
+              <div class="stage"><div class="node" data-st="success"><span class="glyph" data-st="success"></span></div><span class="nm">план</span></div>
+              <div class="conn done"></div>
+              <div class="stage"><div class="node" data-st="success"><span class="glyph" data-st="success"></span></div><span class="nm">контракт</span></div>
+              <div class="conn done"></div>
+              <div class="lanes">
+                <div class="lane"><div class="stage"><div class="node" data-st="running"><span class="glyph" data-st="running"></span></div><span class="nm">бек</span></div></div>
+                <div class="lane"><div class="stage"><div class="node" data-st="success"><span class="glyph" data-st="success"></span></div><span class="nm">фронт</span></div></div>
+              </div>
+              <div class="conn"></div>
+              <div class="stage"><div class="node" data-st="queued"><span class="glyph" data-st="queued"></span></div><span class="nm">синк</span></div>
+              <div class="conn"></div>
+              <div class="stage"><div class="node" data-st="queued"><span class="glyph" data-st="queued"></span></div><span class="nm">тесты</span></div>
+              <div class="conn"></div>
+              <div class="stage"><div class="node" data-st="queued"><span class="glyph" data-st="queued"></span></div><span class="nm">деплой</span></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <span class="label" style="display:block;margin-bottom:var(--s3)">RunCard</span>
+          <div class="runcard">
+            <div class="rc-top">
+              <span class="applabel"><span class="tick"></span>billing-api</span>
+              <span class="mast-spacer" style="flex:1"></span>
+              <span class="badge" data-st="running">Running</span>
+            </div>
+            <div class="rc-title">Добавить идемпотентность в обработчик webhook'ов Stripe</div>
+            <div class="rc-meta">
+              <span class="chip chip--btn" data-copy="run_8f3c2a91" data-ic="copy"><span style="color:var(--text-faint)">run</span> 8f3c2a91</span>
+              <span class="rc-stage"><span class="glyph" data-st="running"></span>стадия: бек</span>
+              <span class="duration live" data-ic="timer" id="dur-card">00:00</span>
+              <span class="costtag" data-ic="dollar-sign">0.31</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <section class="footer">
+    <div class="wrap">
+      <div class="sec-head"><span class="num">→</span><h2>Next</h2></div>
+      <p style="color:var(--text-muted);max-width:62ch">Фундамент зафиксирован. Дальше — единый прототип: левый навигейт + верхний статус-бар, и три фирменных экрана на этом языке.</p>
+      <div class="next">
+        <div class="n"><b>LiveRunsBoard + StagePipeline</b><p>Центральный экран. Лента/сетка RunCard, фирменный DAG как герой.</p></div>
+        <div class="n"><b>RunTimeline + DiffViewer</b><p>Трейс одного прогона: журнал событий, бриф, дифф, гейты тестов.</p></div>
+        <div class="n"><b>ApprovalQueue + ApprovalCard</b><p>«Что ждёт меня». Аппрув за 30 секунд: summary решает, детали по клику.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+(function(){
+  /* ---- Lucide-style icon set ---- */
+  var ICONS = {
+    activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    circle: '<circle cx="12" cy="12" r="9"/>',
+    'chevrons-up': '<path d="m17 11-5-5-5 5"/><path d="m17 18-5-5-5 5"/>',
+    copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+    'git-branch': '<line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+    'dollar-sign': '<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+    cpu: '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/>',
+    timer: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="12" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
+    'triangle-alert': '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+    'external-link': '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/>',
+    sliders: '<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
+    'rotate-ccw': '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>'
+  };
+  function ic(name, cls){
+    return '<svg class="ic '+(cls||'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[name]||'')+'</svg>';
+  }
+  var STATUS_ICON = { running:'activity', success:'check', failed:'x', waiting:'clock', queued:'circle', escalated:'chevrons-up' };
+  function glyph(st){ return '<span class="glyph" data-st="'+st+'"></span>'; }
+
+  function paintIcons(){
+    document.querySelectorAll('.glyph[data-st]').forEach(function(g){ g.innerHTML = ic(STATUS_ICON[g.getAttribute('data-st')]); });
+    document.querySelectorAll('[data-ic]').forEach(function(el){
+      if(el.dataset.icDone) return;
+      el.insertAdjacentHTML('afterbegin', ic(el.getAttribute('data-ic')));
+      el.dataset.icDone='1';
+    });
+  }
+
+  /* ---- theme toggle ---- */
+  var root = document.documentElement;
+  var saved = localStorage.getItem('comuki-theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  var savedA = localStorage.getItem('comuki-accent2');
+  if (savedA) root.setAttribute('data-accent', savedA);
+  function setTheme(t){
+    root.setAttribute('data-theme', t);
+    localStorage.setItem('comuki-theme', t);
+    document.querySelectorAll('[data-set-theme]').forEach(function(b){
+      b.classList.toggle('iconbtn--active', b.getAttribute('data-set-theme')===t);
+    });
+    setTimeout(renderAllSwatches, 30);
+  }
+  document.querySelectorAll('[data-set-theme]').forEach(function(b){
+    b.addEventListener('click', function(){ setTheme(b.getAttribute('data-set-theme')); });
+  });
+
+  /* ---- accent toggle (violet / green) ---- */
+  function setAccent(a){
+    root.setAttribute('data-accent', a);
+    localStorage.setItem('comuki-accent2', a);
+    document.querySelectorAll('[data-set-accent]').forEach(function(b){
+      b.setAttribute('aria-pressed', b.getAttribute('data-set-accent')===a ? 'true':'false');
+    });
+    if (typeof renderAllSwatches === 'function') setTimeout(renderAllSwatches, 30);
+  }
+  document.querySelectorAll('[data-set-accent]').forEach(function(b){
+    b.addEventListener('click', function(){ setAccent(b.getAttribute('data-set-accent')); });
+  });
+
+  /* ---- status data ---- */
+  var STATUSES = [
+    { st:'running',   label:'Running',   tone:'ярче всех',         desc:'Прогон или стадия в работе. Главный фокус взгляда.' },
+    { st:'success',   label:'Success',   tone:'нейтраль',          desc:'Прошло, замержено, зелёный гейт.' },
+    { st:'failed',    label:'Failed',    tone:'danger · красный',  desc:'Красный гейт, краш стадии.' },
+    { st:'waiting',   label:'Waiting',   tone:'нейтраль',          desc:'Ждёт человека — аппрув плана / деплоя / baseline.' },
+    { st:'queued',    label:'Queued',    tone:'тусклее всех',      desc:'В очереди, ещё не начато.' },
+    { st:'escalated', label:'Escalated', tone:'нейтраль',          desc:'Ушло на ведущую модель / на ремонт.' }
+  ];
+
+  document.getElementById('status-grid').innerHTML = STATUSES.map(function(s){
+    return '<div class="status-cell">'+
+      '<div class="top"><div class="big-glyph">'+glyph(s.st)+'</div>'+
+      '<span class="badge" data-st="'+s.st+'">'+glyph(s.st)+s.label+'</span></div>'+
+      '<div class="desc">'+s.desc+'</div>'+
+      '<div class="meta-line"><code>--st-'+s.st+'</code> · '+s.tone+'</div>'+
+      '</div>';
+  }).join('');
+
+  document.getElementById('periph-row').innerHTML = STATUSES.map(function(s){
+    return '<div class="g">'+glyph(s.st)+'<span>'+s.st+'</span></div>';
+  }).join('');
+
+  document.getElementById('atom-badges').innerHTML = STATUSES.map(function(s){
+    return '<span class="badge" data-st="'+s.st+'">'+glyph(s.st)+s.label+'</span>';
+  }).join('');
+
+  /* ---- swatches (live computed values track theme) ---- */
+  var RAMP = [
+    ['bg','--bg','фон'], ['surface','--surface','карточки'], ['surface-raised','--surface-raised','поднятые'],
+    ['surface-sunk','--surface-sunk','wells'], ['border','--border','разделители'], ['border-strong','--border-strong','акцент-границы'],
+    ['text-faint','--text-faint','третичный'], ['text-muted','--text-muted','вторичный'], ['text','--text','основной']
+  ];
+  var ACCENTS = [ ['accent','--accent','действия · primary'], ['accent-hover','--accent-hover','ховер'], ['danger','--danger','сбои / destructive'], ['danger-hover','--danger-hover','ховер'] ];
+  function renderSwatches(id, list){
+    var host = document.getElementById(id); if(!host) return;
+    var cs = getComputedStyle(root);
+    host.innerHTML = list.map(function(r){
+      var hex = cs.getPropertyValue(r[1]).trim();
+      return '<div class="swatch"><div class="chip-color" style="background:var('+r[1]+')"></div>'+
+        '<div class="meta"><div class="role">'+r[0]+'</div><div class="hex">'+hex+'</div>'+
+        (r[2]?'<div class="use">'+r[2]+'</div>':'')+'</div></div>';
+    }).join('');
+  }
+  function renderAllSwatches(){ renderSwatches('sw-ramp', RAMP); renderSwatches('sw-accent', ACCENTS); }
+  renderAllSwatches();
+
+  /* ---- paint icons after all dynamic HTML built ---- */
+  paintIcons();
+  setTheme(root.getAttribute('data-theme') || 'dark');
+  setAccent(root.getAttribute('data-accent') || 'green');
+
+  /* ---- copy to clipboard ---- */
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-copy]');
+    if(!el) return;
+    var txt = el.getAttribute('data-copy');
+    navigator.clipboard && navigator.clipboard.writeText(txt);
+    var prev = el.innerHTML;
+    el.classList.add('copied');
+    el.innerHTML = ic('check')+' copied';
+    setTimeout(function(){ el.classList.remove('copied'); el.innerHTML = prev; }, 1100);
+  });
+
+  /* ---- live ticking durations ---- */
+  function fmt(sec){ var m=Math.floor(sec/60), s=sec%60; return (m<10?'0':'')+m+':'+(s<10?'0':'')+s; }
+  function tick(){
+    var base = Math.floor((Date.now()/1000)) % 6000;
+    var d1 = document.getElementById('dur-live'); if(d1){ d1.lastChild.textContent = ' '+fmt(base%600); }
+    var d2 = document.getElementById('dur-card'); if(d2){ d2.lastChild.textContent = ' '+fmt((base+247)%600); }
+  }
+  tick(); setInterval(tick, 1000);
+
+  /* ---- gentle live jitter on swarm counter ---- */
+  setInterval(function(){
+    if(Math.random()<0.3){
+      var r=document.getElementById('sw-run'); if(r) r.textContent = Math.max(4, Math.min(11, +r.textContent + (Math.random()<0.5?-1:1)));
+    }
+  }, 3200);
+})();
+</script>
+</body>
+</html>

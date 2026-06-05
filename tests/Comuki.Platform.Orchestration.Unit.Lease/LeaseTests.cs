@@ -10,7 +10,7 @@ public sealed class LeaseTests
     /// Real lease logic lands in Phase 4 (Slice 0 Step 1).
     /// </summary>
     [Fact]
-    public void True_is_true()
+    public void True_Is_True()
     {
         true.ShouldBeTrue();
     }

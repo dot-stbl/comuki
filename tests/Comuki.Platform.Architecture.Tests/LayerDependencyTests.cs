@@ -12,7 +12,7 @@ public sealed class LayerDependencyTests
     /// All persistence goes through feature/Orchestration or models/Contracts.
     /// </summary>
     [Fact]
-    public void ApiPublic_must_not_reference_Database()
+    public void ApiPublic_Must_Not_Reference_Database()
     {
         // Load by assembly name to avoid the dotted-namespace resolution issue
         // (Comuki.Platform.Api.Public is a sibling of Comuki.Platform.Api.Contracts,
@@ -37,7 +37,7 @@ public sealed class LayerDependencyTests
     /// Models layer must not reference Database (models don't know about EF).
     /// </summary>
     [Fact]
-    public void Models_must_not_reference_Database()
+    public void Models_Must_Not_Reference_Database()
     {
         var result = Types
             .InAssembly(typeof(Comuki.Platform.Entity.Core.Run).Assembly)
@@ -55,7 +55,7 @@ public sealed class LayerDependencyTests
     /// Feature layer must not reference application layer (no upward deps).
     /// </summary>
     [Fact]
-    public void Feature_must_not_reference_Api()
+    public void Feature_Must_Not_Reference_Api()
     {
         var result = Types
             .InAssembly(typeof(Comuki.Platform.Orchestration.NoOpOrchestrationService).Assembly)

@@ -87,6 +87,9 @@ actual MCP client (Phase 5).
   (`@storybook/test`); browser-mode component tests via
   `@storybook/addon-vitest` + `@storybook/addon-a11y` (axe); Playwright
   smoke test (boots landing page, asserts h1 contains "Comuki").
+  ✅ **DONE** (2026-06-05).
+  - Deviation: `@storybook/addon-vitest` + `@storybook/addon-a11y` are
+    SB 10-only (this project uses SB 8); deferred to Phase 7.
 
 **Out of scope** — worker agents actually using the design system
 (Phase 6+), real visual-regression baselines (Phase 7).

@@ -1,13 +1,13 @@
 ---
 milestone: v1
-status: phase-3-plans-ready
+status: phase-3-complete
 last_updated: 2026-06-05
 progress:
   total_phases: 8
-  completed_phases: 1
+  completed_phases: 3
   total_plans: 3
-  completed_plans: 2
-  percent: 28
+  completed_plans: 3
+  percent: 37
 ---
 
 # Project State
@@ -15,8 +15,8 @@ progress:
 ## Current Position
 
 Phase: 3
-Plan: 2 of 3
-Status: in_progress (plan 03 next)
+Plan: 3 of 3
+Status: phase_complete
 
 ## Active Phase
 
@@ -52,7 +52,12 @@ Phase 3: Design System & Testing Infrastructure — **IN PROGRESS** (2026-06-05)
     - Slate-blue + cool-black palette: `#83A1DC`/`#15171B` dark, `#3C5A86`/`#FBFBFA` light
     - `--radius: 0.375rem` (6px); all 6 status tokens with per-theme hex values
     - Storybook backgrounds + `components.json` baseColor updated (`mauve` → `slate`)
-  - 3 plans total (3.1 test infra ✓, 3.2 design tokens ✓, 3.3 stories + custom components pending)
+  - 3 plans total (3.1 test infra ✓, 3.2 design tokens ✓, 3.3 stories + custom components ✓)
+  - 3.3 Stories + 3 custom components — **DONE** (2026-06-05).
+    - 3 custom components: `StatusBadge` (semantic pill with --st-* tokens), `RunIdChip` (copy-to-clipboard mono chip), `ModeToggle` (sun/moon/system switcher via local `useTheme`)
+    - 58 Storybook stories (55 shadcn + 3 custom), all with 6 canonical states per frontend-construct-rules.md § 2
+    - `@storybook/addon-vitest` + `@storybook/addon-a11y` deferred to Phase 7 (v10-only, project uses SB 8)
+    - `bun run build-storybook` exit 0 ✓; `bun run test` exit 0 ✓
   - Slice 0 vertical slice moved to Phase 4 (was Phase 3 in the
     original plan).
 
@@ -65,7 +70,7 @@ dashboard) → MVP polish.
 
 ## Progress
 
-1 / 8 phases, 2 / 3 plans — 28 %
+3 / 8 phases, 3 / 3 plans — 37 %
 
 ## Decisions
 
@@ -99,3 +104,4 @@ dashboard) → MVP polish.
 | xUnit v3 uses Microsoft Testing Platform (MTP), not VSTest | Tests run via `dotnet run --project <csproj>` not `dotnet test`. VSTest does not support xUnit v3 test discovery. | 3.1 |
 | Storybook test addons (@storybook/addon-vitest, @storybook/addon-a11y) deferred to plan 3.3 | `@storybook/addon-vitest` preset has Node.js 24 compatibility issue (ERR_INTERNAL_ASSERTION on ES module loading). | 3.1 |
 | `Comuki.Platform.Testing` (not `Acme.Shop.Testing` per template) | Project prefix matches actual codebase (`Comuki.Platform`), not the TESTING-RULES template name (`Acme.Shop`). | 3.1 |
+| `@storybook/addon-vitest` + `@storybook/addon-a11y` are SB 10-only; project uses SB 8; deferred to Phase 7 | Both packages have no v8.x release; `addon-vitest` has Node.js 24 ESM loader bug. Both removed from `package.json`; TODO comments added to `main.ts`/`preview.ts`. | 3.3 |

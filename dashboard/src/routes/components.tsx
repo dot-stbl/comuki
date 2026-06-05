@@ -5,22 +5,25 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 import {
+  BellIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
+  GitBranchIcon,
+  HelpCircleIcon,
   Home,
   LayoutGrid,
-  PlusIcon,
-  Trash2Icon,
-  CopyIcon,
-  SettingsIcon,
-  BellIcon,
-  SearchIcon,
-  GitBranchIcon,
-  MoonIcon,
-  ChevronRightIcon,
+  Loader2Icon,
   MenuIcon,
-  XIcon,
+  MoonIcon,
+  PlusIcon,
+  SearchIcon,
+  SettingsIcon,
+  Trash2Icon,
   UserIcon,
-  FileTextIcon,
-  CheckIcon,
+  XIcon,
 } from "lucide-react"
 
 import { AppShell } from "@/components/layout/app-shell"
@@ -162,6 +165,70 @@ import {
 } from "@/components/ui/item"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Kbd, KbdGroup } from "@/components/ui/kbd"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Progress } from "@/components/ui/progress"
+import { Spinner } from "@/components/ui/spinner"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu"
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarTrigger,
+} from "@/components/ui/menubar"
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandShortcut,
+} from "@/components/ui/command"
+import { Toggle } from "@/components/ui/toggle"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+import {
+  Sidebar,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from "@/components/ui/sidebar"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { DirectionProvider } from "@/components/ui/direction"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { RunIdChip } from "@/components/ui/run-id-chip"
+import { ModeToggle } from "@/components/ui/mode-toggle"
+import { useTheme } from "@/components/theme-provider"
 
 export const Route = createFileRoute("/components")({
   component: ComponentsShowcase,
@@ -213,6 +280,10 @@ function ComponentsShowcase() {
           <FormsShowcase />
           <OverlaysShowcase />
           <DataDisplayShowcase />
+          <FeedbackShowcase />
+          <NavigationShowcase />
+          <LayoutShowcase />
+          <ComukiShowcase />
         </div>
       </TooltipProvider>
     </AppShell>
@@ -1144,6 +1215,519 @@ function DataDisplayShowcase() {
             </KbdGroup>
             <Kbd>Esc</Kbd>
             <Kbd>Enter</Kbd>
+          </div>
+        </div>
+      </div>
+    </Section>
+  )
+}
+
+// ─── SECTION 5: FEEDBACK ────────────────────────────────────────────────────
+
+function FeedbackShowcase() {
+  const [progressValue, setProgressValue] = useState(60)
+  const [isLoading, setIsLoading] = useState(false)
+
+  return (
+    <Section
+      title="Feedback"
+      subtitle="Alerts, progress indicators, spinners, and toasts."
+    >
+      <div className="space-y-6">
+        {/* Alert */}
+        <div className="space-y-3">
+          <VariantLabel>Alert</VariantLabel>
+          <div className="space-y-2 max-w-md">
+            <Alert>
+              <AlertTitle>Heads up!</AlertTitle>
+              <AlertDescription>
+                You can use this alert to draw attention to something important.
+              </AlertDescription>
+            </Alert>
+            <Alert variant="destructive">
+              <AlertTitle>Something went wrong</AlertTitle>
+              <AlertDescription>Please try again later or contact support.</AlertDescription>
+            </Alert>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="space-y-3">
+          <VariantLabel>Progress</VariantLabel>
+          <div className="space-y-2 max-w-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-muted-foreground">Processing</span>
+              <span className="text-xs font-mono font-medium">{progressValue}%</span>
+            </div>
+            <Progress value={progressValue} />
+            <Slider
+              value={[progressValue]}
+              onValueChange={([v]) => setProgressValue(v)}
+              max={100}
+              step={1}
+            />
+          </div>
+        </div>
+
+        {/* Spinner */}
+        <div className="space-y-3">
+          <VariantLabel>Spinner</VariantLabel>
+          <div className="flex items-center gap-4">
+            <Spinner />
+            <Spinner className="size-6" />
+            <Spinner className="size-8 text-muted-foreground" />
+            <Button
+              disabled={isLoading}
+              onClick={() => {
+                setIsLoading(true)
+                setTimeout(() => setIsLoading(false), 2000)
+              }}
+            >
+              {isLoading && <Loader2Icon className="mr-2 size-4 animate-spin" />}
+              {isLoading ? "Loading..." : "Simulate async"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Sonner */}
+        <div className="space-y-3">
+          <VariantLabel>Sonner (toast)</VariantLabel>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => toast.success("Task completed", { description: "run_8f3c2a91 finished in 142ms" })}
+            >
+              Success toast
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => toast.error("Task failed", { description: "Connection timeout after 30s" })}
+            >
+              Error toast
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => toast.warning("Task stalled", { description: "No heartbeat in 60s" })}
+            >
+              Warning toast
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => toast.info("Task queued", { description: "Waiting for worker availability" })}
+            >
+              Info toast
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const id = toast.loading("Running task...")
+                setTimeout(() => toast.success("Done!", { id }), 2000)
+              }}
+            >
+              Loading toast
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Section>
+  )
+}
+
+// ─── SECTION 6: NAVIGATION ──────────────────────────────────────────────────
+
+function NavigationShowcase() {
+  const [commandOpen, setCommandOpen] = useState(false)
+  const [toggleBold, setToggleBold] = useState(false)
+  const [toggleItalic, setToggleItalic] = useState(false)
+  const [toggleUnderline, setToggleUnderline] = useState(false)
+  const [alignValue, setAlignValue] = useState("left")
+
+  return (
+    <Section
+      title="Navigation"
+      subtitle="Breadcrumbs, pagination, menus, command palette, and toggles."
+    >
+      <div className="space-y-6">
+        {/* Breadcrumb */}
+        <div className="space-y-3">
+          <VariantLabel>Breadcrumb</VariantLabel>
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="#">Home</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <ChevronRightIcon />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="#">Agents</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator>
+                <ChevronRightIcon />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <BreadcrumbPage>agent-alpha-01</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+
+        {/* Pagination */}
+        <div className="space-y-3">
+          <VariantLabel>Pagination</VariantLabel>
+          <Pagination>
+            <PaginationContent>
+              <PaginationPrevious text="Previous" />
+              <PaginationItem>
+                <PaginationLink isActive>1</PaginationLink>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink>2</PaginationLink>
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink>3</PaginationLink>
+              </PaginationItem>
+              <PaginationEllipsis />
+              <PaginationItem>
+                <PaginationLink>12</PaginationLink>
+              </PaginationItem>
+              <PaginationNext text="Next" />
+            </PaginationContent>
+          </Pagination>
+        </div>
+
+        {/* NavigationMenu */}
+        <div className="space-y-3">
+          <VariantLabel>NavigationMenu</VariantLabel>
+          <NavigationMenu viewport={false}>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Platform</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="grid gap-2 p-2 w-48">
+                    <NavigationMenuLink>Agents</NavigationMenuLink>
+                    <NavigationMenuLink>Tasks</NavigationMenuLink>
+                    <NavigationMenuLink>Logs</NavigationMenuLink>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Settings</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="grid gap-2 p-2 w-48">
+                    <NavigationMenuLink>Preferences</NavigationMenuLink>
+                    <NavigationMenuLink>Integrations</NavigationMenuLink>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Help</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="grid gap-2 p-2 w-48">
+                    <NavigationMenuLink>Documentation</NavigationMenuLink>
+                    <NavigationMenuLink>API Reference</NavigationMenuLink>
+                    <NavigationMenuLink>Contact</NavigationMenuLink>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
+
+        {/* Menubar */}
+        <div className="space-y-3">
+          <VariantLabel>Menubar</VariantLabel>
+          <Menubar className="w-fit">
+            <MenubarMenu>
+              <MenubarTrigger>File</MenubarTrigger>
+              <MenubarContent>
+                <MenubarItem>New task</MenubarItem>
+                <MenubarItem>Open run</MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem>Save</MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem variant="destructive">Exit</MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+            <MenubarMenu>
+              <MenubarTrigger>View</MenubarTrigger>
+              <MenubarContent>
+                <MenubarItem>Toggle sidebar</MenubarItem>
+                <MenubarItem>Fullscreen</MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+          </Menubar>
+        </div>
+
+        {/* Command */}
+        <div className="space-y-3">
+          <VariantLabel>Command</VariantLabel>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => setCommandOpen(true)}>
+              <SearchIcon className="mr-2 size-3.5" />
+              Search commands
+              <span className="ml-2 rounded border border-border px-1 font-mono text-[10px] text-muted-foreground">⌘K</span>
+            </Button>
+          </div>
+          <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
+            <Command>
+              <CommandInput placeholder="Type a command or search..." />
+              <CommandList>
+                <CommandEmpty>No results found.</CommandEmpty>
+                <CommandGroup heading="Suggestions">
+                  <CommandItem>
+                    <FileTextIcon className="mr-2 size-3.5" />
+                    New task
+                    <CommandShortcut>⌘N</CommandShortcut>
+                  </CommandItem>
+                  <CommandItem>
+                    <SearchIcon className="mr-2 size-3.5" />
+                    Search runs
+                  </CommandItem>
+                  <CommandItem>
+                    <SettingsIcon className="mr-2 size-3.5" />
+                    Preferences
+                  </CommandItem>
+                </CommandGroup>
+                <CommandGroup heading="Settings">
+                  <CommandItem>
+                    <BellIcon className="mr-2 size-3.5" />
+                    Notifications
+                  </CommandItem>
+                  <CommandItem>
+                    <MoonIcon className="mr-2 size-3.5" />
+                    Theme
+                  </CommandItem>
+                </CommandGroup>
+                <CommandGroup heading="Help">
+                  <CommandItem>
+                    <HelpCircleIcon className="mr-2 size-3.5" />
+                    Documentation
+                  </CommandItem>
+                  <CommandItem>
+                    <ExternalLinkIcon className="mr-2 size-3.5" />
+                    API reference
+                  </CommandItem>
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </CommandDialog>
+        </div>
+
+        {/* Toggle */}
+        <div className="space-y-3">
+          <VariantLabel>Toggle</VariantLabel>
+          <div className="flex flex-wrap items-center gap-3">
+            <Toggle pressed={toggleBold} onPressedChange={setToggleBold} aria-label="Toggle bold">
+              <span className="font-bold text-xs">B</span>
+            </Toggle>
+            <Toggle pressed={toggleItalic} onPressedChange={setToggleItalic} variant="outline" aria-label="Toggle italic">
+              <span className="italic text-xs">I</span>
+            </Toggle>
+            <Toggle pressed={toggleUnderline} onPressedChange={setToggleUnderline} variant="outline" aria-label="Toggle underline">
+              <span className="underline text-xs">U</span>
+            </Toggle>
+          </div>
+        </div>
+
+        {/* ToggleGroup */}
+        <div className="space-y-3">
+          <VariantLabel>ToggleGroup (alignment)</VariantLabel>
+          <ToggleGroup type="single" value={alignValue} onValueChange={(v) => v && setAlignValue(v)}>
+            <ToggleGroupItem value="left" aria-label="Left">
+              <MenuIcon />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="center" aria-label="Center">
+              <LayoutGrid />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="right" aria-label="Right">
+              <SettingsIcon />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      </div>
+    </Section>
+  )
+}
+
+// ─── SECTION 7: LAYOUT ──────────────────────────────────────────────────────
+
+function LayoutShowcase() {
+  const [collapsibleOpen, setCollapsibleOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [dirDir, setDirDir] = useState<"ltr" | "rtl">("ltr")
+
+  return (
+    <Section
+      title="Layout"
+      subtitle="Resizable panels, collapsible sections, sidebar, and text direction."
+    >
+      <div className="space-y-6">
+        {/* Resizable */}
+        <div className="space-y-3">
+          <VariantLabel>ResizablePanelGroup</VariantLabel>
+          <ResizablePanelGroup orientation="horizontal">
+            <ResizablePanel defaultSize={40}>
+              <div className="flex h-20 items-center justify-center text-xs text-muted-foreground">
+                Left panel — 40%
+              </div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={60}>
+              <div className="flex h-20 items-center justify-center text-xs text-muted-foreground">
+                Right panel — 60% (drag the handle)
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+
+        {/* Collapsible */}
+        <div className="space-y-3">
+          <VariantLabel>Collapsible</VariantLabel>
+          <Collapsible open={collapsibleOpen} onOpenChange={setCollapsibleOpen} className="max-w-sm">
+            <div className="flex items-center gap-2">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  {collapsibleOpen ? "Hide" : "Show"} agent details
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent className="mt-2 rounded-md border border-border p-3">
+              <p className="text-xs text-muted-foreground">
+                agent-alpha-01 · Running since 09:42 UTC · 847 tasks completed ·
+                Memory: 128MB · CPU: 12% avg
+              </p>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        {/* Sidebar mini-demo */}
+        <div className="space-y-3">
+          <VariantLabel>Sidebar (internal state)</VariantLabel>
+          <div className="flex h-40 w-full max-w-xs items-center gap-2">
+            <SidebarProvider defaultOpen={sidebarOpen}>
+              <Sidebar side="left" collapsible="none" className="h-40 w-44 border">
+                <SidebarGroup>
+                  <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive>
+                        <Home className="size-3.5" />
+                        <span>Home</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton>
+                        <LayoutGrid className="size-3.5" />
+                        <span>Components</span>
+                      </SidebarMenuButton>
+                      <SidebarMenuBadge>8</SidebarMenuBadge>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton>
+                        <SettingsIcon className="size-3.5" />
+                        <span>Settings</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroup>
+              </Sidebar>
+            </SidebarProvider>
+            <div className="flex flex-col gap-2">
+              <Button size="sm" variant="outline" onClick={() => setSidebarOpen((o) => !o)}>
+                {sidebarOpen ? "Collapse" : "Expand"} sidebar
+              </Button>
+              <span className="text-[10px] font-mono text-muted-foreground">
+                state: {sidebarOpen ? "expanded" : "collapsed"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Direction */}
+        <div className="space-y-3">
+          <VariantLabel>Direction (RTL toggle)</VariantLabel>
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setDirDir((d) => (d === "ltr" ? "rtl" : "ltr"))}
+            >
+              Toggle direction
+            </Button>
+            <span className="text-xs font-mono text-muted-foreground">dir: {dirDir}</span>
+          </div>
+          <DirectionProvider dir={dirDir}>
+            <div className="max-w-xs rounded-md border border-border p-3">
+              <p className="text-xs text-muted-foreground" dir={dirDir}>
+                The quick brown fox jumps over the lazy dog. Text flows {dirDir === "ltr" ? "left to right" : "right to left"} based on dir attribute.
+              </p>
+            </div>
+          </DirectionProvider>
+        </div>
+      </div>
+    </Section>
+  )
+}
+
+// ─── SECTION 8: COMUKI ──────────────────────────────────────────────────────
+
+function ComukiShowcase() {
+  const { theme } = useTheme()
+
+  return (
+    <Section
+      title="Comuki"
+      subtitle="Custom components built for the platform: StatusBadge, RunIdChip, ModeToggle."
+    >
+      <div className="space-y-6">
+        {/* StatusBadge — md */}
+        <div className="space-y-3">
+          <VariantLabel>StatusBadge — size md</VariantLabel>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status="running" />
+            <StatusBadge status="success" />
+            <StatusBadge status="failed" />
+            <StatusBadge status="waiting" />
+            <StatusBadge status="queued" />
+            <StatusBadge status="escalated" />
+          </div>
+        </div>
+
+        {/* StatusBadge — sm */}
+        <div className="space-y-3">
+          <VariantLabel>StatusBadge — size sm</VariantLabel>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status="running" size="sm" />
+            <StatusBadge status="success" size="sm" />
+            <StatusBadge status="failed" size="sm" />
+            <StatusBadge status="waiting" size="sm" />
+            <StatusBadge status="queued" size="sm" />
+            <StatusBadge status="escalated" size="sm" />
+          </div>
+        </div>
+
+        {/* RunIdChip */}
+        <div className="space-y-3">
+          <VariantLabel>RunIdChip</VariantLabel>
+          <div className="flex flex-wrap items-center gap-3">
+            <RunIdChip id="run_8f3c2a91" />
+            <RunIdChip id="run_8f3c2a91-b7e4-4d3a-9c1f-2e8b5d7c4a9f" />
+          </div>
+          <p className="text-xs text-muted-foreground">Click to copy — long IDs truncate at max-w-32 (8rem).</p>
+        </div>
+
+        {/* ModeToggle */}
+        <div className="space-y-3">
+          <VariantLabel>ModeToggle</VariantLabel>
+          <div className="flex items-center gap-3">
+            <ModeToggle />
+            <span className="font-mono text-xs text-muted-foreground">current theme: {theme}</span>
           </div>
         </div>
       </div>

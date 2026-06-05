@@ -287,18 +287,20 @@ application/
 Все операции с solution — через `dotnet` CLI. IDE — только для редактирования
 кода. Это даёт воспроизводимость, документируемость, работающий CI.
 
-### Workflow (5 шагов в порядке)
+### Workflow (6 шагов в порядке)
 
 ```
 1. Определить место                     (decision tree, раздел 5)
 2. Создать физическую папку             (mkdir)
 3. Создать csproj                       (dotnet new <template>)
-4. Добавить в solution                  (dotnet sln add --solution-folder)
+4. Добавить в comuki.slnx               (edit вручную — см. ниже)
 5. Добавить ProjectReference            (dotnet add reference)
+6. Прогнать верификацию csproj ⇄ slnx   (см. ниже)
 ```
 
 **Критично**: шаги 2 и 4 в этом порядке. Solution folder в `.slnx` **не
-создаёт** физическую папку — она должна быть на диске **до** `sln add`.
+создаёт** физическую папку — она должна быть на диске **до** редактирования
+`.slnx`.
 
 **Шаблоны `dotnet new`**: `classlib` для большинства; `webapi` для
 `application/api/`; `worker` для `application/internal/` и `bots/`;
@@ -306,9 +308,49 @@ application/
 `netstandard2.0` для `generation/`. Test framework фиксируется **один** на
 solution.
 
-**Solution folder = physical path** — должна точно соответствовать
-физическому пути (`src/feature/patterns`, не "Trading Patterns" и не
-"patterns"). `.slnx` руками не редактируем.
+### Правка `comuki.slnx` вручную — зафиксированный workaround
+
+`.NET 10 SDK` на Windows ломает `dotnet sln add --solution-folder` (схлопывает
+пути, ломает иерархию папок в `.slnx`). Поэтому `.slnx` редактируется
+напрямую — это **не исключение**, это установившийся workflow для всех
+проектов в comuki (см. decisions log phase 1 и phase 3).
+
+**Правила правки:**
+
+- **Solution folder = physical path** — точное соответствие физическому
+  пути (`platform/src/feature/patterns`, не "Trading Patterns" и не
+  "patterns"). Атрибут `<Folder Name="...">` = physical path от корня slnx.
+- **Атрибут `Path` относителен корня репо** (не корня slnx). `comuki.slnx`
+  лежит в корне, поэтому `Path="platform/src/.../X.csproj"`.
+- **Один `<Project>` на проект, без дублирования.**
+- **Порядок внутри `<Folder>`** — обычно логический (api → internal → database
+  → feature → models → tests), но не строгий.
+
+**Шаблон правки** (на примере добавления `Comuki.Platform.Worker.Translator`):
+
+```xml
+<Folder Name="/platform/src/application/internal/">           <!-- новая папка, если не было -->
+  <Project Path="platform/src/application/internal/Comuki.Platform.Worker.Translator/Comuki.Platform.Worker.Translator.csproj" />
+</Folder>
+```
+
+### Верификация: csproj ⇄ slnx
+
+Перед **каждым** коммитом (или в CI) — diff между csproj на диске и путями в
+`.slnx`. Пустой вывод = OK. Любое расхождение = забыли проект (или наоборот,
+висячая ссылка):
+
+```bash
+diff <(find platform/src tests -name '*.csproj' | sort) \
+     <(grep -oE 'Path="[^"]+\.csproj"' comuki.slnx | sed 's/Path="//;s/"$//' | sort)
+```
+
+> **Заметка:** `grep -P` (PCRE) не работает в Git Bash на Windows (locale
+> `CP1252`/similar). Используй `grep -E` (POSIX ERE) — для нашего простого
+> паттерна `Path="..."` хватает.
+
+Если расходится — **не коммитить**, починить `.slnx` (или удалить осиротевший
+`.csproj`).
 
 ### Минимальный csproj
 

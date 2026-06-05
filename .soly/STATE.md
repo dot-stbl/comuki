@@ -6,8 +6,8 @@ progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 3
-  completed_plans: 1
-  percent: 17
+  completed_plans: 2
+  percent: 28
 ---
 
 # Project State
@@ -15,8 +15,8 @@ progress:
 ## Current Position
 
 Phase: 3
-Plan: 1 of 3
-Status: in_progress (plan 02 next)
+Plan: 2 of 3
+Status: in_progress (plan 03 next)
 
 ## Active Phase
 
@@ -47,9 +47,12 @@ Phase 3: Design System & Testing Infrastructure — **IN PROGRESS** (2026-06-05)
     - FE: Playwright (playwright.config.ts, e2e/landing.spec.ts 3 smoke tests)
     - CI: `test-backend` + `test-frontend` jobs in `.gitlab-ci.yml`
     - Key deviation: xUnit v3 uses `dotnet run` not `dotnet test` (MTP, not VSTest)
-  - 3 plans written (3.1 test infra, 3.2 design tokens,
-    3.3 stories + 3 custom Comuki components); parent to review
-    and commit before any task is picked up.
+  - **3.2 Design tokens — **DONE** (2026-06-05).
+    - IBM Plex Mono replaces Geist Mono Variable (`@fontsource/ibm-plex-mono`)
+    - Slate-blue + cool-black palette: `#83A1DC`/`#15171B` dark, `#3C5A86`/`#FBFBFA` light
+    - `--radius: 0.375rem` (6px); all 6 status tokens with per-theme hex values
+    - Storybook backgrounds + `components.json` baseColor updated (`mauve` → `slate`)
+  - 3 plans total (3.1 test infra ✓, 3.2 design tokens ✓, 3.3 stories + custom components pending)
   - Slice 0 vertical slice moved to Phase 4 (was Phase 3 in the
     original plan).
 
@@ -62,7 +65,7 @@ dashboard) → MVP polish.
 
 ## Progress
 
-1 / 8 phases, 1 / 3 plans — 17 %
+1 / 8 phases, 2 / 3 plans — 28 %
 
 ## Decisions
 

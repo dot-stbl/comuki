@@ -18,4 +18,13 @@
     <PackageReference Include="Roslynator.Formatting.Analyzers" PrivateAssets="all" />
   </ItemGroup>
 
+  <!-- Test project defaults — activated when IsTestProject=true -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura,opencover</CoverletOutputFormat>
+    <Threshold>70</Threshold>
+    <ThresholdType>line</ThresholdType>
+    <ThresholdStat>total</ThresholdStat>
+  </PropertyGroup>
+
 </Project>

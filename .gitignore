@@ -30,6 +30,22 @@ Thumbs.db
 # Local credentials — copy deploy/.env.example, never commit the real one
 deploy/.env
 
+# Stray .md files sometimes written to project root by previous LLM sessions
+# (leaked thinking blocks or mis-routed `write` calls). Soly never writes
+# these — it uses .soly/STATE.md, .soly/HANDOFF.json, .soly/phases/*/{PLAN,CONTEXT}.md.
+# Findings, plans, and progress belong under .soly/, not in the project root.
+/plan.md
+/context.md
+/progress.md
+
+# Dashboard — generated artifacts (rebuilt on every Storybook / Vitest / Playwright run)
+# Real sources live in dashboard/src/, dashboard/e2e/, .storybook/. Commit only those.
+dashboard/storybook-static/
+dashboard/test-results/
+dashboard/playwright-report/
+dashboard/.tanstack/
+dashboard/coverage/
+
 
 .vscode/*
 !.vscode/settings.json

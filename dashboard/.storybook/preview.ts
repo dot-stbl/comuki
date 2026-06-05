@@ -10,11 +10,12 @@ const preview: Preview = {
         date: /Date$/,
       },
     },
+    // TODO(phase-7): add parameters.a11y block when @storybook/addon-a11y is re-enabled (SB 10 required)
     backgrounds: {
       default: "dark",
       values: [
-        { name: "dark", value: "#1A1815" },
-        { name: "light", value: "#FAF7F0" },
+        { name: "dark", value: "#15171B" },
+        { name: "light", value: "#FBFBFA" },
       ],
     },
   },

@@ -62,6 +62,10 @@ actual MCP client (Phase 5).
   NSubstitute + Testcontainers + Respawn + Bogus + coverlet (70%
   line gate) on BE; Vitest + Testing Library + jsdom + Playwright
   config (placeholder) on FE; `test-be` + `test-fe` jobs added to
+  GitLab CI; NetArchTest layer enforcer. ✅ **DONE** (2026-06-05).
+  NSubstitute + Testcontainers + Respawn + Bogus + coverlet (70%
+  line gate) on BE; Vitest + Testing Library + jsdom + Playwright
+  config (placeholder) on FE; `test-be` + `test-fe` jobs added to
   GitLab CI; NetArchTest layer enforcer.
 - **3.2 — Design tokens:** CSS variables + Tailwind v4 theme from
   `.soly/docs/design-system/Comuki Design System.md`; replace shadcn
@@ -70,6 +74,7 @@ actual MCP client (Phase 5).
   (`#15171B` / `#FBFBFA`); IBM Plex Mono everywhere; status tokens
   (`--st-running`, `--st-success`, `--st-failed`, `--st-waiting`,
   `--st-queued`, `--st-escalated`); theme-provider already wired.
+  ✅ **DONE** (2026-06-05).
 - **3.3 — Design system stories + component customization:**
   Storybook stories for every token (palette, type, radius, status
   semantics); stories for **all 55 shadcn/ui components** in
@@ -82,6 +87,9 @@ actual MCP client (Phase 5).
   (`@storybook/test`); browser-mode component tests via
   `@storybook/addon-vitest` + `@storybook/addon-a11y` (axe); Playwright
   smoke test (boots landing page, asserts h1 contains "Comuki").
+  ✅ **DONE** (2026-06-05).
+  - Deviation: `@storybook/addon-vitest` + `@storybook/addon-a11y` are
+    SB 10-only (this project uses SB 8); deferred to Phase 7.
 
 **Out of scope** — worker agents actually using the design system
 (Phase 6+), real visual-regression baselines (Phase 7).

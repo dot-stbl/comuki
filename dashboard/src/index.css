@@ -1,13 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist-mono";
+@import "@fontsource/ibm-plex-mono";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    --font-sans: var(--font-mono);
     --font-heading: var(--font-mono);
-    --font-mono: 'Geist Mono Variable', monospace;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --radius: 0.375rem;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -24,6 +26,7 @@
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
+    --color-border-strong: var(--border-strong);
     --color-destructive: var(--destructive);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
@@ -39,6 +42,18 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+    --color-st-running: var(--st-running);
+    --color-st-success: var(--st-success);
+    --color-st-failed: var(--st-failed);
+    --color-st-waiting: var(--st-waiting);
+    --color-st-queued: var(--st-queued);
+    --color-st-escalated: var(--st-escalated);
+    --color-st-running-tint: var(--st-running-tint);
+    --color-st-success-tint: var(--st-success-tint);
+    --color-st-failed-tint: var(--st-failed-tint);
+    --color-st-waiting-tint: var(--st-waiting-tint);
+    --color-st-queued-tint: var(--st-queued-tint);
+    --color-st-escalated-tint: var(--st-escalated-tint);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -46,83 +61,118 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    --text-micro: 10px;
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0.008 326);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0.008 326);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0.008 326);
-    --primary: oklch(0.212 0.019 322.12);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.96 0.003 325.6);
-    --secondary-foreground: oklch(0.212 0.019 322.12);
-    --muted: oklch(0.96 0.003 325.6);
-    --muted-foreground: oklch(0.542 0.034 322.5);
-    --accent: oklch(0.96 0.003 325.6);
-    --accent-foreground: oklch(0.212 0.019 322.12);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0.005 325.62);
-    --input: oklch(0.922 0.005 325.62);
-    --ring: oklch(0.711 0.019 323.02);
-    --chart-1: oklch(0.811 0.111 293.571);
-    --chart-2: oklch(0.606 0.25 292.717);
-    --chart-3: oklch(0.541 0.281 293.009);
-    --chart-4: oklch(0.491 0.27 292.581);
-    --chart-5: oklch(0.432 0.232 292.759);
-    --radius: 0.45rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0.008 326);
-    --sidebar-primary: oklch(0.212 0.019 322.12);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.96 0.003 325.6);
-    --sidebar-accent-foreground: oklch(0.212 0.019 322.12);
-    --sidebar-border: oklch(0.922 0.005 325.62);
-    --sidebar-ring: oklch(0.711 0.019 323.02);
+    --background: #FBFBFA;
+    --foreground: #1B232E;
+    --card: #FFFFFF;
+    --card-foreground: #1B232E;
+    --popover: #FFFFFF;
+    --popover-foreground: #1B232E;
+    --primary: #3C5A86;
+    --primary-foreground: #FFFFFF;
+    --secondary: #F3F4F3;
+    --secondary-foreground: #1B232E;
+    --muted: #F3F4F3;
+    --muted-foreground: #697080;
+    --accent: #F3F4F3;
+    --accent-foreground: #1B232E;
+    --destructive: #B0473B;
+    --border: #E6E7E4;
+    --input: #E6E7E4;
+    --ring: #3C5A86;
+    --chart-1: #3C5A86;
+    --chart-2: #4E7C5B;
+    --chart-3: #B0473B;
+    --chart-4: #9C7A3C;
+    --chart-5: #6E5BA6;
+    --radius: 0.375rem;
+    --border-strong: #D2D4D0;
+    --sidebar: #F6F7F6;
+    --sidebar-foreground: #1B232E;
+    --sidebar-primary: #3C5A86;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #F3F4F3;
+    --sidebar-accent-foreground: #1B232E;
+    --sidebar-border: #E6E7E4;
+    --sidebar-ring: #3C5A86;
+    --st-running: #3C5A86;
+    --st-success: #4E7C5B;
+    --st-failed: #B0473B;
+    --st-waiting: #9C7A3C;
+    --st-queued: #A0A4AC;
+    --st-escalated: #6E5BA6;
+    --st-running-tint: color-mix(in oklab, var(--st-running) 18%, transparent);
+    --st-success-tint: color-mix(in oklab, var(--st-success) 18%, transparent);
+    --st-failed-tint: color-mix(in oklab, var(--st-failed) 18%, transparent);
+    --st-waiting-tint: color-mix(in oklab, var(--st-waiting) 18%, transparent);
+    --st-queued-tint: color-mix(in oklab, var(--st-queued) 18%, transparent);
+    --st-escalated-tint: color-mix(in oklab, var(--st-escalated) 18%, transparent);
 }
 
 .dark {
-    --background: oklch(0.145 0.008 326);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.212 0.019 322.12);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.212 0.019 322.12);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0.005 325.62);
-    --primary-foreground: oklch(0.212 0.019 322.12);
-    --secondary: oklch(0.263 0.024 320.12);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.263 0.024 320.12);
-    --muted-foreground: oklch(0.711 0.019 323.02);
-    --accent: oklch(0.263 0.024 320.12);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.542 0.034 322.5);
-    --chart-1: oklch(0.811 0.111 293.571);
-    --chart-2: oklch(0.606 0.25 292.717);
-    --chart-3: oklch(0.541 0.281 293.009);
-    --chart-4: oklch(0.491 0.27 292.581);
-    --chart-5: oklch(0.432 0.232 292.759);
-    --sidebar: oklch(0.212 0.019 322.12);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.263 0.024 320.12);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.542 0.034 322.5);
+    --background: #15171B;
+    --foreground: #E8EAEE;
+    --card: #191C21;
+    --card-foreground: #E8EAEE;
+    --popover: #22262C;
+    --popover-foreground: #E8EAEE;
+    --primary: #83A1DC;
+    --primary-foreground: #0E1116;
+    --secondary: #1C1F25;
+    --secondary-foreground: #E8EAEE;
+    --muted: #1C1F25;
+    --muted-foreground: #969CA6;
+    --accent: #22262C;
+    --accent-foreground: #E8EAEE;
+    --destructive: #D6685A;
+    --border: #262A30;
+    --input: #262A30;
+    --ring: #83A1DC;
+    --chart-1: #83A1DC;
+    --chart-2: #7BA68C;
+    --chart-3: #D6685A;
+    --chart-4: #C6A35E;
+    --chart-5: #9A86C7;
+    --radius: 0.375rem;
+    --border-strong: #373C44;
+    --sidebar: #131519;
+    --sidebar-foreground: #E8EAEE;
+    --sidebar-primary: #83A1DC;
+    --sidebar-primary-foreground: #0E1116;
+    --sidebar-accent: #22262C;
+    --sidebar-accent-foreground: #E8EAEE;
+    --sidebar-border: #262A30;
+    --sidebar-ring: #83A1DC;
+    --st-running: #83A1DC;
+    --st-success: #7BA68C;
+    --st-failed: #D6685A;
+    --st-waiting: #C6A35E;
+    --st-queued: #565C65;
+    --st-escalated: #9A86C7;
+    --st-running-tint: color-mix(in oklab, var(--st-running) 18%, transparent);
+    --st-success-tint: color-mix(in oklab, var(--st-success) 18%, transparent);
+    --st-failed-tint: color-mix(in oklab, var(--st-failed) 18%, transparent);
+    --st-waiting-tint: color-mix(in oklab, var(--st-waiting) 18%, transparent);
+    --st-queued-tint: color-mix(in oklab, var(--st-queued) 18%, transparent);
+    --st-escalated-tint: color-mix(in oklab, var(--st-escalated) 18%, transparent);
 }
 
 @layer base {
+  html, body, #root {
+    @apply h-full;
+    }
+  html, body {
+    @apply overflow-hidden;
+    }
   * {
     @apply border-border outline-ring/50;
     }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "zero";
     }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -130,4 +180,42 @@
   html {
     @apply font-mono;
     }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 30%, transparent);
+    }
 }
+
+/* Thin scrollbar — invisible track, accent-bordered thumb.
+   Works in Chromium/WebKit and Firefox (via scrollbar-width/color). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  }
+::-webkit-scrollbar-track {
+  background: transparent;
+  }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  }
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+  }
+
+/* Decorative textures — used on marketing / auth / empty / hero panels only.
+   Never behind dense data (per design spec A4). */
+@layer components {
+  .bg-faint-grid {
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 34px 34px;
+    opacity: 0.5;
+  }
+  }

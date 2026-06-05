@@ -13,4 +13,9 @@
     <Project Path="platform/src/models/Comuki.Platform.Api.Contracts/Comuki.Platform.Api.Contracts.csproj" />
     <Project Path="platform/src/models/Comuki.Platform.Entity.Core/Comuki.Platform.Entity.Core.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Comuki.Platform.Architecture.Tests/Comuki.Platform.Architecture.Tests.csproj" />
+    <Project Path="tests/Comuki.Platform.Testing/Comuki.Platform.Testing.csproj" />
+    <Project Path="tests/Comuki.Platform.Orchestration.Unit.Lease/Comuki.Platform.Orchestration.Unit.Lease.csproj" />
+  </Folder>
 </Solution>

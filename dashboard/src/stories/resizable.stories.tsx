@@ -14,7 +14,7 @@ type Story = StoryObj<typeof ResizablePanelGroup>
 
 export const Default: Story = {
   render: () => (
-    <ResizablePanelGroup direction="horizontal" className="h-48 w-96">
+    <ResizablePanelGroup className="h-48 w-96">
       <ResizablePanel defaultSize={50}>
         <div className="flex size-full items-center justify-center rounded-md border border-dashed bg-muted text-xs text-muted-foreground">
           Panel A
@@ -39,7 +39,7 @@ export const Empty: Story = {}
 
 export const WithLongText: Story = {
   render: () => (
-    <ResizablePanelGroup direction="horizontal" className="h-48 w-96">
+    <ResizablePanelGroup className="h-48 w-96">
       <ResizablePanel defaultSize={33}>
         <div className="flex size-full items-center justify-center rounded-md border border-dashed bg-muted p-2 text-center text-xs text-muted-foreground">
           This Is A Very Long Panel A Label Text

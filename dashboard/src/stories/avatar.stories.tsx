@@ -2,10 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react"
 
 import {
   Avatar,
-  AvatarBadge,
   AvatarFallback,
-  AvatarGroup,
-  AvatarGroupCount,
   AvatarImage,
 } from "@/components/ui/avatar"
 

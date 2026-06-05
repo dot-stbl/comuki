@@ -1,5 +1,5 @@
+import * as React from "react"
 import type { Meta, StoryObj } from "@storybook/react"
-import { fn } from "@storybook/test"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
@@ -79,5 +79,3 @@ export const WithLongText: Story = {
     )
   },
 }
-
-import * as React from "react"

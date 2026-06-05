@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { DirectionProvider, useDirection } from "@/components/ui/direction"
+import { DirectionProvider } from "@/components/ui/direction"
 
 const meta: Meta<typeof DirectionProvider> = {
   title: "UI/Direction",
@@ -14,7 +14,7 @@ type Story = StoryObj<typeof DirectionProvider>
 
 export const Default: Story = {
   render: () => (
-    <DirectionProvider direction="ltr">
+    <DirectionProvider dir="ltr">
       <p className="text-xs text-muted-foreground">Left-to-right direction active</p>
     </DirectionProvider>
   ),

@@ -2,13 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react"
 
 import {
   Menubar,
-  MenubarCheckboxItem,
   MenubarContent,
   MenubarItem,
-  MenubarLabel,
   MenubarMenu,
-  MenubarRadioGroup,
-  MenubarRadioItem,
   MenubarSeparator,
   MenubarTrigger,
 } from "@/components/ui/menubar"

@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react"
-import { fn } from "@storybook/test"
 
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"

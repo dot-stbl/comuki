@@ -13,7 +13,11 @@
     "generate-api": "dotnet build ../comuki.slnx && kubb generate",
     "predev": "bun run generate-api",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage || true",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -55,26 +59,34 @@
     "@kubb/plugin-oas": "4.37.9",
     "@kubb/plugin-react-query": "4.37.9",
     "@kubb/plugin-ts": "4.37.9",
+    "@playwright/test": "^1.60.0",
     "@storybook/addon-essentials": "^8",
     "@storybook/addon-themes": "^8",
     "@storybook/blocks": "^8",
     "@storybook/react-vite": "^8",
     "@tanstack/router-plugin": "^1.168.14",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6",
+    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/ui": "^4.1.8",
     "ajv": "^7",
     "eslint": "^10",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17",
+    "jsdom": "^29.1.1",
     "kubb": "^3.0.263",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "storybook": "^8",
     "typescript": "~6",
     "typescript-eslint": "^8",
-    "vite": "^8"
+    "vite": "^8",
+    "vitest": "^4.1.8"
   }
 }

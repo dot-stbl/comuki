@@ -8,6 +8,7 @@
   </Folder>
   <Folder Name="/platform/src/feature/">
     <Project Path="platform/src/feature/Comuki.Platform.Orchestration/Comuki.Platform.Orchestration.csproj" />
+    <Project Path="platform/src/feature/Comuki.Platform.Translator/Comuki.Platform.Translator.csproj" />
   </Folder>
   <Folder Name="/platform/src/models/">
     <Project Path="platform/src/models/Comuki.Platform.Api.Contracts/Comuki.Platform.Api.Contracts.csproj" />
@@ -17,5 +18,6 @@
     <Project Path="tests/Comuki.Platform.Architecture.Tests/Comuki.Platform.Architecture.Tests.csproj" />
     <Project Path="tests/Comuki.Platform.Testing/Comuki.Platform.Testing.csproj" />
     <Project Path="tests/Comuki.Platform.Orchestration.Unit.Lease/Comuki.Platform.Orchestration.Unit.Lease.csproj" />
+    <Project Path="tests/Comuki.Platform.Translator.Unit.StreamJson/Comuki.Platform.Translator.Unit.StreamJson.csproj" />
   </Folder>
 </Solution>

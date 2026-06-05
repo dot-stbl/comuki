@@ -76,6 +76,9 @@ dashboard) → MVP polish.
 
 | Decision | Rationale | Phase |
 |----------|-----------|-------|
+| Translator в Phase 4 (Slice 0) — regular `Microsoft.NET.Sdk.Worker`, не NativeAOT. Image ~100MB, cold start ~1s — для эфемерных 30s–30min воркеров оверхед пренебрежим. AOT-накладные (gRPC source-gen, System.Text.Json source-gen, ~3x медленнее build) не оправданы в Slice 0. Ревизия: Phase 5+ если измерения покажут что нужно. | Slice 0 проверяет фундамент, не оптимизации. NativeAOT требует source generators и сломал бы pluggable библиотеки. csproj уже помечен `PublishAot=false` с комментарием, переключение — правка одного свойства. | 4 |
+| Worker image в Phase 4 (Slice 0 step 0) — `oven/bun:1.3.10-bookworm-slim` base, не multi-stage. Translator ещё не собирается в этом плане (04-03). Multi-stage добавится когда появится реальный Translator-бинарь для COPY из build stage. | Phase 4 step 0 нужен только для sanity check, что `pi` запускается headless в контейнере. Translator появится в 04-03, тогда добавим build stage. Premature multi-stage сейчас = лишние слои без пользы. | 4 |
+|----------|-----------|-------|
 | Use **Conventional Commits 1.0.0** in this repo — no `[stbl]` prefix. See `.soly/rules/process/commit-format.md`. | The `[stbl]` prefix from `~/.claude/rules/git.md` is an anlytra-project convention, not a comuki one. The user (this is a hybrid repo) prefers Conventional Commits here. Per-rule hierarchy: `.soly/rules/` overrides `.claude/rules/`. | 1 |
 | Apply commit-format rule **forward only** — do not rewrite the 3 pre-rule commits (`229d1dc`, `e36bda4`, `1be5302`). | History rewriting for cosmetic reasons is not worth the risk. New commits are in scope; old ones stay as-is and document the bootstrap era. | 1 |
 | Polyglot monorepo split by stack (`platform/` C#, `agents/` TS, `dashboard/` React) | Per `comuki-project-structure.md` §1: each stack keeps its own manifest, lockfile, toolchain. | 1 |

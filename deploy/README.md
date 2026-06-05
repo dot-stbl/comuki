@@ -12,10 +12,11 @@ and persist data to named Docker volumes.
 
 | File | Purpose |
 |---|---|
-| `docker-compose.yml` | All five services + their volumes + healthchecks |
-| `.env.example` | Copy to `.env` to override credentials |
+| `docker-compose.yml` | All five services + their volumes + healthchecks + `worker` profile (opt-in) |
+| `.env.example` | Copy to `.env` to override credentials (incl. Phase 4 worker keys) |
 | `postgres/init.d/01-pgvector.sql` | Enables `vector` extension (Phase 5, `Comuki.Platform.Knowledge`) |
-| `worker.Dockerfile` | Sentinel — real worker image lands in Phase 3 (Slice 0 Step 2) |
+| `worker.Dockerfile` | Real minimal pi-coding-agent image (lands in Phase 4, Slice 0 step 0) |
+| `scripts/test-pi-headless.{sh,ps1}` | Build worker, run pi in container, assert stream-json output |
 
 ## Bring it up
 
@@ -100,6 +101,52 @@ Wiping data is fine in dev. In real life, do not.
 - **No secrets manager.** Real deploys go through Vault / AWS SM.
 - **No backup strategy.** Postgres `pg_dump` and MinIO lifecycle
   rules are on the MVP Polish (Phase 8) backlog.
-- **Worker.Dockerfile is a sentinel.** Real image lands in
-  Phase 3 (Slice 0 Step 2) — see file for the planned two-stage
-  build.
+- **Worker image is minimal in Phase 4 (pi + bun, no Translator yet).**
+  Real two-stage build (with `Comuki.Platform.Translator` AOT-deferred
+  binary) lands in 04-03.
+
+## Phase 4 — worker image & headless pi sanity check
+
+The `worker` service in `docker-compose.yml` is **not started by default**
+(it's behind `profiles: ["worker"]`). Opt in with `--profile worker` to
+build, run, or test it.
+
+### Build the image
+
+```bash
+cd deploy
+podman compose --env-file .env --profile worker build worker
+```
+
+Image is tagged `comuki/worker:dev`. Contents: `oven/bun:1.3.10-bookworm-slim`
+base + `@earendil-works/pi-coding-agent` installed globally. ENTRYPOINT is
+`pi` so the container is invokable as
+`podman run --rm comuki/worker:dev -p "..." --output-format stream-json`.
+
+### Run pi headless and assert stream-json output (Slice 0 step 0)
+
+```bash
+cd deploy
+bash scripts/test-pi-headless.sh        # POSIX
+# or
+powershell -ExecutionPolicy Bypass -File scripts/test-pi-headless.ps1
+```
+
+The script:
+1. Verifies `ANTHROPIC_API_KEY` is set in `deploy/.env`
+2. Builds the worker image
+3. Runs `pi -p "$PI_TEST_PROMPT" --output-format stream-json` in the container
+4. Greps for at least one `{"type": ...}` line in the output
+5. Exits 0 on success, 1 on any failure with a descriptive error
+
+If pi does not behave as a headless stream-json emitter, the rest of
+Slice 0 has no foundation — this is the cheapest place to find out.
+
+### Manual interactive use
+
+```bash
+podman run --rm -it \
+  -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
+  comuki/worker:dev \
+  pi -p "What is 2+2?" --output-format stream-json
+```

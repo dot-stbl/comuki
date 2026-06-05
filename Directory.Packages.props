@@ -27,6 +27,10 @@
     <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="4.15.0" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Worker host (used by Comuki.Platform.Translator, future hosted services). -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- OpenAPI runtime spec generation (built-in .NET 9+, replaces Swashbuckle). -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     <!-- Modern API reference UI (replaces Swagger UI). -->

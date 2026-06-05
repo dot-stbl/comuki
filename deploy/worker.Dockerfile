@@ -1,42 +1,36 @@
-# Comuki worker image — placeholder for Phase 3 (Slice 0 Step 2).
+# Comuki worker image — Phase 4 (Slice 0 step 0).
 #
-# What this image will be once the worker lands:
-#   - AOT-built Translator (C#) as the entrypoint: `Process.Start(pi)`,
-#     parse stream-json, gRPC bidirectional stream to Orchestrator.
-#   - pi-coding-agent (Node.js) invoked by Translator as a child process.
-#   - Worktree mount point for the agent to read/write code.
-#   - Healthcheck endpoint that pings the Orchestrator gRPC channel.
+# Minimal pi-coding-agent container for the headless sanity check.
+# Multi-stage not needed yet — Translator (C# AOT-deferred regular Worker)
+# lands in 04-03 and will trigger a two-stage build at that point.
 #
-# For now this is a sentinel that fails the build fast with a clear
-# message — anyone trying to `docker build -f deploy/worker.Dockerfile`
-# before Phase 3 lands gets told exactly why. Replaced in Phase 3.
+# Contents:
+#   - oven/bun:1.3.10-bookworm-slim base (bun already in the image)
+#   - @earendil-works/pi-coding-agent installed globally via bun
+#   - /work as the default worktree mount for future stages
 #
-# Reference (comuki-architecture.md § 03 + comuki-stack.md § 03):
-#   - Translator: Comuki.Platform.Worker.Translator (C#, AOT)
-#   - Agent runtime: pi-coding-agent
-#   - Channel: gRPC bidi (comuki-decisions.md § "Транспорты по природе шва")
-#
-# Future shape (do NOT build yet, will land in Phase 3 PR):
-#
-#   FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
-#   WORKDIR /src
-#   COPY platform/src/worker/Comuki.Platform.Worker.Translator/ ./
-#   RUN dotnet publish -c Release -r linux-x64 --self-contained \
-#       /p:PublishAot=true -o /out
-#
-#   FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble
-#   RUN apt-get update && apt-get install -y --no-install-recommends \
-#       nodejs npm git curl ca-certificates && \
-#       npm install -g @pi-coding/agent && \
-#       rm -rf /var/lib/apt/lists/*
-#   COPY --from=build /out/Comuki.Platform.Worker.Translator /usr/local/bin/translator
-#   WORKDIR /work
-#   VOLUME /work
-#   ENTRYPOINT ["/usr/local/bin/translator"]
-#   EXPOSE 5000
-#   HEALTHCHECK CMD curl -fsS http://localhost:5000/health || exit 1
+# Reference: comuki-architecture.md § 03 (Управляющий цикл),
+#            comuki-slice-0.md § Шаг 0 (Sanity-check pi).
 
-FROM scratch
-LABEL comuki.worker="phase-3-skeleton-not-yet-implemented" \
-      comuki.worker.replaces="comuki-decisions.md § Translator" \
-      comuki.worker.target="Comuki.Platform.Worker.Translator (C# AOT)"
+FROM oven/bun:1.3.10-bookworm-slim
+
+LABEL comuki.worker.phase="4-prep" \
+      comuki.worker.translator="deferred-to-04-03" \
+      comuki.worker.replaces="sentinel-from-phase-3"
+
+# pi-coding-agent is the headless runtime we'll use as the worker agent.
+# Correct npm package name: @earendil-works/pi-coding-agent (NOT
+# @pi-coding/agent, which the phase-3 sentinel incorrectly listed).
+RUN bun add -g @earendil-works/pi-coding-agent
+
+# /work is the worktree mount point for future task execution (04-05).
+# In Phase 4 prep / 04-01 it's just the default working dir for the prompt.
+WORKDIR /work
+VOLUME /work
+
+# ENTRYPOINT is `pi` so the container is invocable as
+# `podman run --rm comuki/worker:dev -p "..." --output-format stream-json`.
+# CMD is unused but kept as a sane default (the test script always passes
+# the prompt explicitly).
+ENTRYPOINT ["pi"]
+CMD ["--help"]

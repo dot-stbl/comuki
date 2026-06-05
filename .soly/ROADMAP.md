@@ -62,6 +62,10 @@ actual MCP client (Phase 5).
   NSubstitute + Testcontainers + Respawn + Bogus + coverlet (70%
   line gate) on BE; Vitest + Testing Library + jsdom + Playwright
   config (placeholder) on FE; `test-be` + `test-fe` jobs added to
+  GitLab CI; NetArchTest layer enforcer. ✅ **DONE** (2026-06-05).
+  NSubstitute + Testcontainers + Respawn + Bogus + coverlet (70%
+  line gate) on BE; Vitest + Testing Library + jsdom + Playwright
+  config (placeholder) on FE; `test-be` + `test-fe` jobs added to
   GitLab CI; NetArchTest layer enforcer.
 - **3.2 — Design tokens:** CSS variables + Tailwind v4 theme from
   `.soly/docs/design-system/Comuki Design System.md`; replace shadcn

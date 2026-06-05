@@ -74,6 +74,7 @@ actual MCP client (Phase 5).
   (`#15171B` / `#FBFBFA`); IBM Plex Mono everywhere; status tokens
   (`--st-running`, `--st-success`, `--st-failed`, `--st-waiting`,
   `--st-queued`, `--st-escalated`); theme-provider already wired.
+  ✅ **DONE** (2026-06-05).
 - **3.3 — Design system stories + component customization:**
   Storybook stories for every token (palette, type, radius, status
   semantics); stories for **all 55 shadcn/ui components** in

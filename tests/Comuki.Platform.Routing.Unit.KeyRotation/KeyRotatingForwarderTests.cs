@@ -64,6 +64,7 @@ public sealed class KeyRotatingForwarderTests
         await CreateSut(pool, sender).ForwardAsync(context, CancellationToken.None);
 
         context.Response.StatusCode.ShouldBe(StatusCodes.Status503ServiceUnavailable);
+        pool.Received(1).MarkExhausted("dead", null);
     }
 
     [Fact]
@@ -79,6 +80,7 @@ public sealed class KeyRotatingForwarderTests
 
         await CreateSut(pool, sender).ForwardAsync(context, CancellationToken.None);
 
+        context.Response.StatusCode.ShouldNotBe(StatusCodes.Status503ServiceUnavailable);
         pool.DidNotReceive().MarkExhausted(Arg.Any<string>(), Arg.Any<TimeSpan?>());
         await sender.Received(1).SendOnceAsync(Arg.Any<HttpContext>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }

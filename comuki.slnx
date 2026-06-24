@@ -24,5 +24,6 @@
     <Project Path="tests/Comuki.Platform.Worker.Translator.Unit.StreamJson/Comuki.Platform.Worker.Translator.Unit.StreamJson.csproj" />
     <Project Path="tests/Comuki.Platform.Worker.Translator.Integration.PiCli/Comuki.Platform.Worker.Translator.Integration.PiCli.csproj" />
     <Project Path="tests/Comuki.Platform.Worker.Translator.Integration.TestTools.TestFakePi/Comuki.Platform.Worker.Translator.Integration.TestTools.TestFakePi.csproj" />
+    <Project Path="tests/Comuki.Platform.Routing.Unit.KeyRotation/Comuki.Platform.Routing.Unit.KeyRotation.csproj" />
   </Folder>
 </Solution>

@@ -11,6 +11,7 @@
   </Folder>
   <Folder Name="/platform/src/feature/">
     <Project Path="platform/src/feature/Comuki.Platform.Orchestration/Comuki.Platform.Orchestration.csproj" />
+    <Project Path="platform/src/feature/Comuki.Platform.Routing/Comuki.Platform.Routing.csproj" />
   </Folder>
   <Folder Name="/platform/src/models/">
     <Project Path="platform/src/models/Comuki.Platform.Api.Contracts/Comuki.Platform.Api.Contracts.csproj" />

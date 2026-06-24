@@ -34,6 +34,12 @@
     <PackageVersion Include="protobuf-net.Grpc" Version="1.2.2" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Модельный прокси: тонкий reverse-proxy на YARP. IHttpForwarder
+         (direct forwarding) — пробрасывает Anthropic-совместимый поток,
+         не транслирует. Используется Comuki.Platform.Routing. -->
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- OpenAPI runtime spec generation (built-in .NET 9+, replaces Swashbuckle). -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     <!-- Modern API reference UI (replaces Swagger UI). -->

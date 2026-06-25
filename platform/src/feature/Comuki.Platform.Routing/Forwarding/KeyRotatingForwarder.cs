@@ -26,6 +26,14 @@ public sealed partial class KeyRotatingForwarder(
                 context.Request.Body.Position = 0;
             }
 
+            // YARP guards SendAsync with IsResponseSet = (StatusCode != 200 || HasStarted).
+            // A previous exhausted attempt sets StatusCode to the upstream error code
+            // without starting the response body, so we must reset to 200 before retry.
+            if (attempt > 0 && !context.Response.HasStarted)
+            {
+                context.Response.StatusCode = StatusCodes.Status200OK;
+            }
+
             var key = keyPool.TryAcquire();
             if (key is null)
             {

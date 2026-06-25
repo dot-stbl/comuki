@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/platform/src/application/internal/">
     <Project Path="platform/src/application/internal/Comuki.Platform.Worker.Translator/Comuki.Platform.Worker.Translator.csproj" />
+    <Project Path="platform/src/application/internal/Comuki.Platform.Proxy/Comuki.Platform.Proxy.csproj" />
   </Folder>
   <Folder Name="/platform/src/database/">
     <Project Path="platform/src/database/Comuki.Platform.Database.Runs/Comuki.Platform.Database.Runs.csproj" />

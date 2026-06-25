@@ -10,7 +10,7 @@ namespace Comuki.Platform.Routing.Forwarding;
 /// и через детектор решает — исчерпание (suppress, retry) или реальная ошибка
 /// (пробросить клиенту). Результат — в <see cref="Result"/>.
 /// </summary>
-internal sealed class RotatingTransformer(string apiKey, IQuotaExhaustionDetector detector) : HttpTransformer
+internal sealed class RotatingTransformer(string apiKey, IQuotaExhaustionDetector detector, TimeProvider timeProvider) : HttpTransformer
 {
     public UpstreamSendResult Result { get; private set; } = UpstreamSendResult.PassedThroughError();
 
@@ -69,7 +69,7 @@ internal sealed class RotatingTransformer(string apiKey, IQuotaExhaustionDetecto
         return false;
     }
 
-    private static TimeSpan? ParseRetryAfter(HttpResponseMessage response)
+    private TimeSpan? ParseRetryAfter(HttpResponseMessage response)
     {
         var retryAfter = response.Headers.RetryAfter;
         if (retryAfter is null)
@@ -87,7 +87,7 @@ internal sealed class RotatingTransformer(string apiKey, IQuotaExhaustionDetecto
             return null;
         }
 
-        var remaining = date - DateTimeOffset.UtcNow;
+        var remaining = date - timeProvider.GetUtcNow();
         return remaining > TimeSpan.Zero ? remaining : null;
     }
 }

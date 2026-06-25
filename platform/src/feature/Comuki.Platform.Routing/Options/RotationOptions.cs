@@ -28,4 +28,12 @@ public sealed class RotationOptions
     [Required]
     [MinLength(1)]
     public required ExhaustionRule[] ExhaustionRules { get; init; }
+
+    /// <summary>
+    /// Максимальный размер тела запроса (в байтах), который хранится в памяти при буферизации
+    /// для повтора попытки с другим ключом. При превышении этого порога буфер сбрасывается на диск.
+    /// Значение по умолчанию — 1 МБ (1 048 576 байт).
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public int RequestBufferThresholdBytes { get; init; } = 1_048_576;
 }

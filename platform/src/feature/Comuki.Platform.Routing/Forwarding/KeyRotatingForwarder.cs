@@ -1,6 +1,8 @@
 using Comuki.Platform.Routing.Interfaces;
+using Comuki.Platform.Routing.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Comuki.Platform.Routing.Forwarding;
 
@@ -8,7 +10,8 @@ namespace Comuki.Platform.Routing.Forwarding;
 public sealed partial class KeyRotatingForwarder(
     IKeyPool keyPool,
     IUpstreamSender sender,
-    ILogger<KeyRotatingForwarder> logger) : IKeyRotatingForwarder
+    ILogger<KeyRotatingForwarder> logger,
+    IOptions<RotationOptions> options) : IKeyRotatingForwarder
 {
     private const string OverloadedBody =
         """{"type":"error","error":{"type":"overloaded_error","message":"All Z.AI keys are in cooldown."}}""";
@@ -16,7 +19,7 @@ public sealed partial class KeyRotatingForwarder(
     public async Task ForwardAsync(HttpContext context, CancellationToken cancellationToken)
     {
         // Буферизуем тело запроса, чтобы повторить его на следующем ключе.
-        context.Request.EnableBuffering();
+        context.Request.EnableBuffering(bufferThreshold: options.Value.RequestBufferThresholdBytes);
 
         var maxAttempts = keyPool.Count;
         for (var attempt = 0; attempt < maxAttempts; attempt++)

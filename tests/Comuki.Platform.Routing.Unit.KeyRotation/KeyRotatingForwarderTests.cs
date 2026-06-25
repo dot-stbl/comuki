@@ -1,17 +1,27 @@
 using Comuki.Platform.Routing.Forwarding;
 using Comuki.Platform.Routing.Interfaces;
+using Comuki.Platform.Routing.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Shouldly;
 using Xunit;
+using MsOptions = Microsoft.Extensions.Options.Options;
 
 namespace Comuki.Platform.Routing.Unit.KeyRotation;
 
 public sealed class KeyRotatingForwarderTests
 {
+    private static readonly IOptions<RotationOptions> DefaultOptions = MsOptions.Create(new RotationOptions
+    {
+        ApiKeys = ["k"],
+        UpstreamUrl = "https://x.example",
+        ExhaustionRules = [new ExhaustionRule { StatusCode = 429 }],
+    });
+
     private static KeyRotatingForwarder CreateSut(IKeyPool pool, IUpstreamSender sender)
-        => new(pool, sender, NullLogger<KeyRotatingForwarder>.Instance);
+        => new(pool, sender, NullLogger<KeyRotatingForwarder>.Instance, DefaultOptions);
 
     [Fact]
     public async Task ForwardAsync_StreamsSuccess_OnFirstLiveKey()

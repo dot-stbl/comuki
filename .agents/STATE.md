@@ -4,10 +4,10 @@ status: phase-5-in-progress
 last_updated: 2026-07-06
 progress:
   total_phases: 9
-  completed_phases: 4
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 5
-  percent: 44
+  completed_plans: 4
+  percent: 22
 ---
 
 # Project State
@@ -17,6 +17,22 @@ progress:
 Phase: 5
 Plan: 05-01 (Z.AI key rotation proxy) — done
 Status: phase_in_progress (Slice 1 first cut shipped; virtual keys / metering / budgets pending)
+
+## ⚠️ Sequencing note (2026-07-06) — read first
+
+**Phase 3 and Phase 4 are NOT finished.** Work jumped to Phase 5
+(Z.AI key rotation) out of urgency, leaving P3 and P4 incomplete.
+This contradicts the stale `phase-3-complete` markers and P3 sub-plan
+SUMMARYs on disk — treat those as aspirational until reconciled.
+
+- **P3** (Design System & Testing) — NOT finished; the 3 sub-plan
+  `✅`/SUMMARYs need re-verification.
+- **P4** (Slice 0) — NOT finished; `04-01-PLAN.md` is `status: ready`,
+  only partial work landed on `develop`.
+- **P5** (Slice 1) — jumped here urgently; 05-01 key-rotation cut done.
+
+**TODO:** return to P3 and P4 before treating them as done. P6+
+depend on a real P3 (testing/design contract) and P4 (vertical slice).
 
 ## Active Phase
 
@@ -34,7 +50,7 @@ Phase 2: Stack Foundation — **DONE** (2026-06-04).
   - deploy/ for local dev (postgres+pgvector, minio, nexus, victoria)
   - `agents/` + `control-plane/` directory skeletons (real TS
     packages land in Phase 4)
-Phase 3: Design System & Testing Infrastructure — **DONE** (2026-06-05).
+Phase 3: Design System & Testing Infrastructure — **NOT FINISHED** (stale `done` markers on disk — see sequencing note).
   - 3.1 Testing infra — **DONE** (2026-06-05).
     - BE: xUnit v3 (MTP runner via `dotnet run`), Shouldly, NSubstitute,
       Testcontainers.PostgreSql, Respawn, Bogus, coverlet.collector (70% gate)
@@ -61,14 +77,13 @@ Phase 3: Design System & Testing Infrastructure — **DONE** (2026-06-05).
   - Slice 0 vertical slice moved to Phase 4 (was Phase 3 in the
     original plan).
 
-Phase 4: Slice 0 Vertical Slice — **DONE** (code on `develop`, 2026-06).
-  - Translator (`Comuki.Platform.Worker.Translator`) launches `pi`
-    headless and parses stream-json; gRPC contract placed in
-    Orchestration; real `IPiRunner`/`ITranslator` + PiCli integration
+Phase 4: Slice 0 Vertical Slice — **NOT FINISHED** (partial; see sequencing note).
+  - Some work landed on `develop`: Translator
+    (`Comuki.Platform.Worker.Translator`) launches `pi` headless +
+    parses stream-json, gRPC contract in Orchestration, PiCli integration
     test via `TestFakePi`.
-  - ⚠️ Soly close-out **pending**: `04-01-PLAN.md` still `status: ready`,
-    no `04-01-SUMMARY.md`. Work shipped faster than the state machine
-    tracked it — same drift pattern as Phase 5.
+  - `04-01-PLAN.md` is still `status: ready`; the slice (claim primitive,
+    gRPC bidirectional stream, full container loop) is **not** complete.
 
 Phase 5: Slice 1 — Proxy & Virtual Keys — **IN PROGRESS**
 (branch `feature/comuki-zai-key-rotation`).
@@ -94,7 +109,10 @@ dashboard) → MVP polish.
 
 ## Progress
 
-4 / 9 phases complete, 5 / 5 plans — 44 % (Phase 5 in progress)
+2 / 9 phases complete (P1, P2 only). **P3 and P4 NOT finished**
+(jumped to P5 out of urgency). Plan-level: 05-01 verified done;
+03-* carry stale SUMMARYs pending reconciliation; 04-01 not started
+(`status: ready`). — 22 %
 
 ## Decisions
 
@@ -134,6 +152,6 @@ dashboard) → MVP polish.
 | `@storybook/addon-vitest` + `@storybook/addon-a11y` are SB 10-only; project uses SB 8; deferred to Phase 7 | Both packages have no v8.x release; `addon-vitest` has Node.js 24 ESM loader bug. Both removed from `package.json`; TODO comments added to `main.ts`/`preview.ts`. | 3.3 |
 | `.soly/` layout migrated to `.agents/` (soly 2.0+ reads `.agents/` only). 55 files moved via `git mv`, all internal `.soly/` path refs rewritten; STATE content carried over unchanged. | `soly_read` / `soly_workflow` returned "not found" under the old layout. Migration is mechanical; STATE content-sync done as a separate step. | 5 |
 | Phase 5 (Z.AI key rotation) executed via the `superpowers` subagent workflow, **not** soly — root cause of the STATE drift past Phase 3. Plan + design relocated from `docs/superpowers/` into `.agents/phases/05-slice-1-proxy/` and given soly frontmatter post-hoc. | Urgent feature; superpowers was the tool at hand. Post-hoc relocation restores soly visibility without rewriting git history. | 5 |
-| Phase 4 (Slice 0) code landed on `develop` but soly close-out is pending (`04-01-PLAN.md` still `status: ready`, no SUMMARY). Counted as DONE for progress; close-out flagged as a follow-up. | Same drift pattern as Phase 5 — work shipped faster than the state machine tracked it. STATE notes the gap honestly rather than overclaiming. | 4 |
+| **Phase 3 and Phase 4 are NOT finished** — work jumped to Phase 5 (Z.AI key rotation) out of urgency. Corrects an earlier overclaim (commit `b80b232`) that marked them DONE. Progress corrected 4/9 → 2/9. | User correction (2026-07-06). The stale `phase-3-complete` status + P3 sub-plan `✅`/SUMMARYs on disk contradicted reality; treat those as aspirational until reconciled. `04-01` is `status: ready`. | 5 |
 | `.editorconfig`: path-scoped `[tests/**.cs]` exempts test methods from the async-suffix naming rule. | TESTING-RULES §3 BDD examples omit `Async` on test methods (`public async Task CreateOrder()`); the global async-suffix rule (error) conflicted. Exemption is scoped to `tests/` only — production async methods still require the suffix. | 5 |
 | Phase 5 urgent run skipped `dotnet format` (36 IDE violations, all in phase-5 files); fixed in `dc38be2` — dropped redundant `this.`, camelCased private fields, applied Pyramid Rule to 3 primary ctors, rewrote tests to BDD. | `dotnet build` doesn't enforce IDE0003/IDE1006; only `dotnet format --verify-no-changes` does (build-verification.md DoD). The urgent run ran build only. | 5 |

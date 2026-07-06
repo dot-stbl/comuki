@@ -50,6 +50,10 @@ actual MCP client (Phase 5).
 
 ## Phase 3 — Design System & Testing Infrastructure (`03-design-system`)
 
+> 🚧 **NOT FINISHED** — the sub-plan `✅ DONE` markers below are
+> stale/aspirational; per the user the phase is NOT complete.
+> Re-verify before depending on it. (Work jumped to Phase 5.)
+
 > **Re-scoped.** Was originally "Slice 0 vertical slice" but the
 > design system + testing infra are load-bearing before any runtime
 > — they form the contract agents get told to follow (Phase 6+
@@ -98,7 +102,10 @@ actual MCP client (Phase 5).
 
 ## Phase 4 — Slice 0 Vertical Slice (`04-slice-0-vertical`)
 
-> ✅ **DONE** (2026-06) — code on `develop` (Translator launches `pi` headless, parses stream-json; gRPC contract in Orchestration; PiCli integration test via `TestFakePi`). Soly close-out pending: `04-01-PLAN.md` still `status: ready`, no `04-01-SUMMARY.md`.
+> 🚧 **NOT FINISHED** — partial work on `develop` (Translator + `pi`
+> headless, gRPC contract, PiCli test), but `04-01-PLAN.md` is
+> `status: ready` and the slice (claim primitive, gRPC stream, container
+> loop) is incomplete. Work jumped to Phase 5 out of urgency.
 
 **Goal:** one trivial ticket flows through the system end-to-end.
 Per `comuki-slice-0.md`: prove pull-model, Translator/gRPC, and

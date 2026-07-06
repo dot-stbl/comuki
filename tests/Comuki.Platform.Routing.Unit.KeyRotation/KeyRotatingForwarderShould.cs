@@ -11,9 +11,9 @@ using MsOptions = Microsoft.Extensions.Options.Options;
 
 namespace Comuki.Platform.Routing.Unit.KeyRotation;
 
-public sealed class KeyRotatingForwarderTests
+public sealed class KeyRotatingForwarderShould
 {
-    private static readonly IOptions<RotationOptions> DefaultOptions = MsOptions.Create(new RotationOptions
+    private static readonly IOptions<RotationOptions> defaultOptions = MsOptions.Create(new RotationOptions
     {
         ApiKeys = ["k"],
         UpstreamUrl = "https://x.example",
@@ -21,10 +21,10 @@ public sealed class KeyRotatingForwarderTests
     });
 
     private static KeyRotatingForwarder CreateSut(IKeyPool pool, IUpstreamSender sender)
-        => new(pool, sender, NullLogger<KeyRotatingForwarder>.Instance, DefaultOptions);
+        => new(pool, sender, defaultOptions, NullLogger<KeyRotatingForwarder>.Instance);
 
-    [Fact]
-    public async Task ForwardAsync_StreamsSuccess_OnFirstLiveKey()
+    [Fact(DisplayName = "Given a live key, when forwarding, then streams success on the first attempt without rotating")]
+    public async Task StreamSuccessWithoutRotation()
     {
         var pool = Substitute.For<IKeyPool>();
         pool.Count.Returns(2);
@@ -40,8 +40,8 @@ public sealed class KeyRotatingForwarderTests
         await sender.Received(1).SendOnceAsync(Arg.Any<HttpContext>(), "live", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task ForwardAsync_RotatesToNextKey_WhenFirstExhausted()
+    [Fact(DisplayName = "Given the first key is exhausted, when forwarding, then marks it exhausted and rotates to a live key")]
+    public async Task RotateToNextKeyWhenFirstExhausted()
     {
         var pool = Substitute.For<IKeyPool>();
         pool.Count.Returns(2);
@@ -59,8 +59,8 @@ public sealed class KeyRotatingForwarderTests
         await sender.Received(1).SendOnceAsync(Arg.Any<HttpContext>(), "live", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task ForwardAsync_Returns503_WhenAllKeysExhausted()
+    [Fact(DisplayName = "Given every key is exhausted, when forwarding, then responds 503")]
+    public async Task Return503WhenAllKeysExhausted()
     {
         var pool = Substitute.For<IKeyPool>();
         pool.Count.Returns(1);
@@ -77,8 +77,8 @@ public sealed class KeyRotatingForwarderTests
         pool.Received(1).MarkExhausted("dead", null);
     }
 
-    [Fact]
-    public async Task ForwardAsync_StopsAndReturns_OnPassThroughError()
+    [Fact(DisplayName = "Given a non-quota upstream error, when forwarding, then stops without rotating the key")]
+    public async Task StopWithoutRotationOnPassThroughError()
     {
         var pool = Substitute.For<IKeyPool>();
         pool.Count.Returns(2);
@@ -95,8 +95,8 @@ public sealed class KeyRotatingForwarderTests
         await sender.Received(1).SendOnceAsync(Arg.Any<HttpContext>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task ForwardAsync_Returns503Immediately_WhenPoolEmpty()
+    [Fact(DisplayName = "Given the pool is empty, when forwarding, then responds 503 without calling the upstream")]
+    public async Task Return503ImmediatelyWhenPoolEmpty()
     {
         var pool = Substitute.For<IKeyPool>();
         pool.Count.Returns(1);

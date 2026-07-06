@@ -9,12 +9,12 @@ namespace Comuki.Platform.Routing.Forwarding;
 
 /// <inheritdoc />
 public sealed partial class YarpUpstreamSender(
+    TimeProvider timeProvider,
     IHttpForwarder forwarder,
-    IQuotaExhaustionDetector detector,
     HttpMessageInvoker httpClient,
     IOptions<RotationOptions> options,
-    ILogger<YarpUpstreamSender> logger,
-    TimeProvider timeProvider) : IUpstreamSender
+    IQuotaExhaustionDetector detector,
+    ILogger<YarpUpstreamSender> logger) : IUpstreamSender
 {
     private readonly string upstreamUrl = options.Value.UpstreamUrl;
 
@@ -23,9 +23,9 @@ public sealed partial class YarpUpstreamSender(
         string apiKey,
         CancellationToken cancellationToken)
     {
-        var transformer = new RotatingTransformer(apiKey, detector, timeProvider);
+        var transformer = new RotatingTransformer(apiKey, timeProvider, detector);
 
-        var error = await forwarder.SendAsync(context, this.upstreamUrl, httpClient, new ForwarderRequestConfig(), transformer, cancellationToken)
+        var error = await forwarder.SendAsync(context, upstreamUrl, httpClient, new ForwarderRequestConfig(), transformer, cancellationToken)
             .ConfigureAwait(false);
 
         if (error != ForwarderError.None)

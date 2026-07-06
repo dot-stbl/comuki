@@ -10,8 +10,8 @@ namespace Comuki.Platform.Routing.Forwarding;
 public sealed partial class KeyRotatingForwarder(
     IKeyPool keyPool,
     IUpstreamSender sender,
-    ILogger<KeyRotatingForwarder> logger,
-    IOptions<RotationOptions> options) : IKeyRotatingForwarder
+    IOptions<RotationOptions> options,
+    ILogger<KeyRotatingForwarder> logger) : IKeyRotatingForwarder
 {
     private const string OverloadedBody =
         """{"type":"error","error":{"type":"overloaded_error","message":"All Z.AI keys are in cooldown."}}""";

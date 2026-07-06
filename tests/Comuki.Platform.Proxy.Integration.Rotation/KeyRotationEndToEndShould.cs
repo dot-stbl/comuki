@@ -5,10 +5,10 @@ using Xunit;
 
 namespace Comuki.Platform.Proxy.Integration.Rotation;
 
-public sealed class KeyRotationEndToEndTests
+public sealed class KeyRotationEndToEndShould
 {
-    [Fact]
-    public async Task DeadKeyFirst_RotatesToLiveKey_ClientSeesSuccess()
+    [Fact(DisplayName = "Given the first Z.AI key is exhausted, when a worker posts a message, then the proxy rotates to a live key and the client sees success")]
+    public async Task RotateToLiveKeyWhenFirstIsDead()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var upstream = await FakeUpstream.StartAsync();
@@ -35,8 +35,8 @@ public sealed class KeyRotationEndToEndTests
         body.ShouldContain("ok-from-live-key");
     }
 
-    [Fact]
-    public async Task AllKeysDead_ClientGets503()
+    [Fact(DisplayName = "Given every Z.AI key is exhausted, when a worker posts a message, then the proxy responds 503")]
+    public async Task Return503WhenAllKeysExhausted()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var upstream = await FakeUpstream.StartAsync();

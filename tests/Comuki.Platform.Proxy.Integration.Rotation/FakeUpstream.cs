@@ -48,5 +48,5 @@ public sealed class FakeUpstream : IAsyncDisposable
         };
     }
 
-    public async ValueTask DisposeAsync() => await this.webApp.DisposeAsync();
+    public async ValueTask DisposeAsync() => await webApp.DisposeAsync();
 }

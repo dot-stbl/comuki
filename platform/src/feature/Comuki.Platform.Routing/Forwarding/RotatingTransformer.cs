@@ -10,7 +10,7 @@ namespace Comuki.Platform.Routing.Forwarding;
 /// и через детектор решает — исчерпание (suppress, retry) или реальная ошибка
 /// (пробросить клиенту). Результат — в <see cref="Result"/>.
 /// </summary>
-internal sealed class RotatingTransformer(string apiKey, IQuotaExhaustionDetector detector, TimeProvider timeProvider) : HttpTransformer
+internal sealed class RotatingTransformer(string apiKey, TimeProvider timeProvider, IQuotaExhaustionDetector detector) : HttpTransformer
 {
     public UpstreamSendResult Result { get; private set; } = UpstreamSendResult.PassedThroughError();
 
@@ -38,14 +38,14 @@ internal sealed class RotatingTransformer(string apiKey, IQuotaExhaustionDetecto
         if (proxyResponse is null)
         {
             // Сетевой/форвард сбой — апстрим не ответил. Forwarder уже выставит ошибку клиенту.
-            this.Result = UpstreamSendResult.PassedThroughError();
+            Result = UpstreamSendResult.PassedThroughError();
             return false;
         }
 
         var status = (int)proxyResponse.StatusCode;
         if (status is >= 200 and < 300)
         {
-            this.Result = UpstreamSendResult.Success();
+            Result = UpstreamSendResult.Success();
             return await base.TransformResponseAsync(httpContext, proxyResponse, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -53,12 +53,12 @@ internal sealed class RotatingTransformer(string apiKey, IQuotaExhaustionDetecto
         var body = await proxyResponse.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         if (detector.IsExhausted(status, body))
         {
-            this.Result = UpstreamSendResult.Exhausted(ParseRetryAfter(proxyResponse));
+            Result = UpstreamSendResult.Exhausted(ParseRetryAfter(proxyResponse));
             return false; // ничего не пишем клиенту — даём шанс retry
         }
 
         // Реальная не-quota ошибка — пробрасываем клиенту (тело уже прочитано).
-        this.Result = UpstreamSendResult.PassedThroughError();
+        Result = UpstreamSendResult.PassedThroughError();
         httpContext.Response.StatusCode = status;
         if (proxyResponse.Content.Headers.ContentType is { } contentType)
         {

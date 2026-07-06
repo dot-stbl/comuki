@@ -7,9 +7,9 @@ using Xunit;
 
 namespace Comuki.Platform.Routing.Unit.KeyRotation;
 
-public sealed class KeyPoolTests
+public sealed class KeyPoolShould
 {
-    private static readonly DateTimeOffset Start = new(2026, 6, 23, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset start = new(2026, 6, 23, 12, 0, 0, TimeSpan.Zero);
 
     private static (KeyPool Pool, MutableTimeProvider Time) CreateSut(
         string[] keys,
@@ -22,20 +22,20 @@ public sealed class KeyPoolTests
             DefaultCooldown = defaultCooldown ?? TimeSpan.FromHours(1),
             ExhaustionRules = [new ExhaustionRule { StatusCode = 429 }],
         });
-        var time = new MutableTimeProvider(Start);
+        var time = new MutableTimeProvider(start);
         return (new KeyPool(options, time), time);
     }
 
-    [Fact]
-    public void TryAcquire_ReturnsFirstKey_WhenNoneExhausted()
+    [Fact(DisplayName = "Given a pool with multiple live keys, when acquiring, then returns the first key")]
+    public void ReturnFirstKeyWhenNoneExhausted()
     {
         var (pool, _) = CreateSut(["a", "b"]);
 
         pool.TryAcquire().ShouldBe("a");
     }
 
-    [Fact]
-    public void TryAcquire_SkipsExhaustedKey()
+    [Fact(DisplayName = "Given the first key is in cooldown, when acquiring, then returns the next live key")]
+    public void SkipExhaustedKey()
     {
         var (pool, _) = CreateSut(["a", "b"]);
 
@@ -44,8 +44,8 @@ public sealed class KeyPoolTests
         pool.TryAcquire().ShouldBe("b");
     }
 
-    [Fact]
-    public void TryAcquire_ReturnsNull_WhenAllExhausted()
+    [Fact(DisplayName = "Given every key is in cooldown, when acquiring, then returns null")]
+    public void ReturnNullWhenAllKeysExhausted()
     {
         var (pool, _) = CreateSut(["a", "b"]);
 
@@ -55,8 +55,8 @@ public sealed class KeyPoolTests
         pool.TryAcquire().ShouldBeNull();
     }
 
-    [Fact]
-    public void TryAcquire_RecoversKey_AfterCooldownElapses()
+    [Fact(DisplayName = "Given a key in cooldown, when the cooldown elapses, then the key becomes acquirable again")]
+    public void RecoverKeyAfterCooldownElapses()
     {
         var (pool, time) = CreateSut(["a"], defaultCooldown: TimeSpan.FromMinutes(30));
 
@@ -68,8 +68,8 @@ public sealed class KeyPoolTests
         pool.TryAcquire().ShouldBe("a");
     }
 
-    [Fact]
-    public void MarkExhausted_UsesRetryAfter_WhenProvided()
+    [Fact(DisplayName = "Given a Retry-After value, when marking a key exhausted, then cooldown lasts exactly Retry-After")]
+    public void UseRetryAfterWhenProvided()
     {
         var (pool, time) = CreateSut(["a"], defaultCooldown: TimeSpan.FromHours(1));
 
@@ -82,8 +82,8 @@ public sealed class KeyPoolTests
         pool.TryAcquire().ShouldBe("a");
     }
 
-    [Fact]
-    public void Count_ReturnsPoolSize()
+    [Fact(DisplayName = "Given a pool of N keys, when reading Count, then returns N")]
+    public void ReturnPoolSize()
     {
         var (pool, _) = CreateSut(["a", "b", "c"]);
 

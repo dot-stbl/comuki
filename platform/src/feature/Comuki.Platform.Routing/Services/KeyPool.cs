@@ -16,24 +16,24 @@ public sealed class KeyPool : IKeyPool
     public KeyPool(IOptions<RotationOptions> options, TimeProvider timeProvider)
     {
         var value = options.Value;
-        this.keys = value.ApiKeys;
-        this.defaultCooldown = value.DefaultCooldown;
+        keys = value.ApiKeys;
+        defaultCooldown = value.DefaultCooldown;
         this.timeProvider = timeProvider;
-        this.cooldownUntil = new Dictionary<string, DateTimeOffset>(StringComparer.Ordinal);
+        cooldownUntil = new Dictionary<string, DateTimeOffset>(StringComparer.Ordinal);
     }
 
     /// <inheritdoc />
-    public int Count => this.keys.Length;
+    public int Count => keys.Length;
 
     /// <inheritdoc />
     public string? TryAcquire()
     {
-        lock (this.gate)
+        lock (gate)
         {
-            var now = this.timeProvider.GetUtcNow();
-            foreach (var key in this.keys)
+            var now = timeProvider.GetUtcNow();
+            foreach (var key in keys)
             {
-                if (!this.cooldownUntil.TryGetValue(key, out var until) || until <= now)
+                if (!cooldownUntil.TryGetValue(key, out var until) || until <= now)
                 {
                     return key;
                 }
@@ -46,9 +46,9 @@ public sealed class KeyPool : IKeyPool
     /// <inheritdoc />
     public void MarkExhausted(string apiKey, TimeSpan? retryAfter)
     {
-        lock (this.gate)
+        lock (gate)
         {
-            this.cooldownUntil[apiKey] = this.timeProvider.GetUtcNow() + (retryAfter ?? this.defaultCooldown);
+            cooldownUntil[apiKey] = timeProvider.GetUtcNow() + (retryAfter ?? defaultCooldown);
         }
     }
 }

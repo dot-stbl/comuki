@@ -98,6 +98,8 @@ actual MCP client (Phase 5).
 
 ## Phase 4 — Slice 0 Vertical Slice (`04-slice-0-vertical`)
 
+> ✅ **DONE** (2026-06) — code on `develop` (Translator launches `pi` headless, parses stream-json; gRPC contract in Orchestration; PiCli integration test via `TestFakePi`). Soly close-out pending: `04-01-PLAN.md` still `status: ready`, no `04-01-SUMMARY.md`.
+
 **Goal:** one trivial ticket flows through the system end-to-end.
 Per `comuki-slice-0.md`: prove pull-model, Translator/gRPC, and
 pi-as-headless-agent.
@@ -126,6 +128,14 @@ real worktrees (Phase 8).
 **Depends on:** Phase 3.
 
 ## Phase 5 — Slice 1: Proxy & Virtual Keys (`05-slice-1-proxy`)
+
+> 🚧 **IN PROGRESS** (branch `feature/comuki-zai-key-rotation`).
+> **05-01 — Z.AI key rotation proxy: DONE** — thin YARP host
+> `Comuki.Platform.Proxy` + `Comuki.Platform.Routing` transparently
+> rotate exhausted Z.AI keys. Plan: `05-01-PLAN.md`, design:
+> `05-01-DESIGN.md`, summary: `05-01-SUMMARY.md`.
+> Pending: virtual keys, role→model routing, metering, budgets,
+> egress allowlist, secret-manager, provider fallback.
 
 **Goal:** workers stop holding real model keys. Everything through
 `Comuki.Platform.Proxy` on YARP; container knows only virtual URL +

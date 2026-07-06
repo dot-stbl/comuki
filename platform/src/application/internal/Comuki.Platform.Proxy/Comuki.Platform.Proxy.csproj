@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Platform.Proxy</RootNamespace>
+    <AssemblyName>Comuki.Platform.Proxy</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\feature\Comuki.Platform.Routing\Comuki.Platform.Routing.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -19,7 +19,7 @@ namespace Comuki.Platform.Orchestration.Interfaces;
 /// No <c>.proto</c> file: contract is defined as a C# interface with
 /// <c>[Service]</c>, gRPC service descriptors are generated at runtime via
 /// <c>protobuf-net.Grpc</c> reflection. See
-/// <c>.soly/docs/architecture/comuki-architecture.md</c> § 03
+/// <c>.agents/docs/architecture/comuki-architecture.md</c> § 03
 /// (Управляющий цикл) and the gRPC transport rationale in
 /// <c>comuki-decisions.md</c> § "Транспорты по природе шва".
 /// </summary>

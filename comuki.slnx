@@ -5,12 +5,14 @@
   </Folder>
   <Folder Name="/platform/src/application/internal/">
     <Project Path="platform/src/application/internal/Comuki.Platform.Worker.Translator/Comuki.Platform.Worker.Translator.csproj" />
+    <Project Path="platform/src/application/internal/Comuki.Platform.Proxy/Comuki.Platform.Proxy.csproj" />
   </Folder>
   <Folder Name="/platform/src/database/">
     <Project Path="platform/src/database/Comuki.Platform.Database.Runs/Comuki.Platform.Database.Runs.csproj" />
   </Folder>
   <Folder Name="/platform/src/feature/">
     <Project Path="platform/src/feature/Comuki.Platform.Orchestration/Comuki.Platform.Orchestration.csproj" />
+    <Project Path="platform/src/feature/Comuki.Platform.Routing/Comuki.Platform.Routing.csproj" />
   </Folder>
   <Folder Name="/platform/src/models/">
     <Project Path="platform/src/models/Comuki.Platform.Api.Contracts/Comuki.Platform.Api.Contracts.csproj" />
@@ -23,5 +25,7 @@
     <Project Path="tests/Comuki.Platform.Worker.Translator.Unit.StreamJson/Comuki.Platform.Worker.Translator.Unit.StreamJson.csproj" />
     <Project Path="tests/Comuki.Platform.Worker.Translator.Integration.PiCli/Comuki.Platform.Worker.Translator.Integration.PiCli.csproj" />
     <Project Path="tests/Comuki.Platform.Worker.Translator.Integration.TestTools.TestFakePi/Comuki.Platform.Worker.Translator.Integration.TestTools.TestFakePi.csproj" />
+    <Project Path="tests/Comuki.Platform.Routing.Unit.KeyRotation/Comuki.Platform.Routing.Unit.KeyRotation.csproj" />
+    <Project Path="tests/Comuki.Platform.Proxy.Integration.Rotation/Comuki.Platform.Proxy.Integration.Rotation.csproj" />
   </Folder>
 </Solution>

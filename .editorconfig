@@ -374,3 +374,13 @@ resharper_unused_method_return_value_local_highlighting = none
 #   <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 #   <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 #   <AnalysisLevel>latest-recommended</AnalysisLevel>
+
+# =====================================================================
+# Test code — relaxations (TESTING-RULES.md § 3: BDD naming)
+# =====================================================================
+# Test methods omit the `Async` suffix on purpose — BDD convention reads
+# `public async Task CreateOrder()`, not `CreateOrderAsync()`. Production
+# async methods still require the suffix (the rule above stays `error`
+# for everything outside `tests/`).
+[tests/**.cs]
+dotnet_naming_rule.async_methods_end_with_async.severity = none

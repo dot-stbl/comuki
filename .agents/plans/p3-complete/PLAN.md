@@ -9,6 +9,18 @@ parallelizable: false
 
 # Plan: p3-complete — finish Phase 3
 
+## Status (2026-07-06)
+
+- ✅ gap 1 (coverage gate) — real gate, 30 tests, lines 85.7% (`19cdbd2`)
+- ✅ gap 6 (build-storybook in CI) — already in build-frontend
+- ✅ gap 7 (test-backend all projects) — all 6 runnable projects (`cbc1b46`)
+- ✅ gap 3 (a11y + story-tests) — addon-a11y@8.6.18 wired, test-runner added (`3668d4a`); test-runner *execution* (storybook server) is a CI follow-up
+- ✅ gap 5 (drift detection) — `check:design-tokens` script + CI
+- ⛔ gap 4 (DB integration) — **blocked on Phase 4**: `RunsDbContext` is a placeholder (no EF Core, no DbContext); a DB integration test would be theater. Infra (Testcontainers+Respawn deps + `.Testing` base) is ready from 3.1; the test lands when EF Core lands in `RunsDbContext`.
+- ⏸ gap 2 (visual cycle) — **deferred** to a focused session (it's the biggest; rushing violates frontend-construct-rules §4)
+
+Also fixed along the way: broken e2e (no browsers in CI + stale expectations) + the `--nologo`-breaks-MTP CI bug.
+
 ## Goal
 
 Phase 3's scaffolding shipped (test stacks, tokens, 58 stories, 3 custom
@@ -53,13 +65,13 @@ Tooling decisions (locked with user):
 
 ## tasks
 
-- [ ] **type: fix, gap 1 — un-neuter the coverage gate**
+- [x] **type: fix, gap 1 — un-neuter the coverage gate**
   - files: `dashboard/package.json`
   - change: `"test:coverage": "vitest run --coverage || true"` → `"test:coverage": "vitest run --coverage"`
   - verify: `cd dashboard && bun run test:coverage` exits non-zero when coverage < 70% (confirm `vitest.config.ts` threshold is 70)
   - accept: a low-coverage run fails; CI `test-frontend` now genuinely gates
 
-- [ ] **type: feat, gap 3 — a11y + story component-tests (SB8-native)**
+- [x] **type: feat, gap 3 — a11y + story component-tests (SB8-native)**
   - files: `dashboard/package.json`, `dashboard/.storybook/main.ts`, `dashboard/.storybook/preview.ts`
   - add deps: `@storybook/addon-a11y@^8`, `@storybook/test-runner@0.24` (+ `concurrently` if needed)
   - wire addon-a11y in `main.ts` (remove the 03-03 TODO); set a11y params in `preview.ts`
@@ -67,30 +79,30 @@ Tooling decisions (locked with user):
   - verify: `bun run test:storybook` (storybook must be running) runs 58 stories; axe violations fail
   - accept: a11y addon active in Storybook; story-runner executes every story
 
-- [ ] **type: feat, gap 6 — build-storybook in CI**
+- [x] **type: feat, gap 6 — build-storybook in CI** (already present in build-frontend)
   - files: `.gitlab-ci.yml`
   - add `bun run build-storybook` to `test-frontend` (or a `build-storybook` job)
   - accept: CI builds the storybook static export on every FE change
 
-- [ ] **type: fix, gap 7 — test-backend runs all test projects**
+- [x] **type: fix, gap 7 — test-backend runs all test projects**
   - files: `.gitlab-ci.yml`
   - enumerate every `tests/**/*.csproj` via `dotnet run --no-build` (MTP); today only Architecture + Orchestration.Unit.Lease run
   - add: Routing.Unit.KeyRotation, Worker.Translator.Unit.StreamJson, Proxy.Integration.Rotation, Worker.Translator.Integration.TestTools.TestFakePi, Worker.Translator.Integration.PiCli (skip any that need services not in CI; document)
   - accept: every self-contained test project runs in CI
 
-- [ ] **type: feat, gap 2 — visual-criticism cycle on 3 components + tokens**
+- [ ] **type: feat, gap 2 — visual-criticism cycle on 3 components + tokens** ⏸ DEFERRED — separate session
   - boot `bun run storybook`; script `dashboard/scripts/visual-audit.mjs` uses `@playwright/test` to screenshot (375/768/1440) the `StatusBadge`/`RunIdChip`/`ModeToggle` stories + a token-palette story; dump `getComputedStyle` on suspect elements
   - review PNGs via `read`; walk the §4 rubric (spacing 4px-grid, rhythm, alignment, radii/shadow/type tokens, overflow, hierarchy, contrast, states, adaptive)
   - fix defects; re-shoot until clean
   - accept: rubric clean in all 3 viewports for all 3 components; defects fixed in-code
 
-- [ ] **type: feat, gap 4 — Database.Runs integration test project**
+- [ ] **type: feat, gap 4 — Database.Runs integration test project** ⛔ BLOCKED on Phase 4 (RunsDbContext is a placeholder)
   - files: `tests/Comuki.Platform.Database.Runs.Integration.Migrations/` (csproj + test), `comuki.slnx`
   - Testcontainers.PostgreSql + Respawn; test applies migrations, asserts schema, respawns
   - verify: `dotnet run --project …` green locally (needs Docker/podman running — check; if unavailable, ensure it builds + mark run as Docker-gated)
   - accept: integration test exists, builds, runs green where Docker is available; added to CI test-backend (docker-in-docker note)
 
-- [ ] **type: feat, gap 5 — design-system drift detection**
+- [x] **type: feat, gap 5 — design-system drift detection**
   - files: `dashboard/scripts/check-design-tokens.mjs`, `dashboard/package.json`, `.gitlab-ci.yml`
   - parse token values from `.agents/docs/design-system/styles/tokens.css` (source of truth) and `dashboard/src/index.css`; diff; fail on mismatch
   - script `"check:design-tokens"`; wire into `test-frontend`

@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:storybook": "test-storybook",
+    "check:design-tokens": "node scripts/check-design-tokens.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

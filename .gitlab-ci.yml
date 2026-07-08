@@ -89,6 +89,13 @@ test-frontend:
   needs: [build-frontend]
   script:
     - cd dashboard
+    # node_modules isn't carried from build-frontend (only dist/storybook-static/api).
+    - bun install --frozen-lockfile
+    # Playwright browsers aren't in the image — install them or test:e2e can't launch.
+    - bunx playwright install --with-deps chromium
+    # Design-system drift guard (Phase 3 DoD #4): --st-* token set must match
+    # the source of truth in .agents/docs/design-system/styles/tokens.css.
+    - bun run check:design-tokens
     - bun run test:coverage
     - bun run test:e2e
   coverage: '/All files[^|]*\|[^|]*\|[^|]*\|[^|]*\s+([\d.]+)/'

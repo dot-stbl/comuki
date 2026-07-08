@@ -11,6 +11,13 @@ const preview: Preview = {
       },
     },
     // TODO(phase-7): add parameters.a11y block when @storybook/addon-a11y is re-enabled (SB 10 required)
+    a11y: {
+      // axe runs on every story in the panel; test-runner asserts in CI.
+      config: {
+        rules: [],
+      },
+      options: {},
+    },
     backgrounds: {
       default: "dark",
       values: [

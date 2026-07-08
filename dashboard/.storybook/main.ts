@@ -9,8 +9,9 @@ const config: StorybookConfig = {
   addons: [
     "@storybook/addon-essentials",
     "@storybook/addon-themes",
-    // TODO(phase-7): re-enable @storybook/addon-a11y when Storybook 10 ships (this project uses SB 8)
-    // TODO(phase-7): re-enable @storybook/addon-vitest when Node.js 24 ESM compat is resolved
+    "@storybook/addon-a11y",
+    // @storybook/addon-vitest is SB 10+ only; on SB 8 we run stories as
+    // component tests via @storybook/test-runner (npm run test:storybook).
   ],
   docs: {},
 }

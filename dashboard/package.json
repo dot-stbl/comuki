@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "overrides": {
+    "@kubb/cli": "4.37.9",
+    "@kubb/core": "4.37.9"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -56,7 +60,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10",
-    "@kubb/core": "4",
+    "@kubb/cli": "4.37.9",
+    "@kubb/core": "4.37.9",
     "@kubb/plugin-client": "4.37.9",
     "@kubb/plugin-oas": "4.37.9",
     "@kubb/plugin-react-query": "4.37.9",

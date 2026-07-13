@@ -1,25 +1,39 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Landing page smoke tests", () => {
-  test("homepage loads and shows Comuki heading", async ({ page }) => {
+// The root route redirects to /components (the component showcase).
+// The old assertions (h1 "Comuki", "Dashboard scaffold") targeted a landing
+// page that no longer exists — these test what the app actually renders.
+
+test.describe("Showcase smoke tests", () => {
+  test("root redirects to /components and shows the Comuki brand", async ({
+    page,
+  }) => {
     await page.goto("/");
-    await expect(page.locator("h1")).toContainText("Comuki");
+
+    await expect(page).toHaveURL(/\/components$/);
+    await expect(page.getByText("Comuki").first()).toBeVisible();
   });
 
-  test("homepage shows dashboard scaffold card", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.getByText("Dashboard scaffold")).toBeVisible();
+  test("showcase renders its first section", async ({ page }) => {
+    await page.goto("/components");
+
+    // Section 3.1 "Buttons" is the first heading in the showcase.
+    await expect(
+      page.getByRole("heading", { name: "Buttons" }).first()
+    ).toBeVisible();
   });
 
-  test("homepage has no console errors", async ({ page }) => {
+  test("showcase loads with no console errors", async ({ page }) => {
     const errors: string[] = [];
-    page.on("console", (msg) => {
-      if (msg.type() === "error") {
-        errors.push(msg.text());
+    page.on("console", (message) => {
+      if (message.type() === "error") {
+        errors.push(message.text());
       }
     });
-    await page.goto("/");
+
+    await page.goto("/components");
     await page.waitForLoadState("networkidle");
+
     expect(errors).toHaveLength(0);
   });
 });

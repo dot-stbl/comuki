@@ -25,8 +25,16 @@ Status: phase_in_progress (Slice 1 first cut shipped; virtual keys / metering / 
 This contradicts the stale `phase-3-complete` markers and P3 sub-plan
 SUMMARYs on disk — treat those as aspirational until reconciled.
 
-- **P3** (Design System & Testing) — NOT finished; the 3 sub-plan
-  `✅`/SUMMARYs need re-verification.
+- **P3** (Design System & Testing) — progress on `p3-complete`: real FE
+  coverage gate + 30 tests (gap 1), addon-a11y wired + test-runner (gap 3),
+  design-token drift guard (gap 5), all 6 BE test projects + build-storybook
+  in CI (gaps 6,7), broken e2e fixed. ⛔ gap 4 (DB integration) **blocked on
+  Phase 4** — `RunsDbContext` is a placeholder (no EF Core); a test would be
+  theater. ⏸ gap 2 (visual cycle) **deferred** to a focused session.
+  Separate pre-existing issue surfaced: FE `tsc -b` fails on generated
+  `src/api` (axios `AxiosHeaders` vs Kubb `RequestConfig`); committed `src/api`
+  is stale vs current deps, masked by CI's `generate-api`. Local `generate-api`
+  is broken (kubb CLI/core mismatch). Not a P3 gap; follow-up.
 - **P4** (Slice 0) — NOT finished; `04-01-PLAN.md` is `status: ready`,
   only partial work landed on `develop`.
 - **P5** (Slice 1) — jumped here urgently; 05-01 key-rotation cut done.
@@ -50,7 +58,7 @@ Phase 2: Stack Foundation — **DONE** (2026-06-04).
   - deploy/ for local dev (postgres+pgvector, minio, nexus, victoria)
   - `agents/` + `control-plane/` directory skeletons (real TS
     packages land in Phase 4)
-Phase 3: Design System & Testing Infrastructure — **NOT FINISHED** (stale `done` markers on disk — see sequencing note).
+Phase 3: Design System & Testing Infrastructure — **IN PROGRESS** (5/7 gaps closed on `p3-complete`; gap 4 blocked on Phase 4, gap 2 deferred — see sequencing note).
   - 3.1 Testing infra — **DONE** (2026-06-05).
     - BE: xUnit v3 (MTP runner via `dotnet run`), Shouldly, NSubstitute,
       Testcontainers.PostgreSql, Respawn, Bogus, coverlet.collector (70% gate)
@@ -153,5 +161,6 @@ dashboard) → MVP polish.
 | `.soly/` layout migrated to `.agents/` (soly 2.0+ reads `.agents/` only). 55 files moved via `git mv`, all internal `.soly/` path refs rewritten; STATE content carried over unchanged. | `soly_read` / `soly_workflow` returned "not found" under the old layout. Migration is mechanical; STATE content-sync done as a separate step. | 5 |
 | Phase 5 (Z.AI key rotation) executed via the `superpowers` subagent workflow, **not** soly — root cause of the STATE drift past Phase 3. Plan + design relocated from `docs/superpowers/` into `.agents/phases/05-slice-1-proxy/` and given soly frontmatter post-hoc. | Urgent feature; superpowers was the tool at hand. Post-hoc relocation restores soly visibility without rewriting git history. | 5 |
 | **Phase 3 and Phase 4 are NOT finished** — work jumped to Phase 5 (Z.AI key rotation) out of urgency. Corrects an earlier overclaim (commit `b80b232`) that marked them DONE. Progress corrected 4/9 → 2/9. | User correction (2026-07-06). The stale `phase-3-complete` status + P3 sub-plan `✅`/SUMMARYs on disk contradicted reality; treat those as aspirational until reconciled. `04-01` is `status: ready`. | 5 |
+| p3-complete closed 5 of 7 Phase-3 gaps: real FE coverage gate (was neutered by `\|\| true`), addon-a11y@8 wired (03-03's 'SB10-only' deferral was wrong — they installed @latest), drift guard, all BE tests in CI, e2e fixed (browsers never installed in CI + stale expectations). Coverage scoped to OUR code (shadcn primitives excluded); gate = 70% line (TESTING-RULES §10) + branches 65 (jsdom-untestable branches documented). | Direct audit of the 3.1/3.2/3.3 deliverables vs DoD. Two gaps remain by design: gap 4 blocked on Phase 4 (`RunsDbContext` is a placeholder, no EF Core — a DB test would be theater), gap 2 (visual cycle) deferred as the largest piece. | 3 |
 | `.editorconfig`: path-scoped `[tests/**.cs]` exempts test methods from the async-suffix naming rule. | TESTING-RULES §3 BDD examples omit `Async` on test methods (`public async Task CreateOrder()`); the global async-suffix rule (error) conflicted. Exemption is scoped to `tests/` only — production async methods still require the suffix. | 5 |
 | Phase 5 urgent run skipped `dotnet format` (36 IDE violations, all in phase-5 files); fixed in `dc38be2` — dropped redundant `this.`, camelCased private fields, applied Pyramid Rule to 3 primary ctors, rewrote tests to BDD. | `dotnet build` doesn't enforce IDE0003/IDE1006; only `dotnet format --verify-no-changes` does (build-verification.md DoD). The urgent run ran build only. | 5 |

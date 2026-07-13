@@ -64,17 +64,24 @@ build-frontend:
       - dashboard/storybook-static/
       - dashboard/src/api/
 
-# xUnit v3 tests: each test project is self-executable via 'dotnet run'.
-# 'dotnet test' does NOT work with xUnit v3 (uses VSTest which lacks v3 support).
-# Coverage from coverlet is emitted as cobertura XML per project.
+# xUnit v3 tests: each test project is self-executable via 'dotnet run'
+# (Microsoft Testing Platform). 'dotnet test' does NOT work with xUnit v3
+# (VSTest lacks v3 discovery). NOTE: do NOT pass --nologo to 'dotnet run' —
+# it gets forwarded to the MTP runner and makes it print help instead of
+# running tests. Binaries aren't carried from build-backend (only the
+# OpenAPI spec is an artifact), so build Debug here once, then run each
+# project with --no-build.
 test-backend:
   stage: test
   needs: [build-backend]
   script:
-    # Architecture tests
-    - dotnet run --project tests/Comuki.Platform.Architecture.Tests/Comuki.Platform.Architecture.Tests.csproj -c Debug --no-build --nologo
-    # Unit tests (each project individually via dotnet run)
-    - dotnet run --project tests/Comuki.Platform.Orchestration.Unit.Lease/Comuki.Platform.Orchestration.Unit.Lease.csproj -c Debug --no-build --nologo
+    - dotnet build comuki.slnx -c Debug --nologo
+    - dotnet run --project tests/Comuki.Platform.Architecture.Tests/Comuki.Platform.Architecture.Tests.csproj -c Debug --no-build
+    - dotnet run --project tests/Comuki.Platform.Orchestration.Unit.Lease/Comuki.Platform.Orchestration.Unit.Lease.csproj -c Debug --no-build
+    - dotnet run --project tests/Comuki.Platform.Routing.Unit.KeyRotation/Comuki.Platform.Routing.Unit.KeyRotation.csproj -c Debug --no-build
+    - dotnet run --project tests/Comuki.Platform.Worker.Translator.Unit.StreamJson/Comuki.Platform.Worker.Translator.Unit.StreamJson.csproj -c Debug --no-build
+    - dotnet run --project tests/Comuki.Platform.Worker.Translator.Integration.PiCli/Comuki.Platform.Worker.Translator.Integration.PiCli.csproj -c Debug --no-build
+    - dotnet run --project tests/Comuki.Platform.Proxy.Integration.Rotation/Comuki.Platform.Proxy.Integration.Rotation.csproj -c Debug --no-build
   coverage: '/Total:\s+(\d+\.\d+)/'
 
 test-frontend:
@@ -82,6 +89,13 @@ test-frontend:
   needs: [build-frontend]
   script:
     - cd dashboard
+    # node_modules isn't carried from build-frontend (only dist/storybook-static/api).
+    - bun install --frozen-lockfile
+    # Playwright browsers aren't in the image — install them or test:e2e can't launch.
+    - bunx playwright install --with-deps chromium
+    # Design-system drift guard (Phase 3 DoD #4): --st-* token set must match
+    # the source of truth in .agents/docs/design-system/styles/tokens.css.
+    - bun run check:design-tokens
     - bun run test:coverage
     - bun run test:e2e
   coverage: '/All files[^|]*\|[^|]*\|[^|]*\|[^|]*\s+([\d.]+)/'

@@ -1,0 +1,154 @@
+/* Comuki tokens — single source for kit CSS Modules + shadcn/Tailwind bridge.
+   Theme switch: `.dark` on <html> (ThemeProvider). Light = :root defaults. */
+
+:root {
+  --background: #fbfbfa;
+  --foreground: #1b232e;
+  --card: #ffffff;
+  --card-foreground: #1b232e;
+  --popover: #ffffff;
+  --popover-foreground: #1b232e;
+  --primary: #3c5a86;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f3;
+  --secondary-foreground: #1b232e;
+  --muted: #f3f4f3;
+  --muted-foreground: #697080;
+  --accent: #f3f4f3;
+  --accent-foreground: #1b232e;
+  --destructive: #b0473b;
+  --border: #e6e7e4;
+  --input: #e6e7e4;
+  --ring: #3c5a86;
+  --chart-1: #3c5a86;
+  --chart-2: #4e7c5b;
+  --chart-3: #b0473b;
+  --chart-4: #9c7a3c;
+  --chart-5: #6e5ba6;
+  --radius: 0.375rem;
+  --border-strong: #d2d4d0;
+  --sidebar: #f6f7f6;
+  --sidebar-foreground: #1b232e;
+  --sidebar-primary: #3c5a86;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f4f3;
+  --sidebar-accent-foreground: #1b232e;
+  --sidebar-border: #e6e7e4;
+  --sidebar-ring: #3c5a86;
+  --st-running: #3c5a86;
+  --st-success: #4e7c5b;
+  --st-failed: #b0473b;
+  --st-waiting: #9c7a3c;
+  --st-queued: #a0a4ac;
+  --st-escalated: #6e5ba6;
+  --st-running-tint: color-mix(in oklab, var(--st-running) 18%, transparent);
+  --st-success-tint: color-mix(in oklab, var(--st-success) 18%, transparent);
+  --st-failed-tint: color-mix(in oklab, var(--st-failed) 18%, transparent);
+  --st-waiting-tint: color-mix(in oklab, var(--st-waiting) 18%, transparent);
+  --st-queued-tint: color-mix(in oklab, var(--st-queued) 18%, transparent);
+  --st-escalated-tint: color-mix(in oklab, var(--st-escalated) 18%, transparent);
+
+  /* Kit semantic aliases (CSS Modules — no Tailwind) */
+  --brand: var(--primary);
+  --brand-foreground: var(--primary-foreground);
+  --danger: var(--destructive);
+  --danger-foreground: #ffffff;
+  --surface: var(--card);
+  --surface-raised: var(--popover);
+  --text: var(--foreground);
+  --text-muted: var(--muted-foreground);
+  --scrim: color-mix(in oklab, #1b232e 45%, transparent);
+
+  /* Type */
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --t-body: 0.8125rem;
+  --t-sm: 0.75rem;
+  --t-xs: 0.6875rem;
+  --t-micro: 0.625rem;
+  --lh-body: 1.55;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  /* Spacing */
+  --s1: 0.125rem;
+  --s2: 0.3125rem;
+  --s3: 0.4375rem;
+  --s4: 0.625rem;
+  --s5: 0.8125rem;
+  --s6: 1rem;
+  --s7: 1.1875rem;
+  --s8: 1.375rem;
+
+  /* Radius / depth / motion */
+  --r-sm: calc(var(--radius) * 0.6);
+  --r-md: var(--radius);
+  --r-pill: 999px;
+  --shadow-modal: 0 14px 36px -12px color-mix(in oklab, #1b232e 22%, transparent),
+    0 3px 10px -4px color-mix(in oklab, #1b232e 14%, transparent);
+  --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --dur: 180ms;
+  --h-button: 1.75rem;
+  --h-button-sm: 1.5rem;
+  --h-button-lg: 2rem;
+  --modal-w: 26rem;
+}
+
+.dark {
+  --background: #15171b;
+  --foreground: #e8eaee;
+  --card: #191c21;
+  --card-foreground: #e8eaee;
+  --popover: #22262c;
+  --popover-foreground: #e8eaee;
+  --primary: #83a1dc;
+  --primary-foreground: #0e1116;
+  --secondary: #1c1f25;
+  --secondary-foreground: #e8eaee;
+  --muted: #1c1f25;
+  --muted-foreground: #969ca6;
+  --accent: #22262c;
+  --accent-foreground: #e8eaee;
+  --destructive: #d6685a;
+  --border: #262a30;
+  --input: #262a30;
+  --ring: #83a1dc;
+  --chart-1: #83a1dc;
+  --chart-2: #7ba68c;
+  --chart-3: #d6685a;
+  --chart-4: #c6a35e;
+  --chart-5: #9a86c7;
+  --radius: 0.375rem;
+  --border-strong: #373c44;
+  --sidebar: #131519;
+  --sidebar-foreground: #e8eaee;
+  --sidebar-primary: #83a1dc;
+  --sidebar-primary-foreground: #0e1116;
+  --sidebar-accent: #22262c;
+  --sidebar-accent-foreground: #e8eaee;
+  --sidebar-border: #262a30;
+  --sidebar-ring: #83a1dc;
+  --st-running: #83a1dc;
+  --st-success: #7ba68c;
+  --st-failed: #d6685a;
+  --st-waiting: #c6a35e;
+  --st-queued: #565c65;
+  --st-escalated: #9a86c7;
+  --st-running-tint: color-mix(in oklab, var(--st-running) 18%, transparent);
+  --st-success-tint: color-mix(in oklab, var(--st-success) 18%, transparent);
+  --st-failed-tint: color-mix(in oklab, var(--st-failed) 18%, transparent);
+  --st-waiting-tint: color-mix(in oklab, var(--st-waiting) 18%, transparent);
+  --st-queued-tint: color-mix(in oklab, var(--st-queued) 18%, transparent);
+  --st-escalated-tint: color-mix(in oklab, var(--st-escalated) 18%, transparent);
+
+  --brand: var(--primary);
+  --brand-foreground: var(--primary-foreground);
+  --danger: var(--destructive);
+  --danger-foreground: #0e1116;
+  --surface: var(--card);
+  --surface-raised: var(--popover);
+  --text: var(--foreground);
+  --text-muted: var(--muted-foreground);
+  --scrim: color-mix(in oklab, #000 55%, transparent);
+  --shadow-modal: 0 14px 36px -10px color-mix(in oklab, #000 66%, transparent),
+    0 3px 10px -4px color-mix(in oklab, #000 50%, transparent);
+}

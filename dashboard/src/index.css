@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource/ibm-plex-mono";
+@import "./app/styles/tokens.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -62,102 +63,6 @@
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
     --text-micro: 10px;
-}
-
-:root {
-    --background: #FBFBFA;
-    --foreground: #1B232E;
-    --card: #FFFFFF;
-    --card-foreground: #1B232E;
-    --popover: #FFFFFF;
-    --popover-foreground: #1B232E;
-    --primary: #3C5A86;
-    --primary-foreground: #FFFFFF;
-    --secondary: #F3F4F3;
-    --secondary-foreground: #1B232E;
-    --muted: #F3F4F3;
-    --muted-foreground: #697080;
-    --accent: #F3F4F3;
-    --accent-foreground: #1B232E;
-    --destructive: #B0473B;
-    --border: #E6E7E4;
-    --input: #E6E7E4;
-    --ring: #3C5A86;
-    --chart-1: #3C5A86;
-    --chart-2: #4E7C5B;
-    --chart-3: #B0473B;
-    --chart-4: #9C7A3C;
-    --chart-5: #6E5BA6;
-    --radius: 0.375rem;
-    --border-strong: #D2D4D0;
-    --sidebar: #F6F7F6;
-    --sidebar-foreground: #1B232E;
-    --sidebar-primary: #3C5A86;
-    --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #F3F4F3;
-    --sidebar-accent-foreground: #1B232E;
-    --sidebar-border: #E6E7E4;
-    --sidebar-ring: #3C5A86;
-    --st-running: #3C5A86;
-    --st-success: #4E7C5B;
-    --st-failed: #B0473B;
-    --st-waiting: #9C7A3C;
-    --st-queued: #A0A4AC;
-    --st-escalated: #6E5BA6;
-    --st-running-tint: color-mix(in oklab, var(--st-running) 18%, transparent);
-    --st-success-tint: color-mix(in oklab, var(--st-success) 18%, transparent);
-    --st-failed-tint: color-mix(in oklab, var(--st-failed) 18%, transparent);
-    --st-waiting-tint: color-mix(in oklab, var(--st-waiting) 18%, transparent);
-    --st-queued-tint: color-mix(in oklab, var(--st-queued) 18%, transparent);
-    --st-escalated-tint: color-mix(in oklab, var(--st-escalated) 18%, transparent);
-}
-
-.dark {
-    --background: #15171B;
-    --foreground: #E8EAEE;
-    --card: #191C21;
-    --card-foreground: #E8EAEE;
-    --popover: #22262C;
-    --popover-foreground: #E8EAEE;
-    --primary: #83A1DC;
-    --primary-foreground: #0E1116;
-    --secondary: #1C1F25;
-    --secondary-foreground: #E8EAEE;
-    --muted: #1C1F25;
-    --muted-foreground: #969CA6;
-    --accent: #22262C;
-    --accent-foreground: #E8EAEE;
-    --destructive: #D6685A;
-    --border: #262A30;
-    --input: #262A30;
-    --ring: #83A1DC;
-    --chart-1: #83A1DC;
-    --chart-2: #7BA68C;
-    --chart-3: #D6685A;
-    --chart-4: #C6A35E;
-    --chart-5: #9A86C7;
-    --radius: 0.375rem;
-    --border-strong: #373C44;
-    --sidebar: #131519;
-    --sidebar-foreground: #E8EAEE;
-    --sidebar-primary: #83A1DC;
-    --sidebar-primary-foreground: #0E1116;
-    --sidebar-accent: #22262C;
-    --sidebar-accent-foreground: #E8EAEE;
-    --sidebar-border: #262A30;
-    --sidebar-ring: #83A1DC;
-    --st-running: #83A1DC;
-    --st-success: #7BA68C;
-    --st-failed: #D6685A;
-    --st-waiting: #C6A35E;
-    --st-queued: #565C65;
-    --st-escalated: #9A86C7;
-    --st-running-tint: color-mix(in oklab, var(--st-running) 18%, transparent);
-    --st-success-tint: color-mix(in oklab, var(--st-success) 18%, transparent);
-    --st-failed-tint: color-mix(in oklab, var(--st-failed) 18%, transparent);
-    --st-waiting-tint: color-mix(in oklab, var(--st-waiting) 18%, transparent);
-    --st-queued-tint: color-mix(in oklab, var(--st-queued) 18%, transparent);
-    --st-escalated-tint: color-mix(in oklab, var(--st-escalated) 18%, transparent);
 }
 
 @layer base {

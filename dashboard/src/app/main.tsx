@@ -22,7 +22,7 @@ declare module "@tanstack/react-router" {
 }
 
 async function bootstrap() {
-  if (env.VITE_USE_MOCK) {
+  if (env.useMock) {
     const { startMocks } = await import("@/app/mocks/start")
     await startMocks()
   }

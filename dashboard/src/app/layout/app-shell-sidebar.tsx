@@ -1,10 +1,14 @@
 import type { LucideIcon } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
+import { SwarmMeter } from "@/app/layout/swarm-meter"
+
 export interface SidebarNavItem {
   label: string
   href: string
   icon?: LucideIcon
+  /** When false, child routes (e.g. /runs/$runId) keep the parent link active. */
+  exact?: boolean
 }
 
 export interface SidebarNavGroup {
@@ -28,6 +32,7 @@ export function AppShellSidebar({ groups }: AppShellSidebarProps) {
             <Link
               key={item.href}
               to={item.href}
+              activeOptions={{ exact: item.exact ?? false }}
               className="flex items-center gap-2 border-l-2 border-transparent rounded-sm px-2 py-1.5 font-mono text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               activeProps={{
                 className:
@@ -40,6 +45,7 @@ export function AppShellSidebar({ groups }: AppShellSidebarProps) {
           ))}
         </div>
       ))}
+      <SwarmMeter />
     </aside>
   )
 }

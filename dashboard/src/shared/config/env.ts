@@ -1,15 +1,19 @@
 import { z } from "zod"
 
 const envSchema = z.object({
-  /** When true, mock handlers land in W1; until then start() is a no-op stub. */
+  /** When true, domain hooks serve shared mock seeds instead of live API. */
   VITE_USE_MOCK: z
     .enum(["true", "false", "1", "0", ""])
     .optional()
     .transform((value) => value === "true" || value === "1"),
 })
 
-export const env = envSchema.parse({
+const parsed = envSchema.parse({
   VITE_USE_MOCK: import.meta.env.VITE_USE_MOCK ?? "",
 })
+
+export const env = {
+  useMock: parsed.VITE_USE_MOCK,
+}
 
 export type Env = typeof env

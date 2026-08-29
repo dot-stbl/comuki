@@ -1,7 +1,10 @@
 /**
- * Mock bootstrap stub (W0).
- * Real MSW / handlers land in W1 when VITE_USE_MOCK=true.
+ * Mock bootstrap (W1).
+ * Domain hooks read `shared/api/mock` seeds when `env.useMock` is true.
+ * MSW service worker is optional and not required for Observe screens.
  */
 export async function startMocks(): Promise<void> {
-  console.info("[comuki] VITE_USE_MOCK=true — mock mode (handlers land in W1)")
+  console.info(
+    "[comuki] VITE_USE_MOCK=true — Observe screens serve shared mock seeds"
+  )
 }

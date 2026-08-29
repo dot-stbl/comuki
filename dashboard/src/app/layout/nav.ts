@@ -19,7 +19,7 @@ export const productNav: SidebarNavGroup[] = [
   {
     label: "Observe",
     items: [
-      { label: "Live runs", href: "/runs", icon: PlayCircle },
+      { label: "Live runs", href: "/runs", icon: PlayCircle, exact: false },
       { label: "Approvals", href: "/approvals", icon: CheckCircle2 },
       { label: "Cost", href: "/cost", icon: Coins },
     ],

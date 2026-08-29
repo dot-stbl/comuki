@@ -82,8 +82,8 @@ Phase 1–2: папки пустые, только `.gitkeep`. Не заполн
 
 ## Подробнее
 
-- `.soly/docs/comuki-project-structure.md` § 5
-- `.soly/docs/comuki-decisions.md` § "Два свода правил по природе, а не по месту"
-- `.soly/docs/comuki-architecture.md` § 05 (знания и правила)
-- `.soly/docs/comuki-architecture.md` § 06 ("новый тип работы сначала становится
+- `.agents/docs/architecture/comuki-project-structure.md` § 5
+- `.agents/docs/architecture/comuki-decisions.md` § "Два свода правил по природе, а не по месту"
+- `.agents/docs/architecture/comuki-architecture.md` § 05 (знания и правила)
+- `.agents/docs/architecture/comuki-architecture.md` § 06 ("новый тип работы сначала становится
   проверенным скиллом, потом — доступным оркестратору")

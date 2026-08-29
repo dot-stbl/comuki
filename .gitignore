@@ -19,8 +19,8 @@ dist/
 .DS_Store
 Thumbs.db
 
-# soly runtime cache (rules hot-reload state, not source)
-.soly/rule-mtimes.json
+# agents runtime cache (rules hot-reload state, not source)
+.agents/rule-mtimes.json
 
 # Generated OpenAPI spec from Microsoft.Extensions.ApiDescription.Server.
 # Lives next to the .csproj (OpenApiDocumentsDirectory=.) on `dotnet build`
@@ -31,9 +31,10 @@ Thumbs.db
 deploy/.env
 
 # Stray .md files sometimes written to project root by previous LLM sessions
-# (leaked thinking blocks or mis-routed `write` calls). Soly never writes
-# these — it uses .soly/STATE.md, .soly/HANDOFF.json, .soly/phases/*/{PLAN,CONTEXT}.md.
-# Findings, plans, and progress belong under .soly/, not in the project root.
+# (leaked thinking blocks or mis-routed `write` calls). Agents never write
+# these — they use .agents/STATE.md, .agents/HANDOFF.json,
+# .agents/phases/*/{PLAN,CONTEXT}.md. Findings, plans, and progress belong
+# under .agents/, not in the project root.
 /plan.md
 /context.md
 /progress.md
@@ -344,3 +345,7 @@ FodyWeavers.xsd
 *.msm
 *.msp
 *.sln.iml
+
+# Agent worktrees — parallel agent checkouts; never commit
+.agents/worktree/
+

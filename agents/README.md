@@ -68,6 +68,6 @@
 
 ## Подробнее
 
-- `.soly/docs/comuki-project-structure.md` § 3
-- `.soly/docs/comuki-decisions.md` § "Два агента под две ситуации, три пакета"
-- `.soly/docs/comuki-architecture.md` § 05 (знания и правила), § 06 (workflow)
+- `.agents/docs/architecture/comuki-project-structure.md` § 3
+- `.agents/docs/architecture/comuki-decisions.md` § "Два агента под две ситуации, три пакета"
+- `.agents/docs/architecture/comuki-architecture.md` § 05 (знания и правила), § 06 (workflow)

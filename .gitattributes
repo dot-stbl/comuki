@@ -1,0 +1,30 @@
+# Cross-platform line endings — lock LF everywhere.
+# Companion to `.editorconfig` (end_of_line = lf).
+# Windows devs: `git config --global core.autocrlf input`
+* text=auto eol=lf
+
+# Explicit per-type to prevent auto-detection from getting it wrong
+*.cs          text eol=lf
+*.csproj      text eol=lf
+*.props       text eol=lf
+*.targets     text eol=lf
+*.slnx        text eol=lf
+*.json        text eol=lf
+*.md          text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+*.ts          text eol=lf
+*.tsx         text eol=lf
+*.css         text eol=lf
+*.html        text eol=lf
+*.sh          text eol=lf
+
+# Binary — no eol processing
+*.png         binary
+*.jpg         binary
+*.jpeg        binary
+*.gif         binary
+*.ico         binary
+*.svg         text eol=lf
+*.woff        binary
+*.woff2       binary

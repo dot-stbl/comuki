@@ -1,0 +1,49 @@
+<Project>
+  <!-- Central Package Management. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- Testing packages (BE) -->
+  <ItemGroup>
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.v3.extensibility.core" Version="3.2.2" />
+    <PackageVersion Include="xunit.v3.core.mtp-v1" Version="3.2.2" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+    <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <PackageVersion Include="NSubstitute" Version="5.3.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.12.0" />
+    <PackageVersion Include="Respawn" Version="7.0.0" />
+    <PackageVersion Include="Bogus" Version="35.6.5" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.8" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageVersion Include="Meziantou.Analyzer" Version="3.0.98" />
+    <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
+    <!-- Дополнительные formatting-only правила (RCS0xxx), не вошедшие в основной
+         Roslynator.Analyzers. Ловятся только в dotnet format, не в dotnet build. -->
+    <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="4.15.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Worker host (used by Comuki.Platform.Translator, future hosted services). -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
+    <!-- Contract-first gRPC via reflection (no .proto, no protoc). Used by
+         Comuki.Platform.Orchestration (owns the worker protocol contract). -->
+    <PackageVersion Include="protobuf-net.Grpc" Version="1.2.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- OpenAPI runtime spec generation (built-in .NET 9+, replaces Swashbuckle). -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <!-- Modern API reference UI (replaces Swagger UI). -->
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.7.0" />
+    <!-- Build-time OpenAPI doc generation (per learn.microsoft.com/aspnetcore/openapi).
+         Wraps the app's entry point in a mock server and writes the spec to disk
+         during 'dotnet build'. Default output: obj/{ProjectName}.json. We override
+         to write to the project root via OpenApiDocumentsDirectory.
+         Pinned to 10.0.0 to match net10.0 — the 9.x package ships
+         GetDocument.Insider.dll only for net9.0 and fails the MSBuild step. -->
+    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.0" />
+  </ItemGroup>
+</Project>

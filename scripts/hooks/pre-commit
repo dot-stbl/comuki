@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Pre-commit hook: format check on staged C# files.
+# Install: ./scripts/install-hooks.sh
+# Bypass:  git commit --no-verify
+set -euo pipefail
+
+# Collect staged .cs files (added/copied/modified).
+STAGED_CS=()
+while IFS= read -r file; do
+  [ -n "$file" ] && STAGED_CS+=("$file")
+done < <(git diff --cached --name-only --diff-filter=ACM | grep -E '\.cs$' || true)
+
+# No C# files staged — nothing to check (e.g. markdown / yaml commit).
+if [ ${#STAGED_CS[@]} -eq 0 ]; then
+  exit 0
+fi
+
+# Skip gracefully if dotnet CLI is not available.
+if ! command -v dotnet >/dev/null 2>&1; then
+  echo "⚠️  dotnet CLI not in PATH — skipping format check"
+  exit 0
+fi
+
+ROOT=$(git rev-parse --show-toplevel)
+SLN="$ROOT/comuki.slnx"
+if [ ! -f "$SLN" ]; then
+  echo "⚠️  comuki.slnx not found at $SLN — skipping format check"
+  exit 0
+fi
+
+COUNT=${#STAGED_CS[@]}
+echo "🔍 dotnet format: $COUNT C# file(s) staged"
+
+# Whitespace check only — fast, purely cosmetic, no semantic risk.
+# Style rules and analyzer fixes are CI-only (process/build-verification.md).
+if ! dotnet format whitespace "$SLN" --verify-no-changes --include "${STAGED_CS[@]}"; then
+  echo ""
+  echo "❌ Format check failed. To fix:"
+  echo "   dotnet format comuki.slnx"
+  echo "   git add -u"
+  echo "   Or bypass: git commit --no-verify"
+  exit 1
+fi
+
+echo "✅ Format check passed"

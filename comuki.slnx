@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Solution>
+  <Folder Name="/platform/src/application/api/">
+    <Project Path="platform/src/application/api/Comuki.Platform.Api.Public/Comuki.Platform.Api.Public.csproj" />
+  </Folder>
+  <Folder Name="/platform/src/application/internal/">
+    <Project Path="platform/src/application/internal/Comuki.Platform.Worker.Translator/Comuki.Platform.Worker.Translator.csproj" />
+  </Folder>
+  <Folder Name="/platform/src/database/">
+    <Project Path="platform/src/database/Comuki.Platform.Database.Runs/Comuki.Platform.Database.Runs.csproj" />
+  </Folder>
+  <Folder Name="/platform/src/feature/">
+    <Project Path="platform/src/feature/Comuki.Platform.Orchestration/Comuki.Platform.Orchestration.csproj" />
+  </Folder>
+  <Folder Name="/platform/src/models/">
+    <Project Path="platform/src/models/Comuki.Platform.Api.Contracts/Comuki.Platform.Api.Contracts.csproj" />
+    <Project Path="platform/src/models/Comuki.Platform.Entity.Core/Comuki.Platform.Entity.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Comuki.Platform.Architecture.Tests/Comuki.Platform.Architecture.Tests.csproj" />
+    <Project Path="tests/Comuki.Platform.Testing/Comuki.Platform.Testing.csproj" />
+    <Project Path="tests/Comuki.Platform.Orchestration.Unit.Lease/Comuki.Platform.Orchestration.Unit.Lease.csproj" />
+    <Project Path="tests/Comuki.Platform.Worker.Translator.Unit.StreamJson/Comuki.Platform.Worker.Translator.Unit.StreamJson.csproj" />
+    <Project Path="tests/Comuki.Platform.Worker.Translator.Integration.PiCli/Comuki.Platform.Worker.Translator.Integration.PiCli.csproj" />
+    <Project Path="tests/Comuki.Platform.Worker.Translator.Integration.TestTools.TestFakePi/Comuki.Platform.Worker.Translator.Integration.TestTools.TestFakePi.csproj" />
+  </Folder>
+</Solution>

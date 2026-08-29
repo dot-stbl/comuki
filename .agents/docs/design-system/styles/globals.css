@@ -1,0 +1,190 @@
+/* ============================================================
+   COMUKI — shadcn/ui theme (Tailwind v4, CSS-first)
+   Drop-in globals.css. Paste over your shadcn `globals.css`.
+
+   Aesthetic: premium-monospace. One typographic voice (IBM Plex Mono),
+   cool-ink neutrals, a single slate-blue brand accent, ~6px radius, airy.
+
+   Mapping philosophy (see "Tokens → shadcn" in the Components gallery):
+   - shadcn --primary      = Comuki brand accent (slate-blue)
+   - shadcn --accent       = a NEUTRAL hover/active surface (NOT the brand color)
+   - shadcn --destructive  = Comuki danger (terracotta — also drives status `failed`)
+   - everything else maps onto the cool-neutral ramp
+   - --status-*            = Comuki extension; muted distinct hues + icon shape
+   Values are hex and match styles/tokens.css 1:1 (the source of truth).
+   ============================================================ */
+
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.375rem; /* 6px — softened, still strict */
+
+  /* ---------- LIGHT (cool paper) ---------- */
+  --background:            #FBFBFA;
+  --foreground:            #1B232E;
+  --card:                  #FFFFFF;
+  --card-foreground:       #1B232E;
+  --popover:               #FFFFFF;
+  --popover-foreground:    #1B232E;
+
+  --primary:               #3C5A86; /* slate-blue */
+  --primary-foreground:    #FFFFFF;
+  --secondary:             #F3F4F3;
+  --secondary-foreground:  #1B232E;
+  --muted:                 #F3F4F3;
+  --muted-foreground:      #697080;
+  --accent:                #F3F4F3; /* neutral hover surface — NOT the brand */
+  --accent-foreground:     #1B232E;
+  --destructive:           #B0473B;
+  --destructive-foreground:#FFFFFF;
+
+  --border:                #E6E7E4;
+  --input:                 #E6E7E4;
+  --ring:                  #3C5A86; /* branded focus ring */
+
+  --chart-1: #3C5A86;
+  --chart-2: #4E7C5B;
+  --chart-3: #B0473B;
+  --chart-4: #9C7A3C;
+  --chart-5: #6E5BA6;
+
+  --sidebar:                     #F6F7F6;
+  --sidebar-foreground:          #1B232E;
+  --sidebar-primary:             #3C5A86;
+  --sidebar-primary-foreground:  #FFFFFF;
+  --sidebar-accent:              #F3F4F3;
+  --sidebar-accent-foreground:   #1B232E;
+  --sidebar-border:              #E6E7E4;
+  --sidebar-ring:                #3C5A86;
+
+  /* Comuki status extensions — muted distinct hues; ICON carries meaning */
+  --status-running:   #3C5A86; /* slate — active */
+  --status-success:   #4E7C5B; /* green */
+  --status-failed:    #B0473B; /* terracotta */
+  --status-waiting:   #9C7A3C; /* amber */
+  --status-queued:    #A0A4AC; /* faint */
+  --status-escalated: #6E5BA6; /* violet — bumped to lead */
+}
+
+.dark {
+  /* ---------- DARK (default product theme — cool ink) ---------- */
+  --background:            #15171B;
+  --foreground:            #E8EAEE;
+  --card:                  #191C21;
+  --card-foreground:       #E8EAEE;
+  --popover:               #22262C;
+  --popover-foreground:    #E8EAEE;
+
+  --primary:               #83A1DC; /* slate-blue (lifted for dark) */
+  --primary-foreground:    #0E1116; /* near-black on light slate */
+  --secondary:             #22262C;
+  --secondary-foreground:  #E8EAEE;
+  --muted:                 #1C1F25;
+  --muted-foreground:      #969CA6;
+  --accent:                #22262C; /* neutral hover surface — NOT the brand */
+  --accent-foreground:     #E8EAEE;
+  --destructive:           #D6685A;
+  --destructive-foreground:#15171B;
+
+  --border:                #262A30;
+  --input:                 #262A30;
+  --ring:                  #83A1DC;
+
+  --chart-1: #83A1DC;
+  --chart-2: #7BA68C;
+  --chart-3: #D6685A;
+  --chart-4: #C6A35E;
+  --chart-5: #9A86C7;
+
+  --sidebar:                     #131519;
+  --sidebar-foreground:          #E8EAEE;
+  --sidebar-primary:             #83A1DC;
+  --sidebar-primary-foreground:  #0E1116;
+  --sidebar-accent:              #22262C;
+  --sidebar-accent-foreground:   #E8EAEE;
+  --sidebar-border:              #262A30;
+  --sidebar-ring:                #83A1DC;
+
+  --status-running:   #83A1DC;
+  --status-success:   #7BA68C;
+  --status-failed:    #D6685A;
+  --status-waiting:   #C6A35E;
+  --status-queued:    #565C65;
+  --status-escalated: #9A86C7;
+}
+
+/* ============================================================
+   @theme inline — expose tokens to Tailwind utilities
+   ============================================================ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Comuki status — usable as text-status-running, bg-status-failed, etc. */
+  --color-status-running: var(--status-running);
+  --color-status-success: var(--status-success);
+  --color-status-failed: var(--status-failed);
+  --color-status-waiting: var(--status-waiting);
+  --color-status-queued: var(--status-queued);
+  --color-status-escalated: var(--status-escalated);
+
+  /* radius scale — derived from --radius (~6px) */
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  /* type — one monospace voice across the whole UI */
+  --font-sans: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "zero";
+  }
+  /* machine text helper */
+  .mono, code, kbd, [data-mono] {
+    font-family: var(--font-mono);
+    font-feature-settings: "zero";
+  }
+}

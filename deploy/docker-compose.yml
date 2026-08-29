@@ -1,0 +1,160 @@
+# Local development infra for Comuki.
+# Five services — every storage/lifecycle primitive the platform spec calls for,
+# wired to localhost-only ports. NOT for production — credentials are
+# dev defaults; swap to secrets-manager for any deploy beyond a laptop.
+#
+# Usage:
+#   cd deploy
+#   podman compose --env-file .env up -d   # Linux/Windows (podman 4+)
+#   docker compose --env-file .env up -d   # if podman isn't set up
+#
+# Verifying:
+#   curl -s http://localhost:5432  - fail (it's postgres, no http)
+#   pg_isready -h localhost -p 5432 -U comuki
+#   curl -s http://localhost:9000/minio/health/live  → OK
+#   curl -s http://localhost:8081/                   → nexus login page
+#   curl -s http://localhost:8428/health             → OK (VictoriaMetrics)
+#   curl -s http://localhost:9428/health             → OK (VictoriaLogs)
+#
+# Tear down + wipe data: podman compose down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: comuki-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${COMUKI_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${COMUKI_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${COMUKI_POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.d:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${COMUKI_POSTGRES_USER} -d ${COMUKI_POSTGRES_DB}
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - comuki-net
+
+  minio:
+    # S3-compatible object storage — Comuki.Platform.Artifacts (Phase 7)
+    # writes run artifacts here: diffs, screenshots, logs per run-id.
+    image: minio/minio:latest
+    container_name: comuki-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${COMUKI_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${COMUKI_MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Web console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    networks:
+      - comuki-net
+
+  nexus:
+    # Package registry — host NuGet + npm + docker base images locally.
+    # Per architecture.md §04: "slopsquatting" defense — workers only pull
+    # dependencies from this. In Phase 1+ we still talk to public registries;
+    # in Phase 3+ we point NuGet/npm at this Nexus instance.
+    image: sonatype/nexus3:3.70.0
+    container_name: comuki-nexus
+    restart: unless-stopped
+    environment:
+      NEXUS_SECURITY_RANDOMPASSWORD: "false"
+      NEXUS_ADMIN_PASSWORD: ${COMUKI_NEXUS_ADMIN_PASSWORD}
+    ports:
+      - "8081:8081"
+    volumes:
+      - nexus-data:/nexus-data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/service/rest/v1/status || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+    networks:
+      - comuki-net
+
+  victoria-metrics:
+    # Time-series DB for OpenTelemetry metrics (per stack.md §06).
+    # Comuki.Platform.Logging emits business + tech metrics into here
+    # via the OTLP endpoint at :8431 (enabled by the OTLP arg below).
+    image: victoriametrics/victoria-metrics:v1.105.0
+    container_name: comuki-victoria-metrics
+    restart: unless-stopped
+    command:
+      - "--storageDataPath=/storage"
+      - "--retentionPeriod=1"  # 1 month; bump for real workloads
+      - "--enableOTLPReceiver"
+    ports:
+      - "8428:8428"  # vmui + query
+      - "8431:8431"  # OTLP ingestion
+    volumes:
+      - victoria-metrics-data:/storage
+    networks:
+      - comuki-net
+
+  victoria-logs:
+    # Append-only log store for OTel logs (per stack.md §06).
+    image: victoriametrics/victoria-logs:v0.8.0
+    container_name: comuki-victoria-logs
+    restart: unless-stopped
+    command:
+      - "--storageDataPath=/storage"
+      - "--retentionPeriod=1"
+    ports:
+      - "9428:9428"  # HTTP ingestion + vmui
+    volumes:
+      - victoria-logs-data:/storage
+    networks:
+      - comuki-net
+
+  worker:
+    # Comuki worker image — pi-coding-agent headless runtime.
+    # Not started by default: opt in with `podman compose --profile worker ...`.
+    # Build context is the repo root so the Dockerfile can COPY platform/ later
+    # (04-03 will add the Translator binary to this image).
+    profiles: ["worker"]
+    build:
+      context: ..
+      dockerfile: deploy/worker.Dockerfile
+    image: comuki/worker:dev
+    container_name: comuki-worker
+    environment:
+      # Empty defaults so the container starts even without a real key
+      # (useful for `--help` / version probes). The test script asserts
+      # against real output, so a key is required for the smoke check.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+      PI_TEST_PROMPT: ${PI_TEST_PROMPT:-Say hello in exactly one word}
+    volumes:
+      # Future: orchestrator mounts the worktree here. For 04-01 the
+      # dir is unused — pi just runs the prompt and emits stream-json.
+      - worker-work:/work
+    networks:
+      - comuki-net
+
+networks:
+  comuki-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  minio-data:
+  nexus-data:
+  victoria-metrics-data:
+  victoria-logs-data:
+  worker-work:

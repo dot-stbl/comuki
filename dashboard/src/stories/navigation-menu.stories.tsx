@@ -7,7 +7,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
+} from "@/shared/ui/navigation-menu"
 
 const meta: Meta<typeof NavigationMenu> = {
   title: "UI/NavigationMenu",

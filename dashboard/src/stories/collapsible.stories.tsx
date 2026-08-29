@@ -1,8 +1,8 @@
 import * as React from "react"
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Button } from "@/components/ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/collapsible"
+import { Button } from "@/shared/ui/button"
 
 const meta: Meta<typeof Collapsible> = {
   title: "UI/Collapsible",

@@ -9,7 +9,7 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu"
+} from "@/shared/ui/context-menu"
 
 const meta: Meta<typeof ContextMenu> = {
   title: "UI/ContextMenu",

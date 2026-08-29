@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react"
 import { useForm } from "react-hook-form"
 
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/shared/ui/form"
+import { Input } from "@/shared/ui/input"
 
 const meta: Meta<typeof Form> = {
   title: "UI/Form",

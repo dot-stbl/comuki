@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { Kbd } from "@/components/ui/kbd"
+import { Kbd } from "@/shared/ui/kbd"
 
 const meta: Meta<typeof Kbd> = {
   title: "UI/Kbd",

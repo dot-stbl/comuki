@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { DirectionProvider } from "@/components/ui/direction"
+import { DirectionProvider } from "@/shared/ui/direction"
 
 const meta: Meta<typeof DirectionProvider> = {
   title: "UI/Direction",

@@ -5,8 +5,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { Button } from "@/components/ui/button"
+} from "@/shared/ui/tooltip"
+import { Button } from "@/shared/ui/button"
 
 const meta: Meta<typeof Tooltip> = {
   title: "UI/Tooltip",

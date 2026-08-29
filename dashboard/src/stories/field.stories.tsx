@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { Field, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
+import { Field, FieldLabel } from "@/shared/ui/field"
+import { Input } from "@/shared/ui/input"
 
 const meta: Meta<typeof Field> = {
   title: "UI/Field",

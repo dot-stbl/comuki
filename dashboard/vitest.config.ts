@@ -23,8 +23,11 @@ export default defineConfig({
       reporter: ["text", "json", "html", "lcov"],
       include: ["src/**/*"],
       exclude: [
-        "src/main.tsx",
+        "src/app/main.tsx",
         "src/routeTree.gen.ts",
+        "src/domains/**/AGENTS.md",
+        "src/design/**",
+        "src/app/mocks/**",
         "**/*.stories.ts",
         "**/*.stories.tsx",
         "**/*.d.ts",

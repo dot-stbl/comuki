@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { RunIdChip } from "@/components/ui/run-id-chip"
+import { RunIdChip } from "@/shared/ui/run-id-chip"
 
 const meta: Meta<typeof RunIdChip> = {
   title: "Comuki/RunIdChip",

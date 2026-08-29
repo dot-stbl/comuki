@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { InputGroup } from "@/components/ui/input-group"
-import { Input } from "@/components/ui/input"
+import { InputGroup } from "@/shared/ui/input-group"
+import { Input } from "@/shared/ui/input"
 
 const meta: Meta<typeof InputGroup> = {
   title: "UI/InputGroup",

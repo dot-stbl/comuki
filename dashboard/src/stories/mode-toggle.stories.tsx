@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { ModeToggle } from "@/components/ui/mode-toggle"
+import { ModeToggle } from "@/shared/ui/mode-toggle"
 
 const meta: Meta<typeof ModeToggle> = {
   title: "Comuki/ModeToggle",

@@ -7,8 +7,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+} from "@/shared/ui/card"
+import { Button } from "@/shared/ui/button"
 
 const meta: Meta<typeof Card> = {
   title: "UI/Card",

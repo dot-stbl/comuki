@@ -13,8 +13,6 @@ import {
   FileTextIcon,
   GitBranchIcon,
   HelpCircleIcon,
-  Home,
-  LayoutGrid,
   Loader2Icon,
   MenuIcon,
   MoonIcon,
@@ -26,21 +24,21 @@ import {
   XIcon,
 } from "lucide-react"
 
-import { AppShell } from "@/components/layout/app-shell"
-import { DemoCard } from "@/components/ui/demo-card"
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
-import { Toaster } from "@/components/ui/sonner"
-import { Button } from "@/components/ui/button"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Switch } from "@/components/ui/switch"
-import { Slider } from "@/components/ui/slider"
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
+import { AppShell } from "@/app/layout/app-shell"
+import { DemoCard } from "@/shared/ui/demo-card"
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/shared/ui/tooltip"
+import { Toaster } from "@/shared/ui/sonner"
+import { Button } from "@/shared/ui/button"
+import { ToggleGroup, ToggleGroupItem } from "@/shared/ui/toggle-group"
+import { Input } from "@/shared/ui/input"
+import { Textarea } from "@/shared/ui/textarea"
+import { Label } from "@/shared/ui/label"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/shared/ui/select"
+import { Checkbox } from "@/shared/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group"
+import { Switch } from "@/shared/ui/switch"
+import { Slider } from "@/shared/ui/slider"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/shared/ui/input-otp"
 import {
   Form,
   FormControl,
@@ -49,7 +47,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from "@/shared/ui/form"
 import {
   Dialog,
   DialogContent,
@@ -58,7 +56,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/shared/ui/dialog"
 import {
   Sheet,
   SheetContent,
@@ -66,12 +64,12 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
+} from "@/shared/ui/sheet"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/shared/ui/popover"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,15 +77,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/shared/ui/dropdown-menu"
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+} from "@/shared/ui/context-menu"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/shared/ui/hover-card"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -98,7 +96,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/shared/ui/alert-dialog"
 import {
   Drawer,
   DrawerContent,
@@ -107,7 +105,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer"
+} from "@/shared/ui/drawer"
 import {
   Combobox,
   ComboboxInput,
@@ -117,7 +115,7 @@ import {
   ComboboxGroup,
   ComboboxLabel,
   ComboboxEmpty,
-} from "@/components/ui/combobox"
+} from "@/shared/ui/combobox"
 import {
   Card,
   CardContent,
@@ -125,7 +123,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/shared/ui/card"
 import {
   Table,
   TableBody,
@@ -135,26 +133,26 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+} from "@/shared/ui/table"
+import { Badge } from "@/shared/ui/badge"
 import {
   Avatar,
   AvatarFallback,
   AvatarGroup,
   AvatarGroupCount,
   AvatarImage,
-} from "@/components/ui/avatar"
+} from "@/shared/ui/avatar"
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Skeleton } from "@/components/ui/skeleton"
-import { AspectRatio } from "@/components/ui/aspect-ratio"
+} from "@/shared/ui/accordion"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs"
+import { Separator } from "@/shared/ui/separator"
+import { ScrollArea } from "@/shared/ui/scroll-area"
+import { Skeleton } from "@/shared/ui/skeleton"
+import { AspectRatio } from "@/shared/ui/aspect-ratio"
 import {
   Item,
   ItemContent,
@@ -164,12 +162,12 @@ import {
   ItemActions,
   ItemGroup,
   ItemSeparator,
-} from "@/components/ui/item"
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
-import { Kbd, KbdGroup } from "@/components/ui/kbd"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Progress } from "@/components/ui/progress"
-import { Spinner } from "@/components/ui/spinner"
+} from "@/shared/ui/item"
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/ui/empty"
+import { Kbd, KbdGroup } from "@/shared/ui/kbd"
+import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert"
+import { Progress } from "@/shared/ui/progress"
+import { Spinner } from "@/shared/ui/spinner"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -177,7 +175,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+} from "@/shared/ui/breadcrumb"
 import {
   Pagination,
   PaginationContent,
@@ -186,7 +184,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
+} from "@/shared/ui/pagination"
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -194,7 +192,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu"
+} from "@/shared/ui/navigation-menu"
 import {
   Menubar,
   MenubarContent,
@@ -202,7 +200,7 @@ import {
   MenubarMenu,
   MenubarSeparator,
   MenubarTrigger,
-} from "@/components/ui/menubar"
+} from "@/shared/ui/menubar"
 import {
   Command,
   CommandDialog,
@@ -212,9 +210,9 @@ import {
   CommandItem,
   CommandList,
   CommandShortcut,
-} from "@/components/ui/command"
-import { Toggle } from "@/components/ui/toggle"
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+} from "@/shared/ui/command"
+import { Toggle } from "@/shared/ui/toggle"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/shared/ui/resizable"
 import {
   Sidebar,
   SidebarGroup,
@@ -224,22 +222,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-} from "@/components/ui/sidebar"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { DirectionProvider } from "@/components/ui/direction"
-import { StatusBadge } from "@/components/ui/status-badge"
-import { RunIdChip } from "@/components/ui/run-id-chip"
-import { ModeToggle } from "@/components/ui/mode-toggle"
-import { useTheme } from "@/components/theme-provider"
+} from "@/shared/ui/sidebar"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/collapsible"
+import { DirectionProvider } from "@/shared/ui/direction"
+import { StatusBadge } from "@/shared/ui/status-badge"
+import { RunIdChip } from "@/shared/ui/run-id-chip"
+import { ModeToggle } from "@/shared/ui/mode-toggle"
+import { useTheme } from "@/app/theme-provider"
 
 export const Route = createFileRoute("/components")({
   component: ComponentsShowcase,
 })
-
-const navItems = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Components", href: "/components", icon: LayoutGrid },
-]
 
 function Section({
   number,
@@ -270,7 +263,7 @@ function Section({
 
 function ComponentsShowcase() {
   return (
-    <AppShell navItems={navItems}>
+    <AppShell>
       <TooltipProvider delayDuration={200}>
         <Toaster richColors position="top-right" />
 

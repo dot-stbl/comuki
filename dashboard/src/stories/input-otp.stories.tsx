@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/shared/ui/input-otp"
 
 const meta: Meta<typeof InputOTP> = {
   title: "UI/InputOTP",

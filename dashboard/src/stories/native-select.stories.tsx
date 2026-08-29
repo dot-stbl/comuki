@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { NativeSelect } from "@/components/ui/native-select"
+import { NativeSelect } from "@/shared/ui/native-select"
 
 const meta: Meta<typeof NativeSelect> = {
   title: "UI/NativeSelect",

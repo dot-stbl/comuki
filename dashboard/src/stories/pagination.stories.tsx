@@ -8,7 +8,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
+} from "@/shared/ui/pagination"
 
 const meta: Meta<typeof Pagination> = {
   title: "UI/Pagination",

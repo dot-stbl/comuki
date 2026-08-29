@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { StatusBadge } from "@/components/ui/status-badge"
+import { StatusBadge } from "@/shared/ui/status-badge"
 
 const meta: Meta<typeof StatusBadge> = {
   title: "Comuki/StatusBadge",

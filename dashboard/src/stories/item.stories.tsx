@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { Item, ItemGroup, ItemTitle } from "@/components/ui/item"
+import { Item, ItemGroup, ItemTitle } from "@/shared/ui/item"
 
 const meta: Meta<typeof Item> = {
   title: "UI/Item",

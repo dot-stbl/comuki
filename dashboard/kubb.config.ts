@@ -15,7 +15,7 @@ import { pluginTs } from "@kubb/plugin-ts"
  * Workflow:
  *   bun run generate-api
  *     → dotnet build comuki.slnx (regenerates openapi-v1.json if API changed)
- *     → kubb generate (emits 15 TS files into src/api/)
+ *     → kubb generate (emits TS files into src/shared/api/)
  *
  * The same openapi-v1.json is also consumed by any future TS / C# / external
  * SDK that wants a typed client — it's the single source of truth for
@@ -27,7 +27,7 @@ export default defineConfig({
     path: "../platform/src/application/api/Comuki.Platform.Api.Public/openapi-v1.json",
   },
   output: {
-    path: "./src/api",
+    path: "./src/shared/api",
     clean: true,
   },
   plugins: [

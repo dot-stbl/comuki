@@ -4,7 +4,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/ui/avatar"
+} from "@/shared/ui/avatar"
 
 const meta: Meta<typeof Avatar> = {
   title: "UI/Avatar",

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { Textarea } from "@/components/ui/textarea"
+import { Textarea } from "@/shared/ui/textarea"
 
 const meta: Meta<typeof Textarea> = {
   title: "UI/Textarea",

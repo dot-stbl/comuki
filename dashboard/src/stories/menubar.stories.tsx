@@ -7,7 +7,7 @@ import {
   MenubarMenu,
   MenubarSeparator,
   MenubarTrigger,
-} from "@/components/ui/menubar"
+} from "@/shared/ui/menubar"
 
 const meta: Meta<typeof Menubar> = {
   title: "UI/Menubar",

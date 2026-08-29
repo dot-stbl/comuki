@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { AspectRatio } from "@/components/ui/aspect-ratio"
+import { AspectRatio } from "@/shared/ui/aspect-ratio"
 
 const meta: Meta<typeof AspectRatio> = {
   title: "UI/AspectRatio",

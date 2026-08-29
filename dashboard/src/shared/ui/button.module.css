@@ -1,0 +1,125 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  height: var(--h-button);
+  padding: 0 var(--s4);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    transform 60ms ease;
+}
+
+.button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  border-color: var(--ring);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.default {
+  background: var(--brand);
+  color: var(--brand-foreground);
+}
+
+.default:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--brand) 85%, var(--text));
+}
+
+.outline {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.outline:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--muted) 80%, transparent);
+}
+
+.secondary {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.secondary:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--secondary) 90%, var(--text));
+}
+
+.ghost {
+  background: transparent;
+  color: var(--text);
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--muted);
+}
+
+.destructive {
+  background: color-mix(in oklab, var(--danger) 15%, transparent);
+  color: var(--danger);
+}
+
+.destructive:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--danger) 25%, transparent);
+}
+
+.link {
+  height: auto;
+  padding: 0;
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.link:hover:not(:disabled) {
+  color: color-mix(in oklab, var(--brand) 80%, var(--text));
+}
+
+.sm {
+  height: var(--h-button-sm);
+  padding: 0 var(--s3);
+  font-size: var(--t-xs);
+}
+
+.lg {
+  height: var(--h-button-lg);
+  padding: 0 var(--s5);
+}
+
+.icon {
+  width: var(--h-button);
+  padding: 0;
+}
+
+.iconSm {
+  width: var(--h-button-sm);
+  height: var(--h-button-sm);
+  padding: 0;
+}
+
+.iconLg {
+  width: var(--h-button-lg);
+  height: var(--h-button-lg);
+  padding: 0;
+}

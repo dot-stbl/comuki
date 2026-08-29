@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
-import { Button } from "@/shared/ui/button"
+import { Button } from "@/shared/ui/_legacy/button"
 
 const meta: Meta<typeof Button> = {
-  title: "UI/Button",
+  title: "Legacy/Button",
   component: Button,
   parameters: { layout: "centered" },
   tags: ["autodocs"],

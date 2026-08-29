@@ -1,0 +1,77 @@
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+  animation: scrim-in var(--dur) var(--ease) both;
+}
+
+.modal {
+  width: var(--modal-w);
+  max-width: calc(100vw - var(--s8));
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-modal);
+  animation: modal-in var(--dur) var(--ease) both;
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+
+.title {
+  margin: 0;
+  padding: var(--s5) var(--s5) 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-body);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.body {
+  margin: 0;
+  padding: var(--s4) var(--s5) var(--s5);
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.footer {
+  display: flex;
+  gap: var(--s3);
+  justify-content: flex-end;
+  padding: var(--s3) var(--s5);
+  border-top: 1px solid var(--border);
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--s2)) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

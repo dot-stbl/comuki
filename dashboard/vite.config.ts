@@ -17,4 +17,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    // Comuki port pool 17000–17200 — see .agents/rules/process/ports.md
+    port: 17173,
+    strictPort: true,
+  },
 })

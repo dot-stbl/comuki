@@ -96,6 +96,10 @@ Milestone **v1**, phase **3 complete** (design system + testing infra).
    Mono, `--radius: 0.375rem`, 6 status tokens. Источник:
    `.agents/docs/design-system/Comuki Design System.md`.
 
+9. **Port pool 17000–17200 — обязательно.** Случайные порты запрещены.
+   Dashboard = **17173** (`strictPort`). Таблица и резервы:
+   [`.agents/rules/process/ports.md`](.agents/rules/process/ports.md).
+
 ---
 
 ## Команды
@@ -106,10 +110,11 @@ dotnet build comuki.slnx -c Debug
 dotnet format comuki.slnx --severity hidden
 dotnet run --project tests/Comuki.Platform.Orchestration.Unit.Lease
 
-# Frontend
+# Frontend (http://localhost:17173 — port pool, not 5173)
 cd dashboard && bun install
 cd dashboard && bun run typecheck && bun run lint && bun run test
 cd dashboard && bun run build
+# User only: cp .env.example .env && bunx vite   → :17173
 ```
 
 Не стартуй `bun run dev` / `dotnet run` (host) / watch из агентской сессии.

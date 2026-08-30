@@ -1,0 +1,53 @@
+schema: spec-driven
+
+context: |
+  Project: Comuki — platform where a leading model (brain) decomposes work and
+  directs a swarm of ephemeral workers in containers. Shared knowledge/rules via
+  MCP. Anti-slop: skills + hard analyzers + design system as enforceable rules.
+
+  Polyglot monorepo by stack:
+  - platform/ — C# / .NET 10 (orchestrator, YARP proxy, knowledge, rules, Translator)
+  - agents/ — TypeScript (comuki-agent-core, comuki-worker-sdk/pi, comuki-dev-sdk)
+  - dashboard/ — React 19 + Vite + shadcn (ops UI)
+  - control-plane/ — worker rules/skills (not product code)
+  - deploy/ — Docker Compose (postgres+pgvector, minio, nexus, victoria)
+  - openspec/ — specs and change proposals (this tree)
+
+  Key decisions:
+  - Agents are stateless; durable state lives in the orchestrator
+  - Brain thinks; deterministic code is the spine ("LLM proposes — system disposes")
+  - Pull-claim workers; Translator bridges pi ↔ orchestrator over gRPC
+  - Model proxy with virtual capability keys (YARP)
+  - Verification is deterministic-first (warnings-as-errors, analyzers)
+  - Control plane versioned as code; human always closes the loop
+  - v1.0 bar: any other product can be built from scratch on Comuki
+
+  Conventions:
+  - Commits: Conventional Commits (see .agents/rules/process/commit-format.md)
+  - Build gate: `dotnet build comuki.slnx -c Debug` (warnings-as-errors)
+  - FE: bun only; no long-lived dev/watch from agents
+  - Communicate with the user in Russian; public OSS docs/README in English
+
+  Brand: .stbl (dot-stbl on GitHub). MIT License © 2026 .stbl.
+  Repo: https://github.com/dot-stbl/comuki
+
+rules:
+  proposal:
+    - Keep proposals under 500 words
+    - Always include a "Non-goals" section
+    - Tie changes to a version/capability promise when relevant (v0.x / v1.0)
+  tasks:
+    - Break tasks into reviewable chunks
+    - Prefer tracer-bullet vertical slices over horizontal layers
+  specs:
+    - Specs describe user-visible / API-visible behavior, not implementation gossip
+    - Reference architecture docs under .agents/docs/architecture/ when extending platform shape
+
+operations:
+  apply:
+    guidance:
+      - Run `dotnet build comuki.slnx -c Debug` before claiming done for C# changes
+      - Do not start long-lived dev/watch/serve processes from the agent
+  archive:
+    guidance:
+      - Summarize what landed vs what was deferred before finishing

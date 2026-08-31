@@ -6,7 +6,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
+    <ProjectReference Include="..\..\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Comuki.Host.Unit.Auth" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Auth" />
   </ItemGroup>
 
 </Project>

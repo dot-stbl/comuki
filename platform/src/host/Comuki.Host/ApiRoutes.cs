@@ -10,4 +10,10 @@ public static class ApiRoutes
     public const string ProfileByKey = "/profiles/{key}";
 
     public const string ChatCommands = "/chat-commands";
+
+    /// <summary>API root prefix of the versioned auth surface.</summary>
+    public const string AuthRoot = "api/v1/auth";
+
+    /// <summary>Base of the per-provider OIDC routes (start endpoint and the handler-owned callback path).</summary>
+    public const string AuthOidcRoot = "api/v1/auth/oidc";
 }

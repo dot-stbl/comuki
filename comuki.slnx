@@ -30,11 +30,13 @@
     <Project Path="tests/unit/Comuki.Host.Unit.ProfileCatalog/Comuki.Host.Unit.ProfileCatalog.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/Comuki.Engine.Orchestration.Unit.StatusMachine.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Compute.Unit/Comuki.Engine.Compute.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.Auth/Comuki.Host.Unit.Auth.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Identity.Unit/Comuki.Modules.Identity.Unit.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Migrations/Comuki.Engine.Orchestration.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Queue/Comuki.Engine.Orchestration.Integration.Queue.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Auth/Comuki.Host.Integration.Auth.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Migrations/Comuki.Modules.Identity.Integration.Migrations.csproj" />
   </Folder>
 </Solution>

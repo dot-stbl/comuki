@@ -1,9 +1,12 @@
 using Comuki.Host.Auth;
 using Comuki.Host.Auth.Security;
 using Comuki.Host.ControlPlane;
+using Comuki.Host.Projects;
 using Comuki.Modules.Identity.Application;
 using Comuki.Modules.Identity.Infrastructure;
 using Comuki.Modules.Identity.Infrastructure.Oidc;
+using Comuki.Modules.Projects.Application;
+using Comuki.Modules.Projects.Infrastructure;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.Options;
 
@@ -36,10 +39,10 @@ internal static class HostComposer
 
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).
-        builder.Services.AddSingleton<Comuki.Engine.Compute.Ports.IProjectScaleSettings>(
-            static serviceProvider => new Comuki.Host.Projects.ProjectScaleSettingsAdapter(
-                serviceProvider.GetRequiredService<Comuki.Modules.Projects.Application.Ports.IProjectSettingsStore>(),
-                serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<Comuki.Engine.Compute.Options.ScaleSupervisorOptions>>()));
+        builder.Services.AddSingleton<Engine.Compute.Ports.IProjectScaleSettings>(
+            static serviceProvider => new ProjectScaleSettingsAdapter(
+                serviceProvider.GetRequiredService<Modules.Projects.Application.Ports.IProjectSettingsStore>(),
+                serviceProvider.GetRequiredService<IOptions<Engine.Compute.Options.ScaleSupervisorOptions>>()));
 
         // The /auth/oidc/{provider}/start surface reads the configured
         // provider list for its 404s; the ticket event + callback path

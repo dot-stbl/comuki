@@ -52,6 +52,11 @@
     <Message Text="[VerifyFormatOnBuild] dotnet format verify running (adds ~10-30s)..."
              Importance="High" />
 
+    <!-- The log lives in the solution-root obj/ which does not exist on a fresh
+         clone; without this the cmd redirection fails silently and the gate
+         passes vacuously (dotnet format never runs). -->
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(_FormatLogFile)'))" />
+
     <!-- dotnet format on the .NET 10 SDK returns exit 0 EVEN when drift is
          found under cmd/PowerShell (console.x hit this on 10.0.109). So:
          redirect both streams to a log, parse diagnostic lines, count them. -->

@@ -5,6 +5,3 @@ var app = builder.Build();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 await app.RunAsync();
-
-/// <summary>Exposed for WebApplicationFactory in integration tests.</summary>
-public partial class Program;

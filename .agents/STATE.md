@@ -1,71 +1,66 @@
 ---
 milestone: v1
-status: s0-skeleton
+status: wave-3-merged
 last_updated: 2026-08-31
 progress:
   total_slices: 15
-  completed_slices: 0.5
-  issues: https://github.com/dot-stbl/comuki/issues
-  percent: 3
+  completed_slices: 9
+  issues_closed: "1,2,3,15,16"
+  issues_open: "4 (S3 in flight), 12 (tail), 14 (T12.4), 5-11"
+  percent: 55
 ---
 
 # Project State
 
 ## Current Position
 
-**Ресет бекенда на новый каркас** (2026-08-31): `platform/src` = `shared` ·
-`engine` · `host` (см. `docs/architecture/comuki-project-structure.md`).
-Старая структура (`application/feature/database/models`) удалена; история и
-рабочий код фазы 4 (Translator runner, gRPC contract, PiCli integration) —
-на ветке `legacy/pre-new-structure`, вернутся по мере слайсов.
+Wave 3 слита (`a4296b5`): Host-auth + Projects/settings. **В работе: S3-runtime**
+(gRPC server, Translator runner, worker image, e2e c TestFakePi — воркер майнит
+`legacy/pre-new-structure`).
 
-Планирование: `docs/product/comuki-task-breakdown.md` (v2.1) ↔ GitHub issues
-S0–S14 + backlog (#1–#16). Текущий слайс: **S0 — скелет** (issue #1), частично
-закрыт этим ресетом.
+Issue-трекер = source of truth статуса: https://github.com/dot-stbl/comuki/issues
+(закрыты S0/S1/S2/S13/S14; S4 — модуль+host готов, хвост: scope-filter 404 +
+keycloak e2e).
 
-## Что есть (живое)
+## Что живёт (после a4296b5)
 
-- `Comuki.Shared.Kernel` — id-VO (RunId/ProjectId/WorkerId, UUIDv7)
-- `Comuki.Shared.Contracts` — `IComputeProvider` порт + labels + request/handles
-- `Comuki.Engine.Orchestration` — RunStatus / WorkItemStatus enums (без stalled)
-- `Comuki.Host` — /health (composition-only entry)
-- `Comuki.Host.Translator` — **stream-json парсер pi + 9 unit-тестов** (перенос из фазы 4)
-- Тесты: arch 4/4 (правила слоёв нового дерева) · translator 9/9
-- Build: `dotnet build comuki.slnx -c Debug` → 0 warnings / 0 errors
-- `nuget.config` — clear sources, только nuget.org (NU1507 закрыт)
-- CI: GitHub Actions нет ещё — issue #16 (S14); `.gitlab-ci.yml` удалён
+- **Каркас**: `platform/src/{shared,modules,engine,host}` + `platform/build` (format gate)
+- **Модули**: Identity (RBAC: roles-in-code, ck_ keys, OIDC linker) · Projects (CRUD + settings live-reload)
+- **Engine**: Orchestration (runs/queue/claim-lease SKIP LOCKED/journal/reaper) · Compute (Docker provider, tokens, scale v0)
+- **Host**: /health · /api/v1/auth/* (cookie+ck_+OIDC start/callback) · /profiles /chat-commands (permissioned) · /api/v1/projects + settings · HostComposer (internal, IVT для тестов)
+- **agents/**: bun workspace, agent-core (zod, парсер-зеркало), worker-sdk (locks, skills)
+- **Тесты**: unit 278 · integration 52 (реальный PG) · TS 65 · CI GitHub Actions зелёный
 
-## Goal (v1.0)
+## Гейты (Definition of Done)
 
-На Comuki можно с нуля собрать любой другой продукт. Полный scope:
-`docs/architecture/comuki-v1-scope-draft.md`; экраны:
-`docs/product/comuki-fe-requirements.md`.
+1. `dotnet build comuki.slnx -c Debug` — 0/0 **+ `[VerifyFormatOnBuild] Format check passed`** (жёсткий формат-гейт в графе билда)
+2. Все suite'ы зелёные (`dotnet run --project <test>` — MTP, не dotnet test)
+3. FE (когда тронут): `cd dashboard && bun run typecheck && bun run lint && bun run test`
+4. Agents TS: `cd agents && bun install && bun run typecheck && bun test`
 
-## Key decisions (актуальные)
+## Ключевые решения (дельта от старых docs)
 
-| Decision | Rationale |
-|----------|-----------|
-| Каркас shared/modules/engine/host по образцу console.x.sdk | модульный монолит; hosts = composition only |
-| Entity id = UUIDv7 (PG uuid) | time-ordered, native PG, API — string |
-| API key `ck_` + HMAC store; worker token opaque+TTL | показать 1 раз; отзыв с lease |
-| Роли только в коде (6 ролей), assignments в БД; permissions = константы + каталог + startup validate | RBAC как console.x ADR-0018, упрощён |
-| Journal = `run_events` jsonb; тяжёлое → MinIO по uri | один SoT timeline; blob дёшево |
-| Lease = колонки `work_items` (SKIP LOCKED) | один hot path, без join |
-| Run 7 статусов; work item без `stalled` (stall → событие + failed/requeue) | меньше состояний, политика снаружи |
-| gRPC: Host = server, Translator = client; k8s Start = batch/v1 Job | контейнер открывает канал наружу |
-| Chat/Voluta в Comuki.Host; Brain = отдельный Host.Brain (gRPC) | изоляция agent-loop |
-| Intake: `/api/hooks/{source}` + двойная идемпотентность (delivery_id + unique active run) | replay-safe, 1 issue = 1 run |
-| Wire к моделям: OpenAI + Anthropic compatible; hapy не зависимость | OSS |
-| FE-тесты: vitest+MSW; Playwright нет | решение scope |
-| Verify → v1.1 (opt-in generic-command) | не ломает ядро |
-| Конventional Commits `[hybrid] type(scope): subject` | см. rules/process/commit-format.md |
-| xUnit v3 = MTP: `dotnet run --project` | VSTest не умеет v3 discovery |
+| Решение | Что |
+|---|---|
+| Анализаторы | ТОЛЬКО IDE code-style + CA Security; **MA/RCS/VSTHRD удалены** (шум) |
+| Формат-гейт | `platform/build/Comuki.Build.Tools` — verify hidden, эскейпы `-p:DisableFormatOnBuild` / `FormatOnBuildTreatAsWarning`; формат-фиксер ≠ доверие: diff всегда ревьюить |
+| IDE0010/IDE0072 off | вписывают NotImplementedException в switch |
+| IDE0058 off | иначе фиксер вставляет `_ =` (запрещены глобальным правилом) |
+| IDE0022 off (expr-bodied) | методы — только block body |
+| Program.cs | top-level, **без** `public partial class Program` — тесты через `internal HostComposer.Compose` + IVT |
+| Entity ids | UUIDv7 (PG uuid), строки в API |
+| Ключи | `ck_` prefix + HMAC(pepper env); worker token opaque+TTL |
+| EF | миграции per-module context (`__comuki_*` history), snake_case, tool-generated only |
+| Тестcontainers | 4.14.0 (4.12 тянет уязвимый SSH.NET) |
+| slnx | править руками (`dotnet sln add --solution-folder` ломает пути на Win) |
 
-## Осторожно (известные грабли)
+## Осторожно (грабли, уже стреляли)
 
-- `dotnet format --severity hidden` вписывает `throw new NotImplementedException()`
-  в switch-руки (IDE0010 fixer) → MA0025 errors. После format — проверять diff.
-- NetArchTest `HaveDependencyOn("Comuki.Host")` префикс-матчит
-  `Comuki.Host.Translator` — проверять реальные границы, не префиксы ns.
-- `dotnet sln add --solution-folder` на Windows/.NET 10 схлопывает пути —
-  править `.slnx` руками и сверять с физическими папками.
+- `dotnet format --severity hidden` — REVIEW DIFF после фикса (см. STATE истории: NotImplementedException-arms)
+- Локальная ветка `master` удалена (указывала на старый dashboard) — integration = `preparation/translator-001`, push как `HEAD:master`
+- NetArchTest prefix-match: `Comuki.Host.Translator` матчится на `Comuki.Host` — проверять реальные границы
+- Merge-конфликты волны: props (дубли PackageVersion → NU1506), slnx (объединять руками), Host.csproj
+
+## Дальше
+
+S3 финиш → волна 4: S5 Chat/Brain (Host.Chat + Voluta + Host.Brain) · S6 Intake · T12.4 dev-sdk · Identity-хвост (#12) · keycloak compose.

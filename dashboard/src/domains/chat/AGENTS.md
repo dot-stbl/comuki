@@ -72,6 +72,9 @@ with the next message as text.
 - The streaming reply is rendered **outside** the `role="log"` region and is
   `aria-hidden` while it arrives. See `ui/chat-thread.tsx`.
 - The dock is hidden — not explained — without `chat.use`, the way the rail
-  hides what a role cannot reach. The rail item and the trigger are two doors
-  to *different* containers (a screen with a URL, a sheet over the board);
-  there is no second door to the same one anywhere.
+  hides what a role cannot reach. The console is **not a rail section**: the
+  floating trigger is its one door in the chrome, decided by the owner. The
+  `/chat` route stays as the URL-addressable reading (and the wizard's
+  neighbour), linked from nothing; the wizard's entry point rides in the
+  sheet's bar, because an entry point must live in the container that is
+  reachable.

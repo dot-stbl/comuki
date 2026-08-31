@@ -6,7 +6,6 @@ import {
   FolderGit2,
   ListOrdered,
   ListTodo,
-  MessageSquare,
   PlayCircle,
   Plug,
   Route as RouteIcon,
@@ -38,16 +37,10 @@ export const productNav: SidebarNavGroup[] = [
   {
     label: "Intake",
     items: [
-      // Above Inbox on purpose: Intake is where work enters the swarm, and
-      // there are exactly two ways in — a ticket landing in the inbox, and a
-      // person typing `/run`. `exact: false` so the wizard keeps it active.
-      {
-        label: "Chat",
-        href: "/chat",
-        icon: MessageSquare,
-        exact: false,
-        permission: "chat.use",
-      },
+      // The console is not a section: its one door in the chrome is the
+      // floating trigger over the board (see `domains/chat`, the dock), so a
+      // conversation is something you have, not somewhere you go. The `/chat`
+      // route remains for a URL somebody pastes, and nothing here links it.
       { label: "Inbox", href: "/tasks", icon: ListTodo, permission: "inbox.view" },
     ],
   },

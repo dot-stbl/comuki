@@ -81,7 +81,6 @@ describe("the rail, filtered by what the session may do", () => {
     const { labels, groups } = railFor(["project-admin"])
 
     expect(labels).toEqual([
-      "Chat",
       "Inbox",
       "Live runs",
       "Queue",
@@ -121,13 +120,14 @@ describe("the rail, filtered by what the session may do", () => {
     expect(groups).not.toContain("Platform")
   })
 
-  it("puts the console where work enters, not where it is watched", () => {
-    // Intake is the group, and Chat is its first item: a ticket landing in the
-    // inbox and a person typing `/run` are the two ways work enters the swarm.
-    const { labels } = railFor(["member"])
+  it("keeps the console out of the rail entirely", () => {
+    // The console is not a section: it is the floating trigger over the
+    // board and the sheet it opens. A rail row would be a second door to a
+    // container that already has exactly one, and `chat.use` gates the
+    // trigger, not a destination.
+    const { labels } = railFor(["platform-admin"])
 
-    expect(labels[0]).toBe("Chat")
-    expect(labels[1]).toBe("Inbox")
+    expect(labels).not.toContain("Chat")
   })
 
   it("gives the same person a longer rail on a project they administer", () => {

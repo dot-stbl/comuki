@@ -153,8 +153,8 @@ async function mounted(initial: string, user?: SessionUser, chatRoute?: boolean)
 }
 
 /** The seeded shift, a trigger press, and the sheet it opens. */
-async function openSheet(initial = "/") {
-  const context = await mounted(initial)
+async function openSheet(initial = "/", user?: SessionUser) {
+  const context = await mounted(initial, user)
   const trigger = await waitFor(() => {
     const found = at("chat-dock-trigger")
     expect(found).not.toBeNull()
@@ -263,6 +263,35 @@ describe("the sheet", () => {
     const mounted = await openSheet("/queue")
     await waitFor(() => expect(at("chat-console")).not.toBeNull())
     expect(at("chat-seed")).toBeNull()
+    mounted.tree.unmount()
+  })
+
+  it("carries the onboarding link the rail item used to own", async () => {
+    // The console stopped being a section, so the wizard's entry point moved
+    // into the sheet's bar — an entry point must arrive in the container that
+    // replaced the one it lived in.
+    const mounted = await openSheet("/")
+    const link = await waitFor(() => {
+      const found = at("chat-init")
+      expect(found).not.toBeNull()
+      return found as HTMLElement
+    })
+    expect(link.getAttribute("href")).toBe("/chat/init")
+
+    // And pressing it hands the wizard the whole window rather than opening
+    // it under a scrim.
+    fireEvent.click(link, { button: 0 })
+    await waitFor(() => expect(at("bottom-sheet")).toBeNull())
+    mounted.tree.unmount()
+  })
+
+  it("offers onboarding only where the session may connect a source", async () => {
+    const mounted = await openSheet("/", {
+      ...SESSION_USER_SEED,
+      platformRoles: ["member"],
+      projectRoles: {},
+    })
+    expect(at("chat-init")).toBeNull()
     mounted.tree.unmount()
   })
 

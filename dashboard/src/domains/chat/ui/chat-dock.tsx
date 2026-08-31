@@ -1,13 +1,13 @@
 import { useEffect, useState, type MouseEvent } from "react"
-import { useLocation } from "@tanstack/react-router"
-import { MessageSquare } from "lucide-react"
+import { Link, useLocation } from "@tanstack/react-router"
+import { MessageSquare, Wand2 } from "lucide-react"
 
 import { useSearchCatalogue } from "@/app/search"
 import { referenceFromLocation } from "@/domains/chat/model/references"
 import { ChatConsole } from "@/domains/chat/ui/chat-console"
 import { chatDockMemory } from "@/domains/chat/ui/chat-dock-memory"
-import { can, useSession } from "@/shared/session"
-import { BottomSheet, Tooltip } from "@/shared/ui"
+import { can, useCan, useSession } from "@/shared/session"
+import { BottomSheet, buttonClass, Tooltip } from "@/shared/ui"
 
 import styles from "./chat-dock.module.css"
 
@@ -84,6 +84,13 @@ export function ChatDock() {
     chatDockMemory.seed = seed
   }, [open, chosenId, draft, seed])
 
+  // The wizard is the one act that outgrew the sheet — creating an entity is
+  // always its own page — so its link rides in the sheet's bar. It lived in
+  // the `/chat` page header until the console stopped being a section, and an
+  // entry point that moves must arrive in the container that replaced it.
+  // Asked before the `chat.use` return because a hook is a hook.
+  const onboard = useCan("sources.edit")
+
   // Hidden rather than explained without `chat.use`, the way the rail hides
   // what a role cannot reach: this is a door to the console, and a door a
   // role cannot walk through is not drawn.
@@ -141,6 +148,21 @@ export function ChatDock() {
         open={open}
         onOpenChange={setOpen}
         title="Console"
+        toolbar={
+          onboard.allowed ? (
+            <Link
+              to="/chat/init"
+              data-test="chat-init"
+              className={buttonClass({ variant: "outline", size: "sm" })}
+              /* The bar is outside the console's link watcher, so the sheet
+                 is closed here rather than left hanging over a page it hid. */
+              onClick={() => setOpen(false)}
+            >
+              <Wand2 aria-hidden="true" />
+              Onboard a repo
+            </Link>
+          ) : null
+        }
         storageKey={DEPTH_KEY}
         expanded={expanded}
         onExpandedChange={onExpandedChange}

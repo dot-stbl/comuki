@@ -73,11 +73,16 @@ public sealed class MigrationsShould : IAsyncLifetime
             "SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'work_items'");
 
         definitions.ShouldContain(static index => index.Contains("ix_work_items_run_id"));
-        // pg normalises the predicate with ::text casts — assert on the essentials
+        // pg normalises the predicate with ::text casts — assert on the essentials.
+        // EF stores PascalCase enum names, so the partial filters must match them.
         definitions.ShouldContain(static index =>
             index.Contains("ix_work_items_active")
-            && index.Contains("'queued'")
-            && index.Contains("'running'"));
+            && index.Contains("'Queued'")
+            && index.Contains("'Running'"));
+        definitions.ShouldContain(static index =>
+            index.Contains("ix_work_items_claim")
+            && index.Contains("profile_key")
+            && index.Contains("'Queued'"));
     }
 
     [Fact(DisplayName = "Given migrated run_events, when indexes are inspected, then the timeline index exists")]
@@ -100,6 +105,9 @@ public sealed class MigrationsShould : IAsyncLifetime
         workItemColumns["leased_by"].ShouldBe(new ColumnSpec("uuid", "YES"));
         workItemColumns["brief"].ShouldBe(new ColumnSpec("jsonb", "NO"));
         workItemColumns["status"].ShouldBe(new ColumnSpec("character varying", "NO"));
+        workItemColumns["image"].ShouldBe(new ColumnSpec("character varying", "NO"));
+        workItemColumns["profiles_ref"].ShouldBe(new ColumnSpec("character varying", "NO"));
+        workItemColumns["attempt"].ShouldBe(new ColumnSpec("integer", "NO"));
 
         var runColumns = await QueryColumnsAsync(OrchestrationTables.Runs);
         runColumns["id"].ShouldBe(new ColumnSpec("uuid", "NO"));
@@ -117,8 +125,8 @@ public sealed class MigrationsShould : IAsyncLifetime
         run.TransitionTo(RunStatus.Waiting, now);
         run.TransitionTo(RunStatus.Running, now.AddMinutes(1));
 
-        var prerequisite = WorkItem.Create(run.Id, "explore-readonly", /*lang=json,strict*/ """{"goal":"read the repo"}""", WorkItemStatus.Queued, now);
-        var dependent = WorkItem.Create(run.Id, "implement", /*lang=json,strict*/ """{"goal":"write the fix"}""", WorkItemStatus.Blocked, now);
+        var prerequisite = WorkItem.Create(run.Id, "explore-readonly", "ghcr.io/comuki/worker@sha256:9f86d0", "refs/heads/main", /*lang=json,strict*/ """{"goal":"read the repo"}""", WorkItemStatus.Queued, now);
+        var dependent = WorkItem.Create(run.Id, "implement", "ghcr.io/comuki/worker@sha256:9f86d0", "refs/heads/main", /*lang=json,strict*/ """{"goal":"write the fix"}""", WorkItemStatus.Blocked, now);
         var dependency = WorkItemDependency.Create(dependent.Id, prerequisite.Id);
         var runEvent = RunEvent.Create(
             run.Id,

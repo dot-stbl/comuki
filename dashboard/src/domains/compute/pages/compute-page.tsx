@@ -20,6 +20,9 @@ import type {
 import { CapacityCard } from "@/domains/compute/ui/capacity-card"
 import { ProvidersPanel } from "@/domains/compute/ui/providers-panel"
 import { VersionsPanel } from "@/domains/compute/ui/versions-panel"
+import { useObservabilityQuery } from "@/domains/observability/api/queries"
+import { BoardsPanel } from "@/domains/observability/ui/boards-panel"
+import { ConnectGuide } from "@/domains/observability/ui/connect-guide"
 import { can, projectOf, useSession } from "@/shared/session"
 import { Button, ConfirmDialog, Section, Tooltip } from "@/shared/ui"
 
@@ -35,7 +38,7 @@ const SKELETON_WIDTHS = ["46%", "78%", "62%", "88%", "40%"]
  * So it is dense and it is not urgent — no live counts, no pulse, no board. It
  * is a registry, read top to bottom.
  *
- * Three sections, in the order the question is actually asked:
+ * Four sections, in the order the question is actually asked:
  *
  *   1. **providers** — which `IComputeProvider` instances exist and which one is
  *      taking new starts. Docker and Kubernetes; containerd is not v1 and does
@@ -47,10 +50,20 @@ const SKELETON_WIDTHS = ["46%", "78%", "62%", "88%", "40%"]
  *   3. **worker versions** — the label a claim is matched against, image digest
  *      plus profiles git-ref. This is where a full idle pool sitting next to a
  *      growing queue stops being a mystery.
+ *   4. **boards** — the grafana boards the platform ships definitions for,
+ *      folded in from the observability screen that no longer has a page of
+ *      its own. Links out, never an embed, and the guide under the list says
+ *      how to connect an installation that has nothing in it yet.
  *
  * Both acts here gate on `compute.manage`, a *platform* permission: it reads
  * platform roles alone, so no `projectId` is ever passed with it. The route
- * already gated `compute.view`; nothing inside re-gates viewing.
+ * already gated `compute.view`; nothing inside re-gates viewing — except the
+ * boards section, which is the first *folded* section and the precedent it
+ * sets: the screen's permission gates the door, and a section folded in from
+ * another screen carries its own permission and *hides* below the door's.
+ * A denied act stays in the document and says what is missing; a denied
+ * section has no act whose denial could be explained, so it is simply not
+ * that session's to see.
  */
 export function ComputePage() {
   const { data, isLoading, isError, error, refetch } = useComputeQuery()
@@ -64,6 +77,19 @@ export function ComputePage() {
   const providers = useMemo(() => data?.providers ?? [], [data])
   const pools = useMemo(() => data?.pools ?? [], [data])
   const versions = useMemo(() => data?.versions ?? [], [data])
+
+  // The folded-section rule, first spelled here: the route's `compute.view`
+  // gates the door, and the boards section carries its own permission —
+  // `observability.view`, platform scope like the door's — and hides below
+  // it, never greys out. There is no act in it whose denial could be
+  // explained, so a session that cannot read it never sees it, and the query
+  // is never even asked.
+  const boardsVisible = can(session, "observability.view")
+  const observability = useObservabilityQuery({ enabled: boardsVisible })
+
+  const boards = observability.data?.boards ?? []
+  const noBoards =
+    boards.length > 0 && boards.every((board) => board.url === null)
 
   // Tightest first: the pool about to refuse work is the one somebody came
   // here about, and it should not be third in a list sorted by project name.
@@ -262,6 +288,36 @@ export function ComputePage() {
                 onRetire={onRetire}
               />
             </Section>
+
+            {boardsVisible && observability.data ? (
+              <Section
+                variant="screen"
+                data-test="compute-boards"
+                title="Boards"
+                note={
+                  <>
+                    The grafana boards, folded in from the screen that used to
+                    own them. They open in a new tab and are not embedded here
+                    on purpose: infra metrics and a run&apos;s own timeline are
+                    read on different clocks by people asking different
+                    questions, and a surface that showed both would teach an
+                    operator to look for a run&apos;s story in a metrics board,
+                    where only half of it is. A run&apos;s story is on{" "}
+                    <span className={styles.code}>/runs</span>. One board covers
+                    every project at once, and the definitions are versioned
+                    with the platform — the guide under the list says how to
+                    connect an installation that has nothing in it yet.
+                  </>
+                }
+              >
+                <BoardsPanel boards={boards} />
+                <ConnectGuide
+                  grafana={observability.data.grafana}
+                  boardsRepo={observability.data.boardsRepo}
+                  noBoards={noBoards}
+                />
+              </Section>
+            ) : null}
           </>
         ) : null}
       </div>

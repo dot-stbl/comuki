@@ -1,1 +1,2 @@
-export { ObservabilityPage } from "./pages/observability-page"
+export { BoardsPanel } from "./ui/boards-panel"
+export { ConnectGuide } from "./ui/connect-guide"

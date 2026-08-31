@@ -26,9 +26,15 @@ async function getObservability(): Promise<ObservabilitySnapshot> {
   return OBSERVABILITY_SEED
 }
 
-export function useObservabilityQuery() {
+/**
+ * `enabled` is a parameter because the section no longer owns its route: it is
+ * folded under compute, which asks with the session's `observability.view` so
+ * a session that cannot see the boards never asks for them either.
+ */
+export function useObservabilityQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: observabilityQueryKey,
     queryFn: getObservability,
+    enabled: options?.enabled,
   })
 }

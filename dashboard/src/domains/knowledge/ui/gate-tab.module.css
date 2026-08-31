@@ -3,15 +3,16 @@
 
    AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
    split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
-   min-height 0, overflow auto, padded) → `.screen` below.
+   min-height 0) → the page's `.screen` → `.tabs` → `.tabPanel` (flex 1 1 0,
+   min-height 0, overflow-y auto, padded) → `.gate` below.
 
-   `.screen` claims no share of the viewport and neither does anything under it:
-   Verify is a document read top to bottom, one section per project, each as
-   tall as its own content. `.content` scrolls it. There is no `height: 100%`
-   anywhere below here that a missing flex parent could quietly resolve to
-   zero. */
+   `.gate` claims no share of the viewport and neither does anything under it:
+   the gate is a document read top to bottom, one section per project, each as
+   tall as its own content. The tab panel scrolls it. There is no
+   `height: 100%` anywhere below here that a missing flex parent could quietly
+   resolve to zero. */
 
-.screen {
+.gate {
   display: flex;
   flex-direction: column;
   gap: var(--s8);
@@ -27,6 +28,7 @@
   color: var(--text-muted);
 }
 
+/* The header's summary line, in this section's own reading. */
 .strong {
   color: var(--foreground);
   font-family: var(--font-data);
@@ -77,6 +79,7 @@
   color: var(--muted-foreground);
 }
 
+/* Rows, not blocks: what is loading is a list of sections, one per project. */
 .skeleton {
   display: flex;
   flex-direction: column;

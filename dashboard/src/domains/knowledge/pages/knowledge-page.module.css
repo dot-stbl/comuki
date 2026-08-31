@@ -3,21 +3,96 @@
 
    AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
    split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
-   min-height 0, overflow auto, padded) → `.screen` below.
+   min-height 0) → `.screen` below (height 100%, flex column) → `.tabs`
+   (flex 1 1 0, flex column) → `.tabList` (flex 0 0 auto) + `.tabPanel`
+   (flex 1 1 0, min-height 0, overflow-y auto, padded) → `.library` / the gate.
 
-   `.screen` claims no share of the viewport and neither does anything under it.
-   That is the decision this screen makes differently from the duty board: the
-   rule set is a document read top to bottom on a slow clock, not a board that
-   has to fit at once — so it grows with its content and `.content` scrolls it.
-   Every link is either `.content`'s own flex growth or a block box sized by
-   what is in it; there is no `height: 100%` anywhere below here that a missing
-   flex parent could quietly resolve to zero.
+   The two links that bite are `.tabs` and `.tabPanel`: React Aria renders both
+   as plain divs, so neither is a flex container until this file says so.
 
-   The eval table is the one box with a depth of its own, and it gets it from
-   `--h-table-body` inside the kit's own stylesheet rather than from a chain
-   through here — see `knowledge-panel.module.css`. */
+   Below the panel the chain deliberately stops. Both sections are documents
+   read top to bottom on a slow clock, not boards that have to fit at once —
+   so the tab strip stays fixed and each panel scrolls its own document, and
+   the eval table caps itself at `--h-table-body` inside the kit's own
+   stylesheet rather than fighting the page for depth — see
+   `knowledge-panel.module.css`. */
 
 .screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* clip, not hidden: the panels below hold tables whose head and pinned
+     columns are sticky, and `hidden` makes this box a scroll container they
+     would silently re-anchor to. See The Clip-Not-Hidden Rule in DESIGN.md. */
+  overflow: clip;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* The two sections, on the hairline that separates them from their content —
+   the same one-pixel rule the topbar sits on. Not a segmented control, not a
+   row of pills: this is chrome, and chrome here is built from a rule. */
+.tabList {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--s6);
+  padding-inline: var(--page-x);
+  border-block-end: var(--hairline) solid var(--rule);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding-block: var(--s3);
+  /* Sits *on* the list's rule rather than above it, so the selected marker and
+     the separator are the same line. */
+  margin-block-end: calc(var(--hairline) * -1);
+  border-block-end: 2px solid transparent;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+/* Marked by a rule and by weight, never by a fill: the same way the rail marks
+   its active item. */
+.tab[data-selected] {
+  color: var(--text);
+  border-block-end-color: var(--brand);
+}
+
+.tab[data-focus-visible] {
+  border-radius: var(--r-sm);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.tabPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--page-y) var(--page-x);
+  outline: none;
+}
+
+/* Library ----------------------------------------------------------------- */
+
+.library {
   display: flex;
   flex-direction: column;
   gap: var(--s8);
@@ -139,7 +214,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--s3);
-  padding: var(--s8) 0;
+  padding: var(--s8) var(--page-x);
   font-family: var(--font-ui);
 }
 
@@ -164,11 +239,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--s2);
-  padding: var(--s6) 0;
+  flex: 1 1 0;
+  min-height: 0;
+  padding: var(--page-y) var(--page-x);
 }
 
 .skeletonBar {
   block-size: var(--h-meter);
+  flex: 0 0 auto;
   border-radius: var(--r-xs);
   background: var(--muted);
 }

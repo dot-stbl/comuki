@@ -11,6 +11,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react"
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ThemeProvider } from "@/app/theme-provider"
+import { Route as ObservabilityRoute } from "@/routes/observability"
 import { resetSeedCompute } from "@/shared/api/mock/compute.store"
 import { TestSession } from "@/shared/session/test-session"
 import type { Role } from "@/shared/session"
@@ -326,5 +327,110 @@ describe("the acts, and who may perform them", () => {
 
     const take = all('[data-test="provider-take-work"]')[0] as HTMLElement
     expect(take.getAttribute("aria-disabled")).toBeNull()
+  })
+})
+
+/* The observability screen is gone; its two halves are the boards section of
+   this one. Asserted here rather than in a page test of its own, because the
+   thing under test is the fold: the section rides this screen's lifecycle and
+   its own permission, below the route's `compute.view` door. */
+
+/** The screen once both queries have answered — the registry and the boards. */
+async function boardsSection(roles: Role[] = ["operator"]) {
+  renderScreen(roles)
+  await waitFor(() =>
+    expect(find('[data-test="compute-boards"]')).not.toBeNull()
+  )
+  return find('[data-test="compute-boards"]')!
+}
+
+describe("the boards section, folded in from the observability screen", () => {
+  it("renders below worker versions for a session with observability.view", async () => {
+    const section = await boardsSection(["operator"])
+
+    // Fourth, in the order the page asks its questions: the boards are what
+    // you open once the registry has answered.
+    const versions = find('[data-test="compute-versions"]')!
+    expect(
+      versions.compareDocumentPosition(section) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+
+    // The links-not-embeds reason moved with the section, so it is still said.
+    expect(section.textContent).toContain(
+      "read on different clocks by people asking different questions"
+    )
+    expect(section.querySelector("iframe")).toBeNull()
+  })
+
+  it("counts what is reachable rather than what exists", async () => {
+    await boardsSection(["operator"])
+
+    // Two of three: the cost board's definition is in our repo and has not
+    // been imported here, which is a different fact from the board not
+    // existing.
+    expect(all('[data-test="board"]')).toHaveLength(3)
+    expect(all('[data-test="board-link"]')).toHaveLength(2)
+    const pending = all('[data-test="board-not-imported"]')
+    expect(pending).toHaveLength(1)
+    expect(pending[0].textContent).toContain("not imported yet")
+  })
+
+  it("keeps the connect guide under the boards, whatever their state", async () => {
+    const section = await boardsSection(["operator"])
+
+    // The half that makes it a section rather than a stub: the operator who
+    // finds a board they cannot reach is told whose job importing it is.
+    expect(
+      section.querySelector('[data-test="connect-guide"]')
+    ).not.toBeNull()
+    expect(
+      section.querySelector('[data-test="grafana-configured"]')
+    ).not.toBeNull()
+    expect(section.querySelectorAll("ol li")).toHaveLength(4)
+  })
+
+  it("hides the section from a session without observability.view", async () => {
+    // Hidden, never disabled: there is no act in the section whose denial
+    // could be explained, so it is simply not that session's to see. (Every
+    // role that holds `compute.view` today also holds `observability.view`,
+    // so the fold is exercised from below the door.)
+    await screenReady(["member"])
+
+    expect(find('[data-test="compute-boards"]')).toBeNull()
+  })
+})
+
+describe("the retired observability route", () => {
+  it("lands on compute rather than a 404", async () => {
+    const root = createRootRoute({ component: blank })
+    const tree = root.addChildren([
+      createRoute({
+        getParentRoute: () => root,
+        path: "/compute",
+        component: blank,
+      }),
+      // The real declaration's `beforeLoad`, lifted out of the route file and
+      // mounted on this tree. The cast is the mounting: the declaration's
+      // context type comes from the registered router, and the generated tree
+      // papers over the same mismatch with an `as any` this file does not get
+      // to use. The declaration reads no context, so the widening is
+      // behaviourally exact.
+      createRoute({
+        getParentRoute: () => root,
+        path: "/observability",
+        beforeLoad: ObservabilityRoute.options.beforeLoad as () => void,
+      }),
+    ])
+    const router = createRouter({
+      routeTree: tree,
+      history: createMemoryHistory({ initialEntries: ["/observability"] }),
+    })
+
+    render(<RouterProvider router={router} />)
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/compute")
+    )
   })
 })

@@ -88,7 +88,6 @@ describe("the rail, filtered by what the session may do", () => {
       "Cost",
       "Sources",
       "Knowledge",
-      "Verify",
       "Settings",
     ])
     // The upper tier entire, and not one item of the lower one: administering
@@ -96,7 +95,7 @@ describe("the rail, filtered by what the session may do", () => {
     expect(groups).toEqual(["Intake", "Observe", "Configure"])
   })
 
-  it("gives an operator the platform tier, and still not the approvals", () => {
+  it("gives an operator the platform tier without the identity registry", () => {
     const { labels, groups } = railFor(["operator"])
 
     expect(groups).toContain("Platform")
@@ -109,7 +108,6 @@ describe("the rail, filtered by what the session may do", () => {
     // platform ops, and approving a plan stays a project judgement.
     expect(labels).toContain("Settings")
     expect(labels).toContain("Cost")
-    expect(labels).not.toContain("Approvals")
   })
 
   it("keeps the platform tier out of a project-admin's rail", () => {
@@ -132,7 +130,9 @@ describe("the rail, filtered by what the session may do", () => {
 
   it("gives the same person a longer rail on a project they administer", () => {
     // Roles in force are the platform roles plus the current project's, so
-    // scope is a real axis of the rail and not decoration.
+    // scope is a real axis of the rail and not decoration. Verify adds no row
+    // any more — its gate is a tab of Knowledge — so the extension shows as
+    // Settings and Approvals.
     const { labels } = railFor(["viewer"], { p_test: ["project-admin"] })
 
     expect(labels).toContain("Settings")

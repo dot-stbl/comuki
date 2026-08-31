@@ -1,5 +1,4 @@
 import {
-  Activity,
   BookOpen,
   CheckCircle2,
   Coins,
@@ -11,7 +10,6 @@ import {
   Route as RouteIcon,
   Server,
   Settings,
-  ShieldCheck,
   Users,
 } from "lucide-react"
 
@@ -83,17 +81,15 @@ export const productNav: SidebarNavGroup[] = [
         icon: Plug,
         permission: "sources.view",
       },
+      // Verify has no row of its own: it is the same chassis as Knowledge —
+      // read-only registries sourced from the client's git — and lives as the
+      // gate tab there.
       {
         label: "Knowledge",
         href: "/knowledge",
         icon: BookOpen,
+        exact: false,
         permission: "knowledge.view",
-      },
-      {
-        label: "Verify",
-        href: "/verify",
-        icon: ShieldCheck,
-        permission: "verify.view",
       },
       {
         label: "Settings",
@@ -119,10 +115,13 @@ export const productNav: SidebarNavGroup[] = [
         icon: Users,
         permission: "identity.manage",
       },
+      // Observability has no row of its own: the boards list and the connect
+      // guide are a section of Compute — same tier, same permission class.
       {
         label: "Compute",
         href: "/compute",
         icon: Server,
+        exact: false,
         permission: "compute.view",
       },
       {
@@ -130,12 +129,6 @@ export const productNav: SidebarNavGroup[] = [
         href: "/models",
         icon: RouteIcon,
         permission: "models.view",
-      },
-      {
-        label: "Observability",
-        href: "/observability",
-        icon: Activity,
-        permission: "observability.view",
       },
     ],
   },

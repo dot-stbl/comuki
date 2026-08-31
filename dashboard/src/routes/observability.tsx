@@ -1,20 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 
-import { RequirePermission } from "@/app/layout/require-permission"
-import { ObservabilityPage } from "@/domains/observability"
-
+/**
+ * The observability screen is gone — its boards and connect guide are a
+ * section of `/compute` now. The file stays so a URL somebody pastes lands on
+ * where the section lives rather than a 404, and `routeTree.gen.ts` keeps its
+ * shape without regeneration.
+ */
 export const Route = createFileRoute("/observability")({
-  component: RouteComponent,
+  beforeLoad: () => {
+    throw redirect({ to: "/compute" })
+  },
 })
-
-function RouteComponent() {
-  return (
-    <RequirePermission
-      permission="observability.view"
-      title="Observability"
-      crumbs={[{ label: "platform" }, { label: "observability" }]}
-    >
-      <ObservabilityPage />
-    </RequirePermission>
-  )
-}

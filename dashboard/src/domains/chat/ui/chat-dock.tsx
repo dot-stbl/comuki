@@ -6,6 +6,7 @@ import { useSearchCatalogue } from "@/app/search"
 import { referenceFromLocation } from "@/domains/chat/model/references"
 import { ChatConsole } from "@/domains/chat/ui/chat-console"
 import { chatDockMemory } from "@/domains/chat/ui/chat-dock-memory"
+import { isApple } from "@/shared/lib/is-apple"
 import { can, useCan, useSession } from "@/shared/session"
 import { BottomSheet, buttonClass, Tooltip } from "@/shared/ui"
 
@@ -15,6 +16,9 @@ import styles from "./chat-dock.module.css"
 const DEPTH_KEY = "comuki.chat.dock.depth"
 /** Where the fill-the-window preference lives, between sessions. */
 const EXPANDED_KEY = "comuki.chat.dock.expanded"
+
+/** The console's chord, spelled the way the operator's keyboard says it. */
+const CHORD = isApple() ? "⌘ j" : "ctrl j"
 
 function readExpanded(): boolean {
   try {
@@ -84,17 +88,61 @@ export function ChatDock() {
     chatDockMemory.seed = seed
   }, [open, chosenId, draft, seed])
 
+  // Asked during render rather than after the null return, so the chord
+  // listener below can refuse to exist for a session that may not use the
+  // console — a viewer pressing ctrl j must not even set hidden state.
+  const allowed = can(session, "chat.use")
+
   // The wizard is the one act that outgrew the sheet — creating an entity is
   // always its own page — so its link rides in the sheet's bar. It lived in
   // the `/chat` page header until the console stopped being a section, and an
   // entry point that moves must arrive in the container that replaced it.
-  // Asked before the `chat.use` return because a hook is a hook.
+  // Asked before the null return because a hook is a hook.
   const onboard = useCan("sources.edit")
+
+  /* The console's chord, on the document the same way search's ctrl k is:
+     the point of a global shortcut is that it works while the operator is
+     three panels deep in a table, not once the trigger already has focus.
+     The same chord closes — a toggle, because "open" and "get out of my
+     way" are the two halves of one gesture, and j is the terminal-panel
+     key the operator's hand already knows. Registered before the null
+     return and gated by `allowed`, so the hook order is fixed while the
+     chord still refuses to exist for a session that may not use it. */
+  useEffect(() => {
+    if (!allowed) {
+      return
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "j") {
+        return
+      }
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) {
+        return
+      }
+      event.preventDefault()
+      if (chatDockMemory.open) {
+        setOpen(false)
+        return
+      }
+      setSeed(
+        referenceFromLocation(
+          location.pathname,
+          location.searchStr,
+          catalogue,
+          session
+        )
+      )
+      setOpen(true)
+    }
+
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [allowed, catalogue, location.pathname, location.searchStr, session])
 
   // Hidden rather than explained without `chat.use`, the way the rail hides
   // what a role cannot reach: this is a door to the console, and a door a
   // role cannot walk through is not drawn.
-  if (!can(session, "chat.use")) {
+  if (!allowed) {
     return null
   }
 
@@ -131,12 +179,12 @@ export function ChatDock() {
 
   return (
     <>
-      <Tooltip content="Console">
+      <Tooltip content={`Console — ${CHORD}`}>
         <button
           type="button"
           className={styles.trigger}
           data-test="chat-dock-trigger"
-          aria-label="Open the console"
+          aria-label={`Open the console — ${CHORD}`}
           aria-expanded={open}
           onClick={openSheet}
         >
@@ -168,6 +216,10 @@ export function ChatDock() {
         onExpandedChange={onExpandedChange}
       >
         <div className={styles.console} onClickCapture={onConsoleClick}>
+          {/* Autofocus on: the sheet mounts fresh on every open, and a
+              console that opens without the box ready to type in charges a
+              click for the first word. The route declines it — a page that
+              steals focus on load is presumptuous. */}
           <ChatConsole
             chosenId={chosenId}
             onChosenIdChange={setChosenId}
@@ -175,6 +227,7 @@ export function ChatDock() {
             onDraftChange={setDraft}
             seed={seed}
             onSeedChange={setSeed}
+            focusComposerOnMount
           />
         </div>
       </BottomSheet>

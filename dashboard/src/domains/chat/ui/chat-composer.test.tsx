@@ -322,3 +322,59 @@ describe("the seeded reference", () => {
     expect(at("chat-seed")).toBeNull()
   })
 })
+
+describe("recalling the last message", () => {
+  /** The harness with a recall offering, the way the console derives one. */
+  function mountWithRecall(recall: string | null) {
+    const onSend = vi.fn()
+    const commands = availableCommands(
+      sessionFor(["member"], {}),
+      CUSTOM
+    )
+
+    function Harness() {
+      const [value, setValue] = useState("")
+      return (
+        <TestSession roles={["member"]}>
+          <ChatComposer
+            commands={commands}
+            onSend={onSend}
+            value={value}
+            onValueChange={setValue}
+            recall={recall}
+          />
+        </TestSession>
+      )
+    }
+
+    render(<Harness />)
+    return {
+      onSend,
+      box: screen.getByLabelText(
+        "Message the console"
+      ) as HTMLTextAreaElement,
+    }
+  }
+
+  it("offers the last thing said to an empty box on arrow-up", () => {
+    const { box } = mountWithRecall("/status")
+    fireEvent.keyDown(box, { key: "ArrowUp" })
+    expect(box.value).toBe("/status")
+  })
+
+  it("does not touch a caret that is moving through a draft", () => {
+    // A draft is a thought in progress; arrow-up inside it is editing, not
+    // history, and the gesture must not eat what was being written.
+    const { box, onSend } = mountWithRecall("/status")
+    type(box, "почему очередь")
+    fireEvent.keyDown(box, { key: "ArrowUp" })
+    expect(box.value).toBe("почему очередь")
+    expect(onSend).not.toHaveBeenCalled()
+  })
+
+  it("has nothing to offer when nothing was said", () => {
+    const { box } = mountWithRecall(null)
+    fireEvent.keyDown(box, { key: "ArrowUp" })
+    expect(box.value).toBe("")
+  })
+})

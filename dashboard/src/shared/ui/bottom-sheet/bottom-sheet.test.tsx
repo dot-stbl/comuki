@@ -130,6 +130,30 @@ describe("the sheet is a modal", () => {
 
     document.body.removeChild(outside)
   })
+
+  it("does not close on a click at the empty scrim above the sheet", () => {
+    // A console is a place somebody is typing; a stray click on the dark is
+    // not a decision to leave it. The two ways out are named, and this is
+    // neither. Real pointer events through the real React Aria handlers —
+    // jsdom has PointerEvent, so the library's interact-outside listener runs
+    // exactly as it does in a browser.
+    const onOpenChange = vi.fn()
+    render(<Sheet onOpenChange={onOpenChange} />)
+
+    // The portal's topmost element is the scrim; with the pane group stubbed,
+    // the whole window above the dialog is that element's own background.
+    const scrim = document.body.lastElementChild as Element
+    for (const fire of [
+      () => fireEvent.pointerDown(scrim, { button: 0 }),
+      () => fireEvent.mouseDown(scrim, { button: 0 }),
+      () => fireEvent.mouseUp(scrim, { button: 0 }),
+      () => fireEvent.click(scrim, { button: 0 }),
+    ]) {
+      fire()
+    }
+
+    expect(onOpenChange).not.toHaveBeenCalled()
+  })
 })
 
 describe("the drag edge", () => {

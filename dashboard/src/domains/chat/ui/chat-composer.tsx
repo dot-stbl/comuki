@@ -39,6 +39,19 @@ export interface ChatComposerProps {
    */
   seed?: SearchTarget | null
   onSeedChange?: (next: SearchTarget | null) => void
+  /**
+   * The last thing said in this conversation, offered to an empty box on
+   * arrow-up — the terminal gesture. The operator who just sent a command and
+   * wants it again with one word changed does not retype it.
+   */
+  recall?: string | null
+  /**
+   * Focus the box the moment the composer mounts. The dock's sheet turns it
+   * on — opening a console and having to click into it first is a tax — while
+   * the route leaves it off, because a page that steals focus on load is
+   * presumptuous.
+   */
+  autoFocus?: boolean
 }
 
 /**
@@ -85,6 +98,8 @@ export function ChatComposer({
   onValueChange,
   seed,
   onSeedChange,
+  recall,
+  autoFocus,
 }: ChatComposerProps) {
   const session = useSession()
   const box = useRef<HTMLTextAreaElement | null>(null)
@@ -143,6 +158,20 @@ export function ChatComposer({
     if (event.key === "Escape" && menuOpen) {
       event.preventDefault()
       setDismissed(true)
+      return
+    }
+    // Arrow-up in an empty box recalls the last thing said — the terminal
+    // gesture, and the reason `recall` exists. Preceded by nothing the
+    // operator typed, so it can never eat a caret someone was moving through
+    // a draft they are editing.
+    if (
+      event.key === "ArrowUp" &&
+      !event.shiftKey &&
+      value.trim().length === 0 &&
+      recall
+    ) {
+      event.preventDefault()
+      onValueChange(recall)
       return
     }
     if (event.key === "ArrowDown" && menuOpen) {
@@ -232,6 +261,7 @@ export function ChatComposer({
           data-test="chat-input"
           rows={rows}
           value={value}
+          autoFocus={autoFocus}
           aria-label="Message the console"
           placeholder="Ask, or start with a slash"
           onKeyDown={onBoxKeyDown}

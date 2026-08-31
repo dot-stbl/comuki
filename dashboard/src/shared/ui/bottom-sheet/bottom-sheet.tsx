@@ -114,8 +114,11 @@ export function BottomSheet({
       /* A console is a place somebody is typing. A stray click on the scrim
          must not take it away — the two ways out are both deliberate, and both
          are named: escape, and the control in the bar. The product's other two
-         modals answer this question the same way. */
+         modals answer this question the same way. Both props, belt and braces:
+         `isDismissable` is the contract, and the explicit predicate keeps a
+         future library default from re-arming the gesture underneath it. */
       isDismissable={false}
+      shouldCloseOnInteractOutside={() => false}
       className={styles.scrim}
     >
       <Modal className={styles.modal}>

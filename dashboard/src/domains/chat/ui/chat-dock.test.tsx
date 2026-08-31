@@ -172,19 +172,61 @@ describe("the floating trigger", () => {
   it("is there for a shift that may use the console, and says what it opens", async () => {
     await openSheet("/")
     const trigger = at("chat-dock-trigger") as HTMLElement
-    expect(trigger.getAttribute("aria-label")).toBe("Open the console")
+    // The label spells the chord the way this keyboard says it — jsdom's
+    // user agent is not an Apple one, so the test hears the ctrl spelling.
+    expect(trigger.getAttribute("aria-label")).toBe(
+      "Open the console — ctrl j"
+    )
     expect(trigger.getAttribute("aria-expanded")).toBe("true")
   })
 
   it("is not drawn for a role that cannot use the console", async () => {
     // The rail's rule, kept by the other door: navigation a role cannot use
     // is hidden, not explained.
-    await mounted("/", {
+    const context = await mounted("/", {
       ...SESSION_USER_SEED,
       platformRoles: ["viewer"],
       projectRoles: {},
     })
     expect(at("chat-dock-trigger")).toBeNull()
+    // And the chord is not armed either — a shortcut that opened a door the
+    // rail hides would be a door.
+    fireEvent.keyDown(document, { key: "j", ctrlKey: true })
+    expect(at("bottom-sheet")).toBeNull()
+    context.tree.unmount()
+  })
+
+  it("answers its chord from anywhere, both ways", async () => {
+    // The chord is the point: the operator is three panels deep in a table,
+    // presses ctrl j, and the console is there — not after finding the
+    // trigger. The same chord closes, because "open" and "get out of my way"
+    // are the two halves of one gesture.
+    const context = await mounted("/")
+
+    fireEvent.keyDown(document, { key: "j", ctrlKey: true })
+    await waitFor(() => expect(at("bottom-sheet")).not.toBeNull())
+
+    fireEvent.keyDown(document, { key: "j", ctrlKey: true })
+    await waitFor(() => expect(at("bottom-sheet")).toBeNull())
+    context.tree.unmount()
+  })
+
+  it("leaves the chord alone without its modifier", async () => {
+    const context = await mounted("/")
+    // A bare j is a letter somebody is typing into a filter.
+    fireEvent.keyDown(document, { key: "j" })
+    expect(at("bottom-sheet")).toBeNull()
+    context.tree.unmount()
+  })
+
+  it("puts the caret in the composer the moment the sheet opens", async () => {
+    const mounted = await openSheet("/")
+    await waitFor(() =>
+      expect(document.activeElement?.getAttribute("data-test")).toBe(
+        "chat-input"
+      )
+    )
+    mounted.tree.unmount()
   })
 })
 

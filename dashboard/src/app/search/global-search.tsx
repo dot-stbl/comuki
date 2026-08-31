@@ -8,21 +8,7 @@ import { Button, Tooltip } from "@/shared/ui"
 import { useSearchCatalogue } from "./catalogue"
 import { CommandPalette } from "./command-palette"
 import { resolveQuery, type SearchItem } from "./resolve"
-
-/**
- * The shortcut, and the word for it.
- *
- * Apple keyboards say command, everyone else says control, and a label that
- * guessed wrong would send half the operators looking for a key their board
- * does not have. Read once, from the platform the browser reports.
- */
-const APPLE = /mac|iphone|ipad|ipod/i
-
-function isApple(): boolean {
-  return (
-    typeof navigator !== "undefined" && APPLE.test(navigator.userAgent ?? "")
-  )
-}
+import { isApple } from "@/shared/lib/is-apple"
 
 /**
  * Global search, wired to the product.

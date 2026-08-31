@@ -42,6 +42,13 @@ export interface ChatConsoleProps {
    */
   seed?: SearchTarget | null
   onSeedChange?: (next: SearchTarget | null) => void
+  /**
+   * Focus the composer the moment this tree mounts. The dock's sheet mounts
+   * and unmounts with every open and close, so the box is ready to type in
+   * the instant the sheet arrives; the route mounts once on navigation and
+   * leaves the focus where the operator put it.
+   */
+  focusComposerOnMount?: boolean
 }
 
 /**
@@ -80,6 +87,7 @@ export function ChatConsole({
   onDraftChange,
   seed,
   onSeedChange,
+  focusComposerOnMount,
 }: ChatConsoleProps) {
   const session = useSession()
   const sessions = useChatSessionsQuery()
@@ -123,6 +131,19 @@ export function ChatConsole({
     })
   }, [start, onChosenIdChange])
 
+  // The last thing *the operator* said in this conversation, for the empty
+  // box's arrow-up. Derived, not stored: the thread is the history, and a
+  // second copy of it would be a second thing to keep true.
+  const recall = useMemo(() => {
+    const messages = current?.messages ?? []
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      if (messages[index]?.kind === "person") {
+        return messages[index]?.text ?? null
+      }
+    }
+    return null
+  }, [current])
+
   return (
     <div className={styles.screen} data-test="chat-console">
       <div className={styles.rail}>
@@ -149,6 +170,8 @@ export function ChatConsole({
           onValueChange={onDraftChange}
           seed={seed}
           onSeedChange={onSeedChange}
+          recall={recall}
+          autoFocus={focusComposerOnMount}
         />
       </div>
 

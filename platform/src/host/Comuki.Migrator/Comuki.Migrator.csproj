@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
+    <ProjectReference Include="..\..\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

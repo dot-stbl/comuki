@@ -12,6 +12,11 @@
     <Project Path="platform/src/engine/Comuki.Engine.Orchestration/Comuki.Engine.Orchestration.csproj" />
     <Project Path="platform/src/engine/Comuki.Engine.Compute/Comuki.Engine.Compute.csproj" />
   </Folder>
+  <Folder Name="/platform/src/modules/">
+    <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Domain/Comuki.Modules.Identity.Domain.csproj" />
+    <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Application/Comuki.Modules.Identity.Application.csproj" />
+    <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Infrastructure/Comuki.Modules.Identity.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/platform/src/host/">
     <Project Path="platform/src/host/Comuki.Host/Comuki.Host.csproj" />
     <Project Path="platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj" />
@@ -24,8 +29,10 @@
     <Project Path="tests/unit/Comuki.Host.Translator.Unit.StreamJson/Comuki.Host.Translator.Unit.StreamJson.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/Comuki.Engine.Orchestration.Unit.StatusMachine.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Compute.Unit/Comuki.Engine.Compute.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Identity.Unit/Comuki.Modules.Identity.Unit.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Migrations/Comuki.Engine.Orchestration.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Migrations/Comuki.Modules.Identity.Integration.Migrations.csproj" />
   </Folder>
 </Solution>

@@ -112,6 +112,12 @@ dotnet_diagnostic.IDE0083.severity = warning
 # VSTHRD analyzer removed (2026-08-31) — async suffix / no-blocking-discipline
 # enforced by code review (house rules in .agents/rules/coding/CODING-RULES.md).
 
+# Destructive code-fixes, OFF everywhere (format gate excludes them too):
+# they silently add switch arms (NotImplementedException) to exhaustive
+# switches and break `_ =>` defaults.
+dotnet_diagnostic.IDE0010.severity = none
+dotnet_diagnostic.IDE0072.severity = none
+
 # Forget ConfigureAwait — для library code; в app можно отключить
 
 #---------------------------------------------------------------------

@@ -349,3 +349,6 @@ FodyWeavers.xsd
 # Agent worktrees — parallel agent checkouts; never commit
 .agents/worktree/
 
+
+# format-gate verify log
+/obj/

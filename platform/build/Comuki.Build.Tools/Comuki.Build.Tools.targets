@@ -1,0 +1,81 @@
+<Project>
+
+  <!--
+    Comuki.Build.Tools — solution-level build hooks (ported from console.x
+    Hybrid.Build.Tools, pre-deletion revision f3c809502).
+
+    This project owns the VerifyFormatOnBuild target so the format-check
+    runs exactly once per solution build (when THIS project is built, not
+    when every project is built). Keep it FIRST in comuki.slnx and with no
+    ProjectReferences — MSBuild's topological order then builds it before
+    any other project.
+
+    Why not Directory.Build.targets?
+      That file is imported by every .csproj, so a target defined there
+      fires once per project. Putting the target in a single project that
+      is built exactly once = 1 invocation.
+
+    Behavior (HARD gate — format drift FAILS the build):
+      - dotnet build comuki.slnx
+            -> builds Comuki.Build.Tools (no deps, top of topo order)
+            -> runs VerifyFormatOnBuild (1 time)
+            -> drift => build FAILS; clean => builds the rest
+      - dotnet build platform/src/foo/foo.csproj
+            -> Build.Tools NOT in the build graph -> gate does NOT run
+
+    `dotnet build comuki.slnx -c Debug` is THE single verification command:
+    compile + analyzers + format in one gate, identical to CI.
+
+    To fix drift:
+      dotnet format comuki.slnx (with the severity hidden flag)
+      THEN REVIEW THE DIFF — the formatter must never be trusted blindly
+      (see STATE.md "Осторожно": it has been caught inserting
+      NotImplementedException switch arms via IDE0010/IDE0072; those
+      diagnostics are excluded below AND set to none in .editorconfig).
+
+    Escape hatches (per-invocation, inner-loop only):
+      DisableFormatOnBuild=true        = skip the gate entirely
+      FormatOnBuildTreatAsWarning=true = downgrade drift to a warning
+  -->
+  <Target Name="VerifyFormatOnBuild"
+          BeforeTargets="Build"
+          Condition="'$(DisableFormatOnBuild)' != 'true' AND '$(DesignTimeBuild)' != 'true'">
+
+    <PropertyGroup>
+      <!-- Tool-generated EF migrations are never hand-formatted. IDE0010/IDE0072
+           (add missing switch cases) are the destructive code-fixes — excluded
+           from the gate and disabled in .editorconfig. -->
+      <_FormatExcludes>--exclude &quot;**/Migrations/**&quot; --exclude &quot;**/*ModelSnapshot.cs&quot; --exclude &quot;**/*.Designer.cs&quot; --exclude-diagnostics IDE0010 IDE0072</_FormatExcludes>
+      <_FormatLogFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../../obj/format-verify.log'))</_FormatLogFile>
+    </PropertyGroup>
+
+    <Message Text="[VerifyFormatOnBuild] dotnet format verify running (adds ~10-30s)..."
+             Importance="High" />
+
+    <!-- dotnet format on the .NET 10 SDK returns exit 0 EVEN when drift is
+         found under cmd/PowerShell (console.x hit this on 10.0.109). So:
+         redirect both streams to a log, parse diagnostic lines, count them. -->
+    <Exec Command="dotnet format comuki.slnx --verify-no-changes --severity hidden --no-restore $(_FormatExcludes) &gt; &quot;$(_FormatLogFile)&quot; 2&gt;&amp;1"
+          WorkingDirectory="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../..'))"
+          IgnoreExitCode="true" />
+
+    <ReadLinesFromFile File="$(_FormatLogFile)">
+      <Output TaskParameter="Lines" ItemName="_FormatLogLines" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <_FormatOutput>@(_FormatLogLines)</_FormatOutput>
+      <_FormatDriftCount>$([System.Text.RegularExpressions.Regex]::Matches(&quot;$(_FormatOutput)&quot;, &quot;(?i):\s+(error|warning|hidden|info|silent)\s+(IDE|RCS|MA|CA|VSTHRD|CS|SA)[0-9]+:&quot;).Count)</_FormatDriftCount>
+    </PropertyGroup>
+
+    <Message Text="[VerifyFormatOnBuild] Format check passed."
+             Importance="High"
+             Condition="'$(_FormatDriftCount)' == '0'" />
+
+    <Error Condition="'$(_FormatDriftCount)' != '0' AND '$(FormatOnBuildTreatAsWarning)' != 'true'"
+           Text="[VerifyFormatOnBuild] Format drift detected: $(_FormatDriftCount) violation(s). Fix: 'dotnet format comuki.slnx --severity hidden' then REVIEW THE DIFF. Inner-loop escapes: -p:DisableFormatOnBuild=true (skip), -p:FormatOnBuildTreatAsWarning=true (warn). Full file:line list in obj/format-verify.log." />
+
+    <Warning Condition="'$(_FormatDriftCount)' != '0' AND '$(FormatOnBuildTreatAsWarning)' == 'true'"
+             Text="[VerifyFormatOnBuild] Format drift detected (downgraded): $(_FormatDriftCount) violation(s). See obj/format-verify.log." />
+  </Target>
+
+</Project>

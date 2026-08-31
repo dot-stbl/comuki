@@ -42,6 +42,16 @@ public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
             .HasMaxLength(128)
             .IsRequired();
 
+        _ = builder.Property(static item => item.Image)
+            .HasColumnName("image")
+            .HasMaxLength(512)
+            .IsRequired();
+
+        _ = builder.Property(static item => item.ProfilesRef)
+            .HasColumnName("profiles_ref")
+            .HasMaxLength(256)
+            .IsRequired();
+
         _ = builder.Property(static item => item.Brief)
             .HasColumnName("brief")
             .HasColumnType("jsonb")
@@ -57,6 +67,10 @@ public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
         _ = builder.Property(static item => item.HeartbeatAt)
             .HasColumnName("heartbeat_at");
 
+        _ = builder.Property(static item => item.Attempt)
+            .HasColumnName("attempt")
+            .HasDefaultValue(0);
+
         _ = builder.Property(static item => item.CreatedAt)
             .HasColumnName("created_at");
 
@@ -66,9 +80,16 @@ public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
         _ = builder.HasIndex(static item => item.RunId)
             .HasDatabaseName("ix_work_items_run_id");
 
-        // claim scans only ever look at live statuses — keep the index small
+        // claim scans only ever look at live statuses — keep the index small.
+        // EF's HasConversion<string> stores PascalCase enum names, so the
+        // predicate must match them or the index would never be used.
         _ = builder.HasIndex(static item => new { item.Status, item.CreatedAt })
             .HasDatabaseName("ix_work_items_active")
-            .HasFilter("status IN ('queued', 'running')");
+            .HasFilter("status IN ('Queued', 'Running')");
+
+        // the claim subselect: profile match + FIFO within one profile, live rows only
+        _ = builder.HasIndex(static item => new { item.ProfileKey, item.CreatedAt })
+            .HasDatabaseName("ix_work_items_claim")
+            .HasFilter("status = 'Queued'");
     }
 }

@@ -8,9 +8,27 @@
 
 ```
 control-plane/
+├── profiles/        # воркер-профили: system prompt + allowedTools + model hint
+├── chat-commands/   # built-in slash pack для chat harness
 ├── rules/worker/    # поведение роя (НЕ проектные правила)
 └── skills/          # обкатанные рецепты
 ```
+
+## `profiles/` — воркер-профили
+
+Один воркер = один Comuki image + профиль. Профиль = markdown с frontmatter
+(`name`, `description`, `allowedTools` — yaml-список, опционально `model` —
+role hint) + body = system prompt (EN, concise). Каталог читает
+`Comuki.Host` (GET /profiles) и TS reader в agent-core — один и тот же
+frontmatter subset. Дефолты здесь; кастом клиента — в git клиента
+(pin на прогон).
+
+## `chat-commands/` — built-in slash pack
+
+Команды чата по умолчанию (`init`, `run`, `status`, `stop`, `plan`,
+`project`, `help`). Frontmatter `name` + `description`, body = короткая
+инструкция для мозга. Экспонируется `GET /chat-commands`; custom commands
+из git клиента мержатся рядом.
 
 ## `rules/worker/` — поведение роя
 
@@ -74,11 +92,13 @@ control-plane/
 
 | Папка | Phase | Что |
 |---|---|---|
+| `profiles/` | 4 (Slice 0) | Дефолтные профили: explore-readonly, implement, docs-writer |
+| `chat-commands/` | 4 (Slice 0) | Built-in slash pack |
 | `rules/worker/` | 7 (DAG + Dashboard) | Dashboard-формы для добавления/редактирования; v1-контент |
 | `skills/` | 6+ (Verification) | По мере накопления рецептов из сделанного |
 
-Phase 1–2: папки пустые, только `.gitkeep`. Не заполняем "на будущее" — каждый skill
-должен быть **проверен на реальной фиче**, не выдуман.
+Phase 1–2: `rules/worker/` пустой, только `.gitkeep`. Не заполняем "на
+будущее" — каждый skill должен быть **проверен на реальной фиче**, не выдуман.
 
 ## Подробнее
 

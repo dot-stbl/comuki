@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- No code, no output assembly: this project exists only as a build-graph
+         anchor so VerifyFormatOnBuild runs once per solution build. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS2008;CS8785</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="**/*.cs" />
+  </ItemGroup>
+
+  <Import Project="Comuki.Build.Tools.targets" />
+
+</Project>

@@ -350,4 +350,6 @@ FodyWeavers.xsd
 .agents/worktree/
 
 
-.impeccable/
+# format-gate verify log?
+/obj/?
+.impeccable/?

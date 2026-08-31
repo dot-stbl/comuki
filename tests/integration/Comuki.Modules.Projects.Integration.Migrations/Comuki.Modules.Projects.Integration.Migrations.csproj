@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Modules.Projects.Integration.Migrations</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Projects\Comuki.Modules.Projects.Infrastructure\Comuki.Modules.Projects.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

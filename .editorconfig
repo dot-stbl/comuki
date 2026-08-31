@@ -7,11 +7,12 @@
 #   warning  — visible in IDE and build log, doesn't fail build.
 #   suggestion / silent — hint, hidden in build log.
 #
-# Required analyzers (add to Directory.Packages.props or csproj):
-#   Microsoft.CodeAnalysis.NetAnalyzers          (CA rules)
-#   Microsoft.VisualStudio.Threading.Analyzers   (VSTHRD rules)
-#   Meziantou.Analyzer                           (MA rules)
-#   Roslynator.Analyzers                         (RCS rules)
+# Required analyzers (wired in Directory.Build.props):
+#   IDE (code-style, EnforceCodeStyleInBuild)    — house style
+#   NetAnalyzers (CA)                            — AnalysisMode=None; only the
+#       Security category (AnalysisModeSecurity=All) + explicit opt-ins below.
+#   Meziantou (MA), Roslynator (RCS), VSTHRD — REMOVED 2026-08-31 (noise;
+#       the simplifications they flagged are covered by IDE analyzers).
 #
 # Cross-platform note:
 #   end_of_line = lf для всего репозитория.
@@ -44,6 +45,11 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+# Tests: SQL literals are fixtures, not user input — CA2100 fires on the
+# constant strings passed to ADO helpers in integration tests.
+[tests/**/*.cs]
+dotnet_diagnostic.CA2100.severity = none
 
 # =====================================================================
 # C# rules
@@ -108,17 +114,27 @@ dotnet_diagnostic.IDE0083.severity = warning
 #---------------------------------------------------------------------
 # Section 6: Async / await
 #---------------------------------------------------------------------
-# Async suffix mandatory
-dotnet_diagnostic.VSTHRD200.severity = error
-
-# No .Result / .Wait() / .GetAwaiter().GetResult()
-dotnet_diagnostic.VSTHRD002.severity = error
-dotnet_diagnostic.VSTHRD103.severity = error
-dotnet_diagnostic.VSTHRD104.severity = error
+# VSTHRD surgical set (2026-08-31): naming + blocking discipline enforced;
+# VSTHRD103 (call-async-counterpart) is OFF — the sync read paths it flags
+# (settings cache GetCached, reads inside an open transaction) are deliberate;
+# audit found 14 sites, all of this one category.
+dotnet_diagnostic.VSTHRD200.severity = error    # Async suffix on Task-returning
+dotnet_diagnostic.VSTHRD002.severity = error    # no .Result/.Wait()/GetAwaiter().GetResult()
+dotnet_diagnostic.VSTHRD103.severity = none     # deliberate sync paths (see above)
+dotnet_diagnostic.VSTHRD104.severity = error    # offer CancellationToken
 dotnet_diagnostic.VSTHRD110.severity = warning  # observe awaited result
 
+# Destructive code-fixes, OFF everywhere (format gate excludes them too):
+# they silently add switch arms (NotImplementedException) to exhaustive
+# switches and break `_ =>` defaults.
+dotnet_diagnostic.IDE0010.severity = none
+dotnet_diagnostic.IDE0072.severity = none
+
+# No `_ =` discard statements (owner global rule async-and-tasks §6): bare
+# calls; the IDE0058 fixer is what inserts them — off.
+dotnet_diagnostic.IDE0058.severity = none
+
 # Forget ConfigureAwait — для library code; в app можно отключить
-dotnet_diagnostic.MA0004.severity = none
 
 #---------------------------------------------------------------------
 # Section 2: sealed по умолчанию
@@ -209,7 +225,9 @@ dotnet_diagnostic.IDE0040.severity = error
 #---------------------------------------------------------------------
 # Expression-bodied members
 #---------------------------------------------------------------------
-csharp_style_expression_bodied_methods = when_on_single_line:silent
+# Block bodies REQUIRED for methods (owner global rule: code-shape §5,
+# IDE0022). The format gate converts any expression-bodied method back.
+csharp_style_expression_bodied_methods = false:silent
 csharp_style_expression_bodied_constructors = false:silent
 csharp_style_expression_bodied_operators = when_on_single_line:silent
 csharp_style_expression_bodied_properties = true:silent
@@ -245,29 +263,8 @@ dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary:w
 csharp_new_line_before_members_in_object_initializers = false
 
 #---------------------------------------------------------------------
-# Roslynator — упрощение кода и минимальность
-#---------------------------------------------------------------------
-dotnet_diagnostic.RCS1124.severity = warning   # inline local variable
-dotnet_diagnostic.RCS1173.severity = warning   # simplify if-else to ternary
-dotnet_diagnostic.RCS1206.severity = warning   # conditional access vs if
-dotnet_diagnostic.RCS1208.severity = warning   # reduce if nesting
-dotnet_diagnostic.RCS1218.severity = warning   # simplify code branching
-dotnet_diagnostic.RCS1238.severity = warning   # avoid nested ternary
-
-#---------------------------------------------------------------------
-# Meziantou — дополнительные best practices
-#---------------------------------------------------------------------
-dotnet_diagnostic.MA0006.severity = warning    # use String.Equals with StringComparison
-dotnet_diagnostic.MA0011.severity = warning    # IFormatProvider missing
-dotnet_diagnostic.MA0016.severity = warning    # prefer returning collection abstraction
-dotnet_diagnostic.MA0040.severity = warning    # forward CancellationToken
-dotnet_diagnostic.MA0042.severity = error      # do not use blocking calls in async method
-dotnet_diagnostic.MA0045.severity = warning    # do not use blocking calls
-dotnet_diagnostic.MA0080.severity = warning    # use a cancellation token
-dotnet_diagnostic.MA0099.severity = warning    # use Explicit enum value
-
-#---------------------------------------------------------------------
-# Microsoft.CodeAnalysis.NetAnalyzers — отдельные
+# Microsoft.CodeAnalysis.NetAnalyzers — opt-in (CA off by default:
+# AnalysisMode=None in Directory.Build.props; Security category is on)
 #---------------------------------------------------------------------
 dotnet_diagnostic.CA1031.severity = none       # do not catch general exception types — иногда оправдано
 dotnet_diagnostic.CA1062.severity = none       # validate arguments — слишком шумно с required
@@ -282,6 +279,17 @@ dotnet_diagnostic.CA1860.severity = warning    # avoid using Enumerable.Any() �
 dotnet_diagnostic.CA1862.severity = warning    # use StringComparison method overloads
 dotnet_diagnostic.CA2007.severity = none       # ConfigureAwait — не нужно в app code
 dotnet_diagnostic.CA2008.severity = warning    # do not create tasks without TaskScheduler
+
+#---------------------------------------------------------------------
+# EF Core migrations — tool-generated by `dotnet ef migrations add`,
+# never hand-edited (.agents/rules/process/build-verification.md §"Когда
+# применять": **/Migrations/**/*.cs excluded from style rules). Exclusions
+# are scoped to this block only.
+#---------------------------------------------------------------------
+[**/Migrations/*.cs]
+dotnet_diagnostic.IDE0161.severity = none    # block namespace is what dotnet-ef emits
+dotnet_diagnostic.MA0048.severity = none     # timestamped file names are the EF convention
+dotnet_diagnostic.MA0051.severity = none     # Up()/Down() length is schema-driven
 
 # =====================================================================
 # ReSharper / Rider properties
@@ -374,3 +382,10 @@ resharper_unused_method_return_value_local_highlighting = none
 #   <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 #   <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 #   <AnalysisLevel>latest-recommended</AnalysisLevel>
+
+# Top-level entry points: the compiler-generated <Main>$ returns Task and
+# cannot take the Async suffix — the only sanctioned VSTHRD200 exemption.
+# (Last section on purpose: a mid-file section header would cut off the
+# [*.cs] block above.)
+[Program.cs]
+dotnet_diagnostic.VSTHRD200.severity = none

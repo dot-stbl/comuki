@@ -1,27 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Solution>
-  <Folder Name="/platform/src/application/api/">
-    <Project Path="platform/src/application/api/Comuki.Platform.Api.Public/Comuki.Platform.Api.Public.csproj" />
+  <!-- Build.Tools first: no refs -> top of topo order -> format gate runs once -->
+  <Folder Name="/platform/build/">
+    <Project Path="platform/build/Comuki.Build.Tools/Comuki.Build.Tools.csproj" />
   </Folder>
-  <Folder Name="/platform/src/application/internal/">
-    <Project Path="platform/src/application/internal/Comuki.Platform.Worker.Translator/Comuki.Platform.Worker.Translator.csproj" />
+  <Folder Name="/platform/src/shared/">
+    <Project Path="platform/src/shared/Comuki.Shared.Kernel/Comuki.Shared.Kernel.csproj" />
+    <Project Path="platform/src/shared/Comuki.Shared.Contracts/Comuki.Shared.Contracts.csproj" />
   </Folder>
-  <Folder Name="/platform/src/database/">
-    <Project Path="platform/src/database/Comuki.Platform.Database.Runs/Comuki.Platform.Database.Runs.csproj" />
+  <Folder Name="/platform/src/modules/">
+    <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Domain/Comuki.Modules.Identity.Domain.csproj" />
+    <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Application/Comuki.Modules.Identity.Application.csproj" />
+    <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Infrastructure/Comuki.Modules.Identity.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Domain/Comuki.Modules.Projects.Domain.csproj" />
+    <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Application/Comuki.Modules.Projects.Application.csproj" />
+    <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Infrastructure/Comuki.Modules.Projects.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/platform/src/feature/">
-    <Project Path="platform/src/feature/Comuki.Platform.Orchestration/Comuki.Platform.Orchestration.csproj" />
+  <Folder Name="/platform/src/engine/">
+    <Project Path="platform/src/engine/Comuki.Engine.Orchestration/Comuki.Engine.Orchestration.csproj" />
+    <Project Path="platform/src/engine/Comuki.Engine.Compute/Comuki.Engine.Compute.csproj" />
   </Folder>
-  <Folder Name="/platform/src/models/">
-    <Project Path="platform/src/models/Comuki.Platform.Api.Contracts/Comuki.Platform.Api.Contracts.csproj" />
-    <Project Path="platform/src/models/Comuki.Platform.Entity.Core/Comuki.Platform.Entity.Core.csproj" />
+  <Folder Name="/platform/src/host/">
+    <Project Path="platform/src/host/Comuki.Host/Comuki.Host.csproj" />
+    <Project Path="platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj" />
+    <Project Path="platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Comuki.Platform.Architecture.Tests/Comuki.Platform.Architecture.Tests.csproj" />
-    <Project Path="tests/Comuki.Platform.Testing/Comuki.Platform.Testing.csproj" />
-    <Project Path="tests/Comuki.Platform.Orchestration.Unit.Lease/Comuki.Platform.Orchestration.Unit.Lease.csproj" />
-    <Project Path="tests/Comuki.Platform.Worker.Translator.Unit.StreamJson/Comuki.Platform.Worker.Translator.Unit.StreamJson.csproj" />
-    <Project Path="tests/Comuki.Platform.Worker.Translator.Integration.PiCli/Comuki.Platform.Worker.Translator.Integration.PiCli.csproj" />
-    <Project Path="tests/Comuki.Platform.Worker.Translator.Integration.TestTools.TestFakePi/Comuki.Platform.Worker.Translator.Integration.TestTools.TestFakePi.csproj" />
+    <Project Path="tests/Comuki.Architecture.Tests/Comuki.Architecture.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/unit/">
+    <Project Path="tests/unit/Comuki.Host.Translator.Unit.StreamJson/Comuki.Host.Translator.Unit.StreamJson.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.ProfileCatalog/Comuki.Host.Unit.ProfileCatalog.csproj" />
+    <Project Path="tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/Comuki.Engine.Orchestration.Unit.StatusMachine.csproj" />
+    <Project Path="tests/unit/Comuki.Engine.Compute.Unit/Comuki.Engine.Compute.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.Auth/Comuki.Host.Unit.Auth.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Identity.Unit/Comuki.Modules.Identity.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Projects.Unit/Comuki.Modules.Projects.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Migrations/Comuki.Engine.Orchestration.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Queue/Comuki.Engine.Orchestration.Integration.Queue.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Auth/Comuki.Host.Integration.Auth.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Migrations/Comuki.Modules.Identity.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Projects.Integration.Migrations/Comuki.Modules.Projects.Integration.Migrations.csproj" />
   </Folder>
 </Solution>

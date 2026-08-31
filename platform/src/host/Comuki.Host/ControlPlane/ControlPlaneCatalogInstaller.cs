@@ -18,15 +18,15 @@ public static class ControlPlaneCatalogInstaller
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        _ = services.AddOptions<ControlPlaneCatalogOptions>()
+        services.AddOptions<ControlPlaneCatalogOptions>()
             .Bind(configuration.GetSection(ControlPlaneCatalogOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        _ = services.AddSingleton<ControlPlaneCatalog>();
-        _ = services.AddSingleton<IProfileCatalog>(static serviceProvider =>
+        services.AddSingleton<ControlPlaneCatalog>();
+        services.AddSingleton<IProfileCatalog>(static serviceProvider =>
             serviceProvider.GetRequiredService<ControlPlaneCatalog>());
-        _ = services.AddSingleton<IChatCommandCatalog>(static serviceProvider =>
+        services.AddSingleton<IChatCommandCatalog>(static serviceProvider =>
             serviceProvider.GetRequiredService<ControlPlaneCatalog>());
 
         return services;

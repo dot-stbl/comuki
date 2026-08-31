@@ -382,3 +382,10 @@ resharper_unused_method_return_value_local_highlighting = none
 #   <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 #   <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 #   <AnalysisLevel>latest-recommended</AnalysisLevel>
+
+# Top-level entry points: the compiler-generated <Main>$ returns Task and
+# cannot take the Async suffix — the only sanctioned VSTHRD200 exemption.
+# (Last section on purpose: a mid-file section header would cut off the
+# [*.cs] block above.)
+[Program.cs]
+dotnet_diagnostic.VSTHRD200.severity = none

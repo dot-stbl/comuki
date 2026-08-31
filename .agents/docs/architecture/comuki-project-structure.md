@@ -1,243 +1,180 @@
 # Comuki — Project Structure
 
 Структура репозитория платформы Comuki. Полиглот-монорепо: верхний уровень
-разделён **по стеку** (C# платформа / TS агенты / React дашборд), а внутри
-C#-части (`platform/`) действуют правила из **`PROJECT-RULES.md`** целиком
-(слои, нейминг, плоские тесты, ссылки только вниз, запрет помоек).
+**по стеку**; внутри `platform/` — каркас в духе **console.x.sdk**:
+`shared` · `modules` · `engine` · `host`.
 
-> Comuki **не пишет свой код сам** — это инструмент, который пишет *другие*
-> проекты (продукты). Поэтому в этом репозитории нет ничего продуктового,
-> кроме правил и скиллов под конкретные продукты в `control-plane/apps/` —
-> и то как текстовые конвенции, а не код.
+> Comuki **не пишет свой код сам** — пишет *другие* проекты. В этом репо:
+> платформа, агентские SDK, operational UI, дефолтный control-plane контент.
+>
+> Продуктовые решения (scope) — в `comuki-v1-scope-draft.md`.  
+> FE-экраны — в `../product/comuki-fe-requirements.md`.
+
+**Эволюция:** ранняя раскладка `application/feature/database/models` заменяется
+на каркас ниже. Существующие проекты (`Api.Public`, `Orchestration`,
+`Worker.Translator`, `Database.Runs`, …) мигрируют по плану в конце файла —
+не big-bang в одном PR.
 
 ---
 
-## 1. Верхний уровень: границы по стеку
-
-Comuki — полиглот: платформа на C#, агенты (core + worker-sdk + dev-sdk) на TS, дашборд на React. Это не
-один solution, поэтому корень делится по стеку, а не по слоям. Каждая
-стековая часть самодостаточна (свой манифест, свой lock, свои инструменты).
+## 1. Верхний уровень (по стеку)
 
 ```
 comuki/
-├── README.md
-├── CLAUDE.md / AGENTS.md
-├── docs/              # слепок проектирования (architecture, stack, decisions, designspec)
-├── platform/          # C# — здесь действуют правила из PROJECT-RULES.md
-├── agents/            # TS — comuki-agent-core + worker-sdk (pi) + dev-sdk (Claude Code)
-├── dashboard/         # React + shadcn — operational UI
-├── control-plane/     # воркер-правила и скиллы под git-ref (поведение роя; не код)
-└── deploy/            # Dockerfile воркера, docker-compose инфраструктуры
+├── README.md · LICENSE · AGENTS.md · comuki.slnx
+├── openspec/              # spec-driven changes
+├── .agents/               # rules, docs, phases, STATE (агентский контур)
+├── platform/              # C# — shared / modules / engine / host
+├── agents/                # TS — agent-core · worker-sdk (pi) · dev-sdk
+├── dashboard/             # React — operational UI + chat surface
+├── control-plane/         # дефолтные worker profiles/skills (git-ref)
+├── deploy/                # compose, worker image, grafana dashboards
+└── tests/                 # solution-level tests (или platform/tests — см. §8)
 ```
 
-> **Проектные правила здесь НЕ лежат.** Правила и скиллы конкретного продукта
-> живут в репозитории *этого продукта* (едут одной ревизией с кодом, нужны и
-> разрабу, и воркеру). В `control-plane/` — только воркер-правила (поведение
-> роя), задаваемые через dashboard.
-
-**Почему по стеку, а не по слоям.** Правила `PROJECT-RULES.md` написаны под
-один C# solution. У Comuki три стека с разными манифестами и lock-файлами —
-смешивать их в одной слоёвке нельзя (lock-файлы лежат рядом со своим
-манифестом, не в корне). Поэтому верхний уровень изолирует стеки, а слоёвка
-живёт внутри C#-части, где для неё есть все условия.
+`comuki.slnx` — **в корне** репо (не внутри `platform/`).
 
 ---
 
-## 2. `platform/` — C# (правила PROJECT-RULES.md в полном объёме)
+## 2. `platform/` — C# (console.x.sdk-style)
 
-Самодостаточный C# solution. Внутри — всё по присланным правилам: свой
-`.slnx`, `Directory.Build.props` с анализаторами, слои, нейминг, плоские
-тесты.
+Префикс проектов: **`Comuki.*`** (короче, чем `Comuki.Platform.*`; при миграции
+допускается временное сосуществование старых имён до rename PR).
 
 ```
 platform/
-├── Directory.Build.props          # общие свойства + анализаторы на ВСЕ проекты
-├── Directory.Packages.props       # Central Package Management
-├── .editorconfig                  # код-стайл, naming, severity=error
-├── comuki.slnx
+├── Directory.Build.props / Directory.Packages.props / .editorconfig
+│     (сейчас часть в корне репо — оставить единый DB.props в корне OK)
 │
-├── src/
-│   ├── application/
-│   │   ├── api/
-│   │   │   └── Comuki.Platform.Api.Public/        # REST дашборда + claim/heartbeat воркеров
-│   │   └── internal/
-│   │       └── Comuki.Platform.Proxy/             # YARP модельный прокси (тонкий entry point)
-│   │
-│   ├── feature/
-│   │   ├── Comuki.Platform.Orchestration/         # control plane: DAG, pull-очередь, диспетчинг, вызовы мозга
-│   │   ├── Comuki.Platform.Knowledge/             # retrieval + MCP-сервер знаний
-│   │   ├── Comuki.Platform.Rules/                 # движок правил: скоупы, версии, пины на прогон
-│   │   ├── Comuki.Platform.Routing/               # роль→физическая модель, виртуальные ключи, метринг
-│   │   └── Comuki.Platform.Artifacts/             # MinIO: запись/чтение артефактов прогонов
-│   │
-│   ├── database/
-│   │   ├── Comuki.Platform.Database.Core/         # specs, base entities, pgvector extensions
-│   │   ├── Comuki.Platform.Database.Runs/         # прогоны, стадии, журнал событий, очередь задач
-│   │   └── Comuki.Platform.Database.Knowledge/    # вектора знаний (опц. вынести в Qdrant)
-│   │
-│   ├── client/
-│   │   └── Comuki.Platform.Client.Public/         # типизированный клиент к Api.Public (тесты, internal)
-│   │
-│   ├── models/
-│   │   ├── Comuki.Platform.Entity.Core/           # доменные entities: Run, Stage, Task, Rule, Revision
-│   │   └── Comuki.Platform.Api.Contracts/         # HTTP DTO + формат брифа/отчёта (стык с агентом-воркером)
-│   │
-│   ├── shared/
-│   │   ├── Comuki.Platform.Composition/           # DI bootstrap
-│   │   ├── Comuki.Platform.Logging/               # OpenTelemetry → VictoriaMetrics/Logs
-│   │   └── Comuki.Platform.Extensions/
-│   │
-│   └── worker/                                     # ← код, который едет В ОБРАЗ воркера, не в облако
-│       └── Comuki.Platform.Worker.Translator/     # AOT-мост claude ↔ оркестратор (gRPC)
+├── shared/
+│   ├── Comuki.Shared.Kernel           # примитивы, ids, results — 0 I/O
+│   ├── Comuki.Shared.Contracts        # порты: IComputeProvider, IChatGateway…
+│   ├── Comuki.Shared.Persistence      # EF base, naming, shared helpers
+│   ├── Comuki.Shared.Configuration    # YAML + env binder
+│   └── Comuki.Shared.Telemetry        # OTel → Victoria
 │
-└── tests/                          # плоско, категория в имени проекта
-    ├── Comuki.Platform.Orchestration.Unit.Lease/
-    ├── Comuki.Platform.Orchestration.Unit.Scheduling/
-    ├── Comuki.Platform.Routing.Unit.VirtualKeys/
-    ├── Comuki.Platform.Api.Public.Integration.Claim/
-    ├── Comuki.Platform.Database.Runs.Integration.Migrations/
-    └── Comuki.Platform.Architecture.Tests/
+├── modules/                           # Domain | Application | Infrastructure
+│   ├── Identity/
+│   │   ├── Comuki.Modules.Identity.Domain
+│   │   ├── Comuki.Modules.Identity.Application
+│   │   └── Comuki.Modules.Identity.Infrastructure   # EF + migrations
+│   ├── Intake/                        # GH/GL/YT/Jira/Native providers + admission
+│   ├── Chat/                          # sessions, slash catalog, memory ports
+│   ├── Brain/                         # agent-loop tools, plan emit (no git files)
+│   ├── Knowledge/                     # OPT-IN — MCP + retrieval
+│   └── Verify/                        # OPT-IN — generic-command gate
+│
+├── engine/                            # runtime spine — не «фича продукта»
+│   ├── Comuki.Engine.Orchestration    # runs, work-item queue, plan apply, journal
+│   ├── Comuki.Engine.Compute          # providers Docker/k8s/containerd + pool/scale
+│   └── Comuki.Engine.Routing          # OPT — virtual keys / budget (с Proxy host)
+│
+├── host/                              # composition roots / deployables
+│   ├── Comuki.Host                    # REST + SignalR + Voluta chat + webhooks/hooks
+│   ├── Comuki.Host.Brain              # отдельный процесс: brain agent-loop (gRPC server)
+│   ├── Comuki.Host.Proxy              # OPT thin YARP (OpenAI+Anthropic compatible)
+│   ├── Comuki.Host.Translator         # CMD образа воркера: claim+fetch+pi+gRPC client
+│   └── Comuki.Migrator                # one-shot EF migrations + seed
+│
+└── api/                               # OPTIONAL как в console.x
+    └── Comuki.Api.*                   # controllers+DTO по bounded context
+        # Альтернатива v0: контроллеры живут в Host до разрастания поверхности
 ```
 
-### Префикс
+### Правила зависимостей
 
-`Comuki.Platform` — один префикс на solution (по правилам). `Platform`
-оставляет пространство под продукты: CRM и прочее — свои репозитории со
-своим `<Company>.<App>`, не здесь.
+```
+host → modules/engine → shared
+modules ↛ modules     (только через Shared.Contracts / integration events)
+engine ↛ modules UI   (Orchestration вызывает порты Brain/Intake через contracts)
+Brain ↛ Compute       (только через Orchestration / ports)
+Api.* → Application   (не в Domain)
+```
 
-### Где логика, где хост (правило «application тонкий»)
+Как console.x.sdk: **механизм** в modules/engine; **vocabulary** permissions/roles
+в Identity.Domain (роли **в коде**, assignments в Infrastructure/БД).
 
-- **Прокси**: `application/internal/Comuki.Platform.Proxy/` — тонкий YARP-хост
-  (`Program.cs`, bootstrap). Логика маршрутизации (роль→модель, виртуальные
-  ключи, метринг) — в `feature/Comuki.Platform.Routing/`.
-- **Оркестратор**: логика в `feature/Comuki.Platform.Orchestration/`,
-  хостится через `application/api/Comuki.Platform.Api.Public/`.
+### Слои модуля (канон)
 
-### Translator — особый зверь (`worker/`)
+| Слой | Можно | Нельзя |
+|------|-------|--------|
+| Domain | entities, VOs, invariants | EF, HTTP, Voluta, Docker |
+| Application | handlers, ports usage, installers | EF DbContext напрямую (через ports) |
+| Infrastructure | EF, migrations, provider SDKs | HTTP controllers (→ Api или Host) |
 
-`Comuki.Platform.Worker.Translator` вынесен в отдельную папку `worker/`, а не
-в `application/`, потому что он **не деплоится в облако как сервис** — он
-едет внутрь образа воркера и запускается как `CMD` контейнера рядом с Claude
-Code. Это AOT-бинарь (тонкий, быстрый старт), **двунаправленный мост** между
-Claude Code и оркестратором:
+### Database
 
-- запускает `claude -p` как дочерний процесс, держит его stdout напрямую;
-- переводит сырой stream-json Claude Code в типизированные события Comuki и
-  шлёт оркестратору;
-- принимает команды оркестратора (`Stop`, `InjectContext`) и передаёт их
-  Claude Code.
+Отдельных `Database.*` проектов **нет** (уход от старой схемы).  
+Миграции — в `*.Infrastructure/Migrations/` соответствующего модуля/engine.  
+Применяет `Comuki.Migrator`.
 
-**Translator переводит и исполняет, но не принимает решений.** Ретрай,
-эскалация, мердж, стоп-по-бюджету — это оркестратор (у него есть состояние
-задачи, бюджет, DAG; у Translator'а — нет). Translator шлёт факты
-(`StageReport` со статусом), решает оркестратор. Та же граница, что у агента:
-формирует и исполняет, не судит.
+Исключение на переходный период: `Comuki.Platform.Database.Runs` живёт до
+переноса в `Engine.Orchestration.Infrastructure`.
 
-Канал Translator ↔ оркестратор — **gRPC** (сервис-сервис, двунаправленный
-типизированный стрим; общие proto-типы → рассогласование ловит компилятор).
-Дашборд ↔ оркестратор — **SignalR** (браузеры, real-time UI). Разные швы —
-разный транспорт.
+### Translator host
 
-### Формат брифа/отчёта (стык C# ↔ TS)
+`Comuki.Host.Translator` — **не облачный сервис**, а entrypoint образа:
 
-Структура того, что оркестратор кладёт воркеру (бриф: задача, правила,
-git-ref, роль модели) и что воркер возвращает (отчёт: статус, тронутые файлы,
-результаты тестов) — описывается в `Comuki.Platform.Api.Contracts` как DTO.
-Агент-воркер знает эту структуру и парсит JSON. Отдельного источника схем на
-старте не заводим — стык простой. Если он разрастётся (сложный
-многоступенчатый бриф/отчёт), тогда вынести в общий JSON Schema, из которого
-генерятся обе стороны. Не раньше.
+- claim / heartbeat / lease  
+- fetch pin'нутого git-ref профилей клиента  
+- `Process.Start(pi)` · parse stream-json  
+- gRPC bi-di → Orchestration (events out, Stop/Inject in)  
+
+**Не решает** retry / budget / plan — только канал + claim.
+
+gRPC contracts: `Comuki.Shared.Contracts` или отдельный
+`Comuki.Engine.Orchestration.Contracts` (proto) — один пакет, ссылают Host.Translator
+и Engine.Orchestration.
+
+### Brief / report C# ↔ TS
+
+Форма брифа/отчёта — DTO в contracts (пока руками). Codegen C#→TS — после
+стабилизации (как в arch). Не раньше Slice-0+.
 
 ---
 
-## 3. `agents/` — TS (оболочки агентов)
+## 3. `agents/` — TypeScript
 
-Два агента под две ситуации. Оба **правил не хранят** — получают извне
-(проектные из репо проекта, воркер-правила от оркестратора). Оба общаются за
-знаниями с `Comuki.Platform.Knowledge` по MCP.
+Без смены идеи: три пакета.
 
 ```
 agents/
-├── comuki-agent-core/             # общее ядро (ваше): шарят оба sdk
-│   └── src/
-│       ├── events/                # типы событий (StageReport, EscalationRequest…)
-│       ├── rules/                 # чтение/применение ДЕКЛАРАТИВНЫХ правил (текст)
-│       ├── mcp/                   # клиент к Comuki.Platform.Knowledge
-│       └── protocol/              # формат брифа/отчёта
-│
-├── comuki-worker-sdk/             # воркеры: pi + специфика
-│   └── src/
-│       ├── pi-extensions/         # адаптеры принуждения механикой pi (замки)
-│       └── skills/                # загрузка скиллов-рецептов
-│
-└── comuki-dev-sdk/                # разрабы: форк GSD под Claude Code (имя по роли, не по происхождению)
-    └── src/
-        ├── hooks/                 # те же замки, механикой Claude Code
-        └── subagents/             # сабагенты, переопределённые под стадии
+├── comuki-agent-core/      # events, declarative rules reader, MCP client, brief/report
+├── comuki-worker-sdk/      # pi extensions (locks), skill load
+└── comuki-dev-sdk/         # Claude Code hooks / subagents (GSD-origin fork)
 ```
 
-**Три пакета, не два.** Общее ядро `comuki-agent-core` шарят оба sdk — там
-то, что должно быть единым: типы событий, MCP-доступ к знаниям, чтение
-декларативных правил, формат брифа/отчёта. Поверх — два тонких sdk под свой
-рантайм: `comuki-worker-sdk` (pi, для воркеров — контроль и наблюдаемость) и
-`comuki-dev-sdk` (Claude Code, для разрабов — зрелый интерактивный UX).
-`comuki-dev-sdk` — форк GSD, но имя по роли, а не по происхождению: после
-форка и переработки под свои стадии это уже ваш код.
-
-**Дыра «разные правила у воркеров и людей» закрыта в самом ядре, а не
-синхронизацией.** Декларативные правила (текст), MCP-доступ и типы событий
-живут в `comuki-agent-core` — пишутся один раз, шарятся обоими sdk, разъехаться
-не могут by design. Принуждающие правила (замки: физически блокируют действие)
-— НЕ в core, а в каждом sdk своя механика (pi-extensions у воркера, Claude Code
-hooks у разраба), потому что перехват у pi и Claude Code разный. Но это
-маленький фиксированный набор (запрет править тесты, install, push в main),
-который почти не меняется. Общее — в ядре; специфичное — в тонких адаптерах.
-
-Рантаймы берутся готовыми (pi, Claude Code), ваши — три пакета поверх. Не
-frontend и не .NET — отдельный TS-стек со своим тулингом.
+Декларативное — в core; принуждение — в sdk-адаптерах.
 
 ---
 
-## 4. `dashboard/` — React + shadcn
+## 4. `dashboard/` — React
 
-Operational UI наблюдения за роем. Дизайн-система — по
-`docs/dashboard-designspec.md`. Изолирован, свой lock.
+Operational UI + chat surface. Детали экранов —
+`.agents/docs/product/comuki-fe-requirements.md`.
 
 ```
 dashboard/
-├── package.json
-├── bun.lock
-└── src/
-    ├── components/                # StatusBadge, StagePipeline, RunTimeline, ApprovalCard...
-    └── design-system/             # токены + дашбордная дизайн-система
+├── package.json · bun.lock
+└── src/                    # FSD/экраны — по FE-requirements
 ```
 
-Дашбордная дизайн-система ≠ продуктовая (CRM): общий только бренд-токен.
+Типы API — Kubb из OpenAPI Host.  
+Тесты: vitest + MSW; e2e Playwright **нет** (решение scope).
 
 ---
 
-## 5. `control-plane/` — воркер-правила, не код (P7)
+## 5. `control-plane/` — дефолтный контент (не код)
 
-**Воркер-правила** — поведение роя, задаваемое через dashboard: ограничения
-автономных агентов, скоупы, политики. Версионируемый контент под git-ref,
-который пинится на прогон. Касается только воркеров (человеку не нужно).
+Дефолтные профили/skills платформы. Кастом клиента — в **git клиента**
+(fetch на старте воркера). UI не SoT для промптов.
 
 ```
 control-plane/
-├── rules/
-│   └── worker/                    # поведение роя: ограничения, скоупы, политики автономии
-└── skills/                        # глобальные обкатанные рецепты (растут из сделанного)
+├── profiles/               # system prompts заготовок
+├── skills/
+└── chat-commands/          # optional built-in slash packs
 ```
-
-**Проектные правила и скиллы здесь НЕ лежат** — они в репозитории каждого
-продукта (нужны только ему, едут одной ревизией с кодом). Их берут оба: разраб
-(сидит в репе) и воркер (выкачивает репо). Это два свода *по природе*:
-проектные (в репе, про код продукта, для всех) и воркер-правила (здесь, про
-поведение роя, только воркеру). Они не дублируют друг друга и не обязаны быть
-синхронны — про разное. Воркер складывает оба; разраб берёт только проектные.
-
-Контент (`control-plane/`) и оболочки агентов (`agents/`) версионируются
-раздельно — разный ритм изменений.
 
 ---
 
@@ -245,32 +182,98 @@ control-plane/
 
 ```
 deploy/
-├── worker.Dockerfile              # ОДИН образ воркера: pi (агент) + comuki-worker-sdk + Translator (AOT)
-└── docker-compose.yml             # self-hosted инфра: postgres, minio, nexus, victoria
+├── worker.Dockerfile       # pi + worker-sdk + Host.Translator
+├── docker-compose.yml      # postgres(+pgvector), minio, nexus, victoria, grafana
+└── grafana/dashboards/     # as-code (только в Comuki repo)
 ```
 
-**Воркер — не один C#-проект-сервис.** Образ собирает три вещи: **pi**
-(агент-рантайм), `comuki-worker-sdk` (адаптеры принуждения, доступ к
-знаниям) и `Comuki.Platform.Worker.Translator` (AOT-бинарь, `CMD` контейнера).
-Translator запускает pi и мостит его к оркестратору. Сам по себе воркер тупой:
-стартует, Translator берёт задачу (pull: claim → lease → heartbeat) и получает
-специфику по API — поэтому образ один на любую стадию, продукт и модель.
-«Тупость» воркера — про отсутствие *решений*, а не про отсутствие кода:
-Translator есть, но он только мост.
+Один worker image; специфика — profile git-ref + очередь.
 
 ---
 
-## 7. Чего в репозитории Comuki НЕТ
+## 7. Hosts (процессы) — итог
 
-- **Кода продуктов** (CRM и пр.) — они в своих репозиториях. Comuki их пишет,
-  но не содержит.
-- **Продуктовых OpenAPI** — контракт фронт↔бек продукта живёт у api-проекта
-  *продукта*, не здесь. Comuki его генерит при разработке фичи.
-- **Продуктовой дизайн-системы** — она в репозитории продукта (ею Comuki
-  принуждает воркеров). Здесь только дашбордная.
-- **Воркер-проекта на C#** — воркер это Dockerfile + pi-агент + Translator, не сервис-csproj.
+| Host | Зачем |
+|------|--------|
+| `Comuki.Host` | REST (dashboard, claim, `/api/hooks/*`) + SignalR + **Voluta chat** + composition |
+| `Comuki.Host.Brain` | Brain agent-loop; **gRPC server**; вызывается из Host |
+| `Comuki.Host.Proxy` | optional model gateway (virtual keys / budget) |
+| `Comuki.Host.Translator` | container CMD; **gRPC client** → Host (Orchestration) |
+| `Comuki.Migrator` | schema + seed |
+
+Внутренние швы service↔service: **gRPC** (Translator, Brain).  
+Наружу к dashboard: **OpenAPI + SignalR** (Kubb/Refit на клиентах).
 
 ---
 
-*Дополняет PROJECT-RULES.md (правила C#-части) и слепок проектирования в docs/.
-Глобальная структура — по стеку; внутри platform/ — правила в полном объёме.*
+## 8. Tests
+
+Предпочтительно зеркало console.x:
+
+```
+tests/
+├── unit/
+│   ├── Comuki.Engine.Orchestration.Unit.*/
+│   ├── Comuki.Modules.Identity.Unit.*/
+│   └── …
+├── integration/            # WAF + Testcontainers + Refit
+├── architecture/           # NetArchTest: layers, module isolation
+└── host/                   # optional TestHost
+```
+
+Пока часть тестов лежит в `tests/` у корня / `platform/tests` — при миграции
+свести к одной схеме. Категория в имени проекта сохраняется.
+
+Стек: xUnit · Shouldly · NSubstitute · Testcontainers · Refit · vitest/MSW на FE.
+Без Playwright.
+
+---
+
+## 9. Чего в репо нет
+
+- Кода продуктов-клиентов  
+- Продуктовых OpenAPI клиентов  
+- Кастомных ролей в БД (роли только в коде Identity)  
+- Обязательного Knowledge/Verify/Proxy (opt-in features)  
+
+---
+
+## 10. План миграции с текущего дерева
+
+Сейчас (legacy paths):
+
+```
+platform/src/application/api/Comuki.Platform.Api.Public
+platform/src/application/internal/Comuki.Platform.Worker.Translator
+platform/src/feature/Comuki.Platform.Orchestration
+platform/src/database/Comuki.Platform.Database.Runs
+platform/src/models/Comuki.Platform.Entity.Core
+platform/src/models/Comuki.Platform.Api.Contracts
+```
+
+Целевые шаги (отдельные PR, не один):
+
+1. Завести `shared/*` skeleton + Composition hooks  
+2. `Orchestration` → `engine/Comuki.Engine.Orchestration` (+ Infra для Runs EF)  
+3. `Api.Public` → `host/Comuki.Host` (или `api/` + Host)  
+4. `Worker.Translator` → `host/Comuki.Host.Translator`  
+5. Добавить `modules/Identity` (первым новым модулем: users, keys, assignments, OIDC)  
+6. `Host.Brain` + `modules/Brain` · Voluta в `Host`  
+7. Intake / Compute — по мере фич  
+8. Удалить пустые legacy folders · обновить NetArchTest  
+
+До завершения миграции **оба** layout'а могут сосуществовать в `comuki.slnx`;
+arch tests ослабить на переход или писать под фактические пути.
+
+---
+
+## 11. Связь с правилами
+
+- C# style / DI / testing — `.agents/rules/coding/` + user-global csharp rules  
+- Отступление от старого `PROJECT-STRUCTURE` application/feature — **осознанное**,
+  по образцу console.x.sdk; зафиксировано этим документом и scope-draft  
+- Python запрещён для скриптов; FE — bun  
+
+---
+
+*Обновлено под scope 2026-08-30 · каркас shared/modules/engine/host.*

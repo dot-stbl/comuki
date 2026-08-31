@@ -11,6 +11,13 @@ public sealed class ComputeStartRequest()
 {
     public required ProjectId ProjectId { get; init; }
 
+    /// <summary>
+    /// WorkerId the caller already bound a token to. The provider must reuse
+    /// it instead of minting its own, so the token identity and the container
+    /// identity agree. Null lets the provider mint a fresh id.
+    /// </summary>
+    public WorkerId? PreIssuedWorkerId { get; init; }
+
     /// <summary>Profile key the scale decision was made for (e.g. <c>implement</c>).</summary>
     public required string ProfileKey { get; init; }
 

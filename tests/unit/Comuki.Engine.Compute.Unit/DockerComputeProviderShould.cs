@@ -19,11 +19,12 @@ public sealed class DockerComputeProviderShould
 {
     private readonly IContainerOperations containers = Substitute.For<IContainerOperations>();
 
-    private static ComputeStartRequest CreateStartRequest(ProjectId projectId)
+    private static ComputeStartRequest CreateStartRequest(ProjectId projectId, WorkerId? preIssuedWorkerId = null)
     {
         return new ComputeStartRequest
         {
             ProjectId = projectId,
+            PreIssuedWorkerId = preIssuedWorkerId,
             ProfileKey = "implement",
             ProfilesGitRef = "refs/tags/v1.2",
             Image = "ghcr.io/comuki/worker@sha256:abc",
@@ -59,6 +60,7 @@ public sealed class DockerComputeProviderShould
             && parameters.Env.Contains($"COMUKI_PROJECT_ID={projectId.Value}")
             && parameters.Env.Contains("COMUKI_PROFILE_KEY=implement")
             && parameters.Env.Contains("COMUKI_PROFILES_REF=refs/tags/v1.2")
+            && parameters.Env.Contains("COMUKI_WORKER_IMAGE=ghcr.io/comuki/worker@sha256:abc")
             && parameters.Env.Contains($"COMUKI_ORCH_GRPC={grpcUrl}")
             && parameters.Env.Contains("FOO=bar")
             && parameters.Labels is not null
@@ -98,6 +100,51 @@ public sealed class DockerComputeProviderShould
             cancellationToken);
         _ = await containers.Received(1).StartContainerAsync(
             "container-1", Arg.Any<ContainerStartParameters>(), cancellationToken);
+    }
+
+    [Fact]
+    public async Task HonorPreIssuedWorkerIdWhenProvidedAsync()
+    {
+        var projectId = ProjectId.New();
+        var preIssued = WorkerId.New();
+        var request = CreateStartRequest(projectId, preIssuedWorkerId: preIssued);
+        var cancellationToken = TestContext.Current.CancellationToken;
+        _ = containers.CreateContainerAsync(Arg.Any<CreateContainerParameters>(), cancellationToken)
+            .Returns(new CreateContainerResponse { ID = "container-pre" });
+        var provider = CreateProvider();
+
+        var handle = await provider.StartAsync(request, cancellationToken);
+
+        // the token identity and the container identity must agree —
+        // the provider reuses the caller's id instead of minting its own
+        handle.Id.ShouldBe(preIssued);
+        var expectedNameSuffix = preIssued.Value.ToString("N")[..12];
+        var expectedWorkerIdLabel = preIssued.Value.ToString();
+        _ = await containers.Received(1).CreateContainerAsync(
+            Arg.Is<CreateContainerParameters>(parameters =>
+                parameters.Labels != null
+                && string.Equals(
+                    parameters.Labels[DockerComputeProvider.WorkerIdLabel],
+                    expectedWorkerIdLabel,
+                    StringComparison.Ordinal)
+                && parameters.Name.EndsWith(expectedNameSuffix, StringComparison.Ordinal)),
+            cancellationToken);
+    }
+
+    [Fact]
+    public async Task MintFreshWorkerIdWhenNonePreIssuedAsync()
+    {
+        var projectId = ProjectId.New();
+        var request = CreateStartRequest(projectId);
+        var cancellationToken = TestContext.Current.CancellationToken;
+        _ = containers.CreateContainerAsync(Arg.Any<CreateContainerParameters>(), cancellationToken)
+            .Returns(new CreateContainerResponse { ID = "container-mint" });
+        var provider = CreateProvider();
+
+        var handle = await provider.StartAsync(request, cancellationToken);
+
+        handle.Id.ShouldNotBe(default);
+        request.PreIssuedWorkerId.ShouldBeNull();
     }
 
     [Fact]

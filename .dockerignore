@@ -1,0 +1,11 @@
+# Build context hygiene for deploy/worker.Dockerfile (context = repo root).
+.git
+.agents
+dashboard
+agents
+control-plane
+tests
+openspec
+**/bin
+**/obj
+**/*.user

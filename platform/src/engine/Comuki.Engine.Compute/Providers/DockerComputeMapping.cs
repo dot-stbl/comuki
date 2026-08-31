@@ -112,6 +112,7 @@ internal static class DockerComputeMapping
             $"COMUKI_PROJECT_ID={request.ProjectId.Value}",
             $"COMUKI_PROFILE_KEY={request.ProfileKey}",
             $"COMUKI_PROFILES_REF={request.ProfilesGitRef}",
+            $"COMUKI_WORKER_IMAGE={request.Image}",
             $"COMUKI_ORCH_GRPC={request.OrchestratorGrpcUrl}",
         };
         environment.AddRange(request.Env.Select(static pair => $"{pair.Key}={pair.Value}"));

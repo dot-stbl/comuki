@@ -81,6 +81,7 @@ public sealed class ScaleSupervisorCycle(
                     var request = new ComputeStartRequest
                     {
                         ProjectId = projectId,
+                        PreIssuedWorkerId = tokenId,
                         ProfileKey = profileKey,
                         ProfilesGitRef = settings.ProfilesGitRef ?? options.ProfilesGitRef,
                         Image = settings.WorkerImage ?? options.WorkerImage,

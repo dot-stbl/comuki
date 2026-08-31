@@ -18,4 +18,12 @@ public static class ApiRoutes
     public const string AuthOidcRoot = "api/v1/auth/oidc";
 
     public const string Projects = "/api/v1/projects";
+
+    public const string WorkerClaim = "/workers/claim";
+
+    public const string WorkerHeartbeat = "/workers/{workItemId}/heartbeat";
+
+    public const string WorkerComplete = "/workers/{workItemId}/complete";
+
+    public const string WorkerFail = "/workers/{workItemId}/fail";
 }

@@ -31,7 +31,7 @@ public sealed class DockerComputeProvider(
     /// <inheritdoc />
     public async Task<WorkerHandle> StartAsync(ComputeStartRequest request, CancellationToken cancellationToken = default)
     {
-        var workerId = WorkerId.New();
+        var workerId = request.PreIssuedWorkerId ?? WorkerId.New();
         var createParameters = DockerComputeMapping.ToCreateParameters(request, workerId, computeOptions.Value);
 
         var created = await docker.Containers.CreateContainerAsync(createParameters, cancellationToken);

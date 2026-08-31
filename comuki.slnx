@@ -28,6 +28,7 @@
   <Folder Name="/tests/unit/">
     <Project Path="tests/unit/Comuki.Host.Translator.Unit.StreamJson/Comuki.Host.Translator.Unit.StreamJson.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.ProfileCatalog/Comuki.Host.Unit.ProfileCatalog.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.WorkerRuntime/Comuki.Host.Unit.WorkerRuntime.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/Comuki.Engine.Orchestration.Unit.StatusMachine.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Compute.Unit/Comuki.Engine.Compute.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Identity.Unit/Comuki.Modules.Identity.Unit.csproj" />

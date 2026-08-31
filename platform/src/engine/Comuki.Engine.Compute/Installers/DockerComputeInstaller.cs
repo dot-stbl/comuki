@@ -1,7 +1,11 @@
 using Comuki.Engine.Compute.Options;
+using Comuki.Engine.Compute.Pool;
+using Comuki.Engine.Compute.Ports;
 using Comuki.Engine.Compute.Providers;
 using Comuki.Engine.Compute.Security;
 using Comuki.Engine.Compute.Security.Stores;
+using Comuki.Engine.Compute.Settings;
+using Comuki.Engine.Compute.Supervisor;
 using Comuki.Shared.Contracts.Compute;
 using Docker.DotNet;
 using Microsoft.Extensions.Configuration;
@@ -11,12 +15,15 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Comuki.Engine.Compute.Installers;
 
 /// <summary>
-/// Registers the Docker compute provider and the worker token issuer. Wired
-/// only in a host composition root — nothing else references these concretes.
+/// Registers the Docker compute provider, the worker token issuer and the
+/// scale supervisor (T2.4/T2.5). Wired only in a host composition root —
+/// nothing else references these concretes. The host must ALSO register an
+/// <see cref="IBacklogReader"/> (the Orchestration queue adapter lands with
+/// the queue slice); without it the supervisor resolution fails fast.
 /// </summary>
 public static class DockerComputeInstaller
 {
-    /// <summary>Adds the compute engine: options, IDockerClient, token issuer, docker provider.</summary>
+    /// <summary>Adds the compute engine: options, IDockerClient, token issuer, docker provider, scale supervisor.</summary>
     /// <param name="services"></param>
     /// <param name="configuration"></param>
     public static IServiceCollection AddComukiCompute(this IServiceCollection services, IConfiguration configuration)
@@ -31,12 +38,22 @@ public static class DockerComputeInstaller
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        _ = services.AddOptions<ScaleSupervisorOptions>()
+            .Bind(configuration.GetSection(ScaleSupervisorOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.TryAddSingleton(TimeProvider.System);
 
         _ = services.AddSingleton<IWorkerTokenStore, InMemoryWorkerTokenStore>();
         _ = services.AddSingleton<WorkerTokenIssuer>();
         _ = services.AddSingleton<IDockerClient>(static _ => new DockerClientConfiguration().CreateClient());
         _ = services.AddSingleton<IComputeProvider, DockerComputeProvider>();
+        _ = services.AddSingleton<IProjectScaleSettings, InMemoryProjectScaleSettings>();
+        _ = services.AddSingleton<WorkerPoolState>();
+        _ = services.AddSingleton<IWorkerPoolState>(static serviceProvider => serviceProvider.GetRequiredService<WorkerPoolState>());
+        _ = services.AddSingleton<ScaleSupervisorCycle>();
+        _ = services.AddHostedService<ScaleSupervisorWorker>();
 
         return services;
     }

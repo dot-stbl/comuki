@@ -14,11 +14,16 @@
   <Folder Name="/platform/src/host/">
     <Project Path="platform/src/host/Comuki.Host/Comuki.Host.csproj" />
     <Project Path="platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj" />
+    <Project Path="platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Comuki.Architecture.Tests/Comuki.Architecture.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/unit/">
     <Project Path="tests/unit/Comuki.Host.Translator.Unit.StreamJson/Comuki.Host.Translator.Unit.StreamJson.csproj" />
+    <Project Path="tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/Comuki.Engine.Orchestration.Unit.StatusMachine.csproj" />
+  </Folder>
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Migrations/Comuki.Engine.Orchestration.Integration.Migrations.csproj" />
   </Folder>
 </Solution>

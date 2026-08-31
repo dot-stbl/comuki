@@ -17,10 +17,10 @@ public static class OrchestrationApplicationExtensions
     /// <param name="services"></param>
     public static IServiceCollection AddOrchestrationApplication(this IServiceCollection services)
     {
-        _ = services.AddSingleton<RunStatusMachine>();
-        _ = services.AddSingleton<WorkItemStatusMachine>();
-        _ = services.AddSingleton<IValidator<ClaimWorkItemCommand>, ClaimWorkItemValidator>();
-        _ = services.AddScoped<ClaimWorkItemHandler>();
+        services.AddSingleton<RunStatusMachine>();
+        services.AddSingleton<WorkItemStatusMachine>();
+        services.AddSingleton<IValidator<ClaimWorkItemCommand>, ClaimWorkItemValidator>();
+        services.AddScoped<ClaimWorkItemHandler>();
 
         return services;
     }

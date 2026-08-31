@@ -26,7 +26,7 @@ public static class OrchestrationInfrastructureExtensions
         this IServiceCollection services,
         string connectionString)
     {
-        _ = services.AddDbContext<OrchestrationDbContext>(options =>
+        services.AddDbContext<OrchestrationDbContext>(options =>
             OrchestrationDbContext.ApplyOptions(options, connectionString));
         return services;
     }
@@ -42,17 +42,17 @@ public static class OrchestrationInfrastructureExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        _ = services.AddOptions<LeaseOptions>()
+        services.AddOptions<LeaseOptions>()
             .Bind(configuration.GetSection(LeaseOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         services.TryAddSingleton(TimeProvider.System);
 
-        _ = services.AddScoped<IWorkItemQueue, WorkItemQueueEf>();
-        _ = services.AddScoped<IRunJournal, RunJournalEf>();
-        _ = services.AddScoped<LeaseReaper>();
-        _ = services.AddHostedService<LeaseReaperWorker>();
+        services.AddScoped<IWorkItemQueue, WorkItemQueueEf>();
+        services.AddScoped<IRunJournal, RunJournalEf>();
+        services.AddScoped<LeaseReaper>();
+        services.AddHostedService<LeaseReaperWorker>();
 
         return services;
     }

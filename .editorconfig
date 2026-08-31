@@ -123,6 +123,10 @@ dotnet_diagnostic.IDE0083.severity = warning
 dotnet_diagnostic.IDE0010.severity = none
 dotnet_diagnostic.IDE0072.severity = none
 
+# No `_ =` discard statements (owner global rule async-and-tasks §6): bare
+# calls; the IDE0058 fixer is what inserts them — off.
+dotnet_diagnostic.IDE0058.severity = none
+
 # Forget ConfigureAwait — для library code; в app можно отключить
 
 #---------------------------------------------------------------------

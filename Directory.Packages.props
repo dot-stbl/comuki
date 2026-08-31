@@ -19,4 +19,21 @@
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
     <PackageVersion Include="Roslynator.Formatting.Analyzers" Version="4.15.0" />
   </ItemGroup>
+
+  <!-- EF Core / persistence (Engine.Orchestration + Migrator) -->
+  <ItemGroup>
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
+  </ItemGroup>
+
+  <!-- Integration testing -->
+  <ItemGroup>
+    <!-- 4.14.0 (not the requested 4.12.0): 4.12.0 pulls vulnerable SSH.NET
+         2025.1.0 (GHSA-q939-rpr3-3284, NU1903 -> build error); 4.14.0
+         references the patched SSH.NET 2026.0.0. -->
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
+  </ItemGroup>
 </Project>

@@ -13,10 +13,6 @@ namespace Comuki.Engine.Compute.Security;
 /// HMAC-SHA256(pepper, token) is stored; validation scans every record with a
 /// fixed-time comparison so timing does not reveal which token matched.
 /// </summary>
-// MA0038/CA1822 suppressed: the Roslynator 4.15 "make static" fixer mis-handles
-// primary-constructor captures — it marks methods static while they still capture
-// ctor parameters (clock/store/tokenOptions), which breaks compilation (CS9105).
-#pragma warning disable MA0038 // Make method static (do not use with primary ctor captures)
 public sealed class WorkerTokenIssuer(
     TimeProvider clock,
     IWorkerTokenStore store,
@@ -64,7 +60,6 @@ public sealed class WorkerTokenIssuer(
     /// <param name="workerId"></param>
     public void Revoke(WorkerId workerId) => store.Revoke(workerId);
 }
-#pragma warning restore MA0038 // Make method static (do not use with primary ctor captures)
 
 /// <summary>HMAC hashing and fixed-time comparison for worker tokens.</summary>
 file static class WorkerTokenHasher

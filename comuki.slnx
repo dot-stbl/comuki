@@ -6,6 +6,7 @@
   </Folder>
   <Folder Name="/platform/src/engine/">
     <Project Path="platform/src/engine/Comuki.Engine.Orchestration/Comuki.Engine.Orchestration.csproj" />
+    <Project Path="platform/src/engine/Comuki.Engine.Compute/Comuki.Engine.Compute.csproj" />
   </Folder>
   <Folder Name="/platform/src/host/">
     <Project Path="platform/src/host/Comuki.Host/Comuki.Host.csproj" />
@@ -16,5 +17,6 @@
   </Folder>
   <Folder Name="/tests/unit/">
     <Project Path="tests/unit/Comuki.Host.Translator.Unit.StreamJson/Comuki.Host.Translator.Unit.StreamJson.csproj" />
+    <Project Path="tests/unit/Comuki.Engine.Compute.Unit/Comuki.Engine.Compute.Unit.csproj" />
   </Folder>
 </Solution>

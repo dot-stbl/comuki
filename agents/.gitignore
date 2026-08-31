@@ -1,0 +1,5 @@
+node_modules/
+
+# The root .gitignore ignores bun.lock globally; agents/ pins its lockfile
+# so worker images and CI resolve identical dependency versions.
+!bun.lock

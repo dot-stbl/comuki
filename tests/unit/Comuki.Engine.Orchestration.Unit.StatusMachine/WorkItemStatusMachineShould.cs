@@ -16,6 +16,9 @@ namespace Comuki.Engine.Orchestration.Unit.StatusMachine;
 /// </summary>
 public sealed class WorkItemStatusMachineShould
 {
+    private const string Image = "ghcr.io/comuki/worker@sha256:9f86d0";
+    private const string ProfilesRef = "refs/heads/main";
+
     private static readonly IReadOnlyDictionary<WorkItemStatus, WorkItemStatus[]> expectedTransitions =
         new Dictionary<WorkItemStatus, WorkItemStatus[]>
         {
@@ -89,11 +92,14 @@ public sealed class WorkItemStatusMachineShould
         var runId = RunId.New();
         var now = DateTimeOffset.UtcNow;
 
-        var item = WorkItem.Create(runId, "implement", /*lang=json,strict*/ """{"goal":"write tests"}""", WorkItemStatus.Queued, now);
+        var item = WorkItem.Create(runId, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"write tests"}""", WorkItemStatus.Queued, now);
 
         item.RunId.ShouldBe(runId);
         item.Status.ShouldBe(WorkItemStatus.Queued);
         item.ProfileKey.ShouldBe("implement");
+        item.Image.ShouldBe(Image);
+        item.ProfilesRef.ShouldBe(ProfilesRef);
+        item.Attempt.ShouldBe(0);
         item.Id.Version.ShouldBe(7);
         item.LeasedBy.ShouldBeNull();
         item.LeaseUntil.ShouldBeNull();
@@ -103,7 +109,7 @@ public sealed class WorkItemStatusMachineShould
     [Fact(DisplayName = "Given plan apply with dependencies, when Create is called blocked, then the item starts blocked")]
     public void CreateBlockedWorkItem()
     {
-        var item = WorkItem.Create(RunId.New(), "docs-writer", /*lang=json,strict*/ """{"goal":"document"}""", WorkItemStatus.Blocked, DateTimeOffset.UtcNow);
+        var item = WorkItem.Create(RunId.New(), "docs-writer", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"document"}""", WorkItemStatus.Blocked, DateTimeOffset.UtcNow);
 
         item.Status.ShouldBe(WorkItemStatus.Blocked);
     }
@@ -112,22 +118,26 @@ public sealed class WorkItemStatusMachineShould
     public void RejectInvalidInitialStatus()
     {
         _ = Should.Throw<ArgumentException>(
-            static () => WorkItem.Create(RunId.New(), "implement", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Running, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Running, DateTimeOffset.UtcNow));
     }
 
-    [Fact(DisplayName = "Given an empty profile key or brief, when Create is called, then it throws")]
-    public void RejectEmptyProfileKeyAndBrief()
+    [Fact(DisplayName = "Given an empty profile key, image, profiles ref or brief, when Create is called, then it throws")]
+    public void RejectEmptyLabelsAndBrief()
     {
         _ = Should.Throw<ArgumentException>(
-            static () => WorkItem.Create(RunId.New(), " ", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), " ", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
         _ = Should.Throw<ArgumentException>(
-            static () => WorkItem.Create(RunId.New(), "implement", "", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), "implement", "", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+        _ = Should.Throw<ArgumentException>(
+            static () => WorkItem.Create(RunId.New(), "implement", Image, " ", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+        _ = Should.Throw<ArgumentException>(
+            static () => WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, "", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
     }
 
     [Fact(DisplayName = "Given a running item, when the lease expires and is requeued, then TransitionTo queued succeeds")]
     public void ApplyRequeueTransitionOnAggregate()
     {
-        var item = WorkItem.Create(RunId.New(), "implement", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow);
+        var item = WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow);
         item.TransitionTo(WorkItemStatus.Running, DateTimeOffset.UtcNow);
 
         item.TransitionTo(WorkItemStatus.Queued, DateTimeOffset.UtcNow);
@@ -138,7 +148,7 @@ public sealed class WorkItemStatusMachineShould
     [Fact(DisplayName = "Given a terminal item, when TransitionTo is called, then the aggregate throws")]
     public void RejectIllegalTransitionOnAggregate()
     {
-        var item = WorkItem.Create(RunId.New(), "implement", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow);
+        var item = WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow);
         item.TransitionTo(WorkItemStatus.Running, DateTimeOffset.UtcNow);
         item.TransitionTo(WorkItemStatus.Succeeded, DateTimeOffset.UtcNow);
 

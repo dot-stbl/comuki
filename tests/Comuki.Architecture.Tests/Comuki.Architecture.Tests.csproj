@@ -19,6 +19,9 @@
     <ProjectReference Include="..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
     <ProjectReference Include="..\..\platform\src\host\Comuki.Host\Comuki.Host.csproj" />
     <ProjectReference Include="..\..\platform\src\host\Comuki.Host.Translator\Comuki.Host.Translator.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Identity\Comuki.Modules.Identity.Domain\Comuki.Modules.Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Identity\Comuki.Modules.Identity.Application\Comuki.Modules.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
   </ItemGroup>

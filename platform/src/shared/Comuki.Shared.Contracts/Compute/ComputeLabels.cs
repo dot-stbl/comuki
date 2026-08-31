@@ -15,5 +15,8 @@ public static class ComputeLabels
     /// <summary>Kubernetes label values must match [A-Za-z0-9._-]; git refs with
     /// slashes become underscores.</summary>
     /// <param name="value"></param>
-    public static string Sanitize(string value) => value.Replace('/', '_');
+    public static string Sanitize(string value)
+    {
+        return value.Replace('/', '_');
+    }
 }

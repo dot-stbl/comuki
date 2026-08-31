@@ -174,7 +174,10 @@ file static class StreamJsonEventMapping
         return new PiEvent.SystemEvent(subtype, cwd, tools);
     }
 
-    public static PiEvent MapUser(JsonElement root) => new PiEvent.UserEvent(ExtractUserContent(root));
+    public static PiEvent MapUser(JsonElement root)
+    {
+        return new PiEvent.UserEvent(ExtractUserContent(root));
+    }
 
     public static PiEvent MapAssistant(JsonElement root)
     {

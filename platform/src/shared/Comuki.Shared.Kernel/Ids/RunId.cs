@@ -8,7 +8,13 @@ namespace Comuki.Shared.Kernel.Ids;
 /// <param name="Value"></param>
 public readonly record struct RunId(Guid Value)
 {
-    public static RunId New() => new(Guid.CreateVersion7());
+    public static RunId New()
+    {
+        return new(Guid.CreateVersion7());
+    }
 
-    public override string ToString() => Value.ToString();
+    public override string ToString()
+    {
+        return Value.ToString();
+    }
 }

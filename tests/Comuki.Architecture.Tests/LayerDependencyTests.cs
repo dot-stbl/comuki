@@ -67,6 +67,8 @@ public sealed class LayerDependencyTests
         Assert.True(result.IsSuccessful, Failing(result));
     }
 
-    private static string Failing(NetArchTest.Rules.TestResult result) =>
-        $"Failing types: {string.Join(", ", result.FailingTypeNames ?? [])}";
+    private static string Failing(NetArchTest.Rules.TestResult result)
+    {
+        return $"Failing types: {string.Join(", ", result.FailingTypeNames ?? [])}";
+    }
 }

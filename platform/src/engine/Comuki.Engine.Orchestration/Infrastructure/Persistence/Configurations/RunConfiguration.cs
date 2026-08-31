@@ -10,28 +10,28 @@ public sealed class RunConfiguration : IEntityTypeConfiguration<Run>
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<Run> builder)
     {
-        builder.ToTable(OrchestrationTables.Runs);
-        builder.HasKey(static run => run.Id);
+        _ = builder.ToTable(OrchestrationTables.Runs);
+        _ = builder.HasKey(static run => run.Id);
 
-        builder.Property(static run => run.Id)
+        _ = builder.Property(static run => run.Id)
             .HasColumnName("id")
             .HasConversion(OrchestrationIdConverters.RunIdToUuid)
             .ValueGeneratedNever();
 
-        builder.Property(static run => run.ProjectId)
+        _ = builder.Property(static run => run.ProjectId)
             .HasColumnName("project_id")
             .HasConversion(OrchestrationIdConverters.ProjectIdToUuid);
 
-        builder.Property(static run => run.Status)
+        _ = builder.Property(static run => run.Status)
             .HasColumnName("status")
             .HasConversion<string>()
             .HasMaxLength(16)
             .IsRequired();
 
-        builder.Property(static run => run.CreatedAt)
+        _ = builder.Property(static run => run.CreatedAt)
             .HasColumnName("created_at");
 
-        builder.Property(static run => run.UpdatedAt)
+        _ = builder.Property(static run => run.UpdatedAt)
             .HasColumnName("updated_at");
     }
 }

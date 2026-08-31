@@ -17,7 +17,7 @@ public static class OrchestrationInfrastructureExtensions
         this IServiceCollection services,
         string connectionString)
     {
-        services.AddDbContext<OrchestrationDbContext>(options =>
+        _ = services.AddDbContext<OrchestrationDbContext>(options =>
             OrchestrationDbContext.ApplyOptions(options, connectionString));
         return services;
     }

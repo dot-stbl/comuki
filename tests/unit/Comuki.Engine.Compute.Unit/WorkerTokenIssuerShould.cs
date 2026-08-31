@@ -16,7 +16,10 @@ public sealed class WorkerTokenIssuerShould
     private readonly FakeTimeProvider clock = new();
     private readonly InMemoryWorkerTokenStore store = new();
 
-    private WorkerTokenIssuer CreateIssuer() => new(clock, store, Microsoft.Extensions.Options.Options.Create(new WorkerTokenOptions()));
+    private WorkerTokenIssuer CreateIssuer()
+    {
+        return new(clock, store, Microsoft.Extensions.Options.Options.Create(new WorkerTokenOptions()));
+    }
 
     [Fact]
     public void IssueThenValidateReturnsWorkerId()

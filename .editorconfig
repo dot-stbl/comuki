@@ -46,6 +46,11 @@ indent_size = 2
 [*.md]
 trim_trailing_whitespace = false
 
+# Tests: SQL literals are fixtures, not user input — CA2100 fires on the
+# constant strings passed to ADO helpers in integration tests.
+[tests/**/*.cs]
+dotnet_diagnostic.CA2100.severity = none
+
 # =====================================================================
 # C# rules
 # =====================================================================

@@ -58,7 +58,10 @@ public sealed class WorkerTokenIssuer(
 
     /// <summary>Revokes the token of a worker (stop / lease-expire path).</summary>
     /// <param name="workerId"></param>
-    public void Revoke(WorkerId workerId) => store.Revoke(workerId);
+    public void Revoke(WorkerId workerId)
+    {
+        store.Revoke(workerId);
+    }
 }
 
 /// <summary>HMAC hashing and fixed-time comparison for worker tokens.</summary>

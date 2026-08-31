@@ -14,11 +14,20 @@ public sealed class InMemoryWorkerTokenStore() : IWorkerTokenStore
     private readonly ConcurrentDictionary<WorkerId, WorkerTokenRecord> recordsByWorker = new();
 
     /// <inheritdoc />
-    public void Save(WorkerTokenRecord record) => recordsByWorker[record.WorkerId] = record;
+    public void Save(WorkerTokenRecord record)
+    {
+        recordsByWorker[record.WorkerId] = record;
+    }
 
     /// <inheritdoc />
-    public void Revoke(WorkerId workerId) => _ = recordsByWorker.TryRemove(workerId, out _);
+    public void Revoke(WorkerId workerId)
+    {
+        _ = recordsByWorker.TryRemove(workerId, out _);
+    }
 
     /// <inheritdoc />
-    public IReadOnlyList<WorkerTokenRecord> List() => [.. recordsByWorker.Values];
+    public IReadOnlyList<WorkerTokenRecord> List()
+    {
+        return [.. recordsByWorker.Values];
+    }
 }

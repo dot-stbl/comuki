@@ -10,21 +10,21 @@ public sealed class WorkItemDependencyConfiguration : IEntityTypeConfiguration<W
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<WorkItemDependency> builder)
     {
-        builder.ToTable(OrchestrationTables.WorkItemDependencies);
-        builder.HasKey(static dependency => new { dependency.WorkItemId, dependency.DependsOnWorkItemId });
+        _ = builder.ToTable(OrchestrationTables.WorkItemDependencies);
+        _ = builder.HasKey(static dependency => new { dependency.WorkItemId, dependency.DependsOnWorkItemId });
 
-        builder.Property(static dependency => dependency.WorkItemId)
+        _ = builder.Property(static dependency => dependency.WorkItemId)
             .HasColumnName("work_item_id");
 
-        builder.Property(static dependency => dependency.DependsOnWorkItemId)
+        _ = builder.Property(static dependency => dependency.DependsOnWorkItemId)
             .HasColumnName("depends_on_work_item_id");
 
-        builder.HasOne<WorkItem>()
+        _ = builder.HasOne<WorkItem>()
             .WithMany()
             .HasForeignKey(static dependency => dependency.WorkItemId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<WorkItem>()
+        _ = builder.HasOne<WorkItem>()
             .WithMany()
             .HasForeignKey(static dependency => dependency.DependsOnWorkItemId)
             .OnDelete(DeleteBehavior.Cascade);

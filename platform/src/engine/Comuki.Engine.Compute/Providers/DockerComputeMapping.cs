@@ -33,18 +33,30 @@ internal static class DockerComputeMapping
     /// <summary>Container name: comuki-{projectId}-{short worker suffix}, unique per start.</summary>
     /// <param name="projectId"></param>
     /// <param name="workerId"></param>
-    public static string ToContainerName(ProjectId projectId, WorkerId workerId) => $"comuki-{projectId.Value:N}-{workerId.Value.ToString("N")[..12]}";
+    public static string ToContainerName(ProjectId projectId, WorkerId workerId)
+    {
+        return $"comuki-{projectId.Value:N}-{workerId.Value.ToString("N")[..12]}";
+    }
 
     /// <summary>List parameters selecting containers of one project (running only).</summary>
     /// <param name="projectId"></param>
-    public static ContainersListParameters ToProjectListParameters(ProjectId projectId) => ToLabelListParameters($"{ComputeLabels.Project}={projectId.Value}", all: false);
+    public static ContainersListParameters ToProjectListParameters(ProjectId projectId)
+    {
+        return ToLabelListParameters($"{ComputeLabels.Project}={projectId.Value}", all: false);
+    }
 
     /// <summary>List parameters selecting containers of one worker (any state, for stop/cleanup).</summary>
     /// <param name="workerId"></param>
-    public static ContainersListParameters ToWorkerListParameters(WorkerId workerId) => ToLabelListParameters($"{DockerComputeProvider.WorkerIdLabel}={workerId.Value}", all: true);
+    public static ContainersListParameters ToWorkerListParameters(WorkerId workerId)
+    {
+        return ToLabelListParameters($"{DockerComputeProvider.WorkerIdLabel}={workerId.Value}", all: true);
+    }
 
     /// <summary>List parameters selecting every comuki worker (label presence, running only).</summary>
-    public static ContainersListParameters ToWorkerListParameters() => ToLabelListParameters(ComputeLabels.Project, all: false);
+    public static ContainersListParameters ToWorkerListParameters()
+    {
+        return ToLabelListParameters(ComputeLabels.Project, all: false);
+    }
 
     /// <summary>Maps a listed container to a <see cref="WorkerInfo"/>; null when labels are missing.</summary>
     /// <param name="container"></param>
@@ -70,7 +82,10 @@ internal static class DockerComputeMapping
     /// <summary>Label value or empty string when the label is absent.</summary>
     /// <param name="labels"></param>
     /// <param name="key"></param>
-    public static string LabelOrDefault(IDictionary<string, string> labels, string key) => labels.TryGetValue(key, out var value) ? value : string.Empty;
+    public static string LabelOrDefault(IDictionary<string, string> labels, string key)
+    {
+        return labels.TryGetValue(key, out var value) ? value : string.Empty;
+    }
 
     /// <summary>List parameters selecting containers by a docker label filter expression.</summary>
     /// <param name="labelFilter"></param>

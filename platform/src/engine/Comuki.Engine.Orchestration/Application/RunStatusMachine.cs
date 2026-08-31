@@ -11,13 +11,15 @@ namespace Comuki.Engine.Orchestration.Application;
 /// </summary>
 public sealed class RunStatusMachine
 {
-    private readonly IReadOnlyDictionary<RunStatus, RunStatus[]> allowed = RunTransitions.Table;
+    private readonly IReadOnlyDictionary<RunStatus, RunStatus[]> allowed = RunTransitions.table;
 
     /// <summary>Returns true when <paramref name="from"/> -> <paramref name="to"/> is legal.</summary>
     /// <param name="from"></param>
     /// <param name="to"></param>
-    public bool CanTransition(RunStatus from, RunStatus to) =>
-        allowed.TryGetValue(from, out var targets) && targets.Contains(to);
+    public bool CanTransition(RunStatus from, RunStatus to)
+    {
+        return allowed.TryGetValue(from, out var targets) && targets.Contains(to);
+    }
 
     /// <summary>Throws <see cref="InvalidOperationException"/> when the transition is illegal.</summary>
     /// <param name="from"></param>
@@ -35,6 +37,8 @@ public sealed class RunStatusMachine
 
     /// <summary>All statuses reachable from <paramref name="from"/> in one hop.</summary>
     /// <param name="from"></param>
-    public IReadOnlyCollection<RunStatus> AllowedTargets(RunStatus from) =>
-        allowed.TryGetValue(from, out var targets) ? targets : [];
+    public IReadOnlyCollection<RunStatus> AllowedTargets(RunStatus from)
+    {
+        return allowed.TryGetValue(from, out var targets) ? targets : [];
+    }
 }

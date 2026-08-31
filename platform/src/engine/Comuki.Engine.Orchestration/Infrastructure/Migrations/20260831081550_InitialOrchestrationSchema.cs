@@ -1,4 +1,3 @@
-using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,9 +10,9 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "runs",
-                columns: table => new
+                columns: static table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     project_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -21,14 +20,14 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
-                constraints: table =>
+                constraints: static table =>
                 {
-                    table.PrimaryKey("pk_runs", x => x.id);
+                    _ = table.PrimaryKey("pk_runs", static x => x.id);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "run_events",
-                columns: table => new
+                columns: static table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     run_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -36,20 +35,20 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                     payload = table.Column<string>(type: "jsonb", nullable: false),
                     occurred_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
-                constraints: table =>
+                constraints: static table =>
                 {
-                    table.PrimaryKey("pk_run_events", x => x.id);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("pk_run_events", static x => x.id);
+                    _ = table.ForeignKey(
                         name: "fk_run_events_runs_run_id",
-                        column: x => x.run_id,
+                        column: static x => x.run_id,
                         principalTable: "runs",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "work_items",
-                columns: table => new
+                columns: static table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     run_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -62,58 +61,58 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
-                constraints: table =>
+                constraints: static table =>
                 {
-                    table.PrimaryKey("pk_work_items", x => x.id);
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("pk_work_items", static x => x.id);
+                    _ = table.ForeignKey(
                         name: "fk_work_items_runs_run_id",
-                        column: x => x.run_id,
+                        column: static x => x.run_id,
                         principalTable: "runs",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "work_item_dependencies",
-                columns: table => new
+                columns: static table => new
                 {
                     work_item_id = table.Column<Guid>(type: "uuid", nullable: false),
                     depends_on_work_item_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
-                constraints: table =>
+                constraints: static table =>
                 {
-                    table.PrimaryKey("pk_work_item_dependencies", x => new { x.work_item_id, x.depends_on_work_item_id });
-                    table.ForeignKey(
+                    _ = table.PrimaryKey("pk_work_item_dependencies", static x => new { x.work_item_id, x.depends_on_work_item_id });
+                    _ = table.ForeignKey(
                         name: "fk_work_item_dependencies_work_items_depends_on_work_item_id",
-                        column: x => x.depends_on_work_item_id,
+                        column: static x => x.depends_on_work_item_id,
                         principalTable: "work_items",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
+                    _ = table.ForeignKey(
                         name: "fk_work_item_dependencies_work_items_work_item_id",
-                        column: x => x.work_item_id,
+                        column: static x => x.work_item_id,
                         principalTable: "work_items",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "ix_run_events_run_id_occurred_at",
                 table: "run_events",
-                columns: new[] { "run_id", "occurred_at" });
+                columns: ["run_id", "occurred_at"]);
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "ix_work_item_dependencies_depends_on_work_item_id",
                 table: "work_item_dependencies",
                 column: "depends_on_work_item_id");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "ix_work_items_active",
                 table: "work_items",
-                columns: new[] { "status", "created_at" },
+                columns: ["status", "created_at"],
                 filter: "status IN ('queued', 'running')");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "ix_work_items_run_id",
                 table: "work_items",
                 column: "run_id");
@@ -122,16 +121,16 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "run_events");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "work_item_dependencies");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "work_items");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "runs");
         }
     }

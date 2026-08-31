@@ -14,7 +14,7 @@ namespace Comuki.Engine.Orchestration.Unit.StatusMachine;
 /// </summary>
 public sealed class RunStatusMachineShould
 {
-    private static readonly IReadOnlyDictionary<RunStatus, RunStatus[]> ExpectedTransitions =
+    private static readonly IReadOnlyDictionary<RunStatus, RunStatus[]> expectedTransitions =
         new Dictionary<RunStatus, RunStatus[]>
         {
             [RunStatus.Queued] = [RunStatus.Waiting, RunStatus.Running, RunStatus.Failed, RunStatus.Cancelled, RunStatus.Escalated],
@@ -35,7 +35,7 @@ public sealed class RunStatusMachineShould
             {
                 foreach (var to in Enum.GetValues<RunStatus>())
                 {
-                    data.Add(from, to, ExpectedTransitions[from].Contains(to));
+                    data.Add(from, to, expectedTransitions[from].Contains(to));
                 }
             }
 
@@ -78,7 +78,7 @@ public sealed class RunStatusMachineShould
 
         foreach (var from in Enum.GetValues<RunStatus>())
         {
-            machine.AllowedTargets(from).ShouldBe(ExpectedTransitions[from], ignoreOrder: true);
+            machine.AllowedTargets(from).ShouldBe(expectedTransitions[from], ignoreOrder: true);
         }
     }
 
@@ -115,6 +115,6 @@ public sealed class RunStatusMachineShould
         var run = Run.Create(ProjectId.New(), DateTimeOffset.UtcNow);
         run.TransitionTo(RunStatus.Cancelled, DateTimeOffset.UtcNow);
 
-        Should.Throw<InvalidOperationException>(() => run.TransitionTo(RunStatus.Running, DateTimeOffset.UtcNow));
+        _ = Should.Throw<InvalidOperationException>(() => run.TransitionTo(RunStatus.Running, DateTimeOffset.UtcNow));
     }
 }

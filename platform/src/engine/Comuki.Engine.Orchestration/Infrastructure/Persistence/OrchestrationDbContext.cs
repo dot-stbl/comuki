@@ -39,7 +39,7 @@ public sealed class OrchestrationDbContext(DbContextOptions<OrchestrationDbConte
     /// <param name="connectionString"></param>
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
-        builder
+        _ = builder
             .UseNpgsql(connectionString)
             .UseSnakeCaseNamingConvention();
     }
@@ -47,7 +47,7 @@ public sealed class OrchestrationDbContext(DbContextOptions<OrchestrationDbConte
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder
+        _ = modelBuilder
             .ApplyConfiguration(new RunConfiguration())
             .ApplyConfiguration(new WorkItemConfiguration())
             .ApplyConfiguration(new WorkItemDependencyConfiguration())

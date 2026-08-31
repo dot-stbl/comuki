@@ -40,7 +40,7 @@ public sealed class MigrationsShould : IAsyncLifetime
         await container.StartAsync(TestContext.Current.CancellationToken);
 
         var services = new ServiceCollection();
-        services.AddOrchestrationPersistence(container.GetConnectionString());
+        _ = services.AddOrchestrationPersistence(container.GetConnectionString());
         provider = services.BuildServiceProvider();
         db = provider.GetRequiredService<OrchestrationDbContext>();
         await db.Database.MigrateAsync(TestContext.Current.CancellationToken);
@@ -126,11 +126,11 @@ public sealed class MigrationsShould : IAsyncLifetime
             $$"""{"from":"{{RunStatus.Queued}}","to":"{{RunStatus.Waiting}}"}""",
             now.AddSeconds(5));
 
-        db.Runs.Add(run);
+        _ = db.Runs.Add(run);
         db.WorkItems.AddRange(prerequisite, dependent);
-        db.WorkItemDependencies.Add(dependency);
-        db.RunEvents.Add(runEvent);
-        await db.SaveChangesAsync(cancellationToken);
+        _ = db.WorkItemDependencies.Add(dependency);
+        _ = db.RunEvents.Add(runEvent);
+        _ = await db.SaveChangesAsync(cancellationToken);
         db.ChangeTracker.Clear();
 
         var readOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
@@ -184,7 +184,11 @@ public sealed class MigrationsShould : IAsyncLifetime
         await using var command = connection.CreateCommand();
         command.CommandText =
             "SELECT column_name, data_type, is_nullable FROM information_schema.columns "
-            + $"WHERE table_schema = 'public' AND table_name = '{tableName}'";
+            + "WHERE table_schema = 'public' AND table_name = @tableName";
+        var tableNameParameter = command.CreateParameter();
+        tableNameParameter.ParameterName = "@tableName";
+        tableNameParameter.Value = tableName;
+        _ = command.Parameters.Add(tableNameParameter);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {

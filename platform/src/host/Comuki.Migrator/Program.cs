@@ -20,7 +20,7 @@ await using var db = new OrchestrationDbContext(options.Options);
 
 if (recreate)
 {
-    await db.Database.EnsureDeletedAsync();
+    _ = await db.Database.EnsureDeletedAsync();
     Console.WriteLine("database dropped (--recreate)");
 }
 

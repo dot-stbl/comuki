@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
+    <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

@@ -31,6 +31,16 @@ internal static class HostComposer
             .AddIdentityPersistence(connectionString)
             .AddIdentityAuth(builder.Configuration, typeof(HostComposer).Assembly);
 
+        builder.Services.AddProjectsApplication();
+        builder.Services.AddProjectsPersistence(connectionString);
+
+        // Projects settings back the compute scale port (live-reload store
+        // replaces the in-memory default registered by AddComukiCompute).
+        builder.Services.AddSingleton<Comuki.Engine.Compute.Ports.IProjectScaleSettings>(
+            static serviceProvider => new Comuki.Host.Projects.ProjectScaleSettingsAdapter(
+                serviceProvider.GetRequiredService<Comuki.Modules.Projects.Application.Ports.IProjectSettingsStore>(),
+                serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<Comuki.Engine.Compute.Options.ScaleSupervisorOptions>>()));
+
         // The /auth/oidc/{provider}/start surface reads the configured
         // provider list for its 404s; the ticket event + callback path
         // rewrite below turn the module's OIDC schemes into local-cookie
@@ -53,6 +63,7 @@ internal static class HostComposer
 
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));
         app.MapControllers();
+        app.MapProjectsEndpoints();
 
         return app;
     }

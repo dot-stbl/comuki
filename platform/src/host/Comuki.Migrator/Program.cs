@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Migrator;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
+using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 var recreate = args.Contains("--recreate", StringComparer.Ordinal);
@@ -24,9 +25,9 @@ if (recreate)
     Console.WriteLine("database dropped (--recreate)");
 }
 
-// Both module contexts migrate the same database; each keeps its own
-// migrations history table (identity uses __comuki_identity), so the two
-// applications cannot collide.
+// All module contexts migrate the same database; each keeps its own
+// migrations history table (identity uses __comuki_identity, projects
+// uses __comuki_projects), so the applications cannot collide.
 var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
 OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
 await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
@@ -36,6 +37,11 @@ var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
 IdentityDbContext.ApplyOptions(identityOptions, connectionString);
 await using var identityDb = new IdentityDbContext(identityOptions.Options);
 await ApplyAsync(identityDb, "identity");
+
+var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
+ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
+await using var projectsDb = new ProjectsDbContext(projectsOptions.Options);
+await ApplyAsync(projectsDb, "projects");
 
 return 0;
 

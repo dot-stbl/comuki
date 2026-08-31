@@ -16,4 +16,6 @@ public static class ApiRoutes
 
     /// <summary>Base of the per-provider OIDC routes (start endpoint and the handler-owned callback path).</summary>
     public const string AuthOidcRoot = "api/v1/auth/oidc";
+
+    public const string Projects = "/api/v1/projects";
 }

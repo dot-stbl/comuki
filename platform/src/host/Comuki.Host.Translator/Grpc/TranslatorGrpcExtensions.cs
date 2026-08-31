@@ -1,6 +1,5 @@
 using Comuki.Shared.Contracts.Grpc;
 using Grpc.Net.Client;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using ProtoBuf.Grpc.Client;
 

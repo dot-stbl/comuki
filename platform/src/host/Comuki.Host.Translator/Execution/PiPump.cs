@@ -2,7 +2,6 @@ using Comuki.Host.Translator.Api;
 using Comuki.Host.Translator.Parsing;
 using Comuki.Host.Translator.Runtime;
 using Comuki.Shared.Contracts.Grpc;
-using Microsoft.Extensions.Logging;
 
 namespace Comuki.Host.Translator.Execution;
 

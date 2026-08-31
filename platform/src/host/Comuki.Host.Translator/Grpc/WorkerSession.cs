@@ -59,7 +59,10 @@ public sealed class WorkerSession : IAsyncDisposable
     /// <param name="cancellationToken"></param>
     public async ValueTask<OrchestratorCommand?> TryReceiveAsync(CancellationToken cancellationToken = default)
     {
-        return await commands.MoveNextAsync()
+        // The protobuf-net command stream's enumerator takes no token, so the
+        // token cancels the *wait*: stopping the host unsticks this loop
+        // instead of leaving it parked on a command that never comes.
+        return await commands.MoveNextAsync().AsTask().WaitAsync(cancellationToken)
             ? commands.Current
             : null;
     }

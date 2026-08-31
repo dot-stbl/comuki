@@ -8,15 +8,16 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Analyzer set (2026-08-31): IDE code-style + CA Security category only.
+         CA off by default (AnalysisMode=None) — noisy style rules; explicit
+         opt-ins live in .editorconfig. Meziantou (MA), Roslynator (RCS) and
+         VSTHRD — REMOVED (noise; covered by IDE analyzers / house style). -->
+    <AnalysisMode>None</AnalysisMode>
+    <AnalysisModeSecurity>All</AnalysisModeSecurity>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <!-- Suppress missing XML doc comments — added per-area as code lands. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Meziantou.Analyzer" PrivateAssets="all" />
-    <PackageReference Include="Roslynator.Analyzers" PrivateAssets="all" />
-    <PackageReference Include="Roslynator.Formatting.Analyzers" PrivateAssets="all" />
-  </ItemGroup>
 
   <!-- Test project defaults — activated when IsTestProject=true -->
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">

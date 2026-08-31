@@ -14,9 +14,11 @@ namespace Comuki.Host.Translator.Unit.StreamJson;
 public sealed class StreamJsonParserShould
 {
     private static async Task<string> ReadFixtureAsync(string fileName)
-        => await File.ReadAllTextAsync(
+    {
+        return await File.ReadAllTextAsync(
             Path.Combine(AppContext.BaseDirectory, "Fixtures", fileName),
             TestContext.Current.CancellationToken);
+    }
 
     [Fact]
     public async Task RecognizeSystemEventAsync()
@@ -110,9 +112,12 @@ public sealed class StreamJsonParserShould
         var events = StreamJsonParser.Parse(reader).ToList();
 
         events.Count.ShouldBe(4);
-        _ = events[0].ShouldBeOfType<PiEvent.SystemEvent>();
-        _ = events[1].ShouldBeOfType<PiEvent.UserEvent>();
-        _ = events[2].ShouldBeOfType<PiEvent.UnparseableEvent>();
-        _ = events[3].ShouldBeOfType<PiEvent.ResultEvent>();
+        events.Select(static item => item.GetType()).ShouldBe(
+        [
+            typeof(PiEvent.SystemEvent),
+            typeof(PiEvent.UserEvent),
+            typeof(PiEvent.UnparseableEvent),
+            typeof(PiEvent.ResultEvent),
+        ]);
     }
 }

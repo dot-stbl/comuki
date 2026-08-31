@@ -7,7 +7,7 @@ namespace Comuki.Shared.Contracts.Compute;
 /// COMUKI_WORKER_TOKEN, COMUKI_PROJECT_ID, COMUKI_PROFILE_KEY,
 /// COMUKI_PROFILES_REF, COMUKI_ORCH_GRPC.
 /// </summary>
-public sealed class ComputeStartRequest
+public sealed class ComputeStartRequest()
 {
     public required ProjectId ProjectId { get; init; }
 

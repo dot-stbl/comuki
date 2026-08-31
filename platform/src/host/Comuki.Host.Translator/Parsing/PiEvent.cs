@@ -44,6 +44,41 @@ public abstract record PiEvent
     public sealed record ResultEvent(string Subtype, long DurationMs, decimal CostUsd, string Result) : PiEvent;
 
     /// <summary>
+    /// pi-native session header — the first line of
+    /// <c>pi --mode json</c> output (<c>{"type":"session",...}</c>).
+    /// </summary>
+    /// <param name="Version"></param>
+    /// <param name="SessionId"></param>
+    /// <param name="Cwd"></param>
+    public sealed record SessionHeaderEvent(int Version, string SessionId, string Cwd) : PiEvent;
+
+    /// <summary>
+    /// pi-native streaming text delta from <c>message_update</c>
+    /// (<c>assistantMessageEvent.type == "text_delta"</c>). Deltas are
+    /// cumulative-assembly-only: concatenate <see cref="Delta"/> to build the
+    /// live text.
+    /// </summary>
+    /// <param name="ContentIndex"></param>
+    /// <param name="Delta"></param>
+    public sealed record TextDeltaEvent(int ContentIndex, string Delta) : PiEvent;
+
+    /// <summary>
+    /// pi-native tool invocation — either a <c>toolcall_start</c> assistant
+    /// message event (tool arguments being produced) or a
+    /// <c>tool_execution_start</c> (the tool actually running).
+    /// </summary>
+    /// <param name="ToolName"></param>
+    /// <param name="ArgsJson"></param>
+    public sealed record ToolCallEvent(string ToolName, string ArgsJson) : PiEvent;
+
+    /// <summary>
+    /// pi-native end of the whole agent run (<c>agent_end</c>): the session
+    /// finished and the final messages are available. Marks stream
+    /// completion for the translator.
+    /// </summary>
+    public sealed record AgentEndEvent : PiEvent;
+
+    /// <summary>
     /// Event type we don't model yet. The raw JSON is preserved so nothing is
     /// lost — we just don't surface it as a typed record.
     /// </summary>

@@ -1,0 +1,1 @@
+{"type":"message_update","usage":{"inputTokens":10,"outputTokens":2},"assistantMessageEvent":{"type":"text_delta","contentIndex":0,"delta":"Hello"}}

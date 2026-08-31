@@ -68,6 +68,11 @@ public static class StreamJsonParser
                 StreamJsonWire.UserType => StreamJsonEventMapping.MapUser(root),
                 StreamJsonWire.AssistantType => StreamJsonEventMapping.MapAssistant(root),
                 StreamJsonWire.ResultType => StreamJsonEventMapping.MapResult(root),
+                StreamJsonWire.SessionType => StreamJsonEventMapping.MapSessionHeader(root),
+                StreamJsonWire.MessageUpdateType => StreamJsonEventMapping.MapMessageUpdate(root),
+                StreamJsonWire.MessageEndType => StreamJsonEventMapping.MapAssistant(root),
+                StreamJsonWire.ToolExecutionStartType => StreamJsonEventMapping.MapToolExecutionStart(root),
+                StreamJsonWire.AgentEndType => new PiEvent.AgentEndEvent(),
                 _ => new PiEvent.UnknownEvent(type, root.Clone()),
             };
         }
@@ -95,8 +100,26 @@ file static class StreamJsonWire
     public const string AssistantType = "assistant";
     public const string ResultType = "result";
 
+    // pi-native json-mode event types (pi --mode json; see the pi docs/json.md).
+    public const string SessionType = "session";
+    public const string MessageUpdateType = "message_update";
+    public const string MessageEndType = "message_end";
+    public const string ToolExecutionStartType = "tool_execution_start";
+    public const string AgentEndType = "agent_end";
+
+    public const string VersionField = "version";
+    public const string IdField = "id";
+    public const string AssistantMessageEventField = "assistantMessageEvent";
+    public const string ContentIndexField = "contentIndex";
+    public const string DeltaField = "delta";
+    public const string ToolNameField = "toolName";
+    public const string ArgsField = "args";
+
     public const string TextBlock = "text";
     public const string ToolUseBlock = "tool_use";
+
+    public const string TextDeltaType = "text_delta";
+    public const string ToolCallStartType = "toolcall_start";
 }
 
 /// <summary>Result of a single-line JSON parse attempt: a document or an error, never both.</summary>
@@ -129,7 +152,17 @@ file static class StreamJsonElementExtensions
     {
         return element.TryGetProperty(propertyName, out var property)
             && property.ValueKind == JsonValueKind.Number
-                ? property.GetDecimal()
+            && property.GetDecimal() is var value
+                ? value
+                : fallback;
+    }
+
+    public static int GetInt32Or(this JsonElement element, string propertyName, int fallback)
+    {
+        return element.TryGetProperty(propertyName, out var property)
+            && property.ValueKind == JsonValueKind.Number
+            && property.TryGetInt32(out var value)
+                ? value
                 : fallback;
     }
 }
@@ -231,6 +264,47 @@ file static class StreamJsonEventMapping
         var costUsd = root.GetDecimalOr(StreamJsonWire.CostUsdField, 0m);
         var result = root.GetStringOr(StreamJsonWire.ResultField, string.Empty);
         return new PiEvent.ResultEvent(subtype, durationMs, costUsd, result);
+    }
+
+    public static PiEvent MapSessionHeader(JsonElement root)
+    {
+        var version = root.GetInt32Or(StreamJsonWire.VersionField, 0);
+        var sessionId = root.GetStringOr(StreamJsonWire.IdField, string.Empty);
+        var cwd = root.GetStringOr(StreamJsonWire.CwdField, string.Empty);
+        return new PiEvent.SessionHeaderEvent(version, sessionId, cwd);
+    }
+
+    public static PiEvent MapMessageUpdate(JsonElement root)
+    {
+        return root.TryGetProperty(StreamJsonWire.AssistantMessageEventField, out var assistantEvent)
+            && assistantEvent.ValueKind == JsonValueKind.Object
+            && assistantEvent.TryGetProperty(StreamJsonWire.TypeField, out var typeElement)
+            && typeElement.GetString() is { } assistantEventType
+                ? MapAssistantMessageEvent(assistantEvent, assistantEventType, root)
+                : new PiEvent.UnknownEvent(StreamJsonWire.MessageUpdateType, root.Clone());
+    }
+
+    public static PiEvent MapAssistantMessageEvent(JsonElement assistantEvent, string assistantEventType, JsonElement root)
+    {
+        return assistantEventType switch
+        {
+            StreamJsonWire.TextDeltaType => new PiEvent.TextDeltaEvent(
+                assistantEvent.GetInt32Or(StreamJsonWire.ContentIndexField, 0),
+                assistantEvent.GetStringOr(StreamJsonWire.DeltaField, string.Empty)),
+            StreamJsonWire.ToolCallStartType => new PiEvent.ToolCallEvent(
+                assistantEvent.GetStringOr(StreamJsonWire.ToolNameField, string.Empty),
+                assistantEvent.TryGetProperty(StreamJsonWire.ArgsField, out var args)
+                    ? args.GetRawText()
+                    : "{}"),
+            _ => new PiEvent.UnknownEvent(StreamJsonWire.MessageUpdateType, root.Clone()),
+        };
+    }
+
+    public static PiEvent MapToolExecutionStart(JsonElement root)
+    {
+        return new PiEvent.ToolCallEvent(
+            root.GetStringOr(StreamJsonWire.ToolNameField, string.Empty),
+            root.TryGetProperty(StreamJsonWire.ArgsField, out var args) ? args.GetRawText() : "{}");
     }
 
     public static string ExtractUserContent(JsonElement root)

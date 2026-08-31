@@ -7,11 +7,12 @@
 #   warning  — visible in IDE and build log, doesn't fail build.
 #   suggestion / silent — hint, hidden in build log.
 #
-# Required analyzers (add to Directory.Packages.props or csproj):
-#   Microsoft.CodeAnalysis.NetAnalyzers          (CA rules)
-#   Microsoft.VisualStudio.Threading.Analyzers   (VSTHRD rules)
-#   Meziantou.Analyzer                           (MA rules)
-#   Roslynator.Analyzers                         (RCS rules)
+# Required analyzers (wired in Directory.Build.props):
+#   IDE (code-style, EnforceCodeStyleInBuild)    — house style
+#   NetAnalyzers (CA)                            — AnalysisMode=None; only the
+#       Security category (AnalysisModeSecurity=All) + explicit opt-ins below.
+#   Meziantou (MA), Roslynator (RCS), VSTHRD — REMOVED 2026-08-31 (noise;
+#       the simplifications they flagged are covered by IDE analyzers).
 #
 # Cross-platform note:
 #   end_of_line = lf для всего репозитория.
@@ -108,17 +109,10 @@ dotnet_diagnostic.IDE0083.severity = warning
 #---------------------------------------------------------------------
 # Section 6: Async / await
 #---------------------------------------------------------------------
-# Async suffix mandatory
-dotnet_diagnostic.VSTHRD200.severity = error
-
-# No .Result / .Wait() / .GetAwaiter().GetResult()
-dotnet_diagnostic.VSTHRD002.severity = error
-dotnet_diagnostic.VSTHRD103.severity = error
-dotnet_diagnostic.VSTHRD104.severity = error
-dotnet_diagnostic.VSTHRD110.severity = warning  # observe awaited result
+# VSTHRD analyzer removed (2026-08-31) — async suffix / no-blocking-discipline
+# enforced by code review (house rules in .agents/rules/coding/CODING-RULES.md).
 
 # Forget ConfigureAwait — для library code; в app можно отключить
-dotnet_diagnostic.MA0004.severity = none
 
 #---------------------------------------------------------------------
 # Section 2: sealed по умолчанию
@@ -245,29 +239,8 @@ dotnet_style_parentheses_in_relational_binary_operators = never_if_unnecessary:w
 csharp_new_line_before_members_in_object_initializers = false
 
 #---------------------------------------------------------------------
-# Roslynator — упрощение кода и минимальность
-#---------------------------------------------------------------------
-dotnet_diagnostic.RCS1124.severity = warning   # inline local variable
-dotnet_diagnostic.RCS1173.severity = warning   # simplify if-else to ternary
-dotnet_diagnostic.RCS1206.severity = warning   # conditional access vs if
-dotnet_diagnostic.RCS1208.severity = warning   # reduce if nesting
-dotnet_diagnostic.RCS1218.severity = warning   # simplify code branching
-dotnet_diagnostic.RCS1238.severity = warning   # avoid nested ternary
-
-#---------------------------------------------------------------------
-# Meziantou — дополнительные best practices
-#---------------------------------------------------------------------
-dotnet_diagnostic.MA0006.severity = warning    # use String.Equals with StringComparison
-dotnet_diagnostic.MA0011.severity = warning    # IFormatProvider missing
-dotnet_diagnostic.MA0016.severity = warning    # prefer returning collection abstraction
-dotnet_diagnostic.MA0040.severity = warning    # forward CancellationToken
-dotnet_diagnostic.MA0042.severity = error      # do not use blocking calls in async method
-dotnet_diagnostic.MA0045.severity = warning    # do not use blocking calls
-dotnet_diagnostic.MA0080.severity = warning    # use a cancellation token
-dotnet_diagnostic.MA0099.severity = warning    # use Explicit enum value
-
-#---------------------------------------------------------------------
-# Microsoft.CodeAnalysis.NetAnalyzers — отдельные
+# Microsoft.CodeAnalysis.NetAnalyzers — opt-in (CA off by default:
+# AnalysisMode=None in Directory.Build.props; Security category is on)
 #---------------------------------------------------------------------
 dotnet_diagnostic.CA1031.severity = none       # do not catch general exception types — иногда оправдано
 dotnet_diagnostic.CA1062.severity = none       # validate arguments — слишком шумно с required

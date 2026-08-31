@@ -10,4 +10,6 @@ public static class ApiRoutes
     public const string ProfileByKey = "/profiles/{key}";
 
     public const string ChatCommands = "/chat-commands";
+
+    public const string Projects = "/api/v1/projects";
 }

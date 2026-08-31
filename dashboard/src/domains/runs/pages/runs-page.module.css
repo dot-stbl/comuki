@@ -1,0 +1,131 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* clip, not hidden: this box sits above a table whose head and pinned
+     columns are sticky, and `hidden` makes it a scroll container they would
+     silently re-anchor to. See The Clip-Not-Hidden Rule in DESIGN.md. */
+  overflow: clip;
+}
+
+/* The screen's identity, its controls and the legend all live in the shared
+   `PageHeader` now. What is left here are the two figures inside its summary
+   line, which are this domain's own reading rather than the header's. */
+.strong {
+  color: var(--foreground);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.warn {
+  color: var(--st-waiting);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* FIRST VIEWPORT: the board over the list, with a rule the duty engineer can
+   drag. The panel owns the board's height now — the river fills whatever it is
+   given rather than pinning itself to a slice of the viewport — so a laptop and
+   a 27-inch board both end up wherever their operator left the divider. */
+.split {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.boardPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.flow {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 var(--s6);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* The list is the plane in front of the flow: light casts upward from it. */
+.tablePanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--background);
+  box-shadow: var(--shadow-lift);
+}
+
+/* The table's frame is sized from this box rather than from its own default
+   depth, so the rows end exactly where the panel does at any divider position.
+   Container units, not a percentage, because the box is a flex item whose
+   height is only settled after layout — and `100cqh` is this box's *content*
+   box, so the padding below is honoured rather than overrun.
+
+   The padding is the frame's air: the table is a bounded instrument now, and an
+   instrument pressed against the window edge reads as clipped. The block-start
+   gap is what the filter bar used to hold before it moved into `PageHeader`. */
+.tableArea {
+  flex: 1 1 0;
+  min-height: 0;
+  padding-block: var(--s4) var(--page-y);
+  container-type: size;
+
+  --h-table-body: 100cqh;
+}
+
+/* Flush with the table's frame below it, not inset from it: the notice and the
+   instrument are the same column of the screen. */
+.failure {
+  flex: 0 0 auto;
+  margin-block-start: var(--s4);
+  padding: var(--s3) var(--s4);
+  border-left: var(--hairline) solid var(--st-failed);
+  border-radius: var(--r-md);
+  background: var(--st-failed-tint);
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) var(--s6);
+  font-family: var(--font-ui);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--muted-foreground);
+  max-width: 52ch;
+  line-height: var(--lh-body);
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s4);
+  flex: 1 1 0;
+  min-height: 0;
+  padding: var(--s6);
+}
+
+.skeletonBar {
+  flex: 1;
+  border-radius: var(--r-sm);
+  background: var(--muted);
+}

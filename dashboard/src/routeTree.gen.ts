@@ -12,12 +12,34 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApprovalsRouteImport } from './routes/approvals'
 import { Route as ComponentsRouteImport } from './routes/components'
+import { Route as ComputeRouteImport } from './routes/compute'
 import { Route as CostRouteImport } from './routes/cost'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ModelsRouteImport } from './routes/models'
+import { Route as ObservabilityRouteImport } from './routes/observability'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as VerifyRouteImport } from './routes/verify'
+import { Route as ChatIndexRouteImport } from './routes/chat/index'
+import { Route as ChatInitRouteImport } from './routes/chat/init'
+import { Route as IdentityIndexRouteImport } from './routes/identity/index'
+import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
+import { Route as ProjectsProjectIdRouteImport } from './routes/projects/$projectId'
+import { Route as ProjectsNewRouteImport } from './routes/projects/new'
+import { Route as QueueIndexRouteImport } from './routes/queue/index'
 import { Route as RunsIndexRouteImport } from './routes/runs/index'
 import { Route as RunsRunIdRouteImport } from './routes/runs/$runId'
+import { Route as SourcesIndexRouteImport } from './routes/sources/index'
+import { Route as SourcesNewRouteImport } from './routes/sources/new'
+import { Route as IdentityGrantsNewRouteImport } from './routes/identity/grants/new'
+import { Route as IdentityKeysNewRouteImport } from './routes/identity/keys/new'
+import { Route as IdentityUsersNewRouteImport } from './routes/identity/users/new'
+import { Route as QueueWorkersWorkerIdRouteImport } from './routes/queue/workers/$workerId'
+import { Route as SourcesSourceIdIndexRouteImport } from './routes/sources/$sourceId/index'
+import { Route as IdentityUsersUserIdIndexRouteImport } from './routes/identity/users/$userId/index'
+import { Route as IdentityUsersUserIdLinkRouteImport } from './routes/identity/users/$userId/link'
+import { Route as SourcesSourceIdTicketNewRouteImport } from './routes/sources/$sourceId/ticket/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,6 +56,11 @@ const ComponentsRoute = ComponentsRouteImport.update({
   path: '/components',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComputeRoute = ComputeRouteImport.update({
+  id: '/compute',
+  path: '/compute',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CostRoute = CostRouteImport.update({
   id: '/cost',
   path: '/cost',
@@ -42,6 +69,21 @@ const CostRoute = CostRouteImport.update({
 const KnowledgeRoute = KnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelsRoute = ModelsRouteImport.update({
+  id: '/models',
+  path: '/models',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObservabilityRoute = ObservabilityRouteImport.update({
+  id: '/observability',
+  path: '/observability',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -54,6 +96,46 @@ const TasksRoute = TasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VerifyRoute = VerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatIndexRoute = ChatIndexRouteImport.update({
+  id: '/chat/',
+  path: '/chat/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatInitRoute = ChatInitRouteImport.update({
+  id: '/chat/init',
+  path: '/chat/init',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdentityIndexRoute = IdentityIndexRouteImport.update({
+  id: '/identity/',
+  path: '/identity/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsProjectIdRoute = ProjectsProjectIdRouteImport.update({
+  id: '/projects/$projectId',
+  path: '/projects/$projectId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsNewRoute = ProjectsNewRouteImport.update({
+  id: '/projects/new',
+  path: '/projects/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QueueIndexRoute = QueueIndexRouteImport.update({
+  id: '/queue/',
+  path: '/queue/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RunsIndexRoute = RunsIndexRouteImport.update({
   id: '/runs/',
   path: '/runs/',
@@ -64,40 +146,158 @@ const RunsRunIdRoute = RunsRunIdRouteImport.update({
   path: '/runs/$runId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SourcesIndexRoute = SourcesIndexRouteImport.update({
+  id: '/sources/',
+  path: '/sources/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SourcesNewRoute = SourcesNewRouteImport.update({
+  id: '/sources/new',
+  path: '/sources/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdentityGrantsNewRoute = IdentityGrantsNewRouteImport.update({
+  id: '/identity/grants/new',
+  path: '/identity/grants/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdentityKeysNewRoute = IdentityKeysNewRouteImport.update({
+  id: '/identity/keys/new',
+  path: '/identity/keys/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdentityUsersNewRoute = IdentityUsersNewRouteImport.update({
+  id: '/identity/users/new',
+  path: '/identity/users/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QueueWorkersWorkerIdRoute = QueueWorkersWorkerIdRouteImport.update({
+  id: '/queue/workers/$workerId',
+  path: '/queue/workers/$workerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SourcesSourceIdIndexRoute = SourcesSourceIdIndexRouteImport.update({
+  id: '/sources/$sourceId/',
+  path: '/sources/$sourceId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IdentityUsersUserIdIndexRoute =
+  IdentityUsersUserIdIndexRouteImport.update({
+    id: '/identity/users/$userId/',
+    path: '/identity/users/$userId/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const IdentityUsersUserIdLinkRoute = IdentityUsersUserIdLinkRouteImport.update({
+  id: '/identity/users/$userId/link',
+  path: '/identity/users/$userId/link',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SourcesSourceIdTicketNewRoute =
+  SourcesSourceIdTicketNewRouteImport.update({
+    id: '/sources/$sourceId/ticket/new',
+    path: '/sources/$sourceId/ticket/new',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/approvals': typeof ApprovalsRoute
   '/components': typeof ComponentsRoute
+  '/compute': typeof ComputeRoute
   '/cost': typeof CostRoute
   '/knowledge': typeof KnowledgeRoute
+  '/login': typeof LoginRoute
+  '/models': typeof ModelsRoute
+  '/observability': typeof ObservabilityRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
+  '/verify': typeof VerifyRoute
+  '/chat/init': typeof ChatInitRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/projects/new': typeof ProjectsNewRoute
   '/runs/$runId': typeof RunsRunIdRoute
+  '/sources/new': typeof SourcesNewRoute
+  '/chat/': typeof ChatIndexRoute
+  '/identity/': typeof IdentityIndexRoute
+  '/projects/': typeof ProjectsIndexRoute
+  '/queue/': typeof QueueIndexRoute
   '/runs/': typeof RunsIndexRoute
+  '/sources/': typeof SourcesIndexRoute
+  '/identity/grants/new': typeof IdentityGrantsNewRoute
+  '/identity/keys/new': typeof IdentityKeysNewRoute
+  '/identity/users/new': typeof IdentityUsersNewRoute
+  '/queue/workers/$workerId': typeof QueueWorkersWorkerIdRoute
+  '/sources/$sourceId/': typeof SourcesSourceIdIndexRoute
+  '/identity/users/$userId/link': typeof IdentityUsersUserIdLinkRoute
+  '/sources/$sourceId/ticket/new': typeof SourcesSourceIdTicketNewRoute
+  '/identity/users/$userId/': typeof IdentityUsersUserIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/approvals': typeof ApprovalsRoute
   '/components': typeof ComponentsRoute
+  '/compute': typeof ComputeRoute
   '/cost': typeof CostRoute
   '/knowledge': typeof KnowledgeRoute
+  '/login': typeof LoginRoute
+  '/models': typeof ModelsRoute
+  '/observability': typeof ObservabilityRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
+  '/verify': typeof VerifyRoute
+  '/chat/init': typeof ChatInitRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/projects/new': typeof ProjectsNewRoute
   '/runs/$runId': typeof RunsRunIdRoute
+  '/sources/new': typeof SourcesNewRoute
+  '/chat': typeof ChatIndexRoute
+  '/identity': typeof IdentityIndexRoute
+  '/projects': typeof ProjectsIndexRoute
+  '/queue': typeof QueueIndexRoute
   '/runs': typeof RunsIndexRoute
+  '/sources': typeof SourcesIndexRoute
+  '/identity/grants/new': typeof IdentityGrantsNewRoute
+  '/identity/keys/new': typeof IdentityKeysNewRoute
+  '/identity/users/new': typeof IdentityUsersNewRoute
+  '/queue/workers/$workerId': typeof QueueWorkersWorkerIdRoute
+  '/sources/$sourceId': typeof SourcesSourceIdIndexRoute
+  '/identity/users/$userId/link': typeof IdentityUsersUserIdLinkRoute
+  '/sources/$sourceId/ticket/new': typeof SourcesSourceIdTicketNewRoute
+  '/identity/users/$userId': typeof IdentityUsersUserIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/approvals': typeof ApprovalsRoute
   '/components': typeof ComponentsRoute
+  '/compute': typeof ComputeRoute
   '/cost': typeof CostRoute
   '/knowledge': typeof KnowledgeRoute
+  '/login': typeof LoginRoute
+  '/models': typeof ModelsRoute
+  '/observability': typeof ObservabilityRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
+  '/verify': typeof VerifyRoute
+  '/chat/init': typeof ChatInitRoute
+  '/projects/$projectId': typeof ProjectsProjectIdRoute
+  '/projects/new': typeof ProjectsNewRoute
   '/runs/$runId': typeof RunsRunIdRoute
+  '/sources/new': typeof SourcesNewRoute
+  '/chat/': typeof ChatIndexRoute
+  '/identity/': typeof IdentityIndexRoute
+  '/projects/': typeof ProjectsIndexRoute
+  '/queue/': typeof QueueIndexRoute
   '/runs/': typeof RunsIndexRoute
+  '/sources/': typeof SourcesIndexRoute
+  '/identity/grants/new': typeof IdentityGrantsNewRoute
+  '/identity/keys/new': typeof IdentityKeysNewRoute
+  '/identity/users/new': typeof IdentityUsersNewRoute
+  '/queue/workers/$workerId': typeof QueueWorkersWorkerIdRoute
+  '/sources/$sourceId/': typeof SourcesSourceIdIndexRoute
+  '/identity/users/$userId/link': typeof IdentityUsersUserIdLinkRoute
+  '/sources/$sourceId/ticket/new': typeof SourcesSourceIdTicketNewRoute
+  '/identity/users/$userId/': typeof IdentityUsersUserIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -105,46 +305,134 @@ export interface FileRouteTypes {
     | '/'
     | '/approvals'
     | '/components'
+    | '/compute'
     | '/cost'
     | '/knowledge'
+    | '/login'
+    | '/models'
+    | '/observability'
     | '/settings'
     | '/tasks'
+    | '/verify'
+    | '/chat/init'
+    | '/projects/$projectId'
+    | '/projects/new'
     | '/runs/$runId'
+    | '/sources/new'
+    | '/chat/'
+    | '/identity/'
+    | '/projects/'
+    | '/queue/'
     | '/runs/'
+    | '/sources/'
+    | '/identity/grants/new'
+    | '/identity/keys/new'
+    | '/identity/users/new'
+    | '/queue/workers/$workerId'
+    | '/sources/$sourceId/'
+    | '/identity/users/$userId/link'
+    | '/sources/$sourceId/ticket/new'
+    | '/identity/users/$userId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/approvals'
     | '/components'
+    | '/compute'
     | '/cost'
     | '/knowledge'
+    | '/login'
+    | '/models'
+    | '/observability'
     | '/settings'
     | '/tasks'
+    | '/verify'
+    | '/chat/init'
+    | '/projects/$projectId'
+    | '/projects/new'
     | '/runs/$runId'
+    | '/sources/new'
+    | '/chat'
+    | '/identity'
+    | '/projects'
+    | '/queue'
     | '/runs'
+    | '/sources'
+    | '/identity/grants/new'
+    | '/identity/keys/new'
+    | '/identity/users/new'
+    | '/queue/workers/$workerId'
+    | '/sources/$sourceId'
+    | '/identity/users/$userId/link'
+    | '/sources/$sourceId/ticket/new'
+    | '/identity/users/$userId'
   id:
     | '__root__'
     | '/'
     | '/approvals'
     | '/components'
+    | '/compute'
     | '/cost'
     | '/knowledge'
+    | '/login'
+    | '/models'
+    | '/observability'
     | '/settings'
     | '/tasks'
+    | '/verify'
+    | '/chat/init'
+    | '/projects/$projectId'
+    | '/projects/new'
     | '/runs/$runId'
+    | '/sources/new'
+    | '/chat/'
+    | '/identity/'
+    | '/projects/'
+    | '/queue/'
     | '/runs/'
+    | '/sources/'
+    | '/identity/grants/new'
+    | '/identity/keys/new'
+    | '/identity/users/new'
+    | '/queue/workers/$workerId'
+    | '/sources/$sourceId/'
+    | '/identity/users/$userId/link'
+    | '/sources/$sourceId/ticket/new'
+    | '/identity/users/$userId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApprovalsRoute: typeof ApprovalsRoute
   ComponentsRoute: typeof ComponentsRoute
+  ComputeRoute: typeof ComputeRoute
   CostRoute: typeof CostRoute
   KnowledgeRoute: typeof KnowledgeRoute
+  LoginRoute: typeof LoginRoute
+  ModelsRoute: typeof ModelsRoute
+  ObservabilityRoute: typeof ObservabilityRoute
   SettingsRoute: typeof SettingsRoute
   TasksRoute: typeof TasksRoute
+  VerifyRoute: typeof VerifyRoute
+  ChatInitRoute: typeof ChatInitRoute
+  ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
+  ProjectsNewRoute: typeof ProjectsNewRoute
   RunsRunIdRoute: typeof RunsRunIdRoute
+  SourcesNewRoute: typeof SourcesNewRoute
+  ChatIndexRoute: typeof ChatIndexRoute
+  IdentityIndexRoute: typeof IdentityIndexRoute
+  ProjectsIndexRoute: typeof ProjectsIndexRoute
+  QueueIndexRoute: typeof QueueIndexRoute
   RunsIndexRoute: typeof RunsIndexRoute
+  SourcesIndexRoute: typeof SourcesIndexRoute
+  IdentityGrantsNewRoute: typeof IdentityGrantsNewRoute
+  IdentityKeysNewRoute: typeof IdentityKeysNewRoute
+  IdentityUsersNewRoute: typeof IdentityUsersNewRoute
+  QueueWorkersWorkerIdRoute: typeof QueueWorkersWorkerIdRoute
+  SourcesSourceIdIndexRoute: typeof SourcesSourceIdIndexRoute
+  IdentityUsersUserIdLinkRoute: typeof IdentityUsersUserIdLinkRoute
+  SourcesSourceIdTicketNewRoute: typeof SourcesSourceIdTicketNewRoute
+  IdentityUsersUserIdIndexRoute: typeof IdentityUsersUserIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -170,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComponentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/compute': {
+      id: '/compute'
+      path: '/compute'
+      fullPath: '/compute'
+      preLoaderRoute: typeof ComputeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cost': {
       id: '/cost'
       path: '/cost'
@@ -182,6 +477,27 @@ declare module '@tanstack/react-router' {
       path: '/knowledge'
       fullPath: '/knowledge'
       preLoaderRoute: typeof KnowledgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/models': {
+      id: '/models'
+      path: '/models'
+      fullPath: '/models'
+      preLoaderRoute: typeof ModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/observability': {
+      id: '/observability'
+      path: '/observability'
+      fullPath: '/observability'
+      preLoaderRoute: typeof ObservabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -198,6 +514,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TasksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/': {
+      id: '/chat/'
+      path: '/chat'
+      fullPath: '/chat/'
+      preLoaderRoute: typeof ChatIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/init': {
+      id: '/chat/init'
+      path: '/chat/init'
+      fullPath: '/chat/init'
+      preLoaderRoute: typeof ChatInitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/identity/': {
+      id: '/identity/'
+      path: '/identity'
+      fullPath: '/identity/'
+      preLoaderRoute: typeof IdentityIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects/': {
+      id: '/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof ProjectsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects/$projectId': {
+      id: '/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof ProjectsProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects/new': {
+      id: '/projects/new'
+      path: '/projects/new'
+      fullPath: '/projects/new'
+      preLoaderRoute: typeof ProjectsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/queue/': {
+      id: '/queue/'
+      path: '/queue'
+      fullPath: '/queue/'
+      preLoaderRoute: typeof QueueIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/runs/': {
       id: '/runs/'
       path: '/runs'
@@ -212,6 +584,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RunsRunIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sources/': {
+      id: '/sources/'
+      path: '/sources'
+      fullPath: '/sources/'
+      preLoaderRoute: typeof SourcesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sources/new': {
+      id: '/sources/new'
+      path: '/sources/new'
+      fullPath: '/sources/new'
+      preLoaderRoute: typeof SourcesNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/identity/grants/new': {
+      id: '/identity/grants/new'
+      path: '/identity/grants/new'
+      fullPath: '/identity/grants/new'
+      preLoaderRoute: typeof IdentityGrantsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/identity/keys/new': {
+      id: '/identity/keys/new'
+      path: '/identity/keys/new'
+      fullPath: '/identity/keys/new'
+      preLoaderRoute: typeof IdentityKeysNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/identity/users/new': {
+      id: '/identity/users/new'
+      path: '/identity/users/new'
+      fullPath: '/identity/users/new'
+      preLoaderRoute: typeof IdentityUsersNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/queue/workers/$workerId': {
+      id: '/queue/workers/$workerId'
+      path: '/queue/workers/$workerId'
+      fullPath: '/queue/workers/$workerId'
+      preLoaderRoute: typeof QueueWorkersWorkerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sources/$sourceId/': {
+      id: '/sources/$sourceId/'
+      path: '/sources/$sourceId'
+      fullPath: '/sources/$sourceId/'
+      preLoaderRoute: typeof SourcesSourceIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/identity/users/$userId/': {
+      id: '/identity/users/$userId/'
+      path: '/identity/users/$userId'
+      fullPath: '/identity/users/$userId/'
+      preLoaderRoute: typeof IdentityUsersUserIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/identity/users/$userId/link': {
+      id: '/identity/users/$userId/link'
+      path: '/identity/users/$userId/link'
+      fullPath: '/identity/users/$userId/link'
+      preLoaderRoute: typeof IdentityUsersUserIdLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sources/$sourceId/ticket/new': {
+      id: '/sources/$sourceId/ticket/new'
+      path: '/sources/$sourceId/ticket/new'
+      fullPath: '/sources/$sourceId/ticket/new'
+      preLoaderRoute: typeof SourcesSourceIdTicketNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -219,12 +661,34 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApprovalsRoute: ApprovalsRoute,
   ComponentsRoute: ComponentsRoute,
+  ComputeRoute: ComputeRoute,
   CostRoute: CostRoute,
   KnowledgeRoute: KnowledgeRoute,
+  LoginRoute: LoginRoute,
+  ModelsRoute: ModelsRoute,
+  ObservabilityRoute: ObservabilityRoute,
   SettingsRoute: SettingsRoute,
   TasksRoute: TasksRoute,
+  VerifyRoute: VerifyRoute,
+  ChatInitRoute: ChatInitRoute,
+  ProjectsProjectIdRoute: ProjectsProjectIdRoute,
+  ProjectsNewRoute: ProjectsNewRoute,
   RunsRunIdRoute: RunsRunIdRoute,
+  SourcesNewRoute: SourcesNewRoute,
+  ChatIndexRoute: ChatIndexRoute,
+  IdentityIndexRoute: IdentityIndexRoute,
+  ProjectsIndexRoute: ProjectsIndexRoute,
+  QueueIndexRoute: QueueIndexRoute,
   RunsIndexRoute: RunsIndexRoute,
+  SourcesIndexRoute: SourcesIndexRoute,
+  IdentityGrantsNewRoute: IdentityGrantsNewRoute,
+  IdentityKeysNewRoute: IdentityKeysNewRoute,
+  IdentityUsersNewRoute: IdentityUsersNewRoute,
+  QueueWorkersWorkerIdRoute: QueueWorkersWorkerIdRoute,
+  SourcesSourceIdIndexRoute: SourcesSourceIdIndexRoute,
+  IdentityUsersUserIdLinkRoute: IdentityUsersUserIdLinkRoute,
+  SourcesSourceIdTicketNewRoute: SourcesSourceIdTicketNewRoute,
+  IdentityUsersUserIdIndexRoute: IdentityUsersUserIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

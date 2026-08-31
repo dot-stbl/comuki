@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components"
 
 import { cn } from "@/shared/lib/utils"
@@ -8,7 +9,16 @@ import styles from "./confirm-dialog.module.css"
 export interface ConfirmDialogProps {
   open: boolean
   title: string
-  body: string
+  /**
+   * What the act does, in a sentence.
+   *
+   * A node rather than a string: the consequence is often two consequences, or
+   * a sentence with an identifier in it, and a caller that can only hand over
+   * one flat string has to assemble those with a template literal and give up
+   * the data voice on the identifier. Still one paragraph — this is the body of
+   * a confirm, not a form.
+   */
+  body: ReactNode
   confirmLabel: string
   cancelLabel: string
   onConfirm: () => void

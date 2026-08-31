@@ -1,0 +1,58 @@
+/* One row tall, and nothing in it that would want a second. The strip is the
+   control as well as the picture, so it carries a real focus state. */
+
+.strip {
+  display: flex;
+  align-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: var(--h-strip);
+  padding: 0 var(--s6);
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* The kit's one focus ring, spelled the way every other component spells it. */
+.strip:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* The drawn empty channel a pool is measured against — the same material the
+   data surfaces are made of, so an empty pool reads as a track with nothing in
+   it rather than as a missing element. */
+.track {
+  display: flex;
+  inline-size: 100%;
+  block-size: var(--h-meter);
+  border-radius: var(--r-xs);
+  background: var(--lane-alt);
+  border: var(--hairline) solid var(--rule);
+  overflow: hidden;
+}
+
+.segment {
+  block-size: 100%;
+  flex: 0 0 auto;
+}
+
+.busy {
+  background: color-mix(in oklab, var(--st-running) 55%, transparent);
+}
+
+/* Hue and weave, so capacity that is about to disappear is distinguishable
+   from capacity that is working even in greyscale. */
+.draining {
+  background:
+    var(--weave-waiting),
+    color-mix(in oklab, var(--st-waiting) 55%, transparent);
+}
+
+.idle {
+  background: var(--muted);
+}
+
+.strip:hover .track {
+  border-color: var(--rule-strong);
+}

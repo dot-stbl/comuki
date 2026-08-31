@@ -1,0 +1,67 @@
+/* Built on the same measurements as the kit's `StatusBadge` at its small step:
+   these sit in compact table rows and must not become a second size language. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  /* A badge is a reading, so it never gives up width: the value or the prose
+     beside it truncates instead. Declared rather than inherited from
+     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
+     family to. */
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  border: var(--hairline) solid var(--border);
+  padding: 0 var(--s3);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  line-height: 1.2;
+  color: var(--st);
+  background: color-mix(in oklab, var(--st) 10%, transparent);
+  white-space: nowrap;
+}
+
+.icon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
+/* Provider states -------------------------------------------------------- */
+
+/* Taking work: the product's running hue, because that is what it is. */
+.active {
+  --st: var(--st-running);
+}
+
+/* Configured, reachable, holding nothing. The pool doing its job, not a
+   problem to find — so the least saturated of the four. */
+.standby {
+  --st: var(--st-queued);
+}
+
+/* Amber: transitional, and something an operator should notice — a draining
+   provider is capacity that is about to disappear. */
+.draining {
+  --st: var(--st-waiting);
+}
+
+/* The one state that escalates its own badge, on the same rule the kit follows
+   for `failed`: a stronger border and a full tint, because a provider that did
+   not answer is the reason a whole column of readings below is missing. */
+.unreachable {
+  --st: var(--st-failed);
+
+  border-color: color-mix(in oklab, var(--st-failed) 40%, transparent);
+  background: var(--st-failed-tint);
+}
+
+/* Provider kind ---------------------------------------------------------- */
+
+/* Nothing left to declare. The kind used to be a badge — a bordered chip with a
+   stand-in glyph and the word beside it — and it is now the provider's own
+   mark, drawn by `BrandTag`, which carries the same muted strength for the same
+   reason: an identity has no urgency and the chrome rule reserves colour for
+   the data. A hairline box around a logo would be building a container for a
+   fact that has no state in it. */

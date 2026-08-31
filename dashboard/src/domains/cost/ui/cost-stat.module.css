@@ -1,0 +1,92 @@
+/* One reading off the day's report. Not a card in the design system's sense —
+   no shadow, no lift, nothing that takes it off the page plane. It is a data
+   surface: a hairline on its start edge, the surface material it is made of,
+   and the surface step of the corner scale, because a slab this size reads as
+   a square without one. The corner was never what made a card a card; the fill
+   that lifts it off the floor and the shadow that floats it were, and neither
+   is here. Same construction as `compute/ui/capacity-card`. */
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+  padding: var(--s4) var(--s5);
+  border-inline-start: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+/* The tile that is about to stop the swarm marks its own edge — hue plus the
+   words already in its own line, never hue alone. */
+.stat[data-heat="near"] {
+  border-inline-start-color: var(--st-waiting);
+}
+
+.stat[data-heat="over"] {
+  border-inline-start-color: var(--st-failed);
+}
+
+/* What the figure is: a data label, so the tight gesture in the interface
+   voice. It names a value; it is not a region heading and does not take that
+   tracking. */
+.label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* The figure. Mono, tabular, and at the same step the compute registry gives
+   its headline number — `--t-display` belongs to the screen's own title, and a
+   tile figure standing at the page title's size flattens the hierarchy rather
+   than sharpening it. */
+.figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The number itself, at full strength: everything else on the tile is about
+   this, and a scan down a row of tiles is a scan down these. */
+.value {
+  color: var(--text);
+}
+
+/* The currency mark and the unit are not the number. They ride beside it a
+   step down and muted, so a scan down a row of tiles compares magnitudes. */
+.unit {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-regular);
+  color: var(--text-faint);
+}
+
+.stat[data-heat="near"] .value {
+  color: var(--st-waiting);
+}
+
+.stat[data-heat="over"] .value {
+  color: var(--st-failed);
+  font-weight: var(--fw-semibold);
+}
+
+/* The line under the figure: prose about it, so the interface voice. */
+.sub {
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}

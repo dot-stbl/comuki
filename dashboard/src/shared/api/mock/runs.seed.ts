@@ -1,33 +1,102 @@
 export type SeedStatus =
-  | "running"
-  | "success"
-  | "failed"
-  | "waiting"
-  | "queued"
-  | "escalated"
+  "running" | "success" | "failed" | "waiting" | "queued" | "escalated"
 
-export interface SeedStageTemplate {
-  key: string
+/**
+ * The worker profiles this client has declared.
+ *
+ * A closed catalog: profiles live in the client's git as prompt + skills +
+ * tools, and the brain can only pick from what exists there. That is what makes
+ * the profile the run graph's one stable identity, and the only axis the duty
+ * board is allowed to aggregate on.
+ *
+ * The step *names* on the work items below are the opposite: the brain invents
+ * them per ticket, in the product's own language. Two runs share profiles and
+ * share no step name at all — which is exactly what the seed has to make vivid.
+ */
+export const PROFILE_CATALOG = [
+  "explorer",
+  "planner",
+  "implementer",
+  "reviewer",
+  "tester",
+  "verifier",
+  "docs",
+] as const
+
+export type SeedProfile = (typeof PROFILE_CATALOG)[number]
+
+export interface SeedWorkItem {
+  /** Unique inside its run. */
+  id: string
+  profile: SeedProfile
+  /** The brain's own name for this step. Prose, never a key. */
   label: string
-  lane?: "a" | "b"
-}
-
-export interface SeedStage extends SeedStageTemplate {
   status: SeedStatus
+  /** Ids of items in the same run this one waits on. */
+  deps: string[]
+  cost?: number
+  tokens?: number
+  /** Run-relative clock, `MM:SS`. Absent while the item is queued. */
+  startedAt?: string
 }
 
 export interface SeedRun {
   id: string
+  /**
+   * The project this run belongs to, by id — an attribute of the row, not a
+   * mode the screen is in. The duty engineer watches the whole swarm at once,
+   * so every list mixes projects and every gated act on a row answers to *this*
+   * project rather than to the session.
+   */
+  projectId: string
   app: string
   title: string
   status: SeedStatus
+  /** Id of the work item the run is standing on. */
   current: string
   model: "worker" | "lead"
   cost: number
   tokens: number
   startSec: number
   done?: boolean
-  stages: SeedStage[]
+  items: SeedWorkItem[]
+}
+
+/** A run before the seed stamps its project on it — see `PROJECT_BY_APP`. */
+type SeedRunDraft = Omit<SeedRun, "projectId">
+
+/**
+ * Which project an app belongs to.
+ *
+ * One app, one project: an application is built inside a project and does not
+ * move between them, so a run and a backlog item that name the same app can
+ * never disagree about whose project they are in. Both seeds read this — it is
+ * the whole mapping, written once.
+ *
+ * The ids are the ones `session.seed.ts` hands the shift, and the split is what
+ * makes the duty list worth looking at: the seeded user approves on `p_comuki`,
+ * administers `p_atlas` and can only watch `p_plexor`, so the same list carries
+ * rows whose Approve works directly above rows whose Approve explains itself.
+ */
+export const PROJECT_BY_APP: Record<string, string> = {
+  // The vendor's own platform.
+  "web-app": "p_comuki",
+  "worker-pool": "p_comuki",
+  "search-idx": "p_comuki",
+  // Plexor — identity and messaging. The session only watches this one.
+  "auth-svc": "p_plexor",
+  "identity-svc": "p_plexor",
+  "notify-svc": "p_plexor",
+  "admin-portal": "p_plexor",
+  // Atlas — payments, storefront and the guide site that documents them.
+  "billing-api": "p_atlas",
+  "ledger-core": "p_atlas",
+  "checkout-web": "p_atlas",
+  "docs-site": "p_atlas",
+}
+
+function withProject(run: SeedRunDraft): SeedRun {
+  return { ...run, projectId: PROJECT_BY_APP[run.app] }
 }
 
 export interface SeedDiffLine {
@@ -58,360 +127,673 @@ export interface SeedTrace {
   tests: Array<{ name: string; st: SeedStatus; detail: string }>
 }
 
-export const STAGE_TEMPLATE: SeedStageTemplate[] = [
-  { key: "explore", label: "explore" },
-  { key: "plan", label: "plan" },
-  { key: "contract", label: "contract" },
-  { key: "back", label: "backend", lane: "a" },
-  { key: "front", label: "frontend", lane: "b" },
-  { key: "sync", label: "sync" },
-  { key: "tests", label: "tests" },
-  { key: "deploy", label: "deploy" },
-  { key: "doc", label: "doc" },
-]
-
-function stages(map: Partial<Record<string, SeedStatus>>): SeedStage[] {
-  return STAGE_TEMPLATE.map((stage) => ({
-    ...stage,
-    status: map[stage.key] ?? "queued",
-  }))
+function item(
+  id: string,
+  profile: SeedProfile,
+  label: string,
+  status: SeedStatus,
+  deps: string[] = []
+): SeedWorkItem {
+  return { id, profile, label, status, deps }
 }
 
-export const RUNS_SEED: SeedRun[] = [
+/* ---------------------------------------------------------------------------
+ * Hand-written runs. Six plans, six different shapes: a three-item "just close
+ * it", a branch of two, a four-wide branch, a run that died at the second step.
+ * No two share a step name.
+ * ------------------------------------------------------------------------- */
+
+const HAND_RUNS: SeedRunDraft[] = [
   {
     id: "8f3c2a91",
     app: "billing-api",
     title: "Идемпотентность в обработчике webhook'ов Stripe",
     status: "running",
-    current: "back",
+    current: "w4",
     model: "worker",
     cost: 0.42,
     tokens: 18400,
     startSec: 252,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "running",
-      front: "success",
-    }),
+    items: [
+      item("w1", "explorer", "прочитать обработчик вебхуков", "success"),
+      item("w2", "planner", "контракт на идемпотентность", "success", ["w1"]),
+      item("w3", "implementer", "завести таблицу idem_keys", "success", ["w2"]),
+      item(
+        "w4",
+        "implementer",
+        "переписать обработчик под ключ идемпотентности",
+        "running",
+        ["w2"]
+      ),
+      item("w5", "reviewer", "проверить границы транзакции", "queued", [
+        "w3",
+        "w4",
+      ]),
+      item("w6", "tester", "проверить повторную доставку события", "queued", [
+        "w5",
+      ]),
+      item("w7", "verifier", "дождаться аппрува на раскатку", "queued", ["w6"]),
+      item("w8", "docs", "обновить страницу про вебхуки", "queued", ["w7"]),
+    ],
   },
   {
     id: "b3d8a402",
     app: "web-app",
     title: "Скелетоны загрузки на дашборде прогонов",
     status: "running",
-    current: "front",
+    current: "w2",
     model: "worker",
     cost: 0.18,
     tokens: 7200,
     startSec: 96,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "running",
-    }),
+    // Mode A: the brain decided this one does not need a plan at all.
+    items: [
+      item(
+        "w1",
+        "explorer",
+        "посмотреть, где сейчас пусто на экране",
+        "success"
+      ),
+      item(
+        "w2",
+        "implementer",
+        "нарисовать скелетоны вместо спиннера",
+        "running",
+        ["w1"]
+      ),
+      item("w3", "verifier", "снять визуальный снапшот", "queued", ["w2"]),
+    ],
   },
   {
     id: "5b1d7e40",
     app: "web-app",
     title: "Виртуализация таблицы прогонов (react-window)",
     status: "waiting",
-    current: "deploy",
+    current: "w9",
     model: "worker",
     cost: 1.08,
     tokens: 42100,
     startSec: 775,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "success",
-      sync: "success",
-      tests: "success",
-      deploy: "waiting",
-    }),
+    items: [
+      item("w1", "explorer", "снять список затронутых таблиц", "success"),
+      item("w2", "planner", "решить, что делаем в этой итерации", "success", [
+        "w1",
+      ]),
+      item(
+        "w3",
+        "implementer",
+        "вынести строку в отдельный компонент",
+        "success",
+        ["w2"]
+      ),
+      item("w4", "implementer", "подключить виртуализатор к телу", "success", [
+        "w3",
+      ]),
+      item("w5", "implementer", "пересчитать высоту скролл-порта", "success", [
+        "w4",
+      ]),
+      item("w6", "reviewer", "сверить с контрактом таблицы", "success", ["w5"]),
+      item("w7", "tester", "прогнать смоук по длинным спискам", "success", [
+        "w6",
+      ]),
+      item("w8", "tester", "снять визуальный снапшот", "success", ["w6"]),
+      item("w9", "verifier", "дождаться аппрува на раскатку", "waiting", [
+        "w7",
+        "w8",
+      ]),
+      item("w10", "docs", "записать решение в базу знаний", "queued", ["w9"]),
+    ],
   },
   {
     id: "2a6f1c33",
     app: "auth-svc",
     title: "Ротация JWT-ключей без даунтайма",
     status: "escalated",
-    current: "back",
+    current: "w6",
     model: "lead",
     cost: 2.31,
     tokens: 96800,
     startSec: 540,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "escalated",
-      front: "success",
-    }),
+    // Four lanes off one plan — the widest branch the brain writes by hand.
+    items: [
+      item("w1", "explorer", "выяснить, где живёт проверка подписи", "success"),
+      item("w2", "planner", "план ротации без даунтайма", "success", ["w1"]),
+      item("w3", "implementer", "завести второй активный ключ", "success", [
+        "w2",
+      ]),
+      item("w4", "implementer", "научить верификатор двум ключам", "success", [
+        "w2",
+      ]),
+      item("w5", "implementer", "обновить JWKS-эндпоинт", "success", ["w2"]),
+      item(
+        "w6",
+        "implementer",
+        "починить гонку при выкате ключа",
+        "escalated",
+        ["w2"]
+      ),
+      item("w7", "reviewer", "проверить обратную совместимость", "queued", [
+        "w3",
+        "w4",
+        "w5",
+        "w6",
+      ]),
+      item("w8", "tester", "прогнать сценарий старого токена", "queued", [
+        "w7",
+      ]),
+      item("w9", "verifier", "подтвердить, что откат готов", "queued", ["w8"]),
+      item("w10", "docs", "описать новый формат ключей", "queued", ["w9"]),
+    ],
   },
   {
     id: "9d72b5f0",
     app: "docs-site",
     title: "Миграция на новый theme API",
     status: "failed",
-    current: "contract",
+    current: "w3",
     model: "worker",
     cost: 0.19,
     tokens: 8300,
     startSec: 121,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "failed",
-    }),
+    items: [
+      item("w1", "explorer", "собрать карту использований темы", "success"),
+      item("w2", "planner", "решить, что переносим сейчас", "success", ["w1"]),
+      item("w3", "implementer", "переехать на новый theme API", "failed", [
+        "w2",
+      ]),
+      item("w4", "reviewer", "вычитать диф по правилам ui-tokens", "queued", [
+        "w3",
+      ]),
+      item("w5", "verifier", "прогнать гейт проверок клиента", "queued", [
+        "w4",
+      ]),
+    ],
   },
   {
     id: "c40aa2e1",
     app: "worker-pool",
     title: "Ретраи с экспоненциальным бэкоффом",
     status: "success",
-    current: "doc",
+    current: "w9",
     model: "worker",
     cost: 0.67,
     tokens: 25600,
     startSec: 510,
     done: true,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "success",
-      sync: "success",
-      tests: "success",
-      deploy: "success",
-      doc: "success",
-    }),
-  },
-  {
-    id: "7e0b9d12",
-    app: "billing-api",
-    title: "Кэш идемпотентных ответов в Redis",
-    status: "queued",
-    current: "explore",
-    model: "worker",
-    cost: 0,
-    tokens: 0,
-    startSec: 0,
-    stages: stages({}),
-  },
-  {
-    id: "a1f4c8d2",
-    app: "web-app",
-    title: "Тёмная тема для экрана настроек",
-    status: "running",
-    current: "front",
-    model: "worker",
-    cost: 0.24,
-    tokens: 9800,
-    startSec: 140,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "running",
-    }),
-  },
-  {
-    id: "4c91e6a7",
-    app: "worker-pool",
-    title: "Грейсфул-шатдаун при rolling deploy",
-    status: "success",
-    current: "doc",
-    model: "worker",
-    cost: 0.53,
-    tokens: 21300,
-    startSec: 430,
-    done: true,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "success",
-      sync: "success",
-      tests: "success",
-      deploy: "success",
-      doc: "success",
-    }),
-  },
-  {
-    id: "d8b2705f",
-    app: "auth-svc",
-    title: "Rate-limit на эндпоинт логина",
-    status: "waiting",
-    current: "deploy",
-    model: "worker",
-    cost: 0.71,
-    tokens: 28900,
-    startSec: 610,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "success",
-      sync: "success",
-      tests: "success",
-      deploy: "waiting",
-    }),
-  },
-  {
-    id: "f3e0a91b",
-    app: "billing-api",
-    title: "Вебхук-ретраи с дедупликацией по event_id",
-    status: "running",
-    current: "back",
-    model: "worker",
-    cost: 0.39,
-    tokens: 16700,
-    startSec: 205,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "running",
-      front: "success",
-    }),
-  },
-  {
-    id: "6a7d4e22",
-    app: "docs-site",
-    title: "Поиск по документации (Pagefind)",
-    status: "queued",
-    current: "explore",
-    model: "worker",
-    cost: 0,
-    tokens: 0,
-    startSec: 0,
-    stages: stages({}),
-  },
-  {
-    id: "b5c89f01",
-    app: "web-app",
-    title: "Оптимистичные апдейты в очереди аппрувов",
-    status: "escalated",
-    current: "sync",
-    model: "lead",
-    cost: 1.84,
-    tokens: 74200,
-    startSec: 495,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "success",
-      sync: "escalated",
-    }),
-  },
-  {
-    id: "2f6b1a90",
-    app: "worker-pool",
-    title: "Метрики heartbeat воркеров в Prometheus",
-    status: "success",
-    current: "doc",
-    model: "worker",
-    cost: 0.44,
-    tokens: 18100,
-    startSec: 380,
-    done: true,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "success",
-      sync: "success",
-      tests: "success",
-      deploy: "success",
-      doc: "success",
-    }),
-  },
-  {
-    id: "9c3e7b44",
-    app: "auth-svc",
-    title: "Миграция сессий на Redis-кластер",
-    status: "failed",
-    current: "tests",
-    model: "worker",
-    cost: 0.92,
-    tokens: 36400,
-    startSec: 520,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "success",
-      sync: "success",
-      tests: "failed",
-    }),
-  },
-  {
-    id: "e7a05c18",
-    app: "billing-api",
-    title: "Экспорт инвойсов в CSV/PDF",
-    status: "running",
-    current: "front",
-    model: "worker",
-    cost: 0.28,
-    tokens: 11200,
-    startSec: 165,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "running",
-    }),
-  },
-  {
-    id: "1b8f3d67",
-    app: "docs-site",
-    title: "OG-картинки для страниц гайдов",
-    status: "queued",
-    current: "explore",
-    model: "worker",
-    cost: 0,
-    tokens: 0,
-    startSec: 0,
-    stages: stages({}),
-  },
-  {
-    id: "5d24a0f9",
-    app: "web-app",
-    title: "Виртуализация ленты событий трейса",
-    status: "success",
-    current: "doc",
-    model: "worker",
-    cost: 0.61,
-    tokens: 24800,
-    startSec: 455,
-    done: true,
-    stages: stages({
-      explore: "success",
-      plan: "success",
-      contract: "success",
-      back: "success",
-      front: "success",
-      sync: "success",
-      tests: "success",
-      deploy: "success",
-      doc: "success",
-    }),
+    items: [
+      item("w1", "explorer", "найти все места с ретраями", "success"),
+      item("w2", "planner", "выбрать единый бэкофф", "success", ["w1"]),
+      item("w3", "implementer", "вынести ретраи в отдельный слой", "success", [
+        "w2",
+      ]),
+      item("w4", "implementer", "прокинуть тайм-аут до провайдера", "success", [
+        "w2",
+      ]),
+      item("w5", "reviewer", "проверить, что нет утечки секретов", "success", [
+        "w3",
+        "w4",
+      ]),
+      item("w6", "tester", "прогнать юнит-тесты по очереди", "success", ["w5"]),
+      item("w7", "verifier", "сверить метрики после выката", "success", ["w6"]),
+      item("w8", "docs", "записать решение в базу знаний", "success", ["w7"]),
+      item("w9", "docs", "добавить пример в гайд", "success", ["w8"]),
+    ],
   },
 ]
+
+/* ---------------------------------------------------------------------------
+ * Synthetic bulk — NOT real runs.
+ *
+ * The duty screen is designed for 50–200 concurrent runs; the hand-written set
+ * above is six, which never exercises the board. These fill the swarm to a
+ * realistic shift so density, the pinch marker and the stuck list are seen
+ * under the load they were built for. Deterministic (fixed LCG seed) so tests
+ * and Storybook stay stable. Every field is invented: no real cost, token or
+ * timing figure from a production run appears here.
+ *
+ * The graphs are deliberately unlike each other — three-item runs the brain
+ * closed without planning, ordinary eight-to-thirteen item plans, and a handful
+ * of forty-plus item runs branching four lanes wide. Nothing in the product may
+ * assume a shape, so the mock refuses to give it one.
+ * ------------------------------------------------------------------------- */
+
+const SYNTHETIC_APPS = [
+  "billing-api",
+  "web-app",
+  "ledger-core",
+  "notify-svc",
+  "search-idx",
+  "admin-portal",
+  "checkout-web",
+  "identity-svc",
+]
+
+const SYNTHETIC_TITLES = [
+  "Ретраи с экспоненциальной паузой в очереди выплат",
+  "Пагинация в списке инвойсов",
+  "Импорт словаря синонимов для поиска",
+  "Массовое назначение ролей",
+  "Гостевой чекаут: форма адреса",
+  "Переезд диалогов на React Aria",
+  "Бэкфилл курсов валют",
+  "Отказ от legacy SMS-провайдера",
+  "Экспорт журнала аудита в CSV",
+  "Переиндексация при переименовании тенанта",
+  "Кэш прайс-листа на стороне edge",
+  "Разбор вебхуков в фоновой очереди",
+  "Ограничение частоты для публичного API",
+  "Мягкое удаление в справочнике клиентов",
+  "Перенос миграций на idempotent-скрипты",
+  "Правки текстов в письмах о просрочке",
+  "Виртуализация длинных таблиц",
+  "Единый формат ошибок в ответах API",
+  "Точечная инвалидация кэша каталога",
+  "Двухфакторка через TOTP",
+  "Сжатие артефактов прогонов в MinIO",
+  "Трассировка запросов через прокси",
+  "Пересчёт агрегатов стоимости за сутки",
+  "Фильтр по приложению в очереди аппрувов",
+]
+
+/**
+ * Step names, per profile — the brain's vocabulary, not a catalog. Nothing
+ * reads these as keys; they exist so a row and a graph node say something a
+ * person recognises, and so no two runs look like they ran the same steps.
+ */
+const LABELS: Record<SeedProfile, string[]> = {
+  explorer: [
+    "прочитать обработчик вебхуков",
+    "найти все места с ретраями",
+    "собрать карту зависимостей модуля",
+    "выяснить, где живёт валидация",
+    "посмотреть, как устроен текущий кэш",
+    "снять список затронутых эндпоинтов",
+    "разобраться со схемой миграций",
+    "найти похожий случай в соседнем сервисе",
+  ],
+  planner: [
+    "контракт на идемпотентность",
+    "разбить задачу на два лейна",
+    "решить, что делаем в этой итерации",
+    "план миграции без даунтайма",
+    "согласовать формат ошибки",
+    "расписать шаги отката",
+    "выбрать порядок раскатки",
+    "уточнить границы правки",
+  ],
+  implementer: [
+    "переписать обработчик под ключ идемпотентности",
+    "завести таблицу под ключи",
+    "вынести ретраи в отдельный слой",
+    "починить гонку при параллельных вебхуках",
+    "прокинуть тайм-аут до провайдера",
+    "переехать на новый клиент",
+    "добавить пагинацию в список",
+    "закрыть дыру в валидации входа",
+    "подключить кэш прайс-листа",
+    "обновить тексты в письмах",
+    "разнести миграцию на два шага",
+    "убрать дубли в очереди",
+  ],
+  reviewer: [
+    "вычитать диф по правилам db-tx",
+    "проверить, что нет утечки секретов",
+    "сверить с контрактом",
+    "посмотреть на границы транзакции",
+    "оценить риск раскатки",
+    "проверить обратную совместимость",
+  ],
+  tester: [
+    "прогнать юнит-тесты по обработчику",
+    "проверить повторную доставку события",
+    "нагрузить эндпоинт логина",
+    "прогнать смоук по критичным маршрутам",
+    "проверить миграцию на копии базы",
+    "снять визуальный снапшот",
+  ],
+  verifier: [
+    "дождаться аппрува на раскатку",
+    "прогнать гейт проверок клиента",
+    "сверить метрики после выката",
+    "проверить бюджет прогона",
+    "подтвердить, что откат готов",
+  ],
+  docs: [
+    "записать решение в базу знаний",
+    "обновить страницу про вебхуки",
+    "добавить пример в гайд",
+    "описать новый формат ошибки",
+  ],
+}
+
+/**
+ * Where the shift is sitting, per profile. The graphs are arbitrary but the
+ * board's reading is authored: the approve gate is where work piles up waiting
+ * on a person, and the implementer lane is where it is busiest.
+ */
+const SYNTHETIC_POOL: Array<[SeedProfile, Array<[SeedStatus, number]>]> = [
+  [
+    "explorer",
+    [
+      ["running", 6],
+      ["queued", 8],
+    ],
+  ],
+  [
+    "planner",
+    [
+      ["running", 7],
+      ["waiting", 4],
+    ],
+  ],
+  [
+    "implementer",
+    [
+      ["running", 28],
+      ["failed", 4],
+      ["escalated", 3],
+    ],
+  ],
+  [
+    "reviewer",
+    [
+      ["running", 11],
+      ["waiting", 3],
+    ],
+  ],
+  [
+    "tester",
+    [
+      ["running", 9],
+      ["failed", 7],
+      ["escalated", 3],
+    ],
+  ],
+  [
+    "verifier",
+    [
+      ["running", 5],
+      ["waiting", 14],
+      ["escalated", 2],
+    ],
+  ],
+  [
+    "docs",
+    [
+      ["running", 5],
+      ["success", 9],
+    ],
+  ],
+]
+
+function lcg(seed: number): () => number {
+  let state = seed
+  return () => {
+    state = (state * 1664525 + 1013904223) % 4294967296
+    return state / 4294967296
+  }
+}
+
+function hexId(index: number): string {
+  return (index * 2654435761 + 0x9e3779b9)
+    .toString(16)
+    .padStart(8, "0")
+    .slice(-8)
+}
+
+/** A plan under construction: profile plus the ids it waits on. */
+interface PlanNode {
+  id: string
+  profile: SeedProfile
+  deps: string[]
+}
+
+interface Plan {
+  nodes: PlanNode[]
+}
+
+type ShapeKind = "close" | "standard" | "wide"
+
+function plan(
+  build: (add: (profile: SeedProfile, deps: string[]) => string) => void
+): Plan {
+  const nodes: PlanNode[] = []
+  const add = (profile: SeedProfile, deps: string[]): string => {
+    const id = `w${nodes.length + 1}`
+    nodes.push({ id, profile, deps })
+    return id
+  }
+  build(add)
+  return { nodes }
+}
+
+/** Three items, no plan step: the brain decided to just close the ticket. */
+function closePlan(): Plan {
+  return plan((add) => {
+    const explore = add("explorer", [])
+    const work = add("implementer", [explore])
+    add("verifier", [work])
+  })
+}
+
+/** The ordinary shape: eight to thirteen items, two to four lanes of work. */
+function standardPlan(random: () => number): Plan {
+  return plan((add) => {
+    const explore = add("explorer", [])
+    const planning = add("planner", [explore])
+
+    const lanes = 2 + Math.floor(random() * 3)
+    const first: string[] = []
+    for (let lane = 0; lane < lanes; lane += 1) {
+      first.push(add("implementer", [planning]))
+    }
+
+    const second: string[] = []
+    const extra = Math.floor(random() * 4)
+    for (let n = 0; n < extra; n += 1) {
+      second.push(add("implementer", [first[n % first.length]]))
+    }
+
+    const review = add("reviewer", [...first, ...second])
+    const test = add("tester", [review])
+    const verify = add("verifier", [test])
+    add("docs", [verify])
+  })
+}
+
+/**
+ * Forty-plus items, four lanes wide and eight deep. Nothing in the product may
+ * assume a run is small, so one shape in the seed insists otherwise.
+ */
+function widePlan(): Plan {
+  return plan((add) => {
+    const explore = add("explorer", [])
+    const planning = add("planner", [explore])
+
+    const laneReviews: string[] = []
+    for (let lane = 0; lane < 4; lane += 1) {
+      let previous = planning
+      for (let step = 0; step < 8; step += 1) {
+        previous = add("implementer", [previous])
+      }
+      laneReviews.push(add("reviewer", [previous]))
+    }
+
+    const review = add("reviewer", laneReviews)
+    const test = add("tester", [review])
+    const verify = add("verifier", [test])
+    add("docs", [verify])
+  })
+}
+
+function buildPlan(kind: ShapeKind, random: () => number): Plan {
+  if (kind === "close") {
+    return closePlan()
+  }
+  if (kind === "wide") {
+    return widePlan()
+  }
+  return standardPlan(random)
+}
+
+/** Longest-path depth, the same rule the domain model reads graphs with. */
+function planDepths(nodes: PlanNode[]): Map<string, number> {
+  const depths = new Map<string, number>()
+  for (const node of nodes) {
+    const depth = node.deps.reduce(
+      (max, dependency) => Math.max(max, (depths.get(dependency) ?? 0) + 1),
+      0
+    )
+    depths.set(node.id, depth)
+  }
+  return depths
+}
+
+/**
+ * A shape that can actually host the pool slot being filled. `close` has no
+ * planner and no docs, so a run parked on either has to be a bigger plan.
+ */
+function shapeFor(profile: SeedProfile, random: () => number): ShapeKind {
+  const roll = random()
+  if (profile === "implementer" || profile === "reviewer") {
+    return roll > 0.94 ? "wide" : "standard"
+  }
+  if (profile === "explorer" || profile === "verifier") {
+    return roll > 0.72 ? "close" : "standard"
+  }
+  return "standard"
+}
+
+/**
+ * Statuses over a graph: everything upstream of the front has cleared, the
+ * front carries the run's own status, everything downstream is still queued.
+ * Siblings on the front's own depth are a coin toss between cleared and queued
+ * — which is what makes a lane look like a lane rather than a wavefront.
+ */
+function assignStatuses(
+  nodes: PlanNode[],
+  frontId: string,
+  status: SeedStatus,
+  random: () => number
+): SeedWorkItem[] {
+  const depths = planDepths(nodes)
+  const frontDepth = depths.get(frontId) ?? 0
+  const labels = new Map<SeedProfile, number>()
+
+  return nodes.map((node) => {
+    const depth = depths.get(node.id) ?? 0
+    let itemStatus: SeedStatus = "queued"
+    if (node.id === frontId) {
+      itemStatus = status
+    } else if (depth < frontDepth) {
+      itemStatus = "success"
+    } else if (depth === frontDepth) {
+      itemStatus = random() > 0.5 ? "success" : "queued"
+    }
+
+    // Walk each profile's vocabulary rather than sampling it, so one run never
+    // repeats a step name while two runs rarely share one.
+    const cursor = labels.get(node.profile) ?? Math.floor(random() * 12)
+    labels.set(node.profile, cursor + 1)
+    const bank = LABELS[node.profile]
+
+    return {
+      id: node.id,
+      profile: node.profile,
+      label: bank[cursor % bank.length],
+      status: itemStatus,
+      deps: node.deps,
+    }
+  })
+}
+
+function syntheticRuns(): SeedRunDraft[] {
+  const random = lcg(20260830)
+  const runs: SeedRunDraft[] = []
+  let index = 0
+
+  for (const [profile, statuses] of SYNTHETIC_POOL) {
+    for (const [status, count] of statuses) {
+      for (let n = 0; n < count; n += 1) {
+        index += 1
+        const done = status === "success"
+        const kind = shapeFor(profile, random)
+        let nodes = buildPlan(kind, random).nodes
+        if (!nodes.some((node) => node.profile === profile)) {
+          nodes = buildPlan("standard", random).nodes
+        }
+
+        const hosts = nodes.filter((node) => node.profile === profile)
+        const front = hosts[Math.floor(random() * hosts.length)] ?? nodes[0]
+
+        const items = done
+          ? assignStatuses(nodes, nodes[nodes.length - 1].id, "success", random)
+          : assignStatuses(nodes, front.id, status, random)
+
+        runs.push({
+          id: hexId(index),
+          app: SYNTHETIC_APPS[index % SYNTHETIC_APPS.length],
+          title: SYNTHETIC_TITLES[index % SYNTHETIC_TITLES.length],
+          status,
+          current: done ? nodes[nodes.length - 1].id : front.id,
+          model: random() > 0.78 ? "lead" : "worker",
+          cost: Math.round(random() * 210) / 100,
+          tokens: Math.round(random() * 46000) + 900,
+          startSec: status === "queued" ? 0 : Math.round(random() * 2400) + 40,
+          done,
+          items,
+        })
+      }
+    }
+  }
+
+  return runs
+}
+
+/** Stable per-run seed, so an item's figures never move between reloads. */
+function hash(text: string): number {
+  let value = 2166136261
+  for (let index = 0; index < text.length; index += 1) {
+    value = (value ^ text.charCodeAt(index)) * 16777619
+    value >>>= 0
+  }
+  return value
+}
+
+function clock(seconds: number): string {
+  const minutes = Math.floor(seconds / 60)
+  return `${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`
+}
+
+/**
+ * Per-item cost, tokens and start clock. Filled here rather than written into
+ * every plan above: they are figures, not decisions, and an item that has not
+ * started has none of them.
+ */
+function withItemMetrics(run: SeedRun): SeedRun {
+  const random = lcg(hash(run.id))
+  let elapsed = 0
+
+  return {
+    ...run,
+    items: run.items.map((entry) => {
+      if (entry.status === "queued") {
+        return entry
+      }
+      elapsed += 20 + Math.floor(random() * 160)
+      return {
+        ...entry,
+        cost: Math.round(random() * 90) / 100,
+        tokens: Math.round(random() * 21000) + 400,
+        startedAt: clock(elapsed),
+      }
+    }),
+  }
+}
+
+export const RUNS_SEED: SeedRun[] = [...HAND_RUNS, ...syntheticRuns()]
+  .map(withProject)
+  .map(withItemMetrics)
 
 export const TRACE_SEED: Record<string, SeedTrace> = {
   "8f3c2a91": {
@@ -420,27 +802,30 @@ export const TRACE_SEED: Record<string, SeedTrace> = {
     rules: ["api-errors", "db-tx", "no-secrets"],
     revision: { rules: "rules@a1b9e0", sdk: "sdk@2.4.1" },
     events: [
-      { t: "00:00", st: "success", text: "Запрос принят · план мозга построен" },
+      {
+        t: "00:00",
+        st: "success",
+        text: "Запрос принят · план мозга построен",
+      },
       {
         t: "00:04",
         st: "success",
-        text: "Стадия «изучатор» завершена — 4 файла в контексте",
+        text: "«прочитать обработчик вебхуков» завершён — 4 файла в контексте",
       },
-      { t: "00:31", st: "success", text: "Стадия «план» завершена · DAG 8 стадий" },
+      {
+        t: "00:31",
+        st: "success",
+        text: "«контракт на идемпотентность» завершён · граф из 8 задач",
+      },
       {
         t: "01:02",
         st: "success",
-        text: "Контракт согласован · применено 3 правила",
-      },
-      {
-        t: "01:05",
-        st: "success",
-        text: "Лейн «фронт» завершён (no-op, только бек)",
+        text: "«завести таблицу idem_keys» завершён · применено 3 правила",
       },
       {
         t: "01:48",
         st: "running",
-        text: "Лейн «бек» в работе · правка handler + миграция",
+        text: "«переписать обработчик под ключ идемпотентности» в работе",
       },
       { t: "03:10", st: "waiting", text: "Retry юнит-теста test_replay (1/3)" },
       {
@@ -466,7 +851,11 @@ export const TRACE_SEED: Record<string, SeedTrace> = {
             text: "  const key = req.headers['idempotency-key'];",
           },
           { ty: "add", n: "44", text: "  if (key) {" },
-          { ty: "add", n: "45", text: "    const cached = await store.get(key);" },
+          {
+            ty: "add",
+            n: "45",
+            text: "    const cached = await store.get(key);",
+          },
           {
             ty: "add",
             n: "46",
@@ -519,8 +908,13 @@ export const TRACE_SEED: Record<string, SeedTrace> = {
   },
 }
 
-export const STAGE_META: Record<
-  string,
+/**
+ * What a profile is, said once — its role, what it is handed, what it leaves
+ * behind. Keyed on the profile because that is the identity: the same seven
+ * entries answer for every run, however the brain named the step.
+ */
+export const PROFILE_META: Record<
+  SeedProfile,
   {
     role: "worker" | "lead" | "judge"
     in: Array<[string, string, string?]>
@@ -530,7 +924,7 @@ export const STAGE_META: Record<
     live?: string
   }
 > = {
-  explore: {
+  explorer: {
     role: "worker",
     in: [
       ["book", "comuki-mcp · docs"],
@@ -538,37 +932,27 @@ export const STAGE_META: Record<
       ["file", "ticket brief"],
     ],
     out: [["file", "findings.md", "context map · risk points"]],
-    ev: ["read docs: webhooks, idempotency", "grep worktree: handlers/stripe_*"],
+    ev: [
+      "read docs: webhooks, idempotency",
+      "grep worktree: handlers/stripe_*",
+    ],
   },
-  plan: {
+  planner: {
     role: "lead",
     in: [
       ["file", "findings.md"],
       ["book", "ruleset"],
     ],
     out: [
-      ["box", "stage DAG", "parallel lanes: back ∥ front"],
+      ["box", "work item graph", "profiles + dependencies"],
       ["file", "worker brief"],
     ],
-    ev: ["build DAG under task", "judge: plan approved"],
+    ev: ["emit plan under task", "judge: plan approved"],
   },
-  contract: {
+  implementer: {
     role: "worker",
     in: [
       ["file", "brief"],
-      ["box", "DAG"],
-    ],
-    out: [
-      ["file", "openapi.yaml", "committed @c1a2e0"],
-      ["git-branch", "feat branch"],
-    ],
-    gate: "lite",
-    ev: ["generate OpenAPI", "commit openapi.yaml @c1a2e0"],
-  },
-  back: {
-    role: "worker",
-    in: [
-      ["file", "openapi.yaml @c1a2"],
       ["lock", "db-tx @a1b9e0"],
       ["lock", "api-errors @a1b9e0"],
       ["server", "prod snapshot"],
@@ -576,49 +960,44 @@ export const STAGE_META: Record<
     out: "diff",
     gate: "full",
     ev: [
-      "read contract openapi.yaml@c1a2",
+      "fetch profile ref implementer@a1b9e0",
       "apply rules: db-tx, api-errors",
       "write handlers/stripe_webhook.ts",
       "ran tsc → 0 errors",
     ],
     live: "ran eslint → running…",
   },
-  front: {
-    role: "worker",
-    in: [
-      ["file", "openapi.yaml @c1a2"],
-      ["lock", "ui-tokens @a1b9e0"],
-    ],
-    out: [["image", "visual baseline", "snapshot accepted"]],
-    gate: "full",
-    ev: ["read contract openapi.yaml@c1a2", "front lane completed"],
-  },
-  sync: {
+  reviewer: {
     role: "lead",
-    in: [["box", "back + front outputs"]],
-    out: [["box", "contract reconcile"]],
-    ev: ["reconcile parallel lanes"],
+    in: [
+      ["box", "upstream diff"],
+      ["book", "ruleset"],
+    ],
+    out: [["box", "review notes", "blocking · non-blocking"]],
+    gate: "lite",
+    ev: ["read diff", "check rules: db-tx, no-secrets"],
   },
-  tests: {
+  tester: {
     role: "judge",
     in: [["box", "feature build"]],
     out: [["flask", "verification gate"]],
     gate: "full",
     ev: ["deterministic layer: types → lint → unit → build"],
   },
-  deploy: {
-    role: "worker",
+  verifier: {
+    role: "judge",
     in: [
       ["box", "green gate"],
       ["file", "autonomy policy"],
     ],
     out: [["server", "prod / staging"]],
-    ev: ["await approval gate"],
+    gate: "full",
+    ev: ["run client checks", "await approval gate"],
   },
-  doc: {
+  docs: {
     role: "worker",
     in: [["box", "event: shipped to prod"]],
     out: [["book", "knowledge base update"]],
-    ev: ["doc-agent updates KB"],
+    ev: ["docs profile upserts knowledge"],
   },
 }

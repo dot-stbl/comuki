@@ -1,0 +1,264 @@
+/* Needs you — a hairline-bounded reading surface, not a stack of cards.
+   Every track except the two prose ones is a fixed width, which is what lets
+   each row be its own grid and still line up with the row above it: same
+   template, same fixed values, so the two `fr` columns divide the identical
+   remainder on every line. */
+.list {
+  --w-run: 6rem;
+  --w-project: 5.5rem;
+  --w-clock: 4rem;
+  /* Three square controls at the default height plus the two gaps between
+     them. It was 12rem while the three carried words; leaving it there would
+     have parked the glyphs at the far edge of an empty track and made the
+     task column read as the end of the row. */
+  --w-acts: 6rem;
+
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* The lower of the two strong hairlines that bound a data surface. The upper
+     one sits on the column names. Between them the separators are `--rule` —
+     the same three weights the duty table is built from, and no card. */
+  border-bottom: var(--hairline) solid var(--rule-strong);
+}
+
+.columns,
+.row {
+  display: grid;
+  grid-template-columns:
+    var(--w-run)
+    var(--w-project)
+    minmax(0, 1.4fr)
+    minmax(0, 1fr)
+    var(--w-clock)
+    var(--w-acts);
+  align-items: center;
+  gap: var(--s4);
+  min-width: 0;
+  padding: 0 var(--s3);
+}
+
+/* Column names in the data-label voice: they name values, so they take the
+   tight gesture and the faint step and never compete with the rows beneath. */
+.columns {
+  height: var(--h-row-head);
+  border-top: var(--hairline) solid var(--rule-strong);
+  border-bottom: var(--hairline) solid var(--rule);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.clockHead {
+  text-align: end;
+}
+
+/* --- one bucket: a state, said once --- */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  min-width: 0;
+  margin: 0;
+  padding: var(--s5) var(--s3) var(--s3);
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-weight: var(--fw-regular);
+}
+
+.reason {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted-foreground);
+}
+
+.groupCount {
+  margin-left: auto;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--hairline) solid var(--rule);
+}
+
+/* --- one run --- */
+
+.row {
+  min-height: calc(var(--h-button) + var(--s5));
+  border-bottom: var(--hairline) solid var(--rule);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  transition: background-color var(--dur) var(--ease);
+}
+
+.row:hover {
+  background: var(--muted);
+}
+
+.id {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.id:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.id:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+.project,
+.clock {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.clock {
+  text-align: end;
+}
+
+/* The ticket, in the person's own words — the most human thing on the row, so
+   it takes the interface voice and the full-strength colour. */
+.task {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+/* The brain's name for the step: prose, one step quieter than the ticket. */
+.step {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.faint {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+/* --- what did not fit --- */
+
+.more {
+  margin: 0;
+  padding: var(--s5) var(--s3);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+}
+
+.moreLink {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  border-radius: var(--r-xs);
+}
+
+.moreLink:hover {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.moreLink:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--s1);
+}
+
+/* The only motion here, and it is the duty list's own: a pending decision is
+   the one thing that has to look like it is happening inside a still row. */
+@media (prefers-reduced-motion: no-preference) {
+  .spin {
+    animation: attention-spin 900ms linear infinite;
+  }
+}
+
+@keyframes attention-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* Narrow desks. A reading is never crushed to fit — the column that carries the
+   least unique information goes first (the step is prose about the task beside
+   it), then the project key, which the denial sentence still names. */
+@media (max-width: 1240px) {
+  .columns,
+  .row {
+    grid-template-columns:
+      var(--w-run)
+      var(--w-project)
+      minmax(0, 1fr)
+      var(--w-clock)
+      var(--w-acts);
+  }
+
+  .columns > :nth-child(4),
+  .row > :nth-child(4) {
+    display: none;
+  }
+}
+
+@media (max-width: 1000px) {
+  .columns,
+  .row {
+    grid-template-columns:
+      var(--w-run)
+      minmax(0, 1fr)
+      var(--w-clock)
+      var(--w-acts);
+  }
+
+  .columns > :nth-child(2),
+  .row > :nth-child(2) {
+    display: none;
+  }
+}

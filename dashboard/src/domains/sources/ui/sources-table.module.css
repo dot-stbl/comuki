@@ -1,0 +1,90 @@
+/* Cell-level styling for the connections list. Rows are one line tall by
+   contract, so anything that can run long truncates rather than wraps. */
+
+/* A repo path, a queue key, a host, an account — all values the operator reads
+   back somewhere else, so all of them take the data voice.
+
+   The source's own name is one of those values, and it is also the way to that
+   source's page, so it is `.link` rather than a plain span.
+   The identifier cell is the link and the row is not — a row-wide click target
+   would swallow the four buttons in the actions column — so this is the same
+   arrangement a run id has two screens over, and it is spelled the same way:
+   the value's own voice at rest, the accent and an underline on hover, and the
+   product's one focus ring when a keyboard arrives. */
+.link {
+  display: block;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.link:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+.muted {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+/* The row's one line of prose — why it is broken, what it is not admitting,
+   when it last synced. The interface voice, because it is a sentence. */
+.note {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+/* A failure states its reason in the failure's own colour, because this cell is
+   the only place on the screen the reason appears — the badge two columns to
+   the left says *that* it is broken and this says *why*. Hue plus the word
+   `error` in the badge: two channels, as everywhere else. */
+.noteBad {
+  color: var(--st-failed);
+}
+
+/* A watch that is on, healthy and admitting nothing. Not a failure — nothing
+   is broken — but the one row on the board somebody should look at twice. */
+.noteWarn {
+  color: var(--st-waiting);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+/* The only spinner in the product, borrowed for the same reason the duty list
+   borrows it: a pending probe is the one place where "something is happening"
+   has to be visible in a row that is otherwise still. Gated, like every other
+   motion here. */
+@media (prefers-reduced-motion: no-preference) {
+  .spin {
+    animation: sources-spin 900ms linear infinite;
+  }
+}
+
+@keyframes sources-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+

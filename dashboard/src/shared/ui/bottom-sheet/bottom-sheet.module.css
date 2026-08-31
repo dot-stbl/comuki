@@ -1,0 +1,204 @@
+/* A modal bottom sheet — the scrim, the docked panel, the drag edge.
+ *
+ * THE HEIGHT CHAIN, hand-traced again because jsdom lays nothing out and a
+ * sheet that renders as a blank strip passes every gate.
+ *
+ * `.scrim` (fixed, inset 0 — definite)
+ *   → `.modal` (height 100%)
+ *     → `.group` (the pane group, height 100%, min-height 0)
+ *       → `.above` (transparent measurement panel) + separator + `.panel`
+ *         → `.dialog` (flex column, height 100%, min-height 0)
+ *           → `.bar` (flex 0 0 auto) + `.body` (flex 1 1 0, min-height 0).
+ *
+ * Every link repeats a definite height and `min-block-size: 0`, the same pair
+ * the console's own stylesheet traces, because a flex item's default
+ * `min-height: auto` would rather push the composer off the window than let
+ * the thread scroll.
+ */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: var(--scrim);
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* The pane group spans the whole window so the sheet's depth is measured
+   against it; the transparent panel above the separator is the part of the
+   window the sheet is *not* filling, and the scrim shows through it. */
+.group {
+  height: 100%;
+  min-height: 0;
+}
+
+.above {
+  min-height: 0;
+  /* Transparent on purpose: it is a measurement, not a surface. */
+  background: transparent;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* clip, not hidden — the Clip-Not-Hidden Rule. The scroll ports are the
+     ones the content opens (the console's three columns); opening a fourth
+     here would let a wide proposal card scroll the whole sheet sideways
+     with no scrollbar to say so. */
+  overflow: clip;
+  border: var(--hairline) solid var(--rule-strong);
+  border-bottom: 0;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background: var(--surface);
+  /* The sheet is the nearer plane in front of the board, and its shadow is
+     cast *up* onto what it covers — the Lift direction. The Modal shadow
+     points down and would disappear under the sheet's own fill. */
+  box-shadow: var(--shadow-lift);
+}
+
+/* The drag edge, and why it paints nothing of its own.
+ *
+ * The separator between the two panels *is* the sheet's top edge — and the
+ * panel already draws that edge with `border-block-start`, which follows the
+ * rounded corners a separator's square 1px rule cannot. Two rules stacked
+ * (the pane kit's at-rest background plus this border) is a doubled line, so
+ * one source wins: the border. The edge stops painting entirely and instead
+ * turns the panel's own border Signal Blue while it is live, so the drag
+ * keeps the colouring the pane kit gives every other separator.
+ *
+ * The doubled class in these selectors is load-bearing, not decorative: the
+ * pane kit's stylesheet is a different module, and its `.separator:hover`
+ * rules out-rank a single `.edge` regardless of which module the bundler
+ * happens to emit first. `[data-separator="active"]` is the dragging state
+ * the pane library actually sets. */
+.edge.edge,
+.edge.edge:hover,
+.edge.edge[data-separator="active"],
+.edge.edge:focus-visible {
+  background: none;
+}
+
+.edge:hover + .panel,
+.edge[data-separator="active"] + .panel,
+.edge:focus-visible + .panel {
+  border-block-start-color: var(--primary);
+}
+
+/* Full window: the edge is out of work. The separator stays in the tree —
+ * disabled is a state it can be, and it keeps its role and its name — but
+ * nothing of it paints: not the line (the panel's border stands down too,
+ * because the window edge is the boundary now), not the grip (the pane
+ * kit's own hover rule would fade it in over the sheet), and not the
+ * generous hit area, which would otherwise take the pointer off the top of
+ * the sheet's bar for a drag that can no longer happen. */
+.edgeGone.edgeGone,
+.edgeGone.edgeGone:hover,
+.edgeGone.edgeGone:focus-visible {
+  background: none;
+}
+
+/* The grip by structure rather than by name: its class belongs to the pane
+ * kit's module and cannot be named from here. */
+.edgeGone > span {
+  display: none;
+}
+
+.edgeGone::before {
+  display: none;
+}
+
+.edgeGone + .panel {
+  border-block-start: 0;
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  outline: none;
+}
+
+/* The sheet's own chrome: a heading, the caller's controls, and the two the
+   sheet owns. One row, control height, so the bar reads as furniture and the
+   body below as the thing it holds. */
+.bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+  padding: var(--s3) var(--s5) 0;
+}
+
+.title {
+  margin: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+/* What the sheet holds. Inline gutter only: a body that owns no scroll hands
+   the ports to its content, and the block air belongs to that content the
+   same way it does on a full screen. */
+.body {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  min-inline-size: 0;
+  padding-inline: var(--page-x);
+}
+
+/* Entrance, opt-out. The sheet rises from the bottom edge it is docked to —
+   a moment, not a message, so a reader who has asked for less motion gets it
+   already in place. */
+@media (prefers-reduced-motion: no-preference) {
+  .scrim {
+    animation: sheet-scrim-in var(--dur) var(--ease) both;
+  }
+
+  .panel {
+    animation: sheet-in var(--dur) var(--ease) both;
+  }
+}
+
+@keyframes sheet-scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(var(--s5));
+  }
+
+  to {
+    transform: none;
+  }
+}

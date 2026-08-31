@@ -1,0 +1,174 @@
+/* THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a screen that renders as a blank strip.
+
+   AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
+   split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
+   min-height 0, overflow auto, padded) → `.screen` below.
+
+   `.screen` claims no share of the viewport and neither does anything under it.
+   That is the decision this screen makes differently from the duty board: the
+   rule set is a document read top to bottom on a slow clock, not a board that
+   has to fit at once — so it grows with its content and `.content` scrolls it.
+   Every link is either `.content`'s own flex growth or a block box sized by
+   what is in it; there is no `height: 100%` anywhere below here that a missing
+   flex parent could quietly resolve to zero.
+
+   The eval table is the one box with a depth of its own, and it gets it from
+   `--h-table-body` inside the kit's own stylesheet rather than from a chain
+   through here — see `knowledge-panel.module.css`. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  min-inline-size: 0;
+}
+
+/* Readings ---------------------------------------------------------------- */
+
+.readings {
+  display: grid;
+  /* `min()` rather than a bare `18rem`, so a track can never be wider than the
+     column it sits in: an auto-fill track at a fixed minimum overflows the page
+     the moment the rail is dragged wide. */
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+/* A data surface, not a card. A hairline on its start edge, the material data
+   is made of, and the surface step of the corner scale — no fill that lifts it
+   off the floor and no shadow that floats it. */
+.reading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+  padding: var(--s4) var(--s5);
+  border-inline-start: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+/* Names a value, so it takes the tight gesture — not the wide one, which names
+   a region and is already spoken by the section heading above. */
+.readingLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* The reading itself. Mono and tabular, because two of the three are figures
+   that will be compared against the same three boxes tomorrow, and the third is
+   a revision handle somebody will read back into a terminal. */
+.readingFigure {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-h1);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* A unit is not part of the number: it stays a step down so the figure keeps
+   the eye. */
+.readingUnit {
+  margin-inline-start: var(--s1);
+  font-size: var(--t-sm);
+  color: var(--text-faint);
+}
+
+.readingNote {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-muted);
+}
+
+/* Entries ----------------------------------------------------------------- */
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* The search came back with nothing. Bounded like the rows it stands in for,
+   so the list does not appear to have vanished. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+  padding: var(--s6) var(--s5);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.emptyTitle {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.emptyBody {
+  margin: 0;
+  max-inline-size: 52ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* States ------------------------------------------------------------------ */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) 0;
+  font-family: var(--font-ui);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-inline-size: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* Rows, not blocks: what is loading is a list of rules, and a skeleton that
+   lies about the shape of what is coming is worse than none. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s6) 0;
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}

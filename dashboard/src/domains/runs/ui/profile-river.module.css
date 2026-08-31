@@ -1,0 +1,437 @@
+/* Columns align on one axis so every channel is measured against the same
+   scale: a branch — two profiles at the same observed depth — is the only
+   place the river is meant to leave it.
+
+   The split panel owns the board's height now, so the river fills whatever it
+   is given and the channels take what is left after the node's own chrome.
+   That chrome is fixed and named once below, because the connector between two
+   columns has to start and stop exactly where the channels do. */
+.river {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+  height: 100%;
+  padding: var(--s6) 0 var(--s4);
+
+  --h-node-mix: var(--h-river-label);
+  --h-node-metrics: calc(var(--t-display) + var(--s1) + var(--h-node-mix));
+  --h-node-mark: var(--s6);
+  --h-node-head: calc(
+    var(--hairline) + var(--s3) + var(--h-river-label) + var(--s3)
+  );
+  --h-node-foot: calc(
+    var(--s3) + var(--h-node-metrics) + var(--s3) + var(--h-node-mark) +
+      var(--s3) + var(--hairline)
+  );
+}
+
+/* The overflow edge, marked: a fade pinned to the right of the scrollport says
+   the river continues past it. It sticks while there is more to scroll to and
+   settles into the river's own end — where it fades background into background
+   and disappears — once there is not. Zero net width, so it never scrolls. */
+.river::after {
+  content: "";
+  position: sticky;
+  right: 0;
+  flex: 0 0 var(--s6);
+  align-self: stretch;
+  margin-left: calc(var(--s6) * -1);
+  background: linear-gradient(to right, transparent, var(--background));
+  pointer-events: none;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* --- the node: one profile --- */
+
+.node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--s3) var(--s2);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-md);
+  background: transparent;
+  text-align: left;
+  font-family: var(--font-ui);
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.node:hover {
+  border-color: var(--rule);
+}
+
+/* Pressed means "the table below is filtered to this profile" — the same value
+   the toolbar shows, said a second way. */
+.node[aria-pressed="true"] {
+  border-color: var(--rule-strong);
+}
+
+.label {
+  height: var(--h-river-label);
+  line-height: var(--h-river-label);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node[aria-pressed="true"] .label {
+  color: var(--foreground);
+}
+
+/* --- the channel: a drawn lane the band is measured against --- */
+
+.track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--lane);
+  border-radius: var(--r-xs);
+}
+
+.node[aria-pressed="true"] .track {
+  background: color-mix(in oklab, var(--lane) 70%, var(--foreground) 4%);
+}
+
+.band,
+.stripBand {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+}
+
+.band {
+  transform-origin: left center;
+}
+
+.cleared,
+.seg {
+  display: block;
+  flex-basis: 0;
+  min-height: 0;
+}
+
+.cleared {
+  background: var(--flow-ribbon-dim);
+}
+
+.node[aria-pressed="true"] .cleared {
+  background: var(--flow-ribbon);
+}
+
+/* Status is carried by weave as well as hue, and both come from tokens: the
+   legend swatch, the collapsed strip and the run graph consume the same two
+   properties, so the cue can never drift apart between the screens. */
+.status[data-status="running"] {
+  --hue: var(--st-running);
+  --weave: var(--weave-running);
+}
+
+.status[data-status="waiting"] {
+  --hue: var(--st-waiting);
+  --weave: var(--weave-waiting);
+}
+
+.status[data-status="escalated"] {
+  --hue: var(--st-escalated);
+  --weave: var(--weave-escalated);
+}
+
+.status[data-status="failed"] {
+  --hue: var(--st-failed);
+  --weave: var(--weave-failed);
+}
+
+.status[data-status="queued"] {
+  --hue: var(--st-queued);
+  --weave: var(--weave-queued);
+}
+
+.status[data-status="success"] {
+  --hue: var(--st-success);
+  --weave: var(--weave-success);
+}
+
+.seg,
+.keySwatch {
+  background-color: var(--hue);
+  background-image: var(--weave, none);
+}
+
+/* --- legend: the same weave, so the cue reads once and means one thing --- */
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.keySwatch {
+  width: calc(var(--h-meter) * 2.5);
+  height: calc(var(--h-meter) * 1.25);
+  border-radius: var(--r-xs);
+  flex: 0 0 auto;
+}
+
+.keyCleared {
+  background-color: var(--flow-ribbon-dim);
+  background-image: none;
+}
+
+/* --- numbers under the channel --- */
+
+/* Two lines of fixed height: the quantity, then the same quantity split into
+   the statuses it is actually made of. Fixed, because every node reserves the
+   identical footprint or the channels above them stop sharing one axis. */
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.pool {
+  height: var(--t-display);
+  line-height: var(--t-display);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-medium);
+  color: var(--foreground);
+}
+
+.mix {
+  height: var(--h-node-mix);
+  line-height: var(--h-node-mix);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- the worst profile: the one thing the screen answers first --- */
+
+.markedNode {
+  border-color: color-mix(in oklab, var(--st-waiting) 55%, transparent);
+  background: color-mix(in oklab, var(--st-waiting) 7%, transparent);
+}
+
+.markedNode .label {
+  color: var(--st-waiting);
+}
+
+.markedNode .pool {
+  font-size: var(--t-display);
+  font-weight: var(--fw-bold);
+  color: var(--st-waiting);
+  letter-spacing: var(--tracking-display);
+}
+
+/* Reserved on every node, filled on one. The border, tint and warm colour have
+   already said "this one is worst"; the line only has to say how much. */
+.mark {
+  display: block;
+  height: var(--h-node-mark);
+  line-height: var(--h-node-mark);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--st-waiting);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- the connector between two columns: observed transitions only --- */
+
+.link {
+  flex: 0 0 auto;
+  width: var(--s6);
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--h-node-head);
+  padding-bottom: var(--h-node-foot);
+}
+
+.linkTrack {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The connectors are the flow itself, so the gradient runs along them: thin
+   upstream, dense downstream. It is the one gradient in the product that
+   carries a reading rather than a finish. */
+.linkBar,
+.stripBar {
+  width: 100%;
+  background-color: var(--flow-ribbon-dim);
+  background-image: var(--gradient-flow);
+}
+
+.linkBar {
+  transform-origin: left center;
+}
+
+/* A pinched connector drops the gradient: the warm flat colour is the alarm,
+   and a gradient over it would soften exactly what must not soften. */
+.linkNarrow {
+  background-color: color-mix(in oklab, var(--st-waiting) 45%, transparent);
+  background-image: none;
+}
+
+/* --- the board collapsed: the same flow, roughly one row tall --- */
+
+.strip {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: var(--s2) var(--s6);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.strip:hover {
+  background: var(--accent);
+}
+
+.strip:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: calc(var(--hairline) * -1);
+}
+
+.stripColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.stripLane {
+  display: flex;
+  align-items: center;
+  flex: 1 1 0;
+  min-height: 0;
+  background: var(--lane);
+  border-radius: var(--r-xs);
+}
+
+.stripLink {
+  display: flex;
+  align-items: center;
+  flex: 0 0 var(--s4);
+  min-height: 0;
+}
+
+/* A value that moved while nobody was looking marks itself once, in the same
+   grammar as the entrance: a wash that leaves rather than a badge that stays. */
+.moved {
+  padding: 0 var(--s1);
+  margin: 0 calc(var(--s1) * -1);
+  border-radius: var(--r-xs);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .moved {
+    animation: value-moved 900ms var(--ease) both;
+  }
+}
+
+@keyframes value-moved {
+  0%,
+  25% {
+    background: color-mix(in oklab, var(--primary) 32%, transparent);
+  }
+
+  100% {
+    background: transparent;
+  }
+}
+
+/* --- one authored entrance: the river fills from the source --- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .band,
+  .linkBar {
+    animation: river-fill 620ms var(--ease) both;
+    animation-delay: calc(var(--index) * 45ms);
+  }
+}
+
+@keyframes river-fill {
+  from {
+    transform: scaleX(0.04);
+    opacity: 0.2;
+  }
+
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* Narrow desks: the flow keeps its shape and scrolls sideways inside its own
+   container rather than crushing the profiles into unreadable slivers. The
+   collapsed strip never scrolls — it is a shape, not a reading, so it shrinks
+   to fit instead. */
+@media (max-width: 1240px) {
+  .column {
+    flex: 0 0 7.5rem;
+  }
+}
+
+@media (max-width: 1000px) {
+  .river {
+    padding-top: var(--s5);
+  }
+
+  .column {
+    flex: 0 0 6.5rem;
+  }
+}

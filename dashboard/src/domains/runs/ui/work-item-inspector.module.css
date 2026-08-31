@@ -1,0 +1,496 @@
+/* The work item inspector — the graph's companion.
+ *
+ * The graph says where an item sits and what state it is in; this says what it
+ * actually is. What it shows about a step comes from the step's profile, which
+ * is declared and knowable; the heading is the brain's own name for it, which
+ * is prose and keys nothing.
+ *
+ * It owns the scroll of whatever panel it is given and never sets a height of
+ * its own: the screen decides how much room the inspector gets, and a diff
+ * that runs long scrolls here rather than pushing the graph off the surface.
+ */
+
+.inspector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  height: 100%;
+  min-height: 0;
+  padding: var(--s5) var(--s6) var(--s7);
+  overflow-y: auto;
+  background: var(--background);
+  font-family: var(--font-ui);
+  container-type: inline-size;
+}
+
+/* --- who this item is --- */
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s5);
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+/* The brain's prose, at heading weight. Measured rather than full-bleed: a
+   step name is a sentence, and a sentence the width of a 27-inch board is
+   unreadable.
+
+   `overflow-wrap: anywhere` because it is not always a sentence: a step name
+   can arrive as one unbroken token — a path, a branch, an identifier — and one
+   unbreakable word sets the heading's min-content, overflows `.identity` and
+   paints under the status badge parked at the end of the line, which is
+   `flex: 0 0 auto` and has nowhere to go. Spelled the way `page-header`
+   already spells it for a run id. */
+.title {
+  margin: 0;
+  max-width: 68ch;
+  overflow-wrap: anywhere;
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-display);
+  line-height: 1.15;
+  color: var(--foreground);
+}
+
+/* The identity line, in the data voice. */
+.ident {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.identStrong {
+  color: var(--muted-foreground);
+}
+
+.badge {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+/* --- the figures --- */
+
+/* Four values on one line, each with its name above it. A definition list
+   because that is what it is; the name is chrome and the number is the data,
+   so only the number is in the mono voice. */
+.figures {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s7);
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: var(--s4) 0;
+  border-top: var(--hairline) solid var(--rule);
+  border-bottom: var(--hairline) solid var(--rule);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.figureName {
+  margin: 0;
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.figureValue {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+/* --- the two panes --- */
+
+/* One column while the panel is narrow, two once there is room. A container
+   query rather than a viewport one: the inspector lives in a panel a person
+   drags, and the viewport has no opinion about how wide that panel is. */
+.panes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s7);
+  min-width: 0;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+  min-width: 0;
+}
+
+@container (min-width: 54rem) {
+  .panes {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .pane {
+    flex: 1 1 0;
+  }
+}
+
+/* --- a section --- */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  padding-bottom: var(--s2);
+  border-bottom: var(--hairline) solid var(--rule);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  color: var(--muted-foreground);
+}
+
+.sectionNote {
+  margin-left: auto;
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* --- what this item waits on --- */
+
+/* The long edge, made reachable. A dependency more than one column back is the
+   thing the layered graph cannot draw honestly, so here it is a real control:
+   selecting one moves the graph's cursor onto it. Every dependency is listed,
+   near and far, and the distance is written out — a person should not have to
+   learn that "no distance shown" means "the column beside it". */
+.deps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dep {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-width: 0;
+  padding: var(--s2) var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: var(--foreground);
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.dep:hover {
+  border-color: var(--rule-strong);
+  background: var(--accent);
+}
+
+.dep:focus-visible {
+  outline: calc(var(--hairline) * 2) solid var(--ring);
+  outline-offset: var(--s1);
+}
+
+.depIcon {
+  flex: 0 0 auto;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--text-faint);
+}
+
+.depLabel {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.depProfile {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--muted-foreground);
+}
+
+/* The distance, and the only place in the product it is spelled out. A long
+   edge gets the warm colour because it is the one a person has to go and find
+   by hand — the graph beside it cannot point at it. */
+.depSpan {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.depLong .depSpan {
+  color: var(--st-waiting);
+  font-weight: var(--fw-semibold);
+}
+
+.depLong {
+  border-color: color-mix(in oklab, var(--st-waiting) 40%, transparent);
+}
+
+/* --- chips: inputs, outputs, gate --- */
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  max-width: 100%;
+  padding: var(--s1) var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-size: var(--t-sm);
+  color: var(--foreground);
+}
+
+.chipIcon {
+  flex: 0 0 auto;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--text-faint);
+}
+
+.chipDetail {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--muted-foreground);
+}
+
+.outputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.output {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  font-size: var(--t-sm);
+  color: var(--foreground);
+}
+
+.outputDetail {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--muted-foreground);
+}
+
+/* --- the log --- */
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s4);
+  min-width: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+}
+
+.eventTime {
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.eventText {
+  min-width: 0;
+  color: var(--foreground);
+}
+
+/* The log's own statuses. Colour is a reinforcement here, never the message:
+   every line already says in words what happened. */
+.event[data-status="running"] .eventText {
+  color: var(--st-running);
+}
+
+.event[data-status="failed"] .eventText {
+  color: var(--st-failed);
+}
+
+.event[data-status="waiting"] .eventText {
+  color: var(--st-waiting);
+}
+
+.event[data-status="escalated"] .eventText {
+  color: var(--st-escalated);
+}
+
+/* --- the diff --- */
+
+.files {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-width: 0;
+}
+
+.file {
+  min-width: 0;
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  /* `clip`, not `hidden`: the head band has to be cut to the corner, and this
+     box must never become a scroll container for something sticky inside it. */
+  overflow: clip;
+}
+
+.fileHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s3);
+  border-bottom: var(--hairline) solid var(--rule);
+  background: var(--muted);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--foreground);
+}
+
+.filePath {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fileAdded {
+  flex: 0 0 auto;
+  color: var(--st-success);
+  font-variant-numeric: tabular-nums;
+}
+
+.fileDeleted {
+  flex: 0 0 auto;
+  color: var(--st-failed);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Wide code scrolls inside its own box; the panel around it never scrolls
+   sideways. */
+.hunk {
+  margin: 0;
+  padding: var(--s2) 0;
+  overflow-x: auto;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+}
+
+/* Three columns: the line number, the sign, the code. The sign is the channel
+   that survives greyscale — the tint behind it is reinforcement. */
+.line {
+  display: grid;
+  grid-template-columns: calc(var(--s8) * 2) var(--s6) 1fr;
+  gap: var(--s3);
+  padding: 0 var(--s3);
+  white-space: pre;
+}
+
+.lineNumber {
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.lineSign {
+  color: var(--text-faint);
+}
+
+.line[data-kind="add"] {
+  background: var(--st-success-tint);
+  color: var(--st-success);
+}
+
+.line[data-kind="del"] {
+  background: var(--st-failed-tint);
+  color: var(--st-failed);
+}
+
+.line[data-kind="add"] .lineSign,
+.line[data-kind="del"] .lineSign {
+  color: inherit;
+}
+
+/* --- nothing to show --- */
+
+.none {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--text-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dep {
+    transition: none;
+  }
+}

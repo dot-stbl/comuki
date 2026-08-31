@@ -1,0 +1,113 @@
+/* Cell-level styling for the three identity lists. Rows are one line tall by
+   contract, so anything that can run long truncates rather than wraps.
+
+   Almost everything on this screen is a value rather than prose — an address,
+   a subject, a key prefix, a role name, a date — so the data voice does most
+   of the work here and the interface voice appears only where a human wrote
+   the words: a person's name, and what a key is for. */
+
+.value,
+.link,
+.name,
+.role,
+.scope,
+.absent,
+.warn,
+.off,
+.grants {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The value that identifies a subject: an address, or a key prefix. Full
+   strength, because it is the thing the row is about. */
+.value {
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+/* The same value, when it is also the way into the thing it identifies.
+   Spelled exactly like the run id in the duty list: the identifier cell is the
+   link and the row is not, so the two buttons at the end of the row keep their
+   own click targets. It carries no underline at rest — a column of underlined
+   addresses reads as a list of warnings — and takes the accent on hover. */
+.link {
+  display: block;
+  font-family: var(--font-data);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.link:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+/* Prose beside it. */
+.name {
+  font-family: var(--font-ui);
+  color: var(--text-muted);
+}
+
+/* A role name is a value from a closed set in code, not a label somebody
+   chose — it reads in the data voice like the status column on a run. */
+.role {
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+.scope,
+.grants {
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+/* Nothing there, said quietly and in words: never used, no expiry, not linked.
+   A blank cell reads as a broken render. */
+.absent {
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}
+
+/* Ending soon. The word carries the reading; the hue only sharpens it, which
+   is the same two-channel rule the status bands follow. */
+.warn {
+  font-family: var(--font-data);
+  color: var(--st-waiting);
+}
+
+/* Switched off, or revoked. Again a word first: `disabled`, `revoked`. */
+.off {
+  font-family: var(--font-data);
+  color: var(--st-failed);
+}
+
+/* A grant that is real and inert — the subject behind it is disabled or the
+   key is gone. The row stays legible and stops claiming to be in force. */
+.inert {
+  color: var(--text-faint);
+  text-decoration: line-through;
+  text-decoration-thickness: var(--hairline);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

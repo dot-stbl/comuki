@@ -1,0 +1,84 @@
+/* Where the day's money went, ranked. One row per app: what it is, how much of
+   the biggest spend it is, and the figure itself. */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+
+/* Name, channel, figure — one grid, so every bar starts and ends on the same
+   two lines. Two bars on different scales cannot be compared, and comparing
+   them is the whole task. */
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 7rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+/* An app name is a value the operator reads back somewhere else, so it takes
+   the data voice — and it truncates rather than wraps, because a row that
+   grows a line pushes every bar under it off the axis it shares. */
+.app {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* The drawn empty channel every fill is measured against — the same material
+   the table and the flow's tracks are made of. */
+.channel {
+  position: relative;
+  display: block;
+  block-size: var(--h-meter);
+  min-inline-size: 0;
+  border-radius: var(--r-xs);
+  background: var(--lane-alt);
+  overflow: clip;
+}
+
+/* Neutral, at every length.
+
+   The bar this replaced was painted in the accent, and it is the one decision
+   of the old screen the new world contradicts: saturation in this product is
+   reserved for status inside the flow, and a spend ranking carries no status —
+   nobody is being asked to do anything about being third. The compute
+   registry's non-binding track is drawn the same way and for the same reason:
+   a track that is not stopping anything is not a reading, it is a
+   distraction. The ranking survives untouched, because length is what ranks. */
+.fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: block;
+  border-radius: var(--r-xs);
+  background: var(--text-faint);
+}
+
+/* The figure, at the end of the row and tabular, so a scan down the column
+   compares magnitudes rather than glyph widths. */
+.spend {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}

@@ -1,0 +1,63 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* The panel is `main`'s parent now, not a flex row, so `flex: 1` sized nothing
+   and the height collapsed to content — taking every `height: 100%` below it
+   with it. The panel already stretches; `main` just has to fill it.
+
+   It is a column of exactly two bands: fixed chrome, then the scroll port. The
+   scroll lives here rather than on `main`, which is what keeps a header from
+   scrolling away with the content it heads. */
+/* `clip`, never `hidden` — the Clip-Not-Hidden Rule, applied where it is least
+   obvious. `hidden` here would make the whole content region a scroll container,
+   and every `position: sticky` below it resolves against the nearest scrolling
+   ancestor: today the data table's own port is nearer, so nothing broke, but
+   the first sticky element a screen puts straight into `.content` would anchor
+   here instead and silently stop holding. `clip` cuts the same rectangle
+   without opening a port — and without the second bug `hidden` carries, where
+   focusing something clipped scrolls this box sideways with no scrollbar to
+   say so and no way to scroll it back. */
+.main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: clip;
+  background: var(--background);
+}
+
+.headerSlot {
+  flex-shrink: 0;
+}
+
+/* Everything below the header is the screen's content, and it owns the scroll.
+   `min-height: 0` so a tall screen scrolls instead of forcing the flex item
+   past the panel; `flex: 1 1 0` so a screen that fills (the duty board) has a
+   definite height to resolve its own `height: 100%` against. */
+.content {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  /* The side gutter is unconditional — a screen that opts out of padding is
+     opting out of *vertical* padding because it fills, not asking to run into
+     the window edge. Content flush to the edge reads as clipped rather than as
+     full, and a table that does it looks broken. */
+  padding-inline: var(--page-x);
+}
+
+.padded {
+  padding-block: var(--page-y);
+}

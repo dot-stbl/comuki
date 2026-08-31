@@ -1,0 +1,93 @@
+/* The intake grid. Each tracker is a data surface — a hairline on its start
+   edge, the lane material it is made of, and the surface step of the corner
+   scale, because a slab this size reads as a square without one and every
+   control standing on it is rounded. It is emphatically not a card: no fill
+   that lifts it off the floor, no shadow that floats it, no ring. */
+
+.grid {
+  display: grid;
+  /* `min()` rather than a bare width, so a track can never be wider than the
+     column it sits in when the rail is dragged wide. */
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.tracker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+  padding: var(--s4) var(--s5);
+  border-inline-start: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+/* A tracker that is actually feeding the backlog marks its own edge. Hue plus
+   the badge inside it, never hue alone — and an edge rather than a ring,
+   because a ring in this product is a focus state. */
+.tracker[data-connected] {
+  border-inline-start-color: var(--st-success);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+/* The provider's own name — prose, because a person named it. */
+.name {
+  margin: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+/* What the connection is pointed at, and how much it holds — values. */
+.meta {
+  margin: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-muted);
+}
+
+/* The act sits at the end edge whether or not there is a clock beside it: a
+   control that walks to the other side of the box when a tracker connects is a
+   control that has to be re-found on every use. */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s3);
+  margin-block-start: auto;
+  padding-block-start: var(--s3);
+  border-block-start: var(--hairline) solid var(--rule);
+  min-inline-size: 0;
+}
+
+/* A clock, so it takes tabular figures like every other reading that updates
+   in place. */
+.synced {
+  margin-inline-end: auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}

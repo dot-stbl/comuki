@@ -1,0 +1,44 @@
+/* Cell-level styling for the backlog table. Rows are one line tall by
+   contract, so anything that can run long truncates rather than wraps. */
+
+.title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.app {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+/* A project key is a value the operator scans down a column — `comuki`, not
+   "Comuki platform" — so it takes the data voice, like the app beside it. */
+.project {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+/* A ticket in a project this session cannot see. The dash says the backlog
+   reaches further than this shift does, rather than reading as a blank cell. */
+.unknown {
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

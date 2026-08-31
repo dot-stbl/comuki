@@ -7,7 +7,7 @@ export interface SeedCostByApp {
 }
 
 export interface SeedCostFailure {
-  stage: string
+  profile: string
   rate: number
   note: string
 }
@@ -70,17 +70,17 @@ export const COST_SEED: SeedCostSummary = {
   budget: { used: 148.2, cap: 220 },
   failures: [
     {
-      stage: "contract",
+      profile: "planner",
       rate: 0.11,
       note: "types mismatch most often",
     },
     {
-      stage: "tests",
+      profile: "tester",
       rate: 0.07,
       note: "flaky e2e on CI",
     },
     {
-      stage: "backend",
+      profile: "implementer",
       rate: 0.04,
       note: "escalates to lead",
     },

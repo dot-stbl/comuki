@@ -1,0 +1,37 @@
+/* A mark is sized from the icon scale and from nothing else — the same rule
+   `button.module.css` applies to every SVG it contains. Four steps, no fifth,
+   and no call site handing one a length of its own. */
+
+.icon {
+  flex: 0 0 auto;
+  color: inherit;
+  fill: currentcolor;
+}
+
+.xs {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+}
+
+.sm {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}
+
+.md {
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+}
+
+.lg {
+  inline-size: var(--icon-lg);
+  block-size: var(--icon-lg);
+}
+
+/* A mark whose box is cropped to artwork that is not square: the step sets the
+   height and the width follows, because forcing it into a square box would
+   squash the drawing rather than fit it. Ordered after the four steps so it
+   wins on the one property it overrides. */
+.wide {
+  inline-size: auto;
+}

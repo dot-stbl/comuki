@@ -1,0 +1,23 @@
+/* A provider in a dense row: the mark aligned to the type beside it, or the
+   name in the data voice when there is no mark to draw. Both sit at muted
+   strength — which provider a row is, is an identity and not a state, and the
+   chrome rule reserves colour for the data. */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+/* The fallback is a value, not prose, so it takes the data voice — and it
+   truncates rather than wraps, because a row here is one line by contract. */
+.word {
+  display: inline-block;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}

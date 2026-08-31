@@ -1,0 +1,23 @@
+/* The queue half's own two bands: a bare toolbar, then the table's scroll port.
+   Both are flex children of the split panel, which is where the height comes
+   from — nothing here may introduce a box that stops being a flex container,
+   because jsdom lays nothing out and a broken chain still passes every gate. */
+
+/* Aligned to the table's own cell gutter, not the page header's, so the first
+   filter sits directly over the first column. */
+.toolbar {
+  flex: 0 0 auto;
+  padding: var(--s4) var(--s3) 0;
+}
+
+/* The table's scroll port is sized from this box rather than from its own
+   default depth, so the rows end exactly where the panel does at any divider
+   position. Container units, not a percentage, because the box is a flex item
+   whose height is only settled after layout. */
+.tableArea {
+  flex: 1 1 0;
+  min-height: 0;
+  container-type: size;
+
+  --h-table-body: 100cqh;
+}

@@ -1,0 +1,109 @@
+/* Built on the same measurements as the kit's `StatusBadge`, at its small step:
+   these sit in compact table rows and must not be a second size language. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  /* A badge is a reading, so it never gives up width — see The Shape-Not-Reading
+     Rule in DESIGN.md. It keeps the width its label needs and the title beside
+     it truncates instead.
+
+     This rule carried `min-inline-size: 0` with `overflow: hidden` and
+     `text-overflow: ellipsis` behind it, which was two defects wearing each
+     other as cover. `text-overflow` applies to block containers; a badge is an
+     `inline-flex` box, so its children are flex items and the ellipsis never
+     rendered at all — the "truncation" was a hard cut through a glyph. And the
+     truncation should not have been there in the first place: `PLAT-4821` cut
+     to `PLAT-4` is a ticket id that names a different ticket, and `escalated`
+     cut to `escal` is a status nobody can filter on. In a table cell the cell
+     already clips, which is the product's answer for a column too narrow to
+     hold its own value; the badge does not need a second, worse one. */
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  border: var(--hairline) solid var(--border);
+  padding: 0 var(--s3);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  line-height: 1.2;
+  color: var(--st);
+  background: color-mix(in oklab, var(--st) 10%, transparent);
+  white-space: nowrap;
+}
+
+.icon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
+/* Source ------------------------------------------------------------------ */
+
+/* A tracker id is the ticket's identity, so it reads at full strength. Manual
+   intake has no id to show and only the word — which is the honest limit of a
+   column that is a badge rather than a value. */
+.jira {
+  --st: var(--text);
+
+  background: transparent;
+}
+
+.manual {
+  --st: var(--text-muted);
+
+  background: transparent;
+}
+
+/* Priority ---------------------------------------------------------------- */
+
+/* The only one of the three that is ever worth catching an eye. */
+.high {
+  --st: var(--st-failed);
+}
+
+/* The default lane: no hue at all, because a backlog where two thirds of the
+   rows are tinted has taught the operator to stop reading the tint. */
+.normal {
+  --st: var(--text-muted);
+
+  background: var(--muted);
+}
+
+.low {
+  --st: var(--st-queued);
+}
+
+/* Status ------------------------------------------------------------------ */
+
+/* Arrived and waiting on a person to route it — the product's waiting hue. */
+.new {
+  --st: var(--st-waiting);
+}
+
+.queued {
+  --st: var(--st-queued);
+}
+
+/* The one status that is work in motion, so it shares the running hue and the
+   kit badge's pulse — the same 1.4s loop, opted out under reduced motion. */
+.planning {
+  --st: var(--st-running);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .planning {
+    animation: task-badge-pulse 1.4s var(--ease) infinite;
+  }
+}
+
+@keyframes task-badge-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}

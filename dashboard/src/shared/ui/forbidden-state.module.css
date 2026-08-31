@@ -1,0 +1,30 @@
+/* Deliberately the same shape as `.state` on the runs screen — the slot the
+   empty and error states already occupy: left-aligned, flush with the content's
+   own gutter, one title and one measured line. The four states of §17 have to
+   be interchangeable in a list's body, and a Forbidden that arrived as a
+   centred card would announce itself as the more serious of the four. */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) var(--s6);
+  font-family: var(--font-ui);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+/* Measured at 52ch like every other state's prose: this is the line that has to
+   be read, not scanned. Muted, because it is an explanation and not an alarm. */
+.body {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}

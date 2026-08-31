@@ -18,7 +18,7 @@ export function toCostSummary(seed: SeedCostSummary): CostSummary {
       cap: seed.budget.cap,
     },
     failures: seed.failures.map((row) => ({
-      stage: row.stage,
+      profile: row.profile,
       rate: row.rate,
       note: row.note,
     })),

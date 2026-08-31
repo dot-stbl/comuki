@@ -1,0 +1,125 @@
+/* Cell-level styling for this screen's three tables. Rows are one line tall by
+   contract, so anything that can run long truncates rather than wraps. */
+
+.value {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* A url, a key prefix, a model name — the row's identity. Full strength. */
+.strong {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+.faint {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}
+
+/* The operator's own language among the values. */
+.note {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  color: var(--text-muted);
+}
+
+/* What a key may reach, listed rather than counted: "3 models" is a number an
+   operator then has to go and expand, and the list is the security reading. */
+.models {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+.model {
+  flex: 0 0 auto;
+}
+
+.modelSep {
+  flex: 0 0 auto;
+  color: var(--rule-strong);
+}
+
+/* A TTL already in the past. Not a failure — the key did exactly what it was
+   built to do — so it takes the quiet end, with the word beside it doing the
+   work. */
+.lapsed {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  font-style: normal;
+}
+
+/* A role and its duty in one cell: the role is the key, the duty is what it is
+   doing. Two voices, because they are two kinds of thing. */
+.route {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.role {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+}
+
+.duty {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spin {
+    animation: models-actions-spin 900ms linear infinite;
+  }
+}
+
+@keyframes models-actions-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}

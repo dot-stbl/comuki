@@ -1,0 +1,284 @@
+/* A pool's two ceilings. Not a card in the design system's sense — no shadow,
+   no lift, nothing that takes it off the page plane. It is a data surface: a
+   hairline on its start edge, the lane material it is made of, and the surface
+   step of the corner scale, because a panel this size reads as a square slab
+   without one and every control sitting on it is rounded. The corner was never
+   what made a card a card. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+  padding: var(--s4) var(--s5);
+  border-inline-start: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+/* The pool that is actually refusing work marks its own edge. Hue plus the
+   `binding` tag inside, never hue alone. */
+.card[data-binding="quota"],
+.card[data-binding="capacity"],
+.card[data-binding="both"] {
+  border-inline-start-color: var(--st-waiting);
+}
+
+.card[data-binding="unknown"] {
+  border-inline-start-color: var(--st-failed);
+}
+
+/* The naming line and the reading share a row, and the row grows downward when
+   it has to. Neither side of it can be crushed: `.room` is `nowrap` and holds
+   its figure, and `.title` is a project key and a provider mark, both of which
+   are values rather than prose. Without the wrap the title's content simply
+   went on painting past the title's own box and across the figure beside it —
+   `min-inline-size: 0` let the box shrink and there is nothing behind it that
+   cuts. Wrapping is the product's own answer: a row grows downward, never
+   sideways, and no reading is crushed to buy the room. */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin: 0;
+  min-inline-size: 0;
+  font-size: var(--t-sm);
+  font-weight: var(--fw-regular);
+}
+
+/* The project is what the operator calls it — a value, in the data voice. */
+.project {
+  font-family: var(--font-data);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+}
+
+/* One word of prose between two values, so it takes the prose voice. */
+.on {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.provider {
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+/* The same slot when the provider has a mark of its own. Centred rather than
+   baseline-aligned, because a mark has no baseline worth aligning to: an
+   inline-flex box carrying nothing but an SVG puts its baseline at its bottom
+   edge, which would hang the glyph below the project key beside it. */
+.providerMark {
+  align-self: center;
+}
+
+.room {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.roomFigure {
+  font-family: var(--font-data);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.roomUnit,
+.roomNone {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+/* Name, channel, figures — ONE grid, so both tracks share an axis. Two bars
+   on different scales cannot be compared, and comparing them is the whole
+   task — which is why the grid lives here on the rows' parent and not on each
+   row: a grid per row sizes its own name column per row, and two name columns
+   of different widths put the two channels at different x. `display: contents`
+   below is what lets the rows contribute their cells to this grid.
+
+   The first track is `max-content` because a fixed width here was this sheet's
+   own bug: `allocatable` plus the `binding` tag beside it is wider than the
+   `6.5rem` the column used to be, a grid cell does not clip its item, and the
+   tag went on painting across the channel in the next column. `max-content`
+   sizes the column once from the widest name either row brings — tag included
+   — so every name cell is exactly as wide as its own content and has nothing
+   left to overflow. The middle track is zero-floored, so a card that runs out
+   of room takes the shortfall out of the channel: a bar is a shape, and a
+   shape shrinks before a reading does. The gap carries both distances the old
+   layout kept apart — `--s2` between the two rows, `--s3` between a row's
+   cells — now said once, on the grid that owns both. */
+.tracks {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+  min-inline-size: 0;
+}
+
+/* A row is not a box — it is three cells of the grid above. `display:
+   contents` suppresses the row's own box without removing the element, so
+   `data-track`, `data-binding` and `data-empty` stay exactly where the state
+   selectors below read them from. */
+.track {
+  display: contents;
+}
+
+.trackName {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* The second channel on the binding mark: a word, not just a colour. It rides
+   beside the name inside the first cell, so it holds the same contract the
+   badge family holds (`badge-fit.test.ts`): a badge is a reading — it never
+   gives up width, never wraps its own label, never takes a cut. The
+   `max-content` name column is what makes that contract safe to keep here:
+   the row sized itself around the tag, not the tag around the row. */
+.bindingTag {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 0 var(--s1);
+  border-radius: var(--r-xs);
+  background: color-mix(in oklab, var(--st-waiting) 18%, transparent);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  letter-spacing: normal;
+  color: var(--st-waiting);
+}
+
+/* The drawn empty channel every fill is measured against — the same material
+   the table and the flow's tracks are made of. */
+.channel {
+  position: relative;
+  display: block;
+  block-size: var(--h-meter);
+  min-inline-size: 0;
+  border-radius: var(--r-xs);
+  background: var(--lane-alt);
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: block;
+  border-radius: var(--r-xs);
+  background: var(--text-faint);
+}
+
+/* Only the ceiling that is actually stopping something is drawn in a hue. A
+   track at 72% that is not binding is not a reading, it is a distraction. */
+.track[data-binding] .fill {
+  background: var(--st-waiting);
+}
+
+/* A channel with no reading behind it is hatched rather than empty: an empty
+   channel means "nothing used", and that is the one thing this is not saying.
+   The weave is the product's own failed hatch, read from the token so the
+   encoding stays defined in one place. */
+.track[data-empty] .channel {
+  background-color: var(--st-failed-tint);
+  background-image: var(--weave-failed);
+}
+
+.figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.used {
+  color: var(--text);
+}
+
+.of {
+  color: var(--text-faint);
+}
+
+.limit {
+  color: var(--text-muted);
+}
+
+.spare {
+  margin-inline-start: var(--s2);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.track[data-binding] .used,
+.track[data-binding] .spare {
+  color: var(--st-waiting);
+  font-weight: var(--fw-medium);
+}
+
+.track[data-empty] .figure {
+  color: var(--st-failed);
+}
+
+/* The sentence the two tracks are for: which ceiling binds, and what the other
+   one had spare — so nobody goes and buys nodes that would not have helped. */
+.sentence {
+  margin: 0;
+  max-inline-size: 52ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.card[data-binding="unknown"] .sentence {
+  color: var(--st-failed);
+}
+
+/* The knobs, said where the pool is — because `min idle 0` is what stops an
+   empty pool from reading as an outage. */
+.knobs {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin: 0;
+  padding-block-start: var(--s2);
+  border-block-start: var(--hairline) solid var(--rule);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.knobFigure {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.knobSep {
+  color: var(--rule-strong);
+}

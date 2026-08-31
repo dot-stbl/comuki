@@ -1,0 +1,28 @@
+/* A panel's two bands: a bare toolbar, then the table's scroll port.
+
+   THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a screen that renders as a blank strip.
+
+   AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
+   split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
+   min-height 0, **overflow auto**) → this screen.
+
+   The chain stops at `.content` on purpose. A platform registry is a document
+   read top to bottom on a slow clock, not a board that has to fit at once — so
+   nothing below `.content` claims a share of the viewport, and nothing needs a
+   `height: 100%` that a missing flex parent could quietly resolve to zero.
+
+   The table is therefore sized by its own content and capped by
+   `--h-table-body` in the kit's stylesheet: a four-row section is four rows
+   tall, and one that outgrows the cap scrolls inside itself rather than pushing
+   the sections below it off the page. */
+
+/* Aligned to the table's own cell gutter, not the section's, so the first
+   filter sits directly over the first column. */
+.toolbar {
+  padding: 0 var(--s3) var(--s3);
+}
+
+.tableArea {
+  min-inline-size: 0;
+}

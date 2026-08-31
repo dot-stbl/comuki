@@ -1,0 +1,93 @@
+/* Cell-level styling for the duty list. Rows are one line tall by contract,
+   so anything that can run long truncates rather than wraps. */
+
+.id {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.id:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.id:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+/* A project key is a value the operator scans down a column — `comuki`, not
+   "Comuki platform" — so it takes the data voice beside `app`, not the
+   interface one. */
+.project,
+.app,
+.profile,
+.worker {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+.title {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+/* The step name is the brain's prose, not a key: it reads as language beside
+   the profile's data voice, and it truncates like every other long cell. */
+.step {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+/* A ticket the brain has not planned yet: it has no profile and no step name,
+   and saying so quietly beats two blank cells that read as a broken render. */
+.unplanned {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+/* The only spinner in the product, and it turns because a pending decision is
+   the one place where "something is happening" has to be visible in a row that
+   is otherwise still. Gated, like every other motion here. */
+@media (prefers-reduced-motion: no-preference) {
+  .spin {
+    animation: actions-spin 900ms linear infinite;
+  }
+}
+
+@keyframes actions-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

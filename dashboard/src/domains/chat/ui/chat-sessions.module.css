@@ -1,0 +1,103 @@
+/* Past conversations. A column of its own inside the screen's grid, bounded on
+   its end edge by the one hairline that separates it from the thread. */
+
+.sessions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  block-size: 100%;
+  min-block-size: 0;
+  min-inline-size: 0;
+  padding-block: var(--s4);
+  padding-inline-end: var(--s4);
+  border-inline-end: var(--hairline) solid var(--rule);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* Names a region, so the wide gesture. */
+.headLabel {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hairline);
+  flex: 1 1 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-block-size: 0;
+  min-inline-size: 0;
+  overflow-y: auto;
+}
+
+/* A rail item's shape, at a rail item's step. Marked by a docked seam rather
+   than by layout, so switching rows changes nothing but colour. */
+.row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: var(--s2) var(--s3);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  text-align: start;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--muted);
+}
+
+.row:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline-offset: -2px;
+  border-color: var(--ring);
+}
+
+.rowCurrent {
+  background: color-mix(in oklab, var(--primary) 14%, transparent);
+}
+
+.rowCurrent::before {
+  content: "";
+  position: absolute;
+  inset-block: var(--s1);
+  inset-inline-start: 0;
+  inline-size: 2px;
+  border-radius: var(--hairline);
+  background: var(--primary);
+}
+
+.rowTitle {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+.rowAge {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}

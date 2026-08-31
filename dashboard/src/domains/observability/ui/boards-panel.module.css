@@ -1,0 +1,96 @@
+/* The boards, as a hairline-bounded list rather than a row of cards.
+
+   The No-Card Rule holds here for the same reason it holds over the duty
+   table: a card is for something that has left the page plane, and these three
+   have not. Two strong hairlines bound the list, one rule separates each entry,
+   and nothing takes a fill or a shadow. There is no corner either, but that is
+   geometry rather than the rule: the list is bounded on the block axis only, so
+   a radius would have no edges to meet. */
+
+.boards {
+  display: flex;
+  flex-direction: column;
+  border-block: var(--hairline) solid var(--rule-strong);
+  min-inline-size: 0;
+}
+
+.board {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding: var(--s5) var(--s4);
+  min-inline-size: 0;
+}
+
+.board + .board {
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+  flex: 1 1 22rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.summary {
+  margin: 0;
+  max-inline-size: 68ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* The dashboard's uid and the date its definition last changed: both values the
+   operator will type or compare, so both in the data voice. */
+.meta {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
+.action {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+/* A board whose definition exists in our repo and has not been imported here.
+   Not an error — nothing is broken — so it takes the waiting hue and says the
+   next step rather than the failure. */
+.pending {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s1) var(--s4);
+  border: var(--hairline) solid
+    color-mix(in oklab, var(--st-waiting) 30%, transparent);
+  border-radius: var(--r-sm);
+  background: color-mix(in oklab, var(--st-waiting) 10%, transparent);
+  color: var(--st-waiting);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  white-space: nowrap;
+}
+
+.pendingIcon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+}

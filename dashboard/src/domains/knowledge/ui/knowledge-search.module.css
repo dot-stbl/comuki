@@ -1,0 +1,46 @@
+/* The toolbar's search field, drawn to the same measurements outside a table.
+   Every value here is the one `data-table-toolbar.module.css` uses — this is a
+   second call site for one control, not a second control. */
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* Grows into whatever the band is not using, up to a measure where a long
+     query is still readable. A search box that stays narrow makes the operator
+     scroll a field to re-read what they just typed. */
+  flex: 1 1 22rem;
+  max-inline-size: 34rem;
+  min-inline-size: 8rem;
+}
+
+.icon {
+  position: absolute;
+  inset-inline-start: var(--s3);
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.input {
+  inline-size: 100%;
+  block-size: var(--h-button-sm);
+  padding-inline: calc(var(--s3) * 2 + var(--icon-sm)) var(--s3);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 30%, transparent);
+}

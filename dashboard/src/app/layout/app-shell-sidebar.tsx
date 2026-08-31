@@ -1,7 +1,15 @@
+import { useMemo } from "react"
 import type { LucideIcon } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
-import { SwarmMeter } from "@/app/layout/swarm-meter"
+import { visibleNav } from "@/app/layout/nav"
+import { RailAccount } from "@/app/layout/rail-account"
+import { useRunsQuery } from "@/domains/runs/api/queries"
+import { cn } from "@/shared/lib/utils"
+import { useSession, type Permission } from "@/shared/session"
+import { Tooltip } from "@/shared/ui"
+
+import styles from "./app-shell-sidebar.module.css"
 
 export interface SidebarNavItem {
   label: string
@@ -9,43 +17,123 @@ export interface SidebarNavItem {
   icon?: LucideIcon
   /** When false, child routes (e.g. /runs/$runId) keep the parent link active. */
   exact?: boolean
+  /** Which live count to show, if any. */
+  badge?: "running" | "needsHuman"
+  /**
+   * The act this section is for. An item the session cannot perform is hidden
+   * rather than disabled; an item with no permission is always shown.
+   */
+  permission?: Permission
 }
 
 export interface SidebarNavGroup {
   label: string
   items: SidebarNavItem[]
+  /**
+   * `platform` groups sit below the divider — the machinery under the product,
+   * visited on a different clock from the work above it. Absent means work.
+   */
+  tier?: "work" | "platform"
 }
 
 export interface AppShellSidebarProps {
   groups: SidebarNavGroup[]
+  /** Icon-only rail: the panel is collapsed, or the viewport is too narrow. */
+  collapsed?: boolean
 }
 
-export function AppShellSidebar({ groups }: AppShellSidebarProps) {
+export function AppShellSidebar({
+  groups,
+  collapsed = false,
+}: AppShellSidebarProps) {
+  const { data = [] } = useRunsQuery()
+  const session = useSession()
+
+  // Filtered here rather than by the shell that hands the groups over: the rail
+  // is the thing that knows what a rail item is, and a caller that had to
+  // pre-filter would be one more place the rule could be forgotten.
+  const visible = useMemo(() => visibleNav(groups, session), [groups, session])
+
+  // The divider is drawn on the first platform group rather than at a fixed
+  // index, so a session with no platform access simply never sees one — an
+  // empty tier must not leave a rule floating above the account block.
+  const firstPlatform = visible.findIndex(
+    (group) => group.tier === "platform"
+  )
+
+  const counts = useMemo(
+    () => ({
+      running: data.filter((run) => run.status === "running").length,
+      needsHuman: data.filter(
+        (run) => run.status === "waiting" || run.status === "escalated"
+      ).length,
+    }),
+    [data]
+  )
+
   return (
-    <aside className="flex w-44 shrink-0 flex-col gap-3 overflow-y-auto border-r border-border bg-sidebar p-3">
-      {groups.map((group) => (
-        <div key={group.label} className="flex flex-col gap-1">
-          <div className="px-2 py-1 font-mono text-xs uppercase tracking-wider text-muted-foreground">
-            {group.label}
-          </div>
-          {group.items.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              activeOptions={{ exact: item.exact ?? false }}
-              className="flex items-center gap-2 border-l-2 border-transparent rounded-sm px-2 py-1.5 font-mono text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              activeProps={{
-                className:
-                  "bg-sidebar-accent font-medium text-sidebar-accent-foreground border-l-primary",
-              }}
-            >
-              {item.icon ? <item.icon className="size-3.5 shrink-0" /> : null}
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      ))}
-      <SwarmMeter />
+    <aside className={styles.rail} data-collapsed={collapsed || undefined}>
+      <div className={styles.scroll}>
+        {visible.map((group, index) => (
+          <nav
+            key={group.label}
+            className={cn(
+              styles.group,
+              index === firstPlatform && styles.tierBreak
+            )}
+            aria-label={group.label}
+          >
+            <span className={styles.groupLabel}>{group.label}</span>
+            {group.items.map((item) => {
+              const count = item.badge ? counts[item.badge] : null
+              return (
+                /* The item's own label never leaves the accessibility tree —
+                   collapsed it is clipped to zero width, not hidden — so the
+                   tooltip is a second channel for a pointer and a keyboard,
+                   not the name itself. It replaces the native `title`, which
+                   arrived a second late, could not be styled and was invisible
+                   to touch. The wrapper is always in the tree and switches off
+                   with `disabled`: rendering it conditionally would remount the
+                   link, and a remounted element has no previous state to
+                   transition the collapse from. */
+                <Tooltip
+                  key={item.href}
+                  content={item.label}
+                  placement="end"
+                  disabled={!collapsed}
+                >
+                  <Link
+                    to={item.href}
+                    activeOptions={{ exact: item.exact ?? item.href === "/" }}
+                    className={styles.item}
+                    activeProps={{ className: styles.active }}
+                  >
+                    {item.icon ? (
+                      <item.icon className={styles.icon} aria-hidden="true" />
+                    ) : null}
+                    <span className={styles.itemLabel}>{item.label}</span>
+                    {count ? (
+                      <span
+                        className={cn(
+                          styles.count,
+                          item.badge === "needsHuman" && styles.alert
+                        )}
+                      >
+                        {count}
+                      </span>
+                    ) : null}
+                  </Link>
+                </Tooltip>
+              )
+            })}
+          </nav>
+        ))}
+      </div>
+
+      {/* Anchored to the floor of the rail, not to the flow above it: identity
+          is the one thing whose position must not move as sections appear and
+          disappear with a role. */}
+      <RailAccount collapsed={collapsed} />
     </aside>
   )
 }

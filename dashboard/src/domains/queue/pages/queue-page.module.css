@@ -1,0 +1,105 @@
+/* THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a screen that renders as a blank strip.
+
+   AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
+   split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
+   min-height 0) → `.screen` below (height 100%) → `.split` (flex 1 1 0) →
+   a `SplitPanel` (the pane group stretches it) → `.queuePanel` / `.poolPanel`
+   (flex column, height 100%, min-height 0) → the panel's toolbar band and its
+   `.tableArea` (flex 1 1 0, container-type: size).
+
+   Every link either grows as a flex child or has an explicit height. The one
+   that bit this project before was a `flex: 1` whose parent stopped being a
+   flex container once it was wrapped in a panel — which is why both panel
+   classes below declare `display: flex` themselves rather than inheriting the
+   arrangement from anything above them. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* clip, not hidden: this box sits above a table whose head and pinned
+     columns are sticky, and `hidden` makes it a scroll container they would
+     silently re-anchor to. See The Clip-Not-Hidden Rule in DESIGN.md. */
+  overflow: clip;
+}
+
+.split {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.queuePanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* The pool is the plane in front of the queue: light casts upward from it, the
+   same relation the duty board's list has to its flow. */
+.poolPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--background);
+  box-shadow: var(--shadow-lift);
+}
+
+/* The two figures in the header's summary line, which are this domain's own
+   reading rather than the header's. */
+.strong {
+  color: var(--foreground);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.warn {
+  color: var(--st-waiting);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) var(--s6);
+  font-family: var(--font-ui);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* Rows, not bars: what is loading is a list, and a skeleton that lies about
+   the shape of what is coming is worse than none. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  flex: 1 1 0;
+  min-height: 0;
+  padding: var(--s6);
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  flex: 0 0 auto;
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}

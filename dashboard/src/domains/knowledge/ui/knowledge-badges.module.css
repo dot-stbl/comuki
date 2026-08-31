@@ -1,0 +1,99 @@
+/* Built on the same measurements as the kit's `StatusBadge` at its small step,
+   and on the same construction as the queue's and compute's own marks: these
+   sit in one-line table cells and in a dense entry row, and a second size
+   language here would be visible in the first screenshot. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  /* A badge is a reading, so it never gives up width: the value or the prose
+     beside it truncates instead. Declared rather than inherited from
+     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
+     family to. */
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  border: var(--hairline) solid var(--border);
+  padding: 0 var(--s3);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  line-height: 1.2;
+  color: var(--st);
+  background: color-mix(in oklab, var(--st) 10%, transparent);
+  white-space: nowrap;
+}
+
+.icon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
+/* Entry kind ------------------------------------------------------------- */
+
+/* Colourless on purpose. Rule / doc / skill is a shelf, not a state: nothing
+   about it is urgent and saturation on this screen belongs to the readings that
+   are. The icon is the whole distinction, which is why every kind has one. */
+.kind {
+  --st: var(--text-muted);
+
+  background: transparent;
+}
+
+/* Rule kind -------------------------------------------------------------- */
+
+/* The rule that will refuse a run takes the product's hold hue — the same hue
+   the marked stage and an alerting count wear, and for the same reason. */
+.hard {
+  --st: var(--st-waiting);
+}
+
+/* Advice. The least saturated of the six, because a soft rule is nobody's
+   problem until it is quoted back at them in review. */
+.soft {
+  --st: var(--st-queued);
+}
+
+/* Pinned ----------------------------------------------------------------- */
+
+/* Not a badge: no border, no wash. Being pinned is a property of the entry
+   rather than a value beside it, so it is set as one accented word. */
+.pinned {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  /* A badge is a reading, so it never gives up width: the value or the prose
+     beside it truncates instead. Declared rather than inherited from
+     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
+     family to. */
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--brand);
+  white-space: nowrap;
+}
+
+/* Eval delta ------------------------------------------------------------- */
+
+.improved {
+  --st: var(--st-success);
+}
+
+/* The one mark here that escalates itself, the way the kit's `failed` badge
+   does: a rule edit that broke a golden task should be visible before it is
+   read. */
+.regressed {
+  --st: var(--st-failed);
+
+  border-color: color-mix(in oklab, var(--st-failed) 40%, transparent);
+  background: var(--st-failed-tint);
+}
+
+/* Nothing moved, so nothing is owed: no hue at all, and the flat bar says it. */
+.unchanged {
+  --st: var(--text-muted);
+
+  background: var(--muted);
+}

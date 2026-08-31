@@ -1,0 +1,21 @@
+/* Cell-level styling for the eval harness. Rows are one line tall by contract,
+   so anything that can run long truncates rather than wraps. */
+
+/* A golden task's name is an identifier the operator will look up in the
+   harness repo, so it is a value and takes the data voice at full strength. */
+.task {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

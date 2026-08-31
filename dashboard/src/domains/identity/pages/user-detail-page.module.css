@@ -1,0 +1,268 @@
+/* One person, in full.
+ *
+ * THE HEIGHT CHAIN, and what this screen deliberately does not do with it.
+ * `AppShell` already hands every screen a sized scroll port: `.shell` ->
+ * `.body` -> the shell's split -> `.main` -> `.content` (flex 1 1 0,
+ * min-height 0, overflow auto). A screen that *fills* — the registry, the duty
+ * board, the three identity lists — has to declare `height: 100%` all the way
+ * down so a virtualized table can resolve a depth against it. This one does
+ * not fill. It is three regions of prose and values, and it ends where the
+ * last one ends: no height, no `flex: 1`, nothing that would stretch a short
+ * account into a tall blank. The port above it handles the case where the
+ * reading is taller than the window. Same shape, and the same reasoning, as
+ * `form-page.module.css`.
+ *
+ * jsdom computes no layout, so a wrong answer here renders as a blank strip
+ * that still passes every gate. The right answer for this shape is to leave
+ * the chain alone.
+ *
+ * There is no card anywhere in this file. The regions are separated by air and
+ * by their own headings; the one place a boundary is drawn — between two
+ * grants — it is drawn with a hairline. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  /* The measure a reading is set to, not the width the window happens to be.
+     Wide enough for a provider subject and a date on one line and no wider —
+     a fact list that runs the width of a desk monitor stops being a list. */
+  max-inline-size: 60rem;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+}
+
+.region {
+  min-inline-size: 0;
+}
+
+/* --- the header's own line --- */
+
+/* The address is a value, so it keeps the data voice even inside the header's
+   prose. The status word beside it is a reading and stays in the interface
+   voice, which is what keeps the two apart at a glance. */
+.address {
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+/* --- its own facts --- */
+
+/* Auto-fitting rather than a fixed column count, so the list reflows on a
+   narrow board without a breakpoint of its own: the product has exactly two
+   widths and neither of them is about this. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: var(--s5) var(--s7);
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+/* The tight gesture: this names a value, not a region. */
+.factName {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* Addresses, subjects, dates and the status word are all values. */
+.factValue {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* A person's name is the one thing here a human wrote. */
+.factProse {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+
+/* A fact that carries the act it is missing, on one line with it. */
+.factAct {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin: 0;
+  min-inline-size: 0;
+}
+
+/* Nothing there, said quietly and in words: local only, never. A blank reads
+   as a broken render. */
+.absent {
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text-faint);
+}
+
+/* Switched off. Again a word first — the hue only sharpens it. */
+.off {
+  color: var(--st-failed);
+}
+
+/* --- roles by project --- */
+
+.grants {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+  list-style: none;
+}
+
+/* One grant, one line, wrapping downward rather than crushing: the role and
+   the scope are values a person compares down the list and neither may be
+   truncated to fit the other. Bounded by a hairline, which is the only
+   boundary this product draws around data. */
+.grant {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+  min-inline-size: 0;
+  padding-block: var(--s3);
+  border-block-end: var(--hairline) solid var(--rule);
+}
+
+.grant:last-child {
+  border-block-end: none;
+}
+
+.role {
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+
+/* The word between them. Prose, and quiet, because the two values either side
+   are the reading. */
+.on {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.scope {
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text-muted);
+}
+
+.granted {
+  margin-inline-start: auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* A grant that is real and inert — the account behind it is switched off. The
+   line stays legible and stops claiming to be in force, exactly as the
+   assignments table draws the same fact. */
+.inert {
+  color: var(--text-faint);
+  text-decoration: line-through;
+  text-decoration-thickness: var(--hairline);
+}
+
+/* And then it says so, because a strikethrough is a mark and not a sentence. */
+.inertNote {
+  flex: 0 0 100%;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--st-failed);
+}
+
+/* --- what a region says when there is nothing to list, and what it hands off --- */
+
+.quiet {
+  margin: 0;
+  max-inline-size: 68ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* A figure inside prose is still a figure. */
+.figure {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.handoffs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s6);
+  min-inline-size: 0;
+}
+
+/* --- states --- */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.stateBody {
+  margin: 0;
+  max-inline-size: 62ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* The id off the URL — the missing thing, named. It is the one string a person
+   copies out of this state, so it is selected as a unit. */
+.id {
+  font-family: var(--font-data);
+  color: var(--text);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  flex: 0 0 auto;
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}

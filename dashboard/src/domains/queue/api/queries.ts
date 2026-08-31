@@ -1,0 +1,43 @@
+import { useQuery } from "@tanstack/react-query"
+
+import {
+  listQueueItems,
+  listWorkerPools,
+  listWorkers,
+} from "@/domains/queue/api/pool.store"
+import type { QueueItem, Worker, WorkerPool } from "@/domains/queue/model/types"
+import { env } from "@/shared/config/env"
+
+/**
+ * The screen's two halves arrive together, because they are one reading.
+ *
+ * An unclaimed item only accuses the pool if you can see the pool at the same
+ * instant; splitting them into two queries would let the table say "queued 11
+ * minutes" beside a worker list from a second ago that still had a free
+ * implementer. One query, one answer.
+ */
+export interface QueueBoard {
+  items: QueueItem[]
+  workers: Worker[]
+  pools: WorkerPool[]
+}
+
+export const queueQueryKey = ["queue"] as const
+
+async function getQueueBoard(): Promise<QueueBoard> {
+  if (!env.useMock) {
+    throw new Error("queue API not implemented — set VITE_USE_MOCK=true")
+  }
+  return {
+    items: listQueueItems(),
+    workers: listWorkers(),
+    pools: listWorkerPools(),
+  }
+}
+
+export function useQueueQuery() {
+  return useQuery({
+    queryKey: queueQueryKey,
+    queryFn: getQueueBoard,
+  })
+}

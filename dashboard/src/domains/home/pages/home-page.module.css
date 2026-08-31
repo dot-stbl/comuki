@@ -1,0 +1,94 @@
+/* One scrolling column.
+   The height chain matters here only because getting it wrong is invisible in
+   jsdom: `AppShell` gives this box a scroll port that is already a sized flex
+   child (`.content` — `flex: 1 1 0; min-height: 0; overflow: auto`), so this
+   screen deliberately declares **no** height of its own and no `flex: 1` on
+   anything. Nothing below can collapse to nothing, because nothing below is
+   trying to fill anything. The duty screen fills its viewport because it has a
+   draggable board to fill it with; this one is short on a good shift and says
+   so by ending where its content ends. */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  min-width: 0;
+}
+
+/* Figures inside the header's summary line stay in the data voice, and the
+   count that the screen is about turns warm the moment it is not zero — the
+   pinned line then answers the question before the body has been read. */
+.strong {
+  color: var(--foreground);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.warn {
+  color: var(--st-waiting);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The blocks themselves — the heading, its note and the stack under it — are
+   the kit's `Section`. This screen was where that shape was first drawn; it is
+   `shared/ui/section.module.css` now, and nothing here restates it. */
+
+/* --- the states this screen can be in besides the shift --- */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) 0;
+  font-family: var(--font-ui);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+.failure {
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-left: var(--hairline) solid var(--st-failed);
+  border-radius: var(--r-md);
+  background: var(--st-failed-tint);
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+}
+
+/* The loading shape is the screen's own shape — a band, then rows — so the
+   moment the data lands nothing jumps. It is not a spinner: a spinner would
+   say "something is happening" where this says "the verdict is coming". */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-width: 0;
+}
+
+.skeletonBand {
+  height: calc(var(--t-display) + var(--s6) * 2);
+  border-radius: var(--r-md);
+  background: var(--muted);
+}
+
+.skeletonRow {
+  height: var(--h-row-head);
+  border-radius: var(--r-sm);
+  background: var(--muted);
+}

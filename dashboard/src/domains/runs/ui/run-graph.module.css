@@ -1,0 +1,409 @@
+/* The run graph — a plan drawn as layers.
+ *
+ * Work items sit in columns by their depth in the graph, left to right, and a
+ * branch is neighbouring rows inside one column. Between two columns runs the
+ * product's own connector: the short ribbon the duty board draws between
+ * profiles and the breadcrumb draws between crumbs, with the flow's paint on
+ * it. There is no canvas, no zoom, no minimap and no auto-layout — the reading
+ * is the same one the board already teaches, so a person learns it once.
+ *
+ * TWO HEIGHTS, AND THE RULES THAT GO WITH THEM
+ *
+ * The node is a FIXED height. Four short items and one long one still have to
+ * share a single axis, or the columns stop being comparable and the graph
+ * becomes a ransom note. The height is a sum of the node's own chrome, named
+ * once below, because the connector has to enter every column at exactly the
+ * same y whether that column holds one item or four.
+ *
+ * A column that cannot fit its items SCROLLS INSIDE ITSELF. Nothing shrinks
+ * and nothing overlaps: a four-wide branch on a short surface gives you the
+ * first nodes at full legibility and a scrollport for the rest, rather than
+ * four nodes squeezed to nothing. The duty board's node had a channel that
+ * could absorb pressure by getting shorter; a work item is text, and text has
+ * a floor.
+ *
+ * ORDER MATTERS BELOW. The rules run base → data → interaction, because a
+ * failed node and a selected node are both "a node with an attribute on it"
+ * and carry identical specificity. Put selection first and it loses to the
+ * status tint, and clicking a failed item does nothing visible at all.
+ */
+
+.graph {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+  padding: var(--s5) 0 var(--s4);
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--background);
+
+  /* The node's chrome, summed once. Everything that reserves space on a node
+     is listed here, so giving the label a third line moves the connector, the
+     column head and the scroll threshold together instead of one at a time. */
+  --h-graph-line: calc(var(--t-micro) * var(--lh-body));
+  --h-graph-head: var(--h-graph-line);
+  --h-graph-label: calc(var(--t-body) * var(--lh-body) * 2);
+  --h-graph-node: calc(
+    var(--hairline) + var(--s3) + var(--h-graph-label) + var(--s1) +
+      var(--h-graph-line) + var(--s1) + var(--h-graph-line) + var(--s3) +
+      var(--hairline)
+  );
+  --w-graph-edge: var(--s3);
+}
+
+/* Sized by the parent. The screen that owns a definite height hands it down;
+   the graph fills it and the columns resolve their scroll against it. */
+.fill {
+  height: 100%;
+}
+
+/* Sized by the content, capped. For a graph embedded in a card that flows —
+   the plan under review in an approval — where there is no height to inherit.
+   The cap is what keeps a forty-item plan from turning a card into a page;
+   past it the columns scroll exactly as they do in the filled case. */
+.content {
+  max-height: calc(var(--s8) * 16);
+}
+
+/* The overflow edge, marked: a fade pinned to the right of the scrollport says
+   the plan continues past it, and settles into the background once it does
+   not. Zero net width, so it never scrolls and never adds a column. */
+.graph::after {
+  content: "";
+  position: sticky;
+  right: 0;
+  flex: 0 0 var(--s6);
+  align-self: stretch;
+  margin-left: calc(var(--s6) * -1);
+  background: linear-gradient(to right, transparent, var(--background));
+  pointer-events: none;
+}
+
+/* --- a column: one depth band --- */
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  flex: 0 0 var(--w-graph-column);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Reserved on every column, filled on the ones that branch. Reserved, because
+   a head that appeared only sometimes would push half the columns down by a
+   line and take the shared axis with it. */
+.head {
+  flex: 0 0 auto;
+  height: var(--h-graph-head);
+  padding: 0 var(--s2);
+  overflow: hidden;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  line-height: var(--h-graph-head);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.column[data-parallel] .head {
+  color: var(--muted-foreground);
+}
+
+/* One column's scrollport — the answer to a branch taller than the surface.
+   Nothing inside it may draw outside a node's border box, because this clips:
+   the focus ring is inset and the trace cue is a tint rather than a halo. */
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+}
+
+/* --- the node: one work item --- */
+
+.node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  flex: 0 0 var(--h-graph-node);
+  min-width: 0;
+  padding: var(--s3) var(--s3) var(--s3) calc(var(--w-graph-edge) + var(--s3));
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  text-align: left;
+  font-family: var(--font-ui);
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.interactive {
+  cursor: pointer;
+}
+
+/* --- status: hue and weave, never hue alone --- */
+
+/* A full-height bar down the leading edge, sitting flush over the node's own
+   border. Wide enough that the hatch actually reads at a glance across forty
+   nodes, which a hairline would not be. */
+.edge {
+  position: absolute;
+  top: calc(var(--hairline) * -1);
+  bottom: calc(var(--hairline) * -1);
+  left: calc(var(--hairline) * -1);
+  width: var(--w-graph-edge);
+  border-radius: var(--r-md) 0 0 var(--r-md);
+  background-color: var(--hue);
+  background-image: var(--weave);
+}
+
+.status[data-status="running"] {
+  --hue: var(--st-running);
+  --weave: var(--weave-running);
+}
+
+.status[data-status="success"] {
+  --hue: var(--st-success);
+  --weave: var(--weave-success);
+}
+
+.status[data-status="failed"] {
+  --hue: var(--st-failed);
+  --weave: var(--weave-failed);
+}
+
+.status[data-status="waiting"] {
+  --hue: var(--st-waiting);
+  --weave: var(--weave-waiting);
+}
+
+.status[data-status="queued"] {
+  --hue: var(--st-queued);
+  --weave: var(--weave-queued);
+}
+
+.status[data-status="escalated"] {
+  --hue: var(--st-escalated);
+  --weave: var(--weave-escalated);
+}
+
+/* A plan that has stopped mid-graph, and one that is holding for a person, are
+   the two readings this screen exists to answer — so they get area, not just
+   an edge. The tints are the product's own eighteen-percent mixes, which stay
+   safe under body text in both themes. */
+.node[data-status="failed"] {
+  border-color: color-mix(in oklab, var(--st-failed) 45%, transparent);
+  background: var(--st-failed-tint);
+}
+
+.node[data-status="escalated"] {
+  border-color: color-mix(in oklab, var(--st-escalated) 45%, transparent);
+  background: var(--st-escalated-tint);
+}
+
+.node[data-status="waiting"] {
+  border-color: color-mix(in oklab, var(--st-waiting) 45%, transparent);
+  background: var(--st-waiting-tint);
+}
+
+/* --- an item nothing will happen to until a person looks upstream --- */
+
+/* Its own status is `queued`, which is true and misleading. The dashed border
+   is the channel that survives when the note line runs out of room, and the
+   faded label says the same thing a third time. */
+.node[data-blocked] {
+  border-style: dashed;
+  background: var(--background);
+}
+
+.node[data-blocked] .label {
+  color: var(--text-faint);
+}
+
+.node[data-blocked] .note {
+  color: var(--st-failed);
+}
+
+/* --- interaction, which has to win over every data state above --- */
+
+.interactive:hover {
+  border-color: var(--rule-strong);
+  background: var(--accent);
+}
+
+/* Inset, because the column above is a scrollport and an outline drawn outside
+   the node would be clipped on the first and last row. An invisible focus ring
+   is a broken focus ring. */
+.interactive:focus-visible {
+  outline: calc(var(--hairline) * 2) solid var(--ring);
+  outline-offset: calc(var(--hairline) * -2);
+}
+
+/* The inspector's cursor. Selection is what the panel below is showing, said a
+   second way — the same relationship the board's pressed profile has with the
+   table's filter. */
+.node[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 12%, var(--surface));
+}
+
+/* Hovering or focusing a node lights the items it waits on. That costs nothing
+   for the neighbouring dependencies the layout already draws, and it is the
+   whole answer for the ones it does not: a long edge you can point at. Pointer
+   and keyboard drive the same state, and the same set is written out as text
+   in the accessible name and listed as real controls in the inspector — so
+   none of this is the only way to find a dependency.
+
+   The distant one takes the warm colour, which is the product's word for "you
+   have to go and find this one": the inspector's distance marker uses it too. */
+.node[data-trace="from"] {
+  border-color: var(--primary);
+}
+
+.node[data-trace="to"] {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 10%, var(--surface));
+}
+
+.node[data-trace="to"][data-long] {
+  border-color: var(--st-waiting);
+  background: color-mix(in oklab, var(--st-waiting) 16%, var(--surface));
+}
+
+/* --- the node's two names, and the marks under them --- */
+
+/* The brain's own prose, and the only place in the product it is written out.
+   It gets the weight, and two lines of room; the full string is in `title` and
+   in the accessible name for the runs where two lines are not enough. */
+.label {
+  display: -webkit-box;
+  flex: 0 0 auto;
+  height: var(--h-graph-label);
+  overflow: hidden;
+  font-size: var(--t-body);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-body);
+  color: var(--foreground);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/* The identity line, in the data voice: the profile is a catalog key declared
+   in git, the state is one of six words. Both are text, which is what keeps
+   the status readable with every colour channel switched off. */
+.meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  height: var(--h-graph-line);
+  min-width: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  line-height: var(--h-graph-line);
+  letter-spacing: var(--tracking-data);
+}
+
+.profile {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.state {
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* Where the run is standing right now. One node in the graph carries it, and
+   it is a word rather than a colour because "current" and "selected" are two
+   different things that a second hue would only blur together. */
+.here {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--primary);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+
+/* Reserved on every node, filled when the node has something the layout itself
+   cannot say. The long-edge mark is written FIRST: `blocked` has a dashed
+   border to fall back on and `here` has its own slot, but a dependency that
+   skips a column has nothing else holding it up, so it is the mark that has to
+   survive a truncation. The whole string is always in `title` and in the
+   accessible name. */
+.note {
+  height: var(--h-graph-line);
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  line-height: var(--h-graph-line);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* --- the connector between two columns --- */
+
+/* Pinned to the middle of the FIRST row rather than the middle of the column,
+   so work enters every band at the same height whether the band holds one item
+   or four. The offset is measured from the flex container's content box, which
+   the graph's own top padding has already moved — counting that padding again
+   here is what put every connector a line below the row it points at.
+
+   The gradient runs along the direction of travel: thin upstream, dense
+   downstream. It is the one gradient in the product that carries a reading
+   rather than a finish. */
+.link {
+  flex: 0 0 var(--s7);
+  align-self: flex-start;
+  height: var(--s1);
+  margin-top: calc(
+    var(--h-graph-head) + var(--s2) + (var(--h-graph-node) / 2) -
+      (var(--s1) / 2)
+  );
+  border-radius: var(--hairline);
+  background-color: var(--flow-ribbon-dim);
+  background-image: var(--gradient-flow);
+}
+
+/* --- a plan with nothing in it --- */
+
+/* The detail screen answers this case itself, at screen scale. This is the
+   fallback for every other caller, so an empty plan is never a blank box that
+   reads as a component which failed to render. */
+.empty {
+  margin: 0;
+  padding: var(--s5) var(--s6);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: var(--muted-foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node {
+    transition: none;
+  }
+}
+
+/* Narrow desks keep the node legible and scroll instead: the column width is
+   the one measurement that must not give, because everything in it is text. */
+@media (max-width: 1000px) {
+  .graph {
+    padding-top: var(--s4);
+  }
+}

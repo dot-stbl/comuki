@@ -1,0 +1,86 @@
+/* The shape every section on this screen shares: a stack of `Section`s, and
+   inside a section either a bare toolbar over a table's scroll port, or a form.
+
+   THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a screen that renders as a blank strip.
+
+   AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
+   split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
+   min-height 0) → `settings-page.module.css` `.screen` (height 100%, flex
+   column) → `.tabPanel` (flex 1 1 0, min-height 0, **overflow-y auto**) → the
+   stack below.
+
+   The chain stops at `.tabPanel` on purpose, exactly as it does on the two
+   platform registries. A control-plane section is a document read top to bottom
+   on a slow clock, not a board that has to fit at once — so nothing below the
+   panel claims a share of the viewport, and nothing needs a `height: 100%` that
+   a missing flex parent could quietly resolve to zero.
+
+   A table inside is therefore sized by its own content and capped by
+   `--h-table-body` in the kit's own stylesheet: a three-row section is three
+   rows tall, and one that outgrows the cap scrolls inside itself rather than
+   pushing the sections below it off the page. */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  min-inline-size: 0;
+}
+
+/* Aligned to the table's own cell gutter, not the section's, so the first
+   filter sits directly over the first column. */
+.toolbar {
+  padding: 0 var(--s3) var(--s3);
+}
+
+.tableArea {
+  min-inline-size: 0;
+}
+
+/* Forms ------------------------------------------------------------------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-inline-size: 0;
+}
+
+/* Three caps or three model names side by side on a desk, one column the
+   moment a label would have to hyphenate. */
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: var(--s5);
+  min-inline-size: 0;
+}
+
+/* The two switches are sentences rather than values, so they stack full width
+   under the caps rather than joining the grid of boxes. */
+.switches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  padding-block-start: var(--s4);
+  border-block-start: var(--hairline) solid var(--rule);
+  min-inline-size: 0;
+}
+
+/* The one control that writes, on its own line above nothing. A rule over it,
+   the way a dialog's footer sits over its own. */
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s3);
+  padding-block-start: var(--s4);
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+/* An identifier quoted inside prose stays in the data voice, because it is a
+   value the operator will read back somewhere else. */
+.code {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}

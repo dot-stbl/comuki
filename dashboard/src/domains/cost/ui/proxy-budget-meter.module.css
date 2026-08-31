@@ -1,0 +1,62 @@
+/* The proxy cap, drawn under a figure that already states it.
+
+   Built on `models/ui/budget-meter.module.css` rather than as a fifth meter
+   idiom — there are four hand-built meters in this product already and that one
+   is the nearest relative, because it is literally spend against a cap. What is
+   different here is only that this one carries no figures of its own: it lives
+   on a tile whose figure is the percentage and whose line under it is
+   `$148 / $220`, so a second copy of the numbers inside the bar would be the
+   same reading said three times. The bar is decoration on top of a reading, not
+   the reading — which is why the whole element is hidden from the a11y tree. */
+
+.meter {
+  display: block;
+  min-inline-size: 0;
+}
+
+/* The drawn empty channel the fill is measured against — the same material the
+   table and the flow's tracks are made of. */
+.channel {
+  position: relative;
+  display: block;
+  block-size: var(--h-meter);
+  border-radius: var(--r-xs);
+  background: var(--lane-alt);
+  /* clip, not hidden: `hidden` makes the box a scroll container, and this one
+     sits inside a tile that must never open one. */
+  overflow: clip;
+}
+
+.fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: block;
+  border-radius: var(--r-xs);
+  background: var(--st);
+}
+
+/* Three readings, not a gradient. Below `near` there is nothing to decide, so
+   there is no hue — a bar that colours at 40% has taught the operator to
+   ignore the colour by the time it reaches 90%. */
+.meter[data-heat="ok"] {
+  --st: var(--text-faint);
+}
+
+.meter[data-heat="near"] {
+  --st: var(--st-waiting);
+}
+
+.meter[data-heat="over"] {
+  --st: var(--st-failed);
+}
+
+/* At the cap the kill-switch fires, which the tile's own line says in words.
+   The bar cannot grow past full, so the second channel is a weave rather than
+   more length — the reading survives greyscale, like every status in the
+   product. The hatch is the product's own failed weave, read from the token so
+   the encoding stays defined in one place. */
+.meter[data-heat="over"] .fill {
+  background-color: color-mix(in oklab, var(--st-failed) 55%, transparent);
+  background-image: var(--weave-failed);
+}

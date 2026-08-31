@@ -1,0 +1,52 @@
+/* Three lines, the controls in one column so the notes beside them line up.
+   Flat — no card, no panel: it is the quietest block on the screen and it is
+   allowed to look like it. */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--s4) var(--s3) 0;
+  list-style: none;
+  border-top: var(--hairline) solid var(--rule);
+}
+
+.row {
+  display: grid;
+  /* The control is a square now, so the track is that square rather than a
+     fixed run of it. Three glyphs of one size are already one column, and the
+     notes beside them still line up with each other. */
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s5);
+  min-width: 0;
+}
+
+/* Written as a descendant pair rather than a bare class so it outranks the
+   kit's own recipe by specificity instead of by whichever stylesheet the
+   bundler happened to emit last. */
+.row .link {
+  text-decoration: none;
+}
+
+.note {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: var(--text-faint);
+}
+
+@media (max-width: 1000px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s2);
+  }
+
+  .row .link {
+    justify-self: start;
+  }
+}

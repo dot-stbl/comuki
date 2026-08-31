@@ -1,0 +1,88 @@
+/* Cell-level styling for both halves of the screen. Rows are one line tall by
+   contract, so anything that can run long truncates rather than wraps. */
+
+.value {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* The step name is the brain's prose, not a key: it reads as language beside
+   the identifiers around it. */
+.step {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.faint {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}
+
+.link {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-decoration: none;
+  flex: 0 0 auto;
+}
+
+.link:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.link:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+/* What a busy worker holds: the run it belongs to, then the step's own name.
+   Two voices in one cell, which is the point — the id is a value, the step is
+   language. */
+.current {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+/* Motion only while a decision is actually in flight, and only because the row
+   is otherwise still. Gated, like everything else here. */
+@media (prefers-reduced-motion: no-preference) {
+  .spin {
+    animation: queue-actions-spin 900ms linear infinite;
+  }
+}
+
+@keyframes queue-actions-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

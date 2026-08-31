@@ -1,0 +1,148 @@
+/* The product's one select. Chrome, so it is built from the neutral ramp and
+   the hairline alone — the trigger is the same box a text input is, at the same
+   corner, because the two stand side by side in every form and a select that
+   disagreed with the field above it by three pixels was the tell that they came
+   from different places. */
+
+/* The root is only a box for the trigger: the list is a popover and leaves the
+   page plane entirely. It stretches, because a select in a column of fields is
+   as wide as the field. */
+.root {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+/* Trigger --------------------------------------------------------------- */
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  inline-size: 100%;
+  min-inline-size: 0;
+  block-size: var(--h-button-lg);
+  padding-inline: var(--s3);
+  border: var(--hairline) solid var(--border);
+  /* The step `Button` and `.control` both wear. */
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* The toolbar's density. 1.5rem and no lower: 24px is WCAG 2.2's minimum
+   target, and this is a control an operator aims at with a thumb. */
+.sm {
+  block-size: var(--h-button-sm);
+  font-size: var(--t-xs);
+}
+
+/* Hover strengthens the rule and lifts the reading from muted to full — the
+   toolbar's own gesture, kept: a control the pointer is on is a control that
+   is about to be read. */
+.trigger[data-hovered]:not([data-disabled]) {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.trigger[data-focus-visible] {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* A control that is doing something says so with its own border and its own
+   text weight — never with a coloured fill. */
+.trigger[data-active] {
+  border-color: color-mix(in oklab, var(--brand) 55%, var(--border));
+  color: var(--text);
+}
+
+.trigger[data-invalid] {
+  border-color: var(--st-failed);
+}
+
+/* Nothing chosen reads quieter than a choice, whether that is a form's
+   placeholder or a filter's "all apps". One rule for both, because they are
+   the same reading: this control is not narrowing anything yet. */
+.trigger[data-empty] {
+  color: var(--text-muted);
+}
+
+/* Last of the state rules on purpose. These all sit at one specificity, so
+   order is what decides them, and a control that cannot be used reads faint
+   whatever it is holding and whatever the pointer is doing. */
+.trigger[data-disabled] {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.value {
+  overflow: hidden;
+  min-inline-size: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+}
+
+/* The list -------------------------------------------------------------- */
+
+/* An overlay, so it takes the raised surface and the Modal shadow — the only
+   plane in the product that leaves the page. `--trigger-width` is React Aria's
+   own measurement of the control it opened from, so the list is never narrower
+   than the value it is replacing. */
+.popover {
+  min-inline-size: var(--trigger-width);
+  padding: var(--s1);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+}
+
+.listBox {
+  display: flex;
+  flex-direction: column;
+  max-block-size: 16rem;
+  overflow-y: auto;
+  outline: none;
+}
+
+.option {
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Keyboard focus and pointer hover land on the same reading: there is one
+   "this is the row you are on", however you got to it. */
+.option[data-focused],
+.option[data-hovered] {
+  background: var(--muted);
+  color: var(--text);
+}
+
+.option[data-selected] {
+  color: var(--brand);
+}
+
+.option[data-disabled] {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}

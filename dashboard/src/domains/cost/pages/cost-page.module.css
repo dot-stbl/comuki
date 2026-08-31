@@ -1,0 +1,104 @@
+/* THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a screen that renders as a blank strip.
+
+   AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
+   split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
+   min-height 0, **overflow auto**, padded) → `.screen` below.
+
+   The chain stops at `.content`, and that is this screen's own decision rather
+   than an oversight. Cost is a report read top to bottom on a slow clock — a
+   day's arithmetic, opened deliberately and usually to answer one question —
+   not a duty board that has to fit at once. So `.screen` claims no share of the
+   viewport, nothing under it does either, and `.content` scrolls the whole
+   thing. Every box below here is either `.content`'s own flex growth or sized
+   by what is in it; there is no `height: 100%` anywhere under this file that a
+   missing flex parent could quietly resolve to zero. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  min-inline-size: 0;
+}
+
+/* The three readings. `auto-fit` rather than `auto-fill`: the count is fixed at
+   three, and `auto-fill` would open a fourth empty track on a wide board and
+   leave the row hanging short of the gutter. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+/* The two regions, side by side while there is room for both to keep their
+   readings, stacked the moment there is not. `min()` rather than a bare length,
+   so a track can never be wider than the column it sits in — a fixed minimum
+   overflows the page the moment the rail is dragged wide, and a report that
+   scrolls sideways is a report nobody reads to the end. */
+.regions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  gap: var(--s8);
+  min-inline-size: 0;
+}
+
+/* The seeded-data mark. The figures above are fictional and say so — this is
+   the line that says it, and it stays until the report is real. */
+.mock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.mockIcon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
+/* States ------------------------------------------------------------------ */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) 0;
+  font-family: var(--font-ui);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-inline-size: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* Rows, not blocks: what is loading is three readings and two lists, and a
+   skeleton that lies about the shape of what is coming is worse than none. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s6) 0;
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}

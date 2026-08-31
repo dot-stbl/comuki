@@ -1,15 +1,22 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource/ibm-plex-mono";
+@import "@fontsource-variable/archivo";
+@import "@fontsource-variable/jetbrains-mono";
+/* Values first, vocabulary second. `themes.css` is generated from the theme
+   registry and states only the primitives each palette owns; `tokens.css`
+   derives everything else from them. The two never declare the same property,
+   so this order is documentation rather than cascade — but the theme blocks do
+   depend on their own internal order, which the generator owns. */
+@import "./app/styles/themes.css";
 @import "./app/styles/tokens.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-sans: var(--font-mono);
-    --font-heading: var(--font-mono);
-    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --font-sans: var(--font-ui);
+    --font-heading: var(--font-ui);
+    --font-mono: var(--font-data);
     --radius: 0.375rem;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -55,14 +62,27 @@
     --color-st-waiting-tint: var(--st-waiting-tint);
     --color-st-queued-tint: var(--st-queued-tint);
     --color-st-escalated-tint: var(--st-escalated-tint);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
-    --text-micro: 10px;
+    /* The Tailwind bridge, pointed at the kit's own corner scale.
+
+       Screens still on the old stack — approvals, cost, knowledge, settings,
+       tasks — wear `rounded-*` classes rather than CSS Modules, and these
+       four steps are what those classes resolve to. Left hanging off
+       `--radius` they ran 3.6/4.8/6px against the kit's 3/5/7/10, which is
+       exactly the half-rounded reading the scale was retuned to end. A ported
+       screen and an unported one now meet at the same corner.
+
+       The names do not line up one-for-one and cannot: Tailwind's ladder
+       starts at `sm`, the kit's at `xs`, so each class takes the kit step of
+       its *size*, not of its name. Beyond `xl` the scale continues past
+       anything the kit needs; nothing in this product should reach for it. */
+    --radius-sm: var(--r-xs);
+    --radius-md: var(--r-sm);
+    --radius-lg: var(--r-md);
+    --radius-xl: var(--r-lg);
+    --radius-2xl: 14px;
+    --radius-3xl: 18px;
+    --radius-4xl: 22px;
+    --text-micro: var(--t-micro);
 }
 
 @layer base {
@@ -77,16 +97,25 @@
     }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "zero";
+    font-feature-settings: "zero";
     }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
     }
   html {
-    @apply font-mono;
+    font-family: var(--font-ui);
+    caret-color: var(--primary);
     }
   ::selection {
-    background: color-mix(in oklab, var(--primary) 30%, transparent);
+    background: color-mix(in oklab, var(--primary) 32%, transparent);
+    color: var(--foreground);
+    }
+  ::placeholder {
+    color: var(--text-faint);
+    }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
     }
 }
 
@@ -105,7 +134,7 @@
   }
 ::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   border: 2px solid transparent;
   background-clip: padding-box;
   }
@@ -113,14 +142,7 @@
   background: var(--border-strong);
   }
 
-/* Decorative textures — used on marketing / auth / empty / hero panels only.
-   Never behind dense data (per design spec A4). */
-@layer components {
-  .bg-faint-grid {
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 34px 34px;
-    opacity: 0.5;
-  }
-  }
+/* The decorative hairline-grid texture that used to live here is gone with the
+   old visual world: the dispatcher board carries structure with drawn lanes and
+   rules, not a tiled pattern behind content. Its only component,
+   `_legacy/app-background`, had no consumers and went with it. */

@@ -47,7 +47,7 @@ const meta = {
   args: {
     open: false,
     title: "Abort run?",
-    body: "Workers will stop after the current stage. Partial artifacts stay in the run log.",
+    body: "Workers will stop after the current work item. Partial artifacts stay in the run log.",
     confirmLabel: "Abort",
     cancelLabel: "Keep running",
     danger: true,

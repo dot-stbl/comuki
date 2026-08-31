@@ -1,22 +1,30 @@
+import type { ComponentType } from "react"
 import {
   Box,
   CheckCheck,
   Cpu,
   Database,
   GitBranch,
+  RotateCw,
   ShieldAlert,
   SlidersHorizontal,
 } from "lucide-react"
+import { Tab, TabList, TabPanel, Tabs } from "react-aria-components"
 import { toast } from "sonner"
 
 import { AppShell } from "@/app/layout/app-shell"
+import { PageHeader } from "@/app/layout/page-header"
 import {
   useSettingsQuery,
   useSettingsSaveMutation,
 } from "@/domains/settings/api/queries"
 import type { BudgetFormValues } from "@/domains/settings/model/budget-form"
 import type { RoutingFormValues } from "@/domains/settings/model/routing-form"
-import type { ModelRoute, SettingsSnapshot } from "@/domains/settings/model/types"
+import { isSettingsTab, type SettingsTab } from "@/domains/settings/model/tabs"
+import type {
+  ModelRoute,
+  SettingsSnapshot,
+} from "@/domains/settings/model/types"
 import { AppsPanel } from "@/domains/settings/ui/apps-panel"
 import { AutonomyPanel } from "@/domains/settings/ui/autonomy-panel"
 import { BudgetsPanel } from "@/domains/settings/ui/budgets-panel"
@@ -24,24 +32,28 @@ import { KeysPanel } from "@/domains/settings/ui/keys-panel"
 import { RoutingPanel } from "@/domains/settings/ui/routing-panel"
 import { RulesPanel } from "@/domains/settings/ui/rules-panel"
 import { TrackerPanel } from "@/domains/settings/ui/tracker-panel"
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from "@/shared/ui/empty"
-import { Skeleton } from "@/shared/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs"
+import { useCan } from "@/shared/session"
+import { Button, Tooltip } from "@/shared/ui"
 
-const SECTIONS = [
-  { id: "apps", label: "Apps", icon: Box },
-  { id: "rules", label: "Rules", icon: CheckCheck },
-  { id: "autonomy", label: "Autonomy", icon: SlidersHorizontal },
-  { id: "routing", label: "Routing", icon: Cpu },
-  { id: "budgets", label: "Budgets", icon: ShieldAlert },
-  { id: "keys", label: "Keys", icon: Database },
-  { id: "tracker", label: "Tracker", icon: GitBranch },
-] as const
+import styles from "./settings-page.module.css"
+
+const SKELETON_WIDTHS = ["48%", "72%", "56%", "84%", "42%"]
+
+interface SectionMeta {
+  id: SettingsTab
+  label: string
+  icon: ComponentType<{ className?: string }>
+}
+
+const SECTIONS: SectionMeta[] = [
+  { id: "apps", label: "apps", icon: Box },
+  { id: "rules", label: "rules", icon: CheckCheck },
+  { id: "autonomy", label: "autonomy", icon: SlidersHorizontal },
+  { id: "routing", label: "routing", icon: Cpu },
+  { id: "budgets", label: "budgets", icon: ShieldAlert },
+  { id: "keys", label: "keys", icon: Database },
+  { id: "tracker", label: "tracker", icon: GitBranch },
+]
 
 function applyRouting(
   current: ModelRoute[],
@@ -72,12 +84,40 @@ function applyBudgets(
   }
 }
 
-export function SettingsPage() {
-  const { data, isLoading, isError, error } = useSettingsQuery()
+export interface SettingsPageProps {
+  /** Which section is showing. In the URL, so it can be linked and returned to. */
+  tab: SettingsTab
+  onTabChange: (tab: SettingsTab) => void
+}
+
+/**
+ * The control plane, in seven sections.
+ *
+ * Three of them are read-only and say so on their own title line, because their
+ * source is somewhere else entirely — the apps registry and the swarm rules
+ * live in the client's git and change by commit, and the provider keys come
+ * from env with rotation running inside the proxy. A panel that offered no
+ * controls and no explanation would read as a screen somebody forgot to finish,
+ * which is exactly the wrong reading: those three are complete.
+ *
+ * Sections rather than seven rail items because none of them is a destination —
+ * nobody comes to the platform to look at `keys`, they come to settings and
+ * then find keys. The showing section lives in the URL rather than in this
+ * component, so a cap or a routing map is a thing one operator can send another
+ * and so a save that refetches cannot drop somebody back on `apps`.
+ *
+ * Every panel here that writes writes a *live* setting — one the control plane
+ * reloads without a git round-trip — so one `settings.live` answer serves all of
+ * them. The panels whose source is git have nothing to gate.
+ */
+export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
+  const { data, isLoading, isError, error, refetch } = useSettingsQuery()
   const save = useSettingsSaveMutation()
 
+  const mayEdit = useCan("settings.live")
+
   const onSaveRouting = (values: RoutingFormValues) => {
-    if (!data) {
+    if (!data || !mayEdit.allowed) {
       return
     }
     save.mutate(
@@ -96,7 +136,7 @@ export function SettingsPage() {
   }
 
   const onSaveBudgets = (values: BudgetFormValues) => {
-    if (!data) {
+    if (!data || !mayEdit.allowed) {
       return
     }
     save.mutate(
@@ -119,79 +159,113 @@ export function SettingsPage() {
   }
 
   return (
-    <AppShell>
-      <div className="flex flex-col gap-4">
-        <header className="flex flex-col gap-1">
-          <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            configure / settings
-          </div>
-          <h1 className="text-lg font-semibold tracking-tight">Settings</h1>
-          <p className="font-mono text-xs text-muted-foreground">
-            control plane configuration
-          </p>
-        </header>
-
+    <AppShell
+      padded={false}
+      header={
+        <PageHeader
+          breadcrumbs={[{ label: "settings" }]}
+          title="Settings"
+          summary="control plane configuration"
+        />
+      }
+    >
+      <div className={styles.screen}>
         {isLoading ? (
-          <div className="flex flex-col gap-3">
-            <Skeleton className="h-8 w-full max-w-xl rounded-lg" />
-            <Skeleton className="h-64 rounded-lg" />
+          <div className={styles.skeleton} data-test="settings-loading">
+            {SKELETON_WIDTHS.map((width, index) => (
+              <span
+                key={index}
+                className={styles.skeletonBar}
+                style={{ width }}
+              />
+            ))}
           </div>
         ) : null}
 
         {isError ? (
-          <Empty className="border border-dashed">
-            <EmptyHeader>
-              <EmptyTitle>Failed to load settings</EmptyTitle>
-              <EmptyDescription>
-                {error instanceof Error ? error.message : "Unknown error"}
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
+          <div className={styles.state} role="alert">
+            <p className={styles.stateTitle}>Settings did not load</p>
+            <p className={styles.stateBody}>
+              {error instanceof Error ? error.message : "Unknown error"}
+            </p>
+            <span>
+              <Tooltip content="Retry">
+                <Button
+                  size="icon-sm"
+                  data-test="settings-retry"
+                  aria-label="Retry"
+                  onClick={() => {
+                    void refetch()
+                  }}
+                >
+                  <RotateCw aria-hidden="true" />
+                </Button>
+              </Tooltip>
+            </span>
+          </div>
         ) : null}
 
         {data ? (
-          <Tabs defaultValue="apps">
-            <TabsList variant="line" className="flex h-auto w-full flex-wrap">
+          <Tabs
+            className={styles.tabs}
+            selectedKey={tab}
+            onSelectionChange={(key) => {
+              if (isSettingsTab(key)) {
+                onTabChange(key)
+              }
+            }}
+          >
+            <TabList aria-label="Settings sections" className={styles.tabList}>
               {SECTIONS.map((section) => {
                 const Icon = section.icon
                 return (
-                  <TabsTrigger key={section.id} value={section.id}>
-                    <Icon />
+                  <Tab
+                    key={section.id}
+                    id={section.id}
+                    className={styles.tab}
+                    data-test={`tab-${section.id}`}
+                  >
+                    {/* The glyph rides the word rather than replacing it: seven
+                        sections of bare icons is a rebus, and this strip is
+                        navigation rather than a row of acts. */}
+                    <Icon className={styles.tabIcon} aria-hidden="true" />
                     {section.label}
-                  </TabsTrigger>
+                  </Tab>
                 )
               })}
-            </TabsList>
+            </TabList>
 
-            <TabsContent value="apps" className="mt-4">
+            <TabPanel id="apps" className={styles.tabPanel}>
               <AppsPanel apps={data.apps} />
-            </TabsContent>
-            <TabsContent value="rules" className="mt-4">
+            </TabPanel>
+            <TabPanel id="rules" className={styles.tabPanel}>
               <RulesPanel rules={data.rules} />
-            </TabsContent>
-            <TabsContent value="autonomy" className="mt-4">
+            </TabPanel>
+            <TabPanel id="autonomy" className={styles.tabPanel}>
               <AutonomyPanel rows={data.autonomy} />
-            </TabsContent>
-            <TabsContent value="routing" className="mt-4">
+            </TabPanel>
+            <TabPanel id="routing" className={styles.tabPanel}>
               <RoutingPanel
                 routes={data.routing}
                 busy={save.isPending}
+                save={mayEdit}
                 onSave={onSaveRouting}
               />
-            </TabsContent>
-            <TabsContent value="budgets" className="mt-4">
+            </TabPanel>
+            <TabPanel id="budgets" className={styles.tabPanel}>
               <BudgetsPanel
                 budgets={data.budgets}
                 busy={save.isPending}
+                save={mayEdit}
                 onSave={onSaveBudgets}
               />
-            </TabsContent>
-            <TabsContent value="keys" className="mt-4">
+            </TabPanel>
+            <TabPanel id="keys" className={styles.tabPanel}>
               <KeysPanel keys={data.keys} />
-            </TabsContent>
-            <TabsContent value="tracker" className="mt-4">
-              <TrackerPanel trackers={data.trackers} />
-            </TabsContent>
+            </TabPanel>
+            <TabPanel id="tracker" className={styles.tabPanel}>
+              <TrackerPanel trackers={data.trackers} edit={mayEdit} />
+            </TabPanel>
           </Tabs>
         ) : null}
       </div>

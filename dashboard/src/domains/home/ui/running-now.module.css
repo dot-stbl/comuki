@@ -1,0 +1,167 @@
+/* Running now — one step quieter than the block above it in every way that can
+   carry weight: no column names, no status column, no actions, shorter rows.
+   It is bounded by the same two strong hairlines as any data surface here; what
+   it drops is the header band, because nothing on these rows needs naming. */
+.list {
+  --w-run: 6rem;
+  --w-project: 5.5rem;
+  --w-profile: 6.5rem;
+  --w-clock: 4rem;
+
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-bottom: var(--hairline) solid var(--rule-strong);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--hairline) solid var(--rule-strong);
+}
+
+.row {
+  display: grid;
+  grid-template-columns:
+    var(--w-run)
+    var(--w-project)
+    minmax(0, 1.4fr)
+    var(--w-profile)
+    minmax(0, 1fr)
+    var(--w-clock);
+  align-items: center;
+  gap: var(--s4);
+  min-width: 0;
+  height: var(--h-row-head);
+  padding: 0 var(--s3);
+  border-bottom: var(--hairline) solid var(--rule);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  transition: background-color var(--dur) var(--ease);
+}
+
+.row:hover {
+  background: var(--muted);
+}
+
+.id {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.id:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.id:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+.meta,
+.clock {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.clock {
+  text-align: end;
+}
+
+.task {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.step,
+.faint {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+.quiet {
+  margin: 0;
+  padding: var(--s4) var(--s3);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: var(--muted-foreground);
+}
+
+.more {
+  margin: 0;
+  padding: var(--s4) var(--s3);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+}
+
+.moreLink {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  border-radius: var(--r-xs);
+}
+
+.moreLink:hover {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.moreLink:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--s1);
+}
+
+/* Narrow desks: the step's prose goes first, then the profile. Both are about
+   the task in the column beside them; the id, the project and the clock are
+   not, so they are the last three standing. */
+@media (max-width: 1240px) {
+  .row {
+    grid-template-columns:
+      var(--w-run)
+      var(--w-project)
+      minmax(0, 1fr)
+      var(--w-profile)
+      var(--w-clock);
+  }
+
+  .row > :nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 1000px) {
+  .row {
+    grid-template-columns:
+      var(--w-run)
+      minmax(0, 1fr)
+      var(--w-clock);
+  }
+
+  .row > :nth-child(2),
+  .row > :nth-child(4) {
+    display: none;
+  }
+}

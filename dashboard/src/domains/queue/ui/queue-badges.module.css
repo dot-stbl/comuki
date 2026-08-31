@@ -1,0 +1,102 @@
+/* Built on the same measurements as the kit's `StatusBadge`, at its small step:
+   these sit in compact table rows and must not be a second size language. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  /* A badge is a reading, so it never gives up width: the value or the prose
+     beside it truncates instead. Declared rather than inherited from
+     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
+     family to. */
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  border: var(--hairline) solid var(--border);
+  padding: 0 var(--s3);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  line-height: 1.2;
+  color: var(--st);
+  background: color-mix(in oklab, var(--st) 10%, transparent);
+  white-space: nowrap;
+}
+
+.icon {
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
+/* Work-item statuses ----------------------------------------------------- */
+
+.queued {
+  --st: var(--st-queued);
+}
+
+.running {
+  --st: var(--st-running);
+  animation: queue-badge-pulse 1.4s var(--ease) infinite;
+}
+
+.succeeded {
+  --st: var(--st-success);
+}
+
+/* The one status that escalates its own badge: a stronger border and a full
+   tint, so a failure is visible before it is read. Same rule the kit follows. */
+.failed {
+  --st: var(--st-failed);
+
+  border-color: color-mix(in oklab, var(--st-failed) 40%, transparent);
+  background: var(--st-failed-tint);
+}
+
+/* Blocked is a wait, so it takes the product's waiting hue — it is waiting on
+   its own run, not on a person, and the icon is what says which. */
+.blocked {
+  --st: var(--st-waiting);
+}
+
+/* Cancelled is over and nobody is owed anything: no hue at all. Absence is the
+   channel here, and the icon carries the word. */
+.cancelled {
+  --st: var(--text-muted);
+
+  background: var(--muted);
+}
+
+/* Worker states ---------------------------------------------------------- */
+
+/* Idle is the least saturated of the three on purpose: an idle worker is the
+   pool doing its job, not a problem to be found. */
+.idle {
+  --st: var(--st-queued);
+}
+
+.busy {
+  --st: var(--st-running);
+}
+
+/* Amber: transitional, and something a duty engineer should notice — a
+   draining worker is capacity that is about to disappear. */
+.draining {
+  --st: var(--st-waiting);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .running {
+    animation: none;
+  }
+}
+
+@keyframes queue-badge-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}

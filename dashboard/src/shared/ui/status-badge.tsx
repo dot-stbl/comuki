@@ -43,8 +43,12 @@ export function StatusBadge({
   children,
 }: StatusBadgeProps) {
   const Icon = statusIcons[status]
-  const label =
-    children ?? status.charAt(0).toUpperCase() + status.slice(1)
+  // Verbatim, not title-cased. A status is a value out of a closed vocabulary
+  // — the same six strings the filter offers, the API returns and the seed
+  // writes — and a value is spelled the way it is stored. Capitalising it here
+  // made the badge say 'Running' while the filter beside it said 'running',
+  // which reads as two different vocabularies rather than one.
+  const label = children ?? status
 
   return (
     <span

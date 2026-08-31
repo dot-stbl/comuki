@@ -1,0 +1,178 @@
+/* The entry sheet. `form.module.css`'s modal, docked instead of centred: same
+   scrim, same border, same corner scale, same one shadow — all that changes is
+   where the box lands and which two corners it rounds. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  /* Docked to the inline-end edge, full height: the list stays visible behind
+     it, so the operator does not lose their place in what they were reading. */
+  align-items: stretch;
+  justify-content: flex-end;
+  background: var(--scrim);
+}
+
+/* `dvh` with `vh` under it, for the same reason `FormDialog` carries both: on a
+   tablet browser `100vh` is the viewport with the chrome retracted, so a panel
+   capped at `100vh` is taller than the window it is standing in. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  inline-size: 28rem;
+  max-inline-size: calc(100vw - var(--s8));
+  block-size: 100vh;
+  block-size: 100dvh;
+  border-inline-start: var(--hairline) solid var(--border);
+  /* Only the leading corners: the far edge is the window's, and a corner there
+     would leave two slivers of scrim nobody asked for. */
+  border-start-start-radius: var(--r-lg);
+  border-end-start-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-modal);
+}
+
+/* The panel owns the scroll — a long rule body must not push the head off. */
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-block-size: 0;
+  padding: var(--s6) var(--page-x);
+  overflow-y: auto;
+  outline: none;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.headText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+/* The entry's handle, so it takes the data voice — the same value the row it
+   was opened from puts at the head of its line. */
+.title {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-data);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+}
+
+.summary {
+  margin: 0;
+  max-inline-size: 52ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.marks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.revision {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* Two facts, named and answered. A definition list rather than a two-column
+   table: there are two of them, and a table would be chrome around a pair. */
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  padding-block: var(--s3);
+  border-block: var(--hairline) solid var(--rule);
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.factName {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.factValue {
+  margin: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* The one field on this screen a person wrote for another person. */
+.body {
+  margin: 0;
+  max-inline-size: 62ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+/* One moment, on arrival, and it is opt-out — the same guard `FormDialog`
+   carries. The panel comes in along the edge it is docked to. */
+@media (prefers-reduced-motion: no-preference) {
+  .scrim {
+    animation: knowledge-scrim-in var(--dur) var(--ease) both;
+  }
+
+  .sheet {
+    animation: knowledge-sheet-in var(--dur) var(--ease) both;
+  }
+}
+
+@keyframes knowledge-scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes knowledge-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--s6));
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

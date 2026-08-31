@@ -1,0 +1,80 @@
+/* Built on the same measurements as the kit's `StatusBadge` at its small step:
+   these sit in compact table rows and must not become a second size language. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  /* A badge is a reading, so it never gives up width: the value or the prose
+     beside it truncates instead. Declared rather than inherited from
+     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
+     family to. */
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  border: var(--hairline) solid var(--border);
+  padding: 0 var(--s3);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  line-height: 1.2;
+  color: var(--st);
+  background: color-mix(in oklab, var(--st) 10%, transparent);
+  white-space: nowrap;
+}
+
+.icon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
+/* Endpoint states --------------------------------------------------------- */
+
+.ok {
+  --st: var(--st-success);
+}
+
+/* Amber: usable, and worse than it was. Something to notice, not to page on. */
+.degraded {
+  --st: var(--st-waiting);
+}
+
+/* Parked on purpose. No hue: a disabled upstream is a decision somebody made,
+   not a fault, and colour here would send people to fix it. */
+.disabled {
+  --st: var(--text-muted);
+
+  background: var(--muted);
+}
+
+/* Key states -------------------------------------------------------------- */
+
+.live {
+  --st: var(--st-success);
+}
+
+/* The key stopped working and nobody did anything — which is the argument for
+   putting a TTL inside the key, so it reads as a fact rather than a fault. */
+.expired {
+  --st: var(--st-queued);
+}
+
+/* The one badge here that escalates itself, on the rule the kit uses for
+   `failed`: a stronger border and a full tint. A revoked key is a deliberate,
+   irreversible act, and it should be visible before it is read. */
+.revoked {
+  --st: var(--st-failed);
+
+  border-color: color-mix(in oklab, var(--st-failed) 40%, transparent);
+  background: var(--st-failed-tint);
+}
+
+/* Wire -------------------------------------------------------------------- */
+
+/* Which protocol an upstream speaks is an identity, not a state. The chrome
+   rule reserves colour for data, so this carries none. */
+.wire {
+  --st: var(--text-muted);
+
+  background: var(--muted);
+}

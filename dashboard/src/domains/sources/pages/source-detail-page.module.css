@@ -1,0 +1,186 @@
+/* One connection, in full.
+ *
+ * THE HEIGHT CHAIN, and what this screen deliberately does not do with it.
+ * `AppShell` gives every screen a sized scroll port — `.shell` -> `.body` ->
+ * the shell's split -> `.main` -> `.content` (flex 1 1 0, min-height 0,
+ * overflow auto) — and `FormPage`'s own column declares no height and no
+ * `flex: 1` on purpose, so it ends where its last region ends and the port
+ * above scrolls it. Nothing in this file claims a share of the viewport
+ * either. That is the right answer for this shape: a source's page is read top
+ * to bottom on a slow clock, it is not a board that has to fit at once.
+ *
+ * jsdom computes no layout, so a wrong answer here renders as a blank strip
+ * that still passes every gate. Do not add a `height: 100%` to get a region to
+ * fill — there is no filled region on this page.
+ */
+
+/* --- the connection's own facts --- */
+
+/* A definition list on a two-track grid: the name of the fact, then the fact.
+   Not a card — no fill, no shadow — because these are the values the page is
+   about rather than a panel sitting on it. The bounding is the region heading
+   above it and the rule under the region that follows. */
+.facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--s3) var(--s5);
+  align-items: baseline;
+  margin: 0;
+  min-inline-size: 0;
+}
+
+/* Names a value, so it takes the tight gesture in the interface voice — the
+   same spelling every field label in the product uses. */
+.factName {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* A host, an account, a date, an id — every one of these is a value the
+   operator reads back somewhere else, so all of them are in the data voice.
+   `anywhere` because a base url has nowhere to break and the column is 44rem. */
+.factValue {
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* The provider's mark sits inline with its own name, exactly as it does in the
+   list's provider column — the mark is the recognition and the word is the
+   reading, and neither one replaces the other. */
+.factBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* The one sentence the product will ever say about a stored secret, and the
+   one it says about a source with no remote end. Prose, so the interface
+   voice, and quiet, because it is a rule rather than a value. */
+.factNote {
+  display: block;
+  max-inline-size: 60ch;
+  margin-block-start: var(--s1);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* --- where this connection's work goes --- */
+
+/* A detail page links to the real screens with a filter applied; it does not
+   redraw their tables. So each hand-off is a count, a sentence and a
+   destination — never a second copy of a list that already has a screen. */
+.handoffs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.handoff {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+  min-inline-size: 0;
+}
+
+/* A figure that sits beside its siblings down a column, so tabular. */
+.handoffCount {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.handoffText {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* A destination, spelled as one: an anchor the operator can open in a tab and
+   copy out of. It is navigation, so it is a link and not a button. */
+.handoffLink {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.handoffLink:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.handoffLink:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+/* --- states --- */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) 0;
+  font-family: var(--font-ui);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-inline-size: 60ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* The id the address named and the platform does not have. In the data voice,
+   because it is a value — the operator is going to compare it with whatever
+   they pasted. */
+.stateId {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* Rows, not bars: what is loading is a register of facts, and a skeleton that
+   lies about the shape of what is coming is worse than none. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s6) 0;
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}

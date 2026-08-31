@@ -1,0 +1,32 @@
+/* The connect form's one piece of furniture: the probe control and the answer
+   it came back with, on one line.
+
+   In the dialog this control was the footer's lead — a glyph at the far left of
+   the row that also held "Save connection" and "Cancel". A page's footer is
+   left-aligned and reads primary-act-first, so a step in the form standing to
+   the left of the answer the form is asking for would have read as the first
+   thing to press. It sits with its own sentence instead, directly above the
+   footer, which is where the operator is already looking when they wonder why
+   the save is shut. */
+
+.probe {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s4);
+  /* Wraps rather than crushes: the provider's refusal is a sentence, and the
+     button beside it is `flex: 0 0 auto` — so on a narrow board the sentence
+     goes under the control rather than being squeezed to a column of words. */
+  flex-wrap: wrap;
+  min-inline-size: 0;
+}
+
+.probeControl {
+  flex: 0 0 auto;
+}
+
+/* The answer takes the rest of the line and is allowed to become the whole of
+   it. `Notice` is a band; it has no narrower reading. */
+.probeAnswer {
+  flex: 1 1 18rem;
+  min-inline-size: 0;
+}

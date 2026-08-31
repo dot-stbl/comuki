@@ -1,0 +1,134 @@
+/* The palette control. Built to the same measurements as
+   `app/layout/theme-control.module.css` on purpose: the two sit side by side in
+   the topbar and a second icon trigger that disagrees with the first about its
+   size, corner or hover is the seam the corner pass exists to close. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--h-button);
+  height: var(--h-button);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  outline: none;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.trigger[data-hovered],
+.trigger[data-pressed] {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.trigger[data-focus-visible] {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  border-color: var(--ring);
+}
+
+.glyph {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+/* Sized to the grid of cards rather than to a sentence: the rows lost their
+   words, so the popover no longer needs a measure wide enough to read one.
+   Capped against the window because React Aria flips and shifts an overlay but
+   never shrinks one. */
+.popover {
+  max-inline-size: calc(100vw - var(--s8));
+  padding: var(--s2);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+}
+
+/* A grid, not a column. The whole reason the cards lost their words is so six
+   palettes can be compared in one look instead of read as six lines. */
+.menu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s2);
+  outline: none;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  block-size: 3rem;
+  inline-size: 4.5rem;
+  overflow: clip;
+  border: var(--hairline) solid var(--sw-rule);
+  border-radius: var(--r-sm);
+  background: var(--sw-floor);
+  cursor: pointer;
+  outline: none;
+}
+
+.card[data-focused],
+.card[data-hovered] {
+  border-color: var(--text-faint);
+}
+
+.card[data-focus-visible] {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* The bands are the palette itself: floor and rail are the chrome it is built
+   from, then the three colours that carry meaning — the accent, and the two
+   statuses whose weave is none and whose hue is therefore their whole
+   encoding. Five bands is the smallest set that shows what a theme decides. */
+.bandFloor,
+.bandRail,
+.bandAccent,
+.bandRunning,
+.bandFailed {
+  flex: 1 1 0;
+}
+
+.bandFloor {
+  background: var(--sw-floor);
+}
+
+.bandRail {
+  background: var(--sw-rail);
+}
+
+.bandAccent {
+  background: var(--sw-accent);
+}
+
+.bandRunning {
+  background: var(--sw-running);
+}
+
+.bandFailed {
+  background: var(--sw-failed);
+}
+
+/* Sits over the palette rather than beside it, so it needs a ground of its own
+   — a mark in the interface's own text colour would vanish on a card whose
+   bands happen to match it, and this mark is the only thing saying which theme
+   is on. */
+.check {
+  position: absolute;
+  inset-block-start: var(--s1);
+  inset-inline-end: var(--s1);
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  padding: var(--hairline);
+  border-radius: var(--r-xs);
+  background: var(--sw-floor);
+  color: var(--sw-text);
+  opacity: 0;
+}
+
+.card[data-selected] .check {
+  opacity: 1;
+}

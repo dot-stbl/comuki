@@ -1,0 +1,84 @@
+/* A form that got its own page, and the room that comes with it.
+
+   One stylesheet for the page and for the form standing in it, because the two
+   are one gesture: the column's measure is what the fields are laid out
+   against, and the gaps between the regions are chosen against that measure.
+   Identity and Projects each grew a private copy of this inside a fortnight and
+   the pair was already named a promotion candidate in both files; this is the
+   promotion.
+
+   THE HEIGHT CHAIN, and what this screen deliberately does not do with it.
+   `AppShell` gives every screen a sized scroll port: `.shell` -> `.body` ->
+   the shell's split -> `.main` -> `.content` (flex 1 1 0, min-height 0,
+   overflow auto). A screen that *fills* — the registry, the duty board — has
+   to declare `height: 100%` all the way down so its table can resolve a depth
+   against it. A form does not fill. It declares no height and no `flex: 1` at
+   all and simply ends where its last field ends, and the scroll port above it
+   handles the case where that is taller than the window.
+
+   jsdom computes no layout, so a wrong answer here renders as a blank strip
+   that still passes every gate. The right answer for this shape is to leave
+   the chain alone. */
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+  /* The whole reason this stopped being a dialog. `--modal-w` is 26rem, which
+     put a repository url and the sentence explaining it into a column narrower
+     than either — every hint wrapped to three lines and every field looked
+     like the same field. 44rem is wide enough for a git remote on one line and
+     still inside the 68ch the page title is measured to. */
+  max-inline-size: 44rem;
+  min-inline-size: 0;
+}
+
+/* The line under the title that says what the form is for. Measured as prose,
+   because that is what it is. */
+.summary {
+  display: block;
+  max-inline-size: 60ch;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s7);
+  min-inline-size: 0;
+}
+
+/* One step wider than the dialog's `--s5` between fields. On a page the fields
+   are the only thing in the column, so the gap is what separates one question
+   from the next — in a dialog the modal's edge was doing half that work. */
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+  min-inline-size: 0;
+}
+
+/* Two fields that are one decision — a lifetime and its unit, a scope and its
+   target — sit on one line and wrap rather than crush. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5);
+  min-inline-size: 0;
+}
+
+.rowItem {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+}
+
+/* Bounded by a hairline above it, like every other region on this product —
+   not floated, not sticky. The primary act leads because the column is read
+   left to right and this one is left-aligned; a dialog puts it last because a
+   dialog's footer is right-aligned. */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  padding-block-start: var(--s5);
+  border-block-start: var(--hairline) solid var(--border);
+}

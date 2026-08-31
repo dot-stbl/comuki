@@ -1,0 +1,192 @@
+/* One decision waiting on a person.
+
+   Not a card in the design system's sense — no fill that lifts it off the
+   floor, no shadow that floats it. A data surface: hairlines on all four
+   sides, the lane material it is made of, and the surface step of the corner
+   scale, because a block this size reads as a square slab without one and
+   every control standing on it is rounded. See The No-Card Rule in DESIGN.md. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+  padding: var(--s4) var(--s5);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+/* The first line: what kind of decision, on what, at what risk, how old. It
+   wraps rather than crushes — the app name is the one thing here that can run
+   long. */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* The app is a value the operator scans down the queue, so it takes the data
+   voice — the same column the duty list carries. */
+.app {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+
+/* A clock rides at the far end of the line, in mono with tabular figures so a
+   column of cards compares magnitudes rather than glyph widths. */
+.age {
+  margin-inline-start: auto;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* The one sentence a person wrote for another person to read, so it takes the
+   interface voice and stops at a readable measure. */
+.summary {
+  margin: 0;
+  max-inline-size: 78ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* The disclosure stays at the start edge and the three decisions at the end:
+   reading is not deciding, and the two groups should not be reachable by the
+   same accidental click. */
+.spacer {
+  flex: 1 1 auto;
+}
+
+.chevron {
+  transform: rotate(0deg);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chevron {
+    transition: transform var(--dur) var(--ease);
+  }
+}
+
+/* What is behind the disclosure. Separated by the same one-pixel rule the rest
+   of the product separates things with, never by a second surface. */
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-inline-size: 0;
+  padding-block-start: var(--s4);
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+.region {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* Names a region of the surface, so it takes the wide gesture in the data
+   voice — the kit's region heading, spelled the way `Section` spells it. */
+.regionHead {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+/* Two panes side by side, one column the moment there is no room for two. */
+.panes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+/* Nothing has been captured yet, and the dashed rule is what says so: a solid
+   frame around an empty box reads as a failed image rather than as a slot. */
+.pane {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  min-inline-size: 0;
+  block-size: 6rem;
+  border: var(--hairline) dashed var(--rule-strong);
+  border-radius: var(--r-md);
+  overflow: clip;
+}
+
+.paneHead {
+  padding: var(--s1) var(--s3);
+  border-block-end: var(--hairline) dashed var(--rule);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.paneBody {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+}
+
+.paneIcon {
+  inline-size: var(--icon-lg);
+  block-size: var(--icon-lg);
+}
+
+.assumptions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+
+/* What the planner took for granted — prose, so the interface voice. */
+.assumption {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.arrow {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}

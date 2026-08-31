@@ -1,0 +1,163 @@
+/* One project's gate: the switch, where its commands live, and the commands.
+
+   THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a screen that renders as a blank strip.
+
+   AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
+   split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
+   min-height 0, **overflow auto**) → the screen → this panel.
+
+   The chain stops at `.content`. Verify is a document read top to bottom —
+   three project sections stacked, each as tall as it needs to be — so nothing
+   below `.content` claims a share of the viewport and nothing needs a
+   `height: 100%` a missing flex parent could quietly zero. The table is capped
+   by `--h-table-body` in the kit's stylesheet and scrolls inside itself. */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+/* The project key is the value the operator scans for, so it stays in the data
+   voice inside a heading that is otherwise interface type. */
+.key {
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+/* Where the commands live — the sentence this screen exists to say.
+   A band with a left rule rather than a card: it is a fact about the section it
+   sits in, and it cannot be dismissed. */
+.source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding: var(--s4);
+  border-inline-start: 2px solid var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--lane);
+  min-inline-size: 0;
+}
+
+.sourceText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+.sourceLead {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+  max-inline-size: 78ch;
+}
+
+/* A repo, a ref and a path are all values, so the whole coordinate is mono. */
+.sourcePath {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* The gate is off. Not an error — somebody turned it off on purpose — so it
+   takes the waiting hue and says what is still true rather than what is wrong. */
+.off {
+  display: flex;
+  gap: var(--s3);
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-inline-start: 2px solid var(--st-waiting);
+  border-radius: var(--r-md);
+  background: var(--st-waiting-tint);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.offIcon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+  margin-block-start: var(--s1);
+  color: var(--st-waiting);
+}
+
+/* Aligned to the table's own cell gutter, not the section's, so the first
+   filter sits directly over the first column. */
+.toolbar {
+  padding: 0 var(--s3) var(--s3);
+}
+
+.tableArea {
+  min-inline-size: 0;
+}
+
+/* Nothing declared at all. The empty state has to name the file the client is
+   expected to create, or it is just an empty box. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s6) 0;
+  min-inline-size: 0;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.emptyBody {
+  margin: 0;
+  max-inline-size: 62ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.code {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

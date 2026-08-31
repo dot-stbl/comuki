@@ -1,0 +1,39 @@
+/* A tooltip is an overlay, so it takes the raised surface and the modal plane —
+   the same two the account menu and the toolbar popovers take. It is not a
+   third depth plane, and it never gets a halo. */
+.tooltip {
+  max-inline-size: 18rem;
+  padding: var(--s2) var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  /* A tooltip is one short reading. If it wrapped it would be a paragraph, and
+     a paragraph belongs in the page, not in an overlay that leaves on blur. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The arrival is a moment, not a message: a reader who has asked for less
+   motion gets the tooltip already in place and loses nothing. Only the entrance
+   is authored — with no exit animation the overlay unmounts on close instead of
+   lingering, which is the right behaviour for something this short-lived. */
+@media (prefers-reduced-motion: no-preference) {
+  .tooltip[data-entering] {
+    animation: tooltip-in var(--dur) var(--ease) both;
+  }
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

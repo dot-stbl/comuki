@@ -1,0 +1,115 @@
+/* The third column. Readings only — see the note on the component. */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+  block-size: 100%;
+  min-block-size: 0;
+  min-inline-size: 0;
+  overflow-y: auto;
+  padding-block: var(--s4);
+  padding-inline-start: var(--s4);
+  border-inline-start: var(--hairline) solid var(--rule);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+/* Names a region, so the wide gesture. */
+.head {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+.reading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+  padding: var(--s3) var(--s4);
+  border-inline-start: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.readingSummary {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.readingMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.value {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.denial {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--st-waiting);
+}
+
+.quiet {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.help {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.helpRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+.helpName {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+}
+
+.helpDescription {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-faint);
+}

@@ -1,0 +1,145 @@
+/* The screen's fixed chrome. `AppShell` pins this band above the scroll port,
+   so it is the one part of a screen that never moves: identity and the global
+   controls stay put while the work below them scrolls. */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-width: 0;
+  /* Side padding is the page gutter, so the title sits on the same left edge
+     as the content beneath it. Vertical is the header's own. */
+  padding: var(--s5) var(--page-x) var(--s4);
+  border-bottom: var(--hairline) solid var(--rule);
+  background: var(--background);
+}
+
+/* The crumb line: the rail control at the far left, the path beside it, the
+   screen's own controls at the far right. The title below starts at the
+   header's padding edge, so it lines up with the content it belongs to rather
+   than being pushed right by a piece of chrome. */
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--s3) var(--s5);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Pulled back by its own side padding so the glyph — not the hit area — sits
+   on the header's left edge, in line with the title beneath it. */
+.rail {
+  flex: 0 0 auto;
+  margin-left: calc(var(--s3) * -1);
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  min-width: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* One crumb never breaks mid-word — a path segment read across two lines is a
+   path you have to reassemble. It truncates instead, and only once it is wider
+   than the whole band: a run id or a project slug is the long case, and an
+   ellipsis on the tail of one crumb costs less than a header that runs off the
+   side of the window. */
+.crumb {
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crumb[aria-current="page"] {
+  color: var(--muted-foreground);
+}
+
+.crumbLink {
+  color: var(--text-faint);
+  text-decoration: none;
+  border-radius: var(--r-xs);
+  transition: color var(--dur) var(--ease);
+}
+
+.crumbLink:hover {
+  color: var(--foreground);
+}
+
+.crumbLink:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--s1);
+}
+
+/* The separator is the product's own device: the short connector that joins
+   two columns in the profile river, with the river's paint on it. A crumb path
+   then reads as a flow, which is what it is. Drawn, never a glyph — a slash
+   would be read aloud and would say nothing about direction. */
+.connector {
+  flex: 0 0 auto;
+  width: var(--s5);
+  height: var(--s1);
+  border-radius: var(--hairline);
+  background-color: var(--flow-ribbon-dim);
+  background-image: var(--gradient-flow);
+}
+
+/* Measured, not full-bleed: a run's own title is a sentence, and a sentence
+   that runs the width of a 27-inch board is unreadable. */
+/* `anywhere`, because a screen title is not always prose: a run detail page
+   names a run, and a run id has no space in it to break at. Without this the
+   one unbreakable word sets the header's min-content and the band leaves the
+   window on a narrow board. */
+.title {
+  margin: 0;
+  min-width: 0;
+  max-width: 68ch;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-display);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-display);
+  line-height: 1.05;
+  color: var(--foreground);
+}
+
+.summary {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  color: var(--muted-foreground);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+/* The screen's filter bar, pinned with the rest of the header. A single-column
+   grid rather than a flex row on purpose: the slot's job is to hand its child
+   the full page gutter — so the first filter sits on the same left edge as the
+   first column of the table below — and a lone grid track stretches without the
+   child having to ask for `flex: 1`. */
+.filters {
+  display: grid;
+  /* `minmax(0, 1fr)`, not the implicit `auto` track. An auto track is floored
+     by its item's min-content, so the toolbar's own minimum — a search field,
+     a filter button and a tail that cannot shrink — would size the track and
+     push the band wider than the header, where `AppShell`'s `.main` clips it.
+     A zero-floored track hands the child exactly the width there is and lets
+     the child's own wrapping decide what to do with it, which is the whole
+     reason the toolbar wraps. */
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  margin-top: var(--s2);
+}

@@ -2,31 +2,36 @@ import type {
   DiffFile,
   GateCheck,
   RunDetail,
-  RunStage,
   RunSummary,
-  StageInspector,
   TraceEvent,
+  WorkItem,
+  WorkItemInspector,
 } from "@/domains/runs/model/types"
 import {
-  STAGE_META,
+  PROFILE_META,
   TRACE_SEED,
   type SeedDiffFile,
+  type SeedProfile,
   type SeedRun,
-  type SeedStage,
   type SeedStatus,
   type SeedTrace,
+  type SeedWorkItem,
 } from "@/shared/api/mock"
 
 function mapStatus(status: SeedStatus) {
   return status
 }
 
-function mapStage(stage: SeedStage): RunStage {
+function mapWorkItem(entry: SeedWorkItem): WorkItem {
   return {
-    key: stage.key,
-    label: stage.label,
-    status: mapStatus(stage.status),
-    lane: stage.lane,
+    id: entry.id,
+    profile: entry.profile,
+    label: entry.label,
+    status: mapStatus(entry.status),
+    dependsOn: entry.deps,
+    cost: entry.cost,
+    tokens: entry.tokens,
+    startedAt: entry.startedAt,
   }
 }
 
@@ -45,21 +50,21 @@ function mapDiff(files: SeedDiffFile[]): DiffFile[] {
 
 function genericTrace(run: SeedRun): SeedTrace {
   const events: SeedTrace["events"] = []
-  run.stages.forEach((stage, index) => {
-    if (stage.status === "queued") {
+  run.items.forEach((entry, index) => {
+    if (entry.status === "queued") {
       return
     }
     const minutes = String(Math.floor(index * 0.9)).padStart(2, "0")
     const seconds = String((index * 17) % 60).padStart(2, "0")
     events.push({
-      t: `${minutes}:${seconds}`,
-      st: stage.status,
-      text: `Stage «${stage.label}» — ${stage.status}`,
+      t: entry.startedAt ?? `${minutes}:${seconds}`,
+      st: entry.status,
+      text: `«${entry.label}» — ${entry.status}`,
     })
   })
 
   return {
-    brief: `${run.title}. Worker brief for the current stage.`,
+    brief: `${run.title}. Worker brief for the current work item.`,
     rules: ["api-errors", "db-tx"],
     revision: { rules: "rules@a1b9e0", sdk: "sdk@2.4.1" },
     events,
@@ -89,9 +94,7 @@ function genericTrace(run: SeedRun): SeedTrace {
   }
 }
 
-function mapEvents(
-  events: SeedTrace["events"]
-): TraceEvent[] {
+function mapEvents(events: SeedTrace["events"]): TraceEvent[] {
   return events.map((event) => ({
     time: event.t,
     status: mapStatus(event.st),
@@ -102,6 +105,7 @@ function mapEvents(
 export function toRunSummary(seed: SeedRun): RunSummary {
   return {
     id: seed.id,
+    projectId: seed.projectId,
     app: seed.app,
     title: seed.title,
     status: mapStatus(seed.status),
@@ -111,7 +115,7 @@ export function toRunSummary(seed: SeedRun): RunSummary {
     tokens: seed.tokens,
     durationSec: seed.startSec,
     done: seed.done ?? false,
-    stages: seed.stages.map(mapStage),
+    workItems: seed.items.map(mapWorkItem),
   }
 }
 
@@ -126,21 +130,20 @@ export function toRunDetail(seed: SeedRun): RunDetail {
   }
 }
 
-export function toStageInspector(
+/**
+ * The inspector for one work item. What it is handed and what it leaves behind
+ * comes from its **profile** — that is the part of a step that is declared and
+ * knowable. The step's name is the brain's, and never keys anything here.
+ */
+export function toWorkItemInspector(
   seed: SeedRun,
-  stageKey: string
-): StageInspector {
-  const stage =
-    seed.stages.find((item) => item.key === stageKey) ??
-    ({ key: stageKey, label: stageKey, status: "queued" } as SeedStage)
-  const meta = STAGE_META[stageKey] ?? {
-    role: "worker" as const,
-    in: [["box", "upstream output"]],
-    out: [["box", "output"]] as Array<[string, string, string?]>,
-    ev: ["stage work"],
-  }
+  itemId: string
+): WorkItemInspector {
+  const entry = seed.items.find((candidate) => candidate.id === itemId)
+  const profile: SeedProfile = entry?.profile ?? "implementer"
+  const meta = PROFILE_META[profile]
   const trace = TRACE_SEED[seed.id] ?? genericTrace(seed)
-  const status = stage.status
+  const status = entry?.status ?? "queued"
   const active = status === "running" || status === "escalated"
   const env =
     status === "queued"
@@ -151,15 +154,9 @@ export function toStageInspector(
   const tokens =
     status === "queued"
       ? "0"
-      : active
-        ? `${(seed.tokens / 1000).toFixed(1)}k`
-        : `${3 + stageKey.length}.0k`
+      : `${((entry?.tokens ?? seed.tokens) / 1000).toFixed(1)}k`
   const cost =
-    status === "queued"
-      ? "0.00"
-      : active
-        ? seed.cost.toFixed(2)
-        : (0.05 + stageKey.length * 0.02).toFixed(2)
+    status === "queued" ? "0.00" : (entry?.cost ?? seed.cost).toFixed(2)
 
   let gate: GateCheck[] | null = null
   if (meta.gate) {
@@ -169,8 +166,7 @@ export function toStageInspector(
         status: "queued" as const,
       }))
     } else {
-      const base =
-        meta.gate === "full" ? trace.tests : trace.tests.slice(0, 2)
+      const base = meta.gate === "full" ? trace.tests : trace.tests.slice(0, 2)
       gate = base.map((test) => ({
         name: test.name,
         status: status === "success" ? "success" : mapStatus(test.st),
@@ -183,7 +179,7 @@ export function toStageInspector(
     events.push({ time: "—", text: "queued — not started", status: "queued" })
   } else {
     events.push({
-      time: "00:00",
+      time: entry?.startedAt ?? "00:00",
       text: `container up · ${env}`,
       status: "success",
     })
@@ -192,7 +188,7 @@ export function toStageInspector(
       text: `pinned ${trace.revision.rules} · ${trace.revision.sdk}`,
       status: "success",
     })
-    ;(meta.ev ?? ["stage work"]).forEach((line, index) => {
+    meta.ev.forEach((line, index) => {
       events.push({
         time: `00:${String(12 + index * 9).padStart(2, "0")}`,
         text: line,
@@ -206,11 +202,15 @@ export function toStageInspector(
         status: "running",
       })
     } else if (status === "success") {
-      events.push({ time: "01:00", text: "stage complete", status: "success" })
+      events.push({
+        time: "01:00",
+        text: "work item complete",
+        status: "success",
+      })
     } else if (status === "failed") {
       events.push({
         time: "01:00",
-        text: "gate failed — escalated to debug-agent",
+        text: "gate failed — escalated to debug profile",
         status: "failed",
       })
     } else if (status === "waiting") {
@@ -228,14 +228,10 @@ export function toStageInspector(
     env,
     tokens,
     cost,
-    inputs: (meta.in ?? []).map(([icon, label, detail]) => ({
-      icon,
-      label,
-      detail,
-    })),
+    inputs: meta.in.map(([icon, label, detail]) => ({ icon, label, detail })),
     outputs: outDiff
       ? []
-      : ((meta.out as Array<[string, string, string?]>) ?? []).map(
+      : (meta.out as Array<[string, string, string?]>).map(
           ([icon, label, detail]) => ({ icon, label, detail })
         ),
     files: outDiff ? mapDiff(trace.diff) : null,

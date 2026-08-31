@@ -1,0 +1,93 @@
+/* Age and lease: two figures in the data voice, each with one extra channel so
+   the column can be scanned rather than read. Both live inside a one-line
+   table cell, so nothing here may add height. */
+
+.age {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.figure {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* The bar sits under the figure rather than beside it, so a row without one
+   does not move the number: the column stays a column at every heat. */
+/* Two pixels tall, spelled from the one-pixel unit rather than from `--r-xs`:
+   the bar's *height* was reading the radius token, so moving the corner would
+   have silently changed the reading. Nothing here may add height either — the
+   table's rows are uniform by contract. A 2px bar has no room for a 3px corner,
+   so this is the one place the scale bottoms out at the hairline. */
+.track {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  block-size: calc(var(--hairline) * 2);
+  border-radius: var(--hairline);
+  background: var(--st);
+}
+
+.age[data-heat="fresh"] {
+  --st: var(--st-queued);
+}
+
+.age[data-heat="warm"] {
+  --st: var(--st-waiting);
+}
+
+/* Full length, the alarm hue, and a heavier figure — three channels, because
+   this is the reading the screen exists to deliver. */
+.age[data-heat="stalled"] {
+  --st: var(--st-failed);
+}
+
+.age[data-heat="stalled"] .figure {
+  color: var(--st-failed);
+  font-weight: var(--fw-medium);
+}
+
+.age[data-heat="warm"] .figure {
+  color: var(--text);
+}
+
+.lease {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s1);
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.lease .figure {
+  color: var(--text-muted);
+}
+
+.lease[data-heat="expiring"] .figure {
+  color: var(--st-waiting);
+}
+
+.lease[data-heat="lost"] .figure {
+  color: var(--st-failed);
+  font-weight: var(--fw-medium);
+}
+
+.icon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+  color: var(--st-failed);
+}
+
+.none {
+  display: block;
+  text-align: end;
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}

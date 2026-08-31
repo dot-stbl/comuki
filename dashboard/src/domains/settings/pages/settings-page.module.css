@@ -1,0 +1,146 @@
+/* THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and a screen
+   that renders as a blank strip still passes every gate.
+
+   AppShell `.shell` (100dvh) -> `.body` (flex, min-height 0) -> the shell's
+   split -> `.main` (flex column, height 100%) -> `.content` (flex 1 1 0,
+   min-height 0) -> `.screen` below (height 100%, flex column) -> `.tabs`
+   (flex 1 1 0, flex column) -> `.tabList` (flex 0 0 auto) + `.tabPanel`
+   (flex 1 1 0, min-height 0, overflow-y auto) -> the section stack, which
+   claims no share of the viewport and grows with its content.
+
+   The two links that bite are `.tabs` and `.tabPanel`: React Aria renders both
+   as plain divs, so neither is a flex container until this file says so.
+
+   The panel is where the chain deliberately stops. A control-plane section is a
+   document read top to bottom on a slow clock, not a board that has to fit at
+   once — so the tab strip stays fixed and each panel scrolls its own document,
+   and the tables inside cap themselves at `--h-table-body` rather than fighting
+   the page for depth. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* clip, not hidden: the tab strip sits above panels holding tables whose head
+     and pinned columns are sticky, and `hidden` makes this box a scroll
+     container they would silently re-anchor to. See The Clip-Not-Hidden Rule
+     in DESIGN.md. */
+  overflow: clip;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* The seven sections, on the hairline that separates them from their content —
+   the same one-pixel rule the topbar sits on. Not a segmented control, not a
+   row of pills: this is chrome, and chrome here is built from a rule. Seven is
+   more than three, so the strip is allowed to scroll sideways rather than crush
+   its own words — the shape-not-reading rule. */
+.tabList {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--s6);
+  padding-inline: var(--page-x);
+  border-block-end: var(--hairline) solid var(--rule);
+  overflow-x: auto;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: 0 0 auto;
+  padding-block: var(--s3);
+  /* Sits *on* the list's rule rather than above it, so the selected marker and
+     the separator are the same line. */
+  margin-block-end: calc(var(--hairline) * -1);
+  border-block-end: 2px solid transparent;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+/* Marked by a rule and by weight, never by a fill: the same way the rail marks
+   its active item. */
+.tab[data-selected] {
+  color: var(--text);
+  border-block-end-color: var(--brand);
+}
+
+.tab[data-focus-visible] {
+  border-radius: var(--r-sm);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* An icon rides at the cap height of the word beside it and never above it. */
+.tabIcon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+}
+
+.tabPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--page-y) var(--page-x);
+  outline: none;
+}
+
+/* States ------------------------------------------------------------------ */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) var(--page-x);
+  font-family: var(--font-ui);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* Rows, not blocks: what is loading is a list of settings. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  flex: 1 1 0;
+  min-height: 0;
+  padding: var(--page-y) var(--page-x);
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  flex: 0 0 auto;
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}

@@ -1,0 +1,110 @@
+/* Built on the same measurements as the kit's `StatusBadge`, at its small step:
+   these sit in compact table rows and must not be a second size language. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  /* A badge is a reading, so it never gives up width: the value or the prose
+     beside it truncates instead. Declared rather than inherited from
+     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
+     family to. */
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  border: var(--hairline) solid var(--border);
+  padding: 0 var(--s3);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  line-height: 1.2;
+  color: var(--st);
+  background: color-mix(in oklab, var(--st) 10%, transparent);
+  white-space: nowrap;
+}
+
+.icon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
+/* Rule kind --------------------------------------------------------------- */
+
+/* Neither of these is a status, so neither takes a status hue. The reading is
+   carried by the glyph and by how firmly the badge is drawn: a hard rule is
+   bounded by the strong hairline and set at full strength, a soft one recedes
+   into the muted ramp. Colour would have made a rule severity look like a run
+   state, which is exactly what it is not. */
+.hard {
+  --st: var(--text);
+
+  border-color: var(--rule-strong);
+  background: var(--muted);
+}
+
+.soft {
+  --st: var(--text-muted);
+
+  background: transparent;
+}
+
+/* Provider key health ----------------------------------------------------- */
+
+.ok {
+  --st: var(--st-success);
+}
+
+/* Amber, and the provider's own sentence beside it: `budget 67%` is a reading,
+   `warn` is a category, and only one of the two tells anybody what to do. */
+.warn {
+  --st: var(--st-waiting);
+}
+
+/* Autonomy mode ----------------------------------------------------------- */
+
+.auto {
+  --st: var(--st-running);
+}
+
+/* The same hue the flow uses for `waiting on a human`, because that is what a
+   change class set to `human` produces one level down. */
+.human {
+  --st: var(--st-waiting);
+}
+
+/* Environments ------------------------------------------------------------ */
+
+.tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+/* Chrome, not data: transparent ground, a hairline, no hue and no fill. The
+   same rectangle the toolbar's filter chips are, at the same step. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  /* A badge is a reading, so it never gives up width: the value or the prose
+     beside it truncates instead. Declared rather than inherited from
+     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
+     family to. */
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  border: var(--hairline) solid var(--rule-strong);
+  padding: 0 var(--s2);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  line-height: 1.2;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Nothing to show, said in a word. A blank cell reads as a broken render. */
+.absent {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}

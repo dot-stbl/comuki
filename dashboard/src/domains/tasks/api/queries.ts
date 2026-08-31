@@ -30,6 +30,7 @@ async function createTask(input: CreateTaskInput): Promise<Task[]> {
   const id = `m-${Math.floor(3042 + Math.random() * 900)}`
   const next: Task = {
     id,
+    projectId: input.projectId,
     source: "manual",
     title: input.title,
     app: input.app,

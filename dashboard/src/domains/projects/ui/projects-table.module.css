@@ -1,0 +1,74 @@
+/* Cell-level styling for the platform registry. Rows are one line tall by
+   contract, so anything that can run long truncates rather than wraps. */
+
+/* The handle. It is the value every other list in the product shows, so it
+   takes the data voice and it is the one thing on the row set at full strength
+   — the name beside it is prose about it.
+
+   It is also the way into the project's own screen, spelled the way the duty
+   list spells a run id: the identifier cell is the link, so the destination is
+   a real anchor that can be opened in a tab, copied and traversed — and the
+   rest of the row stays inert, which is what keeps a future actions column
+   from being swallowed by a row-wide target. */
+.slug {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.slug:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.slug:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+/* Prose: the only field on a project written for a reader. */
+.name {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+/* A repository address and a date are both values. */
+.repo,
+.created {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+/* Nothing to show, said quietly. A blank cell reads as a broken render; a dash
+   reads as a fact — no repository, no spend yet, nothing running. */
+.absent {
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}
+
+/* A project with work in flight. The figure is the only thing on this screen
+   that is ever worth catching an eye, so it is the only one at full strength. */
+.active {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

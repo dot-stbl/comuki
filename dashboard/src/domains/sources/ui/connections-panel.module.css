@@ -1,0 +1,40 @@
+/* A panel's two bands: a bare toolbar, then the table's scroll port.
+
+   THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a screen that renders as a blank strip.
+
+   AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
+   split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
+   min-height 0, **overflow auto**) → the screen → this panel.
+
+   The chain stops at `.content`. Sources is a register that scrolls, not a
+   board that fills, so nothing below `.content` claims a share of the viewport
+   and nothing needs a `height: 100%` that a missing flex parent could quietly
+   zero. The table is sized by its own content, capped by `--h-table-body`
+   (26rem) in the kit's stylesheet: eight rows are eight rows tall, and a list
+   that grows past the cap scrolls inside itself instead of pushing whatever is
+   under it off the page. */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+/* Aligned to the table's own cell gutter, not the section's, so the first
+   filter sits directly over the first column. */
+.toolbar {
+  padding: 0 var(--s3) var(--s3);
+}
+
+.tableArea {
+  min-inline-size: 0;
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

@@ -1,0 +1,106 @@
+/* One entry, as a hairline-bounded data surface. Not a card: it is the lane
+   material with a rule around it and the corner its size deserves — no raised
+   fill that lifts it off the floor, no shadow that floats it. */
+
+.row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s2);
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: var(--s3) var(--s4);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  text-align: start;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease);
+}
+
+.row:hover {
+  border-color: var(--rule-strong);
+}
+
+/* The kit's one focus ring, spelled the way every other component spells it. */
+.row:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* Marked by its border and a wash of the one accent, the way the rail marks
+   its active item. A shadow here would be a third depth plane and this list is
+   flat on the floor. */
+.selected {
+  border-color: color-mix(in oklab, var(--brand) 55%, var(--rule-strong));
+  background: color-mix(in oklab, var(--brand) 8%, var(--surface));
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* The entry's handle — the value somebody quotes back in a review — so it takes
+   the data voice at full strength. */
+.title {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+}
+
+/* Rides at the end of the line, the way a count does on a region heading. */
+.revision {
+  margin-inline-start: auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* The one line on the row written for a reader, so it takes the prose voice.
+   Two lines at most — past that it belongs in the sheet. */
+.summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2);
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.scope {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.sep {
+  color: var(--rule-strong);
+}

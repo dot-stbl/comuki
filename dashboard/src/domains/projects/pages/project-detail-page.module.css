@@ -1,0 +1,388 @@
+/* One project, in full.
+
+   THE HEIGHT CHAIN, and the one thing this screen deliberately does not do
+   with it. `AppShell` hands every screen a sized scroll port:
+
+     .shell (100dvh) -> .body (flex, min-height 0) -> the shell's split
+       -> .main (flex column, height 100%) -> .content (flex 1 1 0,
+          min-height 0, overflow auto)  <- already a scroll port, already padded
+
+   A screen that *fills* — the registry, the duty board — has to declare
+   `height: 100%` all the way down so its table can resolve a depth against it.
+   This one does not fill. It declares no height and no `flex: 1` at all and
+   ends where its last region ends; the port above it handles the case where
+   that is taller than the window. Same answer as `form-page.module.css`, for
+   the same shape of screen.
+
+   jsdom lays nothing out, so a wrong answer here renders as a blank strip and
+   still passes every gate. The right answer for this shape is to leave the
+   chain alone. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  /* Regions, not fields: one step wider than a form's gap between questions,
+     because what is being separated here is three unrelated readings. */
+  gap: var(--s8);
+  /* Wide enough for a git remote on one line — the longest value on the page —
+     and narrow enough that the hand-off rows do not stretch into a horizon
+     with the arrow a screen away from the words it belongs to. */
+  max-inline-size: 52rem;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+}
+
+/* The header's summary line: a handle and a date, both values. */
+.value {
+  font-family: var(--font-data);
+  color: var(--foreground);
+}
+
+/* --- the record --- */
+
+/* Four facts about one row, bounded by a hairline and cut with the corner a
+   box this size deserves. No fill and no shadow: this is data, and data in
+   this product is a boundary rather than a card. `clip` rather than `hidden`
+   so the corners cut without the box quietly becoming a scroll container. */
+.facts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  overflow: clip;
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: 12rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--s5);
+  padding: var(--s4) var(--s5);
+}
+
+.fact + .fact {
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+/* Names a value, so it takes the tight gesture. Faint and small buys the
+   separation capitals used to buy, and survives being read in Russian. */
+.factName {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* A slug and a date are values. */
+.factValue {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+
+/* The only field on a project written for a reader. */
+.factProse {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+
+/* The one fact somebody copies out of this screen, so it is selected as a unit
+   rather than as part of a sentence — the run id gets the same treatment on
+   the run detail page, for the same reason. */
+.factRepo {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text);
+  user-select: all;
+}
+
+/* Not missing — running on the platform's own profiles. Said quietly, in the
+   registry column's own words. */
+.factAbsent {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text-faint);
+}
+
+/* --- roles --- */
+
+.grants {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  overflow: clip;
+}
+
+.grant {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 9rem 7rem;
+  align-items: baseline;
+  gap: var(--s5);
+  padding: var(--s3) var(--s5);
+}
+
+.grant + .grant {
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+/* An address is the value the row is about, so it stands at full strength. */
+.grantSubject {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+
+/* A role is a value out of a closed set in code, not a label somebody chose. */
+.grantRole {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text-muted);
+}
+
+.grantWhen {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* A real answer, and a common one — said in words rather than left as an
+   empty box, which reads as a broken render. */
+.quiet {
+  margin: 0;
+  max-inline-size: 62ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* `ForbiddenState` carries a screen's content gutter, because it usually
+   stands in a list's body. Here it stands inside a region that already has
+   one, so the inline half comes back off. */
+.forbidden {
+  padding-inline: 0;
+  padding-block: var(--s5);
+}
+
+/* Where a region hands the reader on. Words, not controls: these are
+   destinations, and a destination is spelled as an anchor. */
+.outbound {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s6);
+  margin: 0;
+  font-size: var(--t-sm);
+}
+
+.outLink {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.outLink:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.outLink:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+/* --- the hand-offs --- */
+
+.handoffs {
+  display: flex;
+  flex-direction: column;
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  overflow: clip;
+}
+
+.handoff {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  padding: var(--s4) var(--s5);
+  color: inherit;
+  text-decoration: none;
+}
+
+.handoff + .handoff {
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+/* A row-wide target is right here and wrong in the registry, and the
+   difference is what else is on the row: there is no actions column in this
+   list to swallow, and nothing on a row but the one destination. */
+.handoff:hover {
+  background: var(--muted);
+}
+
+.handoff:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: calc(var(--hairline) * -2);
+}
+
+.handoffText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.handoffHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2) var(--s4);
+  min-inline-size: 0;
+}
+
+.handoffWhat {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+/* The reading, in two voices: the words are prose about the figures, and the
+   figures are values. */
+.handoffCount {
+  min-inline-size: 0;
+  font-size: var(--t-sm);
+  color: var(--text-muted);
+}
+
+/* Any figure that sits beside another figure is compared with it, so it takes
+   the data voice and tabular figures. */
+.figure {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Nothing to show, said quietly: not measured, still counting. A blank reads
+   as a rendering fault; a dash and a word read as facts. */
+.absent {
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}
+
+.handoffNote {
+  min-inline-size: 0;
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}
+
+.handoffIcon {
+  flex: 0 0 auto;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--text-faint);
+}
+
+.handoff:hover .handoffIcon {
+  color: var(--brand);
+}
+
+/* --- states --- */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding-block: var(--s6);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.stateBody {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* The id out of the URL, set as the value it is and selectable as a unit: it
+   is the only part of a dead link the operator can take back to whoever wrote
+   it. */
+.missing {
+  padding: 0 var(--s1);
+  border-radius: var(--r-xs);
+  background: var(--muted);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+  user-select: all;
+}
+
+/* Bars, not rows: what is loading is one record and three regions. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  flex: 0 0 auto;
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}
+
+/* The narrow desk. The fact list's fixed name column is the first thing with
+   no room left, so the pairs stack instead of crushing a repository url into a
+   sliver — the reading survives, which is the whole rule. */
+@media (max-width: 1000px) {
+  .fact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s1);
+  }
+
+  .grant {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .grantWhen {
+    grid-column: 1 / -1;
+  }
+}

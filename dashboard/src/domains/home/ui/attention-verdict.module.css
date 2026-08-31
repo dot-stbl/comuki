@@ -1,0 +1,134 @@
+/* The verdict band.
+   No card: the shape is a bounded strip with a woven status rail down its
+   leading edge — the same device the failure notice on the duty screen uses,
+   and the same hue/weave pair the profile river paints its segments with. It
+   takes the same corner every notice band takes, because it is the same device
+   at a larger size; what it still refuses is the fill and the shadow. */
+.band {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s5);
+  min-width: 0;
+  border-top: var(--hairline) solid var(--rule);
+  border-bottom: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: color-mix(in oklab, var(--hue) 7%, transparent);
+  /* `clip` rather than `hidden`: the status rail is a stretched flex child and
+     would paint through the rounded corners, and `hidden` would make this box
+     a scroll container for anything sticky that ever lands inside it. */
+  overflow: clip;
+}
+
+/* Hue and weave together, declared once here and read by nothing else — this
+   band is the only consumer, and the values come from the tokens the river and
+   the run graph already share, so the cue cannot drift away from them. */
+.band[data-status="escalated"] {
+  --hue: var(--st-escalated);
+  --weave: var(--weave-escalated);
+}
+
+.band[data-status="failed"] {
+  --hue: var(--st-failed);
+  --weave: var(--weave-failed);
+}
+
+.band[data-status="waiting"] {
+  --hue: var(--st-waiting);
+  --weave: var(--weave-waiting);
+}
+
+.band[data-status="clear"] {
+  --hue: var(--st-success);
+  --weave: var(--weave-success);
+}
+
+/* Two pixels rather than a hairline, because a hairline has no room to carry a
+   weave and hue alone is not allowed to say what state this is. */
+.rail {
+  flex: 0 0 var(--s1);
+  align-self: stretch;
+  background-color: var(--hue);
+  background-image: var(--weave, none);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-width: 0;
+  padding: var(--s6) var(--s6) var(--s6) 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s4);
+  min-width: 0;
+  margin: 0;
+}
+
+/* The one figure this screen is allowed to grow, and the only place display
+   type appears below the page title. Mono, because it is a value. */
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-display);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-display);
+  line-height: 1.05;
+  color: var(--hue);
+}
+
+.label {
+  font-family: var(--font-ui);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+/* The clear reading takes the display step for the *sentence* instead of for a
+   figure: "nothing" is not a quantity, and a large 0 reads as a counter that
+   broke rather than as a shift with nothing owed. */
+.verdict {
+  font-family: var(--font-ui);
+  font-size: var(--t-display);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-display);
+  line-height: 1.05;
+  color: var(--foreground);
+}
+
+.mark {
+  align-self: center;
+  flex: 0 0 auto;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  color: var(--hue);
+}
+
+.line {
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* Values inside a sentence stay in the data voice, like the duty screen's own
+   summary line. */
+.figure {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+@media (max-width: 1000px) {
+  .body {
+    padding: var(--s5) var(--s5) var(--s5) 0;
+  }
+
+  .head {
+    flex-wrap: wrap;
+  }
+}

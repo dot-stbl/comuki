@@ -1,0 +1,371 @@
+/* One turn in the thread, and everything a turn can be made of.
+ *
+ * A composite, like the kit's `form/` and `data-table/`: the message, the tool
+ * record inside it, the proposal inside that, the hand-off under it and the
+ * reference inside the prose are one gesture, and splitting them across five
+ * stylesheets would put one rhythm in five places.
+ *
+ * NO BUBBLES. A chat bubble is a card — a fill that lifts it off the floor and
+ * a corner that floats it — and this product does not have cards on data. A
+ * turn is bounded the way every other data surface here is bounded: a hairline
+ * where a boundary exists, the lane material, the corner its size deserves. The
+ * two speakers are separated by an author line and an inset, not by two ribbons
+ * of colour running down opposite sides of the page. */
+
+.message {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s1);
+  min-inline-size: 0;
+  padding-block: var(--s3);
+}
+
+/* What a person said is inset from what the console said, so the thread reads
+   as a conversation without either side wearing a colour. */
+.message[data-kind="person"] .body {
+  padding-inline-start: var(--s4);
+  border-inline-start: var(--hairline) solid var(--rule-strong);
+}
+
+.byline {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* Who spoke. A value in a log, so the data voice — and a data label's tracking,
+   because it names a value rather than a region. */
+.author {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+}
+
+.message[data-kind="person"] .author {
+  color: var(--text);
+}
+
+.clock {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+/* Prose. The interface voice, at the body step, capped at a readable measure —
+   a paragraph that runs the width of a 27-inch board is a paragraph nobody
+   finishes a line of. `pre-wrap` so a pasted stack trace keeps its shape. */
+.text {
+  margin: 0;
+  max-inline-size: 68ch;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+/* An identifier inside a sentence. The data voice, because it is a value —
+   and underlined rather than coloured, so it is not the only blue thing in a
+   paragraph competing with the accent everywhere else. */
+.reference {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 0.2em;
+}
+
+.reference:hover {
+  color: var(--primary);
+  text-decoration-color: var(--primary);
+}
+
+.reference:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* Tool record ------------------------------------------------------------- */
+
+.tool {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+  padding: var(--s3) var(--s4);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+/* A failure is louder than the rule alone: the border takes the failure hue,
+   and the badge beside it carries the second channel. */
+.tool[data-status="failed"] {
+  border-color: color-mix(in oklab, var(--st-failed) 40%, transparent);
+}
+
+.toolHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.toolName {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+}
+
+.toolArgs {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.toolResult {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Proposal ---------------------------------------------------------------- */
+
+/* The one surface on the thread that is asking something, so it is the one
+   allowed a boundary on all four sides. Still not a card: hairlines and the
+   lane material, no raised fill and no shadow. */
+.proposal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+  max-inline-size: 44rem;
+  padding: var(--s4) var(--s5);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+/* A decided proposal is history. It keeps its shape so the thread reads back
+   the same way it was read the first time, and loses the emphasis. */
+.proposal[data-decision] {
+  border-color: var(--rule);
+  color: var(--text-muted);
+}
+
+.proposalHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* Names a value — the act — so the tight gesture. */
+.proposalAct {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.proposalScope,
+.proposalSubject {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-muted);
+}
+
+.proposalSummary {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--s2);
+  align-items: baseline;
+  min-inline-size: 0;
+}
+
+.stepProfile {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.stepLabel {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+
+.proposalActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s3);
+  padding-block-start: var(--s3);
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+/* The reason, said out loud rather than hidden in a tooltip. It takes the
+   remaining width so the pair stays put at the end of the row — a control that
+   moves when a sentence appears beside it is a control that has to be found
+   again. */
+.denial {
+  flex: 1 1 14rem;
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--st-waiting);
+}
+
+.proposalPair {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--s2);
+}
+
+.decided {
+  margin: 0;
+  padding-block-start: var(--s3);
+  border-block-start: var(--hairline) solid var(--rule);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+/* Error ------------------------------------------------------------------- */
+
+/* A band with a left rule, the way every other failure in this product is
+   marked — hue and a mark, never hue alone. */
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  margin: 0;
+  min-inline-size: 0;
+  max-inline-size: 60ch;
+  padding: var(--s3) var(--s4);
+  border-inline-start: 2px solid var(--st-failed);
+  border-radius: var(--r-md);
+  background: var(--st-failed-tint);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.errorIcon {
+  flex: 0 0 auto;
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  margin-block-start: 0.2em;
+  color: var(--st-failed);
+}
+
+/* Hand-off ---------------------------------------------------------------- */
+
+.handoffs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+
+.handoff {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+  padding: var(--s1) var(--s3);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.handoff:hover {
+  border-color: color-mix(in oklab, var(--primary) 55%, var(--rule-strong));
+  color: var(--text);
+}
+
+.handoff:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline-offset: 2px;
+  border-color: var(--ring);
+}
+
+.handoffIcon {
+  flex: 0 0 auto;
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+}
+
+.handoffWords {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+}
+
+.handoffQuery {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text);
+}

@@ -1,8 +1,8 @@
-import { Pin } from "lucide-react"
-
 import type { KnowledgeEntry } from "@/domains/knowledge/model/types"
 import { cn } from "@/shared/lib/utils"
-import { Badge } from "@/shared/ui/badge"
+
+import { KindMark, PinnedMark, RuleKindMark } from "./knowledge-badges"
+import styles from "./knowledge-entry-row.module.css"
 
 export interface KnowledgeEntryRowProps {
   entry: KnowledgeEntry
@@ -10,6 +10,19 @@ export interface KnowledgeEntryRowProps {
   onSelect: (id: string) => void
 }
 
+/**
+ * One entry in the rule set, as a row that opens itself.
+ *
+ * A list rather than a table, because the reading is not column-wise: nobody
+ * scans a rule set comparing revisions down a page. They look for the one rule
+ * whose *summary* is the thing they are arguing about, and the summary is a
+ * sentence — a column would truncate it into uselessness on every row.
+ *
+ * The whole row is the control, so there is no separate open affordance to aim
+ * at. Selection is marked by a border and a wash the way the rail marks its
+ * active item: never by a shadow, and never by a halo — the one zero-offset
+ * ring in this product is the focus ring.
+ */
 export function KnowledgeEntryRow({
   entry,
   selected,
@@ -18,38 +31,33 @@ export function KnowledgeEntryRow({
   return (
     <button
       type="button"
+      data-test="knowledge-entry"
+      data-entry={entry.id}
+      data-selected={selected || undefined}
+      aria-pressed={selected}
+      className={cn(styles.row, selected && styles.selected)}
       onClick={() => onSelect(entry.id)}
-      className={cn(
-        "flex w-full flex-col gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted/40",
-        selected && "border-primary/50 bg-muted/50 ring-1 ring-primary/30"
-      )}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-xs font-medium text-foreground">
-          {entry.title}
+      <span className={styles.head}>
+        <span className={styles.title}>{entry.title}</span>
+        <KindMark kind={entry.kind} />
+        {entry.ruleKind ? <RuleKindMark ruleKind={entry.ruleKind} /> : null}
+        {entry.pinned ? <PinnedMark /> : null}
+        <span className={styles.revision}>@{entry.revision}</span>
+      </span>
+
+      {/* The entry's own words, and the reason the list is a list. Two lines at
+          most: past that it is the detail sheet's job, and a row that grows
+          with its prose stops being scannable. */}
+      <span className={styles.summary}>{entry.summary}</span>
+
+      <span className={styles.meta}>
+        <span className={styles.scope}>{entry.scope}</span>
+        <span className={styles.sep} aria-hidden="true">
+          ·
         </span>
-        <Badge variant="outline">{entry.kind}</Badge>
-        {entry.ruleKind ? (
-          <Badge variant={entry.ruleKind === "hard" ? "secondary" : "outline"}>
-            {entry.ruleKind}
-          </Badge>
-        ) : null}
-        {entry.pinned ? (
-          <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-primary">
-            <Pin className="size-3" />
-            pinned
-          </span>
-        ) : null}
-        <span className="ml-auto font-mono text-[10px] text-muted-foreground">
-          @{entry.revision}
-        </span>
-      </div>
-      <p className="text-xs text-muted-foreground">{entry.summary}</p>
-      <div className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground">
-        <span>{entry.scope}</span>
-        <span>·</span>
         <span>updated {entry.updated}</span>
-      </div>
+      </span>
     </button>
   )
 }

@@ -2,11 +2,59 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>vite-app</title>
+    <title>Comuki</title>
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#222226" />
   </head>
   <body>
+    <!--
+    Comuki — the dispatcher board. The duty engineer scans it all day to answer
+    one question: am I needed right now. A run is a graph of work items, not a
+    fixed pipeline; a profile is the only axis with a stable identity across
+    runs, and the step names beside it are prose a language model wrote.
+    Chrome is colourless and colour lives inside the flow, where the six run
+    statuses are the data. Archivo carries meaning, JetBrains Mono carries
+    values. The palette is chosen from the theme picker; the default is built
+    on the plane where protanopia and deuteranopia are fixed points, so the
+    board looks the same to everyone reading it.
+    -->
+    <script>
+      /* Runs before the bundle so the first painted frame already wears the
+         person's palette. Without it a viewer who chose anything but the
+         default sees one frame of the default and then a swap.
+
+         Deliberately duplicated from `theme-provider.tsx` rather than imported:
+         a module import is a network round trip, and by the time it resolved
+         the flash it exists to prevent would already have happened. The two
+         copies are pinned together by a test in `theme-provider.test.tsx`. */
+      ;(function () {
+        try {
+          var root = document.documentElement
+          var mode = localStorage.getItem("comuki-ui-theme") || "dark"
+          if (mode === "system") {
+            mode = window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+          }
+          if (mode !== "dark" && mode !== "light") mode = "dark"
+          root.classList.add(mode)
+          root.style.colorScheme = mode
+
+          var palette = localStorage.getItem("comuki-ui-theme-name")
+          if (palette && /^[a-z0-9-]{1,32}$/.test(palette)) {
+            root.setAttribute("data-theme", palette)
+          }
+        } catch (error) {
+          /* Private mode, or storage denied. The default is already correct in
+             the stylesheet's bare `:root` selectors, so there is nothing to do
+             and nothing worth logging on the critical path. */
+        }
+      })()
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/app/main.tsx"></script>
   </body>

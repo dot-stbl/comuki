@@ -1,0 +1,134 @@
+/* THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a screen that renders as a blank strip.
+
+   AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
+   split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
+   min-height 0, overflow auto, padded) → `.screen` below.
+
+   `.screen` claims no share of the viewport and neither does anything under it.
+   That is the decision this screen makes differently from the duty board: a
+   platform registry is a document read top to bottom on a slow clock, not a
+   board that has to fit at once — so it grows with its content and `.content`
+   scrolls it. Every link is either `.content`'s own flex growth or a block box
+   sized by what is in it; there is no `height: 100%` anywhere below here that a
+   missing flex parent could quietly resolve to zero. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  min-inline-size: 0;
+}
+
+/* Sections ---------------------------------------------------------------- */
+
+/* The sections themselves — the frame, the title and its paragraph — are the
+   kit's `Section` in its screen variant. Four page stylesheets carried a
+   byte-identical copy of this block; it lives in
+   `shared/ui/section.module.css` now. */
+
+/* An identifier quoted inside prose stays in the data voice, because it is a
+   value the operator will read back somewhere else. */
+.code {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* The same word the binding track wears, so the note and the card teach the
+   same mark rather than two. */
+.tag {
+  padding: 0 var(--s1);
+  border-radius: var(--r-xs);
+  background: color-mix(in oklab, var(--st-waiting) 18%, transparent);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--st-waiting);
+}
+
+.sectionEmpty {
+  margin: 0;
+  padding: var(--s5) 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}
+
+/* The pool cards. Wide enough for two sixty-something-character sentences side
+   by side on a desk; one column the moment they would have to hyphenate. */
+.pools {
+  display: grid;
+  /* `min()` rather than a bare `24rem`, so a track can never be wider than the
+     column it sits in: an auto-fill track at a fixed minimum overflows the page
+     the moment the rail is dragged wide, and a registry that scrolls sideways
+     is a registry nobody reads to the end. */
+  grid-template-columns: repeat(auto-fill, minmax(min(24rem, 100%), 1fr));
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+/* The two figures in the header's summary line, this domain's own reading. */
+.strong {
+  color: var(--foreground);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.warn {
+  color: var(--st-waiting);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* States ------------------------------------------------------------------ */
+
+.failure {
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-inline-start: var(--hairline) solid var(--st-failed);
+  border-radius: var(--r-md);
+  background: var(--st-failed-tint);
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) 0;
+  font-family: var(--font-ui);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-inline-size: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* Rows, not bars: what is loading is a registry, and a skeleton that lies
+   about the shape of what is coming is worse than none. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s6) 0;
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}

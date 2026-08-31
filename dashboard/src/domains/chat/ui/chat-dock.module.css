@@ -1,0 +1,55 @@
+/* The floating trigger. Chrome, not data: raised surface, hairline-strong
+ * border, no saturated fill — the Colourless Chrome Rule has no exception for
+ * a button that floats. The one shadow it takes is Lift, cast upward, because
+ * it genuinely is in front of the board (the Two Planes Rule's nearer plane);
+ * a zero-offset glow would be a focus ring, and it is not one.
+ *
+ * Positioning, and what was checked before choosing it: the runs board
+ * occupies its whole right edge — the toolbar's trailing controls at the top,
+ * the split separator at the split, the table's horizontal scrollbar at the
+ * floor. So the trigger sits one gutter in from the content region's edge
+ * (`--page-x`, flush with the board's own frame) and one step above the
+ * floor, clearing the scrollbar's thumb at both ends of its travel. What it
+ * can cover is the extreme corner cell of a table — one reading on one row,
+ * only at the very bottom of a scroll.
+ *
+ * Under the scrim, not above it: no z-index of its own, so the sheet's scrim
+ * (z-index 100) dims and blocks it like the rest of the board. Escape and the
+ * bar's control are the ways out; a live trigger under a modal would be a
+ * third. */
+
+.trigger {
+  position: fixed;
+  right: var(--page-x);
+  bottom: var(--s6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--h-button-lg);
+  block-size: var(--h-button-lg);
+  padding: 0;
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-lift);
+  cursor: pointer;
+}
+
+.trigger:hover {
+  border-color: var(--ring);
+  color: var(--primary);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline-offset: 1px;
+  border-color: var(--ring);
+}
+
+/* The console's own root manages its height and gutters; this wrapper exists
+   only to watch for navigations, so it must not introduce a box of its own
+   between the sheet's body and the console's definite height. */
+.console {
+  display: contents;
+}

@@ -1,0 +1,134 @@
+/* The switch that decides what the rest of the screen means. A data surface,
+   so it is bounded by a hairline on its start edge and nothing else — no
+   shadow, no lift, no card. It carries the surface step of the corner scale:
+   rounding a panel does not give it card chrome, and leaving it square while
+   everything on it is rounded is what made the screen read as half-finished. */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-inline-size: 0;
+  padding: var(--s4) var(--s5);
+  border-inline-start: var(--hairline) solid var(--st-waiting);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+/* On is the resting state and takes no mark at all: an operator should not have
+   to learn a colour to know that the normal arrangement is normal. */
+.panel[data-enabled] {
+  border-inline-start-color: var(--rule-strong);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s6);
+  min-inline-size: 0;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.state {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  margin: 0;
+}
+
+/* The word, not a dot and not a badge: this is the screen's single most
+   consequential fact and it is allowed to be the size of one. */
+.stateWord {
+  font-family: var(--font-data);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-medium);
+  color: var(--st-waiting);
+}
+
+.panel[data-enabled] .stateWord {
+  color: var(--st-success);
+}
+
+.since {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.sentence {
+  margin: 0;
+  max-inline-size: 78ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+/* The figures, on one line and in the data voice. A definition list, because
+   that is what they are — a name and the value it names. */
+.figures {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s6);
+  margin: 0;
+  padding-block-start: var(--s3);
+  border-block-start: var(--hairline) solid var(--rule);
+  min-inline-size: 0;
+}
+
+.figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.figureName {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.figureValue {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Numbers that are no longer being produced read as history, not as a
+   dashboard: the window says so in words rather than by going grey alone. */
+.panel:not([data-enabled]) .figureValue {
+  color: var(--text-muted);
+}
+
+.window {
+  margin: 0;
+  margin-inline-start: auto;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spin {
+    animation: proxy-spin 900ms linear infinite;
+  }
+}
+
+@keyframes proxy-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}

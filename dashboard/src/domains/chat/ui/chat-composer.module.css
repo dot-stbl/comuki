@@ -1,0 +1,255 @@
+/* The composer, its menu and its scope control — one gesture, one stylesheet.
+ *
+ * It never scrolls and never moves: it is `flex: 0 0 auto` at the foot of the
+ * thread's column, so the box the operator is typing into cannot be pushed off
+ * the screen by the conversation above it. */
+
+.composer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  gap: var(--s2);
+  min-inline-size: 0;
+  padding-block: var(--s3) var(--s5);
+}
+
+/* The box. A bounded data surface at the control step — the same corner every
+   text input in this product takes, because it is one. */
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+  padding: var(--s3);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.box:focus-within {
+  border-color: var(--ring);
+}
+
+/* `field-sizing` grows the box for text that *wrapped* rather than broke — the
+   long paste with no newlines in it, which the `rows` fallback cannot see. The
+   two bounds are the same numbers `chat-composer.tsx` clamps `rows` to, so the
+   box behaves identically whether the browser has the property or not. */
+.input {
+  min-inline-size: 0;
+  min-block-size: 4rem;
+  max-block-size: 16rem;
+  field-sizing: content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  resize: none;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+  caret-color: var(--primary);
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+/* The ring is on the box, not on the bare textarea inside it — otherwise the
+   focus state draws a rectangle inside a rectangle. */
+.input:focus-visible {
+  outline: none;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+/* Seeded reference --------------------------------------------------------- */
+
+/* A chip in the chrome's own material — the toolbar filter chip's spelling,
+   because it is the same gesture: one thing said out loud, removable by
+   itself. A badge is a reading: `0 0 auto`, `nowrap`, never crushed and never
+   clipped, in either direction — an id half-hidden by ellipsis is a different
+   id. */
+.seed {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--s1);
+  padding: 0 var(--s2);
+  block-size: var(--h-button-sm);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  background: transparent;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.seed:hover {
+  border-color: var(--ring);
+}
+
+.seed:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline-offset: 1px;
+  border-color: var(--ring);
+}
+
+/* "about" is a word of prose between values, so it takes the prose voice. */
+.seedAbout {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+/* The identifier is a value, and mono is where values live. */
+.seedId {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.seed:hover .seedId {
+  color: var(--text);
+}
+
+.seedX {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  color: var(--text-faint);
+}
+
+/* Scope ------------------------------------------------------------------- */
+
+.scope {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* Says what it is scoping, out loud. The command is a value and the rest of the
+   line is meaning, so the two voices split inside one label. */
+.scopeLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.scopeCommand {
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+.scopeNone {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--st-waiting);
+}
+
+/* Not a refusal — an unfinished command. Quiet, and it goes when it is done. */
+.incomplete {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+/* Menu -------------------------------------------------------------------- */
+
+/* Sits above the box rather than over it: the operator is reading the thread
+   and typing at the bottom of it, so a menu that covered the last messages
+   would hide the thing being replied to. */
+.menuWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+  max-block-size: 15rem;
+  overflow-y: auto;
+  padding: var(--s3);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+}
+
+/* Names a region, so the wide gesture. */
+.menuHead {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+
+.option {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr) auto;
+  gap: var(--s3);
+  align-items: baseline;
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: var(--s2) var(--s2);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  text-align: start;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: var(--muted);
+}
+
+.option:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline-offset: -2px;
+  border-color: var(--ring);
+}
+
+.optionName {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+}
+
+.optionDescription {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-muted);
+}
+
+.optionOrigin {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}

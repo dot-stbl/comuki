@@ -1,0 +1,287 @@
+/* One worker, in full.
+ *
+ * THE HEIGHT CHAIN, and what this screen deliberately does not do with it.
+ *
+ * `AppShell` already hands every screen a sized scroll port:
+ *
+ *   .shell (100dvh) → .body (flex, min-height 0) → the shell's split →
+ *   .main (column, height 100%, overflow clip) → .content (flex 1 1 0,
+ *   min-height 0, overflow auto) → .screen below
+ *
+ * The duty board and the pool have to declare `height: 100%` all the way down
+ * because a virtualized table has to resolve a depth against something. This
+ * page has no table in it — that is the whole argument of the screen: it links
+ * to the pool with a filter applied rather than redrawing it. So it declares
+ * **no height and no `flex: 1`** and simply ends where its last region ends,
+ * exactly as `form-page.module.css` does, and the port above it handles the
+ * case where that is taller than the window.
+ *
+ * jsdom lays nothing out, so a wrong answer here renders as a blank strip that
+ * still passes every gate. The right answer for this shape is to leave the
+ * chain alone. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  /* The page is read as a column of readings, not as a document: past this it
+     stops being one glance and the eye has to travel back for the next label. */
+  max-inline-size: 76ch;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+}
+
+/* The worker id in the header's title slot. It is a value, so it takes the
+   data voice even standing at display size — the one thing on this screen the
+   operator pasted in from somewhere else and will paste out again. */
+.titleId {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  user-select: all;
+}
+
+/* The summary line under it: project, profile, provider. Three values with
+   middots between them, so they read as one line of facts rather than prose. */
+.summaryValue {
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+/* --- the acts --- */
+
+.acts {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+/* Motion only while a decision is actually in flight, and only because the
+   header band is otherwise still. Gated, like every authored moment here. */
+@media (prefers-reduced-motion: no-preference) {
+  .spin {
+    animation: worker-detail-spin 900ms linear infinite;
+  }
+}
+
+@keyframes worker-detail-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* --- a region of readings --- */
+
+/* Every region on this page is the same shape: a row of labelled values that
+   wraps downward. `wrap`, never a horizontal scroll — these are readings, and
+   the Shape-Not-Reading Rule says a reading that runs out of room moves down
+   rather than being crushed or cut off the side. */
+.readings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5) var(--s8);
+  min-inline-size: 0;
+}
+
+.reading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+/* Names a value, so it takes the tight gesture. Never the wide one — that is
+   the region heading's, and the two are not interchangeable. */
+.readingLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* The value itself. `inline-flex` because two of these hold a meter rather
+   than a string, and a meter is a flex box that wants a box of its own width
+   to sit in. */
+.readingValue {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s2);
+  max-inline-size: 100%;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* A handle is the longest string on this screen and the one most likely to
+   arrive as a single unbreakable token, so it is the one that gives. */
+.readingValue.wrap {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+/* The quiet half-sentence under a figure, saying what the figure is measuring.
+   Prose, so it changes voice — a reading and its explanation must not look
+   like the same kind of thing. */
+.readingNote {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-faint);
+}
+
+/* A value that is also a hand-off. Same treatment the two tables give a link,
+   because it is the same gesture arriving on a different surface. */
+.link {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.link:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+/* --- what the worker is holding --- */
+
+/* Not a card: a hairline on the start edge and nothing else. The item is the
+   one thing on this page that belongs to another screen, and the rule marks
+   the border rather than lifting the box off the floor. */
+.work {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  min-inline-size: 0;
+  padding-inline-start: var(--s5);
+  border-inline-start: var(--hairline) solid var(--rule);
+}
+
+/* The step's own name — the brain's prose, and the most human thing here. */
+.workLabel {
+  margin: 0;
+  max-inline-size: 62ch;
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+/* The identifiers under it, with the item's own age riding at the end. */
+.workFacts {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s5);
+  min-inline-size: 0;
+}
+
+/* An idle worker is the pool doing its job, so it is said in the same word and
+   the same quiet the pool's own column says it in — not as a gap. */
+.idle {
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text-faint);
+}
+
+/* --- the lost heartbeat --- */
+
+/* The two things on this screen that are allowed a hue, because they are the
+   two that accuse somebody: the lease nobody is defending, and an act the pool
+   refused. A rule on the start edge and a wash — the same shape the pool
+   panel's own failure band takes, and not a badge, because both of these are
+   sentences rather than statuses.
+
+   One rule for both, so a message that has to be noticed cannot end up drawn
+   two different ways on one screen. */
+.lost,
+.failure {
+  margin: 0;
+  max-inline-size: 62ch;
+  padding: var(--s3) var(--s4);
+  border-inline-start: var(--hairline) solid var(--st-failed);
+  background: var(--st-failed-tint);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+/* --- states --- */
+
+/* Torn down, not found and the load failure all take this shape. They are
+   three different sentences and only one of them is an error, so the shape is
+   shared and the hue is not: nothing here is tinted, and the error state adds
+   its own `role="alert"` at the call site rather than a colour. */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-inline-size: 62ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* The figures a state's sentence quotes are values, so they change voice: a
+   number the operator is being asked to trust should look like a reading. */
+.figure {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+/* Where the state sends them next. A row of hand-offs, not a paragraph of
+   links: each one is a place to go, and they wrap rather than crowd. */
+.exits {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s5);
+  min-inline-size: 0;
+  font-size: var(--t-sm);
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  flex: 0 0 auto;
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}
+
+@media (max-width: 1000px) {
+  .screen {
+    gap: var(--s7);
+  }
+
+  .readings {
+    gap: var(--s4) var(--s6);
+  }
+}

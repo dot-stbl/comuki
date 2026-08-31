@@ -113,7 +113,7 @@ export const SETTINGS_SEED: SeedSettingsSnapshot = {
     },
     {
       id: "db-tx",
-      scope: "stage:backend",
+      scope: "profile:implementer",
       kind: "hard",
       ver: "a1b9e0",
       desc: "Мутации БД — в транзакции, идемпотентны",
@@ -137,7 +137,7 @@ export const SETTINGS_SEED: SeedSettingsSnapshot = {
     },
     {
       id: "test-cov",
-      scope: "stage:tests",
+      scope: "profile:tester",
       kind: "soft",
       ver: "7b3d10",
       desc: "Покрытие изменённых строк ≥ 80%",
@@ -163,7 +163,7 @@ export const SETTINGS_SEED: SeedSettingsSnapshot = {
     {
       role: "worker",
       model: "worker",
-      use: "stages, routine edits",
+      use: "routine steps, small edits",
     },
     {
       role: "judge",

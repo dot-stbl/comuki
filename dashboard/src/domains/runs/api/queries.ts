@@ -3,14 +3,14 @@ import { useQuery } from "@tanstack/react-query"
 import {
   toRunDetail,
   toRunSummary,
-  toStageInspector,
+  toWorkItemInspector,
 } from "@/domains/runs/api/mappers"
 import type {
   RunDetail,
   RunSummary,
-  StageInspector,
+  WorkItemInspector,
 } from "@/domains/runs/model/types"
-import { RUNS_SEED } from "@/shared/api/mock"
+import { findSeedRun, listSeedRuns } from "@/shared/api/mock"
 import { env } from "@/shared/config/env"
 
 export const runsQueryKey = ["runs"] as const
@@ -20,14 +20,14 @@ async function listRuns(): Promise<RunSummary[]> {
   if (!env.useMock) {
     throw new Error("runs API not implemented — set VITE_USE_MOCK=true")
   }
-  return RUNS_SEED.map(toRunSummary)
+  return listSeedRuns().map(toRunSummary)
 }
 
 async function getRun(runId: string): Promise<RunDetail> {
   if (!env.useMock) {
     throw new Error("runs API not implemented — set VITE_USE_MOCK=true")
   }
-  const seed = RUNS_SEED.find((run) => run.id === runId)
+  const seed = findSeedRun(runId)
   if (!seed) {
     throw new Error(`run ${runId} not found`)
   }
@@ -49,16 +49,16 @@ export function useRunQuery(runId: string) {
   })
 }
 
-export function getStageInspector(
+export function getWorkItemInspector(
   runId: string,
-  stageKey: string
-): StageInspector | null {
+  itemId: string
+): WorkItemInspector | null {
   if (!env.useMock) {
     return null
   }
-  const seed = RUNS_SEED.find((run) => run.id === runId)
+  const seed = findSeedRun(runId)
   if (!seed) {
     return null
   }
-  return toStageInspector(seed, stageKey)
+  return toWorkItemInspector(seed, itemId)
 }

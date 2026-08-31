@@ -1,0 +1,147 @@
+/* The wizard's own furniture. The frame, the form rhythm and the footer come
+   from `app/layout/form-page`; what is here is the step list, the review and
+   the progress stream.
+ *
+ * No height chain: `FormPage` mounts `AppShell` with padding on and the shell
+ * owns the scroll, so this column is sized by the fields in it — the same
+ * decision every other form page in the product makes. */
+
+/* Steps ------------------------------------------------------------------- */
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+
+/* A marker, not a control: the operator moves with Continue and Back, and a
+   step list you can click is a step list that lets you skip validation. */
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+  padding: var(--s1) var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  color: var(--text-faint);
+}
+
+.stepCurrent {
+  border-color: color-mix(in oklab, var(--primary) 55%, var(--rule-strong));
+  color: var(--text);
+}
+
+.stepDone {
+  color: var(--text-muted);
+}
+
+.stepNumber {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+}
+
+.stepName {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+}
+
+/* Review ------------------------------------------------------------------ */
+
+.review {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
+  gap: var(--s3);
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.reviewRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+  padding: var(--s2) var(--s3);
+  border-inline-start: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+/* Names a value, so the tight gesture. */
+.reviewLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.reviewValue {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* Stream ------------------------------------------------------------------ */
+
+.stream {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+/* Names a region, so the wide gesture. */
+.streamHead {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+.stages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-inline-size: 0;
+  padding: var(--s2) var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.stage[data-stage="queued"] {
+  opacity: 0.72;
+}
+
+.stageLabel {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text);
+}

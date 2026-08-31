@@ -1,0 +1,68 @@
+/* The field-name hints under the expression box.
+
+   They are reference material that happens to be clickable, not an
+   autocomplete: each one inserts a bare word and nothing else. There is no
+   punctuation on them and none goes in, because no separator, operator or
+   precedence has been decided for this language yet — see the component. */
+
+.hints {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.hintsLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.hint {
+  padding: 0 var(--s2);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--lane);
+  color: var(--text-muted);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  line-height: 1.6;
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.hint:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.hint:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.hint:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* The label the whole field hangs on: this text is stored and handed to the
+   connector exactly as typed. Said quietly and permanently, under the box. */
+.verbatim {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-faint);
+  max-inline-size: 68ch;
+}
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}

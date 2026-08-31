@@ -1,0 +1,103 @@
+/* Spend against a cap, inside a one-line table cell. Two bands stacked in the
+   row's own height: the figures, then a hairline channel under them. Nothing
+   here may add height — the table's rows are uniform by contract. */
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+  inline-size: 100%;
+}
+
+.figures {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.spent {
+  color: var(--text);
+}
+
+.of {
+  color: var(--text-faint);
+}
+
+.cap {
+  color: var(--text-muted);
+}
+
+.left {
+  margin-inline-start: auto;
+  color: var(--text-faint);
+}
+
+/* The drawn empty channel the fill is measured against — the same material the
+   table and the flow's tracks are made of. */
+/* Two pixels tall, spelled from the one-pixel unit rather than from `--r-xs`:
+   the bar's *height* was reading the radius token, so moving the corner would
+   have silently changed the reading. Nothing here may add height either — the
+   table's rows are uniform by contract. A 2px bar has no room for a 3px corner,
+   so this is the one place the scale bottoms out at the hairline. */
+.channel {
+  position: relative;
+  display: block;
+  block-size: calc(var(--hairline) * 2);
+  border-radius: var(--hairline);
+  background: var(--lane-alt);
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: block;
+  border-radius: var(--hairline);
+  background: var(--st);
+}
+
+/* Three readings, not a gradient. Below `near` there is nothing to decide. */
+.meter[data-heat="ok"] {
+  --st: var(--text-faint);
+}
+
+.meter[data-heat="near"] {
+  --st: var(--st-waiting);
+}
+
+.meter[data-heat="over"] {
+  --st: var(--st-failed);
+}
+
+/* A key that is not live spends nothing more, whatever its bar says. */
+.meter[data-heat="idle"] {
+  --st: var(--rule-strong);
+}
+
+.meter[data-heat="near"] .spent,
+.meter[data-heat="near"] .left {
+  color: var(--st-waiting);
+  font-weight: var(--fw-medium);
+}
+
+.meter[data-heat="over"] .spent,
+.meter[data-heat="over"] .left {
+  color: var(--st-failed);
+  font-weight: var(--fw-medium);
+}
+
+/* Not enforced: the fraction is still true, so the length stays — but the fill
+   is hatched, because a solid bar claims something will happen at the end of
+   it, and with the proxy off nothing will. The weave is the product's queued
+   hatch, read from the token so the encoding lives in one place. */
+.meter:not([data-enforced]) .fill {
+  background-color: color-mix(in oklab, var(--st) 45%, transparent);
+  background-image: var(--weave-queued);
+}

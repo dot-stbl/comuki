@@ -1,0 +1,382 @@
+/* A bare bar, not a card: the search field and the filter button on the left,
+   the chips that say what is filtered beside them, table-level controls right.
+   It sits directly above the table's top hairline, so it carries no border of
+   its own. */
+
+.bar {
+  display: flex;
+  /* Start, not centre: chips wrap into a second line and the two controls on
+     the left must not drift down when they do. */
+  align-items: flex-start;
+  /* The row grows downward and never sideways — and that promise has to hold
+     for the tail as well as for the chips. `.tail` cannot shrink (a count and
+     a column manager have no smaller reading), so on a narrow board the bar's
+     min-content is wider than the header band it sits in; without wrapping the
+     tail simply left the box, and `AppShell`'s `.main` clipped it. A clipped
+     control is worse than a stacked one: it is not scrollable to, because the
+     header is the one band that deliberately does not scroll. */
+  flex-wrap: wrap;
+  gap: var(--s3);
+  padding-block-end: var(--s3);
+  min-inline-size: 0;
+}
+
+/* The fixed left edge. `nowrap` is the promise: the search field and the
+   button keep their line and their order whatever the chips do. */
+.controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  flex: 1 1 auto;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.tail {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: 0 0 auto;
+  /* Pushed right rather than won by `space-between`, so the chip list can
+     shrink and wrap without the tail sliding around behind it. On a wrapped
+     row it keeps the same end alignment, so the tail is in the same place
+     whether it shares the line or owns one. */
+  margin-inline-start: auto;
+  min-inline-size: 0;
+}
+
+.icon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+}
+
+/* Search ---------------------------------------------------------------- */
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* Grows into whatever the row is not using, up to a measure where a long
+     query is still readable — a search box that stays narrow makes the
+     operator scroll a field to re-read what they just typed. It still gives
+     way first when chips crowd the row, which is why it shrinks before the
+     filter button does. */
+  flex: 1 1 22rem;
+  max-inline-size: 34rem;
+  min-inline-size: 8rem;
+}
+
+.searchIcon {
+  position: absolute;
+  inset-inline-start: var(--s3);
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.input {
+  inline-size: 100%;
+  block-size: var(--h-button-sm);
+  padding-inline: calc(var(--s3) * 2 + var(--icon-sm)) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 30%, transparent);
+}
+
+/* Inside the sheet the field is named above it, so there is no icon to clear
+   room for and the text starts at the same gutter as everything else. */
+.sheetInput {
+  padding-inline: var(--s3);
+}
+
+.sheetInput[data-active] {
+  border-color: color-mix(in oklab, var(--brand) 55%, var(--border));
+}
+
+/* The filter button ----------------------------------------------------- */
+
+.sheetTrigger,
+.columnsTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  block-size: var(--h-button-sm);
+  padding-inline: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sheetTrigger {
+  flex: 0 0 auto;
+}
+
+.sheetTrigger:hover,
+.columnsTrigger:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.sheetTrigger[data-focus-visible],
+.columnsTrigger[data-focus-visible] {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 30%, transparent);
+}
+
+/* A control that is doing something says so with its own border and its own
+   text weight — never with a coloured fill. The select beside it says the same
+   thing in the same words; that rule lives on the kit control now. */
+.sheetTrigger[data-active] {
+  border-color: color-mix(in oklab, var(--brand) 55%, var(--border));
+  color: var(--text);
+}
+
+.count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Chips ----------------------------------------------------------------- */
+
+/* Not rendered at all when nothing is active — an empty list would still hold
+   the row's height open for a reading that is not there. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chipItem {
+  display: flex;
+  min-inline-size: 0;
+}
+
+/* Hairline-bounded and square to the sm step, in the chrome's own material:
+   this is a reading, not a badge. No fill, no pill, no dot. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  block-size: var(--h-button-sm);
+  max-inline-size: 12rem;
+  padding-inline: var(--s3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: color-mix(in oklab, var(--brand) 55%, var(--border-strong));
+}
+
+.chip:hover .chipIcon {
+  color: var(--text);
+}
+
+.chip:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 30%, transparent);
+}
+
+.chipText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chipIcon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+  color: var(--text-faint);
+}
+
+/* Overlays -------------------------------------------------------------- */
+
+/* The column manager's overlay. The filter select's list is the kit control's
+   own and is styled in `shared/ui/select`. */
+.popover {
+  min-inline-size: var(--trigger-width);
+  padding: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+}
+
+/* The sheet is wider than its own trigger, so it sizes to its fields rather
+   than to the button that opened it. That decoupling is the intent and stays;
+   what it was missing is a width of its own.
+
+   An overlay is absolutely positioned, so with no `inline-size` it shrink-wraps
+   its content — and a `1fr` track resolves against a *definite* inline size. In
+   a shrink-to-fit box the fractional tracks have nothing to distribute and fall
+   back to max-content, so two fields holding different words came out different
+   widths: the sheet read as ragged and cramped rather than as a grid. The fix
+   is a measure, not a fight with the grid.
+
+   The measure follows the field count, because a sheet holding one filter must
+   be one field wide rather than a panel with a lone select adrift in it. The
+   count arrives as `--sheet-cols` from the component — set on this element
+   rather than on the grid, so the box and the tracks inside it are two readings
+   of one number. `--s4 * 2` is this box's own padding and `--hairline * 2` its
+   border, both inside the width because the sheet is `border-box`. */
+.sheetPopover {
+  /* One field's measure. Deliberately not the grid's 9.5rem floor: that is the
+     width below which a select's value stops being readable, not the width the
+     sheet wants when there is room for a comfortable one. */
+  --sheet-field-w: 11rem;
+
+  inline-size: calc(
+    var(--sheet-cols, 2) * var(--sheet-field-w) + (var(--sheet-cols, 2) - 1) *
+      var(--s3) + var(--s4) * 2 + var(--hairline) * 2
+  );
+  /* The clamp beats the measure by construction — `max-inline-size` always wins
+     over `inline-size` — so on a 320px window the sheet is 288px and the grid
+     below stacks inside it. React Aria flips and shifts an overlay against the
+     viewport; it does not shrink one, so without this a two-column sheet hangs
+     off the edge with no way to reach the far column. */
+  max-inline-size: calc(100vw - var(--s8));
+  padding: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  outline: none;
+}
+
+/* At most two fields to a line, and one when there is only room for one.
+
+   `auto-fit` rather than `repeat(var(--sheet-cols), …)`, now that the popover
+   above carries a definite width derived from that same count: at the sheet's
+   full measure exactly `--sheet-cols` tracks fit and the fields come out even,
+   and when the viewport clamp cuts the box down the count falls out of the
+   arithmetic instead of overflowing it. The ceiling is still the component's —
+   the box is only ever wide enough for the columns it asked for.
+
+   `min(9.5rem, 100%)` rather than a flat `9.5rem` is what makes the last step
+   safe: a fixed floor is a floor the container may be unable to meet, and a
+   grid whose tracks cannot fit their own box overflows it. */
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(9.5rem, 100%), 1fr));
+  gap: var(--s4) var(--s3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+.fieldLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.sheetFoot {
+  display: flex;
+  justify-content: flex-end;
+  padding-block-start: var(--s3);
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+.columnsTrigger {
+  justify-content: center;
+  min-inline-size: var(--h-button-sm);
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 11rem;
+  outline: none;
+}
+
+.dialogTitle {
+  margin: 0;
+  padding: var(--s2) var(--s3);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.columnRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-sm);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.columnRow:hover {
+  background: var(--muted);
+}
+
+.columnRow:has(.check:disabled) {
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.check {
+  inline-size: var(--s5);
+  block-size: var(--s5);
+  margin: 0;
+  accent-color: var(--brand);
+  cursor: inherit;
+}
+
+.columnLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

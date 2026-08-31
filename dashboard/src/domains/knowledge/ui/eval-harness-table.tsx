@@ -1,86 +1,40 @@
-import { Check, Circle, X } from "lucide-react"
+import { useMemo, useState } from "react"
 
-import type { EvalCase, EvalDelta } from "@/domains/knowledge/model/types"
-import { Badge } from "@/shared/ui/badge"
-import { StatusBadge } from "@/shared/ui/status-badge"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table"
+import type { EvalCase } from "@/domains/knowledge/model/types"
+import { DataTable, type DataTableSorting } from "@/shared/ui"
 
-const DELTA_META: Record<
-  EvalDelta,
-  { label: string; icon: typeof Check; className: string }
-> = {
-  "+": {
-    label: "improved",
-    icon: Check,
-    className: "text-st-success border-st-success/40",
-  },
-  "-": {
-    label: "regressed",
-    icon: X,
-    className: "text-st-failed border-st-failed/40",
-  },
-  "=": {
-    label: "no change",
-    icon: Circle,
-    className: "text-muted-foreground",
-  },
-}
+import { createEvalColumns, getEvalId } from "./eval-columns"
+import styles from "./knowledge-panel.module.css"
 
 export interface EvalHarnessTableProps {
   cases: EvalCase[]
 }
 
+/**
+ * What the current rule set does to the golden tasks.
+ *
+ * Four columns and a handful of rows, so it carries no toolbar: a filter over
+ * four rows is chrome that narrows nothing, and the one ordering that matters —
+ * regressions first — is a click on the `delta` head rather than a control the
+ * screen has to render. It sizes itself to its rows and caps at
+ * `--h-table-body`, so a harness that grows to fifty tasks scrolls inside its
+ * own frame instead of pushing the rest of the screen off the page.
+ */
 export function EvalHarnessTable({ cases }: EvalHarnessTableProps) {
+  const columns = useMemo(() => createEvalColumns(), [])
+  const [sorting, setSorting] = useState<DataTableSorting>([])
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>task</TableHead>
-          <TableHead>before</TableHead>
-          <TableHead>after</TableHead>
-          <TableHead className="text-right">delta</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {cases.map((item) => {
-          const delta = DELTA_META[item.delta]
-          const DeltaIcon = delta.icon
-          return (
-            <TableRow key={item.task}>
-              <TableCell className="font-mono">{item.task}</TableCell>
-              <TableCell>
-                <StatusBadge
-                  status={item.before === "pass" ? "success" : "failed"}
-                  size="sm"
-                >
-                  {item.before}
-                </StatusBadge>
-              </TableCell>
-              <TableCell>
-                <StatusBadge
-                  status={item.after === "pass" ? "success" : "failed"}
-                  size="sm"
-                >
-                  {item.after}
-                </StatusBadge>
-              </TableCell>
-              <TableCell className="text-right">
-                <Badge variant="outline" className={delta.className}>
-                  <DeltaIcon />
-                  {delta.label}
-                </Badge>
-              </TableCell>
-            </TableRow>
-          )
-        })}
-      </TableBody>
-    </Table>
+    <div className={styles.tableArea}>
+      <DataTable
+        columns={columns}
+        data={cases}
+        getRowId={getEvalId}
+        density="compact"
+        sorting={sorting}
+        onSortingChange={setSorting}
+        emptyLabel="no golden task has been run against this revision"
+      />
+    </div>
   )
 }

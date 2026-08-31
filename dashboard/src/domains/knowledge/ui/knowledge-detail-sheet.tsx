@@ -1,14 +1,11 @@
-import { Pin } from "lucide-react"
+import { X } from "lucide-react"
+import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components"
 
 import type { KnowledgeEntry } from "@/domains/knowledge/model/types"
-import { Badge } from "@/shared/ui/badge"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/shared/ui/sheet"
+import { Button, Tooltip } from "@/shared/ui"
+
+import { KindMark, PinnedMark, RuleKindMark } from "./knowledge-badges"
+import styles from "./knowledge-detail-sheet.module.css"
 
 export interface KnowledgeDetailSheetProps {
   entry: KnowledgeEntry | null
@@ -16,60 +13,92 @@ export interface KnowledgeDetailSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
+/**
+ * One entry, in full, without leaving the list.
+ *
+ * **The kit has no sheet.** It has a `ConfirmDialog` that asks one question and
+ * a `FormDialog` that holds a form, and both are centred boxes — which is the
+ * wrong shape for a body of prose read beside the list it came from. So this is
+ * built in the domain and reported as a gap rather than added to `shared/ui`.
+ *
+ * It is the kit's own construction, though, and deliberately `FormDialog`'s
+ * sibling rather than a second opinion about what a modal is: React Aria for
+ * the behaviour (focus trap, escape, restore, scrim dismissal) and a CSS Module
+ * for the look. All that differs is where the box lands — docked to the
+ * inline-end edge at full height, so the entry list stays visible behind it and
+ * the operator keeps their place in it.
+ *
+ * A rule's `body` is the one field on this screen written by a human for a
+ * human, so it is the only thing here in the interface voice; everything around
+ * it is a value.
+ */
 export function KnowledgeDetailSheet({
   entry,
   open,
   onOpenChange,
 }: KnowledgeDetailSheetProps) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="sm:max-w-md">
-        {entry ? (
-          <>
-            <SheetHeader>
-              <SheetTitle className="font-mono">{entry.title}</SheetTitle>
-              <SheetDescription>{entry.summary}</SheetDescription>
-            </SheetHeader>
-            <div className="flex flex-col gap-4 px-4 pb-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline">{entry.kind}</Badge>
-                {entry.ruleKind ? (
-                  <Badge
-                    variant={
-                      entry.ruleKind === "hard" ? "secondary" : "outline"
-                    }
+    <ModalOverlay
+      isOpen={open}
+      onOpenChange={onOpenChange}
+      className={styles.scrim}
+    >
+      <Modal className={styles.sheet}>
+        <Dialog className={styles.dialog} data-test="knowledge-sheet">
+          {entry ? (
+            <>
+              <header className={styles.head}>
+                <div className={styles.headText}>
+                  <Heading slot="title" className={styles.title}>
+                    {entry.title}
+                  </Heading>
+                  <p className={styles.summary}>{entry.summary}</p>
+                </div>
+                {/* Escape and the scrim both close this; the glyph is the third
+                    way, for a pointer that never learned either. */}
+                <Tooltip content="Close">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    data-test="knowledge-sheet-close"
+                    aria-label="Close the entry"
+                    onClick={() => onOpenChange(false)}
                   >
-                    {entry.ruleKind}
-                  </Badge>
+                    <X aria-hidden="true" />
+                  </Button>
+                </Tooltip>
+              </header>
+
+              <div className={styles.marks}>
+                <KindMark kind={entry.kind} />
+                {entry.ruleKind ? (
+                  <RuleKindMark ruleKind={entry.ruleKind} />
                 ) : null}
                 {entry.pinned ? (
-                  <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-primary">
-                    <Pin className="size-3" />
-                    pinned @ {entry.revision}
-                  </span>
+                  <PinnedMark revision={entry.revision} />
                 ) : (
-                  <span className="font-mono text-[10px] text-muted-foreground">
+                  <span className={styles.revision}>
                     revision @{entry.revision}
                   </span>
                 )}
               </div>
-              <dl className="grid gap-2 font-mono text-xs">
-                <div className="flex justify-between gap-3">
-                  <dt className="text-muted-foreground">scope</dt>
-                  <dd>{entry.scope}</dd>
+
+              <dl className={styles.facts}>
+                <div className={styles.fact}>
+                  <dt className={styles.factName}>scope</dt>
+                  <dd className={styles.factValue}>{entry.scope}</dd>
                 </div>
-                <div className="flex justify-between gap-3">
-                  <dt className="text-muted-foreground">updated</dt>
-                  <dd>{entry.updated}</dd>
+                <div className={styles.fact}>
+                  <dt className={styles.factName}>updated</dt>
+                  <dd className={styles.factValue}>{entry.updated}</dd>
                 </div>
               </dl>
-              <p className="text-sm leading-relaxed text-foreground">
-                {entry.body}
-              </p>
-            </div>
-          </>
-        ) : null}
-      </SheetContent>
-    </Sheet>
+
+              <p className={styles.body}>{entry.body}</p>
+            </>
+          ) : null}
+        </Dialog>
+      </Modal>
+    </ModalOverlay>
   )
 }

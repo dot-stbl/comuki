@@ -1,0 +1,122 @@
+/* Cell-level styling for both of this screen's tables. Rows are one line tall
+   by contract, so anything that can run long truncates rather than wraps. */
+
+/* The default cell voice here is the data voice: almost everything in a
+   platform registry is a value — an endpoint, a digest, a git ref, a count. */
+.value {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* What the orchestrator dials. Full strength, because it is the row's identity
+   as much as its kind is. */
+.endpoint {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+.faint {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}
+
+/* One line of the operator's own language among the values — a note on why a
+   provider is configured the way it is, or why a label is stale. */
+.note {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  color: var(--text-muted);
+}
+
+/* The two halves of a worker label, in one cell and never apart: a container on
+   the target image whose profiles ref has moved is exactly as unmatchable as
+   one a release behind, and it takes both values side by side to see it. */
+.label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+.digest {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+.ref {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+/* A count that is a problem rather than a fact. Hue plus weight, and the word
+   beside it in the header says what it counts — never hue alone. */
+.stranded {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-medium);
+  color: var(--st-waiting);
+}
+
+.target {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--st-running);
+}
+
+.targetIcon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* Motion only while a decision is actually in flight, and only because the row
+   is otherwise still. Gated, like everything else here. */
+@media (prefers-reduced-motion: no-preference) {
+  .spin {
+    animation: compute-actions-spin 900ms linear infinite;
+  }
+}
+
+@keyframes compute-actions-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}

@@ -1,0 +1,35 @@
+/* The empty pool's explanation. It sits where the table would be, so it is
+   given the same start edge as the first column rather than being centred —
+   this is a sentence to read, not a placeholder to look past. */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) var(--s6);
+  font-family: var(--font-ui);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.body {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* The figures the sentence is quoting are values, so they change voice — the
+   number a duty engineer is being asked to trust should look like a reading. */
+.figure {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}

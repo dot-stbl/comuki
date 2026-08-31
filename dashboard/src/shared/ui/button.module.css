@@ -4,13 +4,17 @@
   justify-content: center;
   gap: var(--s2);
   height: var(--h-button);
-  padding: 0 var(--s4);
+  padding: 0 var(--s2);
   border-radius: var(--r-md);
   border: 1px solid transparent;
   background: transparent;
   color: var(--text);
-  font-family: var(--font-mono);
-  font-size: var(--t-sm);
+  /* The interface voice, not the data voice. This said `--font-mono` from
+     before the product had two voices, and a monospace label is wider than a
+     proportional one at the same size by construction — every glyph takes a
+     cell. That width was most of why the buttons read heavy. */
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
   font-weight: var(--fw-medium);
   line-height: 1;
   white-space: nowrap;
@@ -19,8 +23,7 @@
   transition:
     background-color var(--dur) var(--ease),
     border-color var(--dur) var(--ease),
-    color var(--dur) var(--ease),
-    transform 60ms ease;
+    color var(--dur) var(--ease);
 }
 
 .button:focus-visible {
@@ -34,17 +37,67 @@
   cursor: not-allowed;
 }
 
-.button:active:not(:disabled) {
-  transform: translateY(1px);
+/* The press nudge is motion, and every moment of motion in this product is
+   opt-out. Both halves sit behind the guard: a reader who asked for less motion
+   gets a button that changes colour under the pointer and does not move under
+   the finger. Colour, focus and the disabled reading are unaffected — those are
+   states, not moments. */
+@media (prefers-reduced-motion: no-preference) {
+  .button {
+    transition:
+      background-color var(--dur) var(--ease),
+      border-color var(--dur) var(--ease),
+      color var(--dur) var(--ease),
+      transform 60ms ease;
+  }
+
+  .button:active:not(:disabled) {
+    transform: translateY(1px);
+  }
 }
 
+/* Flat at rest — the label's contrast was measured against this colour, so it
+   is the colour that ships. The gradient is a hover state only, and only here:
+   `default` is the one accent-filled control in the product. */
 .default {
-  background: var(--brand);
+  position: relative;
+  isolation: isolate;
+  background-color: var(--brand);
   color: var(--brand-foreground);
 }
 
-.default:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--brand) 85%, var(--text));
+/* `background-image` does not interpolate between `none` and a gradient, so the
+   hover rides its own layer. It enters left to right, the same direction work
+   moves through the profile flow, rather than sweeping across like a highlight. */
+.default::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-image: var(--gradient-primary-hover);
+  background-size: 220% 100%;
+  background-position: 100% 0;
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.default:hover:not(:disabled)::after,
+.default:focus-visible:not(:disabled)::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .default::after {
+    transition:
+      opacity var(--dur) var(--ease),
+      background-position 320ms var(--ease);
+  }
+
+  .default:hover:not(:disabled)::after,
+  .default:focus-visible:not(:disabled)::after {
+    background-position: 0 0;
+  }
 }
 
 .outline {
@@ -98,13 +151,13 @@
 
 .sm {
   height: var(--h-button-sm);
-  padding: 0 var(--s3);
-  font-size: var(--t-xs);
+  padding: 0 var(--s1);
+  font-size: var(--t-micro);
 }
 
 .lg {
   height: var(--h-button-lg);
-  padding: 0 var(--s5);
+  padding: 0 var(--s3);
 }
 
 .icon {
@@ -122,4 +175,42 @@
   width: var(--h-button-lg);
   height: var(--h-button-lg);
   padding: 0;
+}
+
+/* Icons ride the control's own scale, so an icon dropped into any button is
+   proportionate to its type by construction — no call site sizes its own SVG.
+   Ordered after the size variants: same specificity, later rule wins. */
+.button svg {
+  width: var(--icon-md);
+  height: var(--icon-md);
+  flex: 0 0 auto;
+}
+
+.sm svg,
+.iconSm svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+.lg svg,
+.iconLg svg {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+}
+
+/* Denied is not disabled: the control keeps its focus ring and its hover so the
+   tooltip explaining what is missing can actually be reached. It reads as
+   unavailable rather than broken — same footprint, no press, no lift. */
+.button[data-denied] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.button[data-denied]:active {
+  transform: none;
+}
+
+.default[data-denied]:hover::after,
+.default[data-denied]:focus-visible::after {
+  opacity: 0;
 }

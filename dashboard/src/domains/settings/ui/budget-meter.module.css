@@ -1,0 +1,127 @@
+/* Spend against the global cap. Three bands stacked: the reading, the drawn
+   channel, the two figures under it. Not a card — no fill that lifts it off the
+   floor and no shadow that floats it; it is a reading standing on the page. */
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+  max-inline-size: 26rem;
+}
+
+.reading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+  margin: 0;
+  min-inline-size: 0;
+}
+
+/* The one figure on this panel allowed to grow: it is the whole reason
+   somebody opened the section. */
+.percent {
+  font-family: var(--font-data);
+  font-size: var(--t-h1);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.unit {
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text-faint);
+}
+
+.left {
+  margin-inline-start: auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* The drawn empty channel the fill is measured against — the same material the
+   table and the flow's tracks are made of. */
+.channel {
+  position: relative;
+  display: block;
+  block-size: var(--h-meter);
+  min-inline-size: 0;
+  border-radius: var(--r-xs);
+  background: var(--lane-alt);
+  border: var(--hairline) solid var(--rule);
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: block;
+  border-radius: var(--r-xs);
+  background: var(--st);
+}
+
+.figures {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.of {
+  color: var(--text-faint);
+}
+
+/* The sentence that says what happens at the end of the bar. */
+.note {
+  margin-inline-start: var(--s3);
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  color: var(--text-faint);
+}
+
+/* Three readings, not a gradient. Below `near` there is nothing to decide. */
+.meter[data-heat="ok"] {
+  --st: var(--text-faint);
+}
+
+.meter[data-heat="near"] {
+  --st: var(--st-waiting);
+}
+
+.meter[data-heat="over"] {
+  --st: var(--st-failed);
+}
+
+/* Hue plus weight, and the words beside it already say which — never hue
+   alone. */
+.meter[data-heat="near"] .percent,
+.meter[data-heat="near"] .left {
+  color: var(--st-waiting);
+}
+
+.meter[data-heat="over"] .percent,
+.meter[data-heat="over"] .left {
+  color: var(--st-failed);
+}
+
+/* Already stopped. The length stays because the spend is real; what the bar
+   stops claiming is that the number is still moving. The weave is the
+   product's queued hatch, read from the token so the encoding lives in one
+   place. */
+.meter[data-stopped] .fill {
+  background-color: color-mix(in oklab, var(--st) 45%, transparent);
+  background-image: var(--weave-queued);
+}

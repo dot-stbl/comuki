@@ -8,4 +8,6 @@ export const budgetFormSchema = z.object({
   pauseSwarm: z.boolean(),
 })
 
-export type BudgetFormValues = z.infer<typeof budgetFormSchema>
+/** `z.coerce.number()` accepts the form's raw strings, so input ≠ output here. */
+export type BudgetFormInput = z.input<typeof budgetFormSchema>
+export type BudgetFormValues = z.output<typeof budgetFormSchema>

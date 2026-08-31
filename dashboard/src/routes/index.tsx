@@ -1,7 +1,20 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
+
+import { RequirePermission } from "@/app/layout/require-permission"
+import { HomePage } from "@/domains/home"
 
 export const Route = createFileRoute("/")({
-  beforeLoad: () => {
-    throw redirect({ to: "/runs" })
-  },
+  component: RouteComponent,
 })
+
+function RouteComponent() {
+  return (
+    <RequirePermission
+      permission="runs.view"
+      title="Attention"
+      crumbs={[{ label: "attention" }]}
+    >
+      <HomePage />
+    </RequirePermission>
+  )
+}

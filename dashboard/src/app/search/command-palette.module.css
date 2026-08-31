@@ -1,0 +1,227 @@
+/* The palette sits above the board rather than in it, so it takes the modal
+   plane — the same one the confirm dialog and the toolbar popovers take. It is
+   the third box in the product big enough for the largest corner. */
+
+.scrim {
+  /* Where the box hangs from. Named once because the modal's own depth cap is
+     the same number read a second way, and two spellings of one offset is how
+     a palette ends up taller than the room it opens in. */
+  --palette-top: 12vh;
+
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* High rather than centred: the list grows downward as it fills, and a box
+     that centres itself would slide the first row out from under the cursor
+     every time the query changed. */
+  padding: var(--palette-top) var(--s5) var(--s5);
+  background: var(--scrim);
+}
+
+/* `dvh` with a `vh` fallback, for the reason both dialogs carry one: `100vh`
+   is the *large* viewport on a mobile browser — the one with the address bar
+   retracted — so a box capped against it puts its own footer under the
+   chrome. */
+.modal {
+  inline-size: min(38rem, 100%);
+  max-block-size: calc(100vh - var(--palette-top) - var(--s5));
+  max-block-size: calc(100dvh - var(--palette-top) - var(--s5));
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-modal);
+  /* Clip, never hidden: `hidden` would make this box a scroll container, and
+     the list inside it is the one that owns the scroll. */
+  overflow: clip;
+}
+
+/* Entrance, opt-out — the same guard the confirm dialog carries and for the
+   same reason: the arrival is a moment, not a message. */
+@media (prefers-reduced-motion: no-preference) {
+  .scrim {
+    animation: palette-scrim-in var(--dur) var(--ease) both;
+  }
+
+  .modal {
+    animation: palette-in var(--dur) var(--ease) both;
+  }
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  outline: none;
+}
+
+/* The field stands at the topbar's own height, because that is the control it
+   opened from and the palette reads as that control expanded. */
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-block-size: var(--h-bar);
+  padding: 0 var(--s5);
+  border-bottom: 1px solid var(--rule);
+  flex: 0 0 auto;
+}
+
+.fieldIcon {
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  flex: 0 0 auto;
+  color: var(--text-faint);
+}
+
+.textField {
+  display: flex;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/* The query is a value — an id pasted out of a ticket, an app's name — so it
+   is set in the data voice, like every other identifier in the product. */
+.input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+.list {
+  min-block-size: 0;
+  overflow-y: auto;
+  padding: var(--s2);
+  outline: none;
+}
+
+.band {
+  display: block;
+}
+
+/* A region heading: the wide gesture, in the data face, on the faint step.
+   It names a band, not a value. */
+.bandLabel {
+  display: block;
+  padding: var(--s3) var(--s3) var(--s2);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--s3);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  outline: none;
+}
+
+/* React Aria moves through the list with virtual focus while the caret stays
+   in the field, so the row that enter would take is `data-focused` — there is
+   no real focus on it to draw a ring around. */
+.item[data-focused],
+.item[data-hovered] {
+  background: var(--muted);
+  color: var(--text);
+}
+
+/* The kind names the value beside it: the tight gesture, in the interface
+   face. Set against the label so the labels form a column to scan down. */
+.itemKind {
+  justify-self: end;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.itemLabel {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: inherit;
+}
+
+/* An identifier is a value, and values are mono with tabular figures. */
+.itemValue {
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.itemHint {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--s7) var(--s5);
+  text-align: center;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  justify-content: flex-end;
+  padding: var(--s2) var(--s5);
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+  flex: 0 0 auto;
+}
+
+@keyframes palette-scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--s2) * -1)) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

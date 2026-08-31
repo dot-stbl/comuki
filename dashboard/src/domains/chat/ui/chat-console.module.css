@@ -1,0 +1,78 @@
+/* THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a thread that renders as a blank strip.
+
+   The console has two containers, and both hand it a definite height:
+
+   The route —
+     AppShell `.shell` (100dvh)
+       → `.body` (flex row, min-height 0)
+         → the shell's own SplitPane
+           → `.main` (flex column, height 100%, overflow clip)
+             → `.content` (flex 1 1 0, min-height 0, overflow auto, padded off)
+               → `.screen` here.
+
+   The dock's sheet —
+     BottomSheet `.scrim` (fixed, inset 0)
+       → `.modal` (height 100%)
+         → the sheet's pane group
+           → `.panel` (flex column, min-height 0, overflow clip)
+             → `.dialog` (flex column, height 100%, min-height 0)
+               → `.bar` (flex 0 0 auto) + `.body` (flex 1 1 0, min-height 0)
+                 → `.screen` here.
+
+   In both chains some ancestor is a flex item with a definite height, which
+   is what makes the `block-size: 100%` below resolve to a number rather than
+   to `auto`. Every link from there down repeats the same two declarations: a
+   definite height and `min-block-size: 0`, because a flex item's default
+   `min-height: auto` refuses to shrink below its content and would push the
+   composer off the bottom of the box instead of scrolling the thread.
+
+   On the route the screen is mounted with `padded={false}`: it fills rather
+   than flows, and the shell's inline gutter still applies. The sheet's own
+   `.body` carries that gutter, so the two containers read as one console. */
+
+.screen {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr) 17rem;
+  gap: var(--s5);
+  block-size: 100%;
+  min-block-size: 0;
+  min-inline-size: 0;
+  /* clip, not hidden — the Clip-Not-Hidden Rule. The scroll ports on this
+     screen are the three columns, and opening a fourth one here would let a
+     wide proposal card scroll the whole screen sideways with no scrollbar to
+     say so. */
+  overflow: clip;
+}
+
+.rail,
+.centre,
+.panel {
+  min-block-size: 0;
+  min-inline-size: 0;
+}
+
+/* The thread and the composer, in one column: the thread takes what is left
+   and the composer takes what it needs. */
+.centre {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+}
+
+/* Two breakpoints exist product-wide and there is no third; this screen uses
+   one of them and needs no more. The side panel goes and the conversation list
+   stays, because the panel is a second reading of something already on screen
+   — the proposal it summarises is right there in the thread — while the list is
+   the only way back into yesterday's conversation. Shape-not-reading: nothing
+   here is crushed to fit, one column is simply dropped. The sheet and the
+   route cross this threshold together, because they are one console. */
+@media (max-width: 1240px) {
+  .screen {
+    grid-template-columns: 14rem minmax(0, 1fr);
+  }
+
+  .panel {
+    display: none;
+  }
+}

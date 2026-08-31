@@ -1,0 +1,94 @@
+/* An icon-only control at the end of the bar needs no box drawn round it to be
+   found — the hairline appears only when the pointer or the keyboard arrives.
+   It is a button at the button's own size, so it takes the button's corner: an
+   icon trigger that disagrees with the control beside it is the seam the whole
+   corner pass exists to close. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--h-button);
+  height: var(--h-button);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  outline: none;
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.trigger[data-hovered],
+.trigger[data-pressed] {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.trigger[data-focus-visible] {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  border-color: var(--ring);
+}
+
+.glyph {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+.popover {
+  min-inline-size: 9rem;
+  padding: var(--s1);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: var(--icon-sm) 1fr;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-focused],
+.item[data-hovered] {
+  background: var(--muted);
+  color: var(--text);
+}
+
+/* The mark is drawn on every row and revealed only on the current one, so
+   choosing moves no text sideways — and so the cue is a shape, not a hue. */
+.check {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  opacity: 0;
+  color: var(--text-faint);
+}
+
+.item[data-selected] .check {
+  opacity: 1;
+  color: var(--text);
+}
+
+.item[data-selected] .itemLabel {
+  color: var(--text);
+}
+
+.itemLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+}

@@ -1,6 +1,12 @@
 export type AutonomyMode = "auto" | "human"
 export type KeyStatus = "ok" | "warn"
 export type ModelRole = "lead" | "worker" | "judge"
+/**
+ * Binding or advisory. Named rather than left inline on `SwarmRule`, because
+ * the mark that draws it and the filter that offers it both have to speak the
+ * closed set — and a union spelled out in three places is a union that drifts.
+ */
+export type RuleKind = "hard" | "soft"
 
 export interface AppRegistryItem {
   name: string
@@ -13,7 +19,7 @@ export interface AppRegistryItem {
 export interface SwarmRule {
   id: string
   scope: string
-  kind: "hard" | "soft"
+  kind: RuleKind
   ver: string
   desc: string
   body: string

@@ -1,0 +1,85 @@
+/* THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and a screen
+   that renders as a blank strip still passes every gate.
+
+   AppShell `.shell` (100dvh) -> `.body` (flex, min-height 0) -> the shell's
+   split -> `.main` (flex column, height 100%) -> `.content` (flex 1 1 0,
+   min-height 0) -> `.screen` below (height 100%, flex column) -> `.tableArea`
+   (flex 1 1 0, container-type: size, publishing `--h-table-body: 100cqh`) ->
+   the table's scroll port, which ends exactly where this screen does.
+
+   Every link either grows as a flex child or has an explicit height. Nothing
+   here may introduce a box that stops being a flex container. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* clip, not hidden: this box sits above a table whose head and pinned
+     columns are sticky, and `hidden` makes it a scroll container they would
+     silently re-anchor to. See The Clip-Not-Hidden Rule in DESIGN.md. */
+  overflow: clip;
+}
+
+/* Aligned to the table's own cell gutter, not the page header's, so the first
+   filter sits directly over the first column. */
+.toolbar {
+  flex: 0 0 auto;
+  padding: var(--s4) var(--s3) 0;
+}
+
+.tableArea {
+  flex: 1 1 0;
+  min-height: 0;
+  container-type: size;
+
+  --h-table-body: 100cqh;
+}
+
+/* The header's summary line, in this domain's own reading. */
+.strong {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) var(--s6);
+  font-family: var(--font-ui);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* Rows, not bars: what is loading is a list. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  flex: 1 1 0;
+  min-height: 0;
+  padding: var(--s6);
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  flex: 0 0 auto;
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}

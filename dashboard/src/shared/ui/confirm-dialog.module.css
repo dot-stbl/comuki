@@ -6,19 +6,36 @@
   align-items: center;
   justify-content: center;
   background: var(--scrim);
-  animation: scrim-in var(--dur) var(--ease) both;
 }
 
+/* The depth cap is `dvh` with a `vh` fallback for the same reason `FormDialog`
+   carries one: `100vh` is the large viewport on a mobile browser, so a confirm
+   sized against it puts its own footer — the two buttons that are the entire
+   point of a confirm — under the address bar. */
 .modal {
   width: var(--modal-w);
   max-width: calc(100vw - var(--s8));
+  max-height: calc(100vh - var(--s8));
+  max-height: calc(100dvh - var(--s8));
   display: flex;
   flex-direction: column;
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-modal);
-  animation: modal-in var(--dur) var(--ease) both;
+}
+
+/* Entrance, opt-out — the same guard `FormDialog` carries, and for the same
+   reason: the arrival is a moment, not a message, so a reader who has asked for
+   less motion loses nothing by getting the dialog already in place. */
+@media (prefers-reduced-motion: no-preference) {
+  .scrim {
+    animation: scrim-in var(--dur) var(--ease) both;
+  }
+
+  .modal {
+    animation: modal-in var(--dur) var(--ease) both;
+  }
 }
 
 .dialog {
@@ -29,6 +46,7 @@
 
 .title {
   margin: 0;
+  overflow-wrap: anywhere;
   padding: var(--s5) var(--s5) 0;
   font-family: var(--font-mono);
   font-size: var(--t-body);
@@ -37,17 +55,28 @@
   color: var(--text);
 }
 
+/* The one part of the box that gives way when the window is short: the title
+   and the footer are what a confirm is, so the sentence in the middle is what
+   scrolls. `auto`, never `hidden` — this is a scroll port on purpose and the
+   Clip-Not-Hidden rule is about boxes that open one by accident. */
 .body {
   margin: 0;
+  min-block-size: 0;
+  overflow-y: auto;
   padding: var(--s4) var(--s5) var(--s5);
   font-family: var(--font-mono);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 
+/* Wraps rather than crushes: at 288px — the dialog's width on a 320px window —
+   two labelled buttons can be wider than the row that holds them, and a modal
+   with no clip of its own would paint them out over the scrim. */
 .footer {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--s3);
   justify-content: flex-end;
   padding: var(--s3) var(--s5);

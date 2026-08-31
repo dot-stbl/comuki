@@ -1,0 +1,69 @@
+/* Where the swarm breaks, by profile. Two lines per row: the profile and its
+   rate, then the one sentence that says what goes wrong. */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+/* A profile name is the row's identity and a value, so the data voice at full
+   strength. Fixed track, so the rates line up down the column. */
+.profile {
+  flex: 0 0 5rem;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* The one figure on the row worth catching an eye. The hue is the column's,
+   not a status — the region's own note says what these numbers are — and the
+   weight is the second channel, so the reading survives greyscale. */
+.rate {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  color: var(--st-failed);
+}
+
+/* One line of the operator's own language among the values, so the interface
+   voice — and it truncates, because a row that grows breaks the column. */
+.note {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+
+.empty {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}

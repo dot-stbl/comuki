@@ -7,7 +7,7 @@ export interface CostByApp {
 }
 
 export interface CostFailure {
-  stage: string
+  profile: string
   rate: number
   note: string
 }

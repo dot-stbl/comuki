@@ -1,0 +1,110 @@
+.group {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+/* `clip`, never `hidden` — a panel is an ancestor of everything a screen puts
+   in it, sticky table heads and pinned columns included, and `hidden` would
+   make it a scroll container they could re-anchor to. `clip` cuts the panel's
+   rectangle without opening a port. The two `min-*: 0` are what let a panel be
+   smaller than its content in the first place; the clip is what keeps the
+   overflow inside the pane group rather than under the next panel. */
+.panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: clip;
+}
+
+/* The separator is a hairline at rest and a grabbable band under the pointer:
+   the hit area stays generous while the drawn rule stays one pixel. */
+.separator {
+  position: relative;
+  flex: 0 0 auto;
+  background: var(--rule);
+  border: none;
+  padding: 0;
+  transition: background-color var(--dur) var(--ease);
+}
+
+.horizontal {
+  width: var(--hairline);
+  cursor: col-resize;
+}
+
+.vertical {
+  height: var(--hairline);
+  cursor: row-resize;
+}
+
+.separator::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--s3) * -1);
+}
+
+.vertical::before {
+  inset: calc(var(--s3) * -1) 0;
+}
+
+.horizontal::before {
+  inset: 0 calc(var(--s3) * -1);
+}
+
+.separator:hover,
+.separator[data-state="dragging"] {
+  background: var(--primary);
+}
+
+.separator:focus-visible {
+  outline: none;
+  background: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* The grip: three marks that appear only when the separator is live, so the
+   resting board stays a clean rule. */
+.grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: var(--s1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.vertical .grip {
+  flex-direction: row;
+}
+
+.horizontal .grip {
+  flex-direction: column;
+}
+
+.separator:hover .grip,
+.separator:focus-visible .grip,
+.separator[data-state="dragging"] .grip {
+  opacity: 1;
+}
+
+/* Two pixels square, spelled from the one-pixel unit rather than from
+   `--r-xs`: the mark's size was riding the radius scale, so moving the corner
+   would have silently resized the grip. A box this small has no room for a
+   real corner, so it keeps the hairline one. */
+.grip span {
+  display: block;
+  width: calc(var(--hairline) * 2);
+  height: calc(var(--hairline) * 2);
+  border-radius: var(--hairline);
+  background: var(--background);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .separator,
+  .grip {
+    transition: none;
+  }
+}

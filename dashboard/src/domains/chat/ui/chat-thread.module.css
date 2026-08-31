@@ -1,0 +1,141 @@
+/* The thread: a scroll port with a definite height, and nothing else.
+ *
+ * `.thread` claims the whole of the grid cell it is put in and splits it into
+ * the port and the announcement line. The composer is a sibling in the page's
+ * own column, not a child here, because the composer is a control that acts on
+ * the conversation rather than a part of the reading. */
+
+.thread {
+  /* Positioned so the off-screen announcement below resolves against this box
+     rather than against whatever happens to be positioned further up. */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  min-block-size: 0;
+  min-inline-size: 0;
+}
+
+/* The one box on this screen that scrolls. `auto`, not `clip`: this is the
+   port, and the shell's `.content` above it deliberately is not. */
+.scroll {
+  flex: 1 1 0;
+  min-block-size: 0;
+  min-inline-size: 0;
+  overflow-y: auto;
+  overflow-x: clip;
+  padding-block: var(--s4);
+  padding-inline-end: var(--s3);
+}
+
+.log {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+}
+
+/* A reply still arriving. Same shape as a settled one so nothing jumps when it
+   lands — only the caret says it is not finished yet. */
+.pending {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+  padding-block: var(--s3);
+}
+
+.pendingByline {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+}
+
+.pendingAuthor {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+}
+
+.pendingClock {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+/* The one authored moment on this screen, and it is a *state* rather than
+   decoration: a block that blinks says the sentence is not over. At rest — and
+   for anyone who asked for less motion — it is a solid block, which still says
+   the same thing by being there at all. */
+.cursor {
+  display: inline-block;
+  inline-size: var(--h-meter);
+  block-size: var(--icon-md);
+  border-radius: var(--r-xs);
+  background: var(--primary);
+  vertical-align: text-bottom;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cursor {
+    animation: caret 1.1s steps(1, end) infinite;
+  }
+}
+
+@keyframes caret {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  56%,
+  100% {
+    opacity: 0.15;
+  }
+}
+
+/* The announcement. Off screen but not `display: none` — a hidden live region
+   is a live region that never speaks. */
+.announce {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: clip;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Empty ------------------------------------------------------------------- */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+  padding: var(--s6) var(--s5);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.emptyTitle {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.emptyBody {
+  margin: 0;
+  max-inline-size: 52ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}

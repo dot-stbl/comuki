@@ -1,0 +1,66 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  height: var(--h-bar);
+  flex-shrink: 0;
+  padding: 0 var(--s5);
+  background: var(--bar);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* The mark carries the brand on its own — there is no wordmark and no reveal.
+   It is the one link that always goes home, so it is built to read as a
+   control: it takes `currentColor` and goes Signal Blue on hover. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--s2) var(--s3);
+  margin-left: calc(var(--s3) * -1);
+  border-radius: var(--r-sm);
+  color: var(--foreground);
+}
+
+.brand:hover {
+  color: var(--primary);
+}
+
+.brand:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.mark {
+  height: 1rem;
+  width: auto;
+  flex: 0 0 auto;
+  transition: color var(--dur) var(--ease);
+}
+
+/* The container is a thing that arrives and leaves; on hover it nudges along
+   its own axis rather than swelling. Colour still shifts without motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .mark {
+    transition:
+      color var(--dur) var(--ease),
+      transform var(--dur) var(--ease);
+  }
+
+  .brand:hover .mark {
+    transform: translateX(2px);
+  }
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* The controls at the far edge read as one set, so they sit closer to each
+   other than the bar's own gap would put them. `--s5` between four icon
+   buttons made four separate things; `--s3` makes a group. */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-inline-size: 0;
+}

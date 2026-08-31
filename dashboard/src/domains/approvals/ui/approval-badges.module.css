@@ -1,0 +1,64 @@
+/* Built on the same measurements as the kit's `StatusBadge`, at its small step:
+   these ride a header line beside an app name and must not be a second size
+   language. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  /* A badge is a reading, so it never gives up width: the app name beside it is
+     what truncates, and `.head` wraps when even that is not enough.
+
+     This rule said `min-inline-size: 0` — the opposite instruction, with
+     nothing behind it to make good on it. It cancelled the content-based
+     minimum that `white-space: nowrap` otherwise gives every badge in this
+     product, so the box could be squeezed under its own label while the label
+     itself, being `nowrap` and unclipped, went on painting at full width —
+     outside the border, over whatever stood next to it. */
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  border: var(--hairline) solid var(--border);
+  padding: 0 var(--s3);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  line-height: 1.2;
+  color: var(--st);
+  background: color-mix(in oklab, var(--st) 10%, transparent);
+  white-space: nowrap;
+}
+
+.icon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
+/* What is being decided. No hue: the kind of decision is not urgent, it is
+   only the subject — the risk badge beside it is what is worth a colour. */
+.type {
+  --st: var(--text);
+
+  background: transparent;
+  border-color: var(--rule-strong);
+}
+
+/* Risk ------------------------------------------------------------------- */
+
+/* The one that escalates its own badge — a stronger border and a full tint —
+   because a high-risk deploy should be visible before it is read. Same rule the
+   kit's `failed` follows. */
+.high {
+  --st: var(--st-failed);
+
+  border-color: color-mix(in oklab, var(--st-failed) 40%, transparent);
+  background: var(--st-failed-tint);
+}
+
+.medium {
+  --st: var(--st-waiting);
+}
+
+.low {
+  --st: var(--st-success);
+}

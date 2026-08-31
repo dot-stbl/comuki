@@ -1,0 +1,20 @@
+/* The band a table stands in on this screen.
+
+   THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a screen that renders as a blank strip.
+
+   AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
+   split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
+   min-height 0, **overflow auto**) → `knowledge-page.module.css`'s `.screen`
+   → this box.
+
+   The chain stops at `.content`, exactly as it does on the two platform
+   registries: knowledge is a document read top to bottom, not a board that has
+   to fit at once. So nothing here claims a share of the viewport and nothing
+   carries a `height: 100%` a missing flex parent could quietly resolve to zero.
+   The table below is sized by its own rows and capped by `--h-table-body`
+   (26rem) in the kit's own stylesheet. */
+
+.tableArea {
+  min-inline-size: 0;
+}

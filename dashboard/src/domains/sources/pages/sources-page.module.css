@@ -1,0 +1,125 @@
+/* THE HEIGHT CHAIN, hand-traced, because jsdom lays nothing out and every gate
+   passes on a screen that renders as a blank strip.
+
+   AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
+   split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
+   min-height 0, overflow auto, padded) → `.screen` below.
+
+   `.screen` claims no share of the viewport and neither does anything under it.
+   That is the decision this screen makes differently from the duty board:
+   Sources is a register read top to bottom on a slow clock, not a board that
+   has to fit at once — so it grows with its content and `.content` scrolls it.
+   Every link below here is a block box sized by what is in it; there is no
+   `height: 100%` anywhere that a missing flex parent could quietly resolve to
+   zero. The table's own scroll port is capped by `--h-table-body` in the kit's
+   stylesheet, so a long list scrolls inside itself rather than pushing the
+   sections under it off the page. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  min-inline-size: 0;
+}
+
+/* Sections ---------------------------------------------------------------- */
+
+/* The sections themselves — the frame, the title and its paragraph — are the
+   kit's `Section` in its screen variant. Four page stylesheets carried a
+   byte-identical copy of this block; it lives in
+   `shared/ui/section.module.css` now. */
+
+/* A value quoted inside prose stays in the data voice, because it is something
+   the operator will read back somewhere else. */
+.code {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* The two figures in the header's summary line, this domain's own reading. */
+.strong {
+  color: var(--foreground);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.warn {
+  color: var(--st-failed);
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* States ------------------------------------------------------------------ */
+
+.failure {
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-inline-start: var(--hairline) solid var(--st-failed);
+  border-radius: var(--r-md);
+  background: var(--st-failed-tint);
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+}
+
+/* The answer to a probe the operator started from a row rather than from the
+   connect form. It sits above the table because that is where they are looking,
+   and it says which connection answered — a bare "ok" over a list of eight
+   would belong to any of them. */
+.probe {
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-inline-start: var(--hairline) solid var(--st-success);
+  border-radius: var(--r-md);
+  background: var(--st-success-tint);
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+}
+
+.probeBad {
+  border-inline-start-color: var(--st-failed);
+  background: var(--st-failed-tint);
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) 0;
+  font-family: var(--font-ui);
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-inline-size: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* Rows, not bars: what is loading is a register, and a skeleton that lies about
+   the shape of what is coming is worse than none. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s6) 0;
+}
+
+.skeletonBar {
+  block-size: var(--h-meter);
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}

@@ -1,0 +1,56 @@
+/* The write-back preview: six run statuses down the left, what the connector
+   puts on the ticket down the right. Read-only — this is derived from the
+   provider, not configured here — so it is a definition list bounded by
+   hairlines rather than a table with controls in it. */
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.head {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s2) var(--s4);
+  align-items: baseline;
+  margin: 0;
+  padding-block: var(--s2);
+  border-block: var(--hairline) solid var(--rule-strong);
+  min-inline-size: 0;
+}
+
+.from {
+  margin: 0;
+  min-inline-size: 0;
+}
+
+/* What the connector writes is a value the operator will read back in the
+   tracker — a label name, a transition name — so it takes the data voice. */
+.to {
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  line-height: 1.4;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.none {
+  margin: 0;
+  max-inline-size: 60ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}

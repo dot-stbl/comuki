@@ -13,6 +13,8 @@ import {
   FileTextIcon,
   GitBranchIcon,
   HelpCircleIcon,
+  Home,
+  LayoutGrid,
   Loader2Icon,
   MenuIcon,
   MoonIcon,
@@ -26,14 +28,14 @@ import {
 
 import { AppShell } from "@/app/layout/app-shell"
 import { DemoCard } from "@/shared/ui/demo-card"
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/shared/ui/tooltip"
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/shared/ui/_legacy/tooltip"
 import { Toaster } from "@/shared/ui/sonner"
 import { Button } from "@/shared/ui/button"
 import { ToggleGroup, ToggleGroupItem } from "@/shared/ui/toggle-group"
 import { Input } from "@/shared/ui/input"
 import { Textarea } from "@/shared/ui/textarea"
 import { Label } from "@/shared/ui/label"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/shared/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/shared/ui/_legacy/select"
 import { Checkbox } from "@/shared/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group"
 import { Switch } from "@/shared/ui/switch"
@@ -47,7 +49,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/shared/ui/form"
+} from "@/shared/ui/_legacy/form"
 import {
   Dialog,
   DialogContent,
@@ -297,14 +299,14 @@ function ButtonsShowcase() {
       </DemoCard>
 
       <DemoCard label="Size">
-        <Button size="xs">xs</Button>
+        <Button size="sm">xs</Button>
         <Button size="sm">sm</Button>
         <Button size="default">Default</Button>
         <Button size="lg">lg</Button>
       </DemoCard>
 
       <DemoCard label="Icon Sizes">
-        <Button size="icon-xs" aria-label="Close"><XIcon /></Button>
+        <Button size="icon-sm" aria-label="Close"><XIcon /></Button>
         <Button size="icon-sm" aria-label="Settings"><SettingsIcon /></Button>
         <Button size="icon" aria-label="Add"><PlusIcon /></Button>
         <Button size="icon-lg" aria-label="Delete"><Trash2Icon /></Button>
@@ -913,7 +915,7 @@ function DataDisplayShowcase() {
               <ItemDescription>agent-alpha finished task #847 in 142ms.</ItemDescription>
             </ItemContent>
             <ItemActions>
-              <Button size="icon-xs" variant="ghost"><ChevronRightIcon /></Button>
+              <Button size="icon-sm" variant="ghost"><ChevronRightIcon /></Button>
             </ItemActions>
           </Item>
           <ItemSeparator />
@@ -932,7 +934,7 @@ function DataDisplayShowcase() {
 
       {/* Empty */}
       <DemoCard label="Empty">
-        <div className="relative w-full max-w-xs overflow-hidden rounded-md border border-dashed bg-faint-grid">
+        <div className="relative w-full max-w-xs overflow-hidden rounded-md border border-dashed bg-muted">
           <div className="relative bg-popover/90 p-4">
           <Empty>
             <EmptyMedia variant="icon"><SearchIcon /></EmptyMedia>

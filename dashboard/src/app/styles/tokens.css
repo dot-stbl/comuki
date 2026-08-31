@@ -1,154 +1,336 @@
-/* Comuki tokens — single source for kit CSS Modules + shadcn/Tailwind bridge.
-   Theme switch: `.dark` on <html> (ThemeProvider). Light = :root defaults. */
+/* Comuki tokens — the vocabulary. `themes.css` holds the values.
+
+   Two axes, and they are independent:
+
+     theme   a complete palette, selected with `data-theme` on <html>
+     mode    dark | light | system, selected with `.dark` on <html>
+
+   A theme has *both* renderings, so picking "dockside" and picking "dark" are
+   different questions and the product asks them separately. `ThemeProvider`
+   writes both attributes; `src/app/theme/themes.ts` is the registry and
+   `src/app/styles/themes.css` is that registry compiled to CSS.
+
+   What lives where:
+
+     themes.css  the twenty primitives each theme states — floor, rail, lane,
+                 the two text greys, the accent, the six statuses.
+     tokens.css  everything derived from those primitives, plus every token
+                 that is not a colour at all: type, spacing, corners, motion,
+                 geometry. A new theme never touches this file.
+
+   The split is what keeps a theme cheap. `--sidebar-ring` is `var(--primary)`
+   in every theme there will ever be, so it is written once here rather than
+   six times over there — and a theme that forgot it could not exist. */
 
 :root {
-  --background: #fbfbfa;
-  --foreground: #1b232e;
-  --card: #ffffff;
-  --card-foreground: #1b232e;
-  --popover: #ffffff;
-  --popover-foreground: #1b232e;
-  --primary: #3c5a86;
-  --primary-foreground: #ffffff;
-  --secondary: #f3f4f3;
-  --secondary-foreground: #1b232e;
-  --muted: #f3f4f3;
-  --muted-foreground: #697080;
-  --accent: #f3f4f3;
-  --accent-foreground: #1b232e;
-  --destructive: #b0473b;
-  --border: #e6e7e4;
-  --input: #e6e7e4;
-  --ring: #3c5a86;
-  --chart-1: #3c5a86;
-  --chart-2: #4e7c5b;
-  --chart-3: #b0473b;
-  --chart-4: #9c7a3c;
-  --chart-5: #6e5ba6;
-  --radius: 0.375rem;
-  --border-strong: #d2d4d0;
-  --sidebar: #f6f7f6;
-  --sidebar-foreground: #1b232e;
-  --sidebar-primary: #3c5a86;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3f4f3;
-  --sidebar-accent-foreground: #1b232e;
-  --sidebar-border: #e6e7e4;
-  --sidebar-ring: #3c5a86;
-  --st-running: #3c5a86;
-  --st-success: #4e7c5b;
-  --st-failed: #b0473b;
-  --st-waiting: #9c7a3c;
-  --st-queued: #a0a4ac;
-  --st-escalated: #6e5ba6;
+  /* ---------------------------------------------------------------- *
+   * Derived colour vocabulary.
+   *
+   * Every declaration below resolves against the *same element* the theme
+   * block sets its primitives on, so source order between the two files does
+   * not matter: `var()` is substituted at use, not at parse.
+   * ---------------------------------------------------------------- */
+
+  /* shadcn/Tailwind bridge names. Load-bearing for the five screens still on
+     the old stack — approvals, cost, knowledge, settings, tasks — which wear
+     `bg-card` and `text-muted-foreground` rather than CSS Modules. */
+  --card-foreground: var(--foreground);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--lane-alt);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--lane-alt);
+  --accent-foreground: var(--foreground);
+  --input: var(--border);
+  --ring: var(--primary);
+  --sidebar: var(--rail);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--primary);
+
+  /* Charts read the status set rather than a second palette: a failed series
+     and a failed run are the same fact and have no business being two
+     colours. */
+  --chart-1: var(--st-running);
+  --chart-2: var(--st-success);
+  --chart-3: var(--st-failed);
+  --chart-4: var(--st-waiting);
+  --chart-5: var(--st-escalated);
+
+  /* The wash a status paints behind itself. One percentage for all six, so a
+     badge cannot quietly become louder than its neighbour. */
   --st-running-tint: color-mix(in oklab, var(--st-running) 18%, transparent);
   --st-success-tint: color-mix(in oklab, var(--st-success) 18%, transparent);
   --st-failed-tint: color-mix(in oklab, var(--st-failed) 18%, transparent);
   --st-waiting-tint: color-mix(in oklab, var(--st-waiting) 18%, transparent);
   --st-queued-tint: color-mix(in oklab, var(--st-queued) 18%, transparent);
-  --st-escalated-tint: color-mix(in oklab, var(--st-escalated) 18%, transparent);
+  --st-escalated-tint: color-mix(
+    in oklab,
+    var(--st-escalated) 18%,
+    transparent
+  );
 
-  /* Kit semantic aliases (CSS Modules — no Tailwind) */
+  /* Kit semantic aliases (CSS Modules — no Tailwind). */
   --brand: var(--primary);
   --brand-foreground: var(--primary-foreground);
   --danger: var(--destructive);
-  --danger-foreground: #ffffff;
+  /* Whatever is legible on the accent is legible on the destructive fill:
+     within a mode the two always share a polarity — a light fill in dark, a
+     dark fill in light — so a second value here would only be a second thing
+     to get wrong. */
+  --danger-foreground: var(--primary-foreground);
   --surface: var(--card);
   --surface-raised: var(--popover);
   --text: var(--foreground);
   --text-muted: var(--muted-foreground);
-  --scrim: color-mix(in oklab, #1b232e 45%, transparent);
+  --bar: var(--background);
+  --rule: var(--border);
+  --rule-strong: var(--border-strong);
+  --flow-ribbon: color-mix(in oklab, var(--st-running) 22%, transparent);
+  --flow-ribbon-dim: color-mix(in oklab, var(--text-faint) 18%, transparent);
 
-  /* Type */
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --t-body: 0.8125rem;
-  --t-sm: 0.75rem;
-  --t-xs: 0.6875rem;
-  --t-micro: 0.625rem;
+  /* Gradients live only where there is real area, and never in `--primary`
+     itself: that token is consumed as `color`, `border-color`, `box-shadow`,
+     `outline`, `accent-color` and `caret-color`, and a gradient is an <image> —
+     every one of those declarations would drop silently.
+     The primary button is flat at rest (the colour its label contrast was
+     measured against) and takes this only on hover and focus. Lighter at the
+     top in both modes, because "hover lifts" is the gesture; the mix is toward
+     white rather than toward a hand-picked second hex so a theme gets its hover
+     for free. */
+  --gradient-primary-hover: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--primary) 82%, #fff),
+    var(--primary)
+  );
+  /* Along the direction of travel: thin upstream, dense downstream, so the
+     connector says which way work moves. Derived, so it follows the theme. */
+  --gradient-flow: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--primary) 12%, transparent),
+    color-mix(in oklab, var(--primary) 38%, transparent)
+  );
+
+  /* Status weave — the second channel, written once.
+     Hue is never allowed to carry a status on its own, so every status also
+     gets a hatch whose angle and density differ: the cue survives greyscale,
+     colour blindness and a photocopied screenshot. These lived inside the
+     profile river's module while it was the only consumer; the run graph is
+     the second, and two copies of an encoding is how an encoding drifts.
+
+     The weave is theme-independent on purpose. It is the channel that does not
+     depend on which palette is showing — and `running` and `success` are the
+     two statuses that have none, which is why every palette in the registry
+     has to hold those two furthest apart in lightness. */
+  --weave-running: none;
+  --weave-success: none;
+  --weave-waiting: repeating-linear-gradient(
+    0deg,
+    color-mix(in oklab, #000 45%, transparent) 0 1px,
+    transparent 1px 4px
+  );
+  --weave-escalated: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, #000 45%, transparent) 0 2px,
+    transparent 2px 5px
+  );
+  --weave-failed: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklab, #000 50%, transparent) 0 2px,
+    transparent 2px 5px
+  );
+  --weave-queued: repeating-linear-gradient(
+    90deg,
+    color-mix(in oklab, #000 40%, transparent) 0 1px,
+    transparent 1px 6px
+  );
+
+  /* Depth, mode-only.
+
+     The dispatcher board has two planes, and only two. The list is in front of
+     the flow (light casts upward), the sticky header in front of the rows it
+     scrolls over. Offset and blur, never a zero-offset halo.
+
+     These follow the *mode* rather than the theme: a shadow is cast by the
+     room's light, not by the palette on the walls. The light values are cast in
+     the theme's own ink so a warm floor gets a warm shadow; the dark ones are
+     black, because on a dark floor a tinted shadow reads as a smudge. */
+  --scrim: color-mix(in oklab, var(--foreground) 45%, transparent);
+  --shadow-modal: 0 14px 36px -12px
+      color-mix(in oklab, var(--foreground) 22%, transparent),
+    0 3px 10px -4px color-mix(in oklab, var(--foreground) 14%, transparent);
+  --shadow-lift: 0 -10px 22px -14px
+    color-mix(in oklab, var(--foreground) 40%, transparent);
+  --shadow-header: 0 6px 12px -10px
+    color-mix(in oklab, var(--foreground) 35%, transparent);
+  /* The seam beside the pinned block while the port is scrolled sideways.
+
+     No spread, and that is the whole history of this token. It has been
+     retuned twice for the wrong reason: it used to be cast by every pinned
+     *cell*, so the numbers were chasing a smear that was really N shadows
+     stacked one per row. The seam is now a single hairline element spanning
+     the frame, and a spread contracts the shadow box on every side — against
+     a 1px source any negative spread erases it entirely. A hairline wants no
+     spread and a short throw.
+
+     `box-shadow` has no logical form, so this one offset is physical — the day
+     the product runs right-to-left it needs a mirrored pair, unlike everything
+     around it. */
+  --shadow-pinned: 4px 0 8px 0
+    color-mix(in oklab, var(--foreground) 28%, transparent);
+
+  /* Type — two voices: Archivo carries meaning, JetBrains Mono carries values.
+     --font-mono stays as the kit/Tailwind alias so ported components follow. */
+  --font-ui: "Archivo Variable", "Archivo", system-ui, sans-serif;
+  --font-data: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace,
+    monospace;
+  --font-mono: var(--font-data);
+  /* Type. Every step moved up one notch with the spacing, for the same
+     reason: 10px micro-labels beside 13px body left no room for a hierarchy to
+     be *seen*, only inferred. The scale is now 11/12/13/14/16/21/24. */
+  --t-display: 1.5rem;
+  --t-h1: 1.3125rem;
+  --t-h2: 1rem;
+  --t-body: 0.875rem;
+  --t-sm: 0.8125rem;
+  --t-xs: 0.75rem;
+  --t-micro: 0.6875rem;
+  /* Retuned when the capitals went: 0.16em was opening up uppercase, and at
+     lowercase it read as spaced-out mush rather than as a heading. */
+  --tracking-label: 0.08em;
   --lh-body: 1.55;
+  --fw-regular: 400;
   --fw-medium: 500;
   --fw-semibold: 600;
+  --fw-bold: 700;
+  /* Two tracking roles, so the gesture carries meaning rather than decoration:
+     wide marks a region heading, tight marks a data label. Both were set for
+     capitals; lowercase needs roughly half as much air, and the roles stay
+     apart — the heading is still four times the label's tracking. */
+  --tracking-data: 0.02em;
+  /* Display type tightens; the kit forbids raw values in modules. */
+  --tracking-display: -0.02em;
 
-  /* Spacing */
-  --s1: 0.125rem;
-  --s2: 0.3125rem;
-  --s3: 0.4375rem;
-  --s4: 0.625rem;
-  --s5: 0.8125rem;
-  --s6: 1rem;
-  --s7: 1.1875rem;
-  --s8: 1.375rem;
+  /* Spacing.
+
+     Retuned upward after the board was walked end to end: the first scale ran
+     2/5/7/10px, which is instrument-panel tight, and fifteen screens of it read
+     as one undifferentiated mass — there was no step big enough to say "these
+     two things are unrelated". The scale is now 4/6/8/12/16/20/24/32, so the
+     small end still packs a table row and the large end can actually separate
+     one region from the next. Nothing below --s1 exists; a gap smaller than
+     4px is a mistake, not a decision. */
+  --s1: 0.25rem;
+  --s2: 0.375rem;
+  --s3: 0.5rem;
+  --s4: 0.75rem;
+  --s5: 1rem;
+  --s6: 1.25rem;
+  --s7: 1.5rem;
+  --s8: 2rem;
 
   /* Radius / depth / motion */
-  --r-sm: calc(var(--radius) * 0.6);
-  --r-md: var(--radius);
+  /* THE CORNER GROWS WITH THE BOX. Four steps, proportional rather than flat,
+     and there is no zero step any more. The old scale ran 2 / 3.6 / 6px *and
+     nothing at all on every data surface*, so half the product was rounded and
+     half was square — which is exactly what it read as. A corner is not a
+     decoration you either apply or withhold; it is a property of the box.
+
+     The steps are optical, and optical in both directions: a small box wearing
+     a large corner stops being a rectangle and reads as a capsule, and a large
+     box wearing a small corner reads as square whatever number is on it. So the
+     step is chosen by the box, not by the component's category — a 10px corner
+     on a 20px chip is wrong even though a chip is a control.
+
+       --hairline  1px   the one-pixel unit: hairline gaps, the smallest marks,
+                         a 2px thumb or grip with no room for a real corner
+       --r-xs      3px   marks and tracks — meters, drawn channels, swatches,
+                         the switch thumb, a checkbox, an inline code span
+       --r-sm      5px   small furniture — badges, chips, tags, menu and rail
+                         items, tooltips
+       --r-md      7px   controls and the blocks that stand beside them —
+                         buttons, text inputs and selects, popovers, notice
+                         bands, the flow's nodes
+       --r-lg     10px   the screen's own surfaces — the data-table frame,
+                         panels, dialogs
+
+     Literals rather than multiples of `--radius`: `--radius` is the
+     shadcn/Tailwind bridge kept alive for the screens still on the old stack,
+     and hanging the kit's optics off it is what produced a 3.6px step nobody
+     ever chose. The two scales are allowed to diverge; this one is the kit's. */
+  --radius: 0.375rem;
+  --hairline: 1px;
+  --r-xs: 3px;
+  --r-sm: 5px;
+  --r-md: 7px;
+  --r-lg: 10px;
+  /* Legacy step. Zero consumers outside _legacy/ — do not spread it. It is a
+     retired shape in this form language, not a fifth step. */
   --r-pill: 999px;
-  --shadow-modal: 0 14px 36px -12px color-mix(in oklab, #1b232e 22%, transparent),
-    0 3px 10px -4px color-mix(in oklab, #1b232e 14%, transparent);
+  /* The meter unit: swatches, track heights, the brand mark. */
+  --h-meter: 0.5rem;
   --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
   --dur: 180ms;
+
+  /* Control heights. Trimmed a step across the board — this is a dense console
+     and the buttons were reading heavy against 13px body type.
+     `--h-button-sm` stops at 1.5rem and goes no lower: 24px is WCAG 2.2's
+     minimum target size, and the table's icon-only Approve/Cancel sit at `sm`
+     with only `--s2` between them, so the "sufficient spacing" exception does
+     not rescue a smaller one. Height came down where there was room; the rest
+     of the weight comes off the horizontal padding in `button.module.css`. */
   --h-button: 1.75rem;
   --h-button-sm: 1.5rem;
-  --h-button-lg: 2rem;
+  --h-button-lg: 2.125rem;
   --modal-w: 26rem;
+
+  /* Data tables. Row height is virtualizer geometry and belongs with the
+     component that measures it; these two are pure chrome — the header band,
+     and the scroll-port depth a screen gets before it names its own. */
+  --h-row-head: 2rem;
+  /* The gutter every screen keeps from the edge of the content region.
+     Content that runs to the edge reads as clipped rather than as full — and a
+     table that does it looks broken. One token so no screen invents its own. */
+  --page-x: var(--s7);
+  --page-y: var(--s6);
+  --h-table-body: 26rem;
+
+  /* Icon scale — an icon sits at the cap height of the type beside it, never
+     above it: xs beside micro labels (10px), sm beside values (12px), md
+     beside body (13px) and the default control, lg for the large control.
+     Kit controls size their own SVGs from this; call sites don't hand-size. */
+  --icon-xs: 0.6875rem;
+  --icon-sm: 0.8125rem;
+  --icon-md: 0.9375rem;
+  --icon-lg: 1.125rem;
+
+  /* Dispatcher surface — shell chrome and the profile flow. */
+  --w-rail: 13.5rem;
+
+  /* Run graph. Every depth band is the same fixed width, so the layered plan
+     reads as a grid rather than as a ransom note, and so the connector between
+     two bands is always the same length. The node's height is derived from
+     type inside the module — this is the one measurement that is a decision
+     rather than a sum. */
+  --w-graph-column: 11rem;
+  --h-bar: 3rem;
+  --h-river-label: 1rem;
+  /* The flow board collapsed: roughly one row, enough for the shape and not
+     enough for a number. The panel collapses to the same depth in pixels,
+     because that is the unit `react-resizable-panels` measures in. */
+  --h-strip: 2.375rem;
 }
 
-.dark {
-  --background: #15171b;
-  --foreground: #e8eaee;
-  --card: #191c21;
-  --card-foreground: #e8eaee;
-  --popover: #22262c;
-  --popover-foreground: #e8eaee;
-  --primary: #83a1dc;
-  --primary-foreground: #0e1116;
-  --secondary: #1c1f25;
-  --secondary-foreground: #e8eaee;
-  --muted: #1c1f25;
-  --muted-foreground: #969ca6;
-  --accent: #22262c;
-  --accent-foreground: #e8eaee;
-  --destructive: #d6685a;
-  --border: #262a30;
-  --input: #262a30;
-  --ring: #83a1dc;
-  --chart-1: #83a1dc;
-  --chart-2: #7ba68c;
-  --chart-3: #d6685a;
-  --chart-4: #c6a35e;
-  --chart-5: #9a86c7;
-  --radius: 0.375rem;
-  --border-strong: #373c44;
-  --sidebar: #131519;
-  --sidebar-foreground: #e8eaee;
-  --sidebar-primary: #83a1dc;
-  --sidebar-primary-foreground: #0e1116;
-  --sidebar-accent: #22262c;
-  --sidebar-accent-foreground: #e8eaee;
-  --sidebar-border: #262a30;
-  --sidebar-ring: #83a1dc;
-  --st-running: #83a1dc;
-  --st-success: #7ba68c;
-  --st-failed: #d6685a;
-  --st-waiting: #c6a35e;
-  --st-queued: #565c65;
-  --st-escalated: #9a86c7;
-  --st-running-tint: color-mix(in oklab, var(--st-running) 18%, transparent);
-  --st-success-tint: color-mix(in oklab, var(--st-success) 18%, transparent);
-  --st-failed-tint: color-mix(in oklab, var(--st-failed) 18%, transparent);
-  --st-waiting-tint: color-mix(in oklab, var(--st-waiting) 18%, transparent);
-  --st-queued-tint: color-mix(in oklab, var(--st-queued) 18%, transparent);
-  --st-escalated-tint: color-mix(in oklab, var(--st-escalated) 18%, transparent);
-
-  --brand: var(--primary);
-  --brand-foreground: var(--primary-foreground);
-  --danger: var(--destructive);
-  --danger-foreground: #0e1116;
-  --surface: var(--card);
-  --surface-raised: var(--popover);
-  --text: var(--foreground);
-  --text-muted: var(--muted-foreground);
+/* The dark room. Only the depth tokens differ — the palette itself comes from
+   whichever theme block matched, in either mode. */
+:root.dark {
   --scrim: color-mix(in oklab, #000 55%, transparent);
   --shadow-modal: 0 14px 36px -10px color-mix(in oklab, #000 66%, transparent),
     0 3px 10px -4px color-mix(in oklab, #000 50%, transparent);
+  --shadow-lift: 0 -10px 24px -12px color-mix(in oklab, #000 78%, transparent);
+  --shadow-header: 0 6px 14px -10px color-mix(in oklab, #000 70%, transparent);
+  --shadow-pinned: 4px 0 10px 0 color-mix(in oklab, #000 55%, transparent);
 }

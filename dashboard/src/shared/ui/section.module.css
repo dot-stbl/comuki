@@ -1,0 +1,76 @@
+/* A titled region of a screen.
+   Five screens spelled this out privately before it was a component, and three
+   of those five reached for the wrong tracking on the way. So the tracking is
+   not a decision a call site gets to make here: the region heading carries
+   `--tracking-label` because it names a region, its inline note carries
+   `--tracking-data` because it names a value, and the screen title carries no
+   tracking at all because it is neither. There is no prop that changes any of
+   those three, which is the whole point of the file. */
+
+/* The shared frame: a heading, then whatever the section is about. Identical
+   under both headings, which is why they are one component and not two. */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+/* --- region: the micro label --- */
+
+/* The wide gesture, in the data voice, naming a region of the screen rather
+   than a value on it. Used where the section's contents are the reading and
+   the heading is only telling you which reading you are looking at. */
+.regionHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s5);
+  min-inline-size: 0;
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+/* Rides at the far end of the heading line: a count, a mix, a clock. It names
+   a value, so it takes the tight gesture and tabular figures. */
+.regionNote {
+  margin-inline-start: auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* --- screen: the title and its paragraph --- */
+
+/* Used where the section needs explaining before it can be read — a registry
+   whose two ceilings answer to different people, an intake whose credential and
+   whose watch break separately. The note is prose under the title, not a figure
+   beside it, so the two stack. */
+.screenHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.screenTitle {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.screenNote {
+  margin: 0;
+  max-inline-size: 78ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}

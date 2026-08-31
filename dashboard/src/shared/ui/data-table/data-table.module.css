@@ -1,0 +1,480 @@
+/* Virtualized table. The scroll port owns both overflows; `.body` is a
+   positioned canvas the virtualizer writes row offsets into, which is why the
+   element display roles are overridden onto grid/flex instead of the browser's
+   table layout — a table box cannot host absolutely positioned rows.
+
+   Two numbers are published by the component so the rule the browser paints and
+   the number the component computed can never disagree: `--dt-row-h` is the row
+   height the virtualizer offsets by, and `--dt-total-w` is the sum of the
+   column tracks. Everything horizontal hangs off that second one — `.table` is
+   exactly that wide, `.headRow` and `.row` are 100% of `.table`, and every cell
+   takes its flex basis inline from the same `column.getSize()` the sum is made
+   of. Head and body are separate elements with one width source between them.
+
+   The floor is the port: `min-inline-size: 100%` keeps the rules and the row
+   backgrounds spanning the full width when the columns do not reach it, and
+   above that the port scrolls sideways rather than the cells spilling out of a
+   row whose background stopped at 100%. */
+
+/* The frame. A data surface is still not a card — no raised fill, no wrapping
+   shadow — but it is bounded on all four sides and it carries the largest
+   corner in the scale. The corner is not card chrome: what made a card a card
+   was lifting the data off the floor with a fill and floating it with a shadow,
+   and a rounded rectangle bounded by one hairline does neither. A square frame
+   sitting under rounded buttons and rounded panels was the visible half of the
+   defect this scale exists to close.
+
+   The depth cap lives here rather than on the port so the frame's own hairlines
+   are inside the height a screen gives it; the port then takes whatever is
+   left, which is what makes the bottom edge land on the frame instead of
+   somewhere under it. */
+.root {
+  display: flex;
+  flex-direction: column;
+  /* The containing block for the pinned seam, and nothing else. `relative` with
+     no `z-index` does not open a stacking context, so the paint ladder below
+     still resolves exactly where it resolved before. */
+  position: relative;
+  max-block-size: var(--h-table-body);
+  min-inline-size: 0;
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--text);
+
+  /* `clip`, and NEVER `hidden`. A rounded frame has to cut its own corners or
+     the rows paint straight through them — but `hidden` makes this box a
+     scroll container, and `position: sticky` resolves against the nearest
+     scrolling ancestor. Every pinned cell below would re-anchor from `.scroll`
+     to here and stop holding, which is the pinned-column bug that was just
+     fixed. `clip` cuts without opening a scroll port. `data-table.test.tsx`
+     reads this file back and fails if it is ever swapped. */
+  overflow: clip;
+
+  /* The head's own ground, one step off the rows so the band terminates
+     against them rather than dissolving into them. Declared once here because
+     two rules read it — the band itself, and a pinned head cell, which has to
+     restate its background or leave a two-column notch in the band. */
+  --dt-band: color-mix(in oklab, var(--rule) 42%, var(--surface));
+
+  /* Paint order, spelled out rather than left to tree order. These three sit
+     in one stacking context — nothing between the port and a cell opens one —
+     so equal numbers would be settled by document order, and the body comes
+     after the head. That is exactly the defect this scale exists to close: at
+     equal weight the pinned cells painted *over* the sticky head, and the
+     pinned columns became the only ones that kept scrolling through the header
+     band instead of disappearing under it. `.body` isolates on top of this, so
+     even a future cell that invents its own z-index cannot climb out of it.
+
+     The grip sits *under* the pin for the same reason the pin sits under the
+     head: a column sliding beneath a pinned track must take its resize rule
+     with it rather than draw a hairline across the track that is holding. */
+  --dt-z-grip: 1;
+  --dt-z-pinned: 2;
+  --dt-z-head: 3;
+  /* Above the head, because the seam is the edge of the *frame*'s held block
+     and runs the whole depth of it — head band included. It is the only rung
+     that is not a cell, which is exactly why it needed a rung rather than a
+     number: a seam drawn under the head would stop one row short of the top
+     and read as a rule that failed to reach. */
+  --dt-z-seam: 4;
+}
+
+.scroll {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+}
+
+.table {
+  display: grid;
+  inline-size: var(--dt-total-w, 100%);
+  min-inline-size: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: 1.2;
+}
+
+.head {
+  display: grid;
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--dt-z-head);
+  background: var(--dt-band);
+  box-shadow: var(--shadow-header);
+}
+
+.headRow {
+  display: flex;
+  inline-size: 100%;
+  block-size: var(--h-row-head);
+  border-block-end: var(--hairline) solid var(--rule-strong);
+}
+
+/* `isolation` is the load-bearing declaration in this file. It makes the body
+   one stacking context, so every pinned cell inside it is ranked against its
+   siblings and never against the head that has to cover them all. Without it a
+   `z-index` on a cell is a number in the *table's* stacking context, competing
+   with the sticky head from a later position in the document — and winning. */
+.body {
+  display: grid;
+  position: relative;
+  isolation: isolate;
+}
+
+.row {
+  display: flex;
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  inline-size: 100%;
+  block-size: var(--dt-row-h);
+  border-block-end: var(--hairline) solid var(--rule);
+  transition: background-color var(--dur) var(--ease);
+}
+
+.row:hover {
+  background: var(--muted);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.selected,
+.selected:hover {
+  background: color-mix(in oklab, var(--brand) 14%, transparent);
+}
+
+/* `flex` is written inline from the width source and always wins; what is left
+   here is the fallback for a cell rendered before a size exists, and the shape
+   every track shares. `position: relative` is what lets the resize grip hang off
+   the end edge without leaving the cell. */
+.cell {
+  display: flex;
+  position: relative;
+  align-items: center;
+  gap: var(--s2);
+  flex: 1 0 0;
+  min-inline-size: 0;
+  padding-inline: var(--s4);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* The column name is a label, not content, so it reads at label size with data
+   tracking and never competes with the values below it. */
+.th {
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.td {
+  color: var(--text);
+}
+
+/* Figures line up column-wise, so a scan down the column compares magnitudes
+   rather than glyph shapes. */
+.td.numeric {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.alignEnd {
+  justify-content: flex-end;
+  text-align: end;
+}
+
+/* Density varies the cell gutter and, for compact, the type step — and nothing
+   else, because the row's own depth is `--dt-row-h`, which the component
+   publishes from the same number the virtualizer offsets by. A row is a line of
+   values with air around it now rather than the tightest thing on the screen;
+   the gutters moved up one step with the rest of the scale. */
+.compact .table {
+  font-size: var(--t-xs);
+}
+
+.compact .cell {
+  padding-inline: var(--s4);
+}
+
+.comfortable .cell {
+  padding-inline: var(--s5);
+}
+
+.emptyBody {
+  display: grid;
+}
+
+.emptyRow {
+  display: flex;
+  inline-size: 100%;
+  block-size: calc(var(--dt-row-h) * 4);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 100%;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* The checkbox gutter is a fixed track holding one control, so it takes its own
+   tight padding at every density: a gutter sized for text would clip the box it
+   exists to hold, and the track cannot widen — its rendered width is what the
+   next pinned column offsets itself by. */
+.compact .gutter,
+.comfortable .gutter,
+.gutter {
+  justify-content: center;
+  padding-inline: var(--s2);
+}
+
+.check {
+  inline-size: var(--s5);
+  block-size: var(--s5);
+  margin: 0;
+  /* The native box paints itself, but the focus ring follows this — and a ring
+     on a rounded box has to follow the corner. */
+  border-radius: var(--r-xs);
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+.check:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+/* Sortable head ---------------------------------------------------------
+   A real button, so the keyboard reaches sorting without a single key
+   handler of our own; it fills the cell so the whole column name is the
+   target. It borrows the head's type wholesale — the control must look like
+   the label it replaced, not like a control. */
+
+.sort {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.sort:hover,
+.sort[data-sorted] {
+  color: var(--text);
+}
+
+.sort:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+  border-radius: var(--r-xs);
+}
+
+/* Numbers stay flush with the figures below them, so the chevron sits
+   inboard of the label rather than out at the edge. */
+.alignEnd .sort {
+  flex-direction: row-reverse;
+}
+
+.sortLabel {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Nine idle columns must not sprout nine arrows. The chevron always holds
+   its track — so nothing shifts under the pointer — and only inks in on the
+   column being sorted, or on the one the user is about to sort. */
+.sortIcon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+  opacity: 0;
+}
+
+.sort:hover .sortIcon,
+.sort:focus-visible .sortIcon,
+.sort[data-sorted] .sortIcon {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sortIcon {
+    transition: opacity var(--dur) var(--ease);
+  }
+}
+
+/* Pinned tracks -----------------------------------------------------------
+   Sticky against `.scroll`, which is the only scroll container between here
+   and the page: nothing on the way up sets `overflow`, `transform`, `filter`
+   or `contain`, so the cell's sticky rectangle is the port itself and the row
+   is positioned rather than translated. That is an invariant, not a
+   description — `data-table.test.tsx` reads this stylesheet back and fails if
+   any of `.table`, `.head`, `.headRow`, `.body` or `.row` ever acquires one of
+   those properties, because each of them silently re-anchors a sticky cell to
+   something that is not the port and the pin stops holding.
+
+   `inset-inline-start` comes in inline — the sum of the pinned tracks ahead of
+   this one — so a second pinned column parks beside the first rather than on
+   top of it.
+
+   The background is not decoration. A transparent sticky cell shows the row
+   sliding underneath it, so the pinned track carries the surface it sits on,
+   and every row state that paints a background has to be restated here — with
+   the selection tint composited against the surface rather than left
+   translucent, because there is now something behind it. */
+
+.pinned {
+  position: sticky;
+  z-index: var(--dt-z-pinned);
+  background: var(--surface);
+}
+
+/* The head has its own ground, so a pinned head cell restates that one — not
+   the row surface, which would leave a two-column notch in the band. */
+.head .pinned {
+  background: var(--dt-band);
+}
+
+.row:hover .pinned {
+  background: var(--muted);
+}
+
+.selected .pinned,
+.selected:hover .pinned {
+  background: color-mix(in oklab, var(--brand) 14%, var(--surface));
+}
+
+/* The seam — ONE element, and that is the whole design.
+   ---------------------------------------------------------------------------
+   It used to be a `box-shadow` on `.pinnedEdge`, which is a *per-cell* class:
+   the last pinned cell of the head and of every row. A scrolled table therefore
+   cast thirty-odd shadows stacked one above the other, and a `box-shadow` blurs
+   on the block axis as well as the inline one, so each row's shadow bled onto
+   its neighbours and out over the content beside them. The reading was smear,
+   not seam. No spread value fixes it: tightening the spread from -10px to -4px
+   only traded a scalloped edge for a smeared one, because both are symptoms of
+   the same fault — a continuous edge was being drawn as N independent boxes.
+
+   So it is drawn once, against the frame. The component knows the pinned
+   block's exact width — pinned columns never take `flex-grow`, so the sum of
+   `column.getSize()` *is* the rendered width — and publishes it as
+   `--dt-pinned-w` on `.root`, the same way it publishes `--dt-row-h` for the
+   virtualizer: one number, computed once, painted once.
+
+   Absolute against `.root` rather than sticky inside the port, because the port
+   is what moves. The seam belongs to the frame: it holds its inline position
+   while the columns slide underneath it, and `inset-block: 0` runs it the full
+   depth of the instrument, through the head band and past the last row, which
+   is what makes the held columns read as one held block instead of as a stack
+   of separately-edged cells.
+
+   `pointer-events: none` because it sits over the rows: a seam that swallowed a
+   click on the first unpinned column would be a decoration that broke the
+   table. */
+.seam {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--dt-pinned-w, 0px);
+  z-index: var(--dt-z-seam);
+  inline-size: var(--hairline);
+  background: var(--rule-strong);
+
+  /* The falloff beside the rule. The token carries no spread on purpose — the
+     source here is a 1px hairline, and a negative spread against a 1px box
+     goes negative and paints nothing at all. See the token for the history. */
+  box-shadow: var(--shadow-pinned);
+  /* Only once the port has actually moved. At rest the columns are simply
+     adjacent and a rule there would be noise; under scroll it is the difference
+     between "pinned" and "two columns overlapping". */
+  opacity: 0;
+  pointer-events: none;
+}
+
+.root[data-scrolled-x] .seam {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .seam {
+    transition: opacity var(--dur) var(--ease);
+  }
+}
+
+/* Resize grip -------------------------------------------------------------
+   A button on the head's end edge, sized to the cell's own gutter so it never
+   covers a label — the track it occupies is padding, not content. Invisible at
+   rest for the same reason nine idle columns must not sprout nine arrows: the
+   rule inks in under the pointer, on focus, and while the drag is live.
+
+   The focus ring is drawn inside the box. `.cell` clips its children, and the
+   app's default ring sits two pixels outside, where it would be cut in half. */
+
+.grip {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: var(--dt-z-grip);
+  display: flex;
+  justify-content: center;
+  inline-size: var(--s4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.grip::before {
+  content: "";
+  inline-size: var(--hairline);
+  background: var(--rule-strong);
+  opacity: 0;
+}
+
+.grip:hover::before,
+.grip:focus-visible::before,
+.grip:active::before {
+  opacity: 1;
+}
+
+.grip:focus-visible,
+.grip:active {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: calc(var(--hairline) * -1);
+}
+
+.grip:active::before,
+.grip:focus-visible::before {
+  background: var(--brand);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Opacity only: the rule fades in, the track never eases toward the pointer.
+     A drag is direct manipulation and has to land where it was dropped. */
+  .grip::before {
+    transition: opacity var(--dur) var(--ease);
+  }
+}

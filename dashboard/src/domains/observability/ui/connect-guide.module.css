@@ -1,0 +1,82 @@
+/* "How to connect" — four steps, for the operator who opened this page and
+   found nothing to click. Numbered because they are ordered, and the numbers
+   are the platform's own list markers rather than a drawn device: a coloured
+   round marker is exactly the retired dot, and a list does not need one. */
+
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin: 0;
+  padding-inline-start: var(--s8);
+  min-inline-size: 0;
+}
+
+.step {
+  max-inline-size: 78ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.step::marker {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}
+
+/* A host, a path, an org name — values the operator will type somewhere else. */
+.code {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+
+/* No Grafana at all. Said before the steps rather than after them, because the
+   steps only make sense once the operator knows nothing is configured. */
+.none {
+  display: flex;
+  gap: var(--s3);
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-inline-start: 2px solid var(--st-waiting);
+  border-radius: var(--r-md);
+  background: var(--st-waiting-tint);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.noneIcon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+  margin-block-start: var(--s1);
+  color: var(--st-waiting);
+}
+
+/* Where the platform is answering from, when it is. */
+.where {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,290 @@
+/* The panel owns the width now — the rail fills whatever it is given.
+
+   Two locals rather than raw values in six places: `--rail-pad-x` because the
+   active item's dock has to reach the rail's edge and can only do that if it
+   knows how far the edge is, and `--rail-item-h` because the row height is one
+   decision that the item, its dock and the collapsed strip all have to agree
+   on. Both resolve to tokens; neither is a new scale. */
+.rail {
+  --rail-pad-x: var(--s4);
+  --rail-item-h: var(--h-button-lg);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  width: 100%;
+  height: 100%;
+  padding: var(--s5) var(--rail-pad-x) var(--s3);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--rail);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+/* The seam the rail did not have.
+
+   `.scroll` is a block, so two `<nav>`s used to stack with *nothing* between
+   them: a group heading landed hard against the last item of the group above
+   it, and with only its own `padding-bottom` for company it read as one more
+   row rather than as a label over a set. That is what "everything is glued
+   together" was. The air goes above the heading, because air above is what
+   makes a heading a heading. */
+.group + .group {
+  margin-block-start: var(--s6);
+}
+
+/* An explicit `line-height` is doing real work here, not decoration: it makes
+   the label's box exactly `--s5 + --s3`, which is the `max-height` the collapse
+   animates from. The old cap was tighter than the type it was capping, so with
+   `overflow: hidden` every heading with a descender — Configure, Observe — was
+   quietly clipped at the baseline at full width. A heading with its tail cut
+   off reads as damage, and damage reads as unsure. */
+.groupLabel {
+  display: block;
+  overflow: hidden;
+  max-height: var(--s7);
+  padding-block-end: var(--s3);
+  padding-inline: var(--s4);
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  line-height: var(--s5);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+/* `justify-content: center` is constant: at full width the label grows and
+   fills the row, so centring has nothing to do; as the label shrinks to zero
+   the icon drifts to the middle on its own. Animating the collapse this way
+   costs one property instead of a `justify-content` switch, which cannot
+   transition and would snap the icon to centre before the words had gone. */
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s4);
+  height: var(--rail-item-h);
+  padding: 0 var(--s4);
+  border-radius: var(--r-sm);
+  color: var(--muted-foreground);
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+}
+
+.item:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+/* The rail had no focus state at all — a keyboard walking it was walking it
+   blind. The ring is spelled the way every other control in the kit spells it. */
+.item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* The active item is not a louder hover: it reaches the rail's edge and docks
+   against the working plane. The fill runs out to the boundary, the right
+   corners square off so nothing looks detached, and a hairline of accent marks
+   the seam. Hover keeps the film, never the dock, so the two states differ by a
+   part rather than by a shade.
+   (An earlier pass floated a short connector in the padding instead. In the
+   profile flow a connector joins two columns; here it joined the item to nothing,
+   and read as a stray dash — the reason it is a seam now, not a stub.) */
+.active {
+  background: var(--accent);
+  color: var(--foreground);
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+/* The dock is paint, never layout. Extending the item with a negative margin
+   and matching padding reached the edge, but it also resized the content box on
+   every switch — and since `padding` transitions while `margin` does not, the
+   icon lurched twice per navigation. Two pseudo-elements carry it instead, so
+   changing the active item moves nothing.
+   They exist on every item and only change colour, because a pseudo-element
+   that appears with the class has no previous state to animate from: it would
+   pop into place while the item's own fill was still fading. */
+.item::before,
+.item::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(var(--rail-pad-x) * -1);
+  background: transparent;
+}
+
+.item::before {
+  width: var(--rail-pad-x);
+}
+
+.item::after {
+  width: var(--hairline);
+}
+
+.active::before {
+  background: var(--accent);
+}
+
+.active::after {
+  background: var(--primary);
+}
+
+.active .icon {
+  color: var(--primary);
+}
+
+/* One step up from the `md` an icon takes beside body type, because the row is
+   no longer a body-sized control: at `--h-button-lg` the rail item *is* a large
+   control, and an icon takes its size from the control it sits in. It is also
+   the size the collapsed strip needs, which is why the two states now agree and
+   the icon no longer resizes as the rail closes. */
+.icon {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  flex: 0 0 auto;
+}
+
+/* Grows, so it fills the row at any rail width and centring has nothing left to
+   do — and it is the single property the collapse animates.
+   `max-width: 100%` never binds (flex already caps it at the free space); it
+   exists only so there is a length to transition to zero from. A fixed cap here
+   was a bug: past that width the label stopped growing, free space appeared,
+   and the whole row drifted to the middle. */
+.itemLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--text-faint);
+}
+
+.alert {
+  color: var(--st-waiting);
+}
+
+/* Collapsed: the rail keeps navigation, the live counts and the dock, and loses
+   the words. One mechanism drives it — the panel's collapsed state — and a
+   narrow viewport reaches it by collapsing the panel, not by a second rule.
+
+   The words collapse by width rather than `display: none`, which is what makes
+   the transition possible at all. It is also the better answer for assistive
+   tech: `display: none` cuts the item's name out of the accessibility tree and
+   leaves a screen reader with a bare icon, while a zero-width clip keeps the
+   name readable. The tooltip on the trigger is supplementary to that name, not
+   a replacement for it. */
+.rail[data-collapsed] {
+  --rail-pad-x: var(--s1);
+
+  padding-bottom: var(--s2);
+}
+
+.rail[data-collapsed] .itemLabel {
+  max-width: 0;
+  opacity: 0;
+}
+
+/* The heading goes, the seam stays — one notch tighter, but it stays. With the
+   words gone and nothing between the groups they would fuse into a single
+   undifferentiated column of icons, which is the same defect the full-width
+   rail had, one level down. */
+.rail[data-collapsed] .groupLabel {
+  max-height: 0;
+  padding-block-end: 0;
+  opacity: 0;
+}
+
+.rail[data-collapsed] .group + .group {
+  margin-block-start: var(--s4);
+}
+
+.rail[data-collapsed] .tierBreak {
+  padding-block-start: var(--s4);
+}
+
+.rail[data-collapsed] .item {
+  gap: var(--s1);
+  padding: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .item {
+    transition:
+      background-color var(--dur) var(--ease),
+      color var(--dur) var(--ease),
+      gap var(--dur) var(--ease),
+      padding var(--dur) var(--ease);
+  }
+
+  /* Same clock as the item's own fill, so the dock arrives with it. */
+  .item::before,
+  .item::after {
+    transition: background-color var(--dur) var(--ease);
+  }
+
+  .itemLabel {
+    transition:
+      max-width var(--dur) var(--ease),
+      opacity var(--dur) var(--ease);
+  }
+
+  .groupLabel {
+    transition:
+      max-height var(--dur) var(--ease),
+      padding-block-end var(--dur) var(--ease),
+      opacity var(--dur) var(--ease);
+  }
+
+  /* The group seams do NOT animate, and that is a decision rather than an
+     omission. They close by 8px across the whole collapse; buying that with a
+     margin and a padding transition means the browser relays out the rail on
+     every frame of the gesture, and the words fading above them already carry
+     it. The label transitions below are layout properties too, and they stay:
+     there they are load-bearing, because collapsing to zero width rather than
+     to a hidden display is what keeps section names in the accessibility tree.
+     Pay the relayout where it buys something. */
+
+  .icon {
+    transition: color var(--dur) var(--ease);
+  }
+}
+
+/* The rail is a column: the sections scroll, the account block does not.
+   Without a zero min-height the scroll port would grow to its content and push
+   the account off the bottom of a short viewport. */
+.scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* The seam between the two tiers. Drawn on the group rather than as its own
+   element so it disappears with the group when a role has no platform access.
+   Only the padding is its own — the margin above the rule comes from the same
+   `.group + .group` step every other heading gets, so the tier break reads as
+   one notch deeper than a group break rather than as a different device. */
+.tierBreak {
+  padding-block-start: var(--s6);
+  border-top: var(--hairline) solid var(--rule);
+}

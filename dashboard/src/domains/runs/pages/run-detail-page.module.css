@@ -1,0 +1,209 @@
+/* One run, in full.
+ *
+ * THE HEIGHT CHAIN, because nothing in CI can see it.
+ *
+ *   .shell            100dvh, column
+ *     topbar          fixed
+ *     .body           flex: 1, min-height: 0
+ *       split group   height: 100%
+ *         content panel
+ *           main      height: 100%, column, overflow hidden
+ *             header  flex-shrink: 0        ← PageHeader, never scrolls
+ *             .content flex: 1 1 0, min-height: 0
+ *               .screen                     ← this file starts here
+ *                 .context  flex: 0 0 auto, capped and scrollable
+ *                 .split    flex: 1 1 0, min-height: 0
+ *                   graph panel   → RunGraph fills it, columns scroll
+ *                   inspector panel → inspector owns its own scroll
+ *
+ * The screen takes `padded={false}` from the shell for the same reason the
+ * duty board does: it owns its own scrolling, and a padded scroll port would
+ * put the padding outside the panels rather than inside them.
+ */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* clip, not hidden: this box sits above a table whose head and pinned
+     columns are sticky, and `hidden` makes it a scroll container they would
+     silently re-anchor to. See The Clip-Not-Hidden Rule in DESIGN.md. */
+  overflow: clip;
+  font-family: var(--font-ui);
+}
+
+/* --- the run's standing context --- */
+
+/* What is true of the run regardless of which item is selected: its figures
+   and the ticket it came from. Fixed above the split, and capped: a brief is
+   written by a person and occasionally by a person who would not stop, and a
+   long one must not be allowed to eat the graph. Past the cap it scrolls in
+   place, which keeps both panels below at their minimum whatever arrives. */
+.context {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  flex: 0 0 auto;
+  max-height: calc(var(--s8) * 5);
+  padding: var(--s4) var(--s6) var(--s5);
+  border-bottom: var(--hairline) solid var(--rule);
+  overflow-y: auto;
+}
+
+.facts {
+  display: flex;
+  align-items: center;
+  gap: var(--s3) var(--s6);
+  flex-wrap: wrap;
+  min-width: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.fact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.factIcon {
+  flex: 0 0 auto;
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+}
+
+.factValue {
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The run id is the one fact a person copies out of this screen, so it is the
+   one that gets selected as a unit rather than as part of a sentence. */
+.runId {
+  color: var(--foreground);
+  user-select: all;
+}
+
+.brief {
+  margin: 0;
+  max-width: 92ch;
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  color: var(--foreground);
+}
+
+/* The values the brief quotes — an endpoint, a header, a table. */
+.briefCode {
+  padding: 0 var(--s1);
+  border-radius: var(--r-xs);
+  background: var(--muted);
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+}
+
+/* --- the working surface --- */
+
+/* The graph over the inspector, with a rule a person can drag: the same
+   grammar as the duty board, where the shape sits above the detail. The
+   divider position survives a reload, because a run detail tab stays open for
+   as long as the run does. */
+.split {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.graphPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 0 var(--s6);
+  background: var(--background);
+}
+
+/* The inspector is the plane in front of the graph: light casts upward from
+   it, exactly as the duty list does over the flow board. */
+.inspectorPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--background);
+  box-shadow: var(--shadow-lift);
+}
+
+/* --- states --- */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  flex: 1 1 0;
+  min-height: 0;
+  padding: var(--s8) var(--s6);
+  overflow-y: auto;
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  max-width: 62ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* What the plan will look like when there is one, said in the graph's own
+   terms rather than as an apology. */
+.stateHint {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  flex: 1 1 0;
+  min-height: 0;
+  padding: var(--s6);
+}
+
+.skeletonBar {
+  flex: 0 0 auto;
+  height: var(--s8);
+  border-radius: var(--r-sm);
+  background: var(--muted);
+}
+
+.skeletonBoard {
+  flex: 1 1 0;
+  min-height: 0;
+  border-radius: var(--r-lg);
+  background: var(--muted);
+}
+
+@media (max-width: 1000px) {
+  .context {
+    padding: var(--s3) var(--s5) var(--s4);
+  }
+
+  .graphPanel {
+    padding: 0 var(--s5);
+  }
+}

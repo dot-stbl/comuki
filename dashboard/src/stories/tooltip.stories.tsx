@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shared/ui/tooltip"
+} from "@/shared/ui/_legacy/tooltip"
 import { Button } from "@/shared/ui/button"
 
 const meta: Meta<typeof Tooltip> = {

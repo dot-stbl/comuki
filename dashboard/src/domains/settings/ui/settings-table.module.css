@@ -1,0 +1,87 @@
+/* Cell-level styling for the five control-plane tables. Rows are one line tall
+   by contract, so anything that can run long truncates rather than wraps.
+
+   Almost everything on this screen is a value rather than prose — an app name,
+   a repository, a rule id, a scope, a revision, a rotation window — so the data
+   voice does most of the work, and the interface voice appears only where a
+   person wrote the words: a rule's description, a role's usage, a change
+   class. */
+
+.value,
+.name,
+.note,
+.faint,
+.stack {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The value the row is about: an app, a rule id, a provider, a role. Full
+   strength, because it is the row's identity. */
+.name {
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+/* Every other value on the row. */
+.value {
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+/* A revision, a rotation window, a scope — a value that qualifies the row
+   rather than identifying it. */
+.faint {
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}
+
+/* One line somebody wrote for a reader: what a rule is for, what a role does,
+   what a change class covers. */
+.note {
+  font-family: var(--font-ui);
+  color: var(--text-muted);
+}
+
+/* A stack is a sentence about technology rather than an identifier, so it takes
+   the interface voice like the note beside it. */
+.stack {
+  font-family: var(--font-ui);
+  color: var(--text-muted);
+}
+
+/* A model role is a value out of a closed set in code — `lead`, `worker`,
+   `judge` — so it reads in the data voice, and its mark rides at cap height
+   beside it rather than being hand-sized at the call site. */
+.role {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+.roleIcon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+  color: var(--text-faint);
+}
+
+/* Nothing there, said quietly and in a word. A blank cell reads as a broken
+   render; a word reads as a fact. */
+.absent {
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}
+
+.count {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  white-space: nowrap;
+}

@@ -1,0 +1,565 @@
+/* The kit's form controls. One stylesheet for the whole set, because the set is
+   one gesture: Sources and Identity each grew a private copy of it inside a
+   fortnight, and the two had already drifted before either shipped.
+
+   Everything here is chrome, so it is built from the neutral ramp and the
+   hairline alone: a field is a label, a control bounded by one rule, and one
+   quiet line under it. No card, no fill, no saturated anything — the only
+   colour a form is allowed is the one on a message that says something is
+   wrong or something is irreversible, and both say it in words as well. */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* The tight gesture: this names a value, so it takes the data label voice —
+   Archivo, semibold, micro, lightly tracked. Not a region heading. */
+.label {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* What the field is *for* is optional; when a field carries a rule the operator
+   cannot see by looking at the box, the rule goes here. */
+.hint {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* Hue plus a mark, never hue alone: the icon carries the reading in greyscale
+   and the sentence carries it in words. */
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--st-failed);
+}
+
+.errorIcon {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
+/* Controls -------------------------------------------------------------- */
+
+/* The text input and the textarea. The select is not one of these any more: it
+   is the kit's own control now, in `shared/ui/select`, and it stands at this
+   same height on this same corner so the two still agree wherever they meet in
+   a column of fields. */
+
+.control {
+  inline-size: 100%;
+  min-inline-size: 0;
+  block-size: var(--h-button-lg);
+  padding-inline: var(--s3);
+  border: var(--hairline) solid var(--border);
+  /* The same step `Button` wears. These two stand side by side in every form,
+     and until now they disagreed by three pixels in every one of them. */
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+}
+
+.control::placeholder {
+  color: var(--text-faint);
+}
+
+.control:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.control:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.control:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.control[aria-invalid="true"] {
+  border-color: var(--st-failed);
+}
+
+/* Prose the operator writes, so it takes the interface voice and a real block
+   of room. Vertical resize only: a horizontal drag would break the dialog. */
+.area {
+  block-size: auto;
+  min-block-size: 5rem;
+  padding-block: var(--s3);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  resize: vertical;
+}
+
+/* A value the operator types that the product treats as a value, not as prose
+   — an expression, a path, a command. Mono, and it wraps rather than scrolls
+   sideways, because an expression that runs off the edge cannot be read back. */
+.code {
+  block-size: auto;
+  min-block-size: 4.5rem;
+  padding-block: var(--s3);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  resize: vertical;
+}
+
+/* A value the product produced rather than one the operator typed: the created
+   key, shown once. It is read, selected and copied, never edited. */
+.secret {
+  display: block;
+  inline-size: 100%;
+  padding: var(--s3);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--lane);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  overflow-wrap: anywhere;
+  /* One gesture selects the whole thing, from either input device. */
+  user-select: all;
+}
+
+/* Focusable, so the secret can be reached and selected from the keyboard —
+   which means it needs a visible focus state like every other control here. */
+.secret:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* Switch ---------------------------------------------------------------- */
+
+/* Rectilinear, like everything else here: `--r-pill` is a retired step and a
+   switch is not an exception to the form language. The reading is carried by
+   the thumb's position *and* by the word beside it, so it survives greyscale
+   and does not depend on the fill's hue. */
+.switchRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+/* The track is a `span` and the thumb is a `span`; the real `<input>` lies
+   invisibly on top of both and keeps every behaviour the platform gives a
+   checkbox — the click target, the space key, the announced role and state.
+   Deliberately not a pseudo-element on the input: `::after` on a replaced
+   element is a grey area in the spec that browsers happen to honour, and the
+   thumb is the whole reading. */
+/* Sized as a control, which it had not been: the track was taking its height
+   from `--h-meter`, the 8px unit for swatches and meter bars. That made the
+   whole switch ten pixels tall including its border — and since the invisible
+   input lies exactly on the track, ten pixels was also the click target,
+   against the 24px floor this product holds itself to everywhere else. */
+.switch {
+  position: relative;
+  flex: 0 0 auto;
+  display: block;
+  inline-size: 2.25rem;
+  block-size: 1.25rem;
+  border: var(--hairline) solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--lane);
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+/* Reaches past the track on every side so the target clears 24px while the
+   drawn control stays 20px — the size of the thing you press is not the size
+   of the thing you see, and only one of the two has a floor. */
+.switchInput {
+  position: absolute;
+  inset: -2px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  appearance: none;
+}
+
+.switchInput:disabled {
+  cursor: not-allowed;
+}
+
+.switchThumb {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 50%;
+  /* The step the track wears, so the thumb's ends follow the track's own
+     curve instead of squaring off inside it. */
+  border-radius: var(--r-sm);
+  background: var(--text-faint);
+  transition: background-color var(--dur) var(--ease);
+}
+
+/* The thumb's travel is the one moment this control has, so it is opt-out like
+   every other. Off, the thumb is simply already at the end it belongs at — the
+   reading (which side, which colour) is identical, only the slide is gone. */
+@media (prefers-reduced-motion: no-preference) {
+  .switchThumb {
+    transition:
+      transform var(--dur) var(--ease),
+      background-color var(--dur) var(--ease);
+  }
+}
+
+/* Driven by the component rather than by `:checked`, so the track and the thumb
+   cannot disagree and nothing depends on a parent selector. */
+.switchOn {
+  border-color: var(--brand);
+  background: color-mix(in oklab, var(--brand) 18%, transparent);
+}
+
+.switchOn .switchThumb {
+  transform: translateX(100%);
+  background: var(--brand);
+}
+
+.switch:hover {
+  border-color: var(--ring);
+}
+
+/* `:focus-within` rather than `:focus-visible` on the input: the ring belongs
+   to the track the operator can see, and this is supported everywhere. */
+.switch:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.switchOff {
+  opacity: 0.5;
+}
+
+.switchText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+.switchLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+
+/* The state, said in a word. A switch whose only reading is its own geometry
+   is a switch somebody has to look twice at. */
+.switchState {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* Choice ---------------------------------------------------------------- */
+
+/* Three modes that are genuinely three different products for the same ticket,
+   so each option carries its own sentence rather than a bare word. Boxes rather
+   than radio dots: the round dot is a retired device here, and a box has room
+   for the sentence that tells the three apart. */
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  padding: var(--s3) var(--s4);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.choice:hover {
+  border-color: var(--border-strong);
+}
+
+/* The input itself is off-screen rather than `display: none`, so it keeps its
+   place in the tab order and its arrow-key group; the box carries the ring. */
+.choiceInput {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: calc(var(--hairline) * -1);
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* `:focus-within` rather than a parent selector on the input: the ring belongs
+   to the box the operator can see, and this is supported everywhere. */
+.choice:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* Selected is a border, a wash and a mark — three channels, none of them a hue
+   on its own. Driven by the component rather than by `:checked`, so the whole
+   reading survives without a parent selector. */
+.choiceSelected {
+  border-color: var(--brand);
+  background: color-mix(in oklab, var(--brand) 10%, transparent);
+}
+
+.choiceHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* Reserved on every option, filled on one: a mark that appeared would shift the
+   label beside it every time the selection moved. */
+.choiceMark {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+  color: var(--brand);
+  visibility: hidden;
+}
+
+.choiceSelected .choiceMark {
+  visibility: visible;
+}
+
+.choiceNote {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* Notices --------------------------------------------------------------- */
+
+/* The thing the operator has to know *before* they act, marked by a left rule
+   the way a failure notice is — a band, not a card. */
+.notice {
+  display: flex;
+  gap: var(--s3);
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-inline-start: 2px solid var(--st-waiting);
+  border-radius: var(--r-md);
+  background: var(--st-waiting-tint);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.noticeIcon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+  margin-block-start: var(--s1);
+  color: var(--st-waiting);
+}
+
+.noticeOk {
+  border-inline-start-color: var(--st-success);
+  background: var(--st-success-tint);
+}
+
+.noticeOk .noticeIcon {
+  color: var(--st-success);
+}
+
+.noticeBad {
+  border-inline-start-color: var(--st-failed);
+  background: var(--st-failed-tint);
+}
+
+.noticeBad .noticeIcon {
+  color: var(--st-failed);
+}
+
+/* Dialog ---------------------------------------------------------------- */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+}
+
+/* `dvh`, with `vh` underneath it for anything that does not know the unit. On a
+   phone or a tablet browser `100vh` is the *large* viewport — the one with the
+   address bar retracted — so a dialog capped at `100vh` is taller than the
+   window it is standing in, and its footer, which is where the submit lives,
+   sits under the chrome with nothing to scroll it into view. */
+.modal {
+  inline-size: var(--modal-w);
+  max-inline-size: calc(100vw - var(--s8));
+  max-block-size: calc(100vh - var(--s8));
+  max-block-size: calc(100dvh - var(--s8));
+  display: flex;
+  flex-direction: column;
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-modal);
+}
+
+/* A form with three sections in it needs more room than a confirm does. */
+.wide {
+  inline-size: 34rem;
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  outline: none;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+.title {
+  margin: 0;
+  padding: var(--s5) var(--s5) 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  line-height: 1.3;
+  color: var(--text);
+}
+
+/* The measure follows the modal, not the other way round. At the default width
+   the box is the binding constraint anyway and 52ch is the body rule; in a wide
+   dialog there is real room to spare, and a line that stopped at 52ch there
+   would leave a third of the modal blank beside three-line prose. */
+.description {
+  margin: 0;
+  padding: var(--s2) var(--s5) 0;
+  max-inline-size: 52ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.wide .description {
+  max-inline-size: 60ch;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  padding: var(--s5);
+  min-block-size: 0;
+  overflow-y: auto;
+}
+
+/* Wraps rather than crushes, and rather than leaving the box: at the dialog's
+   narrow ceiling — 100vw minus the gutter, which is 288px on a 320px window —
+   a lead control plus two labelled buttons is wider than the footer, and the
+   modal draws no clip of its own, so an unwrapped row would paint out over the
+   scrim where it cannot be pressed. */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  justify-content: flex-end;
+  align-items: center;
+  padding: var(--s3) var(--s5);
+  border-block-start: var(--hairline) solid var(--border);
+}
+
+/* A control that belongs at the far left of the footer — the test button,
+   which is a step in the form rather than a way out of it. */
+.footerLead {
+  margin-inline-end: auto;
+}
+
+/* A pair of controls that belong on one line. Wraps rather than crushes. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+}
+
+.rowItem {
+  flex: 1 1 9rem;
+  min-inline-size: 0;
+}
+
+/* Entrance, opt-out — the guard the confirm dialog never got. */
+@media (prefers-reduced-motion: no-preference) {
+  .scrim {
+    animation: form-scrim-in var(--dur) var(--ease) both;
+  }
+
+  .modal {
+    animation: form-modal-in var(--dur) var(--ease) both;
+  }
+}
+
+@keyframes form-scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes form-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--s2)) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

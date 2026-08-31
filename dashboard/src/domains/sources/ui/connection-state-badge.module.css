@@ -1,0 +1,57 @@
+/* A connection's state, in the shape of the kit's own status badge — hairline
+   border, a wash of its own hue, an icon at the data icon size, the word beside
+   it. It is a domain component rather than a `StatusBadge` variant because a
+   connection is not a run: `connected` is not one of the product's six run
+   statuses, and borrowing that vocabulary would make the badge lie about what
+   kind of thing it is describing.
+
+   Hue is never the only channel. Every state carries a distinct mark as well,
+   so the reading survives greyscale and colour blindness exactly as a status
+   band does. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  /* A badge is a reading, so it never gives up width: the value or the prose
+     beside it truncates instead. Declared rather than inherited from
+     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
+     family to. */
+  flex: 0 0 auto;
+  padding: var(--s1) var(--s4);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-sm);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.icon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+}
+
+.connected {
+  border-color: color-mix(in oklab, var(--st-success) 30%, transparent);
+  background: color-mix(in oklab, var(--st-success) 10%, transparent);
+  color: var(--st-success);
+}
+
+/* The one state that escalates its own badge — a stronger border and a fuller
+   tint — for the same reason a failed run's does: a broken connection should be
+   visible before it is read. */
+.error {
+  border-color: color-mix(in oklab, var(--st-failed) 45%, transparent);
+  background: color-mix(in oklab, var(--st-failed) 18%, transparent);
+  color: var(--st-failed);
+}
+
+/* Deliberately the quietest of the three: somebody turned this off on purpose,
+   so it is a fact rather than an alarm. */
+.disabled {
+  border-color: color-mix(in oklab, var(--st-queued) 30%, transparent);
+  background: color-mix(in oklab, var(--st-queued) 10%, transparent);
+  color: var(--st-queued);
+}

@@ -1,0 +1,262 @@
+/* The one screen with no shell above it, which means it owns its own height —
+   nothing else on the route is going to give it one.
+   The chain, hand-traced because jsdom will never catch a break in it:
+     html, body, #root  → height: 100% (index.css base layer)
+     .screen            → 100dvh, an absolute unit, so a missing link above it
+                          cannot collapse this screen to a strip
+     .panel             → margin: auto inside a flex parent
+   `margin: auto` rather than `justify-content: center` on purpose: centring by
+   justification clips the top of a child taller than its container, and this
+   panel gets taller as the landing notice and the failure notice appear.
+   `body` is `overflow: hidden`, so the scroll for a short window lives here. */
+.screen {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  overflow-y: auto;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.panel {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+  width: 100%;
+  /* Roughly the confirm dialog's measure, minus its chrome: wide enough for the
+     lead line to break well, narrow enough that the eye never leaves the form. */
+  max-width: 21rem;
+  padding: var(--s8) var(--s6);
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+/* The whole brand lockup — there is no wordmark to set beside it. Larger here
+   than in the topbar (1rem) because on this screen it is the only thing naming
+   the product, and `currentColor` keeps it in the text ramp rather than
+   colouring the chrome. */
+.mark {
+  height: 2rem;
+  width: auto;
+  color: var(--text);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-display);
+  font-weight: var(--fw-bold);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-display);
+  color: var(--text);
+}
+
+.lead {
+  margin: 0;
+  max-width: 52ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* Arrivals. The chrome stays colourless, so the second landing is marked by a
+   hairline and a tone step rather than by a hue — an expired session is not a
+   run status and must not borrow one of the six. */
+.notice {
+  display: grid;
+  grid-template-columns: var(--icon-sm) 1fr;
+  align-items: start;
+  gap: var(--s3);
+  padding: var(--s4);
+  border-left: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-md);
+  background: color-mix(in oklab, var(--muted) 70%, transparent);
+}
+
+/* The chosen departure. No border, no fill, no icon weight — a confirmation
+   that something worked should not look like something went wrong. */
+.quiet {
+  border-left-color: transparent;
+  background: transparent;
+  padding-left: 0;
+}
+
+.noticeIcon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  /* Optical: the glyph rides the cap height of the first line beside it. */
+  margin-top: 0.15em;
+  color: var(--text-faint);
+}
+
+.noticeBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.noticeTitle {
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.noticeLead {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* A path is a value, so it is set in the data voice and can be read character
+   by character — which is the only reason to show it at all. */
+.path {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* The one saturated thing on the screen, and the one the system already
+   sanctions in chrome: a failure notice is marked by a left border. Hue is not
+   carrying it alone — there is a glyph and there is the sentence. */
+.failure {
+  display: grid;
+  grid-template-columns: var(--icon-sm) 1fr;
+  align-items: start;
+  gap: var(--s3);
+  margin: 0;
+  padding: var(--s4);
+  border-left: var(--hairline) solid var(--st-failed);
+  border-radius: var(--r-md);
+  background: var(--st-failed-tint);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--st-failed);
+}
+
+.failureIcon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  margin-top: 0.15em;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+/* Names a value, so it takes the tight gesture — the same one the table's
+   column names take. */
+.label {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* An address and a secret are both values: data voice, tabular by default. */
+.input {
+  height: var(--h-button-lg);
+  padding: 0 var(--s3);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  letter-spacing: var(--tracking-data);
+  transition:
+    border-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.input:hover {
+  border-color: color-mix(in oklab, var(--rule-strong) 60%, var(--text));
+}
+
+/* The ring, spelled the way every other control in the kit spells it. */
+.input:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--st-failed);
+}
+
+.submit {
+  width: 100%;
+}
+
+.alternative {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+/* A hairline with a word in it — the same rule the rest of the board uses to
+   divide, rather than a second surface. It sets no tracking: the word names
+   neither a region nor a value, and there is no third role. */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1 1 0;
+  height: var(--hairline);
+  background: var(--rule);
+}
+
+/* The invented-data mark. Small and last, but present: every seed in this
+   product says it is a seed, and a sign-in screen that silently accepts
+   anything is the one place that admission actually changes what you do. */
+.mockNote {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  padding-top: var(--s4);
+  border-top: var(--hairline) solid var(--rule);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-faint);
+}
+
+.mockNote p {
+  margin: 0;
+}
+
+.code {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-muted);
+}

@@ -1,0 +1,61 @@
+/* Cell-level styling for the commands list. Rows are one line tall by contract,
+   so anything that can run long truncates rather than wraps. */
+
+/* A command line and a repo-relative path are both values the operator will
+   read back in a terminal or an editor, so both take the data voice. */
+.value {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+.muted {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text-muted);
+}
+
+/* The first line of a failure's output — the reason it is worth showing here
+   rather than only in the run. Prose, so the interface voice. */
+.detail {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--st-failed);
+}
+
+.never {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+/* The deep link back to the run that produced the result — the whole reason a
+   result is worth showing on this screen rather than only on that one. */
+.runLink {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.runLink:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.runLink:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+

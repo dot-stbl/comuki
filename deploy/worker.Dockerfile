@@ -12,7 +12,7 @@
 # Reference: comuki-architecture.md § 03 (Управляющий цикл),
 #            comuki-slice-0.md § Шаг 0 (Sanity-check pi).
 
-FROM oven/bun:1.3.10-bookworm-slim
+FROM oven/bun:1.3.10-slim
 
 LABEL comuki.worker.phase="4-prep" \
       comuki.worker.translator="deferred-to-04-03" \

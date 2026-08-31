@@ -1,0 +1,15 @@
+{
+  "name": "@comuki/agents",
+  "private": true,
+  "workspaces": [
+    "comuki-*"
+  ],
+  "scripts": {
+    "typecheck": "bun run --filter './comuki-*' typecheck",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0",
+    "typescript": "^7.0.2"
+  }
+}

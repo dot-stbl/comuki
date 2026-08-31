@@ -54,8 +54,12 @@
     <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="10.0.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="15.0.240" />
+  </ItemGroup>
+
   <!-- Analyzers: IDE code-style + CA Security only (see .editorconfig);
-       Meziantou / Roslynator / VSTHRD removed 2026-08-31. -->
+       Meziantou / Roslynator removed 2026-08-31; VSTHRD surgical (200/002/104). -->
   <ItemGroup>
   </ItemGroup>
 </Project>

@@ -10,14 +10,22 @@
     <AnalysisLevel>latest</AnalysisLevel>
     <!-- Analyzer set (2026-08-31): IDE code-style + CA Security category only.
          CA off by default (AnalysisMode=None) — noisy style rules; explicit
-         opt-ins live in .editorconfig. Meziantou (MA), Roslynator (RCS) and
-         VSTHRD — REMOVED (noise; covered by IDE analyzers / house style). -->
+         opt-ins live in .editorconfig. Meziantou (MA) and Roslynator (RCS) —
+         REMOVED (noise). VSTHRD — surgical: 200/002/104 error, 103 none
+         (see .editorconfig Async section for rationale). -->
     <AnalysisMode>None</AnalysisMode>
     <AnalysisModeSecurity>All</AnalysisModeSecurity>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <!-- Suppress missing XML doc comments — added per-area as code lands. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
   <!-- Test project defaults — activated when IsTestProject=true -->
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">

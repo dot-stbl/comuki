@@ -114,8 +114,15 @@ dotnet_diagnostic.IDE0083.severity = warning
 #---------------------------------------------------------------------
 # Section 6: Async / await
 #---------------------------------------------------------------------
-# VSTHRD analyzer removed (2026-08-31) — async suffix / no-blocking-discipline
-# enforced by code review (house rules in .agents/rules/coding/CODING-RULES.md).
+# VSTHRD surgical set (2026-08-31): naming + blocking discipline enforced;
+# VSTHRD103 (call-async-counterpart) is OFF — the sync read paths it flags
+# (settings cache GetCached, reads inside an open transaction) are deliberate;
+# audit found 14 sites, all of this one category.
+dotnet_diagnostic.VSTHRD200.severity = error    # Async suffix on Task-returning
+dotnet_diagnostic.VSTHRD002.severity = error    # no .Result/.Wait()/GetAwaiter().GetResult()
+dotnet_diagnostic.VSTHRD103.severity = none     # deliberate sync paths (see above)
+dotnet_diagnostic.VSTHRD104.severity = error    # offer CancellationToken
+dotnet_diagnostic.VSTHRD110.severity = warning  # observe awaited result
 
 # Destructive code-fixes, OFF everywhere (format gate excludes them too):
 # they silently add switch arms (NotImplementedException) to exhaustive

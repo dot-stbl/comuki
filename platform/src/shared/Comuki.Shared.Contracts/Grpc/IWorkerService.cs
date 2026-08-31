@@ -30,5 +30,5 @@ public interface IWorkerService
     /// <param name="events"></param>
     /// <param name="context"></param>
     [Operation]
-    public IAsyncEnumerable<OrchestratorCommand> Connect(IAsyncEnumerable<WorkerEvent> events, CallContext context = default);
+    public IAsyncEnumerable<OrchestratorCommand> Connect(IAsyncEnumerable<WorkerEvent> events, CallContext context);
 }

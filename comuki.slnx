@@ -43,7 +43,11 @@
     <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Migrations/Comuki.Engine.Orchestration.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Queue/Comuki.Engine.Orchestration.Integration.Queue.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Auth/Comuki.Host.Integration.Auth.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Translator.Integration.PiCli/Comuki.Host.Translator.Integration.PiCli.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Migrations/Comuki.Modules.Identity.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.Migrations/Comuki.Modules.Projects.Integration.Migrations.csproj" />
+  </Folder>
+  <Folder Name="/tests/tools/">
+    <Project Path="tests/tools/Comuki.TestFakePi/Comuki.TestFakePi.csproj" />
   </Folder>
 </Solution>

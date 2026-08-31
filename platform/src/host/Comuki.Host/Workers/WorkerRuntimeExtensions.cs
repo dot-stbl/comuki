@@ -44,7 +44,25 @@ public static class WorkerRuntimeExtensions
     /// <param name="app"></param>
     public static void MapWorkerRuntime(this WebApplication app)
     {
+        app.MapWorkerGrpc();
+        app.MapWorkerRest();
+    }
+
+    /// <summary>
+    /// Maps only the bidi gRPC service. Hosts that register no orchestration
+    /// application services (REST claim handlers) must use this overload —
+    /// mapping REST without its handlers fails parameter binding per request.
+    /// </summary>
+    /// <param name="app"></param>
+    public static void MapWorkerGrpc(this WebApplication app)
+    {
         app.MapGrpcService<WorkerGrpcService>();
+    }
+
+    /// <summary>Maps the worker REST claim/heartbeat/complete/fail surface.</summary>
+    /// <param name="app"></param>
+    public static void MapWorkerRest(this WebApplication app)
+    {
         WorkerEndpoints.MapWorkerEndpoints(app);
     }
 }

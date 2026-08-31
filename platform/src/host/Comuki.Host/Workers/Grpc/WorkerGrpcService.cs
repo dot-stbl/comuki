@@ -31,7 +31,7 @@ public sealed class WorkerGrpcService(
     /// <inheritdoc />
     public async IAsyncEnumerable<OrchestratorCommand> Connect(
         IAsyncEnumerable<WorkerEvent> events,
-        CallContext context = default)
+        CallContext context)
     {
         var workerId = WorkerGrpcAuthentication.AuthenticateOrThrow(authenticator, context);
         logger.LogInformation("Worker {WorkerId} stream opened", workerId.Value);
@@ -41,19 +41,53 @@ public sealed class WorkerGrpcService(
             journal,
             clock,
             loggerFactory.CreateLogger<WorkerStreamJournal>());
-        var pump = WorkerEventStreamPump.PumpAsync(events, streamJournal, context.CancellationToken);
 
+        // Stream semantics (contract doc): the call ends when the worker
+        // completes its events enumeration. Commands flow while events are
+        // still coming; the pump cancels the command loop on completion —
+        // no pending MoveNextAsync is ever left for dispose (grpc-net
+        // throws NotSupportedException on dispose-with-pending-move).
+        var endStream = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
+        var ender = WorkerStreamEnd.WhenPumpedEndAsync(
+            WorkerEventStreamPump.PumpAsync(events, streamJournal, context.CancellationToken),
+            endStream);
+
+        var commandReader = commands.Reader.ReadAllAsync(endStream.Token).GetAsyncEnumerator(endStream.Token);
         try
         {
-            await foreach (var command in commands.Reader.ReadAllAsync(context.CancellationToken))
+            while (true)
             {
-                yield return command;
+                bool hasCommand;
+                try
+                {
+                    hasCommand = await commandReader.MoveNextAsync();
+                }
+                catch (OperationCanceledException) when (endStream.IsCancellationRequested)
+                {
+                    // the events pump finished and cancelled the command
+                    // loop — the documented close path, not a fault
+                    break;
+                }
+
+                if (!hasCommand)
+                {
+                    break;
+                }
+
+                yield return commandReader.Current;
             }
         }
         finally
         {
+            await commandReader.DisposeAsync();
+
+            // awaiting the ender is awaiting the pump: cancellation of the
+            // worker stream is swallowed (expected close), any real pump
+            // fault propagates from here. Must run BEFORE endStream.Dispose()
+            // — the ender's finally still cancels the token.
+            await ender;
+            endStream.Dispose();
             commandHub.Unregister(workerId, commands);
-            await pump;
             logger.LogInformation("Worker {WorkerId} stream closed", workerId.Value);
         }
     }
@@ -80,6 +114,30 @@ file static class WorkerEventStreamPump
         await foreach (var workerEvent in events.WithCancellation(cancellationToken))
         {
             await streamJournal.AppendAsync(workerEvent, cancellationToken);
+        }
+    }
+}
+
+/// <summary>
+/// Cancels the command loop as soon as the events pump finishes (worker
+/// completed its stream) and republishes the pump's completion: stream
+/// cancellation is swallowed (expected close), real faults propagate.
+/// </summary>
+file static class WorkerStreamEnd
+{
+    public static async Task WhenPumpedEndAsync(Task pump, CancellationTokenSource endStream)
+    {
+        try
+        {
+            await pump;
+        }
+        catch (OperationCanceledException)
+        {
+            // the worker dropped the stream mid-events; expected close path
+        }
+        finally
+        {
+            await endStream.CancelAsync();
         }
     }
 }

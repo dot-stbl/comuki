@@ -47,6 +47,16 @@
   background: transparent;
 }
 
+/* The dismissal catcher, present only when the caller made the dark a way
+   out. Fills the measurement panel so a click anywhere in the window the
+   sheet is not filling lands on it, and paints nothing: what the operator
+   sees is the scrim behind it, and what they learn is that the dark closes
+   the sheet — the lightbox gesture. */
+.aboveHit {
+  block-size: 100%;
+  background: transparent;
+}
+
 .panel {
   display: flex;
   flex-direction: column;
@@ -170,9 +180,12 @@
   padding-inline: var(--page-x);
 }
 
-/* Entrance, opt-out. The sheet rises from the bottom edge it is docked to —
-   a moment, not a message, so a reader who has asked for less motion gets it
-   already in place. */
+/* Entrance and exit, opt-out. The sheet rises from the bottom edge it is
+   docked to, and leaves the same way — arriving is a moment, and leaving
+   through the same door is what makes the pair read as one gesture rather
+   than as a box that vanishes. React Aria marks the overlay `data-exiting`
+   and holds it mounted until the animation ends; without one (jsdom, or a
+   reader who asked for less motion) it unmounts at once. */
 @media (prefers-reduced-motion: no-preference) {
   .scrim {
     animation: sheet-scrim-in var(--dur) var(--ease) both;
@@ -180,6 +193,14 @@
 
   .panel {
     animation: sheet-in var(--dur) var(--ease) both;
+  }
+
+  .scrim[data-exiting] {
+    animation: sheet-scrim-out var(--dur) var(--ease) both;
+  }
+
+  .panel[data-exiting] {
+    animation: sheet-out var(--dur) var(--ease) both;
   }
 }
 
@@ -193,6 +214,16 @@
   }
 }
 
+@keyframes sheet-scrim-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes sheet-in {
   from {
     transform: translateY(var(--s5));
@@ -200,5 +231,15 @@
 
   to {
     transform: none;
+  }
+}
+
+@keyframes sheet-out {
+  from {
+    transform: none;
+  }
+
+  to {
+    transform: translateY(var(--s5));
   }
 }

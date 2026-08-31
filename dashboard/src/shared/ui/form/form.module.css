@@ -531,7 +531,10 @@
   min-inline-size: 0;
 }
 
-/* Entrance, opt-out — the guard the confirm dialog never got. */
+/* Entrance and exit, opt-out. The exit runs the arrival backwards, so a form
+   dialog closes the way it opened rather than snapping out of existence;
+   React Aria holds the overlay under `data-exiting` until the animation
+   ends, and skips the wait where there is no animation to wait for. */
 @media (prefers-reduced-motion: no-preference) {
   .scrim {
     animation: form-scrim-in var(--dur) var(--ease) both;
@@ -539,6 +542,14 @@
 
   .modal {
     animation: form-modal-in var(--dur) var(--ease) both;
+  }
+
+  .scrim[data-exiting] {
+    animation: form-scrim-out var(--dur) var(--ease) both;
+  }
+
+  .modal[data-exiting] {
+    animation: form-modal-out var(--dur) var(--ease) both;
   }
 }
 
@@ -552,6 +563,16 @@
   }
 }
 
+@keyframes form-scrim-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes form-modal-in {
   from {
     opacity: 0;
@@ -561,5 +582,17 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes form-modal-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(var(--s2)) scale(0.98);
   }
 }

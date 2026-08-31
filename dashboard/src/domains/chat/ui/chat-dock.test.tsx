@@ -228,6 +228,35 @@ describe("the floating trigger", () => {
     )
     mounted.tree.unmount()
   })
+
+  it("closes on a click in the empty window above the sheet", async () => {
+    // The owner's gesture: the dark is the cheapest way out. Safe here and
+    // only here — the conversation, the draft and the depth all live outside
+    // the sheet's tree, so a stray click costs nothing.
+    const mounted = await openSheet("/")
+
+    const box = document.querySelector<HTMLTextAreaElement>(
+      '[data-test="chat-input"]'
+    )
+    fireEvent.change(box as HTMLTextAreaElement, {
+      target: { value: "почему очередь стоит" },
+    })
+
+    fireEvent.click(at("bottom-sheet-scrim-hit") as HTMLElement)
+    await waitFor(() => expect(at("bottom-sheet")).toBeNull())
+
+    // And what it cost: nothing. The draft is exactly where it was.
+    fireEvent.click(at("chat-dock-trigger") as HTMLElement)
+    const again = await waitFor(() => {
+      const found = document.querySelector<HTMLTextAreaElement>(
+        '[data-test="chat-input"]'
+      )
+      expect(found).not.toBeNull()
+      return found as HTMLTextAreaElement
+    })
+    expect(again.value).toBe("почему очередь стоит")
+    mounted.tree.unmount()
+  })
 })
 
 describe("the sheet", () => {

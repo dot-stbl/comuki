@@ -50,10 +50,12 @@ const KEY = "comuki.test.bottom-sheet"
 /** The sheet at whatever depth the caller says, with the seams a test needs. */
 function Sheet({
   expanded = false,
+  dismissable = false,
   onOpenChange = () => undefined,
   onExpandedChange = () => undefined,
 }: {
   expanded?: boolean
+  dismissable?: boolean
   onOpenChange?: (open: boolean) => void
   onExpandedChange?: (next: boolean) => void
 }) {
@@ -64,6 +66,7 @@ function Sheet({
       title="Run log"
       storageKey={KEY}
       expanded={expanded}
+      dismissable={dismissable}
       onExpandedChange={onExpandedChange}
     >
       lines
@@ -132,9 +135,9 @@ describe("the sheet is a modal", () => {
   })
 
   it("does not close on a click at the empty scrim above the sheet", () => {
-    // A console is a place somebody is typing; a stray click on the dark is
-    // not a decision to leave it. The two ways out are named, and this is
-    // neither. Real pointer events through the real React Aria handlers —
+    // The default, and the product's form-dialog rule: a form half-filled is
+    // lost to a stray click, so the dark is not a way out unless the caller
+    // says so. Real pointer events through the real React Aria handlers —
     // jsdom has PointerEvent, so the library's interact-outside listener runs
     // exactly as it does in a browser.
     const onOpenChange = vi.fn()
@@ -153,6 +156,33 @@ describe("the sheet is a modal", () => {
     }
 
     expect(onOpenChange).not.toHaveBeenCalled()
+  })
+})
+
+describe("the dismissable dark", () => {
+  it("closes on a click in the empty window above the sheet", () => {
+    const onOpenChange = vi.fn()
+    render(<Sheet dismissable onOpenChange={onOpenChange} />)
+
+    const hit = byTest("bottom-sheet-scrim-hit")
+    fireEvent.click(hit)
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it("keeps the sheet itself immune to a stray click", () => {
+    // The dark closes; the sheet does not. A click that lands inside the
+    // dialog — on the bar, the body, a control — is a click *in* the console,
+    // and consoles are where people click while thinking.
+    const onOpenChange = vi.fn()
+    render(<Sheet dismissable onOpenChange={onOpenChange} />)
+
+    fireEvent.click(screen.getByRole("dialog"))
+    expect(onOpenChange).not.toHaveBeenCalled()
+  })
+
+  it("is not drawn when the caller kept the default", () => {
+    render(<Sheet />)
+    expect(document.querySelector('[data-test="bottom-sheet-scrim-hit"]')).toBeNull()
   })
 })
 

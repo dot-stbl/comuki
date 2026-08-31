@@ -196,6 +196,11 @@ export function ChatDock() {
         open={open}
         onOpenChange={setOpen}
         title="Console"
+        /* The dark is a way out *here*, and only here: the conversation, the
+           draft and the depth all live outside the sheet's tree, so leaving
+           by a stray click costs nothing. A form half-filled would not say
+           the same, which is why the kit keeps this off by default. */
+        dismissable
         toolbar={
           onboard.allowed ? (
             <Link

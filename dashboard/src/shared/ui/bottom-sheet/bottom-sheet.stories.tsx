@@ -64,7 +64,13 @@ function Log() {
   )
 }
 
-function Sheet({ initiallyExpanded = false }: { initiallyExpanded?: boolean }) {
+function Sheet({
+  initiallyExpanded = false,
+  dismissable = false,
+}: {
+  initiallyExpanded?: boolean
+  dismissable?: boolean
+}) {
   const [open, setOpen] = useState(true)
   const [expanded, setExpanded] = useState(initiallyExpanded)
 
@@ -78,6 +84,7 @@ function Sheet({ initiallyExpanded = false }: { initiallyExpanded?: boolean }) {
       <BottomSheet
         open={open}
         onOpenChange={setOpen}
+        dismissable={dismissable}
         title="Run log"
         storageKey="storybook.bottom-sheet"
         expanded={expanded}
@@ -108,4 +115,10 @@ export const Panel: Story = {
  *  depth it left rather than the whole window it showed. */
 export const FullWindow: Story = {
   render: () => <Sheet initiallyExpanded />,
+}
+
+/** The dark closes it: for a caller whose state survives the close, a click
+ *  on the empty window is the cheapest way out. Keyboard parity is Escape. */
+export const Dismissable: Story = {
+  render: () => <Sheet dismissable />,
 }

@@ -27,7 +27,11 @@
 
 /* Entrance, opt-out — the same guard `FormDialog` carries, and for the same
    reason: the arrival is a moment, not a message, so a reader who has asked for
-   less motion loses nothing by getting the dialog already in place. */
+   less motion loses nothing by getting the dialog already in place. The exit
+   runs the arrival backwards: a dialog that fades in and then snaps out reads
+   as crashed rather than closed. React Aria holds the overlay mounted under
+   `data-exiting` until the animation ends, and skips the wait when there is
+   no animation to wait for. */
 @media (prefers-reduced-motion: no-preference) {
   .scrim {
     animation: scrim-in var(--dur) var(--ease) both;
@@ -35,6 +39,14 @@
 
   .modal {
     animation: modal-in var(--dur) var(--ease) both;
+  }
+
+  .scrim[data-exiting] {
+    animation: scrim-out var(--dur) var(--ease) both;
+  }
+
+  .modal[data-exiting] {
+    animation: modal-out var(--dur) var(--ease) both;
   }
 }
 
@@ -102,5 +114,27 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes scrim-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(var(--s2)) scale(0.98);
   }
 }

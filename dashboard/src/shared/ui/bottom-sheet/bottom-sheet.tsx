@@ -63,6 +63,20 @@ export interface BottomSheetProps {
   /** Filling the window, controlled — see the note above. */
   expanded: boolean
   onExpandedChange: (next: boolean) => void
+  /**
+   * Whether the empty window above the sheet closes it on a click.
+   *
+   * Off by default, the way the product's form dialogs are: a form
+   * half-filled is lost to a stray click, and a confirm's answer must be
+   * deliberate. On, for a caller whose state outlives the close — the
+   * console keeps its conversation, draft and depth, so leaving by clicking
+   * the dark costs nothing. The surface is the sheet's own transparent
+   * measurement panel: it is inside the modal, where React Aria's
+   * dismissable gesture cannot see it, so the sheet owns the click itself.
+   * Keyboard parity is Escape, which is always armed; the catcher is
+   * pointer-only and hidden from assistive technology on purpose.
+   */
+  dismissable?: boolean
   /** Test hook for the dialog itself; the two controls carry their own. */
   "data-test"?: string
 }
@@ -78,6 +92,7 @@ export function BottomSheet({
   minSize = "12%",
   expanded,
   onExpandedChange,
+  dismissable = false,
   "data-test": dataTest = "bottom-sheet",
 }: BottomSheetProps) {
   const above = useRef<PanelImperativeHandle | null>(null)
@@ -111,14 +126,17 @@ export function BottomSheet({
     <ModalOverlay
       isOpen={open}
       onOpenChange={onOpenChange}
-      /* A console is a place somebody is typing. A stray click on the scrim
-         must not take it away — the two ways out are both deliberate, and both
-         are named: escape, and the control in the bar. The product's other two
-         modals answer this question the same way. Both props, belt and braces:
-         `isDismissable` is the contract, and the explicit predicate keeps a
-         future library default from re-arming the gesture underneath it. */
+      /* With `dismissable` off, a stray click on the dark must not take the
+         sheet away — the ways out are escape and the control in the bar, the
+         product's form dialogs answering the same way. Both props, belt and
+         braces: `isDismissable` is the contract, and the pinned predicate
+         keeps a future library default from re-arming the gesture under it.
+         With `dismissable` on, the sheet owns the dismissal itself — see the
+         catcher in the panel above — so React Aria's own gesture stays off
+         either way; it would not see the click anyway, the transparent panel
+         being inside the modal. */
       isDismissable={false}
-      shouldCloseOnInteractOutside={() => false}
+      shouldCloseOnInteractOutside={dismissable ? undefined : () => false}
       className={styles.scrim}
     >
       <Modal className={styles.modal}>
@@ -128,8 +146,11 @@ export function BottomSheet({
           shouldPersist={persist}
           className={styles.group}
         >
-          {/* The window the sheet is *not* filling. Empty on purpose: it is a
-              measurement, and the scrim behind it is what the reader sees. */}
+          {/* The window the sheet is *not* filling. A measurement, and — when
+              the caller says so — the way out: the catcher is the dark the
+              operator sees, a click on it closes, and nothing is pointed at
+              that a pointer could accidentally drag. Pointer-only on purpose;
+              Escape is the keyboard's way out and it is always armed. */}
           <SplitPanel
             id="above"
             panelRef={above}
@@ -139,9 +160,18 @@ export function BottomSheet({
             collapsedSize={0}
             className={styles.above}
           >
-            {/* `null`, not omitted: the panel is required to state that it
-                holds nothing, the same way the comment above does. */}
-            {null}
+            {dismissable ? (
+              <div
+                className={styles.aboveHit}
+                data-test="bottom-sheet-scrim-hit"
+                aria-hidden="true"
+                onClick={() => onOpenChange(false)}
+              />
+            ) : (
+              /* `null`, not omitted: the panel is required to state that it
+                 holds nothing, the same way the comment above does. */
+              null
+            )}
           </SplitPanel>
 
           <SplitSeparator

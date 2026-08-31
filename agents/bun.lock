@@ -23,6 +23,9 @@
     "comuki-worker-sdk": {
       "name": "@comuki/worker-sdk",
       "version": "0.1.0",
+      "dependencies": {
+        "@comuki/agent-core": "workspace:*",
+      },
     },
   },
   "packages": {

@@ -1,6 +1,3 @@
-using Comuki.Host.Translator.Grpc;
-using Microsoft.Extensions.Logging;
-
 namespace Comuki.Host.Translator.Execution;
 
 /// <summary>

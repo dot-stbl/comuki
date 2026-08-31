@@ -45,12 +45,12 @@ public sealed class PiEventToWorkerEventShould
     {
         var forwarded = PiEventToWorkerEvent.ToForwardEvent(
             WorkItemId,
-            new PiEvent.ToolCallEvent("Bash", """{"command":"ls"}"""));
+            new PiEvent.ToolCallEvent("Bash", /*lang=json,strict*/ """{"command":"ls"}"""));
 
         forwarded.ShouldNotBeNull();
         forwarded.Activity.ShouldNotBeNull();
         forwarded.Activity.Tool.ShouldBe("Bash");
-        forwarded.Activity.ToolInputJson.ShouldBe("""{"command":"ls"}""");
+        forwarded.Activity.ToolInputJson.ShouldBe(/*lang=json,strict*/ """{"command":"ls"}""");
         forwarded.Activity.Text.ShouldBeNull();
     }
 

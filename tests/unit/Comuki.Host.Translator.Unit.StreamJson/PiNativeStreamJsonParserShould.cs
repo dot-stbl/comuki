@@ -78,12 +78,14 @@ public sealed class PiNativeStreamJsonParserShould
     }
 
     [Fact]
-    public async Task SurfaceUnmodelledMessageUpdateAsUnknownAsync()
+    public Task SurfaceUnmodelledMessageUpdateAsUnknownAsync()
     {
         var events = StreamJsonParser.ParseLine(
-            """{"type":"message_update","usage":{},"assistantMessageEvent":{"type":"thinking_delta","delta":"..."}}""").ToList();
+                                 /*lang=json,strict*/
+                                 """{"type":"message_update","usage":{},"assistantMessageEvent":{"type":"thinking_delta","delta":"..."}}""").ToList();
 
         var unknown = events.ShouldHaveSingleItem().ShouldBeOfType<PiEvent.UnknownEvent>();
         unknown.Type.ShouldBe("message_update");
+        return Task.CompletedTask;
     }
 }

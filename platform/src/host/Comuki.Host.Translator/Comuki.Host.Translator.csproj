@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
     <PackageReference Include="protobuf-net.Grpc" />
     <PackageReference Include="Refit.HttpClientFactory" />
+    <PackageReference Include="Refit.Reflection" />
   </ItemGroup>
 
   <ItemGroup>

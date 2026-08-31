@@ -1,0 +1,1 @@
+{"type":"message_update","usage":{},"assistantMessageEvent":{"type":"toolcall_start","id":"toolu_01ABC","toolName":"Bash","args":{"command":"ls /work"}}}

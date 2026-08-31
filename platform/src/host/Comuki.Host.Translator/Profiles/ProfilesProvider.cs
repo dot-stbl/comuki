@@ -1,5 +1,4 @@
 using LibGit2Sharp;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Host.Translator.Profiles;

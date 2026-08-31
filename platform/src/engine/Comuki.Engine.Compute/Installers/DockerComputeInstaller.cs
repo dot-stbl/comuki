@@ -28,32 +28,32 @@ public static class DockerComputeInstaller
     /// <param name="configuration"></param>
     public static IServiceCollection AddComukiCompute(this IServiceCollection services, IConfiguration configuration)
     {
-        _ = services.AddOptions<DockerComputeOptions>()
+        services.AddOptions<DockerComputeOptions>()
             .Bind(configuration.GetSection(DockerComputeOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        _ = services.AddOptions<WorkerTokenOptions>()
+        services.AddOptions<WorkerTokenOptions>()
             .Bind(configuration.GetSection(WorkerTokenOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        _ = services.AddOptions<ScaleSupervisorOptions>()
+        services.AddOptions<ScaleSupervisorOptions>()
             .Bind(configuration.GetSection(ScaleSupervisorOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         services.TryAddSingleton(TimeProvider.System);
 
-        _ = services.AddSingleton<IWorkerTokenStore, InMemoryWorkerTokenStore>();
-        _ = services.AddSingleton<WorkerTokenIssuer>();
-        _ = services.AddSingleton<IDockerClient>(static _ => new DockerClientConfiguration().CreateClient());
-        _ = services.AddSingleton<IComputeProvider, DockerComputeProvider>();
-        _ = services.AddSingleton<IProjectScaleSettings, InMemoryProjectScaleSettings>();
-        _ = services.AddSingleton<WorkerPoolState>();
-        _ = services.AddSingleton<IWorkerPoolState>(static serviceProvider => serviceProvider.GetRequiredService<WorkerPoolState>());
-        _ = services.AddSingleton<ScaleSupervisorCycle>();
-        _ = services.AddHostedService<ScaleSupervisorWorker>();
+        services.AddSingleton<IWorkerTokenStore, InMemoryWorkerTokenStore>();
+        services.AddSingleton<WorkerTokenIssuer>();
+        services.AddSingleton<IDockerClient>(static _ => new DockerClientConfiguration().CreateClient());
+        services.AddSingleton<IComputeProvider, DockerComputeProvider>();
+        services.AddSingleton<IProjectScaleSettings, InMemoryProjectScaleSettings>();
+        services.AddSingleton<WorkerPoolState>();
+        services.AddSingleton<IWorkerPoolState>(static serviceProvider => serviceProvider.GetRequiredService<WorkerPoolState>());
+        services.AddSingleton<ScaleSupervisorCycle>();
+        services.AddHostedService<ScaleSupervisorWorker>();
 
         return services;
     }

@@ -73,7 +73,7 @@ public sealed class WorkerPoolState(
     /// <param name="workerId"></param>
     public void Remove(WorkerId workerId)
     {
-        _ = workers.TryRemove(workerId, out _);
+        workers.TryRemove(workerId, out _);
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public sealed class WorkerPoolState(
 
         foreach (var cached in workers.Values.Where(worker => worker.ProjectId == projectId && !listedIds.Contains(worker.Id)))
         {
-            _ = workers.TryRemove(cached.Id, out _);
+            workers.TryRemove(cached.Id, out _);
         }
 
         foreach (var info in listed.Where(worker => !workers.ContainsKey(worker.Id)))

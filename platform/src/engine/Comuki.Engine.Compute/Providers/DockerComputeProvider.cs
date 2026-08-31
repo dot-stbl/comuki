@@ -35,7 +35,7 @@ public sealed class DockerComputeProvider(
         var createParameters = DockerComputeMapping.ToCreateParameters(request, workerId, computeOptions.Value);
 
         var created = await docker.Containers.CreateContainerAsync(createParameters, cancellationToken);
-        _ = await docker.Containers.StartContainerAsync(created.ID, new ContainerStartParameters(), cancellationToken);
+        await docker.Containers.StartContainerAsync(created.ID, new ContainerStartParameters(), cancellationToken);
 
         return new WorkerHandle(workerId, created.ID);
     }
@@ -48,7 +48,7 @@ public sealed class DockerComputeProvider(
 
         foreach (var container in containers)
         {
-            _ = await docker.Containers.StopContainerAsync(
+            await docker.Containers.StopContainerAsync(
                 container.ID,
                 new ContainerStopParameters { WaitBeforeKillSeconds = (uint)computeOptions.Value.WaitBeforeKillSeconds },
                 cancellationToken);

@@ -1,13 +1,21 @@
 using Comuki.Host.Auth;
 using Comuki.Host.Auth.Security;
+using Comuki.Host.Chat;
 using Comuki.Host.ControlPlane;
 using Comuki.Host.Projects;
+using Comuki.Modules.Chat.Application;
+using Comuki.Modules.Chat.Application.Ports;
+using Comuki.Modules.Chat.Infrastructure;
 using Comuki.Modules.Identity.Application;
 using Comuki.Modules.Identity.Infrastructure;
 using Comuki.Modules.Identity.Infrastructure.Oidc;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
+using Comuki.Shared.Contracts.Brain;
+using Comuki.Shared.Contracts.Memory;
+using Comuki.Shared.Contracts.Runs;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Host;
@@ -37,6 +45,26 @@ internal static class HostComposer
 
         builder.Services.AddProjectsApplication();
         builder.Services.AddProjectsPersistence(database.ConnectionString);
+
+        // Chat module (issue #5 slice B): turn services + Voluta graph over
+        // the chat schema. The brain port falls back to the in-process stub
+        // and the memory digest to the empty fallback until the brain host
+        // and the memory store slices land — TryAdd keeps the real
+        // implementations winning once registered. The tool executor scopes
+        // into orchestration, which Program wires above this call.
+        builder.Services
+            .AddChatApplication()
+            .AddChatPersistence(database.ConnectionString);
+        builder.Services.TryAddSingleton<IBrainClient, BrainStub>();
+        builder.Services.TryAddSingleton<IMemoryDigest, EmptyMemoryDigest>();
+        builder.Services.AddSingleton<IChatToolExecutor, HostChatToolExecutor>();
+        builder.Services.AddSingleton<ChatSessionResolver>();
+        builder.Services.AddScoped<IRunsReader, OrchestrationRunsReader>();
+        builder.Services.AddScoped<ChatRunStarter>();
+        builder.Services.AddOptions<ChatWorkerDefaults>()
+            .Bind(builder.Configuration.GetSection(ChatWorkerDefaults.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).

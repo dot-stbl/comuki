@@ -19,6 +19,21 @@ public static class ApiRoutes
 
     public const string Projects = "/api/v1/projects";
 
+    /// <summary>Base of the chat session surface (issue #5 slice B).</summary>
+    public const string ChatSessions = "/api/v1/chat/sessions";
+
+    /// <summary>One chat session by id.</summary>
+    public const string ChatSession = "/api/v1/chat/sessions/{sessionId:guid}";
+
+    /// <summary>Messages of one chat session (post a turn / read the transcript).</summary>
+    public const string ChatSessionMessages = "/api/v1/chat/sessions/{sessionId:guid}/messages";
+
+    /// <summary>Approve/reject the pending plan interrupt of a session.</summary>
+    public const string ChatSessionApprove = "/api/v1/chat/sessions/{sessionId:guid}/approve";
+
+    /// <summary>Merged slash-command catalog (built-ins + control-plane pack).</summary>
+    public const string ChatSlash = "/api/v1/chat/slash";
+
     public const string WorkerClaim = "/workers/claim";
 
     public const string WorkerHeartbeat = "/workers/{workItemId}/heartbeat";

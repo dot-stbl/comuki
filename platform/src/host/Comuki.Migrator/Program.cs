@@ -1,5 +1,6 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Migrator;
+using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +50,11 @@ var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
 ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
 await using var projectsDb = new ProjectsDbContext(projectsOptions.Options);
 await ApplyAsync(projectsDb, "projects");
+
+var chatOptions = new DbContextOptionsBuilder<ChatDbContext>();
+ChatDbContext.ApplyOptions(chatOptions, connectionString);
+await using var chatDb = new ChatDbContext(chatOptions.Options);
+await ApplyAsync(chatDb, "chat");
 
 return 0;
 

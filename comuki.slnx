@@ -25,6 +25,7 @@
   </Folder>
   <Folder Name="/platform/src/host/">
     <Project Path="platform/src/host/Comuki.Host/Comuki.Host.csproj" />
+    <Project Path="platform/src/host/Comuki.Host.Brain/Comuki.Host.Brain.csproj" />
     <Project Path="platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj" />
     <Project Path="platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj" />
   </Folder>

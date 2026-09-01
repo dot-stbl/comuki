@@ -7,8 +7,10 @@ Storybook = единственный источник правды по виду
 ## 0. Источники правды
 
 - **Вид/поведение** — **Storybook** (`bun run storybook`, :6006):
-  - `UI Kit/*` — стори нового кита (`shared/ui/<name>.stories.tsx`);
-  - `UI/*` / `Comuki/*` — legacy shadcn demos (из `_legacy/`, не эталон кита).
+  - `UI Kit/*` — стори кита (`shared/ui/<name>.stories.tsx` и со-локализованные
+    доменные стори).
+  - Исторические `UI/*` / `Comuki/*` (legacy shadcn demos из `_legacy/`)
+    удалены вместе с карантином.
   При расхождении **прав бук**, не HTML mock из `.agents/docs/design-system/`.
 - **Токены** — два файла, и они не пересекаются:
   `app/styles/themes.css` — **генерируемый**, только цветовые примитивы, по
@@ -68,13 +70,18 @@ Storybook = единственный источник правды по виду
   компонентов, а не запрет на группировку.
 - Одна стори на каждое значимое состояние (variants, disabled, danger).
 
-## 6. Strangler / `_legacy`
+## 6. Strangler / `_legacy` — REMOVED
 
-- `shared/ui/_legacy/**` — quarantine shadcn/radix wrappers.
-- Новый код **не** импортирует `_legacy`.
-- Домены мигрируют по одному; временные shim-re-exports с старых путей
-  допустимы только для ещё-не-портированных примитивов.
-- Не удалять `_legacy` и не расширять его новыми компонентами.
+- `_legacy` удалён (вместе с showcase-роутом `/components`, legacy-стори
+  из `src/stories/`, path-шимами `shared/ui/<name>.tsx` и shadcn-депами:
+  radix-*, cva, recharts, vaul, embla, cmdk, input-otp, next-themes,
+  react-day-picker, date-fns, @base-ui/react, shadcn CLI). Правило
+  «не удалять» снято — strangler завершён.
+- Импортировать `_legacy` больше нечего и неоткуда: путь не существует.
+  Если встретил импорт `_legacy` — это битая ссылка, чини на кит.
+- Новый код импортирует **только** `@/shared/ui` (barrel) — как и раньше.
+- `_legacy` не возвращать: новые примитивы — только китом (CSS Modules +
+  React Aria), по процедуре этого плейбука.
 
 ## 7. Чеклист перед merge
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { Toaster } from "sonner"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { useAuthState } from "@/domains/auth"
@@ -41,6 +42,30 @@ export function AppProviders({ children }: AppProvidersProps) {
       <SessionProvider user={user ?? SIGNED_OUT_USER} projects={PROJECTS_SEED}>
         <QueryClientProvider client={queryClient}>
           {children}
+          {/* The proof a write landed — `toast()` is called from a dozen
+              screens, but the only Toaster this app ever mounted lived inside
+              the shadcn showcase and died with it. It lives at the root now,
+              where every screen's toasts render, not just the showcase's.
+
+              Top-centre, because every other corner is taken: bottom-right is
+              the console dock's trigger, bottom anything is the sheet itself
+              when it is open, and the top corners are the bar's controls.
+              Styled from the tokens — a toast is a raised surface carrying a
+              sentence, and it should look like one of ours. */}
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              style: {
+                background: "var(--surface-raised)",
+                border: "var(--hairline) solid var(--rule-strong)",
+                color: "var(--text)",
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--t-sm)",
+                borderRadius: "var(--r-md)",
+                boxShadow: "var(--shadow-modal)",
+              },
+            }}
+          />
         </QueryClientProvider>
       </SessionProvider>
     </ThemeProvider>

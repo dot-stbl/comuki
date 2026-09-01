@@ -18,7 +18,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as CostRouteImport } from './routes/cost'
 import { Route as ComputeRouteImport } from './routes/compute'
-import { Route as ComponentsRouteImport } from './routes/components'
 import { Route as ApprovalsRouteImport } from './routes/approvals'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SourcesIndexRouteImport } from './routes/sources/index'
@@ -84,11 +83,6 @@ const CostRoute = CostRouteImport.update({
 const ComputeRoute = ComputeRouteImport.update({
   id: '/compute',
   path: '/compute',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComponentsRoute = ComponentsRouteImport.update({
-  id: '/components',
-  path: '/components',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApprovalsRoute = ApprovalsRouteImport.update({
@@ -202,7 +196,6 @@ const IdentityUsersUserIdLinkRoute = IdentityUsersUserIdLinkRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/approvals': typeof ApprovalsRoute
-  '/components': typeof ComponentsRoute
   '/compute': typeof ComputeRoute
   '/cost': typeof CostRoute
   '/knowledge': typeof KnowledgeRoute
@@ -235,7 +228,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/approvals': typeof ApprovalsRoute
-  '/components': typeof ComponentsRoute
   '/compute': typeof ComputeRoute
   '/cost': typeof CostRoute
   '/knowledge': typeof KnowledgeRoute
@@ -269,7 +261,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/approvals': typeof ApprovalsRoute
-  '/components': typeof ComponentsRoute
   '/compute': typeof ComputeRoute
   '/cost': typeof CostRoute
   '/knowledge': typeof KnowledgeRoute
@@ -304,7 +295,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/approvals'
-    | '/components'
     | '/compute'
     | '/cost'
     | '/knowledge'
@@ -337,7 +327,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/approvals'
-    | '/components'
     | '/compute'
     | '/cost'
     | '/knowledge'
@@ -370,7 +359,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/approvals'
-    | '/components'
     | '/compute'
     | '/cost'
     | '/knowledge'
@@ -404,7 +392,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApprovalsRoute: typeof ApprovalsRoute
-  ComponentsRoute: typeof ComponentsRoute
   ComputeRoute: typeof ComputeRoute
   CostRoute: typeof CostRoute
   KnowledgeRoute: typeof KnowledgeRoute
@@ -498,13 +485,6 @@ declare module '@tanstack/react-router' {
       path: '/compute'
       fullPath: '/compute'
       preLoaderRoute: typeof ComputeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/components': {
-      id: '/components'
-      path: '/components'
-      fullPath: '/components'
-      preLoaderRoute: typeof ComponentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/approvals': {
@@ -660,7 +640,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApprovalsRoute: ApprovalsRoute,
-  ComponentsRoute: ComponentsRoute,
   ComputeRoute: ComputeRoute,
   CostRoute: CostRoute,
   KnowledgeRoute: KnowledgeRoute,

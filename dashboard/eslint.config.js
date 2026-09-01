@@ -31,7 +31,7 @@ export default defineConfig([
       'react-refresh/only-export-components': 'off',
     },
   },
-  // shadcn primitives export variants / hooks alongside components
+  // Kit primitives export helpers / contexts alongside components
   {
     files: ['src/shared/ui/**/*.{ts,tsx}'],
     rules: {
@@ -44,13 +44,6 @@ export default defineConfig([
     files: ['src/shared/hooks/**/*.{ts,tsx}'],
     rules: {
       'react-hooks/set-state-in-effect': 'off',
-    },
-  },
-  // Storybook CSF render() callbacks are not components
-  {
-    files: ['src/stories/**/*.{ts,tsx}'],
-    rules: {
-      'react-hooks/rules-of-hooks': 'off',
     },
   },
 ])

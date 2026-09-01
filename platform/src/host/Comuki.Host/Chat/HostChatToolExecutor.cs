@@ -66,13 +66,14 @@ file static class HostChatTools
         CancellationToken cancellationToken)
     {
         var ticket = ChatTicketArgumentParsing.Parse(argumentsJson);
+        var plan = ticket is null ? null : ChatTicketArgumentParsing.ParsePlan(ticket.PlanJson);
 
-        if (ticket is null)
+        if (ticket is null || plan is null)
         {
             return new ChatToolResult(false, "{}", "chat.ticket_arguments_invalid", NotImplemented: false);
         }
 
-        var validation = await services.GetRequiredService<IValidator<Plan>>().ValidateAsync(ticket.Plan, cancellationToken);
+        var validation = await services.GetRequiredService<IValidator<Plan>>().ValidateAsync(plan, cancellationToken);
 
         if (!validation.IsValid)
         {
@@ -80,7 +81,7 @@ file static class HostChatTools
         }
 
         var starter = services.GetRequiredService<ChatRunStarter>();
-        var runId = await starter.StartAsync(new ProjectId(Guid.Parse(ticket.ProjectId)), ticket.Plan, cancellationToken);
+        var runId = await starter.StartAsync(new ProjectId(Guid.Parse(ticket.ProjectId)), plan, cancellationToken);
 
         return new ChatToolResult(
             true,

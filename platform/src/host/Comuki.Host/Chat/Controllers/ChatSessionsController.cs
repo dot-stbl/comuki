@@ -52,10 +52,8 @@ public sealed class ChatSessionsController(
                 request.Title,
                 cancellationToken);
 
-            return new CreatedAtActionResult(
-                nameof(GetAsync),
-                null,
-                new { sessionId = session.Id.Value },
+            return new CreatedResult(
+                ApiRoutes.ChatSessions + "/" + session.Id.Value,
                 ChatSessionView.Of(session));
         });
     }

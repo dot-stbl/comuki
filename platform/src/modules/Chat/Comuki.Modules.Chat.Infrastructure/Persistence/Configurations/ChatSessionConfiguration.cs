@@ -10,8 +10,8 @@ public sealed class ChatSessionConfiguration : IEntityTypeConfiguration<ChatSess
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ChatSession> builder)
     {
-
-
+        builder.ToTable(ChatTables.Sessions);
+        builder.HasKey(static session => session.Id);
 
         builder.Property(static session => session.Id)
             .HasColumnName("id")

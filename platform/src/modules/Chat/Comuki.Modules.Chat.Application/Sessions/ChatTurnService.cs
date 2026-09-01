@@ -5,19 +5,20 @@ using Comuki.Modules.Chat.Domain.Sessions;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Checkpoint;
 using Voluta.Abstractions.Runtime;
+using Voluta.Abstractions.Streaming;
 using Voluta.Graph;
 
 namespace Comuki.Modules.Chat.Application.Sessions;
 
 /// <summary>
 /// Drives chat turns over the compiled graph: seeds the turn channels,
-/// invokes (or resumes) the graph, hands the finished snapshot to the
-/// journalist and stamps the session. The transcript is the audit journal —
-/// the graph checkpoint carries only routing state.
+/// invokes (or resumes) the graph in values mode and hands the terminal
+/// event to the journalist. The transcript is the audit journal — the
+/// graph checkpoint carries only routing state.
 /// </summary>
 /// <param name="store">Transcript + session persistence.</param>
 /// <param name="graph">Compiled chat graph (one thread per session).</param>
-/// <param name="journalist">Snapshot → transcript journaling.</param>
+/// <param name="journalist">Terminal event → transcript journaling.</param>
 /// <param name="clock">Time source for journal stamps.</param>
 public sealed class ChatTurnService(
     IChatSessionStore store,
@@ -45,12 +46,12 @@ public sealed class ChatTurnService(
         // Voluta invokes start from an empty channel store — carry-over
         // channels (wizard state) must be re-seeded from the checkpoint so
         // multi-turn flows survive turn boundaries.
-        await graph.InvokeAsync(
+        var terminal = await graph.InvokeAsync(
             ChatTurnSeed.For(session, message, ChatTurnCarry.From(state)),
-            new RunOptions { ThreadId = threadId },
+            new RunOptions { ThreadId = threadId, StreamMode = StreamMode.Values },
             cancellationToken);
 
-        return await journalist.JournalAsync(session, clearPlan: false, cancellationToken);
+        return await journalist.JournalAsync(session, terminal, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -75,12 +76,19 @@ public sealed class ChatTurnService(
         session.Touch(clock.GetUtcNow());
         await store.SaveAsync(session, cancellationToken);
 
-        await graph.ResumeInvokeAsync(
-            threadId,
-            approved ? Command.Approve(ConfirmNode.ApprovePayload) : Command.Reject(reason ?? string.Empty),
+        // values mode: the terminal event carries the final channel snapshot,
+        // which the journalist reads — the checkpoint is never re-read after
+        // the run (invoke step numbering restarts per turn, so the newest
+        // checkpoint row is not necessarily this turn's terminal state)
+        var terminal = await ChatTerminal.DrainAsync(
+            graph.ResumeAsync(
+                threadId,
+                approved ? Command.Approve(ConfirmNode.ApprovePayload) : Command.Reject(reason ?? string.Empty),
+                StreamMode.Values,
+                cancellationToken),
             cancellationToken);
 
-        return await journalist.JournalAsync(session, clearPlan: true, cancellationToken);
+        return await journalist.JournalAsync(session, terminal, cancellationToken);
     }
 }
 
@@ -130,5 +138,26 @@ file static class ChatTurnCarry
         }
 
         return carry is null ? [] : carry;
+    }
+}
+
+/// <summary>Drains a values-mode stream to its terminal event, rethrowing failures.</summary>
+file static class ChatTerminal
+{
+    public static async Task<StreamEvent> DrainAsync(IAsyncEnumerable<StreamEvent> stream, CancellationToken cancellationToken)
+    {
+        StreamEvent? terminal = null;
+
+        await foreach (var item in stream.WithCancellation(cancellationToken))
+        {
+            terminal = item;
+
+            if (item.Kind is StreamEventKind.Failed && item.Payload is Exception exception)
+            {
+                throw exception;
+            }
+        }
+
+        return terminal ?? new StreamEvent { Kind = StreamEventKind.End };
     }
 }

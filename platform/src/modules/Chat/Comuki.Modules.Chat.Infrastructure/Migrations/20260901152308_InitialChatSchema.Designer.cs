@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Comuki.Modules.Chat.Infrastructure.Migrations
 {
     [DbContext(typeof(ChatDbContext))]
-    [Migration("20260901124422_InitialChatSchema")]
+    [Migration("20260901152308_InitialChatSchema")]
     partial class InitialChatSchema
     {
         /// <inheritdoc />

@@ -35,8 +35,8 @@ public static class ChatApplicationExtensions
         services.AddSingleton<ThinkNode>();
 
         services.AddSingleton<IValidator<Plan>, PlanValidator>();
-        services.AddSingleton<CreateChatSessionValidator>();
-        services.AddSingleton<PostChatMessageValidator>();
+        services.AddSingleton<IValidator<CreateChatSessionCommand>, CreateChatSessionValidator>();
+        services.AddSingleton<IValidator<PostChatMessageCommand>, PostChatMessageValidator>();
 
         services.AddSingleton<ChatSessionService>();
         services.AddSingleton<ChatTurnJournalist>();

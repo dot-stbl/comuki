@@ -12,6 +12,9 @@
     <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Domain/Comuki.Modules.Identity.Domain.csproj" />
     <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Application/Comuki.Modules.Identity.Application.csproj" />
     <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Infrastructure/Comuki.Modules.Identity.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Memory/Comuki.Modules.Memory.Domain/Comuki.Modules.Memory.Domain.csproj" />
+    <Project Path="platform/src/modules/Memory/Comuki.Modules.Memory.Application/Comuki.Modules.Memory.Application.csproj" />
+    <Project Path="platform/src/modules/Memory/Comuki.Modules.Memory.Infrastructure/Comuki.Modules.Memory.Infrastructure.csproj" />
     <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Domain/Comuki.Modules.Projects.Domain.csproj" />
     <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Application/Comuki.Modules.Projects.Application.csproj" />
     <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Infrastructure/Comuki.Modules.Projects.Infrastructure.csproj" />

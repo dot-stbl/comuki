@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Migrator;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
+using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,7 +35,8 @@ if (recreate)
 
 // All module contexts migrate the same database; each keeps its own
 // migrations history table (identity uses __comuki_identity, projects
-// uses __comuki_projects), so the applications cannot collide.
+// uses __comuki_projects, memory uses __comuki_memory), so the
+// applications cannot collide.
 var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
 OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
 await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
@@ -49,6 +51,11 @@ var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
 ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
 await using var projectsDb = new ProjectsDbContext(projectsOptions.Options);
 await ApplyAsync(projectsDb, "projects");
+
+var memoryOptions = new DbContextOptionsBuilder<MemoryDbContext>();
+MemoryDbContext.ApplyOptions(memoryOptions, connectionString);
+await using var memoryDb = new MemoryDbContext(memoryOptions.Options);
+await ApplyAsync(memoryDb, "memory");
 
 return 0;
 

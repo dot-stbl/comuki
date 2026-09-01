@@ -11,6 +11,8 @@ export interface TextFieldProps
   > {
   id: string
   label: string
+  /** The label is real but not drawn — see `FieldProps.labelHidden`. */
+  labelHidden?: boolean
   value: string
   onValueChange: (next: string) => void
   hint?: ReactNode
@@ -27,6 +29,7 @@ export interface TextFieldProps
 export function TextField({
   id,
   label,
+  labelHidden,
   value,
   onValueChange,
   hint,
@@ -34,7 +37,7 @@ export function TextField({
   ...rest
 }: TextFieldProps) {
   return (
-    <Field id={id} label={label} hint={hint} error={error}>
+    <Field id={id} label={label} labelHidden={labelHidden} hint={hint} error={error}>
       <input
         {...rest}
         id={id}

@@ -17,6 +17,8 @@ import { PageHeader } from "@/app/layout/page-header"
 import {
   useSettingsQuery,
   useSettingsSaveMutation,
+  useSettingsStopMutation,
+  type SettingsStopKind,
 } from "@/domains/settings/api/queries"
 import type { BudgetFormValues } from "@/domains/settings/model/budget-form"
 import type { RoutingFormValues } from "@/domains/settings/model/routing-form"
@@ -74,13 +76,15 @@ function applyBudgets(
   snapshot: SettingsSnapshot,
   values: BudgetFormValues
 ): SettingsSnapshot["budgets"] {
+  // The caps only. The two stops are not form fields any more: they act the
+  // moment they are pressed, through their own mutation, so a save here can
+  // never silently carry an emergency toggle that was flipped three days ago
+  // and left sitting in a draft.
   return {
     ...snapshot.budgets,
     perTaskUsd: values.perTaskUsd,
     perAppUsd: values.perAppUsd,
     globalUsd: values.globalUsd,
-    killSwitch: values.killSwitch,
-    pauseSwarm: values.pauseSwarm,
   }
 }
 
@@ -113,8 +117,15 @@ export interface SettingsPageProps {
 export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
   const { data, isLoading, isError, error, refetch } = useSettingsQuery()
   const save = useSettingsSaveMutation()
+  // The stops' own channel: kill-switch and pause act the moment they are
+  // pressed and are never buffered behind Save.
+  const stop = useSettingsStopMutation()
 
   const mayEdit = useCan("settings.live")
+
+  const onToggleStop = (kind: SettingsStopKind, on: boolean) => {
+    stop.mutate({ kind, on })
+  }
 
   const onSaveRouting = (values: RoutingFormValues) => {
     if (!data || !mayEdit.allowed) {
@@ -147,11 +158,7 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
       {
         onSuccess: () => {
           toast.success("Budgets saved", {
-            description: values.killSwitch
-              ? "kill-switch ON · swarm claims blocked"
-              : values.pauseSwarm
-                ? "swarm paused"
-                : "caps updated (mock)",
+            description: "caps updated (mock)",
           })
         },
       }
@@ -258,6 +265,7 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
                 busy={save.isPending}
                 save={mayEdit}
                 onSave={onSaveBudgets}
+                onToggleStop={onToggleStop}
               />
             </TabPanel>
             <TabPanel id="keys" className={styles.tabPanel}>

@@ -56,14 +56,102 @@
   min-inline-size: 0;
 }
 
-/* The two switches are sentences rather than values, so they stack full width
-   under the caps rather than joining the grid of boxes. */
-.switches {
+/* The reading band: the meter, and the two stops that act on it. Wraps rather
+   than crushes — on a narrow board the stops drop under the meter whole, still
+   beside the numbers they halt, never squeezed into a third column. */
+.reading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s5);
+  min-inline-size: 0;
+}
+
+/* The two stops are sentences rather than values, so they stack in their own
+   column rather than joining a grid of number boxes. The start rule is the one
+   the meter's own figures sit under: reading on one side of it, acts on the
+   other, the same split a dialog's footer makes over its body. */
+.stops {
   display: flex;
   flex-direction: column;
-  gap: var(--s5);
-  padding-block-start: var(--s4);
+  gap: var(--s4);
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+  max-inline-size: 22rem;
+  padding-inline-start: var(--s5);
+  border-inline-start: var(--hairline) solid var(--rule);
+}
+
+/* Caps ------------------------------------------------------------------- */
+
+/* The parent cap, anchored on the first row at the meter's own measure, so
+   the eye reads one column of authority: the number above, the number that
+   governs it below. */
+.capGlobal {
+  max-inline-size: 26rem;
+  min-inline-size: 0;
+}
+
+/* The refinements under their own rule: a legend in the region-label voice
+   (the wide gesture — it names a region, not a value), then the two caps as
+   peers inside it. */
+.capRefinements {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
   border-block-start: var(--hairline) solid var(--rule);
+}
+
+.capRefinementsLegend {
+  padding: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+.refineFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: var(--s5);
+  min-inline-size: 0;
+}
+
+/* Routing ---------------------------------------------------------------- */
+
+/* One sentence, edited a line at a time: role → model. The role word is the
+   data voice (it is a value the operator compares row-wise), the arrow is
+   faint furniture, and the field's own label is real but not drawn — the
+   sentence already names it, and painting it twice would make the row two
+   rows. */
+.route {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+.routeRole {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.routeArrow {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text-faint);
+}
+
+.routeField {
+  flex: 1 1 12rem;
   min-inline-size: 0;
 }
 

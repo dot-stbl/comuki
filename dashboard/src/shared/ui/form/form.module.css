@@ -97,6 +97,64 @@
   border-color: var(--st-failed);
 }
 
+/* A label that names the control without painting anything. Same technique as
+   the choice input: off-screen rather than `display: none`, so the label keeps
+   pointing at the control and clicking it still focuses the control. */
+.labelHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: calc(var(--hairline) * -1);
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Numbers ---------------------------------------------------------------- */
+
+/* The box a number and its unit share. The unit is drawn inside the control's
+   own border at its end edge, because a unit outside the box reads as a second
+   field, and a unit absent reads as a question. */
+.numberBox {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+/* No native stepper, in either vendor's spelling. The spinner arrows are
+   unlabelled, hard to hit and fired by the scroll wheel — on a cap that a
+   passing scroll would quietly change, the affordance is a hazard rather than
+   a control. `appearance: textfield` is the standard spelling; the -moz one
+   is still the load-bearing declaration in Firefox. */
+.numberInput {
+  -moz-appearance: textfield;
+  appearance: textfield;
+  /* Room for the unit so the typed digits never run under it: the unit's own
+     width in mono ch, plus its inset from the end edge, on top of the padding
+     every control already carries. */
+  padding-inline-end: calc(var(--s3) + var(--s1) + 3ch);
+}
+
+.numberInput::-webkit-outer-spin-button,
+.numberInput::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.numberUnit {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: var(--s3);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
 /* Prose the operator writes, so it takes the interface voice and a real block
    of room. Vertical resize only: a horizontal drag would break the dialog. */
 .area {

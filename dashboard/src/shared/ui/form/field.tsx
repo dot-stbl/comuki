@@ -8,6 +8,13 @@ export interface FieldProps {
   /** The control's id. The label points at it, so it is required. */
   id: string
   label: string
+  /**
+   * The label is real but not drawn. The sentence around the control names it
+   * already — a row that reads "lead → [model]" has one label, not two — so
+   * the element stays for the screen reader and the pointer target and nothing
+   * is painted.
+   */
+  labelHidden?: boolean
   /** The rule the operator cannot see by looking at the box. */
   hint?: ReactNode
   /** What is wrong, in a sentence. Replaces the hint while it is present. */
@@ -26,10 +33,21 @@ export interface FieldProps {
  * The message is never carried by colour alone — it takes a mark and a
  * sentence, so it survives greyscale exactly like a status band does.
  */
-export function Field({ id, label, hint, error, children }: FieldProps) {
+export function Field({
+  id,
+  label,
+  labelHidden = false,
+  hint,
+  error,
+  children,
+}: FieldProps) {
   return (
     <div className={styles.field}>
-      <label className={styles.label} id={fieldLabelId(id)} htmlFor={id}>
+      <label
+        className={labelHidden ? styles.labelHidden : styles.label}
+        id={fieldLabelId(id)}
+        htmlFor={id}
+      >
         {label}
       </label>
       {children}

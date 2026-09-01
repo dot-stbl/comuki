@@ -5,6 +5,7 @@ import { ChoiceField } from "./choice-field"
 import { CopyButton } from "./copy-button"
 import { FormDialog } from "./form-dialog"
 import { Notice } from "./notice"
+import { NumberField } from "./number-field"
 import { SecretValue } from "./secret-value"
 import { SelectField } from "./select-field"
 import { SwitchField } from "./switch-field"
@@ -81,6 +82,62 @@ function Fields() {
 export const Fields_: Story = {
   name: "Fields",
   render: () => <Fields />,
+}
+
+function Numbers() {
+  const [cap, setCap] = useState("220")
+  const [perTask, setPerTask] = useState("2")
+
+  return (
+    <Column>
+      <NumberField
+        id="story-cap"
+        label="global cap"
+        unit="USD"
+        value={cap}
+        hint="The unit rides inside the box; the browser's stepper is gone."
+        onValueChange={setCap}
+      />
+      <NumberField
+        id="story-per-task"
+        label="per task"
+        unit="USD"
+        value={perTask}
+        step="0.01"
+        error={Number(perTask) <= 0 ? "a task cap has to leave room for one step" : null}
+        onValueChange={setPerTask}
+      />
+    </Column>
+  )
+}
+
+/**
+ * A number the operator types, not one they scroll to — no native spinner in
+ * either vendor's spelling, and the unit drawn inside the box at its end edge.
+ */
+export const Numbers_: Story = {
+  name: "Number",
+  render: () => <Numbers />,
+}
+
+/** The label is real but not painted: the sentence around the field names it. */
+export const LabelHidden: Story = {
+  render: () => (
+    <Column>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--s3)" }}>
+        <span style={{ fontFamily: "var(--font-data)", color: "var(--text)" }}>
+          lead →
+        </span>
+        <TextField
+          id="story-label-hidden"
+          label="lead model"
+          labelHidden
+          value="primary (large)"
+          onValueChange={() => {}}
+        />
+      </div>
+    </Column>
+  ),
 }
 
 function Areas() {

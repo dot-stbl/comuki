@@ -40,11 +40,22 @@ const TRACKERS: TrackerProvider[] = [
 
 /** The settings screen's arrangement: one `settings.live` answer for every
     panel that writes, because every one of them writes the same kind of thing. */
-function LiveSettings({ onSave }: { onSave: (values: BudgetFormValues) => void }) {
+function LiveSettings({
+  onSave,
+  onToggleStop,
+}: {
+  onSave: (values: BudgetFormValues) => void
+  onToggleStop: () => void
+}) {
   const may = useCan("settings.live")
   return (
     <>
-      <BudgetsPanel budgets={BUDGETS} save={may} onSave={onSave} />
+      <BudgetsPanel
+        budgets={BUDGETS}
+        save={may}
+        onSave={onSave}
+        onToggleStop={onToggleStop}
+      />
       <TrackerPanel trackers={TRACKERS} edit={may} />
     </>
   )
@@ -52,9 +63,10 @@ function LiveSettings({ onSave }: { onSave: (values: BudgetFormValues) => void }
 
 function mount(roles: Role[]) {
   const onSave = vi.fn()
+  const onToggleStop = vi.fn()
   render(
     <TestSession roles={roles}>
-      <LiveSettings onSave={onSave} />
+      <LiveSettings onSave={onSave} onToggleStop={onToggleStop} />
     </TestSession>
   )
   return {
@@ -92,7 +104,7 @@ describe("live settings, by role", () => {
 
     // The fields themselves stay writable — a cap you cannot apply is still a
     // cap worth working out before you ask for it.
-    const perTask = screen.getByLabelText("per task (USD)")
+    const perTask = screen.getByLabelText("per task")
     expect(perTask.hasAttribute("disabled")).toBe(false)
     fireEvent.change(perTask, { target: { value: "5" } })
 
@@ -108,7 +120,7 @@ describe("live settings, by role", () => {
     expect(save.hasAttribute("aria-disabled")).toBe(false)
     expect(sync.hasAttribute("aria-disabled")).toBe(false)
 
-    fireEvent.change(screen.getByLabelText("per task (USD)"), {
+    fireEvent.change(screen.getByLabelText("per task"), {
       target: { value: "5" },
     })
     fireEvent.click(save)

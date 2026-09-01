@@ -17,6 +17,10 @@ export { CopyButton, type CopyButtonProps } from "./copy-button"
 export { Field, type FieldProps } from "./field"
 export { FormDialog, type FormDialogProps } from "./form-dialog"
 export { Notice, type NoticeProps } from "./notice"
+export {
+  NumberField,
+  type NumberFieldProps,
+} from "./number-field"
 export { SecretValue, type SecretValueProps } from "./secret-value"
 export {
   SelectField,

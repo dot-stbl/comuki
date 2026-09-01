@@ -1,7 +1,8 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 
+import type { SettingsStopKind } from "@/domains/settings/api/queries"
 import type { Budgets } from "@/domains/settings/model/types"
 import {
   budgetFormSchema,
@@ -9,7 +10,13 @@ import {
   type BudgetFormValues,
 } from "@/domains/settings/model/budget-form"
 import type { PermissionCheck } from "@/shared/session"
-import { Button, Section, SwitchField, TextField } from "@/shared/ui"
+import {
+  Button,
+  ConfirmDialog,
+  NumberField,
+  Section,
+  SwitchField,
+} from "@/shared/ui"
 
 import { BudgetMeter } from "./budget-meter"
 import styles from "./settings-panel.module.css"
@@ -19,51 +26,63 @@ export interface BudgetsPanelProps {
   busy?: boolean
   onSave: (values: BudgetFormValues) => void
   /**
-   * May this session turn a live setting. Only the save is gated: the fields
-   * stay writable so a role that cannot apply a cap can still work out what it
-   * would ask for, and the one control that writes says what it needs.
+   * Throw or stand down one of the two stops. Applied the moment the control
+   * is pressed — the stops are acts beside the reading, not values in the form
+   * below, because an emergency brake that waits for a submit arrives late.
+   */
+  onToggleStop: (kind: SettingsStopKind, on: boolean) => void
+  /**
+   * May this session turn a live setting. Covers the save and the two stops
+   * both: they write the same kind of thing, so one `settings.live` answer
+   * names the permission once. The caps fields stay writable for a role that
+   * cannot apply one, and every control that refuses says what it needs.
    */
   save: PermissionCheck
 }
 
 /**
- * What the swarm is allowed to spend, and the two switches that stop it.
+ * What the swarm is allowed to spend, and the two stops that halt it.
  *
- * The reading comes first and the controls after it, because nobody sets a cap
- * without first looking at what the last one did. The two switches sit below
- * the three caps rather than beside them: a cap is a value and a switch is a
- * sentence, and a sentence in a grid of number boxes reads as a fourth number
- * that has lost its box.
+ * The reading comes first, and the two stops stand beside it rather than under
+ * it, because they are not settings — they are the brake and the clutch, and
+ * both act the instant they are touched. Throwing the kill-switch is the one
+ * act on this panel that asks first: it blocks every new claim for every app
+ * at once, and a sentence that names what it stops costs less than an
+ * accidental press. Standing it down, and pausing the swarm, run directly —
+ * un-pausing and un-blocking restore what was there, and a pause loses
+ * nothing: workers running finish, no container is torn down, one press
+ * undoes it, and the state word sits beside the meter where an accidental
+ * flip is legible the moment it happens.
  *
- * Only the submit is gated. The fields stay writable for a role that cannot
- * apply anything, because a cap you cannot set is still a cap worth working out
- * before you go and ask for it — and the control that refuses says what it
- * needs, rather than the form going quietly dead.
+ * Below the reading, the caps are a form — values, one save — with the
+ * hierarchy the meter already insists on: the global cap is the parent number
+ * the meter measures against, and the per-task and per-app caps refine it
+ * under their own rule. Only the submit is gated; a cap you cannot apply is
+ * still a cap worth working out before you go and ask for it.
  */
 export function BudgetsPanel({
   budgets,
   busy = false,
   onSave,
+  onToggleStop,
   save,
 }: BudgetsPanelProps) {
+  const [askingKill, setAskingKill] = useState(false)
+
   const form = useForm<BudgetFormInput, unknown, BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
+      globalUsd: budgets.globalUsd,
       perTaskUsd: budgets.perTaskUsd,
       perAppUsd: budgets.perAppUsd,
-      globalUsd: budgets.globalUsd,
-      killSwitch: budgets.killSwitch,
-      pauseSwarm: budgets.pauseSwarm,
     },
   })
 
   useEffect(() => {
     form.reset({
+      globalUsd: budgets.globalUsd,
       perTaskUsd: budgets.perTaskUsd,
       perAppUsd: budgets.perAppUsd,
-      globalUsd: budgets.globalUsd,
-      killSwitch: budgets.killSwitch,
-      pauseSwarm: budgets.pauseSwarm,
     })
   }, [budgets, form])
 
@@ -75,14 +94,68 @@ export function BudgetsPanel({
         title="Proxy budget"
         note="what the swarm has spent today against the global cap"
       >
-        <BudgetMeter budgets={budgets} />
+        <div className={styles.reading}>
+          <BudgetMeter budgets={budgets} />
+
+          {/* A rule between the reading and the acts: the meter is what
+              happened, the switches are what to do about it, and the two are
+              different sentences even though they stand on one line. */}
+          <div className={styles.stops} data-test="budget-stops">
+            <SwitchField
+              id="killSwitch"
+              label="Kill-switch"
+              data-test="budgets-kill-switch"
+              checked={budgets.killSwitch}
+              onLabel="claims blocked"
+              offLabel="claims open"
+              onCheckedChange={(next) => {
+                // The one act here that asks first. Standing the switch back
+                // down restores what was there, so it runs directly.
+                if (next) {
+                  setAskingKill(true)
+                  return
+                }
+                onToggleStop("killSwitch", false)
+              }}
+              denied={save.denial}
+              disabled={busy}
+              hint="Hard-stop all new claims — every app, every task."
+            />
+            <SwitchField
+              id="pauseSwarm"
+              label="Pause swarm"
+              data-test="budgets-pause-swarm"
+              checked={budgets.pauseSwarm}
+              onLabel="paused"
+              offLabel="running"
+              onCheckedChange={(next) => onToggleStop("pauseSwarm", next)}
+              denied={save.denial}
+              disabled={busy}
+              hint="Soft pause — running workers finish; no new containers start."
+            />
+          </div>
+        </div>
+
+        <ConfirmDialog
+          open={askingKill}
+          danger
+          title="Throw the kill-switch?"
+          body="New claims stop now — every app, every task — and stay stopped until the switch is turned back off. Workers mid-step finish what they are holding; nothing queued is cancelled."
+          confirmLabel="Block new claims"
+          cancelLabel="Leave claims open"
+          onConfirm={() => {
+            setAskingKill(false)
+            onToggleStop("killSwitch", true)
+          }}
+          onCancel={() => setAskingKill(false)}
+        />
       </Section>
 
       <Section
         variant="screen"
         data-test="settings-budgets"
         title="Budget caps"
-        note="per-task / per-app / global · kill-switch and pause swarm"
+        note="the global cap the meter reads · per-task and per-app refine it"
       >
         <form
           className={styles.form}
@@ -95,95 +168,74 @@ export function BudgetsPanel({
             onSave(values)
           })}
         >
-          <div className={styles.fields}>
-            <Controller
-              control={form.control}
-              name="perTaskUsd"
-              render={({ field, fieldState }) => (
-                <TextField
-                  id="perTaskUsd"
-                  label="per task (USD)"
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={String(field.value ?? "")}
-                  onValueChange={field.onChange}
-                  onBlur={field.onBlur}
-                  disabled={busy}
-                  error={fieldState.error?.message ?? null}
-                />
-              )}
-            />
-            <Controller
-              control={form.control}
-              name="perAppUsd"
-              render={({ field, fieldState }) => (
-                <TextField
-                  id="perAppUsd"
-                  label="per app (USD)"
-                  type="number"
-                  step="1"
-                  inputMode="decimal"
-                  value={String(field.value ?? "")}
-                  onValueChange={field.onChange}
-                  onBlur={field.onBlur}
-                  disabled={busy}
-                  error={fieldState.error?.message ?? null}
-                />
-              )}
-            />
+          {/* The parent number, anchored on its own row: it is the cap the
+              meter above measures against, and a reader who has to work that
+              out from the order of three identical boxes has been made to
+              guess. */}
+          <div className={styles.capGlobal} data-test="budgets-cap-global">
             <Controller
               control={form.control}
               name="globalUsd"
               render={({ field, fieldState }) => (
-                <TextField
+                <NumberField
                   id="globalUsd"
-                  label="global (USD)"
-                  type="number"
+                  label="global cap"
+                  unit="USD"
                   step="1"
-                  inputMode="decimal"
                   value={String(field.value ?? "")}
                   onValueChange={field.onChange}
                   onBlur={field.onBlur}
                   disabled={busy}
                   error={fieldState.error?.message ?? null}
+                  hint="The meter above measures spend against this cap."
                 />
               )}
             />
           </div>
 
-          <div className={styles.switches}>
-            <Controller
-              control={form.control}
-              name="killSwitch"
-              render={({ field }) => (
-                <SwitchField
-                  id="killSwitch"
-                  label="Kill-switch"
-                  data-test="budgets-kill-switch"
-                  checked={Boolean(field.value)}
-                  onCheckedChange={field.onChange}
-                  disabled={busy}
-                  hint="Hard-stop all new claims when global cap is hit or toggled on."
-                />
-              )}
-            />
-            <Controller
-              control={form.control}
-              name="pauseSwarm"
-              render={({ field }) => (
-                <SwitchField
-                  id="pauseSwarm"
-                  label="Pause swarm"
-                  data-test="budgets-pause-swarm"
-                  checked={Boolean(field.value)}
-                  onCheckedChange={field.onChange}
-                  disabled={busy}
-                  hint="Soft pause — running workers finish; no new containers start."
-                />
-              )}
-            />
-          </div>
+          {/* The two refinements, grouped under a rule and a legend so they
+              read as refinements of the parent rather than as two more caps
+              of the same rank. A fieldset rather than a div: the group is
+              real to a screen reader too. */}
+          <fieldset className={styles.capRefinements} data-test="budgets-cap-refinements">
+            <legend className={styles.capRefinementsLegend}>refinements</legend>
+            <div className={styles.refineFields}>
+              <Controller
+                control={form.control}
+                name="perTaskUsd"
+                render={({ field, fieldState }) => (
+                  <NumberField
+                    id="perTaskUsd"
+                    label="per task"
+                    unit="USD"
+                    step="0.01"
+                    value={String(field.value ?? "")}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    disabled={busy}
+                    error={fieldState.error?.message ?? null}
+                  />
+                )}
+              />
+              <Controller
+                control={form.control}
+                name="perAppUsd"
+                render={({ field, fieldState }) => (
+                  <NumberField
+                    id="perAppUsd"
+                    label="per app"
+                    unit="USD"
+                    step="1"
+                    value={String(field.value ?? "")}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    disabled={busy}
+                    error={fieldState.error?.message ?? null}
+                  />
+                )}
+              />
+            </div>
+          </fieldset>
 
           <div className={styles.footer}>
             {/* A button that commits a form keeps its words. `denied` and never

@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Comuki.Host.Unit.Auth" />
+    <InternalsVisibleTo Include="Comuki.Host.Unit.WorkerRuntime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Auth" />
   </ItemGroup>
 

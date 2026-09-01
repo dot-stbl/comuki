@@ -5,22 +5,23 @@ using Comuki.Host.Workers;
 using Comuki.Shared.Contracts.ControlPlane.ChatCommands;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 
-// Worker runtime (gRPC + claim REST) comes up only when a database is wired;
-// without one the host stays the catalog/identity surface. Compose below is
-// the single composition point for everything else.
+// One resolved connection wires the whole host. HostDatabase owns the
+// single read — COMUKI_DB env, then the legacy COMUKI_DATABASE alias
+// (warned at startup), then ConnectionStrings:Comuki — and throws when
+// absent, so the host never boots half-wired: the worker runtime
+// (gRPC + claim REST) below and identity/projects inside Compose share
+// the same resolved string.
 var builder = WebApplication.CreateBuilder(args);
 
-var database = builder.Configuration["COMUKI_DATABASE"];
-if (!string.IsNullOrWhiteSpace(database))
-{
-    _ = builder.Services
-        .AddOrchestrationPersistence(database)
-        .AddOrchestrationQueue(builder.Configuration)
-        .AddOrchestrationApplication()
-        .AddWorkerRuntime(builder.Configuration);
-}
+var database = HostDatabase.Resolve(builder.Configuration);
 
-var app = HostComposer.Compose(builder);
+_ = builder.Services
+    .AddOrchestrationPersistence(database.ConnectionString)
+    .AddOrchestrationQueue(builder.Configuration)
+    .AddOrchestrationApplication()
+    .AddWorkerRuntime(builder.Configuration);
+
+var app = HostComposer.Compose(builder, database);
 
 app.MapGet(
     ApiRoutes.Profiles,
@@ -37,9 +38,6 @@ app.MapGet(
     static async (IChatCommandCatalog catalog, CancellationToken cancellationToken) =>
         Results.Ok(await catalog.ListCommandsAsync(cancellationToken)));
 
-if (!string.IsNullOrWhiteSpace(database))
-{
-    app.MapWorkerRuntime();
-}
+app.MapWorkerRuntime();
 
 await app.RunAsync();

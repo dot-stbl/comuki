@@ -6,13 +6,20 @@ using Microsoft.EntityFrameworkCore;
 
 var recreate = args.Contains("--recreate", StringComparer.Ordinal);
 
-var connectionString = ConnectionStringSource.Resolve();
+var connectionString = ConnectionStringSource.TryResolve(out var fromLegacyAlias);
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     Console.Error.WriteLine(
         $"connection string not found: set the {ConnectionStringSource.EnvVariable} env var "
         + "or ConnectionStrings:Comuki in appsettings.json");
     return 1;
+}
+
+if (fromLegacyAlias)
+{
+    Console.Error.WriteLine(
+        $"warning: connection string resolved from the legacy {ConnectionStringSource.LegacyEnvVariable} env var; "
+        + $"rename it to {ConnectionStringSource.EnvVariable}");
 }
 
 if (recreate)

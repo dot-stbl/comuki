@@ -15,27 +15,28 @@ namespace Comuki.Host;
 /// <summary>
 /// The single composition point of the orchestrator host: services,
 /// authentication schemes, controllers and the anonymous health endpoint.
-/// <see cref="Program"/> stays a four-line entry; integration tests boot
-/// the exact same composition through this class on a test port.
+/// <see cref="Program"/> resolves the database connection once through
+/// <see cref="HostDatabase"/> and flows it in — for identity/projects here
+/// and for the worker runtime wiring above the Compose call; integration
+/// tests boot the exact same composition through this class on a test port.
 /// </summary>
 internal static class HostComposer
 {
     /// <summary>Wires every host service and returns the built application, not yet started.</summary>
     /// <param name="builder"></param>
+    /// <param name="database">Connection resolved once by <see cref="HostDatabase.Resolve"/>; flows into identity/projects persistence and the legacy-alias warning.</param>
     /// <returns></returns>
-    public static WebApplication Compose(WebApplicationBuilder builder)
+    public static WebApplication Compose(WebApplicationBuilder builder, HostDatabase.Connection database)
     {
-        var connectionString = HostDatabase.ResolveConnectionString(builder.Configuration);
-
         builder.Services.AddControlPlaneCatalogCore(builder.Configuration);
 
         builder.Services
             .AddIdentityApplication()
-            .AddIdentityPersistence(connectionString)
+            .AddIdentityPersistence(database.ConnectionString)
             .AddIdentityAuth(builder.Configuration, typeof(HostComposer).Assembly);
 
         builder.Services.AddProjectsApplication();
-        builder.Services.AddProjectsPersistence(connectionString);
+        builder.Services.AddProjectsPersistence(database.ConnectionString);
 
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).
@@ -61,6 +62,8 @@ internal static class HostComposer
 
         var app = builder.Build();
 
+        HostDatabase.WarnLegacyAlias(database, app.Logger);
+
         app.UseExceptionHandler();
         app.UseAuthentication();
 
@@ -69,29 +72,5 @@ internal static class HostComposer
         app.MapProjectsEndpoints();
 
         return app;
-    }
-}
-
-/// <summary>Connection-string resolution shared by the host and its test boot: <c>COMUKI_DB</c> env, then <c>ConnectionStrings:Comuki</c>.</summary>
-file static class HostDatabase
-{
-    public const string ConnectionStringName = "Comuki";
-
-    public const string EnvVariable = "COMUKI_DB";
-
-    public static string ResolveConnectionString(IConfiguration configuration)
-    {
-        var fromEnvironment = Environment.GetEnvironmentVariable(EnvVariable);
-        if (!string.IsNullOrWhiteSpace(fromEnvironment))
-        {
-            return fromEnvironment;
-        }
-
-        var fromConfiguration = configuration.GetConnectionString(ConnectionStringName);
-
-        return string.IsNullOrWhiteSpace(fromConfiguration)
-            ? throw new InvalidOperationException(
-                $"connection string not found: set the {EnvVariable} env var or ConnectionStrings:{ConnectionStringName} in configuration")
-            : fromConfiguration;
     }
 }

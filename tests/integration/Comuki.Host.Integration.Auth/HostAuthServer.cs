@@ -72,12 +72,11 @@ public sealed class HostAuthServer : IAsyncLifetime
             new WebApplicationOptions { ApplicationName = typeof(HostComposer).Assembly.GetName().Name });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
-        builder.Configuration["ConnectionStrings:Comuki"] = connectionString;
         builder.Configuration["ControlPlane:Root"] = controlPlane.Root;
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
 
-        application = HostComposer.Compose(builder);
+        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
         await application.StartAsync(cancellationToken);
 
         baseAddress = new Uri(

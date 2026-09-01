@@ -41,7 +41,9 @@
     <Project Path="tests/unit/Comuki.Engine.Compute.Unit/Comuki.Engine.Compute.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Auth/Comuki.Host.Unit.Auth.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Identity.Unit/Comuki.Modules.Identity.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Memory.Unit/Comuki.Modules.Memory.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Projects.Unit/Comuki.Modules.Projects.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Brain.Unit/Comuki.Host.Brain.Unit.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Migrations/Comuki.Engine.Orchestration.Integration.Migrations.csproj" />
@@ -49,6 +51,7 @@
     <Project Path="tests/integration/Comuki.Host.Integration.Auth/Comuki.Host.Integration.Auth.csproj" />
     <Project Path="tests/integration/Comuki.Host.Translator.Integration.PiCli/Comuki.Host.Translator.Integration.PiCli.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Migrations/Comuki.Modules.Identity.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Memory.Integration.Migrations/Comuki.Modules.Memory.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.Migrations/Comuki.Modules.Projects.Integration.Migrations.csproj" />
   </Folder>
   <Folder Name="/tests/tools/">

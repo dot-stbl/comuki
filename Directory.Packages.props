@@ -22,6 +22,7 @@
     <PackageVersion Include="LibGit2Sharp" Version="0.32.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
@@ -49,6 +50,15 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
+  </ItemGroup>
+
+  <!-- Chat graph (Voluta, S5): stateful agent graphs + EF Core checkpointer.
+       0.3.0 pinned per README (public API frozen); local repo at
+       C:\Users\bradw\source\stbl\voluta is the source of the packages. -->
+  <ItemGroup>
+    <PackageVersion Include="Voluta" Version="0.3.0" />
+    <PackageVersion Include="Voluta.DependencyInjection" Version="0.3.0" />
+    <PackageVersion Include="Voluta.Checkpoints.EntityFrameworkCore" Version="0.3.0" />
   </ItemGroup>
 
   <!-- Integration testing -->

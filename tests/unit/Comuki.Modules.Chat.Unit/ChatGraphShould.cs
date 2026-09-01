@@ -60,7 +60,7 @@ public sealed class ChatGraphShould
         result.PendingPlanJson.ShouldNotBeNullOrWhiteSpace();
 
         using var plan = JsonDocument.Parse(result.PendingPlanJson);
-        plan.RootElement.GetProperty("items")[0].GetProperty("profileKey").GetString().ShouldBe("implement");
+        plan.RootElement.GetProperty("nodes")[0].GetProperty("profileKey").GetString().ShouldBe("implement");
 
         harness.Brain.Requests.ShouldHaveSingleItem().Kind.ShouldBe("plan");
     }

@@ -57,7 +57,7 @@ public sealed class ChatSessionsShould(HostChatServer server) : IClassFixture<Ho
 
         turn.GetProperty("awaitingApproval").GetBoolean().ShouldBeTrue();
         var plan = turn.GetProperty("pendingPlan");
-        plan.GetProperty("items")[0].GetProperty("profileKey").GetString().ShouldBe("implement");
+        plan.GetProperty("nodes")[0].GetProperty("profileKey").GetString().ShouldBe("implement");
 
         // the transcript journals the card prompt as the assistant reply
         var messages = await ListMessagesAsync(client, sessionId);
@@ -116,8 +116,11 @@ public sealed class ChatSessionsShould(HostChatServer server) : IClassFixture<Ho
     [Fact(DisplayName = "Given a pending approve, when rejected, then no run is created and the reason is echoed")]
     public async Task RejectCreatesNothingAsync()
     {
+        // own project scope: the approve test above legitimately lands a run
+        // under the shared projectGuid, and this test must observe a virgin one
+        var rejectProjectGuid = Guid.Parse("33333333-3333-3333-3333-333333333333");
         using var client = await server.CreateBrowserClientAsync();
-        var sessionId = await NewSessionAsync(client, projectGuid);
+        var sessionId = await NewSessionAsync(client, rejectProjectGuid);
         await PostMessageAsync(client, sessionId, "write the migration");
 
         var reject = await client.PostAsJsonAsync(
@@ -134,7 +137,7 @@ public sealed class ChatSessionsShould(HostChatServer server) : IClassFixture<Ho
 
         await using var db = await NewOrchestrationDbAsync();
         (await db.Runs.AsNoTracking()
-                .AnyAsync(row => row.ProjectId == new Shared.Kernel.Ids.ProjectId(projectGuid), TestContext.Current.CancellationToken))
+                .AnyAsync(row => row.ProjectId == new Shared.Kernel.Ids.ProjectId(rejectProjectGuid), TestContext.Current.CancellationToken))
             .ShouldBeFalse();
     }
 

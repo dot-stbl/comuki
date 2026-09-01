@@ -5,14 +5,15 @@ namespace Comuki.Host.Chat;
 
 /// <summary>
 /// In-process brain fallback until the dedicated brain host
-/// (Comuki.Host.Brain, gRPC — sibling slice) lands: plan invocations return
-/// a deterministic single-item implement plan carrying the task as the
-/// brief; chat invocations echo the task. Registered with TryAdd so a real
-/// client registration always wins.
+/// (Comuki.Host.Brain, gRPC — sibling slice) is configured: plan invocations
+/// return a deterministic single-node implement plan carrying the task as
+/// the brief; chat invocations echo the task. Registered with TryAdd so a
+/// real client registration always wins. Emits the canonical Plan contract
+/// shape (summary/nodes/edges).
 /// </summary>
 public sealed class BrainStub : IBrainClient
 {
-    /// <summary>Single-item plan the stub produces for plan invocations.</summary>
+    /// <summary>Single-node plan profile the stub produces for plan invocations.</summary>
     public const string StubProfileKey = "implement";
 
     /// <inheritdoc />
@@ -32,18 +33,25 @@ file static class StubPlanJson
     public static string Of(string task)
     {
         return JsonSerializer.Serialize(
-            new StubPlan([new StubPlanItem("step-1", BrainStub.StubProfileKey, task, [])]),
+            new StubPlan("stub plan", [new StubPlanNode("n1", "Do it", BrainStub.StubProfileKey, task)], []),
             JsonSerializerOptions.Web);
     }
 }
 
-/// <summary>Stub plan wire shape (camelCase).</summary>
-/// <param name="Items"></param>
-internal sealed record StubPlan(IReadOnlyList<StubPlanItem> Items);
+/// <summary>Stub plan wire shape (camelCase) matching the Plan contract.</summary>
+/// <param name="Summary"></param>
+/// <param name="Nodes"></param>
+/// <param name="Edges"></param>
+internal sealed record StubPlan(string Summary, IReadOnlyList<StubPlanNode> Nodes, IReadOnlyList<StubPlanEdge> Edges);
 
-/// <summary>Stub plan item wire shape (camelCase).</summary>
-/// <param name="Key"></param>
+/// <summary>Stub plan node wire shape.</summary>
+/// <param name="Id"></param>
+/// <param name="Title"></param>
 /// <param name="ProfileKey"></param>
 /// <param name="Brief"></param>
-/// <param name="DependsOn"></param>
-internal sealed record StubPlanItem(string Key, string ProfileKey, string Brief, IReadOnlyList<string> DependsOn);
+internal sealed record StubPlanNode(string Id, string Title, string ProfileKey, string Brief);
+
+/// <summary>Stub plan edge wire shape (empty in the stub).</summary>
+/// <param name="From"></param>
+/// <param name="To"></param>
+internal sealed record StubPlanEdge(string From, string To);

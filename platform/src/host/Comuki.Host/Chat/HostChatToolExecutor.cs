@@ -3,7 +3,6 @@ using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Shared.Contracts.Plans;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Ids;
-using FluentValidation;
 
 namespace Comuki.Host.Chat;
 
@@ -73,9 +72,7 @@ file static class HostChatTools
             return new ChatToolResult(false, "{}", "chat.ticket_arguments_invalid", NotImplemented: false);
         }
 
-        var validation = await services.GetRequiredService<IValidator<Plan>>().ValidateAsync(plan, cancellationToken);
-
-        if (!validation.IsValid)
+        if (!PlanValidator.Validate(plan).IsValid)
         {
             return new ChatToolResult(false, "{}", "chat.plan_invalid", NotImplemented: false);
         }

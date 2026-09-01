@@ -30,18 +30,27 @@ public sealed class ProjectSettingsCacheRefresher(
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            try
+            while (!stoppingToken.IsCancellationRequested)
             {
-                await RefreshAllAsync(stoppingToken);
-            }
-            catch (DbException exception)
-            {
-                logger.LogWarning(exception, "Project settings refresh failed; retrying next interval");
-            }
+                try
+                {
+                    await RefreshAllAsync(stoppingToken);
+                }
+                catch (DbException exception)
+                {
+                    logger.LogWarning(exception, "Project settings refresh failed; retrying next interval");
+                }
 
-            await Task.Delay(RefreshInterval, stoppingToken);
+                await Task.Delay(RefreshInterval, stoppingToken);
+            }
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // host shutdown (refresh or delay cancelled): the expected stop
+            // path — an unhandled cancel here trips StopHost and kills
+            // in-flight requests
         }
     }
 

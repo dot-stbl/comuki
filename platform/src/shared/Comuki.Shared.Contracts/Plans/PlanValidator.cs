@@ -77,13 +77,27 @@ file static class PlanValidatorRules
 
     public static bool BeAcyclic(IReadOnlyList<PlanItem> items)
     {
-        var byKey = items.ToFrozenDictionary(static item => item.Key, static item => item.DependsOn, StringComparer.Ordinal);
+        // duplicate keys and dangling references are reported by the
+        // dedicated rules; acyclicity must not throw on those shapes
+        var byKey = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var item in items)
+        {
+            if (!byKey.TryAdd(item.Key, item.DependsOn))
+            {
+                return false;
+            }
+        }
+
         var visiting = new HashSet<string>(StringComparer.Ordinal);
         var done = new HashSet<string>(StringComparer.Ordinal);
 
         return items.All(item => ReachesNoCycle(item.Key, byKey, visiting, done));
 
-        static bool ReachesNoCycle(string key, FrozenDictionary<string, IReadOnlyList<string>> byKey, HashSet<string> visiting, HashSet<string> done)
+        static bool ReachesNoCycle(
+            string key,
+            Dictionary<string, IReadOnlyList<string>> byKey,
+            HashSet<string> visiting,
+            HashSet<string> done)
         {
             if (done.Contains(key))
             {
@@ -95,7 +109,7 @@ file static class PlanValidatorRules
                 return false;
             }
 
-            if (!byKey[key].All(dependency => ReachesNoCycle(dependency, byKey, visiting, done)))
+            if (!byKey[key].All(dependency => byKey.ContainsKey(dependency) && ReachesNoCycle(dependency, byKey, visiting, done)))
             {
                 return false;
             }

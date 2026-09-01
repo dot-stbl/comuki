@@ -3,6 +3,7 @@ using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Domain.Messages;
 using Comuki.Modules.Chat.Domain.Sessions;
 using Voluta.Abstractions.Channels;
+using Voluta.Abstractions.Checkpoint;
 using Voluta.Abstractions.Runtime;
 using Voluta.Graph;
 
@@ -41,8 +42,11 @@ public sealed class ChatTurnService(
         session.Touch(clock.GetUtcNow());
         await store.SaveAsync(session, cancellationToken);
 
+        // Voluta invokes start from an empty channel store — carry-over
+        // channels (wizard state) must be re-seeded from the checkpoint so
+        // multi-turn flows survive turn boundaries.
         await graph.InvokeAsync(
-            ChatTurnSeed.For(session, message),
+            ChatTurnSeed.For(session, message, ChatTurnCarry.From(state)),
             new RunOptions { ThreadId = threadId },
             cancellationToken);
 
@@ -83,7 +87,7 @@ public sealed class ChatTurnService(
 /// <summary>Seed writes of one user turn.</summary>
 file static class ChatTurnSeed
 {
-    public static IReadOnlyList<ChannelWrite> For(ChatSession session, string message)
+    public static IReadOnlyList<ChannelWrite> For(ChatSession session, string message, IReadOnlyList<ChannelWrite> carry)
     {
         return
         [
@@ -91,6 +95,40 @@ file static class ChatTurnSeed
             new ChannelWrite(ChatChannels.SessionId, session.Id.Value.ToString()),
             new ChannelWrite(ChatChannels.SubjectId, session.SubjectId.ToString()),
             new ChannelWrite(ChatChannels.ProjectId, session.ProjectId?.Value.ToString() ?? string.Empty),
+            .. carry,
         ];
+    }
+}
+
+/// <summary>
+/// Cross-turn channel carry: Voluta starts every invoke from an empty
+/// channel store, so long-lived per-thread state (the /init wizard) must be
+/// re-seeded from the latest checkpoint into the next turn's input.
+/// </summary>
+file static class ChatTurnCarry
+{
+    private static readonly string[] carryChannels =
+    [
+        ChatChannels.Wizard,
+        ChatChannels.InitStep,
+        ChatChannels.InitAnswersJson,
+    ];
+
+    public static IReadOnlyList<ChannelWrite> From(ThreadSnapshot? state)
+    {
+        List<ChannelWrite>? carry = null;
+
+        if (state is not null)
+        {
+            foreach (var channel in carryChannels)
+            {
+                if (state.Values.GetValueOrDefault(channel) is string { Length: > 0 } value)
+                {
+                    (carry ??= []).Add(new ChannelWrite(channel, value));
+                }
+            }
+        }
+
+        return carry is null ? [] : carry;
     }
 }

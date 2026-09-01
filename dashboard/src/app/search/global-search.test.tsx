@@ -36,6 +36,7 @@ const routeTree = rootRoute.addChildren([
   ...[
     "/",
     "/tasks",
+    "/tasks/new",
     "/runs",
     "/queue",
     "/approvals",

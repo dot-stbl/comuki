@@ -24,12 +24,67 @@
   display: flex;
   flex-direction: column;
   gap: var(--s6);
-  /* The whole reason this stopped being a dialog. `--modal-w` is 26rem, which
-     put a repository url and the sentence explaining it into a column narrower
-     than either — every hint wrapped to three lines and every field looked
-     like the same field. 44rem is wide enough for a git remote on one line and
-     still inside the 68ch the page title is measured to. */
-  max-inline-size: 44rem;
+  /* Full width, deliberately: the page stopped being a dialog twice over.
+     First the dialog's 26rem became a 44rem column, which was the readable
+     measure a plain stack of fields wants. Then the forms that outgrew a
+     stack — source cards, segmented rows — wanted the *width* too, and a
+     wide column of full-width fields is a form nobody can scan. So the
+     column takes everything the shell gives, and the grouping is done by
+     the cards inside it (`FormCard`), each carrying its own fields at
+     their own sensible widths. An ungrouped stack keeps the old measure —
+     see `.fields`. */
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+/* A group of fields that are one question, on the page's full width.
+
+   A bordered surface with a label of its own — the same construction the
+   shell's cards use (hairline, `--surface`, `--r-md`) — so a wide form reads
+   as a few named decisions rather than one long column. The label is the
+   field-label voice: micro, semibold, data-tracked, faint. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-inline-size: 0;
+  padding: var(--s6);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.cardHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  padding-block-end: var(--s2);
+  border-block-end: var(--hairline) solid var(--border);
+}
+
+.cardLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* The one line that says what the group is deciding, measured as prose. */
+.cardNote {
+  max-inline-size: 68ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* A field (or a run of prose) that should not ride the card's full width —
+   a one-line title at 100rem is a field nobody can read back. The measure
+   the plain column used to impose, applied per field where the group leaves
+   room. */
+.measure {
+  max-inline-size: 40rem;
   min-inline-size: 0;
 }
 
@@ -49,11 +104,17 @@
 
 /* One step wider than the dialog's `--s5` between fields. On a page the fields
    are the only thing in the column, so the gap is what separates one question
-   from the next — in a dialog the modal's edge was doing half that work. */
+   from the next — in a dialog the modal's edge was doing half that work.
+
+   This wrapper is the *ungrouped* form: a plain stack keeps the readable
+   measure the column used to impose, because a stack of full-width fields is
+   exactly what the cards are here to avoid. Grouped forms use `FormCard`
+   instead and get the full width. */
 .fields {
   display: flex;
   flex-direction: column;
   gap: var(--s6);
+  max-inline-size: 44rem;
   min-inline-size: 0;
 }
 

@@ -35,22 +35,42 @@
   box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
 }
 
-/* A square, not a circle: the round token is retired product-wide, and a
-   squared initial sits with the tables and badges rather than against them —
-   which is why it takes the badge step. At 1.75rem the mark step read as a
-   hard corner beside the rounded rail items directly above it. */
+/* A squared initial with a soft primary wash and a hairline ring — enough
+   colour to read as *this person* without shouting over the rail icons above.
+   The ring brightens on hover / open so the trigger feels live. */
 .avatar {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: var(--h-button);
   height: var(--h-button);
-  border: var(--hairline) solid var(--rule-strong);
   border-radius: var(--r-sm);
+  background: color-mix(in oklab, var(--primary) 16%, var(--accent));
+  box-shadow: inset 0 0 0 var(--hairline)
+    color-mix(in oklab, var(--primary) 35%, transparent);
+  transition:
+    background-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.trigger[data-hovered] .avatar,
+.trigger[data-pressed] .avatar,
+.trigger[data-focus-visible] .avatar {
+  background: color-mix(in oklab, var(--primary) 28%, var(--accent));
+  box-shadow: inset 0 0 0 var(--hairline)
+    color-mix(in oklab, var(--primary) 55%, transparent);
+  transform: translateY(-1px);
+}
+
+.avatarMark {
   font-family: var(--font-data);
   font-size: var(--t-xs);
+  font-weight: var(--fw-semibold);
   letter-spacing: var(--tracking-data);
-  color: var(--text-muted);
+  color: var(--primary);
+  line-height: 1;
 }
 
 .identity {
@@ -89,14 +109,20 @@
   grid-template-columns: 1fr;
   justify-items: center;
   padding-inline: 0;
+  padding-block: var(--s3);
 }
 
 :global([data-collapsed]) .identity {
   display: none;
 }
 
+:global([data-collapsed]) .avatar {
+  width: calc(var(--h-button) + 2px);
+  height: calc(var(--h-button) + 2px);
+}
+
 .popover {
-  min-inline-size: 14rem;
+  min-inline-size: 15rem;
   padding: var(--s2);
   border: var(--hairline) solid var(--rule);
   border-radius: var(--r-md);
@@ -105,11 +131,31 @@
 }
 
 .header {
+  display: grid;
+  grid-template-columns: var(--h-button-lg) 1fr;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s3) var(--s4);
+  border-bottom: var(--hairline) solid var(--rule);
+}
+
+.headerAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--h-button-lg);
+  height: var(--h-button-lg);
+  border-radius: var(--r-sm);
+  background: color-mix(in oklab, var(--primary) 18%, var(--accent));
+  box-shadow: inset 0 0 0 var(--hairline)
+    color-mix(in oklab, var(--primary) 40%, transparent);
+}
+
+.headerText {
   display: flex;
   flex-direction: column;
   gap: var(--s1);
-  padding: var(--s3) var(--s3) var(--s4);
-  border-bottom: var(--hairline) solid var(--rule);
+  min-width: 0;
 }
 
 .headerName {
@@ -117,6 +163,9 @@
   font-size: var(--t-body);
   font-weight: var(--fw-medium);
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .headerEmail {
@@ -124,6 +173,9 @@
   font-size: var(--t-micro);
   letter-spacing: var(--tracking-data);
   color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .menu {
@@ -170,4 +222,12 @@
 .itemLabel {
   font-family: var(--font-ui);
   font-size: var(--t-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar,
+  .trigger[data-hovered] .avatar {
+    transition: none;
+    transform: none;
+  }
 }

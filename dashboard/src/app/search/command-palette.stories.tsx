@@ -37,13 +37,13 @@ const SECTIONS: SearchItem[] = [
     href: "/approvals",
   },
   {
-    id: "act:/tasks",
+    id: "act:/tasks/new",
     group: "act",
     kind: "act",
-    label: "New run",
+    label: "New task",
     value: false,
-    hint: "take a ticket from the inbox",
-    href: "/tasks",
+    hint: "put a ticket in the backlog",
+    href: "/tasks/new",
   },
   {
     id: "act:/projects/new",

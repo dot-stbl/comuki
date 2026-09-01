@@ -83,6 +83,7 @@ beforeAll(() => {
 
 const RAIL_PATHS = [
   "/tasks",
+  "/tasks/new",
   "/runs",
   "/queue",
   "/approvals",

@@ -1,0 +1,169 @@
+/* The two-pane rail: outer column of section icons + inner column of pages
+   in the active section.
+
+   The outer lives at a fixed width — it never collapses, because at collapsed
+   size it is the rail's only remaining navigation. The inner uses the same
+   width as the v1 rail did (it is the panel the resizable panels library
+   sizes), and collapses to zero so the empty strip does not linger. */
+
+.outer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--s5) var(--s1) var(--s3);
+}
+
+.sectionButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--h-button-lg);
+  border-radius: var(--r-sm);
+  color: var(--muted-foreground);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.sectionButton:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.sectionButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.sectionButton[data-active] {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.sectionButton[data-active] .sectionIcon {
+  color: var(--primary);
+}
+
+.sectionIcon {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  flex: 0 0 auto;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   INNER — pages of the active section
+   ────────────────────────────────────────────────────────────────────────── */
+
+.inner {
+  --rail-pad-x: var(--s4);
+  --rail-item-h: var(--h-button-lg);
+
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: var(--s5) var(--rail-pad-x) var(--s3);
+  background: var(--rail);
+}
+
+.scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  height: var(--rail-item-h);
+  padding: 0 var(--s4);
+  border-radius: var(--r-sm);
+  color: var(--muted-foreground);
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+}
+
+.item:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.itemActive {
+  background: var(--accent);
+  color: var(--foreground);
+}
+
+.itemActive .itemIcon {
+  color: var(--primary);
+}
+
+.itemIcon {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  flex: 0 0 auto;
+}
+
+.itemLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--text-faint);
+}
+
+.countAlert {
+  color: var(--st-waiting);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sectionButton {
+    transition:
+      background-color var(--dur) var(--ease),
+      color var(--dur) var(--ease);
+  }
+
+  .item {
+    transition:
+      background-color var(--dur) var(--ease),
+      color var(--dur) var(--ease);
+  }
+
+  .itemIcon {
+    transition: color var(--dur) var(--ease);
+  }
+}

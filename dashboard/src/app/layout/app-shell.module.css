@@ -61,3 +61,34 @@
 .padded {
   padding-block: var(--page-y);
 }
+
+/* The SplitPane fills whatever the outer column does not take. Without
+   `flex: 1` the Group would size to content and leave the content panel
+   stranded at zero. */
+.split {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The two-pane outer column — a sibling of the SplitPane, never a child of
+   it. Width is `3rem` (the same as the v1 rail's collapsed state). The
+   account rides icon-only via `data-collapsed` (what `RailAccount`'s CSS
+   keys off). Background matches the v1 rail so the column does not read
+   as a hole in the chrome. */
+.outerPane {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 3rem;
+  height: 100%;
+  overflow: hidden;
+  background: var(--rail);
+  border-inline-end: var(--hairline) solid var(--rule);
+}
+
+.outerPane :global([data-outer-rail]) {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}

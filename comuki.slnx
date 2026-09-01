@@ -18,6 +18,9 @@
     <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Domain/Comuki.Modules.Projects.Domain.csproj" />
     <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Application/Comuki.Modules.Projects.Application.csproj" />
     <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Infrastructure/Comuki.Modules.Projects.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Chat/Comuki.Modules.Chat.Domain/Comuki.Modules.Chat.Domain.csproj" />
+    <Project Path="platform/src/modules/Chat/Comuki.Modules.Chat.Application/Comuki.Modules.Chat.Application.csproj" />
+    <Project Path="platform/src/modules/Chat/Comuki.Modules.Chat.Infrastructure/Comuki.Modules.Chat.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/platform/src/engine/">
     <Project Path="platform/src/engine/Comuki.Engine.Orchestration/Comuki.Engine.Orchestration.csproj" />
@@ -44,6 +47,7 @@
     <Project Path="tests/unit/Comuki.Modules.Memory.Unit/Comuki.Modules.Memory.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Projects.Unit/Comuki.Modules.Projects.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Brain.Unit/Comuki.Host.Brain.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Chat.Unit/Comuki.Modules.Chat.Unit.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Migrations/Comuki.Engine.Orchestration.Integration.Migrations.csproj" />
@@ -53,6 +57,7 @@
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Migrations/Comuki.Modules.Identity.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Memory.Integration.Migrations/Comuki.Modules.Memory.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.Migrations/Comuki.Modules.Projects.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Chat/Comuki.Host.Integration.Chat.csproj" />
   </Folder>
   <Folder Name="/tests/tools/">
     <Project Path="tests/tools/Comuki.TestFakePi/Comuki.TestFakePi.csproj" />

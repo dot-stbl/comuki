@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
 import type { CreateTaskInput, Task } from "@/domains/tasks/model/types"
-import { CreateTaskDialog } from "@/domains/tasks/ui/create-task-dialog"
+import { CreateTaskForm } from "@/domains/tasks/ui/create-task-form"
 import { createTaskColumns, getTaskId } from "@/domains/tasks/ui/tasks-columns"
 import { useSession, type Role } from "@/shared/session"
 import { TestSession } from "@/shared/session/test-session"
@@ -82,11 +82,10 @@ function Backlog({ onDispatch }: { onDispatch: (task: Task) => void }) {
 
 function Intake({ onCreate }: { onCreate: (input: CreateTaskInput) => void }) {
   return (
-    <CreateTaskDialog
-      open
+    <CreateTaskForm
       apps={["checkout-web"]}
-      onOpenChange={() => {}}
       onCreate={onCreate}
+      onCancel={() => {}}
     />
   )
 }
@@ -123,12 +122,12 @@ function mountIntake(roles: Role[], projectRoles: Record<string, Role[]> = {}) {
      a native `<select>` — so the values are read and written through the form
      element React Aria keeps beside it, which is what a `<form>` submit and
      browser autofill see. Every assertion below is the one it always was. */
-  const project = screen.getByLabelText("Project")
+  const project = screen.getByLabelText("project")
   return {
     onCreate,
     project,
     options: selectValues(project),
-    title: screen.getByLabelText("Title"),
+    title: screen.getByLabelText("title"),
     create: screen.getByRole("button", { name: "Create & queue" }),
   }
 }
@@ -212,6 +211,7 @@ describe("manual intake, by project", () => {
       title: "look into the flake",
       app: "checkout-web",
       priority: "normal",
+      source: "manual",
       brief: undefined,
     })
   })
@@ -248,6 +248,7 @@ describe("manual intake, by project", () => {
       title: "look into the flake",
       app: "checkout-web",
       priority: "normal",
+      source: "manual",
       brief: undefined,
     })
   })

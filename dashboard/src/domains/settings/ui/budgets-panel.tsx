@@ -193,12 +193,19 @@ export function BudgetsPanel({
             />
           </div>
 
-          {/* The two refinements, grouped under a rule and a legend so they
+          {/* The two refinements, grouped under a rule and a label so they
               read as refinements of the parent rather than as two more caps
               of the same rank. A fieldset rather than a div: the group is
-              real to a screen reader too. */}
-          <fieldset className={styles.capRefinements} data-test="budgets-cap-refinements">
-            <legend className={styles.capRefinementsLegend}>refinements</legend>
+              real to a screen reader too — named through `aria-label`,
+              because a `<legend>` renders in the fieldset's border slot
+              where no flex gap reaches it (the same defect the priority
+              picker and `ChoiceField` lost their legends to). */}
+          <fieldset
+            className={styles.capRefinements}
+            aria-label="refinements"
+            data-test="budgets-cap-refinements"
+          >
+            <span className={styles.capRefinementsLabel}>refinements</span>
             <div className={styles.refineFields}>
               <Controller
                 control={form.control}

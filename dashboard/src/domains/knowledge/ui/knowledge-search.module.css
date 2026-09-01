@@ -42,5 +42,5 @@
 .input:focus-visible {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 30%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
 }

@@ -6,7 +6,7 @@
   height: var(--h-button);
   padding: 0 var(--s2);
   border-radius: var(--r-md);
-  border: 1px solid transparent;
+  border: var(--hairline) solid transparent;
   background: transparent;
   color: var(--text);
   /* The interface voice, not the data voice. This said `--font-mono` from

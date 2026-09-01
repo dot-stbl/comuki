@@ -13,7 +13,13 @@ import {
   TaskStatusBadge,
 } from "./tasks-badges"
 
-const SOURCES: TaskSource[] = ["jira", "manual"]
+const SOURCES: TaskSource[] = [
+  "github",
+  "gitlab",
+  "yandex-tracker",
+  "jira",
+  "manual",
+]
 const PRIORITIES: TaskPriority[] = ["high", "normal", "low"]
 const STATUSES: TaskStatus[] = ["new", "queued", "planning"]
 

@@ -4,18 +4,19 @@ import {
   ChevronDown,
   ChevronsUp,
   Circle,
-  GitBranch,
   Minus,
-  Plus,
   Sparkles,
+  SquareKanban,
 } from "lucide-react"
 
 import { cn } from "@/shared/lib/utils"
+import { TASK_SOURCE_BRAND } from "@/domains/tasks/model/task-sources"
 import type {
   TaskPriority,
   TaskSource,
   TaskStatus,
 } from "@/domains/tasks/model/types"
+import { BrandIcon } from "@/shared/ui"
 
 import styles from "./tasks-badges.module.css"
 
@@ -37,9 +38,23 @@ import styles from "./tasks-badges.module.css"
  * scanned down the page.
  */
 
-const sourceIcons: Record<TaskSource, ComponentType<{ className?: string }>> = {
-  manual: Plus,
-  jira: GitBranch,
+/**
+ * Where a ticket came from, drawn as the provider's own drained mark — the
+ * same marks the intake cards and the sources table wear, so one provider is
+ * one glyph everywhere it appears. Yandex Tracker is the spelled exception
+ * (no monochrome mark exists; see `task-sources.ts`), and takes a board
+ * glyph rather than a shape nobody could name. Every mark is decorative
+ * here: the badge's own text — the tracker id, or the word "manual" — is
+ * the reading.
+ */
+function SourceMark({ source }: { source: TaskSource }) {
+  const brand = TASK_SOURCE_BRAND[source]
+  if (!brand) {
+    return <SquareKanban className={styles.icon} aria-hidden="true" />
+  }
+  return (
+    <BrandIcon brand={brand} size="xs" label={null} className={styles.icon} />
+  )
 }
 
 export interface TaskSourceBadgeProps {
@@ -54,15 +69,21 @@ export function TaskSourceBadge({
   id,
   className,
 }: TaskSourceBadgeProps) {
-  const Icon = sourceIcons[source]
-
   return (
     <span
       data-test="task-source-badge"
       data-source={source}
-      className={cn(styles.badge, styles[source], className)}
+      /* One styling class for the four tracker stamps and one for manual:
+         within the two groups the mark and the id carry which provider it
+         is, and a hue per vendor would be confetti on the Colourless Chrome
+         Rule's one surface it never allowed. */
+      className={cn(
+        styles.badge,
+        source === "manual" ? styles.manual : styles.tracker,
+        className
+      )}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <SourceMark source={source} />
       {source === "manual" ? "manual" : id}
     </span>
   )

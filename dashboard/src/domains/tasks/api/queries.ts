@@ -31,7 +31,9 @@ async function createTask(input: CreateTaskInput): Promise<Task[]> {
   const next: Task = {
     id,
     projectId: input.projectId,
-    source: "manual",
+    // The provenance the form asked about, rather than a hard-coded "manual":
+    // the stamp is the backlog's identity column, so it is the form's to give.
+    source: input.source,
     title: input.title,
     app: input.app,
     priority: input.priority,

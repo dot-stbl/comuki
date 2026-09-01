@@ -67,10 +67,10 @@ export function navSections(
  */
 export const SEARCH_ACTS: SearchAct[] = [
   {
-    label: "New run",
-    href: "/tasks",
+    label: "New task",
+    href: "/tasks/new",
     permission: "inbox.take",
-    hint: "take a ticket from the inbox",
+    hint: "put a ticket in the backlog",
   },
   {
     label: "New project",

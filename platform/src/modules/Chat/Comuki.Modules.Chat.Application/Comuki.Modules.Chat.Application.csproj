@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Modules.Chat.Application</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Voluta" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Comuki.Modules.Chat.Domain\Comuki.Modules.Chat.Domain.csproj" />
+    <ProjectReference Include="..\..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

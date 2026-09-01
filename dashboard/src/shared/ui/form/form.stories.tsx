@@ -215,7 +215,7 @@ function Choices() {
     <Column>
       <ChoiceField
         name="story-mode"
-        legend="what an admitted ticket does"
+        label="what an admitted ticket does"
         value={mode}
         options={[
           {

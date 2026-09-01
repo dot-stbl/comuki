@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyRouteImport } from './routes/verify'
-import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ObservabilityRouteImport } from './routes/observability'
 import { Route as ModelsRouteImport } from './routes/models'
@@ -20,12 +19,14 @@ import { Route as CostRouteImport } from './routes/cost'
 import { Route as ComputeRouteImport } from './routes/compute'
 import { Route as ApprovalsRouteImport } from './routes/approvals'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TasksIndexRouteImport } from './routes/tasks/index'
 import { Route as SourcesIndexRouteImport } from './routes/sources/index'
 import { Route as RunsIndexRouteImport } from './routes/runs/index'
 import { Route as QueueIndexRouteImport } from './routes/queue/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as IdentityIndexRouteImport } from './routes/identity/index'
 import { Route as ChatIndexRouteImport } from './routes/chat/index'
+import { Route as TasksNewRouteImport } from './routes/tasks/new'
 import { Route as SourcesNewRouteImport } from './routes/sources/new'
 import { Route as RunsRunIdRouteImport } from './routes/runs/$runId'
 import { Route as ProjectsNewRouteImport } from './routes/projects/new'
@@ -43,11 +44,6 @@ import { Route as IdentityUsersUserIdLinkRouteImport } from './routes/identity/u
 const VerifyRoute = VerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TasksRoute = TasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -95,6 +91,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TasksIndexRoute = TasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SourcesIndexRoute = SourcesIndexRouteImport.update({
   id: '/sources/',
   path: '/sources/',
@@ -123,6 +124,11 @@ const IdentityIndexRoute = IdentityIndexRouteImport.update({
 const ChatIndexRoute = ChatIndexRouteImport.update({
   id: '/chat/',
   path: '/chat/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TasksNewRoute = TasksNewRouteImport.update({
+  id: '/tasks/new',
+  path: '/tasks/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SourcesNewRoute = SourcesNewRouteImport.update({
@@ -203,19 +209,20 @@ export interface FileRoutesByFullPath {
   '/models': typeof ModelsRoute
   '/observability': typeof ObservabilityRoute
   '/settings': typeof SettingsRoute
-  '/tasks': typeof TasksRoute
   '/verify': typeof VerifyRoute
   '/chat/init': typeof ChatInitRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/new': typeof ProjectsNewRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/sources/new': typeof SourcesNewRoute
+  '/tasks/new': typeof TasksNewRoute
   '/chat/': typeof ChatIndexRoute
   '/identity/': typeof IdentityIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/queue/': typeof QueueIndexRoute
   '/runs/': typeof RunsIndexRoute
   '/sources/': typeof SourcesIndexRoute
+  '/tasks/': typeof TasksIndexRoute
   '/identity/grants/new': typeof IdentityGrantsNewRoute
   '/identity/keys/new': typeof IdentityKeysNewRoute
   '/identity/users/new': typeof IdentityUsersNewRoute
@@ -235,19 +242,20 @@ export interface FileRoutesByTo {
   '/models': typeof ModelsRoute
   '/observability': typeof ObservabilityRoute
   '/settings': typeof SettingsRoute
-  '/tasks': typeof TasksRoute
   '/verify': typeof VerifyRoute
   '/chat/init': typeof ChatInitRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/new': typeof ProjectsNewRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/sources/new': typeof SourcesNewRoute
+  '/tasks/new': typeof TasksNewRoute
   '/chat': typeof ChatIndexRoute
   '/identity': typeof IdentityIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/queue': typeof QueueIndexRoute
   '/runs': typeof RunsIndexRoute
   '/sources': typeof SourcesIndexRoute
+  '/tasks': typeof TasksIndexRoute
   '/identity/grants/new': typeof IdentityGrantsNewRoute
   '/identity/keys/new': typeof IdentityKeysNewRoute
   '/identity/users/new': typeof IdentityUsersNewRoute
@@ -268,19 +276,20 @@ export interface FileRoutesById {
   '/models': typeof ModelsRoute
   '/observability': typeof ObservabilityRoute
   '/settings': typeof SettingsRoute
-  '/tasks': typeof TasksRoute
   '/verify': typeof VerifyRoute
   '/chat/init': typeof ChatInitRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/new': typeof ProjectsNewRoute
   '/runs/$runId': typeof RunsRunIdRoute
   '/sources/new': typeof SourcesNewRoute
+  '/tasks/new': typeof TasksNewRoute
   '/chat/': typeof ChatIndexRoute
   '/identity/': typeof IdentityIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/queue/': typeof QueueIndexRoute
   '/runs/': typeof RunsIndexRoute
   '/sources/': typeof SourcesIndexRoute
+  '/tasks/': typeof TasksIndexRoute
   '/identity/grants/new': typeof IdentityGrantsNewRoute
   '/identity/keys/new': typeof IdentityKeysNewRoute
   '/identity/users/new': typeof IdentityUsersNewRoute
@@ -302,19 +311,20 @@ export interface FileRouteTypes {
     | '/models'
     | '/observability'
     | '/settings'
-    | '/tasks'
     | '/verify'
     | '/chat/init'
     | '/projects/$projectId'
     | '/projects/new'
     | '/runs/$runId'
     | '/sources/new'
+    | '/tasks/new'
     | '/chat/'
     | '/identity/'
     | '/projects/'
     | '/queue/'
     | '/runs/'
     | '/sources/'
+    | '/tasks/'
     | '/identity/grants/new'
     | '/identity/keys/new'
     | '/identity/users/new'
@@ -334,19 +344,20 @@ export interface FileRouteTypes {
     | '/models'
     | '/observability'
     | '/settings'
-    | '/tasks'
     | '/verify'
     | '/chat/init'
     | '/projects/$projectId'
     | '/projects/new'
     | '/runs/$runId'
     | '/sources/new'
+    | '/tasks/new'
     | '/chat'
     | '/identity'
     | '/projects'
     | '/queue'
     | '/runs'
     | '/sources'
+    | '/tasks'
     | '/identity/grants/new'
     | '/identity/keys/new'
     | '/identity/users/new'
@@ -366,19 +377,20 @@ export interface FileRouteTypes {
     | '/models'
     | '/observability'
     | '/settings'
-    | '/tasks'
     | '/verify'
     | '/chat/init'
     | '/projects/$projectId'
     | '/projects/new'
     | '/runs/$runId'
     | '/sources/new'
+    | '/tasks/new'
     | '/chat/'
     | '/identity/'
     | '/projects/'
     | '/queue/'
     | '/runs/'
     | '/sources/'
+    | '/tasks/'
     | '/identity/grants/new'
     | '/identity/keys/new'
     | '/identity/users/new'
@@ -399,19 +411,20 @@ export interface RootRouteChildren {
   ModelsRoute: typeof ModelsRoute
   ObservabilityRoute: typeof ObservabilityRoute
   SettingsRoute: typeof SettingsRoute
-  TasksRoute: typeof TasksRoute
   VerifyRoute: typeof VerifyRoute
   ChatInitRoute: typeof ChatInitRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   ProjectsNewRoute: typeof ProjectsNewRoute
   RunsRunIdRoute: typeof RunsRunIdRoute
   SourcesNewRoute: typeof SourcesNewRoute
+  TasksNewRoute: typeof TasksNewRoute
   ChatIndexRoute: typeof ChatIndexRoute
   IdentityIndexRoute: typeof IdentityIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   QueueIndexRoute: typeof QueueIndexRoute
   RunsIndexRoute: typeof RunsIndexRoute
   SourcesIndexRoute: typeof SourcesIndexRoute
+  TasksIndexRoute: typeof TasksIndexRoute
   IdentityGrantsNewRoute: typeof IdentityGrantsNewRoute
   IdentityKeysNewRoute: typeof IdentityKeysNewRoute
   IdentityUsersNewRoute: typeof IdentityUsersNewRoute
@@ -429,13 +442,6 @@ declare module '@tanstack/react-router' {
       path: '/verify'
       fullPath: '/verify'
       preLoaderRoute: typeof VerifyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tasks': {
-      id: '/tasks'
-      path: '/tasks'
-      fullPath: '/tasks'
-      preLoaderRoute: typeof TasksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -501,6 +507,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tasks/': {
+      id: '/tasks/'
+      path: '/tasks'
+      fullPath: '/tasks/'
+      preLoaderRoute: typeof TasksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sources/': {
       id: '/sources/'
       path: '/sources'
@@ -541,6 +554,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat/'
       preLoaderRoute: typeof ChatIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tasks/new': {
+      id: '/tasks/new'
+      path: '/tasks/new'
+      fullPath: '/tasks/new'
+      preLoaderRoute: typeof TasksNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sources/new': {
@@ -647,19 +667,20 @@ const rootRouteChildren: RootRouteChildren = {
   ModelsRoute: ModelsRoute,
   ObservabilityRoute: ObservabilityRoute,
   SettingsRoute: SettingsRoute,
-  TasksRoute: TasksRoute,
   VerifyRoute: VerifyRoute,
   ChatInitRoute: ChatInitRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   ProjectsNewRoute: ProjectsNewRoute,
   RunsRunIdRoute: RunsRunIdRoute,
   SourcesNewRoute: SourcesNewRoute,
+  TasksNewRoute: TasksNewRoute,
   ChatIndexRoute: ChatIndexRoute,
   IdentityIndexRoute: IdentityIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
   QueueIndexRoute: QueueIndexRoute,
   RunsIndexRoute: RunsIndexRoute,
   SourcesIndexRoute: SourcesIndexRoute,
+  TasksIndexRoute: TasksIndexRoute,
   IdentityGrantsNewRoute: IdentityGrantsNewRoute,
   IdentityKeysNewRoute: IdentityKeysNewRoute,
   IdentityUsersNewRoute: IdentityUsersNewRoute,

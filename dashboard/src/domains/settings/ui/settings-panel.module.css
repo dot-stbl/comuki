@@ -92,9 +92,12 @@
   min-inline-size: 0;
 }
 
-/* The refinements under their own rule: a legend in the region-label voice
+/* The refinements under their own rule: a label in the region-label voice
    (the wide gesture — it names a region, not a value), then the two caps as
-   peers inside it. */
+   peers inside it. The label is a flex child like any other, so the gap
+   below it is the fieldset's own `s4` — a `<legend>` here would sit in the
+   border slot, where no gap reaches. The block padding puts the same air
+   between the rule and the label. */
 .capRefinements {
   display: flex;
   flex-direction: column;
@@ -102,12 +105,12 @@
   min-inline-size: 0;
   margin: 0;
   padding: 0;
+  padding-block-start: var(--s4);
   border: 0;
   border-block-start: var(--hairline) solid var(--rule);
 }
 
-.capRefinementsLegend {
-  padding: 0;
+.capRefinementsLabel {
   font-family: var(--font-data);
   font-size: var(--t-micro);
   letter-spacing: var(--tracking-label);

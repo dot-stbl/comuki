@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState } from "react"
+import { Link } from "@tanstack/react-router"
 import { Plus, RotateCw } from "lucide-react"
 import { toast } from "sonner"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
 import {
-  useCreateTaskMutation,
   useDispatchTaskMutation,
   useTasksQuery,
 } from "@/domains/tasks/api/queries"
@@ -16,12 +16,10 @@ import {
   uniqueTaskProjects,
 } from "@/domains/tasks/model/filter-tasks"
 import type {
-  CreateTaskInput,
   Task,
   TaskPriorityFilter,
   TaskStatusFilter,
 } from "@/domains/tasks/model/types"
-import { CreateTaskDialog } from "@/domains/tasks/ui/create-task-dialog"
 import { createTaskColumns, getTaskId } from "@/domains/tasks/ui/tasks-columns"
 import tableStyles from "@/domains/tasks/ui/tasks-table.module.css"
 import { TASK_APPS } from "@/shared/api/mock/tasks.seed"
@@ -31,6 +29,7 @@ import {
   DataTable,
   DataTableToolbar,
   Tooltip,
+  buttonClass,
   hasActiveFilters,
   type DataTableColumnSizing,
   type DataTableColumnVisibility,
@@ -53,7 +52,6 @@ export interface TasksPageProps {
 
 export function TasksPage({ focus }: TasksPageProps) {
   const { data = [], isLoading, isError, error, refetch } = useTasksQuery()
-  const createTask = useCreateTaskMutation()
   const dispatchTask = useDispatchTaskMutation()
 
   const session = useSession()
@@ -62,12 +60,11 @@ export function TasksPage({ focus }: TasksPageProps) {
   // to `inbox.take` — but *where* differs. The opener asks the rail's
   // question, with no project: may this person take a ticket at all, on any
   // project they hold? Hiding intake from someone who runs it daily on one
-  // project out of three would be a lie of omission. The row's dispatch and
-  // the dialog's submit ask the sharper question against a project, and they
-  // ask it themselves.
+  // project out of three would be a lie of omission. The row's dispatch asks
+  // the sharper question against a project, and the create page asks it again
+  // on submit.
   const mayTake = useCan("inbox.take")
 
-  const [modalOpen, setModalOpen] = useState(false)
   // Seeded once, then owned by the toolbar: the filter is the operator's from
   // the moment they land, and clearing it is the ordinary control it always is.
   const [filters, setFilters] = useState<DataTableFilterValues>(() => {
@@ -147,21 +144,6 @@ export function TasksPage({ focus }: TasksPageProps) {
   )
   const newCount = countNew(data)
 
-  const onCreate = (input: CreateTaskInput) => {
-    // The dialog only offers projects this shift may take work in, and its
-    // submit is gated on the one chosen — this asks again on the way out,
-    // because the gate is the permission and not the control carrying it.
-    if (!can(session, "inbox.take", input.projectId)) {
-      return
-    }
-    createTask.mutate(input, {
-      onSuccess: () => {
-        setModalOpen(false)
-        toast.success("Task created", { description: input.title })
-      },
-    })
-  }
-
   const ready = !isLoading && !isError
 
   return (
@@ -181,25 +163,33 @@ export function TasksPage({ focus }: TasksPageProps) {
             ) : undefined
           }
           actions={
-            // The opener is gated rather than hidden: a viewer who lands here
-            // should learn that intake exists and what it takes to use it.
-            //
-            // Two words, so the glyph carries the act and the tooltip carries
-            // the words — the denial takes that place when there is one, which
-            // is why `denied` and not `disabled`: an `aria-disabled` control
-            // still fires the pointer events the tooltip rides on.
-            <Tooltip content={mayTake.denial ?? "New task"}>
-              <Button
-                type="button"
-                size="icon-sm"
-                data-test="task-new"
-                denied={mayTake.denial}
-                aria-label="New task"
-                onClick={() => setModalOpen(true)}
-              >
-                <Plus aria-hidden="true" />
-              </Button>
-            </Tooltip>
+            // Creating is a page at `/tasks/new`, not a modal over this list —
+            // same split projects and identity use. Allowed, it is navigation
+            // and spelled as an anchor; denied, it is a control that refuses
+            // and says what it needs (a disabled anchor is not a thing).
+            mayTake.allowed ? (
+              <Tooltip content="New task">
+                <Link
+                  to="/tasks/new"
+                  data-test="task-new"
+                  aria-label="New task"
+                  className={buttonClass({ size: "icon-sm" })}
+                >
+                  <Plus aria-hidden="true" />
+                </Link>
+              </Tooltip>
+            ) : (
+              <Tooltip content={mayTake.denial ?? "New task"}>
+                <Button
+                  size="icon-sm"
+                  data-test="task-new"
+                  denied={mayTake.denial}
+                  aria-label="New task"
+                >
+                  <Plus aria-hidden="true" />
+                </Button>
+              </Tooltip>
+            )
           }
         />
       }
@@ -279,16 +269,6 @@ export function TasksPage({ focus }: TasksPageProps) {
         ) : null}
       </div>
 
-      {/* The dialog reads the shift itself: which projects it may open, and
-          whether the one chosen is still one of them, are the same question
-          asked of a value the dialog owns. */}
-      <CreateTaskDialog
-        open={modalOpen}
-        apps={apps}
-        busy={createTask.isPending}
-        onOpenChange={setModalOpen}
-        onCreate={onCreate}
-      />
-    </AppShell>
+      </AppShell>
   )
 }

@@ -6,7 +6,7 @@
   flex-shrink: 0;
   padding: 0 var(--s5);
   background: var(--bar);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: var(--hairline) solid var(--rule);
 }
 
 /* The mark carries the brand on its own — there is no wordmark and no reveal.

@@ -1,12 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import type { PanelImperativeHandle, PanelSize } from "react-resizable-panels"
+import { useNavigate } from "@tanstack/react-router"
 
-import { AppShellSidebar } from "@/app/layout/app-shell-sidebar"
+import {
+  AppShellTwoPaneInner,
+  AppShellTwoPaneOuter,
+} from "@/app/layout/app-shell-two-pane-sidebar"
 import { AppShellTopbar } from "@/app/layout/app-shell-topbar"
-import { productNav } from "@/app/layout/nav"
+import { useActiveNavSection } from "@/app/layout/nav-active-section"
+import {
+  productNavSections,
+  visibleNavSections,
+} from "@/app/layout/nav-sections"
+import { RailAccount } from "@/app/layout/rail-account"
 import { RailContext, type RailState } from "@/app/layout/rail-context"
+import { useApprovalsQuery } from "@/domains/approvals/api/queries"
 import { ChatDock } from "@/domains/chat"
+import { useRunsQuery } from "@/domains/runs/api/queries"
+import { useSession } from "@/shared/session"
 import { cn } from "@/shared/lib/utils"
 import { SplitPane, SplitPanel, SplitSeparator } from "@/shared/ui"
 
@@ -52,6 +64,27 @@ export function AppShell({ children, header, padded = true }: AppShellProps) {
   // Remembers whether the viewport collapsed the rail, so widening the window
   // only re-opens a rail the user had not closed themselves.
   const collapsedByViewport = useRef(false)
+  const navigate = useNavigate()
+  const session = useSession()
+  /* When the URL is somewhere the rail does not name (`/`, login, …), fall
+     back to the first visible section so the inner column is never empty —
+     an empty rail next to a page of content reads as broken chrome. */
+  const matchedSection = useActiveNavSection(productNavSections)
+  const activeSection = useMemo(() => {
+    if (matchedSection) {
+      return matchedSection
+    }
+    return visibleNavSections(productNavSections, session)[0]
+  }, [matchedSection, session])
+  const { data: runs = [] } = useRunsQuery()
+  const { data: approvals = [] } = useApprovalsQuery()
+  const navCounts = useMemo(
+    () => ({
+      running: runs.filter((run) => run.status === "running").length,
+      needsHuman: approvals.length,
+    }),
+    [runs, approvals]
+  )
 
   useEffect(() => {
     const query = window.matchMedia(NARROW)
@@ -130,10 +163,30 @@ export function AppShell({ children, header, padded = true }: AppShellProps) {
       <div className={styles.shell}>
         <AppShellTopbar />
         <div className={styles.body}>
+          {/* The outer column is a sibling of the SplitPane, never a child of
+             it. `react-resizable-panels` Group only understands Panel and
+             Separator children. */}
+          <div className={styles.outerPane} data-collapsed>
+            <AppShellTwoPaneOuter
+              sections={productNavSections}
+              activeId={activeSection?.id}
+              onSelect={(section) => {
+                const first = section.items[0]
+                if (first) {
+                  void navigate({ to: first.href })
+                }
+              }}
+            />
+            {/* `data-collapsed` on the wrapper is what `RailAccount`'s CSS
+               keys off — the prop alone only moves the popover. */}
+            <RailAccount collapsed />
+          </div>
+
           <SplitPane
             orientation="horizontal"
             storageKey={RAIL_LAYOUT_KEY}
             shouldPersist={persistRail}
+            className={styles.split}
           >
             <SplitPanel
               id="rail"
@@ -142,10 +195,17 @@ export function AppShell({ children, header, padded = true }: AppShellProps) {
               minSize={RAIL_MIN}
               maxSize="20rem"
               collapsible
-              collapsedSize={RAIL_COLLAPSED}
+              /* The outer column already carries navigation when the inner is
+                 gone — collapsing to 48px left an empty strip. Collapse to
+                 zero so only the outer survives. */
+              collapsedSize={0}
               onResize={onRailResize}
             >
-              <AppShellSidebar groups={productNav} collapsed={railCollapsed} />
+              <AppShellTwoPaneInner
+                section={activeSection}
+                counts={navCounts}
+                collapsed={railCollapsed}
+              />
             </SplitPanel>
 
             <SplitSeparator

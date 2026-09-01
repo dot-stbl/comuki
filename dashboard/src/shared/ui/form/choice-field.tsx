@@ -12,9 +12,9 @@ export interface ChoiceOption {
 }
 
 export interface ChoiceFieldProps {
-  /** Names the group for assistive tech, and the `name` every radio shares. */
+  /** Names the group for assistive tech. */
   name: string
-  legend: string
+  label: string
   value: string
   onValueChange: (next: string) => void
   options: readonly ChoiceOption[]
@@ -35,10 +35,16 @@ export interface ChoiceFieldProps {
  * that keeps the arrow-key group, the single tab stop and the announced role
  * that a div-with-`aria-checked` would have to reimplement. The box carries the
  * focus ring on the input's behalf.
+ *
+ * The heading is a `span`, not a `<legend>`: a legend renders in the fieldset's
+ * border slot, outside the layout, so the gap between it and the first box is
+ * the browser's legend rule rather than the `s2` every other field puts
+ * between its label and its control. The fieldset keeps its group name through
+ * `aria-label`.
  */
 export function ChoiceField({
   name,
-  legend,
+  label,
   value,
   onValueChange,
   options,
@@ -46,8 +52,12 @@ export function ChoiceField({
   "data-test": dataTest,
 }: ChoiceFieldProps) {
   return (
-    <fieldset className={styles.choices} data-test={dataTest}>
-      <legend className={styles.label}>{legend}</legend>
+    <fieldset
+      className={styles.choices}
+      aria-label={label}
+      data-test={dataTest}
+    >
+      <span className={styles.label}>{label}</span>
       {options.map((option) => {
         const selected = value === option.value
         return (

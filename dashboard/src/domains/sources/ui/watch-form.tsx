@@ -131,7 +131,7 @@ export function WatchForm({
 
         <ChoiceField
           name="admission"
-          legend="admission mode"
+          label="admission mode"
           value={mode}
           disabled={busy}
           options={ADMISSION_MODES}

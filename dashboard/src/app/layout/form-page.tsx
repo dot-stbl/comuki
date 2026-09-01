@@ -129,6 +129,50 @@ export function FormLayout({
   )
 }
 
+export interface FormCardProps {
+  /** The group's name, in the field-label voice. */
+  label: string
+  /** One line under the label saying what this group is deciding. */
+  note?: string
+  children: ReactNode
+}
+
+/**
+ * One named decision on a full-width form page.
+ *
+ * The page's column takes everything the shell gives; a form that filled it
+ * with one long run of full-width fields would be unreadable, so the width is
+ * spent on *groups* instead. A card is a bordered surface carrying its own
+ * label and its own fields, and the fields inside it choose their own widths —
+ * a `FormRow` fills the card, a one-line `TextField` takes `FormMeasure` so
+ * the operator can still read back what they typed.
+ *
+ * Not a fieldset: the label names a region of a form, not one control, and
+ * nothing inside is a radio group that assistive tech should be told is one.
+ */
+export function FormCard({ label, note, children }: FormCardProps) {
+  return (
+    <section className={styles.card} data-test="form-card">
+      <div className={styles.cardHead}>
+        <span className={styles.cardLabel}>{label}</span>
+        {note ? <span className={styles.cardNote}>{note}</span> : null}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+/**
+ * A field that should not ride its card's full width.
+ *
+ * The measure the plain column used to impose, applied per field: a one-line
+ * title or a prose textarea at 100rem wide is a field nobody can read back,
+ * and the group's room is better spent on the rows beside it.
+ */
+export function FormMeasure({ children }: { children: ReactNode }) {
+  return <div className={styles.measure}>{children}</div>
+}
+
 /**
  * The questions, one under the other.
  *

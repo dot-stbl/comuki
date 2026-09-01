@@ -80,7 +80,7 @@
   inline-size: 100%;
   block-size: var(--h-button-sm);
   padding-inline: calc(var(--s3) * 2 + var(--icon-sm)) var(--s3);
-  border: 1px solid var(--border);
+  border: var(--hairline) solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface);
   color: var(--text);
@@ -95,7 +95,7 @@
 .input:focus-visible {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 30%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
 }
 
 /* Inside the sheet the field is named above it, so there is no icon to clear
@@ -117,7 +117,7 @@
   gap: var(--s2);
   block-size: var(--h-button-sm);
   padding-inline: var(--s3);
-  border: 1px solid var(--border);
+  border: var(--hairline) solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface);
   color: var(--text-muted);
@@ -141,7 +141,7 @@
 .columnsTrigger[data-focus-visible] {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 30%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
 }
 
 /* A control that is doing something says so with its own border and its own
@@ -187,7 +187,7 @@
   block-size: var(--h-button-sm);
   max-inline-size: 12rem;
   padding-inline: var(--s3);
-  border: 1px solid var(--border-strong);
+  border: var(--hairline) solid var(--border-strong);
   border-radius: var(--r-sm);
   background: transparent;
   color: var(--text);
@@ -207,7 +207,7 @@
 .chip:focus-visible {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 30%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
 }
 
 .chipText {
@@ -230,7 +230,7 @@
 .popover {
   min-inline-size: var(--trigger-width);
   padding: var(--s1);
-  border: 1px solid var(--border);
+  border: var(--hairline) solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface-raised);
   box-shadow: var(--shadow-modal);
@@ -270,7 +270,7 @@
      off the edge with no way to reach the far column. */
   max-inline-size: calc(100vw - var(--s8));
   padding: var(--s4);
-  border: 1px solid var(--border);
+  border: var(--hairline) solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface-raised);
   box-shadow: var(--shadow-modal);

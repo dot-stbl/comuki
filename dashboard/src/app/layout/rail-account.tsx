@@ -1,4 +1,4 @@
-import { LogOut, KeyRound, UserRound } from "lucide-react"
+import { KeyRound, LogOut, Settings, UserRound } from "lucide-react"
 import { useNavigate } from "@tanstack/react-router"
 import {
   Button as AriaButton,
@@ -30,6 +30,10 @@ export interface RailAccountProps {
  *
  * The menu opens upward — there is nothing below it — and the trigger keeps its
  * footprint when the rail collapses so the floor of the rail does not shift.
+ *
+ * Settings and API keys live here rather than as rail destinations: they are
+ * about *this person* (and the keys they hold), visited on a different clock
+ * from the duty screens above.
  */
 export function RailAccount({ collapsed = false }: RailAccountProps) {
   const navigate = useNavigate()
@@ -44,8 +48,8 @@ export function RailAccount({ collapsed = false }: RailAccountProps) {
         data-test="rail-account"
         aria-label={`Account — ${user.name}`}
       >
-        <span className={styles.avatar} aria-hidden="true">
-          {initial}
+        <span className={styles.avatar} aria-hidden="true" data-initial={initial}>
+          <span className={styles.avatarMark}>{initial}</span>
         </span>
         <span className={styles.identity}>
           <span className={styles.name}>{user.name}</span>
@@ -61,11 +65,26 @@ export function RailAccount({ collapsed = false }: RailAccountProps) {
             that cannot be chosen is a trap for a keyboard. The trigger's label
             carries the same name for assistive technology. */}
         <div className={styles.header}>
-          <span className={styles.headerName}>{user.name}</span>
-          <span className={styles.headerEmail}>{user.email}</span>
+          <span className={styles.headerAvatar} aria-hidden="true">
+            <span className={styles.avatarMark}>{initial}</span>
+          </span>
+          <span className={styles.headerText}>
+            <span className={styles.headerName}>{user.name}</span>
+            <span className={styles.headerEmail}>{user.email}</span>
+          </span>
         </div>
 
         <Menu className={styles.menu} aria-label="Account">
+          <MenuItem
+            className={styles.item}
+            onAction={() => void navigate({ to: "/settings" })}
+            isDisabled={!can(session, "settings.live")}
+            textValue="Settings"
+          >
+            <Settings aria-hidden="true" className={styles.itemIcon} />
+            <span className={styles.itemLabel}>Settings</span>
+          </MenuItem>
+
           <MenuItem
             className={styles.item}
             onAction={() => void navigate({ to: "/identity" })}

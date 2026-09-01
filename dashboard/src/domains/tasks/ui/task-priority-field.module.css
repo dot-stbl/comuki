@@ -1,0 +1,132 @@
+/* Priority as three segments, each wearing the hue and the silhouette the
+   backlog's badge wears for the same value.
+ *
+ * The `--st` per-value variable is the badge's own device (see
+ * `tasks-badges.module.css`): one rule draws the wash and the text, and each
+ * value only sets its colour. `normal` sets none — the default lane is quiet
+ * on purpose, in the form as it is in the column. */
+
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* The kit `.field` label, spelled here rather than imported: same voice,
+   same size, same inherited line box — and — the point — same place in a
+   `gap: s2` column, so the run from this label to its control measures
+   exactly like the run from the title label to its box beside it. */
+.fieldLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.segments {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s2);
+}
+
+.segment {
+  /* Per-value; `normal` inherits the unset default below. */
+  --st: var(--text-muted);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+  padding: 0 var(--s4);
+  /* The kit control's own height and corner, because this field stands in
+     a `FormRow` beside selects and inputs: a segment that was its own
+     height shorter made the row read as three fields and a footnote. */
+  block-size: var(--h-button-lg);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-md);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.segment:hover {
+  border-color: var(--border-strong);
+}
+
+/* The input itself is off-screen rather than `display: none`, so it keeps its
+   place in the tab order and its arrow-key group; the segment carries the
+   ring. Same clip recipe as `TaskSourceCards`. */
+.input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: calc(var(--hairline) * -1);
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.segment:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.icon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+}
+
+/* The word beside the icon inside a segment. Its own rule, distinct from
+   the heading above: the heading is a label and this is a value, and when
+   the two shared a class the segment's word picked up the label's micro
+   faint voice while the label picked up this line-height — each wearing the
+   other's clothes. */
+.segmentLabel {
+  line-height: 1;
+}
+
+/* Per-value hues — the badge's table, one line each. */
+
+.high {
+  --st: var(--st-failed);
+}
+
+.normal {
+  --st: var(--text-muted);
+}
+
+.low {
+  --st: var(--st-queued);
+}
+
+/* Selected: the value's own hue carries the text and the icon, over the same
+   10% wash the badge uses — picking `high` here is already seeing the badge
+   the backlog will draw. `normal` selected reads as weight alone (a filled
+   wash and the brand border), which is the honest answer for a lane whose
+   colour is no colour. */
+.selected {
+  color: var(--st);
+  border-color: color-mix(in oklab, var(--st) 55%, var(--border));
+  background: color-mix(in oklab, var(--st) 10%, var(--surface));
+}
+
+.segment[data-disabled],
+.segment:has(input:disabled) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

@@ -33,7 +33,7 @@
   flex-direction: column;
   border-radius: var(--r-lg);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: var(--hairline) solid var(--border);
   box-shadow: var(--shadow-modal);
   /* Clip, never hidden: `hidden` would make this box a scroll container, and
      the list inside it is the one that owns the scroll. */
@@ -67,7 +67,7 @@
   gap: var(--s3);
   min-block-size: var(--h-bar);
   padding: 0 var(--s5);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: var(--hairline) solid var(--rule);
   flex: 0 0 auto;
 }
 
@@ -197,7 +197,7 @@
   gap: var(--s4);
   justify-content: flex-end;
   padding: var(--s2) var(--s5);
-  border-top: 1px solid var(--rule);
+  border-top: var(--hairline) solid var(--rule);
   font-family: var(--font-data);
   font-size: var(--t-micro);
   color: var(--text-faint);

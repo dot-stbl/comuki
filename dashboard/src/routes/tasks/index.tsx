@@ -16,7 +16,7 @@ export interface TasksSearch {
   q?: string
 }
 
-export const Route = createFileRoute("/tasks")({
+export const Route = createFileRoute("/tasks/")({
   validateSearch: (search: Record<string, unknown>): TasksSearch => {
     const q = typeof search.q === "string" ? search.q.trim() : ""
     return q ? { q } : {}

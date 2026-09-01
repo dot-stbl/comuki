@@ -8,7 +8,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeAll, describe, expect, it } from "vitest"
 
@@ -16,6 +16,7 @@ import { AppShell } from "@/app/layout/app-shell"
 import { AppShellSidebar } from "@/app/layout/app-shell-sidebar"
 import { productNav } from "@/app/layout/nav"
 import { ThemeProvider } from "@/app/theme-provider"
+import { APPROVALS_SEED } from "@/shared/api/mock"
 import type { Role } from "@/shared/session"
 import { TestSession } from "@/shared/session/test-session"
 
@@ -122,6 +123,22 @@ describe("the shell's rail", () => {
 
     await screen.findByText("screen body")
     expect(screen.getByLabelText("Platform")).not.toBeNull()
+  })
+
+  it("counts the approvals row's own queue, not the waiting runs", async () => {
+    // The badge once counted waiting runs — the runs screen's reading worn on
+    // the wrong row. A badge answers "how is my screen", so it counts that
+    // screen's own things: the undecided approvals, which is exactly what the
+    // queue holds (deciding removes the card).
+    renderShell(<AppShellSidebar groups={productNav} />, ["approver"])
+
+    const item = await screen.findByRole("link", { name: /approvals/i })
+    await waitFor(
+      () =>
+        expect(
+          item.querySelector('[data-test="rail-badge"]')?.textContent
+        ).toBe(String(APPROVALS_SEED.length))
+    )
   })
 })
 

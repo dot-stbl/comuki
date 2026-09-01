@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router"
 
 import { visibleNav } from "@/app/layout/nav"
 import { RailAccount } from "@/app/layout/rail-account"
+import { useApprovalsQuery } from "@/domains/approvals/api/queries"
 import { useRunsQuery } from "@/domains/runs/api/queries"
 import { cn } from "@/shared/lib/utils"
 import { useSession, type Permission } from "@/shared/session"
@@ -61,14 +62,20 @@ export function AppShellSidebar({
     (group) => group.tier === "platform"
   )
 
+  // Two live counts, each about the row it rides on. `running` is the runs
+  // the board is showing in motion; `needsHuman` is the queue of decisions
+  // waiting on the Approvals screen — the approvals queue IS the undecided
+  // set (deciding removes the card), so its length is the count. It counted
+  // waiting runs once, which was the runs screen's reading worn on the wrong
+  // row: a badge that answers "how is my screen" must count that screen's
+  // own things.
+  const { data: approvals = [] } = useApprovalsQuery()
   const counts = useMemo(
     () => ({
       running: data.filter((run) => run.status === "running").length,
-      needsHuman: data.filter(
-        (run) => run.status === "waiting" || run.status === "escalated"
-      ).length,
+      needsHuman: approvals.length,
     }),
-    [data]
+    [data, approvals]
   )
 
   return (
@@ -113,11 +120,15 @@ export function AppShellSidebar({
                     ) : null}
                     <span className={styles.itemLabel}>{item.label}</span>
                     {count ? (
+                      /* The count span never carries the alert alone: the row
+                         it rides on is what it counts, and the count reads as
+                         a figure with or without the colour. */
                       <span
                         className={cn(
                           styles.count,
                           item.badge === "needsHuman" && styles.alert
                         )}
+                        data-test="rail-badge"
                       >
                         {count}
                       </span>

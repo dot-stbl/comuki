@@ -78,8 +78,29 @@ file static class ProfileDocumentParser
 
         var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var tools = new List<string>();
-        foreach (var line in frontmatter.Split('\n'))
+        var collectingTools = false;
+        foreach (var rawLine in frontmatter.Split('\n'))
         {
+            var line = rawLine.Trim();
+            if (line.Length == 0)
+            {
+                continue;
+            }
+
+            // block-list item: belongs to the preceding key (allowedTools:
+            // followed by "  - Read" lines — the shape real profile
+            // documents use)
+            if (line.StartsWith('-'))
+            {
+                var item = line.TrimStart('-').Trim();
+                if (collectingTools && item.Length > 0)
+                {
+                    tools.Add(item);
+                }
+
+                continue;
+            }
+
             var separator = line.IndexOf(':');
             if (separator <= 0)
             {
@@ -88,11 +109,19 @@ file static class ProfileDocumentParser
 
             var name = line[..separator].Trim();
             var value = line[(separator + 1)..].Trim();
+            collectingTools = false;
             if (name.Equals("allowedTools", StringComparison.OrdinalIgnoreCase))
             {
-                if (value.Length > 0)
+                // empty value opens a block list below; non-empty is an
+                // inline comma list (allowedTools: Read, Bash)
+                collectingTools = value.Length == 0;
+                foreach (var item in value.Split(','))
                 {
-                    tools.Add(value.TrimStart('-').Trim());
+                    var trimmed = item.Trim();
+                    if (trimmed.Length > 0)
+                    {
+                        tools.Add(trimmed);
+                    }
                 }
             }
             else

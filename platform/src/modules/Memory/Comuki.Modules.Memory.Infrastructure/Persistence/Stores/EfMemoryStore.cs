@@ -66,7 +66,21 @@ public sealed class EfMemoryStore(
 
             if (write.Embedding is { } vector)
             {
-                await MemoryFactVectors.AttachAsync(db, fact.Id, vector, cancellationToken);
+                // no pgvector at migration time ⇒ no embedding column: the
+                // fact still lands, searchable via the fallback ranking
+                // (the add-chat-memory contract's hard floor). When the
+                // column exists the attach is part of the write
+                // transaction — a failure there rolls the whole write back
+                // (a failed statement poisons the transaction; swallowing
+                // it would turn the commit into a silent rollback).
+                if (await MemoryFactVectors.HasColumnAsync(db, cancellationToken))
+                {
+                    await MemoryFactVectors.AttachAsync(db, fact.Id, vector, cancellationToken);
+                }
+                else
+                {
+                    logger.LogWarning("embedding column unavailable; fact stored without a vector");
+                }
             }
 
             await transaction.CommitAsync(cancellationToken);
@@ -233,12 +247,12 @@ file static class MemoryFactVectors
                 command.CommandText = MemoryFactSql.CosineSearchSql;
                 _ = command.Parameters.Add(VectorParameter("vector", embedding));
                 _ = command.Parameters.Add(new NpgsqlParameter("cutoff", ephemeralCutoff));
-                _ = command.Parameters.Add(new NpgsqlParameter(
-                    "scope", query.Scope is { } scope ? MemoryScopeKeys.Key(scope) : DBNull.Value));
-                _ = command.Parameters.Add(new NpgsqlParameter(
-                    "subject", query.SubjectId is null ? DBNull.Value : MemoryFact.CanonicalKey(query.SubjectId)));
-                _ = command.Parameters.Add(new NpgsqlParameter(
-                    "kind", query.Kind is { } kind ? MemoryFactKindKeys.Key(kind) : DBNull.Value));
+                _ = command.Parameters.Add(FilterTextParameter(
+                    "scope", query.Scope is { } scope ? MemoryScopeKeys.Key(scope) : null));
+                _ = command.Parameters.Add(FilterTextParameter(
+                    "subject", query.SubjectId is null ? null : MemoryFact.CanonicalKey(query.SubjectId)));
+                _ = command.Parameters.Add(FilterTextParameter(
+                    "kind", query.Kind is { } kind ? MemoryFactKindKeys.Key(kind) : null));
                 _ = command.Parameters.Add(new NpgsqlParameter("limit", query.Limit));
 
                 var rows = new List<MemoryFactView>();
@@ -266,9 +280,24 @@ file static class MemoryFactVectors
 
     public static NpgsqlParameter VectorParameter(string name, float[] vector)
     {
-        return new NpgsqlParameter(name, NpgsqlTypes.NpgsqlDbType.Text)
+        // Unknown-typed parameter: PostgreSQL treats the value as an
+        // untyped literal and the explicit ::vector cast in the SQL types
+        // it (a bare unknown parameter in the operator position fails
+        // with 42P08). An explicitly text-typed parameter has no cast to
+        // vector and kills the statement.
+        return new NpgsqlParameter(name, NpgsqlTypes.NpgsqlDbType.Unknown)
         {
             Value = MemoryFactSql.VectorLiteral(vector),
+        };
+    }
+
+    public static NpgsqlParameter FilterTextParameter(string name, string? value)
+    {
+        // the @param IS NULL filters need a TYPED null — an untyped
+        // DBNull parameter fails with 42P08 (data type undetermined)
+        return new NpgsqlParameter(name, NpgsqlTypes.NpgsqlDbType.Text)
+        {
+            Value = value is null ? DBNull.Value : value,
         };
     }
 }

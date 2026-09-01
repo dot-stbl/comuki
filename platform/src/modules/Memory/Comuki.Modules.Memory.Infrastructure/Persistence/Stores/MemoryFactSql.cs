@@ -26,9 +26,15 @@ public static class MemoryFactSql
 
     /// <summary>Writes the embedding of one fact row (inside the write transaction).</summary>
     public const string UpdateEmbeddingSql =
-        "UPDATE memory_facts SET embedding = @vector WHERE id = @id";
+        "UPDATE memory_facts SET embedding = @vector::vector WHERE id = @id";
 
-    /// <summary>Cosine-distance search over embedded, visible facts; NULL filter parameters widen the scope.</summary>
+    /// <summary>
+    /// Cosine-distance search over embedded, visible facts; NULL filter
+    /// parameters widen the scope (they must arrive text-typed — an
+    /// untyped NULL parameter fails with 42P08). The vector parameter
+    /// carries an untyped literal typed by the explicit <c>::vector</c>
+    /// cast.
+    /// </summary>
     public const string CosineSearchSql =
         """
         SELECT id, scope, subject_id, kind, topic_key, text, source, created_by, created_at
@@ -39,7 +45,7 @@ public static class MemoryFactSql
           AND (@subject IS NULL OR subject_id = @subject)
           AND (@kind IS NULL OR kind = @kind)
           AND embedding IS NOT NULL
-        ORDER BY embedding <=> @vector
+        ORDER BY embedding <=> @vector::vector
         LIMIT @limit
         """;
 

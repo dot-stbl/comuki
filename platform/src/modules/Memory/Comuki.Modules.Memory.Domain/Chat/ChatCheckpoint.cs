@@ -43,8 +43,14 @@ public sealed class ChatCheckpoint
     /// <summary>Replaces the graph state (update path).</summary>
     /// <param name="graphStateJson"></param>
     /// <param name="now"></param>
+    /// <exception cref="ArgumentException">The graph state is empty.</exception>
     public void Replace(string graphStateJson, DateTimeOffset now)
     {
+        if (string.IsNullOrWhiteSpace(graphStateJson))
+        {
+            throw new ArgumentException("graph state must not be empty", nameof(graphStateJson));
+        }
+
         GraphState = graphStateJson;
         UpdatedAt = now;
     }

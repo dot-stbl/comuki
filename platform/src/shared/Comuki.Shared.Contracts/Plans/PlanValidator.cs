@@ -84,14 +84,23 @@ public static class PlanValidator
         return errors.Count == 0 ? PlanValidationResult.Valid : new PlanValidationResult(errors);
     }
 
-    /// <summary>Returns one node on a cycle, or null when the graph is a DAG.</summary>
+    /// <summary>Returns one node on a cycle, or null when the graph is a DAG. Tolerates duplicate ids (Validate reports those separately).</summary>
     /// <param name="plan"></param>
     public static string? FindCycleNode(Plan plan)
     {
-        var outgoing = plan.Nodes.ToDictionary(
-            static node => node.Id,
-            static _ => new List<string>(),
-            StringComparer.Ordinal);
+        // first-wins on duplicate ids: Validate() already reports them as
+        // errors — crashing here would mask those errors
+        var outgoing = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var state = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var node in plan.Nodes)
+        {
+            if (!outgoing.ContainsKey(node.Id))
+            {
+                outgoing[node.Id] = [];
+                state[node.Id] = 0;
+            }
+        }
+
         foreach (var edge in plan.Edges)
         {
             if (outgoing.TryGetValue(edge.From, out var targets)
@@ -103,8 +112,6 @@ public static class PlanValidator
         }
 
         // 0 = unvisited, 1 = on the current path, 2 = done
-        var state = plan.Nodes.ToDictionary(static node => node.Id, static _ => 0, StringComparer.Ordinal);
-
         foreach (var node in plan.Nodes)
         {
             if (state[node.Id] != 0)

@@ -244,6 +244,14 @@ Infra logs — отдельно (Grafana/Victoria), не в том же UI чт�
 - Built-in slash + **custom commands из git клиента**
 - Mid-run: Inject / Stop / Escalate; read PR comments
 - Memory v1 must: **user-scope + project-scope + knowledge hooks**
+- **Memory дизайн (прогриллен 2026-09-01, openspec/changes/add-chat-memory):**
+  сессии = Voluta-чекпоинты + chat_messages в PG (30д архив); факты =
+  memory_facts + pgvector (scope·kind standing/ephemeral·topic_key·superseded);
+  чтение = digest-инъекция + memory.search tool; запись = только memory.write
+  tool (topic_key канонизация, старое → superseded); забывание = /forget +
+  ephemeral TTL 14д; контекст мозга = **MemoryDigest.Build() один сборщик**
+  (зовут чат И orchestration, поданное — в журнале) + memory.search у мозга;
+  learning-кандидаты = **отдельная learning_candidates** (апрув-очередь → PR в git)
 - `/project` + контекст сессии (детали мультипроекта — уточнять при FE)
 
 ### Chat / Brain — техника (техпроход)

@@ -5,6 +5,7 @@ using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using Shouldly;
 using Xunit;
 
 namespace Comuki.Modules.Costs.Unit;
@@ -91,5 +92,49 @@ public sealed class UsageRecorderShould
             Arg.Any<long>(),
             Arg.Any<long>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given spend below hard and soft, when RecordAsync, then hard-stop is not invoked")]
+    public async Task StayQuietUnderCapsAsync()
+    {
+        var projectId = ProjectId.New();
+        var store = Substitute.For<IUsageEventStore>();
+        var budgets = Substitute.For<IProjectBudgetSettings>();
+        var gate = Substitute.For<IBudgetGate>();
+
+        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+            .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 1_000_000, HardLimitUsdMicros: 2_000_000));
+        _ = store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>())
+            .Returns(10);
+
+        var recorder = new UsageRecorder(store, budgets, gate, NullLogger<UsageRecorder>.Instance);
+
+        await recorder.RecordAsync(
+            new UsageRecord(projectId, RunId.New(), UsageSourceKeys.Worker, "model", 1, 1, 10, DateTimeOffset.UtcNow),
+            TestContext.Current.CancellationToken);
+
+        await gate.DidNotReceive().HardStopAsync(
+            Arg.Any<RunId>(),
+            Arg.Any<ProjectId>(),
+            Arg.Any<long>(),
+            Arg.Any<long>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given an unknown usage source key, when RecordAsync, then throws before persisting")]
+    public async Task RefuseUnknownSourceAsync()
+    {
+        var store = Substitute.For<IUsageEventStore>();
+        var recorder = new UsageRecorder(
+            store,
+            Substitute.For<IProjectBudgetSettings>(),
+            Substitute.For<IBudgetGate>(),
+            NullLogger<UsageRecorder>.Instance);
+
+        await Should.ThrowAsync<ArgumentOutOfRangeException>(async () => await recorder.RecordAsync(
+            new UsageRecord(ProjectId.New(), null, "nope", "model", 0, 0, 1, DateTimeOffset.UtcNow),
+            TestContext.Current.CancellationToken));
+
+        await store.DidNotReceive().AddAsync(Arg.Any<UsageEvent>(), Arg.Any<CancellationToken>());
     }
 }

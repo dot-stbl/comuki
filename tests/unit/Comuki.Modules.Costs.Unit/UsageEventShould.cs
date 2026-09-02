@@ -63,4 +63,32 @@ public sealed class UsageEventShould
             -1,
             DateTimeOffset.UtcNow));
     }
+
+    [Fact(DisplayName = "Given negative input tokens, when Create is called, then throws")]
+    public void RefuseNegativeInputTokens()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(static () => UsageEvent.Create(
+            ProjectId.New(),
+            null,
+            UsageSource.Brain,
+            "model",
+            -1,
+            0,
+            1,
+            DateTimeOffset.UtcNow));
+    }
+
+    [Fact(DisplayName = "Given negative output tokens, when Create is called, then throws")]
+    public void RefuseNegativeOutputTokens()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(static () => UsageEvent.Create(
+            ProjectId.New(),
+            null,
+            UsageSource.Brain,
+            "model",
+            0,
+            -1,
+            1,
+            DateTimeOffset.UtcNow));
+    }
 }

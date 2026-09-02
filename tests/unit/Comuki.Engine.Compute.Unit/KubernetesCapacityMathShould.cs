@@ -111,6 +111,61 @@ public sealed class KubernetesCapacityMathShould
         capacity.RunningWorkers.ShouldBe(0);
     }
 
+    [Fact(DisplayName = "Given Failed pods and missing request keys, when ToCapacity, then those requests count as zero")]
+    public void IgnoreFailedPodsAndMissingRequestKeys()
+    {
+        var capacity = KubernetesCapacityMath.ToCapacity(
+            [Node("2", "4Gi")],
+            [
+                Pod("Failed", Requests("8", "16Gi")),
+                new V1Pod
+                {
+                    Spec = new V1PodSpec
+                    {
+                        Containers =
+                        [
+                            new V1Container
+                            {
+                                Name = "app",
+                                Resources = new V1ResourceRequirements
+                                {
+                                    Requests = new Dictionary<string, ResourceQuantity>(StringComparer.Ordinal),
+                                },
+                            },
+                        ],
+                    },
+                    Status = new V1PodStatus { Phase = "Running" },
+                },
+            ],
+            options);
+
+        capacity.FreeSlots.ShouldBe(4);
+    }
+
+    [Fact(DisplayName = "Given zero worker requests, when ToCapacity, then free slots stay zero")]
+    public void ZeroRequestDenominatorYieldsZeroSlots()
+    {
+        var capacity = KubernetesCapacityMath.ToCapacity(
+            [Node("8", "16Gi")],
+            [],
+            new KubernetesComputeOptions { CpuRequestMillis = 0, MemoryRequestMiB = 0 });
+
+        capacity.FreeSlots.ShouldBe(0);
+    }
+
+    [Theory(DisplayName = "Given a quantity map, when QuantityToString is called, then missing keys are null")]
+    [InlineData("cpu", "2")]
+    [InlineData("memory", null)]
+    public void ReadQuantityStrings(string key, string? expected)
+    {
+        var quantities = new Dictionary<string, ResourceQuantity>(StringComparer.Ordinal)
+        {
+            ["cpu"] = new("2"),
+        };
+
+        KubernetesCapacityMath.QuantityToString(quantities, key).ShouldBe(expected);
+    }
+
     private static V1Node Node(string cpu, string memory, bool unschedulable = false)
     {
         return new V1Node

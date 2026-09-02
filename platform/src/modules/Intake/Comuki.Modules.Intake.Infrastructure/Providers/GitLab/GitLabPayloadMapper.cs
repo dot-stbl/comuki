@@ -85,7 +85,7 @@ public static class GitLabPayloadMapper
     /// <param name="projectId"></param>
     /// <param name="now"></param>
     /// <returns></returns>
-    public static IncomingTicket ToTicket(GitLabIssueDto issue, string projectPath, ProjectId projectId, DateTimeOffset now)
+    public static IncomingTicket ToTicket(GitLabIssue issue, string projectPath, ProjectId projectId, DateTimeOffset now)
     {
         return IncomingTicket.Create(
             projectId,

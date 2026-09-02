@@ -10,40 +10,40 @@ public sealed class LearningCandidateConfiguration : IEntityTypeConfiguration<Le
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<LearningCandidate> builder)
     {
-        _ = builder.ToTable(MemoryTables.LearningCandidates);
-        _ = builder.HasKey(static candidate => candidate.Id);
+        builder.ToTable(MemoryTables.LearningCandidates);
+        builder.HasKey(static candidate => candidate.Id);
 
-        _ = builder.Property(static candidate => candidate.Id)
+        builder.Property(static candidate => candidate.Id)
             .HasColumnName("id")
             .HasConversion(MemoryIdConverters.LearningCandidateIdToUuid)
             .ValueGeneratedNever();
 
-        _ = builder.Property(static candidate => candidate.Pattern)
+        builder.Property(static candidate => candidate.Pattern)
             .HasColumnName("pattern")
             .HasMaxLength(2000)
             .IsRequired();
 
-        _ = builder.Property(static candidate => candidate.SourceRef)
+        builder.Property(static candidate => candidate.SourceRef)
             .HasColumnName("source_ref")
             .HasMaxLength(512)
             .IsRequired();
 
-        _ = builder.Property(static candidate => candidate.RepeatCount)
+        builder.Property(static candidate => candidate.RepeatCount)
             .HasColumnName("repeat_count");
 
-        _ = builder.Property(static candidate => candidate.Status)
+        builder.Property(static candidate => candidate.Status)
             .HasColumnName("status")
             .HasConversion(MemoryKeyConverters.LearningStatusToKey)
             .HasMaxLength(16)
             .IsRequired();
 
-        _ = builder.Property(static candidate => candidate.CreatedAt)
+        builder.Property(static candidate => candidate.CreatedAt)
             .HasColumnName("created_at");
 
-        _ = builder.Property(static candidate => candidate.DecidedAt)
+        builder.Property(static candidate => candidate.DecidedAt)
             .HasColumnName("decided_at");
 
-        _ = builder.HasIndex(static candidate => candidate.Status)
+        builder.HasIndex(static candidate => candidate.Status)
             .HasDatabaseName("ix_learning_candidates_status");
     }
 }

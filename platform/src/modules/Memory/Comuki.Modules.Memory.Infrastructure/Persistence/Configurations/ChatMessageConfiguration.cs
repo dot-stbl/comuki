@@ -10,32 +10,32 @@ public sealed class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMess
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ChatMessage> builder)
     {
-        _ = builder.ToTable(MemoryTables.ChatMessages);
-        _ = builder.HasKey(static message => message.Id);
+        builder.ToTable(MemoryTables.ChatMessages);
+        builder.HasKey(static message => message.Id);
 
-        _ = builder.Property(static message => message.Id)
+        builder.Property(static message => message.Id)
             .HasColumnName("id")
             .ValueGeneratedNever();
 
-        _ = builder.Property(static message => message.SessionId)
+        builder.Property(static message => message.SessionId)
             .HasColumnName("session_id")
             .HasMaxLength(128)
             .IsRequired();
 
-        _ = builder.Property(static message => message.Role)
+        builder.Property(static message => message.Role)
             .HasColumnName("role")
             .HasMaxLength(32)
             .IsRequired();
 
-        _ = builder.Property(static message => message.Content)
+        builder.Property(static message => message.Content)
             .HasColumnName("content")
             .HasColumnType("text")
             .IsRequired();
 
-        _ = builder.Property(static message => message.CreatedAt)
+        builder.Property(static message => message.CreatedAt)
             .HasColumnName("created_at");
 
-        _ = builder.HasIndex(static message => message.SessionId)
+        builder.HasIndex(static message => message.SessionId)
             .HasDatabaseName("ix_chat_messages_session_id");
     }
 }

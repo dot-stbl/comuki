@@ -10,20 +10,20 @@ public sealed class ChatCheckpointConfiguration : IEntityTypeConfiguration<ChatC
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ChatCheckpoint> builder)
     {
-        _ = builder.ToTable(MemoryTables.ChatCheckpoints);
-        _ = builder.HasKey(static checkpoint => checkpoint.SessionId);
+        builder.ToTable(MemoryTables.ChatCheckpoints);
+        builder.HasKey(static checkpoint => checkpoint.SessionId);
 
-        _ = builder.Property(static checkpoint => checkpoint.SessionId)
+        builder.Property(static checkpoint => checkpoint.SessionId)
             .HasColumnName("session_id")
             .HasMaxLength(128)
             .IsRequired();
 
-        _ = builder.Property(static checkpoint => checkpoint.GraphState)
+        builder.Property(static checkpoint => checkpoint.GraphState)
             .HasColumnName("graph_state")
             .HasColumnType("jsonb")
             .IsRequired();
 
-        _ = builder.Property(static checkpoint => checkpoint.UpdatedAt)
+        builder.Property(static checkpoint => checkpoint.UpdatedAt)
             .HasColumnName("updated_at");
     }
 }

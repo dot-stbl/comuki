@@ -88,12 +88,19 @@ internal static class HostComposer
         builder.Services.AddControllers();
         builder.Services.AddProblemDetails();
 
+        // Ambient subject scope: one AsyncLocal-backed accessor for the
+        // whole process — the middleware installs a scope per request, the
+        // worker surfaces and hosted consumers declare AsSystem, and the
+        // context scope members read it inside the query filters.
+        builder.Services.AddSingleton<Shared.Kernel.Scoping.ISubjectScopeAccessor, Shared.Kernel.Scoping.AsyncLocalSubjectScopeAccessor>();
+
         var app = builder.Build();
 
         HostDatabase.WarnLegacyAlias(database, app.Logger);
 
         app.UseExceptionHandler();
         app.UseAuthentication();
+        app.UseMiddleware<SubjectScopeMiddleware>();
 
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));
         app.MapControllers();

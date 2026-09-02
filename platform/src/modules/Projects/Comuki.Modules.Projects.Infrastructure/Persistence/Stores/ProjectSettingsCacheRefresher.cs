@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Comuki.Modules.Projects.Application.Settings;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -14,13 +15,17 @@ namespace Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
 /// pick up writes made outside this process. Refresh failures are logged
 /// and retried on the next pass (the host may start before the database
 /// is reachable); the short cache TTL bounds how long a dead refresher
-/// keeps answering.
+/// keeps answering. The pass runs as a named system consumer: it owns no
+/// subject, and the scope query filters would otherwise confine it to no
+/// project's rows.
 /// </summary>
 /// <param name="dbFactory"></param>
+/// <param name="scopeAccessor"></param>
 /// <param name="cache"></param>
 /// <param name="logger"></param>
 public sealed class ProjectSettingsCacheRefresher(
     IDbContextFactory<ProjectsDbContext> dbFactory,
+    ISubjectScopeAccessor scopeAccessor,
     ProjectSettingsCache cache,
     ILogger<ProjectSettingsCacheRefresher> logger) : BackgroundService
 {
@@ -59,6 +64,7 @@ public sealed class ProjectSettingsCacheRefresher(
     /// <returns></returns>
     public async Task RefreshAllAsync(CancellationToken cancellationToken = default)
     {
+        using var systemScope = scopeAccessor.AsSystem("project-settings-refresher");
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var rows = await db.ProjectSettings.AsNoTracking().ToListAsync(cancellationToken);
 

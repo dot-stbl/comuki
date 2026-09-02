@@ -22,10 +22,11 @@ namespace Comuki.Modules.Identity.Infrastructure.Security.Authorization;
 /// <param name="evaluator"></param>
 /// <remarks>
 /// A resource filter rather than an authorization filter deliberately:
-/// this filter owns the whole check inline (no ambient scope in the
-/// Comuki model — scope filtering happens in the reads themselves), and
-/// the resource stage wraps model binding and result execution, so the
-/// decision cannot be bypassed by an earlier short-circuit.
+/// this filter owns the whole check inline, and the resource stage wraps
+/// model binding and result execution, so the decision cannot be
+/// bypassed by an earlier short-circuit. The object axis is enforced
+/// elsewhere — the ambient subject scope feeds the row-level query
+/// filters, and out-of-scope rows surface as 404 downstream.
 /// </remarks>
 public sealed class RequiresPermissionFilter(IPermissionEvaluator evaluator) : IAsyncResourceFilter
 {

@@ -53,6 +53,7 @@
     <Project Path="tests/unit/Comuki.Host.Brain.Unit/Comuki.Host.Brain.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Chat.Unit/Comuki.Modules.Chat.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Intake.Unit/Comuki.Modules.Intake.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.Realtime/Comuki.Host.Unit.Realtime.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Migrations/Comuki.Engine.Orchestration.Integration.Migrations.csproj" />
@@ -66,6 +67,7 @@
     <Project Path="tests/integration/Comuki.Modules.Intake.Integration.Migrations/Comuki.Modules.Intake.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Chat/Comuki.Host.Integration.Chat.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Intake/Comuki.Host.Integration.Intake.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Realtime/Comuki.Host.Integration.Realtime.csproj" />
   </Folder>
   <Folder Name="/tests/tools/">
     <Project Path="tests/tools/Comuki.TestFakePi/Comuki.TestFakePi.csproj" />

@@ -62,4 +62,7 @@ public static class ApiRoutes
 
     /// <summary>One admission rule by id.</summary>
     public const string AdmissionRule = "/api/v1/admission-rules/{ruleId:guid}";
+
+    /// <summary>The realtime hub of runs and project attention (issue #7).</summary>
+    public const string HubsRuns = "/hubs/runs";
 }

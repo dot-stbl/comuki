@@ -70,6 +70,9 @@
          (GHSA-q939-rpr3-3284, NU1903 -> build error); 4.14.0 references
          the patched SSH.NET 2026.0.0. -->
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
+    <!-- Realtime (issue #7): .NET client the integration suite connects
+         to the runs hub with. -->
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.11" />
   </ItemGroup>
 
   <!-- Identity module -->

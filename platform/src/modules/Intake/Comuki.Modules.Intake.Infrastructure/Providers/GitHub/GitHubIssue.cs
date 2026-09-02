@@ -4,11 +4,11 @@ using System.Text.Json.Serialization;
 namespace Comuki.Modules.Intake.Infrastructure.Providers.GitHub;
 
 /// <summary>
-/// GitHub issue payload (wire DTO) — tolerant: unknown fields are
+/// GitHub issue payload (wire shape) — tolerant: unknown fields are
 /// ignored; <see cref="PullRequest"/> is non-null only on pull requests
 /// (the catalog endpoint mixes them in).
 /// </summary>
-public sealed record GitHubIssueDto
+public sealed record GitHubIssue
 {
     /// <summary>Issue number.</summary>
     public int Number { get; init; }
@@ -24,13 +24,13 @@ public sealed record GitHubIssueDto
 
     /// <summary>Author sub-object.</summary>
     [JsonPropertyName("user")]
-    public GitHubUserDto? User { get; init; }
+    public GitHubUser? User { get; init; }
 
     /// <summary>Author login.</summary>
     public string UserLogin => User?.Login ?? string.Empty;
 
     /// <summary>Labels — the wire carries name/name pairs.</summary>
-    public IReadOnlyList<GitHubLabelDto> Labels { get; init; } = [];
+    public IReadOnlyList<GitHubLabel> Labels { get; init; } = [];
 
     /// <summary>Present only when the item is a pull request.</summary>
     [JsonPropertyName("pull_request")]
@@ -39,23 +39,3 @@ public sealed record GitHubIssueDto
     /// <summary>True when the item is a real issue (not a PR).</summary>
     public bool IsIssue => PullRequest is null;
 }
-
-/// <summary>GitHub label wire shape.</summary>
-public sealed record GitHubLabelDto
-{
-    /// <summary>Label name.</summary>
-    public string Name { get; init; } = string.Empty;
-}
-
-/// <summary>GitHub user wire shape.</summary>
-public sealed record GitHubUserDto
-{
-    /// <summary>User login.</summary>
-    public string Login { get; init; } = string.Empty;
-}
-
-/// <summary>Comment request body.</summary>
-public sealed record GitHubCommentBody(string Body);
-
-/// <summary>Issue state patch body.</summary>
-public sealed record GitHubIssueUpdate(string State);

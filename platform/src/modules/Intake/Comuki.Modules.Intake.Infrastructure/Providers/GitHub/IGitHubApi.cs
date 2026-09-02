@@ -19,7 +19,7 @@ public interface IGitHubApi
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Get("/repos/{owner}/{repo}/issues")]
-    public Task<IReadOnlyList<GitHubIssueDto>> ListIssuesAsync(
+    public Task<IReadOnlyList<GitHubIssue>> ListIssuesAsync(
         string owner,
         string repo,
         [AliasAs("state")] string state,

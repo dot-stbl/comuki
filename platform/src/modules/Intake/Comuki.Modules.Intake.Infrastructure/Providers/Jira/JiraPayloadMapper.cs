@@ -83,7 +83,7 @@ public static class JiraPayloadMapper
     /// <param name="projectId"></param>
     /// <param name="now"></param>
     /// <returns></returns>
-    public static IncomingTicket ToTicket(JiraIssueDto issue, string site, ProjectId projectId, DateTimeOffset now)
+    public static IncomingTicket ToTicket(JiraIssue issue, string site, ProjectId projectId, DateTimeOffset now)
     {
         var fields = issue.Fields;
         return IncomingTicket.Create(

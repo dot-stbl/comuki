@@ -16,7 +16,7 @@ public interface IGitLabApi
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Get("/projects/{projectId}/issues")]
-    public Task<IReadOnlyList<GitLabIssueDto>> ListIssuesAsync(
+    public Task<IReadOnlyList<GitLabIssue>> ListIssuesAsync(
         int projectId,
         [AliasAs("state")] string state,
         [AliasAs("per_page")] int perPage,

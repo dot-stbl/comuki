@@ -1,4 +1,4 @@
-namespace Comuki.Host.Translator.Api;
+namespace Comuki.Host.Translator.Api.Models.Responses;
 
 /// <summary>A claimed work item. Lease deadline is UTC unix milliseconds on the wire.</summary>
 /// <param name="WorkItemId"></param>

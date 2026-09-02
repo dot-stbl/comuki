@@ -1,4 +1,6 @@
-namespace Comuki.Host.Translator.Execution;
+using Comuki.Host.Translator.Execution.Run;
+
+namespace Comuki.Host.Translator.Execution.Commands;
 
 /// <summary>
 /// Consumes orchestrator commands for one run: Stop cancels pi (the run

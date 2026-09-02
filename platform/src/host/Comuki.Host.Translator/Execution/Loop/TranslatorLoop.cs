@@ -1,5 +1,9 @@
 using System.Text.Json;
-using Comuki.Host.Translator.Api;
+using Comuki.Host.Translator.Api.Contracts;
+using Comuki.Host.Translator.Api.Models.Requests;
+using Comuki.Host.Translator.Execution.Commands;
+using Comuki.Host.Translator.Execution.Outcomes;
+using Comuki.Host.Translator.Execution.Run;
 using Comuki.Host.Translator.Grpc;
 using Comuki.Host.Translator.Profiles;
 using Comuki.Host.Translator.Runtime;
@@ -7,7 +11,7 @@ using Comuki.Shared.Contracts.Grpc;
 using Grpc.Core;
 using Microsoft.Extensions.Options;
 
-namespace Comuki.Host.Translator.Execution;
+namespace Comuki.Host.Translator.Execution.Loop;
 
 /// <summary>
 /// One claim-execute-report cycle (T3.3): claim an item over REST, prepare

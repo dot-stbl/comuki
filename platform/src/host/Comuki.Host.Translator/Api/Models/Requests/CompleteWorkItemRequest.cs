@@ -1,4 +1,4 @@
-namespace Comuki.Host.Translator.Api;
+namespace Comuki.Host.Translator.Api.Models.Requests;
 
 /// <summary>Completion body: the worker-produced result JSON.</summary>
 /// <param name="ResultJson"></param>

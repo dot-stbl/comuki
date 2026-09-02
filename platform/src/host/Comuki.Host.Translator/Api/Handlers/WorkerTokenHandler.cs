@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Options;
 
-namespace Comuki.Host.Translator.Api;
+namespace Comuki.Host.Translator.Api.Handlers;
 
 /// <summary>
 /// DelegatingHandler that stamps the worker token on every orchestrator

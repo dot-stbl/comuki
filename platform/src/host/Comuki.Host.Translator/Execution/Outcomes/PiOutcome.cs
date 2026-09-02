@@ -1,4 +1,4 @@
-namespace Comuki.Host.Translator.Execution;
+namespace Comuki.Host.Translator.Execution.Outcomes;
 
 /// <summary>
 /// Bottom line of one pi run: status (<c>success</c> / <c>failed</c> /

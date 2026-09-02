@@ -1,6 +1,8 @@
+using Comuki.Host.Translator.Api.Models.Requests;
+using Comuki.Host.Translator.Api.Models.Responses;
 using Refit;
 
-namespace Comuki.Host.Translator.Api;
+namespace Comuki.Host.Translator.Api.Contracts;
 
 /// <summary>
 /// The orchestrator's worker-facing REST surface (claim / heartbeat /

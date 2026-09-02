@@ -1,4 +1,4 @@
-namespace Comuki.Host.Translator.Api;
+namespace Comuki.Host.Translator.Api.Models.Requests;
 
 /// <summary>Failure body: human-readable reason text.</summary>
 /// <param name="Reason"></param>

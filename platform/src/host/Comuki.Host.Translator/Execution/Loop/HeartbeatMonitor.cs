@@ -1,6 +1,6 @@
-using Comuki.Host.Translator.Api;
+using Comuki.Host.Translator.Api.Contracts;
 
-namespace Comuki.Host.Translator.Execution;
+namespace Comuki.Host.Translator.Execution.Loop;
 
 /// <summary>
 /// Extends the lease of a running item on a fixed cadence until the run

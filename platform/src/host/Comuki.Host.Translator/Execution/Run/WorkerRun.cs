@@ -1,7 +1,7 @@
-using Comuki.Host.Translator.Api;
+using Comuki.Host.Translator.Api.Models.Responses;
 using Comuki.Host.Translator.Grpc;
 
-namespace Comuki.Host.Translator.Execution;
+namespace Comuki.Host.Translator.Execution.Run;
 
 /// <summary>
 /// State of one claimed work item: the claim, the open gRPC session and

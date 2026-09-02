@@ -1,6 +1,6 @@
 using Comuki.Host.Translator;
-using Comuki.Host.Translator.Api;
-using Comuki.Host.Translator.Execution;
+using Comuki.Host.Translator.Api.Registration;
+using Comuki.Host.Translator.Execution.Loop;
 using Comuki.Host.Translator.Grpc;
 using Comuki.Host.Translator.Profiles;
 using Comuki.Host.Translator.Runtime;

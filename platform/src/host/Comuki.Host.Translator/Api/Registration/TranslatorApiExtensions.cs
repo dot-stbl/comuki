@@ -1,7 +1,9 @@
+using Comuki.Host.Translator.Api.Contracts;
+using Comuki.Host.Translator.Api.Handlers;
 using Microsoft.Extensions.Options;
 using Refit;
 
-namespace Comuki.Host.Translator.Api;
+namespace Comuki.Host.Translator.Api.Registration;
 
 /// <summary>
 /// Registers the Refit client for <see cref="IOrchestratorApi"/>: base

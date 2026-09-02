@@ -1,7 +1,7 @@
 using System.Text;
 using Comuki.Host.Translator.Parsing;
 
-namespace Comuki.Host.Translator.Execution;
+namespace Comuki.Host.Translator.Execution.Run;
 
 /// <summary>
 /// Accumulates the assistant's output over one pi run: streaming text

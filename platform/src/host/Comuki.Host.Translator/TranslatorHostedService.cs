@@ -1,4 +1,4 @@
-using Comuki.Host.Translator.Execution;
+using Comuki.Host.Translator.Execution.Loop;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Host.Translator;

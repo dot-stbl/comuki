@@ -31,9 +31,9 @@ public sealed class UserAccountStore(IdentityDbContext db) : IUserAccountStore
     {
         if (db.Entry(user).State == EntityState.Detached)
         {
-            _ = db.Users.Add(user);
+            db.Users.Add(user);
         }
 
-        _ = await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

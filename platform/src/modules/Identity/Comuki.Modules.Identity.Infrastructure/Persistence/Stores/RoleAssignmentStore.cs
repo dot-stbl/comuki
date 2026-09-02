@@ -61,9 +61,9 @@ public sealed class RoleAssignmentStore(IdentityDbContext db) : IRoleAssignmentS
     {
         if (db.Entry(assignment).State == EntityState.Detached)
         {
-            _ = db.RoleAssignments.Add(assignment);
+            db.RoleAssignments.Add(assignment);
         }
 
-        _ = await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

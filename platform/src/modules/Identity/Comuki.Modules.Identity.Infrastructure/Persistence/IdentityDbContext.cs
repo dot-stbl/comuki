@@ -40,7 +40,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
     /// <param name="connectionString"></param>
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
-        _ = builder
+        builder
             .UseNpgsql(connectionString, static npgsql => _ = npgsql.MigrationsHistoryTable(IdentityTables.MigrationsHistory))
             .UseSnakeCaseNamingConvention();
     }
@@ -48,7 +48,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        _ = modelBuilder
+        modelBuilder
             .ApplyConfiguration(new UserConfiguration())
             .ApplyConfiguration(new ApiKeyConfiguration())
             .ApplyConfiguration(new RoleAssignmentConfiguration())

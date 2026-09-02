@@ -14,7 +14,8 @@ namespace Comuki.Host.Integration.Intake;
 /// into the outbox, drained into the (fake) provider transition port,
 /// and releases the one-live-run lock so the issue can run again.
 /// </summary>
-public sealed class SyncBackShould(HostIntakeServer server) : IClassFixture<HostIntakeServer>
+[Collection(nameof(IntakeHostCollection))]
+public sealed class SyncBackShould(HostIntakeServer server)
 {
     private readonly HostIntakeServer server = server;
 

@@ -27,6 +27,8 @@ namespace Comuki.Host.Integration.Intake;
 /// all six module contexts — with a fast bridge interval and a FAKE
 /// GitHub sync port pre-registered (the registry resolves first-match,
 /// so the fake shadows the real Refit client; no tracker HTTP in tests).
+/// One shared instance per test run (collection fixture): every test
+/// scopes itself by its own project id / delivery ids.
 /// </summary>
 public sealed class HostIntakeServer : IAsyncLifetime
 {
@@ -156,7 +158,6 @@ public sealed class HostIntakeServer : IAsyncLifetime
     {
         await application.DisposeAsync();
         await container.DisposeAsync();
-        Environment.SetEnvironmentVariable(HookSecretEnv, null, EnvironmentVariableTarget.Process);
     }
 
     private async Task MigrateAsync<TContext>(

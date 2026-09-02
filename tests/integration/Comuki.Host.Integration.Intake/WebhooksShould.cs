@@ -14,7 +14,8 @@ namespace Comuki.Host.Integration.Intake;
 /// creates a run, replays are no-ops, duplicate-active deliveries are
 /// dropped, bad signatures are rejected, and the inbox claim runs once.
 /// </summary>
-public sealed class WebhooksShould(HostIntakeServer server) : IClassFixture<HostIntakeServer>
+[Collection(nameof(IntakeHostCollection))]
+public sealed class WebhooksShould(HostIntakeServer server)
 {
     private readonly HostIntakeServer server = server;
 

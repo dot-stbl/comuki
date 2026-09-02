@@ -9,7 +9,8 @@ namespace Comuki.Host.Integration.Intake;
 /// The native ticket surface: creates ticket + run in one call, honors
 /// the one-live-run lock, and demands <c>run:create</c>.
 /// </summary>
-public sealed class NativeTicketsShould(HostIntakeServer server) : IClassFixture<HostIntakeServer>
+[Collection(nameof(IntakeHostCollection))]
+public sealed class NativeTicketsShould(HostIntakeServer server)
 {
     private readonly HostIntakeServer server = server;
 

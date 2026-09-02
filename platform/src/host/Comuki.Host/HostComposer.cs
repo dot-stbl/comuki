@@ -19,6 +19,7 @@ using Comuki.Modules.Projects.Infrastructure;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Contracts.Runs;
+using Comuki.Shared.Telemetry.Installers;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -41,6 +42,10 @@ internal static class HostComposer
     /// <returns></returns>
     public static WebApplication Compose(WebApplicationBuilder builder, HostDatabase.Connection database)
     {
+        // Telemetry first: options ValidateOnStart always; OTLP SDK only when
+        // Telemetry:OtlpEndpoint is set (see deploy/README — VictoriaMetrics :8431).
+        builder.Services.AddComukiTelemetry(builder.Configuration);
+
         builder.Services.AddControlPlaneCatalogCore(builder.Configuration);
 
         builder.Services

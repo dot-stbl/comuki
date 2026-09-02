@@ -38,7 +38,7 @@ public static class ComukiTelemetryInstaller
             return services;
         }
 
-        _ = services.AddOpenTelemetry()
+        services.AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(
                 serviceName: telemetryOptions.ServiceName))
             .WithTracing(tracing => tracing

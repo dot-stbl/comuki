@@ -47,7 +47,7 @@ public sealed class OrchestrationBudgetGate(
 
         var from = run.Status.ToString();
         run.TransitionTo(RunStatus.Cancelled, now);
-        _ = await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
         var payload = JsonSerializer.Serialize(
             new

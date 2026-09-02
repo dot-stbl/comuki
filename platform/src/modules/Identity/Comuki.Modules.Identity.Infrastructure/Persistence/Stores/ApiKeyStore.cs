@@ -30,9 +30,9 @@ public sealed class ApiKeyStore(IdentityDbContext db) : IApiKeyStore
     {
         if (db.Entry(apiKey).State == EntityState.Detached)
         {
-            _ = db.ApiKeys.Add(apiKey);
+            db.ApiKeys.Add(apiKey);
         }
 
-        _ = await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

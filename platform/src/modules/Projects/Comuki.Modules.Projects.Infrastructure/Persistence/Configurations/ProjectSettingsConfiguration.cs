@@ -16,50 +16,50 @@ public sealed class ProjectSettingsConfiguration : IEntityTypeConfiguration<Proj
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ProjectSettings> builder)
     {
-        _ = builder.ToTable(ProjectsTables.ProjectSettings);
-        _ = builder.HasKey(static settings => settings.ProjectId);
+        builder.ToTable(ProjectsTables.ProjectSettings);
+        builder.HasKey(static settings => settings.ProjectId);
 
-        _ = builder.Property(static settings => settings.ProjectId)
+        builder.Property(static settings => settings.ProjectId)
             .HasColumnName("project_id")
             .HasConversion(ProjectsIdConverters.ProjectIdToUuid)
             .ValueGeneratedNever();
 
-        _ = builder.HasOne<Project>()
+        builder.HasOne<Project>()
             .WithOne()
             .HasForeignKey<ProjectSettings>(static settings => settings.ProjectId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        _ = builder.Property(static settings => settings.MinIdle)
+        builder.Property(static settings => settings.MinIdle)
             .HasColumnName("min_idle");
 
-        _ = builder.Property(static settings => settings.MaxConcurrent)
+        builder.Property(static settings => settings.MaxConcurrent)
             .HasColumnName("max_concurrent");
 
-        _ = builder.Property(static settings => settings.IdleTtlSeconds)
+        builder.Property(static settings => settings.IdleTtlSeconds)
             .HasColumnName("idle_ttl_seconds");
 
-        _ = builder.Property(static settings => settings.ApproveRequired)
+        builder.Property(static settings => settings.ApproveRequired)
             .HasColumnName("approve_required");
 
-        _ = builder.Property(static settings => settings.KnowledgeEnabled)
+        builder.Property(static settings => settings.KnowledgeEnabled)
             .HasColumnName("knowledge_enabled");
 
-        _ = builder.Property(static settings => settings.VerifyEnabled)
+        builder.Property(static settings => settings.VerifyEnabled)
             .HasColumnName("verify_enabled");
 
-        _ = builder.Property(static settings => settings.ProxyEnabled)
+        builder.Property(static settings => settings.ProxyEnabled)
             .HasColumnName("proxy_enabled");
 
-        _ = builder.Property(static settings => settings.SoftBudgetUsdMicros)
+        builder.Property(static settings => settings.SoftBudgetUsdMicros)
             .HasColumnName("soft_budget_usd_micros");
 
-        _ = builder.Property(static settings => settings.HardBudgetUsdMicros)
+        builder.Property(static settings => settings.HardBudgetUsdMicros)
             .HasColumnName("hard_budget_usd_micros");
 
-        _ = builder.Property(static settings => settings.UpdatedAt)
+        builder.Property(static settings => settings.UpdatedAt)
             .HasColumnName("updated_at");
 
-        _ = builder.Property(static settings => settings.Version)
+        builder.Property(static settings => settings.Version)
             .HasColumnName("version")
             .IsConcurrencyToken();
     }

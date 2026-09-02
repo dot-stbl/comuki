@@ -25,14 +25,14 @@ public static class MemoryPersistenceExtensions
         this IServiceCollection services,
         string connectionString)
     {
-        _ = services.AddDbContextFactory<MemoryDbContext>(options =>
+        services.AddDbContextFactory<MemoryDbContext>(options =>
             MemoryDbContext.ApplyOptions(options, connectionString));
 
         services.TryAddSingleton<ILoggerFactory, NullLoggerFactory>();
         services.TryAddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.TryAddSingleton(TimeProvider.System);
-        _ = services.AddSingleton<IMemoryStore, EfMemoryStore>();
-        _ = services.AddHostedService<MemorySweepWorker>();
+        services.AddSingleton<IMemoryStore, EfMemoryStore>();
+        services.AddHostedService<MemorySweepWorker>();
 
         return services;
     }

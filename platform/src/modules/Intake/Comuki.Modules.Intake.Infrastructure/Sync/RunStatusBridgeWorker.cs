@@ -1,3 +1,5 @@
+using System.Data.Common;
+using System.Text.Json;
 using Comuki.Modules.Intake.Application.Options;
 using Comuki.Modules.Intake.Application.Ports;
 using Comuki.Modules.Intake.Application.Sync;
@@ -46,7 +48,8 @@ public sealed class RunStatusBridgeWorker(
             {
                 break;
             }
-            catch (Exception exception)
+            catch (Exception exception) when (exception is HttpRequestException or IOException or TimeoutException
+                                       or DbException or JsonException)
             {
                 // boundary: the worker's own supervision loop — a transient
                 // store/provider failure must not kill the hosted service
@@ -153,10 +156,12 @@ public sealed class RunStatusBridgeWorker(
                 await store.MarkSyncJobDoneAsync(job.Id, clock.GetUtcNow(), cancellationToken);
                 logger.LogInformation("Sync job {JobId} pushed {RunStatus} for {ExternalId}", job.Id, job.RunStatus, job.ExternalId);
             }
-            catch (Exception exception)
+            catch (Exception exception) when (exception is HttpRequestException or IOException or TimeoutException or JsonException
+                                       or DbException)
             {
                 // boundary: per-job isolation — one failing tracker call
-                // schedules its retry and never stops the drain loop
+                // (or its follow-up store write) schedules a retry and never
+                // stops the drain loop
                 logger.LogWarning(exception, "Sync job {JobId} attempt {Attempt} failed", job.Id, job.Attempts + 1);
                 await store.MarkSyncJobFailedAsync(job.Id, exception.Message, intakeOptions.SyncMaxAttempts, intakeOptions.SyncBackoff, clock.GetUtcNow(), cancellationToken);
             }

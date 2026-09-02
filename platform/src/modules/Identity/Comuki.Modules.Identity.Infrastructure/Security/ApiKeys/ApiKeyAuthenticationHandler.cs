@@ -72,7 +72,10 @@ public sealed class ApiKeyAuthenticationHandler(
 
         if (await apiKeyStore.FindByPrefixAsync(token.Prefix, Context.RequestAborted) is not { } apiKey)
         {
-            _ = hasher.Verify(rawToken, DummyDigest);
+            // Constant-time dummy verify: defeat timing oracles that would
+            // otherwise reveal whether a prefix maps to a real key.
+            // Result discarded by design — only the work itself matters.
+            hasher.Verify(rawToken, DummyDigest);
             return AuthenticateResult.Fail("unknown api key");
         }
 

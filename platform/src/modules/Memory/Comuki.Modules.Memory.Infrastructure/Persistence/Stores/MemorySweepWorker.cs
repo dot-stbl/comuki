@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Comuki.Modules.Memory.Application.Ports;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -36,7 +37,7 @@ public sealed class MemorySweepWorker(
             {
                 break;
             }
-            catch (Exception exception) when (exception is not OperationCanceledException)
+            catch (Exception exception) when (exception is DbException or IOException or TimeoutException)
             {
                 logger.LogWarning(exception, "memory sweep failed; retrying next interval");
             }

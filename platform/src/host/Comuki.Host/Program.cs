@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var database = HostDatabase.Resolve(builder.Configuration);
 
-_ = builder.Services
+builder.Services
     .AddOrchestrationPersistence(database.ConnectionString)
     .AddOrchestrationQueue(builder.Configuration)
     .AddOrchestrationApplication()

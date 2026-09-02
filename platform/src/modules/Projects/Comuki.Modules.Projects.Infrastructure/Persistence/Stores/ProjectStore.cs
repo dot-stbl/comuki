@@ -49,10 +49,10 @@ public sealed class ProjectStore(ProjectsDbContext db) : IProjectStore
         ProjectSettings settings,
         CancellationToken cancellationToken = default)
     {
-        _ = db.Projects.Add(project);
-        _ = db.ProjectSettings.Add(settings);
+        db.Projects.Add(project);
+        db.ProjectSettings.Add(settings);
 
-        _ = await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />
@@ -60,9 +60,9 @@ public sealed class ProjectStore(ProjectsDbContext db) : IProjectStore
     {
         if (db.Entry(project).State == EntityState.Detached)
         {
-            _ = db.Projects.Add(project);
+            db.Projects.Add(project);
         }
 
-        _ = await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

@@ -53,7 +53,7 @@ public sealed class RequiresPermissionFilter(IPermissionEvaluator evaluator) : I
 
         if (demand is null)
         {
-            _ = await next();
+            await next();
 
             return;
         }
@@ -74,7 +74,7 @@ public sealed class RequiresPermissionFilter(IPermissionEvaluator evaluator) : I
         }
         else
         {
-            _ = await next();
+            await next();
         }
     }
 

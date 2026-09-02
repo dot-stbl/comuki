@@ -17,8 +17,8 @@ public sealed class EfUsageEventStore(IDbContextFactory<CostsDbContext> factory)
     public async Task AddAsync(UsageEvent usageEvent, CancellationToken cancellationToken = default)
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        _ = db.UsageEvents.Add(usageEvent);
-        _ = await db.SaveChangesAsync(cancellationToken);
+        db.UsageEvents.Add(usageEvent);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />

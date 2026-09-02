@@ -51,7 +51,7 @@ public static class PlanJson
     /// <param name="json"></param>
     public static PlanValidationResult Parse(string json)
     {
-        _ = TryParse(json, out _, out var validation);
+        TryParse(json, out _, out var validation);
         return validation;
     }
 

@@ -22,13 +22,13 @@ public static class CostsPersistenceExtensions
         this IServiceCollection services,
         string connectionString)
     {
-        _ = services.AddDbContextFactory<CostsDbContext>(options =>
+        services.AddDbContextFactory<CostsDbContext>(options =>
             CostsDbContext.ApplyOptions(options, connectionString));
 
         services.TryAddSingleton<ILoggerFactory, NullLoggerFactory>();
         services.TryAddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.TryAddSingleton(TimeProvider.System);
-        _ = services.AddSingleton<IUsageEventStore, EfUsageEventStore>();
+        services.AddSingleton<IUsageEventStore, EfUsageEventStore>();
 
         return services;
     }

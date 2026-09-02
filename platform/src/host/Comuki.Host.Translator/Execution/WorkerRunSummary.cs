@@ -20,11 +20,11 @@ public sealed class WorkerRunSummary()
         switch (piEvent)
         {
             case PiEvent.TextDeltaEvent delta:
-                _ = text.Append(delta.Delta);
+                text.Append(delta.Delta);
                 break;
             case PiEvent.AssistantTextEvent authoritative:
-                _ = text.Clear();
-                _ = text.Append(authoritative.Text);
+                text.Clear();
+                text.Append(authoritative.Text);
                 break;
         }
     }

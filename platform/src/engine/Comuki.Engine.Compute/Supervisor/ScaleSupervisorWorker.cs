@@ -35,7 +35,7 @@ public sealed class ScaleSupervisorWorker(
                 {
                     break;
                 }
-                catch (Exception exception)
+                catch (Exception exception) when (exception is HttpRequestException or IOException or TimeoutException)
                 {
                     logger.LogError(exception, "Scale supervisor pass failed; retrying next poll");
                 }

@@ -41,15 +41,15 @@ public sealed class MemoryDbContext(DbContextOptions<MemoryDbContext> options)
     /// <param name="connectionString"></param>
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
-        _ = builder
-            .UseNpgsql(connectionString, static npgsql => _ = npgsql.MigrationsHistoryTable(MemoryTables.MigrationsHistory))
+        builder
+            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(MemoryTables.MigrationsHistory))
             .UseSnakeCaseNamingConvention();
     }
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        _ = modelBuilder
+        modelBuilder
             .ApplyConfiguration(new ChatMessageConfiguration())
             .ApplyConfiguration(new ChatCheckpointConfiguration())
             .ApplyConfiguration(new MemoryFactConfiguration())

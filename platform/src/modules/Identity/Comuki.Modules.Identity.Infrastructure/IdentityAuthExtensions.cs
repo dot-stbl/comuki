@@ -40,12 +40,12 @@ public static class IdentityAuthExtensions
         IConfiguration configuration,
         params Assembly[] scanAssemblies)
     {
-        _ = services.AddOptions<CookieAuthOptions>()
+        services.AddOptions<CookieAuthOptions>()
             .Bind(configuration.GetSection(CookieAuthOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        _ = services.AddHttpContextAccessor();
+        services.AddHttpContextAccessor();
         services.TryAddScoped<IUserAuthenticationService, UserAuthenticationService>();
 
         var authentication = services.AddAuthentication(options =>
@@ -60,21 +60,21 @@ public static class IdentityAuthExtensions
             options.DefaultForbidScheme = AuthSchemes.Cookie;
         });
 
-        _ = services.AddOptions<CookieAuthenticationOptions>(AuthSchemes.Cookie)
+        services.AddOptions<CookieAuthenticationOptions>(AuthSchemes.Cookie)
             .Configure<IConfiguration>(ConfigureCookie);
 
-        _ = authentication
+        authentication
             .AddCookie(AuthSchemes.Cookie)
             .AddScheme<ApiKeySchemeOptions, ApiKeyAuthenticationHandler>(AuthSchemes.ApiKey, _ => { });
 
         AddOidcProviders(authentication, configuration);
 
-        _ = services.AddAuthorization();
+        services.AddAuthorization();
 
         // Enforcement: one global resource filter per request + the startup
         // check over the assemblies the host asked to cover.
-        _ = services.Configure<MvcOptions>(static options => options.Filters.Add<RequiresPermissionFilter>());
-        _ = services.AddHostedService(provider => new PermissionDemandStartupValidator(
+        services.Configure<MvcOptions>(static options => options.Filters.Add<RequiresPermissionFilter>());
+        services.AddHostedService(provider => new PermissionDemandStartupValidator(
             provider.GetRequiredService<IPermissionCatalog>(),
             scanAssemblies));
 
@@ -136,7 +136,7 @@ public static class IdentityAuthExtensions
 
             var scheme = AuthSchemes.Oidc(provider.Name);
 
-            _ = authentication.AddOpenIdConnect(scheme, options =>
+            authentication.AddOpenIdConnect(scheme, options =>
             {
                 options.Authority = provider.Authority;
                 options.ClientId = provider.ClientId;

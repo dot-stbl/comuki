@@ -33,63 +33,63 @@ public sealed class RoleAssignmentConfiguration : IEntityTypeConfiguration<RoleA
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<RoleAssignment> builder)
     {
-        _ = builder.ToTable(IdentityTables.RoleAssignments);
-        _ = builder.HasKey(static assignment => assignment.Id);
+        builder.ToTable(IdentityTables.RoleAssignments);
+        builder.HasKey(static assignment => assignment.Id);
 
-        _ = builder.Property(static assignment => assignment.Id)
+        builder.Property(static assignment => assignment.Id)
             .HasColumnName("id")
             .HasConversion(IdentityIdConverters.RoleAssignmentIdToUuid)
             .ValueGeneratedNever();
 
-        _ = builder.Property(static assignment => assignment.SubjectType)
+        builder.Property(static assignment => assignment.SubjectType)
             .HasColumnName("subject_type")
             .HasConversion(subjectTypeToString)
             .HasMaxLength(8)
             .IsRequired();
 
-        _ = builder.Property(static assignment => assignment.SubjectId)
+        builder.Property(static assignment => assignment.SubjectId)
             .HasColumnName("subject_id");
 
-        _ = builder.Property(static assignment => assignment.Role)
+        builder.Property(static assignment => assignment.Role)
             .HasColumnName("role")
             .HasConversion(roleToString)
             .HasMaxLength(32)
             .IsRequired();
 
-        _ = builder.Property(static assignment => assignment.ScopeLevel)
+        builder.Property(static assignment => assignment.ScopeLevel)
             .HasColumnName("scope_level")
             .HasConversion(scopeLevelToString)
             .HasMaxLength(16)
             .IsRequired();
 
-        _ = builder.Property(static assignment => assignment.ScopeProjectId)
+        builder.Property(static assignment => assignment.ScopeProjectId)
             .HasColumnName("scope_project_id")
             .HasConversion(IdentityIdConverters.ProjectIdToUuid);
 
-        _ = builder.Property(static assignment => assignment.GrantedByType)
+        builder.Property(static assignment => assignment.GrantedByType)
             .HasColumnName("granted_by_type")
             .HasConversion(subjectTypeToString)
             .HasMaxLength(8);
 
-        _ = builder.Property(static assignment => assignment.GrantedById)
+        builder.Property(static assignment => assignment.GrantedById)
             .HasColumnName("granted_by_id");
 
-        _ = builder.Property(static assignment => assignment.CreatedAt)
+        builder.Property(static assignment => assignment.CreatedAt)
             .HasColumnName("created_at");
 
-        _ = builder.Property(static assignment => assignment.RevokedAt)
+        builder.Property(static assignment => assignment.RevokedAt)
             .HasColumnName("revoked_at");
 
-        _ = builder.HasIndex(static assignment => new { assignment.SubjectType, assignment.SubjectId })
+        builder.HasIndex(static assignment => new { assignment.SubjectType, assignment.SubjectId })
             .HasDatabaseName("ix_role_assignments_subject")
             .HasFilter("revoked_at IS NULL");
 
-        _ = builder.HasIndex(static assignment => new { assignment.SubjectType, assignment.SubjectId, assignment.Role })
+        builder.HasIndex(static assignment => new { assignment.SubjectType, assignment.SubjectId, assignment.Role })
             .IsUnique()
             .HasDatabaseName("ix_role_assignments_active_platform")
             .HasFilter("revoked_at IS NULL AND scope_project_id IS NULL");
 
-        _ = builder.HasIndex(
+        builder.HasIndex(
                 static assignment => new { assignment.SubjectType, assignment.SubjectId, assignment.Role, assignment.ScopeProjectId })
             .IsUnique()
             .HasDatabaseName("ix_role_assignments_active_project")

@@ -12,7 +12,7 @@ var builder = Host.CreateApplicationBuilder(args);
 // stamps these on the worker container at Start).
 builder.Configuration.AddInMemoryCollection(TranslatorEnvironment.Snapshot());
 
-_ = builder.Services.AddOptions<TranslatorOptions>()
+builder.Services.AddOptions<TranslatorOptions>()
     .Bind(builder.Configuration.GetSection(TranslatorOptions.SectionName))
     .ValidateDataAnnotations()
     .ValidateOnStart();
@@ -24,7 +24,7 @@ builder.Services.AddSingleton<HeartbeatMonitor>();
 builder.Services.AddSingleton<TranslatorLoop>();
 builder.Services.AddHostedService<TranslatorHostedService>();
 
-_ = builder.Services
+builder.Services
     .AddOrchestratorApi()
     .AddWorkerGrpcClient();
 

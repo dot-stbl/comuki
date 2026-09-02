@@ -26,9 +26,9 @@ public sealed class OidcLinkStore(IdentityDbContext db) : IOidcLinkStore
     {
         if (db.Entry(link).State == EntityState.Detached)
         {
-            _ = db.OidcLinks.Add(link);
+            db.OidcLinks.Add(link);
         }
 
-        _ = await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

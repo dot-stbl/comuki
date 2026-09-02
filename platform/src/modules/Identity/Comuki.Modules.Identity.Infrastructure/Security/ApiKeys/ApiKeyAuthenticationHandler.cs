@@ -24,6 +24,11 @@ namespace Comuki.Modules.Identity.Infrastructure.Security.ApiKeys;
 /// <param name="userStore"></param>
 /// <param name="hasher"></param>
 /// <param name="keyOptions"></param>
+/// <param name="clock">
+///     Injected <see cref="TimeProvider" /> for the <c>last_used</c> throttle
+///     check — the base <c>AuthenticationHandler</c> doesn't expose one, so the
+///     handler resolves <c>now</c> via this additional ctor parameter.
+/// </param>
 public sealed class ApiKeyAuthenticationHandler(
     IOptionsMonitor<ApiKeySchemeOptions> options,
     ILoggerFactory loggerFactory,
@@ -31,7 +36,8 @@ public sealed class ApiKeyAuthenticationHandler(
     IApiKeyStore apiKeyStore,
     IUserAccountStore userStore,
     ApiKeyHasher hasher,
-    IOptions<ApiKeyOptions> keyOptions) : AuthenticationHandler<ApiKeySchemeOptions>(options, loggerFactory, encoder)
+    IOptions<ApiKeyOptions> keyOptions,
+    TimeProvider clock) : AuthenticationHandler<ApiKeySchemeOptions>(options, loggerFactory, encoder)
 {
     private const string BearerPrefix = "Bearer ";
 
@@ -87,9 +93,10 @@ public sealed class ApiKeyAuthenticationHandler(
             return AuthenticateResult.Fail("owner disabled or missing");
         }
 
-        if (apiKey.LastUsedAt is null || DateTimeOffset.UtcNow - apiKey.LastUsedAt > keyOptions.Value.LastUsedRefreshInterval)
+        var now = clock.GetUtcNow();
+        if (apiKey.LastUsedAt is null || now - apiKey.LastUsedAt > keyOptions.Value.LastUsedRefreshInterval)
         {
-            apiKey.MarkUsed(DateTimeOffset.UtcNow);
+            apiKey.MarkUsed(now);
             await apiKeyStore.SaveAsync(apiKey, Context.RequestAborted);
         }
 

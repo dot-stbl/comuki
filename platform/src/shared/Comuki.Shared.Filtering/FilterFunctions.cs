@@ -7,9 +7,11 @@ namespace Comuki.Shared.Filtering;
 ///     Server-side functions evaluable as filter values. Each function takes a
 ///     well-typed argument parsed by the lexer and returns a concrete
 ///     <see cref="DateTimeOffset" /> that the comparison operator applies to the
-///     field. Time is anchored to <see cref="DateTimeOffset.UtcNow" /> — never to
-///     client-supplied timestamps, so a query like <c>createdAt&gt;=now(-7d)</c>
-///     returns consistent results regardless of where the request originated.
+///     field. Time is anchored to the <c>now</c> argument supplied by the caller
+///     (typically sampled from a <see cref="TimeProvider" /> at translation time)
+///     — never to client-supplied timestamps, so a query like
+///     <c>createdAt&gt;=now(-7d)</c> returns consistent results regardless of
+///     where the request originated.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -30,10 +32,10 @@ namespace Comuki.Shared.Filtering;
 public static class FilterFunctions
 {
     /// <summary>
-    ///     Evaluates <c>now(offset)</c> against <see cref="DateTimeOffset.UtcNow" />.
+    ///     Evaluates <c>now(offset)</c> against the supplied <paramref name="now" />.
     ///     The <paramref name="argument" /> is the duration string captured by the
     ///     lexer (e.g. <c>-7d</c>, <c>1h</c>, <c>0d</c>); it is parsed and applied
-    ///     to the current UTC timestamp. Returns the absolute point in time the
+    ///     to the supplied timestamp. Returns the absolute point in time the
     ///     comparison operator should compare the field against.
     /// </summary>
     /// <param name="functionName">
@@ -47,14 +49,20 @@ public static class FilterFunctions
     /// <param name="position">
     ///     Source position for error messages.
     /// </param>
+    /// <param name="now">
+    ///     Anchor instant for the duration offset. Sampled once per
+    ///     <c>EfFilterTranslator</c> translation from an injected
+    ///     <see cref="TimeProvider" />, so every <c>now(offset)</c> in a single
+    ///     filter resolves against the same anchor.
+    /// </param>
     /// <returns>
-    ///     <c>DateTimeOffset.UtcNow + parsed offset</c>.
+    ///     <paramref name="now" /> + parsed offset.
     /// </returns>
     /// <exception cref="FilterParseException">
     ///     Thrown for unknown function names, malformed durations, unknown units,
     ///     or out-of-range integer values.
     /// </exception>
-    public static DateTimeOffset EvaluateNow(string functionName, string argument, int position)
+    public static DateTimeOffset EvaluateNow(string functionName, string argument, int position, DateTimeOffset now)
     {
         if (!string.Equals(functionName, "now", StringComparison.OrdinalIgnoreCase))
         {
@@ -63,8 +71,8 @@ public static class FilterFunctions
                 position);
         }
 
-        var offset = ParseDuration(argument, position);
-        return DateTimeOffset.UtcNow + offset;
+        var offset = ParseDuration(argument, position, now);
+        return now + offset;
     }
 
     /// <summary>
@@ -75,8 +83,13 @@ public static class FilterFunctions
     /// </summary>
     /// <param name="text">Raw argument text from the lexer (no surrounding parens).</param>
     /// <param name="position">Source position for error messages.</param>
+    /// <param name="now">
+    ///     Anchor instant for the defensive range check — the parsed
+    ///     <see cref="TimeSpan" /> must be representable as <paramref name="now" />
+    ///     + offset without overflowing <see cref="DateTimeOffset" />.
+    /// </param>
     /// <exception cref="FilterParseException">Malformed duration.</exception>
-    public static TimeSpan ParseDuration(string text, int position)
+    public static TimeSpan ParseDuration(string text, int position, DateTimeOffset now)
     {
         if (string.IsNullOrEmpty(text) || text.Length < 2)
         {
@@ -159,11 +172,12 @@ public static class FilterFunctions
         };
 
         // Defensive range check: DateTimeOffset +/- TimeSpan must stay representable.
-        // UtcNow +/- ~10000 days is far outside any realistic filter; reject anything
-        // that would throw at evaluation time so the client sees 400, not 500.
+        // The injected `now` +/- ~10000 days is far outside any realistic filter;
+        // reject anything that would throw at evaluation time so the client sees
+        // 400, not 500.
         try
         {
-            _ = DateTimeOffset.UtcNow + offset;
+            _ = now + offset;
         }
         catch (ArgumentOutOfRangeException ex)
         {

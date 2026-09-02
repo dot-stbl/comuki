@@ -23,9 +23,10 @@ public static class QueryableFilterExtensions
     public static IQueryable<TEntity> ApplyFilter<TEntity>(
         this IQueryable<TEntity> source,
         string? filter,
-        FilterableFieldSet<TEntity>? fields = null)
+        FilterableFieldSet<TEntity>? fields = null,
+        TimeProvider? clock = null)
     {
-        var predicate = FilterExpression.ParseFor(filter, fields);
+        var predicate = FilterExpression.ParseFor(filter, fields, clock);
         return predicate is null ? source : source.Where(predicate);
     }
 

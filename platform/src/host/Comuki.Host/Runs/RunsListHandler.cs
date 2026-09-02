@@ -13,7 +13,7 @@ namespace Comuki.Host.Runs;
 /// internals.
 /// </summary>
 /// <param name="db">Orchestration context of the current scope.</param>
-public sealed class RunsListHandler(OrchestrationDbContext db)
+public sealed class RunsListHandler(OrchestrationDbContext db, TimeProvider clock)
 {
     /// <summary>
     /// Default ordering when the request carries no sort spec: newest activity
@@ -30,7 +30,7 @@ public sealed class RunsListHandler(OrchestrationDbContext db)
         var normalized = query.Normalized();
 
         var filtered = db.Runs.AsNoTracking()
-            .ApplyFilter(normalized.Filter);
+            .ApplyFilter(normalized.Filter, clock: clock);
 
         var total = await filtered.CountAsync(cancellationToken);
 

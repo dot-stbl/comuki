@@ -1,3 +1,4 @@
+using System.Net.Http;
 using Comuki.Engine.Compute.Options;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -35,7 +36,7 @@ public sealed class ScaleSupervisorWorker(
                 {
                     break;
                 }
-                catch (Exception exception)
+                catch (Exception exception) when (exception is HttpRequestException or IOException or TimeoutException)
                 {
                     logger.LogError(exception, "Scale supervisor pass failed; retrying next poll");
                 }

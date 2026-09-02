@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Data.Common;
+using System.Net.Http;
 using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Shared.Contracts.Journal;
 using Microsoft.EntityFrameworkCore;
@@ -94,7 +96,7 @@ file static class RunEventsBroadcastSender
         {
             await broadcaster.BroadcastAsync(entries, cancellationToken);
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is HttpRequestException or DbException or IOException or TimeoutException)
         {
             // boundary: realtime delivery is best-effort by contract; the
             // journal rows are already saved and remain readable over REST

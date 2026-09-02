@@ -101,6 +101,9 @@ public sealed class WebhookIntakeService(
             return WebhookReceipt.Ok(DeliveryOutcomes.Filtered, ticket.ExternalId);
         }
 
+        // bind the sync-back routing target before storing
+        ticket.BindConnection(connection.Id);
+
         // Lock #2 — one live run per issue: the partial unique index over
         // the active statuses rejects a second active ticket.
         var stored = await store.TryInsertTicketAsync(ticket, cancellationToken);

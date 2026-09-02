@@ -23,6 +23,7 @@
     <Project Path="platform/src/modules/Chat/Comuki.Modules.Chat.Infrastructure/Comuki.Modules.Chat.Infrastructure.csproj" />
     <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Domain/Comuki.Modules.Intake.Domain.csproj" />
     <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Application/Comuki.Modules.Intake.Application.csproj" />
+    <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Infrastructure/Comuki.Modules.Intake.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/platform/src/engine/">
     <Project Path="platform/src/engine/Comuki.Engine.Orchestration/Comuki.Engine.Orchestration.csproj" />
@@ -59,6 +60,7 @@
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Migrations/Comuki.Modules.Identity.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Memory.Integration.Migrations/Comuki.Modules.Memory.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.Migrations/Comuki.Modules.Projects.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Intake.Integration.Migrations/Comuki.Modules.Intake.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Chat/Comuki.Host.Integration.Chat.csproj" />
   </Folder>
   <Folder Name="/tests/tools/">

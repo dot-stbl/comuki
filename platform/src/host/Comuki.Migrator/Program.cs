@@ -2,6 +2,7 @@ using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Migrator;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
+using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +37,8 @@ if (recreate)
 
 // All module contexts migrate the same database; each keeps its own
 // migrations history table (identity uses __comuki_identity, projects
-// uses __comuki_projects, memory uses __comuki_memory), so the
+// uses __comuki_projects, memory uses __comuki_memory, chat uses
+// __comuki_chat, intake uses __comuki_intake), so the
 // applications cannot collide.
 var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
 OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
@@ -62,6 +64,11 @@ var chatOptions = new DbContextOptionsBuilder<ChatDbContext>();
 ChatDbContext.ApplyOptions(chatOptions, connectionString);
 await using var chatDb = new ChatDbContext(chatOptions.Options);
 await ApplyAsync(chatDb, "chat");
+
+var intakeOptions = new DbContextOptionsBuilder<IntakeDbContext>();
+IntakeDbContext.ApplyOptions(intakeOptions, connectionString);
+await using var intakeDb = new IntakeDbContext(intakeOptions.Options);
+await ApplyAsync(intakeDb, "intake");
 
 return 0;
 

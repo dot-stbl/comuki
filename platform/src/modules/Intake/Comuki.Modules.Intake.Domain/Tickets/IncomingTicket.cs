@@ -53,6 +53,12 @@ public sealed class IncomingTicket
     /// <summary>Issue labels at the time of the delivery.</summary>
     public string[] Labels { get; private set; } = [];
 
+    /// <summary>
+    /// The connection the ticket arrived through — the sync-back routing
+    /// target; null for native tickets (no external tracker).
+    /// </summary>
+    public SourceConnectionId? ConnectionId { get; private set; }
+
     /// <summary>Current lifecycle status; mutated only via the Mark* methods.</summary>
     public IntakeTicketStatus Status { get; private set; }
 
@@ -105,6 +111,17 @@ public sealed class IncomingTicket
             CreatedAt = now,
             UpdatedAt = now,
         };
+    }
+
+    /// <summary>
+    /// Binds the ticket to the connection it arrived through (the
+    /// sync-back routing target). Set once by the webhook pipeline
+    /// before the ticket is stored; native tickets stay unbound.
+    /// </summary>
+    /// <param name="connectionId"></param>
+    public void BindConnection(SourceConnectionId connectionId)
+    {
+        ConnectionId = connectionId;
     }
 
     /// <summary>Claims the ticket for a run; legal only from <see cref="IntakeTicketStatus.Pending"/>.</summary>

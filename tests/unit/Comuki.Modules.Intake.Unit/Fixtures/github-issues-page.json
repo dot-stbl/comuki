@@ -1,0 +1,21 @@
+[
+  {
+    "number": 482,
+    "title": "Real issue",
+    "body": "A plain issue body.",
+    "html_url": "https://github.com/dot-stbl/comuki/issues/482",
+    "state": "open",
+    "user": { "login": "bob" },
+    "labels": [ { "name": "bug" } ]
+  },
+  {
+    "number": 101,
+    "title": "A pull request mixed in",
+    "body": "PRs come through the same endpoint.",
+    "html_url": "https://github.com/dot-stbl/comuki/pull/101",
+    "state": "open",
+    "user": { "login": "carol" },
+    "labels": [],
+    "pull_request": { "url": "https://api.github.com/repos/dot-stbl/comuki/pulls/101" }
+  }
+]

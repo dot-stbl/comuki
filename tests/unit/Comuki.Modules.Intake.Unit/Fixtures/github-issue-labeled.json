@@ -1,0 +1,14 @@
+{
+  "action": "labeled",
+  "label": { "name": "comuki" },
+  "issue": {
+    "number": 481,
+    "title": "Release checklist broken",
+    "body": "The checklist step fails on Windows.",
+    "html_url": "https://github.com/dot-stbl/comuki/issues/481",
+    "state": "open",
+    "user": { "login": "alice" },
+    "labels": [ { "name": "bug" }, { "name": "comuki" } ]
+  },
+  "repository": { "full_name": "dot-stbl/comuki" }
+}

@@ -1,0 +1,17 @@
+{
+  "object_kind": "issue",
+  "user": { "username": "bob" },
+  "project": {
+    "id": 12345,
+    "path_with_namespace": "acme/platform"
+  },
+  "object_attributes": {
+    "iid": 12,
+    "title": "Deploy fails at midnight",
+    "description": "The deploy job dies exactly at 00:00.",
+    "url": "https://gitlab.com/acme/platform/-/issues/12",
+    "action": "update"
+  },
+  "labels": [ { "title": "comuki" }, { "title": "flaky" } ],
+  "changes": { "labels": { "previous": [], "current": [ { "title": "comuki" } ] } }
+}

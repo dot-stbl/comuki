@@ -15,6 +15,8 @@
     <ProjectReference Include="..\..\modules\Chat\Comuki.Modules.Chat.Application\Comuki.Modules.Chat.Application.csproj" />
     <ProjectReference Include="..\..\modules\Chat\Comuki.Modules.Chat.Infrastructure\Comuki.Modules.Chat.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Application\Comuki.Modules.Intake.Application.csproj" />
+    <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Infrastructure\Comuki.Modules.Intake.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Application\Comuki.Modules.Projects.Application.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Infrastructure\Comuki.Modules.Projects.Infrastructure.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
@@ -25,6 +27,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Unit.WorkerRuntime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Auth" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Chat" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Intake" />
   </ItemGroup>
 
 </Project>

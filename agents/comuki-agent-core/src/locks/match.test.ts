@@ -40,6 +40,15 @@ describe('globToRegExp', () => {
     expect(pattern.test('a.ts')).toBe(true);
     expect(pattern.test('ab.ts')).toBe(false);
   });
+
+  test('star extension matches any test-file extension', () => {
+    const pattern = globToRegExp('**/*.test.*');
+
+    expect(pattern.test('foo.test.ts')).toBe(true);
+    expect(pattern.test('foo.test.tsx')).toBe(true);
+    expect(pattern.test('src/foo.test.js')).toBe(true);
+    expect(pattern.test('foo.ts')).toBe(false);
+  });
 });
 
 const editRule: LockRule = {

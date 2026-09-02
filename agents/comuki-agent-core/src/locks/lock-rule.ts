@@ -1,5 +1,5 @@
 /**
- * A lock descriptor — pure data describing one hard restriction for a worker.
+ * A lock descriptor — pure data describing one hard restriction for an agent.
  * Locks are enforced by runtime adapters (`pi-extensions` for workers, Claude
  * Code `hooks` for devs); this module only describes them so both adapters
  * share one vocabulary.

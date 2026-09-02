@@ -25,7 +25,11 @@ describe('BLOCKED_TOOL_TARGETS', () => {
 
   test('blocks package installs', () => {
     expect(findToolLock(BLOCKED_TOOL_TARGETS, 'Bash(npm install zod)')).toBeDefined();
+    expect(findToolLock(BLOCKED_TOOL_TARGETS, 'Bash(npm add zod)')).toBeDefined();
     expect(findToolLock(BLOCKED_TOOL_TARGETS, 'Bash(bun add @types/bun)')).toBeDefined();
+    expect(findToolLock(BLOCKED_TOOL_TARGETS, 'Bash(bun install)')).toBeDefined();
+    expect(findToolLock(BLOCKED_TOOL_TARGETS, 'Bash(pnpm install)')).toBeDefined();
+    expect(findToolLock(BLOCKED_TOOL_TARGETS, 'Bash(yarn install)')).toBeDefined();
     expect(findToolLock(BLOCKED_TOOL_TARGETS, 'Bash(pip install requests)')).toBeDefined();
     expect(findToolLock(BLOCKED_TOOL_TARGETS, 'Bash(dotnet add package Newtonsoft.Json)')).toBeDefined();
     expect(findToolLock(BLOCKED_TOOL_TARGETS, 'Bash(npm run build)')).toBeUndefined();

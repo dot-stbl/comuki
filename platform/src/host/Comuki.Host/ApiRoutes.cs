@@ -19,6 +19,9 @@ public static class ApiRoutes
 
     public const string Projects = "/api/v1/projects";
 
+    /// <summary>Run listing surface (filter/sort DSL, permission run:read).</summary>
+    public const string Runs = "/api/v1/runs";
+
     /// <summary>Base of the chat session surface (issue #5 slice B).</summary>
     public const string ChatSessions = "/api/v1/chat/sessions";
 

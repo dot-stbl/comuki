@@ -67,6 +67,7 @@
     <Project Path="tests/integration/Comuki.Modules.Intake.Integration.Migrations/Comuki.Modules.Intake.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Chat/Comuki.Host.Integration.Chat.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Intake/Comuki.Host.Integration.Intake.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Runs/Comuki.Host.Integration.Runs.csproj" />
     <Project Path="tests/integration/Comuki.Shared.Filtering.Integration.Ef/Comuki.Shared.Filtering.Integration.Ef.csproj" />
   </Folder>
   <Folder Name="/tests/tools/">

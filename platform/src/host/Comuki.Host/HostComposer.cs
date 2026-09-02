@@ -65,6 +65,7 @@ internal static class HostComposer
         builder.Services.AddSingleton<IChatToolExecutor, HostChatToolExecutor>();
         builder.Services.AddSingleton<ChatSessionResolver>();
         builder.Services.AddScoped<IRunsReader, OrchestrationRunsReader>();
+        builder.Services.AddScoped<Runs.RunsListHandler>();
         builder.Services.AddScoped<ChatRunStarter>();
         builder.Services.AddOptions<ChatWorkerDefaults>()
             .Bind(builder.Configuration.GetSection(ChatWorkerDefaults.SectionName))

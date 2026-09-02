@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Application\Comuki.Modules.Projects.Application.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Infrastructure\Comuki.Modules.Projects.Infrastructure.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
+    <ProjectReference Include="..\..\shared\Comuki.Shared.Filtering\Comuki.Shared.Filtering.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +30,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Chat" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Intake" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Oidc" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Runs" />
   </ItemGroup>
 
 </Project>

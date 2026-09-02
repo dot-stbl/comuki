@@ -24,4 +24,12 @@ public sealed class OidcProviderOptions
     /// <summary>Name of the environment variable holding the client secret.</summary>
     [Required]
     public required string ClientSecretEnv { get; init; }
+
+    /// <summary>
+    /// Whether the authority must serve metadata over HTTPS. Defaults to
+    /// true (the framework default); an explicit false admits an
+    /// http:// authority — dev containers and local compose profiles
+    /// only, never a production deployment.
+    /// </summary>
+    public bool? RequireHttps { get; init; }
 }

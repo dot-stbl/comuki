@@ -1,6 +1,7 @@
 using Comuki.Shared.Contracts.Grpc;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using Grpc.Core;
 using ProtoBuf.Grpc;
 
@@ -15,6 +16,7 @@ namespace Comuki.Host.Workers.Grpc;
 /// per connection; the scope lives for the whole stream.
 /// </summary>
 /// <param name="authenticator"></param>
+/// <param name="scopeAccessor"></param>
 /// <param name="commandHub"></param>
 /// <param name="journal"></param>
 /// <param name="clock"></param>
@@ -22,6 +24,7 @@ namespace Comuki.Host.Workers.Grpc;
 /// <param name="logger"></param>
 public sealed class WorkerGrpcService(
     WorkerTokenAuthenticator authenticator,
+    ISubjectScopeAccessor scopeAccessor,
     WorkerCommandHub commandHub,
     IRunJournal journal,
     TimeProvider clock,
@@ -35,6 +38,11 @@ public sealed class WorkerGrpcService(
     {
         var workerId = WorkerGrpcAuthentication.AuthenticateOrThrow(authenticator, context);
         logger.LogInformation("Worker {WorkerId} stream opened", workerId.Value);
+
+        // The stream is a platform-system consumer for its whole life:
+        // journal writes flow for runs of every project, and the
+        // subject-scope query filters must not confine them.
+        using var systemScope = scopeAccessor.AsSystem("worker-runtime");
 
         var commands = commandHub.Register(workerId);
         var streamJournal = new WorkerStreamJournal(

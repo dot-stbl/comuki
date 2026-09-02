@@ -24,6 +24,7 @@ always: true
 | 17023 | MinIO console                   | reserved |
 | 17024 | Postgres                        | reserved (host-mapped) |
 | 17025 | Nexus                           | reserved |
+| 17026 | Keycloak (compose profile `keycloak`) | `deploy/docker-compose.yml` → keycloak service |
 
 Свободный диапазон для ad-hoc / экспериментов: **17180–17200**.
 Новый постоянный сервис — **добавь строку в эту таблицу** в том же PR,

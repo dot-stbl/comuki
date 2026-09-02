@@ -3,6 +3,7 @@ using Comuki.Engine.Orchestration.Application.Models;
 using Comuki.Engine.Orchestration.Options;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using FluentValidation;
 using Microsoft.Extensions.Options;
 
@@ -31,6 +32,7 @@ public static class WorkerEndpoints
         ClaimWorkItemRequest request,
         HttpContext httpContext,
         WorkerTokenAuthenticator authenticator,
+        ISubjectScopeAccessor scopeAccessor,
         ClaimWorkItemHandler claimHandler,
         CancellationToken cancellationToken)
     {
@@ -39,6 +41,10 @@ public static class WorkerEndpoints
             return Unauthenticated();
         }
 
+        // The claim loop is a platform-system consumer: it claims across
+        // every project, so the subject-scope query filters must not
+        // confine it.
+        using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var command = new ClaimWorkItemCommand(
             workerId,
             new WorkItemLabels(request.Image, request.ProfilesRef, request.ProfileKey));
@@ -68,6 +74,7 @@ public static class WorkerEndpoints
         Guid workItemId,
         HttpContext httpContext,
         WorkerTokenAuthenticator authenticator,
+        ISubjectScopeAccessor scopeAccessor,
         IWorkItemQueue queue,
         TimeProvider clock,
         IOptions<LeaseOptions> leaseOptions,
@@ -78,6 +85,7 @@ public static class WorkerEndpoints
             return Unauthenticated();
         }
 
+        using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var now = clock.GetUtcNow();
         var extended = await queue.HeartbeatAsync(
             workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
@@ -89,6 +97,7 @@ public static class WorkerEndpoints
         CompleteWorkItemRequest request,
         HttpContext httpContext,
         WorkerTokenAuthenticator authenticator,
+        ISubjectScopeAccessor scopeAccessor,
         IWorkItemQueue queue,
         TimeProvider clock,
         CancellationToken cancellationToken)
@@ -98,6 +107,7 @@ public static class WorkerEndpoints
             return Unauthenticated();
         }
 
+        using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var completed = await queue.CompleteAsync(workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken);
         return completed ? Results.NoContent() : NotOwner();
     }
@@ -107,6 +117,7 @@ public static class WorkerEndpoints
         FailWorkItemRequest request,
         HttpContext httpContext,
         WorkerTokenAuthenticator authenticator,
+        ISubjectScopeAccessor scopeAccessor,
         IWorkItemQueue queue,
         TimeProvider clock,
         CancellationToken cancellationToken)
@@ -116,6 +127,7 @@ public static class WorkerEndpoints
             return Unauthenticated();
         }
 
+        using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var failed = await queue.FailAsync(workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken);
         return failed ? Results.NoContent() : NotOwner();
     }

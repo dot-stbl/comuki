@@ -147,6 +147,35 @@ services:
     networks:
       - comuki-net
 
+  keycloak:
+    # Optional Keycloak IdP for the OIDC login slice (issue #12): opt in
+    # with `podman compose --profile keycloak up -d`. start-dev imports
+    # deploy/keycloak/comuki-realm.json on first boot — the realm carries
+    # the public PKCE client `comuki-dashboard` (dashboard redirect) and a
+    # test user with direct-access grants so the token endpoint is usable
+    # without a browser. Dev-only: start-dev, dev admin credentials.
+    profiles: ["keycloak"]
+    image: quay.io/keycloak/keycloak:26.2.5
+    container_name: comuki-keycloak
+    restart: unless-stopped
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${COMUKI_KEYCLOAK_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${COMUKI_KEYCLOAK_ADMIN_PASSWORD}
+    ports:
+      - "17026:8080"
+    volumes:
+      - ./keycloak/comuki-realm.json:/opt/keycloak/data/import/comuki-realm.json:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://localhost:8080/realms/comuki || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 24
+    networks:
+      - comuki-net
+
 networks:
   comuki-net:
     driver: bridge

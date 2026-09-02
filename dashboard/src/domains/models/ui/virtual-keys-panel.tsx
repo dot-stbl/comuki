@@ -76,7 +76,7 @@ export function VirtualKeysPanel({
 
   const emptyLabel = hasActiveFilters(filters)
     ? "no keys match the current filters"
-    : "no virtual key has been issued"
+    : "no spend key has been issued"
 
   return (
     <>

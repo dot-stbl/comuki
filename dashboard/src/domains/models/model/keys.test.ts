@@ -172,7 +172,7 @@ describe("the words the screen says", () => {
   it("says what the proxy being off actually stops, not just that it is off", () => {
     const off = proxySentence(false)
 
-    expect(off).toContain("virtual keys are not checked")
+    expect(off).toContain("Spend keys are not checked")
     expect(off).toContain("budgets are not enforced")
     expect(off).toContain("nothing is metered")
     expect(proxySentence(true)).toContain("every run is metered")

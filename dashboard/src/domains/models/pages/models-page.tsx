@@ -37,7 +37,7 @@ type Pending =
  *   1. **proxy** — the thin optional proxy. Off, nothing below is enforced.
  *   2. **upstream endpoints** — openai-compatible and anthropic-compatible
  *      wires. A self-hosted url is an ordinary row.
- *   3. **virtual keys** — route, budget, models, scope and TTL all live inside
+ *   3. **Spend keys** — route, budget, models, scope and TTL all live inside
  *      the key, which is what makes a leaked one nearly useless. Revoking is
  *      destructive and asks first.
  *   4. **role → model** — the platform speaks in roles, and this table is where
@@ -111,7 +111,7 @@ export function ModelsPage() {
               <>
                 <span className={styles.strong}>{endpoints.length}</span>{" "}
                 endpoints · <span className={styles.strong}>{keys.length}</span>{" "}
-                virtual keys ·{" "}
+                Spend keys ·{" "}
                 {proxy.enabled ? (
                   <>
                     proxy <span className={styles.strong}>on</span>
@@ -194,7 +194,7 @@ export function ModelsPage() {
               note={
                 <>
                   A thin optional hop in front of the upstreams. It is what
-                  issues a virtual key, holds it to a budget, meters a run and
+                  issues a spend key, holds it to a budget, meters a run and
                   pulls a key when its lease ends — so its switch decides
                   whether the three sections below are configuration or
                   enforcement.
@@ -227,7 +227,7 @@ export function ModelsPage() {
             <Section
               variant="screen"
               data-test="models-keys"
-              title="Virtual keys"
+              title="Spend keys"
               note={
                 <>
                   A key carries its own route, cap, model list, scope and TTL —
@@ -285,7 +285,7 @@ export function ModelsPage() {
           pending?.kind === "revoke"
             ? `${pending.entry.prefix} · ${pending.entry.label} — the key stops working immediately and cannot be brought back. A worker holding it loses it with its lease, mid-run.`
             : pending?.kind === "proxy-off"
-              ? "Workers get a url and a key injected directly. Virtual keys stop being checked, every budget below stops being enforced, and no run is metered until it is turned back on."
+              ? "Workers get a url and a key injected directly. Spend keys stop being checked, every budget below stops being enforced, and no run is metered until it is turned back on."
               : ""
         }
         confirmLabel={pending?.kind === "revoke" ? "Revoke key" : "Turn it off"}

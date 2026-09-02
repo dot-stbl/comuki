@@ -25,7 +25,7 @@ const LATENCY_MS = 220
 async function postRevoke(keyId: string) {
   if (!env.useMock) {
     throw new Error(
-      `revoking a virtual key not implemented — set VITE_USE_MOCK=true, or wire POST /api/v1/models/keys/${keyId}/revoke`
+      `revoking a spend key not implemented — set VITE_USE_MOCK=true, or wire POST /api/v1/models/keys/${keyId}/revoke`
     )
   }
   await new Promise((resolve) => setTimeout(resolve, LATENCY_MS))

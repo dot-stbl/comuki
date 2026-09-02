@@ -7,7 +7,7 @@ import type {
 } from "./types"
 
 /**
- * What a virtual key is worth to whoever is holding it.
+ * What a spend key is worth to whoever is holding it.
  *
  * The product's own idea, and the reason it matters is arithmetic rather than
  * cryptography: the route, the cap, the model list, the scope and the TTL all
@@ -131,8 +131,8 @@ export function routeLabel(route: ModelRoute): string {
  */
 export function proxySentence(enabled: boolean): string {
   return enabled
-    ? "virtual keys are checked, budgets are enforced and every run is metered"
-    : "workers get a url and a key injected directly — virtual keys are not checked, budgets are not enforced and nothing is metered"
+    ? "Spend keys are checked, budgets are enforced and every run is metered"
+    : "workers get a url and a key injected directly — Spend keys are not checked, budgets are not enforced and nothing is metered"
 }
 
 /** Keys worth looking at first: the ones about to stop, or already stopped. */

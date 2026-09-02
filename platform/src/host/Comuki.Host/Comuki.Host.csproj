@@ -32,6 +32,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Unit.Realtime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Auth" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Chat" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Errors" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Intake" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Oidc" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Realtime" />

@@ -73,6 +73,7 @@
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.Migrations/Comuki.Modules.Projects.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Intake.Integration.Migrations/Comuki.Modules.Intake.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Chat/Comuki.Host.Integration.Chat.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Errors/Comuki.Host.Integration.Errors.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Intake/Comuki.Host.Integration.Intake.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Realtime/Comuki.Host.Integration.Realtime.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Runs/Comuki.Host.Integration.Runs.csproj" />

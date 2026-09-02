@@ -1,6 +1,6 @@
 using Comuki.Shared.Contracts.Memory;
 
-namespace Comuki.Host.Chat;
+namespace Comuki.Host.Chat.Tools;
 
 /// <summary>
 /// Digest fallback for hosts composed without the memory store (sibling

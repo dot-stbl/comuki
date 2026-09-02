@@ -1,6 +1,6 @@
 using Comuki.Modules.Chat.Domain.Messages;
 
-namespace Comuki.Host.Chat.Models;
+namespace Comuki.Host.Chat.Models.Views;
 
 /// <summary>Transcript row read model.</summary>
 public sealed class ChatMessageView

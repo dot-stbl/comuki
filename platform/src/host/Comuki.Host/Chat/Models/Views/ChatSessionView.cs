@@ -1,6 +1,6 @@
 using Comuki.Modules.Chat.Domain.Sessions;
 
-namespace Comuki.Host.Chat.Models;
+namespace Comuki.Host.Chat.Models.Views;
 
 /// <summary>Session read model.</summary>
 public sealed class ChatSessionView

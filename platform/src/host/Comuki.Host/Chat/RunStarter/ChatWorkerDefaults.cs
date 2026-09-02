@@ -1,4 +1,4 @@
-namespace Comuki.Host.Chat;
+namespace Comuki.Host.Chat.RunStarter;
 
 /// <summary>
 /// Worker launch defaults for chat-created tickets: the claim labels every

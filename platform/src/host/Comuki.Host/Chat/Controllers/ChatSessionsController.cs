@@ -1,4 +1,7 @@
-using Comuki.Host.Chat.Models;
+using Comuki.Host.Chat.Models.Requests;
+using Comuki.Host.Chat.Models.Responses;
+using Comuki.Host.Chat.Models.Views;
+using Comuki.Host.Chat.Sessions;
 using Comuki.Modules.Chat.Application.Commands;
 using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Application.Sessions;

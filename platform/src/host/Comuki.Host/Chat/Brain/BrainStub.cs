@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Comuki.Shared.Contracts.Brain;
 
-namespace Comuki.Host.Chat;
+namespace Comuki.Host.Chat.Brain;
 
 /// <summary>
 /// In-process brain fallback until the dedicated brain host

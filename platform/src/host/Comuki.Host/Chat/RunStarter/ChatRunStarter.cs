@@ -7,7 +7,7 @@ using Comuki.Shared.Contracts.Plans;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Options;
 
-namespace Comuki.Host.Chat;
+namespace Comuki.Host.Chat.RunStarter;
 
 /// <summary>
 /// Host-side plan applier (the HostRunStarter of issue #5): turns an

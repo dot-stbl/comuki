@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Comuki.Shared.Contracts.Plans;
 
-namespace Comuki.Host.Chat;
+namespace Comuki.Host.Chat.Models.Tickets;
 
 /// <summary>
 /// create_ticket tool arguments (camelCase on the wire) — the same shape

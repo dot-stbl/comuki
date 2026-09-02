@@ -1,4 +1,4 @@
-namespace Comuki.Host.Chat.Models;
+namespace Comuki.Host.Chat.Models.Requests;
 
 /// <summary>Approve-request body: resolves the pending plan interrupt.</summary>
 public sealed class ChatApproveRequest

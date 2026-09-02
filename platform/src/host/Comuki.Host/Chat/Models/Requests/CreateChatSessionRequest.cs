@@ -1,4 +1,4 @@
-namespace Comuki.Host.Chat.Models;
+namespace Comuki.Host.Chat.Models.Requests;
 
 /// <summary>Create-session request body.</summary>
 public sealed class CreateChatSessionRequest

@@ -1,4 +1,4 @@
-namespace Comuki.Host.Chat.Models;
+namespace Comuki.Host.Chat.Models.Requests;
 
 /// <summary>Post-message request body: one chat turn.</summary>
 public sealed class PostChatMessageRequest

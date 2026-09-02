@@ -1,10 +1,12 @@
 using System.Text.Json;
+using Comuki.Host.Chat.Models.Tickets;
+using Comuki.Host.Chat.RunStarter;
 using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Shared.Contracts.Plans;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Ids;
 
-namespace Comuki.Host.Chat;
+namespace Comuki.Host.Chat.Tools;
 
 /// <summary>
 /// Host implementation of the chat tool port — the only place the chat

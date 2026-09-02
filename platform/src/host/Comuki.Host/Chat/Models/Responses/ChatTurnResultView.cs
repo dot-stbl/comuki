@@ -1,7 +1,8 @@
 using System.Text.Json;
+using Comuki.Host.Chat.Models.Views;
 using Comuki.Modules.Chat.Application.Sessions;
 
-namespace Comuki.Host.Chat.Models;
+namespace Comuki.Host.Chat.Models.Responses;
 
 /// <summary>
 /// Turn outcome: the reply view plus the pending approve card when the

@@ -3,7 +3,7 @@ using Comuki.Modules.Chat.Application.Sessions;
 using Comuki.Modules.Chat.Domain.Ids;
 using Comuki.Modules.Chat.Domain.Sessions;
 
-namespace Comuki.Host.Chat;
+namespace Comuki.Host.Chat.Sessions;
 
 /// <summary>
 /// Principal → owned session lookup for the chat endpoints: resolves the

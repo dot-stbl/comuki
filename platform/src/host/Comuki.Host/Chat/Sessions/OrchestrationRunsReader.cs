@@ -2,7 +2,7 @@ using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Shared.Contracts.Runs;
 using Microsoft.EntityFrameworkCore;
 
-namespace Comuki.Host.Chat;
+namespace Comuki.Host.Chat.Sessions;
 
 /// <summary>
 /// Host-side <see cref="IRunsReader"/>: reads the newest runs straight from

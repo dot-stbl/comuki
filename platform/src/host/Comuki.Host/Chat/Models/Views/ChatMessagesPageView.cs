@@ -1,6 +1,6 @@
 using Comuki.Modules.Chat.Application.Paging;
 
-namespace Comuki.Host.Chat.Models;
+namespace Comuki.Host.Chat.Models.Views;
 
 /// <summary>Transcript page read model.</summary>
 public sealed class ChatMessagesPageView

@@ -73,6 +73,9 @@
     <!-- Realtime (issue #7): .NET client the integration suite connects
          to the runs hub with. -->
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.11" />
+    <!-- In-memory test server for WebApplication.GetTestClient() (issue #17 fixture):
+         no host, no port — runs the request pipeline through TestHost. -->
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.11" />
   </ItemGroup>
 
   <!-- Identity module -->

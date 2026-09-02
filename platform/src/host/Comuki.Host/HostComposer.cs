@@ -3,6 +3,7 @@ using Comuki.Host.Auth.Security;
 using Comuki.Host.Chat;
 using Comuki.Host.ControlPlane;
 using Comuki.Host.Costs;
+using Comuki.Host.Errors;
 using Comuki.Host.Intake;
 using Comuki.Host.Projects;
 using Comuki.Host.Realtime;
@@ -132,6 +133,7 @@ internal static class HostComposer
 
         builder.Services.AddControllers();
         builder.Services.AddProblemDetails();
+        builder.Services.AddExceptionHandler<ProviderExceptionHandler>();
 
         // Realtime surface (issue #7): SignalR hub + the journal broadcast
         // interceptor. Registered after orchestration persistence — the

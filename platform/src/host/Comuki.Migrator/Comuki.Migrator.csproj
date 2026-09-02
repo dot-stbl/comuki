@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
     <ProjectReference Include="..\..\modules\Chat\Comuki.Modules.Chat.Infrastructure\Comuki.Modules.Chat.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Costs\Comuki.Modules.Costs.Infrastructure\Comuki.Modules.Costs.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Infrastructure\Comuki.Modules.Intake.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />

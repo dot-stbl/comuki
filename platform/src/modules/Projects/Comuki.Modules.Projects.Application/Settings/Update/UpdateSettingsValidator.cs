@@ -24,5 +24,20 @@ public sealed class UpdateSettingsValidator : AbstractValidator<UpdateSettingsCo
         _ = RuleFor(static command => command.IdleTtlSeconds)
             .Must(static idleTtlSeconds => idleTtlSeconds is null or (>= 30 and <= 86400))
             .WithMessage("idle_ttl_seconds must be between 30 and 86400, or null for the engine default");
+
+        _ = RuleFor(static command => command.SoftBudgetUsdMicros)
+            .Must(static soft => soft is null or >= 0)
+            .WithMessage("soft_budget_usd_micros must be >= 0 or null");
+
+        _ = RuleFor(static command => command.HardBudgetUsdMicros)
+            .Must(static hard => hard is null or >= 0)
+            .WithMessage("hard_budget_usd_micros must be >= 0 or null");
+
+        _ = RuleFor(static command => command)
+            .Must(static command =>
+                command.SoftBudgetUsdMicros is null
+                || command.HardBudgetUsdMicros is null
+                || command.SoftBudgetUsdMicros <= command.HardBudgetUsdMicros)
+            .WithMessage("soft_budget_usd_micros must not exceed hard_budget_usd_micros");
     }
 }

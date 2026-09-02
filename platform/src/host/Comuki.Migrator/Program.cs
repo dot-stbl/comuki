@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Migrator;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
+using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
 using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
@@ -38,8 +39,8 @@ if (recreate)
 // All module contexts migrate the same database; each keeps its own
 // migrations history table (identity uses __comuki_identity, projects
 // uses __comuki_projects, memory uses __comuki_memory, chat uses
-// __comuki_chat, intake uses __comuki_intake), so the
-// applications cannot collide.
+// __comuki_chat, intake uses __comuki_intake, costs uses
+// __comuki_costs), so the applications cannot collide.
 var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
 OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
 await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
@@ -69,6 +70,11 @@ var intakeOptions = new DbContextOptionsBuilder<IntakeDbContext>();
 IntakeDbContext.ApplyOptions(intakeOptions, connectionString);
 await using var intakeDb = new IntakeDbContext(intakeOptions.Options);
 await ApplyAsync(intakeDb, "intake");
+
+var costsOptions = new DbContextOptionsBuilder<CostsDbContext>();
+CostsDbContext.ApplyOptions(costsOptions, connectionString);
+await using var costsDb = new CostsDbContext(costsOptions.Options);
+await ApplyAsync(costsDb, "costs");
 
 return 0;
 

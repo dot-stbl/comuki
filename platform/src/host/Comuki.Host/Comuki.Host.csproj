@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-<PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation" />
     <PackageReference Include="protobuf-net.Grpc.AspNetCore" />
   </ItemGroup>
 
@@ -14,12 +14,15 @@
     <ProjectReference Include="..\..\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
     <ProjectReference Include="..\..\modules\Chat\Comuki.Modules.Chat.Application\Comuki.Modules.Chat.Application.csproj" />
     <ProjectReference Include="..\..\modules\Chat\Comuki.Modules.Chat.Infrastructure\Comuki.Modules.Chat.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Costs\Comuki.Modules.Costs.Application\Comuki.Modules.Costs.Application.csproj" />
+    <ProjectReference Include="..\..\modules\Costs\Comuki.Modules.Costs.Infrastructure\Comuki.Modules.Costs.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Application\Comuki.Modules.Intake.Application.csproj" />
     <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Infrastructure\Comuki.Modules.Intake.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Application\Comuki.Modules.Projects.Application.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Infrastructure\Comuki.Modules.Projects.Infrastructure.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
+    <ProjectReference Include="..\..\shared\Comuki.Shared.Filtering\Comuki.Shared.Filtering.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Telemetry\Comuki.Shared.Telemetry.csproj" />
   </ItemGroup>
 
@@ -32,6 +35,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Intake" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Oidc" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Realtime" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Runs" />
   </ItemGroup>
 
 </Project>

@@ -76,6 +76,8 @@ public sealed class DbProjectSettingsStore(
                 settings.KnowledgeEnabled,
                 settings.VerifyEnabled,
                 settings.ProxyEnabled,
+                settings.SoftBudgetUsdMicros,
+                settings.HardBudgetUsdMicros,
                 settings.UpdatedAt);
             saved = row;
         }

@@ -22,6 +22,9 @@
     <ProjectReference Include="..\..\platform\src\modules\Identity\Comuki.Modules.Identity.Domain\Comuki.Modules.Identity.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Identity\Comuki.Modules.Identity.Application\Comuki.Modules.Identity.Application.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Costs\Comuki.Modules.Costs.Domain\Comuki.Modules.Costs.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Costs\Comuki.Modules.Costs.Application\Comuki.Modules.Costs.Application.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Costs\Comuki.Modules.Costs.Infrastructure\Comuki.Modules.Costs.Infrastructure.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Intake\Comuki.Modules.Intake.Domain\Comuki.Modules.Intake.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Intake\Comuki.Modules.Intake.Application\Comuki.Modules.Intake.Application.csproj" />
     <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />

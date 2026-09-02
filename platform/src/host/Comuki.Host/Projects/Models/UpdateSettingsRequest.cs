@@ -13,6 +13,8 @@ namespace Comuki.Host.Projects.Models;
 /// <param name="KnowledgeEnabled"></param>
 /// <param name="VerifyEnabled"></param>
 /// <param name="ProxyEnabled"></param>
+/// <param name="SoftBudgetUsdMicros"></param>
+/// <param name="HardBudgetUsdMicros"></param>
 public sealed record UpdateSettingsRequest(
     int Version,
     int MinIdle,
@@ -21,4 +23,6 @@ public sealed record UpdateSettingsRequest(
     bool ApproveRequired,
     bool KnowledgeEnabled,
     bool VerifyEnabled,
-    bool ProxyEnabled);
+    bool ProxyEnabled,
+    long? SoftBudgetUsdMicros,
+    long? HardBudgetUsdMicros);

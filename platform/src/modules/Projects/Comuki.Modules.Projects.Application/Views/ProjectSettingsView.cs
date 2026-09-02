@@ -15,6 +15,8 @@ namespace Comuki.Modules.Projects.Application.Views;
 /// <param name="KnowledgeEnabled"></param>
 /// <param name="VerifyEnabled"></param>
 /// <param name="ProxyEnabled"></param>
+/// <param name="SoftBudgetUsdMicros"></param>
+/// <param name="HardBudgetUsdMicros"></param>
 /// <param name="UpdatedAt"></param>
 /// <param name="Version"></param>
 public sealed record ProjectSettingsView(
@@ -26,5 +28,7 @@ public sealed record ProjectSettingsView(
     bool KnowledgeEnabled,
     bool VerifyEnabled,
     bool ProxyEnabled,
+    long? SoftBudgetUsdMicros,
+    long? HardBudgetUsdMicros,
     DateTimeOffset UpdatedAt,
     int Version);

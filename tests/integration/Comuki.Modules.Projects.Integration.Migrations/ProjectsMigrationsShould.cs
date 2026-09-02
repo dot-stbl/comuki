@@ -176,7 +176,9 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
                     ApproveRequired: true,
                     KnowledgeEnabled: true,
                     VerifyEnabled: false,
-                    ProxyEnabled: true),
+                    ProxyEnabled: true,
+                    SoftBudgetUsdMicros: null,
+                    HardBudgetUsdMicros: null),
                 cancellationToken);
 
             updated.Version.ShouldBe(2);
@@ -206,7 +208,7 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
             current.ShouldNotBeNull();
 
             _ = await handler.HandleAsync(
-                new UpdateSettingsCommand(projectId, current.Version, 1, 6, null, false, false, false, false),
+                new UpdateSettingsCommand(projectId, current.Version, 1, 6, null, false, false, false, false, null, null),
                 cancellationToken);
         }
 
@@ -217,7 +219,7 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
             () => staleHandler.HandleAsync(
                 new UpdateSettingsCommand(projectId, Version: 1, MinIdle: 0, MaxConcurrent: 4,
                     IdleTtlSeconds: null, ApproveRequired: false, KnowledgeEnabled: false,
-                    VerifyEnabled: false, ProxyEnabled: false),
+                    VerifyEnabled: false, ProxyEnabled: false, SoftBudgetUsdMicros: null, HardBudgetUsdMicros: null),
                 cancellationToken));
 
         stale.CurrentVersion.ShouldBe(2);
@@ -295,6 +297,8 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         columns["knowledge_enabled"].ShouldBe(new ColumnSpec("boolean", "NO"));
         columns["verify_enabled"].ShouldBe(new ColumnSpec("boolean", "NO"));
         columns["proxy_enabled"].ShouldBe(new ColumnSpec("boolean", "NO"));
+        columns["soft_budget_usd_micros"].ShouldBe(new ColumnSpec("bigint", "YES"));
+        columns["hard_budget_usd_micros"].ShouldBe(new ColumnSpec("bigint", "YES"));
         columns["version"].ShouldBe(new ColumnSpec("integer", "NO"));
 
         var projectColumns = await QueryColumnsAsync(ProjectsTables.Projects);

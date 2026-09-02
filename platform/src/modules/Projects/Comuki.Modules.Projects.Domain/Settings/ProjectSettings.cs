@@ -43,6 +43,18 @@ public sealed class ProjectSettings
     /// <summary>Opt-in Proxy feature (model gateway).</summary>
     public bool ProxyEnabled { get; private set; }
 
+    /// <summary>
+    /// Soft budget in USD micros (1 USD = 1_000_000); null = unlimited.
+    /// Soft exceedance is advisory (attention), not a stop.
+    /// </summary>
+    public long? SoftBudgetUsdMicros { get; private set; }
+
+    /// <summary>
+    /// Hard budget in USD micros; null = unlimited. Hard exceedance cancels
+    /// the attributed run via the host budget gate.
+    /// </summary>
+    public long? HardBudgetUsdMicros { get; private set; }
+
     /// <summary>Last mutation timestamp.</summary>
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -64,6 +76,8 @@ public sealed class ProjectSettings
             KnowledgeEnabled = false,
             VerifyEnabled = false,
             ProxyEnabled = false,
+            SoftBudgetUsdMicros = null,
+            HardBudgetUsdMicros = null,
             UpdatedAt = now,
             Version = 1,
         };
@@ -82,6 +96,8 @@ public sealed class ProjectSettings
     /// <param name="knowledgeEnabled"></param>
     /// <param name="verifyEnabled"></param>
     /// <param name="proxyEnabled"></param>
+    /// <param name="softBudgetUsdMicros"></param>
+    /// <param name="hardBudgetUsdMicros"></param>
     /// <param name="now"></param>
     public void Apply(
         int minIdle,
@@ -91,6 +107,8 @@ public sealed class ProjectSettings
         bool knowledgeEnabled,
         bool verifyEnabled,
         bool proxyEnabled,
+        long? softBudgetUsdMicros,
+        long? hardBudgetUsdMicros,
         DateTimeOffset now)
     {
         MinIdle = minIdle;
@@ -100,6 +118,8 @@ public sealed class ProjectSettings
         KnowledgeEnabled = knowledgeEnabled;
         VerifyEnabled = verifyEnabled;
         ProxyEnabled = proxyEnabled;
+        SoftBudgetUsdMicros = softBudgetUsdMicros;
+        HardBudgetUsdMicros = hardBudgetUsdMicros;
         UpdatedAt = now;
         Version++;
     }

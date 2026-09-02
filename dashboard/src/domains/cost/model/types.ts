@@ -6,6 +6,13 @@ export interface CostByApp {
   trend: string
 }
 
+/** One day of the spend series: which weekday it was, and what it cost. */
+export interface CostDaySpend {
+  /** The day's short label ("mon", "today"). */
+  label: string
+  spend: number
+}
+
 export interface CostFailure {
   profile: string
   rate: number
@@ -24,4 +31,6 @@ export interface CostSummary {
   byApp: CostByApp[]
   budget: CostBudget
   failures: CostFailure[]
+  /** Spend per day over the chosen window, oldest first. */
+  byDay: CostDaySpend[]
 }

@@ -135,6 +135,27 @@ export function proxySentence(enabled: boolean): string {
     : "workers get a url and a key injected directly — Spend keys are not checked, budgets are not enforced and nothing is metered"
 }
 
+/** An hour of the burn series, in the clock's own spelling (`15:00`). */
+export function hourLabel(hour: number): string {
+  return `${String(hour).padStart(2, "0")}:00`
+}
+
+/** The highest hour of a burn series, and what it cost. */
+export function burnPeak(
+  hourly: number[]
+): { hour: number; usd: number } | null {
+  if (hourly.length === 0) {
+    return null
+  }
+  let peak = { hour: 0, usd: hourly[0] ?? 0 }
+  hourly.forEach((usd, hour) => {
+    if (usd > peak.usd) {
+      peak = { hour, usd }
+    }
+  })
+  return peak
+}
+
 /** Keys worth looking at first: the ones about to stop, or already stopped. */
 export function keyOrder(keys: VirtualKey[]): VirtualKey[] {
   const rank = (key: VirtualKey) => {

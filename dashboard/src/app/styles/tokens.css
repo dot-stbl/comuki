@@ -322,6 +322,13 @@
      enough for a number. The panel collapses to the same depth in pixels,
      because that is the unit `react-resizable-panels` measures in. */
   --h-strip: 2.375rem;
+  /* Day-series charts — the height of the bar plot a reading band draws beside
+     its figure. Tall enough that a week of bars is a shape at a glance, short
+     enough that the band it lives in costs a table no more than two rows. */
+  --h-day-series: 3rem;
+  /* The sparkline — a one-line shape riding beside figures that already state
+     the reading in words, so it never needs room for numbers of its own. */
+  --h-spark: 1.5rem;
 }
 
 /* The dark room. Only the depth tokens differ — the palette itself comes from

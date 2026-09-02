@@ -1,6 +1,7 @@
 import type {
   CostBudget,
   CostByApp,
+  CostDaySpend,
   CostFailure,
   CostSummary,
 } from "./types"
@@ -95,4 +96,39 @@ export function spendShare(row: CostByApp, axis: number): number {
 /** A profile's failure rate as whole percent. */
 export function failurePercent(row: CostFailure): number {
   return Math.round(row.rate * 100)
+}
+
+/* --------------------------------------------------------------------------
+ * The week behind the day — the time half of the report.
+ *
+ * The day's figures answer "what is now"; the series answers "is it getting
+ * better", and its arithmetic lives here for the same reason the rest does:
+ * so the figure the screen says and the bars it draws cannot drift apart.
+ * ------------------------------------------------------------------------ */
+
+/** What the whole window cost, to the cent. */
+export function spendWeekTotal(days: CostDaySpend[]): number {
+  return Math.round(days.reduce((sum, day) => sum + day.spend, 0) * 100) / 100
+}
+
+/**
+ * The window's day average, to the cent.
+ *
+ * Divided by the series' own length rather than a hardcoded week: the reading
+ * stays true if the window ever widens, and an empty window is explicitly no
+ * average at all rather than a division by zero dressed up as zero.
+ */
+export function spendDayAverage(days: CostDaySpend[]): number | null {
+  if (days.length === 0) {
+    return null
+  }
+  return Math.round((spendWeekTotal(days) / days.length) * 100) / 100
+}
+
+/** The heaviest day of the window — the one the figure names out loud. */
+export function spendPeakDay(days: CostDaySpend[]): CostDaySpend | null {
+  return days.reduce<CostDaySpend | null>(
+    (peak, day) => (peak === null || day.spend > peak.spend ? day : peak),
+    null
+  )
 }

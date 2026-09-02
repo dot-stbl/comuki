@@ -7,7 +7,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ThemeProvider } from "@/app/theme-provider"
@@ -36,6 +36,12 @@ vi.mock("@/domains/runs/api/queries", async (importOriginal) => {
     await importOriginal<typeof import("@/domains/runs/api/queries")>()
   return { ...actual, useRunsQuery: () => state.current }
 })
+
+/* The outcomes band reads the seed through the home query, which — like every
+   query in the product — serves mock data only when the environment says so.
+   Pinning it here keeps the band on the screen under test rather than at the
+   mercy of whoever's `.env.local` is on disk. */
+vi.mock("@/shared/config/env", () => ({ env: { useMock: true, repoUrl: null } }))
 
 beforeAll(() => {
   if (!("ResizeObserver" in globalThis)) {
@@ -292,5 +298,60 @@ describe("when a decision is owed", () => {
     expect(
       screen.getByText("and 3 more — open live runs")
     ).not.toBeNull()
+  })
+
+  it("draws the week of outcomes inside the running-now band", async () => {
+    state.current.data = [run("r1", "running", 90)]
+    mount()
+
+    await verdictNode()
+    // The outcomes query is a real one — unlike the mocked runs query above,
+    // it resolves on its own tick, and the band arrives when it has.
+    const band = await waitFor(() => {
+      const found = find("[data-test='home-outcomes']")
+      expect(found).not.toBeNull()
+      return found as HTMLElement
+    })
+
+    // Seven columns stacked by outcome, today last, and every status word in
+    // the legend — hue is never the only channel on this chart.
+    const bars = [
+      ...document.querySelectorAll("[data-test='home-outcomes'] [data-test='bar-series-bar']"),
+    ]
+    expect(bars.length).toBeGreaterThanOrEqual(7 * 2)
+    expect(
+      bars[bars.length - 1].getAttribute("data-key")
+    ).toBe("today")
+    expect(
+      bars.filter((bar) => bar.getAttribute("data-status") === "success").length
+    ).toBe(7)
+
+    const legend = band.textContent ?? ""
+    expect(legend).toContain("success")
+    expect(legend).toContain("failed")
+    expect(legend).toContain("escalated")
+
+    // The figure states the reading in words beside the shape.
+    expect(legend).toContain("finished today so far")
+    expect(legend).toContain("this week")
+  })
+
+  it("keeps the outcomes band below the verdict, not above it", async () => {
+    state.current.data = [run("w1", "waiting")]
+    mount()
+
+    await verdictNode()
+    const outcomes = await waitFor(() => {
+      const found = find("[data-test='home-outcomes']")
+      expect(found).not.toBeNull()
+      return found as HTMLElement
+    })
+    const verdict = find("[data-test='attention-verdict']")
+
+    // History never outranks a decision that is owed now.
+    expect(
+      verdict!.compareDocumentPosition(outcomes) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).not.toBe(0)
   })
 })

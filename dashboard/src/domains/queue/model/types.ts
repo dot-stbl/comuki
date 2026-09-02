@@ -93,3 +93,17 @@ export interface WorkerPool {
   minIdle: number
   maxIdle: number
 }
+
+/**
+ * One day of the depth series: how many work items were waiting for a claim.
+ *
+ * The same thing the header's count says about now, said about a day — so the
+ * band and the header are one reading, and the series is what turns "14
+ * queued" from a number into a direction.
+ */
+export interface QueueDepthDay {
+  /** The day's short label ("mon", "today"). */
+  label: string
+  /** Items waiting for a claim that day. */
+  depth: number
+}

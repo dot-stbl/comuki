@@ -1,10 +1,16 @@
 import type {
+  SeedQueueDepth,
   SeedQueueItem,
   SeedWorker,
   SeedWorkerPool,
 } from "@/shared/api/mock/queue.seed"
 
-import type { QueueItem, Worker, WorkerPool } from "@/domains/queue/model/types"
+import type {
+  QueueDepthDay,
+  QueueItem,
+  Worker,
+  WorkerPool,
+} from "@/domains/queue/model/types"
 
 /**
  * Seed shapes to domain shapes.
@@ -50,5 +56,12 @@ export function toWorkerPool(seed: SeedWorkerPool): WorkerPool {
     projectId: seed.projectId,
     minIdle: seed.minIdle,
     maxIdle: seed.maxIdle,
+  }
+}
+
+export function toQueueDepthDay(seed: SeedQueueDepth): QueueDepthDay {
+  return {
+    label: seed.weekday,
+    depth: seed.depth,
   }
 }

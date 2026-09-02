@@ -197,4 +197,27 @@ describe("the cost report, end to end over the seed", () => {
     expect(first.textContent).toContain("11%")
     expect(first.textContent).toContain("types mismatch most often")
   })
+
+  it("draws the week of spend beside the sentence that says it", async () => {
+    await screenReady()
+
+    const section = find('[data-test="cost-by-day"]')
+    expect(section).not.toBeNull()
+    expect(text('[data-test="cost-by-day"] h2')).toContain("spend by day")
+
+    // Seven columns, one per day, and the last is today.
+    const bars = all('[data-test="cost-by-day"] [data-test="bar-series-bar"]')
+    expect(bars).toHaveLength(7)
+    expect(bars[6].getAttribute("data-key")).toBe("today")
+
+    // The figure states the reading in words; the chart's accessible name is
+    // the same sentence, so nothing on this screen is a shape alone.
+    const band = text('[data-test="spend-by-day"]')
+    expect(band).toContain("over the last 7 days")
+    expect(band).toContain("a day")
+    expect(band).toContain("heaviest")
+    expect(
+      find('[data-test="cost-by-day"] [data-test="bar-series"]')?.getAttribute("aria-label")
+    ).toContain("over the last 7 days")
+  })
 })

@@ -1,0 +1,38 @@
+/* The depth reading band: a sentence and a column chart, sitting above the
+   split that carries the two halves whose relationship the band is about.
+   Fixed height rather than a share of the screen — it costs the table two
+   rows, never more, and never pushes either half out of the height chain. */
+
+.band {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s6);
+  flex: 0 0 auto;
+  padding: var(--s3) var(--s5);
+  border-block-end: var(--hairline) solid var(--rule);
+  min-inline-size: 0;
+}
+
+.figure {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.figureValue {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.chart {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  gap: var(--s1);
+}

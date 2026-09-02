@@ -30,6 +30,14 @@
   min-height: 0;
 }
 
+/* The depth band, above the split it is about: fixed height, so it costs the
+   table two rows and never a share of the screen, and the height chain below
+   it is exactly the chain the comment at the top of this file traces. The
+   band's own look lives with the band; this only seats it. */
+.depth {
+  flex: 0 0 auto;
+}
+
 .queuePanel {
   display: flex;
   flex-direction: column;

@@ -12,8 +12,10 @@ import {
   budgetHeat,
   budgetLeftUsd,
   budgetShare,
+  burnPeak,
   expiredKeys,
   expiryReading,
+  hourLabel,
   isLive,
   keyOrder,
   keyState,
@@ -223,6 +225,24 @@ describe("the models seed and its store", () => {
     expect(readSeedModels().proxy.changedAgoSec).toBe(0)
   })
 
+  it("sums the burn series to the metered day it claims to be", () => {
+    // The sparkline says "this is the day"; the figures say "$31.40"; the
+    // series has to add up to both or one of them is a shape lying about a
+    // number. (The seed derives the closing hour so it always does.)
+    const { proxy } = MODELS_SEED
+    expect(proxy.burnHourlyUsd).toHaveLength(24)
+    const total =
+      Math.round(
+        proxy.burnHourlyUsd.reduce((sum, usd) => sum + usd, 0) * 100
+      ) / 100
+    expect(Math.abs(total - proxy.burnDayUsd)).toBeLessThanOrEqual(0.01)
+    // And it is one day of the window the figures report, not a parallel
+    // universe: under a seventh of the week would be too cheap for the
+    // heaviest day of a $168.60 window.
+    expect(proxy.burnDayUsd).toBeGreaterThan(proxy.spendUsd / 7)
+    expect(proxy.burnDayUsd).toBeLessThan(proxy.spendUsd)
+  })
+
   it("routes every key and every role at an endpoint that exists", () => {
     const ids = new Set(MODELS_SEED.endpoints.map((entry) => entry.id))
 
@@ -245,5 +265,40 @@ describe("the models seed and its store", () => {
         expect(endpoint.models).toContain(model)
       }
     }
+  })
+})
+
+describe("the burn by hour, and its peak", () => {
+  it("names the highest hour and what it cost", () => {
+    const peak = burnPeak([0.1, 0.2, 3.4, 0.2])
+
+    expect(peak).toEqual({ hour: 2, usd: 3.4 })
+  })
+
+  it("keeps the first hour when the day is flat", () => {
+    // A tie goes to the earlier hour: the morning the trouble started, not
+    // the evening it coasted on the same number.
+    expect(burnPeak([2, 2, 2])).toEqual({ hour: 0, usd: 2 })
+  })
+
+  it("has no peak for a day nothing was metered", () => {
+    expect(burnPeak([])).toBeNull()
+  })
+
+  it("spells an hour the way the clock does", () => {
+    expect(hourLabel(0)).toBe("00:00")
+    expect(hourLabel(9)).toBe("09:00")
+    expect(hourLabel(16)).toBe("16:00")
+  })
+
+  it("puts the seeded peak in the migration's afternoon", () => {
+    const peak = burnPeak(MODELS_SEED.proxy.burnHourlyUsd)
+
+    // The metered day's shape: quiet night, morning ramp, heavy afternoon —
+    // the auth-svc migration was reviewed and re-run all day.
+    expect(peak).not.toBeNull()
+    expect(peak!.hour).toBeGreaterThanOrEqual(14)
+    expect(peak!.hour).toBeLessThanOrEqual(18)
+    expect(peak!.usd).toBeGreaterThan(3)
   })
 })

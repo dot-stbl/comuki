@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
 
+import { COST_SEED } from "@/shared/api/mock/cost.seed"
+
 import {
   budgetHeat,
   budgetLeftUsd,
@@ -7,10 +9,13 @@ import {
   budgetShare,
   failurePercent,
   spendAxis,
+  spendDayAverage,
+  spendPeakDay,
   spendShare,
+  spendWeekTotal,
   successPercent,
 } from "./cost"
-import type { CostByApp, CostSummary } from "./types"
+import type { CostByApp, CostDaySpend, CostSummary } from "./types"
 
 function app(name: string, spend: number): CostByApp {
   return { app: name, spend, runs: 1, perSuccess: spend, trend: "+0%" }
@@ -75,5 +80,84 @@ describe("the readings the tiles state in words", () => {
 
   it("rounds a profile's failure rate to whole percent", () => {
     expect(failurePercent({ profile: "planner", rate: 0.11, note: "" })).toBe(11)
+  })
+})
+
+describe("the week behind the day", () => {
+  const days: CostDaySpend[] = [
+    { label: "sat", spend: 96.5 },
+    { label: "sun", spend: 88.2 },
+    { label: "mon", spend: 130.4 },
+    { label: "tue", spend: 180.8 },
+    { label: "wed", spend: 131.1 },
+    { label: "thu", spend: 142.6 },
+    { label: "today", spend: 148.2 },
+  ]
+
+  it("totals the window to the cent", () => {
+    expect(spendWeekTotal(days)).toBeCloseTo(917.8, 2)
+  })
+
+  it("averages over the series' own length, not a hardcoded week", () => {
+    expect(spendDayAverage(days)).toBeCloseTo(131.11, 2)
+    expect(spendDayAverage(days.slice(0, 3))).toBeCloseTo(105.03, 2)
+  })
+
+  it("has no average at all for an empty window", () => {
+    // Not zero — zero would say the week was free.
+    expect(spendDayAverage([])).toBeNull()
+    expect(spendPeakDay([])).toBeNull()
+  })
+
+  it("names the heaviest day, not the latest", () => {
+    expect(spendPeakDay(days)?.label).toBe("tue")
+  })
+})
+
+describe("the seeded week tells the seeded story", () => {
+  const byDay = COST_SEED.byDay
+
+  it("anchors today's column to the per-day tile exactly", () => {
+    // One reading said twice: the tile above the chart and the chart's last
+    // bar are the same number, or the report argues with itself.
+    expect(byDay).toHaveLength(7)
+    expect(byDay[byDay.length - 1]?.spend).toBe(COST_SEED.totalDay)
+    expect(byDay[byDay.length - 1]?.daysAgo).toBe(0)
+  })
+
+  it("puts the spike where the incident story says one is", () => {
+    // Three days back the auth-svc migration ran; the app list still carries
+    // its +21% trend, and the outcomes seed spikes on the same day.
+    const incident = byDay.find((day) => day.daysAgo === 3)
+    const peak = spendPeakDay(
+      byDay.map((day) => ({ label: day.weekday, spend: day.spend }))
+    )
+    expect(incident?.spend).toBeGreaterThan(COST_SEED.totalDay)
+    expect(peak?.label).toBe(incident?.weekday)
+  })
+
+  it("keeps the weekend columns visibly lighter than the weekdays", () => {
+    // Today is anchored to the tile and the incident day carries its spike, so
+    // neither belongs in either set; whichever of them falls on a weekend, the
+    // *other* weekend column still has to read as a quiet day.
+    const quiet = byDay.filter(
+      (day) => day.weekend && day.daysAgo > 0 && day.daysAgo !== 3
+    )
+    const working = byDay.filter(
+      (day) => !day.weekend && day.daysAgo > 0 && day.daysAgo !== 3
+    )
+    expect(quiet.length).toBeGreaterThanOrEqual(1)
+    expect(working.length).toBeGreaterThanOrEqual(3)
+
+    const heaviestQuiet = Math.max(...quiet.map((day) => day.spend))
+    const lightestWorking = Math.min(...working.map((day) => day.spend))
+    expect(heaviestQuiet).toBeLessThan(lightestWorking)
+  })
+
+  it("derives its weekday labels from the clock, not a stamped date", () => {
+    for (const day of byDay) {
+      expect(day.weekday).toMatch(/^(mon|tue|wed|thu|fri|sat|sun|today)$/)
+    }
+    expect(new Set(byDay.map((day) => day.weekday)).size).toBe(7)
   })
 })

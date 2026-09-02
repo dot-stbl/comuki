@@ -12,6 +12,7 @@ import { CostStat } from "@/domains/cost/ui/cost-stat"
 import { FailureAnalytics } from "@/domains/cost/ui/failure-analytics"
 import { ProxyBudgetMeter } from "@/domains/cost/ui/proxy-budget-meter"
 import { SpendByApp } from "@/domains/cost/ui/spend-by-app"
+import { SpendByDay } from "@/domains/cost/ui/spend-by-day"
 import { Button, Section, Tooltip } from "@/shared/ui"
 
 import styles from "./cost-page.module.css"
@@ -115,6 +116,19 @@ export function CostPage() {
                 <ProxyBudgetMeter budget={data.budget} />
               </CostStat>
             </div>
+
+            {/* The time half of the report. The three tiles above say what the
+                day is; this band says whether the day is an improvement — full
+                width, because a week of columns asked to share a row with the
+                per-app ranking would crush the one comparison it exists for. */}
+            <Section
+              id="cost-by-day"
+              data-test="cost-by-day"
+              title="spend by day"
+              note="the last 7 days"
+            >
+              <SpendByDay days={data.byDay} />
+            </Section>
 
             <div className={styles.regions}>
               <Section

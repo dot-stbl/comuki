@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { PROFILE_CATALOG } from "@/shared/api/mock/runs.seed"
 import {
+  QUEUE_DEPTH_SEED,
   QUEUE_SEED,
   WORKERS_SEED,
   WORKER_POOLS_SEED,
@@ -144,5 +145,42 @@ describe("the seed carries the cases the screen was built for", () => {
     expect(statuses.has("stalled" as never)).toBe(false)
     // The stall that happened is a failure, which is the only shape it has.
     expect(statuses.has("failed")).toBe(true)
+  })
+})
+
+describe("the seeded depth series agrees with the queue it sits above", () => {
+  it("counts today's column off the live queue, not off an authored number", () => {
+    // The band and the header are one reading said twice; a seed that authored
+    // its own "today" would let them drift by exactly the number that matters.
+    expect(QUEUE_DEPTH_SEED).toHaveLength(7)
+    const today = QUEUE_DEPTH_SEED[QUEUE_DEPTH_SEED.length - 1]
+    expect(today?.daysAgo).toBe(0)
+    expect(today?.weekday).toBe("today")
+    expect(today?.depth).toBe(backlogOf(QUEUE_SEED))
+  })
+
+  it("tells the story the snapshot tells: single digits, then today", () => {
+    const past = QUEUE_DEPTH_SEED.filter((day) => day.daysAgo > 0)
+    const deepest = Math.max(...past.map((day) => day.depth))
+    const today = QUEUE_DEPTH_SEED[QUEUE_DEPTH_SEED.length - 1]?.depth ?? 0
+
+    // An ordinary week for a pool that keeps up…
+    expect(deepest).toBeLessThanOrEqual(10)
+    // …and today holding the week's depth, for the two faults the list shows:
+    // the lease nobody may claim and the atlas batch nobody has scaled for.
+    expect(today).toBeGreaterThan(deepest)
+  })
+
+  it("counts waiting-for-claim only — blocked items are not depth", () => {
+    // Blocked work waits on its own run, not on the pool, and a depth series
+    // that counted it would accuse the pool of a backlog it cannot claim.
+    const blocked = QUEUE_SEED.filter(
+      (item) => item.status === "blocked"
+    ).length
+    const today = QUEUE_DEPTH_SEED[QUEUE_DEPTH_SEED.length - 1]?.depth ?? 0
+
+    expect(blocked).toBeGreaterThan(0)
+    expect(today).toBe(backlogOf(QUEUE_SEED))
+    expect(today).not.toBe(backlogOf(QUEUE_SEED) + blocked)
   })
 })

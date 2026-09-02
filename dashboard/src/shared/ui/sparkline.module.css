@@ -1,0 +1,19 @@
+/* The sparkline: a hairline in the chrome's own quiet tone. `currentColor` is
+   the whole colour decision — the figures it rides beside decide the tone, and
+   a stale window can quiet the line exactly the way it quiets their values,
+   from the panel's own stylesheet and without this file knowing about it. */
+
+.spark {
+  display: block;
+  inline-size: 100%;
+  block-size: var(--h-spark);
+  color: var(--text-muted);
+}
+
+.line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--hairline);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

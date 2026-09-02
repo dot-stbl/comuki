@@ -1,6 +1,7 @@
 import { formatDuration } from "@/domains/runs/model/format"
 
 import type {
+  QueueDepthDay,
   QueueItem,
   WorkItemStatus,
   Worker,
@@ -123,6 +124,39 @@ export function unclaimedOver(items: QueueItem[], seconds: number): number {
   return items.filter(
     (item) => item.status === "queued" && item.ageSec >= seconds
   ).length
+}
+
+/* --------------------------------------------------------------------------
+ * Depth over time
+ *
+ * The header's count answers "how many are waiting now"; the series answers
+ * whether that is getting better. The band's figures are derived here, beside
+ * everything else the screen derives, so the sentence and the bars are one
+ * derivation read twice.
+ * ------------------------------------------------------------------------ */
+
+export interface DepthReadings {
+  /** The series' last column — the same number the header is saying. */
+  today: number
+  /** The shallowest and deepest the week ran, excluding today. */
+  weekMin: number
+  weekMax: number
+  /** Whether today is the deepest day of the window. */
+  todayIsDeepest: boolean
+}
+
+export function depthReadings(days: QueueDepthDay[]): DepthReadings | null {
+  if (days.length === 0) {
+    return null
+  }
+  const past = days.slice(0, -1)
+  const today = days[days.length - 1]?.depth ?? 0
+  return {
+    today,
+    weekMin: past.length > 0 ? Math.min(...past.map((day) => day.depth)) : today,
+    weekMax: past.length > 0 ? Math.max(...past.map((day) => day.depth)) : today,
+    todayIsDeepest: past.every((day) => day.depth <= today),
+  }
 }
 
 /* --------------------------------------------------------------------------

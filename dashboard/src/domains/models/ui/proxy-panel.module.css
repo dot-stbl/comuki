@@ -121,6 +121,39 @@
   color: var(--text-faint);
 }
 
+/* --- the burn figure: a line, beside figures that already state it --- */
+
+/* The sparkline entry is a figure like its neighbours, only wider — the dd
+   holds the line and the peak words under it rather than a value beside the
+   name, because a line has no "beside" worth speaking of at this size. */
+.burn {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+
+.burn dd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.burnPeak {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* A window that is no longer being produced reads as history, not as a
+   dashboard: the burn line quiets exactly the way the figures' values do,
+   through the same panel-state selector and without the sparkline knowing. */
+.burnStale {
+  color: var(--text-faint);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .spin {
     animation: proxy-spin 900ms linear infinite;

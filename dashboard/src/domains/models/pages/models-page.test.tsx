@@ -181,6 +181,22 @@ describe("the model registry, end to end over the seeds", () => {
     )
   })
 
+  it("draws the burn sparkline beside the figures, with its peak in words", async () => {
+    await screenReady()
+
+    const burn = find('[data-test="proxy-burn"]')
+    expect(burn).not.toBeNull()
+
+    // A line with a vertex per metered hour, and the words that say the
+    // reading it confirms — the line is never the only carrier.
+    const line = find('[data-test="proxy-burn"] [data-test="sparkline-line"]')
+    expect(line?.getAttribute("points")?.split(" ")).toHaveLength(24)
+    expect(burn?.textContent).toContain("peak $3.42 at 16:00")
+    expect(
+      find('[data-test="proxy-burn"] [data-test="sparkline"]')?.getAttribute("aria-label")
+    ).toContain("peak $3.42 at 16:00")
+  })
+
   it("marks a budget that is recorded but not being applied", async () => {
     await screenReady()
 

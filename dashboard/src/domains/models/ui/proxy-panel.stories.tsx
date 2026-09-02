@@ -55,6 +55,32 @@ export const On: Story = {
   args: { proxy: { ...PROXY_SEED, enabled: true, changedAgoSec: 19 * 86_400 } },
 }
 
+/** A spikier metered day — one bad migration re-run all afternoon. */
+export const HeavyDay: Story = {
+  args: {
+    proxy: {
+      ...PROXY_SEED,
+      enabled: true,
+      changedAgoSec: 2 * 86_400,
+      windowLabel: "the last 7 days",
+      burnHourlyUsd: [
+        0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2, 0.5, 1.1, 1.9, 2.7, 3.3, 2.9, 3.8,
+        5.1, 5.4, 4.2, 3.1, 2.6, 2.2, 1.6, 1.0, 0.6, 0.3,
+      ],
+    },
+  },
+}
+
+/** A day nothing was metered keeps the figure and its name, and draws no line. */
+export const NothingMetered: Story = {
+  args: {
+    proxy: {
+      ...PROXY_SEED,
+      burnHourlyUsd: Array.from({ length: 24 }, () => 0),
+    },
+  },
+}
+
 /** Mid-flight. `disabled` here is busy, which is what `disabled` is for. */
 export const Switching: Story = {
   args: { busy: true },

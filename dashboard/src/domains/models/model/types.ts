@@ -69,6 +69,12 @@ export interface Proxy {
   runs: number
   spendUsd: number
   costPerRunUsd: number
+  /**
+   * Spend by hour across the last metered day, midnight-first. With the proxy
+   * off nothing is being metered now, and the series is the shape of the day
+   * before the switch — marked with the same staleness the figures carry.
+   */
+  burnHourlyUsd: number[]
 }
 
 export interface ModelsSnapshot {

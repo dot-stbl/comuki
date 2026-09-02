@@ -21,6 +21,7 @@ import {
   unclaimedOver,
   workerCounts,
 } from "@/domains/queue/model/queue"
+import { DepthBand } from "@/domains/queue/ui/depth-band"
 import { PoolStrip } from "@/domains/queue/ui/pool-strip"
 import { QueuePanel } from "@/domains/queue/ui/queue-panel"
 import { WorkersPanel } from "@/domains/queue/ui/workers-panel"
@@ -208,53 +209,61 @@ export function QueuePage({
         ) : null}
 
         {ready ? (
-          <SplitPane
-            orientation="vertical"
-            storageKey={POOL_LAYOUT_KEY}
-            className={styles.split}
-          >
-            <SplitPanel
-              id="queue"
-              className={styles.queuePanel}
-              defaultSize="58%"
-              minSize="20%"
-            >
-              <QueuePanel
-                items={items}
-                projects={session.projects}
-                search={search}
-                onSearchChange={onSearchChange}
-              />
-            </SplitPanel>
+          <>
+            {/* The trend above the split: depth is the mechanism's reading
+                rather than either half's, so it stands where both can see it —
+                and the header's "14 queued" stops being a number and becomes a
+                direction before the table has even been read. */}
+            <DepthBand days={data?.depth ?? []} className={styles.depth} />
 
-            <SplitSeparator
+            <SplitPane
               orientation="vertical"
-              aria-label="Resize the worker pool"
-            />
-
-            <SplitPanel
-              id="pool"
-              className={styles.poolPanel}
-              panelRef={pool}
-              minSize="18%"
-              collapsible
-              collapsedSize={STRIP_HEIGHT}
-              onResize={onPoolResize}
+              storageKey={POOL_LAYOUT_KEY}
+              className={styles.split}
             >
-              {poolCollapsed ? (
-                <PoolStrip counts={counts} onExpand={expandPool} />
-              ) : (
-                <WorkersPanel
-                  workers={workers}
+              <SplitPanel
+                id="queue"
+                className={styles.queuePanel}
+                defaultSize="58%"
+                minSize="20%"
+              >
+                <QueuePanel
                   items={items}
-                  pools={pools}
                   projects={session.projects}
-                  search={workerSearch}
-                  onSearchChange={onWorkerSearchChange}
+                  search={search}
+                  onSearchChange={onSearchChange}
                 />
-              )}
-            </SplitPanel>
-          </SplitPane>
+              </SplitPanel>
+
+              <SplitSeparator
+                orientation="vertical"
+                aria-label="Resize the worker pool"
+              />
+
+              <SplitPanel
+                id="pool"
+                className={styles.poolPanel}
+                panelRef={pool}
+                minSize="18%"
+                collapsible
+                collapsedSize={STRIP_HEIGHT}
+                onResize={onPoolResize}
+              >
+                {poolCollapsed ? (
+                  <PoolStrip counts={counts} onExpand={expandPool} />
+                ) : (
+                  <WorkersPanel
+                    workers={workers}
+                    items={items}
+                    pools={pools}
+                    projects={session.projects}
+                    search={workerSearch}
+                    onSearchChange={onWorkerSearchChange}
+                  />
+                )}
+              </SplitPanel>
+            </SplitPane>
+          </>
         ) : null}
       </div>
     </AppShell>

@@ -114,6 +114,16 @@ export interface SeedProxy {
   runs: number
   spendUsd: number
   costPerRunUsd: number
+  /**
+   * Spend by hour across the last metered day, 24 values midnight-first.
+   *
+   * The proxy is off, so "today's burn" is not metered and the seed refuses to
+   * pretend it is — this is the shape of the day before the switch was thrown,
+   * and the panel marks it with the same staleness the figures carry.
+   */
+  burnHourlyUsd: number[]
+  /** That day's total; the series sums to it, and a test holds them together. */
+  burnDayUsd: number
 }
 
 export interface SeedModelsSnapshot {
@@ -301,7 +311,27 @@ export const MODEL_ROUTES_SEED: SeedModelRoute[] = [
 /* ---------------------------------------------------------------------------
  * The proxy. Off, and off for six days — which is why a key at ninety percent
  * of its cap is still being spent against.
+ *
+ * The burn series is the last day the proxy metered: a quiet night, the
+ * morning ramp, and a heavy afternoon — the auth-svc migration was reviewed
+ * and re-run all day, which is the same incident the cost and outcome seeds
+ * spike on three days before their "today". It sums to `burnDayUsd` exactly
+ * (the closing hour is derived), and at $31.40 it is the heaviest day of the
+ * $168.60 window the figures above report.
  * ------------------------------------------------------------------------- */
+
+const BURN_HOURS = [
+  0.31, 0.22, 0.14, 0.11, 0.08, 0.09, 0.16, 0.44, 1.03, 1.6, 2.1, 1.85, 1.44,
+  1.76, 2.32, 2.68, 3.42, 2.71, 2.36, 2.24, 1.87, 1.42, 0.83,
+].map((usd) => Math.round(usd * 100) / 100)
+
+const BURN_DAY_USD = 31.4
+
+function burnSeries(dayTotal: number): number[] {
+  const rest = BURN_HOURS.reduce((sum, usd) => sum + usd, 0)
+  const closing = Math.round((dayTotal - rest) * 100) / 100
+  return [...BURN_HOURS, closing]
+}
 
 export const PROXY_SEED: SeedProxy = {
   enabled: false,
@@ -310,6 +340,8 @@ export const PROXY_SEED: SeedProxy = {
   runs: 412,
   spendUsd: 168.6,
   costPerRunUsd: 0.41,
+  burnHourlyUsd: burnSeries(BURN_DAY_USD),
+  burnDayUsd: BURN_DAY_USD,
 }
 
 export const MODELS_SEED: SeedModelsSnapshot = {

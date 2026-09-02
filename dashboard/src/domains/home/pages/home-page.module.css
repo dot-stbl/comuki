@@ -33,6 +33,13 @@
    the kit's `Section`. This screen was where that shape was first drawn; it is
    `shared/ui/section.module.css` now, and nothing here restates it. */
 
+/* The outcomes band seats itself inside the "running now" section: a little
+   more air below than the section's own gap, because the band is a reading and
+   the rows under it are a list, and the two are not the same kind of thing. */
+.outcomes {
+  margin-block-end: var(--s2);
+}
+
 /* --- the states this screen can be in besides the shift --- */
 
 .state {

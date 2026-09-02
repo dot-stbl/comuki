@@ -1,0 +1,85 @@
+/* The outcomes band: the week's shape on the left of its words, the legend
+   under the words, and the chart taking the rest of the line. Wraps rather
+   than shrinking — the chart's bars are percentages, but the figure beside it
+   is the reading, and a sentence cut in half says less than a sentence
+   wrapped. */
+
+.band {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s6);
+  min-inline-size: 0;
+}
+
+.reading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  flex: 0 1 auto;
+  min-inline-size: 0;
+}
+
+.figure {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.figureValue {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* The legend says in words what the stack says in hue — the second channel,
+   drawn in the same material the river's legend uses because it is the same
+   device: the swatch pairs with a status word, and neither stands alone. */
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--s5);
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.swatch {
+  inline-size: calc(var(--h-meter) * 2);
+  block-size: var(--h-meter);
+  border-radius: var(--r-xs);
+  flex: 0 0 auto;
+}
+
+.chart {
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
+
+/* The legend swatch reads the same status tokens the bars read, so the word,
+   the hue and the shape can never drift apart. */
+.status[data-status="success"] {
+  background-color: var(--st-success);
+}
+
+.status[data-status="failed"] {
+  background-color: var(--st-failed);
+}
+
+.status[data-status="escalated"] {
+  background-color: var(--st-escalated);
+}

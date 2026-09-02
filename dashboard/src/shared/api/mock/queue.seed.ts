@@ -1,4 +1,4 @@
-import { PROFILE_CATALOG, type SeedProfile } from "./runs.seed"
+import { PROFILE_CATALOG, seedDayAxis, type SeedProfile } from "./runs.seed"
 
 /**
  * The claim queue and the worker pool — the two halves of the runtime.
@@ -718,3 +718,43 @@ function bulkItems(): SeedQueueItem[] {
 }
 
 export const QUEUE_SEED: SeedQueueItem[] = [...HAND_ITEMS, ...bulkItems()]
+
+/* ---------------------------------------------------------------------------
+ * Queue depth per day — the time half of the reading the snapshot above is.
+ *
+ * The list answers "what is waiting now"; the series answers whether that is
+ * getting better. Six authored days in single digits — an ordinary week for a
+ * pool that keeps up — and today *derived*: the series' last column is counted
+ * off `QUEUE_SEED` itself, so the chart and the header can never disagree about
+ * how deep the queue is on the day you are looking at both of them.
+ *
+ * The story the shape continues: today holds the week's depth because of the
+ * two faults the snapshot already tells — `wi_0104`, stuck on the lease
+ * `wk_e34d` stopped defending, and the four atlas items waiting on a pool that
+ * is `minIdle: 0` and has not scaled up yet.
+ * ------------------------------------------------------------------------- */
+
+export interface SeedQueueDepth {
+  daysAgo: number
+  weekday: string
+  /** Work items waiting for a claim — the same thing the header's count says. */
+  depth: number
+}
+
+const PAST_DEPTHS = [4, 6, 5, 8, 6, 9] as const
+
+export const QUEUE_DEPTH_SEED: SeedQueueDepth[] = [
+  ...seedDayAxis()
+    .filter((day) => day.daysAgo > 0)
+    .map((day, index) => ({
+      daysAgo: day.daysAgo,
+      weekday: day.weekday,
+      depth: PAST_DEPTHS[index] ?? 6,
+    })),
+  {
+    daysAgo: 0,
+    weekday: "today",
+    // Derived, not authored: the band and the header are one reading.
+    depth: QUEUE_SEED.filter((item) => item.status === "queued").length,
+  },
+]

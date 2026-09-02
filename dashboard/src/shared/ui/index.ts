@@ -12,6 +12,17 @@ export {
   type BrandTagProps,
 } from "./brand-icon"
 export { ComukiMark, type ComukiMarkProps } from "./comuki-mark"
+export {
+  BarSeries,
+  barSeriesAxis,
+  type BarSeriesPoint,
+  type BarSeriesProps,
+  type BarSeriesSegment,
+} from "./bar-series"
+export {
+  Sparkline,
+  type SparklineProps,
+} from "./sparkline"
 export { ForbiddenState, type ForbiddenStateProps } from "./forbidden-state"
 export {
   SplitPane,

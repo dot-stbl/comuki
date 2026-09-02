@@ -1,0 +1,105 @@
+/* Bars on one shared axis. The plot is an SVG with no viewBox and geometry in
+   percentages, so a bar is exactly as tall as its share of the viewport at any
+   width the band hands it — and `rx` stays a real pixel count from the token,
+   which a uniformly-stretched viewBox would not give. */
+
+.series {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.plot {
+  display: block;
+  inline-size: 100%;
+  block-size: var(--h-day-series);
+}
+
+/* The axis row: one tick per column, equal tracks, so a label sits under its
+   bar at every width without either knowing about the other. */
+.axis {
+  display: flex;
+  min-inline-size: 0;
+}
+
+.tick {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+/* A bar without a status is chrome, not data — spend and queue depth rank, and
+   nobody is being asked to do anything about being third. The same neutral the
+   spend ranking's fill takes, for the same reason. */
+.bar {
+  fill: var(--text-faint);
+  rx: var(--r-xs);
+}
+
+/* A segment may carry one of the six real statuses; the hue is only ever the
+   second channel, because the figure beside the chart and its legend name every
+   status in words. Declared here rather than inherited from `.status[…]` up in
+   the domains: the weave is a background image and an SVG rect has no
+   background — for a chart, the words are the channel that survives greyscale. */
+.seg {
+  rx: var(--r-xs);
+}
+
+.seg[data-status="running"] {
+  fill: var(--st-running);
+}
+
+.seg[data-status="success"] {
+  fill: var(--st-success);
+}
+
+.seg[data-status="failed"] {
+  fill: var(--st-failed);
+}
+
+.seg[data-status="waiting"] {
+  fill: var(--st-waiting);
+}
+
+.seg[data-status="queued"] {
+  fill: var(--st-queued);
+}
+
+.seg[data-status="escalated"] {
+  fill: var(--st-escalated);
+}
+
+/* --- one authored entrance: the series rises from its baseline --- */
+
+.bar,
+.seg {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar,
+  .seg {
+    animation: bar-rise 620ms var(--ease) both;
+    animation-delay: calc(var(--index) * 45ms);
+  }
+}
+
+@keyframes bar-rise {
+  from {
+    transform: scaleY(0.04);
+    opacity: 0.2;
+  }
+
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}

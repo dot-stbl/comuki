@@ -79,6 +79,18 @@ const PROJECTS = [
 
 const POOLS = [{ projectId: "p_comuki", minIdle: 2, maxIdle: 6 }]
 
+/** The depth series the worker's own page never draws, but the board it reads
+ *  always carries — one quiet week, today included. */
+const DEPTH = [
+  { label: "mon", depth: 4 },
+  { label: "tue", depth: 6 },
+  { label: "wed", depth: 5 },
+  { label: "thu", depth: 8 },
+  { label: "fri", depth: 6 },
+  { label: "sat", depth: 9 },
+  { label: "today", depth: 14 },
+]
+
 const IMAGE = "sha256:9c41ab"
 
 function worker(over: Partial<Worker> = {}): Worker {
@@ -114,7 +126,13 @@ function item(over: Partial<QueueItem> = {}): QueueItem {
 }
 
 function board(over: Partial<QueueBoard> = {}): QueueBoard {
-  return { items: [item()], workers: [worker()], pools: POOLS, ...over }
+  return {
+    items: [item()],
+    workers: [worker()],
+    pools: POOLS,
+    depth: DEPTH,
+    ...over,
+  }
 }
 
 interface ScreenProps {
@@ -288,6 +306,9 @@ export const TornDown: Story = {
         workers: [],
         pools: POOLS,
         items: [item({ status: "queued", claimedBy: null, ageSec: 0 })],
+        depth: DEPTH.map((day, index) =>
+          index === DEPTH.length - 1 ? { ...day, depth: day.depth + 1 } : day
+        ),
       }}
     />
   ),

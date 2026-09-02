@@ -3,6 +3,7 @@ import { RotateCw } from "lucide-react"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
+import { useOutcomesQuery } from "@/domains/home/api/queries"
 import {
   groupAttention,
   readAttention,
@@ -10,6 +11,7 @@ import {
 import { AttentionList } from "@/domains/home/ui/attention-list"
 import { AttentionVerdict } from "@/domains/home/ui/attention-verdict"
 import { HomeShortcuts } from "@/domains/home/ui/home-shortcuts"
+import { OutcomesBand } from "@/domains/home/ui/outcomes-band"
 import { RunningNow } from "@/domains/home/ui/running-now"
 import { useApproveRun, useCancelRun } from "@/domains/runs/api/mutations"
 import { useRunsQuery } from "@/domains/runs/api/queries"
@@ -48,6 +50,7 @@ const RUNNING_SHOWN = 8
  */
 export function HomePage() {
   const { data = [], isLoading, isError, error, refetch } = useRunsQuery()
+  const outcomes = useOutcomesQuery()
 
   const reading = useMemo(() => readAttention(data), [data])
 
@@ -184,6 +187,16 @@ export function HomePage() {
                 </>
               }
             >
+              {/* The week behind the shift, above the rows: this section is
+                  already the screen's second question ("what is the swarm
+                  doing"), and the outcomes band is that question's time half.
+                  It stays *below* "needs you" on purpose — the verdict owns
+                  the top of this screen, and history never outranks a
+                  decision that is owed now. */}
+              {outcomes.data ? (
+                <OutcomesBand days={outcomes.data} className={styles.outcomes} />
+              ) : null}
+
               <RunningNow runs={running} total={reading.running.length} />
             </Section>
 

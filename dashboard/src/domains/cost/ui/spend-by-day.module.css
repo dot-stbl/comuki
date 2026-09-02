@@ -1,0 +1,43 @@
+/* The week's spend: a sentence and a column chart, on one line while there is
+   room for both and stacked the moment there is not. The sentence is prose in
+   the interface voice with its figures in the data voice — the same grammar
+   the header summaries use — and the chart is the shape of what it says. */
+
+.band {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s6);
+  min-inline-size: 0;
+}
+
+.figure {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.figureValue {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* The chart takes what is left; it has no minimum worth defending because its
+   bars are percentages, not pixels — the shape survives any width. */
+.chart {
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
+
+.empty {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}

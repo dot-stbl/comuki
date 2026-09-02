@@ -1,11 +1,22 @@
 import {
+  QUEUE_DEPTH_SEED,
   QUEUE_SEED,
   WORKERS_SEED,
   WORKER_POOLS_SEED,
 } from "@/shared/api/mock/queue.seed"
 
-import { toQueueItem, toWorker, toWorkerPool } from "@/domains/queue/api/mappers"
-import type { QueueItem, Worker, WorkerPool } from "@/domains/queue/model/types"
+import {
+  toQueueDepthDay,
+  toQueueItem,
+  toWorker,
+  toWorkerPool,
+} from "@/domains/queue/api/mappers"
+import type {
+  QueueDepthDay,
+  QueueItem,
+  Worker,
+  WorkerPool,
+} from "@/domains/queue/model/types"
 
 /**
  * The pool's mutable half, for as long as the orchestrator has no endpoint.
@@ -75,4 +86,23 @@ export function listQueueItems(): QueueItem[] {
 
 export function listWorkerPools(): WorkerPool[] {
   return WORKER_POOLS_SEED.map(toWorkerPool)
+}
+
+/**
+ * The week of depth. Today's column is counted off the seed at read time —
+ * including any item a `forceStopWorker` requeued — so the band, the header
+ * and the table underneath can never disagree about how deep the queue is.
+ */
+export function listQueueDepth(): QueueDepthDay[] {
+  const items = listQueueItems()
+  const past = QUEUE_DEPTH_SEED.filter((day) => day.daysAgo > 0).map(
+    toQueueDepthDay
+  )
+  return [
+    ...past,
+    {
+      label: "today",
+      depth: items.filter((item) => item.status === "queued").length,
+    },
+  ]
 }

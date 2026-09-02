@@ -99,6 +99,139 @@ function withProject(run: SeedRunDraft): SeedRun {
   return { ...run, projectId: PROJECT_BY_APP[run.app] }
 }
 
+/* ---------------------------------------------------------------------------
+ * The day axis every time series in the mock reads.
+ *
+ * The seeds keep times relative on purpose — a stamped date is a mock that
+ * starts failing on a Tuesday six months from now — and a day series is still
+ * relative: `daysAgo` counts back from today, the weekday label is derived from
+ * the clock at seed init, and `weekend` says which columns are Saturday and
+ * Sunday *this* week. The stories the series tell (weekend tickets are
+ * lighter, the incident was three days ago) therefore hold on whichever day
+ * the app is opened, which a fixed list of dates never could.
+ * ------------------------------------------------------------------------- */
+
+const WEEKDAY_LABELS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const
+
+export interface SeedDay {
+  daysAgo: number
+  /** Derived weekday ("mon"), or "today" for the column the shift is standing on. */
+  weekday: string
+  /** Saturday or Sunday this week — the days the spend story expects to be lighter. */
+  weekend: boolean
+}
+
+export function seedDayAxis(count = 7): SeedDay[] {
+  const today = new Date().getDay()
+  return Array.from({ length: count }, (_, index) => {
+    const daysAgo = count - 1 - index
+    const weekday = (today - daysAgo + 7 * Math.ceil(daysAgo / 7) + 7) % 7
+    return {
+      daysAgo,
+      weekday: daysAgo === 0 ? "today" : WEEKDAY_LABELS[weekday],
+      weekend: weekday === 0 || weekday === 6,
+    }
+  })
+}
+
+/* ---------------------------------------------------------------------------
+ * Run outcomes per day — the shift's history, which the snapshot above is not.
+ *
+ * A run the live list shows is a run that happened *today*: ages are minutes,
+ * leases are minutes, and the list is the current shift rather than an archive.
+ * So the day a run finishes never appears in `RUNS_SEED` as a field — it
+ * appears here, as the finished counts per day, and the last column is bounded
+ * below by what the live list is already showing (a seed that finished fewer
+ * runs today than the list holds would be describing a different day).
+ *
+ * The statuses are the three a run can *rest in* overnight: success, failed,
+ * escalated. The other three — running, waiting, queued — are mid-flight
+ * states, and a bar that stacked them would be counting unfinished work as an
+ * outcome of the day it sits in.
+ *
+ * The story the shape continues: three days ago the auth-svc identity
+ * migration ran (the app list still carries its `+21%` trend), and that day
+ * broke the week's runs — the failed spike sits there, on every screen that
+ * asks the time question, so the cost spike, the outcome spike and the
+ * `+21%` trend all name one incident rather than three coincidences.
+ * ------------------------------------------------------------------------- */
+
+export interface SeedOutcomeDay {
+  daysAgo: number
+  weekday: string
+  /** Only the statuses a finished run can rest in, worst last in the stack. */
+  byStatus: Array<{ status: SeedStatus; count: number }>
+}
+
+/** Finishes on a weekday: what the swarm clears on an uneventful day. */
+const WEEKDAY_SUCCESSES: Record<number, number> = {
+  0: 11, // sun
+  1: 34, // mon
+  2: 33, // tue
+  3: 35, // wed
+  4: 32, // thu
+  5: 30, // fri
+  6: 14, // sat
+}
+
+/** Failures and escalations per days-ago, for every day but today. */
+const PAST_DAYS: Record<number, { failed: number; escalated: number }> = {
+  6: { failed: 4, escalated: 1 },
+  5: { failed: 3, escalated: 2 },
+  4: { failed: 5, escalated: 1 },
+  3: { failed: 14, escalated: 3 },
+  2: { failed: 6, escalated: 2 },
+  1: { failed: 5, escalated: 1 },
+}
+
+/** The incident day — the auth-svc migration — cleared less than a normal day. */
+const INCIDENT_DAYS_AGO = 3
+const INCIDENT_SUCCESS_FACTOR = 0.8
+
+function outcomeDays(): SeedOutcomeDay[] {
+  const axis = seedDayAxis()
+
+  const past = axis
+    .filter((day) => day.daysAgo > 0)
+    .map((day) => {
+      const weekday = WEEKDAY_LABELS.indexOf(
+        day.weekday as (typeof WEEKDAY_LABELS)[number]
+      )
+      const base = PAST_DAYS[day.daysAgo] ?? { failed: 0, escalated: 0 }
+      const success = Math.round(
+        WEEKDAY_SUCCESSES[weekday] *
+          (day.daysAgo === INCIDENT_DAYS_AGO ? INCIDENT_SUCCESS_FACTOR : 1)
+      )
+      return {
+        daysAgo: day.daysAgo,
+        weekday: day.weekday,
+        byStatus: [
+          { status: "success" as const, count: success },
+          { status: "failed" as const, count: base.failed },
+          { status: "escalated" as const, count: base.escalated },
+        ],
+      }
+    })
+
+  return [
+    ...past,
+    {
+      daysAgo: 0,
+      weekday: "today",
+      // Bounded below by the live list: every run RUNS_SEED shows in a
+      // finished state happened on today's shift, so today's column cannot
+      // be smaller than the list that is drawing beside it.
+      byStatus: [
+        { status: "success", count: 26 },
+        { status: "failed", count: 12 },
+        { status: "escalated", count: 9 },
+      ],
+    },
+  ]
+}
+
+export const OUTCOMES_SEED: SeedOutcomeDay[] = outcomeDays()
+
 export interface SeedDiffLine {
   ty: "ctx" | "add" | "del"
   n: string

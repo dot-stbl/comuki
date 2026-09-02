@@ -1,3 +1,5 @@
+import { seedDayAxis } from "./runs.seed"
+
 export interface SeedCostByApp {
   app: string
   spend: number
@@ -17,6 +19,15 @@ export interface SeedCostBudget {
   cap: number
 }
 
+/** One column of the spend-by-day series. See the block comment below. */
+export interface SeedCostDay {
+  daysAgo: number
+  weekday: string
+  /** Saturday or Sunday — the days the spend story expects to be lighter. */
+  weekend: boolean
+  spend: number
+}
+
 export interface SeedCostSummary {
   perSuccess: number
   totalDay: number
@@ -24,6 +35,57 @@ export interface SeedCostSummary {
   byApp: SeedCostByApp[]
   budget: SeedCostBudget
   failures: SeedCostFailure[]
+  /** Spend per day over the last week, oldest first, today last. */
+  byDay: SeedCostDay[]
+}
+
+/* ---------------------------------------------------------------------------
+ * The week of spend, continued from the figures above.
+ *
+ * The day series has to agree with three things the report already says: the
+ * per-day tile (`totalDay`), the auth-svc row's `+21%` trend, and the swarm's
+ * working rhythm. So the values are generated rather than listed:
+ *
+ *   - today is anchored to `totalDay` exactly, because the tile and the last
+ *     bar are one reading said twice;
+ *   - three days ago takes the incident multiplier — the auth-svc identity
+ *     migration that broke the week's runs and their budget, which the
+ *     outcomes series spikes on the same day;
+ *   - Saturday and Sunday columns sit well under the weekdays, because fewer
+ *     tickets arrive on a weekend — the shape has to look like a real week.
+ *
+ * The axis comes from `seedDayAxis()` in the run seed, so the weekend columns
+ * are the *actual* weekend columns on whichever day the app is opened.
+ * ------------------------------------------------------------------------- */
+
+/** Organic variation by days-ago — no real week is a flat line. */
+const DAY_FACTOR: Record<number, number> = {
+  6: 0.92,
+  5: 0.95,
+  4: 0.9,
+  3: 1.22, // the auth-svc migration day
+  2: 0.88,
+  1: 0.96,
+}
+
+const WEEKEND_FACTOR = 0.66
+/** The day the incident story says one is. */
+const INCIDENT_DAYS_AGO = 3
+
+function spendByDay(totalDay: number): SeedCostDay[] {
+  return seedDayAxis().map((day) => {
+    const factor =
+      (DAY_FACTOR[day.daysAgo] ?? 1) *
+      (day.weekend && day.daysAgo !== 0 && day.daysAgo !== INCIDENT_DAYS_AGO
+        ? WEEKEND_FACTOR
+        : 1)
+    return {
+      daysAgo: day.daysAgo,
+      weekday: day.weekday,
+      weekend: day.weekend,
+      spend: Math.round(totalDay * factor * 100) / 100,
+    }
+  })
 }
 
 export const COST_SEED: SeedCostSummary = {
@@ -85,4 +147,5 @@ export const COST_SEED: SeedCostSummary = {
       note: "escalates to lead",
     },
   ],
+  byDay: spendByDay(148.2),
 }

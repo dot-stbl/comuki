@@ -1,10 +1,15 @@
 import { Loader2, Power, PowerOff } from "lucide-react"
 
-import { proxySentence } from "@/domains/models/model/keys"
+import {
+  burnPeak,
+  hourLabel,
+  proxySentence,
+} from "@/domains/models/model/keys"
 import type { Proxy } from "@/domains/models/model/types"
 import { formatCost } from "@/domains/runs/model/format"
 import { can, needsLabel, useSession } from "@/shared/session"
-import { Button, Tooltip } from "@/shared/ui"
+import { Button, Sparkline, Tooltip } from "@/shared/ui"
+import { cn } from "@/shared/lib/utils"
 
 import styles from "./proxy-panel.module.css"
 
@@ -21,6 +26,15 @@ function days(seconds: number): string {
     return "just now"
   }
   return `${value} ${value === 1 ? "day" : "days"} ago`
+}
+
+/** The burn reading in words — the sparkline's whole accessible name. */
+function burnLabel(proxy: Proxy): string {
+  const peak = burnPeak(proxy.burnHourlyUsd)
+  if (!peak) {
+    return "Spend by hour: nothing metered."
+  }
+  return `Spend by hour across the metered day, peak ${formatCost(peak.usd)} at ${hourLabel(peak.hour)}.`
 }
 
 /**
@@ -45,6 +59,7 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
     : needsLabel("models.manage")
 
   const stale = !proxy.enabled
+  const peak = burnPeak(proxy.burnHourlyUsd)
 
   return (
     <section
@@ -112,6 +127,26 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
           <dt className={styles.figureName}>runs</dt>
           <dd className={styles.figureValue}>{proxy.runs}</dd>
         </div>
+        {/* The shape of the metered day, beside the figures that say it in
+            words: a quiet night, the morning ramp, the heavy afternoon. The
+            line takes the same staleness the values take when the proxy is
+            off, because a six-day-old burn curve shown as live would be the
+            same lie a six-day-old cost-per-run would. */}
+        {peak ? (
+          <div className={cn(styles.figure, styles.burn)}>
+            <dt className={styles.figureName}>burn by hour</dt>
+            <dd className={styles.figureValue} data-test="proxy-burn">
+              <Sparkline
+                className={stale ? styles.burnStale : undefined}
+                values={proxy.burnHourlyUsd}
+                label={burnLabel(proxy)}
+              />
+              <span className={styles.burnPeak}>
+                peak {formatCost(peak.usd)} at {hourLabel(peak.hour)}
+              </span>
+            </dd>
+          </div>
+        ) : null}
         <p className={styles.window} data-test="proxy-window">
           {stale ? "last metered over " : "over "}
           {proxy.windowLabel}

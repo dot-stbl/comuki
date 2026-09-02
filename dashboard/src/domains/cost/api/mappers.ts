@@ -22,5 +22,9 @@ export function toCostSummary(seed: SeedCostSummary): CostSummary {
       rate: row.rate,
       note: row.note,
     })),
+    byDay: seed.byDay.map((day) => ({
+      label: day.weekday,
+      spend: day.spend,
+    })),
   }
 }

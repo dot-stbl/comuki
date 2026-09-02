@@ -203,6 +203,30 @@ describe("the queue screen, end to end over the seeds", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("true")
     expect(find('[data-test="pool-strip"]')).toBeNull()
   })
+
+  it("draws the week of depth above the split, beside the sentence", async () => {
+    await boardReady()
+
+    const band = find('[data-test="queue-depth"]')
+    expect(band).not.toBeNull()
+
+    // Seven columns, today last, and the figure says the same reading the
+    // header above it is saying — one number, one direction, one source.
+    const bars = all('[data-test="queue-depth"] [data-test="bar-series-bar"]')
+    expect(bars).toHaveLength(7)
+    expect(bars[bars.length - 1].getAttribute("data-key")).toBe("today")
+
+    const figure = band?.textContent ?? ""
+    expect(figure).toContain("14 queued now")
+    expect(figure).toContain("the week ran 4–9")
+    expect(figure).toContain("deepest of the week today")
+
+    // The chart's accessible name is the same reading in words, so the trend
+    // is not a shape a screen reader cannot follow.
+    expect(
+      find('[data-test="queue-depth"] [data-test="bar-series"]')?.getAttribute("aria-label")
+    ).toContain("14 queued today")
+  })
 })
 
 /* ------------------------------------------------------------------ *

@@ -7,6 +7,7 @@ import {
   ageShare,
   backlogOf,
   compareQueueItems,
+  depthReadings,
   leaseHeat,
   lostLeases,
   minIdleFor,
@@ -15,7 +16,7 @@ import {
   unclaimedOver,
   workerCounts,
 } from "./queue"
-import type { QueueItem, Worker, WorkerPool } from "./types"
+import type { QueueDepthDay, QueueItem, Worker, WorkerPool } from "./types"
 
 function item(
   id: string,
@@ -242,5 +243,41 @@ describe("an empty pool, and which kind of empty it is", () => {
     // No project filter: the whole board answers for every pool it can see.
     expect(minIdleFor(pools, "")).toBe(2)
     expect(minIdleFor(pools, "p_missing")).toBe(0)
+  })
+})
+
+describe("depth over time, and whether today accuses anyone", () => {
+  const week: QueueDepthDay[] = [
+    { label: "mon", depth: 4 },
+    { label: "tue", depth: 6 },
+    { label: "wed", depth: 5 },
+    { label: "thu", depth: 8 },
+    { label: "fri", depth: 6 },
+    { label: "sat", depth: 9 },
+    { label: "today", depth: 14 },
+  ]
+
+  it("reads the week's range off the days before today", () => {
+    const readings = depthReadings(week)
+
+    expect(readings).not.toBeNull()
+    expect(readings?.today).toBe(14)
+    expect(readings?.weekMin).toBe(4)
+    expect(readings?.weekMax).toBe(9)
+    expect(readings?.todayIsDeepest).toBe(true)
+  })
+
+  it("says today is ordinary when it is", () => {
+    const readings = depthReadings(
+      week.map((day) =>
+        day.label === "today" ? { ...day, depth: 5 } : day
+      )
+    )
+
+    expect(readings?.todayIsDeepest).toBe(false)
+  })
+
+  it("has no reading at all for a series with no days", () => {
+    expect(depthReadings([])).toBeNull()
   })
 })

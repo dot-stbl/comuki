@@ -79,7 +79,7 @@ public static class GitHubPayloadMapper
     /// <param name="projectId"></param>
     /// <param name="now"></param>
     /// <returns></returns>
-    public static IncomingTicket ToTicket(GitHubIssueDto issue, string owner, string repo, ProjectId projectId, DateTimeOffset now)
+    public static IncomingTicket ToTicket(GitHubIssue issue, string owner, string repo, ProjectId projectId, DateTimeOffset now)
     {
         return IncomingTicket.Create(
             projectId,

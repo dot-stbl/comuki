@@ -25,6 +25,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Unit.WorkerRuntime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Auth" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Chat" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Oidc" />
   </ItemGroup>
 
 </Project>

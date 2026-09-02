@@ -147,6 +147,10 @@ public static class IdentityAuthExtensions
                 // admits an http:// dev authority (local containers only).
                 options.RequireHttpsMetadata = provider.RequireHttps ?? true;
                 options.ResponseType = OpenIdConnectResponseType.Code;
+                // PKCE (S256): the code flow never travels with a shared
+                // secret alone — public clients reject non-PKCE authorize
+                // requests, and confidential ones lose nothing by it.
+                options.UsePkce = true;
                 options.CallbackPath = $"/auth/oidc/{provider.Name}/callback";
                 options.SignInScheme = AuthSchemes.Cookie;
                 options.SaveTokens = false;

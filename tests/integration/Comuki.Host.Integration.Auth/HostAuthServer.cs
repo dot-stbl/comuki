@@ -1,10 +1,15 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Comuki.Engine.Orchestration.Domain;
+using Comuki.Engine.Orchestration.Domain.Runs;
+using Comuki.Engine.Orchestration.Domain.WorkItems;
+using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Auth;
 using Comuki.Modules.Identity.Application.ApiKeys;
 using Comuki.Modules.Identity.Application.Assignments.Grant;
+using Comuki.Modules.Identity.Application.Authorization;
 using Comuki.Modules.Identity.Application.Ports;
 using Comuki.Modules.Identity.Application.Users;
 using Comuki.Modules.Identity.Application.Views;
@@ -14,6 +19,11 @@ using Comuki.Modules.Identity.Domain.Scopes;
 using Comuki.Modules.Identity.Domain.Subjects;
 using Comuki.Modules.Identity.Domain.Users;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
+using Comuki.Modules.Projects.Application.Projects.Create;
+using Comuki.Modules.Projects.Application.Views;
+using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -64,6 +74,11 @@ public sealed class HostAuthServer : IAsyncLifetime
         await using var identityDb = new IdentityDbContext(identityOptions.Options);
         await identityDb.Database.MigrateAsync(cancellationToken);
 
+        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
+        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
+        await using var projectsDb = new ProjectsDbContext(projectsOptions.Options);
+        await projectsDb.Database.MigrateAsync(cancellationToken);
+
         controlPlane = new TempControlPlaneRoot();
         controlPlane.WriteProfile();
         controlPlane.WriteChatCommand();
@@ -75,6 +90,11 @@ public sealed class HostAuthServer : IAsyncLifetime
         builder.Configuration["ControlPlane:Root"] = controlPlane.Root;
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+
+        // Program wires orchestration persistence before Compose (the worker
+        // runtime and the scoped reads below resolve the context); the scope
+        // fixture's run seeds and visibility probes need it too.
+        _ = builder.Services.AddOrchestrationPersistence(connectionString);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
         await application.StartAsync(cancellationToken);
@@ -110,14 +130,6 @@ public sealed class HostAuthServer : IAsyncLifetime
             .FindByEmailAsync(email, TestContext.Current.CancellationToken);
     }
 
-    /// <inheritdoc />
-    public async ValueTask DisposeAsync()
-    {
-        await application.DisposeAsync();
-        controlPlane.Dispose();
-        await container.DisposeAsync();
-    }
-
     /// <summary>Creates a local account directly through the handler.</summary>
     public async Task<UserAccountView> CreateUserAsync(string email, string password = "user-pass-123")
     {
@@ -136,6 +148,104 @@ public sealed class HostAuthServer : IAsyncLifetime
             .HandleAsync(
                 new GrantRoleCommand(subject, role, AssignmentScope.Platform(), ActingAs: null),
                 TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>Grants a role to a subject on exactly one project through the handler.</summary>
+    public async Task GrantProjectRoleAsync(RoleSubject subject, Role role, ProjectId projectId)
+    {
+        using var scope = application.Services.CreateScope();
+
+        _ = await scope.ServiceProvider.GetRequiredService<GrantRoleHandler>()
+            .HandleAsync(
+                new GrantRoleCommand(subject, role, AssignmentScope.ForProject(projectId), ActingAs: null),
+                TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Creates a project directly through the handler — as a system
+    /// consumer, because a seeding flow owns no subject.
+    /// </summary>
+    public async Task<ProjectView> CreateProjectAsync(string name, string slug)
+    {
+        using var scope = application.Services.CreateScope();
+        using var systemScope = scope.ServiceProvider
+            .GetRequiredService<ISubjectScopeAccessor>()
+            .AsSystem("test-seeder");
+
+        return await scope.ServiceProvider.GetRequiredService<CreateProjectHandler>()
+            .HandleAsync(
+                new CreateProjectCommand(name, slug, null, null, null),
+                TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>
+    /// Seeds one run with a single queued work item — as a system
+    /// consumer, because a seeding flow owns no subject.
+    /// </summary>
+    public async Task<RunId> SeedRunWithItemAsync(ProjectId projectId)
+    {
+        using var scope = application.Services.CreateScope();
+        using var systemScope = scope.ServiceProvider
+            .GetRequiredService<ISubjectScopeAccessor>()
+            .AsSystem("test-seeder");
+
+        var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var run = Run.Create(projectId, now);
+        var item = WorkItem.Create(
+            run.Id,
+            "implement",
+            "ghcr.io/comuki/worker:test",
+            "refs/heads/main",
+            /*lang=json,strict*/ """{"goal":"scope check"}""",
+            WorkItemStatus.Queued,
+            now);
+
+        _ = db.Runs.Add(run);
+        _ = db.WorkItems.Add(item);
+        _ = await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return run.Id;
+    }
+
+    /// <summary>
+    /// The run ids a subject's scope lets it see, through the host's own
+    /// accessor + context (the query filter in force, not a re-implementation).
+    /// </summary>
+    public async Task<IReadOnlyList<Guid>> VisibleRunsAsync(RoleSubject subject)
+    {
+        var accessor = application.Services.GetRequiredService<ISubjectScopeAccessor>();
+        var authorization = await application.Services.GetRequiredService<IPermissionEvaluator>()
+            .EvaluateAsync(subject, TestContext.Current.CancellationToken);
+
+        using var scope = application.Services.CreateScope();
+        using (accessor.Begin(authorization.ToSubjectScope()))
+        {
+            var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+            var runs = await db.Runs.AsNoTracking().ToListAsync(TestContext.Current.CancellationToken);
+
+            return [.. runs.Select(static run => run.Id.Value)];
+        }
+    }
+
+    /// <summary>
+    /// The work-item ids a subject's scope lets it see, through the host's
+    /// own accessor + context (work items filter through their parent run).
+    /// </summary>
+    public async Task<IReadOnlyList<Guid>> VisibleWorkItemsAsync(RoleSubject subject)
+    {
+        var accessor = application.Services.GetRequiredService<ISubjectScopeAccessor>();
+        var authorization = await application.Services.GetRequiredService<IPermissionEvaluator>()
+            .EvaluateAsync(subject, TestContext.Current.CancellationToken);
+
+        using var scope = application.Services.CreateScope();
+        using (accessor.Begin(authorization.ToSubjectScope()))
+        {
+            var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+            var items = await db.WorkItems.AsNoTracking().ToListAsync(TestContext.Current.CancellationToken);
+
+            return [.. items.Select(static item => item.Id)];
+        }
     }
 
     /// <summary>Issues an API key for an owner through the module issuer.</summary>
@@ -174,6 +284,14 @@ public sealed class HostAuthServer : IAsyncLifetime
         listener.Stop();
 
         return port;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        await application.DisposeAsync();
+        controlPlane.Dispose();
+        await container.DisposeAsync();
     }
 }
 

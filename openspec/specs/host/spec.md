@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the orchestrator host composition: the single composition point, database connection resolution, the anonymous health endpoint, the authentication surface (login/logout/me/OIDC handoff), bootstrap-admin seeding, and the separate migrator tool.
+Defines the orchestrator host composition: the single composition point, database connection resolution, the anonymous health endpoint, the authentication surface (login/logout/me/OIDC handoff), bootstrap-admin seeding, realtime/telemetry wiring, and the separate migrator tool.
 
 ## Requirements
 
@@ -80,11 +80,11 @@ The bootstrap pass runs as a startup service; an unreachable or unmigrated datab
 
 ### Requirement: Migrator tool
 
-A separate console tool SHALL apply migrations for all module contexts (orchestration, identity, projects) against the same connection string (same resolution order as the host), printing each applied migration per context. Each context keeps its own migrations-history table so the contexts migrate one database without colliding. `--recreate` SHALL drop the database first (dev reset).
+A separate console tool SHALL apply migrations for all module contexts (orchestration, identity, projects, and any additional module contexts such as memory, chat, intake, costs) against the same connection string (same resolution order as the host), printing each applied migration per context. Each context keeps its own migrations-history table so the contexts migrate one database without colliding. `--recreate` SHALL drop the database first (dev reset).
 
 #### Scenario: Fresh database
 - **WHEN** the migrator runs against an empty database
-- **THEN** all three contexts apply their initial schema and report it per label
+- **THEN** every registered context applies its initial schema and reports it per label
 
 ### Requirement: Scale settings bridge at composition
 
@@ -93,3 +93,23 @@ At composition the host SHALL replace the engine's in-memory per-project scale s
 #### Scenario: Compute reads projects settings
 - **WHEN** the host composes
 - **THEN** the compute engine resolves scale knobs from the Projects settings store, not the in-memory default
+
+### Requirement: Realtime composition
+
+The host composition SHALL register SignalR, the `IRunEventsBroadcaster` implementation, and map `/hubs/runs` (see realtime). Detailed errors MAY be enabled in development; production still requires authenticated hub access.
+
+#### Scenario: Hub is mapped
+- **WHEN** the host boots
+- **THEN** `/hubs/runs` accepts SignalR negotiate for authenticated clients
+
+### Requirement: OpenTelemetry opt-in
+
+The host SHALL register Comuki telemetry (meters `comuki.queue` / `comuki.runs` / `comuki.compute` and orchestration/compute/host activity sources) when `Telemetry:OtlpEndpoint` is configured; otherwise telemetry registration is a validated no-op. The Migrator SHALL NOT emit business telemetry. Deploy MAY ship Grafana dashboards as-code under `deploy/grafana` for runs/workers/cost panels against the Victoria/OTLP stack.
+
+#### Scenario: Telemetry disabled
+- **WHEN** `Telemetry:OtlpEndpoint` is unset
+- **THEN** the host boots without an OTLP exporter and options still validate
+
+#### Scenario: Telemetry enabled
+- **WHEN** an OTLP endpoint is configured
+- **THEN** traces and metrics for the subscribed sources/meters export to that endpoint

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 
-namespace Comuki.Migrator;
+namespace Comuki.Migrator.Sources;
 
 /// <summary>
 /// Connection-string resolution for the Migrator and the design-time factory:

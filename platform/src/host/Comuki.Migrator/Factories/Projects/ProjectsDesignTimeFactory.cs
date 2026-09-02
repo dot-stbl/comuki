@@ -1,8 +1,9 @@
+using Comuki.Migrator.Sources;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Comuki.Migrator;
+namespace Comuki.Migrator.Factories.Projects;
 
 /// <summary>
 /// Design-time factory for <c>dotnet ef</c>: Projects migrations are

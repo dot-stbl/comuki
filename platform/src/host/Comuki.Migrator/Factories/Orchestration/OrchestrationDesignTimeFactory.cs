@@ -1,8 +1,9 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Migrator.Sources;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Comuki.Migrator;
+namespace Comuki.Migrator.Factories.Orchestration;
 
 /// <summary>
 /// Design-time factory for <c>dotnet ef</c>: migrations are authored in

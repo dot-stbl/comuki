@@ -1,8 +1,9 @@
+using Comuki.Migrator.Sources;
 using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Comuki.Migrator;
+namespace Comuki.Migrator.Factories.Intake;
 
 /// <summary>
 /// Design-time factory for <see cref="IntakeDbContext"/>: reads the same

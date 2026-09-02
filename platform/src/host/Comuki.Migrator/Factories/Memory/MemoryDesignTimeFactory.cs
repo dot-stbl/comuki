@@ -1,8 +1,9 @@
+using Comuki.Migrator.Sources;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Comuki.Migrator;
+namespace Comuki.Migrator.Factories.Memory;
 
 /// <summary>
 /// Design-time factory for <c>dotnet ef</c>: Memory migrations are

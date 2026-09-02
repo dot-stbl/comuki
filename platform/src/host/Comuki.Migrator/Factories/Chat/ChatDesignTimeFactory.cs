@@ -1,8 +1,9 @@
+using Comuki.Migrator.Sources;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Comuki.Migrator;
+namespace Comuki.Migrator.Factories.Chat;
 
 /// <summary>
 /// Design-time factory for <see cref="ChatDbContext"/>: reads the same

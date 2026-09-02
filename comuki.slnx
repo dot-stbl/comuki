@@ -7,6 +7,7 @@
   <Folder Name="/platform/src/shared/">
     <Project Path="platform/src/shared/Comuki.Shared.Kernel/Comuki.Shared.Kernel.csproj" />
     <Project Path="platform/src/shared/Comuki.Shared.Contracts/Comuki.Shared.Contracts.csproj" />
+    <Project Path="platform/src/shared/Comuki.Shared.Filtering/Comuki.Shared.Filtering.csproj" />
   </Folder>
   <Folder Name="/platform/src/modules/">
     <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Domain/Comuki.Modules.Identity.Domain.csproj" />
@@ -52,6 +53,7 @@
     <Project Path="tests/unit/Comuki.Host.Brain.Unit/Comuki.Host.Brain.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Chat.Unit/Comuki.Modules.Chat.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Intake.Unit/Comuki.Modules.Intake.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Shared.Filtering.Unit/Comuki.Shared.Filtering.Unit.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Migrations/Comuki.Engine.Orchestration.Integration.Migrations.csproj" />

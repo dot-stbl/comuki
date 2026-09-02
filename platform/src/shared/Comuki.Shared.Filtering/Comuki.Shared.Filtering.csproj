@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk), issue #8 S9:
+       filter/sort DSL (lexer → parser → EF translator) with reflection-based
+       filterable-field registry. Hybrid references dropped (StringEnum /
+       OpenTypeKey key-set narrowing, split-query provider). -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

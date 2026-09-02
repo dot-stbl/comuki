@@ -4,6 +4,7 @@ using Comuki.Host.Chat;
 using Comuki.Host.ControlPlane;
 using Comuki.Host.Intake;
 using Comuki.Host.Projects;
+using Comuki.Host.Realtime;
 using Comuki.Modules.Chat.Application;
 using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Infrastructure;
@@ -113,6 +114,13 @@ internal static class HostComposer
         builder.Services.AddControllers();
         builder.Services.AddProblemDetails();
 
+        // Realtime surface (issue #7): SignalR hub + the journal broadcast
+        // interceptor. Registered after orchestration persistence — the
+        // interceptor appends to the context options the engine registered
+        // (Program wires persistence before Compose; the chat test fixture
+        // mirrors that order).
+        builder.Services.AddComukiRealtime();
+
         // Ambient subject scope: one AsyncLocal-backed accessor for the
         // whole process — the middleware installs a scope per request, the
         // worker surfaces and hosted consumers declare AsSystem, and the
@@ -130,6 +138,7 @@ internal static class HostComposer
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));
         app.MapControllers();
         app.MapProjectsEndpoints();
+        app.MapComukiRealtime();
 
         return app;
     }

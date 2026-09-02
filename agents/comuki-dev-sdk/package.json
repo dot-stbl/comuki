@@ -2,5 +2,17 @@
   "name": "@comuki/dev-sdk",
   "version": "0.1.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "install-hooks": "bun src/install.ts",
+    "uninstall-hooks": "bun src/install.ts --uninstall"
+  },
+  "dependencies": {
+    "@comuki/agent-core": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.30.0"
+  }
 }

@@ -25,6 +25,7 @@ always: true
 | 17024 | Postgres                        | reserved (host-mapped) |
 | 17025 | Nexus                           | reserved |
 | 17026 | Keycloak (compose profile `keycloak`) | `deploy/docker-compose.yml` → keycloak service |
+| 17027 | Grafana (compose profile `grafana`) | `deploy/docker-compose.yml` → grafana service |
 
 Свободный диапазон для ad-hoc / экспериментов: **17180–17200**.
 Новый постоянный сервис — **добавь строку в эту таблицу** в том же PR,

@@ -176,6 +176,39 @@ services:
     networks:
       - comuki-net
 
+  grafana:
+    # Dashboards-as-code for S8 observability. Opt in with
+    # `podman compose --profile grafana up -d`. Provisioning mounts
+    # deploy/grafana/provisioning + dashboards; datasource points at
+    # victoria-metrics on the compose network. Host UI: :17027 (port pool).
+    profiles: ["grafana"]
+    image: grafana/grafana:11.5.2
+    container_name: comuki-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${COMUKI_GRAFANA_ADMIN_USER:-comuki}
+      GF_SECURITY_ADMIN_PASSWORD: ${COMUKI_GRAFANA_ADMIN_PASSWORD:-comuki_dev}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    ports:
+      - "17027:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - victoria-metrics
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -qO- http://localhost:3000/api/health | grep -q ok
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      - comuki-net
+
 networks:
   comuki-net:
     driver: bridge
@@ -186,4 +219,5 @@ volumes:
   nexus-data:
   victoria-metrics-data:
   victoria-logs-data:
+  grafana-data:
   worker-work:

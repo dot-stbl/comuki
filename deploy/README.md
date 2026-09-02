@@ -12,11 +12,12 @@ and persist data to named Docker volumes.
 
 | File | Purpose |
 |---|---|
-| `docker-compose.yml` | All five services + their volumes + healthchecks + `worker` profile (opt-in) |
+| `docker-compose.yml` | Core services + volumes + healthchecks + opt-in profiles (`worker`, `keycloak`, `grafana`) |
 | `.env.example` | Copy to `.env` to override credentials (incl. Phase 4 worker keys) |
 | `postgres/init.d/01-pgvector.sql` | Enables `vector` extension (Phase 5, `Comuki.Platform.Knowledge`) |
 | `worker.Dockerfile` | Real minimal pi-coding-agent image (lands in Phase 4, Slice 0 step 0) |
 | `scripts/test-pi-headless.{sh,ps1}` | Build worker, run pi in container, assert stream-json output |
+| `grafana/` | Dashboards-as-code + provisioning (S8; profile `grafana`) |
 
 ## Bring it up
 
@@ -69,6 +70,7 @@ curl -fsS http://localhost:9428/health
 | VictoriaMetrics OTLP | `localhost:8431` | none |
 | VictoriaLogs vmui | `http://localhost:9428/vmui` | none (localhost) |
 | VictoriaLogs HTTP | `http://localhost:9428` | none |
+| Grafana (profile `grafana`) | `http://localhost:17027` | `${COMUKI_GRAFANA_ADMIN_USER}` / `${COMUKI_GRAFANA_ADMIN_PASSWORD}` |
 
 ## What connects to what
 
@@ -79,7 +81,8 @@ When the platform lands:
 | `Comuki.Platform.Database.Runs` (EFCore, Phase 3) | Postgres :5432 |
 | `Comuki.Platform.Artifacts` (Phase 7) | MinIO :9000 (S3 API) |
 | Worker containers (Phase 3+) | pull deps from Nexus :8081 |
-| `Comuki.Platform.Logging` (Phase 8) | VictoriaLogs :9428 (OTel logs) + VictoriaMetrics :8431 (OTel metrics) |
+| `Comuki.Shared.Telemetry` / host (`AddComukiTelemetry`) | VictoriaMetrics OTLP :8431 when `Telemetry:OtlpEndpoint` is set |
+| Grafana (profile `grafana`) | reads VictoriaMetrics :8428 via provisioned Prometheus datasource |
 
 Per `comuki-decisions.md` § "Прокси (ключевое решение)" — workers in
 containers only see a virtual URL + capability key from
@@ -94,6 +97,42 @@ podman compose down -v     # wipe data
 ```
 
 Wiping data is fine in dev. In real life, do not.
+
+## Grafana dashboards-as-code (S8)
+
+Opt in — Grafana is behind `profiles: ["grafana"]` so a bare `compose up`
+stays lean:
+
+```bash
+cd deploy
+podman compose --env-file .env --profile grafana up -d
+# UI: http://localhost:17027  (admin from COMUKI_GRAFANA_*)
+```
+
+Layout:
+
+| Path | Role |
+|---|---|
+| `grafana/provisioning/datasources/victoria.yml` | Prometheus datasource → `http://victoria-metrics:8428` |
+| `grafana/provisioning/dashboards/dashboards.yml` | file provider → `/var/lib/grafana/dashboards` |
+| `grafana/dashboards/comuki-runs.json` | runs started / work items / claim latency |
+| `grafana/dashboards/comuki-workers.json` | worker start/stop + claim outcomes |
+| `grafana/dashboards/comuki-cost.json` | placeholder until S9 cost/budgets |
+
+### OTel → Victoria → Grafana wiring
+
+1. Compose already starts VictoriaMetrics with `--enableOTLPReceiver`
+   (OTLP gRPC on host `:8431`, query/vmui on `:8428`).
+2. Host: set `Telemetry:OtlpEndpoint` (or env `Telemetry__OtlpEndpoint`) to
+   `http://localhost:8431`. `HostComposer` calls `AddComukiTelemetry` —
+   options always `ValidateOnStart`; the OTLP SDK wires only when the
+   endpoint is set (otherwise instruments stay cheap no-ops).
+3. Grafana provisioned datasource scrapes / queries VictoriaMetrics as
+   Prometheus. Metric names follow OTel→Prometheus translation
+   (`comuki.runs.started` → `comuki_runs_started_total`, etc.).
+
+VictoriaLogs (`:9428`) stays log-only for now — no Grafana Loki
+datasource until a log dashboard lands.
 
 ## Known gaps (deferred to later phases)
 

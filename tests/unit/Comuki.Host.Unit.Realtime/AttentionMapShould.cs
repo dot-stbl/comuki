@@ -111,4 +111,12 @@ public sealed class AttentionMapShould
 
         AttentionMap.FromEntry(entry).ShouldBeNull();
     }
+
+    [Fact(DisplayName = "Given a non-string to field, when mapped, then no attention is emitted")]
+    public void SkipNonStringTargetStatus()
+    {
+        var entry = Entry("work_item.status_changed", /*lang=json,strict*/ """{"itemId":"018f1e2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b","to":1}""");
+
+        AttentionMap.FromEntry(entry).ShouldBeNull();
+    }
 }

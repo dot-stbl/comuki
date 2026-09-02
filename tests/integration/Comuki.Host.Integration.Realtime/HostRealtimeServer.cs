@@ -132,12 +132,15 @@ public sealed class HostRealtimeServer : IAsyncLifetime
     /// <summary>
     /// Seeds one run in <c>Queued</c> with one <c>Queued</c> work item and
     /// returns their ids — the chat-run-starter shape, applied directly
-    /// through the engine's domain factories.
+    /// through the engine's domain factories. Each seed uses a unique
+    /// profile key so ClaimAsync cannot pick up a leftover Queued item
+    /// from a sibling test that never claimed (shared fixture DB).
     /// </summary>
-    public async Task<(RunId RunId, Guid WorkItemId)> SeedRunAsync(ProjectId projectId)
+    public async Task<(RunId RunId, Guid WorkItemId, string ProfileKey)> SeedRunAsync(ProjectId projectId)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var now = DateTimeOffset.UtcNow;
+        var profileKey = "profile-" + Guid.NewGuid().ToString("N");
 
         await using var scope = application.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
@@ -148,7 +151,7 @@ public sealed class HostRealtimeServer : IAsyncLifetime
         var run = Run.Create(projectId, now);
         var item = WorkItem.Create(
             run.Id,
-            "profile-key",
+            profileKey,
             "image",
             "profiles-ref",
                                  /*lang=json,strict*/
@@ -159,11 +162,11 @@ public sealed class HostRealtimeServer : IAsyncLifetime
         db.WorkItems.Add(item);
         await db.SaveChangesAsync(cancellationToken);
 
-        return (run.Id, item.Id);
+        return (run.Id, item.Id, profileKey);
     }
 
     /// <summary>Claims the seeded item through the real queue — the claim path a worker takes.</summary>
-    public async Task ClaimAsync(RunId runId, Guid workItemId)
+    public async Task ClaimAsync(RunId runId, Guid workItemId, string profileKey)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
 
@@ -175,7 +178,7 @@ public sealed class HostRealtimeServer : IAsyncLifetime
 
         var claimed = await queue.ClaimAsync(
             new WorkerId(Guid.NewGuid()),
-            new Shared.Contracts.Queue.WorkItemLabels("image", "profiles-ref", "profile-key"),
+            new Shared.Contracts.Queue.WorkItemLabels("image", "profiles-ref", profileKey),
             DateTimeOffset.UtcNow.AddMinutes(2),
             DateTimeOffset.UtcNow,
             cancellationToken);

@@ -36,7 +36,7 @@ public sealed class KubernetesComputeMappingShould
 
         var job = KubernetesComputeMapping.ToJob(request, workerId, options);
 
-        job.Metadata?.Name.ShouldBe($"comuki-w-{workerId.Value.ToString("N")[..12]}");
+        job.Metadata?.Name.ShouldBe($"comuki-w-{workerId.Value.ToString("N")[^12..]}");
         var metadata = job.Metadata.ShouldNotBeNull();
         var labels = metadata.Labels.ShouldNotBeNull();
         labels[ComputeLabels.Project].ShouldBe(projectId.Value.ToString());
@@ -101,7 +101,7 @@ public sealed class KubernetesComputeMappingShould
 
         var name = KubernetesComputeMapping.ToJobName(workerId);
 
-        name.ShouldBe($"comuki-w-{workerId.Value.ToString("N")[..12]}");
+        name.ShouldBe($"comuki-w-{workerId.Value.ToString("N")[^12..]}");
         name.ShouldNotBe(KubernetesComputeMapping.ToJobName(WorkerId.New()));
     }
 

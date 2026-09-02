@@ -16,7 +16,10 @@ internal static class KubernetesComputeMapping
     /// <param name="workerId"></param>
     public static string ToJobName(WorkerId workerId)
     {
-        return $"comuki-w-{workerId.Value.ToString("N")[..12]}";
+        // UUID7 packs the timestamp into the first 12 hex chars of the "N"
+        // form — two ids minted in the same millisecond collide on a prefix
+        // slice. Take the trailing 12 (random bits) so job names stay unique.
+        return $"comuki-w-{workerId.Value.ToString("N")[^12..]}";
     }
 
     /// <summary>Label-selector string selecting the worker Jobs of one project.</summary>

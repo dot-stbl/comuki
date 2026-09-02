@@ -129,7 +129,7 @@ public sealed class KubernetesComputeProviderShould
         // token identity and container identity must agree — the provider
         // reuses the caller's id instead of minting its own
         handle.Id.ShouldBe(preIssued);
-        handle.ProviderRef.ShouldBe($"comuki-w-{preIssued.Value.ToString("N")[..12]}");
+        handle.ProviderRef.ShouldBe($"comuki-w-{preIssued.Value.ToString("N")[^12..]}");
         _ = await batchV1.Received(1).CreateNamespacedJobWithHttpMessagesAsync(
             Arg.Is<V1Job>(job =>
                 job.Metadata != null
@@ -173,7 +173,7 @@ public sealed class KubernetesComputeProviderShould
         await Provider.StopAsync(workerId, reason, cancellationToken);
 
         _ = await batchV1.Received(1).DeleteNamespacedJobWithHttpMessagesAsync(
-            $"comuki-w-{workerId.Value.ToString("N")[..12]}",
+            $"comuki-w-{workerId.Value.ToString("N")[^12..]}",
             "comuki",
             Arg.Is<V1DeleteOptions>(deleteOptions =>
                 deleteOptions.GracePeriodSeconds == expectedGrace

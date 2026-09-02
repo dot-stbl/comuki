@@ -20,7 +20,7 @@ public sealed class RunsHubShould(HostRealtimeServer server) : IClassFixture<Hos
     public async Task ReceiveJournalEventAfterJoinAsync()
     {
         var projectId = new ProjectId(Guid.NewGuid());
-        var (runId, workItemId) = await server.SeedRunAsync(projectId);
+        var (runId, workItemId, profileKey) = await server.SeedRunAsync(projectId);
 
         await using var connection = await server.ConnectHubAsync(
             HostRealtimeServer.BootstrapEmail,
@@ -36,7 +36,7 @@ public sealed class RunsHubShould(HostRealtimeServer server) : IClassFixture<Hos
 #pragma warning disable xUnit1051
         await connection.InvokeAsync("JoinRunAsync", runId.Value);
 #pragma warning restore xUnit1051
-        await server.ClaimAsync(runId, workItemId);
+        await server.ClaimAsync(runId, workItemId, profileKey);
 
         var view = await received.Task.WaitAsync(HostRealtimeServer.HubTimeout, TestContext.Current.CancellationToken);
 
@@ -65,7 +65,7 @@ public sealed class RunsHubShould(HostRealtimeServer server) : IClassFixture<Hos
     public async Task RefuseJoinWithoutPermissionAsync()
     {
         var projectId = new ProjectId(Guid.NewGuid());
-        var (runId, _) = await server.SeedRunAsync(projectId);
+        var (runId, _, _) = await server.SeedRunAsync(projectId);
 
         await using var connection = await server.ConnectHubAsync(
             HostRealtimeServer.MemberEmail,
@@ -83,7 +83,7 @@ public sealed class RunsHubShould(HostRealtimeServer server) : IClassFixture<Hos
     public async Task BroadcastAttentionOnStatusTransitionAsync()
     {
         var projectId = new ProjectId(Guid.NewGuid());
-        var (runId, workItemId) = await server.SeedRunAsync(projectId);
+        var (runId, workItemId, profileKey) = await server.SeedRunAsync(projectId);
 
         await using var connection = await server.ConnectHubAsync(
             HostRealtimeServer.BootstrapEmail,
@@ -97,7 +97,7 @@ public sealed class RunsHubShould(HostRealtimeServer server) : IClassFixture<Hos
 #pragma warning disable xUnit1051
         await connection.InvokeAsync("JoinProjectAsync", projectId.Value);
 #pragma warning restore xUnit1051
-        await server.ClaimAsync(runId, workItemId);
+        await server.ClaimAsync(runId, workItemId, profileKey);
 
         var attention = await received.Task.WaitAsync(HostRealtimeServer.HubTimeout, TestContext.Current.CancellationToken);
 

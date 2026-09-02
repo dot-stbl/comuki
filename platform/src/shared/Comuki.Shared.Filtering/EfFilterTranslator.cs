@@ -13,28 +13,42 @@ namespace Comuki.Shared.Filtering;
 ///     <see cref="FilterOperatorDescriptor.BuildExpression" />.
 /// </summary>
 /// <typeparam name="TEntity">The entity type to filter.</typeparam>
-/// <param name="fieldSet"></param>
-internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fieldSet)
+/// <param name="fieldSet">Filterable fields registry for <typeparamref name="TEntity" />.</param>
+/// <param name="clock">
+///     Clock used to anchor <c>now(offset)</c> calls. Sampled once per
+///     <see cref="Translate" /> call so every function in a single filter
+///     resolves against the same instant.
+/// </param>
+internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fieldSet, TimeProvider clock)
 {
+    /// <summary>Samples the translator's clock — anchor for <c>now(offset)</c> calls.</summary>
+    public DateTimeOffset Now()
+    {
+        return clock.GetUtcNow();
+    }
+
     /// <summary>
     ///     Translates a <see cref="FilterNode" /> tree into an EF <see cref="Expression" />
-    ///     over the given <paramref name="parameter" />.
+    ///     over the given <paramref name="parameter" />. <paramref name="now" /> is
+    ///     sampled once per translation and used by every <c>now(offset)</c> call —
+    ///     the per-function resolution lands at translation time, not at query execution.
     /// </summary>
     /// <param name="node"></param>
     /// <param name="parameter"></param>
+    /// <param name="now"></param>
     /// <exception cref="NotSupportedException"></exception>
-    public Expression Translate(FilterNode node, ParameterExpression parameter)
+    public Expression Translate(FilterNode node, ParameterExpression parameter, DateTimeOffset now)
     {
         return node switch
         {
-            AndNode and => TranslateAnd(and, parameter),
-            OrNode or => TranslateOr(or, parameter),
-            ComparisonNode cmp => TranslateComparison(cmp, parameter),
+            AndNode and => TranslateAnd(and, parameter, now),
+            OrNode or => TranslateOr(or, parameter, now),
+            ComparisonNode cmp => TranslateComparison(cmp, parameter, now),
             _ => throw new NotSupportedException($"Unknown FilterNode type: {node.GetType().Name}")
         };
     }
 
-    private Expression TranslateAnd(AndNode and, ParameterExpression parameter)
+    private Expression TranslateAnd(AndNode and, ParameterExpression parameter, DateTimeOffset now)
     {
         if (and.Children.Length == 0)
         {
@@ -46,14 +60,14 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
         foreach (var child in and.Children)
         {
             accumulated = accumulated is null
-                    ? Translate(child, parameter)
-                    : Expression.AndAlso(accumulated, Translate(child, parameter));
+                    ? Translate(child, parameter, now)
+                    : Expression.AndAlso(accumulated, Translate(child, parameter, now));
         }
 
         return accumulated!;
     }
 
-    private Expression TranslateOr(OrNode or, ParameterExpression parameter)
+    private Expression TranslateOr(OrNode or, ParameterExpression parameter, DateTimeOffset now)
     {
         if (or.Children.Length == 0)
         {
@@ -65,14 +79,14 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
         foreach (var child in or.Children)
         {
             accumulated = accumulated is null
-                    ? Translate(child, parameter)
-                    : Expression.OrElse(accumulated, Translate(child, parameter));
+                    ? Translate(child, parameter, now)
+                    : Expression.OrElse(accumulated, Translate(child, parameter, now));
         }
 
         return accumulated!;
     }
 
-    private Expression TranslateComparison(ComparisonNode cmp, ParameterExpression parameter)
+    private Expression TranslateComparison(ComparisonNode cmp, ParameterExpression parameter, DateTimeOffset now)
     {
         var field = fieldSet.Find(cmp.Field)
                     ?? throw new FilterParseException($"Unknown field '{cmp.Field}'");
@@ -86,7 +100,7 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
         var accessor = Expression.Property(parameter, field.Name);
         var descriptor = FilterOperatorRegistry.Get(cmp.Operator);
 
-        var convertedValue = ConvertValue(cmp, field, descriptor.ValueKind);
+        var convertedValue = ConvertValue(cmp, field, descriptor.ValueKind, now);
 
         return descriptor.BuildExpression(accessor, convertedValue, field.ValueType);
     }
@@ -98,19 +112,20 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
     /// <param name="cmp"></param>
     /// <param name="field"></param>
     /// <param name="valueKind"></param>
+    /// <param name="now">Anchor for <c>now(offset)</c> function calls.</param>
     /// <exception cref="NotSupportedException"></exception>
-    private static object? ConvertValue(ComparisonNode cmp, FilterableField<TEntity> field, ValueKind valueKind)
+    private static object? ConvertValue(ComparisonNode cmp, FilterableField<TEntity> field, ValueKind valueKind, DateTimeOffset now)
     {
         return valueKind switch
         {
             ValueKind.None => null,
-            ValueKind.Scalar => ConvertScalar(cmp, field),
+            ValueKind.Scalar => ConvertScalar(cmp, field, now),
             ValueKind.List => ConvertList(cmp.Value, field),
             _ => throw new NotSupportedException($"Unknown ValueKind: {valueKind}")
         };
     }
 
-    private static object? ConvertScalar(ComparisonNode cmp, FilterableField<TEntity> field)
+    private static object? ConvertScalar(ComparisonNode cmp, FilterableField<TEntity> field, DateTimeOffset now)
     {
         var rawValue = cmp.Value;
 
@@ -118,7 +133,7 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
         // The old heuristic (EndsWith(')') && Contains('(')) misfired on quoted
         // strings like "John; Doe (admin)" because they contain both.
         return cmp.ValueKind == FilterValueKind.FunctionCall && rawValue is string fnCall
-            ? EvaluateFunction(fnCall, field)
+            ? EvaluateFunction(fnCall, field, now)
             : rawValue is string s ? ConvertValue(s, field.ValueType) : rawValue;
     }
 
@@ -139,7 +154,7 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
         return list;
     }
 
-    private static DateTimeOffset EvaluateFunction(string call, FilterableField<TEntity> field)
+    private static DateTimeOffset EvaluateFunction(string call, FilterableField<TEntity> field, DateTimeOffset now)
     {
         var valueType = field.ValueType;
 
@@ -153,7 +168,7 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
         var functionName = parts[0];
         var argument = parts.Length > 1 ? parts[1] : string.Empty;
 
-        return FilterFunctions.EvaluateNow(functionName, argument, 0);
+        return FilterFunctions.EvaluateNow(functionName, argument, 0, now);
     }
 
     private static object ConvertValue(string text, Type targetType)

@@ -23,9 +23,15 @@ public static class FilterExpression
     /// <typeparam name="TEntity">The entity type to filter.</typeparam>
     /// <param name="source">The DSL string.</param>
     /// <param name="fields">Optional pre-built field set; defaults to registry lookup.</param>
+    /// <param name="clock">
+    ///     Optional clock used to anchor <c>now(offset)</c> calls. When null,
+    ///     <see cref="TimeProvider.System" /> is used. Production callers should
+    ///     pass an injected clock so the translation is testable.
+    /// </param>
     public static Expression<Func<TEntity, bool>>? ParseFor<TEntity>(
         string? source,
-        FilterableFieldSet<TEntity>? fields = null)
+        FilterableFieldSet<TEntity>? fields = null,
+        TimeProvider? clock = null)
     {
         var node = FilterParser.Parse(source);
 
@@ -35,9 +41,10 @@ public static class FilterExpression
         }
 
         var fieldSet = fields ?? FilterableFieldRegistry.For<TEntity>();
-        var translator = new EfFilterTranslator<TEntity>(fieldSet);
+        var translator = new EfFilterTranslator<TEntity>(fieldSet, clock ?? TimeProvider.System);
         var parameter = Expression.Parameter(typeof(TEntity), "x");
-        var body = translator.Translate(node, parameter);
+        var now = translator.Now();
+        var body = translator.Translate(node, parameter, now);
 
         return Expression.Lambda<Func<TEntity, bool>>(body, parameter);
     }

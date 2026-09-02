@@ -1,5 +1,5 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
-using Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Ports;
 using Microsoft.EntityFrameworkCore;
 
 namespace Comuki.Host.Runs;

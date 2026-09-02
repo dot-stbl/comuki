@@ -1,4 +1,5 @@
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Admission;
+using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Application.Views;
 using Comuki.Modules.Intake.Domain.Tickets;
 using FluentValidation;

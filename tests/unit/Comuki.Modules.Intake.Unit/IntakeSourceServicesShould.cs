@@ -1,4 +1,4 @@
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Application.Sources;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Ids;

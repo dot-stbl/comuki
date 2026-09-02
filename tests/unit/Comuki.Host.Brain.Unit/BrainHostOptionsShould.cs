@@ -1,3 +1,4 @@
+using Comuki.Host.Brain.Brain.Options;
 using Microsoft.Extensions.Configuration;
 using Shouldly;
 using Xunit;

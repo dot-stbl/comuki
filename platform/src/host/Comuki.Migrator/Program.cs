@@ -1,5 +1,5 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
-using Comuki.Migrator;
+using Comuki.Migrator.Sources;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;

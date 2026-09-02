@@ -1,3 +1,4 @@
+using Comuki.Host.Brain.Brain;
 using Comuki.Shared.Contracts.Brain;
 using Shouldly;
 using Xunit;

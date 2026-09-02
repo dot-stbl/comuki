@@ -1,6 +1,8 @@
 // Ported from Hybrid.Sdk.Shared.Filtering.Unit (console.x.sdk) — fidelity over house style.
 using System.ComponentModel.DataAnnotations.Schema;
 
+using Comuki.Shared.Filtering.Attributes;
+
 namespace Comuki.Shared.Filtering.Unit.TestEntities;
 
 /// <summary>

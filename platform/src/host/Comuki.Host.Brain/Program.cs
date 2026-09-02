@@ -1,7 +1,10 @@
 using Comuki.Host.Brain;
+using Comuki.Host.Brain.Brain;
+using Comuki.Host.Brain.Brain.Options;
 using Comuki.Host.Brain.ControlPlane;
 using Comuki.Host.Brain.Model;
-using Comuki.Host.Brain.Ports;
+using Comuki.Host.Brain.Ports.ActiveRuns;
+using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Modules.Memory.Infrastructure;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 using Microsoft.Extensions.AI;

@@ -1,5 +1,7 @@
 using Comuki.Modules.Intake.Application.Admission;
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Admission;
+using Comuki.Modules.Intake.Application.Ports.Sync;
+using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Application.Sync;
 using Comuki.Modules.Intake.Domain.Deliveries;
 using Comuki.Modules.Intake.Domain.Rules;

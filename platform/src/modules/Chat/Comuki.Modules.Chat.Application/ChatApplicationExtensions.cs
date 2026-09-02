@@ -1,5 +1,10 @@
 using Comuki.Modules.Chat.Application.Commands;
-using Comuki.Modules.Chat.Application.Graph;
+using Comuki.Modules.Chat.Application.Graph.Act;
+using Comuki.Modules.Chat.Application.Graph.Clarify;
+using Comuki.Modules.Chat.Application.Graph.Confirm;
+using Comuki.Modules.Chat.Application.Graph.Init;
+using Comuki.Modules.Chat.Application.Graph.Route;
+using Comuki.Modules.Chat.Application.Graph.Think;
 using Comuki.Modules.Chat.Application.Sessions;
 using Comuki.Modules.Chat.Application.Slash;
 using FluentValidation;

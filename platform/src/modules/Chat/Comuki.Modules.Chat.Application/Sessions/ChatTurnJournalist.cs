@@ -1,4 +1,4 @@
-using Comuki.Modules.Chat.Application.Graph;
+using Comuki.Modules.Chat.Application.Graph.Channels;
 using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Domain.Ids;
 using Comuki.Modules.Chat.Domain.Messages;

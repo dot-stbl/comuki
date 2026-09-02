@@ -1,4 +1,5 @@
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Sources;
+using Comuki.Modules.Intake.Application.Ports.Sync;
 
 namespace Comuki.Modules.Intake.Application.Sync;
 

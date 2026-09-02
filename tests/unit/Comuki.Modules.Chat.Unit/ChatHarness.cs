@@ -1,5 +1,5 @@
 using Comuki.Modules.Chat.Application;
-using Comuki.Modules.Chat.Application.Graph;
+using Comuki.Modules.Chat.Application.Graph.Factory;
 using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Application.Sessions;
 using Comuki.Modules.Chat.Domain.Ids;

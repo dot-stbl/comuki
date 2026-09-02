@@ -1,4 +1,5 @@
 // Ported from Hybrid.Sdk.Shared.Filtering.Unit (console.x.sdk) — fidelity over house style.
+using Comuki.Shared.Filtering.Translator;
 using Comuki.Shared.Filtering.Unit.TestEntities;
 using Shouldly;
 using Xunit;

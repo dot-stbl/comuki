@@ -20,4 +20,10 @@ public static class RunEventTypes
     /// (Running -> Queued requeue or Running -> Failed after max attempts) and the attempt count.
     /// </summary>
     public const string WorkItemLeaseExpired = "work_item.lease_expired";
+
+    /// <summary>
+    /// Hard project budget exceeded; payload carries spent/hard limit in USD micros
+    /// and the project id. Emitted by the host budget gate before cancel.
+    /// </summary>
+    public const string BudgetExceeded = "budget.exceeded";
 }

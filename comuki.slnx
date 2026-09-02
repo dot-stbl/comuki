@@ -22,6 +22,9 @@
     <Project Path="platform/src/modules/Chat/Comuki.Modules.Chat.Domain/Comuki.Modules.Chat.Domain.csproj" />
     <Project Path="platform/src/modules/Chat/Comuki.Modules.Chat.Application/Comuki.Modules.Chat.Application.csproj" />
     <Project Path="platform/src/modules/Chat/Comuki.Modules.Chat.Infrastructure/Comuki.Modules.Chat.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Costs/Comuki.Modules.Costs.Domain/Comuki.Modules.Costs.Domain.csproj" />
+    <Project Path="platform/src/modules/Costs/Comuki.Modules.Costs.Application/Comuki.Modules.Costs.Application.csproj" />
+    <Project Path="platform/src/modules/Costs/Comuki.Modules.Costs.Infrastructure/Comuki.Modules.Costs.Infrastructure.csproj" />
     <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Domain/Comuki.Modules.Intake.Domain.csproj" />
     <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Application/Comuki.Modules.Intake.Application.csproj" />
     <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Infrastructure/Comuki.Modules.Intake.Infrastructure.csproj" />
@@ -52,6 +55,7 @@
     <Project Path="tests/unit/Comuki.Modules.Projects.Unit/Comuki.Modules.Projects.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Brain.Unit/Comuki.Host.Brain.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Chat.Unit/Comuki.Modules.Chat.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Costs.Unit/Comuki.Modules.Costs.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Intake.Unit/Comuki.Modules.Intake.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Filtering.Unit/Comuki.Shared.Filtering.Unit.csproj" />
   </Folder>

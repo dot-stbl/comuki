@@ -42,6 +42,8 @@ public static class ProjectMapper
             settings.KnowledgeEnabled,
             settings.VerifyEnabled,
             settings.ProxyEnabled,
+            settings.SoftBudgetUsdMicros,
+            settings.HardBudgetUsdMicros,
             settings.UpdatedAt,
             settings.Version);
     }

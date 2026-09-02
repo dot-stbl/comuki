@@ -91,6 +91,10 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("approve_required");
 
+                    b.Property<long?>("HardBudgetUsdMicros")
+                        .HasColumnType("bigint")
+                        .HasColumnName("hard_budget_usd_micros");
+
                     b.Property<int?>("IdleTtlSeconds")
                         .HasColumnType("integer")
                         .HasColumnName("idle_ttl_seconds");
@@ -110,6 +114,10 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                     b.Property<bool>("ProxyEnabled")
                         .HasColumnType("boolean")
                         .HasColumnName("proxy_enabled");
+
+                    b.Property<long?>("SoftBudgetUsdMicros")
+                        .HasColumnType("bigint")
+                        .HasColumnName("soft_budget_usd_micros");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")

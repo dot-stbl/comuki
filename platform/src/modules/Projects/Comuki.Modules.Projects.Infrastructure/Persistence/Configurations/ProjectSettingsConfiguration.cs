@@ -50,6 +50,12 @@ public sealed class ProjectSettingsConfiguration : IEntityTypeConfiguration<Proj
         _ = builder.Property(static settings => settings.ProxyEnabled)
             .HasColumnName("proxy_enabled");
 
+        _ = builder.Property(static settings => settings.SoftBudgetUsdMicros)
+            .HasColumnName("soft_budget_usd_micros");
+
+        _ = builder.Property(static settings => settings.HardBudgetUsdMicros)
+            .HasColumnName("hard_budget_usd_micros");
+
         _ = builder.Property(static settings => settings.UpdatedAt)
             .HasColumnName("updated_at");
 

@@ -2,11 +2,14 @@ using Comuki.Host.Auth;
 using Comuki.Host.Auth.Security;
 using Comuki.Host.Chat;
 using Comuki.Host.ControlPlane;
+using Comuki.Host.Costs;
 using Comuki.Host.Intake;
 using Comuki.Host.Projects;
 using Comuki.Modules.Chat.Application;
 using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Infrastructure;
+using Comuki.Modules.Costs.Application;
+using Comuki.Modules.Costs.Infrastructure;
 using Comuki.Modules.Identity.Application;
 using Comuki.Modules.Identity.Infrastructure;
 using Comuki.Modules.Identity.Infrastructure.Oidc;
@@ -17,6 +20,7 @@ using Comuki.Modules.Intake.Infrastructure;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
 using Comuki.Shared.Contracts.Brain;
+using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Contracts.Runs;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -50,6 +54,15 @@ internal static class HostComposer
 
         builder.Services.AddProjectsApplication();
         builder.Services.AddProjectsPersistence(database.ConnectionString);
+
+        // Costs module (S9 T9.5): usage_events + budgets. Budget ports are
+        // host-composed (Projects settings + orchestration cancel/journal)
+        // and registered BEFORE AddCostsApplication so its TryAdd defaults
+        // stay out of the way.
+        builder.Services.AddSingleton<IProjectBudgetSettings, ProjectBudgetSettingsAdapter>();
+        builder.Services.AddScoped<IBudgetGate, OrchestrationBudgetGate>();
+        builder.Services.AddCostsApplication();
+        builder.Services.AddCostsPersistence(database.ConnectionString);
 
         // Chat module (issue #5 slice B): turn services + Voluta graph over
         // the chat schema. The brain port falls back to the in-process stub
@@ -131,6 +144,7 @@ internal static class HostComposer
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));
         app.MapControllers();
         app.MapProjectsEndpoints();
+        app.MapCostsEndpoints();
 
         return app;
     }

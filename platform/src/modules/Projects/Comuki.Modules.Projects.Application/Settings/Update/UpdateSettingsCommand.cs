@@ -17,6 +17,8 @@ namespace Comuki.Modules.Projects.Application.Settings.Update;
 /// <param name="KnowledgeEnabled"></param>
 /// <param name="VerifyEnabled"></param>
 /// <param name="ProxyEnabled"></param>
+/// <param name="SoftBudgetUsdMicros"></param>
+/// <param name="HardBudgetUsdMicros"></param>
 public sealed record UpdateSettingsCommand(
     ProjectId ProjectId,
     int Version,
@@ -26,4 +28,6 @@ public sealed record UpdateSettingsCommand(
     bool ApproveRequired,
     bool KnowledgeEnabled,
     bool VerifyEnabled,
-    bool ProxyEnabled);
+    bool ProxyEnabled,
+    long? SoftBudgetUsdMicros,
+    long? HardBudgetUsdMicros);

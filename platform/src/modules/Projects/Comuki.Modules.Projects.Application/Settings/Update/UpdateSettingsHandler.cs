@@ -42,6 +42,8 @@ public sealed class UpdateSettingsHandler(IProjectSettingsStore settings, TimePr
             command.KnowledgeEnabled,
             command.VerifyEnabled,
             command.ProxyEnabled,
+            command.SoftBudgetUsdMicros,
+            command.HardBudgetUsdMicros,
             clock.GetUtcNow());
 
         var saved = await settings.SaveAsync(current, cancellationToken);

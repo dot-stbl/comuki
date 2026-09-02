@@ -161,7 +161,9 @@ file static class ProjectsEndpointMapper
             request.ApproveRequired,
             request.KnowledgeEnabled,
             request.VerifyEnabled,
-            request.ProxyEnabled);
+            request.ProxyEnabled,
+            request.SoftBudgetUsdMicros,
+            request.HardBudgetUsdMicros);
     }
 }
 

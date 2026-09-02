@@ -59,7 +59,7 @@ public sealed class ProjectSettingsCacheShould
         cache.Warm(original);
 
         var updated = ProjectSettings.CreateDefaults(projectId, clock.UtcNow);
-        updated.Apply(1, 12, 600, false, false, false, false, clock.UtcNow);
+        updated.Apply(1, 12, 600, false, false, false, false, null, null, clock.UtcNow);
         cache.Refresh(updated);
 
         cache.Get(projectId).ShouldBeSameAs(updated);

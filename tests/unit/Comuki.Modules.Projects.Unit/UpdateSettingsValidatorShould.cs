@@ -18,7 +18,7 @@ public sealed class UpdateSettingsValidatorShould
     {
         var command = new UpdateSettingsCommand(ProjectId.New(), Version: 3, MinIdle: 1, MaxConcurrent: 8,
             IdleTtlSeconds: 900, ApproveRequired: true, KnowledgeEnabled: false, VerifyEnabled: true,
-            ProxyEnabled: false);
+            ProxyEnabled: false, SoftBudgetUsdMicros: 1_000_000, HardBudgetUsdMicros: 5_000_000);
 
         var result = validator.Validate(command);
 
@@ -30,7 +30,7 @@ public sealed class UpdateSettingsValidatorShould
     [InlineData(-1)]
     public void RefuseNonPositiveVersion(int version)
     {
-        var command = new UpdateSettingsCommand(ProjectId.New(), version, 0, 4, null, false, false, false, false);
+        var command = new UpdateSettingsCommand(ProjectId.New(), version, 0, 4, null, false, false, false, false, null, null);
 
         var result = validator.Validate(command);
 
@@ -43,7 +43,7 @@ public sealed class UpdateSettingsValidatorShould
     {
         var command = new UpdateSettingsCommand(ProjectId.New(), 1, MinIdle: 5, MaxConcurrent: 4,
             IdleTtlSeconds: null, ApproveRequired: false, KnowledgeEnabled: false, VerifyEnabled: false,
-            ProxyEnabled: false);
+            ProxyEnabled: false, SoftBudgetUsdMicros: null, HardBudgetUsdMicros: null);
 
         var result = validator.Validate(command);
 
@@ -56,7 +56,7 @@ public sealed class UpdateSettingsValidatorShould
     [InlineData(86401)]
     public void RefuseOutOfBoundIdleTtl(int idleTtlSeconds)
     {
-        var command = new UpdateSettingsCommand(ProjectId.New(), 1, 0, 4, idleTtlSeconds, false, false, false, false);
+        var command = new UpdateSettingsCommand(ProjectId.New(), 1, 0, 4, idleTtlSeconds, false, false, false, false, null, null);
 
         var result = validator.Validate(command);
 
@@ -67,7 +67,7 @@ public sealed class UpdateSettingsValidatorShould
     [Fact(DisplayName = "Given a null idle TTL (engine default), when validated, then it passes")]
     public void AcceptNullIdleTtl()
     {
-        var command = new UpdateSettingsCommand(ProjectId.New(), 1, 0, 4, null, false, false, false, false);
+        var command = new UpdateSettingsCommand(ProjectId.New(), 1, 0, 4, null, false, false, false, false, null, null);
 
         var result = validator.Validate(command);
 

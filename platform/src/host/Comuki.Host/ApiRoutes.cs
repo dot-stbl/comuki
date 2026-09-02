@@ -68,4 +68,7 @@ public static class ApiRoutes
 
     /// <summary>The realtime hub of runs and project attention (issue #7).</summary>
     public const string HubsRuns = "/hubs/runs";
+
+    /// <summary>Cost rollup for one project (permission cost:read).</summary>
+    public const string ProjectCosts = "/api/v1/projects/{projectId:guid}/costs";
 }

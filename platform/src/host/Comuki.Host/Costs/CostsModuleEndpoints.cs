@@ -16,8 +16,7 @@ public static class CostsModuleEndpoints
     /// <param name="app"></param>
     public static IEndpointRouteBuilder MapCostsEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(ApiRoutes.Projects).WithTags("Costs");
-        group.MapGet("/{projectId:guid}/costs", GetCostsAsync);
+        app.MapGet(ApiRoutes.ProjectCosts, GetCostsAsync).WithTags("Costs");
         return app;
     }
 

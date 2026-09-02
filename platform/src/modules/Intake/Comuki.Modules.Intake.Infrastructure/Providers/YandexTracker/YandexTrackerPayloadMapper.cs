@@ -64,7 +64,7 @@ public static class YandexTrackerPayloadMapper
     /// <param name="projectId"></param>
     /// <param name="now"></param>
     /// <returns></returns>
-    public static IncomingTicket ToTicket(TrackerIssueDto issue, ProjectId projectId, DateTimeOffset now)
+    public static IncomingTicket ToTicket(TrackerIssue issue, ProjectId projectId, DateTimeOffset now)
     {
         return IncomingTicket.Create(
             projectId,

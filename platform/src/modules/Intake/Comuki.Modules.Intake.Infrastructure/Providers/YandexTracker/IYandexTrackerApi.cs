@@ -13,7 +13,7 @@ public interface IYandexTrackerApi
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Post("/v2/issues/_search")]
-    public Task<IReadOnlyList<TrackerIssueDto>> SearchIssuesAsync([Body] TrackerSearchBody body, CancellationToken cancellationToken);
+    public Task<IReadOnlyList<TrackerIssue>> SearchIssuesAsync([Body] TrackerSearchBody body, CancellationToken cancellationToken);
 
     /// <summary>Posts a comment on an issue.</summary>
     /// <param name="issueKey">Issue key (e.g. COMUKI-5).</param>

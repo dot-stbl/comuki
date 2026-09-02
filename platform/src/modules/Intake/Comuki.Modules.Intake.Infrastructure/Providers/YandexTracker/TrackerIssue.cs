@@ -1,7 +1,7 @@
 namespace Comuki.Modules.Intake.Infrastructure.Providers.YandexTracker;
 
-/// <summary>Yandex Tracker issue wire DTO — tolerant: unknown fields ignored.</summary>
-public sealed record TrackerIssueDto
+/// <summary>Yandex Tracker issue wire shape — tolerant: unknown fields ignored.</summary>
+public sealed record TrackerIssue
 {
     /// <summary>Issue key (e.g. COMUKI-5).</summary>
     public string Key { get; init; } = string.Empty;
@@ -13,13 +13,13 @@ public sealed record TrackerIssueDto
     public string? Description { get; init; }
 
     /// <summary>Queue sub-object.</summary>
-    public TrackerQueueDto? Queue { get; init; }
+    public TrackerQueue? Queue { get; init; }
 
     /// <summary>Queue key.</summary>
     public string QueueKey => Queue?.Key ?? string.Empty;
 
     /// <summary>Creator sub-object.</summary>
-    public TrackerUserDto? CreatedBy { get; init; }
+    public TrackerUser? CreatedBy { get; init; }
 
     /// <summary>Creator login.</summary>
     public string CreatedByLogin => CreatedBy?.Login ?? string.Empty;
@@ -30,23 +30,3 @@ public sealed record TrackerIssueDto
     /// <summary>Issue tags.</summary>
     public IReadOnlyList<string> Tags { get; init; } = [];
 }
-
-/// <summary>Tracker queue wire shape.</summary>
-public sealed record TrackerQueueDto
-{
-    /// <summary>Queue key.</summary>
-    public string Key { get; init; } = string.Empty;
-}
-
-/// <summary>Tracker user wire shape.</summary>
-public sealed record TrackerUserDto
-{
-    /// <summary>User login.</summary>
-    public string Login { get; init; } = string.Empty;
-}
-
-/// <summary>Search request body (HQL query).</summary>
-public sealed record TrackerSearchBody(string Query);
-
-/// <summary>Comment request body.</summary>
-public sealed record TrackerCommentBody(string Text);

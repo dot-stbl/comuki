@@ -45,7 +45,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
             return null;
         }
 
-        _ = db.RunEvents.Add(RunEvent.Create(
+        db.RunEvents.Add(RunEvent.Create(
             claimed.RunId,
             RunEventTypes.WorkItemStatusChanged,
             WorkItemEventPayloads.StatusChanged(
@@ -55,7 +55,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
                 workerId.Value,
                 claimed.Attempt),
             now));
-        _ = await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return claimed;
     }
@@ -164,12 +164,12 @@ file static class WorkItemOwnedTransition
         }
 
         var to = completing ? nameof(WorkItemStatus.Succeeded) : nameof(WorkItemStatus.Failed);
-        _ = db.RunEvents.Add(RunEvent.Create(
+        db.RunEvents.Add(RunEvent.Create(
             owner,
             RunEventTypes.WorkItemStatusChanged,
             WorkItemEventPayloads.StatusChangedWithDetail(workItemId, nameof(WorkItemStatus.Running), to, detail),
             now));
-        _ = await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return true;
     }

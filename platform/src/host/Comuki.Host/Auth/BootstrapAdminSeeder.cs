@@ -47,7 +47,7 @@ public sealed class BootstrapAdminSeeder(
         var created = await createUser.HandleAsync(
             new CreateUserCommand(email, email, password),
             cancellationToken);
-        _ = await grantRole.HandleAsync(
+        await grantRole.HandleAsync(
             new GrantRoleCommand(
                 RoleSubject.ForUser(created.Id),
                 Role.PlatformAdmin,

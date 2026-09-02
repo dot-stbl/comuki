@@ -13,19 +13,19 @@ public sealed class ClaimWorkItemValidator : AbstractValidator<ClaimWorkItemComm
     /// <summary>Configures the claim rules.</summary>
     public ClaimWorkItemValidator()
     {
-        _ = RuleFor(static command => command.WorkerId.Value)
+        RuleFor(static command => command.WorkerId.Value)
             .NotEqual(Guid.Empty)
             .WithMessage("worker id must not be empty");
 
-        _ = RuleFor(static command => command.Labels.Image)
+        RuleFor(static command => command.Labels.Image)
             .NotEmpty()
             .MaximumLength(512);
 
-        _ = RuleFor(static command => command.Labels.ProfilesRef)
+        RuleFor(static command => command.Labels.ProfilesRef)
             .NotEmpty()
             .MaximumLength(256);
 
-        _ = RuleFor(static command => command.Labels.ProfileKey)
+        RuleFor(static command => command.Labels.ProfileKey)
             .NotEmpty()
             .MaximumLength(128)
             .Matches("^[a-z0-9][a-z0-9-]*$")

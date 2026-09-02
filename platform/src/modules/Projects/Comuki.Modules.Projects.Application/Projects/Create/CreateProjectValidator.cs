@@ -14,23 +14,23 @@ public sealed class CreateProjectValidator : AbstractValidator<CreateProjectComm
     /// <summary>Rules: name shape/length, slug pattern, optional field length bounds.</summary>
     public CreateProjectValidator()
     {
-        _ = RuleFor(static command => command.Name)
+        RuleFor(static command => command.Name)
             .NotEmpty()
             .MaximumLength(128);
 
-        _ = RuleFor(static command => command.Slug)
+        RuleFor(static command => command.Slug)
             .NotEmpty()
             .Matches(SlugPattern)
             .WithMessage("slug must be lower-case kebab-case (a-z, 0-9, single dashes)")
             .Length(3, 64);
 
-        _ = RuleFor(static command => command.Description)
+        RuleFor(static command => command.Description)
             .MaximumLength(2000);
 
-        _ = RuleFor(static command => command.ProfilesGitUrl)
+        RuleFor(static command => command.ProfilesGitUrl)
             .MaximumLength(2048);
 
-        _ = RuleFor(static command => command.ProfilesGitRef)
+        RuleFor(static command => command.ProfilesGitRef)
             .MaximumLength(256);
     }
 }

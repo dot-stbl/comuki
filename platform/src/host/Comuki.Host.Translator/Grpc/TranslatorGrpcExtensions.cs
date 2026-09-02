@@ -16,7 +16,7 @@ public static class TranslatorGrpcExtensions
     /// <param name="services"></param>
     public static IServiceCollection AddWorkerGrpcClient(this IServiceCollection services)
     {
-        _ = services.AddSingleton(static serviceProvider =>
+        services.AddSingleton(static serviceProvider =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<TranslatorOptions>>().Value;
             return GrpcClientFactory.CreateGrpcService<IWorkerService>(

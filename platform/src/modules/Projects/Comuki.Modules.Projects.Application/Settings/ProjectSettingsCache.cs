@@ -37,14 +37,14 @@ public sealed class ProjectSettingsCache(IMemoryCache cache)
     /// <param name="settings"></param>
     public void Warm(ProjectSettings settings)
     {
-        _ = cache.Set(SettingsCacheKeys.Key(settings.ProjectId), settings, EntryTtl);
+        cache.Set(SettingsCacheKeys.Key(settings.ProjectId), settings, EntryTtl);
     }
 
     /// <summary>Replaces the cache entry and fires the project's change token (write path).</summary>
     /// <param name="settings"></param>
     public void Refresh(ProjectSettings settings)
     {
-        _ = cache.Set(SettingsCacheKeys.Key(settings.ProjectId), settings, EntryTtl);
+        cache.Set(SettingsCacheKeys.Key(settings.ProjectId), settings, EntryTtl);
         NotifyChanged(settings.ProjectId);
     }
 

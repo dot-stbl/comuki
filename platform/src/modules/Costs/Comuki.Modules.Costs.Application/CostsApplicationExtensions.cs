@@ -23,9 +23,9 @@ public static class CostsApplicationExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IBudgetGate, NullBudgetGate>();
         services.TryAddSingleton<IProjectBudgetSettings, UnlimitedBudgetSettings>();
-        _ = services.AddScoped<IUsageRecorder, UsageRecorder>();
-        _ = services.AddScoped<RunCostAggregator>();
-        _ = services.AddScoped<GetProjectCostsHandler>();
+        services.AddScoped<IUsageRecorder, UsageRecorder>();
+        services.AddScoped<RunCostAggregator>();
+        services.AddScoped<GetProjectCostsHandler>();
         return services;
     }
 }

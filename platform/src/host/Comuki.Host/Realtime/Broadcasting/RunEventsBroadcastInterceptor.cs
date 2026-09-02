@@ -71,7 +71,7 @@ public sealed class RunEventsBroadcastInterceptor(
     {
         if (eventData.Context is { } context)
         {
-            _ = pending.TryRemove(context, out _);
+            pending.TryRemove(context, out _);
         }
 
         return Task.CompletedTask;

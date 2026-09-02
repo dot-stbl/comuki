@@ -20,13 +20,13 @@ public static class IdentityPersistenceExtensions
         this IServiceCollection services,
         string connectionString)
     {
-        _ = services.AddDbContext<IdentityDbContext>(options =>
+        services.AddDbContext<IdentityDbContext>(options =>
             IdentityDbContext.ApplyOptions(options, connectionString));
 
-        _ = services.AddScoped<IUserAccountStore, UserAccountStore>();
-        _ = services.AddScoped<IRoleAssignmentStore, RoleAssignmentStore>();
-        _ = services.AddScoped<IApiKeyStore, ApiKeyStore>();
-        _ = services.AddScoped<IOidcLinkStore, OidcLinkStore>();
+        services.AddScoped<IUserAccountStore, UserAccountStore>();
+        services.AddScoped<IRoleAssignmentStore, RoleAssignmentStore>();
+        services.AddScoped<IApiKeyStore, ApiKeyStore>();
+        services.AddScoped<IOidcLinkStore, OidcLinkStore>();
 
         return services;
     }

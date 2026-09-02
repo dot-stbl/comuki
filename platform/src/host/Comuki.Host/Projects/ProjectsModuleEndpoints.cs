@@ -95,7 +95,7 @@ public static class ProjectsModuleEndpoints
     {
         return await ProjectsEndpointRunner.ExecuteAsync(async () =>
         {
-            _ = await handler.HandleAsync(new ArchiveProjectCommand(new ProjectId(projectId)), cancellationToken);
+            await handler.HandleAsync(new ArchiveProjectCommand(new ProjectId(projectId)), cancellationToken);
 
             return Results.NoContent();
         });

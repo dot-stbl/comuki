@@ -24,12 +24,12 @@ public static class ProjectsPersistenceExtensions
         this IServiceCollection services,
         string connectionString)
     {
-        _ = services.AddDbContextFactory<ProjectsDbContext>(options =>
+        services.AddDbContextFactory<ProjectsDbContext>(options =>
             ProjectsDbContext.ApplyOptions(options, connectionString));
 
-        _ = services.AddScoped<IProjectStore, ProjectStore>();
-        _ = services.AddSingleton<IProjectSettingsStore, DbProjectSettingsStore>();
-        _ = services.AddHostedService<ProjectSettingsCacheRefresher>();
+        services.AddScoped<IProjectStore, ProjectStore>();
+        services.AddSingleton<IProjectSettingsStore, DbProjectSettingsStore>();
+        services.AddHostedService<ProjectSettingsCacheRefresher>();
 
         return services;
     }

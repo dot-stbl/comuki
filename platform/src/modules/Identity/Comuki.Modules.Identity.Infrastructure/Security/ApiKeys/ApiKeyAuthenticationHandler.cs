@@ -66,7 +66,7 @@ public sealed class ApiKeyAuthenticationHandler(
 
         if (await apiKeyStore.FindByPrefixAsync(token.Prefix, Context.RequestAborted) is not { } apiKey)
         {
-            _ = hasher.Verify(rawToken, DummyDigest);
+            hasher.Verify(rawToken, DummyDigest);
             return AuthenticateResult.Fail("unknown api key");
         }
 

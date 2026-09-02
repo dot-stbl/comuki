@@ -24,21 +24,21 @@ public static class ProjectsApplicationExtensions
     public static IServiceCollection AddProjectsApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
-        _ = services.AddMemoryCache();
+        services.AddMemoryCache();
 
-        _ = services.AddSingleton<ProjectSettingsCache>();
+        services.AddSingleton<ProjectSettingsCache>();
 
-        _ = services.AddScoped<CreateProjectHandler>();
-        _ = services.AddScoped<UpdateProjectHandler>();
-        _ = services.AddScoped<ArchiveProjectHandler>();
-        _ = services.AddScoped<GetProjectHandler>();
-        _ = services.AddScoped<ListProjectsHandler>();
-        _ = services.AddScoped<UpdateSettingsHandler>();
-        _ = services.AddScoped<GetProjectSettingsHandler>();
+        services.AddScoped<CreateProjectHandler>();
+        services.AddScoped<UpdateProjectHandler>();
+        services.AddScoped<ArchiveProjectHandler>();
+        services.AddScoped<GetProjectHandler>();
+        services.AddScoped<ListProjectsHandler>();
+        services.AddScoped<UpdateSettingsHandler>();
+        services.AddScoped<GetProjectSettingsHandler>();
 
-        _ = services.AddScoped<IValidator<CreateProjectCommand>, CreateProjectValidator>();
-        _ = services.AddScoped<IValidator<UpdateProjectCommand>, UpdateProjectValidator>();
-        _ = services.AddScoped<IValidator<UpdateSettingsCommand>, UpdateSettingsValidator>();
+        services.AddScoped<IValidator<CreateProjectCommand>, CreateProjectValidator>();
+        services.AddScoped<IValidator<UpdateProjectCommand>, UpdateProjectValidator>();
+        services.AddScoped<IValidator<UpdateSettingsCommand>, UpdateSettingsValidator>();
 
         return services;
     }

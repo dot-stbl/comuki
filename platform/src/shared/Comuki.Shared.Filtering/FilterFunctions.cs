@@ -158,21 +158,28 @@ public static class FilterFunctions
                 position)
         };
 
-        // Defensive range check: DateTimeOffset +/- TimeSpan must stay representable.
-        // UtcNow +/- ~10000 days is far outside any realistic filter; reject anything
-        // that would throw at evaluation time so the client sees 400, not 500.
-        try
-        {
-            _ = DateTimeOffset.UtcNow + offset;
-        }
-        catch (ArgumentOutOfRangeException ex)
+        // Defensive range check: DateTimeOffset can hold at most ~10000 days
+        // in either direction. Anything beyond that throws
+        // ArgumentOutOfRangeException when applied to a DateTimeOffset; reject
+        // it here so callers see 400, not 500, when the filter is evaluated.
+        FilterFunctionGuards.EnsureOffsetFitsInDateTimeOffset(offset, text, position);
+
+        return offset;
+    }
+}
+
+file static class FilterFunctionGuards
+{
+    // DateTimeOffset range is ±10000 days. 1 day = 864e8 ticks; round up.
+    private const long MaxFilterOffsetTicks = 10_000L * 864_000_000_000L;
+
+    public static void EnsureOffsetFitsInDateTimeOffset(TimeSpan offset, string text, int position)
+    {
+        if (Math.Abs(offset.Ticks) > MaxFilterOffsetTicks)
         {
             throw new FilterParseException(
                 $"Duration '{text}' is out of representable range",
-                position,
-                ex);
+                position);
         }
-
-        return offset;
     }
 }

@@ -204,6 +204,6 @@ internal static class WorkItemQueueSql
         var parameter = command.CreateParameter();
         parameter.ParameterName = name;
         parameter.Value = value;
-        _ = command.Parameters.Add(parameter);
+        command.Parameters.Add(parameter);
     }
 }

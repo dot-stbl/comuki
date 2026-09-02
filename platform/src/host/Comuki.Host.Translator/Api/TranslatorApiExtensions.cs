@@ -14,8 +14,8 @@ public static class TranslatorApiExtensions
     /// <param name="services"></param>
     public static IServiceCollection AddOrchestratorApi(this IServiceCollection services)
     {
-        _ = services.AddTransient<WorkerTokenHandler>();
-        _ = services
+        services.AddTransient<WorkerTokenHandler>();
+        services
             .AddRefitClient<IOrchestratorApi>()
             .ConfigureHttpClient(static (serviceProvider, client) =>
                 client.BaseAddress = serviceProvider.GetRequiredService<IOptions<TranslatorOptions>>().Value.OrchestratorBaseUrl)

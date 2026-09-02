@@ -50,7 +50,7 @@ public sealed class EfMemoryStore(
             // supersede-first inside the transaction keeps at most one
             // active row per topic even under concurrent writers (the
             // partial unique index is the last line of defense)
-            _ = await db.MemoryFacts
+            await db.MemoryFacts
                 .Where(fact => fact.Scope == write.Scope
                     && fact.SubjectId == subject
                     && fact.TopicKey == topic
@@ -61,7 +61,7 @@ public sealed class EfMemoryStore(
 
             var fact = MemoryFact.Create(
                 write.Scope, subject, write.Kind, topic, write.Text, write.Source, write.CreatedBy, now);
-            _ = db.MemoryFacts.Add(fact);
+            db.MemoryFacts.Add(fact);
             await db.SaveChangesAsync(cancellationToken);
 
             if (write.Embedding is { } vector)
@@ -132,7 +132,7 @@ public sealed class EfMemoryStore(
             return false;
         }
 
-        _ = db.MemoryFacts.Remove(fact);
+        db.MemoryFacts.Remove(fact);
         await db.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -208,9 +208,9 @@ file static class MemoryFactVectors
         var connection = db.Database.GetDbConnection();
         await using var command = connection.CreateCommand();
         command.CommandText = MemoryFactSql.UpdateEmbeddingSql;
-        _ = command.Parameters.Add(new NpgsqlParameter("id", id.Value));
-        _ = command.Parameters.Add(VectorParameter("vector", vector));
-        _ = await command.ExecuteNonQueryAsync(cancellationToken);
+        command.Parameters.Add(new NpgsqlParameter("id", id.Value));
+        command.Parameters.Add(VectorParameter("vector", vector));
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public static async Task<bool> HasColumnAsync(MemoryDbContext db, CancellationToken cancellationToken)
@@ -245,15 +245,15 @@ file static class MemoryFactVectors
                 var connection = db.Database.GetDbConnection();
                 await using var command = connection.CreateCommand();
                 command.CommandText = MemoryFactSql.CosineSearchSql;
-                _ = command.Parameters.Add(VectorParameter("vector", embedding));
-                _ = command.Parameters.Add(new NpgsqlParameter("cutoff", ephemeralCutoff));
-                _ = command.Parameters.Add(FilterTextParameter(
+                command.Parameters.Add(VectorParameter("vector", embedding));
+                command.Parameters.Add(new NpgsqlParameter("cutoff", ephemeralCutoff));
+                command.Parameters.Add(FilterTextParameter(
                     "scope", query.Scope is { } scope ? MemoryScopeKeys.Key(scope) : null));
-                _ = command.Parameters.Add(FilterTextParameter(
+                command.Parameters.Add(FilterTextParameter(
                     "subject", query.SubjectId is null ? null : MemoryFact.CanonicalKey(query.SubjectId)));
-                _ = command.Parameters.Add(FilterTextParameter(
+                command.Parameters.Add(FilterTextParameter(
                     "kind", query.Kind is { } kind ? MemoryFactKindKeys.Key(kind) : null));
-                _ = command.Parameters.Add(new NpgsqlParameter("limit", query.Limit));
+                command.Parameters.Add(new NpgsqlParameter("limit", query.Limit));
 
                 var rows = new List<MemoryFactView>();
                 await using var reader = await command.ExecuteReaderAsync(cancellationToken);

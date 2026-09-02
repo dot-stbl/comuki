@@ -71,7 +71,7 @@ public sealed class OrchestrationDbContext(
     /// <param name="connectionString"></param>
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
-        _ = builder
+        builder
             .UseNpgsql(connectionString)
             .UseSnakeCaseNamingConvention();
     }
@@ -79,7 +79,7 @@ public sealed class OrchestrationDbContext(
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        _ = modelBuilder
+        modelBuilder
             .ApplyConfiguration(new RunConfiguration())
             .ApplyConfiguration(new WorkItemConfiguration())
             .ApplyConfiguration(new WorkItemDependencyConfiguration())
@@ -90,9 +90,9 @@ public sealed class OrchestrationDbContext(
         // of its own) is visible when its parent run is. The filter shape is
         // constant and reads the scope off THIS context instance, so EF
         // parameterises it per query and the cached model is shared.
-        _ = modelBuilder.Entity<Run>()
+        modelBuilder.Entity<Run>()
             .HasQueryFilter(run => ScopeUnrestricted || ScopeProjectIds.Contains(run.ProjectId));
-        _ = modelBuilder.Entity<WorkItem>()
+        modelBuilder.Entity<WorkItem>()
             .HasQueryFilter(item => ScopeUnrestricted || Runs.Any(run => run.Id == item.RunId));
 
         base.OnModelCreating(modelBuilder);

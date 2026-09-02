@@ -47,7 +47,7 @@ public sealed class LeaseReaper(
 
         foreach (var lease in requeued)
         {
-            _ = db.RunEvents.Add(RunEvent.Create(
+            db.RunEvents.Add(RunEvent.Create(
                 lease.RunId,
                 RunEventTypes.WorkItemLeaseExpired,
                 WorkItemEventPayloads.LeaseExpired(lease.WorkItemId, nameof(WorkItemStatus.Queued), lease.Attempt),
@@ -56,7 +56,7 @@ public sealed class LeaseReaper(
 
         foreach (var lease in failed)
         {
-            _ = db.RunEvents.Add(RunEvent.Create(
+            db.RunEvents.Add(RunEvent.Create(
                 lease.RunId,
                 RunEventTypes.WorkItemLeaseExpired,
                 WorkItemEventPayloads.LeaseExpired(lease.WorkItemId, nameof(WorkItemStatus.Failed), lease.Attempt),
@@ -65,7 +65,7 @@ public sealed class LeaseReaper(
 
         if (requeued.Count + failed.Count > 0)
         {
-            _ = await db.SaveChangesAsync(cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
         }
 
         await transaction.CommitAsync(cancellationToken);

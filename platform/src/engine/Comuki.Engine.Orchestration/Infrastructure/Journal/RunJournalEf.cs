@@ -17,8 +17,8 @@ public sealed class RunJournalEf(OrchestrationDbContext db) : IRunJournal
     /// <inheritdoc />
     public async Task AppendAsync(RunEventEntry entry, CancellationToken cancellationToken = default)
     {
-        _ = db.RunEvents.Add(RunEvent.Create(entry.RunId, entry.Type, entry.PayloadJson, entry.OccurredAt));
-        _ = await db.SaveChangesAsync(cancellationToken);
+        db.RunEvents.Add(RunEvent.Create(entry.RunId, entry.Type, entry.PayloadJson, entry.OccurredAt));
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />

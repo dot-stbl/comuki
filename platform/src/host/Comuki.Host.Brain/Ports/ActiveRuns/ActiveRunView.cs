@@ -1,4 +1,4 @@
-namespace Comuki.Host.Brain.Ports;
+namespace Comuki.Host.Brain.Ports.ActiveRuns;
 
 /// <summary>One active run as the brain sees it.</summary>
 /// <param name="RunId">Run id string.</param>

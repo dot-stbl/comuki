@@ -1,3 +1,4 @@
+using Comuki.Host.Brain.Brain.Options;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 
 namespace Comuki.Host.Brain.ControlPlane;

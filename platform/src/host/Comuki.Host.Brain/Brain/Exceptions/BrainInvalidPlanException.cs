@@ -1,4 +1,4 @@
-namespace Comuki.Host.Brain;
+namespace Comuki.Host.Brain.Brain.Exceptions;
 
 /// <summary>
 /// The model emitted an invalid plan and exhausted its retry — the brain

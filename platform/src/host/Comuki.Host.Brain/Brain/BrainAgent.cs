@@ -1,12 +1,16 @@
 using System.Runtime.CompilerServices;
-using Comuki.Host.Brain.Ports;
+using Comuki.Host.Brain.Brain.Exceptions;
+using Comuki.Host.Brain.Brain.Options;
+using Comuki.Host.Brain.Brain.Tools;
+using Comuki.Host.Brain.Ports.ActiveRuns;
+using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 
-namespace Comuki.Host.Brain;
+namespace Comuki.Host.Brain.Brain;
 
 /// <summary>
 /// The brain agent loop: a stateless think-run over the leading model

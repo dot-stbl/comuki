@@ -1,6 +1,6 @@
 using Comuki.Shared.Contracts.Brain;
 
-namespace Comuki.Host.Brain;
+namespace Comuki.Host.Brain.Brain;
 
 /// <summary>
 /// System prompts per brain request kind. The plan prompt pins the plan

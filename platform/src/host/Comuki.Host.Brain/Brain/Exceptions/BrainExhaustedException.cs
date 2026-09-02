@@ -1,4 +1,4 @@
-namespace Comuki.Host.Brain;
+namespace Comuki.Host.Brain.Brain.Exceptions;
 
 /// <summary>The agent loop hit its iteration cap without producing a result.</summary>
 public sealed class BrainExhaustedException(int maxIterations) : Exception(

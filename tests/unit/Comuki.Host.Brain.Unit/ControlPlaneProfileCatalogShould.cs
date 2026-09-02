@@ -1,3 +1,4 @@
+using Comuki.Host.Brain.Brain.Options;
 using Comuki.Host.Brain.ControlPlane;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;

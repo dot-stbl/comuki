@@ -1,4 +1,4 @@
-namespace Comuki.Host.Brain.Ports;
+namespace Comuki.Host.Brain.Ports.ActiveRuns;
 
 /// <summary>
 /// The brain's view of active runs (the <c>list_active_runs</c> tool).

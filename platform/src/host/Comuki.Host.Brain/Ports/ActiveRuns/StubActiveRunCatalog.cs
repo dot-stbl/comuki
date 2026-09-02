@@ -1,4 +1,4 @@
-namespace Comuki.Host.Brain.Ports;
+namespace Comuki.Host.Brain.Ports.ActiveRuns;
 
 /// <summary>
 /// Slice-A stub: no runs are visible through it. The agent tool reports

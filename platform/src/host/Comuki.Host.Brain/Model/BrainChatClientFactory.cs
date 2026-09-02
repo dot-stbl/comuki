@@ -1,4 +1,5 @@
 using System.ClientModel;
+using Comuki.Host.Brain.Brain.Options;
 using Microsoft.Extensions.AI;
 using OpenAI;
 

@@ -1,4 +1,4 @@
-namespace Comuki.Host.Brain;
+namespace Comuki.Host.Brain.Brain.Options;
 
 /// <summary>The leading model connection — any OpenAI-compatible endpoint.</summary>
 public sealed record BrainModelOptions

@@ -1,4 +1,6 @@
-using Comuki.Host.Brain.Ports;
+using Comuki.Host.Brain.Brain.Exceptions;
+using Comuki.Host.Brain.Ports.ActiveRuns;
+using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Modules.Memory.Application.Views;
 using Comuki.Modules.Memory.Domain.Facts.Kinds;
@@ -7,7 +9,7 @@ using Comuki.Shared.Contracts.ControlPlane.Profiles;
 using Comuki.Shared.Contracts.Plans;
 using Microsoft.Extensions.AI;
 
-namespace Comuki.Host.Brain;
+namespace Comuki.Host.Brain.Brain.Tools;
 
 /// <summary>
 /// Per-request tool surface of the brain agent loop: memory.search,

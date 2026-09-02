@@ -1,4 +1,4 @@
-namespace Comuki.Host.Brain.Ports;
+namespace Comuki.Host.Brain.Ports.Exploration;
 
 /// <summary>Slice-A stub: no explorer reports are available through it.</summary>
 public sealed class StubExplorerReportReader : IExplorerReportReader

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Comuki.Host.Brain;
+namespace Comuki.Host.Brain.Brain.Options;
 
 /// <summary>
 /// Brain host configuration. Config section wins; the

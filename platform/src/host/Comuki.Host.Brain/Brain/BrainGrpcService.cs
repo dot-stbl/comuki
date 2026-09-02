@@ -1,9 +1,10 @@
 using System.Runtime.CompilerServices;
+using Comuki.Host.Brain.Brain.Exceptions;
 using Comuki.Shared.Contracts.Brain;
 using Grpc.Core;
 using ProtoBuf.Grpc;
 
-namespace Comuki.Host.Brain;
+namespace Comuki.Host.Brain.Brain;
 
 /// <summary>
 /// Server side of the brain surface: validates the request kind, runs the

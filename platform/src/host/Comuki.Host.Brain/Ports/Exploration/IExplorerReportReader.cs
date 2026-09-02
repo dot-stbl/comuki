@@ -1,4 +1,4 @@
-namespace Comuki.Host.Brain.Ports;
+namespace Comuki.Host.Brain.Ports.Exploration;
 
 /// <summary>
 /// The brain's view of the latest explorer (read-only recon) report —

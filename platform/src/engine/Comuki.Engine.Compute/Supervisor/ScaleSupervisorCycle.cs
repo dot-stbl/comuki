@@ -41,6 +41,11 @@ public sealed class ScaleSupervisorCycle(
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         var options = scaleOptions.Value;
+        // Capacity is a provider-wide hint (one call per pass). Remaining
+        // free slots shrink as this pass starts workers so later projects /
+        // profiles cannot overshoot the same cluster headroom.
+        var remainingFreeSlots = (await computeProvider.GetCapacityAsync(cancellationToken)).FreeSlots;
+
         foreach (var projectValue in options.Projects)
         {
             var projectId = new ProjectId(projectValue);
@@ -63,17 +68,29 @@ public sealed class ScaleSupervisorCycle(
                         staleIdleCount,
                         projectWorkers.Count,
                         settings.MinIdle,
-                        settings.MaxConcurrent));
+                        settings.MaxConcurrent,
+                        remainingFreeSlots));
+                if (decision.ClampedByCapacity)
+                {
+                    logger.LogWarning(
+                        "Scale decision for project {ProjectId} profile {ProfileKey} clamped by provider capacity: freeSlots={FreeSlots}",
+                        projectId.Value,
+                        profileKey,
+                        remainingFreeSlots);
+                }
+
                 logger.LogInformation(
-                    "Scale decision for project {ProjectId} profile {ProfileKey}: queued={QueuedCount} idle={IdleCount} staleIdle={StaleIdleCount} running={RunningCount}; start={StartWorkers} stopIdle={StopIdleWorkers}",
+                    "Scale decision for project {ProjectId} profile {ProfileKey}: queued={QueuedCount} idle={IdleCount} staleIdle={StaleIdleCount} running={RunningCount} freeSlots={FreeSlots}; start={StartWorkers} stopIdle={StopIdleWorkers} clampedByCapacity={ClampedByCapacity}",
                     projectId.Value,
                     profileKey,
                     queuedCount,
                     idleCount,
                     staleIdleCount,
                     projectWorkers.Count,
+                    remainingFreeSlots,
                     decision.StartWorkers,
-                    decision.StopIdleWorkers);
+                    decision.StopIdleWorkers,
+                    decision.ClampedByCapacity);
 
                 for (var started = 0; started < decision.StartWorkers; started++)
                 {
@@ -91,6 +108,7 @@ public sealed class ScaleSupervisorCycle(
 
                     var handle = await computeProvider.StartAsync(request, cancellationToken);
                     pool.Register(handle, tokenId, projectId, profileKey);
+                    remainingFreeSlots = Math.Max(0, remainingFreeSlots - 1);
                     logger.LogInformation(
                         "Scale supervisor started worker {WorkerId} for project {ProjectId} profile {ProfileKey}",
                         handle.Id.Value,

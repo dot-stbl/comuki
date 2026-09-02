@@ -6,7 +6,7 @@ namespace Comuki.Engine.Compute.Unit;
 
 /// <summary>
 /// Truth table for the pure scale policy: create-per-task capped by
-/// MaxConcurrent, stale-idle reaping floored by MinIdle.
+/// MaxConcurrent and provider FreeSlots, stale-idle reaping floored by MinIdle.
 /// </summary>
 public sealed class ScalePolicyShould
 {
@@ -39,6 +39,58 @@ public sealed class ScalePolicyShould
 
         decision.StartWorkers.ShouldBe(expectedStart);
         decision.StopIdleWorkers.ShouldBe(expectedStop);
+        decision.ClampedByCapacity.ShouldBeFalse();
+    }
+
+    [Theory(DisplayName = "Given FreeSlots, when Decide is called, then starts are clamped to capacity")]
+    [InlineData(5, 0, 0, 0, 0, 10, 2, 2, true)]   // capacity tighter than project cap
+    [InlineData(5, 0, 0, 0, 0, 10, 0, 0, true)]   // no free slots — start nothing
+    [InlineData(5, 0, 0, 0, 0, 3, 10, 3, false)]  // project cap tighter than capacity
+    [InlineData(2, 1, 0, 1, 0, 10, 1, 1, false)]  // deficit already equals FreeSlots — no clamp flag
+    [InlineData(4, 0, 0, 2, 0, 10, 1, 1, true)]   // concurrent room 8, FreeSlots 1 — clamp
+    public void ClampStartsByFreeSlots(
+        int queuedCount,
+        int idleCount,
+        int staleIdleCount,
+        int runningCount,
+        int minIdle,
+        int maxConcurrent,
+        int freeSlots,
+        int expectedStart,
+        bool expectedClamped)
+    {
+        var input = new ScalePolicyInput(
+            queuedCount,
+            idleCount,
+            staleIdleCount,
+            runningCount,
+            minIdle,
+            maxConcurrent,
+            freeSlots);
+
+        var decision = ScalePolicy.Decide(input);
+
+        decision.StartWorkers.ShouldBe(expectedStart);
+        decision.StopIdleWorkers.ShouldBe(0);
+        decision.ClampedByCapacity.ShouldBe(expectedClamped);
+    }
+
+    [Fact]
+    public void SkipCapacityClampWhenFreeSlotsIsNull()
+    {
+        var input = new ScalePolicyInput(
+            QueuedCount: 5,
+            IdleCount: 0,
+            StaleIdleCount: 0,
+            RunningCount: 0,
+            MinIdle: 0,
+            MaxConcurrent: 10,
+            FreeSlots: null);
+
+        var decision = ScalePolicy.Decide(input);
+
+        decision.StartWorkers.ShouldBe(5);
+        decision.ClampedByCapacity.ShouldBeFalse();
     }
 
     [Fact]
@@ -50,5 +102,6 @@ public sealed class ScalePolicyShould
 
         decision.StartWorkers.ShouldBe(0);
         decision.StopIdleWorkers.ShouldBe(0);
+        decision.ClampedByCapacity.ShouldBeFalse();
     }
 }

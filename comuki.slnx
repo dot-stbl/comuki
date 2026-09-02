@@ -7,6 +7,7 @@
   <Folder Name="/platform/src/shared/">
     <Project Path="platform/src/shared/Comuki.Shared.Kernel/Comuki.Shared.Kernel.csproj" />
     <Project Path="platform/src/shared/Comuki.Shared.Contracts/Comuki.Shared.Contracts.csproj" />
+    <Project Path="platform/src/shared/Comuki.Shared.Telemetry/Comuki.Shared.Telemetry.csproj" />
   </Folder>
   <Folder Name="/platform/src/modules/">
     <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Domain/Comuki.Modules.Identity.Domain.csproj" />

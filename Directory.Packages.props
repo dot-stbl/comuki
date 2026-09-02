@@ -17,6 +17,9 @@
   <!-- Platform packages (BE) -->
   <ItemGroup>
     <PackageVersion Include="Docker.DotNet" Version="3.125.15" />
+    <!-- KubernetesClient 17.x: latest stable of the line the k8s compute
+         provider targets (18/19 exist but are unvetted here). -->
+    <PackageVersion Include="KubernetesClient" Version="17.0.14" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.83.0" />
     <PackageVersion Include="LibGit2Sharp" Version="0.32.0" />
@@ -89,6 +92,14 @@
 
   <ItemGroup>
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="15.0.240" />
+  </ItemGroup>
+
+  <!-- OpenTelemetry (S8): business metrics + spans exported over OTLP to
+       VictoriaMetrics (deploy/docker-compose.yml, OTLP gRPC :8431).
+       Versions aligned with the console.x sdk telemetry module. -->
+  <ItemGroup>
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
   </ItemGroup>
 
   <!-- Analyzers: IDE code-style + CA Security only (see .editorconfig);

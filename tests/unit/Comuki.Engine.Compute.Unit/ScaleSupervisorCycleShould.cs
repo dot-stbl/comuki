@@ -65,8 +65,16 @@ public sealed class ScaleSupervisorCycleShould
             });
         _ = computeProvider.ListAsync(Arg.Any<ProjectId>(), Arg.Any<CancellationToken>())
             .Returns(_ => [.. runningHandles.Select(handle => new WorkerInfo(handle.Id, handle.ProviderRef, "implement", "worker:1", "main"))]);
+        _ = computeProvider.GetCapacityAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => new ComputeCapacity(FreeSlots: 100, RunningWorkers: runningHandles.Count));
         _ = backlogReader.CountQueuedAsync(Arg.Any<ProjectId>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(0);
+    }
+
+    private void Capacity(int freeSlots)
+    {
+        _ = computeProvider.GetCapacityAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => new ComputeCapacity(FreeSlots: freeSlots, RunningWorkers: runningHandles.Count));
     }
 
     private SupervisorHarness CreateHarness(ScaleSupervisorOptions? options = null)
@@ -266,5 +274,36 @@ public sealed class ScaleSupervisorCycleShould
         startedRequests.ShouldBeEmpty();
         _ = await backlogReader.DidNotReceive().CountQueuedAsync(
             Arg.Any<ProjectId>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CapStartsAtProviderFreeSlotsAsync()
+    {
+        var harness = CreateHarness();
+        Capacity(1);
+        Queue(5);
+
+        await harness.Cycle.RunAsync(TestContext.Current.CancellationToken);
+
+        startedRequests.Count.ShouldBe(1);
+        _ = await computeProvider.Received(1).GetCapacityAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ShareProviderFreeSlotsAcrossProfilesAsync()
+    {
+        var harness = CreateHarness(new ScaleSupervisorOptions
+        {
+            Projects = [projectId.Value],
+            ProfileKeys = ["implement", "docs"],
+        });
+        Capacity(2);
+        Queue(3, "implement");
+        Queue(3, "docs");
+
+        await harness.Cycle.RunAsync(TestContext.Current.CancellationToken);
+
+        startedRequests.Count.ShouldBe(2);
+        startedRequests.ShouldAllBe(static request => request.ProfileKey == "implement");
     }
 }

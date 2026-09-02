@@ -3,6 +3,7 @@ using Comuki.Engine.Compute.Security;
 using Comuki.Engine.Compute.Security.Stores;
 using Comuki.Host.Workers.Api;
 using Comuki.Host.Workers.Grpc;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ProtoBuf.Grpc.Server;
 
@@ -36,6 +37,12 @@ public static class WorkerRuntimeExtensions
             serviceProvider.GetRequiredService<WorkerCommandHub>());
         services.AddScoped<WorkerGrpcService>();
         services.AddCodeFirstGrpc();
+
+        // The worker runtime is a system consumer by nature: the gRPC
+        // service and the REST surface run every operation as
+        // AsSystem("worker-runtime") and need the ambient-scope bus to do
+        // it. TryAdd — the full host registers the same implementation.
+        services.TryAddSingleton<ISubjectScopeAccessor, AsyncLocalSubjectScopeAccessor>();
 
         return services;
     }

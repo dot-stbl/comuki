@@ -179,7 +179,13 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
 
     private async Task<(Guid RunId, Guid WorkItemId)> SeedQueuedItemAsync(string brief)
     {
+        // The fixture is a system consumer: it seeds and verifies rows the
+        // subject-scope filters would otherwise hide (or reject, with no
+        // scope established on the test flow at all).
         using var scope = host.CreateScope();
+        using var systemScope = scope.ServiceProvider
+            .GetRequiredService<Shared.Kernel.Scoping.ISubjectScopeAccessor>()
+            .AsSystem("translator-e2e-fixture");
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
         var run = Run.Create(ProjectId.New(), DateTimeOffset.UtcNow);
         var item = WorkItem.Create(run.Id, ProfileKey, Image, ProfilesRef, brief, WorkItemStatus.Queued, DateTimeOffset.UtcNow);
@@ -192,6 +198,9 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
     private async Task<WorkItem> LoadItemAsync(Guid workItemId)
     {
         using var scope = host.CreateScope();
+        using var systemScope = scope.ServiceProvider
+            .GetRequiredService<Shared.Kernel.Scoping.ISubjectScopeAccessor>()
+            .AsSystem("translator-e2e-fixture");
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
         return await db.WorkItems.AsNoTracking().SingleAsync(item => item.Id == workItemId, TestContext.Current.CancellationToken);
     }
@@ -199,6 +208,9 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
     private async Task<IReadOnlyList<RunEventEntry>> ReadTimelineAsync(Guid runId)
     {
         using var scope = host.CreateScope();
+        using var systemScope = scope.ServiceProvider
+            .GetRequiredService<Shared.Kernel.Scoping.ISubjectScopeAccessor>()
+            .AsSystem("translator-e2e-fixture");
         var journal = scope.ServiceProvider.GetRequiredService<IRunJournal>();
         return await journal.ReadTimelineAsync(new RunId(runId), page: 1, pageSize: 100, TestContext.Current.CancellationToken);
     }

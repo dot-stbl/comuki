@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Catalog;
 
 /// <summary>Phase values the router and confirm nodes write to <see cref="ChatChannels.Phase"/>.</summary>
 public static class ChatPhases

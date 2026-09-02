@@ -1,5 +1,8 @@
 using System.Text.Json;
 using Comuki.Modules.Chat.Application.Ports;
+using Comuki.Modules.Chat.Application.Graph.Catalog;
+using Comuki.Modules.Chat.Application.Graph.Channels;
+using Comuki.Modules.Chat.Application.Graph.Confirm;
 using Comuki.Modules.Chat.Domain.Ids;
 using Comuki.Modules.Chat.Domain.Messages;
 using Comuki.Shared.Contracts.Brain;
@@ -8,7 +11,7 @@ using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 using Voluta.Graph;
 
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Think;
 
 /// <summary>
 /// Think node — assembles the brain context (memory digest + history tail),

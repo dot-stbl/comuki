@@ -1,6 +1,6 @@
 using Comuki.Shared.Contracts.Plans;
 
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Confirm;
 
 /// <summary>
 /// Brain plan JSON → validated canonical plan JSON (or an honest rejection):

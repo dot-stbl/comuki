@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Catalog;
 
 /// <summary>
 /// Deterministic v1 intent heuristic the router uses to pick

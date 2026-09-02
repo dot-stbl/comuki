@@ -1,10 +1,12 @@
 using System.Globalization;
 using Comuki.Modules.Chat.Application.Slash;
+using Comuki.Modules.Chat.Application.Graph.Catalog;
+using Comuki.Modules.Chat.Application.Graph.Channels;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 using Voluta.Graph;
 
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Init;
 
 /// <summary>
 /// /init wizard node — skeleton edition. Step 0 asks the first prompt; every

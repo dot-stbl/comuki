@@ -1,6 +1,6 @@
 using Comuki.Shared.Contracts.Plans;
 
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Confirm;
 
 /// <summary>
 /// Outcome of the plan gate: the validated plan and its canonical JSON.

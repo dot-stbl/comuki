@@ -1,8 +1,10 @@
+using Comuki.Modules.Chat.Application.Graph.Catalog;
+using Comuki.Modules.Chat.Application.Graph.Channels;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 using Voluta.Graph;
 
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Confirm;
 
 /// <summary>
 /// Confirm node — the HITL gate. First visit interrupts with the approve

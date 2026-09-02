@@ -1,9 +1,11 @@
 using Comuki.Modules.Chat.Application.Slash;
+using Comuki.Modules.Chat.Application.Graph.Catalog;
+using Comuki.Modules.Chat.Application.Graph.Channels;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 using Voluta.Graph;
 
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Route;
 
 /// <summary>
 /// Router node — the deterministic v1 turn dispatcher. Slash commands expand

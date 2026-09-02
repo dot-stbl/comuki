@@ -1,4 +1,4 @@
-using Comuki.Modules.Chat.Application.Graph;
+using Comuki.Modules.Chat.Application.Graph.Factory;
 using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Chat.Infrastructure.Persistence.Stores;

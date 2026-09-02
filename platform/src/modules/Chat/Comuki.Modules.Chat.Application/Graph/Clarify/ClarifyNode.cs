@@ -1,8 +1,10 @@
+using Comuki.Modules.Chat.Application.Graph.Catalog;
+using Comuki.Modules.Chat.Application.Graph.Channels;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 using Voluta.Graph;
 
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Clarify;
 
 /// <summary>
 /// Clarify node — a task-looking message arrived without project scope, so

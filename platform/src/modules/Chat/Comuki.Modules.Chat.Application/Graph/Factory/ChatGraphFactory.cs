@@ -1,3 +1,11 @@
+using Comuki.Modules.Chat.Application.Graph.Act;
+using Comuki.Modules.Chat.Application.Graph.Catalog;
+using Comuki.Modules.Chat.Application.Graph.Channels;
+using Comuki.Modules.Chat.Application.Graph.Clarify;
+using Comuki.Modules.Chat.Application.Graph.Confirm;
+using Comuki.Modules.Chat.Application.Graph.Init;
+using Comuki.Modules.Chat.Application.Graph.Route;
+using Comuki.Modules.Chat.Application.Graph.Think;
 using Voluta;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Checkpoint;
@@ -5,7 +13,7 @@ using Voluta.Graph;
 using Voluta.Graph.Builder;
 using Voluta.Graph.Options;
 
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Factory;
 
 /// <summary>
 /// Builds the compiled chat graph: route → clarify | init | think →

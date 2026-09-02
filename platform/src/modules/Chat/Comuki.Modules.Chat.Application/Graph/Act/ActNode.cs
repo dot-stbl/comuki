@@ -1,10 +1,12 @@
 using System.Text.Json;
 using Comuki.Modules.Chat.Application.Ports;
+using Comuki.Modules.Chat.Application.Graph.Catalog;
+using Comuki.Modules.Chat.Application.Graph.Channels;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 using Voluta.Graph;
 
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Act;
 
 /// <summary>
 /// Act node — applies the approved plan through the host tool runtime

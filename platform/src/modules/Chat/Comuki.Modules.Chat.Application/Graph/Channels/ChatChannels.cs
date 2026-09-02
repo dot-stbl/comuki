@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Channels;
 
 /// <summary>
 /// Channel names of the chat graph state. Every channel is LastValue and

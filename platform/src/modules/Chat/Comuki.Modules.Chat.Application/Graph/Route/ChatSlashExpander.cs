@@ -1,8 +1,10 @@
 using Comuki.Modules.Chat.Application.Slash;
+using Comuki.Modules.Chat.Application.Graph.Catalog;
+using Comuki.Modules.Chat.Application.Graph.Channels;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 
-namespace Comuki.Modules.Chat.Application.Graph;
+namespace Comuki.Modules.Chat.Application.Graph.Route;
 
 /// <summary>
 /// Expands a slash message into the router's channel writes. Unknown

@@ -7,10 +7,12 @@ namespace Comuki.Engine.Compute.Scaling;
 /// <param name="RunningCount">All running workers of the project (idle + busy, every profile) — the cap denominator.</param>
 /// <param name="MinIdle">Warm-idle floor of the project — idle workers are never reaped below it.</param>
 /// <param name="MaxConcurrent">Concurrency cap of the project.</param>
+/// <param name="FreeSlots">Provider capacity hint — the decision never starts more workers than the runtime can host. Null skips the clamp (no hint).</param>
 public sealed record ScalePolicyInput(
     int QueuedCount,
     int IdleCount,
     int StaleIdleCount,
     int RunningCount,
     int MinIdle,
-    int MaxConcurrent);
+    int MaxConcurrent,
+    int? FreeSlots = null);

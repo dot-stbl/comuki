@@ -64,7 +64,7 @@ public sealed class ProjectsDbContext(
     /// <param name="connectionString"></param>
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
-        _ = builder
+        builder
             .UseNpgsql(connectionString, static npgsql => _ = npgsql.MigrationsHistoryTable(ProjectsTables.MigrationsHistory))
             .UseSnakeCaseNamingConvention();
     }
@@ -72,16 +72,16 @@ public sealed class ProjectsDbContext(
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        _ = modelBuilder
+        modelBuilder
             .ApplyConfiguration(new ProjectConfiguration())
             .ApplyConfiguration(new ProjectSettingsConfiguration());
 
         // The object axis, as row-level filters: a project's own identity is
         // the axis value; a settings row follows its project. Out-of-scope
         // reads surface as not-found downstream, never as a deny.
-        _ = modelBuilder.Entity<Project>()
+        modelBuilder.Entity<Project>()
             .HasQueryFilter(project => ScopeUnrestricted || ScopeProjectIds.Contains(project.Id));
-        _ = modelBuilder.Entity<ProjectSettings>()
+        modelBuilder.Entity<ProjectSettings>()
             .HasQueryFilter(settings => ScopeUnrestricted || ScopeProjectIds.Contains(settings.ProjectId));
 
         base.OnModelCreating(modelBuilder);

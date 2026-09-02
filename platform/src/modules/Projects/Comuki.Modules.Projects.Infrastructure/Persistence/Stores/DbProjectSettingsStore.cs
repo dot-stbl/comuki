@@ -56,7 +56,7 @@ public sealed class DbProjectSettingsStore(
                 throw new ProjectSettingsConflictException(settings.ProjectId, settings.Version, 0);
             }
 
-            _ = db.ProjectSettings.Add(settings);
+            db.ProjectSettings.Add(settings);
             saved = settings;
         }
         else
@@ -84,7 +84,7 @@ public sealed class DbProjectSettingsStore(
 
         try
         {
-            _ = await db.SaveChangesAsync(cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException exception)
         {

@@ -8,18 +8,18 @@ public sealed class UpdateProjectValidator : AbstractValidator<UpdateProjectComm
     /// <summary>Rules: optional name must be non-empty when provided; length bounds on every optional field.</summary>
     public UpdateProjectValidator()
     {
-        _ = RuleFor(static command => command.Name)
+        RuleFor(static command => command.Name)
             .NotEmpty()
             .When(static command => command.Name is not null)
             .MaximumLength(128);
 
-        _ = RuleFor(static command => command.Description)
+        RuleFor(static command => command.Description)
             .MaximumLength(2000);
 
-        _ = RuleFor(static command => command.ProfilesGitUrl)
+        RuleFor(static command => command.ProfilesGitUrl)
             .MaximumLength(2048);
 
-        _ = RuleFor(static command => command.ProfilesGitRef)
+        RuleFor(static command => command.ProfilesGitRef)
             .MaximumLength(256);
     }
 }

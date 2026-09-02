@@ -182,5 +182,8 @@ public static class FilterFunctions
     // The + operator has no TryAdd equivalent on DateTimeOffset, so this
     // probes by computing the offset. Result discarded by design — only the
     // throw matters.
-    private static void OverflowProbe(TimeSpan offset) => _ = DateTimeOffset.UtcNow + offset;
+    private static void OverflowProbe(TimeSpan offset)
+    {
+        _ = DateTimeOffset.UtcNow + offset;
+    }
 }

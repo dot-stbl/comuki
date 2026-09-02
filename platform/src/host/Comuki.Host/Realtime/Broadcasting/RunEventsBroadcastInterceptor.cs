@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
-using System.Net.Http;
 using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Shared.Contracts.Journal;
 using Microsoft.EntityFrameworkCore;

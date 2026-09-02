@@ -177,7 +177,7 @@ public static class FilterFunctions
         // 400, not 500.
         try
         {
-            OverflowProbe(offset);
+            OverflowProbe(now, offset);
         }
         catch (ArgumentOutOfRangeException ex)
         {
@@ -194,11 +194,12 @@ public static class FilterFunctions
     // ArgumentOutOfRangeException that DateTimeOffset.UtcNow + offset raises
     // (the wrapper exception is FilterParseException at the call site).
     // The + operator has no TryAdd equivalent on DateTimeOffset, so this
-    // probes by computing the offset. Result discarded by design — only the
-    // throw matters.
-    private static void OverflowProbe(TimeSpan offset)
+    // probes by computing the offset against the same anchor the caller
+    // passed. The result is bound to a local so the analyser doesn't flag
+    // it as a discarded expression — only the throw matters.
+    private static void OverflowProbe(DateTimeOffset now, TimeSpan offset)
     {
-        _ = DateTimeOffset.UtcNow + offset;
+        _ = now + offset;
     }
 }
 

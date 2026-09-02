@@ -41,4 +41,25 @@ public static class ApiRoutes
     public const string WorkerComplete = "/workers/{workItemId}/complete";
 
     public const string WorkerFail = "/workers/{workItemId}/fail";
+
+    /// <summary>Root of the anonymous tracker webhook surface (issue #6): /api/hooks/{provider}/{key}.</summary>
+    public const string HooksRoot = "api/hooks";
+
+    /// <summary>Native ticket creation (permission run:create).</summary>
+    public const string Tickets = "/api/v1/tickets";
+
+    /// <summary>Base of the inbox surface (pending list, catalog, claim).</summary>
+    public const string Inbox = "/api/v1/inbox";
+
+    /// <summary>Source connection CRUD base.</summary>
+    public const string Sources = "/api/v1/sources";
+
+    /// <summary>One source connection by id.</summary>
+    public const string Source = "/api/v1/sources/{sourceId:guid}";
+
+    /// <summary>Admission rule CRUD base.</summary>
+    public const string AdmissionRules = "/api/v1/admission-rules";
+
+    /// <summary>One admission rule by id.</summary>
+    public const string AdmissionRule = "/api/v1/admission-rules/{ruleId:guid}";
 }

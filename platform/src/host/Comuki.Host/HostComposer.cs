@@ -2,6 +2,7 @@ using Comuki.Host.Auth;
 using Comuki.Host.Auth.Security;
 using Comuki.Host.Chat;
 using Comuki.Host.ControlPlane;
+using Comuki.Host.Intake;
 using Comuki.Host.Projects;
 using Comuki.Modules.Chat.Application;
 using Comuki.Modules.Chat.Application.Ports;
@@ -9,6 +10,10 @@ using Comuki.Modules.Chat.Infrastructure;
 using Comuki.Modules.Identity.Application;
 using Comuki.Modules.Identity.Infrastructure;
 using Comuki.Modules.Identity.Infrastructure.Oidc;
+using Comuki.Modules.Intake.Application;
+using Comuki.Modules.Intake.Application.Options;
+using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Infrastructure;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
 using Comuki.Shared.Contracts.Brain;
@@ -63,6 +68,26 @@ internal static class HostComposer
         builder.Services.AddScoped<ChatRunStarter>();
         builder.Services.AddOptions<ChatWorkerDefaults>()
             .Bind(builder.Configuration.GetSection(ChatWorkerDefaults.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // Intake module (issue #6): webhooks + native tickets over the
+        // intake schema, the tracker Refit providers, and the run status
+        // bridge worker. Runs launch through the host-composed port
+        // (IntakeRunLauncher) — the module never references the engine;
+        // bridge intervals are bound from Intake:* configuration.
+        builder.Services
+            .AddIntakeApplication()
+            .AddIntakePersistence(database.ConnectionString)
+            .AddIntakeProviders();
+        builder.Services.AddOptions<IntakeOptions>()
+            .Bind(builder.Configuration.GetSection(IntakeOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder.Services.AddScoped<IRunLauncher, IntakeRunLauncher>();
+        builder.Services.AddScoped<IRunStatusReader, OrchestrationRunStatusReader>();
+        builder.Services.AddOptions<IntakeWorkerDefaults>()
+            .Bind(builder.Configuration.GetSection(IntakeWorkerDefaults.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

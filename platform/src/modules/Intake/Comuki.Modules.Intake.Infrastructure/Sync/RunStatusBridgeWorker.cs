@@ -4,6 +4,7 @@ using Comuki.Modules.Intake.Application.Sync;
 using Comuki.Modules.Intake.Domain.Sync;
 using Comuki.Modules.Intake.Domain.Tickets;
 using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,13 +19,16 @@ namespace Comuki.Modules.Intake.Infrastructure.Sync;
 /// releases the one-live-run lock, then drains due jobs into the
 /// provider transition APIs with exponential backoff. Runs as a hosted
 /// service resolving everything through scopes — never captures a
-/// scoped dependency.
+/// scoped dependency. Each cycle runs AsSystem: the bridge reads runs
+/// across every project, ambient subject scope does not apply.
 /// </summary>
 /// <param name="scopeFactory"></param>
+/// <scopeAccessor></scopeAccessor>
 /// <param name="options"></param>
 /// <param name="logger"></param>
 public sealed class RunStatusBridgeWorker(
     IServiceScopeFactory scopeFactory,
+    ISubjectScopeAccessor scopeAccessor,
     IOptions<IntakeOptions> options,
     ILogger<RunStatusBridgeWorker> logger) : BackgroundService
 {
@@ -35,6 +39,7 @@ public sealed class RunStatusBridgeWorker(
         {
             try
             {
+                using var systemScope = scopeAccessor.AsSystem("intake-bridge");
                 await BridgeOnceAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

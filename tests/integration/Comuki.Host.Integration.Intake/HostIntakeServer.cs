@@ -167,8 +167,23 @@ public sealed class HostIntakeServer : IAsyncLifetime
     {
         var options = new DbContextOptionsBuilder<TContext>();
         applyOptions(options, ConnectionString);
-        await using var context = (TContext)Activator.CreateInstance(typeof(TContext), options.Options)!;
-        await context.Database.MigrateAsync(cancellationToken);
+
+        // Activator.CreateInstance(Type, args) cannot bind the optional
+        // scope-accessor ctor parameter the filtered contexts take; direct
+        // construction (no accessor) is system semantics — what a migration
+        // pass needs. One reflective cast keeps the generic call sites.
+        var constructor = typeof(TContext).GetConstructors().OrderByDescending(static ctor => ctor.GetParameters().Length).First();
+        object?[] arguments = constructor.GetParameters().Length switch
+        {
+            1 => [options.Options],
+            2 => [options.Options, null],
+            _ => throw new InvalidOperationException("unexpected ctor arity on " + typeof(TContext).Name),
+        };
+        var context = (TContext)constructor.Invoke(arguments);
+        await using (context)
+        {
+            await context.Database.MigrateAsync(cancellationToken);
+        }
     }
 
     private static int FreeTcpPort()

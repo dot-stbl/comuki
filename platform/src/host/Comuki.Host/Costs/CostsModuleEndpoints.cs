@@ -1,4 +1,5 @@
 using Comuki.Modules.Costs.Application.Queries;
+using Comuki.Modules.Identity.Application.Permissions;
 using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Host.Costs;
@@ -6,7 +7,8 @@ namespace Comuki.Host.Costs;
 /// <summary>
 /// Thin REST surface for project costs (S9 T9.5):
 /// GET /api/v1/projects/{projectId}/costs — permission <c>cost:read</c>
-/// (auth attribute TODO with the host-wide permission filter).
+/// enforced by the host-wide permission filter
+/// (<see cref="RequiresPermissionAttribute"/>).
 /// </summary>
 public static class CostsModuleEndpoints
 {
@@ -14,11 +16,11 @@ public static class CostsModuleEndpoints
     /// <param name="app"></param>
     public static IEndpointRouteBuilder MapCostsEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(ApiRoutes.Projects).WithTags("Costs");
-        group.MapGet("/{projectId:guid}/costs", GetCostsAsync);
+        app.MapGet(ApiRoutes.ProjectCosts, GetCostsAsync).WithTags("Costs");
         return app;
     }
 
+    [RequiresPermission("cost:read")]
     private static async Task<IResult> GetCostsAsync(
         Guid projectId,
         GetProjectCostsHandler handler,

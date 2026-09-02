@@ -113,17 +113,18 @@ file static class PermissionProblem
 {
     public static IActionResult Result(int statusCode, string code, string detail)
     {
-        var problem = new ProblemDetails
-        {
-            Status = statusCode,
-            Title = statusCode == StatusCodes.Status403Forbidden ? "Permission denied" : "Authentication required",
-            Detail = detail,
-        };
-        problem.Extensions["code"] = code;
+        // Build with TypedResults.Problem so the title/type defaults and
+        // extension shape stay canonical (issue #20), then wrap in
+        // ObjectResult for the MVC filter context.
+        var typed = TypedResults.Problem(
+            title: statusCode == StatusCodes.Status403Forbidden ? "Permission denied" : "Authentication required",
+            detail: detail,
+            statusCode: statusCode,
+            extensions: new Dictionary<string, object?> { ["code"] = code });
 
-        return new ObjectResult(problem)
+        return new ObjectResult(typed.ProblemDetails)
         {
-            StatusCode = statusCode,
+            StatusCode = typed.StatusCode,
             ContentTypes = { "application/problem+json" },
         };
     }

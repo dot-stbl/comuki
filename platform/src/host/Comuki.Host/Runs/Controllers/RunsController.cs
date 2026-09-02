@@ -58,17 +58,18 @@ public static class RunsProblems
     /// <param name="detail"></param>
     public static ActionResult InvalidFilter(string detail)
     {
-        var problem = new ProblemDetails
-        {
-            Status = StatusCodes.Status400BadRequest,
-            Title = "Invalid filter expression",
-            Detail = detail,
-        };
-        problem.Extensions["code"] = "filter.invalid";
+        // Build with TypedResults.Problem so the title/type defaults and
+        // extension shape stay canonical (issue #20), then wrap in
+        // ObjectResult for the controller-side ActionResult contract.
+        var typed = TypedResults.Problem(
+            title: "Invalid filter expression",
+            detail: detail,
+            statusCode: StatusCodes.Status400BadRequest,
+            extensions: new Dictionary<string, object?> { ["code"] = "filter.invalid" });
 
-        return new ObjectResult(problem)
+        return new ObjectResult(typed.ProblemDetails)
         {
-            StatusCode = StatusCodes.Status400BadRequest,
+            StatusCode = typed.StatusCode,
             ContentTypes = { "application/problem+json" },
         };
     }

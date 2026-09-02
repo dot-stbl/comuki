@@ -178,30 +178,36 @@ file static class ProjectsEndpointRunner
         }
         catch (ProjectNotFoundException exception)
         {
-            return Results.Problem(
+            return TypedResults.Problem(
                 title: "Project not found",
                 detail: exception.Message,
                 statusCode: StatusCodes.Status404NotFound,
-                extensions: new Dictionary<string, object?> { ["projectId"] = exception.ProjectId.ToString() });
+                extensions: new Dictionary<string, object?>
+                {
+                    ["code"] = "project.not_found",
+                    ["projectId"] = exception.ProjectId.ToString(),
+                });
         }
         catch (ProjectSettingsConflictException exception)
         {
-            return Results.Problem(
+            return TypedResults.Problem(
                 title: "Settings version conflict",
                 detail: exception.Message + "; re-read the settings and retry",
                 statusCode: StatusCodes.Status409Conflict,
                 extensions: new Dictionary<string, object?>
                 {
+                    ["code"] = "project.settings_conflict",
                     ["projectId"] = exception.ProjectId.ToString(),
                     ["currentVersion"] = exception.CurrentVersion,
                 });
         }
         catch (ProjectConflictException exception)
         {
-            return Results.Problem(
+            return TypedResults.Problem(
                 title: "Project conflict",
                 detail: exception.Message,
-                statusCode: StatusCodes.Status409Conflict);
+                statusCode: StatusCodes.Status409Conflict,
+                extensions: new Dictionary<string, object?> { ["code"] = "project.conflict" });
         }
         catch (ValidationException exception)
         {
@@ -211,7 +217,7 @@ file static class ProjectsEndpointRunner
                     static grouping => grouping.Key,
                     static grouping => grouping.Select(static failure => failure.ErrorMessage).ToArray());
 
-            return Results.ValidationProblem(errors);
+            return TypedResults.ValidationProblem(errors);
         }
     }
 }

@@ -65,7 +65,12 @@ public sealed class AuthController(
 
         if (!validation.IsValid)
         {
-            return ValidationProblem(new ValidationProblemDetails(validation.ToDictionary()));
+            var typed = TypedResults.ValidationProblem(validation.ToDictionary());
+            return new ObjectResult(typed.ProblemDetails)
+            {
+                StatusCode = typed.StatusCode,
+                ContentTypes = { "application/problem+json" },
+            };
         }
 
         var result = await authentication.LoginAsync(command, cancellationToken);
@@ -191,17 +196,18 @@ file static class AuthProblems
 {
     public static ActionResult Problem(int statusCode, string code, string detail)
     {
-        var problem = new ProblemDetails
-        {
-            Status = statusCode,
-            Title = statusCode == StatusCodes.Status404NotFound ? "Not found" : "Authentication required",
-            Detail = detail,
-        };
-        problem.Extensions["code"] = code;
+        // Build with TypedResults.Problem so the title/type defaults and
+        // extension shape stay canonical (issue #20), then wrap in
+        // ObjectResult for the controller-side ActionResult contract.
+        var typed = TypedResults.Problem(
+            title: statusCode == StatusCodes.Status404NotFound ? "Not found" : "Authentication required",
+            detail: detail,
+            statusCode: statusCode,
+            extensions: new Dictionary<string, object?> { ["code"] = code });
 
-        return new ObjectResult(problem)
+        return new ObjectResult(typed.ProblemDetails)
         {
-            StatusCode = statusCode,
+            StatusCode = typed.StatusCode,
             ContentTypes = { "application/problem+json" },
         };
     }

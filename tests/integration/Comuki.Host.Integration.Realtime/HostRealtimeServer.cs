@@ -7,6 +7,7 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Host.Realtime;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Application.Users;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
@@ -47,6 +48,7 @@ public sealed class HostRealtimeServer : IAsyncLifetime
     private WebApplication application = null!;
     private TempControlPlaneRoot controlPlane = null!;
     private Uri baseAddress = null!;
+    private bool detailedErrorsPreviouslySet;
 
     /// <summary>Bound on every hub read — SignalR defaults can be slow on cold containers.</summary>
     public static readonly TimeSpan HubTimeout = TimeSpan.FromSeconds(30);
@@ -55,6 +57,15 @@ public sealed class HostRealtimeServer : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
+
+        // The realtime suite's HubException assertions expect stack frames
+        // in the message — the production gate in AddComukiRealtime would
+        // turn them off (issue #19). Flip the test-only opt-in here, before
+        // HostComposer.Compose builds the SignalR options.
+        detailedErrorsPreviouslySet = Environment.GetEnvironmentVariable(RealtimeExtensions.DetailedErrorsEnvVar) is { } already
+            && string.Equals(already, "true", StringComparison.Ordinal);
+        Environment.SetEnvironmentVariable(RealtimeExtensions.DetailedErrorsEnvVar, "true");
+
         await container.StartAsync(cancellationToken);
 
         var connectionString = container.GetConnectionString();
@@ -252,6 +263,11 @@ public sealed class HostRealtimeServer : IAsyncLifetime
 
         controlPlane?.Dispose();
         await container.DisposeAsync();
+
+        if (!detailedErrorsPreviouslySet)
+        {
+            Environment.SetEnvironmentVariable(RealtimeExtensions.DetailedErrorsEnvVar, null);
+        }
     }
 
 }

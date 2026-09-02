@@ -51,17 +51,18 @@ public static class ChatProblems
     /// <param name="detail"></param>
     public static ActionResult Problem(int statusCode, string code, string title, string detail)
     {
-        var problem = new ProblemDetails
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = detail,
-        };
-        problem.Extensions["code"] = code;
+        // Build with TypedResults.Problem so the title/type defaults and
+        // extension shape stay canonical (issue #20), then wrap in
+        // ObjectResult for the controller-side ActionResult contract.
+        var typed = TypedResults.Problem(
+            title: title,
+            detail: detail,
+            statusCode: statusCode,
+            extensions: new Dictionary<string, object?> { ["code"] = code });
 
-        return new ObjectResult(problem)
+        return new ObjectResult(typed.ProblemDetails)
         {
-            StatusCode = statusCode,
+            StatusCode = typed.StatusCode,
             ContentTypes = { "application/problem+json" },
         };
     }
@@ -70,9 +71,10 @@ public static class ChatProblems
     /// <param name="errors">Field → messages.</param>
     public static ActionResult Validation(IReadOnlyDictionary<string, string[]> errors)
     {
-        return new ObjectResult(new ValidationProblemDetails(errors.ToDictionary()))
+        var typed = TypedResults.ValidationProblem(errors.ToDictionary());
+        return new ObjectResult(typed.ProblemDetails)
         {
-            StatusCode = StatusCodes.Status400BadRequest,
+            StatusCode = typed.StatusCode,
             ContentTypes = { "application/problem+json" },
         };
     }

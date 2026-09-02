@@ -133,6 +133,7 @@ internal static class HostComposer
 
         app.UseExceptionHandler();
         app.UseAuthentication();
+        app.UseAuthorization();
         app.UseMiddleware<SubjectScopeMiddleware>();
 
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));

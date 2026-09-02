@@ -22,7 +22,7 @@ public static class RealtimeExtensions
     /// <param name="services"></param>
     public static IServiceCollection AddComukiRealtime(this IServiceCollection services)
     {
-        services.AddSignalR();
+        services.AddSignalR(static options => options.EnableDetailedErrors = true);
         services.AddSingleton<IRunEventsBroadcaster, SignalRRunEventsBroadcaster>();
         services.AddSingleton<RunEventsBroadcastInterceptor>();
         services.AddScoped<IRealtimeRunProjects, RealtimeRunProjectsReader>();
@@ -36,6 +36,6 @@ public static class RealtimeExtensions
     /// <param name="app"></param>
     public static void MapComukiRealtime(this WebApplication app)
     {
-        _ = app.MapHub<RunsHub>(ApiRoutes.HubsRuns);
+        app.MapHub<RunsHub>(ApiRoutes.HubsRuns);
     }
 }

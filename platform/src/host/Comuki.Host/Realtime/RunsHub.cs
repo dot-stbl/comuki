@@ -29,11 +29,14 @@ public sealed class RunsHub(
     /// <summary>
     /// Joins the <c>run:{id}</c> timeline group. Requires <c>run:read</c> on
     /// the run's project; an unknown run is an error to the caller.
+    /// Cancellation rides <see cref="HubCallerContext.ConnectionAborted"/> —
+    /// hub methods must not take a <see cref="CancellationToken"/> parameter
+    /// or clients serialise it as an invocation argument.
     /// </summary>
     /// <param name="runId"></param>
-    /// <param name="cancellationToken"></param>
-    public async Task JoinRunAsync(Guid runId, CancellationToken cancellationToken = default)
+    public async Task JoinRunAsync(Guid runId)
     {
+        var cancellationToken = Context.ConnectionAborted;
         var id = new RunId(runId);
         var projects = await runProjects.ReadAsync([id], cancellationToken);
 
@@ -48,13 +51,12 @@ public sealed class RunsHub(
 
     /// <summary>Leaves the <c>run:{id}</c> group; leaving is always allowed.</summary>
     /// <param name="runId"></param>
-    /// <param name="cancellationToken"></param>
-    public Task LeaveRunAsync(Guid runId, CancellationToken cancellationToken = default)
+    public Task LeaveRunAsync(Guid runId)
     {
         return Groups.RemoveFromGroupAsync(
             Context.ConnectionId,
             RealtimeGroups.RunGroup(new RunId(runId)),
-            cancellationToken);
+            Context.ConnectionAborted);
     }
 
     /// <summary>
@@ -64,9 +66,9 @@ public sealed class RunsHub(
     /// at worst subscribes to a group nobody broadcasts into.
     /// </summary>
     /// <param name="projectId"></param>
-    /// <param name="cancellationToken"></param>
-    public async Task JoinProjectAsync(Guid projectId, CancellationToken cancellationToken = default)
+    public async Task JoinProjectAsync(Guid projectId)
     {
+        var cancellationToken = Context.ConnectionAborted;
         var id = new ProjectId(projectId);
         await RunsHubPermissions.RequireAsync(evaluator, Context.User, Permissions.ProjectRead, id, cancellationToken);
         await Groups.AddToGroupAsync(
@@ -77,13 +79,12 @@ public sealed class RunsHub(
 
     /// <summary>Leaves the <c>project:{id}:attention</c> group; leaving is always allowed.</summary>
     /// <param name="projectId"></param>
-    /// <param name="cancellationToken"></param>
-    public Task LeaveProjectAsync(Guid projectId, CancellationToken cancellationToken = default)
+    public Task LeaveProjectAsync(Guid projectId)
     {
         return Groups.RemoveFromGroupAsync(
             Context.ConnectionId,
             RealtimeGroups.ProjectAttentionGroup(new ProjectId(projectId)),
-            cancellationToken);
+            Context.ConnectionAborted);
     }
 }
 

@@ -26,7 +26,7 @@ public sealed class CostsDbContext(DbContextOptions<CostsDbContext> options)
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
         builder
-            .UseNpgsql(connectionString, static npgsql => _ = npgsql.MigrationsHistoryTable(CostsTables.MigrationsHistory))
+            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(CostsTables.MigrationsHistory))
             .UseSnakeCaseNamingConvention();
     }
 

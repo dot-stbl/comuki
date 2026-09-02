@@ -32,7 +32,7 @@ if (recreate)
     OrchestrationDbContext.ApplyOptions(dropOptions, connectionString);
     await using var forDrop = new OrchestrationDbContext(dropOptions.Options);
 
-    _ = await forDrop.Database.EnsureDeletedAsync();
+    await forDrop.Database.EnsureDeletedAsync();
     Console.WriteLine("database dropped (--recreate)");
 }
 

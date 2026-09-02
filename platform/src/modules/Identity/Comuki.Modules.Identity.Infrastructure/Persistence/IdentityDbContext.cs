@@ -41,7 +41,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
         builder
-            .UseNpgsql(connectionString, static npgsql => _ = npgsql.MigrationsHistoryTable(IdentityTables.MigrationsHistory))
+            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(IdentityTables.MigrationsHistory))
             .UseSnakeCaseNamingConvention();
     }
 

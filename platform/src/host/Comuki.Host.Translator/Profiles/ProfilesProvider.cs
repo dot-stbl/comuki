@@ -51,10 +51,10 @@ internal static class ProfilesFileSystem
 {
     public static void CopyDirectory(string source, string target)
     {
-        _ = Directory.CreateDirectory(target);
+        Directory.CreateDirectory(target);
         foreach (var directory in Directory.EnumerateDirectories(source, "*", SearchOption.AllDirectories))
         {
-            _ = Directory.CreateDirectory(Path.Combine(target, directory[source.Length..].TrimStart(Path.DirectorySeparatorChar)));
+            Directory.CreateDirectory(Path.Combine(target, directory[source.Length..].TrimStart(Path.DirectorySeparatorChar)));
         }
 
         foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))

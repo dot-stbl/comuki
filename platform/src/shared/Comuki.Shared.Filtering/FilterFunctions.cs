@@ -163,7 +163,7 @@ public static class FilterFunctions
         // that would throw at evaluation time so the client sees 400, not 500.
         try
         {
-            _ = DateTimeOffset.UtcNow + offset;
+            OverflowProbe(offset);
         }
         catch (ArgumentOutOfRangeException ex)
         {
@@ -175,4 +175,9 @@ public static class FilterFunctions
 
         return offset;
     }
+
+    // the only reason this exists is to surface the same ArgumentOutOfRangeException
+    // that DateTimeOffset.UtcNow + offset raises without needing a discard declaration;
+    // reusing the operator here keeps the overflow contract identical.
+    private static void OverflowProbe(TimeSpan offset) => _ = DateTimeOffset.UtcNow + offset;
 }

@@ -47,7 +47,7 @@ public sealed class WorkerCommandHub() : IWorkerCommandPipe
 
         if (channelsByWorker.TryRemove(workerId, out var previous))
         {
-            _ = previous.Writer.TryComplete();
+            previous.Writer.TryComplete();
         }
 
         channelsByWorker[workerId] = channel;
@@ -61,7 +61,7 @@ public sealed class WorkerCommandHub() : IWorkerCommandPipe
     {
         if (channelsByWorker.TryRemove(new KeyValuePair<WorkerId, Channel<OrchestratorCommand>>(workerId, channel)))
         {
-            _ = channel.Writer.TryComplete();
+            channel.Writer.TryComplete();
         }
     }
 

@@ -22,7 +22,7 @@ public sealed class InMemoryWorkerTokenStore() : IWorkerTokenStore
     /// <inheritdoc />
     public void Revoke(WorkerId workerId)
     {
-        _ = recordsByWorker.TryRemove(workerId, out _);
+        recordsByWorker.TryRemove(workerId, out _);
     }
 
     /// <inheritdoc />

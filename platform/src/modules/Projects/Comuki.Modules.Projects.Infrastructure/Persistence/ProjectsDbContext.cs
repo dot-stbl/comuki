@@ -65,7 +65,7 @@ public sealed class ProjectsDbContext(
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
         builder
-            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(ProjectsTables.MigrationsHistory))
+.UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(ProjectsTables.MigrationsHistory))
             .UseSnakeCaseNamingConvention();
     }
 

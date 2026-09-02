@@ -42,7 +42,7 @@ public sealed class MemoryDbContext(DbContextOptions<MemoryDbContext> options)
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
         builder
-            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(MemoryTables.MigrationsHistory))
+.UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(MemoryTables.MigrationsHistory))
             .UseSnakeCaseNamingConvention();
     }
 

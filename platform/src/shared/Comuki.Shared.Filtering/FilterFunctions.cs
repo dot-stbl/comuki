@@ -201,3 +201,19 @@ public static class FilterFunctions
         _ = DateTimeOffset.UtcNow + offset;
     }
 }
+
+file static class FilterFunctionGuards
+{
+    // DateTimeOffset range is ±10000 days. 1 day = 864e8 ticks; round up.
+    private const long MaxFilterOffsetTicks = 10_000L * 864_000_000_000L;
+
+    public static void EnsureOffsetFitsInDateTimeOffset(TimeSpan offset, string text, int position)
+    {
+        if (Math.Abs(offset.Ticks) > MaxFilterOffsetTicks)
+        {
+            throw new FilterParseException(
+                $"Duration '{text}' is out of representable range",
+                position);
+        }
+    }
+}

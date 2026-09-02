@@ -1,0 +1,18 @@
+{
+  "expand": "schema,names",
+  "startAt": 0,
+  "maxResults": 25,
+  "total": 1,
+  "issues": [
+    {
+      "key": "COM-10",
+      "fields": {
+        "summary": "Board column colors broken",
+        "description": "The done column renders red.",
+        "project": { "key": "COM" },
+        "creator": { "displayName": "erin" },
+        "labels": [ "ui" ]
+      }
+    }
+  ]
+}

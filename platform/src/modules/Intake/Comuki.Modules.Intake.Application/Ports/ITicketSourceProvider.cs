@@ -1,6 +1,5 @@
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
-using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Modules.Intake.Application.Ports;
 
@@ -39,12 +38,14 @@ public interface ITicketSourceProvider
     /// Normalizes the payload into a pending ticket; null when the event
     /// is not a ticket event for this source (ping, unrelated kinds) — a
     /// skip, not an error. Unparseable-but-ticket-shaped payloads also
-    /// answer null (logged skip, 200 OK).
+    /// answer null (logged skip, 200 OK). The connection carries the
+    /// project scope and the provider settings (some trackers need the
+    /// site/queue to compose URLs).
     /// </summary>
     /// <param name="delivery"></param>
-    /// <param name="projectId"></param>
+    /// <param name="connection"></param>
     /// <returns></returns>
-    public IncomingTicket? Normalize(WebhookDelivery delivery, ProjectId projectId);
+    public IncomingTicket? Normalize(WebhookDelivery delivery, SourceConnection connection);
 
     /// <summary>
     /// Fetches one page of the provider's issue catalog for inbox mode

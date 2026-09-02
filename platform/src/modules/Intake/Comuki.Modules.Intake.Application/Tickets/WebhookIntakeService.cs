@@ -81,7 +81,7 @@ public sealed class WebhookIntakeService(
             return WebhookReceipt.SignatureInvalid("webhook signature verification failed");
         }
 
-        var ticket = provider.Normalize(delivery, connection.ProjectId);
+        var ticket = provider.Normalize(delivery, connection);
         if (ticket is null)
         {
             logger.LogDebug("Webhook skipped for source {Source} delivery {DeliveryId}: not a ticket event", sourceKey, deliveryRow.DeliveryId);

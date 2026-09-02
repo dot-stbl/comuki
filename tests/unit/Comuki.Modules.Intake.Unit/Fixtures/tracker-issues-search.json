@@ -1,0 +1,19 @@
+[
+  {
+    "key": "COMUKI-5",
+    "summary": "Import hangs on large files",
+    "description": "Anything over 1 GB never finishes.",
+    "queue": { "key": "COMUKI" },
+    "createdBy": { "login": "carol" },
+    "self": "https://tracker.yandex.ru/COMUKI-5",
+    "tags": [ "import" ]
+  },
+  {
+    "key": "COMUKI-6",
+    "summary": "Dashboard shows stale runs",
+    "queue": { "key": "COMUKI" },
+    "createdBy": { "login": "dave" },
+    "self": "https://tracker.yandex.ru/COMUKI-6",
+    "tags": []
+  }
+]

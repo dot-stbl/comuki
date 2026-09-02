@@ -1,0 +1,13 @@
+{
+  "webhookEvent": "jira:issue_created",
+  "issue": {
+    "key": "COM-9",
+    "fields": {
+      "summary": "Migration drops indexes",
+      "description": "The migration tool drops every index it finds.",
+      "project": { "key": "COM" },
+      "creator": { "displayName": "dave" },
+      "labels": [ "db", "comuki" ]
+    }
+  }
+}

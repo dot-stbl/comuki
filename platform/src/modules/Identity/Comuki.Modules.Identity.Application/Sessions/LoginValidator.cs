@@ -8,12 +8,12 @@ public sealed class LoginValidator : AbstractValidator<LoginCommand>
     /// <summary>Rules: both fields present and bounded.</summary>
     public LoginValidator()
     {
-        _ = RuleFor(static command => command.Email)
+        RuleFor(static command => command.Email)
             .NotEmpty()
             .EmailAddress()
             .MaximumLength(320);
 
-        _ = RuleFor(static command => command.Password)
+        RuleFor(static command => command.Password)
             .NotEmpty()
             .MaximumLength(128);
     }

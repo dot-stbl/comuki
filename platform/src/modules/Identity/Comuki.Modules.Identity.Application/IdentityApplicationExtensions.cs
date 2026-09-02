@@ -30,30 +30,30 @@ public static class IdentityApplicationExtensions
     public static IServiceCollection AddIdentityApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
-        _ = services.AddMemoryCache();
+        services.AddMemoryCache();
 
-        _ = services.AddOptions<ApiKeyOptions>()
+        services.AddOptions<ApiKeyOptions>()
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        _ = services.AddSingleton<IPermissionCatalog, RoleMatrixPermissionCatalog>();
-        _ = services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
+        services.AddSingleton<IPermissionCatalog, RoleMatrixPermissionCatalog>();
+        services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
 
-        _ = services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
-        _ = services.AddSingleton<ApiKeyHasher>();
-        _ = services.AddScoped<ApiKeyIssuer>();
+        services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
+        services.AddSingleton<ApiKeyHasher>();
+        services.AddScoped<ApiKeyIssuer>();
 
-        _ = services.AddScoped<CreateUserHandler>();
-        _ = services.AddScoped<LoginHandler>();
-        _ = services.AddScoped<GrantRoleHandler>();
-        _ = services.AddScoped<RevokeRoleHandler>();
-        _ = services.AddScoped<IssueApiKeyHandler>();
-        _ = services.AddScoped<OidcAccountLinker>();
+        services.AddScoped<CreateUserHandler>();
+        services.AddScoped<LoginHandler>();
+        services.AddScoped<GrantRoleHandler>();
+        services.AddScoped<RevokeRoleHandler>();
+        services.AddScoped<IssueApiKeyHandler>();
+        services.AddScoped<OidcAccountLinker>();
 
-        _ = services.AddScoped<IValidator<CreateUserCommand>, CreateUserValidator>();
-        _ = services.AddScoped<IValidator<LoginCommand>, LoginValidator>();
-        _ = services.AddScoped<IValidator<GrantRoleCommand>, GrantRoleValidator>();
-        _ = services.AddScoped<IValidator<IssueApiKeyCommand>, IssueApiKeyValidator>();
+        services.AddScoped<IValidator<CreateUserCommand>, CreateUserValidator>();
+        services.AddScoped<IValidator<LoginCommand>, LoginValidator>();
+        services.AddScoped<IValidator<GrantRoleCommand>, GrantRoleValidator>();
+        services.AddScoped<IValidator<IssueApiKeyCommand>, IssueApiKeyValidator>();
 
         return services;
     }

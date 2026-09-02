@@ -20,17 +20,17 @@ var connectionString = BrainDatabase.Resolve(builder.Configuration);
 
 builder.WebHost.UseUrls($"http://localhost:{options.GrpcPort}");
 
-_ = builder.Services.AddMemoryPersistence(connectionString);
+builder.Services.AddMemoryPersistence(connectionString);
 builder.Services.AddCodeFirstGrpc();
 
-_ = builder.Services.AddSingleton(options);
-_ = builder.Services.AddSingleton<IProfileCatalog, ControlPlaneProfileCatalog>();
-_ = builder.Services.AddSingleton<IActiveRunCatalog, StubActiveRunCatalog>();
-_ = builder.Services.AddSingleton<IExplorerReportReader, StubExplorerReportReader>();
-_ = builder.Services.AddSingleton(static serviceProvider =>
+builder.Services.AddSingleton(options);
+builder.Services.AddSingleton<IProfileCatalog, ControlPlaneProfileCatalog>();
+builder.Services.AddSingleton<IActiveRunCatalog, StubActiveRunCatalog>();
+builder.Services.AddSingleton<IExplorerReportReader, StubExplorerReportReader>();
+builder.Services.AddSingleton(static serviceProvider =>
     BrainChatClientFactory.Create(serviceProvider.GetRequiredService<BrainOptions>().Model));
-_ = builder.Services.AddSingleton<BrainAgent>();
-_ = builder.Services.AddScoped<BrainGrpcService>();
+builder.Services.AddSingleton<BrainAgent>();
+builder.Services.AddScoped<BrainGrpcService>();
 
 var app = builder.Build();
 

@@ -9,10 +9,10 @@ public sealed class GrantRoleValidator : AbstractValidator<GrantRoleCommand>
     /// <summary>Rules: non-empty subject id, coherent scope (project scope needs a project id).</summary>
     public GrantRoleValidator()
     {
-        _ = RuleFor(static command => command.Grantee.Id)
+        RuleFor(static command => command.Grantee.Id)
             .Must(static id => id != Guid.Empty);
 
-        _ = RuleFor(static command => command.Scope)
+        RuleFor(static command => command.Scope)
             .Must(static scope => scope.Level != ScopeLevel.Project
                 || (scope.ProjectId is { } project && project.Value != Guid.Empty))
             .WithMessage("project scope requires a project id");

@@ -8,16 +8,16 @@ public sealed class CreateUserValidator : AbstractValidator<CreateUserCommand>
     /// <summary>Rules: email shape/length, non-empty display name, password length bounds.</summary>
     public CreateUserValidator()
     {
-        _ = RuleFor(static command => command.Email)
+        RuleFor(static command => command.Email)
             .NotEmpty()
             .EmailAddress()
             .MaximumLength(320);
 
-        _ = RuleFor(static command => command.DisplayName)
+        RuleFor(static command => command.DisplayName)
             .NotEmpty()
             .MaximumLength(256);
 
-        _ = RuleFor(static command => command.Password)
+        RuleFor(static command => command.Password)
             .NotEmpty()
             .MinimumLength(8)
             .MaximumLength(128);

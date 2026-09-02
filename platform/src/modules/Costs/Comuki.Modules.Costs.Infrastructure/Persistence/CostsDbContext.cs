@@ -25,7 +25,7 @@ public sealed class CostsDbContext(DbContextOptions<CostsDbContext> options)
     /// <param name="connectionString"></param>
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
-        _ = builder
+        builder
             .UseNpgsql(connectionString, static npgsql => _ = npgsql.MigrationsHistoryTable(CostsTables.MigrationsHistory))
             .UseSnakeCaseNamingConvention();
     }
@@ -33,7 +33,7 @@ public sealed class CostsDbContext(DbContextOptions<CostsDbContext> options)
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        _ = modelBuilder.ApplyConfiguration(new UsageEventConfiguration());
+        modelBuilder.ApplyConfiguration(new UsageEventConfiguration());
         base.OnModelCreating(modelBuilder);
     }
 }

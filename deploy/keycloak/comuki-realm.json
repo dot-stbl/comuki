@@ -1,0 +1,54 @@
+{
+  "realm": "comuki",
+  "enabled": true,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "clients": [
+    {
+      "clientId": "comuki-dashboard",
+      "name": "Comuki Dashboard",
+      "description": "Public SPA client of the Comuki dashboard (PKCE enforced).",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:17173/*",
+        "http://127.0.0.1:17173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:17173",
+        "http://127.0.0.1:17173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "test-user",
+      "enabled": true,
+      "email": "test-user@comuki.test",
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "test-pass-123",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

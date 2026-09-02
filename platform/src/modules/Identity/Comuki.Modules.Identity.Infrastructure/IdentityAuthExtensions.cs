@@ -143,6 +143,9 @@ public static class IdentityAuthExtensions
                 options.ClientSecret = Environment.GetEnvironmentVariable(provider.ClientSecretEnv)
                     ?? throw new InvalidOperationException(
                         $"oidc provider '{provider.Name}': environment variable '{provider.ClientSecretEnv}' with the client secret is not set");
+                // null keeps the framework default (true); an explicit false
+                // admits an http:// dev authority (local containers only).
+                options.RequireHttpsMetadata = provider.RequireHttps ?? true;
                 options.ResponseType = OpenIdConnectResponseType.Code;
                 options.CallbackPath = $"/auth/oidc/{provider.Name}/callback";
                 options.SignInScheme = AuthSchemes.Cookie;

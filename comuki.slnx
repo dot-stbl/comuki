@@ -21,6 +21,8 @@
     <Project Path="platform/src/modules/Chat/Comuki.Modules.Chat.Domain/Comuki.Modules.Chat.Domain.csproj" />
     <Project Path="platform/src/modules/Chat/Comuki.Modules.Chat.Application/Comuki.Modules.Chat.Application.csproj" />
     <Project Path="platform/src/modules/Chat/Comuki.Modules.Chat.Infrastructure/Comuki.Modules.Chat.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Domain/Comuki.Modules.Intake.Domain.csproj" />
+    <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Application/Comuki.Modules.Intake.Application.csproj" />
   </Folder>
   <Folder Name="/platform/src/engine/">
     <Project Path="platform/src/engine/Comuki.Engine.Orchestration/Comuki.Engine.Orchestration.csproj" />

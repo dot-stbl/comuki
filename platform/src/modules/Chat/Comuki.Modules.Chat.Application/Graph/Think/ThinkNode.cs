@@ -1,8 +1,8 @@
 using System.Text.Json;
-using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Application.Graph.Catalog;
 using Comuki.Modules.Chat.Application.Graph.Channels;
 using Comuki.Modules.Chat.Application.Graph.Confirm;
+using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Domain.Ids;
 using Comuki.Modules.Chat.Domain.Messages;
 using Comuki.Shared.Contracts.Brain;

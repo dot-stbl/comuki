@@ -1,4 +1,4 @@
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Application.Tickets;
 using Microsoft.AspNetCore.Mvc;
 

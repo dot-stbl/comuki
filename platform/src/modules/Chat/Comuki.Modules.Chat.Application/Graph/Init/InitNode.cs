@@ -1,7 +1,7 @@
 using System.Globalization;
-using Comuki.Modules.Chat.Application.Slash;
 using Comuki.Modules.Chat.Application.Graph.Catalog;
 using Comuki.Modules.Chat.Application.Graph.Channels;
+using Comuki.Modules.Chat.Application.Slash;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 using Voluta.Graph;

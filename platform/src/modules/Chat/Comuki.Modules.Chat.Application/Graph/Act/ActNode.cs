@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Application.Graph.Catalog;
 using Comuki.Modules.Chat.Application.Graph.Channels;
+using Comuki.Modules.Chat.Application.Ports;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 using Voluta.Graph;

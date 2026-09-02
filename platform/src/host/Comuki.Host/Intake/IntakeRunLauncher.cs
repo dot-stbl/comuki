@@ -3,7 +3,7 @@ using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Admission;
 using Comuki.Modules.Intake.Domain.Tickets;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Options;

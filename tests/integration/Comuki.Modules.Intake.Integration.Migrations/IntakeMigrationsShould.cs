@@ -1,6 +1,6 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Modules.Intake.Application;
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Deliveries;
 using Comuki.Modules.Intake.Domain.Ids;

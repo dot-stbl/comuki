@@ -1,5 +1,5 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Admission;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 

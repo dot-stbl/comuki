@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using Comuki.Modules.Identity.Domain.Permissions;
 using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 
 namespace Comuki.Modules.Identity.Application.Authorization;
 
@@ -49,5 +50,21 @@ public sealed record SubjectAuthorization(
     {
         return IsPermittedGlobally(key)
             || (ProjectPermissions.TryGetValue(project, out var permissions) && permissions.Contains(key));
+    }
+
+    /// <summary>
+    /// The object-axis projection of this authorization: any
+    /// platform-scope grant makes the subject unrestricted (its
+    /// permissions apply in every project); otherwise the subject is
+    /// confined to the projects its assignments reach. A subject with no
+    /// assignments projects to <see cref="SubjectScope.Nothing"/> — the
+    /// fail-closed answer.
+    /// </summary>
+    /// <returns>The scope to install for the rest of the request.</returns>
+    public SubjectScope ToSubjectScope()
+    {
+        return PlatformPermissions.Count > 0
+            ? new SubjectScope(Unrestricted: true, SystemName: null, ProjectIds: [])
+            : new SubjectScope(Unrestricted: false, SystemName: null, ProjectIds: [.. ProjectPermissions.Keys]);
     }
 }

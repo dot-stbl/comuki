@@ -1,4 +1,5 @@
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Sources;
+using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Comuki.Modules.Intake.Infrastructure.Persistence.Stores;
 using Comuki.Modules.Intake.Infrastructure.Sync;

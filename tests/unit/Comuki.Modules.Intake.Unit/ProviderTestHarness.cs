@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text;
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Infrastructure.Providers;
 using Microsoft.Extensions.DependencyInjection;
 

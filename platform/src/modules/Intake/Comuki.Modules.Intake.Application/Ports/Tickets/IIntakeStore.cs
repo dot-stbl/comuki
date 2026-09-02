@@ -6,7 +6,7 @@ using Comuki.Modules.Intake.Domain.Sync;
 using Comuki.Modules.Intake.Domain.Tickets;
 using Comuki.Shared.Kernel.Ids;
 
-namespace Comuki.Modules.Intake.Application.Ports;
+namespace Comuki.Modules.Intake.Application.Ports.Tickets;
 
 /// <summary>
 /// The intake persistence port — everything the application layer needs

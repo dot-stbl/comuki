@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Intake.Application.Ports;
+namespace Comuki.Modules.Intake.Application.Ports.Sources;
 
 /// <summary>
 /// Resolves an environment-variable name to its value — the only way

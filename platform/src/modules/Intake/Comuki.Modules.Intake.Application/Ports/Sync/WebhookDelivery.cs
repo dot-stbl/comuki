@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Intake.Application.Ports;
+namespace Comuki.Modules.Intake.Application.Ports.Sync;
 
 /// <summary>
 /// One raw webhook delivery as it arrived: the unmodified body bytes

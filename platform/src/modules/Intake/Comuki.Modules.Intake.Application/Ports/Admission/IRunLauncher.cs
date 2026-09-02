@@ -1,7 +1,7 @@
 using Comuki.Modules.Intake.Domain.Tickets;
 using Comuki.Shared.Kernel.Ids;
 
-namespace Comuki.Modules.Intake.Application.Ports;
+namespace Comuki.Modules.Intake.Application.Ports.Admission;
 
 /// <summary>
 /// The run-launch port — the module's only way to create a run. The

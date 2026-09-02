@@ -1,6 +1,6 @@
 using Comuki.Shared.Kernel.Ids;
 
-namespace Comuki.Modules.Intake.Application.Ports;
+namespace Comuki.Modules.Intake.Application.Ports.Admission;
 
 /// <summary>
 /// Read-side port over the orchestration runs — how the run status

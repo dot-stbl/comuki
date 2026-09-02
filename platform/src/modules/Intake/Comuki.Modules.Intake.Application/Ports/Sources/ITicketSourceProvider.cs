@@ -1,7 +1,8 @@
+using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
 
-namespace Comuki.Modules.Intake.Application.Ports;
+namespace Comuki.Modules.Intake.Application.Ports.Sources;
 
 /// <summary>
 /// The per-provider intake port: webhook acceptance (delivery id,

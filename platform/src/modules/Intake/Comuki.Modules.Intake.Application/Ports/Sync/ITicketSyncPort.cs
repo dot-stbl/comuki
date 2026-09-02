@@ -1,6 +1,7 @@
+using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Domain.Connections;
 
-namespace Comuki.Modules.Intake.Application.Ports;
+namespace Comuki.Modules.Intake.Application.Ports.Sync;
 
 /// <summary>
 /// The sync-back port: pushes a finished run's status into the tracker

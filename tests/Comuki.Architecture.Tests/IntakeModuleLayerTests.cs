@@ -43,7 +43,7 @@ public sealed class IntakeModuleLayerTests
     public void IntakeApplicationMustNotDependOnInfrastructureOrEngineOrHosts()
     {
         var result = Types
-            .InAssembly(typeof(Modules.Intake.Application.Ports.IIntakeStore).Assembly)
+            .InAssembly(typeof(Modules.Intake.Application.Ports.Tickets.IIntakeStore).Assembly)
             .ShouldNot()
             .HaveDependencyOnAny(IntakeInfrastructure, Engine, EngineCompute, Host, Translator, Migrator)
             .GetResult();
@@ -63,7 +63,7 @@ public sealed class IntakeModuleLayerTests
             .HaveDependencyOnAny(Engine, EngineCompute)
             .GetResult();
         var application = Types
-            .InAssembly(typeof(Modules.Intake.Application.Ports.IIntakeStore).Assembly)
+            .InAssembly(typeof(Modules.Intake.Application.Ports.Tickets.IIntakeStore).Assembly)
             .ShouldNot()
             .HaveDependencyOnAny(Engine, EngineCompute)
             .GetResult();

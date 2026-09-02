@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Intake.Application.Ports;
+namespace Comuki.Modules.Intake.Application.Ports.Sync;
 
 /// <summary>
 /// The webhook pipeline's answer to the hook endpoint: an HTTP status, a

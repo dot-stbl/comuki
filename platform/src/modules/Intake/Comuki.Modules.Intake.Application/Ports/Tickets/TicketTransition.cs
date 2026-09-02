@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Intake.Application.Ports;
+namespace Comuki.Modules.Intake.Application.Ports.Tickets;
 
 /// <summary>
 /// One sync-back transition to push into a tracker: the finished run's

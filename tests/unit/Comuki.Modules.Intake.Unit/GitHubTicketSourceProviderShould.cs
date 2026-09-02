@@ -1,5 +1,5 @@
 using System.Text;
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
 using Comuki.Modules.Intake.Infrastructure.Providers;

@@ -1,5 +1,5 @@
 using Comuki.Modules.Intake.Application.Options;
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Application.Sources;
 using Comuki.Modules.Intake.Application.Sync;
 using Comuki.Modules.Intake.Application.Views;

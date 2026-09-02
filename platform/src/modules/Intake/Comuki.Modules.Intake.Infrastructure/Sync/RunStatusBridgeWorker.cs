@@ -1,7 +1,8 @@
 using System.Data.Common;
 using System.Text.Json;
 using Comuki.Modules.Intake.Application.Options;
-using Comuki.Modules.Intake.Application.Ports;
+using Comuki.Modules.Intake.Application.Ports.Admission;
+using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Application.Sync;
 using Comuki.Modules.Intake.Domain.Sync;
 using Comuki.Modules.Intake.Domain.Tickets;

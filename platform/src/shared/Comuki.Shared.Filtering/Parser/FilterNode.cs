@@ -1,5 +1,7 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
-namespace Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Ast;
+
+namespace Comuki.Shared.Filtering.Parser;
 
 /// <summary>
 ///     Abstract syntax tree node for a parsed filter expression. Produced by

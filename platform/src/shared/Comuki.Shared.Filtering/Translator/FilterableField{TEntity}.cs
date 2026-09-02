@@ -1,7 +1,9 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
 using System.Linq.Expressions;
 
-namespace Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Ast;
+
+namespace Comuki.Shared.Filtering.Translator;
 
 /// <summary>
 ///     Descriptor for one filterable property of an entity. Carries the property's

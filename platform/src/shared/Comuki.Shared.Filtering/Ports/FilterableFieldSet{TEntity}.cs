@@ -3,8 +3,12 @@ using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
 using System.Reflection;
+using Comuki.Shared.Filtering.Ast;
+using Comuki.Shared.Filtering.Attributes;
+using Comuki.Shared.Filtering.Evaluator;
+using Comuki.Shared.Filtering.Translator;
 
-namespace Comuki.Shared.Filtering;
+namespace Comuki.Shared.Filtering.Ports;
 
 /// <summary>
 ///     Reflects an entity type into a map of filterable fields. Every public

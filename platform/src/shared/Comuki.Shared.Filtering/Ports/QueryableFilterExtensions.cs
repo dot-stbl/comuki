@@ -1,7 +1,11 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
 using System.Linq.Expressions;
 
-namespace Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Attributes;
+using Comuki.Shared.Filtering.Parser;
+using Comuki.Shared.Filtering.Translator;
+
+namespace Comuki.Shared.Filtering.Ports;
 
 /// <summary>
 ///     <see cref="IQueryable{T}" /> extensions that apply a parsed

@@ -2,7 +2,10 @@
 using System.Collections;
 using System.Linq.Expressions;
 
-namespace Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Ast;
+using Comuki.Shared.Filtering.Parser;
+
+namespace Comuki.Shared.Filtering.Evaluator;
 
 /// <summary>
 ///     Single source of truth for every filter operator. Adding a new operator is

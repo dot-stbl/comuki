@@ -3,7 +3,13 @@ using System.Collections;
 using System.Globalization;
 using System.Linq.Expressions;
 
-namespace Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Ast;
+using Comuki.Shared.Filtering.Evaluator;
+using Comuki.Shared.Filtering.Lexer;
+using Comuki.Shared.Filtering.Parser;
+using Comuki.Shared.Filtering.Ports;
+
+namespace Comuki.Shared.Filtering.Translator;
 
 /// <summary>
 ///     Walks a neutral <see cref="FilterNode" /> tree and builds a LINQ

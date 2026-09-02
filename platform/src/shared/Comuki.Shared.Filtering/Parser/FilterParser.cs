@@ -1,7 +1,11 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
 using System.Globalization;
 
-namespace Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Ast;
+using Comuki.Shared.Filtering.Evaluator;
+using Comuki.Shared.Filtering.Lexer;
+
+namespace Comuki.Shared.Filtering.Parser;
 
 /// <summary>
 ///     Neutral recursive-descent parser: DSL string → <see cref="FilterNode" /> tree.

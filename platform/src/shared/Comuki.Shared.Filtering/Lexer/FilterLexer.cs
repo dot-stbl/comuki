@@ -1,7 +1,11 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
 using System.Text;
 
-namespace Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Ast;
+using Comuki.Shared.Filtering.Evaluator;
+using Comuki.Shared.Filtering.Parser;
+
+namespace Comuki.Shared.Filtering.Lexer;
 
 /// <summary>Kind of token the <see cref="FilterLexer" /> emits.</summary>
 public enum FilterTokenKind

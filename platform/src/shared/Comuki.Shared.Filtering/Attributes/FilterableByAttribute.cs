@@ -1,5 +1,5 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
-namespace Comuki.Shared.Filtering;
+namespace Comuki.Shared.Filtering.Attributes;
 
 /// <summary>
 ///     Binds a read DTO (the wire shape a list endpoint returns) to the entity the

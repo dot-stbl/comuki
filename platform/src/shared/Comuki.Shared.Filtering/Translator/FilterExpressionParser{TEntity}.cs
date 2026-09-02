@@ -1,7 +1,9 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
 using System.Linq.Expressions;
+using Comuki.Shared.Filtering.Parser;
+using Comuki.Shared.Filtering.Ports;
 
-namespace Comuki.Shared.Filtering;
+namespace Comuki.Shared.Filtering.Translator;
 
 /// <summary>
 ///     Entry point for parsing filter DSL strings into LINQ predicates for EF Core.

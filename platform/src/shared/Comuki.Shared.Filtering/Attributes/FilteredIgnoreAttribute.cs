@@ -1,5 +1,5 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
-namespace Comuki.Shared.Filtering;
+namespace Comuki.Shared.Filtering.Attributes;
 
 /// <summary>
 ///     Keeps a property out of the filter DSL. The field registry never registers it, so no

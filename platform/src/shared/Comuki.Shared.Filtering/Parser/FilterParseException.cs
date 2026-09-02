@@ -1,7 +1,7 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
 using System.Globalization;
 
-namespace Comuki.Shared.Filtering;
+namespace Comuki.Shared.Filtering.Parser;
 
 /// <summary>
 ///     Thrown by the filter DSL parser when the query string is malformed, references

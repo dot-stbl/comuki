@@ -1,7 +1,8 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
+using Comuki.Shared.Filtering.Parser;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Comuki.Shared.Filtering;
+namespace Comuki.Shared.Filtering.Ports;
 
 /// <summary>
 ///     Query envelope accepted by every list endpoint that supports the filter DSL.

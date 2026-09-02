@@ -3,7 +3,9 @@
 // dropped — those attributes belong to Hybrid.Sdk.Shared.Contracts and have no Comuki
 // counterpart. Only the type-level inference survives; the field-set builder calls it
 // with property.PropertyType directly.
-namespace Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Ast;
+
+namespace Comuki.Shared.Filtering.Evaluator;
 
 /// <summary>
 ///     Infers the set of <see cref="FilterOperator" /> a property supports.

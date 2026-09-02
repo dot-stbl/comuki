@@ -3,6 +3,8 @@
 // values, grammar errors, precedence, quoting. The full Hybrid file also covers
 // locale spoofing and deep DoS loops; the DoS caps (token limit, paren depth)
 // are covered here by their boundary cases.
+using Comuki.Shared.Filtering.Parser;
+using Comuki.Shared.Filtering.Translator;
 using Comuki.Shared.Filtering.Unit.TestEntities;
 using Shouldly;
 using Xunit;

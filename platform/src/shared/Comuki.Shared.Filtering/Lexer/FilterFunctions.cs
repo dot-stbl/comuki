@@ -1,7 +1,9 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
 using System.Globalization;
 
-namespace Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Parser;
+
+namespace Comuki.Shared.Filtering.Lexer;
 
 /// <summary>
 ///     Server-side functions evaluable as filter values. Each function takes a

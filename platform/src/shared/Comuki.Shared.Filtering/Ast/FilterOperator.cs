@@ -1,5 +1,5 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
-namespace Comuki.Shared.Filtering;
+namespace Comuki.Shared.Filtering.Ast;
 
 /// <summary>
 ///     Comparison operators supported by the filter DSL. A field's allowed set is

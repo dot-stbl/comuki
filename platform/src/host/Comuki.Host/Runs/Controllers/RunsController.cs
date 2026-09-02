@@ -1,5 +1,6 @@
 using Comuki.Modules.Identity.Application.Permissions;
-using Comuki.Shared.Filtering;
+using Comuki.Shared.Filtering.Parser;
+using Comuki.Shared.Filtering.Ports;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Comuki.Host.Runs.Controllers;

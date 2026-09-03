@@ -362,7 +362,79 @@ export function createSeedNativeTicket(
   return ticket
 }
 
+/* ---------------------------------------------------------------------------
+ * Inbox mock helpers.
+ *
+ * The mock inbox reads the same `state.tickets` the sources screen shows. Two
+ * pieces of derived state live alongside: which ticket a row currently owns
+ * (the run id, when claimed) and which ones are already taken. Both reset with
+ * the rest of the seed.
+ *
+ * The wire shape is the host's `IntakeTicketView` — UUID id, kebab-case source,
+ * externalId, deep-link url, status string, runId, createdAt. We synthesize
+ * the UUID-shaped id and the deep-link url from the seed id, because the seed
+ * keeps human-readable ticket ids (`nt_4120`) on purpose.
+ * ------------------------------------------------------------------------- */
+
+/** Mock-side id of a ticket the operator has claimed; the host's run id. */
+let mockClaimedTickets = new Map<string, string>()
+
+function claimKey(ticketId: string): string {
+  return ticketId
+}
+
+/**
+ * Pending tickets — what the inbox lists.
+ *
+ * Native-only in mock mode: the seed carries native tickets; tracker tickets
+ * live behind webhook delivery, which the mock does not synthesise. The
+ * catalog endpoint's mock path returns `[]` for the same reason — there is
+ * no fake tracker to browse.
+ */
+export function listSeedInboxTickets(
+  projectId: string | undefined
+): SeedNativeTicket[] {
+  return state.tickets.filter(
+    (ticket) => projectId === undefined || ticket.projectId === projectId,
+  )
+}
+
+/** Find one mock ticket by its seed id (e.g. `nt_4120`). */
+export function findSeedInboxTicket(
+  ticketId: string
+): SeedNativeTicket | undefined {
+  return state.tickets.find((ticket) => ticket.id === ticketId)
+}
+
+/**
+ * Claim a mock ticket — record the run id we minted for it.
+ *
+ * Mock claim is one-way: the same ticket can be claimed again without 409,
+ * because the mock has no partial-unique index to violate. The screen renders
+ * a claim failure from the wire path; this path is the storybook / dev:mock
+ * happy route.
+ */
+export function claimSeedInboxTicket(ticketId: string): string {
+  const existing = mockClaimedTickets.get(claimKey(ticketId))
+  if (existing) {
+    return existing
+  }
+  const runId = `00000000-0000-0000-0000-${Date.now().toString(16).padStart(12, "0").slice(0, 12)}`
+  mockClaimedTickets.set(claimKey(ticketId), runId)
+  return runId
+}
+
+/**
+ * Mock run id for a ticket — what the inbox shows next to a row that has
+ * already been claimed. Returns `undefined` for a ticket that was never
+ * claimed in this session.
+ */
+export function mockInboxClaimedRunId(ticketId: string): string | undefined {
+  return mockClaimedTickets.get(claimKey(ticketId))
+}
+
 /** Back to the seeded connections — used by tests and stories. */
 export function resetSeedSources(): void {
   state = clone(SOURCES_SEED)
+  mockClaimedTickets = new Map()
 }

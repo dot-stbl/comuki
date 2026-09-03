@@ -17,7 +17,7 @@ namespace Comuki.Host.Runs.Controllers;
 /// </summary>
 /// <param name="store">MinIO-backed artifact store.</param>
 [ApiController]
-[Route(ApiRoutes.Runs)]
+[Route("api/v1/projects/{projectId:guid}/runs/{runId:guid}/artifacts")]
 [RequiresPermission("run:read")]
 public sealed class RunArtifactsController(IRunArtifactStore store) : ControllerBase
 {
@@ -29,7 +29,7 @@ public sealed class RunArtifactsController(IRunArtifactStore store) : Controller
     /// <param name="projectId">Owning project (path).</param>
     /// <param name="runId">Run whose artifacts are requested (path).</param>
     /// <param name="cancellationToken"></param>
-    [HttpGet("{runId:guid}/artifacts")]
+    [HttpGet]
     [EndpointName("runs-artifacts")]
     [ProducesResponseType<RunArtifactsPage>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

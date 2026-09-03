@@ -35,6 +35,18 @@ builder.Services
 // migrators/workers/seeders, no DB). No-op at runtime.
 builder.Services.RemoveHostedServicesForOpenApiGeneration();
 
+// Under build-time OpenAPI generation seed minimal config defaults
+// (MinIO env vars etc.) so the [Required] data-annotation validation in
+// HostComposer.Compose does not fail on a fresh clone without an env file.
+// No-op at runtime — real config comes from appsettings / env.
+if (OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration)
+{
+    builder.Configuration["Artifacts:Endpoint"] = "build-time:9000";
+    builder.Configuration["Artifacts:AccessKey"] = "build-time";
+    builder.Configuration["Artifacts:SecretKey"] = "build-time";
+    builder.Configuration["Artifacts:Bucket"] = "build-time";
+}
+
 var app = HostComposer.Compose(builder, database);
 
 app.MapGet(

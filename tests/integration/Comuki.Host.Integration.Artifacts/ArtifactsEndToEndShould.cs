@@ -198,7 +198,6 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
 
         var projectId = ProjectId.New();
-        var runId = RunId.New();
         var now = DateTimeOffset.UtcNow;
 
         var run = Run.Create(projectId, now);
@@ -207,9 +206,12 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         orchestrationDb.Runs.Add(run);
 
         // Seed a single work item so the packager can write brief.json
-        // and the journal event payload has an originWorkItemId.
+        // and the journal event payload has an originWorkItemId. The
+        // work item MUST reference the just-created run's id — a separate
+        // RunId.New() would violate the fk_work_items_runs_run_id foreign
+        // key when both rows are inserted in the same SaveChanges.
         var workItem = Engine.Orchestration.Domain.WorkItems.WorkItem.Create(
-            runId,
+            run.Id,
             "implementer",
             "image:latest",
             "refs/heads/main",
@@ -220,7 +222,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         orchestrationDb.WorkItems.Add(workItem);
 
         await orchestrationDb.SaveChangesAsync(cancellationToken);
-        return (projectId, runId);
+        return (projectId, run.Id);
     }
 
     private async Task<(ProjectId ProjectId, RunId RunId)> SeedInFlightRunAsync(CancellationToken cancellationToken)
@@ -230,14 +232,13 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
 
         var projectId = ProjectId.New();
-        var runId = RunId.New();
         var now = DateTimeOffset.UtcNow;
 
         var run = Run.Create(projectId, now);
         run.TransitionTo(RunStatus.Running, now + TimeSpan.FromMinutes(1));
         orchestrationDb.Runs.Add(run);
         await orchestrationDb.SaveChangesAsync(cancellationToken);
-        return (projectId, runId);
+        return (projectId, run.Id);
     }
 
     private async Task<HttpClient> CreateAdminClientAsync()

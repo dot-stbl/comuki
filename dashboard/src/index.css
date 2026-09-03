@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @import "@fontsource-variable/archivo";
 @import "@fontsource-variable/jetbrains-mono";
 /* Values first, vocabulary second. `themes.css` is generated from the theme

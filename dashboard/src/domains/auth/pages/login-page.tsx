@@ -2,13 +2,15 @@ import { useId, useState, type FormEvent } from "react"
 import { Check, CircleAlert, TimerOff } from "lucide-react"
 
 import { useAuthState } from "@/domains/auth/api/auth"
+import { startOidcFlow } from "@/domains/auth/api/oidc-start"
 import {
   landingFor,
   signInTarget,
   type LoginReason,
 } from "@/domains/auth/model/landing"
+import { useLoginMutation } from "@/domains/identity/api/mutations"
 import { env } from "@/shared/config/env"
-import { signInMock, signInWithOidcMock } from "@/shared/api/mock/auth.store"
+import { signInWithOidcMock } from "@/shared/api/mock/auth.store"
 import { cn } from "@/shared/lib/utils"
 import { Button, ComukiMark } from "@/shared/ui"
 
@@ -52,7 +54,9 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
   const [identity, setIdentity] = useState("")
   const [password, setPassword] = useState("")
   const [failure, setFailure] = useState<string | null>(null)
-  const [pending, setPending] = useState(false)
+
+  const loginMutation = useLoginMutation()
+  const pending = loginMutation.isPending
 
   const incomplete = identity.trim() === "" || password === ""
 
@@ -66,28 +70,51 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
       return
     }
 
-    setPending(true)
     setFailure(null)
-    // Mock-first product: the password form goes through the mock store
-    // until a real POST /api/v1/auth/sign-in is wired in. The mock accepts
-    // any credentials (the rejection path was removed when the screen was
-    // made into a page rather than a modal) and writes a duty-engineer
-    // session that the rest of the app recognises. In real prod, replace
-    // this with a fetch against the auth API.
-    await signInMock({ identity, password })
-    setPending(false)
-    land()
+    // Mock-first by design: `useLoginMutation` reads `env.useMock` and routes
+    // to the kubb client (real mode) or the seed store (mock mode) — same
+    // hook, two backends. `me` and `projects` are invalidated on success, so
+    // `useAuthState` (now backed by `useCurrentUserQuery`) re-renders with
+    // the new session and the rail picks up the roles.
+    try {
+      await loginMutation.mutateAsync({
+        email: identity,
+        password,
+      })
+      land()
+    } catch (error) {
+      setFailure(readFailure(error))
+    }
   }
 
   const onContinueWithProvider = async () => {
     if (pending) {
       return
     }
-    setPending(true)
+
     setFailure(null)
-    await signInWithOidcMock()
-    setPending(false)
-    land()
+
+    if (env.useMock) {
+      // Mock flow: the seed store commits a session and we land on the board.
+      // Tests and storybook rely on this; the kubb client is never imported
+      // when `useMock` is true (see `mutations.ts` mock branch).
+      try {
+        await signInWithOidcMock()
+        land()
+      } catch (error) {
+        setFailure(readFailure(error))
+      }
+      return
+    }
+
+    // Real flow: hand the browser to the host's OIDC start endpoint and let
+    // it run the full handshake (302 → IdP → callback → cookie → 302 → /).
+    // The SPA never sees the callback directly — see `oidc-start.ts` for the
+    // why-not-kubb note.
+    if (!oidc) {
+      return
+    }
+    startOidcFlow(env.apiBaseUrl, oidc.id)
   }
 
   return (
@@ -269,4 +296,17 @@ function Landing({ kind, notice, lead, redirect }: LandingProps) {
       </span>
     </div>
   )
+}
+
+/**
+ * Surface the kubb auth error / mock rejection as a string the screen can
+ * show. The mutation throws plain `Error` in the mock branch and an
+ * `Error`-shaped kubb boundary error in the real branch — either way the
+ * `message` is what the operator reads.
+ */
+function readFailure(error: unknown): string {
+  if (error instanceof Error && error.message.length > 0) {
+    return error.message
+  }
+  return "Sign-in failed. Check the address and try again."
 }

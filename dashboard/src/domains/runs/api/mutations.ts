@@ -8,11 +8,17 @@ import { env } from "@/shared/config/env"
 /**
  * Run decisions — the two things the duty screen exists to let a human do.
  *
- * The orchestrator exposes no decision endpoint yet, so in mock mode these
- * write to the shared run store, which the runs query reads. That matters: an
- * optimistic update alone would be undone by the refetch that follows it, and
- * the decision would look like a 220ms animation. Outside mock mode this throws
- * loudly rather than pretending to have succeeded.
+ * The host's `RunsController` ships only `GET /api/v1/runs` (paged list).
+ * `POST /api/v1/runs/{runId}/approve` and `…/{runId}/cancel` are not on
+ * the wire today, so the real-mode branch throws rather than pretending
+ * to have succeeded — an optimistic write would be undone by the next
+ * refetch and the decision would look like a 220ms animation.
+ *
+ * Mock mode writes to the shared seed store, which the runs query reads;
+ * that round-trip is what keeps the UI honest in storybook and dev:mock.
+ * When the host grows a decision endpoint, the real-mode branch becomes
+ * `postApiV1RunsRunidApprove(runId, …)` / `…/cancel` (kubb-generated);
+ * the mock-mode path stays as-is.
  */
 
 async function postDecision(runId: string, decision: "approve" | "cancel") {

@@ -1,0 +1,52 @@
+{
+  "required": [
+    "version",
+    "minIdle",
+    "maxConcurrent",
+    "idleTtlSeconds",
+    "approveRequired",
+    "knowledgeEnabled",
+    "verifyEnabled",
+    "proxyEnabled",
+    "softBudgetUsdMicros",
+    "hardBudgetUsdMicros"
+  ],
+  "type": "object",
+  "properties": {
+    "version": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int32"
+    },
+    "minIdle": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int32"
+    },
+    "maxConcurrent": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int32"
+    },
+    "idleTtlSeconds": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "format": "int32"
+    },
+    "approveRequired": { "type": "boolean" },
+    "knowledgeEnabled": { "type": "boolean" },
+    "verifyEnabled": { "type": "boolean" },
+    "proxyEnabled": { "type": "boolean" },
+    "softBudgetUsdMicros": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "format": "int64"
+    },
+    "hardBudgetUsdMicros": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "format": "int64"
+    }
+  },
+  "x-readme-ref-name": "UpdateSettingsRequest"
+}

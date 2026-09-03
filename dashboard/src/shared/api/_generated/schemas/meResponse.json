@@ -1,0 +1,28 @@
+{
+  "required": ["userId", "subjectType", "subjectId", "roles", "permissions"],
+  "type": "object",
+  "properties": {
+    "userId": { "type": ["null", "string"], "format": "uuid" },
+    "subjectType": { "type": "string" },
+    "subjectId": { "type": "string", "format": "uuid" },
+    "email": { "type": ["null", "string"] },
+    "displayName": { "type": ["null", "string"] },
+    "roles": { "type": "array", "items": { "type": "string" } },
+    "permissions": {
+      "required": ["platform", "projects"],
+      "type": "object",
+      "properties": {
+        "platform": { "type": "array", "items": { "type": "string" } },
+        "projects": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "x-readme-ref-name": "PermissionsView"
+    }
+  },
+  "x-readme-ref-name": "MeResponse"
+}

@@ -3,6 +3,14 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "overrides": {
+    "ajv-draft-04": {
+      "ajv": "^8.5.0"
+    },
+    "eslint": {
+      "ajv": "^6.12.0"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "dev:mock": "vite",
@@ -47,11 +55,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^10",
-    "@kubb/core": "4",
-    "@kubb/plugin-client": "4.37.9",
-    "@kubb/plugin-oas": "4.37.9",
-    "@kubb/plugin-react-query": "4.37.9",
-    "@kubb/plugin-ts": "4.37.9",
+    "@kubb/cli": "4.39.2",
+    "@kubb/core": "4.39.2",
+    "@kubb/plugin-client": "4.39.2",
+    "@kubb/plugin-oas": "4.39.2",
+    "@kubb/plugin-react-query": "4.39.2",
+    "@kubb/plugin-ts": "4.39.2",
+    "@kubb/plugin-zod": "4.39.2",
     "@playwright/test": "^1.60.0",
     "@storybook/addon-essentials": "^8",
     "@storybook/addon-themes": "^8",
@@ -67,13 +77,12 @@
     "@vitejs/plugin-react": "^6",
     "@vitest/coverage-v8": "^4.1.8",
     "@vitest/ui": "^4.1.8",
-    "ajv": "^7",
+    "ajv": "^8.5.0",
     "eslint": "^10",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17",
     "jsdom": "^29.1.1",
-    "kubb": "^3.0.263",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "storybook": "^8",

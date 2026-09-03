@@ -1,0 +1,12 @@
+{
+  "required": ["platform", "projects"],
+  "type": "object",
+  "properties": {
+    "platform": { "type": "array", "items": { "type": "string" } },
+    "projects": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+  "x-readme-ref-name": "PermissionsView"
+}

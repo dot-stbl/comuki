@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": ["null", "string"] },
+    "settingsJson": { "type": ["null", "string"] },
+    "secretEnvRef": { "type": ["null", "string"] },
+    "enabled": { "type": ["null", "boolean"] }
+  },
+  "x-readme-ref-name": "UpdateSourceConnectionRequest"
+}

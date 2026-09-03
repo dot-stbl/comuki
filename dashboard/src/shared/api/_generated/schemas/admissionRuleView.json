@@ -1,0 +1,12 @@
+{
+  "required": ["id", "projectId", "mode", "filterJson", "enabled"],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "projectId": { "type": "string", "format": "uuid" },
+    "mode": { "type": "string" },
+    "filterJson": { "type": "string" },
+    "enabled": { "type": "boolean" }
+  },
+  "x-readme-ref-name": "AdmissionRuleView"
+}

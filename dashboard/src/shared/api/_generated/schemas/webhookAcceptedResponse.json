@@ -1,0 +1,9 @@
+{
+  "required": ["outcome", "detail"],
+  "type": "object",
+  "properties": {
+    "outcome": { "type": "string" },
+    "detail": { "type": ["null", "string"] }
+  },
+  "x-readme-ref-name": "WebhookAcceptedResponse"
+}

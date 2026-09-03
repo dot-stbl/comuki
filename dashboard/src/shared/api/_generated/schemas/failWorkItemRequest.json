@@ -1,0 +1,6 @@
+{
+  "required": ["reason"],
+  "type": "object",
+  "properties": { "reason": { "type": "string" } },
+  "x-readme-ref-name": "FailWorkItemRequest"
+}

@@ -1,0 +1,18 @@
+{
+  "required": [
+    "name",
+    "slug",
+    "description",
+    "profilesGitUrl",
+    "profilesGitRef"
+  ],
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "slug": { "type": "string" },
+    "description": { "type": ["null", "string"] },
+    "profilesGitUrl": { "type": ["null", "string"] },
+    "profilesGitRef": { "type": ["null", "string"] }
+  },
+  "x-readme-ref-name": "CreateProjectRequest"
+}

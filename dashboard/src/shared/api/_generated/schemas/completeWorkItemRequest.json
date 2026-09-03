@@ -1,0 +1,6 @@
+{
+  "required": ["resultJson"],
+  "type": "object",
+  "properties": { "resultJson": { "type": "string" } },
+  "x-readme-ref-name": "CompleteWorkItemRequest"
+}

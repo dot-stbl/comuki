@@ -1,0 +1,13 @@
+{
+  "required": ["id", "title", "status", "createdAt", "updatedAt"],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "projectId": { "type": ["null", "string"], "format": "uuid" },
+    "title": { "type": "string" },
+    "status": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "x-readme-ref-name": "ChatSessionView"
+}

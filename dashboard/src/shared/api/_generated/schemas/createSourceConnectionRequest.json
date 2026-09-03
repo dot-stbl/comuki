@@ -1,0 +1,12 @@
+{
+  "required": ["projectId", "provider", "name", "settingsJson", "secretEnvRef"],
+  "type": "object",
+  "properties": {
+    "projectId": { "type": "string", "format": "uuid" },
+    "provider": { "type": "string" },
+    "name": { "type": "string" },
+    "settingsJson": { "type": "string" },
+    "secretEnvRef": { "type": "string" }
+  },
+  "x-readme-ref-name": "CreateSourceConnectionRequest"
+}

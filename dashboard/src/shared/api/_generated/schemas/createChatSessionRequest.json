@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "properties": {
+    "projectId": { "type": ["null", "string"], "format": "uuid" },
+    "title": { "type": ["null", "string"] }
+  },
+  "x-readme-ref-name": "CreateChatSessionRequest"
+}

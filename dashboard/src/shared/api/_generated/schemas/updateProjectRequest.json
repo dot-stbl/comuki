@@ -1,0 +1,11 @@
+{
+  "required": ["name", "description", "profilesGitUrl", "profilesGitRef"],
+  "type": "object",
+  "properties": {
+    "name": { "type": ["null", "string"] },
+    "description": { "type": ["null", "string"] },
+    "profilesGitUrl": { "type": ["null", "string"] },
+    "profilesGitRef": { "type": ["null", "string"] }
+  },
+  "x-readme-ref-name": "UpdateProjectRequest"
+}

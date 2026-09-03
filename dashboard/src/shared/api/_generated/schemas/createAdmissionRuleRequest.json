@@ -1,0 +1,10 @@
+{
+  "required": ["projectId", "mode", "filterJson"],
+  "type": "object",
+  "properties": {
+    "projectId": { "type": "string", "format": "uuid" },
+    "mode": { "type": "string" },
+    "filterJson": { "type": "string" }
+  },
+  "x-readme-ref-name": "CreateAdmissionRuleRequest"
+}

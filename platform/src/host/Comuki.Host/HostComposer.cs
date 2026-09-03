@@ -138,6 +138,15 @@ internal static class HostComposer
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ProviderExceptionHandler>();
 
+        // OpenAPI document emission (issue #29): AddOpenApi registers the
+        // document in DI under the default name "v1"; MapOpenApi() at the
+        // bottom of this method serves it at /openapi/v1.json for tools,
+        // and the build-time source-generator emits a mirror spec to
+        // artifacts/openapi.json (Comuki.Host.csproj OpenApiDocumentsDirectory).
+        // The mirror is what dashboard/kubb.config.ts reads — both stay
+        // consistent because both are derived from the same AddOpenApi call.
+        builder.Services.AddOpenApi();
+
         // Realtime surface (issue #7): SignalR hub + the journal broadcast
         // interceptor. Registered after orchestration persistence — the
         // interceptor appends to the context options the engine registered
@@ -165,6 +174,13 @@ internal static class HostComposer
         app.MapProjectsEndpoints();
         app.MapCostsEndpoints();
         app.MapComukiRealtime();
+
+        // Build-time source-generator mirrors the AddOpenApi document to
+        // artifacts/openapi.json (comuki.slnx root, gitignored). This
+        // MapOpenApi call serves the same document at runtime for tooling
+        // (Swagger UI, Scalar, curl probes). Anonymous — the document is
+        // public metadata, not an authenticated endpoint.
+        app.MapOpenApi();
 
         return app;
     }

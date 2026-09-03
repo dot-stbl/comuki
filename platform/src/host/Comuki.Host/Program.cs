@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Host;
+using Comuki.Host.OpenApi;
 using Comuki.Host.Workers;
 using Comuki.Shared.Contracts.ControlPlane.ChatCommands;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
@@ -11,15 +12,28 @@ using Comuki.Shared.Contracts.ControlPlane.Profiles;
 // absent, so the host never boots half-wired: the worker runtime
 // (gRPC + claim REST) below and identity/projects inside Compose share
 // the same resolved string.
+//
+// Under build-time OpenAPI generation (Microsoft.Extensions.ApiDescription.Server
+// launches Program as the GetDocument.Insider tool) the env-var-required gate
+// would throw on a plain `dotnet build` of a freshly cloned tree — substitute
+// an explicit dummy connection string for the introspection pass only; the
+// introspection never opens the socket and never starts the migrator.
 var builder = WebApplication.CreateBuilder(args);
 
-var database = HostDatabase.Resolve(builder.Configuration);
+var database = OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration
+    ? HostDatabase.Explicit("Host=build-time-openapi;Username=openapi;Password=openapi;Database=openapi")
+    : HostDatabase.Resolve(builder.Configuration);
 
 builder.Services
     .AddOrchestrationPersistence(database.ConnectionString)
     .AddOrchestrationQueue(builder.Configuration)
     .AddOrchestrationApplication()
     .AddWorkerRuntime(builder.Configuration);
+
+// Under build-time OpenAPI generation (GetDocument.Insider) drop our hosted
+// services so the contract is emitted with zero side effects (no
+// migrators/workers/seeders, no DB). No-op at runtime.
+builder.Services.RemoveHostedServicesForOpenApiGeneration();
 
 var app = HostComposer.Compose(builder, database);
 

@@ -1,4 +1,5 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Migrator;
 using Comuki.Migrator.Sources;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
@@ -37,46 +38,59 @@ if (recreate)
 }
 
 // All module contexts migrate the same database; each keeps its own
-// migrations history table (identity uses __comuki_identity, projects
-// uses __comuki_projects, memory uses __comuki_memory, chat uses
-// __comuki_chat, intake uses __comuki_intake, costs uses
-// __comuki_costs), so the applications cannot collide.
+// schema and per-schema migration history table
+// (orchestration.__ef_migrations_history, identity.__ef_migrations_history,
+// projects.__ef_migrations_history, memory.__ef_migrations_history,
+// chat.__ef_migrations_history, intake.__ef_migrations_history,
+// costs.__ef_migrations_history), so the applications cannot collide.
 var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
 OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
 await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
+await EnsureSchemaAsync(connectionString, OrchestrationDatabase.Schema);
 await ApplyAsync(orchestrationDb, "orchestration");
 
 var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
 IdentityDbContext.ApplyOptions(identityOptions, connectionString);
 await using var identityDb = new IdentityDbContext(identityOptions.Options);
+await EnsureSchemaAsync(connectionString, IdentityDatabase.Schema);
 await ApplyAsync(identityDb, "identity");
 
 var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
 ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
 await using var projectsDb = new ProjectsDbContext(projectsOptions.Options);
+await EnsureSchemaAsync(connectionString, ProjectsDatabase.Schema);
 await ApplyAsync(projectsDb, "projects");
 
 var memoryOptions = new DbContextOptionsBuilder<MemoryDbContext>();
 MemoryDbContext.ApplyOptions(memoryOptions, connectionString);
 await using var memoryDb = new MemoryDbContext(memoryOptions.Options);
+await EnsureSchemaAsync(connectionString, MemoryDatabase.Schema);
 await ApplyAsync(memoryDb, "memory");
 
 var chatOptions = new DbContextOptionsBuilder<ChatDbContext>();
 ChatDbContext.ApplyOptions(chatOptions, connectionString);
 await using var chatDb = new ChatDbContext(chatOptions.Options);
+await EnsureSchemaAsync(connectionString, ChatDatabase.Schema);
 await ApplyAsync(chatDb, "chat");
 
 var intakeOptions = new DbContextOptionsBuilder<IntakeDbContext>();
 IntakeDbContext.ApplyOptions(intakeOptions, connectionString);
 await using var intakeDb = new IntakeDbContext(intakeOptions.Options);
+await EnsureSchemaAsync(connectionString, IntakeDatabase.Schema);
 await ApplyAsync(intakeDb, "intake");
 
 var costsOptions = new DbContextOptionsBuilder<CostsDbContext>();
 CostsDbContext.ApplyOptions(costsOptions, connectionString);
 await using var costsDb = new CostsDbContext(costsOptions.Options);
+await EnsureSchemaAsync(connectionString, CostsDatabase.Schema);
 await ApplyAsync(costsDb, "costs");
 
 return 0;
+
+static async Task EnsureSchemaAsync(string connectionString, string schema)
+{
+    await DatabaseSchemaEnsurer.EnsureAsync(connectionString, schema, CancellationToken.None);
+}
 
 static async Task ApplyAsync(DbContext db, string label)
 {

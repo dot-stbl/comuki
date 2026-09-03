@@ -26,7 +26,6 @@ public sealed class ProjectSettingsCacheRefresherShould : IAsyncLifetime
 
     private IServiceProvider services = null!;
     private ProjectSettingsCache cache = null!;
-    private IDbContextFactory<ProjectsDbContext> dbFactory = null!;
     private string connectionString = string.Empty;
 
     /// <inheritdoc />
@@ -55,7 +54,6 @@ public sealed class ProjectSettingsCacheRefresherShould : IAsyncLifetime
             .BuildServiceProvider();
 
         services = provider;
-        dbFactory = provider.GetRequiredService<IDbContextFactory<ProjectsDbContext>>();
         cache = provider.GetRequiredService<ProjectSettingsCache>();
     }
 

@@ -113,3 +113,27 @@ The host SHALL register Comuki telemetry (meters `comuki.queue` / `comuki.runs` 
 #### Scenario: Telemetry enabled
 - **WHEN** an OTLP endpoint is configured
 - **THEN** traces and metrics for the subscribed sources/meters export to that endpoint
+
+### Requirement: Run artifact bundle in MinIO
+
+The host SHALL register a `IRunArtifactStore` (MinIO / S3) implementation against the `Artifacts:Minio:*` config and run a `RunArtifactPackagerHostService` background driver that polls every 10 seconds for runs in a terminal status. On every terminal run the host uploads `brief.json` / `result.json` / `pins.json` under the `{projectId}/{runId}/` key prefix and emits a `run.artifacts_bundled` journal event carrying the canonical artifact pointer list.
+
+`GET /api/v1/projects/{projectId}/runs/{runId}/artifacts` (permission `run:read`) SHALL return the same pointer list; the response is empty when the run has not been bundled yet.
+
+`Artifacts:Minio:AutoCreateBucket` (boolean, default off) creates the configured bucket on first boot when no other provisioning is in place — dev convenience. The compose `minio-init` job creates the bucket + 30-day non-current-version lifecycle on first stack bring-up (idempotent).
+
+#### Scenario: Terminal run gets bundled
+- **WHEN** a run transitions to a terminal status (succeeded / failed / cancelled / escalated)
+- **THEN** the packager uploads the bundle objects to the artifact store and appends a `run.artifacts_bundled` event to the journal
+
+#### Scenario: In-flight run has no bundle
+- **WHEN** the packager observes a run whose status is queued / running / waiting
+- **THEN** it does not upload and the artifacts endpoint returns an empty list
+
+#### Scenario: Artifacts endpoint requires authentication
+- **WHEN** an anonymous client calls `GET /api/v1/projects/{projectId}/runs/{runId}/artifacts`
+- **THEN** the response is 401
+
+#### Scenario: Artifacts endpoint requires read permission
+- **WHEN** an authenticated client without `run:read` calls the endpoint
+- **THEN** the response is 403

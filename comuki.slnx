@@ -29,6 +29,9 @@
     <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Domain/Comuki.Modules.Intake.Domain.csproj" />
     <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Application/Comuki.Modules.Intake.Application.csproj" />
     <Project Path="platform/src/modules/Intake/Comuki.Modules.Intake.Infrastructure/Comuki.Modules.Intake.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Artifacts/Comuki.Modules.Artifacts.Domain/Comuki.Modules.Artifacts.Domain.csproj" />
+    <Project Path="platform/src/modules/Artifacts/Comuki.Modules.Artifacts.Application/Comuki.Modules.Artifacts.Application.csproj" />
+    <Project Path="platform/src/modules/Artifacts/Comuki.Modules.Artifacts.Infrastructure/Comuki.Modules.Artifacts.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/platform/src/engine/">
     <Project Path="platform/src/engine/Comuki.Engine.Orchestration/Comuki.Engine.Orchestration.csproj" />
@@ -58,6 +61,7 @@
     <Project Path="tests/unit/Comuki.Modules.Chat.Unit/Comuki.Modules.Chat.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Costs.Unit/Comuki.Modules.Costs.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Intake.Unit/Comuki.Modules.Intake.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Artifacts.Unit/Comuki.Modules.Artifacts.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Realtime/Comuki.Host.Unit.Realtime.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Filtering.Unit/Comuki.Shared.Filtering.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Telemetry.Unit/Comuki.Shared.Telemetry.Unit.csproj" />
@@ -78,6 +82,7 @@
     <Project Path="tests/integration/Comuki.Host.Integration.Realtime/Comuki.Host.Integration.Realtime.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Runs/Comuki.Host.Integration.Runs.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Costs/Comuki.Host.Integration.Costs.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Artifacts/Comuki.Host.Integration.Artifacts.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Stores/Comuki.Modules.Identity.Integration.Stores.csproj" />
     <Project Path="tests/integration/Comuki.Shared.Filtering.Integration.Ef/Comuki.Shared.Filtering.Integration.Ef.csproj" />
   </Folder>

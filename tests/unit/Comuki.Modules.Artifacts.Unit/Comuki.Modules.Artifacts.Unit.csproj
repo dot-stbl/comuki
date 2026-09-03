@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Modules.Artifacts.Unit</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\platform\src\modules\Artifacts\Comuki.Modules.Artifacts.Application\Comuki.Modules.Artifacts.Application.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Artifacts\Comuki.Modules.Artifacts.Infrastructure\Comuki.Modules.Artifacts.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

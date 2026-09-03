@@ -72,6 +72,11 @@ public sealed class HostIntakeServer : IAsyncLifetime
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
         builder.Configuration["Intake:BridgeInterval"] = "00:00:01";
         builder.Configuration["Intake:SyncBackoff"] = "00:00:01";
+        // Artifacts module dev defaults — see HostIntakeServer comment.
+        builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
+        builder.Configuration["Artifacts:AccessKey"] = "comuki";
+        builder.Configuration["Artifacts:SecretKey"] = "comuki_dev";
+        builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
 
         // Program wires orchestration persistence before Compose (the
         // worker runtime contract) — the intake endpoints resolve scoped

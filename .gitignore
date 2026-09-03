@@ -353,3 +353,4 @@ FodyWeavers.xsd
 # format-gate verify log?
 /obj/?
 .impeccable/?
+!platform/src/modules/Artifacts/

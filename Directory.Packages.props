@@ -112,4 +112,11 @@
        Meziantou / Roslynator removed 2026-08-31; VSTHRD surgical (200/002/104). -->
   <ItemGroup>
   </ItemGroup>
+
+  <!-- Artifacts module (issue #28): MinIO client SDK + Testcontainers
+       fixture for the integration suite. -->
+  <ItemGroup>
+    <PackageVersion Include="Minio" Version="7.0.0" />
+    <PackageVersion Include="Testcontainers.Minio" Version="4.14.0" />
+  </ItemGroup>
 </Project>

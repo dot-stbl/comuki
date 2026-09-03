@@ -12,6 +12,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\engine\Comuki.Engine.Compute\Comuki.Engine.Compute.csproj" />
     <ProjectReference Include="..\..\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
+    <ProjectReference Include="..\..\modules\Artifacts\Comuki.Modules.Artifacts.Application\Comuki.Modules.Artifacts.Application.csproj" />
+    <ProjectReference Include="..\..\modules\Artifacts\Comuki.Modules.Artifacts.Domain\Comuki.Modules.Artifacts.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\Artifacts\Comuki.Modules.Artifacts.Infrastructure\Comuki.Modules.Artifacts.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Chat\Comuki.Modules.Chat.Application\Comuki.Modules.Chat.Application.csproj" />
     <ProjectReference Include="..\..\modules\Chat\Comuki.Modules.Chat.Infrastructure\Comuki.Modules.Chat.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Costs\Comuki.Modules.Costs.Application\Comuki.Modules.Costs.Application.csproj" />
@@ -37,6 +40,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Oidc" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Realtime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Runs" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Artifacts" />
   </ItemGroup>
 
 </Project>

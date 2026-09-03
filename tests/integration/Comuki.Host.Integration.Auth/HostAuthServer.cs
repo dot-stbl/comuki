@@ -90,6 +90,11 @@ public sealed class HostAuthServer : IAsyncLifetime
         builder.Configuration["ControlPlane:Root"] = controlPlane.Root;
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        // Artifacts module dev defaults — see HostIntakeServer comment.
+        builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
+        builder.Configuration["Artifacts:AccessKey"] = "comuki";
+        builder.Configuration["Artifacts:SecretKey"] = "comuki_dev";
+        builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
 
         // Program wires orchestration persistence before Compose (the worker
         // runtime and the scoped reads below resolve the context); the scope

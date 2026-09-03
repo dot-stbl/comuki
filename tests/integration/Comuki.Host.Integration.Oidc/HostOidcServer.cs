@@ -134,6 +134,13 @@ public sealed class HostOidcServer : IAsyncLifetime
         builder.Configuration["auth:oidc:providers:0:ClientId"] = ClientId;
         builder.Configuration["auth:oidc:providers:0:ClientSecretEnv"] = ClientSecretEnv;
         builder.Configuration["auth:oidc:providers:0:RequireHttps"] = "false";
+        // Artifacts module dev defaults — the OIDC integration suite
+        // does not boot a MinIO Testcontainer; the host still validates
+        // the options so we satisfy the contract with throwaway values.
+        builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
+        builder.Configuration["Artifacts:AccessKey"] = "comuki";
+        builder.Configuration["Artifacts:SecretKey"] = "comuki_dev";
+        builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
 
         // The .NET 10 handler opportunistically switches to Pushed
         // Authorization Requests when the discovery document advertises the

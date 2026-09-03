@@ -11,9 +11,10 @@ namespace Comuki.Modules.Identity.Infrastructure.Persistence;
 /// oidc_links. Snake_case naming is applied by the shared options recipe
 /// (<see cref="ApplyOptions"/>) via <c>UseSnakeCaseNamingConvention</c>;
 /// column names are still written explicitly in the configurations so
-/// migration snapshots stay stable. The migrations history table is
-/// module-private (<see cref="IdentityTables.MigrationsHistory"/>) so this
-/// context and the orchestration context can migrate the same database.
+/// migration snapshots stay stable. The migrations history table lives in
+/// the identity schema at <c>identity.__ef_migrations_history</c> so this
+/// context and the orchestration context can migrate the same database
+/// without colliding.
 /// </summary>
 /// <param name="options"></param>
 public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> options)
@@ -41,7 +42,7 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
         builder
-            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(IdentityTables.MigrationsHistory))
+            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history", IdentityDatabase.Schema))
             .UseSnakeCaseNamingConvention();
     }
 

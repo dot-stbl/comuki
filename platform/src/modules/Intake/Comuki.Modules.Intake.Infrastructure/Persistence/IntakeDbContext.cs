@@ -14,9 +14,9 @@ namespace Comuki.Modules.Intake.Infrastructure.Persistence;
 /// is applied by the shared options recipe (<see cref="ApplyOptions"/>)
 /// via <c>UseSnakeCaseNamingConvention</c>; column names are still
 /// written explicitly in the configurations so migration snapshots stay
-/// stable. The migrations history table is module-private
-/// (<see cref="IntakeTables.MigrationsHistory"/>) so all contexts
-/// migrate one database without colliding.
+/// stable. The migrations history table lives in the intake schema at
+/// <c>intake.__ef_migrations_history</c> so all contexts migrate one
+/// database without colliding.
 /// </summary>
 /// <param name="options"></param>
 public sealed class IntakeDbContext(DbContextOptions<IntakeDbContext> options)
@@ -47,7 +47,7 @@ public sealed class IntakeDbContext(DbContextOptions<IntakeDbContext> options)
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
         builder
-            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(IntakeTables.MigrationsHistory))
+            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history", IntakeDatabase.Schema))
             .UseSnakeCaseNamingConvention();
     }
 

@@ -39,7 +39,7 @@ public sealed class ChatDbContext(DbContextOptions<ChatDbContext> options)
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
         builder
-            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(ChatTables.MigrationsHistory))
+            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history", ChatDatabase.Schema))
             .UseSnakeCaseNamingConvention();
     }
 

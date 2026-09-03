@@ -12,11 +12,11 @@ namespace Comuki.Modules.Projects.Infrastructure.Persistence;
 /// Snake_case naming is applied by the shared options recipe
 /// (<see cref="ApplyOptions"/>) via <c>UseSnakeCaseNamingConvention</c>;
 /// column names are still written explicitly in the configurations so
-/// migration snapshots stay stable. The migrations history table is
-/// module-private (<see cref="ProjectsTables.MigrationsHistory"/>) so this
+/// migration snapshots stay stable. The migrations history table lives in
+/// the projects schema at <c>projects.__ef_migrations_history</c> so this
 /// context, the orchestration context and the identity context can migrate
-/// the same database. Both entity types carry the global subject-scope
-/// query filter — the object axis of the authorization model.
+/// the same database without colliding. Both entity types carry the global
+/// subject-scope query filter — the object axis of the authorization model.
 /// </summary>
 /// <param name="options"></param>
 /// <param name="scopeAccessor">
@@ -65,7 +65,7 @@ public sealed class ProjectsDbContext(
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
         builder
-.UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable(ProjectsTables.MigrationsHistory))
+.UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history", ProjectsDatabase.Schema))
             .UseSnakeCaseNamingConvention();
     }
 

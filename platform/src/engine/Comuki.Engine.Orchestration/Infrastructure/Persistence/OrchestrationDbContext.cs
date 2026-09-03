@@ -62,17 +62,20 @@ public sealed class OrchestrationDbContext(
         : [];
 
     /// <summary>
-    /// Single options recipe (Npgsql + snake_case) used by the DI extension,
-    /// the design-time factory and the Migrator — one place, no drift. Takes
-    /// the non-generic builder so the <c>AddDbContext</c> lambda can call it
-    /// directly; generic builders pass through unchanged (same instance).
+    /// Single options recipe (Npgsql + snake_case + per-schema history
+    /// table) used by the DI extension, the design-time factory and the
+    /// Migrator — one place, no drift. Takes the non-generic builder so the
+    /// <c>AddDbContext</c> lambda can call it directly; generic builders
+    /// pass through unchanged (same instance). The migrations history
+    /// table lives in the orchestration schema at
+    /// <c>orchestration.__ef_migrations_history</c>.
     /// </summary>
     /// <param name="builder"></param>
     /// <param name="connectionString"></param>
     public static void ApplyOptions(DbContextOptionsBuilder builder, string connectionString)
     {
         builder
-            .UseNpgsql(connectionString)
+            .UseNpgsql(connectionString, static npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history", OrchestrationDatabase.Schema))
             .UseSnakeCaseNamingConvention();
     }
 

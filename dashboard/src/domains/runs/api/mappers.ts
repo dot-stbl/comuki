@@ -1,12 +1,20 @@
 import type {
+  ArtifactPointer,
   DiffFile,
   GateCheck,
+  RunArtifacts,
   RunDetail,
   RunSummary,
   TraceEvent,
   WorkItem,
   WorkItemInspector,
 } from "@/domains/runs/model/types"
+import type { RunArtifactsPage as RunArtifactsPageDto } from "@/shared/api/_generated/types/RunArtifactsPage"
+import type { RunView } from "@/shared/api/_generated/types/RunView"
+import type {
+  ArtifactPointer as ArtifactPointerDto,
+} from "@/shared/api/_generated/types/ArtifactPointer"
+import type { RunsPage } from "@/shared/api/_generated/types/RunsPage"
 import {
   PROFILE_META,
   TRACE_SEED,
@@ -237,5 +245,128 @@ export function toWorkItemInspector(
     files: outDiff ? mapDiff(trace.diff) : null,
     gate,
     events,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// kubb wire → domain mappers.
+//
+// The host returns a sparse row (`RunView`: id, projectId, status, createdAt,
+// updatedAt) — not the full SeedRun fixture the mock-first mappers above
+// produce. The real screen will still show many of the same fields (current,
+// app, cost, tokens, plan); we cannot fabricate them from the wire, so the
+// mapping fills in only what RunView actually carries and leaves the rest to
+// defaults the screen can render without crashing.
+//
+// Defaults are picked to keep an empty card legible, not to be plausible:
+// - `status` carries over as-is (`queued`, `running`, …).
+// - `app`, `title`, `model` are unknown until a detail endpoint lands — empty
+//   string. The screen's header falls back to the run id.
+// - `current` is the empty work item id `""`; downstream readers short-circuit
+//   on the empty string (`currentItem`, `planGraph`).
+// - `done` is `false` while the run is in flight; only terminal runs set it.
+// - `cost` / `tokens` are 0; formatting helpers already render zero cleanly.
+// - `durationSec` is the up-to-now delta on `updatedAt - createdAt`. The real
+//   list doesn't expose elapsed time otherwise; this is the closest the wire
+//   gets us without the detail endpoint.
+// - `workItems` is `[]`. The graph would otherwise paint a phantom plan.
+// ---------------------------------------------------------------------------
+
+const EMPTY_WORK_ITEMS: WorkItem[] = []
+
+/**
+ * Wire row → domain summary.
+ *
+ * The screen's render of `done` and the live "duration" sits between two
+ * timestamps the host already gives us (`createdAt` / `updatedAt`); for the
+ * list view, "duration so far" is that delta, in seconds. A detail endpoint
+ * (out of scope this slice) would replace these defaults with planner output.
+ */
+export function mapRunViewToSummary(view: RunView): RunSummary {
+  const durationSec = Math.max(
+    0,
+    Math.round((Date.parse(view.updatedAt) - Date.parse(view.createdAt)) / 1000),
+  )
+  return {
+    id: view.id,
+    projectId: view.projectId,
+    app: "",
+    title: "",
+    status: view.status as RunSummary["status"],
+    current: "",
+    model: "worker",
+    cost: 0,
+    tokens: 0,
+    durationSec,
+    done: view.status === "succeeded" || view.status === "failed" || view.status === "cancelled",
+    workItems: EMPTY_WORK_ITEMS,
+  }
+}
+
+/**
+ * Wire page → list of domain summaries. The wire carries `page` / `pageSize`
+ * / `total`, which the domain shape drops — pagination lives on the screen
+ * (TanStack) and the totals are a derived header string.
+ */
+export function mapRunsPageToSummaries(page: RunsPage): RunSummary[] {
+  return page.items.map(mapRunViewToSummary)
+}
+
+/**
+ * Wire row → domain detail.
+ *
+ * RunView does not carry the bits a RunDetail needs (`brief`, `rules`,
+ * `revision`, `events`). The screen already renders a sparse summary;
+ * rendering an empty detail is no worse than not loading one at all.
+ */
+export function mapRunViewToDetail(view: RunView): RunDetail {
+  return {
+    ...mapRunViewToSummary(view),
+    brief: "",
+    rules: [],
+    revision: { rules: "", sdk: "" },
+    events: [],
+  }
+}
+
+/**
+ * Wire row → `ArtifactPointer` domain item.
+ *
+ * The kubb `ArtifactPointer.uri` is `string`; the domain type carries `URL`
+ * so callers can `.href` it. If the URI is malformed (it never should be —
+ * the host writes canonical signed URLs from MinIO), the row is dropped and a
+ * console warning is logged; the screen keeps a partial list rather than
+ * throwing on bad wire data.
+ */
+function mapArtifactPointer(entry: ArtifactPointerDto): ArtifactPointer | null {
+  try {
+    return {
+      name: entry.name,
+      uri: new URL(entry.uri),
+      size: typeof entry.size === "string" ? Number.parseInt(entry.size, 10) : entry.size,
+      contentType: entry.contentType,
+    }
+  } catch (error) {
+    if (typeof console !== "undefined") {
+      console.warn("[runs] dropping artifact with malformed URI", entry.name, error)
+    }
+    return null
+  }
+}
+
+/**
+ * Wire page → domain run-artifacts page. Empty list when the run has not
+ * been packaged yet — exactly what the host returns.
+ */
+export function mapRunArtifactsPageToArtifacts(
+  page: RunArtifactsPageDto,
+): RunArtifacts {
+  const items = page.items
+    .map(mapArtifactPointer)
+    .filter((entry): entry is ArtifactPointer => entry !== null)
+  return {
+    projectId: page.projectId,
+    runId: page.runId,
+    items,
   }
 }

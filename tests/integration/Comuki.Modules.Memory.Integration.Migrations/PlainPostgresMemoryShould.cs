@@ -54,14 +54,14 @@ public sealed class PlainPostgresMemoryShould : IAsyncLifetime
     public async Task MigrateWithoutPgvectorAsync()
     {
         var columns = await QuerySingleColumnAsync(
-            "SELECT column_name FROM information_schema.columns "
-            + "WHERE table_schema = 'public' AND table_name = 'memory_facts' AND column_name = 'embedding'");
+            $"SELECT column_name FROM information_schema.columns "
+            + $"WHERE table_schema = '{MemoryDatabase.Schema}' AND table_name = '{MemoryDatabase.MemoryFacts}' AND column_name = 'embedding'");
 
         columns.ShouldBeEmpty();
 
         var tables = await QuerySingleColumnAsync(
-            "SELECT table_name FROM information_schema.tables "
-            + "WHERE table_schema = 'public' AND table_name IN ('chat_messages','chat_checkpoints','memory_facts','learning_candidates') "
+            $"SELECT table_name FROM information_schema.tables "
+            + $"WHERE table_schema = '{MemoryDatabase.Schema}' AND table_name IN ('chat_messages','chat_checkpoints','memory_facts','learning_candidates') "
             + "ORDER BY table_name");
         tables.Count.ShouldBe(4);
     }

@@ -13,20 +13,21 @@ namespace Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
 /// formatting, the availability probe, the embedding UPDATE and the
 /// cosine-distance SELECT. The column lives outside the EF model on
 /// purpose — no EF-pgvector provider, no vector materialized in .NET.
+/// All SQL references the per-module <see cref="MemoryDatabase.Schema"/>
+/// so the queries find the table regardless of <c>search_path</c>.
 /// </summary>
 public static class MemoryFactSql
 {
     /// <summary>Availability probe: does the embedding column exist (pgvector was present at migration time)?</summary>
     public const string EmbeddingColumnExistsSql =
-        """
-        SELECT EXISTS (
-            SELECT 1 FROM information_schema.columns
-            WHERE table_schema = 'public' AND table_name = 'memory_facts' AND column_name = 'embedding')
-        """;
+        "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
+        + "WHERE table_schema = '" + MemoryDatabase.Schema + "' "
+        + "AND table_name = '" + MemoryDatabase.MemoryFacts + "' AND column_name = 'embedding')";
 
     /// <summary>Writes the embedding of one fact row (inside the write transaction).</summary>
     public const string UpdateEmbeddingSql =
-        "UPDATE memory_facts SET embedding = @vector::vector WHERE id = @id";
+        "UPDATE " + MemoryDatabase.Schema + "." + MemoryDatabase.MemoryFacts
+        + " SET embedding = @vector::vector WHERE id = @id";
 
     /// <summary>
     /// Cosine-distance search over embedded, visible facts; NULL filter
@@ -36,18 +37,16 @@ public static class MemoryFactSql
     /// cast.
     /// </summary>
     public const string CosineSearchSql =
-        """
-        SELECT id, scope, subject_id, kind, topic_key, text, source, created_by, created_at
-        FROM memory_facts
-        WHERE superseded_at IS NULL
-          AND (kind <> 'ephemeral' OR created_at >= @cutoff)
-          AND (@scope IS NULL OR scope = @scope)
-          AND (@subject IS NULL OR subject_id = @subject)
-          AND (@kind IS NULL OR kind = @kind)
-          AND embedding IS NOT NULL
-        ORDER BY embedding <=> @vector::vector
-        LIMIT @limit
-        """;
+        "SELECT id, scope, subject_id, kind, topic_key, text, source, created_by, created_at "
+        + "FROM " + MemoryDatabase.Schema + "." + MemoryDatabase.MemoryFacts + " "
+        + "WHERE superseded_at IS NULL "
+        + "  AND (kind <> 'ephemeral' OR created_at >= @cutoff) "
+        + "  AND (@scope IS NULL OR scope = @scope) "
+        + "  AND (@subject IS NULL OR subject_id = @subject) "
+        + "  AND (@kind IS NULL OR kind = @kind) "
+        + "  AND embedding IS NOT NULL "
+        + "ORDER BY embedding <=> @vector::vector "
+        + "LIMIT @limit";
 
     /// <summary>Formats a vector as a pgvector literal (<c>[1,0.5,…]</c>, invariant, round-trippable).</summary>
     /// <param name="vector"></param>

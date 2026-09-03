@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
 
@@ -9,66 +10,62 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Queue;
 /// literals are the PascalCase enum names EF's <c>HasConversion&lt;string&gt;</c>
 /// stores. Every mutation is guarded by lease owner (and live status) so
 /// races between a slow worker and the reaper resolve safely in the store.
+/// All SQL references the per-module <see cref="OrchestrationDatabase.Schema"/>
+/// so the queries find the table regardless of <c>search_path</c>.
 /// </summary>
 internal static class WorkItemQueueSql
 {
     /// <summary>Claim: oldest queued item matching the labels, row-locked for the update.</summary>
-    public const string ClaimSql = """
-        UPDATE work_items
-        SET status = 'Running', leased_by = @workerId, lease_until = @leaseUntil,
-            heartbeat_at = @now, attempt = attempt + 1, updated_at = @now
-        WHERE id IN (
-            SELECT id FROM work_items
-            WHERE status = 'Queued'
-              AND profile_key = @profileKey
-              AND image = @image
-              AND profiles_ref = @profilesRef
-            ORDER BY created_at
-            LIMIT 1
-            FOR UPDATE SKIP LOCKED
-        )
-        RETURNING id, run_id, profile_key, brief, lease_until, attempt
-        """;
+    public const string ClaimSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "SET status = 'Running', leased_by = @workerId, lease_until = @leaseUntil, "
+        + "    heartbeat_at = @now, attempt = attempt + 1, updated_at = @now "
+        + "WHERE id IN ( "
+        + "    SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "    WHERE status = 'Queued' "
+        + "      AND profile_key = @profileKey "
+        + "      AND image = @image "
+        + "      AND profiles_ref = @profilesRef "
+        + "    ORDER BY created_at "
+        + "    LIMIT 1 "
+        + "    FOR UPDATE SKIP LOCKED "
+        + ") "
+        + "RETURNING id, run_id, profile_key, brief, lease_until, attempt";
 
     /// <summary>Heartbeat: extend the lease, guarded by owner, running status and an unexpired lease.</summary>
-    public const string HeartbeatSql = """
-        UPDATE work_items
-        SET lease_until = @leaseUntil, heartbeat_at = @now, updated_at = @now
-        WHERE id = @workItemId AND leased_by = @workerId
-          AND status = 'Running' AND lease_until > @now
-        """;
+    public const string HeartbeatSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "SET lease_until = @leaseUntil, heartbeat_at = @now, updated_at = @now "
+        + "WHERE id = @workItemId AND leased_by = @workerId "
+        + "  AND status = 'Running' AND lease_until > @now";
 
     /// <summary>Complete: running item owned by the worker -> succeeded, lease cleared.</summary>
-    public const string CompleteSql = """
-        UPDATE work_items
-        SET status = 'Succeeded', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now
-        WHERE id = @workItemId AND leased_by = @workerId AND status = 'Running'
-        RETURNING run_id
-        """;
+    public const string CompleteSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "SET status = 'Succeeded', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
+        + "WHERE id = @workItemId AND leased_by = @workerId AND status = 'Running' "
+        + "RETURNING run_id";
 
     /// <summary>Fail: running item owned by the worker -> failed, lease cleared.</summary>
-    public const string FailSql = """
-        UPDATE work_items
-        SET status = 'Failed', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now
-        WHERE id = @workItemId AND leased_by = @workerId AND status = 'Running'
-        RETURNING run_id
-        """;
+    public const string FailSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "SET status = 'Failed', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
+        + "WHERE id = @workItemId AND leased_by = @workerId AND status = 'Running' "
+        + "RETURNING run_id";
 
     /// <summary>Reap requeue: expired running lease with retries left -> back to queued.</summary>
-    public const string ReapRequeueSql = """
-        UPDATE work_items
-        SET status = 'Queued', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now
-        WHERE status = 'Running' AND lease_until IS NOT NULL AND lease_until <= @cutoff AND attempt < @maxAttempts
-        RETURNING id, run_id, attempt
-        """;
+    public const string ReapRequeueSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "SET status = 'Queued', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
+        + "WHERE status = 'Running' AND lease_until IS NOT NULL AND lease_until <= @cutoff AND attempt < @maxAttempts "
+        + "RETURNING id, run_id, attempt";
 
     /// <summary>Reap fail: expired running lease out of retries -> failed.</summary>
-    public const string ReapFailSql = """
-        UPDATE work_items
-        SET status = 'Failed', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now
-        WHERE status = 'Running' AND lease_until IS NOT NULL AND lease_until <= @cutoff AND attempt >= @maxAttempts
-        RETURNING id, run_id, attempt
-        """;
+    public const string ReapFailSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "SET status = 'Failed', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
+        + "WHERE status = 'Running' AND lease_until IS NOT NULL AND lease_until <= @cutoff AND attempt >= @maxAttempts "
+        + "RETURNING id, run_id, attempt";
 
     /// <summary>Creates a prepared claim command on the transaction's connection.</summary>
     /// <param name="transaction"></param>

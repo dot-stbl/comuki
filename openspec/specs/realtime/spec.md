@@ -53,8 +53,8 @@ failing the run-group broadcast.
 #### Scenario: Timeline event
 - **WHEN** a `work_item.status_changed` journal row is committed
 - **THEN** connected members of `run:{id}` receive `RunEvent`
-
 ### Requirement: Attention-worthy transitions
+
 Attention SHALL be derived from journal types `work_item.status_changed`,
 `work_item.lease_expired`, and `run.status_changed`. Work-item `Running` →
 attention kind `running`; `Failed` → `failed`. Requeue to `Queued` SHALL NOT
@@ -64,3 +64,17 @@ included for forward compatibility.
 #### Scenario: Requeue is not attention
 - **WHEN** a lease expiry requeues an item to `Queued`
 - **THEN** no Attention message is sent for that transition
+
+### Requirement: Run artifact bundle journal broadcast
+
+The `IRunEventsBroadcaster` SHALL forward `run.artifacts_bundled` journal
+entries the same way it forwards any other `run_events` row: to the
+`run:{id}` group as a `RunEvent` client method. The entry is broadcast
+after the host appends it to the journal; consumers joining the run
+group after the broadcast miss the pointer list and SHALL fall back to
+`GET /api/v1/projects/{projectId}/runs/{runId}/artifacts` (see runs).
+
+#### Scenario: Bundled event reaches the run group
+- **WHEN** the host appends a `run.artifacts_bundled` row for run R
+- **THEN** every connected member of `run:R` receives a `RunEvent`
+  client method whose payload carries the artifact pointer list

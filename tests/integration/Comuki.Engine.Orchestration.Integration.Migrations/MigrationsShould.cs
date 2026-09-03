@@ -66,6 +66,15 @@ public sealed class MigrationsShould : IAsyncLifetime
         tables.ShouldContain(OrchestrationDatabase.RunEvents);
     }
 
+    [Fact(DisplayName = "Given the orchestration schema, when the runs table is queried, then the row reports schema = 'orchestration' (issue #26 verification)")]
+    public async Task RunsTableLivesInOrchestrationSchemaAsync()
+    {
+        var schemaRows = await QuerySingleColumnAsync(
+            "SELECT table_schema FROM information_schema.tables WHERE table_schema = 'orchestration' AND table_name = 'runs'");
+
+        schemaRows.ShouldHaveSingleItem().ShouldBe(OrchestrationDatabase.Schema);
+    }
+
     [Fact(DisplayName = "Given migrated work_items, when indexes are inspected, then claim indexes exist")]
     public async Task CreateClaimIndexesOnWorkItemsAsync()
     {

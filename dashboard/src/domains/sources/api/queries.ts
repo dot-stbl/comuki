@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 
+import { sourceConnectionViewsToSnapshot } from "@/domains/sources/api/mappers"
 import type { SourcesSnapshot } from "@/domains/sources/model/types"
+import { getApiV1Sources } from "@/shared/api/_generated/clients/getApiV1Sources"
 import { readSeedSources } from "@/shared/api/mock/sources.store"
 import { env } from "@/shared/config/env"
 
@@ -13,16 +15,21 @@ export const sourcesQueryKey = ["sources"] as const
  * whose optimistic write vanishes on the refetch two hundred milliseconds
  * later. See `shared/api/mock/sources.store.ts`.
  *
- * The seed shape and the domain shape are the same shape here, on purpose:
- * there is no wire yet, so a mapper layer would be a translation between two
- * things nobody has disagreed about. The day `/api/v1/sources` exists, a mapper
- * goes in this file and `model/types.ts` does not move.
+ * Real mode calls the host. `useGetApiV1Sources` answers a flat array (the
+ * controller is unpaged today — a paging contract would split the snapshot
+ * here); the mapper in `mappers.ts` fills the fields the wire does not
+ * carry with the honest defaults the screens already know how to render
+ * (empty `account`, no `watch`, no `lastSyncAt`, `"never"` for sync, etc).
+ * The detail page's watch form is hidden when `watch === null`; the list's
+ * admission column renders "native intake" for the same shape, so the
+ * degraded view stays the same set of words the operator already reads.
  */
 async function getSources(): Promise<SourcesSnapshot> {
-  if (!env.useMock) {
-    throw new Error("sources API not implemented — set VITE_USE_MOCK=true")
+  if (env.useMock) {
+    return readSeedSources()
   }
-  return readSeedSources()
+  const views = await getApiV1Sources()
+  return sourceConnectionViewsToSnapshot(views)
 }
 
 export function useSourcesQuery() {

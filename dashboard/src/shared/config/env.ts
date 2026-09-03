@@ -61,6 +61,17 @@ const envSchema = z.object({
    * the mock gate (`useMock`) decides whether the value is read at all.
    */
   VITE_API_BASE_URL: z.string().optional(),
+  /**
+   * The name of the OIDC provider the host is configured for, e.g. `comuki`.
+   * Drives the "Continue with …" button and the `/api/v1/auth/oidc/{name}/start`
+   * navigation in real mode. Optional in mock mode (the mock store is the
+   * source of truth there); in real mode the absence of a configured
+   * provider hides the button entirely.
+   *
+   * Runtime provider discovery would be cleaner (`GET /api/v1/auth/oidc/providers`)
+   * but is out of scope for this slice and the host has no such endpoint today.
+   */
+  VITE_OIDC_PROVIDER: z.string().optional(),
 })
 
 const parsed = envSchema.parse({
@@ -71,6 +82,7 @@ const parsed = envSchema.parse({
   VITE_COMMIT_SHA: import.meta.env.VITE_COMMIT_SHA ?? "",
   VITE_DEPLOY_ENV: import.meta.env.VITE_DEPLOY_ENV ?? "local",
   VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL ?? "",
+  VITE_OIDC_PROVIDER: import.meta.env.VITE_OIDC_PROVIDER ?? "",
 })
 
 export const env = {
@@ -87,6 +99,12 @@ export const env = {
    * than pinging localhost and returning a Vite-served 404.
    */
   apiBaseUrl: (parsed.VITE_API_BASE_URL ?? "").trim(),
+  /**
+   * Configured OIDC provider name, or `null` when unset. In mock mode this is
+   * informational only — `auth.store` owns the button — but in real mode it
+   * is the one fact the SPA has about whether an identity provider is wired.
+   */
+  oidcProvider: (parsed.VITE_OIDC_PROVIDER ?? "").trim() || null,
 }
 
 export type Env = typeof env

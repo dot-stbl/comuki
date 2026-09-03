@@ -32,8 +32,10 @@ specs → apply → archive), not by silently editing a main spec.
 | [agents-sdk](specs/agents-sdk/spec.md) | Bun workspace layout, `@comuki/agent-core`, `@comuki/worker-sdk` |
 | [build-and-ci](specs/build-and-ci/spec.md) | Single build gate, format-verify, analyzer policy, CI jobs |
 
-Active OpenSpec changes under `changes/` backfill Wave 5–6 docs (`backfill-*`)
-plus the post-Wave-6 audit (`audit-wave-6`).
+Active OpenSpec changes under `changes/` backfill Wave 5–6 docs (`backfill-*`).
+The post-Wave-6 audit (`audit-wave-6`) is applied — see its
+`audit.md` for the per-issue gap analysis and the `changes/audit-wave-6/`
+folder is retained as the audit record.
 The earlier design-only `add-chat-memory` change remains for historical S5
 intent; prefer the backfill + main `chat`/`memory` specs for landed behavior.
 

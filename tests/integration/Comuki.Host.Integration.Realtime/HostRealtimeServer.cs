@@ -140,6 +140,9 @@ public sealed class HostRealtimeServer : IAsyncLifetime
     /// <summary>The hub URL of the booted host.</summary>
     public Uri HubAddress => new(baseAddress, "hubs/runs");
 
+    /// <summary>The host's DI root — tests need it for fixtures that want to append journal rows or seed data through the real DbContext.</summary>
+    public IServiceProvider Services => application.Services;
+
     /// <summary>
     /// Seeds one run in <c>Queued</c> with one <c>Queued</c> work item and
     /// returns their ids — the chat-run-starter shape, applied directly

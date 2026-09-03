@@ -59,6 +59,15 @@ public sealed class IncomingTicket
     /// </summary>
     public SourceConnectionId? ConnectionId { get; private set; }
 
+    /// <summary>
+    /// What kind of tracker-side object this ticket represents. The
+    /// webhook mapper sets it; <see cref="IntakeTicketKind.Issue"/> for
+    /// regular issues, <see cref="IntakeTicketKind.PullRequest"/> for
+    /// pull-request / merge-request events (inbound review surface).
+    /// Drives the profile router's default choice.
+    /// </summary>
+    public InboundTicketKind Kind { get; private set; }
+
     /// <summary>Current lifecycle status; mutated only via the Mark* methods.</summary>
     public IntakeTicketStatus Status { get; private set; }
 
@@ -81,6 +90,7 @@ public sealed class IncomingTicket
     /// <param name="url"></param>
     /// <param name="projectKey"></param>
     /// <param name="labels"></param>
+    /// <param name="kind">Issue (default) or pull request.</param>
     /// <param name="now"></param>
     public static IncomingTicket Create(
         ProjectId projectId,
@@ -92,6 +102,7 @@ public sealed class IncomingTicket
         string url,
         string? projectKey,
         IReadOnlyList<string> labels,
+        InboundTicketKind kind,
         DateTimeOffset now)
     {
         return new IncomingTicket
@@ -106,6 +117,7 @@ public sealed class IncomingTicket
             Url = url,
             ProjectKey = projectKey,
             Labels = [.. labels],
+            Kind = kind,
             Status = IntakeTicketStatus.Pending,
             RunId = null,
             CreatedAt = now,

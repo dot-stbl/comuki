@@ -74,6 +74,7 @@ public static class JiraPayloadMapper
             url: site.Length > 0 ? $"{site.TrimEnd('/')}/browse/{key}" : string.Empty,
             projectKey: ReadProjectKey(fields),
             labels: ReadLabels(fields),
+            kind: InboundTicketKind.Issue,
             now);
     }
 
@@ -96,6 +97,7 @@ public static class JiraPayloadMapper
             url: site.Length > 0 ? $"{site.TrimEnd('/')}/browse/{issue.Key}" : string.Empty,
             projectKey: fields?.ProjectKey ?? string.Empty,
             labels: [.. fields?.Labels ?? []],
+            kind: InboundTicketKind.Issue,
             now);
     }
 

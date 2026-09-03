@@ -79,6 +79,12 @@ public sealed class IncomingTicketConfiguration : IEntityTypeConfiguration<Incom
             .HasColumnName("run_id")
             .HasConversion(IntakeIdConverters.RunIdToUuid);
 
+        builder.Property(static ticket => ticket.Kind)
+            .HasColumnName("kind")
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .IsRequired();
+
         builder.Property(static ticket => ticket.CreatedAt)
             .HasColumnName("created_at");
 

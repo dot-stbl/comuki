@@ -27,7 +27,7 @@ public interface IGitHubApi
         [AliasAs("page")] int page,
         CancellationToken cancellationToken);
 
-    /// <summary>Posts a comment on an issue.</summary>
+    /// <summary>Posts a comment on an issue (and, on GitHub, on the same-number PR).</summary>
     /// <param name="owner"></param>
     /// <param name="repo"></param>
     /// <param name="issueNumber"></param>
@@ -37,7 +37,7 @@ public interface IGitHubApi
     [Post("/repos/{owner}/{repo}/issues/{issueNumber}/comments")]
     public Task PostCommentAsync(string owner, string repo, int issueNumber, [Body] GitHubCommentBody body, CancellationToken cancellationToken);
 
-    /// <summary>Patches issue state (close on success).</summary>
+    /// <summary>Patches issue state (close on success — issues only).</summary>
     /// <param name="owner"></param>
     /// <param name="repo"></param>
     /// <param name="issueNumber"></param>

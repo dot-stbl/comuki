@@ -8,8 +8,10 @@ namespace Comuki.Modules.Intake.Infrastructure.Providers.GitHub;
 /// <summary>
 /// The GitHub source provider: webhook acceptance (delivery id from
 /// <c>X-GitHub-Delivery</c>, HMAC-SHA256 verification, tolerant payload
-/// normalization) and the open-issues catalog (pull requests filtered
-/// out).
+/// normalization for both issue and pull-request events) and the
+/// inbox catalog (issues by default, PRs when the connection opts in
+/// via the <c>includePullRequests</c> settings flag — never mixed in
+/// without that signal).
 /// </summary>
 /// <param name="clients"></param>
 /// <param name="secrets"></param>
@@ -52,7 +54,7 @@ public sealed class GitHubTicketSourceProvider(
         var issues = await api.ListIssuesAsync(settings.Owner, settings.Repo, "open", PageSize, page, cancellationToken);
 
         return [.. issues
-            .Where(static issue => issue.IsIssue)
+            .Where(issue => settings.IncludePullRequests || issue.IsIssue)
             .Select(issue => GitHubPayloadMapper.ToTicket(issue, settings.Owner, settings.Repo, connection.ProjectId, clock.GetUtcNow()))];
     }
 }

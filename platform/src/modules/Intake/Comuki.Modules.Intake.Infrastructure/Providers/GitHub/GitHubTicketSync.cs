@@ -7,10 +7,12 @@ using Comuki.Modules.Intake.Domain.Tickets;
 namespace Comuki.Modules.Intake.Infrastructure.Providers.GitHub;
 
 /// <summary>
-/// The GitHub sync-back port: posts a status comment with the run link
-/// on every terminal transition and closes the issue when the run
-/// succeeded. Repeats are tolerated — the tracker-side comment may
-/// duplicate, but the state patch is idempotent.
+/// The GitHub sync-back port: posts a single status comment with the
+/// run link on every terminal transition. For issues the comment is the
+/// issue thread; for pull-requests the same endpoint backs the PR
+/// conversation (GitHub unifies issue / PR comment threads). On a
+/// successful run the port closes the issue, but **never** closes the
+/// PR — a Comuki review is a comment, not a decision to merge.
 /// </summary>
 /// <param name="clients"></param>
 /// <param name="secrets"></param>
@@ -39,7 +41,9 @@ public sealed class GitHubTicketSync(
             new GitHubCommentBody(TrackerSyncComments.Of(transition)),
             cancellationToken);
 
-        if (transition.RunStatus == "Succeeded")
+        // Comuki does not decide to merge a PR — only the human / repo's
+        // branch protection does. Close-on-success applies to issues only.
+        if (transition.RunStatus == "Succeeded" && transition.Kind == InboundTicketKind.Issue)
         {
             await api.PatchIssueAsync(parsed.Owner, parsed.Repo, parsed.Number, new GitHubIssueUpdate("closed"), cancellationToken);
         }

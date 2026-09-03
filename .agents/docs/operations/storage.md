@@ -3,13 +3,20 @@
 The orchestrator keeps three persistent stores. This document
 records what lives where and the retention policy for each.
 
+> Per-context Postgres schema layout and the Migrator loop that
+> creates each one — see [database-schemas.md](./database-schemas.md).
+> The bucket topology, lifecycle policy, and host config — see
+> [minio.md](./minio.md).
+
 ## Postgres
 
 The platform's transactional store. Holds runs, work items, the
 run journal, identity, projects, costs, chat sessions, intake
-metadata, memory embeddings and the artifact bookkeeping.
+metadata, memory embeddings and the artifact bookkeeping. Tables
+live in eight per-DbContext schemas (see
+[database-schemas.md](./database-schemas.md)).
 
-- **Backups** — operator concern (pg_dump / WAL archiving); not in
+- **Backups** — operator concern (pg_dump / WAL archiving);, not in
   scope for the platform.
 - **Retention** — none enforced at the platform layer. Rows stay
   until the operator prunes.

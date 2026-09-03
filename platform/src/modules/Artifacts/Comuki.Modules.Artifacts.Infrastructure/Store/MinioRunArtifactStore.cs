@@ -83,7 +83,7 @@ public sealed class MinioRunArtifactStore(
             pointers.Add(new ArtifactPointer(
                 Name: name,
                 Uri: BuildObjectUri(item.Key),
-                SizeBytes: (long)item.Size,
+                Size: (long)item.Size,
                 ContentType: item.ContentType ?? "application/octet-stream"));
         }
 

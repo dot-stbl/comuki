@@ -71,4 +71,7 @@ public static class ApiRoutes
 
     /// <summary>Cost rollup for one project (permission cost:read).</summary>
     public const string ProjectCosts = "/api/v1/projects/{projectId:guid}/costs";
+
+    /// <summary>Artifact bundle pointers for one run (permission run:read).</summary>
+    public const string RunArtifacts = "/api/v1/projects/{projectId:guid}/runs/{runId:guid}/artifacts";
 }

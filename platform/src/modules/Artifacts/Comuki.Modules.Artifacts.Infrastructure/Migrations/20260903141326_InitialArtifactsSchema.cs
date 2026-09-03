@@ -1,4 +1,3 @@
-using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -17,7 +16,7 @@ namespace Comuki.Modules.Artifacts.Infrastructure.Migrations
             migrationBuilder.CreateTable(
                 name: "run_bundles",
                 schema: "artifacts",
-                columns: table => new
+                columns: static table => new
                 {
                     run_id = table.Column<Guid>(type: "uuid", nullable: false),
                     project_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -25,9 +24,9 @@ namespace Comuki.Modules.Artifacts.Infrastructure.Migrations
                     uploaded_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     object_count = table.Column<int>(type: "integer", nullable: false)
                 },
-                constraints: table =>
+                constraints: static table =>
                 {
-                    table.PrimaryKey("pk_run_bundles", x => x.run_id);
+                    table.PrimaryKey("pk_run_bundles", static x => x.run_id);
                 });
         }
 

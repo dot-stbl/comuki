@@ -68,27 +68,28 @@ public sealed class RunArtifactPackagerService(
 
     /// <summary>
     /// Runs one polling cycle — exposed for integration tests that need to
-    /// drive the packager deterministically. Returns the number of runs
-    /// bundled in this cycle.
+    /// drive the packager deterministically. Returns the per-run outcomes;
+    /// null entries (skip / already-bundled) are dropped.
     /// </summary>
     /// <param name="cancellationToken"></param>
-    public async Task<int> PollOnceAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<RunArtifactPackager.BundleOutcome>> PollOnceAsync(CancellationToken cancellationToken)
     {
-        var bundled = 0;
+        var outcomes = new List<RunArtifactPackager.BundleOutcome>();
         await foreach (var candidate in runSource.ListUnbundledTerminalAsync(BatchLimit, cancellationToken))
         {
             var outcome = await packager.BundleAsync(candidate, cancellationToken);
             if (outcome is not null)
             {
-                bundled++;
+                outcomes.Add(outcome);
             }
         }
 
-        if (bundled > 0)
+        if (outcomes.Count > 0)
         {
-            logger.LogInformation("Run artifact packager bundled {Count} run(s) in this cycle", bundled);
+            logger.LogInformation("Run artifact packager bundled {Count} run(s) in this cycle", outcomes.Count);
         }
 
-        return bundled;
+        return outcomes;
     }
 }
+

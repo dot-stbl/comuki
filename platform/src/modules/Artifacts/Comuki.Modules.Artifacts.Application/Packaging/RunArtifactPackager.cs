@@ -35,7 +35,11 @@ public sealed class RunArtifactPackager(
     /// </summary>
     /// <param name="RunId">Run that was bundled.</param>
     /// <param name="ObjectCount">How many objects ended up in the bundle.</param>
-    public sealed record BundleOutcome(Guid RunId, int ObjectCount);
+    /// <param name="Pointers">Immutable artifact pointers the journal event carries.</param>
+    public sealed record BundleOutcome(
+        Guid RunId,
+        int ObjectCount,
+        IReadOnlyList<ArtifactPointer> Pointers);
 
     private static readonly JsonSerializerOptions webOptions = JsonSerializerOptions.Web;
 
@@ -115,13 +119,19 @@ public sealed class RunArtifactPackager(
             },
             cancellationToken);
 
+        // Read the bundle back from the artifact store so the journal
+        // event can carry the canonical URI list — the packager does not
+        // keep its own copy of the object list around, and the
+        // ListAsync round-trip is cheap (one prefix query per run).
+        var pointers = await store.ListAsync(projectId, runId, cancellationToken);
+
         logger.LogInformation(
             "Bundled {ObjectCount} artifact(s) for run {RunId} (status {Status})",
             objectCount,
             runId.Value,
             snapshot.Status);
 
-        return new BundleOutcome(runId.Value, objectCount);
+        return new BundleOutcome(runId.Value, objectCount, pointers);
     }
 
     /// <summary>Uploads a string body as a fresh <see cref="MemoryStream"/>; UTF-8, no BOM.</summary>

@@ -61,6 +61,7 @@
     <Project Path="tests/unit/Comuki.Modules.Chat.Unit/Comuki.Modules.Chat.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Costs.Unit/Comuki.Modules.Costs.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Intake.Unit/Comuki.Modules.Intake.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Artifacts.Unit/Comuki.Modules.Artifacts.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Realtime/Comuki.Host.Unit.Realtime.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Filtering.Unit/Comuki.Shared.Filtering.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Telemetry.Unit/Comuki.Shared.Telemetry.Unit.csproj" />

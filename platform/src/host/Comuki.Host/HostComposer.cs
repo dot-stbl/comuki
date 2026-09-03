@@ -126,10 +126,13 @@ internal static class HostComposer
         // host composition root so the artifacts module never reaches
         // into the engine schema — they read runs / work items through
         // the orchestration DbContext that Program already wired above.
+        // The host driver wraps the in-module polling helper and emits
+        // a `run.artifacts_bundled` journal event after each bundle.
         builder.Services.AddArtifactsApplication();
         builder.Services.AddArtifactsPersistence(database.ConnectionString, builder.Configuration);
         builder.Services.AddScoped<IRunArtifactJournalSource, OrchestrationArtifactJournalSource>();
         builder.Services.AddScoped<IRunArtifactRunSource, OrchestrationArtifactRunSource>();
+        builder.Services.AddHostedService<RunArtifactPackagerHostService>();
 
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).

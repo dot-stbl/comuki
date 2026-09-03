@@ -50,6 +50,17 @@ const envSchema = z.object({
    * environment is the one class of bug a label exists to prevent.
    */
   VITE_DEPLOY_ENV: z.enum(["local", "staging", "production"]).optional(),
+  /**
+   * The host URL kubb-generated clients route through. Read directly by the
+   * kubb-client transport (which throws a single, helpful error when the
+   * variable is missing); exposed here so domain code can branch on "is the
+   * operator pointed at a real backend yet?". Empty when unset.
+   *
+   * The contract on this is "non-empty" in real mode (kubb-client refuses
+   * empty); the schema keeps it `optional()` so mock-first setups parse —
+   * the mock gate (`useMock`) decides whether the value is read at all.
+   */
+  VITE_API_BASE_URL: z.string().optional(),
 })
 
 const parsed = envSchema.parse({
@@ -59,6 +70,7 @@ const parsed = envSchema.parse({
   VITE_REPO_URL: import.meta.env.VITE_REPO_URL ?? REPO_URL_DEFAULT,
   VITE_COMMIT_SHA: import.meta.env.VITE_COMMIT_SHA ?? "",
   VITE_DEPLOY_ENV: import.meta.env.VITE_DEPLOY_ENV ?? "local",
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL ?? "",
 })
 
 export const env = {
@@ -69,6 +81,12 @@ export const env = {
   commitSha: (parsed.VITE_COMMIT_SHA ?? "").trim().slice(0, 8),
   /** Where this build is meant to run — `local` if `VITE_DEPLOY_ENV` is unset. */
   deployEnv: parsed.VITE_DEPLOY_ENV,
+  /**
+   * Host URL kubb-generated clients route through. Empty when unset;
+   * combined with `useMock=false`, kubb-client throws at first call rather
+   * than pinging localhost and returning a Vite-served 404.
+   */
+  apiBaseUrl: (parsed.VITE_API_BASE_URL ?? "").trim(),
 }
 
 export type Env = typeof env

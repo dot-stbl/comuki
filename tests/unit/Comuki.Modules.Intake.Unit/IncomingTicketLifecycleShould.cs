@@ -24,6 +24,7 @@ public sealed class IncomingTicketLifecycleShould
             "https://example.com/1",
             "acme/app",
             ["bug"],
+            InboundTicketKind.Issue,
             now);
         var runId = RunId.New();
         var claimedAt = now.AddMinutes(1);
@@ -52,6 +53,7 @@ public sealed class IncomingTicketLifecycleShould
             string.Empty,
             null,
             [],
+            InboundTicketKind.Issue,
             now);
 
         ticket.MarkDismissed(now.AddSeconds(5));
@@ -72,6 +74,7 @@ public sealed class IncomingTicketLifecycleShould
             string.Empty,
             null,
             [],
+            InboundTicketKind.Issue,
             now);
         ticket.MarkClaimed(RunId.New(), now);
 
@@ -91,6 +94,7 @@ public sealed class IncomingTicketLifecycleShould
             string.Empty,
             null,
             [],
+            InboundTicketKind.Issue,
             now);
 
         Should.Throw<InvalidOperationException>(() => ticket.MarkDone(now));

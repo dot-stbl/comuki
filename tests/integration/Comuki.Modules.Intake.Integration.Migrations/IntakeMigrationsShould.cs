@@ -123,15 +123,15 @@ public sealed class IntakeMigrationsShould : IAsyncLifetime
         var projectId = ProjectId.New();
         var now = DateTimeOffset.UtcNow;
 
-        var first = IncomingTicket.Create(projectId, TicketProvider.GitHub, "dot-stbl/comuki#1", "first", string.Empty, "a", "u", "dot-stbl/comuki", ["bug"], now);
+        var first = IncomingTicket.Create(projectId, TicketProvider.GitHub, "dot-stbl/comuki#1", "first", string.Empty, "a", "u", "dot-stbl/comuki", ["bug"], InboundTicketKind.Issue, now);
         (await store.TryInsertTicketAsync(first, cancellationToken)).ShouldNotBeNull();
 
-        var second = IncomingTicket.Create(projectId, TicketProvider.GitHub, "dot-stbl/comuki#1", "second", string.Empty, "a", "u", "dot-stbl/comuki", [], now);
+        var second = IncomingTicket.Create(projectId, TicketProvider.GitHub, "dot-stbl/comuki#1", "second", string.Empty, "a", "u", "dot-stbl/comuki", [], InboundTicketKind.Issue, now);
         (await store.TryInsertTicketAsync(second, cancellationToken)).ShouldBeNull();
 
         // a different repo's issue with the same number does not collide —
         // the external id is fully qualified
-        var otherRepo = IncomingTicket.Create(projectId, TicketProvider.GitHub, "dot-stbl/other#1", "other", string.Empty, "a", "u", "dot-stbl/other", [], now);
+        var otherRepo = IncomingTicket.Create(projectId, TicketProvider.GitHub, "dot-stbl/other#1", "other", string.Empty, "a", "u", "dot-stbl/other", [], InboundTicketKind.Issue, now);
         (await store.TryInsertTicketAsync(otherRepo, cancellationToken)).ShouldNotBeNull();
     }
 
@@ -144,12 +144,12 @@ public sealed class IntakeMigrationsShould : IAsyncLifetime
         var now = DateTimeOffset.UtcNow;
         var runId = RunId.New();
 
-        var ticket = IncomingTicket.Create(projectId, TicketProvider.GitLab, "acme/app#7", "t", string.Empty, "a", "u", "acme/app", [], now);
+        var ticket = IncomingTicket.Create(projectId, TicketProvider.GitLab, "acme/app#7", "t", string.Empty, "a", "u", "acme/app", [], InboundTicketKind.Issue, now);
         (await store.TryInsertTicketAsync(ticket, cancellationToken)).ShouldNotBeNull();
         (await store.TryMarkClaimedAsync(ticket.Id, runId, cancellationToken)).ShouldBeTrue();
         await store.ReleaseTicketAsync(ticket.Id, cancellationToken);
 
-        var retry = IncomingTicket.Create(projectId, TicketProvider.GitLab, "acme/app#7", "t again", string.Empty, "a", "u", "acme/app", [], now);
+        var retry = IncomingTicket.Create(projectId, TicketProvider.GitLab, "acme/app#7", "t again", string.Empty, "a", "u", "acme/app", [], InboundTicketKind.Issue, now);
         (await store.TryInsertTicketAsync(retry, cancellationToken)).ShouldNotBeNull();
     }
 
@@ -160,7 +160,7 @@ public sealed class IntakeMigrationsShould : IAsyncLifetime
         var store = provider.GetRequiredService<IIntakeStore>();
         var now = DateTimeOffset.UtcNow;
 
-        var ticket = IncomingTicket.Create(ProjectId.New(), TicketProvider.Jira, "COM-1", "t", string.Empty, "a", "u", "COM", [], now);
+        var ticket = IncomingTicket.Create(ProjectId.New(), TicketProvider.Jira, "COM-1", "t", string.Empty, "a", "u", "COM", [], InboundTicketKind.Issue, now);
         (await store.TryInsertTicketAsync(ticket, cancellationToken)).ShouldNotBeNull();
 
         (await store.TryMarkClaimedAsync(ticket.Id, RunId.New(), cancellationToken)).ShouldBeTrue();
@@ -178,7 +178,7 @@ public sealed class IntakeMigrationsShould : IAsyncLifetime
         var connection = SourceConnection.Create(projectId, TicketProvider.GitHub, "c", "{}", "COMUKI_GH_HOOK", "key1234567890abcd", now);
         await store.AddConnectionAsync(connection, cancellationToken);
 
-        var ticket = IncomingTicket.Create(projectId, TicketProvider.GitHub, "dot-stbl/comuki#9", "t", string.Empty, "a", "u", "dot-stbl/comuki", [], now);
+        var ticket = IncomingTicket.Create(projectId, TicketProvider.GitHub, "dot-stbl/comuki#9", "t", string.Empty, "a", "u", "dot-stbl/comuki", [], InboundTicketKind.Issue, now);
         (await store.TryInsertTicketAsync(ticket, cancellationToken)).ShouldNotBeNull();
         ticket.BindConnection(connection.Id);
 
@@ -198,7 +198,7 @@ public sealed class IntakeMigrationsShould : IAsyncLifetime
         var now = DateTimeOffset.UtcNow;
         var projectId = ProjectId.New();
 
-        var ticket = IncomingTicket.Create(projectId, TicketProvider.GitHub, "dot-stbl/comuki#11", "t", string.Empty, "a", "u", "dot-stbl/comuki", [], now);
+        var ticket = IncomingTicket.Create(projectId, TicketProvider.GitHub, "dot-stbl/comuki#11", "t", string.Empty, "a", "u", "dot-stbl/comuki", [], InboundTicketKind.Issue, now);
         (await store.TryInsertTicketAsync(ticket, cancellationToken)).ShouldNotBeNull();
 
         var job = SyncJob.Create(ticket.Id, SourceConnectionId.New(), RunId.New(), ticket.ExternalId, ticket.Url, "Failed", now);

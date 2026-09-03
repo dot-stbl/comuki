@@ -1,0 +1,14 @@
+{
+  "action": "synchronize",
+  "number": 17,
+  "pull_request": {
+    "number": 17,
+    "title": "Add adapter for foreign PR review",
+    "body": "Push to existing PR",
+    "html_url": "https://github.com/dot-stbl/comuki/pull/17",
+    "state": "open",
+    "user": { "login": "eve" },
+    "labels": [ { "name": "needs-review" } ]
+  },
+  "repository": { "full_name": "dot-stbl/comuki" }
+}

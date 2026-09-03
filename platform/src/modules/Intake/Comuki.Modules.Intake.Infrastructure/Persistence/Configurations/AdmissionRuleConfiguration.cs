@@ -10,7 +10,7 @@ public sealed class AdmissionRuleConfiguration : IEntityTypeConfiguration<Admiss
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<AdmissionRule> builder)
     {
-        builder.ToTable(IntakeTables.Rules);
+        builder.ToTable(IntakeDatabase.Rules, IntakeDatabase.Schema);
         builder.HasKey(static rule => rule.Id);
 
         builder.Property(static rule => rule.Id)

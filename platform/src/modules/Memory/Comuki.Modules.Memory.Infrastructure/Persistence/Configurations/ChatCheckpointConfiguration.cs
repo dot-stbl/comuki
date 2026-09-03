@@ -10,7 +10,7 @@ public sealed class ChatCheckpointConfiguration : IEntityTypeConfiguration<ChatC
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ChatCheckpoint> builder)
     {
-        builder.ToTable(MemoryTables.ChatCheckpoints);
+        builder.ToTable(MemoryDatabase.ChatCheckpoints, MemoryDatabase.Schema);
         builder.HasKey(static checkpoint => checkpoint.SessionId);
 
         builder.Property(static checkpoint => checkpoint.SessionId)

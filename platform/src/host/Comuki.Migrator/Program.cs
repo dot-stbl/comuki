@@ -46,51 +46,46 @@ if (recreate)
 var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
 OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
 await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
-await EnsureSchemaAsync(connectionString, OrchestrationDatabase.Schema);
+await DatabaseSchemaEnsurer.EnsureAsync(connectionString, OrchestrationDatabase.Schema, CancellationToken.None);
 await ApplyAsync(orchestrationDb, "orchestration");
 
 var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
 IdentityDbContext.ApplyOptions(identityOptions, connectionString);
 await using var identityDb = new IdentityDbContext(identityOptions.Options);
-await EnsureSchemaAsync(connectionString, IdentityDatabase.Schema);
+await DatabaseSchemaEnsurer.EnsureAsync(connectionString, IdentityDatabase.Schema, CancellationToken.None);
 await ApplyAsync(identityDb, "identity");
 
 var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
 ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
 await using var projectsDb = new ProjectsDbContext(projectsOptions.Options);
-await EnsureSchemaAsync(connectionString, ProjectsDatabase.Schema);
+await DatabaseSchemaEnsurer.EnsureAsync(connectionString, ProjectsDatabase.Schema, CancellationToken.None);
 await ApplyAsync(projectsDb, "projects");
 
 var memoryOptions = new DbContextOptionsBuilder<MemoryDbContext>();
 MemoryDbContext.ApplyOptions(memoryOptions, connectionString);
 await using var memoryDb = new MemoryDbContext(memoryOptions.Options);
-await EnsureSchemaAsync(connectionString, MemoryDatabase.Schema);
+await DatabaseSchemaEnsurer.EnsureAsync(connectionString, MemoryDatabase.Schema, CancellationToken.None);
 await ApplyAsync(memoryDb, "memory");
 
 var chatOptions = new DbContextOptionsBuilder<ChatDbContext>();
 ChatDbContext.ApplyOptions(chatOptions, connectionString);
 await using var chatDb = new ChatDbContext(chatOptions.Options);
-await EnsureSchemaAsync(connectionString, ChatDatabase.Schema);
+await DatabaseSchemaEnsurer.EnsureAsync(connectionString, ChatDatabase.Schema, CancellationToken.None);
 await ApplyAsync(chatDb, "chat");
 
 var intakeOptions = new DbContextOptionsBuilder<IntakeDbContext>();
 IntakeDbContext.ApplyOptions(intakeOptions, connectionString);
 await using var intakeDb = new IntakeDbContext(intakeOptions.Options);
-await EnsureSchemaAsync(connectionString, IntakeDatabase.Schema);
+await DatabaseSchemaEnsurer.EnsureAsync(connectionString, IntakeDatabase.Schema, CancellationToken.None);
 await ApplyAsync(intakeDb, "intake");
 
 var costsOptions = new DbContextOptionsBuilder<CostsDbContext>();
 CostsDbContext.ApplyOptions(costsOptions, connectionString);
 await using var costsDb = new CostsDbContext(costsOptions.Options);
-await EnsureSchemaAsync(connectionString, CostsDatabase.Schema);
+await DatabaseSchemaEnsurer.EnsureAsync(connectionString, CostsDatabase.Schema, CancellationToken.None);
 await ApplyAsync(costsDb, "costs");
 
 return 0;
-
-static async Task EnsureSchemaAsync(string connectionString, string schema)
-{
-    await DatabaseSchemaEnsurer.EnsureAsync(connectionString, schema, CancellationToken.None);
-}
 
 static async Task ApplyAsync(DbContext db, string label)
 {

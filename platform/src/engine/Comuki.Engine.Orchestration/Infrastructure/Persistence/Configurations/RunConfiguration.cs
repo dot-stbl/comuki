@@ -10,7 +10,7 @@ public sealed class RunConfiguration : IEntityTypeConfiguration<Run>
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<Run> builder)
     {
-        builder.ToTable(OrchestrationTables.Runs);
+        builder.ToTable(OrchestrationDatabase.Runs, OrchestrationDatabase.Schema);
         builder.HasKey(static run => run.Id);
 
         builder.Property(static run => run.Id)

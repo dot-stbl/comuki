@@ -10,7 +10,7 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        builder.ToTable(IdentityTables.Users);
+        builder.ToTable(IdentityDatabase.Users, IdentityDatabase.Schema);
         builder.HasKey(static user => user.Id);
 
         builder.Property(static user => user.Id)

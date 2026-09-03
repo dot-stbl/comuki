@@ -13,7 +13,7 @@ public sealed class IntakeDeliveryConfiguration : IEntityTypeConfiguration<Intak
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<IntakeDelivery> builder)
     {
-        builder.ToTable(IntakeTables.Deliveries);
+        builder.ToTable(IntakeDatabase.Deliveries, IntakeDatabase.Schema);
         builder.HasKey(static delivery => delivery.Id);
 
         builder.Property(static delivery => delivery.Id)

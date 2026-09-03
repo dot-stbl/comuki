@@ -33,7 +33,7 @@ public sealed class RoleAssignmentConfiguration : IEntityTypeConfiguration<RoleA
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<RoleAssignment> builder)
     {
-        builder.ToTable(IdentityTables.RoleAssignments);
+        builder.ToTable(IdentityDatabase.RoleAssignments, IdentityDatabase.Schema);
         builder.HasKey(static assignment => assignment.Id);
 
         builder.Property(static assignment => assignment.Id)

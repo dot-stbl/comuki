@@ -11,7 +11,7 @@ public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ApiKey> builder)
     {
-        builder.ToTable(IdentityTables.ApiKeys);
+        builder.ToTable(IdentityDatabase.ApiKeys, IdentityDatabase.Schema);
         builder.HasKey(static apiKey => apiKey.Id);
 
         builder.Property(static apiKey => apiKey.Id)

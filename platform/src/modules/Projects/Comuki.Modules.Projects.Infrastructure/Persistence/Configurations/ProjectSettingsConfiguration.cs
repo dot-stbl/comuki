@@ -16,7 +16,7 @@ public sealed class ProjectSettingsConfiguration : IEntityTypeConfiguration<Proj
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ProjectSettings> builder)
     {
-        builder.ToTable(ProjectsTables.ProjectSettings);
+        builder.ToTable(ProjectsDatabase.ProjectSettings, ProjectsDatabase.Schema);
         builder.HasKey(static settings => settings.ProjectId);
 
         builder.Property(static settings => settings.ProjectId)

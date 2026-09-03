@@ -13,7 +13,7 @@ public sealed class SourceConnectionConfiguration : IEntityTypeConfiguration<Sou
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<SourceConnection> builder)
     {
-        builder.ToTable(IntakeTables.Connections);
+        builder.ToTable(IntakeDatabase.Connections, IntakeDatabase.Schema);
         builder.HasKey(static connection => connection.Id);
 
         builder.Property(static connection => connection.Id)

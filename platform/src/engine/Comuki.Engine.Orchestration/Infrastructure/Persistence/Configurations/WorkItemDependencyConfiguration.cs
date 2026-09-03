@@ -10,7 +10,7 @@ public sealed class WorkItemDependencyConfiguration : IEntityTypeConfiguration<W
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<WorkItemDependency> builder)
     {
-        builder.ToTable(OrchestrationTables.WorkItemDependencies);
+        builder.ToTable(OrchestrationDatabase.WorkItemDependencies, OrchestrationDatabase.Schema);
         builder.HasKey(static dependency => new { dependency.WorkItemId, dependency.DependsOnWorkItemId });
 
         builder.Property(static dependency => dependency.WorkItemId)

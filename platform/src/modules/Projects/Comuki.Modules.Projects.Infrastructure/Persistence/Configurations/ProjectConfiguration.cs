@@ -10,7 +10,7 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<Project> builder)
     {
-        builder.ToTable(ProjectsTables.Projects);
+        builder.ToTable(ProjectsDatabase.Projects, ProjectsDatabase.Schema);
         builder.HasKey(static project => project.Id);
 
         builder.Property(static project => project.Id)

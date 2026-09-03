@@ -10,7 +10,7 @@ public sealed class OidcLinkConfiguration : IEntityTypeConfiguration<OidcLink>
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<OidcLink> builder)
     {
-        builder.ToTable(IdentityTables.OidcLinks);
+        builder.ToTable(IdentityDatabase.OidcLinks, IdentityDatabase.Schema);
         builder.HasKey(static link => link.Id);
 
         builder.Property(static link => link.Id)

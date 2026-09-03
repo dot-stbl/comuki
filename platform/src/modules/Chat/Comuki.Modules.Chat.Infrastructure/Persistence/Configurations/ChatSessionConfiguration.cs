@@ -10,7 +10,7 @@ public sealed class ChatSessionConfiguration : IEntityTypeConfiguration<ChatSess
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ChatSession> builder)
     {
-        builder.ToTable(ChatTables.Sessions);
+        builder.ToTable(ChatDatabase.Sessions, ChatDatabase.Schema);
         builder.HasKey(static session => session.Id);
 
         builder.Property(static session => session.Id)

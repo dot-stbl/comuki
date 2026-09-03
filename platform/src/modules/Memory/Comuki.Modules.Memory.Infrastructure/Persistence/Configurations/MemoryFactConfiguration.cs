@@ -16,7 +16,7 @@ public sealed class MemoryFactConfiguration : IEntityTypeConfiguration<MemoryFac
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<MemoryFact> builder)
     {
-        builder.ToTable(MemoryTables.MemoryFacts);
+        builder.ToTable(MemoryDatabase.MemoryFacts, MemoryDatabase.Schema);
         builder.HasKey(static fact => fact.Id);
 
         builder.Property(static fact => fact.Id)

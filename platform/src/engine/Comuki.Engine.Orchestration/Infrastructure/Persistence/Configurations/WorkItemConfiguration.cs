@@ -15,7 +15,7 @@ public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<WorkItem> builder)
     {
-        builder.ToTable(OrchestrationTables.WorkItems);
+        builder.ToTable(OrchestrationDatabase.WorkItems, OrchestrationDatabase.Schema);
         builder.HasKey(static item => item.Id);
 
         builder.Property(static item => item.Id)

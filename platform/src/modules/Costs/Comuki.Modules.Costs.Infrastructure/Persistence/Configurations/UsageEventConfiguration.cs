@@ -13,7 +13,7 @@ public sealed class UsageEventConfiguration : IEntityTypeConfiguration<UsageEven
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<UsageEvent> builder)
     {
-        builder.ToTable(CostsTables.UsageEvents);
+        builder.ToTable(CostsDatabase.UsageEvents, CostsDatabase.Schema);
         builder.HasKey(static usageEvent => usageEvent.Id);
 
         builder.Property(static usageEvent => usageEvent.Id)

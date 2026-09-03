@@ -10,7 +10,7 @@ public sealed class RunEventConfiguration : IEntityTypeConfiguration<RunEvent>
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<RunEvent> builder)
     {
-        builder.ToTable(OrchestrationTables.RunEvents);
+        builder.ToTable(OrchestrationDatabase.RunEvents, OrchestrationDatabase.Schema);
         builder.HasKey(static runEvent => runEvent.Id);
 
         builder.Property(static runEvent => runEvent.Id)

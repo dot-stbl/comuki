@@ -16,7 +16,7 @@ public sealed class IncomingTicketConfiguration : IEntityTypeConfiguration<Incom
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<IncomingTicket> builder)
     {
-        builder.ToTable(IntakeTables.Tickets);
+        builder.ToTable(IntakeDatabase.Tickets, IntakeDatabase.Schema);
         builder.HasKey(static ticket => ticket.Id);
 
         builder.Property(static ticket => ticket.Id)

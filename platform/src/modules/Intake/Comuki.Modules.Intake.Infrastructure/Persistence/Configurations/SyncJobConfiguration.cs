@@ -16,7 +16,7 @@ public sealed class SyncJobConfiguration : IEntityTypeConfiguration<SyncJob>
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<SyncJob> builder)
     {
-        builder.ToTable(IntakeTables.SyncJobs);
+        builder.ToTable(IntakeDatabase.SyncJobs, IntakeDatabase.Schema);
         builder.HasKey(static job => job.Id);
 
         builder.Property(static job => job.Id)

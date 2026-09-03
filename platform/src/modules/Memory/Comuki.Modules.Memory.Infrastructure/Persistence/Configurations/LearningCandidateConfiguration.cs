@@ -10,7 +10,7 @@ public sealed class LearningCandidateConfiguration : IEntityTypeConfiguration<Le
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<LearningCandidate> builder)
     {
-        builder.ToTable(MemoryTables.LearningCandidates);
+        builder.ToTable(MemoryDatabase.LearningCandidates, MemoryDatabase.Schema);
         builder.HasKey(static candidate => candidate.Id);
 
         builder.Property(static candidate => candidate.Id)

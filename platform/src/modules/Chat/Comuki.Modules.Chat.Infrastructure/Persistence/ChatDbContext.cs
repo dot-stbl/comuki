@@ -51,9 +51,9 @@ public sealed class ChatDbContext(DbContextOptions<ChatDbContext> options)
             .ApplyConfiguration(new ChatMessageConfiguration())
             .ApplyVolutaCheckpointModel();
 
-        // memory-contract table name instead of the package default voluta_checkpoints
+        // memory-contract table name (in the chat schema) instead of the package default voluta_checkpoints
         modelBuilder.Entity<CheckpointRecord>()
-            .ToTable(ChatTables.Checkpoints);
+            .ToTable(ChatDatabase.Checkpoints, ChatDatabase.Schema);
 
         base.OnModelCreating(modelBuilder);
     }

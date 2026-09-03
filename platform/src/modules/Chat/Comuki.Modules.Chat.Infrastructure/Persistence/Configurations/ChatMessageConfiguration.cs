@@ -16,7 +16,7 @@ public sealed class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMess
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ChatMessage> builder)
     {
-        builder.ToTable(ChatTables.Messages);
+        builder.ToTable(ChatDatabase.Messages, ChatDatabase.Schema);
         builder.HasKey(static message => message.Id);
 
         builder.Property(static message => message.Id)

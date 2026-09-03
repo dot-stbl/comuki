@@ -14,8 +14,9 @@ specs → apply → archive), not by silently editing a main spec.
 
 | Capability | What it covers |
 |---|---|
-| [runs](specs/runs/spec.md) | Run / work-item aggregates, status enums (7 run / 6 work-item, no `stalled`), transition tables, the append-only `run_events` journal (incl. `budget.exceeded`), lease-reaper policy, `GET /api/v1/runs` list + filter DSL |
+| [runs](specs/runs/spec.md) | Run / work-item aggregates, status enums (7 run / 6 work-item, no `stalled`), transition tables, the append-only `run_events` journal (incl. `budget.exceeded`, `run.artifacts_bundled`), lease-reaper policy, `GET /api/v1/runs` list + filter DSL, run-artifacts read API |
 | [work-queue](specs/work-queue/spec.md) | SKIP LOCKED claim with exact label match (image / profiles_ref / profile_key), lease columns, owner-guarded heartbeat, complete/fail, queued-depth count |
+| [artifacts](specs/artifacts/spec.md) | Run-bundle MinIO store (`IRunArtifactStore`, `ArtifactPointer`, `RunTerminalSnapshot`), per-run packager + host driver, `run.artifacts_bundled` event, `GET /api/v1/projects/{projectId}/runs/{runId}/artifacts`, `Artifacts:*` config, `artifacts` schema, v1 retention = never delete |
 | [compute](specs/compute/spec.md) | `IComputeProvider` port, Docker + Kubernetes (batch/v1 Job) providers, env/label contract (`COMUKI_*`, `comuki.*`), opaque worker tokens, scale supervisor v0, WorkerId pre-issue |
 | [identity](specs/identity/spec.md) | Users, `ck_` API keys, role assignments, permission catalog + `RequiresPermission`, OIDC linking, cookie `tokens_version`, ambient subject-scope object axis (EF filters → 404) |
 | [projects](specs/projects/spec.md) | CRUD with immutable unique slugs, soft archive, settings (scale + feature flags + soft/hard budget USD micros) with optimistic concurrency and live reload, scale-settings adapter |
@@ -31,7 +32,8 @@ specs → apply → archive), not by silently editing a main spec.
 | [agents-sdk](specs/agents-sdk/spec.md) | Bun workspace layout, `@comuki/agent-core`, `@comuki/worker-sdk` |
 | [build-and-ci](specs/build-and-ci/spec.md) | Single build gate, format-verify, analyzer policy, CI jobs |
 
-Active OpenSpec changes under `changes/` backfill Wave 5–6 docs (`backfill-*`).
+Active OpenSpec changes under `changes/` backfill Wave 5–6 docs (`backfill-*`)
+plus the post-Wave-6 audit (`audit-wave-6`).
 The earlier design-only `add-chat-memory` change remains for historical S5
 intent; prefer the backfill + main `chat`/`memory` specs for landed behavior.
 

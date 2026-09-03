@@ -44,6 +44,27 @@ REST under `/api/v1/sources` SHALL demand `intake:read` for reads and
 - **WHEN** an operator with `source:write` creates a connection
 - **THEN** the response is 201 including the webhook routing key once
 
+### Requirement: Inbound ticket kind discriminator
+Admitted tickets SHALL carry an `InboundTicketKind` discriminator with
+exactly two members: `Issue` (the default) and `PullRequest` (the inbound
+review surface for GitHub pull requests and GitLab merge requests). The
+discriminator SHALL be stamped at normalize time by the provider mapper
+and SHALL be the input the profile router reads to choose the worker
+profile. The persisted column SHALL be named `kind` and SHALL be required
+on every admitted ticket; pre-existing rows SHALL be backfilled to
+`Issue`.
+
+#### Scenario: GitHub pull request stamps PullRequest
+- **WHEN** a GitHub `pull_request.opened` webhook admits a ticket
+- **THEN** `kind = PullRequest` is stamped at normalize time and the
+  ticket row carries the discriminator
+
+#### Scenario: Plain issue stays Issue
+- **WHEN** a GitHub `issues.opened` or any other tracker issue event
+  admits a ticket
+- **THEN** `kind = Issue` and the value never changes for the ticket's
+  lifetime
+
 ### Requirement: Pull-request / merge-request ingress (issue #27)
 The GitHub and GitLab webhook mappers SHALL admit pull-request /
 merge-request events alongside issue events. Admitted events are
@@ -89,12 +110,18 @@ endpoint.
 
 ### Requirement: Profile routing (issue #27)
 Admitted tickets SHALL land on a profile chosen by
-`IIntakeProfileRouter`. The router SHALL honor an explicit
-`profileKey` from the connection's settings jsonb when present; other-
-wise default to `pr-review` for `PullRequest`-kind tickets and to
+`IIntakeProfileRouter`. The intake module SHALL expose
+`IIntakeProfileRouter` as a port that maps an admitted ticket to a
+worker profile key; the host composes the implementation. The default
+implementation SHALL honor an explicit `profileKey` from the
+connection's settings jsonb when present, SHALL fall back to
+`pr-review` for `PullRequest`-kind tickets, and SHALL fall back to
 `Intake:Worker:IssueDefaultProfileKey` (default `general`) for
-`Issue`-kind tickets. Admitted PR tickets SHALL NOT claim on the
-`implement` profile.
+`Issue`-kind tickets. The router SHALL never throw — broken JSON,
+missing fields, and non-string values silently use the fallback.
+Admitted PR tickets SHALL NOT claim on the `implement` profile. The
+intake module SHALL NOT depend on the engine — the host composes the
+implementation.
 
 #### Scenario: Inbound PR webhook claims on pr-review
 - **WHEN** a watch-mode rule admits a `PullRequest`-kind ticket
@@ -103,6 +130,17 @@ wise default to `pr-review` for `PullRequest`-kind tickets and to
 #### Scenario: Per-connection profileKey override wins
 - **WHEN** a connection's settings declare `"profileKey": "explore-readonly"`
 - **THEN** the router returns `explore-readonly` regardless of ticket kind
+
+#### Scenario: Issue kind uses the configured default
+- **WHEN** an admitted `Issue`-kind ticket has no per-connection
+  override
+- **THEN** the router returns `Intake:Worker:IssueDefaultProfileKey`
+  (default `general`)
+
+#### Scenario: Broken settings json falls back silently
+- **WHEN** the connection's settings jsonb is malformed or the
+  `profileKey` field is a non-string
+- **THEN** the router returns the kind-based default and does not throw
 
 ### Requirement: Sync-back for PRs is a single issue-comment only
 On a terminal run transition the GitHub / GitLab sync port SHALL post
@@ -178,3 +216,9 @@ worker profile — `profile == "pr-review"` is the visible surface for
 inbound PR review activity. No new top-level dashboard app, no
 `Modules.PullRequests` backend module, no `/api/v1/prs` route —
 the existing run-detail screen is sufficient.
+
+#### Scenario: Inbox filter scoped to pr-review
+- **WHEN** an operator opens the dashboard Inbox with
+  `profile = "pr-review"`
+- **THEN** the inbox lists only tickets whose work-item profile is
+  `pr-review` and runs are filterable on the same axis

@@ -8,6 +8,9 @@ import type {
   SourceConnection,
   SourcesSnapshot,
 } from "@/domains/sources/model/types"
+import { deleteApiV1SourcesSourceid } from "@/shared/api/_generated/clients/deleteApiV1SourcesSourceid"
+import { postApiV1Tickets } from "@/shared/api/_generated/clients/postApiV1Tickets"
+import type { CreateNativeTicketRequest } from "@/shared/api/_generated/types/CreateNativeTicketRequest"
 import {
   connectSeedSource,
   createSeedNativeTicket,
@@ -155,19 +158,31 @@ export function useUpdateConnection() {
  * Throws when the connection refuses — which today means native. The rule lives
  * in the store as well as in the UI, and this is the path that carries it back
  * to the operator if a control ever gets it wrong.
+ *
+ * Real mode calls `DELETE /api/v1/sources/{id}` via the kubb-generated client.
+ * The host returns 204 on success and 404 on the row already gone — same shape
+ * as mock, where the seed store returns `false` for the same case and the
+ * mutation throws with the native explanation. The host's "this is native"
+ * check is presumed to live in its own controller; the dashboard renders the
+ * 409 ProblemDetails body as a generic error when the host does refuse, and
+ * the native row in mock mode is filtered out at the form level (no connect
+ * for `native`).
  */
 export function useDisconnectSource() {
   const client = useQueryClient()
 
   return useMutation<unknown, Error, string>({
     mutationFn: async (connectionId) => {
-      requireMock("disconnect source")
-      await wait()
-      if (!disconnectSeedSource(connectionId)) {
-        throw new Error(
-          "native intake cannot be disconnected — it is the product's own, and a platform with no way to accept a ticket is not a state this product has."
-        )
+      if (env.useMock) {
+        await wait()
+        if (!disconnectSeedSource(connectionId)) {
+          throw new Error(
+            "native intake cannot be disconnected — it is the product's own, and a platform with no way to accept a ticket is not a state this product has."
+          )
+        }
+        return connectionId
       }
+      await deleteApiV1SourcesSourceid(connectionId)
       return connectionId
     },
     onMutate: async (connectionId) => {
@@ -259,15 +274,42 @@ export function useSaveWatch() {
   })
 }
 
-/** File a ticket in the product's own intake. */
+/**
+ * File a ticket in the product's own intake.
+ *
+ * Mock mode writes to the shared sources store. Real mode calls
+ * `POST /api/v1/tickets`. The wire `CreateNativeTicketRequest` is the host's
+ * intake shape — `projectId`, `title`, `body`, `externalId`, `author` — and
+ * the dashboard's `SeedTicketDraft` carries two fields the wire does not:
+ *
+ * - `labels` — the dashboard's intake screen lets an operator tag a ticket;
+ *   the host's request today has no labels parameter, so the labels are
+ *   dropped on the wire (mock mode preserves them on the seed store).
+ * - `straightToWork` — the screen's switch decides whether the orchestrator
+ *   dispatches the ticket the moment the run is filed. The wire has no
+ *   `dispatchOnCreate` parameter, so the screen says "filed" and the host's
+ *   default routing applies (mock mode honours the switch).
+ *
+ * The two fields are silently dropped, not flattened into `body`, because the
+ * page renders a different badge for "filed straight to work" — keeping the
+ * difference local to the form keeps the host's contract clean.
+ */
 export function useCreateNativeTicket() {
   const client = useQueryClient()
 
   return useMutation<unknown, Error, SeedTicketDraft>({
     mutationFn: async (draft) => {
-      requireMock("create ticket")
-      await wait()
-      return createSeedNativeTicket(draft)
+      if (env.useMock) {
+        await wait()
+        return createSeedNativeTicket(draft)
+      }
+      const request: CreateNativeTicketRequest = {
+        projectId: draft.projectId,
+        title: draft.title,
+        body: draft.body,
+      }
+      await postApiV1Tickets(request)
+      return draft
     },
     onSettled: async () => {
       await client.invalidateQueries({ queryKey: sourcesQueryKey })

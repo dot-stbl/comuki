@@ -36,7 +36,7 @@ public sealed class ClaimTicketHandler(
             throw new IntakeTicketConflictException(ticket.Id, ticket.Status.ToString());
         }
 
-        var runId = await runLauncher.LaunchAsync(ticket.ProjectId, ticket, cancellationToken);
+        var runId = await runLauncher.LaunchAsync(ticket.ProjectId, null, ticket, cancellationToken);
 
         if (!await store.TryMarkClaimedAsync(ticket.Id, runId, cancellationToken))
         {

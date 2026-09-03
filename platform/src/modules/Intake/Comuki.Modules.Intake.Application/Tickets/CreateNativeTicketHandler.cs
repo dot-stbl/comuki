@@ -49,12 +49,13 @@ public sealed class CreateNativeTicketHandler(
             url: string.Empty,
             projectKey: null,
             labels: [],
+            InboundTicketKind.Issue,
             now);
 
         var stored = await store.TryInsertTicketAsync(ticket, cancellationToken)
             ?? throw new IntakeTicketConflictException(ticket.Id, "an active ticket for this external id already exists");
 
-        var runId = await runLauncher.LaunchAsync(command.ProjectId, stored, cancellationToken);
+        var runId = await runLauncher.LaunchAsync(command.ProjectId, null, stored, cancellationToken);
         await store.TryMarkClaimedAsync(stored.Id, runId, cancellationToken);
         logger.LogInformation("Native ticket {ExternalId} launched into run {RunId}", externalId, runId);
 

@@ -55,21 +55,21 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
     public async Task CreateMemoryTablesAsync()
     {
         var tables = await QuerySingleColumnAsync(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name");
+            $"SELECT table_name FROM information_schema.tables WHERE table_schema = '{MemoryDatabase.Schema}' ORDER BY table_name");
 
-        tables.ShouldContain(MemoryTables.ChatMessages);
-        tables.ShouldContain(MemoryTables.ChatCheckpoints);
-        tables.ShouldContain(MemoryTables.MemoryFacts);
-        tables.ShouldContain(MemoryTables.LearningCandidates);
-        tables.ShouldContain(MemoryTables.MigrationsHistory);
+        tables.ShouldContain(MemoryDatabase.ChatMessages);
+        tables.ShouldContain(MemoryDatabase.ChatCheckpoints);
+        tables.ShouldContain(MemoryDatabase.MemoryFacts);
+        tables.ShouldContain(MemoryDatabase.LearningCandidates);
+        tables.ShouldContain("__ef_migrations_history");
     }
 
     [Fact(DisplayName = "Given the pgvector image, when migrations applied, then the embedding column is vector(768)")]
     public async Task CreateVectorEmbeddingColumnAsync()
     {
         var columns = await QuerySingleColumnAsync(
-            "SELECT data_type FROM information_schema.columns "
-            + "WHERE table_schema = 'public' AND table_name = 'memory_facts' AND column_name = 'embedding'");
+            $"SELECT data_type FROM information_schema.columns "
+            + $"WHERE table_schema = '{MemoryDatabase.Schema}' AND table_name = '{MemoryDatabase.MemoryFacts}' AND column_name = 'embedding'");
 
         columns.ShouldHaveSingleItem().ShouldBe("USER-DEFINED");
     }
@@ -78,7 +78,7 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
     public async Task CreateActiveTopicUniqueIndexAsync()
     {
         var definitions = await QuerySingleColumnAsync(
-            "SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'memory_facts'");
+            $"SELECT indexdef FROM pg_indexes WHERE schemaname = '{MemoryDatabase.Schema}' AND tablename = '{MemoryDatabase.MemoryFacts}'");
 
         definitions.ShouldContain(static index => index.Contains("ix_memory_facts_active_topic")
             && index.Contains("UNIQUE")
@@ -102,7 +102,7 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
         visible.ShouldHaveSingleItem().Text.ShouldBe("prefers spaces");
 
         var supersededRows = await QuerySingleColumnAsync(
-            "SELECT count(*)::text FROM memory_facts WHERE superseded_at IS NOT NULL");
+            $"SELECT count(*)::text FROM {MemoryDatabase.Schema}.memory_facts WHERE superseded_at IS NOT NULL");
         supersededRows.ShouldHaveSingleItem().ShouldBe("1");
     }
 
@@ -169,7 +169,7 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
         await store.WriteAsync(Write("old-task", "ephemeral note", kind: MemoryFactKind.Ephemeral), cancellationToken);
         await store.WriteAsync(Write("old-standing", "standing note"), cancellationToken);
         await ExecuteNonQueryAsync(
-            "UPDATE memory_facts SET created_at = created_at - interval '15 days' WHERE topic_key = 'old-task'",
+            $"UPDATE {MemoryDatabase.Schema}.memory_facts SET created_at = created_at - interval '15 days' WHERE topic_key = 'old-task'",
             cancellationToken);
 
         var swept = await store.SweepExpiredAsync(FixedTime.Now, cancellationToken);

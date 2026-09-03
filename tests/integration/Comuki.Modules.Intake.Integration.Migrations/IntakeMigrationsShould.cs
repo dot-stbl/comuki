@@ -70,22 +70,24 @@ public sealed class IntakeMigrationsShould : IAsyncLifetime
     public async Task CreateIntakeTablesAlongsideOrchestrationAsync()
     {
         var tables = await QuerySingleColumnAsync(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name");
+            $"SELECT table_name FROM information_schema.tables "
+            + $"WHERE table_schema IN ('{IntakeDatabase.Schema}', '{OrchestrationDatabase.Schema}') "
+            + "ORDER BY table_name");
 
-        tables.ShouldContain(IntakeTables.Tickets);
-        tables.ShouldContain(IntakeTables.Deliveries);
-        tables.ShouldContain(IntakeTables.Connections);
-        tables.ShouldContain(IntakeTables.Rules);
-        tables.ShouldContain(IntakeTables.SyncJobs);
-        tables.ShouldContain(OrchestrationTables.Runs);
-        tables.ShouldContain(IntakeTables.MigrationsHistory);
+        tables.ShouldContain(IntakeDatabase.Tickets);
+        tables.ShouldContain(IntakeDatabase.Deliveries);
+        tables.ShouldContain(IntakeDatabase.Connections);
+        tables.ShouldContain(IntakeDatabase.Rules);
+        tables.ShouldContain(IntakeDatabase.SyncJobs);
+        tables.ShouldContain(OrchestrationDatabase.Runs);
+        tables.ShouldContain("__ef_migrations_history");
     }
 
     [Fact(DisplayName = "Given migrated intake schema, when indexes are inspected, then both idempotency locks exist as declared")]
     public async Task CreateIdempotencyIndexesAsync()
     {
         var definitions = await QuerySingleColumnAsync(
-            "SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' "
+            "SELECT indexdef FROM pg_indexes WHERE schemaname = '" + IntakeDatabase.Schema + "' "
             + "AND tablename IN ('intake_tickets', 'intake_deliveries', 'sync_jobs')");
 
         definitions.ShouldContain(static definition => definition.Contains("ux_intake_deliveries_source_delivery")
@@ -217,12 +219,12 @@ public sealed class IntakeMigrationsShould : IAsyncLifetime
     [Fact(DisplayName = "Given migrated intake_tickets, when columns are inspected, then labels are text[] and settings are jsonb")]
     public async Task StoreExpectedColumnTypesAsync()
     {
-        var tickets = await QueryColumnsAsync(IntakeTables.Tickets);
+        var tickets = await QueryColumnsAsync(IntakeDatabase.Schema, IntakeDatabase.Tickets);
         tickets["labels"].ShouldBe(new ColumnSpec("ARRAY", "NO"));
         tickets["provider"].ShouldBe(new ColumnSpec("character varying", "NO"));
         tickets["connection_id"].ShouldBe(new ColumnSpec("uuid", "YES"));
 
-        var connections = await QueryColumnsAsync(IntakeTables.Connections);
+        var connections = await QueryColumnsAsync(IntakeDatabase.Schema, IntakeDatabase.Connections);
         connections["settings_json"].ShouldBe(new ColumnSpec("jsonb", "NO"));
         connections["secret_env_ref"].ShouldBe(new ColumnSpec("character varying", "NO"));
     }
@@ -246,7 +248,7 @@ public sealed class IntakeMigrationsShould : IAsyncLifetime
         return rows;
     }
 
-    private async Task<Dictionary<string, ColumnSpec>> QueryColumnsAsync(string tableName)
+    private async Task<Dictionary<string, ColumnSpec>> QueryColumnsAsync(string schema, string tableName)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var scope = provider.CreateAsyncScope();
@@ -257,7 +259,11 @@ public sealed class IntakeMigrationsShould : IAsyncLifetime
         await using var command = connection.CreateCommand();
         command.CommandText =
             "SELECT column_name, data_type, is_nullable FROM information_schema.columns "
-            + "WHERE table_schema = 'public' AND table_name = @tableName";
+            + "WHERE table_schema = @schema AND table_name = @tableName";
+        var schemaParameter = command.CreateParameter();
+        schemaParameter.ParameterName = "@schema";
+        schemaParameter.Value = schema;
+        command.Parameters.Add(schemaParameter);
         var tableNameParameter = command.CreateParameter();
         tableNameParameter.ParameterName = "@tableName";
         tableNameParameter.Value = tableName;

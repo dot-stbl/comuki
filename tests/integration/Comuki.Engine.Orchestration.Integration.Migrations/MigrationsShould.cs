@@ -58,19 +58,19 @@ public sealed class MigrationsShould : IAsyncLifetime
     public async Task CreateOrchestrationTablesAsync()
     {
         var tables = await QuerySingleColumnAsync(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name");
+            $"SELECT table_name FROM information_schema.tables WHERE table_schema = '{OrchestrationDatabase.Schema}' ORDER BY table_name");
 
-        tables.ShouldContain(OrchestrationTables.Runs);
-        tables.ShouldContain(OrchestrationTables.WorkItems);
-        tables.ShouldContain(OrchestrationTables.WorkItemDependencies);
-        tables.ShouldContain(OrchestrationTables.RunEvents);
+        tables.ShouldContain(OrchestrationDatabase.Runs);
+        tables.ShouldContain(OrchestrationDatabase.WorkItems);
+        tables.ShouldContain(OrchestrationDatabase.WorkItemDependencies);
+        tables.ShouldContain(OrchestrationDatabase.RunEvents);
     }
 
     [Fact(DisplayName = "Given migrated work_items, when indexes are inspected, then claim indexes exist")]
     public async Task CreateClaimIndexesOnWorkItemsAsync()
     {
         var definitions = await QuerySingleColumnAsync(
-            "SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'work_items'");
+            $"SELECT indexdef FROM pg_indexes WHERE schemaname = '{OrchestrationDatabase.Schema}' AND tablename = '{OrchestrationDatabase.WorkItems}'");
 
         definitions.ShouldContain(static index => index.Contains("ix_work_items_run_id"));
         // pg normalises the predicate with ::text casts — assert on the essentials.
@@ -89,7 +89,7 @@ public sealed class MigrationsShould : IAsyncLifetime
     public async Task CreateJournalTimelineIndexAsync()
     {
         var definitions = await QuerySingleColumnAsync(
-            "SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'run_events'");
+            $"SELECT indexdef FROM pg_indexes WHERE schemaname = '{OrchestrationDatabase.Schema}' AND tablename = '{OrchestrationDatabase.RunEvents}'");
 
         var timeline = definitions.Single(static index => index.Contains("ix_run_events_run_id_occurred_at", StringComparison.Ordinal));
         timeline.ShouldContain("run_id");
@@ -99,7 +99,7 @@ public sealed class MigrationsShould : IAsyncLifetime
     [Fact(DisplayName = "Given migrated columns, when types are inspected, then ids are uuid and payloads are jsonb")]
     public async Task StoreUuidAndJsonbColumnsAsync()
     {
-        var workItemColumns = await QueryColumnsAsync(OrchestrationTables.WorkItems);
+        var workItemColumns = await QueryColumnsAsync(OrchestrationDatabase.Schema, OrchestrationDatabase.WorkItems);
 
         workItemColumns["id"].ShouldBe(new ColumnSpec("uuid", "NO"));
         workItemColumns["leased_by"].ShouldBe(new ColumnSpec("uuid", "YES"));
@@ -109,10 +109,10 @@ public sealed class MigrationsShould : IAsyncLifetime
         workItemColumns["profiles_ref"].ShouldBe(new ColumnSpec("character varying", "NO"));
         workItemColumns["attempt"].ShouldBe(new ColumnSpec("integer", "NO"));
 
-        var runColumns = await QueryColumnsAsync(OrchestrationTables.Runs);
+        var runColumns = await QueryColumnsAsync(OrchestrationDatabase.Schema, OrchestrationDatabase.Runs);
         runColumns["id"].ShouldBe(new ColumnSpec("uuid", "NO"));
 
-        var runEventColumns = await QueryColumnsAsync(OrchestrationTables.RunEvents);
+        var runEventColumns = await QueryColumnsAsync(OrchestrationDatabase.Schema, OrchestrationDatabase.RunEvents);
         runEventColumns["payload"].ShouldBe(new ColumnSpec("jsonb", "NO"));
     }
 
@@ -184,7 +184,7 @@ public sealed class MigrationsShould : IAsyncLifetime
         return rows;
     }
 
-    private async Task<Dictionary<string, ColumnSpec>> QueryColumnsAsync(string tableName)
+    private async Task<Dictionary<string, ColumnSpec>> QueryColumnsAsync(string schema, string tableName)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var connection = db.Database.GetDbConnection();
@@ -192,7 +192,11 @@ public sealed class MigrationsShould : IAsyncLifetime
         await using var command = connection.CreateCommand();
         command.CommandText =
             "SELECT column_name, data_type, is_nullable FROM information_schema.columns "
-            + "WHERE table_schema = 'public' AND table_name = @tableName";
+            + "WHERE table_schema = @schema AND table_name = @tableName";
+        var schemaParameter = command.CreateParameter();
+        schemaParameter.ParameterName = "@schema";
+        schemaParameter.Value = schema;
+        _ = command.Parameters.Add(schemaParameter);
         var tableNameParameter = command.CreateParameter();
         tableNameParameter.ParameterName = "@tableName";
         tableNameParameter.Value = tableName;

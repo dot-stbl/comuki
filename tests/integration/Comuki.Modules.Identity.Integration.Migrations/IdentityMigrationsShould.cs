@@ -77,27 +77,28 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
     public async Task CreateIdentityTablesAlongsideOrchestrationAsync()
     {
         var tables = await QuerySingleColumnAsync(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name");
+            $"SELECT table_name FROM information_schema.tables "
+            + $"WHERE table_schema IN ('{IdentityDatabase.Schema}', '{OrchestrationDatabase.Schema}') ORDER BY table_name");
         var histories = await QuerySingleColumnAsync(
-            "SELECT table_name FROM information_schema.tables "
-            + "WHERE table_schema = 'public' AND (table_name LIKE '\\_\\_%' OR table_name = '__EFMigrationsHistory') ORDER BY table_name");
+            $"SELECT table_name FROM information_schema.tables "
+            + $"WHERE table_schema IN ('{IdentityDatabase.Schema}', '{OrchestrationDatabase.Schema}') "
+            + "AND table_name = '__ef_migrations_history' ORDER BY table_name");
 
-        tables.ShouldContain(IdentityTables.Users);
-        tables.ShouldContain(IdentityTables.ApiKeys);
-        tables.ShouldContain(IdentityTables.RoleAssignments);
-        tables.ShouldContain(IdentityTables.OidcLinks);
-        tables.ShouldContain(OrchestrationTables.Runs);
+        tables.ShouldContain(IdentityDatabase.Users);
+        tables.ShouldContain(IdentityDatabase.ApiKeys);
+        tables.ShouldContain(IdentityDatabase.RoleAssignments);
+        tables.ShouldContain(IdentityDatabase.OidcLinks);
+        tables.ShouldContain(OrchestrationDatabase.Runs);
 
-        // two histories, one per module context, no collision
-        histories.ShouldContain(IdentityTables.MigrationsHistory);
-        histories.ShouldContain("__EFMigrationsHistory");
+        // per-schema migration history; orchestration uses the default name too
+        histories.ShouldContain("__ef_migrations_history");
     }
 
     [Fact(DisplayName = "Given migrated role_assignments, when indexes are inspected, then the active-assignment unique indexes exist with their partial filters")]
     public async Task CreateActiveAssignmentUniqueIndexesAsync()
     {
         var definitions = await QuerySingleColumnAsync(
-            "SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'role_assignments'");
+            $"SELECT indexdef FROM pg_indexes WHERE schemaname = '{IdentityDatabase.Schema}' AND tablename = '{IdentityDatabase.RoleAssignments}'");
 
         definitions.ShouldContain(static index => index.Contains("ix_role_assignments_active_platform")
             && index.Contains("UNIQUE")
@@ -244,7 +245,7 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
     [Fact(DisplayName = "Given migrated users, when columns are inspected, then ids are uuid and password_hash is nullable")]
     public async Task StoreExpectedColumnTypesAsync()
     {
-        var columns = await QueryColumnsAsync(IdentityTables.Users);
+        var columns = await QueryColumnsAsync(IdentityDatabase.Schema, IdentityDatabase.Users);
 
         columns["id"].ShouldBe(new ColumnSpec("uuid", "NO"));
         columns["email"].ShouldBe(new ColumnSpec("character varying", "NO"));
@@ -252,7 +253,7 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
         columns["tokens_version"].ShouldBe(new ColumnSpec("integer", "NO"));
         columns["disabled"].ShouldBe(new ColumnSpec("boolean", "NO"));
 
-        var assignmentColumns = await QueryColumnsAsync(IdentityTables.RoleAssignments);
+        var assignmentColumns = await QueryColumnsAsync(IdentityDatabase.Schema, IdentityDatabase.RoleAssignments);
         assignmentColumns["subject_id"].ShouldBe(new ColumnSpec("uuid", "NO"));
         assignmentColumns["scope_project_id"].ShouldBe(new ColumnSpec("uuid", "YES"));
         assignmentColumns["role"].ShouldBe(new ColumnSpec("character varying", "NO"));
@@ -277,7 +278,7 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
         return rows;
     }
 
-    private async Task<Dictionary<string, ColumnSpec>> QueryColumnsAsync(string tableName)
+    private async Task<Dictionary<string, ColumnSpec>> QueryColumnsAsync(string schema, string tableName)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var scope = provider.CreateAsyncScope();
@@ -288,7 +289,11 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
         await using var command = connection.CreateCommand();
         command.CommandText =
             "SELECT column_name, data_type, is_nullable FROM information_schema.columns "
-            + "WHERE table_schema = 'public' AND table_name = @tableName";
+            + "WHERE table_schema = @schema AND table_name = @tableName";
+        var schemaParameter = command.CreateParameter();
+        schemaParameter.ParameterName = "@schema";
+        schemaParameter.Value = schema;
+        _ = command.Parameters.Add(schemaParameter);
         var tableNameParameter = command.CreateParameter();
         tableNameParameter.ParameterName = "@tableName";
         tableNameParameter.Value = tableName;

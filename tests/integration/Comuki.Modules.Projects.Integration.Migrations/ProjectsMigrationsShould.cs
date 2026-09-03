@@ -73,25 +73,26 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
     public async Task CreateProjectsTablesAlongsideOrchestrationAsync()
     {
         var tables = await QuerySingleColumnAsync(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name");
+            $"SELECT table_name FROM information_schema.tables "
+            + $"WHERE table_schema IN ('{ProjectsDatabase.Schema}', '{OrchestrationDatabase.Schema}') ORDER BY table_name");
         var histories = await QuerySingleColumnAsync(
-            "SELECT table_name FROM information_schema.tables "
-            + "WHERE table_schema = 'public' AND table_name LIKE '\\_\\_%' ORDER BY table_name");
+            $"SELECT table_name FROM information_schema.tables "
+            + $"WHERE table_schema IN ('{ProjectsDatabase.Schema}', '{OrchestrationDatabase.Schema}') "
+            + "AND table_name = '__ef_migrations_history' ORDER BY table_name");
 
-        tables.ShouldContain(ProjectsTables.Projects);
-        tables.ShouldContain(ProjectsTables.ProjectSettings);
-        tables.ShouldContain(OrchestrationTables.Runs);
+        tables.ShouldContain(ProjectsDatabase.Projects);
+        tables.ShouldContain(ProjectsDatabase.ProjectSettings);
+        tables.ShouldContain(OrchestrationDatabase.Runs);
 
-        // module-private history, distinct from the orchestration default
-        histories.ShouldContain(ProjectsTables.MigrationsHistory);
-        histories.ShouldContain("__EFMigrationsHistory");
+        // per-schema migration history; orchestration uses the default name too
+        histories.ShouldContain("__ef_migrations_history");
     }
 
     [Fact(DisplayName = "Given migrated projects, when indexes are inspected, then the unique slug index exists")]
     public async Task CreateUniqueSlugIndexAsync()
     {
         var definitions = await QuerySingleColumnAsync(
-            "SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'projects'");
+            $"SELECT indexdef FROM pg_indexes WHERE schemaname = '{ProjectsDatabase.Schema}' AND tablename = '{ProjectsDatabase.Projects}'");
 
         definitions.ShouldContain(static definition => definition.Contains("ix_projects_slug")
             && definition.Contains("UNIQUE")
@@ -287,7 +288,7 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
     [Fact(DisplayName = "Given migrated project_settings, when columns are inspected, then ids are uuid, ttl is nullable and flags are booleans")]
     public async Task StoreExpectedColumnTypesAsync()
     {
-        var columns = await QueryColumnsAsync(ProjectsTables.ProjectSettings);
+        var columns = await QueryColumnsAsync(ProjectsDatabase.Schema, ProjectsDatabase.ProjectSettings);
 
         columns["project_id"].ShouldBe(new ColumnSpec("uuid", "NO"));
         columns["min_idle"].ShouldBe(new ColumnSpec("integer", "NO"));
@@ -301,7 +302,7 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         columns["hard_budget_usd_micros"].ShouldBe(new ColumnSpec("bigint", "YES"));
         columns["version"].ShouldBe(new ColumnSpec("integer", "NO"));
 
-        var projectColumns = await QueryColumnsAsync(ProjectsTables.Projects);
+        var projectColumns = await QueryColumnsAsync(ProjectsDatabase.Schema, ProjectsDatabase.Projects);
         projectColumns["id"].ShouldBe(new ColumnSpec("uuid", "NO"));
         projectColumns["slug"].ShouldBe(new ColumnSpec("character varying", "NO"));
         projectColumns["description"].ShouldBe(new ColumnSpec("character varying", "YES"));
@@ -336,7 +337,7 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         return rows;
     }
 
-    private async Task<Dictionary<string, ColumnSpec>> QueryColumnsAsync(string tableName)
+    private async Task<Dictionary<string, ColumnSpec>> QueryColumnsAsync(string schema, string tableName)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var scope = provider.CreateAsyncScope();
@@ -347,7 +348,11 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         await using var command = connection.CreateCommand();
         command.CommandText =
             "SELECT column_name, data_type, is_nullable FROM information_schema.columns "
-            + "WHERE table_schema = 'public' AND table_name = @tableName";
+            + "WHERE table_schema = @schema AND table_name = @tableName";
+        var schemaParameter = command.CreateParameter();
+        schemaParameter.ParameterName = "@schema";
+        schemaParameter.Value = schema;
+        _ = command.Parameters.Add(schemaParameter);
         var tableNameParameter = command.CreateParameter();
         tableNameParameter.ParameterName = "@tableName";
         tableNameParameter.Value = tableName;

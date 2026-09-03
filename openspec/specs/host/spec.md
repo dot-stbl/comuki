@@ -86,6 +86,31 @@ A separate console tool SHALL apply migrations for all module contexts (orchestr
 - **WHEN** the migrator runs against an empty database
 - **THEN** every registered context applies its initial schema and reports it per label
 
+### Requirement: Migrator password env var and Production gate
+
+The Migrator SHALL read the database password from
+`COMUKI_MIGRATOR_DB_PASSWORD` when the resolved connection string
+(`COMUKI_DB` env var, legacy `COMUKI_DATABASE` alias, or
+`ConnectionStrings:Comuki` in `appsettings.json`) has an empty
+`Password=` segment. The committed `appsettings.json` SHALL ship with an
+empty `Password=`; deployers set the env var. When the host runs in
+`Production` (either `ASPNETCORE_ENVIRONMENT` or `DOTNET_ENVIRONMENT`
+equal `Production`) with a still-blank password, the Migrator SHALL
+refuse to start with an `InvalidOperationException` naming the env var.
+
+#### Scenario: Dev Migrator reads password from env
+- **WHEN** `ConnectionStrings:Comuki` is sourced from `appsettings.json`
+  with `Password=` empty and `COMUKI_MIGRATOR_DB_PASSWORD` is set
+- **THEN** the Migrator fills the password segment from the env var and
+  proceeds
+
+#### Scenario: Production refuses a blank password
+- **WHEN** `ASPNETCORE_ENVIRONMENT=Production` (or
+  `DOTNET_ENVIRONMENT=Production`) and the resolved connection string
+  has `Password=` empty with no `COMUKI_MIGRATOR_DB_PASSWORD` set
+- **THEN** the Migrator throws `InvalidOperationException` naming the
+  env var and exits non-zero
+
 ### Requirement: Scale settings bridge at composition
 
 At composition the host SHALL replace the engine's in-memory per-project scale settings with the Projects-backed adapter (see projects), so supervisor decisions observe settings writes without a restart.
@@ -102,6 +127,31 @@ The host composition SHALL register SignalR, the `IRunEventsBroadcaster` impleme
 - **WHEN** the host boots
 - **THEN** `/hubs/runs` accepts SignalR negotiate for authenticated clients
 
+### Requirement: SignalR detailed errors are gated
+
+The host SHALL enable SignalR `EnableDetailedErrors` only when one of
+the following is true: `ASPNETCORE_ENVIRONMENT=Development`,
+`DOTNET_ENVIRONMENT=Development`, `DOTNET_RUNNING_IN_CONTAINER=true`, or
+`COMUKI_REALTIME_DETAILED_ERRORS=true`. Production hosts with none of
+those set SHALL run with detailed errors disabled; the integration suite
+flips `COMUKI_REALTIME_DETAILED_ERRORS=true` for its lifetime to keep
+the assertion path informative.
+
+#### Scenario: Production boot keeps detailed errors off
+- **WHEN** the host boots with `ASPNETCORE_ENVIRONMENT=Production` and
+  none of the three diagnostic opt-ins set
+- **THEN** `AddSignalR` is called with `EnableDetailedErrors = false` and
+  hub exceptions never carry stack frames in their `Message`
+
+#### Scenario: Development boot enables detailed errors
+- **WHEN** the host boots with `ASPNETCORE_ENVIRONMENT=Development`
+- **THEN** `EnableDetailedErrors = true`
+
+#### Scenario: Integration suite opt-in
+- **WHEN** the realtime integration suite sets
+  `COMUKI_REALTIME_DETAILED_ERRORS=true` before composition
+- **THEN** the host enables detailed errors for the test lifetime
+
 ### Requirement: OpenTelemetry opt-in
 
 The host SHALL register Comuki telemetry (meters `comuki.queue` / `comuki.runs` / `comuki.compute` and orchestration/compute/host activity sources) when `Telemetry:OtlpEndpoint` is configured; otherwise telemetry registration is a validated no-op. The Migrator SHALL NOT emit business telemetry. Deploy MAY ship Grafana dashboards as-code under `deploy/grafana` for runs/workers/cost panels against the Victoria/OTLP stack.
@@ -116,11 +166,11 @@ The host SHALL register Comuki telemetry (meters `comuki.queue` / `comuki.runs` 
 
 ### Requirement: Run artifact bundle in MinIO
 
-The host SHALL register a `IRunArtifactStore` (MinIO / S3) implementation against the `Artifacts:Minio:*` config and run a `RunArtifactPackagerHostService` background driver that polls every 10 seconds for runs in a terminal status. On every terminal run the host uploads `brief.json` / `result.json` / `pins.json` under the `{projectId}/{runId}/` key prefix and emits a `run.artifacts_bundled` journal event carrying the canonical artifact pointer list.
+The host SHALL register a `IRunArtifactStore` (MinIO / S3) implementation against the `Artifacts:*` config and run a `RunArtifactPackagerHostService` background driver that polls every 10 seconds for runs in a terminal status. On every terminal run the host uploads `brief.json` / `result.json` / `pins.json` under the `{projectId}/{runId}/` key prefix and emits a `run.artifacts_bundled` journal event carrying the canonical artifact pointer list.
 
-`GET /api/v1/projects/{projectId}/runs/{runId}/artifacts` (permission `run:read`) SHALL return the same pointer list; the response is empty when the run has not been bundled yet.
+`GET /api/v1/projects/{projectId}/runs/{runId}/artifacts` (permission `run:read`, route constant `ApiRoutes.RunArtifacts`) SHALL return the same pointer list; the response is empty when the run has not been bundled yet.
 
-`Artifacts:Minio:AutoCreateBucket` (boolean, default off) creates the configured bucket on first boot when no other provisioning is in place — dev convenience. The compose `minio-init` job creates the bucket + 30-day non-current-version lifecycle on first stack bring-up (idempotent).
+`Artifacts:AutoCreateBucket` (boolean, default off) creates the configured bucket on first boot when no other provisioning is in place — dev convenience. The compose `minio-init` job creates the bucket + 30-day non-current-version lifecycle on first stack bring-up (idempotent).
 
 #### Scenario: Terminal run gets bundled
 - **WHEN** a run transitions to a terminal status (succeeded / failed / cancelled / escalated)
@@ -137,6 +187,49 @@ The host SHALL register a `IRunArtifactStore` (MinIO / S3) implementation agains
 #### Scenario: Artifacts endpoint requires read permission
 - **WHEN** an authenticated client without `run:read` calls the endpoint
 - **THEN** the response is 403
+
+### Requirement: Run artifacts and project costs are separate route constants
+
+`ApiRoutes` SHALL expose `ProjectCosts = "/api/v1/projects/{projectId:guid}/costs"`
+and `RunArtifacts = "/api/v1/projects/{projectId:guid}/runs/{runId:guid}/artifacts"`
+as distinct constants. Endpoint mapping uses the constant — never a
+literal in `MapGet` / `MapPost` / `[Route(...)]`. The costs route is
+permission `cost:read`; the artifacts route is permission `run:read`
+(same as the parent RunsController).
+
+#### Scenario: Costs route uses its constant
+- **WHEN** `CostsModuleEndpoints.MapCostsEndpoints` maps the costs
+  endpoint
+- **THEN** the route is `ApiRoutes.ProjectCosts`, no inline route
+  literal
+
+#### Scenario: Artifacts route uses its constant
+- **WHEN** `RunArtifactsController` declares its route
+- **THEN** the route is `ApiRoutes.RunArtifacts` (`/api/v1/projects/{projectId:guid}/runs/{runId:guid}/artifacts`),
+  no inline route literal
+
+### Requirement: TypedResults.Problem is the error-response convention
+
+Every endpoint that returns an error response SHALL build the body via
+`TypedResults.Problem(...)` (or `TypedResults.ValidationProblem(...)` for
+400 ValidationProblemDetails). The body content type SHALL be
+`application/problem+json` and SHALL carry the `code` extension when the
+source is a typed `ProviderException`. The single composition-root
+`ProviderExceptionHandler` (`IExceptionHandler`) is the canonical mapper
+from typed exceptions to `TypedResults.Problem`; controllers do not
+re-implement the body. Ad-hoc envelopes (anonymous `{ "error": ... }`,
+bare `Results.Json`, hand-rolled 200-with-error shapes) are forbidden.
+
+#### Scenario: Typed exception surfaces RFC 9457
+- **WHEN** a handler throws `ProviderException("provider.network_error", "...")`
+- **THEN** the host answers with `TypedResults.Problem(..., extensions: { "code" = "provider.network_error" })` and
+  `Content-Type: application/problem+json`
+
+#### Scenario: Controller does not hand-roll the body
+- **WHEN** a controller needs to return an error
+- **THEN** it builds with `TypedResults.Problem(...)` (or lets
+  `ProviderExceptionHandler` map the thrown exception); no
+  `Results.Json(new { error = ... })`
 
 ### Requirement: OpenAPI document emission
 

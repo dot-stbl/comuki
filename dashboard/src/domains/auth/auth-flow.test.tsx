@@ -12,6 +12,15 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
+// `useLogoutMutation` reads `env.useMock` and routes to the kubb client when
+// the operator is pointed at a real backend; in tests the variable is unset
+// and the kubb client would throw on first call. Force mock mode so the
+// mutation routes through `signOutMock` — exactly what the rail's old direct
+// call already did.
+vi.mock("@/shared/config/env", () => ({
+  env: { useMock: true, apiBaseUrl: "", oidcProvider: null },
+}))
+
 import { RailAccount } from "@/app/layout/rail-account"
 import { guardSession } from "@/domains/auth"
 import { parseLoginSearch } from "@/domains/auth/model/landing"
@@ -166,7 +175,10 @@ describe("signing out", () => {
 
     // The order is the point: cleared first, landed second. A navigation on its
     // own left the shell holding a signed-in shift behind a sign-in screen.
-    expect(isMockSignedIn()).toBe(false)
+    // The rail now goes through `useLogoutMutation` (`mutateAsync` then navigate),
+    // so the seed-clear happens on the microtask the click schedules — wait for
+    // the mock to register the cleared session, then for the route change.
+    await vi.waitFor(() => expect(isMockSignedIn()).toBe(false))
     await vi.waitFor(() => expect(router.state.location.pathname).toBe("/login"))
     expect(router.state.location.search).toMatchObject({ reason: "signed-out" })
   })

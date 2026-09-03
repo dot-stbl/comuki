@@ -8,7 +8,7 @@ import {
   Popover,
 } from "react-aria-components"
 
-import { signOutMock } from "@/shared/api/mock/auth.store"
+import { useLogoutMutation } from "@/domains/identity/api/mutations"
 import { can, useSession } from "@/shared/session"
 
 import styles from "./rail-account.module.css"
@@ -40,6 +40,7 @@ export function RailAccount({ collapsed = false }: RailAccountProps) {
   const session = useSession()
   const { user } = session
   const initial = user.name.trim().charAt(0).toUpperCase() || "?"
+  const logout = useLogoutMutation()
 
   return (
     <MenuTrigger>
@@ -111,16 +112,34 @@ export function RailAccount({ collapsed = false }: RailAccountProps) {
               and the guard had nothing to catch. `reason=signed-out` is what
               turns the landing into a quiet confirmation rather than an alarm
               about a session that expired — this one did not expire, they
-              closed it. */}
+              closed it.
+
+              `useLogoutMutation` reads `env.useMock` and routes to the seed
+              store (mock mode) or `POST /api/v1/auth/logout` (real mode) —
+              one hook, two backends. We `await mutateAsync` so the navigate
+              only fires after the seed is cleared (or the cookie is dropped
+              in real mode); the same call would have left the shell holding
+              a signed-in shift behind a sign-in screen, and the guard would
+              have had nothing to catch. The mutation invalidates `me` and
+              `projects` on success — the URL change is what tells the guard
+              to render the login screen rather than the half-cleared shell. */}
           <MenuItem
             className={styles.item}
             onAction={() => {
-              signOutMock()
-              void navigate({
-                to: "/login",
-                search: { reason: "signed-out" },
-                replace: true,
-              })
+              void logout
+                .mutateAsync()
+                .then(() => {
+                  void navigate({
+                    to: "/login",
+                    search: { reason: "signed-out" },
+                    replace: true,
+                  })
+                })
+                .catch(() => {
+                  /* A refused logout leaves the operator on the rail — the
+                     shell still holds a signed-in session, so navigating to
+                     /login would 401 them back to the same screen. */
+                })
             }}
             textValue="Sign out"
           >

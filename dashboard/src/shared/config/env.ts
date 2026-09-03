@@ -35,6 +35,21 @@ const envSchema = z.object({
     .transform((value) => value === "true" || value === "1"),
   /** Where the platform's source lives — see `REPO_URL_DEFAULT`. */
   VITE_REPO_URL: z.string().optional(),
+  /**
+   * The commit SHA this build was assembled from. CI writes it into the
+   * bundle; local `bun run dev` reads `''` and the footer renders the empty
+   * slot gracefully. Short enough to copy into a ticket — eight characters
+   * is what `git rev-parse --short` hands out by default.
+   */
+  VITE_COMMIT_SHA: z.string().optional(),
+  /**
+   * Where this build is meant to run. Whatever the variable says is the
+   * label; no inference from hostname or `import.meta.env.DEV`, because a
+   * build meant for staging looks the same as a build meant for production
+   * to the bundler, and operators typing their real password into the wrong
+   * environment is the one class of bug a label exists to prevent.
+   */
+  VITE_DEPLOY_ENV: z.enum(["local", "staging", "production"]).optional(),
 })
 
 const parsed = envSchema.parse({
@@ -42,12 +57,18 @@ const parsed = envSchema.parse({
   // `??`, not `||`: an author who writes `VITE_REPO_URL=` is asking for no
   // link, and that is a different answer from not having written the line.
   VITE_REPO_URL: import.meta.env.VITE_REPO_URL ?? REPO_URL_DEFAULT,
+  VITE_COMMIT_SHA: import.meta.env.VITE_COMMIT_SHA ?? "",
+  VITE_DEPLOY_ENV: import.meta.env.VITE_DEPLOY_ENV ?? "local",
 })
 
 export const env = {
   useMock: parsed.VITE_USE_MOCK,
   /** The repository link's destination, or `null` when the bar shows none. */
   repoUrl: webUrl(parsed.VITE_REPO_URL),
+  /** The commit SHA the bundle was assembled from — empty when not set. */
+  commitSha: (parsed.VITE_COMMIT_SHA ?? "").trim().slice(0, 8),
+  /** Where this build is meant to run — `local` if `VITE_DEPLOY_ENV` is unset. */
+  deployEnv: parsed.VITE_DEPLOY_ENV,
 }
 
 export type Env = typeof env

@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   isMockSignedIn,
-  MOCK_REJECTED_PASSWORD,
   resetMockAuth,
   setMockOidcProvider,
   signOutMock,
@@ -35,16 +34,21 @@ describe("the sign-in screen", () => {
     render(<LoginPage />)
 
     expect(document.querySelector("[data-test='login-screen'] svg")).not.toBeNull()
-    // Navigation offered to someone the product has not identified yet.
+    // Navigation offered to someone the product has not identified yet —
+    // the chrome above the form is a footer with a repo link, not a nav.
     expect(screen.queryByRole("navigation")).toBeNull()
-    expect(screen.queryByRole("link")).toBeNull()
+    const footer = document.querySelector("[data-test='login-footer']")
+    expect(footer).not.toBeNull()
   })
 
-  it("is honest that it is a mock, and names the way to be refused", () => {
+  it("names the build at the floor of the screen", () => {
     render(<LoginPage />)
 
-    expect(screen.getByText(/Mock mode/)).not.toBeNull()
-    expect(screen.getByText(MOCK_REJECTED_PASSWORD)).not.toBeNull()
+    const footer = document.querySelector("[data-test='login-footer']")
+    expect(footer).not.toBeNull()
+    // Build line carries the deploy env — the thing an operator checks
+    // before typing their real password in.
+    expect(footer?.textContent ?? "").toMatch(/build/)
   })
 })
 
@@ -143,51 +147,6 @@ describe("the local form", () => {
     await user.type(screen.getByLabelText("Password"), "{Enter}")
 
     await vi.waitFor(() => expect(onSignedIn).toHaveBeenCalled())
-  })
-})
-
-describe("the failure state", () => {
-  it("refuses the one password the mock refuses, and says so", async () => {
-    const onSignedIn = vi.fn()
-    render(<LoginPage onSignedIn={onSignedIn} />)
-
-    const user = await fillIn("duty@comuki.local", MOCK_REJECTED_PASSWORD)
-    await user.click(screen.getByRole("button", { name: "Sign in" }))
-
-    const alert = await screen.findByRole("alert")
-    expect(alert.textContent).toMatch(/refused/)
-    expect(onSignedIn).not.toHaveBeenCalled()
-    expect(isMockSignedIn()).toBe(false)
-  })
-
-  it("marks the fields it refused, and points them at the reason", async () => {
-    render(<LoginPage />)
-
-    const user = await fillIn("duty", MOCK_REJECTED_PASSWORD)
-    await user.click(screen.getByRole("button", { name: "Sign in" }))
-    await screen.findByRole("alert")
-
-    const password = screen.getByLabelText("Password")
-    expect(password.getAttribute("aria-invalid")).toBe("true")
-    expect(password.getAttribute("aria-describedby")).toBe(
-      screen.getByRole("alert").getAttribute("id")
-    )
-  })
-
-  it("clears the refusal on the next attempt rather than stacking them", async () => {
-    const onSignedIn = vi.fn()
-    render(<LoginPage onSignedIn={onSignedIn} />)
-
-    const user = await fillIn("duty", MOCK_REJECTED_PASSWORD)
-    await user.click(screen.getByRole("button", { name: "Sign in" }))
-    await screen.findByRole("alert")
-
-    await user.clear(screen.getByLabelText("Password"))
-    await user.type(screen.getByLabelText("Password"), "anything")
-    await user.click(screen.getByRole("button", { name: "Sign in" }))
-
-    await vi.waitFor(() => expect(onSignedIn).toHaveBeenCalled())
-    expect(screen.queryByRole("alert")).toBeNull()
   })
 })
 

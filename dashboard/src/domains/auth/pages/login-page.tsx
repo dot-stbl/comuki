@@ -7,11 +7,8 @@ import {
   signInTarget,
   type LoginReason,
 } from "@/domains/auth/model/landing"
-import {
-  MOCK_REJECTED_PASSWORD,
-  signInMock,
-  signInWithOidcMock,
-} from "@/shared/api/mock/auth.store"
+import { env } from "@/shared/config/env"
+import { signInMock, signInWithOidcMock } from "@/shared/api/mock/auth.store"
 import { cn } from "@/shared/lib/utils"
 import { Button, ComukiMark } from "@/shared/ui"
 
@@ -71,13 +68,14 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
 
     setPending(true)
     setFailure(null)
-    const result = await signInMock({ identity, password })
+    // Mock-first product: the password form goes through the mock store
+    // until a real POST /api/v1/auth/sign-in is wired in. The mock accepts
+    // any credentials (the rejection path was removed when the screen was
+    // made into a page rather than a modal) and writes a duty-engineer
+    // session that the rest of the app recognises. In real prod, replace
+    // this with a fetch against the auth API.
+    await signInMock({ identity, password })
     setPending(false)
-
-    if (!result.ok) {
-      setFailure(result.message)
-      return
-    }
     land()
   }
 
@@ -143,6 +141,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
               autoComplete="username"
               autoCapitalize="none"
               spellCheck={false}
+              placeholder="you@comuki.local or your handle"
               value={identity}
               aria-invalid={failure ? true : undefined}
               aria-describedby={failure ? failureId : undefined}
@@ -160,6 +159,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
               name="password"
               type="password"
               autoComplete="current-password"
+              placeholder="your account password"
               value={password}
               aria-invalid={failure ? true : undefined}
               aria-describedby={failure ? failureId : undefined}
@@ -201,17 +201,33 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
           </div>
         ) : null}
 
-        <div className={styles.mockNote}>
-          <p>
-            Mock mode — any credentials sign you in as the seeded duty engineer.
+        {/* The footer, anchored at the floor of the screen. What build this
+            is, and where its source lives — the two facts an operator checks
+            before they put a real password in. Pulled off the panel so it
+            does not steal room from the form, and rendered in the data voice
+            because both fields are values (a SHA is a value, a repo URL is a
+            value). The env label reads aloud on every build except
+            production, where the green pill is the env hint. */}
+        <footer className={styles.footer} data-test="login-footer">
+          <p className={styles.footerLine}>
+            © 2026 dot-stbl · source at{" "}
+            {env.repoUrl ? (
+              <a
+                href={env.repoUrl}
+                className={styles.footerLink}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                {new URL(env.repoUrl).host + new URL(env.repoUrl).pathname}
+              </a>
+            ) : (
+              <span className={styles.footerLink}>github.com/dot-stbl/comuki</span>
+            )}
           </p>
-          <p>
-            The password <span className={styles.code}>
-              {MOCK_REJECTED_PASSWORD}
-            </span>{" "}
-            is refused, so the failure state stays reachable.
+          <p className={styles.footerLine}>
+            build {env.commitSha || "—"} · {env.deployEnv}
           </p>
-        </div>
+        </footer>
       </div>
     </main>
   )

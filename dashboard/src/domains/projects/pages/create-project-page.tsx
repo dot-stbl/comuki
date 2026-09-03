@@ -4,10 +4,8 @@ import { toast } from "sonner"
 
 import { FormPage } from "@/app/layout/form-page"
 import { useUnsavedGuard } from "@/app/layout/use-unsaved-guard"
-import {
-  useCreateProjectMutation,
-  useProjectsQuery,
-} from "@/domains/projects/api/queries"
+import { useCreateProjectMutation } from "@/domains/projects/api/mutations"
+import { useProjectsQuery } from "@/domains/projects/api/queries"
 import type { CreateProjectInput } from "@/domains/projects/model/types"
 import { CreateProjectForm } from "@/domains/projects/ui/create-project-form"
 import { ConfirmDialog } from "@/shared/ui"

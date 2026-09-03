@@ -22,4 +22,13 @@ export default defineConfig({
     port: 17173,
     strictPort: true,
   },
+  define: {
+    // CI exports `COMMIT_SHA=<sha>` (or the deploy pipeline passes it through);
+    // local `bun run dev` reads `''` and the footer renders an empty slot.
+    // The schema in `src/shared/config/env.ts` calls this `VITE_COMMIT_SHA`,
+    // so the value here lands at the same name on `import.meta.env`.
+    "import.meta.env.VITE_COMMIT_SHA": JSON.stringify(
+      process.env.COMMIT_SHA ?? ""
+    ),
+  },
 })

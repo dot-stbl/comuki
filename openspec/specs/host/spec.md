@@ -137,3 +137,27 @@ The host SHALL register a `IRunArtifactStore` (MinIO / S3) implementation agains
 #### Scenario: Artifacts endpoint requires read permission
 - **WHEN** an authenticated client without `run:read` calls the endpoint
 - **THEN** the response is 403
+
+### Requirement: OpenAPI document emission
+
+The host SHALL emit an OpenAPI 3.x document at `artifacts/openapi.json` at the repository root on every Debug `dotnet build`, via `Microsoft.Extensions.ApiDescription.Server`'s source generator wired into `Comuki.Host`. `HostComposer.Compose` SHALL register the document in DI under the default name `v1` via `AddOpenApi()`, and `MapOpenApi()` SHALL serve the same document at `/openapi/v1.json` as an anonymous endpoint so external tooling (curl, Scalar, kubb) can fetch the contract without authentication. The build-time generator runs the host's `Program.Main` for document capture; that path SHALL detect `GetDocument.Insider` (the tool's entry assembly) and short-circuit the database connection plus strip every `Comuki.*` hosted service so a fresh clone with no `COMUKI_DB` env var still produces the spec. Release builds SHALL skip emission entirely (Microsoft.AspNetCore.OpenApi 10.0.9's source generator still emits against the 2.x writable `IOpenApiMediaType.Example`, so Release `OpenApiGenerateDocuments=false` is set explicitly).
+
+#### Scenario: Fresh-clone build emits the document
+- **WHEN** `dotnet build comuki.slnx -c Debug` runs on a tree without `COMUKI_DB` set and no PostgreSQL reachable
+- **THEN** the build exits 0 and `artifacts/openapi.json` is created with all the controllers' endpoints, their request/response shapes, and the controllers' `[ProducesResponseType]` codes
+
+#### Scenario: Generated doc matches runtime document
+- **WHEN** a client fetches `/openapi/v1.json` from a running host
+- **THEN** the document is byte-identical to `artifacts/openapi.json` because both come from the same `AddOpenApi()` registration
+
+#### Scenario: Release build skips emission
+- **WHEN** `dotnet build comuki.slnx -c Release` runs
+- **THEN** `artifacts/openapi.json` is not regenerated (Release=false overrides the targets-file default of true)
+
+#### Scenario: Telemetry disabled
+- **WHEN** `Telemetry:OtlpEndpoint` is unset
+- **THEN** the host boots without an OTLP exporter and options still validate
+
+#### Scenario: Telemetry enabled
+- **WHEN** an OTLP endpoint is configured
+- **THEN** traces and metrics for the subscribed sources/meters export to that endpoint

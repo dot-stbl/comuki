@@ -1,0 +1,37 @@
+{
+  "required": ["items", "page", "pageSize", "total"],
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "required": ["id", "projectId", "status", "createdAt", "updatedAt"],
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "projectId": { "type": "string", "format": "uuid" },
+          "status": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "x-readme-ref-name": "RunView"
+      }
+    },
+    "page": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int32"
+    },
+    "pageSize": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int32"
+    },
+    "total": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int32"
+    }
+  },
+  "x-readme-ref-name": "RunsPage"
+}

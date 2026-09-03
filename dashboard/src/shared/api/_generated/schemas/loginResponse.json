@@ -1,0 +1,10 @@
+{
+  "required": ["userId", "email", "displayName"],
+  "type": "object",
+  "properties": {
+    "userId": { "type": "string", "format": "uuid" },
+    "email": { "type": "string" },
+    "displayName": { "type": "string" }
+  },
+  "x-readme-ref-name": "LoginResponse"
+}

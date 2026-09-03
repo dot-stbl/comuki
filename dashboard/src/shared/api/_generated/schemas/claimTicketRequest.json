@@ -1,0 +1,6 @@
+{
+  "required": ["ticketId"],
+  "type": "object",
+  "properties": { "ticketId": { "type": "string", "format": "uuid" } },
+  "x-readme-ref-name": "ClaimTicketRequest"
+}

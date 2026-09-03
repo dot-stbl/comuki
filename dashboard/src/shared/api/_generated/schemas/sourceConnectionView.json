@@ -1,0 +1,24 @@
+{
+  "required": [
+    "id",
+    "projectId",
+    "provider",
+    "name",
+    "settingsJson",
+    "secretEnvRef",
+    "webhookPath",
+    "enabled"
+  ],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "projectId": { "type": "string", "format": "uuid" },
+    "provider": { "type": "string" },
+    "name": { "type": "string" },
+    "settingsJson": { "type": "string" },
+    "secretEnvRef": { "type": "string" },
+    "webhookPath": { "type": "string" },
+    "enabled": { "type": "boolean" }
+  },
+  "x-readme-ref-name": "SourceConnectionView"
+}

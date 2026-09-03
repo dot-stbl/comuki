@@ -1,0 +1,6 @@
+{
+  "required": ["message"],
+  "type": "object",
+  "properties": { "message": { "type": "string" } },
+  "x-readme-ref-name": "PostChatMessageRequest"
+}

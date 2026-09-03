@@ -1,0 +1,12 @@
+{
+  "required": ["key", "name", "description", "body", "source"],
+  "type": "object",
+  "properties": {
+    "key": { "type": "string" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "body": { "type": "string" },
+    "source": { "type": "string" }
+  },
+  "x-readme-ref-name": "ChatSlashCommand"
+}

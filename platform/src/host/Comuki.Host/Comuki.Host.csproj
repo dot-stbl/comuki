@@ -2,11 +2,40 @@
 
   <PropertyGroup>
     <RootNamespace>Comuki.Host</RootNamespace>
+    <!--
+      NU1903: Microsoft.AspNetCore.OpenApi 10.0.9 transitively pulls
+      Microsoft.OpenApi 2.0.0 with GHSA-v5pm-xwqc-g5wc (high severity).
+      Accepted tech debt — tracked in console.x .agents/debt/BACKEND-ISSUES.md
+      §"2026-07-01". Version bump target: Microsoft.AspNetCore.OpenApi
+      with a 3.x-compatible source generator + matching OpenApi transformer
+      migration to the 3.x immutable AST.
+    -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
+    <!--
+      Build-time OpenAPI document generation (Microsoft.Extensions.ApiDescription.Server).
+      Resolved relative to the csproj: platform/src/host/Comuki.Host
+      → ../.. → /comuki.orchestrator; artifacts lives at the repo root.
+      DEBUG-only: the Microsoft.AspNetCore.OpenApi 10.0.9 source generator
+      still emits against the 2.x writable IOpenApiMediaType.Example, so
+      Release builds skip the target — Release=false ensures we never inherit
+      the default (true) from the targets file.
+    -->
+    <OpenApiDocumentsDirectory>../../../../artifacts</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocuments Condition="'$(Configuration)'=='Debug'">true</OpenApiGenerateDocuments>
+    <OpenApiGenerateDocuments Condition="'$(Configuration)'=='Release'">false</OpenApiGenerateDocuments>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="protobuf-net.Grpc.AspNetCore" />
+    <!-- OpenAPI document in DI (MapOpenApi() serves it at /openapi/v1.json).
+         PrivateAssets=all on ApiDescription.Server keeps its source generator
+         out of the runtime closure. -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -42,5 +71,20 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Runs" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Artifacts" />
   </ItemGroup>
+
+  <!--
+    Rename the OpenAPI output to a stable filename. ApiDescription.Server
+    always emits {ProjectName}.json (Comuki.Host.json); dashboard/kubb.config.ts
+    reads artifacts/openapi.json — keep the canonical name aligned so the FE
+    picks up the latest contract without manual copies. Debug-only, matching
+    the generation gate above.
+  -->
+  <Target Name="RenameOpenApiOutputToCanonicalName"
+          AfterTargets="_GenerateOpenApiDocuments"
+          Condition="'$(Configuration)'=='Debug' and Exists('$(MSBuildProjectDirectory)\$(OpenApiDocumentsDirectory)\$(MSBuildProjectName).json')">
+    <Move SourceFiles="$(MSBuildProjectDirectory)\$(OpenApiDocumentsDirectory)\$(MSBuildProjectName).json"
+          DestinationFiles="$(MSBuildProjectDirectory)\$(OpenApiDocumentsDirectory)\openapi.json"
+          OverwriteReadOnlyFiles="true"/>
+  </Target>
 
 </Project>

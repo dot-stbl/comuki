@@ -1,0 +1,12 @@
+{
+  "required": ["projectId", "title"],
+  "type": "object",
+  "properties": {
+    "projectId": { "type": "string", "format": "uuid" },
+    "title": { "type": "string" },
+    "body": { "type": "string" },
+    "externalId": { "type": ["null", "string"] },
+    "author": { "type": ["null", "string"] }
+  },
+  "x-readme-ref-name": "CreateNativeTicketRequest"
+}

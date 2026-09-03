@@ -1,0 +1,26 @@
+{
+  "required": ["messages", "awaitingApproval"],
+  "type": "object",
+  "properties": {
+    "messages": {
+      "type": "array",
+      "items": {
+        "required": ["id", "role", "content", "createdAt"],
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "role": { "type": "string" },
+          "content": { "type": "string" },
+          "toolName": { "type": ["null", "string"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "x-readme-ref-name": "ChatMessageView"
+      }
+    },
+    "awaitingApproval": { "type": "boolean" },
+    "pendingPlan": {
+      "oneOf": [{ "type": "null" }, { "x-readme-ref-name": "JsonDocument" }]
+    }
+  },
+  "x-readme-ref-name": "ChatTurnResultView"
+}

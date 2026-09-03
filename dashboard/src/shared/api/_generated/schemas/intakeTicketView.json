@@ -1,0 +1,26 @@
+{
+  "required": [
+    "id",
+    "projectId",
+    "source",
+    "externalId",
+    "title",
+    "url",
+    "status",
+    "runId",
+    "createdAt"
+  ],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "projectId": { "type": "string", "format": "uuid" },
+    "source": { "type": "string" },
+    "externalId": { "type": "string" },
+    "title": { "type": "string" },
+    "url": { "type": "string" },
+    "status": { "type": "string" },
+    "runId": { "type": ["null", "string"], "format": "uuid" },
+    "createdAt": { "type": "string", "format": "date-time" }
+  },
+  "x-readme-ref-name": "IntakeTicketView"
+}

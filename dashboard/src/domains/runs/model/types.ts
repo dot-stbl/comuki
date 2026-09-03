@@ -103,3 +103,34 @@ export interface RunDetail extends RunSummary {
   revision: { rules: string; sdk: string }
   events: TraceEvent[]
 }
+
+/**
+ * One object inside a run's artifact bundle. The host writes immutable
+ * artifact pointers to MinIO once the run terminates; the FE renders them as
+ * named links the operator clicks to fetch the bundle over its signed URI.
+ *
+ * The wire shape (`ArtifactPointer`) carries `uri: string`, but the domain
+ * normalises it to `URL` so the screen can `.href` it without re-parsing.
+ */
+export interface ArtifactPointer {
+  name: string
+  uri: URL
+  size: number
+  contentType: string
+}
+
+/**
+ * One page of run-artifact pointers — what the host returns for one run.
+ * The list is empty when the run has not been packaged yet (still in flight,
+ * or the packager has not yet observed the terminal transition).
+ *
+ * `projectId` / `runId` are echoed from the path because the wire page
+ * carries them; the screen keeps them on the domain object so callers do not
+ * have to thread the URL params through alongside the body.
+ */
+export interface RunArtifacts {
+  projectId: string
+  runId: string
+  /** Bundle objects — empty when the run has not been packaged yet. */
+  items: ArtifactPointer[]
+}

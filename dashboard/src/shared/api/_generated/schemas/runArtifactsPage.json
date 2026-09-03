@@ -1,0 +1,27 @@
+{
+  "required": ["items", "projectId", "runId"],
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "required": ["name", "uri", "size", "contentType"],
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "uri": { "type": "string", "format": "uri" },
+          "size": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": ["integer", "string"],
+            "format": "int64"
+          },
+          "contentType": { "type": "string" }
+        },
+        "x-readme-ref-name": "ArtifactPointer"
+      }
+    },
+    "projectId": { "type": "string", "format": "uuid" },
+    "runId": { "type": "string", "format": "uuid" }
+  },
+  "x-readme-ref-name": "RunArtifactsPage"
+}

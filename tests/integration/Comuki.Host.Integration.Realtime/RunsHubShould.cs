@@ -4,7 +4,6 @@ using Comuki.Host.Realtime.Models;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Xunit;
@@ -171,7 +170,7 @@ public sealed class RunsHubShould(HostRealtimeServer server) : IClassFixture<Hos
     private async Task AppendRunEventAsync(RunId runId, string type, string payloadJson)
     {
         await using var scope = server.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<Comuki.Engine.Orchestration.Infrastructure.Persistence.OrchestrationDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<Engine.Orchestration.Infrastructure.Persistence.OrchestrationDbContext>();
         using var _ = scope.ServiceProvider
             .GetRequiredService<Shared.Kernel.Scoping.ISubjectScopeAccessor>()
             .AsSystem("realtime-fixture");

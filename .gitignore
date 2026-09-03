@@ -355,3 +355,4 @@ FodyWeavers.xsd
 .impeccable/?
 !platform/src/modules/Artifacts/
 !platform/src/shared/Comuki.Shared.Contracts/Artifacts/
+!openspec/specs/artifacts/

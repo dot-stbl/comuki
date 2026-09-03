@@ -43,8 +43,11 @@ services:
       - comuki-net
 
   minio:
-    # S3-compatible object storage — Comuki.Platform.Artifacts (Phase 7)
+    # S3-compatible object storage — Comuki.Platform.Artifacts (issue #28)
     # writes run artifacts here: diffs, screenshots, logs per run-id.
+    # The minio-init job below creates the bucket + lifecycle policy the
+    # host relies on; the host uses the Artifacts:Minio:* env vars to
+    # find the bucket and credentials.
     image: minio/minio:latest
     container_name: comuki-minio
     restart: unless-stopped
@@ -62,6 +65,47 @@ services:
       interval: 10s
       timeout: 5s
       retries: 6
+    networks:
+      - comuki-net
+
+  minio-init:
+    # Idempotent bucket + lifecycle provisioning for the artifacts
+    # store. Runs once on stack bring-up and after the MinIO healthcheck
+    # turns green; uses the official mc client to create the bucket
+    # (named in MINIO_DEFAULT_BUCKETS) when absent and configure the
+    # 30-day lifecycle expiry the storage docs commit to. Re-running
+    # the stack never errors — mc treats existing objects / policies
+    # as no-ops.
+    image: minio/mc:latest
+    container_name: comuki-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${COMUKI_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${COMUKI_MINIO_ROOT_PASSWORD}
+      MINIO_DEFAULT_BUCKETS: ${COMUKI_MINIO_ARTIFACTS_BUCKET:-comuki-run-bundles}
+    entrypoint: >
+      /bin/sh -c "
+        set -e;
+        mc alias set local http://minio:9000 '$$MINIO_ROOT_USER' '$$MINIO_ROOT_PASSWORD';
+        for bucket in $$(echo $$MINIO_DEFAULT_BUCKETS | tr ',' ' '); do
+          if ! mc ls local/$$bucket >/dev/null 2>&1; then
+            mc mb local/$$bucket;
+          fi;
+          mc ilm import local/$$bucket <(printf '%s\n' '{
+            "Rules": [
+              {
+                "ID": "expire-non-current-30d",
+                "Status": "Enabled",
+                "Filter": { "Prefix": "" },
+                "NoncurrentVersionExpiration": { "NoncurrentDays": 30 }
+              }
+            ]
+          }');
+        done;
+        exit 0;
+      "
     networks:
       - comuki-net
 

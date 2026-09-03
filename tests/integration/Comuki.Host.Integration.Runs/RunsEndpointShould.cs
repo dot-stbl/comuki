@@ -98,6 +98,13 @@ public sealed class RunsEndpointShould : IAsyncLifetime
         builder.Configuration["ControlPlane:Root"] = Path.GetTempPath();
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        // Artifacts module dev defaults — the integration suite does not
+        // boot a MinIO Testcontainer; the host still validates the
+        // options so we satisfy the contract with throwaway values.
+        builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
+        builder.Configuration["Artifacts:AccessKey"] = "comuki";
+        builder.Configuration["Artifacts:SecretKey"] = "comuki_dev";
+        builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
         builder.Services.AddOrchestrationPersistence(connectionString);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));

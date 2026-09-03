@@ -82,6 +82,7 @@
     <Project Path="tests/integration/Comuki.Host.Integration.Realtime/Comuki.Host.Integration.Realtime.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Runs/Comuki.Host.Integration.Runs.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Costs/Comuki.Host.Integration.Costs.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Artifacts/Comuki.Host.Integration.Artifacts.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Stores/Comuki.Modules.Identity.Integration.Stores.csproj" />
     <Project Path="tests/integration/Comuki.Shared.Filtering.Integration.Ef/Comuki.Shared.Filtering.Integration.Ef.csproj" />
   </Folder>

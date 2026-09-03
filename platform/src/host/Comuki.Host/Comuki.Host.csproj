@@ -40,6 +40,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Oidc" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Realtime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Runs" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Artifacts" />
   </ItemGroup>
 
 </Project>

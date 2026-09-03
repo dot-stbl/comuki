@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Migrator;
 using Comuki.Migrator.Sources;
+using Comuki.Modules.Artifacts.Infrastructure.Persistence;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
@@ -42,7 +43,8 @@ if (recreate)
 // (orchestration.__ef_migrations_history, identity.__ef_migrations_history,
 // projects.__ef_migrations_history, memory.__ef_migrations_history,
 // chat.__ef_migrations_history, intake.__ef_migrations_history,
-// costs.__ef_migrations_history), so the applications cannot collide.
+// costs.__ef_migrations_history, artifacts.__ef_migrations_history),
+// so the applications cannot collide.
 var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
 OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
 await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
@@ -84,6 +86,12 @@ CostsDbContext.ApplyOptions(costsOptions, connectionString);
 await using var costsDb = new CostsDbContext(costsOptions.Options);
 await DatabaseSchemaEnsurer.EnsureAsync(connectionString, CostsDatabase.Schema, CancellationToken.None);
 await ApplyAsync(costsDb, "costs");
+
+var artifactsOptions = new DbContextOptionsBuilder<ArtifactsDbContext>();
+ArtifactsDbContext.ApplyOptions(artifactsOptions, connectionString);
+await using var artifactsDb = new ArtifactsDbContext(artifactsOptions.Options);
+await DatabaseSchemaEnsurer.EnsureAsync(connectionString, ArtifactsDatabase.Schema, CancellationToken.None);
+await ApplyAsync(artifactsDb, "artifacts");
 
 return 0;
 

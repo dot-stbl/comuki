@@ -1,3 +1,4 @@
+using Comuki.Host.Artifacts;
 using Comuki.Host.Auth;
 using Comuki.Host.Auth.Security;
 using Comuki.Host.Chat.Brain;
@@ -10,6 +11,9 @@ using Comuki.Host.Errors;
 using Comuki.Host.Intake;
 using Comuki.Host.Projects;
 using Comuki.Host.Realtime;
+using Comuki.Modules.Artifacts.Application;
+using Comuki.Modules.Artifacts.Application.Packaging;
+using Comuki.Modules.Artifacts.Infrastructure;
 using Comuki.Modules.Chat.Application;
 using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Infrastructure;
@@ -24,6 +28,7 @@ using Comuki.Modules.Intake.Application.Ports.Admission;
 using Comuki.Modules.Intake.Infrastructure;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
+using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Memory;
@@ -114,6 +119,17 @@ internal static class HostComposer
             .Bind(builder.Configuration.GetSection(IntakeWorkerDefaults.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
+
+        // Artifacts module (issue #28): MinIO-backed run bundle store +
+        // the polling packager driver. The two adapters
+        // (IRunArtifactJournalSource, IRunArtifactRunSource) live in the
+        // host composition root so the artifacts module never reaches
+        // into the engine schema — they read runs / work items through
+        // the orchestration DbContext that Program already wired above.
+        builder.Services.AddArtifactsApplication();
+        builder.Services.AddArtifactsPersistence(database.ConnectionString, builder.Configuration);
+        builder.Services.AddScoped<IRunArtifactJournalSource, OrchestrationArtifactJournalSource>();
+        builder.Services.AddScoped<IRunArtifactRunSource, OrchestrationArtifactRunSource>();
 
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).

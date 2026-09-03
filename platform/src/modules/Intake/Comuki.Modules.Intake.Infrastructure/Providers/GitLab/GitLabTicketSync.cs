@@ -7,8 +7,10 @@ using Comuki.Modules.Intake.Domain.Tickets;
 namespace Comuki.Modules.Intake.Infrastructure.Providers.GitLab;
 
 /// <summary>
-/// The GitLab sync-back port: a status note with the run link on every
-/// terminal transition, the close state event when the run succeeded.
+/// The GitLab sync-back port: a single status note with the run link on
+/// every terminal transition, the close state event when the run
+/// succeeded. Close-on-success applies to issues only — a Comuki
+/// review on an MR is a comment, not a merge decision.
 /// </summary>
 /// <param name="clients"></param>
 /// <param name="secrets"></param>
@@ -33,7 +35,8 @@ public sealed class GitLabTicketSync(
 
         await api.PostNoteAsync(settings.ProjectId, issueIid, new GitLabNoteBody(TrackerSyncComments.Of(transition)), cancellationToken);
 
-        if (transition.RunStatus == "Succeeded")
+        // Comuki does not decide to merge an MR — close-on-success applies to issues only.
+        if (transition.RunStatus == "Succeeded" && transition.Kind == InboundTicketKind.Issue)
         {
             await api.UpdateIssueAsync(settings.ProjectId, issueIid, new GitLabIssueUpdate("close"), cancellationToken);
         }

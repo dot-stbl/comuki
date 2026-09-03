@@ -38,7 +38,7 @@ public sealed class CreateNativeTicketHandlerShould
                 return inserted;
             });
         var runId = RunId.New();
-        runLauncher.LaunchAsync(Arg.Any<ProjectId>(), Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>())
+        runLauncher.LaunchAsync(Arg.Any<ProjectId>(), Arg.Any<Domain.Connections.SourceConnection>(), Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>())
             .Returns(runId);
         store.TryMarkClaimedAsync(Arg.Any<IncomingTicketId>(), runId, Arg.Any<CancellationToken>()).Returns(true);
         var handler = new CreateNativeTicketHandler(
@@ -61,7 +61,7 @@ public sealed class CreateNativeTicketHandlerShould
         view.Status.ShouldBe("Claimed");
         view.RunId.ShouldBe(runId.Value);
         view.ExternalId.ShouldBe("native-42");
-        await runLauncher.Received(1).LaunchAsync(projectId, inserted, Arg.Any<CancellationToken>());
+        await runLauncher.Received(1).LaunchAsync(projectId, Arg.Any<Domain.Connections.SourceConnection>(), inserted, Arg.Any<CancellationToken>());
         await store.Received(1).TryMarkClaimedAsync(inserted.Id, runId, Arg.Any<CancellationToken>());
     }
 
@@ -70,7 +70,7 @@ public sealed class CreateNativeTicketHandlerShould
     {
         store.TryInsertTicketAsync(Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>())
             .Returns(static callInfo => callInfo.Arg<IncomingTicket>());
-        runLauncher.LaunchAsync(Arg.Any<ProjectId>(), Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>())
+        runLauncher.LaunchAsync(Arg.Any<ProjectId>(), Arg.Any<Domain.Connections.SourceConnection>(), Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>())
             .Returns(RunId.New());
         store.TryMarkClaimedAsync(Arg.Any<IncomingTicketId>(), Arg.Any<RunId>(), Arg.Any<CancellationToken>()).Returns(true);
         var handler = new CreateNativeTicketHandler(

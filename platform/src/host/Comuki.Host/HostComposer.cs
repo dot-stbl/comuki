@@ -114,6 +114,9 @@ internal static class HostComposer
             .Bind(builder.Configuration.GetSection(IntakeWorkerDefaults.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
+        builder.Services.AddScoped<IIntakeProfileRouter, Modules.Intake.Infrastructure.Admission.IntakeProfileRouter>(static serviceProvider =>
+            new Modules.Intake.Infrastructure.Admission.IntakeProfileRouter(
+                serviceProvider.GetRequiredService<IOptions<IntakeWorkerDefaults>>().Value.IssueDefaultProfileKey));
 
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).

@@ -1,0 +1,16 @@
+{
+  "object_kind": "merge_request",
+  "user": { "username": "grace", "name": "Grace" },
+  "project": {
+    "id": 12345,
+    "path_with_namespace": "acme/platform"
+  },
+  "object_attributes": {
+    "iid": 42,
+    "title": "Refactor adapter pipeline",
+    "description": "MR for review.",
+    "url": "https://gitlab.com/acme/platform/-/merge_requests/42",
+    "action": "open"
+  },
+  "labels": [ { "title": "needs-review" } ]
+}

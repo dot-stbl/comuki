@@ -121,6 +121,7 @@ public sealed class AdmissionEvaluatorShould
             "https://example.com",
             projectKey,
             labels,
+            InboundTicketKind.Issue,
             now);
     }
 }

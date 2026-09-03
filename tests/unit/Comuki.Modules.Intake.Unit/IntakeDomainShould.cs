@@ -85,6 +85,7 @@ public sealed class IntakeDomainShould
             string.Empty,
             null,
             [],
+            InboundTicketKind.Issue,
             now);
 
         ticket.Status.ShouldBe(IntakeTicketStatus.Pending);

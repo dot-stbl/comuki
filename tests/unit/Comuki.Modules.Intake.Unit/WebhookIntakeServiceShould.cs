@@ -138,7 +138,7 @@ public sealed class WebhookIntakeServiceShould
         receipt.StatusCode.ShouldBe(200);
         receipt.Outcome.ShouldBe(DeliveryOutcomes.Replay);
         await store.DidNotReceive().MarkDeliveryOutcomeAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
-        await runLauncher.DidNotReceive().LaunchAsync(Arg.Any<ProjectId>(), Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>());
+        await runLauncher.DidNotReceive().LaunchAsync(Arg.Any<ProjectId>(), Arg.Any<SourceConnection>(), Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>());
     }
 
     [Fact(DisplayName = "Given the signature verification rejects, when HandleAsync runs, then 401 with signature_invalid is returned and the rejection is recorded")]
@@ -206,6 +206,7 @@ public sealed class WebhookIntakeServiceShould
             "https://example.com/42",
             "acme/app",
             ["bug"],
+            InboundTicketKind.Issue,
             now);
         store.FindConnectionByWebhookAsync(TicketProviderKeys.GitHub, connection.WebhookKey, Arg.Any<CancellationToken>())
             .Returns(connection);
@@ -247,6 +248,7 @@ public sealed class WebhookIntakeServiceShould
             "https://example.com/7",
             "acme/app",
             ["bug"],
+            InboundTicketKind.Issue,
             now);
         store.FindConnectionByWebhookAsync(TicketProviderKeys.GitHub, connection.WebhookKey, Arg.Any<CancellationToken>())
             .Returns(connection);
@@ -267,7 +269,7 @@ public sealed class WebhookIntakeServiceShould
         receipt.StatusCode.ShouldBe(200);
         receipt.Outcome.ShouldBe(DeliveryOutcomes.Duplicate);
         await store.DidNotReceive().AddDismissedTicketAsync(Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>());
-        await runLauncher.DidNotReceive().LaunchAsync(Arg.Any<ProjectId>(), Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>());
+        await runLauncher.DidNotReceive().LaunchAsync(Arg.Any<ProjectId>(), Arg.Any<SourceConnection>(), Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>());
     }
 
     [Fact(DisplayName = "Given the matching rule is watch mode, when HandleAsync runs, then a run is launched, the ticket is claimed and outcome=admitted is returned")]
@@ -284,6 +286,7 @@ public sealed class WebhookIntakeServiceShould
             "https://example.com/9",
             "acme/app",
             ["bug"],
+            InboundTicketKind.Issue,
             now);
         store.FindConnectionByWebhookAsync(TicketProviderKeys.GitHub, connection.WebhookKey, Arg.Any<CancellationToken>())
             .Returns(connection);
@@ -294,7 +297,7 @@ public sealed class WebhookIntakeServiceShould
         store.ListEnabledRulesAsync(connection.ProjectId, Arg.Any<CancellationToken>()).Returns([rule]);
         store.TryInsertTicketAsync(Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>()).Returns(ticket);
         var runId = RunId.New();
-        runLauncher.LaunchAsync(connection.ProjectId, ticket, Arg.Any<CancellationToken>()).Returns(runId);
+        runLauncher.LaunchAsync(connection.ProjectId, connection, ticket, Arg.Any<CancellationToken>()).Returns(runId);
         store.TryMarkClaimedAsync(ticket.Id, runId, Arg.Any<CancellationToken>()).Returns(true);
         var service = BuildService();
 
@@ -307,7 +310,7 @@ public sealed class WebhookIntakeServiceShould
         receipt.StatusCode.ShouldBe(200);
         receipt.Outcome.ShouldBe(DeliveryOutcomes.Admitted);
         receipt.Detail.ShouldBe("acme/app#9");
-        await runLauncher.Received(1).LaunchAsync(connection.ProjectId, ticket, Arg.Any<CancellationToken>());
+        await runLauncher.Received(1).LaunchAsync(connection.ProjectId, connection, ticket, Arg.Any<CancellationToken>());
         await store.Received(1).TryMarkClaimedAsync(ticket.Id, runId, Arg.Any<CancellationToken>());
         await store.Received(1).MarkDeliveryOutcomeAsync(
             Arg.Any<Guid>(),
@@ -330,6 +333,7 @@ public sealed class WebhookIntakeServiceShould
             "https://example.com/11",
             "acme/app",
             ["bug"],
+            InboundTicketKind.Issue,
             now);
         store.FindConnectionByWebhookAsync(TicketProviderKeys.GitHub, connection.WebhookKey, Arg.Any<CancellationToken>())
             .Returns(connection);
@@ -349,7 +353,7 @@ public sealed class WebhookIntakeServiceShould
 
         receipt.StatusCode.ShouldBe(200);
         receipt.Outcome.ShouldBe(DeliveryOutcomes.Pending);
-        await runLauncher.DidNotReceive().LaunchAsync(Arg.Any<ProjectId>(), Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>());
+        await runLauncher.DidNotReceive().LaunchAsync(Arg.Any<ProjectId>(), Arg.Any<SourceConnection>(), Arg.Any<IncomingTicket>(), Arg.Any<CancellationToken>());
         await store.DidNotReceive().TryMarkClaimedAsync(Arg.Any<IncomingTicketId>(), Arg.Any<RunId>(), Arg.Any<CancellationToken>());
         await store.Received(1).MarkDeliveryOutcomeAsync(
             Arg.Any<Guid>(),

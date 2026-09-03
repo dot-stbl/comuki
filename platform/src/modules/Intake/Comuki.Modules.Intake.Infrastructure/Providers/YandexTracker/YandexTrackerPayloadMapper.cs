@@ -56,6 +56,7 @@ public static class YandexTrackerPayloadMapper
             url: ReadString(issue, "self"),
             projectKey: ReadQueueKey(issue),
             labels: ReadTags(issue),
+            kind: InboundTicketKind.Issue,
             now);
     }
 
@@ -76,6 +77,7 @@ public static class YandexTrackerPayloadMapper
             url: issue.Self,
             projectKey: issue.QueueKey,
             labels: [.. issue.Tags],
+            kind: InboundTicketKind.Issue,
             now);
     }
 

@@ -12,9 +12,11 @@ namespace Comuki.Modules.Intake.Unit;
 
 /// <summary>
 /// GitHub provider over the fake handler: the catalog fetch hits the
-/// issues endpoint with auth, PRs are filtered out, the delivery id
-/// prefers the header, and verification resolves the secret from the
-/// connection's env ref.
+/// issues endpoint with auth, PRs are filtered out by default and
+/// admitted only when the connection opts in via the
+/// <c>includePullRequests</c> setting, the delivery id prefers the
+/// header, and verification resolves the secret from the connection's
+/// env ref.
 /// </summary>
 public sealed class GitHubTicketSourceProviderShould
 {
@@ -37,6 +39,7 @@ public sealed class GitHubTicketSourceProviderShould
         tickets.Count.ShouldBe(1);
         tickets[0].ExternalId.ShouldBe("dot-stbl/comuki#482");
         tickets[0].Author.ShouldBe("bob");
+        tickets[0].Kind.ShouldBe(InboundTicketKind.Issue);
 
         var request = handler.Requests.Single();
         request.Message.RequestUri!.AbsolutePath.ShouldBe("/repos/dot-stbl/comuki/issues");
@@ -44,6 +47,40 @@ public sealed class GitHubTicketSourceProviderShould
         request.Message.RequestUri.Query.ShouldContain("page=1");
         request.Message.Headers.Authorization!.Scheme.ShouldBe("Bearer");
         request.Message.Headers.Authorization.Parameter.ShouldBe("ghp_test");
+    }
+
+    [Fact(DisplayName = "Given a connection with includePullRequests, when the catalog is fetched, then PRs are admitted as PR-kind tickets")]
+    public async Task FetchCatalogIncludesPullRequestsWhenOptedInAsync()
+    {
+        var (factory, handler) = ProviderTestHarness.CreateFactory();
+        var pageJson = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Fixtures", "github-page-with-pr.json"), TestContext.Current.CancellationToken);
+        handler.Respond = request => ProviderTestHarness.Json(pageJson);
+
+        var secrets = new FakeSecretResolver { Map = { ["COMUKI_GH_TOKEN"] = "ghp_test" } };
+        var provider = new GitHubTicketSourceProvider(factory, secrets, TimeProvider.System);
+        var connection = Connection(/*lang=json,strict*/ """{"owner": "dot-stbl", "repo": "comuki", "apiTokenEnv": "COMUKI_GH_TOKEN", "includePullRequests": true}""");
+
+        var tickets = await provider.FetchCatalogAsync(connection, page: 1, TestContext.Current.CancellationToken);
+
+        tickets.Count.ShouldBe(2);
+        tickets.ShouldContain(ticket => ticket.ExternalId == "dot-stbl/comuki#481" && ticket.Kind == InboundTicketKind.Issue);
+        tickets.ShouldContain(ticket => ticket.ExternalId == "dot-stbl/comuki#17" && ticket.Kind == InboundTicketKind.PullRequest);
+    }
+
+    [Fact(DisplayName = "Given a connection with the default settings, when the catalog is fetched, then PRs are dropped")]
+    public async Task FetchCatalogDropsPullRequestsByDefaultAsync()
+    {
+        var (factory, handler) = ProviderTestHarness.CreateFactory();
+        var pageJson = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Fixtures", "github-page-with-pr.json"), TestContext.Current.CancellationToken);
+        handler.Respond = request => ProviderTestHarness.Json(pageJson);
+
+        var provider = new GitHubTicketSourceProvider(factory, new FakeSecretResolver(), TimeProvider.System);
+        var connection = Connection(/*lang=json,strict*/ """{"owner": "dot-stbl", "repo": "comuki"}""");
+
+        var tickets = await provider.FetchCatalogAsync(connection, page: 1, TestContext.Current.CancellationToken);
+
+        tickets.Count.ShouldBe(1);
+        tickets[0].Kind.ShouldBe(InboundTicketKind.Issue);
     }
 
     [Fact(DisplayName = "Given a delivery with the GitHub delivery header, when the delivery id is derived, then the header wins; without it the body hash answers")]

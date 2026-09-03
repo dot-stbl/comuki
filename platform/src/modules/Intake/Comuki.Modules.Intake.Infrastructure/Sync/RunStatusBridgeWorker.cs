@@ -150,9 +150,16 @@ public sealed class RunStatusBridgeWorker(
 
             try
             {
+                // the job carries the ticket id but not the kind; load the
+                // ticket here so the sync port can decide close-on-success
+                // (issues) vs. comment-only (PRs).
+                var kind = await store.FindTicketAsync(job.TicketId, cancellationToken) is { } ticket
+                    ? ticket.Kind
+                    : InboundTicketKind.Issue;
+
                 await syncPort.TransitionAsync(
                     connection,
-                    new TicketTransition(job.ExternalId, job.ExternalUrl, job.RunStatus, IntakeRunUrls.Of(intakeOptions.PublicBaseUrl, job.RunId)),
+                    new TicketTransition(job.ExternalId, job.ExternalUrl, job.RunStatus, IntakeRunUrls.Of(intakeOptions.PublicBaseUrl, job.RunId), kind),
                     cancellationToken);
                 await store.MarkSyncJobDoneAsync(job.Id, clock.GetUtcNow(), cancellationToken);
                 logger.LogInformation("Sync job {JobId} pushed {RunStatus} for {ExternalId}", job.Id, job.RunStatus, job.ExternalId);

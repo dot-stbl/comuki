@@ -1,0 +1,14 @@
+{
+  "action": "ready_for_review",
+  "number": 18,
+  "pull_request": {
+    "number": 18,
+    "title": "Drop draft flag",
+    "body": "Marking ready for review.",
+    "html_url": "https://github.com/dot-stbl/comuki/pull/18",
+    "state": "open",
+    "user": { "login": "frank" },
+    "labels": []
+  },
+  "repository": { "full_name": "dot-stbl/comuki" }
+}

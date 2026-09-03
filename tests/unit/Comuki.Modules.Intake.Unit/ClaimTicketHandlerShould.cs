@@ -31,10 +31,11 @@ public sealed class ClaimTicketHandlerShould
             "https://example.com/1",
             "acme/app",
             [],
+            InboundTicketKind.Issue,
             now);
         store.FindTicketAsync(ticket.Id, Arg.Any<CancellationToken>()).Returns(ticket);
         var runId = RunId.New();
-        runLauncher.LaunchAsync(ticket.ProjectId, ticket, Arg.Any<CancellationToken>()).Returns(runId);
+        runLauncher.LaunchAsync(ticket.ProjectId, Arg.Any<Domain.Connections.SourceConnection>(), ticket, Arg.Any<CancellationToken>()).Returns(runId);
         store.TryMarkClaimedAsync(ticket.Id, runId, Arg.Any<CancellationToken>()).Returns(true);
         var handler = new ClaimTicketHandler(store, runLauncher, NullLogger<ClaimTicketHandler>.Instance);
 
@@ -67,6 +68,7 @@ public sealed class ClaimTicketHandlerShould
             string.Empty,
             null,
             [],
+            InboundTicketKind.Issue,
             now);
         ticket.MarkDismissed(now);
         store.FindTicketAsync(ticket.Id, Arg.Any<CancellationToken>()).Returns(ticket);
@@ -89,9 +91,10 @@ public sealed class ClaimTicketHandlerShould
             string.Empty,
             null,
             [],
+            InboundTicketKind.Issue,
             now);
         store.FindTicketAsync(ticket.Id, Arg.Any<CancellationToken>()).Returns(ticket);
-        runLauncher.LaunchAsync(ticket.ProjectId, ticket, Arg.Any<CancellationToken>()).Returns(RunId.New());
+        runLauncher.LaunchAsync(ticket.ProjectId, Arg.Any<Domain.Connections.SourceConnection>(), ticket, Arg.Any<CancellationToken>()).Returns(RunId.New());
         store.TryMarkClaimedAsync(Arg.Any<IncomingTicketId>(), Arg.Any<RunId>(), Arg.Any<CancellationToken>()).Returns(false);
         var handler = new ClaimTicketHandler(store, runLauncher, NullLogger<ClaimTicketHandler>.Instance);
 

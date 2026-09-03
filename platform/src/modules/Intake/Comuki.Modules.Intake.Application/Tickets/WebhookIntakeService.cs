@@ -118,7 +118,7 @@ public sealed class WebhookIntakeService(
 
         if (admittedMode == AdmissionMode.Watch)
         {
-            var runId = await runLauncher.LaunchAsync(connection.ProjectId, stored, cancellationToken);
+            var runId = await runLauncher.LaunchAsync(connection.ProjectId, connection, stored, cancellationToken);
             await store.TryMarkClaimedAsync(stored.Id, runId, cancellationToken);
             logger.LogInformation("Ticket {ExternalId} admitted into run {RunId} (watch)", stored.ExternalId, runId);
             await store.MarkDeliveryOutcomeAsync(deliveryRow.Id, DeliveryOutcomes.Admitted, stored.ExternalId, cancellationToken);

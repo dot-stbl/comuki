@@ -19,7 +19,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc -b",
     "preview": "vite preview",
-    "generate-api": "dotnet build ../comuki.slnx && kubb generate",
+    "generate-api": "dotnet build ../comuki.slnx && bunx @kubb/cli generate",
     "predev": "bun run generate-api",
     "storybook": "storybook dev -p 17010 --no-open",
     "build-storybook": "storybook build",

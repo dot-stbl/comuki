@@ -1,9 +1,1 @@
-{
-  "required": ["approved"],
-  "type": "object",
-  "properties": {
-    "approved": { "type": "boolean" },
-    "reason": { "type": ["null", "string"] }
-  },
-  "x-readme-ref-name": "ChatApproveRequest"
-}
+{"required":["approved"],"type":"object","properties":{"approved":{"type":"boolean"},"reason":{"type":["null","string"]}},"x-readme-ref-name":"ChatApproveRequest"}

@@ -22,9 +22,25 @@ import {
   setSeedUserDisabled,
 } from "@/shared/api/mock/identity.store"
 import { listSeedProjects } from "@/shared/api/mock/projects.store"
+import { SESSION_USER_SEED } from "@/shared/api/mock/session.seed"
 import { env } from "@/shared/config/env"
+import type { SessionUser } from "@/shared/session"
+
+import {
+  mapMeResponseToSessionUser,
+  mapOidcStartToAuthorizationUrl,
+} from "./mappers"
+import { getApiV1AuthMe } from "@/shared/api/_generated/clients/getApiV1AuthMe"
+import { getApiV1AuthOidcProviderStart } from "@/shared/api/_generated/clients/getApiV1AuthOidcProviderStart"
 
 export const identityQueryKey = ["identity"] as const
+
+/** The signed-in shift, read from the host's `/me`. */
+export const meQueryKey = ["me"] as const
+
+/** The OIDC start handshake, keyed by the provider the operator chose. */
+export const oidcStartQueryKey = (provider: string) =>
+  ["oidc-start", provider] as const
 
 /**
  * The whole screen in one payload.
@@ -45,7 +61,7 @@ function snapshot(): IdentitySnapshot {
     listSeedRoleAssignments(),
     listSeedApiKeys(),
     listSeedProjects(),
-    new Date()
+    new Date(),
   )
 }
 
@@ -56,6 +72,39 @@ async function loadIdentity(): Promise<IdentitySnapshot> {
   return snapshot()
 }
 
+/**
+ * The signed-in subject, with platform roles and the empty `projectRoles`
+ * map the wire carries (see `mapMeResponseToSessionUser`). Mock mode reads
+ * the seeded duty engineer — the same shift the existing auth store hands
+ * the rest of the dashboard.
+ */
+async function getCurrentUser(): Promise<SessionUser> {
+  if (env.useMock) {
+    return SESSION_USER_SEED
+  }
+  const me = await getApiV1AuthMe()
+  return mapMeResponseToSessionUser(me)
+}
+
+/**
+ * The OIDC redirect URL for the chosen provider.
+ *
+ * Mock mode returns a synthetic URL — the screen knows not to navigate to a
+ * `mock://` host. Real mode calls the kubb-generated client; the response is
+ * `any` because the endpoint answers a 302 (kubb follows redirects and the
+ * body is whatever the IdP returned). The mapper surfaces a readable error
+ * when the wire is not a string, and the screen is expected to use
+ * `window.location.href` against the kubb route directly for the actual
+ * browser redirect.
+ */
+async function startOidc(provider: string): Promise<string> {
+  if (env.useMock) {
+    return `mock://oidc/${provider}/start`
+  }
+  const start = await getApiV1AuthOidcProviderStart(provider)
+  return mapOidcStartToAuthorizationUrl(start)
+}
+
 export function useIdentityQuery() {
   return useQuery({
     queryKey: identityQueryKey,
@@ -63,9 +112,29 @@ export function useIdentityQuery() {
   })
 }
 
+export function useCurrentUserQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: meQueryKey,
+    queryFn: getCurrentUser,
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useStartOidcQuery(provider: string) {
+  return useQuery({
+    queryKey: oidcStartQueryKey(provider),
+    queryFn: () => startOidc(provider),
+    enabled: provider.length > 0,
+    // The start URL is a one-shot handshake, not live data — let it sit in
+    // the cache for the session rather than refetching on every focus.
+    staleTime: Infinity,
+    retry: false,
+  })
+}
+
 /** Every mutation here ends the same way: the snapshot the store now holds. */
 function useIdentityMutation<TInput>(
-  apply: (input: TInput) => void
+  apply: (input: TInput) => void,
 ) {
   const queryClient = useQueryClient()
 

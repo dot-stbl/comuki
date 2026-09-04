@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
+using System.Text.Json;
 using Comuki.Engine.Orchestration.Domain;
+using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
@@ -220,6 +222,30 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
             WorkItemStatus.Queued,
             now);
         orchestrationDb.WorkItems.Add(workItem);
+
+        // Seed a work_item.status_changed event so the journal source can
+        // resolve OriginWorkItemId (brief.json) and DetailJson (result.json).
+        // OrchestrationArtifactJournalSource.ReadTerminalAsync reads the LATEST
+        // such event for the run; without one, both pointers stay null and
+        // the packager only uploads pins.json. The payload mirrors the
+        // WorkItemEventPayloads.StatusChangedWithDetail shape (itemId,
+        // from, to, detail) the queue uses — the journal source only reads
+        // itemId and detail, but a complete shape keeps the test honest.
+        var workItemEventPayload = JsonSerializer.Serialize(
+            new
+            {
+                itemId = workItem.Id,
+                from = nameof(WorkItemStatus.Running),
+                to = nameof(WorkItemStatus.Succeeded),
+                detail = new { summary = "implemented the goal", exitCode = 0 },
+            },
+            JsonSerializerOptions.Web);
+        orchestrationDb.RunEvents.Add(
+            RunEvent.Create(
+                run.Id,
+                RunEventTypes.WorkItemStatusChanged,
+                workItemEventPayload,
+                now + TimeSpan.FromMinutes(6)));
 
         await orchestrationDb.SaveChangesAsync(cancellationToken);
         return (projectId, run.Id);

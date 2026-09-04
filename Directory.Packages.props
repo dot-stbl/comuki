@@ -138,4 +138,13 @@
     <PackageVersion Include="Minio" Version="7.0.0" />
     <PackageVersion Include="Testcontainers.Minio" Version="4.14.0" />
   </ItemGroup>
+
+  <!-- Proxy module (issue #8 / S9 T9.6): YARP reverse proxy with the
+       built-in Microsoft.AspNetCore.Authentication scheme for virtual-key
+       auth. YARP 2.3.x targets net8.0+/net10.0 — pinned conservatively to
+       keep transitive deps inside our .NET 10 / Microsoft.Extensions.* 10.0.11
+       envelope. -->
+  <ItemGroup>
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
 </Project>

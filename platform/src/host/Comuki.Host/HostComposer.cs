@@ -8,8 +8,10 @@ using Comuki.Host.Chat.Tools;
 using Comuki.Host.ControlPlane;
 using Comuki.Host.Costs;
 using Comuki.Host.Errors;
+using Comuki.Host.HealthChecks;
 using Comuki.Host.Intake;
 using Comuki.Host.Projects;
+using Comuki.Host.Proxy;
 using Comuki.Host.Realtime;
 using Comuki.Host.Security.Cors;
 using Comuki.Host.Security.ProductionSecrets;
@@ -32,6 +34,8 @@ using Comuki.Modules.Intake.Application.Ports.Admission;
 using Comuki.Modules.Intake.Infrastructure;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
+using Comuki.Modules.Proxy.Application;
+using Comuki.Modules.Proxy.Infrastructure;
 using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
@@ -39,6 +43,7 @@ using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Telemetry.Installers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Host;
@@ -201,6 +206,37 @@ internal static class HostComposer
         // mirrors that order).
         builder.Services.AddComukiRealtime();
 
+        // Proxy module (issue #8 / S9 T9.6): optional OpenAI / Anthropic
+        // passthrough over YARP. Virtual keys live in Proxy:* configuration
+        // and authenticate via the VirtualKey scheme (Bearer vkey_xxx);
+        // chat / messages routes go through MapReverseProxy and the
+        // request transform rewrites the outbound auth header to the
+        // upstream key the virtual key references. AddVirtualKeyAuth is
+        // called inside AddProxyInfrastructure so the scheme is registered
+        // on the existing authentication builder — without it
+        // AddAuthentication() would wipe the Identity cookie / API-key
+        // defaults.
+        builder.Services.AddProxyApplication(builder.Configuration);
+        builder.Services.AddProxyInfrastructure();
+
+        // Health probes (issue #8 cross-cutting kit): Postgres SELECT 1,
+        // proxy-key catalogue check. The Postgres connection string
+        // is read through the same database connection the host flows
+        // into every persistence layer; no second source of truth.
+        builder.Services.AddSingleton<ProxyKeysHealthCheck>();
+        var postgresConnectionString = database.ConnectionString;
+        builder.Services.AddSingleton(_ => new PostgresHealthCheck(postgresConnectionString));
+
+        builder.Services.AddHealthChecks()
+            .AddCheck<PostgresHealthCheck>(
+                ComukiHealthChecks.Names.Postgres,
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["ready"])
+            .AddCheck<ProxyKeysHealthCheck>(
+                ComukiHealthChecks.Names.ProxyKeys,
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["ready"]);
+
         // Ambient subject scope: one AsyncLocal-backed accessor for the
         // whole process — the middleware installs a scope per request, the
         // worker surfaces and hosted consumers declare AsSystem, and the
@@ -225,10 +261,29 @@ internal static class HostComposer
         app.UseMiddleware<SubjectScopeMiddleware>();
 
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));
+        app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        {
+            Predicate = static check => check.Tags.Contains("ready"),
+        });
         app.MapControllers();
         app.MapProjectsEndpoints();
         app.MapCostsEndpoints();
         app.MapComukiRealtime();
+        app.MapProxyEndpoints();
+
+        // Reverse-proxy passthrough (issue #8): chat / messages / embeddings
+        // virtual-key auth runs in the VirtualKeyAuthenticationHandler the
+        // AddVirtualKeyAuth call above registered; YARP forwards the request
+        // body / headers and the response transform meters usage. The
+        // AuthorizeAttribute scopes the auth + challenge to the VirtualKey
+        // scheme so a missing bearer never falls through to the Cookie
+        // redirect (RequireAuthorization's string overload is policy-named,
+        // not scheme-named — the attribute sets the scheme explicitly).
+        _ = app.MapReverseProxy()
+            .RequireAuthorization(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute
+            {
+                AuthenticationSchemes = Modules.Proxy.Infrastructure.Auth.VirtualKeyAuthenticationHandler.SchemeName,
+            });
 
         // Build-time source-generator mirrors the AddOpenApi document to
         // artifacts/openapi.json (comuki.slnx root, gitignored). This

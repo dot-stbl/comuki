@@ -89,4 +89,7 @@ public static class ApiRoutes
 
     /// <summary>Artifact bundle pointers for one run (permission run:read).</summary>
     public const string RunArtifacts = "/api/v1/projects/{projectId:guid}/runs/{runId:guid}/artifacts";
+
+    /// <summary>OpenAI-compatible model catalogue the proxy advertises (issue #8 / S9 T9.6).</summary>
+    public const string ProxyModels = "/v1/models";
 }

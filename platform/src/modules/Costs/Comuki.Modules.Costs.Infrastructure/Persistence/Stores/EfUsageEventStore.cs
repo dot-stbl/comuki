@@ -38,6 +38,24 @@ public sealed class EfUsageEventStore(IDbContextFactory<CostsDbContext> factory)
     }
 
     /// <inheritdoc />
+    public async Task<long> SumProjectCostBySourceAsync(
+        ProjectId projectId,
+        UsageSource source,
+        DateTimeOffset? since = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        var query = db.UsageEvents.AsNoTracking()
+            .Where(usageEvent => usageEvent.ProjectId == projectId && usageEvent.Source == source);
+        if (since is { } lower)
+        {
+            query = query.Where(usageEvent => usageEvent.OccurredAt >= lower);
+        }
+
+        return await query.SumAsync(static usageEvent => usageEvent.CostUsdMicros, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<long> SumRunCostUsdMicrosAsync(RunId runId, CancellationToken cancellationToken = default)
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);

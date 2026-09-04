@@ -44,6 +44,9 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("postgres:16-alpine")
         .Build();
 
+    private readonly PostgreSqlContainer postgresSeed = new PostgreSqlBuilder("postgres:16-alpine")
+        .Build();
+
 #pragma warning disable CS0612
     private readonly MinioContainer minio = new MinioBuilder("minio/minio:latest")
         .WithUsername(MinioUser)
@@ -55,34 +58,34 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     private WebApplication application = null!;
     private Uri baseAddress = null!;
     private string connectionString = string.Empty;
+    private string hostConnectionString = string.Empty;
+    private string seedConnectionString = string.Empty;
     private string minioEndpoint = string.Empty;
 
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await Task.WhenAll(postgres.StartAsync(cancellationToken), minio.StartAsync(cancellationToken));
+        await Task.WhenAll(
+            postgres.StartAsync(cancellationToken),
+            postgresSeed.StartAsync(cancellationToken),
+            minio.StartAsync(cancellationToken));
 
-        // Pooling=false forces a physical connection per context, so the
-        // seed context's Npgsql connection is fully closed before the host's
-        // DI scope picks one up. Without this, Npgsql hands the same
-        // physical connection back from the pool and throws
-        // "A command is already in progress" on the host's first query.
-        // NOTE: Even with Pooling=false, the test still fails on the
-        // first run because the seed's SaveChangesAsync transaction
-        // leaves the Npgsql backend connection in a "command in progress"
-        // state that lingers past the DbContext dispose boundary on this
-        // Testcontainers build. The test is documented as flaky-pending;
-        // a follow-up PR will move the host onto a second Testcontainers
-        // postgres instance so seed + host have separate physical databases.
-        connectionString = postgres.GetConnectionString() + ";Pooling=false";
+        connectionString = postgres.GetConnectionString() + ";Application Name=host;Pooling=false";
+        hostConnectionString = connectionString;
+        seedConnectionString = postgresSeed.GetConnectionString() + ";Application Name=seed;Pooling=false";
         minioEndpoint = minio.GetConnectionString();
 
         // Migrate every module context the host composes.
-        await MigrateAsync<OrchestrationDbContext>(OrchestrationDbContext.ApplyOptions, cancellationToken);
-        await MigrateAsync<IdentityDbContext>(IdentityDbContext.ApplyOptions, cancellationToken);
-        await MigrateAsync<ProjectsDbContext>(ProjectsDbContext.ApplyOptions, cancellationToken);
-        await MigrateAsync<ArtifactsDbContext>(ArtifactsDbContext.ApplyOptions, cancellationToken);
+        await MigrateAsync<OrchestrationDbContext>(OrchestrationDbContext.ApplyOptions, connectionString, cancellationToken);
+        await MigrateAsync<IdentityDbContext>(IdentityDbContext.ApplyOptions, connectionString, cancellationToken);
+        await MigrateAsync<ProjectsDbContext>(ProjectsDbContext.ApplyOptions, connectionString, cancellationToken);
+        await MigrateAsync<ArtifactsDbContext>(ArtifactsDbContext.ApplyOptions, connectionString, cancellationToken);
+
+        await MigrateAsync<OrchestrationDbContext>(OrchestrationDbContext.ApplyOptions, seedConnectionString, cancellationToken);
+        await MigrateAsync<IdentityDbContext>(IdentityDbContext.ApplyOptions, seedConnectionString, cancellationToken);
+        await MigrateAsync<ProjectsDbContext>(ProjectsDbContext.ApplyOptions, seedConnectionString, cancellationToken);
+        await MigrateAsync<ArtifactsDbContext>(ArtifactsDbContext.ApplyOptions, seedConnectionString, cancellationToken);
 
         var builder = WebApplication.CreateBuilder(
             new WebApplicationOptions { ApplicationName = typeof(HostComposer).Assembly.GetName().Name });
@@ -103,9 +106,9 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         builder.Configuration["Artifacts:AutoCreateBucket"] = "true";
 
         // Program wires orchestration persistence before Compose.
-        builder.Services.AddOrchestrationPersistence(connectionString);
+        builder.Services.AddOrchestrationPersistence(hostConnectionString);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
+        application = HostComposer.Compose(builder, HostDatabase.Explicit(hostConnectionString));
         await application.StartAsync(cancellationToken);
 
         baseAddress = new Uri(
@@ -119,7 +122,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await application.DisposeAsync();
-        await Task.WhenAll(postgres.DisposeAsync().AsTask(), minio.DisposeAsync().AsTask());
+        await Task.WhenAll(postgres.DisposeAsync().AsTask(), postgresSeed.DisposeAsync().AsTask(), minio.DisposeAsync().AsTask());
     }
 
     [Fact(DisplayName = "Given a terminal run, when the packager polls, then the bundle appears in MinIO and the API returns the pointers")]
@@ -133,26 +136,12 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         // it through Running then Succeeded.
         var (projectId, runId) = await SeedTerminalSucceededRunAsync(cancellationToken);
 
-        // Force the host packager to run one cycle immediately so the
-        // test does not depend on the 10-second poll timer. Yield once so
-        // the seed context (await using above) has fully released the
-        // pooled Npgsql connection before the host's DbContext picks it up;
-        // without this, Npgsql throws "A command is already in progress"
-        // when the host tries to query concurrently with the still-disposing
-        // test context.
-        await Task.Yield();
         await using var scope = application.Services.CreateAsyncScope();
         var hostDriver = scope.ServiceProvider
             .GetServices<IHostedService>()
             .OfType<RunArtifactPackagerHostService>()
             .Single();
         await hostDriver.PollOnceAsync(cancellationToken);
-
-        // Yield so the host driver's scope is disposed before the
-        // controller's scope opens a fresh Npgsql connection from the
-        // pool (which may be the same physical one the driver just
-        // returned).
-        await Task.Yield();
 
         // Log in as the bootstrap admin and call the artifacts endpoint.
         using var client = await CreateAdminClientAsync();
@@ -173,7 +162,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
 
         var allPointers = page.Items;
         allPointers.ShouldAllBe(static p => !string.IsNullOrWhiteSpace(p.Name));
-        allPointers.ShouldAllBe(static p => p.Uri.Scheme == "http" || p.Uri.Scheme == "https");
+        allPointers.ShouldAllBe(static p => string.Equals(p.Uri.Scheme, "http", StringComparison.Ordinal) || string.Equals(p.Uri.Scheme, "https", StringComparison.Ordinal));
     }
 
     [Fact(DisplayName = "Given an in-flight run, when the packager polls, then the API returns no artifacts")]
@@ -220,7 +209,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     private async Task<(ProjectId ProjectId, RunId RunId)> SeedTerminalSucceededRunAsync(CancellationToken cancellationToken)
     {
         var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
+        OrchestrationDbContext.ApplyOptions(orchestrationOptions, seedConnectionString);
         await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
 
         var projectId = ProjectId.New();
@@ -278,7 +267,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     private async Task<(ProjectId ProjectId, RunId RunId)> SeedInFlightRunAsync(CancellationToken cancellationToken)
     {
         var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
+        OrchestrationDbContext.ApplyOptions(orchestrationOptions, seedConnectionString);
         await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
 
         var projectId = ProjectId.New();
@@ -305,13 +294,14 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         return client;
     }
 
-    private async Task MigrateAsync<TContext>(
+    private static async Task MigrateAsync<TContext>(
         Action<DbContextOptionsBuilder, string> applyOptions,
+        string targetConnectionString,
         CancellationToken cancellationToken)
         where TContext : DbContext
     {
         var options = new DbContextOptionsBuilder<TContext>();
-        applyOptions(options, connectionString);
+        applyOptions(options, targetConnectionString);
         var constructor = typeof(TContext).GetConstructors().OrderByDescending(static ctor => ctor.GetParameters().Length).First();
         object?[] arguments = constructor.GetParameters().Length switch
         {

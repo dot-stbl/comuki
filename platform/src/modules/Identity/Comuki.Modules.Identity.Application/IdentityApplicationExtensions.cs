@@ -49,6 +49,12 @@ public static class IdentityApplicationExtensions
         services.AddScoped<RevokeRoleHandler>();
         services.AddScoped<IssueApiKeyHandler>();
         services.AddScoped<OidcAccountLinker>();
+        services.AddSingleton<IOidcClientSecrets, OidcClientSecrets>();
+        services.AddHttpClient<IOidcDiscovery, OidcDiscoveryCache>();
+        services.AddHttpClient<IOidcTokenExchange, OidcTokenExchange>();
+        services.AddSingleton<IOidcIdTokenValidator, OidcIdTokenValidator>();
+        services.AddScoped<OidcStartHandler>();
+        services.AddScoped<OidcCallbackHandler>();
 
         services.AddScoped<IValidator<CreateUserCommand>, CreateUserValidator>();
         services.AddScoped<IValidator<LoginCommand>, LoginValidator>();

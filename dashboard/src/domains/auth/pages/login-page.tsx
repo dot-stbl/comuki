@@ -110,11 +110,12 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
     // Real flow: hand the browser to the host's OIDC start endpoint and let
     // it run the full handshake (302 → IdP → callback → cookie → 302 → /).
     // The SPA never sees the callback directly — see `oidc-start.ts` for the
-    // why-not-kubb note.
+    // why-not-kubb note. The `redirect` (URL-safe) round-trips through the
+    // IdP so the operator lands back where they were trying to go.
     if (!oidc) {
       return
     }
-    startOidcFlow(env.apiBaseUrl, oidc.id)
+    startOidcFlow(env.apiBaseUrl, oidc.id, redirect)
   }
 
   return (

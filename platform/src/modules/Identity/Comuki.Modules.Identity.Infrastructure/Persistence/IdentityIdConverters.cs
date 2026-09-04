@@ -1,4 +1,5 @@
 using Comuki.Modules.Identity.Domain.Ids;
+using Comuki.Modules.Identity.Domain.Oidc;
 using Comuki.Modules.Identity.Domain.Users;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -31,6 +32,11 @@ public static class IdentityIdConverters
     public static readonly ValueConverter<OidcLinkId, Guid> OidcLinkIdToUuid = new(
         static id => id.Value,
         static value => new OidcLinkId(value));
+
+    /// <summary><see cref="OidcStateId"/> uuid converter.</summary>
+    public static readonly ValueConverter<OidcStateId, Guid> OidcStateIdToUuid = new(
+        static id => id.Value,
+        static value => new OidcStateId(value));
 
     /// <summary>Kernel <see cref="ProjectId"/> uuid converter.</summary>
     public static readonly ValueConverter<ProjectId, Guid> ProjectIdToUuid = new(

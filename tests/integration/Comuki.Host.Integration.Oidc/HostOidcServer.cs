@@ -64,6 +64,9 @@ public sealed class HostOidcServer : IAsyncLifetime
     /// <summary>The keycloak realm authority the host is configured with.</summary>
     public string Authority { get; private set; } = string.Empty;
 
+    /// <summary>The composed host's DI container — direct resolution for non-HTTP checks (DB seed, hosted services).</summary>
+    public IServiceProvider Services => application.Services;
+
     /// <summary>Anonymous client that does NOT follow redirects — the start endpoint's 302 is the assertion target.</summary>
     public HttpClient CreateNoRedirectClient()
     {

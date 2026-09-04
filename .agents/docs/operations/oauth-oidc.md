@@ -50,6 +50,25 @@ TTL is 5 minutes; a background sweep deletes expired rows. The store
 exposes `SaveAsync`, `ConsumeAsync` (atomic delete + return), and
 `DeleteExpiredAsync`.
 
+The state table is pruned by **`OidcStateSweeper`** — an
+`IHostedService` registered by the host composition and bound from
+`Host:OidcSweep`:
+
+| Setting | Default | Notes |
+|---|---|---|
+| `Enabled` | `true` | Disable in Dev/Test to silence the loop entirely. |
+| `Interval` | `00:05:00` | Cycle period. Range `00:00:05`–`01:00:00`. |
+| `StateTtl` | `00:05:00` | Rows past `now - StateTtl` are deleted. Matches the start handler's TTL — the sweep is a no-op on fresh rows and only catches abandoned ones. |
+
+The worker opens a fresh DI scope per cycle (the store is scoped around
+the EF DbContext), invokes `IOidcStateStore.DeleteExpiredAsync`, and logs
+the deleted count at `Information`. A transient store failure
+(`DbException` / `IOException` / `TimeoutException`) is logged at
+`Warning` and the loop retries on the next interval — a flaky database
+must NOT take the host down. Operators don't have to do anything; the
+`identity.oidc_states` table stays at "one in-flight row per operator"
+under steady state.
+
 The token exchange uses **Basic auth** for the client secret — never
 the secret in the body. The PKCE verifier travels in the body as
 `code_verifier`. The token endpoint answer is parsed and the id_token

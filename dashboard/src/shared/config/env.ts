@@ -28,11 +28,23 @@ function webUrl(value: string | undefined): string | null {
 }
 
 const envSchema = z.object({
-  /** When true, domain hooks serve shared mock seeds instead of live API. */
+  /**
+   * When true, domain hooks serve shared mock seeds instead of live API.
+   *
+   * Defaults to `true` when unset or empty. Mock-first is the dashboard's
+   * baseline posture: a fresh checkout, a test run, and `bun run dev` all
+   * want seed data so screens render without the host running beside them.
+   * Real mode is opt-in — the operator sets `VITE_USE_MOCK=false` (and
+   * `VITE_API_BASE_URL=...`) to point at the host. The transform accepts
+   * the empty/undefined case as a request to mock, not as "I forgot".
+   */
   VITE_USE_MOCK: z
     .enum(["true", "false", "1", "0", ""])
     .optional()
-    .transform((value) => value === "true" || value === "1"),
+    .transform(
+      (value) =>
+        value === undefined || value === "" || value === "true" || value === "1",
+    ),
   /** Where the platform's source lives — see `REPO_URL_DEFAULT`. */
   VITE_REPO_URL: z.string().optional(),
   /**

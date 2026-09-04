@@ -48,6 +48,8 @@
     <ProjectReference Include="..\..\modules\Chat\Comuki.Modules.Chat.Infrastructure\Comuki.Modules.Chat.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Costs\Comuki.Modules.Costs.Application\Comuki.Modules.Costs.Application.csproj" />
     <ProjectReference Include="..\..\modules\Costs\Comuki.Modules.Costs.Infrastructure\Comuki.Modules.Costs.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Proxy\Comuki.Modules.Proxy.Application\Comuki.Modules.Proxy.Application.csproj" />
+    <ProjectReference Include="..\..\modules\Proxy\Comuki.Modules.Proxy.Infrastructure\Comuki.Modules.Proxy.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Application\Comuki.Modules.Intake.Application.csproj" />
     <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Infrastructure\Comuki.Modules.Intake.Infrastructure.csproj" />
@@ -70,6 +72,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Realtime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Runs" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Artifacts" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Proxy" />
   </ItemGroup>
 
   <!--

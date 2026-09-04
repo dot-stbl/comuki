@@ -20,6 +20,21 @@ public interface IUsageEventStore
         DateTimeOffset? since = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Sums cost for a project, restricted to one usage source. The proxy
+    /// pre-flight uses this to keep brain / worker spend out of its
+    /// monthly cap calculation.
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <param name="source"></param>
+    /// <param name="since"></param>
+    /// <param name="cancellationToken"></param>
+    public Task<long> SumProjectCostBySourceAsync(
+        ProjectId projectId,
+        UsageSource source,
+        DateTimeOffset? since = null,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Sums cost for a single run.</summary>
     /// <param name="runId"></param>
     /// <param name="cancellationToken"></param>

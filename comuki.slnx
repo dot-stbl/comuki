@@ -32,6 +32,9 @@
     <Project Path="platform/src/modules/Artifacts/Comuki.Modules.Artifacts.Domain/Comuki.Modules.Artifacts.Domain.csproj" />
     <Project Path="platform/src/modules/Artifacts/Comuki.Modules.Artifacts.Application/Comuki.Modules.Artifacts.Application.csproj" />
     <Project Path="platform/src/modules/Artifacts/Comuki.Modules.Artifacts.Infrastructure/Comuki.Modules.Artifacts.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Knowledge/Comuki.Modules.Knowledge.Domain/Comuki.Modules.Knowledge.Domain.csproj" />
+    <Project Path="platform/src/modules/Knowledge/Comuki.Modules.Knowledge.Application/Comuki.Modules.Knowledge.Application.csproj" />
+    <Project Path="platform/src/modules/Knowledge/Comuki.Modules.Knowledge.Infrastructure/Comuki.Modules.Knowledge.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/platform/src/engine/">
     <Project Path="platform/src/engine/Comuki.Engine.Orchestration/Comuki.Engine.Orchestration.csproj" />

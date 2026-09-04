@@ -1,6 +1,7 @@
 using Comuki.Modules.Memory.Domain.Facts.Kinds;
 using Comuki.Modules.Memory.Domain.Facts.Scopes;
 using Comuki.Modules.Memory.Domain.Facts.Sources;
+using Comuki.Modules.Memory.Domain.Knowledge;
 using Comuki.Modules.Memory.Domain.Learning;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -31,4 +32,9 @@ public static class MemoryKeyConverters
     public static readonly ValueConverter<LearningStatus, string> LearningStatusToKey = new(
         static status => LearningStatusKeys.Key(status),
         static key => LearningStatusKeys.ParseRequired(key));
+
+    /// <summary><see cref="SourceKind"/> ↔ kind key.</summary>
+    public static readonly ValueConverter<SourceKind, string> SourceKindToKey = new(
+        static kind => SourceKindKeys.Key(kind),
+        static key => SourceKindKeys.ParseRequired(key));
 }

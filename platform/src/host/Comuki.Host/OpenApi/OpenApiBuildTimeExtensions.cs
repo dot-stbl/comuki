@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.Extensions.Options;
 
 namespace Comuki.Host.OpenApi;
 
@@ -51,6 +52,19 @@ internal static class OpenApiBuildTimeExtensions
         foreach (var hostedService in hostedServices)
         {
             services.Remove(hostedService);
+        }
+
+        // Also clear ValidateOnStart registrations so data-annotation
+        // validation (e.g. required MinIO env vars on a fresh clone) does
+        // not block document capture. The default factory still returns the
+        // configured instance; we just skip the eager startup gate.
+        var validateOnStart = services
+            .Where(static descriptor => descriptor.ServiceType == typeof(IStartupValidator))
+            .ToList();
+
+        foreach (var validator in validateOnStart)
+        {
+            services.Remove(validator);
         }
 
         return services;

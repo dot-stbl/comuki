@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Identity.Infrastructure.Oidc;
+namespace Comuki.Modules.Identity.Application.Oidc;
 
 /// <summary>
 /// OIDC configuration root, bound from <c>auth:oidc</c>: a (possibly

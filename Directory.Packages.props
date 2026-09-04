@@ -29,6 +29,7 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
@@ -98,6 +99,9 @@
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="10.0.11" />
+    <!-- Manual OIDC code-flow: discovery-doc retriever + JWT validation,
+         aligned with the framework's transitive Microsoft.IdentityModel.* set. -->
+    <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.19.2" />
   </ItemGroup>
 
   <!-- Host.Brain agent loop (S5): MEAI over any OpenAI-compatible endpoint

@@ -18,7 +18,7 @@ public sealed class OidcStartHandler(
     IOidcDiscovery discovery,
     IOidcStateStore stateStore,
     IOptions<OidcOptions> options,
-    OidcClientSecrets clientSecrets,
+    IOidcClientSecrets clientSecrets,
     TimeProvider clock)
 {
     /// <summary>5 minutes — long enough for a slow IdP, short enough that a leaked state expires.</summary>

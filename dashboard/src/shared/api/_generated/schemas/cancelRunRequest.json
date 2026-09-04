@@ -1,0 +1,5 @@
+{
+  "type": "object",
+  "properties": { "reason": { "type": ["null", "string"] } },
+  "x-readme-ref-name": "CancelRunRequest"
+}

@@ -22,6 +22,12 @@ public static class ApiRoutes
     /// <summary>Run listing surface (filter/sort DSL, permission run:read).</summary>
     public const string Runs = "/api/v1/runs";
 
+    /// <summary>One run by id — operator approval (release the escalation gate).</summary>
+    public const string RunApprove = "/api/v1/runs/{runId:guid}/approve";
+
+    /// <summary>One run by id — operator cancellation (tear the run down).</summary>
+    public const string RunCancel = "/api/v1/runs/{runId:guid}/cancel";
+
     /// <summary>Base of the chat session surface (issue #5 slice B).</summary>
     public const string ChatSessions = "/api/v1/chat/sessions";
 

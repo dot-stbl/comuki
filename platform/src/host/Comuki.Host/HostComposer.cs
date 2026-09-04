@@ -14,6 +14,7 @@ using Comuki.Host.Realtime;
 using Comuki.Host.Security.Cors;
 using Comuki.Host.Security.ProductionSecrets;
 using Comuki.Host.Security.RateLimit;
+using Comuki.Host.Workers;
 using Comuki.Modules.Artifacts.Application;
 using Comuki.Modules.Artifacts.Application.Packaging;
 using Comuki.Modules.Artifacts.Infrastructure;
@@ -156,6 +157,17 @@ internal static class HostComposer
         builder.Services.AddOptions<OidcOptions>()
             .Bind(builder.Configuration.GetSection(OidcOptions.SectionName));
         builder.Services.AddScoped<ICookieSigner, CookieSignerAdapter>();
+
+        // OIDC state sweep (issue #4 tail): the start handler issues
+        // 5-minute-TTL rows; the worker prunes abandoned ones on a
+        // fixed interval so the table doesn't grow unbounded. Bound
+        // from Host:OidcSweep, defaults match the start handler's TTL.
+        builder.Services.AddOptions<OidcSweepOptions>()
+            .Bind(builder.Configuration.GetSection(OidcSweepOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder.Services.AddSingleton<OidcStateSweeper>();
+        builder.Services.AddHostedService(static serviceProvider => serviceProvider.GetRequiredService<OidcStateSweeper>());
 
         builder.Services.AddSingleton(BootstrapAdminOptions.Resolve(builder.Configuration));
         builder.Services.AddScoped<BootstrapAdminSeeder>();

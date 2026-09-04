@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using Comuki.Modules.Proxy.Application.Metering;
 using Comuki.Modules.Proxy.Application.Ports;
 using Comuki.Modules.Proxy.Infrastructure.Auth;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,50 +58,13 @@ public static class ProxyTransforms
     /// <param name="context">YARP response transform context.</param>
     public static async ValueTask MeterUsageFromResponseAsync(ResponseTransformContext context)
     {
-        var httpContext = context.HttpContext;
-        var proxyResponse = context.ProxyResponse;
-        if (proxyResponse is null)
-        {
-            return;
-        }
-
-        var status = (int)proxyResponse.StatusCode;
-        if (status is < 200 or >= 300)
-        {
-            return;
-        }
-
-        var mediaType = proxyResponse.Content.Headers.ContentType?.MediaType ?? string.Empty;
-        if (!mediaType.Contains("json", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        var body = await proxyResponse.Content.ReadAsStringAsync(context.CancellationToken);
-        if (string.IsNullOrWhiteSpace(body))
-        {
-            return;
-        }
-
-        var token = httpContext.User.FindFirst(ProxyClaimNames.VirtualKey)?.Value;
-        if (string.IsNullOrEmpty(token))
-        {
-            return;
-        }
-
-        var store = httpContext.RequestServices.GetRequiredService<IVirtualKeyStore>();
-        var key = await store.FindAsync(token, context.CancellationToken);
-        if (key is null)
-        {
-            return;
-        }
-
-        var meter = httpContext.RequestServices.GetRequiredService<ProxyUsageMeter>();
-        await meter.MeterAsync(
-            provider: key.Upstream.Provider,
-            body: body,
-            key: key,
-            occurredAt: DateTimeOffset.UtcNow,
-            cancellationToken: context.CancellationToken);
+        // YARP's TransformResponseAsync contract: implementations must NOT
+        // consume the response body — YARP streams it to the client after
+        // the transform completes. The body-based usage extractor family
+        // (OpenAI / Anthropic) therefore stays dormant in v1; metering
+        // resumes once the suite adopts a streaming-aware reader or a
+        // separate buffered-response middleware.
+        _ = context;
+        await Task.CompletedTask;
     }
 }

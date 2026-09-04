@@ -51,6 +51,8 @@
     <ProjectReference Include="..\..\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Application\Comuki.Modules.Intake.Application.csproj" />
     <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Infrastructure\Comuki.Modules.Intake.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Knowledge\Comuki.Modules.Knowledge.Application\Comuki.Modules.Knowledge.Application.csproj" />
+    <ProjectReference Include="..\..\modules\Knowledge\Comuki.Modules.Knowledge.Infrastructure\Comuki.Modules.Knowledge.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Application\Comuki.Modules.Projects.Application.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Infrastructure\Comuki.Modules.Projects.Infrastructure.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
@@ -70,6 +72,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Realtime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Runs" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Artifacts" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Knowledge" />
   </ItemGroup>
 
   <!--

@@ -1,6 +1,5 @@
 using System.Reflection;
 using Comuki.Modules.Identity.Application.Permissions;
-using Comuki.Modules.Identity.Infrastructure.Oidc;
 using Comuki.Modules.Identity.Infrastructure.Security;
 using Comuki.Modules.Identity.Infrastructure.Security.ApiKeys;
 using Comuki.Modules.Identity.Infrastructure.Security.Authorization;
@@ -12,7 +11,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 namespace Comuki.Modules.Identity.Infrastructure;
 
@@ -121,40 +119,14 @@ public static class IdentityAuthExtensions
 
     private static void AddOidcProviders(AuthenticationBuilder authentication, IConfiguration configuration)
     {
-        var oidc = configuration.GetSection(OidcOptions.SectionName).Get<OidcOptions>() ?? new OidcOptions();
+        _ = authentication;
+        _ = configuration;
 
-        foreach (var provider in oidc.Providers)
-        {
-            if (string.IsNullOrWhiteSpace(provider.Name)
-                || string.IsNullOrWhiteSpace(provider.Authority)
-                || string.IsNullOrWhiteSpace(provider.ClientId)
-                || string.IsNullOrWhiteSpace(provider.ClientSecretEnv))
-            {
-                throw new InvalidOperationException(
-                    $"oidc provider '{provider.Name}' is incomplete: name, authority, clientId and clientSecretEnv are all required");
-            }
-
-            var scheme = AuthSchemes.Oidc(provider.Name);
-
-            authentication.AddOpenIdConnect(scheme, options =>
-            {
-                options.Authority = provider.Authority;
-                options.ClientId = provider.ClientId;
-                options.ClientSecret = Environment.GetEnvironmentVariable(provider.ClientSecretEnv)
-                    ?? throw new InvalidOperationException(
-                        $"oidc provider '{provider.Name}': environment variable '{provider.ClientSecretEnv}' with the client secret is not set");
-                // null keeps the framework default (true); an explicit false
-                // admits an http:// dev authority (local containers only).
-                options.RequireHttpsMetadata = provider.RequireHttps ?? true;
-                options.ResponseType = OpenIdConnectResponseType.Code;
-                // PKCE (S256): the code flow never travels with a shared
-                // secret alone — public clients reject non-PKCE authorize
-                // requests, and confidential ones lose nothing by it.
-                options.UsePkce = true;
-                options.CallbackPath = $"/auth/oidc/{provider.Name}/callback";
-                options.SignInScheme = AuthSchemes.Cookie;
-                options.SaveTokens = false;
-            });
-        }
+        // The OIDC code-flow runs as a manual handler (OidcStartHandler /
+        // OidcCallbackHandler in Identity.Application) — discovery, PKCE,
+        // token exchange and id_token validation are owned there, not by
+        // the ASP.NET framework's OpenIdConnect scheme. Configuration
+        // is validated by OidcOptions' data annotations at startup; no
+        // scheme registration is needed here.
     }
 }

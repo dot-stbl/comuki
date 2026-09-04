@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Comuki.Modules.Identity.Infrastructure.Oidc;
+namespace Comuki.Modules.Identity.Application.Oidc;
 
 /// <summary>
 /// One configured OIDC provider. The client secret is never in the

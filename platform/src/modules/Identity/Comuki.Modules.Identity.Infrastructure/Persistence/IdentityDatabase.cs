@@ -25,4 +25,7 @@ public static class IdentityDatabase
 
     /// <summary>OIDC identity links.</summary>
     public const string OidcLinks = "oidc_links";
+
+    /// <summary>In-flight OIDC authorization states (PKCE + returnTo binding).</summary>
+    public const string OidcStates = "oidc_states";
 }

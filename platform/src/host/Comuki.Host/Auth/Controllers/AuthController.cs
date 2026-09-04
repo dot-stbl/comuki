@@ -2,16 +2,15 @@ using System.Security.Claims;
 using Comuki.Host.Auth.Models;
 using Comuki.Host.Security.RateLimit;
 using Comuki.Modules.Identity.Application.Authorization;
+using Comuki.Modules.Identity.Application.Oidc;
 using Comuki.Modules.Identity.Application.Ports;
 using Comuki.Modules.Identity.Application.Sessions;
 using Comuki.Modules.Identity.Domain.Roles;
 using Comuki.Modules.Identity.Domain.Subjects;
-using Comuki.Modules.Identity.Infrastructure.Oidc;
 using Comuki.Modules.Identity.Infrastructure.Security;
 using Comuki.Modules.Identity.Infrastructure.Security.Authorization;
 using Comuki.Modules.Identity.Infrastructure.Security.Cookies;
 using FluentValidation;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
@@ -42,6 +41,8 @@ public sealed class AuthController(
     IPermissionEvaluator permissionEvaluator,
     IRoleAssignmentStore assignments,
     IOptions<OidcOptions> oidc,
+    OidcStartHandler oidcStart,
+    OidcCallbackHandler oidcCallback,
     ILogger<AuthController> logger) : ControllerBase
 {
     /// <summary>Stable failure code of a rejected login — no reason detail that would enumerate accounts.</summary>
@@ -143,23 +144,84 @@ public sealed class AuthController(
     }
 
     /// <summary>
-    /// Starts the OIDC redirect flow for a configured provider: answers
-    /// a challenge against the provider's scheme. Unknown providers are
-    /// 404 before any redirect happens.
+    /// Starts the manual OIDC code-flow for a configured provider:
+    /// generates a PKCE pair, persists a state row carrying the verifier
+    /// + returnTo, and 302s the browser to the IdP's authorize endpoint
+    /// with all OAuth2 params. Unknown providers are 404 before any
+    /// redirect happens — the redirect URL is never built for them.
     /// </summary>
     /// <param name="provider"></param>
+    /// <param name="returnTo">Optional in-app path the operator was bounced from.</param>
+    /// <param name="cancellationToken"></param>
     [HttpGet("oidc/{provider}/start")]
     [EnableRateLimiting(RateLimitPolicies.OidcStart)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public IActionResult StartOidc(string provider)
+    public async Task<IActionResult> StartOidcAsync(
+        string provider,
+        [FromQuery] string? returnTo,
+        CancellationToken cancellationToken = default)
     {
-        return oidc.Value.Providers.Any(configured => configured.Name == provider)
-            ? Challenge(new AuthenticationProperties { RedirectUri = "/" }, AuthSchemes.Oidc(provider))
-            : AuthProblems.Problem(
+        if (!oidc.Value.Providers.Any(configured => string.Equals(configured.Name, provider, StringComparison.OrdinalIgnoreCase)))
+        {
+            return AuthProblems.Problem(
                 StatusCodes.Status404NotFound,
                 "auth.oidc_provider_not_found",
                 $"oidc provider '{provider}' is not configured");
+        }
+
+        var redirectUri = BuildCallbackUri(Request);
+
+        var result = await oidcStart.HandleAsync(
+            new OidcStartRequest(provider, redirectUri, returnTo),
+            cancellationToken);
+
+        return Redirect(result.AuthorizeUrl.ToString());
+    }
+
+    private static string BuildCallbackUri(HttpRequest request)
+    {
+        // The unified callback path is a single absolute URL the IdP is
+        // configured with — we append it to the request's host so the
+        // deployment doesn't need a separate config knob for it.
+        var path = $"/{ApiRoutes.AuthOidcRoot}/callback";
+        var baseUrl = $"{request.Scheme}://{request.Host}";
+
+        return $"{baseUrl}{path}";
+    }
+
+    /// <summary>
+    /// The unified OIDC callback: validates the state row, exchanges the
+    /// code at the IdP's token endpoint, verifies the id_token signature,
+    /// runs account linking, and signs the user in via the cookie
+    /// scheme. On any failure, redirects to <c>/login?reason=oidc-failed&amp;error=...</c>
+    /// so the SPA can show what happened without exposing internals.
+    /// </summary>
+    /// <param name="code"></param>
+    /// <param name="state"></param>
+    /// <param name="error"></param>
+    /// <param name="errorDescription"></param>
+    /// <param name="cancellationToken"></param>
+    [HttpGet("oidc/callback")]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    public async Task<IActionResult> CallbackOidcAsync(
+        [FromQuery] string? code,
+        [FromQuery] string? state,
+        [FromQuery] string? error,
+        [FromQuery(Name = "error_description")] string? errorDescription,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await oidcCallback.HandleAsync(
+            new OidcCallbackRequest(code, state, error, errorDescription),
+            cancellationToken);
+
+        if (result.Success)
+        {
+            return Redirect(result.RedirectTarget);
+        }
+
+        var query = $"reason=oidc-failed&error={Uri.EscapeDataString(result.FailureCode ?? "unknown")}";
+        return Redirect($"/login?{query}");
     }
 }
 

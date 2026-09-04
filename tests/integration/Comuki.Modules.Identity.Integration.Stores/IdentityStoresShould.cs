@@ -1,5 +1,6 @@
 using Comuki.Modules.Identity.Domain.ApiKeys;
 using Comuki.Modules.Identity.Domain.Assignments;
+using Comuki.Modules.Identity.Domain.Oidc;
 using Comuki.Modules.Identity.Domain.Roles;
 using Comuki.Modules.Identity.Domain.Scopes;
 using Comuki.Modules.Identity.Domain.Subjects;
@@ -29,6 +30,7 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     private IdentityDbContext db = null!;
     private RoleAssignmentStore assignmentStore = null!;
     private ApiKeyStore apiKeyStore = null!;
+    private OidcStateStore oidcStateStore = null!;
 
     private readonly DateTimeOffset now = new(2026, 9, 3, 12, 0, 0, TimeSpan.Zero);
 
@@ -48,6 +50,7 @@ public sealed class IdentityStoresShould : IAsyncLifetime
 
         assignmentStore = new RoleAssignmentStore(db);
         apiKeyStore = new ApiKeyStore(db);
+        oidcStateStore = new OidcStateStore(db);
     }
 
     /// <inheritdoc />
@@ -62,6 +65,8 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     {
         await db.RoleAssignments.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
         await db.ApiKeys.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+        await db.OidcLinks.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+        await db.OidcStates.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
         await db.Users.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
     }
 
@@ -220,5 +225,39 @@ public sealed class IdentityStoresShould : IAsyncLifetime
         count.ShouldBe(1);
         var stored = await db.ApiKeys.FirstAsync(TestContext.Current.CancellationToken);
         stored.LastUsedAt.ShouldBe(now);
+    }
+
+    [Fact(DisplayName = "Given OIDC states of mixed ages, when DeleteExpiredAsync runs past the cutoff, then dead rows are purged and live rows survive")]
+    public async Task OidcStateDeleteExpiredPurgesOnlyExpiredAsync()
+    {
+        await ResetAsync();
+
+        var stale = OidcState.Create(
+            "keycloak",
+            "stale-verifier",
+            "S256",
+            "https://app.example.com/api/v1/auth/oidc/callback",
+            null,
+            now,
+            TimeSpan.FromMinutes(5));
+        var fresh = OidcState.Create(
+            "keycloak",
+            "fresh-verifier",
+            "S256",
+            "https://app.example.com/api/v1/auth/oidc/callback",
+            "/runs",
+            now,
+            TimeSpan.FromMinutes(10));
+        await oidcStateStore.SaveAsync(stale, TestContext.Current.CancellationToken);
+        await oidcStateStore.SaveAsync(fresh, TestContext.Current.CancellationToken);
+
+        var cutoff = now.AddMinutes(7);
+        var purged = await oidcStateStore.DeleteExpiredAsync(cutoff, TestContext.Current.CancellationToken);
+
+        purged.ShouldBe(1);
+        (await oidcStateStore.ConsumeAsync(stale.Id, TestContext.Current.CancellationToken)).ShouldBeNull();
+        var live = await oidcStateStore.ConsumeAsync(fresh.Id, TestContext.Current.CancellationToken);
+        live.ShouldNotBeNull();
+        live.ReturnTo.ShouldBe("/runs");
     }
 }

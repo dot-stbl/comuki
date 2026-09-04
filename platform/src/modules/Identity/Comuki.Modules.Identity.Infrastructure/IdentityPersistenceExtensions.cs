@@ -27,6 +27,7 @@ public static class IdentityPersistenceExtensions
         services.AddScoped<IRoleAssignmentStore, RoleAssignmentStore>();
         services.AddScoped<IApiKeyStore, ApiKeyStore>();
         services.AddScoped<IOidcLinkStore, OidcLinkStore>();
+        services.AddScoped<IOidcStateStore, OidcStateStore>();
 
         return services;
     }

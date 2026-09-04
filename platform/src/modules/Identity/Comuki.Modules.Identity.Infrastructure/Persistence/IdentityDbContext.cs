@@ -1,5 +1,6 @@
 using Comuki.Modules.Identity.Domain.ApiKeys;
 using Comuki.Modules.Identity.Domain.Assignments;
+using Comuki.Modules.Identity.Domain.Oidc;
 using Comuki.Modules.Identity.Domain.Users;
 using Comuki.Modules.Identity.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,9 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
     /// <summary>OIDC identity links.</summary>
     public DbSet<OidcLink> OidcLinks => Set<OidcLink>();
 
+    /// <summary>In-flight OIDC authorization states.</summary>
+    public DbSet<OidcState> OidcStates => Set<OidcState>();
+
     /// <summary>
     /// Single options recipe (Npgsql + snake_case + private history
     /// table) used by the DI extension, the design-time factory and the
@@ -53,7 +57,8 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
             .ApplyConfiguration(new UserConfiguration())
             .ApplyConfiguration(new ApiKeyConfiguration())
             .ApplyConfiguration(new RoleAssignmentConfiguration())
-            .ApplyConfiguration(new OidcLinkConfiguration());
+            .ApplyConfiguration(new OidcLinkConfiguration())
+            .ApplyConfiguration(new OidcStateConfiguration());
         base.OnModelCreating(modelBuilder);
     }
 }

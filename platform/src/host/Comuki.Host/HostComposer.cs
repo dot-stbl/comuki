@@ -23,8 +23,8 @@ using Comuki.Modules.Chat.Infrastructure;
 using Comuki.Modules.Costs.Application;
 using Comuki.Modules.Costs.Infrastructure;
 using Comuki.Modules.Identity.Application;
+using Comuki.Modules.Identity.Application.Oidc;
 using Comuki.Modules.Identity.Infrastructure;
-using Comuki.Modules.Identity.Infrastructure.Oidc;
 using Comuki.Modules.Intake.Application;
 using Comuki.Modules.Intake.Application.Options;
 using Comuki.Modules.Intake.Application.Ports.Admission;
@@ -37,7 +37,6 @@ using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Telemetry.Installers;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
@@ -150,12 +149,13 @@ internal static class HostComposer
                 serviceProvider.GetRequiredService<IOptions<Engine.Compute.Options.ScaleSupervisorOptions>>()));
 
         // The /auth/oidc/{provider}/start surface reads the configured
-        // provider list for its 404s; the ticket event + callback path
-        // rewrite below turn the module's OIDC schemes into local-cookie
-        // logins through OidcAccountLinker.
+        // provider list for its 404s; OidcOptions is bound here so the
+        // manual OIDC code-flow (OidcStartHandler / OidcCallbackHandler
+        // in Identity.Application) resolves the same options instance
+        // across the controller and the handlers.
         builder.Services.AddOptions<OidcOptions>()
             .Bind(builder.Configuration.GetSection(OidcOptions.SectionName));
-        builder.Services.AddSingleton<IPostConfigureOptions<OpenIdConnectOptions>, OidcLoginPostConfigure>();
+        builder.Services.AddScoped<ICookieSigner, CookieSignerAdapter>();
 
         builder.Services.AddSingleton(BootstrapAdminOptions.Resolve(builder.Configuration));
         builder.Services.AddScoped<BootstrapAdminSeeder>();

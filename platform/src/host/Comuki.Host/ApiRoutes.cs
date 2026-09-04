@@ -80,4 +80,7 @@ public static class ApiRoutes
 
     /// <summary>Artifact bundle pointers for one run (permission run:read).</summary>
     public const string RunArtifacts = "/api/v1/projects/{projectId:guid}/runs/{runId:guid}/artifacts";
+
+    /// <summary>Knowledge ingest endpoint — operator-triggered; permission knowledge:write.</summary>
+    public const string KnowledgeIngest = "/api/v1/knowledge/ingest";
 }

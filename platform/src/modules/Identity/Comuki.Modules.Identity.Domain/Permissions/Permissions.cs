@@ -54,6 +54,9 @@ public static class Permissions
     /// <summary>Read the knowledge base.</summary>
     public static readonly PermissionKey KnowledgeRead = new("knowledge:read");
 
+    /// <summary>Write into the knowledge base (ingest, supersede sources).</summary>
+    public static readonly PermissionKey KnowledgeWrite = new("knowledge:write");
+
     /// <summary>Administer the knowledge base.</summary>
     public static readonly PermissionKey KnowledgeAdmin = new("knowledge:admin");
 

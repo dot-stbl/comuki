@@ -9,8 +9,10 @@ using Comuki.Host.ControlPlane;
 using Comuki.Host.Costs;
 using Comuki.Host.Errors;
 using Comuki.Host.Intake;
+using Comuki.Host.Knowledge;
 using Comuki.Host.Projects;
 using Comuki.Host.Realtime;
+using Comuki.Host.Runs;
 using Comuki.Host.Security.Cors;
 using Comuki.Host.Security.ProductionSecrets;
 using Comuki.Host.Security.RateLimit;
@@ -29,6 +31,8 @@ using Comuki.Modules.Intake.Application;
 using Comuki.Modules.Intake.Application.Options;
 using Comuki.Modules.Intake.Application.Ports.Admission;
 using Comuki.Modules.Intake.Infrastructure;
+using Comuki.Modules.Knowledge.Application;
+using Comuki.Modules.Knowledge.Infrastructure;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
 using Comuki.Shared.Contracts.Artifacts;
@@ -95,9 +99,9 @@ internal static class HostComposer
         builder.Services.AddSingleton<IChatToolExecutor, HostChatToolExecutor>();
         builder.Services.AddSingleton<ChatSessionResolver>();
         builder.Services.AddScoped<IRunsReader, OrchestrationRunsReader>();
-        builder.Services.AddScoped<Runs.RunsListHandler>();
-        builder.Services.AddScoped<IApproveRunPort, Runs.HostApproveRunAdapter>();
-        builder.Services.AddScoped<ICancelRunPort, Runs.HostCancelRunAdapter>();
+        builder.Services.AddScoped<RunsListHandler>();
+        builder.Services.AddScoped<IApproveRunPort, HostApproveRunAdapter>();
+        builder.Services.AddScoped<ICancelRunPort, HostCancelRunAdapter>();
         builder.Services.AddScoped<ChatRunStarter>();
         builder.Services.AddOptions<ChatWorkerDefaults>()
             .Bind(builder.Configuration.GetSection(ChatWorkerDefaults.SectionName))
@@ -140,6 +144,14 @@ internal static class HostComposer
         builder.Services.AddScoped<IRunArtifactJournalSource, OrchestrationArtifactJournalSource>();
         builder.Services.AddScoped<IRunArtifactRunSource, OrchestrationArtifactRunSource>();
         builder.Services.AddHostedService<RunArtifactPackagerHostService>();
+
+        // Knowledge module (S10 #9): ingest + search over the pgvector
+        // memory_embeddings table. The ingestor + searcher are
+        // registered through AddKnowledgeInfrastructure (which also
+        // registers the IEmbeddingClient + KnowledgeIngestBackgroundService);
+        // AddKnowledgeApplication is currently a marker extension.
+        builder.Services.AddKnowledgeApplication();
+        builder.Services.AddKnowledgeInfrastructure(builder.Configuration);
 
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).
@@ -216,6 +228,7 @@ internal static class HostComposer
         app.MapControllers();
         app.MapProjectsEndpoints();
         app.MapCostsEndpoints();
+        app.MapKnowledgeEndpoints();
         app.MapComukiRealtime();
 
         // Build-time source-generator mirrors the AddOpenApi document to

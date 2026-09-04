@@ -37,8 +37,10 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
 {
     private const string BootstrapEmail = "bootstrap@comuki.test";
     private const string BootstrapPassword = "bootstrap-pass-1";
-    private const string MinioUser = "comuki";
-    private const string MinioPassword = "comuki_dev";
+    // Non-dev-default secrets so the production-secret validator
+    // (issue #10 T11.4) passes through.
+    private const string MinioUser = "test-access-key";
+    private const string MinioPassword = "test-secret-key-with-enough-entropy";
     private const string TestBucket = "comuki-test-bundles";
 
     private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("postgres:16-alpine")
@@ -88,7 +90,14 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         await MigrateAsync<ArtifactsDbContext>(ArtifactsDbContext.ApplyOptions, seedConnectionString, cancellationToken);
 
         var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions { ApplicationName = typeof(HostComposer).Assembly.GetName().Name });
+            new WebApplicationOptions
+            {
+                ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
+                // Production env on purpose: ValidateScopes off; the
+                // production-secret validator (issue #10 T11.4) is
+                // satisfied by the non-dev-default secrets below.
+                EnvironmentName = Environments.Production,
+            });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;

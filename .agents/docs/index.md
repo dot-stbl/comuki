@@ -18,6 +18,8 @@ operational details in the same place.
 | Doc                                          | Read when |
 |----------------------------------------------|-----------|
 | [install.md](./operations/install.md)        | Deploying the migrator; setting `COMUKI_DB` / `COMUKI_MIGRATOR_DB_PASSWORD`. |
+| [runbook.md](./operations/runbook.md)        | On-call guide for self-hosted Comuki — quick start, bootstrap admin, OIDC, backup/restore, upgrade, troubleshooting (issue #10 T11.1). |
+| [backup.md](./operations/backup.md)          | Per-store backup + restore procedure — `pg_dump` per schema, `mc mirror` for MinIO, retention policy. |
 | [storage.md](./operations/storage.md)        | Postgres + MinIO + Victoria retention; per-store policies. |
 | [oauth-oidc.md](./operations/oauth-oidc.md)  | Wiring an OIDC provider; browser-driven start flow; `OidcAccountLinker`. |
 | [minio.md](./operations/minio.md)            | Run-artifact bucket topology, lifecycle policy, compose `minio-init`, host config. |

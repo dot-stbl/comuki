@@ -27,11 +27,33 @@ import { env } from "@/shared/config/env"
 /**
  * The acts this screen offers.
  *
- * The orchestrator exposes no source endpoints yet, so in mock mode these write
- * to the shared store, which the sources query reads. That matters: an
- * optimistic update alone would be undone by the refetch that follows it, and
- * the decision would look like a 200 ms animation. Outside mock mode each of
- * these throws loudly rather than pretending to have succeeded.
+ * ## Real-mode status (sources admin slice 6)
+ *
+ * Two of the seven mutations here are wired to the kubb client today:
+ * `useDisconnectSource` (DELETE `/api/v1/sources/{id}`) and
+ * `useCreateNativeTicket` (POST `/api/v1/tickets`). The other five remain
+ * mock-first with explicit `requireMock(...)` throws on the real-mode path:
+ *
+ * - `useConnectSource` — wire `POST /api/v1/sources` exists but the request
+ *   shape is `SecretReference`-style (`settingsJson` + `secretEnvRef` are
+ *   env-var NAMES), and the form holds a plaintext credential + `SourceAuth`
+ *   kind. The mismatch is tracked as issue #F8 (connect-form redesign) and
+ *   is the deferred half of the dashboard-pages-polish PR.
+ * - `useUpdateConnection` — wire `PUT /api/v1/sources/{id}` exists with
+ *   `{name, settingsJson, secretEnvRef, enabled}`, none of which overlaps
+ *   the dashboard form's `{baseUrl, account, auth}`. Field-gap, issue #F9.
+ * - `useSaveWatch` — no watch / admission-rule endpoint surfaces in the
+ *   dashboard model yet. The host's admission-rule API lives at
+ *   `/api/v1/admission-rules` but is structured around a separate
+ *   `AdmissionRuleView` (`{id, projectId, mode, filterJson, enabled}`),
+ *   not the nested `SourceConnection.watch`. Issue #F10.
+ * - `useTestSourceDraft` / `useTestConnection` — no probe endpoint on the
+ *   wire. Issues #F11 (draft probe) and #F12 (existing-connection probe).
+ *
+ * The mock store continues to be the single source of truth in mock mode, so
+ * an optimistic write sticks across refetches for the same reason it always
+ * did — and a real-mode caller of a mock-only mutation lands on the kubb
+ * client's `VITE_USE_MOCK is not set` error rather than a phantom success.
  *
  * A **test connection** is the odd one out and deliberately so: a rejected
  * credential is a *result*, not a failed request, so it resolves with
@@ -62,7 +84,15 @@ export interface TestDraftInput {
   secret: string
 }
 
-/** Try the details in the form before anything is saved. */
+/**
+ * Try the details in the form before anything is saved.
+ *
+ * Real-mode: mock-only. The probe needs to take a *draft* (not yet stored)
+ * and a plaintext credential, so it cannot share the read endpoint of
+ * `useTestConnection`; it would need either `POST /api/v1/sources/probe`
+ * taking a draft body or a `?probe` query parameter on the create endpoint.
+ * Neither exists. Issue #F11.
+ */
 export function useTestSourceDraft() {
   return useMutation<ProbeResult, Error, TestDraftInput>({
     mutationFn: async ({ draft, secret }) => {
@@ -73,7 +103,14 @@ export function useTestSourceDraft() {
   })
 }
 
-/** Try a connection that already exists, with the credential it already has. */
+/**
+ * Try a connection that already exists, with the credential it already has.
+ *
+ * Real-mode: mock-only. The probe would need either a dedicated
+ * `POST /api/v1/sources/{id}/probe` endpoint or a query parameter on the
+ * GET endpoint to ask the upstream "is the stored credential still valid?".
+ * Neither exists today. Issue #F12.
+ */
 export function useTestConnection() {
   const client = useQueryClient()
 
@@ -99,6 +136,13 @@ export function useTestConnection() {
  * It resolves with the connection it made, because the form that called it has
  * somewhere to land now: `/sources/$sourceId` is a real screen, and the id it
  * needs is the one thing only this call knows.
+ *
+ * Real-mode: mock-only. The wire `POST /api/v1/sources` body is
+ * `CreateSourceConnectionRequest` — `{projectId, provider, name, settingsJson,
+ * secretEnvRef}` — and `settingsJson` + `secretEnvRef` are env-var NAMES,
+ * not values. The dashboard's `SeedSourceDraft` carries the credential
+ * itself plus an auth kind, which would have to fold into `settingsJson`
+ * (env-var NAMES, not values) via a `SecretReference` resolver. Issue #F8.
  */
 export function useConnectSource() {
   const client = useQueryClient()
@@ -135,6 +179,12 @@ export interface UpdateConnectionInput {
  * No optimistic write. What comes back is the store's own recomputation —
  * `selfHosted` follows the kind and the instance — and inventing that answer
  * here would put a row on the screen that the refetch then contradicts.
+ *
+ * Real-mode: mock-only. The wire `PUT /api/v1/sources/{id}` body is
+ * `UpdateSourceConnectionRequest` — `{name, settingsJson, secretEnvRef,
+ * enabled}` — and the dashboard form's `{baseUrl, account, auth}` carries
+ * none of those fields. The mapping would need a `SecretReference` resolver
+ * for the credential plus a flatten step into `settingsJson`. Issue #F9.
  */
 export function useUpdateConnection() {
   const client = useQueryClient()
@@ -223,6 +273,14 @@ export interface SaveWatchInput {
   mode: AdmissionMode
 }
 
+/**
+ * Real-mode: mock-only. The dashboard models `watch` as a nested field on
+ * `SourceConnection`, but the host's admission-rule API at
+ * `/api/v1/admission-rules` is structured as a separate
+ * `AdmissionRuleView` ({id, projectId, mode, filterJson, enabled}). Wiring
+ * this needs the dashboard to read and write admission rules as a sibling
+ * collection rather than a nested attribute on the connection. Issue #F10.
+ */
 export function useSaveWatch() {
   const client = useQueryClient()
 

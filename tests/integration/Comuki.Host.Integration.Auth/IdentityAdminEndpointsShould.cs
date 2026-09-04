@@ -161,7 +161,7 @@ public sealed class IdentityAdminEndpointsShould(HostAuthServer server) : IClass
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
         var payload = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
-        var secret = payload.GetProperty("secret").GetString()!;
+        var secret = payload.GetProperty("secret").GetString();
         secret.ShouldStartWith("ck_");
         payload.GetProperty("prefix").GetString().ShouldNotBeNullOrEmpty();
     }

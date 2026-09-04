@@ -15,6 +15,7 @@ namespace Comuki.Host.Integration.Auth;
 /// API-key bearer flows resolving to the key's own subject, and the
 /// bootstrap admin's idempotence.
 /// </summary>
+[Collection(nameof(AuthIntegrationCollection))]
 public sealed class AuthEndpointsShould(HostAuthServer server) : IClassFixture<HostAuthServer>
 {
     private static async Task<string> ProblemCodeAsync(HttpResponseMessage response)

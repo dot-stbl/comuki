@@ -98,9 +98,15 @@ public sealed class HostAuthServer : IAsyncLifetime
             });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
+        builder.Logging.AddSimpleConsole(static options => options.IncludeScopes = true);
         builder.Configuration["ControlPlane:Root"] = controlPlane.Root;
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        // Lift the login bucket for the integration run — the test
+        // suite logs in (bootstrap + per-test users) more than the
+        // 10/min default. The rate-limit partition stays registered;
+        // a high value makes it effectively a no-op.
+        builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
         // Artifacts module — non-dev-default secrets so the
         // ProductionSecretValidator (issue #10 T11.4) passes through.
         builder.Configuration["Artifacts:Endpoint"] = "minio:9000";

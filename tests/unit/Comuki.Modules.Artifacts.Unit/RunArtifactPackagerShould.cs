@@ -250,6 +250,14 @@ public sealed class RunArtifactPackagerShould
     {
         var services = new ServiceCollection();
         _ = services.AddSingleton(typeof(Microsoft.Extensions.Logging.ILogger<>), typeof(NullLogger<>));
+        // RunArtifactPackagerService now depends on ISubjectScopeAccessor to
+        // declare the per-cycle AsSystem scope around the bundle phase
+        // (the per-scope refactor in PollOnceAsync moved the scope out of
+        // the discovery stream and into the per-candidate bundle scope).
+        // The test only verifies registration, not subject-scope behaviour,
+        // so the no-op stub is enough to satisfy DI.
+        _ = services.AddSingleton<Shared.Kernel.Scoping.ISubjectScopeAccessor>(
+            new Shared.Kernel.Scoping.AsyncLocalSubjectScopeAccessor());
         _ = services.AddArtifactsApplication();
 
         using var provider = services.BuildServiceProvider();

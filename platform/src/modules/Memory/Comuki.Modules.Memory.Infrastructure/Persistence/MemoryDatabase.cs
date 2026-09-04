@@ -25,4 +25,10 @@ public static class MemoryDatabase
 
     /// <summary>Learning-loop candidate queue (pending → approved | rejected).</summary>
     public const string LearningCandidates = "learning_candidates";
+
+    /// <summary>Knowledge-base source documents (corpus pointer — git | upload | url).</summary>
+    public const string SourceDocuments = "source_documents";
+
+    /// <summary>Knowledge-base embedded chunks (+ pgvector embedding column, raw-SQL managed).</summary>
+    public const string MemoryEmbeddings = "memory_embeddings";
 }

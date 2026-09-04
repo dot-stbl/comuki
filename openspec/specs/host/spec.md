@@ -351,6 +351,46 @@ non-Production environments; integration tests boot under
 - **THEN** startup throws naming `Artifacts:Minio:SecretKey` /
   `Artifacts__Minio__SecretKey` env var; no request is served
 
+### Requirement: OIDC state sweep
+
+The host SHALL register an `OidcStateSweeper` hosted service that prunes
+rows in `identity.oidc_states` past their `ExpiresAt` on a fixed
+interval. The sweep defaults to a 5-minute interval and a 5-minute TTL
+(matching the OIDC start handler's row TTL) — the documented defaults
+keep the table at ~ "one in-flight row per operator" under steady
+state. Configuration is bound from `Host:OidcSweep`:
+
+| Setting | Type | Range | Default | Notes |
+|---|---|---|---|---|
+| `Enabled` | bool | — | `true` | Disable in Dev/Test to silence the loop. |
+| `Interval` | TimeSpan | `00:00:05`–`01:00:00` | `00:05:00` | Cycle period. |
+| `StateTtl` | TimeSpan | `00:00:30`–`00:30:00` | `00:05:00` | Rows past `now - StateTtl` are deleted. |
+
+A transient store failure (DB / IO / timeout) is logged at `Warning` and
+the loop retries on the next interval — the host MUST NOT stop on sweep
+errors.
+
+#### Scenario: Sweep prunes expired rows on interval
+
+- **WHEN** the sweeper runs and the `identity.oidc_states` table holds
+  rows past `now - Host:OidcSweep:StateTtl`
+- **THEN** the rows are deleted and a structured
+  `Swept {SweptCount} expired OIDC state row(s)` log line records the
+  count
+
+#### Scenario: Sweep survives transient failures
+
+- **WHEN** `IOidcStateStore.DeleteExpiredAsync` throws
+  `TimeoutException` (or `DbException` / `IOException`)
+- **THEN** the exception is logged at `Warning` and the loop continues
+  on the next interval without taking the host down
+
+#### Scenario: Disabled flag short-circuits the loop
+
+- **WHEN** `Host:OidcSweep:Enabled = false`
+- **THEN** `OidcStateSweeper.ExecuteAsync` returns immediately without
+  invoking the store
+
 ### Requirement: Operator runbook and backup procedure
 
 The repository SHALL ship an operator-facing runbook at

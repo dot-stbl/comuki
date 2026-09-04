@@ -72,6 +72,15 @@ public static class ApiRoutes
     /// <summary>One admission rule by id.</summary>
     public const string AdmissionRule = "/api/v1/admission-rules/{ruleId:guid}";
 
+    /// <summary>Admission rule nested under a source connection (issue #40 — FE write path for the watch form).</summary>
+    public const string SourceAdmissionRule = "/api/v1/sources/{sourceId:guid}/rules/{ruleId:guid}";
+
+    /// <summary>Probe a draft source connection before save (issue #41).</summary>
+    public const string SourcesProbeDraft = "/api/v1/sources/probe";
+
+    /// <summary>Probe an existing source connection (issue #42).</summary>
+    public const string SourceProbe = "/api/v1/sources/{sourceId:guid}/probe";
+
     /// <summary>The realtime hub of runs and project attention (issue #7).</summary>
     public const string HubsRuns = "/hubs/runs";
 

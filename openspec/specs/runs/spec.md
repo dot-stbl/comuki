@@ -190,6 +190,119 @@ observed the terminal transition).
 - **WHEN** an anonymous client calls the artifacts endpoint
 - **THEN** the response is 401 `application/problem+json`
 
+### Requirement: Run approval endpoint
+
+`POST /api/v1/runs/{runId:guid}/approve` (route constant
+`ApiRoutes.RunApprove`) SHALL release a run the orchestrator escalated back
+to a human gate. The transition is `Escalated → Running` — the run keeps
+flowing through the swarm, the human's job is to unblock the gate. The
+endpoint SHALL require permission `run:read` (the same surface the rest
+of the runs UI lives behind — a dedicated `run:approve` is not required
+because the approval is a status transition, not a state-machine bypass).
+The handler SHALL append a `run.status_changed` journal event in the
+same transaction as the row update. An empty body (`ApproveRunRequest`)
+is accepted; a non-empty body is allowed but currently ignored.
+
+The endpoint SHALL answer:
+
+- `204 No Content` on success.
+- `404 Not Found` (`application/problem+json`) when no run with that id
+  exists or is out of subject scope.
+- `409 Conflict` (`application/problem+json`, code `run.terminal_state`)
+  when the run is in any status other than `Escalated` (including
+  terminal statuses `Succeeded` / `Cancelled` and in-flight statuses
+  that are not currently waiting on a human).
+
+#### Scenario: Approve an escalated run
+- **WHEN** an authenticated caller with `run:read` posts to `/approve`
+  for a run in `Escalated`
+- **THEN** the response is 204; the run's status transitions to
+  `Running`; the journal carries a `run.status_changed` entry whose
+  payload names from `Escalated` to `Running` with `actor: "operator"`
+
+#### Scenario: Approve a terminal run returns 409
+- **WHEN** an authenticated caller posts to `/approve` for a run in
+  `Succeeded` (or `Cancelled`)
+- **THEN** the response is 409 `application/problem+json` with
+  `code: run.terminal_state` and `currentStatus` naming the run's
+  status; the run's row is unchanged
+
+#### Scenario: Approve an in-flight run returns 409
+- **WHEN** an authenticated caller posts to `/approve` for a run in
+  `Queued`, `Waiting` or `Running`
+- **THEN** the response is 409 with `code: run.terminal_state` —
+  approve only releases a human gate, never re-routes an
+  in-flight run
+
+#### Scenario: Approve an unknown run returns 404
+- **WHEN** an authenticated caller posts to `/approve` for a run id
+  that does not exist
+- **THEN** the response is 404 `application/problem+json`
+
+### Requirement: Run cancellation endpoint
+
+`POST /api/v1/runs/{runId:guid}/cancel` (route constant
+`ApiRoutes.RunCancel`) SHALL tear down a run that's still in flight.
+The transition is legal from every non-terminal status (`Queued`,
+`Waiting`, `Running`, `Escalated`) into `Cancelled`; terminal runs
+(`Succeeded`, `Cancelled`) answer 409. The handler SHALL append a
+`run.status_changed` journal event in the same transaction; when the
+request body carries an optional `reason`, the entry's jsonb payload
+carries it as a `reason` field — the operator's note that survives the
+run timeline. The same `run:read` permission gates the endpoint; an
+empty body (`CancelRunRequest` with `reason: null`) is accepted.
+
+#### Scenario: Cancel an in-flight run with a reason
+- **WHEN** an authenticated caller posts to `/cancel` with
+  `{ "reason": "operator closed the run" }` for a run in `Running
+- **THEN** the response is 204; the run's status transitions to
+  `Cancelled`; the journal carries a `run.status_changed` entry whose
+  payload names from `Running` to `Cancelled` with the supplied
+  `reason` in the jsonb
+
+#### Scenario: Cancel an in-flight run without a reason
+- **WHEN** an authenticated caller posts `/cancel` with an empty body
+  for a run in `Waiting`
+- **THEN** the response is 204; the journal entry's payload does not
+  carry a `reason` field
+
+#### Scenario: Cancel a terminal run returns 409
+- **WHEN** an authenticated caller posts to `/cancel` for a run in
+  `Succeeded` (or `Cancelled`)
+- **THEN** the response is 409 `application/problem+json` with
+  `code: run.terminal_state` and `currentStatus` naming the run's
+  status
+
+#### Scenario: Cancel an unknown run returns 404
+- **WHEN** an authenticated caller posts to `/cancel` for a run id that
+  does not exist
+- **THEN** the response is 404 `application/problem+json`
+
+### Requirement: Decision journal event payload
+
+The `run.status_changed` event payload emitted by the operator decision
+endpoints SHALL carry `from`, `to`, `actor`, and an optional `reason`:
+
+- `from` / `to` — PascalCase status names.
+- `actor` — the operator verb (`"operator"` for both approve and cancel;
+  internal flows carry their own consumer name).
+- `reason` — present only when the cancel endpoint receives a non-empty
+  reason; the field is omitted (jsonb `null`) when the body had no
+  reason or the body was absent.
+
+The payload is the same `run.status_changed` shape that the engine's
+internal transitions already emit; the operator decisions extend the
+existing shape, they do not introduce a new event type.
+
+#### Scenario: Cancel payload carries the reason verbatim
+- **WHEN** the cancel endpoint receives `{ "reason": "operator closed the run" }`
+- **THEN** the journal row's payload includes the verbatim `reason`
+  string, trimmed
+
+#### Scenario: Cancel payload omits reason when body is empty
+- **WHEN** the cancel endpoint receives an empty body or `{ "reason": null }`
+- **THEN** the journal row's payload does NOT include a `reason` field
+
 ### Requirement: Webhook delivery outcome labels
 
 The intake webhook pipeline SHALL classify every delivery against a fixed

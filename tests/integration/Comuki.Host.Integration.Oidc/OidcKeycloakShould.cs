@@ -63,7 +63,7 @@ public sealed class OidcKeycloakShould(HostOidcServer server) : IClassFixture<Ho
         payload.GetProperty("token_endpoint").GetString().ShouldStartWith($"{server.Authority}/protocol/openid-connect/token");
     }
 
-    [Fact(DisplayName = "Given the configured provider, when GET /auth/oidc/keycloak/start, then 302 to keycloak authorize with the dashboard client and PKCE S256")]
+    [Fact(DisplayName = "Given the configured provider, when GET /auth/oidc/keycloak/start, then 302 to keycloak authorize with the dashboard client, PKCE S256 and the unified callback path")]
     public async Task StartRedirectsToKeycloakAuthorizeAsync()
     {
         using var client = server.CreateNoRedirectClient();
@@ -77,7 +77,22 @@ public sealed class OidcKeycloakShould(HostOidcServer server) : IClassFixture<Ho
         location.ShouldContain($"client_id={HostOidcServer.ClientId}");
         location.ShouldContain("code_challenge_method=S256");
         location.ShouldContain("code_challenge=");
-        location.ShouldContain($"redirect_uri={Uri.EscapeDataString($"{client.BaseAddress}api/v1/auth/oidc/keycloak/callback")}");
+        // The manual code-flow uses a single unified callback (no
+        // provider in the path) — IdPs register this absolute URL.
+        location.ShouldContain($"redirect_uri={Uri.EscapeDataString($"{client.BaseAddress}api/v1/auth/oidc/callback")}");
+    }
+
+    [Fact(DisplayName = "Given the configured provider, when GET /auth/oidc/keycloak/start with a returnTo query, then the authorize URL carries the state")]
+    public async Task StartPropagatesReturnToAsync()
+    {
+        using var client = server.CreateNoRedirectClient();
+
+        var response = await client.GetAsync("/api/v1/auth/oidc/keycloak/start?returnTo=%2Fruns", TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Found);
+        var location = response.Headers.Location?.ToString();
+        location.ShouldNotBeNullOrEmpty();
+        location.ShouldContain("state=");
     }
 
     [Fact(DisplayName = "Given the test user, when the password grant hits the token endpoint, then userinfo answers the subject and email claims")]

@@ -7,27 +7,16 @@ using Microsoft.IdentityModel.Tokens;
 namespace Comuki.Modules.Identity.Application.Oidc;
 
 /// <summary>
-/// Verifies the signature, issuer, audience and lifetime of an OIDC
-/// <c>id_token</c> against the discovery document's JWKS. Returns the
-/// verified claims — never the raw JWT, never a parsed-but-unsigned
-/// payload.
+/// Default <see cref="IOidcIdTokenValidator"/>: <see cref="JwtSecurityTokenHandler"/>
+/// + <see cref="TokenValidationParameters"/> (issuer, audience, lifetime,
+/// JWKS signing keys from the discovery doc). Returns the verified
+/// claims — never the raw JWT, never a parsed-but-unsigned payload.
 /// </summary>
 /// <param name="logger">Diagnostic log.</param>
-public sealed class OidcIdTokenValidator(ILogger<OidcIdTokenValidator> logger)
+public sealed class OidcIdTokenValidator(ILogger<OidcIdTokenValidator> logger) : IOidcIdTokenValidator
 {
-    /// <summary>The claim bundle the linker expects: sub + email + name.</summary>
-    public sealed record VerifiedClaims(string Subject, string Email, string? DisplayName);
-
-    /// <summary>
-    /// Validates <paramref name="idToken"/> against the IdP's keys and
-    /// returns the claims. Throws on any signature/issuer/audience/lifetime
-    /// mismatch — callers surface those as <c>oidc.id_token_invalid</c>.
-    /// </summary>
-    /// <param name="idToken"></param>
-    /// <param name="discovery"></param>
-    /// <param name="expectedAudience">The client id the token was issued for.</param>
-    /// <param name="cancellationToken"></param>
-    public VerifiedClaims Validate(
+    /// <inheritdoc />
+    public OidcVerifiedClaims Validate(
         string idToken,
         OpenIdConnectConfiguration discovery,
         string expectedAudience,
@@ -69,7 +58,7 @@ public sealed class OidcIdTokenValidator(ILogger<OidcIdTokenValidator> logger)
         return string.IsNullOrWhiteSpace(subject)
             ? throw new InvalidOperationException("oidc id_token carries no sub claim")
             : string.IsNullOrWhiteSpace(email)
-            ? throw new InvalidOperationException("oidc id_token carries no email claim")
-            : new VerifiedClaims(subject, email, name);
+                ? throw new InvalidOperationException("oidc id_token carries no email claim")
+                : new OidcVerifiedClaims(subject, email, name);
     }
 }

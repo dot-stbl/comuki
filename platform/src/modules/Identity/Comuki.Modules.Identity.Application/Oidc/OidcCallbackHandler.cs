@@ -16,8 +16,8 @@ namespace Comuki.Modules.Identity.Application.Oidc;
 /// <param name="discovery">Cached discovery doc (authorize + token + JWKS).</param>
 /// <param name="options">Configured providers list.</param>
 /// <param name="clientSecrets">Env-var lookup for the per-provider client secret.</param>
-/// <param name="tokenExchange">Form-encoded POST to the token endpoint.</param>
-/// <param name="idTokenValidator">JWKS-backed signature verification.</param>
+/// <param name="tokenExchange">Token endpoint POST (form-encoded + Basic auth).</param>
+/// <param name="idTokenValidator">JWKS-backed JWT signature verification.</param>
 /// <param name="linker">Existing account-or-link resolver.</param>
 /// <param name="signer">Cookie sign-in: <see cref="ICookieSigner"/> is host-side.</param>
 /// <param name="logger">Diagnostic log.</param>
@@ -26,8 +26,8 @@ public sealed class OidcCallbackHandler(
     IOidcDiscovery discovery,
     IOptions<OidcOptions> options,
     IOidcClientSecrets clientSecrets,
-    OidcTokenExchange tokenExchange,
-    OidcIdTokenValidator idTokenValidator,
+    IOidcTokenExchange tokenExchange,
+    IOidcIdTokenValidator idTokenValidator,
     OidcAccountLinker linker,
     ICookieSigner signer,
     ILogger<OidcCallbackHandler> logger)
@@ -99,7 +99,7 @@ public sealed class OidcCallbackHandler(
 
         var secret = await clientSecrets.GetAsync(provider.Name, cancellationToken);
 
-        OidcTokenExchange.TokenResponse token;
+        OidcTokenResponse token;
         try
         {
             token = await tokenExchange.ExchangeAsync(
@@ -120,7 +120,7 @@ public sealed class OidcCallbackHandler(
                 FailureCode: "oidc.token_exchange_failed");
         }
 
-        OidcIdTokenValidator.VerifiedClaims claims;
+        OidcVerifiedClaims claims;
         try
         {
             claims = idTokenValidator.Validate(token.IdToken, discoveryDoc, provider.ClientId, cancellationToken);

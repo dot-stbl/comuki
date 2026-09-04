@@ -1,6 +1,7 @@
-using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Comuki.Modules.Identity.Application.Oidc;
 
@@ -12,6 +13,14 @@ namespace Comuki.Modules.Identity.Application.Oidc;
 /// same one the framework's OpenIdConnect handler reads). Short TTL —
 /// token endpoint rotations land without a restart but a hot login
 /// flow doesn't refetch the well-known per request.
+/// <para>
+/// Keycloak 26+ emits fields like <c>frontchannel_logout_session_supported</c>
+/// as <c>bool</c> while Microsoft's <see cref="OpenIdConnectConfiguration"/>
+/// expects them as <c>string</c>; strict STJ deserialization of the
+/// framework type rejects the doc. We hand-roll the four endpoints we
+/// use (issuer, authorize, token, jwks_uri) and only populate the JWKS
+/// signing keys — the rest of the doc is not consulted downstream.
+/// </para>
 /// </summary>
 /// <param name="cache"></param>
 /// <param name="httpClient">Injected — uses the typed client the host registers.</param>
@@ -40,15 +49,81 @@ public sealed class OidcDiscoveryCache(IMemoryCache cache, HttpClient httpClient
         return doc;
     }
 
-    /// <summary>Public for tests — fetches the doc for a given well-known URL.</summary>
+    /// <summary>
+    /// Public for tests — fetches the doc for a given well-known URL
+    /// and maps just the four endpoints the host needs. Lenient on the
+    /// shape: only the well-known field names matter; everything else
+    /// (newer Keycloak fields, MS-typed-as-string but server-emits-bool,
+    /// etc.) is ignored.
+    /// </summary>
     /// <param name="wellKnown"></param>
     /// <param name="cancellationToken"></param>
     public async Task<OpenIdConnectConfiguration> FetchWithAuthorityAsync(string wellKnown, CancellationToken cancellationToken)
     {
-        return await httpClient
-            .GetFromJsonAsync<OpenIdConnectConfiguration>(wellKnown, cancellationToken)
-            .ConfigureAwait(false)
-            ?? throw new InvalidOperationException($"discovery document at '{wellKnown}' answered an empty body");
+        var body = await httpClient
+            .GetStringAsync(wellKnown, cancellationToken)
+            .ConfigureAwait(false);
+
+        var config = new OpenIdConnectConfiguration();
+
+        using (var doc = JsonDocument.Parse(body))
+        {
+            var root = doc.RootElement;
+
+            if (TryGetString(root, "issuer", out var issuer))
+            {
+                config.Issuer = issuer;
+            }
+
+            if (TryGetString(root, "authorization_endpoint", out var authorize))
+            {
+                config.AuthorizationEndpoint = authorize;
+            }
+
+            if (TryGetString(root, "token_endpoint", out var token))
+            {
+                config.TokenEndpoint = token;
+            }
+
+            if (TryGetString(root, "jwks_uri", out var jwksUri))
+            {
+                config.JwksUri = jwksUri;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.JwksUri))
+        {
+            var jwksBody = await httpClient
+                .GetStringAsync(config.JwksUri, cancellationToken)
+                .ConfigureAwait(false);
+
+            foreach (var key in new JsonWebKeySet(jwksBody).GetSigningKeys())
+            {
+                config.SigningKeys.Add(key);
+            }
+        }
+
+        return string.IsNullOrWhiteSpace(config.Issuer)
+            || string.IsNullOrWhiteSpace(config.AuthorizationEndpoint)
+            || string.IsNullOrWhiteSpace(config.TokenEndpoint)
+            ? throw new InvalidOperationException(
+                $"discovery document at '{wellKnown}' is missing required fields "
+                + "(issuer, authorization_endpoint, token_endpoint)")
+            : config;
+    }
+
+    private static bool TryGetString(JsonElement root, string propertyName, out string value)
+    {
+        if (root.ValueKind == JsonValueKind.Object
+            && root.TryGetProperty(propertyName, out var property)
+            && property.ValueKind == JsonValueKind.String)
+        {
+            value = property.GetString()!;
+            return true;
+        }
+
+        value = string.Empty;
+        return false;
     }
 
     private static string BuildWellKnown(string authority)

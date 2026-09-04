@@ -11,17 +11,24 @@ namespace Comuki.Host.Intake.Controllers;
 /// <summary>
 /// Source connection CRUD: the tracker bindings with their webhook
 /// routing keys and env-ref secrets. Reads demand <c>intake:read</c>;
-/// writes demand <c>source:write</c>.
+/// writes demand <c>source:write</c>. The probe endpoints (#41, #42)
+/// share the same prefix and answer a stable shape regardless of the
+/// upstream's success / failure — a rejected credential is a result,
+/// not a 5xx.
 /// </summary>
 /// <param name="connections"></param>
+/// <param name="rules"></param>
+/// <param name="probe"></param>
 [ApiController]
-[Route(ApiRoutes.Sources)]
-public sealed class SourcesController(SourceConnectionService connections) : ControllerBase
+public sealed class SourcesController(
+    SourceConnectionService connections,
+    AdmissionRuleService rules,
+    SourceProbeService probe) : ControllerBase
 {
     /// <summary>Lists connections, optionally per project.</summary>
     /// <param name="projectId">Optional project filter.</param>
     /// <param name="cancellationToken"></param>
-    [HttpGet]
+    [HttpGet(ApiRoutes.Sources)]
     [RequiresPermission("intake:read")]
     [ProducesResponseType<IReadOnlyList<SourceConnectionView>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<SourceConnectionView>>> ListAsync(
@@ -36,7 +43,7 @@ public sealed class SourcesController(SourceConnectionService connections) : Con
     /// <summary>Creates a connection; the view carries the webhook path to configure in the tracker.</summary>
     /// <param name="request"></param>
     /// <param name="cancellationToken"></param>
-    [HttpPost]
+    [HttpPost(ApiRoutes.Sources)]
     [RequiresPermission("source:write")]
     [ProducesResponseType<SourceConnectionView>(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -60,7 +67,7 @@ public sealed class SourcesController(SourceConnectionService connections) : Con
     /// <summary>Reads one connection.</summary>
     /// <param name="sourceId"></param>
     /// <param name="cancellationToken"></param>
-    [HttpGet("{sourceId:guid}")]
+    [HttpGet(ApiRoutes.Source)]
     [RequiresPermission("intake:read")]
     [ProducesResponseType<SourceConnectionView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -74,7 +81,7 @@ public sealed class SourcesController(SourceConnectionService connections) : Con
     /// <param name="sourceId"></param>
     /// <param name="request"></param>
     /// <param name="cancellationToken"></param>
-    [HttpPut("{sourceId:guid}")]
+    [HttpPut(ApiRoutes.Source)]
     [RequiresPermission("source:write")]
     [ProducesResponseType<SourceConnectionView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -93,12 +100,88 @@ public sealed class SourcesController(SourceConnectionService connections) : Con
     /// <summary>Deletes a connection (idempotent).</summary>
     /// <param name="sourceId"></param>
     /// <param name="cancellationToken"></param>
-    [HttpDelete("{sourceId:guid}")]
+    [HttpDelete(ApiRoutes.Source)]
     [RequiresPermission("source:write")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteAsync(Guid sourceId, CancellationToken cancellationToken = default)
     {
         await connections.DeleteAsync(new SourceConnectionId(sourceId), cancellationToken);
         return NoContent();
+    }
+
+    /// <summary>Probes a draft source connection before save (issue #41).</summary>
+    /// <param name="request"></param>
+    /// <param name="cancellationToken"></param>
+    [HttpPost(ApiRoutes.SourcesProbeDraft)]
+    [RequiresPermission("source:write")]
+    [ProducesResponseType<SourceProbeResult>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<SourceProbeResult>> ProbeDraftAsync(
+        [FromBody] ProbeSourceDraftRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await probe.ProbeDraftAsync(
+            request.Provider,
+            request.SettingsJson,
+            request.SecretEnvRef,
+            cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>Probes an existing source connection (issue #42).</summary>
+    /// <param name="sourceId"></param>
+    /// <param name="cancellationToken"></param>
+    [HttpPost(ApiRoutes.SourceProbe)]
+    [RequiresPermission("source:write")]
+    [ProducesResponseType<SourceProbeResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SourceProbeResult>> ProbeConnectionAsync(
+        Guid sourceId,
+        CancellationToken cancellationToken = default)
+    {
+        var connection = await connections.GetAsync(new SourceConnectionId(sourceId), cancellationToken);
+
+        // The view's stored shape carries the persisted credentials; the
+        // probe service resolves the secret through ISecretResolver at
+        // call time so the operator never sees the resolved value.
+        var result = await probe.ProbeDraftAsync(
+            connection.Provider,
+            connection.SettingsJson,
+            connection.SecretEnvRef,
+            cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Partial update of an admission rule nested under a source connection
+    /// (issue #40). Wire-compatible with the sibling
+    /// <c>PUT /api/v1/admission-rules/{ruleId}</c> — the source id is
+    /// accepted in the route for the FE's nested form, but the rule row
+    /// lives in its own table and is matched by id alone.
+    /// </summary>
+    /// <param name="sourceId">Source connection id (route context, not used to filter the rule lookup).</param>
+    /// <param name="ruleId">The admission rule id.</param>
+    /// <param name="request"></param>
+    /// <param name="cancellationToken"></param>
+    [HttpPut(ApiRoutes.SourceAdmissionRule)]
+    [RequiresPermission("source:write")]
+    [ProducesResponseType<AdmissionRuleView>(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public Task<ActionResult> UpdateRuleUnderSourceAsync(
+        Guid sourceId,
+        Guid ruleId,
+        UpdateAdmissionRuleRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        _ = sourceId;
+
+        return IntakeEndpointRunner.ExecuteAsync(async () =>
+            Ok(await rules.UpdateAsync(
+                new AdmissionRuleId(ruleId),
+                request.Mode,
+                request.FilterJson,
+                request.Enabled,
+                cancellationToken)));
     }
 }

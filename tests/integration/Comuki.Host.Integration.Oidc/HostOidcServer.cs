@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -124,7 +125,16 @@ public sealed class HostOidcServer : IAsyncLifetime
         Environment.SetEnvironmentVariable(ClientSecretEnv, "test-client-secret");
 
         var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions { ApplicationName = typeof(HostComposer).Assembly.GetName().Name });
+            new WebApplicationOptions
+            {
+                ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
+                // Production env on purpose: Development turns on
+                // ValidateScopes and the intake installers currently
+                // register handlers as singletons over a scoped DbContext.
+                // ProductionSecretValidator is satisfied with the
+                // non-dev-default secrets below.
+                EnvironmentName = Environments.Production,
+            });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
         builder.Configuration["auth:bootstrap:adminEmail"] = "bootstrap@comuki.test";
@@ -134,12 +144,14 @@ public sealed class HostOidcServer : IAsyncLifetime
         builder.Configuration["auth:oidc:providers:0:ClientId"] = ClientId;
         builder.Configuration["auth:oidc:providers:0:ClientSecretEnv"] = ClientSecretEnv;
         builder.Configuration["auth:oidc:providers:0:RequireHttps"] = "false";
-        // Artifacts module dev defaults — the OIDC integration suite
-        // does not boot a MinIO Testcontainer; the host still validates
-        // the options so we satisfy the contract with throwaway values.
+        // Artifacts module — non-dev-default secrets so the production-secret
+        // validator (issue #10 T11.4) passes through. The OIDC integration
+        // suite does not boot a MinIO Testcontainer; the host still
+        // validates the options, so we satisfy the contract with non-dev
+        // throwaway values.
         builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
-        builder.Configuration["Artifacts:AccessKey"] = "comuki";
-        builder.Configuration["Artifacts:SecretKey"] = "comuki_dev";
+        builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
+        builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
         builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
 
         // The .NET 10 handler opportunistically switches to Pushed

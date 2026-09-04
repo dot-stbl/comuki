@@ -11,6 +11,9 @@ using Comuki.Host.Errors;
 using Comuki.Host.Intake;
 using Comuki.Host.Projects;
 using Comuki.Host.Realtime;
+using Comuki.Host.Security.Cors;
+using Comuki.Host.Security.ProductionSecrets;
+using Comuki.Host.Security.RateLimit;
 using Comuki.Modules.Artifacts.Application;
 using Comuki.Modules.Artifacts.Application.Packaging;
 using Comuki.Modules.Artifacts.Infrastructure;
@@ -162,6 +165,14 @@ internal static class HostComposer
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ProviderExceptionHandler>();
 
+        // Security pass (issue #10 T11.4): CORS allow-list for the
+        // dashboard SPA + per-endpoint rate-limit partitions. Both are
+        // wired before MapControllers so the named policies are visible
+        // to the controller attributes; the production-secret validator
+        // runs after Build() so IOptions bindings are materialised.
+        builder.Services.AddComukiCors(builder.Configuration, builder.Environment);
+        builder.Services.AddComukiRateLimit(builder.Configuration);
+
         // OpenAPI document emission (issue #29): AddOpenApi registers the
         // document in DI under the default name "v1"; MapOpenApi() at the
         // bottom of this method serves it at /openapi/v1.json for tools,
@@ -188,9 +199,17 @@ internal static class HostComposer
 
         HostDatabase.WarnLegacyAlias(database, app.Logger);
 
+        // Production-secret gate (issue #10 T11.4): runs after the
+        // service provider materialises the bound IOptions; throws in
+        // Production when MinIO / bootstrap-admin still carry dev
+        // defaults.
+        ProductionSecretValidator.Validate(app.Services);
+
         app.UseExceptionHandler();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseCors(CorsPolicyNames.Dashboard);
+        app.UseRateLimiter();
         app.UseMiddleware<SubjectScopeMiddleware>();
 
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));

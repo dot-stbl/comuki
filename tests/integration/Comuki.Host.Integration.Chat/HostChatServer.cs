@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Testcontainers.PostgreSql;
@@ -84,16 +85,24 @@ public sealed class HostChatServer : IAsyncLifetime
         controlPlane.WriteChatCommand();
 
         var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions { ApplicationName = typeof(HostComposer).Assembly.GetName().Name });
+            new WebApplicationOptions
+            {
+                ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
+                // Production env on purpose: ValidateScopes off; production-secret
+                // validator (issue #10 T11.4) satisfied by non-dev-default secrets.
+                EnvironmentName = Environments.Production,
+            });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
         builder.Configuration["ControlPlane:Root"] = controlPlane.Root;
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
-        // Artifacts module dev defaults — see HostIntakeServer comment.
+        // Artifacts module — non-dev-default secrets so the production-secret
+        // validator (issue #10 T11.4) passes through. See HostIntakeServer
+        // for the rationale.
         builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
-        builder.Configuration["Artifacts:AccessKey"] = "comuki";
-        builder.Configuration["Artifacts:SecretKey"] = "comuki_dev";
+        builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
+        builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
         builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
 
         // Program wires orchestration persistence before Compose (the worker

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Comuki.Host.Auth.Models;
+using Comuki.Host.Security.RateLimit;
 using Comuki.Modules.Identity.Application.Authorization;
 using Comuki.Modules.Identity.Application.Ports;
 using Comuki.Modules.Identity.Application.Sessions;
@@ -12,6 +13,7 @@ using Comuki.Modules.Identity.Infrastructure.Security.Cookies;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Host.Auth.Controllers;
@@ -54,6 +56,7 @@ public sealed class AuthController(
     /// <param name="request"></param>
     /// <param name="cancellationToken"></param>
     [HttpPost("login")]
+    [EnableRateLimiting(RateLimitPolicies.Login)]
     [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> LoginAsync(
@@ -146,6 +149,7 @@ public sealed class AuthController(
     /// </summary>
     /// <param name="provider"></param>
     [HttpGet("oidc/{provider}/start")]
+    [EnableRateLimiting(RateLimitPolicies.OidcStart)]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public IActionResult StartOidc(string provider)

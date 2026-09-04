@@ -1,10 +1,12 @@
 using Comuki.Host.Runs.Models;
+using Comuki.Host.Security.RateLimit;
 using Comuki.Modules.Identity.Application.Permissions;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Filtering.Parser;
 using Comuki.Shared.Filtering.Ports;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Comuki.Host.Runs.Controllers;
 
@@ -52,6 +54,7 @@ public sealed class RunsController(
     /// <param name="runId">Run to approve.</param>
     /// <param name="cancellationToken"></param>
     [HttpPost("{runId:guid}/approve")]
+    [EnableRateLimiting(RateLimitPolicies.RunDecision)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -75,6 +78,7 @@ public sealed class RunsController(
     /// <param name="request">Cancel body — carries optional <c>reason</c>.</param>
     /// <param name="cancellationToken"></param>
     [HttpPost("{runId:guid}/cancel")]
+    [EnableRateLimiting(RateLimitPolicies.RunDecision)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]

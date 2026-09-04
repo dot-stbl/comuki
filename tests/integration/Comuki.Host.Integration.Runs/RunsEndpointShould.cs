@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Testcontainers.PostgreSql;
@@ -92,18 +93,26 @@ public sealed class RunsEndpointShould : IAsyncLifetime
         }
 
         var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions { ApplicationName = typeof(HostComposer).Assembly.GetName().Name });
+            new WebApplicationOptions
+            {
+                ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
+                // Production env on purpose: ValidateScopes off; production-secret
+                // validator (issue #10 T11.4) satisfied by non-dev-default secrets.
+                EnvironmentName = Environments.Production,
+            });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
         builder.Configuration["ControlPlane:Root"] = Path.GetTempPath();
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
-        // Artifacts module dev defaults — the integration suite does not
-        // boot a MinIO Testcontainer; the host still validates the
-        // options so we satisfy the contract with throwaway values.
+        // Artifacts module — non-dev-default secrets so the production-secret
+        // validator (issue #10 T11.4) passes through. The integration
+        // suite does not boot a MinIO Testcontainer; the host still
+        // validates the options so we satisfy the contract with non-dev
+        // throwaway values.
         builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
-        builder.Configuration["Artifacts:AccessKey"] = "comuki";
-        builder.Configuration["Artifacts:SecretKey"] = "comuki_dev";
+        builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
+        builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
         builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
         builder.Services.AddOrchestrationPersistence(connectionString);
 

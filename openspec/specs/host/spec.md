@@ -351,25 +351,102 @@ non-Production environments; integration tests boot under
 - **THEN** startup throws naming `Artifacts:Minio:SecretKey` /
   `Artifacts__Minio__SecretKey` env var; no request is served
 
-### Requirement: Operator runbook and backup procedure
+### Requirement: Optional OpenAI / Anthropic proxy
 
-The repository SHALL ship an operator-facing runbook at
-`.agents/docs/operations/runbook.md` covering quick start, bootstrap
-admin rotation, OIDC setup, backup / restore, upgrade, and
-troubleshooting. The companion `backup.md` SHALL describe the
-`pg_dump` (per schema) and `mc mirror` (per MinIO bucket) procedures,
-the retention policy, and the monthly verification ritual. Both
-documents are agent-facing — they answer "where do I look when paged
-at 02:00?" without re-reading the code.
+The host SHALL expose an optional YARP-backed proxy that forwards
+OpenAI- and Anthropic-compatible HTTP requests to the upstream
+provider the caller's virtual key is bound to. The proxy runs
+in-process inside the orchestrator host — no separate container.
 
-#### Scenario: A new operator follows the runbook
+Routes:
 
-- **WHEN** an operator reads `.agents/docs/operations/runbook.md` end
-  to end
-- **THEN** they can take a fresh checkout to a running, browser-
-  reachable instance in under 30 minutes; rotate the bootstrap admin
-  password; add a new OIDC provider; back up Postgres + MinIO;
-  restore after partial loss; run the migrator for a release upgrade;
-  and triage the most common failure modes (no subject scope, MinIO
-  403, dev-default secret rejection, journal event lag) without
-  re-reading source code
+| Method | Path | Upstream cluster |
+|--------|------|------------------|
+| `POST` | `/v1/chat/completions` | `openai` (configurable) |
+| `POST` | `/v1/messages` | `anthropic` (configurable) |
+| `GET`  | `/v1/models` | static catalogue from `Proxy:KnownModels` |
+
+Authentication: every proxy route SHALL require the `VirtualKey`
+authentication scheme (`Authorization: Bearer vkey_xxx`). The
+scheme authenticates the bearer against the
+`Proxy:VirtualKeys[]` catalogue (token / expiry / allowed-models),
+selects the upstream cluster the configured virtual key points at,
+rewrites the outbound `Authorization` header to the upstream API
+key the virtual key's `ApiKeyEnvRef` names, and strips the inbound
+`Host` header so the upstream sees its own host.
+
+When `Proxy:Enabled` is `false`, the proxy module SHALL register
+no routes and the VirtualKey scheme SHALL refuse every request.
+
+#### Scenario: Anonymous request is rejected
+- **WHEN** a caller POSTs `/v1/chat/completions` with no `Authorization` header
+- **THEN** the host answers `401 Unauthorized` and the upstream never sees the request
+
+#### Scenario: Unknown virtual key is rejected
+- **WHEN** a caller POSTs `/v1/chat/completions` with `Authorization: Bearer vkey_unknown`
+- **THEN** the host answers `401 Unauthorized`
+
+#### Scenario: Valid virtual key forwards to the upstream
+- **WHEN** a caller POSTs `/v1/chat/completions` with `Authorization: Bearer vkey_alpha`
+  and `vkey_alpha` is configured with `Provider = "openai"`, `BaseUrl = "https://api.openai.com"`,
+  `ApiKeyEnvRef = "OPENAI_API_KEY"`
+- **THEN** the upstream receives the request with `Authorization: Bearer ${OPENAI_API_KEY}`
+  and the upstream's response is returned to the caller unchanged
+
+#### Scenario: Expired virtual key is rejected
+- **WHEN** a caller POSTs with `Authorization: Bearer vkey_alpha` and `vkey_alpha.ExpiresAt <= now`
+- **THEN** the host answers `401 Unauthorized`
+
+#### Scenario: Model outside allow-list is rejected
+- **WHEN** a caller POSTs `/v1/chat/completions` with `Authorization: Bearer vkey_alpha`,
+  `vkey_alpha.AllowedModels = ["gpt-4o-mini"]`, and the body requests `model = "gpt-4"`
+- **THEN** the host answers `401 Unauthorized`
+
+### Requirement: Proxy monthly budget
+
+When a virtual key carries `BudgetUsd`, the proxy SHALL enforce a
+monthly cap. Before forwarding a request the host SHALL sum
+`usage_events.cost_usd_micros` where `source = 'proxy'`, `project_id`
+matches the virtual key, and `occurred_at >= start_of_calendar_month`;
+if the sum meets or exceeds the cap the host answers
+`429 Too Many Requests` with a `Retry-After` header carrying the
+seconds until the next calendar month. Non-proxy spend (brain,
+worker, system) MUST NOT influence the verdict — only `proxy`-source
+rows are summed.
+
+#### Scenario: Under-cap request is forwarded
+- **WHEN** the proxy-source spend this month is below the configured cap
+- **THEN** the request is forwarded normally and the response is returned
+
+#### Scenario: At-cap request is rejected with Retry-After
+- **WHEN** the proxy-source spend this month is at or above the configured cap
+- **THEN** the host answers `429 Too Many Requests` with `Retry-After` set
+  to the seconds until the start of the next calendar month
+
+#### Scenario: Unlimited key never blocks
+- **WHEN** the virtual key carries no `BudgetUsd`
+- **THEN** the proxy forwards every request regardless of accumulated spend
+
+### Requirement: Readiness probes
+
+`GET /health/ready` SHALL run every health check the host registered
+with the `ready` tag — `comuki.postgres` (SELECT 1 round-trip with a
+2-second timeout against the resolved connection string) and
+`comuki.proxy.keys` (Unhealthy when `Proxy:Enabled = true` but
+`Proxy:VirtualKeys` is empty; Healthy when the proxy is disabled or
+keys are present). The existing `GET /health` SHALL stay a pure
+liveness probe with no DB / proxy dependencies — what
+orchestration platforms use to decide whether to restart the pod,
+not to decide whether to gate traffic.
+
+#### Scenario: Postgres readiness is healthy
+- **WHEN** the orchestrator Postgres accepts a `SELECT 1` within 2 seconds
+- **THEN** `/health/ready` returns 200 with `comuki.postgres` reported healthy
+
+#### Scenario: Proxy-disabled readiness is healthy
+- **WHEN** the host runs with `Proxy:Enabled = false` (operators may opt out)
+- **THEN** `/health/ready` returns 200 with `comuki.proxy.keys` reported healthy
+
+#### Scenario: Proxy-enabled with empty keys is unhealthy
+- **WHEN** the host runs with `Proxy:Enabled = true` and `Proxy:VirtualKeys` is empty
+- **THEN** `/health/ready` returns 503 with `comuki.proxy.keys` reported unhealthy

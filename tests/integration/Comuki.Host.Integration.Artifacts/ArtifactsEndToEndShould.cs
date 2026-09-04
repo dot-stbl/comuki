@@ -75,7 +75,17 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
 
         connectionString = postgres.GetConnectionString() + ";Application Name=host;Pooling=false";
         hostConnectionString = connectionString;
-        seedConnectionString = postgresSeed.GetConnectionString() + ";Application Name=seed;Pooling=false";
+        // Seed writes into the host's database. The two-container split
+        // (postgres + postgresSeed) was introduced to dodge an Npgsql
+        // connection-share flake, but it also hid the seed rows from the
+        // host's discovery query — the host saw an empty orchestration
+        // schema, the poll returned no candidates, no bundle was uploaded,
+        // and the list endpoint then 500'd on BucketNotFoundException.
+        // The race fix in RunArtifactPackagerService (fresh scope per
+        // phase + per candidate) plus Pooling=false on both connection
+        // strings is enough isolation for the test to be reliable, so we
+        // point the seed at the same database the host reads from.
+        seedConnectionString = hostConnectionString;
         minioEndpoint = minio.GetConnectionString();
 
         // Migrate every module context the host composes.

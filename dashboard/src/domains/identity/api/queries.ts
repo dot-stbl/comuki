@@ -34,7 +34,7 @@ import { getApiV1AuthMe } from "@/shared/api/_generated/clients/getApiV1AuthMe"
 import { getApiV1AuthOidcProviderStart } from "@/shared/api/_generated/clients/getApiV1AuthOidcProviderStart"
 
 /**
- * Identity admin endpoints are mock-first until #F1–#F7 land.
+ * Identity admin endpoints are mock-first until #31–#37 land.
  *
  * Real mode (`VITE_USE_MOCK=false`) for the session path is wired: `me`,
  * `oidc/{provider}/start`, login, logout. The seven admin mutations on this
@@ -83,12 +83,12 @@ function snapshot(): IdentitySnapshot {
  * today. The host's identity module exposes only the session endpoints
  * (`/api/v1/auth/{login,logout,me,oidc/{provider}/start,oidc/{provider}/callback}`)
  * per `openspec/specs/identity/spec.md`; the admin endpoints are tracked as
- * follow-up issues. Mock-first is the contract until those land.
+ * follow-up issues #31–#37. Mock-first is the contract until those land.
  */
 async function loadIdentity(): Promise<IdentitySnapshot> {
   if (!env.useMock) {
     throw new Error(
-      "identity API not implemented — set VITE_USE_MOCK=true (see issues #F1–#F4)",
+      "identity API not implemented — set VITE_USE_MOCK=true (see issues #31–#37)",
     )
   }
   return snapshot()
@@ -161,8 +161,8 @@ export function useStartOidcQuery(provider: string) {
  * underlying host endpoints do not exist on the wire today — the kubb client
  * directory at `shared/api/_generated/clients/` carries nothing for
  * `users`, `grants`, `keys` or `oidc-links`. Each one is tracked as a
- * follow-up issue (#F1 invite, #F2 grant, #F3 key, #F4 oidc-link, plus
- * #F5 disable, #F6 revoke-grant, #F7 revoke-key).
+ * follow-up issue (#31 invite, #32 grant, #33 key, #34 oidc-link, plus
+ * #35 disable, #36 revoke-grant, #37 revoke-key).
  *
  * Calling any of these in real mode resolves successfully against the seed
  * store rather than throwing — the screen renders, the optimistic write
@@ -190,7 +190,7 @@ function useIdentityMutation<TInput>(
 
 /**
  * Real-mode: throws on read (no `GET /api/v1/users`); the write is also
- * mock-only — no `POST /api/v1/users`. See issue #F1.
+ * mock-only — no `POST /api/v1/users`. See issue #31.
  */
 export function useInviteUserMutation() {
   return useIdentityMutation<InviteUserInput>((input) => {
@@ -200,7 +200,7 @@ export function useInviteUserMutation() {
 
 /**
  * Real-mode: mock-only. No `DELETE /api/v1/oidc-links/{id}` (or
- * `POST /api/v1/users/{id}/oidc-link`) endpoint on the wire. See issue #F4.
+ * `POST /api/v1/users/{id}/oidc-link`) endpoint on the wire. See issue #34.
  */
 export function useLinkOidcMutation() {
   return useIdentityMutation<LinkOidcInput>((input) => {
@@ -210,7 +210,7 @@ export function useLinkOidcMutation() {
 
 /**
  * Real-mode: mock-only. The toggle would map to `PATCH /api/v1/users/{id}`
- * with `{ disabled }`, but neither endpoint exists on the wire. See issue #F5.
+ * with `{ disabled }`, but neither endpoint exists on the wire. See issue #35.
  */
 export function useSetUserDisabledMutation() {
   return useIdentityMutation<SetUserDisabledInput>((input) => {
@@ -221,7 +221,7 @@ export function useSetUserDisabledMutation() {
 /**
  * Real-mode: mock-only. No `POST /api/v1/grants` endpoint. Revocation would
  * be `POST /api/v1/grants/{id}/revoke` (timestamped, never delete) per the
- * identity spec — also missing. See issues #F2 (write) and #F6 (revoke).
+ * identity spec — also missing. See issues #32 (write) and #36 (revoke).
  */
 export function useGrantRoleMutation() {
   return useIdentityMutation<GrantRoleInput>((input) => {
@@ -229,14 +229,14 @@ export function useGrantRoleMutation() {
   })
 }
 
-/** See note on `useGrantRoleMutation`. Revoke side. Issue #F6. */
+/** See note on `useGrantRoleMutation`. Revoke side. Issue #36. */
 export function useRevokeRoleMutation() {
   return useIdentityMutation<string>((grantId) => {
     revokeSeedRole(grantId)
   })
 }
 
-/** Real-mode: mock-only. No `POST /api/v1/keys/{id}/revoke`. Issue #F7. */
+/** Real-mode: mock-only. No `POST /api/v1/keys/{id}/revoke`. Issue #37. */
 export function useRevokeApiKeyMutation() {
   return useIdentityMutation<string>((keyId) => {
     revokeSeedApiKey(keyId)
@@ -255,7 +255,7 @@ export function useRevokeApiKeyMutation() {
  *
  * Real-mode: mock-only. No `POST /api/v1/keys` endpoint; the wire shape
  * (prefix + plaintext shown once) is the dashboard's own projection and
- * would land untouched if/when the host ships the endpoint. See issue #F3.
+ * would land untouched if/when the host ships the endpoint. See issue #33.
  */
 export function useCreateApiKeyMutation() {
   const queryClient = useQueryClient()

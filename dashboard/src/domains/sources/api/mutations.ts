@@ -37,18 +37,18 @@ import { env } from "@/shared/config/env"
  * - `useConnectSource` — wire `POST /api/v1/sources` exists but the request
  *   shape is `SecretReference`-style (`settingsJson` + `secretEnvRef` are
  *   env-var NAMES), and the form holds a plaintext credential + `SourceAuth`
- *   kind. The mismatch is tracked as issue #F8 (connect-form redesign) and
+ *   kind. The mismatch is tracked as issue #38 (connect-form redesign) and
  *   is the deferred half of the dashboard-pages-polish PR.
  * - `useUpdateConnection` — wire `PUT /api/v1/sources/{id}` exists with
  *   `{name, settingsJson, secretEnvRef, enabled}`, none of which overlaps
- *   the dashboard form's `{baseUrl, account, auth}`. Field-gap, issue #F9.
+ *   the dashboard form's `{baseUrl, account, auth}`. Field-gap, issue #39.
  * - `useSaveWatch` — no watch / admission-rule endpoint surfaces in the
  *   dashboard model yet. The host's admission-rule API lives at
  *   `/api/v1/admission-rules` but is structured around a separate
  *   `AdmissionRuleView` (`{id, projectId, mode, filterJson, enabled}`),
- *   not the nested `SourceConnection.watch`. Issue #F10.
+ *   not the nested `SourceConnection.watch`. Issue #40.
  * - `useTestSourceDraft` / `useTestConnection` — no probe endpoint on the
- *   wire. Issues #F11 (draft probe) and #F12 (existing-connection probe).
+ *   wire. Issues #41 (draft probe) and #42 (existing-connection probe).
  *
  * The mock store continues to be the single source of truth in mock mode, so
  * an optimistic write sticks across refetches for the same reason it always
@@ -91,7 +91,7 @@ export interface TestDraftInput {
  * and a plaintext credential, so it cannot share the read endpoint of
  * `useTestConnection`; it would need either `POST /api/v1/sources/probe`
  * taking a draft body or a `?probe` query parameter on the create endpoint.
- * Neither exists. Issue #F11.
+ * Neither exists. Issue #41.
  */
 export function useTestSourceDraft() {
   return useMutation<ProbeResult, Error, TestDraftInput>({
@@ -109,7 +109,7 @@ export function useTestSourceDraft() {
  * Real-mode: mock-only. The probe would need either a dedicated
  * `POST /api/v1/sources/{id}/probe` endpoint or a query parameter on the
  * GET endpoint to ask the upstream "is the stored credential still valid?".
- * Neither exists today. Issue #F12.
+ * Neither exists today. Issue #42.
  */
 export function useTestConnection() {
   const client = useQueryClient()
@@ -142,7 +142,7 @@ export function useTestConnection() {
  * secretEnvRef}` — and `settingsJson` + `secretEnvRef` are env-var NAMES,
  * not values. The dashboard's `SeedSourceDraft` carries the credential
  * itself plus an auth kind, which would have to fold into `settingsJson`
- * (env-var NAMES, not values) via a `SecretReference` resolver. Issue #F8.
+ * (env-var NAMES, not values) via a `SecretReference` resolver. Issue #38.
  */
 export function useConnectSource() {
   const client = useQueryClient()
@@ -184,7 +184,7 @@ export interface UpdateConnectionInput {
  * `UpdateSourceConnectionRequest` — `{name, settingsJson, secretEnvRef,
  * enabled}` — and the dashboard form's `{baseUrl, account, auth}` carries
  * none of those fields. The mapping would need a `SecretReference` resolver
- * for the credential plus a flatten step into `settingsJson`. Issue #F9.
+ * for the credential plus a flatten step into `settingsJson`. Issue #39.
  */
 export function useUpdateConnection() {
   const client = useQueryClient()
@@ -279,7 +279,7 @@ export interface SaveWatchInput {
  * `/api/v1/admission-rules` is structured as a separate
  * `AdmissionRuleView` ({id, projectId, mode, filterJson, enabled}). Wiring
  * this needs the dashboard to read and write admission rules as a sibling
- * collection rather than a nested attribute on the connection. Issue #F10.
+ * collection rather than a nested attribute on the connection. Issue #40.
  */
 export function useSaveWatch() {
   const client = useQueryClient()

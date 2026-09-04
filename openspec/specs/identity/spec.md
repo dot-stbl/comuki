@@ -96,7 +96,7 @@ A global resource filter SHALL enforce the `RequiresPermission` attribute on eve
 
 ### Requirement: OIDC providers and account linking
 
-OIDC SHALL be opt-in per deployment via a possibly-empty provider list (`auth:oidc:providers`), each with a unique `Name`, `Authority`, `ClientId` and the NAME of the environment variable holding the client secret (secrets never live in config files; a missing secret env fails startup for that provider). The linker SHALL resolve an external identity (provider + `sub` claim + email) to a local account in priority order: an existing link wins; else a local account with the matching email is linked; else a password-less account is provisioned and linked. The `sub` and email claims are required — a ticket without them fails linking. The callback SHALL rewrite to the versioned API surface and exchange the external ticket for the local cookie grammar; permissions stay in Comuki assignments — the IdP is never the RBAC source.
+OIDC SHALL be opt-in per deployment via a possibly-empty provider list (`auth:oidc:providers`), each with a unique `Name`, `Authority`, `ClientId` and the NAME of the environment variable holding the client secret (secrets never live in config files; a missing secret env fails startup for that provider). The code-flow SHALL run as a manual handler pair (OidcStartHandler / OidcCallbackHandler) — no framework OpenIdConnect handler is involved: discovery, PKCE, token exchange and id_token verification are owned by the application. The linker SHALL resolve an external identity (provider + `sub` claim + email) to a local account in priority order: an existing link wins; else a local account with the matching email is linked; else a password-less account is provisioned and linked. The `sub` and email claims are required — a ticket without them fails linking. The callback SHALL rewrite to the versioned API surface and exchange the external ticket for the local cookie grammar; permissions stay in Comuki assignments — the IdP is never the RBAC source.
 
 #### Scenario: Email match links silently
 - **WHEN** an OIDC identity arrives whose email matches an existing local account with no prior link
@@ -105,6 +105,30 @@ OIDC SHALL be opt-in per deployment via a possibly-empty provider list (`auth:oi
 #### Scenario: Brand-new identity provisioned
 - **WHEN** no link and no matching email exist
 - **THEN** a password-less account is created, linked, and reported as created
+
+### Requirement: OIDC code-flow with PKCE + state store
+
+The OIDC code-flow SHALL be manual: the start endpoint (`GET /api/v1/auth/oidc/{provider}/start[?returnTo=...]`) SHALL issue a single-use state row (DB-backed `identity.oidc_states`, id = URL-safe UUIDv7, TTL 5 minutes) carrying the PKCE verifier and the in-app returnTo path; redirect 302 to the IdP's `authorization_endpoint` with response_type=code, scope, state, code_challenge and code_challenge_method=S256. The IdP SHALL then redirect to the unified callback path (`GET /api/v1/auth/oidc/callback`, no provider in the URL); the callback SHALL validate state via the single-use ConsumeAsync (replay → `oidc.state_mismatch`), exchange the code at the IdP's `token_endpoint` (form-encoded POST with PKCE verifier + Basic auth for the client secret), verify the id_token signature against the discovery document's JWKS (issuer + audience + lifetime), run the account linker and sign the cookie via the module's `IdentityPrincipalBuilder`. Any failure SHALL redirect to `/login?reason=oidc-failed&error=<stable-machine-code>` so the SPA can surface what happened without exposing internals.
+
+#### Scenario: Happy path signs the user in
+- **WHEN** the callback arrives with a state the store resolves, a code the IdP exchanged, and a valid id_token signature
+- **THEN** the cookie session is set and the browser is 302'd to the in-app returnTo path (or `/` when missing/unsafe)
+
+#### Scenario: Replayed state rejected
+- **WHEN** the callback arrives with a state token the store has already consumed
+- **THEN** the callback redirects to `/login?reason=oidc-failed&error=oidc.state_mismatch` without signing any cookie
+
+#### Scenario: PKCE verifier mismatch rejected
+- **WHEN** the callback arrives with a state that matches but a code the IdP rejects for PKCE verifier mismatch
+- **THEN** the callback redirects to `/login?reason=oidc-failed&error=oidc.token_exchange_failed` without signing any cookie
+
+#### Scenario: id_token signature rejected
+- **WHEN** the IdP returns an id_token whose signature does not validate against the JWKS
+- **THEN** the callback redirects to `/login?reason=oidc-failed&error=oidc.id_token_invalid` without signing any cookie
+
+#### Scenario: returnTo restricted to in-app paths
+- **WHEN** the state row carries a returnTo that is empty, off-site (`//host`), or backslash-prefixed (`/\host`)
+- **THEN** the callback redirects to `/` instead
 
 ### Requirement: Cookie sessions with tokens_version validation
 
@@ -136,4 +160,4 @@ Persistence contexts that carry project-scoped aggregates (orchestration runs to
 
 ## ADAPTER Notes
 
-Tables: `users`, `api_keys`, `role_assignments`, `oidc_links` (unique `(provider, sub)`), with a module-private migrations history (`__comuki_identity`) so multiple contexts migrate one database without colliding. The bootstrap admin (see host) writes through the same create/grant handlers.
+Tables: `users`, `api_keys`, `role_assignments`, `oidc_links` (unique `(provider, sub)`), `oidc_states` (single-use PKCE-binding rows, indexed by `expires_at`), with a module-private migrations history (`__comuki_identity`) so multiple contexts migrate one database without colliding. The bootstrap admin (see host) writes through the same create/grant handlers.

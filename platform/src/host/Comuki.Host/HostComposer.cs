@@ -10,6 +10,7 @@ using Comuki.Host.Costs;
 using Comuki.Host.Errors;
 using Comuki.Host.Intake;
 using Comuki.Host.Knowledge;
+using Comuki.Host.Mcp;
 using Comuki.Host.Projects;
 using Comuki.Host.Realtime;
 using Comuki.Host.Runs;
@@ -153,6 +154,12 @@ internal static class HostComposer
         builder.Services.AddKnowledgeApplication();
         builder.Services.AddKnowledgeInfrastructure(builder.Configuration);
 
+        // MCP server (S10 #9): JSON-RPC 2.0 over /api/v1/mcp. The
+        // dispatcher is a singleton — it carries no per-call state and
+        // the underlying handlers (IKnowledgeIngestor, IKnowledgeSearcher,
+        // RunsListHandler) are resolved per-call by the DI container.
+        builder.Services.AddSingleton<McpServer>();
+
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).
         builder.Services.AddSingleton<Engine.Compute.Ports.IProjectScaleSettings>(
@@ -229,6 +236,7 @@ internal static class HostComposer
         app.MapProjectsEndpoints();
         app.MapCostsEndpoints();
         app.MapKnowledgeEndpoints();
+        app.MapMcpEndpoints();
         app.MapComukiRealtime();
 
         // Build-time source-generator mirrors the AddOpenApi document to

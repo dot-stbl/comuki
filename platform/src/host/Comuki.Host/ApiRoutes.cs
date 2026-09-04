@@ -83,4 +83,7 @@ public static class ApiRoutes
 
     /// <summary>Knowledge ingest endpoint — operator-triggered; permission knowledge:write.</summary>
     public const string KnowledgeIngest = "/api/v1/knowledge/ingest";
+
+    /// <summary>MCP JSON-RPC 2.0 endpoint — cookie / api-key auth like the rest of the host.</summary>
+    public const string Mcp = "/api/v1/mcp";
 }

@@ -28,6 +28,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -84,16 +85,27 @@ public sealed class HostAuthServer : IAsyncLifetime
         controlPlane.WriteChatCommand();
 
         var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions { ApplicationName = typeof(HostComposer).Assembly.GetName().Name });
+            new WebApplicationOptions
+            {
+                ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
+                // Production env on purpose: Development turns on
+                // ValidateScopes and the intake installers currently
+                // register handlers as singletons over a scoped DbContext
+                // (pre-existing; HostChatServer does the same). The
+                // production-secret validator (issue #10 T11.4) is
+                // satisfied with non-dev-default secrets below.
+                EnvironmentName = Environments.Production,
+            });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
         builder.Configuration["ControlPlane:Root"] = controlPlane.Root;
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
-        // Artifacts module dev defaults — see HostIntakeServer comment.
+        // Artifacts module — non-dev-default secrets so the
+        // ProductionSecretValidator (issue #10 T11.4) passes through.
         builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
-        builder.Configuration["Artifacts:AccessKey"] = "comuki";
-        builder.Configuration["Artifacts:SecretKey"] = "comuki_dev";
+        builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
+        builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
         builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
 
         // Program wires orchestration persistence before Compose (the worker

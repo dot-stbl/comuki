@@ -222,3 +222,84 @@ the existing run-detail screen is sufficient.
   `profile = "pr-review"`
 - **THEN** the inbox lists only tickets whose work-item profile is
   `pr-review` and runs are filterable on the same axis
+
+### Requirement: Source connection schema (issues #38, #39)
+
+A `source_connections` row SHALL carry the provider name, the project
+it feeds, a free-form provider-specific `settings_json` (NEVER
+secrets — only env-var names and non-sensitive options), the env-var
+name `secret_env_ref` that holds the webhook verification secret, and
+a generated unguessable `webhook_key` (the routing segment of the
+`/api/hooks/{provider}/{key}` URL). The webhook key is generated on
+create and never rotates — it stays burned for the connection's
+lifetime so a tracker-side misconfiguration can be reproduced and
+diagnosed. REST under `/api/v1/sources` SHALL demand `intake:read`
+for reads and `source:write` for create / update / delete. The
+update body is partial — `null` fields stay.
+
+#### Scenario: Create source
+
+- **WHEN** an operator with `source:write` creates a connection
+- **THEN** the response is 201 including the webhook routing key once
+- **AND** the settings json stores the operator's payload verbatim —
+  the host never interprets or rewrites it
+
+#### Scenario: Update source (PATCH semantics)
+
+- **WHEN** an operator with `source:write` patches a connection with a
+  partial body
+- **THEN** the response is 200 with the updated view; every `null`
+  field stays, every non-null field replaces the stored value
+
+### Requirement: Admission rules as sibling rows (issue #40)
+
+Admission rules SHALL live in `admission_rules` as a sibling
+collection, NOT as a nested field on `source_connections`. The rule's
+project id is the routing key — one project, one rule (or many,
+keyed by `(project_id, mode)`). REST under `/api/v1/admission-rules`
+SHALL demand `intake:read` for reads and `source:write` for writes.
+The host SHALL also expose a sibling-of-the-source write path
+`PUT /api/v1/sources/{sourceId}/rules/{ruleId}` so the dashboard's
+nested watch form can route its writes through the same endpoint
+shape as the read path; the operation is identical to the flat
+`PUT /api/v1/admission-rules/{ruleId}`.
+
+#### Scenario: Update rule under source
+
+- **WHEN** an operator PUTs to
+  `/api/v1/sources/{sourceId}/rules/{ruleId}` with a partial body
+- **THEN** the response is 200 with the updated `AdmissionRuleView`
+- **AND** the source id is accepted for routing symmetry with the
+  dashboard's nested watch form but the lookup is by rule id alone
+
+### Requirement: Source probe — draft and stored (issues #41, #42)
+
+The host SHALL expose two probe endpoints to answer "can the host
+reach this provider with the supplied credential?":
+
+- `POST /api/v1/sources/probe` takes a draft body
+  (`{ provider, settingsJson, secretEnvRef }`) and resolves the
+  credential from the env-var reference at call time. No row is
+  persisted.
+- `POST /api/v1/sources/{id}/probe` takes an empty body, looks up
+  the stored connection, and probes with its stored credential.
+
+Both SHALL demand `source:write`. The answer SHALL always be 200
+with `{ reachable, latencyMs, suggestedId?, message }` — a rejected
+credential is a result, not a 5xx. The host SHALL respect a 5-second
+timeout; on timeout `reachable=false` with the timeout sentence.
+
+#### Scenario: Probe a draft with a missing secret
+
+- **WHEN** an operator posts to `/api/v1/sources/probe` with
+  `provider: github`, a settings json, and an env-var name that does
+  not exist
+- **THEN** the response is 200 with `reachable=false` and a sentence
+  that surfaces the credential-resolution miss
+
+#### Scenario: Probe a stored connection
+
+- **WHEN** an operator posts to `/api/v1/sources/{id}/probe`
+- **THEN** the response is 200 with `reachable`, `latencyMs`, and a
+  provider-specific status sentence based on the stored settings
+  and credential

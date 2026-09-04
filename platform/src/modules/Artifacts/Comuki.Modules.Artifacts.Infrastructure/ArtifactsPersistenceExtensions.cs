@@ -48,7 +48,15 @@ public static class ArtifactsPersistenceExtensions
             return MinioClientFactory.Create(options);
         });
 
-        services.AddSingleton<IRunArtifactStore, MinioRunArtifactStore>();
+        services.AddSingleton<MinioRunArtifactStore>();
+        services.AddSingleton<IRunArtifactStore>(sp => sp.GetRequiredService<MinioRunArtifactStore>());
+
+        // Startup hook — ensures the configured MinIO bucket exists when
+        // ArtifactsOptions.AutoCreateBucket is on. The compose minio-init
+        // job does the same in production; the in-process flag covers
+        // greenfield setups (integration tests, local dev) where the
+        // operator-side provisioning hasn't run.
+        services.AddHostedService<ArtifactBucketInitializer>();
 
         return services;
     }

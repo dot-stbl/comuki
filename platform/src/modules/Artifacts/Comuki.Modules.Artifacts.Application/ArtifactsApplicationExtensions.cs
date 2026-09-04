@@ -36,7 +36,12 @@ public static class ArtifactsApplicationExtensions
         services.TryAddSingleton<IRunArtifactStore, NullRunArtifactStore>();
         services.TryAddSingleton<IRunArtifactJournalSource, NullRunArtifactJournalSource>();
         services.TryAddSingleton<IRunArtifactRunSource, NullRunArtifactRunSource>();
-        services.AddSingleton<RunArtifactPackager>();
+        // Scoped (not Singleton) so each DI scope gets its own packager
+        // wired against a fresh IRunArtifactJournalSource / IRunArtifactBundleStore
+        // — the polling driver in RunArtifactPackagerService opens a fresh
+        // scope per candidate and that scope's packager must see its own
+        // scoped DbContexts, not a captive instance from a root scope.
+        services.AddScoped<RunArtifactPackager>();
         services.AddSingleton<RunArtifactPackagerService>();
         return services;
     }

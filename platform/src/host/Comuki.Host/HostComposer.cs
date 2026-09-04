@@ -8,6 +8,7 @@ using Comuki.Host.Chat.Tools;
 using Comuki.Host.ControlPlane;
 using Comuki.Host.Costs;
 using Comuki.Host.Errors;
+using Comuki.Host.HealthChecks;
 using Comuki.Host.Intake;
 using Comuki.Host.Projects;
 using Comuki.Host.Proxy;
@@ -41,6 +42,7 @@ using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Telemetry.Installers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Host;
@@ -204,6 +206,24 @@ internal static class HostComposer
             .AddAuthentication()
             .AddVirtualKeyAuth();
 
+        // Health probes (issue #8 cross-cutting kit): Postgres SELECT 1,
+        // proxy-key catalogue check. The Postgres connection string
+        // is read through the same database connection the host flows
+        // into every persistence layer; no second source of truth.
+        builder.Services.AddSingleton<ProxyKeysHealthCheck>();
+        var postgresConnectionString = database.ConnectionString;
+        builder.Services.AddSingleton(_ => new PostgresHealthCheck(postgresConnectionString));
+
+        builder.Services.AddHealthChecks()
+            .AddCheck<PostgresHealthCheck>(
+                ComukiHealthChecks.Names.Postgres,
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["ready"])
+            .AddCheck<ProxyKeysHealthCheck>(
+                ComukiHealthChecks.Names.ProxyKeys,
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["ready"]);
+
         // Ambient subject scope: one AsyncLocal-backed accessor for the
         // whole process — the middleware installs a scope per request, the
         // worker surfaces and hosted consumers declare AsSystem, and the
@@ -228,6 +248,10 @@ internal static class HostComposer
         app.UseMiddleware<SubjectScopeMiddleware>();
 
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));
+        app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        {
+            Predicate = static check => check.Tags.Contains("ready"),
+        });
         app.MapControllers();
         app.MapProjectsEndpoints();
         app.MapCostsEndpoints();

@@ -10,6 +10,7 @@ using Comuki.Host.Costs;
 using Comuki.Host.Errors;
 using Comuki.Host.Intake;
 using Comuki.Host.Projects;
+using Comuki.Host.Proxy;
 using Comuki.Host.Realtime;
 using Comuki.Host.Security.Cors;
 using Comuki.Host.Security.ProductionSecrets;
@@ -31,6 +32,8 @@ using Comuki.Modules.Intake.Application.Ports.Admission;
 using Comuki.Modules.Intake.Infrastructure;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
+using Comuki.Modules.Proxy.Application;
+using Comuki.Modules.Proxy.Infrastructure;
 using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
@@ -189,6 +192,18 @@ internal static class HostComposer
         // mirrors that order).
         builder.Services.AddComukiRealtime();
 
+        // Proxy module (issue #8 / S9 T9.6): optional OpenAI / Anthropic
+        // passthrough over YARP. Virtual keys live in Proxy:* configuration
+        // and authenticate via the VirtualKey scheme (Bearer vkey_xxx);
+        // chat / messages routes go through MapReverseProxy and the
+        // request transform rewrites the outbound auth header to the
+        // upstream key the virtual key references.
+        builder.Services.AddProxyApplication(builder.Configuration);
+        builder.Services.AddProxyInfrastructure();
+        builder.Services
+            .AddAuthentication()
+            .AddVirtualKeyAuth();
+
         // Ambient subject scope: one AsyncLocal-backed accessor for the
         // whole process — the middleware installs a scope per request, the
         // worker surfaces and hosted consumers declare AsSystem, and the
@@ -217,6 +232,13 @@ internal static class HostComposer
         app.MapProjectsEndpoints();
         app.MapCostsEndpoints();
         app.MapComukiRealtime();
+        app.MapProxyEndpoints();
+
+        // Reverse-proxy passthrough (issue #8): chat / messages / embeddings
+        // virtual-key auth runs in the VirtualKeyAuthenticationHandler the
+        // AddVirtualKeyAuth call above registered; YARP forwards the request
+        // body / headers and the response transform meters usage.
+        app.MapReverseProxy();
 
         // Build-time source-generator mirrors the AddOpenApi document to
         // artifacts/openapi.json (comuki.slnx root, gitignored). This

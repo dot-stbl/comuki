@@ -11,6 +11,12 @@
  *    random host. We surface the error early — when a screen is wired
  *    against real backend data, the operator must set
  *    `VITE_API_BASE_URL=http://localhost:17173` and restart the dev server.
+ *
+ *    Note: `env.useMock` defaults to `true` when `VITE_USE_MOCK` is unset
+ *    (see `shared/config/env.ts`). Mock-first callers never reach this
+ *    transport — they branch on `useMock` before invoking a generated hook.
+ *    This error fires only when someone opts into real mode
+ *    (`VITE_USE_MOCK=false`) without pointing the SPA at a backend.
  * 2. **Cookie auth.** Comuki's orchestrator authn is cookie-based
  *    (cookie session + `ck_` API key passthrough). Fetch defaults to
  *    `credentials: 'same-origin'` which LOSES the cookie on the cross-origin

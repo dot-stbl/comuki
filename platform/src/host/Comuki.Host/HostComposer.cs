@@ -199,12 +199,13 @@ internal static class HostComposer
         // and authenticate via the VirtualKey scheme (Bearer vkey_xxx);
         // chat / messages routes go through MapReverseProxy and the
         // request transform rewrites the outbound auth header to the
-        // upstream key the virtual key references.
+        // upstream key the virtual key references. AddVirtualKeyAuth is
+        // called inside AddProxyInfrastructure so the scheme is registered
+        // on the existing authentication builder — without it
+        // AddAuthentication() would wipe the Identity cookie / API-key
+        // defaults.
         builder.Services.AddProxyApplication(builder.Configuration);
         builder.Services.AddProxyInfrastructure();
-        builder.Services
-            .AddAuthentication()
-            .AddVirtualKeyAuth();
 
         // Health probes (issue #8 cross-cutting kit): Postgres SELECT 1,
         // proxy-key catalogue check. The Postgres connection string
@@ -261,8 +262,16 @@ internal static class HostComposer
         // Reverse-proxy passthrough (issue #8): chat / messages / embeddings
         // virtual-key auth runs in the VirtualKeyAuthenticationHandler the
         // AddVirtualKeyAuth call above registered; YARP forwards the request
-        // body / headers and the response transform meters usage.
-        app.MapReverseProxy();
+        // body / headers and the response transform meters usage. The
+        // AuthorizeAttribute scopes the auth + challenge to the VirtualKey
+        // scheme so a missing bearer never falls through to the Cookie
+        // redirect (RequireAuthorization's string overload is policy-named,
+        // not scheme-named — the attribute sets the scheme explicitly).
+        _ = app.MapReverseProxy()
+            .RequireAuthorization(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute
+            {
+                AuthenticationSchemes = Modules.Proxy.Infrastructure.Auth.VirtualKeyAuthenticationHandler.SchemeName,
+            });
 
         // Build-time source-generator mirrors the AddOpenApi document to
         // artifacts/openapi.json (comuki.slnx root, gitignored). This

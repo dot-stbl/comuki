@@ -1,4 +1,5 @@
 using Comuki.Modules.Proxy.Application.Options;
+using Microsoft.Extensions.Options;
 
 namespace Comuki.Modules.Proxy.Application.Metering;
 
@@ -7,8 +8,8 @@ namespace Comuki.Modules.Proxy.Application.Metering;
 /// Lookup order: explicit <see cref="ProxyOptions.Pricing"/> entry (case-
 /// insensitive), then <see cref="ProxyOptions.DefaultPricing"/>.
 /// </summary>
-/// <param name="options">Pricing configuration.</param>
-public sealed class ProxyPricingCalculator(ProxyOptions options)
+/// <param name="options">Bound pricing options.</param>
+public sealed class ProxyPricingCalculator(IOptions<ProxyOptions> options)
 {
     /// <summary>USD-micros for one call.</summary>
     /// <param name="model">Model id (case-insensitive).</param>
@@ -16,9 +17,10 @@ public sealed class ProxyPricingCalculator(ProxyOptions options)
     /// <param name="outputTokens">Completion / output tokens.</param>
     public long ComputeUsdMicros(string model, int inputTokens, int outputTokens)
     {
-        var tier = options.Pricing.TryGetValue(model, out var overrideTier)
+        var snapshot = options.Value;
+        var tier = snapshot.Pricing.TryGetValue(model, out var overrideTier)
             ? overrideTier
-            : options.DefaultPricing;
+            : snapshot.DefaultPricing;
 
         var inputUsd = inputTokens / 1_000_000m * tier.InputUsdPerMillion;
         var outputUsd = outputTokens / 1_000_000m * tier.OutputUsdPerMillion;

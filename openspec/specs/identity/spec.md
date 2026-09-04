@@ -158,6 +158,77 @@ Persistence contexts that carry project-scoped aggregates (orchestration runs to
 - **WHEN** a subject confined to project A lists runs
 - **THEN** runs of project B are absent from the result set
 
+### Requirement: Identity admin surface (issues #31-#37)
+
+The host SHALL expose the identity-admin REST surface under `/api/v1`
+for the dashboard's user / grant / key / oidc-link screens. Every
+mutation SHALL demand `identity:write`; reads are out of scope here
+(the dashboard reads them through the existing read endpoints).
+
+#### Scenario: Invite a user
+
+- **WHEN** an operator with `identity:write` posts to `/api/v1/users`
+  with `{ email, displayName?, password? }`
+- **THEN** the response is 201 with the `UserAccountView` projection;
+  when `password` is omitted the new account lands password-less and
+  waits for a bootstrap invitation link
+- **AND** the email is unique-index-enforced — a duplicate email is a
+  semantic failure surfaced as a ProblemDetails
+
+#### Scenario: Grant a role
+
+- **WHEN** an operator with `identity:write` posts to `/api/v1/grants`
+  with `{ userId, role, projectId? }`
+- **THEN** the response is 201 with the `RoleAssignmentView` projection;
+  `projectId` null means platform scope, otherwise project scope
+- **AND** the seniority guard runs with the cookie/api-key principal as
+  the granter — escalating grants fail with a ProblemDetails
+- **AND** the active-assignment duplicate index rejects a second grant
+  of the same role to the same subject at the same scope
+
+#### Scenario: Revoke a grant
+
+- **WHEN** an operator posts to `/api/v1/grants/{grantId}/revoke`
+- **THEN** the response is 200 with the revoked `RoleAssignmentView`
+  (`isActive=false`, `revokedAt` set) and the operator's evaluator
+  cache is invalidated
+- **AND** revocation is idempotent — a second revoke returns the
+  already-revoked row, not an error
+
+#### Scenario: Issue an API key
+
+- **WHEN** an operator with `identity:write` posts to `/api/v1/keys`
+  with `{ userId, label, expiresAt? }`
+- **THEN** the response is 201 with `{ keyId, prefix, secret }` — the
+  secret is the full `ck_…` token, shown exactly once
+- **AND** only the public prefix and the HMAC-SHA256(token, pepper)
+  digest are persisted; the plaintext never reaches the database
+
+#### Scenario: Revoke an API key
+
+- **WHEN** an operator posts to `/api/v1/keys/{keyId}/revoke`
+- **THEN** the response is 200 with the revoked `ApiKeyView`
+  (`isActive=false`, `revokedAt` set); revocation is a timestamp, the
+  row stays burned
+
+#### Scenario: Link an OIDC identity
+
+- **WHEN** an operator with `identity:write` posts to
+  `/api/v1/users/{userId}/oidc-link` with `{ provider, subjectId }`
+- **THEN** the response is 201 with the `OidcLinkView`
+- **AND** the unique index on `oidc_links.(provider, subject)` rejects
+  a duplicate binding as a semantic failure
+
+#### Scenario: Toggle the disabled flag
+
+- **WHEN** an operator with `identity:write` patches
+  `/api/v1/users/{userId}` with `{ disabled }`
+- **THEN** the response is 200 with the updated `UserAccountView`;
+  disabling kills every cookie session through `TokensVersion` bump
+  but leaves grants intact so a returning account returns as itself
+- **AND** the api-key handler refuses to authenticate keys whose owner
+  is disabled, so disabling also closes every outstanding key
+
 ## ADAPTER Notes
 
 Tables: `users`, `api_keys`, `role_assignments`, `oidc_links` (unique `(provider, sub)`), `oidc_states` (single-use PKCE-binding rows, indexed by `expires_at`), with a module-private migrations history (`__comuki_identity`) so multiple contexts migrate one database without colliding. The bootstrap admin (see host) writes through the same create/grant handlers.

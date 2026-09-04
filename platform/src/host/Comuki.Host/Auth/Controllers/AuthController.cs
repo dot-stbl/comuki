@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Comuki.Host.Auth.Models;
+using Comuki.Host.Auth.Security;
 using Comuki.Host.Security.RateLimit;
 using Comuki.Modules.Identity.Application.Authorization;
 using Comuki.Modules.Identity.Application.Oidc;
@@ -7,7 +8,6 @@ using Comuki.Modules.Identity.Application.Ports;
 using Comuki.Modules.Identity.Application.Sessions;
 using Comuki.Modules.Identity.Domain.Roles;
 using Comuki.Modules.Identity.Domain.Subjects;
-using Comuki.Modules.Identity.Infrastructure.Security;
 using Comuki.Modules.Identity.Infrastructure.Security.Authorization;
 using Comuki.Modules.Identity.Infrastructure.Security.Cookies;
 using FluentValidation;
@@ -222,38 +222,6 @@ public sealed class AuthController(
 
         var query = $"reason=oidc-failed&error={Uri.EscapeDataString(result.FailureCode ?? "unknown")}";
         return Redirect($"/login?{query}");
-    }
-}
-
-/// <summary>
-/// Principal → <see cref="RoleSubject"/> for the host surface: the
-/// api-key claim resolves to the key subject, otherwise the
-/// nameidentifier claim resolves to the user subject. Mirrors the
-/// resolver the Identity enforcement filter uses; kept local because
-/// the module's copy is file-private by design.
-/// </summary>
-file static class HostSubjects
-{
-    public static RoleSubject? Resolve(ClaimsPrincipal principal)
-    {
-        return OfClaim(IdentityClaimNames.ApiKeyId, SubjectType.ApiKey, principal)
-            ?? OfClaim(ClaimTypes.NameIdentifier, SubjectType.User, principal);
-    }
-
-    public static Guid? OwnerUserIdOf(ClaimsPrincipal principal)
-    {
-        return principal.FindFirst(ClaimTypes.NameIdentifier)?.Value is { Length: > 0 } value
-            && Guid.TryParse(value, out var userId)
-            ? userId
-            : null;
-    }
-
-    public static RoleSubject? OfClaim(string claimName, SubjectType type, ClaimsPrincipal principal)
-    {
-        return principal.FindFirst(claimName)?.Value is { Length: > 0 } value
-            && Guid.TryParse(value, out var id)
-            ? new RoleSubject(type, id)
-            : null;
     }
 }
 

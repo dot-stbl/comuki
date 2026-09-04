@@ -152,6 +152,7 @@ internal static class HostComposer
         // across the controller and the handlers.
         builder.Services.AddOptions<OidcOptions>()
             .Bind(builder.Configuration.GetSection(OidcOptions.SectionName));
+        builder.Services.AddScoped<ICookieSigner, CookieSignerAdapter>();
 
         builder.Services.AddSingleton(BootstrapAdminOptions.Resolve(builder.Configuration));
         builder.Services.AddScoped<BootstrapAdminSeeder>();

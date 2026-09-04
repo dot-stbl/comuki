@@ -30,6 +30,7 @@ public static class IntakeApplicationExtensions
         services.AddSingleton<InboxCatalogReader>();
         services.AddSingleton<SourceConnectionService>();
         services.AddSingleton<AdmissionRuleService>();
+        services.AddSingleton<SourceProbeService>();
         services.AddSingleton<IValidator<CreateNativeTicketCommand>, CreateNativeTicketValidator>();
         services.AddSingleton<IValidator<CreateSourceConnectionCommand>, CreateSourceConnectionValidator>();
         services.AddSingleton<IValidator<CreateAdmissionRuleCommand>, CreateAdmissionRuleValidator>();

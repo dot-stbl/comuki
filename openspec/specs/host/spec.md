@@ -254,3 +254,122 @@ The host SHALL emit an OpenAPI 3.x document at `artifacts/openapi.json` at the r
 #### Scenario: Telemetry enabled
 - **WHEN** an OTLP endpoint is configured
 - **THEN** traces and metrics for the subscribed sources/meters export to that endpoint
+
+### Requirement: CORS allow-list for the versioned API
+
+The host SHALL register a named CORS policy (`comuki.dashboard`)
+applied to every request to the versioned API surface (`/api/v1/*`).
+The policy SHALL carry `AllowCredentials = true` (cookie + API-key
+auth), the explicit `Authorization` + `Content-Type` headers, and the
+explicit allow-list of browser origins from `Host:Cors:AllowedOrigins[]`
+(or its env-var equivalents). A `Host:Cors:AllowWildcard = true` opt-in
+SHALL swap the allow-list for `*`; the host SHALL refuse to start
+when this opt-in is set under `Production` (`ASPNETCORE_ENVIRONMENT=Production`
+or `DOTNET_ENVIRONMENT=Production`) — wildcards with credentials leak
+sessions across origins.
+
+#### Scenario: Strict allow-list in Production
+
+- **WHEN** `Host:Cors:AllowedOrigins` lists one or more origins and the
+  host runs in `Production`
+- **THEN** the named policy is registered with `WithOrigins(<list>)`,
+  `WithHeaders(["Authorization","Content-Type"])`, and `AllowCredentials = true`;
+  preflight requests from any other origin are rejected by the
+  framework CORS handler before reaching a controller
+
+#### Scenario: Wildcard opt-in is dev-only
+
+- **WHEN** `Host:Cors:AllowWildcard = true` and the host runs in
+  `Production`
+- **THEN** startup throws `InvalidOperationException` naming the
+  offending configuration key; no request is served
+
+### Requirement: Per-endpoint rate limiting
+
+The host SHALL register per-endpoint rate-limit partitions through
+`Microsoft.AspNetCore.RateLimiting` (built-in to .NET 8+), bound from
+`Host:RateLimit:*` configuration. The named partitions SHALL be:
+
+| Partition | Default permits / minute | Endpoints |
+|-----------|---------------------------|-----------|
+| `comuki.ratelimit.login` | 10 | `POST /api/v1/auth/login` |
+| `comuki.ratelimit.oidc-start` | 30 | `GET /api/v1/auth/oidc/{provider}/start` |
+| `comuki.ratelimit.run-decision` | 60 | `POST /api/v1/runs/{runId:guid}/approve`, `POST /api/v1/runs/{runId:guid}/cancel` |
+| `comuki.ratelimit.api` | 600 | (default partition — opt-in for the remaining endpoints) |
+
+All partitions are fixed-window, one minute, partitioned by the
+caller's `ClaimTypes.NameIdentifier` (when authenticated) or the
+`comuki_api_key_id` claim (when API-key authenticated), with a
+remote-IP fallback. A limit of `0` on any partition disables that
+named partition without rewriting the endpoint attributes — the
+documented escape hatch for ops to lift a budget under
+attack-investigation pressure without redeploying.
+
+#### Scenario: Login at the partition limit
+
+- **WHEN** the same IP triggers more than 10 login attempts in a
+  one-minute window
+- **THEN** the 11th request returns `429 Too Many Requests` and
+  no controller code runs
+
+#### Scenario: Zero-permit partition is a no-op
+
+- **WHEN** `Host:RateLimit:LoginPermitsPerMinute = 0`
+- **THEN** the `comuki.ratelimit.login` partition accepts every
+  request and the login endpoint still answers the same 200/401
+  ProblemDetails as before
+
+### Requirement: Production-secret fail-fast
+
+The host SHALL refuse to start in `Production` (`ASPNETCORE_ENVIRONMENT=Production`
+or `DOTNET_ENVIRONMENT=Production`) when the bound options carry the
+committed dev defaults that ship in `deploy/.env.example` /
+`appsettings.json`. Specifically:
+
+- `Artifacts:Minio:AccessKey` MUST NOT equal `"comuki"`.
+- `Artifacts:Minio:SecretKey` MUST NOT equal `"comuki_dev"`.
+- `auth:bootstrap:adminPassword` (or `COMUKI_BOOTSTRAP_ADMIN_PASSWORD`)
+  MUST NOT equal `"comuki_dev"`.
+
+The check runs once after `builder.Build()` and throws
+`InvalidOperationException` naming the offending configuration key
+when any of the three conditions fire. The check is a no-op in
+non-Production environments; integration tests boot under
+`Production` with non-default secrets to satisfy the gate.
+
+#### Scenario: Production boots with real secrets
+
+- **WHEN** the host runs in `Production` and every committed-default
+  secret has been overridden
+- **THEN** `ProductionSecretValidator.Validate` returns without
+  throwing and the host serves traffic normally
+
+#### Scenario: Production refuses a dev-default secret
+
+- **WHEN** the host runs in `Production` and `Artifacts:Minio:SecretKey`
+  is still `"comuki_dev"`
+- **THEN** startup throws naming `Artifacts:Minio:SecretKey` /
+  `Artifacts__Minio__SecretKey` env var; no request is served
+
+### Requirement: Operator runbook and backup procedure
+
+The repository SHALL ship an operator-facing runbook at
+`.agents/docs/operations/runbook.md` covering quick start, bootstrap
+admin rotation, OIDC setup, backup / restore, upgrade, and
+troubleshooting. The companion `backup.md` SHALL describe the
+`pg_dump` (per schema) and `mc mirror` (per MinIO bucket) procedures,
+the retention policy, and the monthly verification ritual. Both
+documents are agent-facing — they answer "where do I look when paged
+at 02:00?" without re-reading the code.
+
+#### Scenario: A new operator follows the runbook
+
+- **WHEN** an operator reads `.agents/docs/operations/runbook.md` end
+  to end
+- **THEN** they can take a fresh checkout to a running, browser-
+  reachable instance in under 30 minutes; rotate the bootstrap admin
+  password; add a new OIDC provider; back up Postgres + MinIO;
+  restore after partial loss; run the migrator for a release upgrade;
+  and triage the most common failure modes (no subject scope, MinIO
+  403, dev-default secret rejection, journal event lag) without
+  re-reading source code

@@ -4,6 +4,7 @@ using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Modules.Artifacts.Domain;
 using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 
 namespace Comuki.Host.Artifacts;
@@ -16,13 +17,16 @@ namespace Comuki.Host.Artifacts;
 /// artifacts module never reaches into the engine schema.
 /// </summary>
 /// <param name="db">Scoped orchestration DbContext.</param>
-public sealed class OrchestrationArtifactJournalSource(OrchestrationDbContext db) : IRunArtifactJournalSource
+public sealed class OrchestrationArtifactJournalSource(
+    OrchestrationDbContext db,
+    ISubjectScopeAccessor scopeAccessor) : IRunArtifactJournalSource
 {
     /// <inheritdoc />
     public async Task<RunTerminalSnapshot?> ReadTerminalAsync(
         RunId runId,
         CancellationToken cancellationToken = default)
     {
+        using var systemScope = scopeAccessor.AsSystem("artifact-journal-source");
         var run = await db.Runs
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == runId, cancellationToken);

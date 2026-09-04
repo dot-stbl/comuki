@@ -2,6 +2,7 @@ using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Modules.Artifacts.Application.Packaging;
 using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 
 namespace Comuki.Host.Artifacts;
@@ -16,15 +17,19 @@ namespace Comuki.Host.Artifacts;
 /// </summary>
 /// <param name="db">Scoped orchestration DbContext.</param>
 /// <param name="bundleStore">Already-bundled bookkeeping in the artifacts schema.</param>
+/// <param name="scopeAccessor">Ambient scope — declared AsSystem because the run source is a background consumer.</param>
 public sealed class OrchestrationArtifactRunSource(
     OrchestrationDbContext db,
-    IRunArtifactBundleStore bundleStore) : IRunArtifactRunSource
+    IRunArtifactBundleStore bundleStore,
+    ISubjectScopeAccessor scopeAccessor) : IRunArtifactRunSource
 {
     /// <inheritdoc />
     public async IAsyncEnumerable<RunArtifactCandidate> ListUnbundledTerminalAsync(
         int limit,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        using var systemScope = scopeAccessor.AsSystem("artifact-run-source");
+
         var terminals = new[] { RunStatus.Succeeded, RunStatus.Failed, RunStatus.Cancelled, RunStatus.Escalated };
 
         await foreach (var run in db.Runs
@@ -50,6 +55,8 @@ public sealed class OrchestrationArtifactRunSource(
     /// <inheritdoc />
     public Task<ProjectId?> ReadProjectIdAsync(RunId runId, CancellationToken cancellationToken = default)
     {
+        using var systemScope = scopeAccessor.AsSystem("artifact-run-source");
+
         return db.Runs
             .AsNoTracking()
             .Where(run => run.Id == runId)

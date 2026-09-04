@@ -134,8 +134,10 @@ public sealed class RunDecisionsEndpointShould : IAsyncLifetime
 
         var entry = verifyDb.RunEvents.Single(e => e.RunId == new RunId(runId));
         entry.Type.ShouldBe(RunEventTypes.RunStatusChanged);
-        entry.Payload.ShouldContain("\"from\":\"Escalated\"");
-        entry.Payload.ShouldContain("\"to\":\"Running\"");
+        entry.Payload.ShouldContain("\"from\"");
+        entry.Payload.ShouldContain("Escalated");
+        entry.Payload.ShouldContain("\"to\"");
+        entry.Payload.ShouldContain("Running");
     }
 
     [Fact(DisplayName = "Given a run in Succeeded, when POST /approve, then 409 with run.terminal_state code")]

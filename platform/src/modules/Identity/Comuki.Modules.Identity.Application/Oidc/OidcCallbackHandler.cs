@@ -1,60 +1,174 @@
 using Comuki.Modules.Identity.Application.Ports;
+using Comuki.Modules.Identity.Domain.Oidc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Modules.Identity.Application.Oidc;
 
 /// <summary>
-/// Stub callback handler — Commit 3 will replace the body with the
-/// full token-exchange + id_token validation + cookie sign-in. The
-/// stub returns an <c>oidc.not_implemented</c> failure so the wiring
-/// is exercised end-to-end while the real handler is in flight.
+/// Owns the manual OIDC code-flow callback: state validation, code
+/// exchange at the IdP's token endpoint, id_token signature
+/// verification, account linking, and the cookie sign-in. The host
+/// wires its callback controller to this handler and renders the
+/// returned <see cref="OidcCallbackResult.RedirectTarget"/> as a 302.
 /// </summary>
-/// <param name="stateStore"></param>
-/// <param name="options"></param>
-/// <param name="logger"></param>
+/// <param name="stateStore">Persistence port for the single-use state row.</param>
+/// <param name="discovery">Cached discovery doc (authorize + token + JWKS).</param>
+/// <param name="options">Configured providers list.</param>
+/// <param name="clientSecrets">Env-var lookup for the per-provider client secret.</param>
+/// <param name="tokenExchange">Form-encoded POST to the token endpoint.</param>
+/// <param name="idTokenValidator">JWKS-backed signature verification.</param>
+/// <param name="linker">Existing account-or-link resolver.</param>
+/// <param name="signer">Cookie sign-in: <see cref="ICookieSigner"/> is host-side.</param>
+/// <param name="logger">Diagnostic log.</param>
 public sealed class OidcCallbackHandler(
     IOidcStateStore stateStore,
+    IOidcDiscovery discovery,
     IOptions<OidcOptions> options,
+    IOidcClientSecrets clientSecrets,
+    OidcTokenExchange tokenExchange,
+    OidcIdTokenValidator idTokenValidator,
+    OidcAccountLinker linker,
+    ICookieSigner signer,
     ILogger<OidcCallbackHandler> logger)
 {
-    /// <summary>Stable failure code for an unimplemented handler.</summary>
-    public const string NotImplementedCode = "oidc.callback_not_implemented";
+    /// <summary>Default landing path on success — operator may have come in cold.</summary>
+    private const string DefaultReturnTo = "/";
 
     /// <summary>
-    /// Stub implementation: validates that a state token was supplied,
-    /// returns an <c>oidc.callback_not_implemented</c> failure otherwise
-    /// the wiring would 200 with an empty redirect.
+    /// Processes the IdP's authorize redirect: validates state, runs
+    /// the code-for-tokens exchange, verifies the id_token, links or
+    /// provisions the local account, and signs the user in via the
+    /// cookie scheme. Any failure short-circuits with a stable failure
+    /// code the SPA can surface.
     /// </summary>
     /// <param name="request"></param>
     /// <param name="cancellationToken"></param>
-    public Task<OidcCallbackResult> HandleAsync(OidcCallbackRequest request, CancellationToken cancellationToken = default)
+    public async Task<OidcCallbackResult> HandleAsync(OidcCallbackRequest request, CancellationToken cancellationToken = default)
     {
-        _ = cancellationToken;
-
+        // Provider-side failure — surface what the IdP told us, never invent one.
         if (!string.IsNullOrWhiteSpace(request.Error))
         {
-            logger.LogInformation("Oidc callback surfaced provider error {Error}: {Description}", request.Error, request.ErrorDescription);
+            logger.LogInformation(
+                "Oidc callback returned provider error {Error}: {Description}",
+                request.Error,
+                request.ErrorDescription);
 
-            return Task.FromResult(new OidcCallbackResult(
+            return new OidcCallbackResult(
                 Success: false,
-                RedirectTarget: "/login",
-                FailureCode: $"oidc.provider_{request.Error}"));
+                RedirectTarget: BuildLoginRedirect($"oidc.provider_{request.Error}"),
+                FailureCode: $"oidc.provider_{request.Error}");
         }
 
-        if (string.IsNullOrWhiteSpace(request.State))
+        if (string.IsNullOrWhiteSpace(request.Code) || string.IsNullOrWhiteSpace(request.State))
         {
-            return Task.FromResult(new OidcCallbackResult(false, "/login", "oidc.state_missing"));
+            return new OidcCallbackResult(
+                Success: false,
+                RedirectTarget: BuildLoginRedirect("oidc.callback_incomplete"),
+                FailureCode: "oidc.callback_incomplete");
         }
 
-        if (!Guid.TryParse(request.State, out _))
+        if (!Guid.TryParse(request.State, out var stateGuid))
         {
-            return Task.FromResult(new OidcCallbackResult(false, "/login", "oidc.state_malformed"));
+            return new OidcCallbackResult(
+                Success: false,
+                RedirectTarget: BuildLoginRedirect("oidc.state_malformed"),
+                FailureCode: "oidc.state_malformed");
         }
 
-        _ = stateStore;
-        _ = options;
+        var stateRow = await stateStore.ConsumeAsync(new OidcStateId(stateGuid), cancellationToken);
+        if (stateRow is null)
+        {
+            return new OidcCallbackResult(
+                Success: false,
+                RedirectTarget: BuildLoginRedirect("oidc.state_mismatch"),
+                FailureCode: "oidc.state_mismatch");
+        }
 
-        return Task.FromResult(new OidcCallbackResult(false, "/login", NotImplementedCode));
+        var provider = ResolveProvider(stateRow.Provider);
+        var discoveryDoc = await discovery.GetAsync(provider, cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(discoveryDoc.TokenEndpoint))
+        {
+            logger.LogWarning("Oidc provider {Provider} discovery has no token_endpoint", provider.Name);
+            return new OidcCallbackResult(
+                Success: false,
+                RedirectTarget: BuildLoginRedirect("oidc.token_endpoint_missing"),
+                FailureCode: "oidc.token_endpoint_missing");
+        }
+
+        var secret = await clientSecrets.GetAsync(provider.Name, cancellationToken);
+
+        OidcTokenExchange.TokenResponse token;
+        try
+        {
+            token = await tokenExchange.ExchangeAsync(
+                new Uri(discoveryDoc.TokenEndpoint, UriKind.Absolute),
+                provider.ClientId,
+                secret,
+                request.Code,
+                stateRow.RedirectUri,
+                stateRow.CodeVerifier,
+                cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Oidc token exchange failed for provider {Provider}", provider.Name);
+            return new OidcCallbackResult(
+                Success: false,
+                RedirectTarget: BuildLoginRedirect("oidc.token_exchange_failed"),
+                FailureCode: "oidc.token_exchange_failed");
+        }
+
+        OidcIdTokenValidator.VerifiedClaims claims;
+        try
+        {
+            claims = idTokenValidator.Validate(token.IdToken, discoveryDoc, provider.ClientId, cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogWarning(ex, "Oidc id_token validation failed for provider {Provider}", provider.Name);
+            return new OidcCallbackResult(
+                Success: false,
+                RedirectTarget: BuildLoginRedirect("oidc.id_token_invalid"),
+                FailureCode: "oidc.id_token_invalid");
+        }
+
+        var linkResult = await linker.HandleAsync(
+            new OidcLinkRequest(provider.Name, claims.Subject, claims.Email, claims.DisplayName),
+            cancellationToken);
+
+        if (linkResult.Created)
+        {
+            logger.LogInformation(
+                "Oidc provider {Provider} provisioned local account {Email}",
+                provider.Name,
+                claims.Email);
+        }
+
+        await signer.SignInAsync(linkResult.User, cancellationToken);
+
+        var returnTo = stateRow.ReturnTo is { Length: > 0 } candidate
+            && candidate.StartsWith('/')
+            && !candidate.StartsWith("//")
+            && !candidate.StartsWith("/\\")
+            ? candidate
+            : DefaultReturnTo;
+
+        return new OidcCallbackResult(Success: true, RedirectTarget: returnTo, FailureCode: null);
+    }
+
+    private OidcProviderOptions ResolveProvider(string name)
+    {
+        return options.Value.Providers
+            .FirstOrDefault(configured =>
+                string.Equals(configured.Name, name, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException(
+                $"oidc provider '{name}' is not configured");
+    }
+
+    private static string BuildLoginRedirect(string failureCode)
+    {
+        return $"/login?reason=oidc-failed&error={Uri.EscapeDataString(failureCode)}";
     }
 }

@@ -1,5 +1,4 @@
 using Comuki.Modules.Intake.Application.Ports.Sources;
-using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Application.Sources;
 using Comuki.Modules.Intake.Application.Sync;
 using Comuki.Modules.Intake.Domain.Connections;
@@ -22,7 +21,7 @@ public sealed class SourceProbeServiceShould
     [Fact(DisplayName = "Given an unknown provider key, when ProbeDraft runs, then Reachable=false with a stable message")]
     public async Task ProbeRefusesUnknownProviderAsync()
     {
-        var registry = new TicketProviderRegistry(Enumerable.Empty<ITicketSourceProvider>(), Enumerable.Empty<ITicketSyncPort>());
+        var registry = new TicketProviderRegistry([], []);
         var service = new SourceProbeService(registry);
 
         var result = await service.ProbeDraftAsync("bitbucket", "{}", "HOOK_SECRET", TestContext.Current.CancellationToken);
@@ -34,7 +33,7 @@ public sealed class SourceProbeServiceShould
     [Fact(DisplayName = "Given the native provider, when ProbeDraft runs, then Reachable=false with a stable message")]
     public async Task ProbeRefusesNativeProviderAsync()
     {
-        var registry = new TicketProviderRegistry(Enumerable.Empty<ITicketSourceProvider>(), Enumerable.Empty<ITicketSyncPort>());
+        var registry = new TicketProviderRegistry([], []);
         var service = new SourceProbeService(registry);
 
         var result = await service.ProbeDraftAsync("native", "{}", "HOOK_SECRET", TestContext.Current.CancellationToken);
@@ -46,7 +45,7 @@ public sealed class SourceProbeServiceShould
     [Fact(DisplayName = "Given a registered provider with no providers registered, when ProbeDraft runs, then Reachable=false with a registered message")]
     public async Task ProbeRefusesUnregisteredProviderAsync()
     {
-        var registry = new TicketProviderRegistry(Enumerable.Empty<ITicketSourceProvider>(), Enumerable.Empty<ITicketSyncPort>());
+        var registry = new TicketProviderRegistry([], []);
         var service = new SourceProbeService(registry);
 
         var result = await service.ProbeDraftAsync("github", "{}", "HOOK_SECRET", TestContext.Current.CancellationToken);
@@ -71,11 +70,11 @@ public sealed class SourceProbeServiceShould
                     "octocat",
                     "https://github.com/acme/app/issues/1",
                     "acme/app",
-                    Array.Empty<string>(),
+                    [],
                     InboundTicketKind.Issue,
                     DateTimeOffset.UtcNow),
             ]);
-        var registry = new TicketProviderRegistry(new[] { provider }, Enumerable.Empty<ITicketSyncPort>());
+        var registry = new TicketProviderRegistry([provider], []);
         var service = new SourceProbeService(registry);
 
         var result = await service.ProbeDraftAsync("github", "{}", "HOOK_SECRET", TestContext.Current.CancellationToken);
@@ -92,8 +91,8 @@ public sealed class SourceProbeServiceShould
         var provider = Substitute.For<ITicketSourceProvider>();
         provider.SourceKey.Returns(TicketProviderKeys.GitHub);
         provider.FetchCatalogAsync(Arg.Any<SourceConnection>(), 1, Arg.Any<CancellationToken>())
-            .Returns<IReadOnlyList<IncomingTicket>>(_ => throw new HttpRequestException("503 Service Unavailable"));
-        var registry = new TicketProviderRegistry(new[] { provider }, Enumerable.Empty<ITicketSyncPort>());
+            .Returns<IReadOnlyList<IncomingTicket>>(static _ => throw new HttpRequestException("503 Service Unavailable"));
+        var registry = new TicketProviderRegistry([provider], []);
         var service = new SourceProbeService(registry);
 
         var result = await service.ProbeDraftAsync("github", "{}", "HOOK_SECRET", TestContext.Current.CancellationToken);

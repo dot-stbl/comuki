@@ -1,5 +1,4 @@
 using Comuki.Modules.Identity.Application.ApiKeys;
-using Comuki.Modules.Identity.Application.ApiKeys.Issue;
 using Comuki.Modules.Identity.Application.ApiKeys.Revoke;
 using Comuki.Modules.Identity.Application.Options;
 using Comuki.Modules.Identity.Application.Ports;

@@ -133,7 +133,7 @@ public sealed class SourcesAdminEndpointsShould(HostIntakeServer server) : IClas
             new ProbeSourceDraftRequest
             {
                 Provider = "github",
-                SettingsJson = "{\"owner\":\"acme\",\"repo\":\"missing\"}",
+                SettingsJson = /*lang=json,strict*/ "{\"owner\":\"acme\",\"repo\":\"missing\"}",
                 SecretEnvRef = "DOES_NOT_EXIST",
             },
             TestContext.Current.CancellationToken);
@@ -159,7 +159,7 @@ public sealed class SourcesAdminEndpointsShould(HostIntakeServer server) : IClas
                 ProjectId = ProjectIdOf(project),
                 Provider = "github",
                 Name = "To probe",
-                SettingsJson = "{\"owner\":\"acme\",\"repo\":\"app\"}",
+                SettingsJson = /*lang=json,strict*/ "{\"owner\":\"acme\",\"repo\":\"app\"}",
                 SecretEnvRef = "DOES_NOT_EXIST",
             },
             TestContext.Current.CancellationToken);
@@ -197,7 +197,7 @@ public sealed class SourcesAdminEndpointsShould(HostIntakeServer server) : IClas
             {
                 ProjectId = ProjectIdOf(project),
                 Mode = "watch",
-                FilterJson = "{\"labelsAny\":[\"comuki\"]}",
+                FilterJson = /*lang=json,strict*/ "{\"labelsAny\":[\"comuki\"]}",
             },
             TestContext.Current.CancellationToken);
         ruleResponse.StatusCode.ShouldBeOneOf(HttpStatusCode.Created, HttpStatusCode.InternalServerError);
@@ -213,7 +213,7 @@ public sealed class SourcesAdminEndpointsShould(HostIntakeServer server) : IClas
 
         var update = await client.PutAsJsonAsync(
             $"/api/v1/sources/{sourceId}/rules/{ruleId}",
-            new UpdateAdmissionRuleRequest { Mode = "inbox", FilterJson = "{\"labelsAny\":[\"bug\"]}", Enabled = true },
+            new UpdateAdmissionRuleRequest { Mode = "inbox", FilterJson = /*lang=json,strict*/ "{\"labelsAny\":[\"bug\"]}", Enabled = true },
             TestContext.Current.CancellationToken);
 
         // Same pre-existing EF Core detached-entity note — the endpoint

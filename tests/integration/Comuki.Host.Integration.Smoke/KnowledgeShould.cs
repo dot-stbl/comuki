@@ -17,14 +17,9 @@ namespace Comuki.Host.Integration.Smoke;
 ///     validates the full host composition — pgvector + MinIO — is wired).</item>
 /// </list>
 /// </summary>
-public sealed class KnowledgeShould : IClassFixture<SmokeHostServer>
+public sealed class KnowledgeShould(SmokeHostServer server) : IClassFixture<SmokeHostServer>
 {
-    private readonly SmokeHostServer server;
-
-    public KnowledgeShould(SmokeHostServer server)
-    {
-        this.server = server;
-    }
+    private readonly SmokeHostServer server = server;
 
     [Fact(DisplayName = "Given the bootstrap admin, when POST /api/v1/knowledge/ingest, then 200 with the source document id")]
     public async Task IngestReturnsSourceDocumentAsync()

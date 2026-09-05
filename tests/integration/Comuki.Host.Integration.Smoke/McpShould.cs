@@ -21,14 +21,9 @@ namespace Comuki.Host.Integration.Smoke;
 ///     (malformed JSON body) returns 400.</item>
 /// </list>
 /// </summary>
-public sealed class McpShould : IClassFixture<SmokeHostServer>
+public sealed class McpShould(SmokeHostServer server) : IClassFixture<SmokeHostServer>
 {
-    private readonly SmokeHostServer server;
-
-    public McpShould(SmokeHostServer server)
-    {
-        this.server = server;
-    }
+    private readonly SmokeHostServer server = server;
 
     [Fact(DisplayName = "Given a JSON-RPC 2.0 request, when tools/list, then 200 with the four MCP tool names")]
     public async Task ToolsListReturnsCatalogAsync()
@@ -93,7 +88,7 @@ public sealed class McpShould : IClassFixture<SmokeHostServer>
         var text = result.GetProperty("content")[0].GetProperty("text").GetString();
         text.ShouldNotBeNullOrWhiteSpace();
 
-        var page = JsonSerializer.Deserialize<JsonElement>(text!);
+        var page = JsonSerializer.Deserialize<JsonElement>(text);
         page.GetProperty("items").ValueKind.ShouldBe(JsonValueKind.Array);
     }
 

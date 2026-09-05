@@ -42,7 +42,7 @@ public static class KnowledgeModuleEndpoints
             request.SourceRef,
             request.MimeType,
             request.Text,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
 
         return Results.Ok(new KnowledgeIngestResponse(
             SourceDocumentId: result.SourceDocumentId.ToString(),

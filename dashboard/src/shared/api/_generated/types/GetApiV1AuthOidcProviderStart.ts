@@ -12,6 +12,13 @@ export type GetApiV1AuthOidcProviderStartPathParams = {
   provider: string
 }
 
+export type GetApiV1AuthOidcProviderStartQueryParams = {
+  /**
+   * @type string | undefined
+   */
+  returnTo?: string
+}
+
 /**
  * @description Found
  */
@@ -27,5 +34,6 @@ export type GetApiV1AuthOidcProviderStartQueryResponse = any
 export type GetApiV1AuthOidcProviderStartQuery = {
   Response: any
   PathParams: GetApiV1AuthOidcProviderStartPathParams
+  QueryParams: GetApiV1AuthOidcProviderStartQueryParams
   Errors: GetApiV1AuthOidcProviderStart404
 }

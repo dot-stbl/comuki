@@ -1,0 +1,6 @@
+{
+  "required": ["disabled"],
+  "type": "object",
+  "properties": { "disabled": { "type": "boolean" } },
+  "x-readme-ref-name": "SetUserDisabledRequest"
+}

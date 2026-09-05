@@ -1,0 +1,10 @@
+{
+  "required": ["provider", "settingsJson", "secretEnvRef"],
+  "type": "object",
+  "properties": {
+    "provider": { "type": "string" },
+    "settingsJson": { "type": "string" },
+    "secretEnvRef": { "type": "string" }
+  },
+  "x-readme-ref-name": "ProbeSourceDraftRequest"
+}

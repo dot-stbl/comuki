@@ -1,0 +1,10 @@
+{
+  "required": ["userId", "role"],
+  "type": "object",
+  "properties": {
+    "userId": { "type": "string", "format": "uuid" },
+    "role": { "type": "string" },
+    "projectId": { "type": ["null", "string"], "format": "uuid" }
+  },
+  "x-readme-ref-name": "GrantRoleRequest"
+}

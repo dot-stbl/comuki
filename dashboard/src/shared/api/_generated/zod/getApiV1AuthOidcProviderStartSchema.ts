@@ -10,6 +10,12 @@ export const getApiV1AuthOidcProviderStartPathParamsSchema = z.object({
   provider: z.string(),
 })
 
+export const getApiV1AuthOidcProviderStartQueryParamsSchema = z
+  .object({
+    returnTo: z.optional(z.string()),
+  })
+  .optional()
+
 /**
  * @description Found
  */

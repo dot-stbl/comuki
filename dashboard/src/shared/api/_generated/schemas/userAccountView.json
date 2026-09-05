@@ -1,0 +1,28 @@
+{
+  "required": [
+    "id",
+    "email",
+    "displayName",
+    "disabled",
+    "tokensVersion",
+    "createdAt"
+  ],
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "object",
+      "properties": { "value": { "type": "string", "format": "uuid" } },
+      "x-readme-ref-name": "UserId"
+    },
+    "email": { "type": "string" },
+    "displayName": { "type": "string" },
+    "disabled": { "type": "boolean" },
+    "tokensVersion": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int32"
+    },
+    "createdAt": { "type": "string", "format": "date-time" }
+  },
+  "x-readme-ref-name": "UserAccountView"
+}

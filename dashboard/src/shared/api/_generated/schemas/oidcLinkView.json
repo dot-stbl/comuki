@@ -1,0 +1,12 @@
+{
+  "required": ["id", "userId", "provider", "subject", "createdAt"],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "userId": { "type": "string", "format": "uuid" },
+    "provider": { "type": "string" },
+    "subject": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" }
+  },
+  "x-readme-ref-name": "OidcLinkView"
+}

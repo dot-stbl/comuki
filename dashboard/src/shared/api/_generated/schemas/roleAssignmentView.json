@@ -1,0 +1,32 @@
+{
+  "required": [
+    "id",
+    "role",
+    "scopeLevel",
+    "scopeProjectId",
+    "subjectType",
+    "subjectId",
+    "grantedBy",
+    "createdAt",
+    "revokedAt",
+    "isActive"
+  ],
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "object",
+      "properties": { "value": { "type": "string", "format": "uuid" } },
+      "x-readme-ref-name": "RoleAssignmentId"
+    },
+    "role": { "type": "string" },
+    "scopeLevel": { "type": "string" },
+    "scopeProjectId": { "type": ["null", "string"] },
+    "subjectType": { "type": "string" },
+    "subjectId": { "type": "string" },
+    "grantedBy": { "type": ["null", "string"] },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "revokedAt": { "type": ["null", "string"], "format": "date-time" },
+    "isActive": { "type": "boolean" }
+  },
+  "x-readme-ref-name": "RoleAssignmentView"
+}

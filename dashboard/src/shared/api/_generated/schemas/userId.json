@@ -1,0 +1,5 @@
+{
+  "type": "object",
+  "properties": { "value": { "type": "string", "format": "uuid" } },
+  "x-readme-ref-name": "UserId"
+}

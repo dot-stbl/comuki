@@ -1,0 +1,9 @@
+{
+  "required": ["provider", "subjectId"],
+  "type": "object",
+  "properties": {
+    "provider": { "type": "string" },
+    "subjectId": { "type": "string" }
+  },
+  "x-readme-ref-name": "LinkOidcRequest"
+}

@@ -1,0 +1,24 @@
+{
+  "required": [
+    "id",
+    "userId",
+    "name",
+    "prefix",
+    "createdAt",
+    "lastUsedAt",
+    "revokedAt",
+    "isActive"
+  ],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "userId": { "type": "string", "format": "uuid" },
+    "name": { "type": "string" },
+    "prefix": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "lastUsedAt": { "type": ["null", "string"], "format": "date-time" },
+    "revokedAt": { "type": ["null", "string"], "format": "date-time" },
+    "isActive": { "type": "boolean" }
+  },
+  "x-readme-ref-name": "ApiKeyView"
+}

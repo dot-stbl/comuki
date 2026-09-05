@@ -1,0 +1,10 @@
+{
+  "required": ["userId", "label"],
+  "type": "object",
+  "properties": {
+    "userId": { "type": "string", "format": "uuid" },
+    "label": { "type": "string" },
+    "expiresAt": { "type": ["null", "string"], "format": "date-time" }
+  },
+  "x-readme-ref-name": "CreateApiKeyRequest"
+}

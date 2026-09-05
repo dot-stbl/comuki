@@ -17,19 +17,22 @@ import type {
 import type {
   GetApiV1AuthOidcProviderStartQueryResponse,
   GetApiV1AuthOidcProviderStartPathParams,
+  GetApiV1AuthOidcProviderStartQueryParams,
   GetApiV1AuthOidcProviderStart404,
 } from "../types/GetApiV1AuthOidcProviderStart"
 import { queryOptions, useQuery } from "@tanstack/react-query"
 import { getApiV1AuthOidcProviderStart } from "../clients/getApiV1AuthOidcProviderStart"
 
 export const getApiV1AuthOidcProviderStartQueryKey = (
-  provider: GetApiV1AuthOidcProviderStartPathParams["provider"] | undefined
+  provider: GetApiV1AuthOidcProviderStartPathParams["provider"] | undefined,
+  params?: GetApiV1AuthOidcProviderStartQueryParams
 ) =>
   [
     {
       url: "/api/v1/auth/oidc/:provider/start",
       params: { provider: provider },
     },
+    ...(params ? [params] : []),
   ] as const
 
 export type GetApiV1AuthOidcProviderStartQueryKey = ReturnType<
@@ -38,9 +41,10 @@ export type GetApiV1AuthOidcProviderStartQueryKey = ReturnType<
 
 export function getApiV1AuthOidcProviderStartQueryOptions(
   provider: GetApiV1AuthOidcProviderStartPathParams["provider"] | undefined,
+  params?: GetApiV1AuthOidcProviderStartQueryParams,
   config: Partial<RequestConfig> & { client?: Client } = {}
 ) {
-  const queryKey = getApiV1AuthOidcProviderStartQueryKey(provider)
+  const queryKey = getApiV1AuthOidcProviderStartQueryKey(provider, params)
   return queryOptions<
     GetApiV1AuthOidcProviderStartQueryResponse,
     ResponseErrorConfig<GetApiV1AuthOidcProviderStart404>,
@@ -50,7 +54,7 @@ export function getApiV1AuthOidcProviderStartQueryOptions(
     enabled: !!provider,
     queryKey,
     queryFn: async ({ signal }) => {
-      return getApiV1AuthOidcProviderStart(provider!, {
+      return getApiV1AuthOidcProviderStart(provider!, params, {
         ...config,
         signal: config.signal ?? signal,
       })
@@ -67,6 +71,7 @@ export function useGetApiV1AuthOidcProviderStart<
   TQueryKey extends QueryKey = GetApiV1AuthOidcProviderStartQueryKey,
 >(
   provider: GetApiV1AuthOidcProviderStartPathParams["provider"] | undefined,
+  params?: GetApiV1AuthOidcProviderStartQueryParams,
   options: {
     query?: Partial<
       QueryObserverOptions<
@@ -83,11 +88,12 @@ export function useGetApiV1AuthOidcProviderStart<
   const { query: queryConfig = {}, client: config = {} } = options ?? {}
   const { client: queryClient, ...resolvedOptions } = queryConfig
   const queryKey =
-    resolvedOptions?.queryKey ?? getApiV1AuthOidcProviderStartQueryKey(provider)
+    resolvedOptions?.queryKey ??
+    getApiV1AuthOidcProviderStartQueryKey(provider, params)
 
   const query = useQuery(
     {
-      ...getApiV1AuthOidcProviderStartQueryOptions(provider, config),
+      ...getApiV1AuthOidcProviderStartQueryOptions(provider, params, config),
       ...resolvedOptions,
       queryKey,
     } as unknown as QueryObserverOptions,

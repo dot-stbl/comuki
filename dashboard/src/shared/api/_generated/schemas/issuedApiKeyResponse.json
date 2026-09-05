@@ -1,0 +1,10 @@
+{
+  "required": ["keyId", "prefix", "secret"],
+  "type": "object",
+  "properties": {
+    "keyId": { "type": "string", "format": "uuid" },
+    "prefix": { "type": "string" },
+    "secret": { "type": "string" }
+  },
+  "x-readme-ref-name": "IssuedApiKeyResponse"
+}

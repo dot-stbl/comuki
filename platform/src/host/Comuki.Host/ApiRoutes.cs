@@ -92,4 +92,10 @@ public static class ApiRoutes
 
     /// <summary>OpenAI-compatible model catalogue the proxy advertises (issue #8 / S9 T9.6).</summary>
     public const string ProxyModels = "/v1/models";
+
+    /// <summary>Knowledge ingest endpoint — operator-triggered; permission knowledge:write.</summary>
+    public const string KnowledgeIngest = "/api/v1/knowledge/ingest";
+
+    /// <summary>MCP JSON-RPC 2.0 endpoint — cookie / api-key auth like the rest of the host.</summary>
+    public const string Mcp = "/api/v1/mcp";
 }

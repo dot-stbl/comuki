@@ -12,6 +12,7 @@ import type {
 import type {
   GetApiV1AuthOidcProviderStartQueryResponse,
   GetApiV1AuthOidcProviderStartPathParams,
+  GetApiV1AuthOidcProviderStartQueryParams,
   GetApiV1AuthOidcProviderStart404,
 } from "../types/GetApiV1AuthOidcProviderStart"
 
@@ -30,6 +31,7 @@ function getGetApiV1AuthOidcProviderStartUrl(
  */
 export async function getApiV1AuthOidcProviderStart(
   provider: GetApiV1AuthOidcProviderStartPathParams["provider"],
+  params?: GetApiV1AuthOidcProviderStartQueryParams,
   config: Partial<RequestConfig> & { client?: Client } = {}
 ) {
   const { client: request = fetch, ...requestConfig } = config
@@ -41,6 +43,7 @@ export async function getApiV1AuthOidcProviderStart(
   >({
     method: "GET",
     url: getGetApiV1AuthOidcProviderStartUrl(provider).url.toString(),
+    params,
     ...requestConfig,
   })
   return res.data

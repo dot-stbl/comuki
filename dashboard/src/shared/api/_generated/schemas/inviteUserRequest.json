@@ -1,0 +1,10 @@
+{
+  "required": ["email"],
+  "type": "object",
+  "properties": {
+    "email": { "type": "string" },
+    "displayName": { "type": ["null", "string"] },
+    "password": { "type": ["null", "string"] }
+  },
+  "x-readme-ref-name": "InviteUserRequest"
+}

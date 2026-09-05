@@ -1,0 +1,15 @@
+{
+  "required": ["reachable", "latencyMs", "suggestedId", "message"],
+  "type": "object",
+  "properties": {
+    "reachable": { "type": "boolean" },
+    "latencyMs": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int64"
+    },
+    "suggestedId": { "type": ["null", "string"] },
+    "message": { "type": "string" }
+  },
+  "x-readme-ref-name": "SourceProbeResult"
+}

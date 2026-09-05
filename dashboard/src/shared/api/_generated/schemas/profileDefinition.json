@@ -1,12 +1,1 @@
-{
-  "required": ["key", "name", "description", "allowedTools", "model"],
-  "type": "object",
-  "properties": {
-    "key": { "type": "string" },
-    "name": { "type": "string" },
-    "description": { "type": "string" },
-    "allowedTools": { "type": "array", "items": { "type": "string" } },
-    "model": { "type": ["null", "string"] }
-  },
-  "x-readme-ref-name": "ProfileDefinition"
-}
+{"required":["key","name","description","allowedTools","model"],"type":"object","properties":{"key":{"type":"string"},"name":{"type":"string"},"description":{"type":"string"},"allowedTools":{"type":"array","items":{"type":"string"}},"model":{"type":["null","string"]}},"x-readme-ref-name":"ProfileDefinition"}

@@ -17,19 +17,22 @@ import type {
 import type {
   GetApiV1AuthOidcProviderStartQueryResponse,
   GetApiV1AuthOidcProviderStartPathParams,
+  GetApiV1AuthOidcProviderStartQueryParams,
   GetApiV1AuthOidcProviderStart404,
 } from "../types/GetApiV1AuthOidcProviderStart"
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query"
 import { getApiV1AuthOidcProviderStart } from "../clients/getApiV1AuthOidcProviderStart"
 
 export const getApiV1AuthOidcProviderStartSuspenseQueryKey = (
-  provider: GetApiV1AuthOidcProviderStartPathParams["provider"] | undefined
+  provider: GetApiV1AuthOidcProviderStartPathParams["provider"] | undefined,
+  params?: GetApiV1AuthOidcProviderStartQueryParams
 ) =>
   [
     {
       url: "/api/v1/auth/oidc/:provider/start",
       params: { provider: provider },
     },
+    ...(params ? [params] : []),
   ] as const
 
 export type GetApiV1AuthOidcProviderStartSuspenseQueryKey = ReturnType<
@@ -38,9 +41,13 @@ export type GetApiV1AuthOidcProviderStartSuspenseQueryKey = ReturnType<
 
 export function getApiV1AuthOidcProviderStartSuspenseQueryOptions(
   provider: GetApiV1AuthOidcProviderStartPathParams["provider"],
+  params?: GetApiV1AuthOidcProviderStartQueryParams,
   config: Partial<RequestConfig> & { client?: Client } = {}
 ) {
-  const queryKey = getApiV1AuthOidcProviderStartSuspenseQueryKey(provider)
+  const queryKey = getApiV1AuthOidcProviderStartSuspenseQueryKey(
+    provider,
+    params
+  )
   return queryOptions<
     GetApiV1AuthOidcProviderStartQueryResponse,
     ResponseErrorConfig<GetApiV1AuthOidcProviderStart404>,
@@ -49,7 +56,7 @@ export function getApiV1AuthOidcProviderStartSuspenseQueryOptions(
   >({
     queryKey,
     queryFn: async ({ signal }) => {
-      return getApiV1AuthOidcProviderStart(provider, {
+      return getApiV1AuthOidcProviderStart(provider, params, {
         ...config,
         signal: config.signal ?? signal,
       })
@@ -65,6 +72,7 @@ export function useGetApiV1AuthOidcProviderStartSuspense<
   TQueryKey extends QueryKey = GetApiV1AuthOidcProviderStartSuspenseQueryKey,
 >(
   provider: GetApiV1AuthOidcProviderStartPathParams["provider"],
+  params?: GetApiV1AuthOidcProviderStartQueryParams,
   options: {
     query?: Partial<
       UseSuspenseQueryOptions<
@@ -81,11 +89,15 @@ export function useGetApiV1AuthOidcProviderStartSuspense<
   const { client: queryClient, ...resolvedOptions } = queryConfig
   const queryKey =
     resolvedOptions?.queryKey ??
-    getApiV1AuthOidcProviderStartSuspenseQueryKey(provider)
+    getApiV1AuthOidcProviderStartSuspenseQueryKey(provider, params)
 
   const query = useSuspenseQuery(
     {
-      ...getApiV1AuthOidcProviderStartSuspenseQueryOptions(provider, config),
+      ...getApiV1AuthOidcProviderStartSuspenseQueryOptions(
+        provider,
+        params,
+        config
+      ),
       ...resolvedOptions,
       queryKey,
     } as unknown as UseSuspenseQueryOptions,

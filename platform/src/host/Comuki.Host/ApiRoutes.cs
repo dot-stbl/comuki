@@ -98,4 +98,25 @@ public static class ApiRoutes
 
     /// <summary>MCP JSON-RPC 2.0 endpoint — cookie / api-key auth like the rest of the host.</summary>
     public const string Mcp = "/api/v1/mcp";
+
+    /// <summary>Identity admin — users collection (invite + set-disabled + oidc-link).</summary>
+    public const string IdentityAdminUsers = "/api/v1/users";
+
+    /// <summary>Identity admin — one user by id (set-disabled PATCH).</summary>
+    public const string IdentityAdminUser = "/api/v1/users/{userId:guid}";
+
+    /// <summary>Identity admin — manual OIDC link for one user.</summary>
+    public const string IdentityAdminUserOidcLink = "/api/v1/users/{userId:guid}/oidc-link";
+
+    /// <summary>Identity admin — role-grant collection.</summary>
+    public const string IdentityAdminGrants = "/api/v1/grants";
+
+    /// <summary>Identity admin — revoke one grant by id.</summary>
+    public const string IdentityAdminGrantRevoke = "/api/v1/grants/{grantId:guid}/revoke";
+
+    /// <summary>Identity admin — API-key issuance collection.</summary>
+    public const string IdentityAdminKeys = "/api/v1/keys";
+
+    /// <summary>Identity admin — revoke one API key by id.</summary>
+    public const string IdentityAdminKeyRevoke = "/api/v1/keys/{keyId:guid}/revoke";
 }

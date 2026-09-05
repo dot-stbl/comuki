@@ -163,10 +163,14 @@ public sealed class SourcesAdminEndpointsShould(HostIntakeServer server) : IClas
                 SecretEnvRef = "DOES_NOT_EXIST",
             },
             TestContext.Current.CancellationToken);
-        // Pre-existing EF Core detached-entity path on the create side
-        // — the endpoint is wired (302/500 either is acceptable for
-        // the smoke test; a follow-up fix lives in IntakeStore).
-        create.StatusCode.ShouldBeOneOf(HttpStatusCode.Created, HttpStatusCode.InternalServerError);
+        // The slice-7 env-var validation surfaces first — a missing
+        // SecretEnvRef is 400 — before the pre-existing detached-entity
+        // path runs. The endpoint is wired (400/500/201 all acceptable
+        // for the smoke test; a follow-up fix lives in IntakeStore).
+        create.StatusCode.ShouldBeOneOf(
+            HttpStatusCode.Created,
+            HttpStatusCode.BadRequest,
+            HttpStatusCode.InternalServerError);
         if (create.StatusCode != HttpStatusCode.Created)
         {
             return;

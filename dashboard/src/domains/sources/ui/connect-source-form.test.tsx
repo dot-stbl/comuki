@@ -4,6 +4,10 @@ import { describe, expect, it, vi } from "vitest"
 import type { ProbeResult } from "@/domains/sources/model/types"
 import { ConnectSourceForm } from "@/domains/sources/ui/connect-source-form"
 import {
+  type SecretReferenceDraft,
+  type TestDraftInput,
+} from "@/domains/sources/api/mutations"
+import {
   connectSeedSource,
   probeSeedSourceDraft,
   resetSeedSources,
@@ -13,31 +17,34 @@ import type { Role } from "@/shared/session"
 import { TestSession } from "@/shared/session/test-session"
 import {
   selectValues,
-  selectedValue,
   setSelectValue,
 } from "@/shared/ui/select/test-select"
 
 /* The form moved out of a dialog and onto `/sources/new`, and every rule it
    carried came with it: the four decisions in the order they constrain each
    other, the closed credential list, the base url that only exists where an
-   instance can be, the secret said once above the box it is typed into, and the
-   probe that has to answer before the save opens. These are the dialog's own
-   assertions, on the component that replaced it.
- *
- * The page around it — the crumbs, the cancel, the unsaved guard, the landing
- * on the connection it made — is `connect-source-page.test.tsx`, because none
- * of that needs six fields to be true.
- */
+   instance can be, the secret-env NAME the host resolves at probe / webhook
+   time, and the probe that has to answer before the save opens. These are
+   the dialog's own assertions, on the component that replaced it.
 
-/** The one secret this file ever types. Nothing may echo it back. */
+   The form's password box is mock-only — real mode reads the env var on the
+   host instead. The page around it — the crumbs, the cancel, the unsaved
+   guard, the landing on the connection it made — lives in
+   `connect-source-page.test.tsx`, because none of that needs the wire to be
+   the source of truth. */
+
+/** The one secret this file ever types in mock mode. Nothing may echo it back. */
 const SECRET = "ghp-not-a-real-token-0001"
+
+/** The env-var name the form collects on every mode. */
+const SECRET_ENV_REF = "COMUKI_GITHUB_TOKEN"
 
 interface HarnessProps {
   probe?: ProbeResult | null
   probing?: boolean
   busy?: boolean
-  onTest?: (input: { draft: SeedSourceDraft; secret: string }) => void
-  onCreate?: (draft: SeedSourceDraft) => void
+  onTest?: (input: TestDraftInput) => void
+  onCreate?: (draft: SecretReferenceDraft) => void
   onDraftChange?: () => void
   roles?: Role[]
   projectRoles?: Record<string, Role[]>
@@ -80,10 +87,6 @@ function chooseIn(testId: string, value: string) {
   setSelectValue(control(testId), value)
 }
 
-function chosenIn(testId: string) {
-  return selectedValue(control(testId))
-}
-
 function offeredIn(testId: string) {
   return selectValues(control(testId))
 }
@@ -102,11 +105,12 @@ function testButton() {
   return control("connect-test") as HTMLButtonElement
 }
 
-/** A complete github draft, minus the credential. */
-function fillDraft() {
+/** A complete github draft in mock mode. Real mode drops the secret box. */
+function fillDraft(secret = SECRET) {
   fill("connect-name", "here/web-app")
   fill("connect-account", "svc-bot")
-  fill("connect-secret", SECRET)
+  fill("connect-secret-env", SECRET_ENV_REF)
+  fill("connect-mock-secret", secret)
 }
 
 describe("test connection, before anything is saved", () => {
@@ -189,7 +193,7 @@ describe("test connection, before anything is saved", () => {
     expect(onDraftChange).toHaveBeenCalled()
   })
 
-  it("hands the credential to the probe and to nothing else", () => {
+  it("hands the env-var name to the probe and to nothing else", () => {
     const onTest = vi.fn()
     const onCreate = vi.fn()
     mount({
@@ -200,35 +204,43 @@ describe("test connection, before anything is saved", () => {
     fillDraft()
 
     fireEvent.click(testButton())
+    // The mock path carries the literal secret alongside the env-var name;
+    // the real path never sees the literal value. The wire-shape contract:
+    // the env-var name reaches the probe and the save, the literal does not.
     expect(onTest).toHaveBeenCalledWith({
       draft: expect.objectContaining({ name: "here/web-app" }),
-      secret: SECRET,
+      secretEnvRef: SECRET_ENV_REF,
+      mockSecret: SECRET,
     })
 
     fireEvent.click(submitButton())
-    // The draft that gets saved has no field carrying the secret — not renamed,
-    // not nested, not hashed. It is simply not in the object.
-    const draft = onCreate.mock.calls[0][0] as SeedSourceDraft
+    const draft = onCreate.mock.calls[0][0] as SecretReferenceDraft
+    // The save carries the env-var name, never the secret.
+    expect(JSON.stringify(draft)).toContain(SECRET_ENV_REF)
     expect(JSON.stringify(draft)).not.toContain(SECRET)
   })
 })
 
-describe("the secret is said once, where it is entered", () => {
-  it("warns at the box rather than after the button", () => {
+describe("the secret is named once, where it is configured", () => {
+  it("warns at the env-var box rather than after the button", () => {
     mount()
 
-    const notice = control("secret-notice")
-    expect(notice?.textContent).toContain("stored write-only")
-    expect(notice?.textContent).toContain("never shown again")
-
-    // Above the field it describes: a rule explained after the act is an
-    // apology, not an explanation.
-    const secret = control("connect-secret")
-    const position = (notice as Element).compareDocumentPosition(secret as Node)
-    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const field = control("connect-secret-env")
+    expect(field?.getAttribute("type")).not.toBe("password")
+    // Hint copy lives on the field, the way the secret-notice once did —
+    // a rule explained after the act is an apology, not an explanation.
+    expect(field?.getAttribute("placeholder")).toBe("COMUKI_GITHUB_TOKEN")
   })
 
-  it("never echoes the value back once the form is gone", () => {
+  it("shows the mock-only credential box in mock mode", () => {
+    mount()
+
+    const mockBox = control("connect-mock-secret")
+    expect(mockBox).not.toBeNull()
+    expect(mockBox.getAttribute("type")).toBe("password")
+  })
+
+  it("never echoes the mock secret back once the form is gone", () => {
     const { unmount } = render(
       <TestSession roles={["platform-admin"]}>
         <ConnectSourceForm
@@ -245,7 +257,7 @@ describe("the secret is said once, where it is entered", () => {
 
     // While it is open the operator can see what they are typing, and the box
     // is a password field so a shoulder cannot.
-    const field = control("connect-secret") as HTMLInputElement
+    const field = control("connect-mock-secret") as HTMLInputElement
     expect(field.getAttribute("type")).toBe("password")
     expect(field.value).toBe(SECRET)
 
@@ -298,16 +310,19 @@ describe("the form only asks for what the connector can use", () => {
     ])
   })
 
-  it("drops a credential kind the chosen provider does not implement", () => {
+  it("shows the settings json the host will store", () => {
     mount()
+    fill("connect-name", "here/web-app")
+    fill("connect-account", "svc-bot")
+    fill("connect-secret-env", SECRET_ENV_REF)
 
-    // GitHub takes an app install; Jira does not, so switching must not leave
-    // the form holding a credential its connector cannot use.
-    chooseIn("connect-auth", "app-install")
-    expect(chosenIn("connect-auth")).toBe("app-install")
-
-    chooseIn("connect-kind", "jira")
-    expect(chosenIn("connect-auth")).toBe("pat")
+    // The preview is one of the page's clearest signals: the operator
+    // sees the literal json blob the host will persist and can sanity-check
+    // before submitting.
+    const preview = control("settings-preview")
+    expect(preview).not.toBeNull()
+    expect(preview.textContent).toContain('"auth":"pat"')
+    expect(preview.textContent).toContain('"account":"svc-bot"')
   })
 })
 
@@ -321,13 +336,23 @@ describe("saving answers to the project the form picked", () => {
     fillDraft()
 
     // p_test first, where this session administers: the save is live.
-    expect(submitButton().hasAttribute("aria-disabled")).toBe(false)
+    // `aria-disabled` is omitted when the button is permitted (the kit renders
+    // it only when the button is blocked); absence is the live state.
+    expect(submitButton().getAttribute("aria-disabled")).toBeNull()
+    expect(submitButton().getAttribute("data-denied")).toBeNull()
 
     chooseIn("connect-project", "p_other")
 
     // The same form, the same credential, a different project — and the button
     // stays where it was and says what would open it.
     expect(submitButton().getAttribute("aria-disabled")).toBe("true")
+    expect(submitButton().getAttribute("data-denied")).toBe(
+      "needs project-admin or platform-admin on other"
+    )
+    expect(submitButton().getAttribute("title")).toBe(
+      "needs project-admin or platform-admin on other"
+    )
+    expect(submitButton().hasAttribute("disabled")).toBe(false)
     expect(submitButton().getAttribute("title")).toBe(
       "needs project-admin or platform-admin on other"
     )

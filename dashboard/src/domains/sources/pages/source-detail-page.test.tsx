@@ -449,7 +449,7 @@ describe("an address that names a connection can be stale", () => {
 })
 
 describe("what the page says about the connection itself", () => {
-  it("shows the provider, the credential and when the secret was taken", async () => {
+  it("shows the provider, the credential and the env-var that holds it", async () => {
     await open(GITLAB)
 
     const facts = control("source-facts")
@@ -461,11 +461,14 @@ describe("what the page says about the connection itself", () => {
     expect(screen.getByRole("img", { name: "gitlab" })).toBeTruthy()
 
     expect(facts.textContent).toContain("personal access token")
-    // A self-hosted instance names its host; the credential says only a date.
+    // A self-hosted instance names its host; the credential says only the
+    // env-var name — the value never reaches this surface.
     expect(facts.textContent).toContain("https://git.plexor.internal")
     expect(facts.textContent).toContain("svc-comuki")
-    expect(facts.textContent).toContain("2026-08-11")
-    expect(facts.textContent).toContain("never shown again")
+    expect(facts.textContent).toContain("MOCK_PLEXOR_GITLAB_TOKEN")
+    // The exact span of the credential sentence is what tells the operator
+    // the env var is host-side rather than stored here.
+    expect(screen.getByText(/resolved on the host/i)).toBeTruthy()
 
     // The title is the connection and the summary says whose it is.
     expect(

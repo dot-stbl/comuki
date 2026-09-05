@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { FormPage } from "@/app/layout/form-page"
 import { useUnsavedGuard } from "@/app/layout/use-unsaved-guard"
 import {
+  useAdmissionRules,
   useDisconnectSource,
   useSaveWatch,
   useTestConnection,
@@ -25,7 +26,9 @@ import type {
   AdmissionMode,
   ProbeResult,
   SourceAuth,
+  SourceWatch,
 } from "@/domains/sources/model/types"
+import type { AdmissionRuleView } from "@/shared/api/_generated/types/AdmissionRuleView"
 import { ConnectionForm } from "@/domains/sources/ui/connection-form"
 import { ConnectionStateBadge } from "@/domains/sources/ui/connection-state-badge"
 import { StatusMappingPreview } from "@/domains/sources/ui/status-mapping-preview"
@@ -48,6 +51,31 @@ import tableStyles from "@/domains/sources/ui/sources-table.module.css"
 import styles from "./source-detail-page.module.css"
 
 const SKELETON_WIDTHS = ["48%", "76%", "38%", "64%", "52%"]
+
+/**
+ * The host's `AdmissionRuleView` carries `mode` as the 2-mode string
+ * (`watch` | `inbox`); the dashboard's `SourceWatch` carries the 3-mode
+ * vocabulary (`watch` | `inbox-only` | `both`). Mapping back to the
+ * dashboard side: `watch` lands as `watch` (or `both`, since both behave
+ * the same on the host — start a run, ticket stays in the catalog);
+ * `inbox` lands as `inbox-only`. The dashboard's read is deliberately
+ * permissive — `both` shows the same form values regardless of which
+ * host-mode word the rule was last saved as.
+ *
+ * `matched` and `mapping` are not on the wire today; the watch form
+ * renders the upstream's preview locally and the count reads `0` until
+ * the host grows a `/api/v1/sources/{id}/status` endpoint.
+ */
+function admissionRuleToWatch(rule: AdmissionRuleView): SourceWatch {
+  const mode: AdmissionMode = rule.mode === "inbox" ? "inbox-only" : "watch"
+  return {
+    enabled: rule.enabled,
+    mode,
+    filter: rule.filterJson,
+    matched: 0,
+    mapping: [],
+  }
+}
 
 export interface SourceDetailPageProps {
   /** From the path. A connection is a thing, so configuring one has an address. */
@@ -117,6 +145,11 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
   const connection =
     data?.connections.find((entry) => entry.id === sourceId) ?? null
   const tickets = data?.tickets ?? []
+
+  // The host's admission rules are siblings of source connections, not a
+  // nested field — the watch form joins the matching rule by projectId on
+  // the client side and writes back through the rule id (issue #40).
+  const admissionRules = useAdmissionRules(connection?.projectId)
 
   const crumbs = [
     { label: "configure" },
@@ -241,8 +274,17 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     if (!can(session, "sources.edit", connection.projectId)) {
       return
     }
+    // The watch form still owns enabled / filter / mode. The host's
+    // admission-rule id and the connection's project id are the only
+    // facts the dashboard adds at save time.
+    const ruleId = admissionRules.data?.find((rule) => rule.enabled === patch.enabled)?.id ?? null
     saveWatch.mutate(
-      { connectionId: connection.id, ...patch },
+      {
+        connectionId: connection.id,
+        projectId: connection.projectId,
+        ruleId,
+        ...patch,
+      },
       {
         onSuccess: () =>
           toast.success("Watch saved", { description: connection.name }),
@@ -251,9 +293,10 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
   }
 
   const onSaveConnection = (patch: {
-    baseUrl: string
-    account: string
     auth: SourceAuth
+    account: string
+    baseUrl: string
+    secretEnvRef: string
   }) => {
     if (!can(session, "sources.edit", connection.projectId)) {
       return
@@ -384,16 +427,35 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
 
           <dt className={styles.factName}>credential</dt>
           <dd className={styles.factValue}>
-            {connection.secretStoredAt ?? "none"}
-            <span className={styles.factNote}>
-              {connection.secretStoredAt
-                ? // The one sentence the product will ever say about a stored
-                  // secret. There is no field anywhere in this domain that
-                  // holds one, which is what makes it structural rather than
-                  // polite.
-                  "stored write-only, and never shown again — not on this page, not in a form, not through the api. Replacing it means connecting again."
-                : "native intake has no remote end, so there is nothing to authenticate against."}
-            </span>
+            {connection.secretEnvRef
+              ? /* code-shaped name the host resolves — the dashboard never
+                 * shows the value, only the name, which is the structural
+                 * "no secret leaves the host" answer. */
+              <>
+                <code data-test="source-secret-env">{connection.secretEnvRef}</code>
+                <span className={styles.factNote}>
+                  resolved on the host at probe / webhook time. The
+                  dashboard never sees the value — replacing it means
+                  changing the env var on the host and patching the
+                  connection&apos;s <code>secretEnvRef</code>.
+                </span>
+              </>
+              : connection.secretStoredAt ?? "none"}
+            {!connection.secretEnvRef && connection.secretStoredAt ? (
+              <span className={styles.factNote}>
+                {/* Mock mode (legacy): the seed stamps a date and the
+                 * product will never say anything about the secret itself. */}
+                stored write-only, and never shown again — not on this page,
+                not in a form, not through the api. Replacing it means
+                connecting again.
+              </span>
+            ) : null}
+            {!connection.secretEnvRef && !connection.secretStoredAt ? (
+              <span className={styles.factNote}>
+                native intake has no remote end, so there is nothing to
+                authenticate against.
+              </span>
+            ) : null}
           </dd>
 
           <dt className={styles.factName}>last sync</dt>
@@ -412,7 +474,16 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         >
           <WatchForm
             connection={connection}
-            watch={connection.watch}
+            // Real mode: derive the watch the form edits from the host's
+            // admission rule for this project. The dashboard joins the
+            // sibling collection on the client side because the host models
+            // rules as a flat list, not a nested field on the connection
+            // (issue #40). Mock mode keeps the seed's nested `watch`.
+            watch={
+              admissionRules.data && admissionRules.data.length > 0
+                ? admissionRuleToWatch(admissionRules.data[0])
+                : connection.watch
+            }
             busy={saveWatch.isPending}
             onSave={onSaveWatch}
             onDirtyChange={setWatchDirty}

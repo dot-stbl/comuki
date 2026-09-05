@@ -21,7 +21,7 @@ public sealed class RoleMatrixShould
             .Select(static field => (PermissionKey)field.GetValue(null)!)
             .ToHashSet();
 
-        vocabulary.Count.ShouldBe(23);
+        vocabulary.Count.ShouldBe(24);
         vocabulary.ShouldAllBe(static key => RoleMatrix.AllPermissionKeys.Contains(key));
         RoleMatrix.AllPermissionKeys.Count.ShouldBe(vocabulary.Count);
     }

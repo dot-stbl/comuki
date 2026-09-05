@@ -69,9 +69,18 @@ export interface SourceConnection {
   selfHosted: boolean
   account: string
   /**
+   * The env-var NAME that holds the credential. The dashboard never sees the
+   * value; the host resolves it at probe and webhook time. Absent on native
+   * (no remote end to authenticate against) and on legacy rows that were
+   * written before the SecretReference rewrite.
+   */
+  secretEnvRef?: string
+  /**
    * When the secret was stored — and the only thing the product ever says about
    * it again. There is no field here for the secret itself, anywhere in the
    * domain, which is what makes "shown once" structural rather than polite.
+   * Carried by the mock seed only; the wire (post-#38) names the env var
+   * instead of marking a date.
    */
   secretStoredAt?: string
   /** Native refuses to be disconnected. See `sources.store.ts`. */

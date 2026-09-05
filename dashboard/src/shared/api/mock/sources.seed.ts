@@ -120,6 +120,13 @@ export interface SeedSourceConnection {
   /** The account or app the credential belongs to. Never the credential. */
   account: string
   /**
+   * The env-var NAME that holds the credential (issues #38–#40). In real
+   * mode the host resolves this at probe / webhook time; in mock mode the
+   * seed supplies a placeholder so the connection form has something to
+   * round-trip against. The literal value is never in this file.
+   */
+  secretEnvRef?: string
+  /**
    * When the secret was stored, and the only thing the product ever says about
    * it again. **The secret itself is not in this file, is not in the store, and
    * is never rendered after the form that took it** — see `sources.store.ts`.
@@ -254,6 +261,7 @@ const CONNECTIONS: SeedSourceConnection[] = [
     auth: "app-install",
     selfHosted: false,
     account: "comuki-swarm (app install 41822)",
+    secretEnvRef: "MOCK_COMUKI_GITHUB_TOKEN",
     secretStoredAt: "2026-07-02",
     removable: true,
     lastSyncAt: "4 min ago",
@@ -276,6 +284,7 @@ const CONNECTIONS: SeedSourceConnection[] = [
     auth: "oauth",
     selfHosted: false,
     account: "swarm@comuki.local",
+    secretEnvRef: "MOCK_COMUKI_TRACKER_TOKEN",
     secretStoredAt: "2026-05-18",
     removable: true,
     lastSyncAt: "12 aug",
@@ -297,6 +306,7 @@ const CONNECTIONS: SeedSourceConnection[] = [
     baseUrl: "https://git.plexor.internal",
     selfHosted: true,
     account: "svc-comuki",
+    secretEnvRef: "MOCK_PLEXOR_GITLAB_TOKEN",
     secretStoredAt: "2026-08-11",
     removable: true,
     lastSyncAt: "9 min ago",
@@ -322,6 +332,7 @@ const CONNECTIONS: SeedSourceConnection[] = [
     baseUrl: "https://atlas.atlassian.net",
     selfHosted: false,
     account: "comuki-intake@atlas.example",
+    secretEnvRef: "MOCK_ATLAS_JIRA_TOKEN",
     secretStoredAt: "2026-06-30",
     removable: true,
     lastSyncAt: "24 aug",
@@ -342,6 +353,7 @@ const CONNECTIONS: SeedSourceConnection[] = [
     auth: "pat",
     selfHosted: false,
     account: "atlas-release-bot",
+    secretEnvRef: "MOCK_ATLAS_GITHUB_TOKEN",
     secretStoredAt: "2026-08-19",
     removable: true,
     lastSyncAt: "1 min ago",

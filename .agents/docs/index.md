@@ -57,12 +57,12 @@ operational details in the same place.
 
 ## Status
 
-v1 milestone implementation is complete on `master` (`947d116`) —
-all 15 v1 slices (S0–S14) landed; 24 of 29 GitHub issues are
-closed; the 5 remaining open issues track work beyond v1 core
-scope (S7 FE dashboard pages, S9 cross-cutting kit, S10
-knowledge, S11 polish, post-1.0 backlog). Live status lives in
-[`.agents/STATE.md`](../STATE.md).
+v1 milestone is complete on `master` (`2bb2afd`) — 24 slices landed
+(15 original v1 core + 9 follow-on: 5 FE wire-up, 2 polish waves,
+1 admin endpoints, 1 docs sweep); 28 of 41 GitHub issues are
+closed; the 13 open issues are post-v1 scope (`#11` post-1.0
+backlog, `#31–#42` FE admin mutations wire-up, `#43` artifacts e2e
+test cleanup). Live status lives in [`.agents/STATE.md`](../STATE.md).
 
 See [`.agents/ROADMAP.md`](../ROADMAP.md) for the per-phase status
 table.

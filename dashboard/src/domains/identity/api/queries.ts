@@ -41,15 +41,24 @@ import { postApiV1UsersUseridOidcLink } from "@/shared/api/_generated/clients/po
 import { patchApiV1UsersUserid } from "@/shared/api/_generated/clients/patchApiV1UsersUserid"
 
 /**
- * Identity admin endpoints are mock-first until #31–#37 land.
+ * Identity admin endpoints.
  *
  * Real mode (`VITE_USE_MOCK=false`) for the session path is wired: `me`,
  * `oidc/{provider}/start`, login, logout. The seven admin mutations on this
  * page (invite, link OIDC, set disabled, grant role, revoke role, revoke key,
- * create key) all run against the seed store today; the read path throws
- * loudly when the seed is bypassed, so a misconfigured mock-off lands on the
- * empty state rather than producing phantom success. Each mutation carries its
- * follow-up issue reference on the per-function JSDoc.
+ * create key) are also wired — each carries a real-mode branch that calls
+ * the kubb-generated client for the host endpoint that landed under
+ * issues #31–#37 (`POST /api/v1/users`, `POST /api/v1/users/{id}/oidc-link`,
+ * `PATCH /api/v1/users/{id}`, `POST /api/v1/grants`,
+ * `POST /api/v1/grants/{id}/revoke`, `POST /api/v1/keys`,
+ * `POST /api/v1/keys/{id}/revoke`). Mock mode still runs the seed store —
+ * the dashboard's "wire to real backend" does not change the mock-first
+ * contract that storybook / dev-mock depend on.
+ *
+ * The read path is mock-only: `loadIdentity` throws on real mode because the
+ * host has no `GET /api/v1/identity` (or `/api/v1/users` + `/api/v1/grants`
+ * + `/api/v1/keys`) list endpoint. A misconfigured mock-off lands on the
+ * empty state rather than producing phantom success.
  */
 
 export const identityQueryKey = ["identity"] as const
@@ -85,12 +94,14 @@ function snapshot(): IdentitySnapshot {
 }
 
 /**
- * Real-mode status: throws — there is no `GET /api/v1/identity` (or
- * `/api/v1/users` + `/api/v1/grants` + `/api/v1/keys`) endpoint on the host
- * today. The host's identity module exposes only the session endpoints
- * (`/api/v1/auth/{login,logout,me,oidc/{provider}/start,oidc/{provider}/callback}`)
- * per `openspec/specs/identity/spec.md`; the admin endpoints are tracked as
- * follow-up issues #31–#37. Mock-first is the contract until those land.
+ * Real-mode status: throws — the host's identity module exposes only the
+ * session endpoints (`/api/v1/auth/{login,logout,me,oidc/{provider}/start,
+ * oidc/{provider}/callback}`) and the per-resource write endpoints shipped
+ * under #31–#37. There is no `GET /api/v1/identity` (or
+ * `/api/v1/users` + `/api/v1/grants` + `/api/v1/keys`) list endpoint on
+ * the wire yet — a real-mode caller lands on the empty-state branch
+ * rather than producing phantom success. Mock-first is the contract for
+ * the read path until those list endpoints land.
  */
 async function loadIdentity(): Promise<IdentitySnapshot> {
   if (!env.useMock) {
@@ -164,20 +175,14 @@ export function useStartOidcQuery(provider: string) {
 /**
  * Every mutation here ends the same way: the snapshot the store now holds.
  *
- * Real-mode status: all seven mutations on this page are mock-only. The
- * underlying host endpoints do not exist on the wire today — the kubb client
- * directory at `shared/api/_generated/clients/` carries nothing for
- * `users`, `grants`, `keys` or `oidc-links`. Each one is tracked as a
- * follow-up issue (#31 invite, #32 grant, #33 key, #34 oidc-link, plus
- * #35 disable, #36 revoke-grant, #37 revoke-key).
+ * Real mode (`VITE_USE_MOCK=false`) calls the kubb-generated client for
+ * `POST /api/v1/users`. Mock mode writes to the seed store; the mutation
+ * returns `snapshot()` either way so the caller's cache stays consistent.
  *
- * Calling any of these in real mode resolves successfully against the seed
- * store rather than throwing — the screen renders, the optimistic write
- * lands in mock space, the next refetch sees what was written. That is the
- * same shape the rest of the dashboard has for mock-first pages: the read
- * is what fails loudly (`loadIdentity` above throws), so a misconfigured
- * `VITE_USE_MOCK=false` lands on the empty-state branch, not on the success
- * branch with phantom data. Mock-first until the endpoints land.
+ * The page-level `useIdentityQuery` is mock-only because the host has no
+ * `GET /api/v1/identity` (or split list endpoints) — see the file header.
+ * A real-mode caller of `useIdentityQuery` throws; a real-mode caller of
+ * this mutation lands against the host. See issue #31.
  */
 export function useInviteUserMutation() {
   const queryClient = useQueryClient()
@@ -202,8 +207,9 @@ export function useInviteUserMutation() {
 }
 
 /**
- * Real-mode: mock-only. No `DELETE /api/v1/oidc-links/{id}` (or
- * `POST /api/v1/users/{id}/oidc-link`) endpoint on the wire. See issue #34.
+ * Real mode calls `POST /api/v1/users/{id}/oidc-link` via the kubb
+ * client. The host does not expose a delete — a subject is written once,
+ * and changing it is a platform operation, not a screen. See issue #34.
  */
 export function useLinkOidcMutation() {
   const queryClient = useQueryClient()
@@ -227,8 +233,8 @@ export function useLinkOidcMutation() {
 }
 
 /**
- * Real-mode: mock-only. The toggle would map to `PATCH /api/v1/users/{id}`
- * with `{ disabled }`, but neither endpoint exists on the wire. See issue #35.
+ * Real mode calls `PATCH /api/v1/users/{id}` with `{ disabled }` via the
+ * kubb client. See issue #35.
  */
 export function useSetUserDisabledMutation() {
   const queryClient = useQueryClient()
@@ -249,9 +255,8 @@ export function useSetUserDisabledMutation() {
 }
 
 /**
- * Real-mode: mock-only. No `POST /api/v1/grants` endpoint. Revocation would
- * be `POST /api/v1/grants/{id}/revoke` (timestamped, never delete) per the
- * identity spec — also missing. See issues #32 (write) and #36 (revoke).
+ * Real mode calls `POST /api/v1/grants` via the kubb client. The revoke
+ * side lives on `useRevokeRoleMutation`. See issue #32.
  */
 export function useGrantRoleMutation() {
   const queryClient = useQueryClient()
@@ -275,7 +280,11 @@ export function useGrantRoleMutation() {
   })
 }
 
-/** See note on `useGrantRoleMutation`. Revoke side. Issue #36. */
+/**
+ * Real mode calls `POST /api/v1/grants/{id}/revoke` via the kubb client.
+ * The host timestamps the revocation rather than deleting the row, so the
+ * grant survives with a `revokedAt`. See issue #36.
+ */
 export function useRevokeRoleMutation() {
   const queryClient = useQueryClient()
 
@@ -294,7 +303,10 @@ export function useRevokeRoleMutation() {
   })
 }
 
-/** Real-mode: mock-only. No `POST /api/v1/keys/{id}/revoke`. Issue #37. */
+/**
+ * Real mode calls `POST /api/v1/keys/{id}/revoke` via the kubb client.
+ * See issue #37.
+ */
 export function useRevokeApiKeyMutation() {
   const queryClient = useQueryClient()
 
@@ -323,9 +335,11 @@ export function useRevokeApiKeyMutation() {
  * taken the value into its own state, so the mutation cache is not a second
  * place the secret lives.
  *
- * Real-mode: mock-only. No `POST /api/v1/keys` endpoint; the wire shape
- * (prefix + plaintext shown once) is the dashboard's own projection and
- * would land untouched if/when the host ships the endpoint. See issue #33.
+ * Real mode calls `POST /api/v1/keys` via the kubb client and reads the
+ * current user from `GET /api/v1/auth/me` to fill `userId`. The wire shape
+ * (`prefix` + `plaintext` shown once) is the dashboard's own projection;
+ * the host's response is unpacked into that shape by the mapper.
+ * See issue #33.
  */
 export function useCreateApiKeyMutation() {
   const queryClient = useQueryClient()

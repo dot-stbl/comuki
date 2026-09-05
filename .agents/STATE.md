@@ -17,6 +17,15 @@ progress:
     kubb clients land — same pattern as the runs/identity/projects/inbox wire-up).
     #43 — Artifacts e2e test cleanup: drop dead `postgresSeed` container now that
     `8825387` rolled both DBs onto one. v1.1 follow-up, not blocking.
+  rule_bootstrap: |
+    Agent onboarding ritual is enforced by three machine-checkable artefacts
+    (see `.agents/RULES-BOOTSTRAP.md`):
+      - [VerifyRuleAwareness] MSBuild target -- prints rule corpus at build start.
+      - [SelfAuditReport] MSBuild target -- writes audit-data/last-commit-audit.md.
+      - dashboard/scripts/rule-audit.ts -- FE mirror, wired into predev/prebuild.
+    All three are WARNING ONLY (MSBuild <Message> is not promoted by
+    TreatWarningsAsErrors). Skip is a load-gate skip, not a courtesy slip.
+    Disable: -p:DisableRuleAwareness=true / -p:DisableSelfAuditReport=true
 ---
 
 # Project State

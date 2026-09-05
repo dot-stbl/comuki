@@ -16,8 +16,17 @@ public static class ProxyModuleEndpoints
     /// <param name="app">Route builder.</param>
     public static IEndpointRouteBuilder MapProxyEndpoints(this IEndpointRouteBuilder app)
     {
+        // The VirtualKey authentication scheme is registered without a
+        // matching named AuthorizationPolicy, so RequireAuthorization's
+        // string overload (which builds a policy from
+        // AuthorizationOptions) cannot resolve it. Mirror the
+        // MapReverseProxy call further down and bind directly through
+        // AuthorizeAttribute.AuthenticationSchemes instead.
         app.MapGet(ApiRoutes.ProxyModels, ListModelsAsync)
-            .RequireAuthorization(Modules.Proxy.Infrastructure.Auth.VirtualKeyAuthenticationHandler.SchemeName)
+            .RequireAuthorization(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute
+            {
+                AuthenticationSchemes = Modules.Proxy.Infrastructure.Auth.VirtualKeyAuthenticationHandler.SchemeName,
+            })
             .WithTags("Provider");
         return app;
     }

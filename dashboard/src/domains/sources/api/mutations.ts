@@ -9,7 +9,10 @@ import type {
   SourcesSnapshot,
 } from "@/domains/sources/model/types"
 import { deleteApiV1SourcesSourceid } from "@/shared/api/_generated/clients/deleteApiV1SourcesSourceid"
+import { postApiV1SourcesProbe } from "@/shared/api/_generated/clients/postApiV1SourcesProbe"
+import { postApiV1SourcesSourceidProbe } from "@/shared/api/_generated/clients/postApiV1SourcesSourceidProbe"
 import { postApiV1Tickets } from "@/shared/api/_generated/clients/postApiV1Tickets"
+import { putApiV1SourcesSourceid } from "@/shared/api/_generated/clients/putApiV1SourcesSourceid"
 import type { CreateNativeTicketRequest } from "@/shared/api/_generated/types/CreateNativeTicketRequest"
 import {
   connectSeedSource,
@@ -96,9 +99,20 @@ export interface TestDraftInput {
 export function useTestSourceDraft() {
   return useMutation<ProbeResult, Error, TestDraftInput>({
     mutationFn: async ({ draft, secret }) => {
-      requireMock("test connection")
-      await wait()
-      return probeSeedSourceDraft(draft, secret)
+      if (env.useMock) {
+        await wait()
+        return probeSeedSourceDraft(draft, secret)
+      }
+      const result = await postApiV1SourcesProbe({
+        provider: draft.kind,
+        settingsJson: JSON.stringify({
+          baseUrl: draft.baseUrl,
+          account: draft.account,
+          auth: draft.auth,
+        }),
+        secretEnvRef: secret,
+      })
+      return { ok: result.reachable, message: result.message }
     },
   })
 }
@@ -116,9 +130,12 @@ export function useTestConnection() {
 
   return useMutation<ProbeResult, Error, string>({
     mutationFn: async (connectionId) => {
-      requireMock("test connection")
-      await wait()
-      return probeSeedConnection(connectionId)
+      if (env.useMock) {
+        await wait()
+        return probeSeedConnection(connectionId)
+      }
+      const result = await postApiV1SourcesSourceidProbe(connectionId)
+      return { ok: result.reachable, message: result.message }
     },
     onSettled: async () => {
       await client.invalidateQueries({ queryKey: sourcesQueryKey })
@@ -191,9 +208,14 @@ export function useUpdateConnection() {
 
   return useMutation<unknown, Error, UpdateConnectionInput>({
     mutationFn: async ({ connectionId, baseUrl, account, auth }) => {
-      requireMock("update connection")
-      await wait()
-      updateSeedConnection(connectionId, { baseUrl, account, auth })
+      if (env.useMock) {
+        await wait()
+        updateSeedConnection(connectionId, { baseUrl, account, auth })
+        return connectionId
+      }
+      await putApiV1SourcesSourceid(connectionId, {
+        settingsJson: JSON.stringify({ baseUrl, account, auth }),
+      })
       return connectionId
     },
     onSettled: async () => {

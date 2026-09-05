@@ -32,6 +32,13 @@ import {
 } from "./mappers"
 import { getApiV1AuthMe } from "@/shared/api/_generated/clients/getApiV1AuthMe"
 import { getApiV1AuthOidcProviderStart } from "@/shared/api/_generated/clients/getApiV1AuthOidcProviderStart"
+import { postApiV1Grants } from "@/shared/api/_generated/clients/postApiV1Grants"
+import { postApiV1GrantsGrantidRevoke } from "@/shared/api/_generated/clients/postApiV1GrantsGrantidRevoke"
+import { postApiV1Keys } from "@/shared/api/_generated/clients/postApiV1Keys"
+import { postApiV1KeysKeyidRevoke } from "@/shared/api/_generated/clients/postApiV1KeysKeyidRevoke"
+import { postApiV1Users } from "@/shared/api/_generated/clients/postApiV1Users"
+import { postApiV1UsersUseridOidcLink } from "@/shared/api/_generated/clients/postApiV1UsersUseridOidcLink"
+import { patchApiV1UsersUserid } from "@/shared/api/_generated/clients/patchApiV1UsersUserid"
 
 /**
  * Identity admin endpoints are mock-first until #31–#37 land.
@@ -172,14 +179,20 @@ export function useStartOidcQuery(provider: string) {
  * `VITE_USE_MOCK=false` lands on the empty-state branch, not on the success
  * branch with phantom data. Mock-first until the endpoints land.
  */
-function useIdentityMutation<TInput>(
-  apply: (input: TInput) => void,
-) {
+export function useInviteUserMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (input: TInput) => {
-      apply(input)
+    mutationFn: async (input: InviteUserInput) => {
+      if (env.useMock) {
+        createSeedUser(input)
+      } else {
+        await postApiV1Users({
+          email: input.email,
+          displayName: input.name,
+          password: input.invite ? null : null,
+        })
+      }
       return snapshot()
     },
     onSuccess: (next) => {
@@ -189,22 +202,27 @@ function useIdentityMutation<TInput>(
 }
 
 /**
- * Real-mode: throws on read (no `GET /api/v1/users`); the write is also
- * mock-only — no `POST /api/v1/users`. See issue #31.
- */
-export function useInviteUserMutation() {
-  return useIdentityMutation<InviteUserInput>((input) => {
-    createSeedUser(input)
-  })
-}
-
-/**
  * Real-mode: mock-only. No `DELETE /api/v1/oidc-links/{id}` (or
  * `POST /api/v1/users/{id}/oidc-link`) endpoint on the wire. See issue #34.
  */
 export function useLinkOidcMutation() {
-  return useIdentityMutation<LinkOidcInput>((input) => {
-    linkSeedOidcSubject(input.userId, input.subject)
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: LinkOidcInput) => {
+      if (env.useMock) {
+        linkSeedOidcSubject(input.userId, input.subject)
+      } else {
+        await postApiV1UsersUseridOidcLink(input.userId, {
+          provider: "oidc",
+          subjectId: input.subject,
+        })
+      }
+      return snapshot()
+    },
+    onSuccess: (next) => {
+      queryClient.setQueryData(identityQueryKey, next)
+    },
   })
 }
 
@@ -213,8 +231,20 @@ export function useLinkOidcMutation() {
  * with `{ disabled }`, but neither endpoint exists on the wire. See issue #35.
  */
 export function useSetUserDisabledMutation() {
-  return useIdentityMutation<SetUserDisabledInput>((input) => {
-    setSeedUserDisabled(input.userId, input.disabled)
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: SetUserDisabledInput) => {
+      if (env.useMock) {
+        setSeedUserDisabled(input.userId, input.disabled)
+      } else {
+        await patchApiV1UsersUserid(input.userId, { disabled: input.disabled })
+      }
+      return snapshot()
+    },
+    onSuccess: (next) => {
+      queryClient.setQueryData(identityQueryKey, next)
+    },
   })
 }
 
@@ -224,22 +254,62 @@ export function useSetUserDisabledMutation() {
  * identity spec — also missing. See issues #32 (write) and #36 (revoke).
  */
 export function useGrantRoleMutation() {
-  return useIdentityMutation<GrantRoleInput>((input) => {
-    grantSeedRole(input)
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: GrantRoleInput) => {
+      if (env.useMock) {
+        grantSeedRole(input)
+      } else {
+        await postApiV1Grants({
+          userId: input.subjectId,
+          role: input.role,
+          projectId: input.projectId,
+        })
+      }
+      return snapshot()
+    },
+    onSuccess: (next) => {
+      queryClient.setQueryData(identityQueryKey, next)
+    },
   })
 }
 
 /** See note on `useGrantRoleMutation`. Revoke side. Issue #36. */
 export function useRevokeRoleMutation() {
-  return useIdentityMutation<string>((grantId) => {
-    revokeSeedRole(grantId)
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (grantId: string) => {
+      if (env.useMock) {
+        revokeSeedRole(grantId)
+      } else {
+        await postApiV1GrantsGrantidRevoke(grantId)
+      }
+      return snapshot()
+    },
+    onSuccess: (next) => {
+      queryClient.setQueryData(identityQueryKey, next)
+    },
   })
 }
 
 /** Real-mode: mock-only. No `POST /api/v1/keys/{id}/revoke`. Issue #37. */
 export function useRevokeApiKeyMutation() {
-  return useIdentityMutation<string>((keyId) => {
-    revokeSeedApiKey(keyId)
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (keyId: string) => {
+      if (env.useMock) {
+        revokeSeedApiKey(keyId)
+      } else {
+        await postApiV1KeysKeyidRevoke(keyId)
+      }
+      return snapshot()
+    },
+    onSuccess: (next) => {
+      queryClient.setQueryData(identityQueryKey, next)
+    },
   })
 }
 
@@ -262,8 +332,17 @@ export function useCreateApiKeyMutation() {
 
   return useMutation({
     mutationFn: async (input: CreateApiKeyInput) => {
-      const created = createSeedApiKey(input)
-      return { prefix: created.key.prefix, plaintext: created.plaintext }
+      if (env.useMock) {
+        const created = createSeedApiKey(input)
+        return { prefix: created.key.prefix, plaintext: created.plaintext }
+      }
+      const me = await getApiV1AuthMe()
+      const created = await postApiV1Keys({
+        userId: me.userId ?? me.subjectId,
+        label: input.name,
+        expiresAt: input.expiresAt,
+      })
+      return { prefix: created.prefix, plaintext: created.secret }
     },
     onSuccess: () => {
       queryClient.setQueryData(identityQueryKey, snapshot())

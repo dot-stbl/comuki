@@ -9,10 +9,11 @@ namespace Comuki.Modules.Identity.Infrastructure.Persistence.Stores;
 /// are <c>SELECT … FOR UPDATE</c>-free — a transaction that loads the
 /// row, deletes it, and commits is enough because the row id is a
 /// UUIDv7 the browser cannot replay, and a stale row is rejected by
-/// the expiry check anyway.
+/// the expiry check on <see cref="ConsumeAsync"/>.
 /// </summary>
 /// <param name="db"></param>
-public sealed class OidcStateStore(IdentityDbContext db) : IOidcStateStore
+/// <param name="clock">Injected <see cref="TimeProvider" /> for the <c>ExpiresAt</c> gate.</param>
+public sealed class OidcStateStore(IdentityDbContext db, TimeProvider clock) : IOidcStateStore
 {
     /// <inheritdoc />
     public async Task SaveAsync(OidcState state, CancellationToken cancellationToken = default)
@@ -33,6 +34,15 @@ public sealed class OidcStateStore(IdentityDbContext db) : IOidcStateStore
         var row = await db.OidcStates.SingleOrDefaultAsync(state => state.Id == id, cancellationToken);
 
         if (row is null)
+        {
+            return null;
+        }
+
+        // Contract: "A stale row (past ExpiresAt) reads as null even if the row
+        // exists — the same single-use guarantee either way." Without this gate
+        // a row that the sweep hasn't reached yet would still hand out its
+        // verifier to a caller whose `state` is past its TTL.
+        if (row.ExpiresAt <= clock.GetUtcNow())
         {
             return null;
         }

@@ -22,8 +22,10 @@ public sealed class OidcIdTokenValidator(ILogger<OidcIdTokenValidator> logger) :
         string expectedAudience,
         CancellationToken cancellationToken = default)
     {
-        _ = cancellationToken;
-
+        // JwtSecurityTokenHandler.ValidateToken is synchronous; the
+        // cancellation token is part of the IOidcIdTokenValidator surface so
+        // a future async validator (or a JsonWebTokenHandler swap) can honor
+        // shutdown without a signature change.
         var parameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

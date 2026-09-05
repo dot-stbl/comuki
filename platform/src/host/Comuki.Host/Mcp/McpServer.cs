@@ -19,12 +19,6 @@ public sealed class McpServer(
     RunsListHandler runsList,
     ILogger<McpServer> logger)
 {
-    private static readonly JsonSerializerOptions jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Dispatches a single JSON-RPC 2.0 envelope — null id on a notification
     /// (the caller is fire-and-forget) returns null and the endpoint
@@ -143,7 +137,7 @@ public sealed class McpServer(
         ToolCallParams? toolCall;
         try
         {
-            toolCall = parameters.Value.Deserialize<ToolCallParams>(jsonOptions);
+            toolCall = parameters.Value.Deserialize<ToolCallParams>(JsonSerializerOptions.Web);
         }
         catch (JsonException exception)
         {
@@ -216,7 +210,7 @@ public sealed class McpServer(
         }).ToArray();
 
         return JsonRpcResponse.Success(id, new ToolResult(
-            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(payload, jsonOptions))],
+            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(payload, JsonSerializerOptions.Web))],
             IsError: false));
     }
 
@@ -246,7 +240,7 @@ public sealed class McpServer(
             {
                 sourceDocumentId = result.SourceDocumentId.ToString(),
                 chunksWritten = result.ChunksWritten,
-            }, jsonOptions))],
+            }, JsonSerializerOptions.Web))],
             IsError: false));
     }
 
@@ -271,7 +265,7 @@ public sealed class McpServer(
 
         var page = await runsList.ListAsync(query, cancellationToken).ConfigureAwait(false);
         return JsonRpcResponse.Success(id, new ToolResult(
-            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(page, jsonOptions))],
+            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(page, JsonSerializerOptions.Web))],
             IsError: false));
     }
 
@@ -399,11 +393,7 @@ public abstract record JsonRpcResponse
     /// <param name="result"></param>
     public static JsonRpcResponse Success(JsonElement? id, object result)
     {
-        var json = JsonSerializer.SerializeToElement(result, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-        });
+        var json = JsonSerializer.SerializeToElement(result, JsonSerializerOptions.Web);
 
         return new JsonRpcResponseSuccess(id, json);
     }

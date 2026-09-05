@@ -251,6 +251,40 @@ update body is partial — `null` fields stay.
 - **THEN** the response is 200 with the updated view; every `null`
   field stays, every non-null field replaces the stored value
 
+### Requirement: Secret env var must resolve at write time (issues #38, #39, #40)
+
+On `POST /api/v1/sources` and on `PUT /api/v1/sources/{id}` (when a
+new `secretEnvRef` is supplied) the host SHALL resolve the named env
+var through the `ISecretResolver` port and SHALL refuse the write
+with 400 ProblemDetails (code `intake.secret_env_ref_unset`) when the
+variable is unset or resolves to the empty string. `PUT` updates
+that do not touch `secretEnvRef` SHALL NOT consult the resolver —
+an already-broken stored connection must remain editable so the
+operator can fix the env var and patch the row later. Native
+intake has no secret; the wire's `secretEnvRef` is the empty string
+and the resolver is not consulted on native.
+
+#### Scenario: Create refuses an unset secret env var
+
+- **WHEN** an operator posts a connection whose `secretEnvRef` does
+  not exist in the host's environment
+- **THEN** the response is 400 ProblemDetails with code
+  `intake.secret_env_ref_unset`
+
+#### Scenario: Update with a new secret env var refuses when unset
+
+- **WHEN** an operator patches a connection with a new `secretEnvRef`
+  that does not resolve on the host
+- **THEN** the response is 400 ProblemDetails with code
+  `intake.secret_env_ref_unset`
+- **AND** the stored row is unchanged
+
+#### Scenario: Update without touching the secret skips the resolver
+
+- **WHEN** an operator patches a connection with `secretEnvRef = null`
+- **THEN** the response is 200 with the updated view
+- **AND** the resolver is not consulted (the stored reference stands)
+
 ### Requirement: Admission rules as sibling rows (issue #40)
 
 Admission rules SHALL live in `admission_rules` as a sibling

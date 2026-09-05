@@ -14,32 +14,74 @@ import type {
  *
  * The wire `SourceConnectionView` carries:
  *  - `id`, `projectId`, `provider`, `name`
- *  - `settingsJson` (the runtime config — kind/host/auth/account)
+ *  - `settingsJson` (the runtime config — kind/host/auth/account, all
+ *    provider-specific)
  *  - `secretEnvRef` (where the credential lives; never the secret itself)
  *  - `webhookPath` (the public URL the provider posts to)
  *  - `enabled` (the connection's own on/off; not the watch's)
  *
  * The domain needs that and more — `state`, `auth`, `account`, `selfHosted`,
- * `baseUrl`, `lastSyncAt`, `removable`, `watch`. The mapper fills the
- * unmodelled fields with the **honest defaults**: a connection that says
- * nothing about its watch has `watch: null` (the screen already knows how
- * to render that — the native branch's empty state), and a connection
- * that says nothing about `account` / `baseUrl` / `auth` gets the empty
- * string and `"none"`. The screen already treats empty as a valid answer
- * in those positions; what it cannot recover is **runtime state** the host
- * hasn't sent, so `lastSyncAt` stays `undefined` (the screen renders "never")
- * and `reason` stays `undefined` (the screen says "the provider refused,
- * and said nothing useful.").
+ * `baseUrl`, `lastSyncAt`, `removable`, `watch`. `settingsJson` carries
+ * `{auth, account, baseUrl}` for the v1 connectors; the mapper parses them
+ * so the screen can show the same fields it showed in mock mode without a
+ * second source of truth. The runtime-only fields the host has not sent
+ * stay at the screen's honest defaults — `watch: null`, `reason: undefined`,
+ * `lastSyncAt: undefined` (rendered as "the provider refused, and said
+ * nothing useful." and "never").
  *
  * When a future host endpoint carries the runtime state — last sync, watch
  * config, the provider's own account — the mapper grows a few lines. The
  * contract here is "what the screen renders against the view the host
  * hands us today"; the contract is not "the host is dumb".
  */
+
+/**
+ * The v1 `settingsJson` shape the dashboard reads. Per-provider fields
+ * live outside this contract — a self-hosted GitLab carries its
+ * `baseUrl` here; a cloud GitHub does not — but the four the dashboard
+ * cares about are stable.
+ */
+interface ParsedSettings {
+  auth?: SourceAuth
+  account?: string
+  baseUrl?: string
+}
+
+function parseSettings(settingsJson: string): ParsedSettings {
+  const trimmed = settingsJson.trim()
+  if (trimmed.length === 0) {
+    return {}
+  }
+  try {
+    const parsed: unknown = JSON.parse(trimmed)
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {}
+    }
+    const result: ParsedSettings = {}
+    const auth = (parsed as Record<string, unknown>).auth
+    if (auth === "pat" || auth === "oauth" || auth === "app-install") {
+      result.auth = auth
+    }
+    const account = (parsed as Record<string, unknown>).account
+    if (typeof account === "string") {
+      result.account = account
+    }
+    const baseUrl = (parsed as Record<string, unknown>).baseUrl
+    if (typeof baseUrl === "string" && baseUrl.length > 0) {
+      result.baseUrl = baseUrl
+    }
+    return result
+  } catch {
+    return {}
+  }
+}
+
 export function sourceConnectionViewToConnection(
   view: SourceConnectionView
 ): SourceConnection {
   const kind = providerToKind(view.provider)
+  const settings = parseSettings(view.settingsJson)
+
   return {
     id: view.id,
     projectId: view.projectId,
@@ -51,25 +93,59 @@ export function sourceConnectionViewToConnection(
     // when the seed forgets one. A future `/sources/{id}/status` endpoint
     // would carry the real reason; the mapper only widens.
     reason: undefined,
-    // The wire carries `secretEnvRef` (where the credential lives) but not
-    // the kind. Native is the only kind the host answers "none" for — every
-    // provider worth a connection is a token of some flavour — so the
-    // domain default is the right read until the host starts sending it.
-    auth: kind === "native" ? ("none" as SourceAuth) : ("pat" as SourceAuth),
-    // `settingsJson` is the runtime config; today the dashboard does not
-    // read it, so `baseUrl` is left undefined (the host renders "cloud").
-    baseUrl: undefined,
-    // Self-hosted is the form for `baseUrl` present; without it we cannot
-    // tell from the wire whether the connection is cloud or self-hosted, so
-    // the screen defaults to cloud via `connectionHost`.
-    selfHosted: false,
-    account: "",
+    // Native has no credential kind on the wire — the host returns the empty
+    // string for `secretEnvRef`. Every other kind reads its `auth` out of
+    // settingsJson and falls back to `"pat"`, the connector's default token
+    // shape for the v1 providers the dashboard knows about.
+    auth: kind === "native"
+      ? ("none" as SourceAuth)
+      : (settings.auth ?? ("pat" as SourceAuth)),
+    // Self-hosted instances carry their `baseUrl` in settings; cloud and
+    // native do not. The mapper leaves `baseUrl` undefined when absent so
+    // `connectionHost` renders "cloud" / "in-platform" honestly.
+    baseUrl: settings.baseUrl,
+    selfHosted: settings.baseUrl !== undefined && settings.baseUrl.length > 0,
+    account: settings.account ?? "",
+    // The wire carries the env-var name; native has none. Empty on native
+    // is the wire's own contract — the host returns "" rather than omitting
+    // the field — and `undefined` keeps the rest of the screens honest.
+    secretEnvRef:
+      view.secretEnvRef.length > 0 && kind !== "native"
+        ? view.secretEnvRef
+        : undefined,
     secretStoredAt: undefined,
     // Native refuses disconnection at the store; the host mirrors that.
     removable: kind !== "native",
     watch: null,
     lastSyncAt: undefined,
   }
+}
+
+/**
+ * The reverse direction — domain write payload → wire `settingsJson`.
+ *
+ * The dashboard collects `auth`, `account`, `baseUrl` as separate fields on
+ * the connect / update screens and folds them into one JSON object here.
+ * Provider-specific extras (e.g. GitHub's `includePullRequests`) stay in
+ * their own textarea on the screen and ride in via a second JSON shape that
+ * the connector later merges; that path is not in scope for the v1.
+ */
+export function settingsToJson(settings: {
+  auth?: SourceAuth
+  account?: string
+  baseUrl?: string
+}): string {
+  const object: Record<string, string> = {}
+  if (settings.auth !== undefined) {
+    object.auth = settings.auth
+  }
+  if (settings.account !== undefined && settings.account.length > 0) {
+    object.account = settings.account
+  }
+  if (settings.baseUrl !== undefined && settings.baseUrl.length > 0) {
+    object.baseUrl = settings.baseUrl
+  }
+  return JSON.stringify(object)
 }
 
 function providerToKind(provider: string): SourceKind {

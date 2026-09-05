@@ -40,6 +40,14 @@ public static class IntakeEndpointRunner
                 "Admission rule not found",
                 exception.Message);
         }
+        catch (SecretEnvRefUnsetException exception)
+        {
+            return IntakeProblems.Problem(
+                StatusCodes.Status400BadRequest,
+                "intake.secret_env_ref_unset",
+                "Secret env var is unset",
+                exception.Message);
+        }
         catch (IntakeTicketConflictException)
         {
             return IntakeProblems.Problem(

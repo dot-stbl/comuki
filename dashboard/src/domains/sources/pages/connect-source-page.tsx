@@ -5,12 +5,12 @@ import { toast } from "sonner"
 import { FormPage } from "@/app/layout/form-page"
 import { useUnsavedGuard } from "@/app/layout/use-unsaved-guard"
 import {
+  type SecretReferenceDraft,
   useConnectSource,
   useTestSourceDraft,
 } from "@/domains/sources/api/mutations"
 import type { ProbeResult } from "@/domains/sources/model/types"
 import { ConnectSourceForm } from "@/domains/sources/ui/connect-source-form"
-import type { SeedSourceDraft } from "@/shared/api/mock/sources.store"
 import { can, useSession } from "@/shared/session"
 import { ConfirmDialog, Notice } from "@/shared/ui"
 
@@ -64,7 +64,7 @@ export function ConnectSourcePage() {
     })
   }
 
-  const onCreate = (draft: SeedSourceDraft) => {
+  const onCreate = (draft: SecretReferenceDraft) => {
     // The button already refuses a denied click, and the handler asks the same
     // question again on the way in: the gate is the permission, not the control
     // that happens to be carrying it today. Asked against the project the form

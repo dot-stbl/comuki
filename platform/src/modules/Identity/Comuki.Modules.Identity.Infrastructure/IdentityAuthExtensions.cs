@@ -4,7 +4,6 @@ using Comuki.Modules.Identity.Infrastructure.Security;
 using Comuki.Modules.Identity.Infrastructure.Security.ApiKeys;
 using Comuki.Modules.Identity.Infrastructure.Security.Authorization;
 using Comuki.Modules.Identity.Infrastructure.Security.Cookies;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

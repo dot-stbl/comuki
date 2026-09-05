@@ -2,7 +2,6 @@ using System.Text.Json;
 using Comuki.Host.Runs;
 using Comuki.Modules.Knowledge.Application;
 using Comuki.Shared.Filtering.Ports;
-using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Host.Mcp;
 

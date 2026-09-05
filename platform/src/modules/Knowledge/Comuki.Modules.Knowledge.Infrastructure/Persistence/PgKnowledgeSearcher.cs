@@ -28,7 +28,10 @@ public sealed class PgKnowledgeSearcher(
         float minSimilarity,
         CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(query);
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            throw new InvalidOperationException("query required");
+        }
         if (topK is < 1 or > 1000)
         {
             throw new ArgumentOutOfRangeException(nameof(topK), topK, "topK must be in [1, 1000]");

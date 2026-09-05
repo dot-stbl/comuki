@@ -40,11 +40,30 @@ public sealed class PgKnowledgeIngestor(
         string text,
         CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(title);
-        ArgumentException.ThrowIfNullOrWhiteSpace(source);
-        ArgumentException.ThrowIfNullOrWhiteSpace(sourceRef);
-        ArgumentException.ThrowIfNullOrWhiteSpace(mimeType);
-        ArgumentException.ThrowIfNullOrWhiteSpace(text);
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new InvalidOperationException("title required");
+        }
+
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            throw new InvalidOperationException("source required");
+        }
+
+        if (string.IsNullOrWhiteSpace(sourceRef))
+        {
+            throw new InvalidOperationException("sourceRef required");
+        }
+
+        if (string.IsNullOrWhiteSpace(mimeType))
+        {
+            throw new InvalidOperationException("mimeType required");
+        }
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new InvalidOperationException("text required");
+        }
 
         var sourceKind = SourceKindKeys.ParseRequired(source);
         var targetTokens = ingestOptions.Value.ChunkTokenTarget;

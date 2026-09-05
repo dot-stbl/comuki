@@ -27,7 +27,7 @@ public sealed class ConfigurationVirtualKeyStore(IOptions<ProxyOptions> options,
             return Task.FromResult<VirtualKey?>(null);
         }
 
-        _ = byToken.Value.TryGetValue(token, out var match);
+        byToken.Value.TryGetValue(token, out var match);
         return Task.FromResult(match);
     }
 

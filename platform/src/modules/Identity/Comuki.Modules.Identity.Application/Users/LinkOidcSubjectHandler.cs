@@ -27,8 +27,10 @@ public sealed class LinkOidcSubjectHandler(
     {
         var userId = new UserId(command.UserId);
 
-        _ = await userStore.FindByIdAsync(userId, cancellationToken)
-            ?? throw new InvalidOperationException($"user {userId} not found");
+        if (await userStore.FindByIdAsync(userId, cancellationToken) is null)
+        {
+            throw new InvalidOperationException($"user {userId} not found");
+        }
 
         if (await oidcLinks.FindAsync(command.Provider, command.Subject, cancellationToken) is not null)
         {

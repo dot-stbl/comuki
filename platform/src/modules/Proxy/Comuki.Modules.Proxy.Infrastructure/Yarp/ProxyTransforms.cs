@@ -63,8 +63,8 @@ public static class ProxyTransforms
         // the transform completes. The body-based usage extractor family
         // (OpenAI / Anthropic) therefore stays dormant in v1; metering
         // resumes once the suite adopts a streaming-aware reader or a
-        // separate buffered-response middleware.
-        _ = context;
+        // separate buffered-response middleware. The `context` parameter is
+        // reserved for that follow-up (interface contract, can't drop).
         await Task.CompletedTask;
     }
 }

@@ -65,7 +65,7 @@ public static class IdentityAuthExtensions
             .AddCookie(AuthSchemes.Cookie)
             .AddScheme<ApiKeySchemeOptions, ApiKeyAuthenticationHandler>(AuthSchemes.ApiKey, _ => { });
 
-        AddOidcProviders(authentication, configuration);
+        AddOidcProviders();
 
         services.AddAuthorization();
 
@@ -117,16 +117,17 @@ public static class IdentityAuthExtensions
                 : AuthSchemes.Cookie;
     }
 
-    private static void AddOidcProviders(AuthenticationBuilder authentication, IConfiguration configuration)
+    /// <summary>
+    /// Reserved hook for future ASP.NET OpenIdConnect scheme registration.
+    /// Today the OIDC code-flow runs as a manual handler
+    /// (<c>OidcStartHandler</c> / <c>OidcCallbackHandler</c> in
+    /// <c>Identity.Application</c>) — discovery, PKCE, token exchange and
+    /// <c>id_token</c> validation are owned there, not by the ASP.NET
+    /// framework's <c>OpenIdConnect</c> scheme. Configuration is validated
+    /// by <c>OidcOptions</c>' data annotations at startup; no scheme
+    /// registration is needed yet.
+    /// </summary>
+    private static void AddOidcProviders()
     {
-        _ = authentication;
-        _ = configuration;
-
-        // The OIDC code-flow runs as a manual handler (OidcStartHandler /
-        // OidcCallbackHandler in Identity.Application) — discovery, PKCE,
-        // token exchange and id_token validation are owned there, not by
-        // the ASP.NET framework's OpenIdConnect scheme. Configuration
-        // is validated by OidcOptions' data annotations at startup; no
-        // scheme registration is needed here.
     }
 }

@@ -55,7 +55,10 @@ public sealed class McpServer(
 
     private static JsonRpcResponse ListToolsAsync(JsonElement? id, CancellationToken cancellationToken)
     {
-        _ = cancellationToken;
+        // The cancellation token is part of the dispatcher call shape so
+        // future async tool listings (e.g. dynamic tool catalog from a
+        // registry) can honor shutdown without changing the dispatcher's
+        // delegate signature. v1 returns a static catalog.
         var tools = new object[]
         {
             new
@@ -275,10 +278,12 @@ public sealed class McpServer(
 
     private static Task<JsonRpcResponse> RunsGetAsync(JsonElement? id, JsonElement? arguments, CancellationToken cancellationToken)
     {
-        _ = cancellationToken;
+        // The cancellation token is reserved for the future runs.get
+        // implementation; v1 returns a "not yet implemented" tool error so
+        // the caller can see the gap.
         var argumentsObject = arguments ?? default;
         var runIdText = ReadString(argumentsObject, "runId");
-        if (string.IsNullOrWhiteSpace(runIdText) || !Guid.TryParse(runIdText, out var parsedRunId))
+        if (string.IsNullOrWhiteSpace(runIdText) || !Guid.TryParse(runIdText, out _))
         {
             return Task.FromResult(JsonRpcResponse.Failure(
                 id,
@@ -292,8 +297,6 @@ public sealed class McpServer(
         // a dedicated GET /api/v1/runs/{id}. Until then surface the
         // gap as a tool error (vs. a JSON-RPC error) so the caller can
         // see the feature is not yet implemented.
-        _ = parsedRunId;
-        _ = new RunId(parsedRunId);
         return Task.FromResult(JsonRpcResponse.Success(id, new ToolResult(
             Content: [new ToolContentBlock("text", $"runs.get for {runIdText} is not yet implemented; use runs.list and filter by runId, or wait for a follow-up slice.")],
             IsError: true)));

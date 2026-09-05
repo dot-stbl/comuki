@@ -52,7 +52,7 @@ public static class ProxyInfrastructureExtensions
     /// <param name="services">DI container.</param>
     public static IServiceCollection AddVirtualKeyAuth(this IServiceCollection services)
     {
-        _ = services.AddAuthentication()
+        services.AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, VirtualKeyAuthenticationHandler>(
                 VirtualKeyAuthenticationHandler.SchemeName,
                 static _ => { });

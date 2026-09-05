@@ -18,8 +18,12 @@ public sealed class OidcClientSecrets(IOptions<OidcOptions> options) : IOidcClie
     /// <inheritdoc />
     public Task<string> GetAsync(string providerName, CancellationToken cancellationToken = default)
     {
-        _ = cancellationToken;
-
+        // The IOidcClientSecrets surface keeps the cancellation token so the
+        // interface signature lines up with the async call sites; lookup is a
+        // in-memory dictionary read with a single Environment.GetEnvironmentVariable
+        // probe, both fast enough that honoring cancellation would add lock-free
+        // state without observable benefit. Reserved if a future provider pulls
+        // its secret from an async vault (Consul KV, AWS Secrets Manager, …).
         lock (gate)
         {
             if (resolved.TryGetValue(providerName, out var cached))

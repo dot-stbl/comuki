@@ -25,8 +25,11 @@ public static class OidcAuthorizationUrlBuilder
         string state,
         string codeChallenge)
     {
-        _ = provider;
-
+        // The `provider` parameter is part of the public surface so callers
+        // can pass an OidcProviderOptions instance directly; the URL builder
+        // only consumes the per-call authorize endpoint + PKCE inputs. Reserved
+        // for a future per-provider URL signing slice (e.g. signed request
+        // objects) — drop the parameter if that signature is never adopted.
         var builder = new UriBuilder(authorizationEndpoint)
         {
             Query = string.Empty,

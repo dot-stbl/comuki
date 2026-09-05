@@ -23,7 +23,7 @@ public sealed class PostgresHealthCheck(string connectionString) : IHealthCheck
             await using var command = connection.CreateCommand();
             command.CommandText = "SELECT 1";
             command.CommandTimeout = 2;
-            _ = await command.ExecuteScalarAsync(cancellationToken);
+            await command.ExecuteScalarAsync(cancellationToken);
             return HealthCheckResult.Healthy(description: "Postgres SELECT 1 returned 1");
         }
         catch (Exception ex)

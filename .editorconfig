@@ -134,6 +134,14 @@ dotnet_diagnostic.IDE0072.severity = none
 # calls; the IDE0058 fixer is what inserts them — off.
 dotnet_diagnostic.IDE0058.severity = none
 
+# Unused-parameter warnings on public API signatures (controller actions,
+# OIDC handlers, hooks) — the parameter is part of the public contract
+# even when the body doesn't read it (ASP.NET routing, kubb-generated
+# client signatures, framework-required cancellation tokens on interfaces).
+# The discard-cleanup sweep removed the `_ =` discards; the IDE0060 warnings
+# are the leftover analysis noise.
+dotnet_diagnostic.IDE0060.severity = none
+
 # Forget ConfigureAwait — для library code; в app можно отключить
 
 #---------------------------------------------------------------------

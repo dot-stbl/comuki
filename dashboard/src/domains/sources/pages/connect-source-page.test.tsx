@@ -142,11 +142,12 @@ const control = (testId: string) =>
 const fill = (testId: string, value: string) =>
   fireEvent.change(control(testId), { target: { value } })
 
-/** A complete github draft, credential and all. */
+/** A complete github draft, env-var name + mock-mode credential. */
 function fillDraft(secret = "ghp-not-a-real-token-0001") {
   fill("connect-name", "here/web-app")
   fill("connect-account", "svc-bot")
-  fill("connect-secret", secret)
+  fill("connect-secret-env", "COMUKI_GITHUB_TOKEN")
+  fill("connect-mock-secret", secret)
 }
 
 /** Press test and wait for the provider to answer, either way. */
@@ -255,7 +256,7 @@ describe("submitting lands on the thing it just made", () => {
     // A good credential opens it — and then an edit shuts it again, because a
     // credential that worked before the account was changed is not evidence
     // about the account that is there now.
-    fill("connect-secret", "ghp-not-a-real-token-0001")
+    fill("connect-mock-secret", "ghp-not-a-real-token-0001")
     await probe()
     await waitFor(() => expect(save.hasAttribute("disabled")).toBe(false))
 

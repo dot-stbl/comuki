@@ -6,9 +6,6 @@ import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
 import {
   CONNECTABLE_KINDS,
   SOURCE_KIND_LABEL,
-  effectiveAuth,
-  needsBaseUrl,
-  secretLabel,
   targetLabel,
   targetPlaceholder,
 } from "@/domains/sources/model/providers"
@@ -17,9 +14,12 @@ import type {
   SourceAuth,
   SourceKind,
 } from "@/domains/sources/model/types"
-import { ConnectionFields } from "@/domains/sources/ui/connection-fields"
-import type { SeedSourceDraft } from "@/shared/api/mock/sources.store"
+import {
+  type SecretReferenceDraft,
+  type TestDraftInput,
+} from "@/domains/sources/api/mutations"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
+import { env } from "@/shared/config/env"
 import { Button, Notice, SelectField, TextField, Tooltip } from "@/shared/ui"
 
 // The domain's one spinner, shared with the row-level test and the source
@@ -33,40 +33,35 @@ export interface ConnectSourceFormProps {
   probe: ProbeResult | null
   probing: boolean
   busy?: boolean
-  onTest: (input: { draft: SeedSourceDraft; secret: string }) => void
+  onTest: (input: TestDraftInput) => void
   /** "The details moved — forget the last answer." */
   onDraftChange: () => void
-  onCreate: (draft: SeedSourceDraft) => void
+  onCreate: (draft: SecretReferenceDraft) => void
   onCancel: () => void
   /** Tells the page whether there is anything here worth asking about. */
   onDirtyChange?: (dirty: boolean) => void
 }
 
 /**
- * Connect a source: four decisions, in the order they constrain each other.
+ * Connect a source: three decisions, in the order they constrain each other.
  *
- * The provider, the project it feeds, where the instance is, and the
- * credential. This was a dialog and is now the fields half of a page — the
- * arguments are unchanged, because none of them were about being in a modal.
+ * The provider, the project it feeds, and the env-var NAME holding the
+ * outbound credential. The dashboard form never holds a plaintext
+ * credential — only `secretEnvRef` (the env-var name) plus a JSON object
+ * of non-secret settings (auth kind, account, base url). The host resolves
+ * the secret at probe and webhook time.
  *
- * **Test before save is a requirement, not a nicety**, so it is wired as one:
- * the submit stays `disabled` until a probe has come back ok, and any edit
- * afterwards drops that answer, because a credential that worked before the
- * host was changed is not evidence about the host that is there now.
- * `disabled` and not `denied` — an untested form is *invalid*, not forbidden,
- * and the two states must not look alike.
+ * **Test before save is a requirement, not a nicety**, so it is wired as
+ * one: the submit stays `disabled` until a probe has come back ok, and
+ * any edit afterwards drops that answer, because a credential that
+ * worked before the host was changed is not evidence about the host
+ * that is there now. `disabled` and not `denied` — an untested form is
+ * *invalid*, not forbidden, and the two states must not look alike.
  *
- * **The secret is said once, where it is entered.** The notice sits directly
- * above the box rather than under the button, because an irreversible rule
- * explained afterwards is an apology. Nothing downstream of this form holds the
- * value: it goes to the probe, it goes nowhere else, and the row that appears
- * afterwards carries a date and not a token.
- *
- * No router, no shell, no mutation — the page above owns all three, which is
- * what lets the fields and the rules about them be tested on their own. What it
- * *does* read is the session, because the act it gates on is `sources.edit` on
- * **the project this form picked**, and no one above it knows which that is
- * until the operator has chosen.
+ * The mock path still asks the operator to type a literal secret because
+ * there is no env-var layer in mock mode; the literal value is held by
+ * the form for exactly as long as the form is mounted, and never reaches
+ * any other surface. Real mode never asks.
  */
 export function ConnectSourceForm({
   probe,
@@ -86,27 +81,38 @@ export function ConnectSourceForm({
   const [auth, setAuth] = useState<SourceAuth>("pat")
   const [account, setAccount] = useState("")
   const [baseUrl, setBaseUrl] = useState("")
-  // The credential lives here, for exactly as long as this form is mounted.
-  const [secret, setSecret] = useState("")
+  /**
+   * The env-var name that holds the credential. The dashboard never sees
+   * the value; the host resolves it at probe and webhook time.
+   */
+  const [secretEnvRef, setSecretEnvRef] = useState("")
+  /**
+   * Mock-only literal credential, held by the form for exactly as long as
+   * the form is mounted. Never sent on the wire — real mode reads the
+   * env var from the host instead.
+   */
+  const [mockSecret, setMockSecret] = useState("")
   /* Coarse on purpose, the way `useUnsavedGuard` asks for it: any field touched
      at all. A form this short has no drafts worth diffing, and a guard that
      tried to be clever about which edits matter is a guard that will one day
      drop the one that did. */
   const [touched, setTouched] = useState(false)
 
-  // Derived rather than synced: changing the provider cannot leave the form
-  // holding a credential kind that provider does not implement, and there is
-  // no effect to fire in the wrong order.
-  const chosenAuth = effectiveAuth(kind, auth)
-  const wantsHost = needsBaseUrl(kind)
+  const wantsHost = SELF_HOSTED_SET.has(kind)
+  const settingsJson = JSON.stringify({
+    auth,
+    account: account.trim(),
+    baseUrl: wantsHost ? baseUrl.trim() : "",
+  })
 
-  const draft: SeedSourceDraft = {
+  const draft: SecretReferenceDraft = {
     projectId,
     kind,
     name: name.trim(),
-    auth: chosenAuth,
+    auth,
     account: account.trim(),
     baseUrl: wantsHost ? baseUrl.trim() : "",
+    secretEnvRef: secretEnvRef.trim(),
   }
 
   const projectKey = projectOf(session, projectId)?.key
@@ -130,8 +136,9 @@ export function ConnectSourceForm({
   const complete =
     draft.name.length > 0 &&
     draft.account.length > 0 &&
-    secret.trim().length > 0 &&
-    (!wantsHost || draft.baseUrl.length > 0)
+    draft.secretEnvRef.length > 0 &&
+    (!wantsHost || draft.baseUrl.length > 0) &&
+    (!env.useMock || mockSecret.trim().length > 0)
 
   const tested = probe?.ok === true
 
@@ -185,35 +192,80 @@ export function ConnectSourceForm({
           onValueChange={edit(setName)}
         />
 
-        <ConnectionFields
-          idPrefix="connect"
-          kind={kind}
-          baseUrl={baseUrl}
-          account={account}
-          auth={chosenAuth}
+        {wantsHost ? (
+          <TextField
+            id="connect-base-url"
+            label="base url"
+            value={baseUrl}
+            disabled={busy}
+            placeholder="https://git.example.internal"
+            spellCheck={false}
+            hint="self-hosted only. https, because the credential crosses this wire."
+            data-test="connect-base-url"
+            onValueChange={edit(setBaseUrl)}
+          />
+        ) : null}
+
+        <SelectField
+          id="connect-auth"
+          label="auth kind"
+          value={auth}
           disabled={busy}
-          onBaseUrlChange={edit(setBaseUrl)}
-          onAuthChange={edit(setAuth)}
-          onAccountChange={edit(setAccount)}
+          options={AUTH_OPTIONS}
+          hint="what the connector accepts. Stored verbatim in the settings json; never holds a credential."
+          data-test="connect-auth"
+          onValueChange={(next: string) => edit(setAuth)(next as SourceAuth)}
         />
 
-        <Notice data-test="secret-notice">
-          The {secretLabel(chosenAuth)} is stored write-only. It is never shown
-          again — not on this row, not in this form, not through the api — so
-          keep your own copy before you save.
+        <TextField
+          id="connect-account"
+          label="account"
+          value={account}
+          disabled={busy}
+          placeholder="the bot or app the credential belongs to"
+          spellCheck={false}
+          hint="shown on the row afterwards, so a stale credential can be traced to a person."
+          data-test="connect-account"
+          onValueChange={edit(setAccount)}
+        />
+
+        <Notice data-test="settings-preview">
+          The host stores this as a single settings json: <code>{settingsJson}</code>
         </Notice>
 
         <TextField
-          id="connect-secret"
-          label={secretLabel(chosenAuth)}
-          type="password"
-          value={secret}
+          id="connect-secret-env"
+          label="secret env var"
+          value={secretEnvRef}
           disabled={busy}
+          placeholder="COMUKI_GITHUB_TOKEN"
           autoComplete="off"
           spellCheck={false}
-          data-test="connect-secret"
-          onValueChange={edit(setSecret)}
+          hint="the name of the env var on the host that holds the credential. The host resolves the value at probe / webhook time — the dashboard never sees it."
+          data-test="connect-secret-env"
+          onValueChange={edit(setSecretEnvRef)}
         />
+
+        {env.useMock ? (
+          <>
+            <Notice data-test="mock-secret-notice">
+              Mock mode only: the form holds a literal credential long enough
+              to probe the seed store. Real mode reads the env var on the
+              host instead and never sees the value.
+            </Notice>
+            <TextField
+              id="connect-mock-secret"
+              label="credential (mock only)"
+              type="password"
+              value={mockSecret}
+              disabled={busy}
+              autoComplete="off"
+              spellCheck={false}
+              data-test="connect-mock-secret"
+              onValueChange={edit(setMockSecret)}
+            />
+          </>
+        ) : null}
 
         <div className={styles.probe}>
           {/* Two words became a glyph, so this is the same mark the row-level
@@ -229,7 +281,9 @@ export function ConnectSourceForm({
                 disabled={!complete || probing || busy}
                 aria-busy={probing || undefined}
                 aria-label="Test connection"
-                onClick={() => onTest({ draft, secret })}
+                onClick={() =>
+                  onTest({draft, secretEnvRef: draft.secretEnvRef, mockSecret})
+                }
               >
                 {probing ? (
                   <Loader2 className={tableStyles.spin} aria-hidden="true" />
@@ -278,3 +332,11 @@ export function ConnectSourceForm({
     </FormLayout>
   )
 }
+
+const SELF_HOSTED_SET: ReadonlySet<SourceKind> = new Set(["gitlab", "jira"])
+
+const AUTH_OPTIONS = [
+  {value: "pat", label: "personal access token"},
+  {value: "oauth", label: "oauth grant"},
+  {value: "app-install", label: "app install"},
+]

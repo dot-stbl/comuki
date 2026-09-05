@@ -48,9 +48,11 @@ public sealed class IdentityStoresShould : IAsyncLifetime
         db = new IdentityDbContext(optionsBuilder.Options);
         await db.Database.MigrateAsync(cancellationToken);
 
+        var clock = new FakeTimeProvider(now);
+
         assignmentStore = new RoleAssignmentStore(db);
         apiKeyStore = new ApiKeyStore(db);
-        oidcStateStore = new OidcStateStore(db);
+        oidcStateStore = new OidcStateStore(db, clock);
     }
 
     /// <inheritdoc />
@@ -259,5 +261,43 @@ public sealed class IdentityStoresShould : IAsyncLifetime
         var live = await oidcStateStore.ConsumeAsync(fresh.Id, TestContext.Current.CancellationToken);
         live.ShouldNotBeNull();
         live.ReturnTo.ShouldBe("/runs");
+    }
+
+    [Fact(DisplayName = "Given a stored OIDC state whose ExpiresAt has passed, when ConsumeAsync runs, then null is returned even though the row exists")]
+    public async Task OidcStateConsumeExpiredReturnsNullAsync()
+    {
+        await ResetAsync();
+
+        // Created 10 minutes before the fixture's "now" with a 5-minute TTL —
+        // ExpiresAt = now-5min, which is already in the past at the fixture clock.
+        var expired = OidcState.Create(
+            "keycloak",
+            "expired-verifier",
+            "S256",
+            "https://app.example.com/api/v1/auth/oidc/callback",
+            "/runs",
+            now.AddMinutes(-10),
+            TimeSpan.FromMinutes(5));
+        await oidcStateStore.SaveAsync(expired, TestContext.Current.CancellationToken);
+
+        var consumed = await oidcStateStore.ConsumeAsync(expired.Id, TestContext.Current.CancellationToken);
+
+        consumed.ShouldBeNull();
+    }
+}
+
+/// <summary>
+/// Deterministic clock for expiry tests — the store reads time exclusively
+/// through the injected <see cref="TimeProvider" />.
+/// </summary>
+/// <param name="initial">The fixed reading returned by <see cref="GetUtcNow" />.</param>
+internal sealed class FakeTimeProvider(DateTimeOffset initial) : TimeProvider
+{
+    private readonly DateTimeOffset utcNow = initial;
+
+    /// <inheritdoc />
+    public override DateTimeOffset GetUtcNow()
+    {
+        return utcNow;
     }
 }

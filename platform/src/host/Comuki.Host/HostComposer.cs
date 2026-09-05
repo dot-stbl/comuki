@@ -1,5 +1,6 @@
 using Comuki.Host.Artifacts;
 using Comuki.Host.Auth;
+using Comuki.Host.Auth.Models;
 using Comuki.Host.Auth.Security;
 using Comuki.Host.Chat.Brain;
 using Comuki.Host.Chat.RunStarter;
@@ -42,6 +43,7 @@ using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Telemetry.Installers;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
@@ -181,6 +183,15 @@ internal static class HostComposer
         builder.Services.AddControllers();
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ProviderExceptionHandler>();
+
+        // Identity-admin surface (issues #31-#37): request-level validators
+        // sit alongside the module-level ones; they share the same DI
+        // pipeline and the startup validator over RequiresPermissionAttribute.
+        builder.Services.AddScoped<IValidator<InviteUserRequest>, InviteUserRequestValidator>();
+        builder.Services.AddScoped<IValidator<SetUserDisabledRequest>, SetUserDisabledRequestValidator>();
+        builder.Services.AddScoped<IValidator<LinkOidcRequest>, LinkOidcRequestValidator>();
+        builder.Services.AddScoped<IValidator<GrantRoleRequest>, GrantRoleRequestValidator>();
+        builder.Services.AddScoped<IValidator<CreateApiKeyRequest>, CreateApiKeyRequestValidator>();
 
         // Security pass (issue #10 T11.4): CORS allow-list for the
         // dashboard SPA + per-endpoint rate-limit partitions. Both are

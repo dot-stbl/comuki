@@ -16,6 +16,7 @@ namespace Comuki.Host.Integration.Auth;
 /// keep seeing everything, and anonymous callers get the fail-closed
 /// empty answer instead of a leak.
 /// </summary>
+[Collection(nameof(AuthIntegrationCollection))]
 public sealed class ProjectScopeShould(HostAuthServer server) : IClassFixture<HostAuthServer>
 {
     private const string MemberPassword = "user-pass-123";

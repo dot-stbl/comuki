@@ -75,10 +75,16 @@ public sealed class HostIntakeServer : IAsyncLifetime
             });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
+        builder.Logging.AddSimpleConsole(static options => options.IncludeScopes = true);
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
         builder.Configuration["Intake:BridgeInterval"] = "00:00:01";
         builder.Configuration["Intake:SyncBackoff"] = "00:00:01";
+        // Lift rate-limit partitions for the integration run.
+        builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
+        builder.Configuration["Host:RateLimit:ApiPermitsPerMinute"] = "100000";
+        builder.Configuration["Host:RateLimit:RunDecisionPermitsPerMinute"] = "10000";
+        builder.Configuration["Host:RateLimit:OidcStartPermitsPerMinute"] = "10000";
         // Artifacts module — non-dev-default secrets so the production-secret
         // validator (issue #10 T11.4) passes through.
         builder.Configuration["Artifacts:Endpoint"] = "minio:9000";

@@ -311,7 +311,7 @@ internal static class HostComposer
         // scheme so a missing bearer never falls through to the Cookie
         // redirect (RequireAuthorization's string overload is policy-named,
         // not scheme-named — the attribute sets the scheme explicitly).
-        _ = app.MapReverseProxy()
+        app.MapReverseProxy()
             .RequireAuthorization(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute
             {
                 AuthenticationSchemes = Modules.Proxy.Infrastructure.Auth.VirtualKeyAuthenticationHandler.SchemeName,

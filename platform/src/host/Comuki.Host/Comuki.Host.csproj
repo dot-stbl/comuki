@@ -77,6 +77,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Artifacts" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Proxy" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Knowledge" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Smoke" />
   </ItemGroup>
 
   <!--

@@ -46,9 +46,6 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("postgres:16-alpine")
         .Build();
 
-    private readonly PostgreSqlContainer postgresSeed = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
-
 #pragma warning disable CS0612
     private readonly MinioContainer minio = new MinioBuilder("minio/minio:latest")
         .WithUsername(MinioUser)
@@ -70,21 +67,13 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         await Task.WhenAll(
             postgres.StartAsync(cancellationToken),
-            postgresSeed.StartAsync(cancellationToken),
             minio.StartAsync(cancellationToken));
 
         connectionString = postgres.GetConnectionString() + ";Application Name=host;Pooling=false";
         hostConnectionString = connectionString;
-        // Seed writes into the host's database. The two-container split
-        // (postgres + postgresSeed) was introduced to dodge an Npgsql
-        // connection-share flake, but it also hid the seed rows from the
-        // host's discovery query — the host saw an empty orchestration
-        // schema, the poll returned no candidates, no bundle was uploaded,
-        // and the list endpoint then 500'd on BucketNotFoundException.
-        // The race fix in RunArtifactPackagerService (fresh scope per
-        // phase + per candidate) plus Pooling=false on both connection
-        // strings is enough isolation for the test to be reliable, so we
-        // point the seed at the same database the host reads from.
+        // Seed writes into the host's database; isolation relies on
+        // Pooling=false and the per-phase/per-candidate scope in
+        // RunArtifactPackagerService.
         seedConnectionString = hostConnectionString;
         minioEndpoint = minio.GetConnectionString();
 
@@ -141,7 +130,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await application.DisposeAsync();
-        await Task.WhenAll(postgres.DisposeAsync().AsTask(), postgresSeed.DisposeAsync().AsTask(), minio.DisposeAsync().AsTask());
+        await Task.WhenAll(postgres.DisposeAsync().AsTask(), minio.DisposeAsync().AsTask());
     }
 
     [Fact(DisplayName = "Given a terminal run, when the packager polls, then the bundle appears in MinIO and the API returns the pointers")]

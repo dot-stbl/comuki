@@ -9,34 +9,28 @@ import type {
   RequestConfig,
   ResponseErrorConfig,
 } from "@/shared/api/kubb-client"
-import type {
-  GetApiV1RunsQueryResponse,
-  GetApiV1RunsQueryParams,
-  GetApiV1Runs400,
-} from "../types/GetApiV1Runs"
+import type { PostApiV1McpMutationResponse } from "../types/PostApiV1Mcp"
 
-function getGetApiV1RunsUrl() {
-  const res = { method: "GET", url: `/api/v1/runs` as const }
+function getPostApiV1McpUrl() {
+  const res = { method: "POST", url: `/api/v1/mcp` as const }
   return res
 }
 
 /**
- * {@link /api/v1/runs}
+ * {@link /api/v1/mcp}
  */
-export async function getApiV1Runs(
-  params?: GetApiV1RunsQueryParams,
+export async function postApiV1Mcp(
   config: Partial<RequestConfig> & { client?: Client } = {}
 ) {
   const { client: request = fetch, ...requestConfig } = config
 
   const res = await request<
-    GetApiV1RunsQueryResponse,
-    ResponseErrorConfig<GetApiV1Runs400>,
+    PostApiV1McpMutationResponse,
+    ResponseErrorConfig<Error>,
     unknown
   >({
-    method: "GET",
-    url: getGetApiV1RunsUrl().url.toString(),
-    params,
+    method: "POST",
+    url: getPostApiV1McpUrl().url.toString(),
     ...requestConfig,
   })
   return res.data

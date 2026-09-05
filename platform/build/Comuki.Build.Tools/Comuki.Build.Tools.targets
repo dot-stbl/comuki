@@ -83,4 +83,98 @@
              Text="[VerifyFormatOnBuild] Format drift detected (downgraded): $(_FormatDriftCount) violation(s). See obj/format-verify.log." />
   </Target>
 
+  <!--
+    VerifyRuleAwareness reminds the agent (human or AI) which rule
+    corpora it should have loaded into context before writing code.
+
+    Runs at the start of every solution build. Scans:
+      - ~/.agents/rules/csharp/**/*.md
+      - ~/.agents/rules/typescript/**/*.md
+      - ~/.agents/rules/process/**/*.md
+      - ~/.agents/rules/observability/**/*.md
+      - .agents/rules/coding/**/*.md   (this repo)
+      - .agents/rules/process/**/*.md  (this repo)
+
+    Emits one Message per scope with the file list, prefixed by a
+    banner that says "REMINDER: read these before code change". This
+    target is WARNING ONLY; it never fails the build; the agent is
+    expected to read the rules in response to the reminder. Disable via
+    -p:DisableRuleAwareness=true for inner-loop noise.
+
+    Pair target: SelfAuditReport (below) emits the post-build audit
+    report that proves the rules were re-read and applied.
+  -->
+  <Target Name="VerifyRuleAwareness"
+          BeforeTargets="Build"
+          Condition="'$(DisableRuleAwareness)' != 'true' AND '$(DesignTimeBuild)' != 'true'">
+
+    <PropertyGroup>
+      <_RuleAwarenessLog>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../../obj/rule-awareness.log'))</_RuleAwarenessLog>
+      <!-- Strip the trailing separator so PowerShell does not see \" (escaped
+           quote) inside the -RepoRoot argument. GetFullPath leaves a trailing
+           slash on directory paths, which trips PowerShell's quote parser. -->
+      <_RuleAwarenessRepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../../').TrimEnd('\/').TrimEnd('\\'))</_RuleAwarenessRepoRoot>
+      <_RuleAwarenessScript>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)Scripts/print-rule-list.ps1'))</_RuleAwarenessScript>
+    </PropertyGroup>
+
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(_RuleAwarenessLog)'))" />
+
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(_RuleAwarenessScript)&quot; -Output &quot;$(_RuleAwarenessLog)&quot; -RepoRoot &quot;$(_RuleAwarenessRepoRoot)&quot;"
+          IgnoreExitCode="true" />
+
+    <ReadLinesFromFile File="$(_RuleAwarenessLog)">
+      <Output TaskParameter="Lines" ItemName="_RuleAwarenessLines" />
+    </ReadLinesFromFile>
+
+    <Message Text="[VerifyRuleAwareness] ==========================================================="
+             Importance="High" />
+    <Message Text="[VerifyRuleAwareness] REMINDER: read these rule files before any code change."
+             Importance="High" />
+    <Message Text="[VerifyRuleAwareness] Re-read at the end and self-audit (see RULES-BOOTSTRAP.md)."
+             Importance="High" />
+    <Message Text="[VerifyRuleAwareness] ==========================================================="
+             Importance="High" />
+    <Message Text="[VerifyRuleAwareness] %( _RuleAwarenessLines.Identity)"
+             Importance="High" />
+    <Message Text="[VerifyRuleAwareness] ==========================================================="
+             Importance="High" />
+  </Target>
+
+  <!--
+    SelfAuditReport scans the last commit's changed .cs files for
+    banned patterns from .agents/rules/process/worker-audit.md and
+    writes a markdown report to audit-data/last-commit-audit.md.
+
+    Runs AfterTargets="Build" so it only fires when the build itself
+    succeeded. WARNING ONLY; emits a Message with a [WARN] prefix
+    when violations > 0, but TreatWarningsAsErrors does NOT promote
+    MSBuild Message output to errors, so the build still succeeds.
+    Disable via -p:DisableSelfAuditReport=true for inner-loop noise.
+
+    This complements worker-audit.md (the prose rule) by giving the
+    agent a machine-checkable artefact proving the audit ran.
+  -->
+  <Target Name="SelfAuditReport"
+          AfterTargets="Build"
+          Condition="'$(DisableSelfAuditReport)' != 'true' AND '$(DesignTimeBuild)' != 'true'">
+
+    <PropertyGroup>
+      <_AuditReportDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../../audit-data'))</_AuditReportDir>
+      <_AuditReportFile>$(_AuditReportDir)\last-commit-audit.md</_AuditReportFile>
+      <!-- Same trailing-separator fix as VerifyRuleAwareness above. -->
+      <_AuditRepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../../').TrimEnd('\/').TrimEnd('\\'))</_AuditRepoRoot>
+      <_AuditScript>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)Scripts/self-audit.ps1'))</_AuditScript>
+    </PropertyGroup>
+
+    <Message Text="[SelfAuditReport] Generating audit report at $(_AuditReportFile)..."
+             Importance="High" />
+
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(_AuditScript)&quot; -Output &quot;$(_AuditReportFile)&quot; -RepoRoot &quot;$(_AuditRepoRoot)&quot;"
+          WorkingDirectory="$(_AuditRepoRoot)"
+          IgnoreExitCode="true" />
+
+    <Message Text="[SelfAuditReport] See $(_AuditReportFile)"
+             Importance="High" />
+  </Target>
+
 </Project>

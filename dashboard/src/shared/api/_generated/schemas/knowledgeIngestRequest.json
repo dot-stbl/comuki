@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "projectId": { "type": ["null", "string"], "format": "uuid" },
+    "title": { "type": "string" },
+    "source": { "type": "string" },
+    "sourceRef": { "type": "string" },
+    "mimeType": { "type": "string" },
+    "text": { "type": "string" }
+  },
+  "x-readme-ref-name": "KnowledgeIngestRequest"
+}

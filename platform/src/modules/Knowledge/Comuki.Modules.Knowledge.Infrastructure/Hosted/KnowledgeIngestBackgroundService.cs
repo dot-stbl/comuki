@@ -11,19 +11,17 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Hosted;
 /// yet, so the loop is a heartbeat that logs readiness + checks the
 /// pgvector availability). When the KnowledgeSource table lands in a
 /// later slice, this loop becomes the dispatcher: every pending source
-/// row triggers a per-document <see cref="IKnowledgeIngestor"/> call.
+/// row triggers a per-document <see cref="IKnowledgeIngestor"/> call
+/// resolved through an <see cref="IServiceScopeFactory"/> injected at
+/// that point (per-source scope, scoped DbContext lifetime).
 /// </summary>
 public sealed class KnowledgeIngestBackgroundService(
-    IServiceProvider services,
     IOptions<KnowledgeIngestOptions> options,
     ILogger<KnowledgeIngestBackgroundService> logger) : BackgroundService
 {
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // The `services` parameter is reserved for the future dispatcher:
-        // every pending KnowledgeSource row will resolve a fresh
-        // IKnowledgeIngestor scope from it. v0 is a heartbeat.
         var interval = TimeSpan.FromSeconds(Math.Max(1, options.Value.PollIntervalSeconds));
         logger.LogInformation("knowledge doc worker started (interval {IntervalSeconds}s)", interval.TotalSeconds);
 

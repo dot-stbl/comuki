@@ -30,7 +30,7 @@ public static class McpModuleEndpoints
         JsonRpcRequest? envelope;
         try
         {
-            envelope = await JsonSerializer.DeserializeAsync<JsonRpcRequest>(request.Body, JsonSerializerOptions.Web, cancellationToken).ConfigureAwait(false);
+            envelope = await JsonSerializer.DeserializeAsync<JsonRpcRequest>(request.Body, JsonSerializerOptions.Web, cancellationToken);
         }
         catch (JsonException exception)
         {
@@ -56,7 +56,7 @@ public static class McpModuleEndpoints
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
-        var response = await server.DispatchAsync(envelope, cancellationToken).ConfigureAwait(false);
+        var response = await server.DispatchAsync(envelope, cancellationToken);
 
         // JSON-RPC notifications carry no id and the spec says the
         // endpoint must not respond. 204 No Content is the closest

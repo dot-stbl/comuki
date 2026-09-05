@@ -27,6 +27,14 @@ Thumbs.db
 # — single source of truth for any client codegen (Kubb, future TS/C# SDKs).
 **/openapi-*.json
 
+# Self-audit reports (VerifyRuleAwareness / SelfAuditReport / rule-audit.ts).
+# Regenerated on every dotnet build / predev / prebuild. The audit data lives
+# next to the curated scan-N reports in audit-data/, but these two files are
+# SNAPSHOTS of HEAD, not source -- keeping them tracked would dirty every
+# commit that builds. scan-N reports are still tracked (one-shot audits).
+audit-data/last-commit-audit.md
+audit-data/last-commit-audit-fe.md
+
 # Local credentials — copy deploy/.env.example, never commit the real one
 deploy/.env
 

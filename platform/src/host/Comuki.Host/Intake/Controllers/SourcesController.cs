@@ -174,8 +174,12 @@ public sealed class SourcesController(
         UpdateAdmissionRuleRequest request,
         CancellationToken cancellationToken = default)
     {
-        _ = sourceId;
-
+        // `sourceId` is part of the route template
+        // (ApiRoutes.SourceAdmissionRule = "/api/v1/sources/{sourceId:guid}/rules/{ruleId:guid}")
+        // so the FE's nested form resolves to the right controller action; the
+        // admission-rule update keys off ruleId alone. Reserved if a future
+        // cross-source consistency check (e.g. "the rule's filter must mention
+        // the source's namespace") ever needs the source row.
         return IntakeEndpointRunner.ExecuteAsync(async () =>
             Ok(await rules.UpdateAsync(
                 new AdmissionRuleId(ruleId),

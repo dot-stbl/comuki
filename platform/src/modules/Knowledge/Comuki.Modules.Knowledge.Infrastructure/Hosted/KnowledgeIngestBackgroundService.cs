@@ -21,7 +21,9 @@ public sealed class KnowledgeIngestBackgroundService(
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _ = services;
+        // The `services` parameter is reserved for the future dispatcher:
+        // every pending KnowledgeSource row will resolve a fresh
+        // IKnowledgeIngestor scope from it. v0 is a heartbeat.
         var interval = TimeSpan.FromSeconds(Math.Max(1, options.Value.PollIntervalSeconds));
         logger.LogInformation("knowledge doc worker started (interval {IntervalSeconds}s)", interval.TotalSeconds);
 
@@ -57,9 +59,10 @@ public sealed class KnowledgeIngestBackgroundService(
 
     private Task TickAsync(CancellationToken cancellationToken)
     {
-        _ = cancellationToken;
-        // v0 heartbeat — a future layer replaces this with a sweep over
-        // a KnowledgeSource table and per-row ingest calls.
+        // The cancellation token is reserved for the future sweep: a row-by-row
+        // IKnowledgeIngestor scope will honor shutdown between sources. v0 is a
+        // heartbeat — the surrounding ExecuteAsync loop already breaks on
+        // OperationCanceledException, so the token would be redundant here.
         logger.LogDebug("knowledge doc worker heartbeat (no sources yet)");
         return Task.CompletedTask;
     }

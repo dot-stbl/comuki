@@ -12,4 +12,7 @@ public static class IdentityClaimNames
 
     /// <summary>The api key id behind an API-key principal.</summary>
     public const string ApiKeyId = "comuki_api_key_id";
+
+    /// <summary>The api key's tenant (project) id behind an API-key principal.</summary>
+    public const string ApiKeyTenant = "comuki_api_key_tenant";
 }

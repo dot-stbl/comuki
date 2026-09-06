@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Comuki.Modules.Identity.Infrastructure.Persistence.Configurations;
 
-/// <summary>Api keys table mapping: unique public prefix, HMAC column, FK to the owner.</summary>
+/// <summary>Api keys table mapping: unique public prefix, HMAC column, FK to the owner, optional tenant project id.</summary>
 public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
 {
     /// <inheritdoc />
@@ -45,6 +45,10 @@ public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
             .IsFixedLength()
             .IsRequired();
 
+        builder.Property(static apiKey => apiKey.TenantProjectId)
+            .HasColumnName("tenant_project_id")
+            .HasConversion(IdentityIdConverters.ProjectIdToUuid);
+
         builder.Property(static apiKey => apiKey.CreatedAt)
             .HasColumnName("created_at");
 
@@ -59,5 +63,11 @@ public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
         builder.HasIndex(static apiKey => apiKey.Prefix)
             .IsUnique()
             .HasDatabaseName("ix_api_keys_prefix");
+
+        // Tenant lookup is per-project (a fleet rotation finds every
+        // scoped key for the project to revoke). Nulls are allowed —
+        // legacy unscoped keys keep authenticating.
+        builder.HasIndex(static apiKey => apiKey.TenantProjectId)
+            .HasDatabaseName("ix_api_keys_tenant_project_id");
     }
 }

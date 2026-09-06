@@ -11,6 +11,10 @@ namespace Comuki.Modules.Identity.Application.ApiKeys;
 /// <param name="UserId"></param>
 /// <param name="Name"></param>
 /// <param name="Prefix"></param>
+/// <param name="TenantProjectId">
+/// Tenant scope the key was issued under. Null when the key has no
+/// tenant scope and accepts any <c>X-Comuki-Tenant</c> header value.
+/// </param>
 /// <param name="CreatedAt"></param>
 /// <param name="LastUsedAt"></param>
 /// <param name="RevokedAt"></param>
@@ -20,6 +24,7 @@ public sealed record ApiKeyView(
     Guid UserId,
     string Name,
     string Prefix,
+    Guid? TenantProjectId,
     DateTimeOffset CreatedAt,
     DateTimeOffset? LastUsedAt,
     DateTimeOffset? RevokedAt,
@@ -35,6 +40,7 @@ public sealed record ApiKeyView(
             apiKey.UserId.Value,
             apiKey.Name,
             apiKey.Prefix,
+            apiKey.TenantProjectId?.Value,
             apiKey.CreatedAt,
             apiKey.LastUsedAt,
             apiKey.RevokedAt,

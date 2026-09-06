@@ -277,7 +277,7 @@ public sealed class HostAuthServer : IAsyncLifetime
         using var scope = application.Services.CreateScope();
 
         return await scope.ServiceProvider.GetRequiredService<ApiKeyIssuer>()
-            .IssueAsync(ownerId, "integration-key", TestContext.Current.CancellationToken);
+            .IssueAsync(ownerId, "integration-key", null, TestContext.Current.CancellationToken);
     }
 
     /// <summary>Runs the bootstrap seeder one more time (idempotence probe).</summary>

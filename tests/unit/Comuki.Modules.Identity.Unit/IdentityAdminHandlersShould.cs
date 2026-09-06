@@ -188,7 +188,7 @@ public sealed class IdentityAdminHandlersShould
             Substitute.For<IApiKeyStore>(),
             new ApiKeyHasher(Options.Create(new ApiKeyOptions { Pepper = "unit-test-pepper-0123456789abcdef" })),
             clock);
-        var issued = await issuer.IssueAsync(userId, "ci", TestContext.Current.CancellationToken);
+        var issued = await issuer.IssueAsync(userId, "ci", null, TestContext.Current.CancellationToken);
 
         var apiKeyStore = Substitute.For<IApiKeyStore>();
         var stored = ApiKey.Create(userId, "ci", issued.Prefix, "digest", now);

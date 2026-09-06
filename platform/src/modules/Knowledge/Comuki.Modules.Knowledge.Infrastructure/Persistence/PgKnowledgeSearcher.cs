@@ -1,6 +1,5 @@
 using Comuki.Modules.Knowledge.Application;
-using Comuki.Modules.Memory.Infrastructure.Persistence;
-using Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
+using Comuki.Modules.Knowledge.Infrastructure.Persistence.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -9,14 +8,14 @@ using NpgsqlTypes;
 namespace Comuki.Modules.Knowledge.Infrastructure.Persistence;
 
 /// <summary>
-/// pgvector cosine-distance search over <c>memory_embeddings</c>.
+/// pgvector cosine-distance search over <c>knowledge.memory_embeddings</c>.
 /// Returns an empty list when the pgvector extension is unavailable —
 /// the migration leaves a graceful <c>RAISE NOTICE</c> path on a plain
 /// Postgres image, and the searcher mirrors that contract. Negative or
 /// impossible similarity thresholds are rejected at the input boundary.
 /// </summary>
 public sealed class PgKnowledgeSearcher(
-    IDbContextFactory<MemoryDbContext> contextFactory,
+    IDbContextFactory<KnowledgeDbContext> contextFactory,
     IEmbeddingClient embedder,
     ILogger<PgKnowledgeSearcher> logger) : IKnowledgeSearcher
 {
@@ -48,7 +47,7 @@ public sealed class PgKnowledgeSearcher(
 
         await using (var probe = connection.CreateCommand())
         {
-            probe.CommandText = MemoryEmbeddingSql.EmbeddingColumnExistsSql;
+            probe.CommandText = EmbeddingSql.EmbeddingColumnExistsSql;
             var available = (bool)(await probe.ExecuteScalarAsync(cancellationToken))!;
             if (!available)
             {
@@ -60,10 +59,10 @@ public sealed class PgKnowledgeSearcher(
         var queryVector = await embedder.EmbedAsync(query, cancellationToken);
 
         await using var command = connection.CreateCommand();
-        command.CommandText = MemoryEmbeddingSql.CosineSearchSql;
+        command.CommandText = EmbeddingSql.CosineSearchSql;
         command.Parameters.Add(new NpgsqlParameter("@vector", NpgsqlDbType.Text)
         {
-            Value = MemoryEmbeddingSql.VectorLiteral(queryVector),
+            Value = EmbeddingSql.VectorLiteral(queryVector),
         });
         command.Parameters.Add(new NpgsqlParameter("@projectId", NpgsqlDbType.Text)
         {
@@ -82,7 +81,7 @@ public sealed class PgKnowledgeSearcher(
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            var (id, sourceDocumentId, _, chunkText, _, _, similarity) = MemoryEmbeddingSql.ReadRow(reader);
+            var (id, sourceDocumentId, _, chunkText, _, _, similarity) = EmbeddingSql.ReadRow(reader);
             hits.Add(new KnowledgeSearchHit(id, sourceDocumentId, chunkText, similarity));
         }
 

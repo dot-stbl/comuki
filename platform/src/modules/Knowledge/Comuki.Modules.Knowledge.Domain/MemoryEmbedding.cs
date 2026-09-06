@@ -1,13 +1,13 @@
-namespace Comuki.Modules.Memory.Domain.Knowledge;
+namespace Comuki.Modules.Knowledge.Domain;
 
 /// <summary>
 /// One embedded chunk of a <see cref="SourceDocument"/>. The
 /// <c>embedding</c> pgvector column is intentionally absent from this
 /// entity: it is created and queried through raw SQL
-/// (<see cref="Memory.Infrastructure.Persistence.Stores.MemoryEmbeddingSql"/>),
-/// same separation as <c>memory_facts.embedding</c>. The chunk text and
-/// the source pointer stay in .NET — those are what the search result
-/// surfaces to the caller; the vector itself is write-once, query-only.
+/// (see <c>EmbeddingSql</c>), same separation as
+/// <c>memory_facts.embedding</c>. The chunk text and the source pointer
+/// stay in .NET — those are what the search result surfaces to the
+/// caller; the vector itself is write-once, query-only.
 /// </summary>
 public sealed class MemoryEmbedding
 {

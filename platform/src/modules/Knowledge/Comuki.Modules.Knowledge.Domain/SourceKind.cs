@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Memory.Domain.Knowledge;
+namespace Comuki.Modules.Knowledge.Domain;
 
 /// <summary>
 /// Origin of a <see cref="SourceDocument"/>. Wire key:

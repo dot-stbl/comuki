@@ -5,7 +5,7 @@ namespace Comuki.Modules.Knowledge.Application;
 /// fixed-length <c>float[]</c>. Implementations include OpenAI (prod)
 /// and a deterministic Noop (dev/test). The vector dimensionality is
 /// provider-specific but always
-/// <see cref="Memory.Infrastructure.Persistence.Stores.MemoryEmbeddingSql.Dimensions"/>
+/// <see cref="Knowledge.Infrastructure.Persistence.Stores.EmbeddingSql.Dimensions"/>
 /// (1536) so pgvector cosine-distance stays valid.
 /// </summary>
 public interface IEmbeddingClient

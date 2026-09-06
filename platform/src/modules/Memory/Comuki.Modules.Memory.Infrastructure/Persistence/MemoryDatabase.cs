@@ -9,6 +9,11 @@ namespace Comuki.Modules.Memory.Infrastructure.Persistence;
 /// <c>npgsql.MigrationsHistoryTable(name, schema)</c> in
 /// <see cref="MemoryDbContext.ApplyOptions"/>.
 /// </summary>
+/// <remarks>
+/// Knowledge-base tables (<c>source_documents</c>, <c>memory_embeddings</c>)
+/// moved to the <c>knowledge</c> schema when the knowledge module was
+/// carved out — they live in <c>KnowledgeDatabase</c> now.
+/// </remarks>
 public static class MemoryDatabase
 {
     /// <summary>Postgres schema name. the namespace.</summary>
@@ -25,10 +30,4 @@ public static class MemoryDatabase
 
     /// <summary>Learning-loop candidate queue (pending → approved | rejected).</summary>
     public const string LearningCandidates = "learning_candidates";
-
-    /// <summary>Knowledge-base source documents (corpus pointer — git | upload | url).</summary>
-    public const string SourceDocuments = "source_documents";
-
-    /// <summary>Knowledge-base embedded chunks (+ pgvector embedding column, raw-SQL managed).</summary>
-    public const string MemoryEmbeddings = "memory_embeddings";
 }

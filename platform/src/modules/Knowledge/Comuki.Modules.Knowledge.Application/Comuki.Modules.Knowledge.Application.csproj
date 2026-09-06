@@ -9,7 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Memory\Comuki.Modules.Memory.Domain\Comuki.Modules.Memory.Domain.csproj" />
     <ProjectReference Include="..\Comuki.Modules.Knowledge.Domain\Comuki.Modules.Knowledge.Domain.csproj" />
   </ItemGroup>
 

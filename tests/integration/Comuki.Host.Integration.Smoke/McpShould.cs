@@ -45,10 +45,9 @@ public sealed class McpShould(SmokeHostServer server) : IClassFixture<SmokeHostS
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var payload = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
 
-        // The dispatcher writes the success envelope as { id, result }
-        // (no top-level jsonrpc echo — the version is implicit in the
-        // 2.0 envelope the caller sent). Assert the result catalog
-        // directly.
+        // JSON-RPC 2.0 §"Response" — every reply carries "jsonrpc":"2.0".
+        payload.GetProperty("jsonrpc").GetString().ShouldBe("2.0");
+
         var tools = payload.GetProperty("result").GetProperty("tools").EnumerateArray()
             .Select(static tool => tool.GetProperty("name").GetString())
             .ToList();
@@ -82,6 +81,8 @@ public sealed class McpShould(SmokeHostServer server) : IClassFixture<SmokeHostS
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var payload = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
 
+        payload.GetProperty("jsonrpc").GetString().ShouldBe("2.0");
+
         var result = payload.GetProperty("result");
         result.GetProperty("isError").GetBoolean().ShouldBeFalse();
 
@@ -112,6 +113,7 @@ public sealed class McpShould(SmokeHostServer server) : IClassFixture<SmokeHostS
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var payload = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        payload.GetProperty("jsonrpc").GetString().ShouldBe("2.0");
         payload.GetProperty("error").GetProperty("code").GetInt32().ShouldBe(-32600);
     }
 }

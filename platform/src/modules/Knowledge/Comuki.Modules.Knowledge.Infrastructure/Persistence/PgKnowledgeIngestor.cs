@@ -110,10 +110,17 @@ public sealed class PgKnowledgeIngestor(
         await context.SaveChangesAsync(cancellationToken);
 
         // Back-fill the pgvector embedding column per row via raw SQL —
-        // the EF model deliberately doesn't model the vector type.
+        // the EF model deliberately doesn't model the vector type. The
+        // same availability probe used by the searcher gates this UPDATE
+        // so a plain Postgres image (no pgvector extension / no
+        // embedding column) skips the vector write cleanly instead of
+        // throwing "type vector does not exist" mid-transaction.
         var connection = (NpgsqlConnection)context.Database.GetDbConnection();
-        await using (var update = connection.CreateCommand())
+        var pgvectorAvailable = await ProbePgvectorAsync(connection, cancellationToken).ConfigureAwait(false);
+
+        if (pgvectorAvailable)
         {
+            await using var update = connection.CreateCommand();
             update.CommandText = MemoryEmbeddingSql.UpdateEmbeddingSql;
             update.Transaction = (NpgsqlTransaction)transaction.GetDbTransaction();
             var idParameter = update.Parameters.Add("@id", NpgsqlTypes.NpgsqlDbType.Uuid);
@@ -124,6 +131,13 @@ public sealed class PgKnowledgeIngestor(
                 vectorParameter.Value = MemoryEmbeddingSql.VectorLiteral(pair.vector);
                 await update.ExecuteNonQueryAsync(cancellationToken);
             }
+        }
+        else
+        {
+            logger.LogInformation(
+                "knowledge ingest wrote {ChunkCount} chunks for document {DocumentId} — pgvector embedding column absent, vectors not persisted",
+                rows.Count,
+                document.Id);
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -136,5 +150,19 @@ public sealed class PgKnowledgeIngestor(
             sourceRef);
 
         return new KnowledgeIngestResult(document.Id, ChunksWritten: rows.Count);
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="PgKnowledgeSearcher"/>'s availability probe —
+    /// the embedding column is conditional on the pgvector extension,
+    /// so a plain Postgres deployment surfaces this as <c>false</c> and
+    /// the caller skips the vector UPDATE.
+    /// </summary>
+    private static async Task<bool> ProbePgvectorAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
+    {
+        await using var probe = connection.CreateCommand();
+        probe.CommandText = MemoryEmbeddingSql.EmbeddingColumnExistsSql;
+        var result = await probe.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+        return result is bool available && available;
     }
 }

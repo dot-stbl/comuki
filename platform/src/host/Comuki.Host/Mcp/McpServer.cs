@@ -395,7 +395,7 @@ public abstract record JsonRpcResponse
     {
         var json = JsonSerializer.SerializeToElement(result, JsonSerializerOptions.Web);
 
-        return new JsonRpcResponseSuccess(id, json);
+        return new JsonRpcResponseSuccess(JsonRpcEnvelope.Version, id, json);
     }
 
     /// <summary>Wraps a <see cref="JsonRpcError"/> for the dispatcher result.</summary>
@@ -405,12 +405,18 @@ public abstract record JsonRpcResponse
     /// <param name="Data"></param>
     public static JsonRpcResponse Failure(JsonElement? id, int code, string message, object? Data)
     {
-        return new JsonRpcResponseError(id, new JsonRpcErrorBody(code, message, Data));
+        return new JsonRpcResponseError(JsonRpcEnvelope.Version, id, new JsonRpcErrorBody(code, message, Data));
     }
 
-    private sealed record JsonRpcResponseSuccess(JsonElement? Id, JsonElement Result)
+    private sealed record JsonRpcResponseSuccess(
+        [property: System.Text.Json.Serialization.JsonPropertyName("jsonrpc")] string JsonRpc,
+        [property: System.Text.Json.Serialization.JsonPropertyName("id")] JsonElement? Id,
+        [property: System.Text.Json.Serialization.JsonPropertyName("result")] JsonElement Result)
         : JsonRpcResponse;
 
-    private sealed record JsonRpcResponseError(JsonElement? Id, JsonRpcErrorBody Error)
+    private sealed record JsonRpcResponseError(
+        [property: System.Text.Json.Serialization.JsonPropertyName("jsonrpc")] string JsonRpc,
+        [property: System.Text.Json.Serialization.JsonPropertyName("id")] JsonElement? Id,
+        [property: System.Text.Json.Serialization.JsonPropertyName("error")] JsonRpcErrorBody Error)
         : JsonRpcResponse;
 }

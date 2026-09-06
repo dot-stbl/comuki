@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Comuki.Modules.Identity.Application.ApiKeys;
@@ -7,6 +6,7 @@ using Comuki.Modules.Identity.Application.Ports;
 using Comuki.Modules.Identity.Domain.ApiKeys;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -15,11 +15,13 @@ namespace Comuki.Modules.Identity.Infrastructure.Security.ApiKeys;
 /// <summary>
 /// API-key authentication handler: reads <c>Authorization: Bearer ck_…</c>,
 /// resolves the row by its public prefix (one indexed lookup), verifies
-/// the HMAC in constant time, refuses revoked keys and disabled owners,
+/// the HMAC constant-time, refuses revoked keys and disabled owners,
 /// and — when the key carries a <see cref="ApiKey.TenantProjectId"/>
-/// — enforces the matching <c>X-Comuki-Tenant</c> header. Builds the
-/// same principal grammar the cookie scheme produces. <c>last_used</c>
-/// is bumped on a throttle to avoid write amplification.
+/// — enforces the matching <c>X-Comuki-Tenant</c> header. The handler
+/// fails authentication when the tenant header is missing or wrong;
+/// <see cref="HandleChallengeAsync"/> flips the response to 403 in that
+/// case (the framework defaults to 401 for AuthenticateResult.Fail).
+/// <c>last_used</c> is bumped on a throttle to avoid write amplification.
 /// </summary>
 /// <param name="options"></param>
 /// <param name="loggerFactory"></param>
@@ -46,7 +48,10 @@ public sealed class ApiKeyAuthenticationHandler(
     private const string BearerPrefix = "Bearer ";
 
     /// <summary>Header that carries the tenant id on scoped keys.</summary>
-    public const string TenantHeader = "X-Comuki-Tenant";
+    internal const string TenantHeader = "X-Comuki-Tenant";
+
+    /// <summary>Set on the request when a scoped key authenticates against a mismatching tenant.</summary>
+    internal const string TenantMismatchFlag = "comuki.api_key.tenant_mismatch";
 
     /// <summary>
     /// Digest of a dummy token — verified on the not-found path so both
@@ -96,20 +101,22 @@ public sealed class ApiKeyAuthenticationHandler(
             return AuthenticateResult.Fail("invalid api key");
         }
 
+        // Tenant scope: a non-null TenantProjectId binds the key to one
+        // project. The header MUST be present and parse to the same
+        // project id; both missing and wrong fail authentication (403 via
+        // HandleChallengeAsync below).
+        if (apiKey.TenantProjectId is { } boundTenant
+            && !HasMatchingTenant(boundTenant))
+        {
+            Context.Items[TenantMismatchFlag] = true;
+            return AuthenticateResult.Fail("api key tenant scope mismatch");
+        }
+
         // A disabled owner closes every one of its keys without anybody
         // revoking them one by one.
         if (await userStore.FindByIdAsync(apiKey.UserId, Context.RequestAborted) is not { } owner || owner.Disabled)
         {
             return AuthenticateResult.Fail("owner disabled or missing");
-        }
-
-        // Tenant scope: a non-null TenantProjectId binds the key to one
-        // project. The header MUST be present and parse to the same
-        // project id; both missing and wrong fail authentication.
-        if (apiKey.TenantProjectId is { } boundTenant
-            && !HasMatchingTenant(boundTenant))
-        {
-            return AuthenticateResult.Fail("tenant scope mismatch");
         }
 
         var now = clock.GetUtcNow();
@@ -125,6 +132,29 @@ public sealed class ApiKeyAuthenticationHandler(
     }
 
     /// <summary>
+    /// Challenge response: 401 for the standard "missing / unknown /
+    /// revoked" failures; 403 when <see cref="HandleAuthenticateAsync"/>
+    /// set <see cref="TenantMismatchFlag"/> — the bearer authenticated,
+    /// but not against the requested tenant.
+    /// </summary>
+    /// <param name="properties"></param>
+    protected override Task HandleChallengeAsync(AuthenticationProperties properties)
+    {
+        if (Context.Items[TenantMismatchFlag] is true)
+        {
+            Response.StatusCode = StatusCodes.Status403Forbidden;
+            Response.Headers.WWWAuthenticate = $"Bearer realm=\"comuki\", error=\"insufficient_scope\", error_description=\"tenant scope mismatch\"";
+        }
+        else
+        {
+            Response.StatusCode = StatusCodes.Status401Unauthorized;
+            Response.Headers.WWWAuthenticate = "Bearer realm=\"comuki\"";
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
     /// True when the request's <see cref="TenantHeader"/> parses as the
     /// same guid the key was bound to. Absent / unparsable / different
     /// id all fail.
@@ -135,8 +165,8 @@ public sealed class ApiKeyAuthenticationHandler(
         return Request.Headers.TryGetValue(TenantHeader, out var headerValues)
             && Guid.TryParse(headerValues.ToString().Trim(), out var parsed)
             && string.Equals(
-                parsed.ToString("D", CultureInfo.InvariantCulture),
-                bound.Value.ToString("D", CultureInfo.InvariantCulture),
+                parsed.ToString("D"),
+                bound.Value.ToString("D"),
                 StringComparison.OrdinalIgnoreCase);
     }
 }
@@ -144,7 +174,8 @@ public sealed class ApiKeyAuthenticationHandler(
 /// <summary>
 /// The principal shape an authenticated API key produces — the same claim
 /// grammar as the cookie scheme, plus the <c>comuki_api_key_id</c> marker
-/// that makes the subject resolve to the key (not its owner).
+/// that makes the subject resolve to the key (not its owner), and the
+/// optional <c>comuki_api_key_tenant</c> claim carrying the bound tenant id.
 /// </summary>
 file static class ApiKeyPrincipals
 {
@@ -156,6 +187,11 @@ file static class ApiKeyPrincipals
             new(ClaimTypes.Name, apiKey.Name),
             new(IdentityClaimNames.ApiKeyId, apiKey.Id.Value.ToString()),
         };
+
+        if (apiKey.TenantProjectId is { } tenant)
+        {
+            claims.Add(new Claim(IdentityClaimNames.ApiKeyTenant, tenant.Value.ToString()));
+        }
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims, AuthSchemes.ApiKey));
     }

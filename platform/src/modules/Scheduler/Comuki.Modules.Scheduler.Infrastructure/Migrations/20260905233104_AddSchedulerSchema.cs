@@ -1,4 +1,3 @@
-using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -17,7 +16,7 @@ namespace Comuki.Modules.Scheduler.Infrastructure.Migrations
             migrationBuilder.CreateTable(
                 name: "scheduled_jobs",
                 schema: "scheduler",
-                columns: table => new
+                columns: static table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     project_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -31,16 +30,16 @@ namespace Comuki.Modules.Scheduler.Infrastructure.Migrations
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
-                constraints: table =>
+                constraints: static table =>
                 {
-                    table.PrimaryKey("pk_scheduled_jobs", x => x.id);
+                    table.PrimaryKey("pk_scheduled_jobs", static x => x.id);
                 });
 
             migrationBuilder.CreateIndex(
                 name: "ix_scheduled_jobs_due",
                 schema: "scheduler",
                 table: "scheduled_jobs",
-                columns: new[] { "enabled", "next_fire_at" },
+                columns: ["enabled", "next_fire_at"],
                 filter: "enabled = TRUE");
 
             migrationBuilder.CreateIndex(

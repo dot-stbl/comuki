@@ -119,4 +119,10 @@ public static class ApiRoutes
 
     /// <summary>Identity admin — revoke one API key by id.</summary>
     public const string IdentityAdminKeyRevoke = "/api/v1/keys/{keyId:guid}/revoke";
+
+    /// <summary>Scheduled jobs collection — per-project cron / one-shot admission source (S15).</summary>
+    public const string SchedulerJobs = "/api/v1/projects/{projectId:guid}/scheduled-jobs";
+
+    /// <summary>One scheduled job by id — read, patch or delete.</summary>
+    public const string SchedulerJob = "/api/v1/projects/{projectId:guid}/scheduled-jobs/{jobId:guid}";
 }

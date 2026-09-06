@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Memory.Domain.Knowledge;
+namespace Comuki.Modules.Knowledge.Domain;
 
 /// <summary>
 /// Strong-typed identifier of a <see cref="MemoryEmbedding"/> chunk.

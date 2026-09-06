@@ -1,6 +1,5 @@
 using Comuki.Modules.Memory.Domain.Chat;
 using Comuki.Modules.Memory.Domain.Facts;
-using Comuki.Modules.Memory.Domain.Knowledge;
 using Comuki.Modules.Memory.Domain.Learning;
 using Comuki.Modules.Memory.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
@@ -9,14 +8,15 @@ namespace Comuki.Modules.Memory.Infrastructure.Persistence;
 
 /// <summary>
 /// EF model for the Memory schema: chat_messages / chat_checkpoints /
-/// memory_facts / learning_candidates / source_documents / memory_embeddings.
-/// Snake_case naming is applied by the shared options recipe
-/// (<see cref="ApplyOptions"/>) via <c>UseSnakeCaseNamingConvention</c>;
-/// column names are still written explicitly in the configurations so
-/// migration snapshots stay stable. The pgvector <c>embedding</c> column
-/// lives OUTSIDE the EF model — created and queried through raw SQL
-/// (see <c>MemoryFactSql</c> and <c>MemoryEmbeddingSql</c>) so the
-/// module needs no EF-pgvector provider.
+/// memory_facts / learning_candidates. Snake_case naming is applied by
+/// the shared options recipe (<see cref="ApplyOptions"/>) via
+/// <c>UseSnakeCaseNamingConvention</c>; column names are still written
+/// explicitly in the configurations so migration snapshots stay stable.
+/// The pgvector <c>embedding</c> column lives OUTSIDE the EF model —
+/// created and queried through raw SQL (see <c>MemoryFactSql</c>) so
+/// the module needs no EF-pgvector provider. The knowledge-base tables
+/// (<c>source_documents</c> / <c>memory_embeddings</c>) live in the
+/// <c>knowledge</c> schema and are owned by <c>KnowledgeDbContext</c>.
 /// </summary>
 /// <param name="options"></param>
 public sealed class MemoryDbContext(DbContextOptions<MemoryDbContext> options)
@@ -33,12 +33,6 @@ public sealed class MemoryDbContext(DbContextOptions<MemoryDbContext> options)
 
     /// <summary>Learning candidates — the human-approval rule queue.</summary>
     public DbSet<LearningCandidate> LearningCandidates => Set<LearningCandidate>();
-
-    /// <summary>Knowledge-base source documents — git | upload | url pointers.</summary>
-    public DbSet<SourceDocument> SourceDocuments => Set<SourceDocument>();
-
-    /// <summary>Knowledge-base embedded chunks — pgvector embedding column, raw-SQL managed.</summary>
-    public DbSet<MemoryEmbedding> MemoryEmbeddings => Set<MemoryEmbedding>();
 
     /// <summary>
     /// Single options recipe (Npgsql + snake_case + private history table)
@@ -61,9 +55,7 @@ public sealed class MemoryDbContext(DbContextOptions<MemoryDbContext> options)
             .ApplyConfiguration(new ChatMessageConfiguration())
             .ApplyConfiguration(new ChatCheckpointConfiguration())
             .ApplyConfiguration(new MemoryFactConfiguration())
-            .ApplyConfiguration(new LearningCandidateConfiguration())
-            .ApplyConfiguration(new SourceDocumentConfiguration())
-            .ApplyConfiguration(new MemoryEmbeddingConfiguration());
+            .ApplyConfiguration(new LearningCandidateConfiguration());
         base.OnModelCreating(modelBuilder);
     }
 }

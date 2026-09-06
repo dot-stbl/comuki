@@ -1,9 +1,8 @@
 using Comuki.Modules.Knowledge.Application;
+using Comuki.Modules.Knowledge.Domain;
 using Comuki.Modules.Knowledge.Infrastructure.Chunking;
 using Comuki.Modules.Knowledge.Infrastructure.Configuration;
-using Comuki.Modules.Memory.Domain.Knowledge;
-using Comuki.Modules.Memory.Infrastructure.Persistence;
-using Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
+using Comuki.Modules.Knowledge.Infrastructure.Persistence.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
@@ -16,15 +15,16 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Persistence;
 /// pgvector-backed knowledge ingestor. Splits the input text via
 /// <see cref="Chunker"/>, writes one
 /// <see cref="MemoryEmbedding"/> row per chunk into the
-/// <c>memory_embeddings</c> table, then back-fills the pgvector
-/// <c>embedding</c> column with raw SQL. The insert + UPDATE pair runs
-/// inside the DbContext's open transaction (caller's responsibility —
-/// <see cref="IKnowledgeIngestor.IngestAsync"/> opens its own scope via
-/// the <see cref="IDbContextFactory{T}"/>), so a partial failure
-/// surfaces to the caller as an exception with no half-written rows.
+/// <c>knowledge.memory_embeddings</c> table, then back-fills the
+/// pgvector <c>embedding</c> column with raw SQL. The insert + UPDATE
+/// pair runs inside the DbContext's open transaction (caller's
+/// responsibility — <see cref="IKnowledgeIngestor.IngestAsync"/> opens
+/// its own scope via the <see cref="IDbContextFactory{T}"/>), so a
+/// partial failure surfaces to the caller as an exception with no
+/// half-written rows.
 /// </summary>
 public sealed class PgKnowledgeIngestor(
-    IDbContextFactory<MemoryDbContext> contextFactory,
+    IDbContextFactory<KnowledgeDbContext> contextFactory,
     IEmbeddingClient embedder,
     IOptions<KnowledgeIngestOptions> ingestOptions,
     TimeProvider clock,
@@ -121,14 +121,14 @@ public sealed class PgKnowledgeIngestor(
         if (pgvectorAvailable)
         {
             await using var update = connection.CreateCommand();
-            update.CommandText = MemoryEmbeddingSql.UpdateEmbeddingSql;
+            update.CommandText = EmbeddingSql.UpdateEmbeddingSql;
             update.Transaction = (NpgsqlTransaction)transaction.GetDbTransaction();
             var idParameter = update.Parameters.Add("@id", NpgsqlTypes.NpgsqlDbType.Uuid);
             var vectorParameter = update.Parameters.Add("@vector", NpgsqlTypes.NpgsqlDbType.Text);
             foreach (var pair in rows.Zip(vectors, static (row, vector) => (row, vector)))
             {
                 idParameter.Value = pair.row.Id.Value;
-                vectorParameter.Value = MemoryEmbeddingSql.VectorLiteral(pair.vector);
+                vectorParameter.Value = EmbeddingSql.VectorLiteral(pair.vector);
                 await update.ExecuteNonQueryAsync(cancellationToken);
             }
         }
@@ -161,7 +161,7 @@ public sealed class PgKnowledgeIngestor(
     private static async Task<bool> ProbePgvectorAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
     {
         await using var probe = connection.CreateCommand();
-        probe.CommandText = MemoryEmbeddingSql.EmbeddingColumnExistsSql;
+        probe.CommandText = EmbeddingSql.EmbeddingColumnExistsSql;
         var result = await probe.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
         return result is bool available && available;
     }

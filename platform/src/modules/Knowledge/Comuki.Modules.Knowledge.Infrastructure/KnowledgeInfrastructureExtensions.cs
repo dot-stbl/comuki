@@ -15,15 +15,12 @@ namespace Comuki.Modules.Knowledge.Infrastructure;
 
 /// <summary>
 /// Knowledge module composition — registers the embedding client
-/// (OpenAI / Noop), the ingestor + searcher over the memory schema, and
-/// the (optional) hosted service that polls the corpus. The pgvector
-/// column lives in the memory schema and is reached through the shared
-/// <see cref="IDbContextFactory{MemoryDbContext}"/> — the
-/// <see cref="Memory.Infrastructure.Persistence.Stores.MemoryEmbeddingSql"/>
-/// helpers carry the raw SQL. The cross-module project reference is
-/// the pragmatic exception: the knowledge layer writes the same tables
-/// the memory layer owns, and lifting those tables into a shared kernel
-/// would be more invasive than the reference itself.
+/// (OpenAI / Noop), the ingestor + searcher over the <c>knowledge</c>
+/// schema, and the (optional) hosted service that polls the corpus.
+/// The pgvector column lives in the knowledge schema and is reached
+/// through the shared <see cref="IDbContextFactory{KnowledgeDbContext}"/>
+/// — the <see cref="Persistence.Stores.EmbeddingSql"/> helpers carry
+/// the raw SQL.
 /// </summary>
 public static class KnowledgeInfrastructureExtensions
 {

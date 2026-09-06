@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Comuki.Host.Integration.Smoke</RootNamespace>
+    <RootNamespace>Comuki.Modules.Knowledge.DomainLayerTests</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
@@ -9,19 +9,16 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Shouldly" />
+    <PackageReference Include="NetArchTest.Rules" />
     <PackageReference Include="coverlet.collector" />
-    <PackageReference Include="Testcontainers.PostgreSql" />
-    <PackageReference Include="Testcontainers.Minio" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
-    <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host\Comuki.Host.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Knowledge\Comuki.Modules.Knowledge.Domain\Comuki.Modules.Knowledge.Domain.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Knowledge\Comuki.Modules.Knowledge.Application\Comuki.Modules.Knowledge.Application.csproj" />
     <ProjectReference Include="..\..\..\platform\src\modules\Knowledge\Comuki.Modules.Knowledge.Infrastructure\Comuki.Modules.Knowledge.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\platform\src\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

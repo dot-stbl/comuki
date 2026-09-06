@@ -1,4 +1,5 @@
 using Comuki.Modules.Identity.Domain.Ids;
+using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Modules.Identity.Domain.ApiKeys;
 
@@ -6,6 +7,9 @@ namespace Comuki.Modules.Identity.Domain.ApiKeys;
 /// An issued API key. The table stores the public <see cref="Prefix"/>
 /// (indexed lookup) and <see cref="KeyHmac"/> — HMAC-SHA256(token, pepper)
 /// — never the secret itself. The plaintext exists once, at issue time.
+/// A non-null <see cref="TenantProjectId"/> binds the key to one
+/// project — the auth handler refuses every request without the
+/// matching <c>X-Comuki-Tenant</c> header.
 /// </summary>
 public sealed class ApiKey
 {
@@ -28,6 +32,13 @@ public sealed class ApiKey
     /// <summary>Lowercase hex HMAC-SHA256 of the full token with the server pepper.</summary>
     public string KeyHmac { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Optional tenant scope. A non-null value requires the matching
+    /// <c>X-Comuki-Tenant</c> header on every authentication; null
+    /// means "no scope" — legacy behaviour, every header accepted.
+    /// </summary>
+    public ProjectId? TenantProjectId { get; private set; }
+
     /// <summary>When the key was issued.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -46,7 +57,17 @@ public sealed class ApiKey
     /// <param name="prefix"></param>
     /// <param name="keyHmac"></param>
     /// <param name="now"></param>
-    public static ApiKey Create(UserId userId, string name, string prefix, string keyHmac, DateTimeOffset now)
+    /// <param name="tenantProjectId">
+    /// Optional tenant scope. A non-null value requires the matching
+    /// <c>X-Comuki-Tenant</c> header on every authentication.
+    /// </param>
+    public static ApiKey Create(
+        UserId userId,
+        string name,
+        string prefix,
+        string keyHmac,
+        DateTimeOffset now,
+        ProjectId? tenantProjectId = null)
     {
         return new ApiKey
         {
@@ -55,6 +76,7 @@ public sealed class ApiKey
             Name = name.Trim(),
             Prefix = prefix,
             KeyHmac = keyHmac,
+            TenantProjectId = tenantProjectId,
             CreatedAt = now,
         };
     }

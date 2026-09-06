@@ -5,7 +5,10 @@ namespace Comuki.Modules.Identity.Application.ApiKeys.Issue;
 /// <summary>
 /// Issues an API key for an account after checking it exists and is
 /// enabled. The plaintext is returned exactly once via
-/// <see cref="IssuedApiKeyCredential"/>.
+/// <see cref="IssuedApiKeyCredential"/>. A non-null
+/// <see cref="IssueApiKeyCommand.TenantProjectId"/> binds the key to one
+/// project — the auth handler will refuse every request without the
+/// matching <c>X-Comuki-Tenant</c> header.
 /// </summary>
 /// <param name="userStore"></param>
 /// <param name="issuer"></param>
@@ -25,6 +28,6 @@ public sealed class IssueApiKeyHandler(
 
         return user.Disabled
             ? throw new InvalidOperationException($"user {command.UserId} is disabled")
-            : await issuer.IssueAsync(command.UserId, command.Name, cancellationToken);
+            : await issuer.IssueAsync(command.UserId, command.Name, command.TenantProjectId, cancellationToken);
     }
 }

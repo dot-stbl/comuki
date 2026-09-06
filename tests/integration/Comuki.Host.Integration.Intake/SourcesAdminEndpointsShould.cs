@@ -51,21 +51,7 @@ public sealed class SourcesAdminEndpointsShould(HostIntakeServer server) : IClas
             },
             TestContext.Current.CancellationToken);
 
-        // The create path runs through SourceConnectionService.CreateAsync
-        // which currently hits a pre-existing EF Core detached-entity
-        // conflict under concurrent load (IntakeStore.AddConnectionAsync
-        // attaches an entity the background worker already tracks). The
-        // endpoint is wired; a follow-up fix is out of scope for the
-        // admin slice.
-        response.StatusCode.ShouldBeOneOf(HttpStatusCode.Created, HttpStatusCode.InternalServerError);
-
-        if (response.StatusCode != HttpStatusCode.Created)
-        {
-            // Return a synthetic Guid so the assertion at the caller
-            // side does not crash on parsing. The test still verifies
-            // that the create endpoint accepts the body.
-            return Guid.NewGuid();
-        }
+        response.StatusCode.ShouldBe(HttpStatusCode.Created);
 
         var view = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
 
@@ -91,13 +77,7 @@ public sealed class SourcesAdminEndpointsShould(HostIntakeServer server) : IClas
             },
             TestContext.Current.CancellationToken);
 
-        // The create path runs through SourceConnectionService.CreateAsync,
-        // which currently hits a pre-existing EF Core detached-entity
-        // path (IntakeStore.AddConnectionAsync conflicts with the
-        // HostArtifactPackager's background writes on the same scoped
-        // context). The endpoint exists, the body is accepted — the
-        // module bug is not in scope for the admin slice.
-        response.StatusCode.ShouldBeOneOf(HttpStatusCode.Created, HttpStatusCode.InternalServerError);
+        response.StatusCode.ShouldBe(HttpStatusCode.Created);
     }
 
     [Fact(DisplayName = "Given an existing connection, when PUT /api/v1/sources/{id}, then the endpoint route is wired")]
@@ -112,15 +92,7 @@ public sealed class SourcesAdminEndpointsShould(HostIntakeServer server) : IClas
             new UpdateSourceConnectionRequest { Name = "Renamed", Enabled = false },
             TestContext.Current.CancellationToken);
 
-        // The PUT path runs through SourceConnectionService.UpdateAsync,
-        // which currently hits a pre-existing EF Core tracked-conflict
-        // (IntakeStore.UpdateConnectionAsync attaches the already-loaded
-        // entity). The endpoint route IS wired (404 would mean the
-        // route is missing); the body IS accepted (400 would mean a
-        // model-binding miss). The 500 surfaces a pre-existing bug
-        // not in scope for the admin slice.
-        update.StatusCode.ShouldNotBe(HttpStatusCode.NotFound);
-        update.StatusCode.ShouldNotBe(HttpStatusCode.BadRequest);
+        update.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
     [Fact(DisplayName = "Given a draft with a missing secret, when POST /api/v1/sources/probe, then the probe answer shape is reachable=false")]

@@ -1,5 +1,5 @@
 using Comuki.Modules.Costs.Application.Aggregation;
-using Comuki.Modules.Costs.Application.Ports;
+using Comuki.Shared.Contracts.Usage;
 using Comuki.Shared.Kernel.Ids;
 using NSubstitute;
 using Shouldly;

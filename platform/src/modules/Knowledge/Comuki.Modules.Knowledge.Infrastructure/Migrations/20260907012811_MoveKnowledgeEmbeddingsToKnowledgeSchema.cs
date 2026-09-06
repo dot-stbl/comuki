@@ -1,3 +1,4 @@
+using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -21,7 +22,7 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Migrations
     /// <c>AddPgvectorKnowledgeSchema</c> in the memory module).
     ///
     /// If a future <c>dotnet ef migrations add</c> on
-    /// <see cref="Persistence.KnowledgeDbContext"/>
+    /// <see cref="Comuki.Modules.Knowledge.Infrastructure.Persistence.KnowledgeDbContext"/>
     /// regenerates a divergent migration, follow the
     /// <c>ef-migrations.md</c> recovery procedure: re-author this file
     /// or drop the new one and re-add with the desired name.

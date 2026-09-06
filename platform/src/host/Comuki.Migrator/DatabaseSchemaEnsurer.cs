@@ -3,6 +3,7 @@ using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
 using Comuki.Modules.Intake.Infrastructure.Persistence;
+using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Npgsql;
@@ -47,6 +48,7 @@ public static class DatabaseSchemaEnsurer
             ChatDatabase.Schema => CreateChatSchemaDdl,
             IntakeDatabase.Schema => CreateIntakeSchemaDdl,
             CostsDatabase.Schema => CreateCostsSchemaDdl,
+            KnowledgeDatabase.Schema => CreateKnowledgeSchemaDdl,
             _ => throw new ArgumentException($"unknown schema: {schema}", nameof(schema)),
         };
 #pragma warning restore CA2100
@@ -66,4 +68,5 @@ public static class DatabaseSchemaEnsurer
     private const string CreateChatSchemaDdl = "CREATE SCHEMA IF NOT EXISTS chat";
     private const string CreateIntakeSchemaDdl = "CREATE SCHEMA IF NOT EXISTS intake";
     private const string CreateCostsSchemaDdl = "CREATE SCHEMA IF NOT EXISTS costs";
+    private const string CreateKnowledgeSchemaDdl = "CREATE SCHEMA IF NOT EXISTS knowledge";
 }

@@ -1,7 +1,7 @@
-using Comuki.Modules.Costs.Application.Ports;
 using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Modules.Proxy.Application.Models;
 using Comuki.Modules.Proxy.Application.Ports;
+using Comuki.Shared.Contracts.Usage;
 
 namespace Comuki.Modules.Proxy.Application.Budgeting;
 
@@ -24,40 +24,20 @@ public sealed class DefaultProxyBudgetEnforcer(IUsageEventStore store, TimeProvi
             return new ProxyBudgetVerdict(Allowed: true, CapUsdMicros: null, SpentUsdMicros: 0, RetryAfterSeconds: 0);
         }
 
-        var monthStart = StartOfMonth(clock.GetUtcNow());
+        var monthStart = ProxyBudgetMath.StartOfMonth(clock.GetUtcNow());
         var spentUsdMicros = await store.SumProjectCostBySourceAsync(
             key.ProjectId,
             UsageSource.Proxy,
             monthStart,
             cancellationToken);
-        var capUsdMicros = ToMicros(budgetUsd);
+        var capUsdMicros = ProxyBudgetMath.ToMicros(budgetUsd);
 
         if (spentUsdMicros < capUsdMicros)
         {
             return new ProxyBudgetVerdict(Allowed: true, CapUsdMicros: capUsdMicros, SpentUsdMicros: spentUsdMicros, RetryAfterSeconds: 0);
         }
 
-        var retryAfter = SecondsUntilNextMonth(clock.GetUtcNow());
+        var retryAfter = ProxyBudgetMath.SecondsUntilNextMonth(clock.GetUtcNow());
         return new ProxyBudgetVerdict(Allowed: false, CapUsdMicros: capUsdMicros, SpentUsdMicros: spentUsdMicros, RetryAfterSeconds: retryAfter);
-    }
-
-    private static DateTimeOffset StartOfMonth(DateTimeOffset instant)
-    {
-        return new DateTimeOffset(instant.Year, instant.Month, 1, 0, 0, 0, instant.Offset);
-    }
-
-    private static int SecondsUntilNextMonth(DateTimeOffset instant)
-    {
-        var nextMonth = instant.Month == 12
-            ? new DateTimeOffset(instant.Year + 1, 1, 1, 0, 0, 0, instant.Offset)
-            : new DateTimeOffset(instant.Year, instant.Month + 1, 1, 0, 0, 0, instant.Offset);
-        var delta = nextMonth - instant;
-        return (int)Math.Min(int.MaxValue, Math.Max(0, delta.TotalSeconds));
-    }
-
-    private static long ToMicros(decimal usd)
-    {
-        var scaled = usd * 1_000_000m;
-        return (long)decimal.Round(scaled, MidpointRounding.AwayFromZero);
     }
 }

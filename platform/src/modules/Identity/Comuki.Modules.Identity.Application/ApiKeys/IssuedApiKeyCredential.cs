@@ -10,5 +10,15 @@ namespace Comuki.Modules.Identity.Application.ApiKeys;
 /// <param name="Id"></param>
 /// <param name="Name"></param>
 /// <param name="Prefix"></param>
+/// <param name="TenantProjectId">
+/// Tenant scope the key was issued under. Null when the key has no
+/// scope; the caller echoes it so operators know to send
+/// <c>X-Comuki-Tenant</c> on every request.
+/// </param>
 /// <param name="PlaintextToken">The full <c>ck_…</c> token — shown once.</param>
-public sealed record IssuedApiKeyCredential(ApiKeyId Id, string Name, string Prefix, string PlaintextToken);
+public sealed record IssuedApiKeyCredential(
+    ApiKeyId Id,
+    string Name,
+    string Prefix,
+    Guid? TenantProjectId,
+    string PlaintextToken);

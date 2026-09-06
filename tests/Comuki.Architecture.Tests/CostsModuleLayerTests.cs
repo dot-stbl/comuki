@@ -42,7 +42,7 @@ public sealed class CostsModuleLayerTests
     public void CostsApplicationMustNotDependOnInfrastructureOrEngineOrHosts()
     {
         var result = Types
-            .InAssembly(typeof(Modules.Costs.Application.Ports.IUsageEventStore).Assembly)
+            .InAssembly(typeof(Modules.Costs.Application.Recording.UsageRecorder).Assembly)
             .ShouldNot()
             .HaveDependencyOnAny(CostsInfrastructure, Engine, EngineCompute, Host, Translator, Migrator)
             .GetResult();
@@ -59,7 +59,7 @@ public sealed class CostsModuleLayerTests
             .HaveDependencyOnAny(Engine, EngineCompute)
             .GetResult();
         var application = Types
-            .InAssembly(typeof(Modules.Costs.Application.Ports.IUsageEventStore).Assembly)
+            .InAssembly(typeof(Modules.Costs.Application.Recording.UsageRecorder).Assembly)
             .ShouldNot()
             .HaveDependencyOnAny(Engine, EngineCompute)
             .GetResult();

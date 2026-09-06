@@ -1,7 +1,7 @@
-using Comuki.Modules.Costs.Application.Ports;
 using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Modules.Proxy.Application.Budgeting;
 using Comuki.Modules.Proxy.Application.Models;
+using Comuki.Shared.Contracts.Usage;
 using Comuki.Shared.Kernel.Ids;
 using NSubstitute;
 using Shouldly;

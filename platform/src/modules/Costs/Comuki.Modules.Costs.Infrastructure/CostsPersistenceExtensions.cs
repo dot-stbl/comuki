@@ -1,6 +1,6 @@
-using Comuki.Modules.Costs.Application.Ports;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence.Stores;
+using Comuki.Shared.Contracts.Usage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;

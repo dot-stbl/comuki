@@ -1,4 +1,4 @@
-using Comuki.Modules.Memory.Domain.Knowledge;
+using Comuki.Modules.Knowledge.Domain;
 
 namespace Comuki.Modules.Knowledge.Application;
 

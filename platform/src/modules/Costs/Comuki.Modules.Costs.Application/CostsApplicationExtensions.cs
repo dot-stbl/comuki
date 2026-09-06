@@ -3,6 +3,7 @@ using Comuki.Modules.Costs.Application.Budgets;
 using Comuki.Modules.Costs.Application.Queries;
 using Comuki.Modules.Costs.Application.Recording;
 using Comuki.Shared.Contracts.Costs;
+using Comuki.Shared.Contracts.Usage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

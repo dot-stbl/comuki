@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Memory.Domain.Knowledge;
+namespace Comuki.Modules.Knowledge.Domain;
 
 /// <summary>
 /// One source of knowledge content: a git URL, an upload blob, or an

@@ -1,27 +1,27 @@
-using Comuki.Modules.Memory.Domain.Knowledge;
+using Comuki.Modules.Knowledge.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Comuki.Modules.Memory.Infrastructure.Persistence.Configurations;
+namespace Comuki.Modules.Knowledge.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 /// memory_embeddings mapping. The pgvector <c>embedding</c> column is
 /// deliberately absent from the EF model — created and queried through
-/// raw SQL (<see cref="Stores.MemoryEmbeddingSql"/>) so the module
-/// keeps the same separation as <c>memory_facts.embedding</c> and needs
-/// no EF-pgvector provider.
+/// raw SQL (<see cref="Stores.EmbeddingSql"/>) so the module keeps the
+/// same separation as <c>memory_facts.embedding</c> and needs no
+/// EF-pgvector provider.
 /// </summary>
 public sealed class MemoryEmbeddingConfiguration : IEntityTypeConfiguration<MemoryEmbedding>
 {
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<MemoryEmbedding> builder)
     {
-        builder.ToTable(MemoryDatabase.MemoryEmbeddings, MemoryDatabase.Schema);
+        builder.ToTable(KnowledgeDatabase.MemoryEmbeddings, KnowledgeDatabase.Schema);
         builder.HasKey(static embedding => embedding.Id);
 
         builder.Property(static embedding => embedding.Id)
             .HasColumnName("id")
-            .HasConversion(MemoryIdConverters.MemoryEmbeddingIdToUuid)
+            .HasConversion(KnowledgeIdConverters.MemoryEmbeddingIdToUuid)
             .ValueGeneratedNever();
 
         builder.Property(static embedding => embedding.ProjectId)
@@ -29,7 +29,7 @@ public sealed class MemoryEmbeddingConfiguration : IEntityTypeConfiguration<Memo
 
         builder.Property(static embedding => embedding.SourceDocumentId)
             .HasColumnName("source_document_id")
-            .HasConversion(MemoryIdConverters.SourceDocumentIdToUuid)
+            .HasConversion(KnowledgeIdConverters.SourceDocumentIdToUuid)
             .IsRequired();
 
         builder.Property(static embedding => embedding.ChunkIndex)

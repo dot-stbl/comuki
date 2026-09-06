@@ -1,6 +1,6 @@
 using Comuki.Shared.Kernel.Ids;
 
-namespace Comuki.Shared.Contracts.Costs;
+namespace Comuki.Shared.Contracts.Usage;
 
 /// <summary>
 /// Cross-host port for metering: proxy / brain / worker reporters append

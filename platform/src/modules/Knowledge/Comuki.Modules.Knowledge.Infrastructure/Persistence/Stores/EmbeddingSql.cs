@@ -1,36 +1,36 @@
 using System.Data;
 using System.Globalization;
-using Comuki.Modules.Memory.Domain.Knowledge;
+using Comuki.Modules.Knowledge.Domain;
 
-namespace Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
+namespace Comuki.Modules.Knowledge.Infrastructure.Persistence.Stores;
 
 /// <summary>
 /// Raw-SQL surface for the pgvector <c>embedding</c> column on
-/// <c>memory_embeddings</c>: literal formatting, the availability probe,
-/// the embedding UPDATE and the cosine-distance SELECT. The column lives
-/// outside the EF model on purpose — no EF-pgvector provider, no vector
-/// materialized in .NET. All SQL references
-/// <see cref="MemoryDatabase.Schema"/> so the queries find the table
-/// regardless of <c>search_path</c>.
+/// <c>knowledge.memory_embeddings</c>: literal formatting, the
+/// availability probe, the embedding UPDATE and the cosine-distance
+/// SELECT. The column lives outside the EF model on purpose — no
+/// EF-pgvector provider, no vector materialized in .NET. All SQL
+/// references <see cref="KnowledgeDatabase.Schema"/> so the queries
+/// find the table regardless of <c>search_path</c>.
 /// </summary>
-public static class MemoryEmbeddingSql
+public static class EmbeddingSql
 {
     /// <summary>Embedding vector dimension — OpenAI text-embedding-3-small default.</summary>
     public const int Dimensions = 1536;
 
     /// <summary>
     /// Availability probe: does the pgvector extension AND the
-    /// <c>memory_embeddings.embedding</c> column both exist (graceful
-    /// probe — the column is conditional in the migration).
+    /// <c>knowledge.memory_embeddings.embedding</c> column both exist
+    /// (graceful probe — the column is conditional in the migration).
     /// </summary>
     public const string EmbeddingColumnExistsSql =
         "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
-        + "WHERE table_schema = '" + MemoryDatabase.Schema + "' "
-        + "AND table_name = '" + MemoryDatabase.MemoryEmbeddings + "' AND column_name = 'embedding')";
+        + "WHERE table_schema = '" + KnowledgeDatabase.Schema + "' "
+        + "AND table_name = '" + KnowledgeDatabase.MemoryEmbeddings + "' AND column_name = 'embedding')";
 
     /// <summary>Writes the embedding of one chunk row (inside the write transaction).</summary>
     public const string UpdateEmbeddingSql =
-        "UPDATE " + MemoryDatabase.Schema + "." + MemoryDatabase.MemoryEmbeddings
+        "UPDATE " + KnowledgeDatabase.Schema + "." + KnowledgeDatabase.MemoryEmbeddings
         + " SET embedding = @vector::vector WHERE id = @id";
 
     /// <summary>
@@ -44,7 +44,7 @@ public static class MemoryEmbeddingSql
     public const string CosineSearchSql =
         "SELECT id, source_document_id, chunk_index, chunk_text, token_count, created_at, "
         + "       (1 - (embedding <=> @vector::vector)) AS similarity "
-        + "FROM " + MemoryDatabase.Schema + "." + MemoryDatabase.MemoryEmbeddings + " "
+        + "FROM " + KnowledgeDatabase.Schema + "." + KnowledgeDatabase.MemoryEmbeddings + " "
         + "WHERE embedding IS NOT NULL "
         + "  AND (@projectId IS NULL OR project_id = @projectId::uuid) "
         + "  AND (1 - (embedding <=> @vector::vector)) >= @minSimilarity "

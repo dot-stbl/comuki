@@ -6,6 +6,7 @@ using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
 using Comuki.Modules.Intake.Infrastructure.Persistence;
+using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -43,7 +44,8 @@ if (recreate)
 // (orchestration.__ef_migrations_history, identity.__ef_migrations_history,
 // projects.__ef_migrations_history, memory.__ef_migrations_history,
 // chat.__ef_migrations_history, intake.__ef_migrations_history,
-// costs.__ef_migrations_history, artifacts.__ef_migrations_history),
+// costs.__ef_migrations_history, artifacts.__ef_migrations_history,
+// knowledge.__ef_migrations_history),
 // so the applications cannot collide.
 var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
 OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
@@ -68,6 +70,12 @@ MemoryDbContext.ApplyOptions(memoryOptions, connectionString);
 await using var memoryDb = new MemoryDbContext(memoryOptions.Options);
 await DatabaseSchemaEnsurer.EnsureAsync(connectionString, MemoryDatabase.Schema, CancellationToken.None);
 await ApplyAsync(memoryDb, "memory");
+
+var knowledgeOptions = new DbContextOptionsBuilder<KnowledgeDbContext>();
+KnowledgeDbContext.ApplyOptions(knowledgeOptions, connectionString);
+await using var knowledgeDb = new KnowledgeDbContext(knowledgeOptions.Options);
+await DatabaseSchemaEnsurer.EnsureAsync(connectionString, KnowledgeDatabase.Schema, CancellationToken.None);
+await ApplyAsync(knowledgeDb, "knowledge");
 
 var chatOptions = new DbContextOptionsBuilder<ChatDbContext>();
 ChatDbContext.ApplyOptions(chatOptions, connectionString);

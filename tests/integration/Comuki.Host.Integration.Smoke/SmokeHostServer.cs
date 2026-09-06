@@ -5,6 +5,7 @@ using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Application.Users;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
+using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
@@ -32,14 +33,11 @@ namespace Comuki.Host.Integration.Smoke;
 /// differently):
 /// </para>
 /// <list type="bullet">
-///   <item><c>AddMemoryPersistence</c> — the main host composition
-///     (<see cref="HostComposer"/>) does not register
-///     <see cref="MemoryDbContext"/>; only the Brain host does. The
-///     knowledge ingestor + searcher depend on
-///     <c>IDbContextFactory&lt;MemoryDbContext&gt;</c>. Calling
-///     <see cref="MemoryPersistenceExtensions.AddMemoryPersistence"/>
-///     here makes the smoke run end-to-end; the host composition gap is
-///     tracked separately.</item>
+///   <item><c>AddKnowledgePersistence</c> — the main host composition
+///     (<see cref="HostComposer"/>) does not register the knowledge
+///     DbContext factory (it's wired in <c>HostComposer.Compose</c>
+///     proper; this server runs the same composition but the smoke path
+///     re-asserts the migration history directly to be defensive).</item>
 /// </list>
 /// </summary>
 public sealed class SmokeHostServer : IAsyncLifetime
@@ -80,6 +78,7 @@ public sealed class SmokeHostServer : IAsyncLifetime
         await MigrateAsync<IdentityDbContext>(IdentityDbContext.ApplyOptions, connectionString, cancellationToken);
         await MigrateAsync<ProjectsDbContext>(ProjectsDbContext.ApplyOptions, connectionString, cancellationToken);
         await MigrateAsync<MemoryDbContext>(MemoryDbContext.ApplyOptions, connectionString, cancellationToken);
+        await MigrateAsync<KnowledgeDbContext>(KnowledgeDbContext.ApplyOptions, connectionString, cancellationToken);
 
         var builder = WebApplication.CreateBuilder(
             new WebApplicationOptions
@@ -130,7 +129,7 @@ public sealed class SmokeHostServer : IAsyncLifetime
         builder.Services.AddOrchestrationPersistence(connectionString);
 
         // Composition gap: HostComposer does not register Memory
-        // persistence; only the Brain host does. The knowledge path
+        // persistence; only the Brain host does. The chat/memory path
         // needs IDbContextFactory<MemoryDbContext> to resolve — wire
         // it here so the smoke run exercises the full pipeline.
         builder.Services.AddMemoryPersistence(connectionString);

@@ -1,8 +1,8 @@
-using Comuki.Modules.Memory.Domain.Knowledge;
+using Comuki.Modules.Knowledge.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Comuki.Modules.Memory.Infrastructure.Persistence.Configurations;
+namespace Comuki.Modules.Knowledge.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 /// source_documents mapping. One row per registered corpus pointer;
@@ -14,12 +14,12 @@ public sealed class SourceDocumentConfiguration : IEntityTypeConfiguration<Sourc
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<SourceDocument> builder)
     {
-        builder.ToTable(MemoryDatabase.SourceDocuments, MemoryDatabase.Schema);
+        builder.ToTable(KnowledgeDatabase.SourceDocuments, KnowledgeDatabase.Schema);
         builder.HasKey(static document => document.Id);
 
         builder.Property(static document => document.Id)
             .HasColumnName("id")
-            .HasConversion(MemoryIdConverters.SourceDocumentIdToUuid)
+            .HasConversion(KnowledgeIdConverters.SourceDocumentIdToUuid)
             .ValueGeneratedNever();
 
         builder.Property(static document => document.ProjectId)
@@ -32,7 +32,7 @@ public sealed class SourceDocumentConfiguration : IEntityTypeConfiguration<Sourc
 
         builder.Property(static document => document.Source)
             .HasColumnName("source")
-            .HasConversion(MemoryKeyConverters.SourceKindToKey)
+            .HasConversion(KnowledgeKeyConverters.SourceKindToKey)
             .HasMaxLength(16)
             .IsRequired();
 

@@ -12,13 +12,6 @@ namespace Comuki.Host.Mcp;
 /// </summary>
 public static class McpModuleEndpoints
 {
-    private static readonly JsonSerializerOptions jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>Maps the MCP JSON-RPC 2.0 endpoint.</summary>
     /// <param name="app"></param>
     public static IEndpointRouteBuilder MapMcpEndpoints(this IEndpointRouteBuilder app)
@@ -37,7 +30,7 @@ public static class McpModuleEndpoints
         JsonRpcRequest? envelope;
         try
         {
-            envelope = await JsonSerializer.DeserializeAsync<JsonRpcRequest>(request.Body, jsonOptions, cancellationToken).ConfigureAwait(false);
+            envelope = await JsonSerializer.DeserializeAsync<JsonRpcRequest>(request.Body, JsonSerializerOptions.Web, cancellationToken);
         }
         catch (JsonException exception)
         {
@@ -47,7 +40,7 @@ public static class McpModuleEndpoints
                     code: JsonRpcEnvelope.ErrorCodes.ParseError,
                     message: $"JSON parse error: {exception.Message}",
                     Data: null),
-                jsonOptions,
+                JsonSerializerOptions.Web,
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
@@ -59,15 +52,15 @@ public static class McpModuleEndpoints
                     code: JsonRpcEnvelope.ErrorCodes.InvalidRequest,
                     message: "empty request body",
                     Data: null),
-                jsonOptions,
+                JsonSerializerOptions.Web,
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
-        var response = await server.DispatchAsync(envelope, cancellationToken).ConfigureAwait(false);
+        var response = await server.DispatchAsync(envelope, cancellationToken);
 
         // JSON-RPC notifications carry no id and the spec says the
         // endpoint must not respond. 204 No Content is the closest
         // .NET analogue that still carries no body.
-        return response is null ? Results.NoContent() : Results.Json(response, jsonOptions, statusCode: StatusCodes.Status200OK);
+        return response is null ? Results.NoContent() : Results.Json(response, JsonSerializerOptions.Web, statusCode: StatusCodes.Status200OK);
     }
 }

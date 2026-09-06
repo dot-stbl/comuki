@@ -31,7 +31,7 @@ public sealed class KnowledgeIngestBackgroundService(
             {
                 try
                 {
-                    await TickAsync(stoppingToken).ConfigureAwait(false);
+                    await TickAsync(stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
@@ -42,7 +42,7 @@ public sealed class KnowledgeIngestBackgroundService(
                     logger.LogError(exception, "knowledge doc worker tick failed; continuing");
                 }
 
-                await Task.Delay(interval, stoppingToken).ConfigureAwait(false);
+                await Task.Delay(interval, stoppingToken);
             }
         }
         catch (OperationCanceledException)

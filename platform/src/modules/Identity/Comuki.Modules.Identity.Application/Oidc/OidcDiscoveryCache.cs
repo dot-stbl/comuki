@@ -42,7 +42,7 @@ public sealed class OidcDiscoveryCache(IMemoryCache cache, HttpClient httpClient
         }
 
         var wellKnown = BuildWellKnown(provider.Authority);
-        var doc = await FetchWithAuthorityAsync(wellKnown, cancellationToken).ConfigureAwait(false);
+        var doc = await FetchWithAuthorityAsync(wellKnown, cancellationToken);
 
         cache.Set(cacheKey, doc, ttl);
 
@@ -62,7 +62,7 @@ public sealed class OidcDiscoveryCache(IMemoryCache cache, HttpClient httpClient
     {
         var body = await httpClient
             .GetStringAsync(wellKnown, cancellationToken)
-            .ConfigureAwait(false);
+            ;
 
         var config = new OpenIdConnectConfiguration();
 
@@ -95,7 +95,7 @@ public sealed class OidcDiscoveryCache(IMemoryCache cache, HttpClient httpClient
         {
             var jwksBody = await httpClient
                 .GetStringAsync(config.JwksUri, cancellationToken)
-                .ConfigureAwait(false);
+                ;
 
             foreach (var key in new JsonWebKeySet(jwksBody).GetSigningKeys())
             {

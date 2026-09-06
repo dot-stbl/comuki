@@ -59,7 +59,7 @@ public sealed partial class OpenAIEmbeddingClient : IEmbeddingClient
     /// <inheritdoc />
     public async Task<IReadOnlyList<float[]>> EmbedBatchAsync(IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
     {
-        return await SendAsync(texts, cancellationToken).ConfigureAwait(false);
+        return await SendAsync(texts, cancellationToken);
     }
 
     private async Task<IReadOnlyList<float[]>> SendAsync(IReadOnlyList<string> texts, CancellationToken cancellationToken)
@@ -70,10 +70,10 @@ public sealed partial class OpenAIEmbeddingClient : IEmbeddingClient
             Input = texts,
         };
 
-        using var response = await httpClient.PostAsJsonAsync("v1/embeddings", request, OpenAiJsonContext.Default.EmbeddingRequest, cancellationToken).ConfigureAwait(false);
+        using var response = await httpClient.PostAsJsonAsync("v1/embeddings", request, OpenAiJsonContext.Default.EmbeddingRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        var payload = await response.Content.ReadFromJsonAsync(OpenAiJsonContext.Default.EmbeddingResponse, cancellationToken).ConfigureAwait(false)
+        var payload = await response.Content.ReadFromJsonAsync(OpenAiJsonContext.Default.EmbeddingResponse, cancellationToken)
             ?? throw new InvalidOperationException("openai returned an empty response body");
 
         var vectors = new float[payload.Data.Count][];

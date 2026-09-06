@@ -14,6 +14,7 @@ using Comuki.Modules.Identity.Domain.Roles;
 using Comuki.Modules.Identity.Domain.Scopes;
 using Comuki.Modules.Identity.Domain.Subjects;
 using Comuki.Modules.Identity.Domain.Users;
+using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -215,10 +216,35 @@ public sealed class IdentityHandlersShould
         var issuer = new ApiKeyIssuer(apiKeyStore, hasher, clock);
         var handler = new IssueApiKeyHandler(userStore, issuer);
 
-        var credential = await handler.HandleAsync(new IssueApiKeyCommand(user.Id, "ci"), TestContext.Current.CancellationToken);
+        var credential = await handler.HandleAsync(
+            new IssueApiKeyCommand(user.Id, "ci", null),
+            TestContext.Current.CancellationToken);
 
         credential.Name.ShouldBe("ci");
         await apiKeyStore.Received(1).SaveAsync(Arg.Any<ApiKey>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given a tenant-scoped IssueApiKey, when the handler runs, then the issuer receives the tenant id")]
+    public async Task IssueApiKeyForwardsTenantScopeAsync()
+    {
+        var userStore = Substitute.For<IUserAccountStore>();
+        var apiKeyStore = Substitute.For<IApiKeyStore>();
+        var user = User.Create("ada@example.com", "Ada", "hash", now);
+        userStore.FindByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
+        var issuer = new ApiKeyIssuer(
+            apiKeyStore,
+            new ApiKeyHasher(Options.Create(new ApiKeyOptions { Pepper = "unit-test-pepper-0123456789abcdef" })),
+            clock);
+        var handler = new IssueApiKeyHandler(userStore, issuer);
+        var tenant = ProjectId.New();
+
+        var credential = await handler.HandleAsync(
+            new IssueApiKeyCommand(user.Id, "fleet-runner", tenant),
+            TestContext.Current.CancellationToken);
+
+        credential.TenantProjectId.ShouldBe(tenant.Value);
+        var stored = apiKeyStore.ReceivedCalls().Single().GetArguments()[0].ShouldBeOfType<ApiKey>();
+        stored.TenantProjectId.ShouldBe(tenant);
     }
 
     [Fact(DisplayName = "Given a disabled user, when IssueApiKey runs, then InvalidOperationException is thrown")]
@@ -236,7 +262,7 @@ public sealed class IdentityHandlersShould
                 clock));
 
         await Should.ThrowAsync<InvalidOperationException>(
-            () => handler.HandleAsync(new IssueApiKeyCommand(user.Id, "ci"), TestContext.Current.CancellationToken));
+            () => handler.HandleAsync(new IssueApiKeyCommand(user.Id, "ci", null), TestContext.Current.CancellationToken));
     }
 
     [Fact(DisplayName = "Given a missing user, when IssueApiKey runs, then InvalidOperationException is thrown")]
@@ -252,7 +278,7 @@ public sealed class IdentityHandlersShould
                 clock));
 
         await Should.ThrowAsync<InvalidOperationException>(
-            () => handler.HandleAsync(new IssueApiKeyCommand(UserId.New(), "ci"), TestContext.Current.CancellationToken));
+            () => handler.HandleAsync(new IssueApiKeyCommand(UserId.New(), "ci", null), TestContext.Current.CancellationToken));
     }
 
     private sealed class FakeTime(DateTimeOffset utcNow) : TimeProvider

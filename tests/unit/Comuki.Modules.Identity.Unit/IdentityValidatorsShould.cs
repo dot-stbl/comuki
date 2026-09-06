@@ -74,12 +74,19 @@ public sealed class IdentityValidatorsShould
     [Fact(DisplayName = "Given an empty IssueApiKey name, when validated, then it fails")]
     public void RefuseEmptyApiKeyName()
     {
-        new IssueApiKeyValidator().Validate(new IssueApiKeyCommand(UserId.New(), "")).IsValid.ShouldBeFalse();
+        new IssueApiKeyValidator().Validate(new IssueApiKeyCommand(UserId.New(), "", null)).IsValid.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Given a valid IssueApiKeyCommand, when validated, then it passes")]
     public void AcceptValidIssueApiKey()
     {
-        new IssueApiKeyValidator().Validate(new IssueApiKeyCommand(UserId.New(), "ci")).IsValid.ShouldBeTrue();
+        new IssueApiKeyValidator().Validate(new IssueApiKeyCommand(UserId.New(), "ci", null)).IsValid.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Given an IssueApiKeyCommand with a tenant scope, when validated, then it passes")]
+    public void AcceptValidIssueApiKeyWithTenant()
+    {
+        var command = new IssueApiKeyCommand(UserId.New(), "fleet-runner", ProjectId.New());
+        new IssueApiKeyValidator().Validate(command).IsValid.ShouldBeTrue();
     }
 }

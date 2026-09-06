@@ -54,6 +54,7 @@ public sealed class IntakeStore(IntakeDbContext db, TimeProvider clock) : IIntak
     /// <inheritdoc />
     public async Task AddConnectionAsync(SourceConnection connection, CancellationToken cancellationToken = default)
     {
+        // New connections are detached aggregates; Add attaches them as Added instead of Update treating them as existing rows.
         db.Connections.Add(connection);
         await db.SaveChangesAsync(cancellationToken);
     }
@@ -61,7 +62,8 @@ public sealed class IntakeStore(IntakeDbContext db, TimeProvider clock) : IIntak
     /// <inheritdoc />
     public async Task UpdateConnectionAsync(SourceConnection connection, CancellationToken cancellationToken = default)
     {
-        db.Connections.Update(connection);
+        // Updates arrive detached after AsNoTracking reads; explicitly attach as Modified so EF never acts on a Detached entry.
+        db.Entry(connection).State = EntityState.Modified;
         await db.SaveChangesAsync(cancellationToken);
     }
 

@@ -17,6 +17,7 @@ using Comuki.Host.Projects;
 using Comuki.Host.Proxy;
 using Comuki.Host.Realtime;
 using Comuki.Host.Runs;
+using Comuki.Host.Scheduler;
 using Comuki.Host.Security.Cors;
 using Comuki.Host.Security.ProductionSecrets;
 using Comuki.Host.Security.RateLimit;
@@ -42,6 +43,10 @@ using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
 using Comuki.Modules.Proxy.Application;
 using Comuki.Modules.Proxy.Infrastructure;
+using Comuki.Modules.Scheduler.Application;
+using Comuki.Modules.Scheduler.Application.Options;
+using Comuki.Modules.Scheduler.Application.Ports;
+using Comuki.Modules.Scheduler.Infrastructure;
 using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
@@ -167,6 +172,24 @@ internal static class HostComposer
         // the underlying handlers (IKnowledgeIngestor, IKnowledgeSearcher,
         // RunsListHandler) are resolved per-call by the DI container.
         builder.Services.AddSingleton<McpServer>();
+
+        // Scheduler module (S15): per-project cron / one-shot admission
+        // source. The application façade + dispatcher worker live in
+        // their own projects; the host composes the dispatcher (it knows
+        // the engine — Run + WorkItem shape) and binds the two options
+        // classes (poll interval + worker image / profiles-ref) from
+        // configuration. Validation on start so a missing image / ref
+        // fails the boot, not the first dispatch cycle.
+        builder.Services
+            .AddSchedulerApplication()
+            .AddSchedulerPersistence(database.ConnectionString);
+        builder.Services.AddScoped<ISchedulerDispatcher, SchedulerRunLauncher>();
+        builder.Services.AddOptions<SchedulerOptions>()
+            .Bind(builder.Configuration.GetSection(SchedulerOptions.SectionName));
+        builder.Services.AddOptions<SchedulerWorkerDefaults>()
+            .Bind(builder.Configuration.GetSection(SchedulerWorkerDefaults.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).

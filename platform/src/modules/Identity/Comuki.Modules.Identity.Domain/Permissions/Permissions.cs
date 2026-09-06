@@ -78,6 +78,12 @@ public static class Permissions
     /// <summary>Write identity (grant/revoke, keys, users).</summary>
     public static readonly PermissionKey IdentityWrite = new("identity:write");
 
+    /// <summary>Read scheduled jobs (per-project cron / one-shot sources).</summary>
+    public static readonly PermissionKey SchedulerRead = new("scheduler:read");
+
+    /// <summary>Write scheduled jobs (create / patch / delete).</summary>
+    public static readonly PermissionKey SchedulerWrite = new("scheduler:write");
+
     /// <summary>Platform-level administration (everything else is scoped below it).</summary>
     public static readonly PermissionKey PlatformAdmin = new("platform:admin");
 }

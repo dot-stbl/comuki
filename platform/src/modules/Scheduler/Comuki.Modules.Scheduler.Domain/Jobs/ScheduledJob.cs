@@ -74,6 +74,7 @@ public sealed class ScheduledJob
     /// <param name="profileKey"></param>
     /// <param name="briefJson"></param>
     /// <param name="runOnOnceAt">Optional one-shot instant.</param>
+    /// <param name="enabled">Initial enabled flag (default true).</param>
     /// <param name="now"></param>
     /// <exception cref="FormatException">Cron expression did not parse.</exception>
     public static ScheduledJob Create(
@@ -82,6 +83,7 @@ public sealed class ScheduledJob
         string profileKey,
         string briefJson,
         DateTimeOffset? runOnOnceAt,
+        bool enabled,
         DateTimeOffset now)
     {
         var cron = Scheduling.CronExpression.Parse(cronExpression);
@@ -95,7 +97,7 @@ public sealed class ScheduledJob
             ProfileKey = profileKey.Trim(),
             BriefJson = briefJson,
             RunOnOnceAt = runOnOnceAt,
-            Enabled = true,
+            Enabled = enabled,
             LastFiredAt = null,
             NextFireAt = initialNext,
             CreatedAt = now,

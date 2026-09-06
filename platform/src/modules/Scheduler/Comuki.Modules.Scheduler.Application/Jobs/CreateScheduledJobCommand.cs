@@ -8,9 +8,11 @@ namespace Comuki.Modules.Scheduler.Application.Jobs;
 /// <param name="ProfileKey">Profile the launched run will resolve.</param>
 /// <param name="BriefJson">Worker brief payload (jsonb).</param>
 /// <param name="RunOnOnceAt">Optional one-shot fire-at; null means cron-only.</param>
+/// <param name="Enabled">Initial enabled flag — null defaults to true on create.</param>
 public sealed record CreateScheduledJobCommand(
     ProjectId ProjectId,
     string CronExpression,
     string ProfileKey,
     string BriefJson,
-    DateTimeOffset? RunOnOnceAt);
+    DateTimeOffset? RunOnOnceAt,
+    bool? Enabled = null);

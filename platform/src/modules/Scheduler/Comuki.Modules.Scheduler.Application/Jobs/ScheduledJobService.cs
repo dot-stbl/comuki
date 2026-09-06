@@ -68,12 +68,13 @@ public sealed class ScheduledJobService(
             command.ProfileKey,
             command.BriefJson,
             command.RunOnOnceAt,
+            command.Enabled ?? true,
             clock.GetUtcNow());
 
         await store.AddAsync(job, cancellationToken);
         logger.LogInformation(
-            "Scheduled job {JobId} created for project {ProjectId} (profile={ProfileKey}, cron={CronExpression})",
-            job.Id.Value, job.ProjectId.Value, job.ProfileKey, job.CronExpression);
+            "Scheduled job {JobId} created for project {ProjectId} (profile={ProfileKey}, cron={CronExpression}, enabled={Enabled})",
+            job.Id.Value, job.ProjectId.Value, job.ProfileKey, job.CronExpression, job.Enabled);
 
         return ScheduledJobView.Of(job);
     }

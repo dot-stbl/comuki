@@ -41,8 +41,6 @@ public sealed class RunArtifactPackager(
         int ObjectCount,
         IReadOnlyList<ArtifactPointer> Pointers);
 
-    private static readonly JsonSerializerOptions webOptions = JsonSerializerOptions.Web;
-
     /// <summary>
     /// Packages one run: reads its terminal snapshot + brief, uploads the
     /// <c>brief.json</c> / <c>result.json</c> / <c>journal.ndjson</c>
@@ -103,7 +101,7 @@ public sealed class RunArtifactPackager(
         {
             snapshot.OccurredAt,
             snapshot.Status,
-        }, webOptions);
+        }, JsonSerializerOptions.Web);
         await UploadTextAsync(projectId, runId, "pins.json", pins, "application/json", cancellationToken);
         objectCount++;
 

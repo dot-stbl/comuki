@@ -19,12 +19,6 @@ public sealed class McpServer(
     RunsListHandler runsList,
     ILogger<McpServer> logger)
 {
-    private static readonly JsonSerializerOptions jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-    };
-
     /// <summary>
     /// Dispatches a single JSON-RPC 2.0 envelope — null id on a notification
     /// (the caller is fire-and-forget) returns null and the endpoint
@@ -43,7 +37,7 @@ public sealed class McpServer(
             : request.Method switch
             {
                 "tools/list" => ListToolsAsync(request.Id, cancellationToken),
-                "tools/call" => await CallToolAsync(request.Id, request.Params, cancellationToken).ConfigureAwait(false),
+                "tools/call" => await CallToolAsync(request.Id, request.Params, cancellationToken),
                 _ => JsonRpcResponse.Failure(
                     request.Id,
                     JsonRpcEnvelope.ErrorCodes.MethodNotFound,
@@ -143,7 +137,7 @@ public sealed class McpServer(
         ToolCallParams? toolCall;
         try
         {
-            toolCall = parameters.Value.Deserialize<ToolCallParams>(jsonOptions);
+            toolCall = parameters.Value.Deserialize<ToolCallParams>(JsonSerializerOptions.Web);
         }
         catch (JsonException exception)
         {
@@ -167,10 +161,10 @@ public sealed class McpServer(
         {
             return toolCall.Name switch
             {
-                "knowledge.search" => await KnowledgeSearchAsync(id, toolCall.Arguments, cancellationToken).ConfigureAwait(false),
-                "knowledge.ingest" => await KnowledgeIngestAsync(id, toolCall.Arguments, cancellationToken).ConfigureAwait(false),
-                "runs.list" => await RunsListAsync(id, toolCall.Arguments, cancellationToken).ConfigureAwait(false),
-                "runs.get" => await RunsGetAsync(id, toolCall.Arguments, cancellationToken).ConfigureAwait(false),
+                "knowledge.search" => await KnowledgeSearchAsync(id, toolCall.Arguments, cancellationToken),
+                "knowledge.ingest" => await KnowledgeIngestAsync(id, toolCall.Arguments, cancellationToken),
+                "runs.list" => await RunsListAsync(id, toolCall.Arguments, cancellationToken),
+                "runs.get" => await RunsGetAsync(id, toolCall.Arguments, cancellationToken),
                 _ => JsonRpcResponse.Failure(
                     id,
                     JsonRpcEnvelope.ErrorCodes.MethodNotFound,
@@ -206,7 +200,7 @@ public sealed class McpServer(
         var topK = ReadOptionalInt(argumentsObject, "topK") ?? 5;
         var minSimilarity = ReadOptionalFloat(argumentsObject, "minSimilarity") ?? 0.5f;
 
-        var hits = await knowledgeSearcher.SearchAsync(query, projectId, topK, minSimilarity, cancellationToken).ConfigureAwait(false);
+        var hits = await knowledgeSearcher.SearchAsync(query, projectId, topK, minSimilarity, cancellationToken);
         var payload = hits.Select(static hit => new
         {
             chunkId = hit.ChunkId.ToString(),
@@ -216,7 +210,7 @@ public sealed class McpServer(
         }).ToArray();
 
         return JsonRpcResponse.Success(id, new ToolResult(
-            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(payload, jsonOptions))],
+            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(payload, JsonSerializerOptions.Web))],
             IsError: false));
     }
 
@@ -239,14 +233,14 @@ public sealed class McpServer(
         }
 
         var projectId = ReadOptionalGuid(argumentsObject, "projectId");
-        var result = await knowledgeIngestor.IngestAsync(projectId, title, source, sourceRef, mimeType, text, cancellationToken).ConfigureAwait(false);
+        var result = await knowledgeIngestor.IngestAsync(projectId, title, source, sourceRef, mimeType, text, cancellationToken);
 
         return JsonRpcResponse.Success(id, new ToolResult(
             Content: [new ToolContentBlock("text", JsonSerializer.Serialize(new
             {
                 sourceDocumentId = result.SourceDocumentId.ToString(),
                 chunksWritten = result.ChunksWritten,
-            }, jsonOptions))],
+            }, JsonSerializerOptions.Web))],
             IsError: false));
     }
 
@@ -269,9 +263,9 @@ public sealed class McpServer(
 
         var query = new FilterQuery { Filter = clauses.Count > 0 ? string.Join(';', clauses) : null };
 
-        var page = await runsList.ListAsync(query, cancellationToken).ConfigureAwait(false);
+        var page = await runsList.ListAsync(query, cancellationToken);
         return JsonRpcResponse.Success(id, new ToolResult(
-            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(page, jsonOptions))],
+            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(page, JsonSerializerOptions.Web))],
             IsError: false));
     }
 
@@ -399,11 +393,7 @@ public abstract record JsonRpcResponse
     /// <param name="result"></param>
     public static JsonRpcResponse Success(JsonElement? id, object result)
     {
-        var json = JsonSerializer.SerializeToElement(result, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-        });
+        var json = JsonSerializer.SerializeToElement(result, JsonSerializerOptions.Web);
 
         return new JsonRpcResponseSuccess(id, json);
     }

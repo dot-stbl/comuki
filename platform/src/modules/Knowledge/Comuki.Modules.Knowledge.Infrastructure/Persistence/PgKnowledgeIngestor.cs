@@ -40,22 +40,41 @@ public sealed class PgKnowledgeIngestor(
         string text,
         CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(title);
-        ArgumentException.ThrowIfNullOrWhiteSpace(source);
-        ArgumentException.ThrowIfNullOrWhiteSpace(sourceRef);
-        ArgumentException.ThrowIfNullOrWhiteSpace(mimeType);
-        ArgumentException.ThrowIfNullOrWhiteSpace(text);
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new InvalidOperationException("title required");
+        }
+
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            throw new InvalidOperationException("source required");
+        }
+
+        if (string.IsNullOrWhiteSpace(sourceRef))
+        {
+            throw new InvalidOperationException("sourceRef required");
+        }
+
+        if (string.IsNullOrWhiteSpace(mimeType))
+        {
+            throw new InvalidOperationException("mimeType required");
+        }
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new InvalidOperationException("text required");
+        }
 
         var sourceKind = SourceKindKeys.ParseRequired(source);
         var targetTokens = ingestOptions.Value.ChunkTokenTarget;
         var now = clock.GetUtcNow();
 
-        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
         var document = SourceDocument.Create(projectId, title, sourceKind, sourceRef, mimeType, now);
         context.SourceDocuments.Add(document);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await context.SaveChangesAsync(cancellationToken);
 
         var chunks = Chunker.Chunk(text, targetTokens);
         if (chunks.Count == 0)
@@ -64,7 +83,7 @@ public sealed class PgKnowledgeIngestor(
             // operator sees a record of the attempt, but write zero
             // embeddings. The caller can decide what to do with this
             // (404 vs 200 with chunksWritten = 0).
-            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken);
             logger.LogInformation(
                 "knowledge ingest wrote an empty document {DocumentId} for {SourceRef} — no chunks produced",
                 document.Id,
@@ -72,7 +91,7 @@ public sealed class PgKnowledgeIngestor(
             return new KnowledgeIngestResult(document.Id, ChunksWritten: 0);
         }
 
-        var vectors = await embedder.EmbedBatchAsync(chunks, cancellationToken).ConfigureAwait(false);
+        var vectors = await embedder.EmbedBatchAsync(chunks, cancellationToken);
         if (vectors.Count != chunks.Count)
         {
             throw new InvalidOperationException(
@@ -88,7 +107,7 @@ public sealed class PgKnowledgeIngestor(
         }
 
         context.MemoryEmbeddings.AddRange(rows);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await context.SaveChangesAsync(cancellationToken);
 
         // Back-fill the pgvector embedding column per row via raw SQL —
         // the EF model deliberately doesn't model the vector type.
@@ -103,11 +122,11 @@ public sealed class PgKnowledgeIngestor(
             {
                 idParameter.Value = pair.row.Id.Value;
                 vectorParameter.Value = MemoryEmbeddingSql.VectorLiteral(pair.vector);
-                await update.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                await update.ExecuteNonQueryAsync(cancellationToken);
             }
         }
 
-        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken);
 
         logger.LogInformation(
             "knowledge ingest wrote {ChunkCount} chunks for document {DocumentId} ({SourceKind} {SourceRef})",

@@ -33,6 +33,58 @@ sync-back client. Unsupported provider names answer 404.
 - **WHEN** a webhook posts to `/api/hooks/bitbucket/{key}`
 - **THEN** the answer is 404
 
+### Requirement: Yandex Tracker and Jira providers
+The `yandex-tracker` and `jira` providers SHALL admit webhook deliveries on
+`/api/hooks/{provider}/{key}`, verify each provider's signature scheme against
+the resolved connection's `secretEnvRef`, normalize the payload to the
+canonical ticket shape (project, key, title, body, reporter, status, labels),
+and create an `intake_tickets` row on success. Both providers SHALL expose a
+`sync-back` client that posts a run-status comment back to the originating
+ticket when the run reaches a terminal status; `yandex-tracker` posts a
+comment via the Tracker REST API and `jira` posts it via the Jira REST API.
+Each provider's connection settings SHALL live under `settings_json` and
+declare at least `projectKey` (the tracker-side project the webhook
+filters on) plus the provider-specific extras surfaced in the requirement
+below.
+
+#### Scenario: Yandex Tracker webhook creates a ticket
+- **WHEN** a signed `POST /api/hooks/yandex-tracker/{key}` arrives with an
+  issue-created payload whose `project.key` matches the connection's
+  `settings_json.projectKey`
+- **THEN** the verifier accepts the signature, the mapper admits the
+  payload, and a row in `intake_tickets` is created with `provider =
+  "yandex-tracker"` and the ticket's external id
+
+#### Scenario: Jira webhook creates a ticket
+- **WHEN** a signed `POST /api/hooks/jira/{key}` arrives with a
+  `jira:issue_created` payload whose `issue.fields.project.key`
+  matches the connection's `settings_json.projectKey`
+- **THEN** the verifier accepts the signature, the mapper admits the
+  payload, and a row in `intake_tickets` is created with `provider =
+  "jira"` and the ticket's external id
+
+#### Scenario: Yandex Tracker signature verification
+- **WHEN** the X-Hub-Signature header on a Yandex Tracker webhook fails to
+  validate against the resolved connection's `secretEnvRef`
+- **THEN** the answer is 401 ProblemDetails and no ticket is admitted
+
+#### Scenario: Jira signature verification
+- **WHEN** the `X-Hub-Signature` header on a Jira webhook fails to validate
+  against the resolved connection's `secretEnvRef`
+- **THEN** the answer is 401 ProblemDetails and no ticket is admitted
+
+#### Scenario: Yandex Tracker settings include projectKey
+- **WHEN** an operator creates a Yandex Tracker connection whose
+  `settings_json` omits `projectKey`
+- **THEN** the create is rejected with 400 ProblemDetails (code
+  `intake.provider_settings_invalid`) and the row is not stored
+
+#### Scenario: Jira settings include projectKey
+- **WHEN** an operator creates a Jira connection whose `settings_json`
+  omits `projectKey`
+- **THEN** the create is rejected with 400 ProblemDetails (code
+  `intake.provider_settings_invalid`) and the row is not stored
+
 ### Requirement: Source connections
 Source connections SHALL persist under `source_connections` with settings
 ,

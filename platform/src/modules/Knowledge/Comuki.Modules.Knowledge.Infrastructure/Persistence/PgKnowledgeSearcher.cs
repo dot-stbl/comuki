@@ -28,7 +28,10 @@ public sealed class PgKnowledgeSearcher(
         float minSimilarity,
         CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(query);
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            throw new InvalidOperationException("query required");
+        }
         if (topK is < 1 or > 1000)
         {
             throw new ArgumentOutOfRangeException(nameof(topK), topK, "topK must be in [1, 1000]");
@@ -39,14 +42,14 @@ public sealed class PgKnowledgeSearcher(
             throw new ArgumentOutOfRangeException(nameof(minSimilarity), minSimilarity, "minSimilarity must be in [0.0, 1.0]");
         }
 
-        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var connection = (NpgsqlConnection)context.Database.GetDbConnection();
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        await connection.OpenAsync(cancellationToken);
 
         await using (var probe = connection.CreateCommand())
         {
             probe.CommandText = MemoryEmbeddingSql.EmbeddingColumnExistsSql;
-            var available = (bool)(await probe.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false))!;
+            var available = (bool)(await probe.ExecuteScalarAsync(cancellationToken))!;
             if (!available)
             {
                 logger.LogInformation("knowledge search skipped — pgvector embedding column is absent on this deployment");
@@ -54,7 +57,7 @@ public sealed class PgKnowledgeSearcher(
             }
         }
 
-        var queryVector = await embedder.EmbedAsync(query, cancellationToken).ConfigureAwait(false);
+        var queryVector = await embedder.EmbedAsync(query, cancellationToken);
 
         await using var command = connection.CreateCommand();
         command.CommandText = MemoryEmbeddingSql.CosineSearchSql;
@@ -76,8 +79,8 @@ public sealed class PgKnowledgeSearcher(
         });
 
         var hits = new List<KnowledgeSearchHit>(topK);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
         {
             var (id, sourceDocumentId, _, chunkText, _, _, similarity) = MemoryEmbeddingSql.ReadRow(reader);
             hits.Add(new KnowledgeSearchHit(id, sourceDocumentId, chunkText, similarity));

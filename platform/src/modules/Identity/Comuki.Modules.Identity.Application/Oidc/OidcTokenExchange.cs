@@ -41,8 +41,8 @@ public sealed class OidcTokenExchange(HttpClient httpClient, ILogger<OidcTokenEx
         var basic = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{clientId}:{clientSecret}"));
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", basic);
 
-        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {

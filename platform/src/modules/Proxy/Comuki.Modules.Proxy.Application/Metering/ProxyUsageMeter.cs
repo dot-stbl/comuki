@@ -2,7 +2,7 @@ using System.Text.Json;
 using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Modules.Proxy.Application.Models;
 using Comuki.Modules.Proxy.Application.Ports;
-using Comuki.Shared.Contracts.Costs;
+using Comuki.Shared.Contracts.Usage;
 using Microsoft.Extensions.Logging;
 
 namespace Comuki.Modules.Proxy.Application.Metering;

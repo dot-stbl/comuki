@@ -160,11 +160,14 @@ internal static class HostComposer
         builder.Services.AddHostedService<RunArtifactPackagerHostService>();
 
         // Knowledge module (S10 #9): ingest + search over the pgvector
-        // memory_embeddings table. The ingestor + searcher are
-        // registered through AddKnowledgeInfrastructure (which also
-        // registers the IEmbeddingClient + KnowledgeIngestBackgroundService);
-        // AddKnowledgeApplication is currently a marker extension.
+        // knowledge.memory_embeddings table. The ingestor + searcher
+        // are registered through AddKnowledgeInfrastructure (which also
+        // registers the IEmbeddingClient + KnowledgeIngestBackgroundService).
+        // AddKnowledgePersistence wires the KnowledgeDbContext factory
+        // (its own schema, its own migration history table) — the module
+        // no longer reaches into Memory.Infrastructure for the context.
         builder.Services.AddKnowledgeApplication();
+        builder.Services.AddKnowledgePersistence(database.ConnectionString);
         builder.Services.AddKnowledgeInfrastructure(builder.Configuration);
 
         // MCP server (S10 #9): JSON-RPC 2.0 over /api/v1/mcp. The

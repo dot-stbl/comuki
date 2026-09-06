@@ -1,9 +1,13 @@
 using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Shared.Kernel.Ids;
 
-namespace Comuki.Modules.Costs.Application.Ports;
+namespace Comuki.Shared.Contracts.Usage;
 
-/// <summary>Persistence port for usage events.</summary>
+/// <summary>
+/// Persistence port for usage events. Reads are exposed here so the
+/// proxy pre-flight can sum proxy-source spend without taking a
+/// dependency on the Costs module's internal Application assembly.
+/// </summary>
 public interface IUsageEventStore
 {
     /// <summary>Appends one event.</summary>

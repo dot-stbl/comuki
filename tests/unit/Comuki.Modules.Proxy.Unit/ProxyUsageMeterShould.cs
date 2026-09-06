@@ -4,7 +4,7 @@ using Comuki.Modules.Proxy.Application.Metering;
 using Comuki.Modules.Proxy.Application.Models;
 using Comuki.Modules.Proxy.Application.Options;
 using Comuki.Modules.Proxy.Application.Ports;
-using Comuki.Shared.Contracts.Costs;
+using Comuki.Shared.Contracts.Usage;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;

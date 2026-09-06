@@ -1,4 +1,4 @@
-using Comuki.Modules.Costs.Application.Ports;
+using Comuki.Shared.Contracts.Usage;
 using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Modules.Costs.Application.Aggregation;

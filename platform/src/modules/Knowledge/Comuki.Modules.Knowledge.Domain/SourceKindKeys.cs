@@ -1,4 +1,4 @@
-namespace Comuki.Modules.Memory.Domain.Knowledge;
+namespace Comuki.Modules.Knowledge.Domain;
 
 /// <summary>
 /// Stable wire keys for <see cref="SourceKind"/> — the database column

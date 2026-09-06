@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.Extensions.AI" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
@@ -19,9 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
     <ProjectReference Include="..\Comuki.Modules.Knowledge.Application\Comuki.Modules.Knowledge.Application.csproj" />
     <ProjectReference Include="..\Comuki.Modules.Knowledge.Domain\Comuki.Modules.Knowledge.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Comuki.Modules.Knowledge.Unit" />
   </ItemGroup>
 
 </Project>

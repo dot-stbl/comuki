@@ -28,6 +28,13 @@ public sealed class RunConfiguration : IEntityTypeConfiguration<Run>
             .HasMaxLength(16)
             .IsRequired();
 
+        builder.Property(static run => run.TrustClass)
+            .HasColumnName("trust_class")
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .IsRequired()
+            .HasDefaultValue(RunTrustClass.Supervised);
+
         builder.Property(static run => run.CreatedAt)
             .HasColumnName("created_at");
 

@@ -17,20 +17,12 @@ public static class EvalReportWriter
     /// <summary>Markdown heading prefix the report starts with.</summary>
     public const string MarkdownHeadingPrefix = "# ";
 
-    private static readonly JsonSerializerOptions jsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower,
-    };
-
     /// <summary>Writes the JSON payload to <paramref name="path"/>.</summary>
     /// <param name="report">The report to serialize.</param>
     /// <param name="path">Destination file path.</param>
     public static void WriteJson(EvalReport report, string path)
     {
-        var body = SerializeJson(report);
-        File.WriteAllText(path, body);
+        File.WriteAllText(path, SerializeJson(report));
     }
 
     /// <summary>Writes the Markdown report to <paramref name="path"/>.</summary>
@@ -38,8 +30,7 @@ public static class EvalReportWriter
     /// <param name="path">Destination file path.</param>
     public static void WriteMarkdown(EvalReport report, string path)
     {
-        var body = RenderMarkdown(report);
-        File.WriteAllText(path, body);
+        File.WriteAllText(path, RenderMarkdown(report));
     }
 
     /// <summary>Renders the report to a Markdown string (no I/O).</summary>
@@ -48,77 +39,90 @@ public static class EvalReportWriter
     public static string RenderMarkdown(EvalReport report)
     {
         var builder = new StringBuilder();
-        _ = builder
-            .Append(MarkdownHeadingPrefix)
-            .Append(report.Suite)
-            .Append(" — ")
-            .Append(report.RunAt.ToString("u", CultureInfo.InvariantCulture))
-            .AppendLine()
-            .AppendLine()
-            .Append("**Pass:** ")
-            .Append(report.PassedCount)
-            .Append(" / ")
-            .Append(report.Results.Count)
-            .Append("    **Fail:** ")
-            .Append(report.FailedCount)
-            .AppendLine()
-            .AppendLine()
-            .AppendLine("| id | name | kind | duration_ms | result |")
-            .AppendLine("|---|---|---|---|---|");
+        AppendHeading(builder, report);
+        AppendSummary(builder, report);
+        AppendTable(builder, report.Results);
+        AppendFailureDrilldown(builder, report.Results);
+        return builder.ToString();
+    }
 
-        foreach (var result in report.Results)
+    private static void AppendHeading(StringBuilder builder, EvalReport report)
+    {
+        builder.Append(MarkdownHeadingPrefix);
+        builder.Append(report.Suite);
+        builder.Append(" — ");
+        builder.Append(report.RunAt.ToString("u", CultureInfo.InvariantCulture));
+        builder.AppendLine();
+        builder.AppendLine();
+    }
+
+    private static void AppendSummary(StringBuilder builder, EvalReport report)
+    {
+        builder.Append("**Pass:** ");
+        builder.Append(report.PassedCount);
+        builder.Append(" / ");
+        builder.Append(report.Results.Count);
+        builder.Append("    **Fail:** ");
+        builder.Append(report.FailedCount);
+        builder.AppendLine();
+        builder.AppendLine();
+    }
+
+    private static void AppendTable(StringBuilder builder, IReadOnlyList<EvalTaskResult> results)
+    {
+        builder.AppendLine("| id | name | kind | duration_ms | result |");
+        builder.AppendLine("|---|---|---|---|---|");
+        foreach (var result in results)
         {
-            _ = builder
-                .Append("| ")
-                .Append(result.Task.Id)
-                .Append(" | ")
-                .Append(result.Task.Name)
-                .Append(" | ")
-                .Append(result.Task.Kind)
-                .Append(" | ")
-                .Append(result.DurationMs)
-                .Append(" | ")
-                .Append(result.Passed ? "PASS" : "FAIL")
-                .AppendLine(" |");
+            builder.Append("| ");
+            builder.Append(result.Task.Id);
+            builder.Append(" | ");
+            builder.Append(result.Task.Name);
+            builder.Append(" | ");
+            builder.Append(result.Task.Kind);
+            builder.Append(" | ");
+            builder.Append(result.DurationMs);
+            builder.Append(" | ");
+            builder.Append(result.Passed ? "PASS" : "FAIL");
+            builder.AppendLine(" |");
         }
 
-        _ = builder.AppendLine();
+        builder.AppendLine();
+    }
 
-        foreach (var result in report.Results.Where(static r => !r.Passed))
+    private static void AppendFailureDrilldown(StringBuilder builder, IReadOnlyList<EvalTaskResult> results)
+    {
+        foreach (var result in results.Where(static r => !r.Passed))
         {
-            _ = builder
-                .Append("## ")
-                .Append(result.Task.Id)
-                .Append(" — ")
-                .Append(result.Task.Name)
-                .AppendLine()
-                .AppendLine()
-                .Append("- kind: `")
-                .Append(result.Task.Kind)
-                .AppendLine("`")
-                .Append("- expected: ")
-                .Append(SummarizeExpected(result.Task))
-                .AppendLine()
-                .Append("- actual:   ")
-                .Append(string.Join(" -> ", result.ActualTransitionLog))
-                .AppendLine();
+            builder.Append("## ");
+            builder.Append(result.Task.Id);
+            builder.Append(" — ");
+            builder.Append(result.Task.Name);
+            builder.AppendLine();
+            builder.AppendLine();
+            builder.Append("- kind: `");
+            builder.Append(result.Task.Kind);
+            builder.AppendLine("`");
+            builder.Append("- expected: ");
+            builder.Append(SummarizeExpected(result.Task));
+            builder.AppendLine();
+            builder.Append("- actual:   ");
+            builder.Append(string.Join(" -> ", result.ActualTransitionLog));
+            builder.AppendLine();
 
             foreach (var mismatch in result.Mismatches)
             {
-                _ = builder
-                    .Append("- mismatch `")
-                    .Append(mismatch.Field)
-                    .Append("`: ")
-                    .Append(mismatch.Expected)
-                    .Append("  !=  ")
-                    .Append(mismatch.Actual)
-                    .AppendLine();
+                builder.Append("- mismatch `");
+                builder.Append(mismatch.Field);
+                builder.Append("`: ");
+                builder.Append(mismatch.Expected);
+                builder.Append("  !=  ");
+                builder.Append(mismatch.Actual);
+                builder.AppendLine();
             }
 
-            _ = builder.AppendLine();
+            builder.AppendLine();
         }
-
-        return builder.ToString();
     }
 
     /// <summary>Serializes the report to JSON (no I/O).</summary>
@@ -126,6 +130,12 @@ public static class EvalReportWriter
     /// <returns>Pretty-printed JSON.</returns>
     public static string SerializeJson(EvalReport report)
     {
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower,
+        };
         var payload = new EvalReportPayload(
             report.Suite,
             report.RunAt,
@@ -133,7 +143,7 @@ public static class EvalReportWriter
             report.FailedCount,
             [.. report.Results.Select(ToPayload)]);
 
-        return JsonSerializer.Serialize(payload, jsonOptions);
+        return JsonSerializer.Serialize(payload, options);
     }
 
     private static string SummarizeExpected(EvalTask task)

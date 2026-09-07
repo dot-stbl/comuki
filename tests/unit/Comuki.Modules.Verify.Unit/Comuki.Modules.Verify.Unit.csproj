@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Modules.Verify.Unit</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\modules\Verify\Comuki.Modules.Verify.Domain\Comuki.Modules.Verify.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\modules\Verify\Comuki.Modules.Verify.Application\Comuki.Modules.Verify.Application.csproj" />
+  </ItemGroup>
+
+</Project>

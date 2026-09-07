@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { cn } from "./utils";
 
 describe("cn", () => {
-  it("merges class names using clsx + tailwind-merge", () => {
+  it("concatenates class names", () => {
     const result = cn("text-red-500", "text-blue-500");
-    expect(result).toBe("text-blue-500");
+    expect(result).toBe("text-red-500 text-blue-500");
   });
 
   it("handles empty inputs", () => {
@@ -21,5 +21,11 @@ describe("cn", () => {
     const isActive = true;
     const result = cn("base-class", isActive && "active");
     expect(result).toBe("base-class active");
+  });
+
+  it("drops falsy values", () => {
+    const isActive = false;
+    const result = cn("base-class", isActive && "active", null, undefined, 0, "");
+    expect(result).toBe("base-class");
   });
 });

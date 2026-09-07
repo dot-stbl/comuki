@@ -11,11 +11,12 @@ public static class ProjectsPersistenceExtensions
     /// <summary>
     /// Registers <see cref="ProjectsDbContext"/> (Npgsql + snake_case +
     /// private migrations history via <see cref="ProjectsDbContext.ApplyOptions"/>),
-    /// the project store (scoped — one context per unit of work) and the
-    /// singleton settings store with its cache refresher. The factory
-    /// registration also provides a scoped <see cref="ProjectsDbContext"/>
-    /// for request-scoped consumers; the settings store and refresher use
-    /// the singleton factory directly (they outlive any scope).
+    /// the project and domain-type admission stores (scoped — one context
+    /// per unit of work) and the singleton settings store with its cache
+    /// refresher. The factory registration also provides a scoped
+    /// <see cref="ProjectsDbContext"/> for request-scoped consumers; the
+    /// settings store and refresher use the singleton factory directly
+    /// (they outlive any scope).
     /// </summary>
     /// <param name="services"></param>
     /// <param name="connectionString"></param>
@@ -28,6 +29,7 @@ public static class ProjectsPersistenceExtensions
             ProjectsDbContext.ApplyOptions(options, connectionString));
 
         services.AddScoped<IProjectStore, ProjectStore>();
+        services.AddScoped<IDomainTypeAdmissionStore, DbDomainTypeAdmissionStore>();
         services.AddSingleton<IProjectSettingsStore, DbProjectSettingsStore>();
         services.AddHostedService<ProjectSettingsCacheRefresher>();
 

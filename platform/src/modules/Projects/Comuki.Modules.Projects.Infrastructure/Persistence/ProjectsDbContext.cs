@@ -1,3 +1,4 @@
+using Comuki.Modules.Projects.Domain.DomainTypes;
 using Comuki.Modules.Projects.Domain.Projects;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Modules.Projects.Infrastructure.Persistence.Configurations;
@@ -39,6 +40,9 @@ public sealed class ProjectsDbContext(
     /// <summary>Per-project settings (one row per project).</summary>
     public DbSet<ProjectSettings> ProjectSettings => Set<ProjectSettings>();
 
+    /// <summary>Per-project domain-type admission policies (many per project).</summary>
+    public DbSet<DomainTypeAdmission> DomainTypeAdmissions => Set<DomainTypeAdmission>();
+
     /// <summary>
     /// Left disjunct of the scope filter: true when the current subject
     /// sees every project (a platform-scope role, a system consumer, or a
@@ -74,15 +78,19 @@ public sealed class ProjectsDbContext(
     {
         modelBuilder
             .ApplyConfiguration(new ProjectConfiguration())
-            .ApplyConfiguration(new ProjectSettingsConfiguration());
+            .ApplyConfiguration(new ProjectSettingsConfiguration())
+            .ApplyConfiguration(new DomainTypeAdmissionConfiguration());
 
         // The object axis, as row-level filters: a project's own identity is
-        // the axis value; a settings row follows its project. Out-of-scope
-        // reads surface as not-found downstream, never as a deny.
+        // the axis value; a settings row and an admission policy follow their
+        // project. Out-of-scope reads surface as not-found downstream, never
+        // as a deny.
         modelBuilder.Entity<Project>()
             .HasQueryFilter(project => ScopeUnrestricted || ScopeProjectIds.Contains(project.Id));
         modelBuilder.Entity<ProjectSettings>()
             .HasQueryFilter(settings => ScopeUnrestricted || ScopeProjectIds.Contains(settings.ProjectId));
+        modelBuilder.Entity<DomainTypeAdmission>()
+            .HasQueryFilter(admission => ScopeUnrestricted || ScopeProjectIds.Contains(admission.ProjectId));
 
         base.OnModelCreating(modelBuilder);
     }

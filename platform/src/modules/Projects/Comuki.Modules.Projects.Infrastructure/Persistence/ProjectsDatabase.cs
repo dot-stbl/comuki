@@ -19,4 +19,7 @@ public static class ProjectsDatabase
 
     /// <summary>Per-project settings.</summary>
     public const string ProjectSettings = "project_settings";
+
+    /// <summary>Per-project domain-type admission policies.</summary>
+    public const string DomainTypeAdmissions = "domain_type_admissions";
 }

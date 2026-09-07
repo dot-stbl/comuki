@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Migrator.Unit</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <!-- Npgsql is pulled transitively via Testcontainers.PostgreSql ->
+         Npgsql.EntityFrameworkCore.PostgreSQL (10.0.3) and is sufficient
+         for the raw NpgsqlConnection / NpgsqlException the schema test
+         exercises. -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- InternalsVisibleTo on Comuki.Migrator grants this test project
+         access to the internal ConnectionStringSource. -->
+    <ProjectReference Include="..\..\..\platform\src\host\Comuki.Migrator\Comuki.Migrator.csproj" />
+  </ItemGroup>
+
+</Project>

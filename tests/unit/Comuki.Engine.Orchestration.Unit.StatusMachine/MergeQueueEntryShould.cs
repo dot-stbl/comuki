@@ -40,7 +40,7 @@ public sealed class MergeQueueEntryShould
     [Fact(DisplayName = "Given an empty branch, when Create is called, then it throws")]
     public void RejectEmptyBranchOnCreate()
     {
-        _ = Should.Throw<ArgumentException>(static () => MergeQueueEntry.Create(
+        Should.Throw<ArgumentException>(static () => MergeQueueEntry.Create(
             ProjectId.New(),
             " ",
             "https://example.com/pr/42",
@@ -52,7 +52,7 @@ public sealed class MergeQueueEntryShould
     [Fact(DisplayName = "Given an empty PR URL, when Create is called, then it throws")]
     public void RejectEmptyPullRequestUrlOnCreate()
     {
-        _ = Should.Throw<ArgumentException>(static () => MergeQueueEntry.Create(
+        Should.Throw<ArgumentException>(static () => MergeQueueEntry.Create(
             ProjectId.New(),
             "feature/x",
             " ",
@@ -79,7 +79,6 @@ public sealed class MergeQueueEntryShould
     {
         var entry = PendingEntry();
         entry.Claim("operator-bob", now);
-        _ = now.AddMinutes(5);
 
         entry.Release();
 
@@ -93,7 +92,7 @@ public sealed class MergeQueueEntryShould
     {
         var entry = PendingEntry();
 
-        _ = Should.Throw<InvalidOperationException>(entry.Release);
+        Should.Throw<InvalidOperationException>(entry.Release);
     }
 
     [Fact(DisplayName = "Given an in-progress entry, when MarkMerged is called, then it is Merged with timestamp")]
@@ -115,7 +114,7 @@ public sealed class MergeQueueEntryShould
     {
         var entry = PendingEntry();
 
-        _ = Should.Throw<InvalidOperationException>(() => entry.MarkMerged(now));
+        Should.Throw<InvalidOperationException>(() => entry.MarkMerged(now));
     }
 
     [Fact(DisplayName = "Given a pending entry, when MarkAbandoned is called, then it is Abandoned with reason")]
@@ -137,7 +136,7 @@ public sealed class MergeQueueEntryShould
         entry.Claim("operator-dan", now);
         entry.MarkMerged(now.AddMinutes(1));
 
-        _ = Should.Throw<InvalidOperationException>(() => entry.MarkAbandoned("trying", now.AddMinutes(2)));
+        Should.Throw<InvalidOperationException>(() => entry.MarkAbandoned("trying", now.AddMinutes(2)));
     }
 
     [Fact(DisplayName = "Given an abandoned entry, when MarkMerged is called, then it throws")]
@@ -146,7 +145,7 @@ public sealed class MergeQueueEntryShould
         var entry = PendingEntry();
         entry.MarkAbandoned("dropped", now);
 
-        _ = Should.Throw<InvalidOperationException>(() => entry.MarkMerged(now.AddMinutes(1)));
+        Should.Throw<InvalidOperationException>(() => entry.MarkMerged(now.AddMinutes(1)));
     }
 
     [Fact(DisplayName = "Given any entry, when SetNotes is called, then the notes field is updated")]
@@ -170,7 +169,7 @@ public sealed class MergeQueueEntryShould
     {
         var entry = PendingEntry();
 
-        _ = Should.Throw<ArgumentException>(() => entry.Claim(operatorId!, now));
+        Should.Throw<ArgumentException>(() => entry.Claim(operatorId!, now));
     }
 
     [Fact(DisplayName = "Given an empty reason, when MarkAbandoned is called, then it throws")]
@@ -178,7 +177,7 @@ public sealed class MergeQueueEntryShould
     {
         var entry = PendingEntry();
 
-        _ = Should.Throw<ArgumentException>(() => entry.MarkAbandoned(" ", now));
+        Should.Throw<ArgumentException>(() => entry.MarkAbandoned(" ", now));
     }
 
     private static MergeQueueEntry PendingEntry()

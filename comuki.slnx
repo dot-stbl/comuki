@@ -62,6 +62,7 @@
     <Project Path="tests/unit/Comuki.Host.Unit.ProfileCatalog/Comuki.Host.Unit.ProfileCatalog.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.WorkerRuntime/Comuki.Host.Unit.WorkerRuntime.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/Comuki.Engine.Orchestration.Unit.StatusMachine.csproj" />
+    <Project Path="tests/unit/Comuki.Engine.Orchestration.Unit.Eval/Comuki.Engine.Orchestration.Unit.Eval.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Compute.Unit/Comuki.Engine.Compute.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Auth/Comuki.Host.Unit.Auth.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Cors/Comuki.Host.Unit.Cors.csproj" />

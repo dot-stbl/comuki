@@ -58,7 +58,7 @@ public sealed class MergeQueueServiceShould
         var store = Substitute.For<IMergeQueueStore>();
         var service = new MergeQueueService(store, new MergeQueueValidator(), new UpdateMergeQueueValidator(), clock, NullLogger<MergeQueueService>.Instance);
 
-        _ = await Should.ThrowAsync<ValidationException>(
+        var exception = await Should.ThrowAsync<ValidationException>(
             () => service.EnqueueAsync(
                 new EnqueueMergeRequestCommand(
                     ProjectId.New(),
@@ -68,6 +68,7 @@ public sealed class MergeQueueServiceShould
                     null),
                 TestContext.Current.CancellationToken));
 
+        exception.ShouldNotBeNull();
         await store.DidNotReceiveWithAnyArgs().AddAsync(default!, TestContext.Current.CancellationToken);
     }
 
@@ -115,11 +116,12 @@ public sealed class MergeQueueServiceShould
         var store = Substitute.For<IMergeQueueStore>();
         var service = new MergeQueueService(store, new MergeQueueValidator(), new UpdateMergeQueueValidator(), new MergeQueueFakeTimeProvider(now), NullLogger<MergeQueueService>.Instance);
 
-        _ = await Should.ThrowAsync<ValidationException>(
+        var exception = await Should.ThrowAsync<ValidationException>(
             () => service.UpdateAsync(
                 new UpdateMergeQueueCommand(Guid.CreateVersion7(), MergeQueueAction.Claim, " ", null, null),
                 TestContext.Current.CancellationToken));
 
+        exception.ShouldNotBeNull();
         await store.DidNotReceiveWithAnyArgs().FindByIdAsync(Guid.Empty, TestContext.Current.CancellationToken);
     }
 

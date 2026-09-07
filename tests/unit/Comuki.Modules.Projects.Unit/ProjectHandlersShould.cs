@@ -153,7 +153,8 @@ public sealed class ProjectHandlersShould
         var handler = new UpdateSettingsHandler(settings, clock);
 
         var view = await handler.HandleAsync(
-            new UpdateSettingsCommand(projectId, 1, 1, 8, 60, true, true, true, true, 1000, 2000),
+            new UpdateSettingsCommand(projectId, 1, 1, 8, 60, true, true, true, true, 1000, 2000,
+                ProjectDomainType.Standard, null),
             TestContext.Current.CancellationToken);
 
         view.MinIdle.ShouldBe(1);
@@ -175,7 +176,8 @@ public sealed class ProjectHandlersShould
 
         var exception = await Should.ThrowAsync<ProjectSettingsConflictException>(
             () => handler.HandleAsync(
-                new UpdateSettingsCommand(projectId, 0, 0, 4, null, false, false, false, false, null, null),
+                new UpdateSettingsCommand(projectId, 0, 0, 4, null, false, false, false, false, null, null,
+                ProjectDomainType.Standard, null),
                 TestContext.Current.CancellationToken));
 
         exception.ProjectId.ShouldBe(projectId);

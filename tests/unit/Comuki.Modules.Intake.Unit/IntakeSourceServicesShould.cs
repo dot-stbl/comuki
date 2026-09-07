@@ -338,6 +338,109 @@ public sealed class IntakeSourceServicesShould
         await store.Received(1).UpdateConnectionAsync(connection, Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "Given an existing connection, when RotateSecret runs, then a fresh hex secret is persisted and returned")]
+    public async Task RotateSecretPersistsAsync()
+    {
+        var connection = SourceConnection.Create(
+            ProjectId.New(),
+            TicketProvider.GitHub,
+            "Main",
+            "{}",
+            "OLD_REF",
+            "abcdefghijklmnop",
+            now);
+        store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>()).Returns(connection);
+
+        var service = new SourceConnectionService(
+            store,
+            clock,
+            new CreateSourceConnectionValidator(),
+            secrets,
+            NullLogger<SourceConnectionService>.Instance);
+
+        var response = await service.RotateSecretAsync(connection.Id, TestContext.Current.CancellationToken);
+
+        response.SourceId.ShouldBe(connection.Id.Value);
+        response.SecretEnvRef.ShouldBe("OLD_REF");
+        // 64-char lowercase hex from WebhookSecretGenerator.Generate()
+        response.Secret.ShouldMatch("^[0-9a-f]{64}$");
+        response.RotatedAt.ShouldBe(now);
+        connection.WebhookSecret.ShouldBe(response.Secret);
+
+        await store.Received(1).RotateSecretAsync(connection, Arg.Any<CancellationToken>());
+        await store.DidNotReceive().UpdateConnectionAsync(Arg.Any<SourceConnection>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given two rotations of the same connection, when each runs, then the secrets differ")]
+    public async Task RotateSecretProducesDistinctValuesAsync()
+    {
+        var connection = SourceConnection.Create(
+            ProjectId.New(),
+            TicketProvider.GitLab,
+            "GL",
+            "{}",
+            "OLD_REF",
+            "abcdefghijklmnop",
+            now);
+        store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>()).Returns(connection);
+
+        var service = new SourceConnectionService(
+            store,
+            clock,
+            new CreateSourceConnectionValidator(),
+            secrets,
+            NullLogger<SourceConnectionService>.Instance);
+
+        var first = await service.RotateSecretAsync(connection.Id, TestContext.Current.CancellationToken);
+        var second = await service.RotateSecretAsync(connection.Id, TestContext.Current.CancellationToken);
+
+        first.Secret.ShouldNotBe(second.Secret);
+    }
+
+    [Fact(DisplayName = "Given an unknown connection id, when RotateSecret runs, then SourceConnectionNotFoundException is thrown")]
+    public async Task RotateSecretOnMissingConnectionThrowsAsync()
+    {
+        store.FindConnectionAsync(Arg.Any<SourceConnectionId>(), Arg.Any<CancellationToken>()).Returns((SourceConnection?)null);
+        var service = new SourceConnectionService(
+            store,
+            clock,
+            new CreateSourceConnectionValidator(),
+            secrets,
+            NullLogger<SourceConnectionService>.Instance);
+
+        await Should.ThrowAsync<SourceConnectionNotFoundException>(
+            () => service.RotateSecretAsync(SourceConnectionId.New(), TestContext.Current.CancellationToken));
+
+        await store.DidNotReceive().RotateSecretAsync(Arg.Any<SourceConnection>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given a connection, when RotateSecret runs, then the resolver is not consulted (rotation generates its own secret)")]
+    public async Task RotateSecretSkipsResolverAsync()
+    {
+        var connection = SourceConnection.Create(
+            ProjectId.New(),
+            TicketProvider.GitHub,
+            "Main",
+            "{}",
+            "OLD_REF",
+            "abcdefghijklmnop",
+            now);
+        store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>()).Returns(connection);
+
+        var service = new SourceConnectionService(
+            store,
+            clock,
+            new CreateSourceConnectionValidator(),
+            secrets,
+            NullLogger<SourceConnectionService>.Instance);
+
+        await service.RotateSecretAsync(connection.Id, TestContext.Current.CancellationToken);
+
+        // The rotation owns the secret value — the host's resolver is the
+        // path for webhook-time verification, not for the rotation itself.
+        secrets.DidNotReceive().Resolve(Arg.Any<string?>());
+    }
+
     private sealed class FakeTime(DateTimeOffset utcNow) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow()

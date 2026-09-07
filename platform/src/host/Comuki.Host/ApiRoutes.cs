@@ -81,6 +81,9 @@ public static class ApiRoutes
     /// <summary>Probe an existing source connection (issue #42).</summary>
     public const string SourceProbe = "/api/v1/sources/{sourceId:guid}/probe";
 
+    /// <summary>Rotate a source connection's webhook secret (issue #46).</summary>
+    public const string SourceRotateSecret = "/api/v1/sources/{sourceId:guid}/rotate-secret";
+
     /// <summary>The realtime hub of runs and project attention (issue #7).</summary>
     public const string HubsRuns = "/hubs/runs";
 

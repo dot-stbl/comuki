@@ -136,4 +136,37 @@ public sealed class SourceConnectionService(
     {
         return store.DeleteConnectionAsync(connectionId, cancellationToken);
     }
+
+    /// <summary>
+    /// Generates a fresh webhook secret, persists the rotation on the row,
+    /// and returns the new value for one-time disclosure (issue #46). The
+    /// structured log entry uses the stable <c>source.secret_rotated</c>
+    /// event id — downstream consumers (the dashboard's audit trail,
+    /// billing) key off that string.
+    /// </summary>
+    /// <param name="connectionId"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="SourceConnectionNotFoundException">Unknown id.</exception>
+    public async Task<SecretRotationResponse> RotateSecretAsync(SourceConnectionId connectionId, CancellationToken cancellationToken = default)
+    {
+        var connection = await store.FindConnectionAsync(connectionId, cancellationToken)
+            ?? throw new SourceConnectionNotFoundException(connectionId);
+
+        var newSecret = WebhookSecretGenerator.Generate();
+        connection.RotateSecret(newSecret, clock.GetUtcNow());
+        await store.RotateSecretAsync(connection, cancellationToken);
+
+        // The event id is the audit key. The structured fields below it
+        // never carry the secret itself — only the connection id, the
+        // env-var name (which is a NAME, not a value), and the rotation
+        // timestamp. The plaintext secret lives only in the response.
+        logger.LogInformation(
+            "source.secret_rotated {ConnectionId} {SecretEnvRef} {RotatedAt:o}",
+            connection.Id,
+            connection.SecretEnvRef,
+            connection.UpdatedAt);
+
+        return SecretRotationResponse.Of(connection, newSecret);
+    }
 }

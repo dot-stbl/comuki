@@ -154,6 +154,26 @@ public sealed class SourcesController(
     }
 
     /// <summary>
+    /// Rotates a source connection's webhook verification secret (issue #46).
+    /// Generates a new 256-bit hex secret, persists it on the connection,
+    /// and returns the plaintext exactly once in the response so the
+    /// operator can configure the tracker. The structured log carries a
+    /// <c>source.secret_rotated</c> event id with the connection id and
+    /// env-var name — never the secret itself.
+    /// </summary>
+    /// <param name="sourceId"></param>
+    /// <param name="cancellationToken"></param>
+    [HttpPost(ApiRoutes.SourceRotateSecret)]
+    [RequiresPermission("source:write")]
+    [ProducesResponseType<SecretRotationResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public Task<ActionResult> RotateSecretAsync(Guid sourceId, CancellationToken cancellationToken = default)
+    {
+        return IntakeEndpointRunner.ExecuteAsync(async () =>
+            Ok(await connections.RotateSecretAsync(new SourceConnectionId(sourceId), cancellationToken)));
+    }
+
+    /// <summary>
     /// Partial update of an admission rule nested under a source connection
     /// (issue #40). Wire-compatible with the sibling
     /// <c>PUT /api/v1/admission-rules/{ruleId}</c> — the source id is

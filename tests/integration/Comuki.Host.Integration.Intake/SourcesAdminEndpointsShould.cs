@@ -205,4 +205,92 @@ public sealed class SourcesAdminEndpointsShould(HostIntakeServer server) : IClas
         view.GetProperty("mode").GetString().ShouldBe("inbox");
         view.GetProperty("filterJson").GetString()!.ShouldContain("bug");
     }
+
+    [Fact(DisplayName = "Given an existing connection, when POST /api/v1/sources/{id}/rotate-secret, then a fresh 64-char hex secret is returned and persisted")]
+    public async Task RotateSecretPersistsAndReturnsAsync()
+    {
+        using var client = await server.CreateBrowserClientAsync();
+        var project = await CreateProjectAsync(client);
+        var sourceId = await CreateSourceAsync(client, ProjectIdOf(project), name: "Rotate me");
+
+        var rotate = await client.PostAsync(
+            $"/api/v1/sources/{sourceId}/rotate-secret",
+            content: null,
+            TestContext.Current.CancellationToken);
+
+        rotate.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var response = await rotate.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        response.GetProperty("sourceId").GetGuid().ShouldBe(sourceId);
+        response.GetProperty("secretEnvRef").GetString().ShouldBe(HostIntakeServer.HookSecretEnv);
+        var secret = response.GetProperty("secret").GetString()!;
+        secret.ShouldMatch("^[0-9a-f]{64}$");
+        response.GetProperty("rotatedAt").GetDateTimeOffset().ShouldNotBe(default);
+    }
+
+    [Fact(DisplayName = "Given an existing connection, when two rotate-secret calls run, then the secrets differ")]
+    public async Task RotateSecretProducesDistinctValuesAsync()
+    {
+        using var client = await server.CreateBrowserClientAsync();
+        var project = await CreateProjectAsync(client);
+        var sourceId = await CreateSourceAsync(client, ProjectIdOf(project), name: "Rotate twice");
+
+        var first = await client.PostAsync(
+            $"/api/v1/sources/{sourceId}/rotate-secret",
+            content: null,
+            TestContext.Current.CancellationToken);
+        first.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var firstSecret = (await first.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken))
+            .GetProperty("secret").GetString();
+
+        var second = await client.PostAsync(
+            $"/api/v1/sources/{sourceId}/rotate-secret",
+            content: null,
+            TestContext.Current.CancellationToken);
+        second.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var secondSecret = (await second.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken))
+            .GetProperty("secret").GetString();
+
+        firstSecret.ShouldNotBe(secondSecret);
+    }
+
+    [Fact(DisplayName = "Given a connection, when rotate-secret runs, then a subsequent GET does not echo the secret")]
+    public async Task RotateSecretDoesNotLeakViaGetAsync()
+    {
+        using var client = await server.CreateBrowserClientAsync();
+        var project = await CreateProjectAsync(client);
+        var sourceId = await CreateSourceAsync(client, ProjectIdOf(project), name: "Rotate, then GET");
+
+        var rotate = await client.PostAsync(
+            $"/api/v1/sources/{sourceId}/rotate-secret",
+            content: null,
+            TestContext.Current.CancellationToken);
+        rotate.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var get = await client.GetAsync(
+            $"/api/v1/sources/{sourceId}",
+            TestContext.Current.CancellationToken);
+        get.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var view = await get.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+
+        // SourceConnectionView does not carry WebhookSecret on the wire —
+        // the rotation response is the one place the plaintext is disclosed.
+        view.TryGetProperty("webhookSecret", out _).ShouldBeFalse();
+        view.TryGetProperty("webhook_secret", out _).ShouldBeFalse();
+        view.GetProperty("secretEnvRef").GetString().ShouldBe(HostIntakeServer.HookSecretEnv);
+    }
+
+    [Fact(DisplayName = "Given an unknown connection id, when POST /api/v1/sources/{id}/rotate-secret, then 404 with intake.connection_not_found")]
+    public async Task RotateSecretOnUnknownConnectionReturns404Async()
+    {
+        using var client = await server.CreateBrowserClientAsync();
+
+        var response = await client.PostAsync(
+            $"/api/v1/sources/{Guid.NewGuid()}/rotate-secret",
+            content: null,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("intake.connection_not_found");
+    }
 }

@@ -11,6 +11,7 @@ namespace Comuki.Shared.Contracts.Realtime;
 /// <param name="Status">The target status (PascalCase domain name, e.g. <c>Failed</c>).</param>
 /// <param name="AttentionKind">Lowercase wire kind: running / failed / escalated / awaiting_approval.</param>
 /// <param name="OccurredAtUnixMs">When the transition happened — UTC unix milliseconds.</param>
+[RealtimeContract]
 public sealed record AttentionView(
     Guid RunId,
     Guid ProjectId,

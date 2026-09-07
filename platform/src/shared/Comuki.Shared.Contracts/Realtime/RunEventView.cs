@@ -13,6 +13,7 @@ namespace Comuki.Shared.Contracts.Realtime;
 /// <param name="OccurredAtUnixMs">When the entry happened — UTC unix milliseconds.</param>
 /// <param name="PayloadJson">Raw payload JSON, or null when omitted by the size cap.</param>
 /// <param name="PayloadOmitted">Whether the payload was dropped by the size cap.</param>
+[RealtimeContract]
 public sealed record RunEventView(
     Guid RunId,
     string Type,

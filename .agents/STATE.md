@@ -319,6 +319,11 @@ Open issues = post-v1 scope; v1 ships.
 
 - #11 — Post-1.0 backlog (verify v1.1 · fleet · autonomy · merge-queue ·
   domain-user · eval · Redis cache при multi-replica Host).
+  - **Autonomy ratchet — first sub-slice landed** on
+    `feature/autonomy` (`openspec/changes/autonomy-escalation-timeout/`):
+    passive `Escalated → Cancelled` timeout sweeper on the orchestration
+    engine, new `run.escalation_timeout` journal event, integrated test
+    in `Comuki.Host.Integration.Runs.EscalationTimeoutSweeperShould`.
 - #31–#42 — FE wire-up of identity admin + sources admin mutations
   (dashboard pages есть, mutations mock-first).
 - #43 — Artifacts e2e test cleanup (drop dead `postgresSeed` container).

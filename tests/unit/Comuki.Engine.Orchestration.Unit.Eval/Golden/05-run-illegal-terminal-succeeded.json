@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "05-run-illegal-terminal-succeeded",
+  "name": "Run: Succeeded is terminal — any transition is rejected",
+  "kind": "Run",
+  "operations": [
+    { "action": "Create" },
+    { "action": "Transition", "status": "Running" },
+    { "action": "Transition", "status": "Succeeded" },
+    { "action": "TransitionExpectFailure", "status": "Running" }
+  ],
+  "expected": {
+    "expectsFailure": true,
+    "expectedFailureMessage": "Succeeded"
+  }
+}

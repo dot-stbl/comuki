@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "06-work-item-lease-cycle",
+  "name": "WorkItem: Queued -> lease -> heartbeat -> release (requeue)",
+  "kind": "WorkItem",
+  "operations": [
+    { "action": "Create", "status": "Queued" },
+    { "action": "AssignLease" },
+    { "action": "Heartbeat" },
+    { "action": "Heartbeat" },
+    { "action": "ReleaseLease" },
+    { "action": "Transition", "status": "Succeeded" }
+  ],
+  "expected": {
+    "finalStatus": "Succeeded",
+    "transitionLog": ["Queued", "Running", "Running", "Running", "Queued", "Succeeded"]
+  }
+}

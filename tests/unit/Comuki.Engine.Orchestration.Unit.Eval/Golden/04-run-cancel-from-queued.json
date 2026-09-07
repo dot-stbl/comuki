@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "04-run-cancel-from-queued",
+  "name": "Run: Queued -> Cancelled (terminal)",
+  "kind": "Run",
+  "operations": [
+    { "action": "Create" },
+    { "action": "Transition", "status": "Cancelled" }
+  ],
+  "expected": {
+    "finalStatus": "Cancelled",
+    "transitionLog": ["Queued", "Cancelled"]
+  }
+}

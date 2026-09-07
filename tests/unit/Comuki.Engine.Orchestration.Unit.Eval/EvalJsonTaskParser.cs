@@ -11,13 +11,6 @@ namespace Comuki.Engine.Orchestration.Unit.Eval;
 /// </summary>
 public static class EvalJsonTaskParser
 {
-    private static readonly JsonSerializerOptions options = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true,
-    };
-
     /// <summary>Schema version this parser understands — bumped when the JSON shape changes.</summary>
     public const int SchemaVersion = 1;
 
@@ -55,7 +48,7 @@ public static class EvalJsonTaskParser
         EvalTaskDocument document;
         try
         {
-            document = JsonSerializer.Deserialize<EvalTaskDocument>(body, options)
+            document = JsonSerializer.Deserialize<EvalTaskDocument>(body, JsonSerializerOptions.Web)
                 ?? throw new EvalParseException("JSON document deserialized to null", source);
         }
         catch (JsonException exception)

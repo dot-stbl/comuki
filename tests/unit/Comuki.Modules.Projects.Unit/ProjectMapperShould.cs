@@ -90,7 +90,7 @@ public sealed class ProjectMapperShould
     {
         var projectId = ProjectId.New();
         var settings = ProjectSettings.CreateDefaults(projectId, now);
-        settings.Apply(2, 16, 1800, true, true, false, true, 2_000_000, 10_000_000, now.AddMinutes(5));
+        settings.Apply(2, 16, 1800, true, true, false, true, 2_000_000, 10_000_000, ProjectDomainType.Standard, null, now.AddMinutes(5));
 
         var view = ProjectMapper.ToView(settings);
 

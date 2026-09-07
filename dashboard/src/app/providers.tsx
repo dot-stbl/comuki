@@ -22,9 +22,30 @@ export interface AppProvidersProps {
   children: ReactNode
 }
 
-export function AppProviders({ children }: AppProvidersProps) {
+/**
+ * Boots the auth-aware session inside the QueryClientProvider.
+ *
+ * `useAuthState` is a `useQuery`, so it needs a client. The old shape called
+ * it from `AppProviders` itself, which renders *above* the QueryClientProvider
+ * and crashes the first render with "No QueryClient set". The boot moves the
+ * hook below the provider; the SessionProvider sits one level deeper so the
+ * `user` it forwards is the resolved one, not `undefined`.
+ *
+ * Until the auth query resolves, children see `SIGNED_OUT_USER` — the screen
+ * guard refuses to render anything that needs an identity, so a signed-out
+ * boot is a no-op rather than a wrong-tenant leak.
+ */
+function AuthBoot({ children }: { children: ReactNode }) {
   const { user } = useAuthState()
 
+  return (
+    <SessionProvider user={user ?? SIGNED_OUT_USER} projects={PROJECTS_SEED}>
+      {children}
+    </SessionProvider>
+  )
+}
+
+export function AppProviders({ children }: AppProvidersProps) {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="comuki-ui-theme">
       {/* The shift, from the mock session store rather than from a constant —
@@ -39,8 +60,8 @@ export function AppProviders({ children }: AppProvidersProps) {
           It sits above the query client because the project a request is
           scoped to is a parameter of nearly every one of them the day those
           requests are real. */}
-      <SessionProvider user={user ?? SIGNED_OUT_USER} projects={PROJECTS_SEED}>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <AuthBoot>
           {children}
           {/* The proof a write landed — `toast()` is called from a dozen
               screens, but the only Toaster this app ever mounted lived inside
@@ -66,8 +87,8 @@ export function AppProviders({ children }: AppProvidersProps) {
               },
             }}
           />
-        </QueryClientProvider>
-      </SessionProvider>
+        </AuthBoot>
+      </QueryClientProvider>
     </ThemeProvider>
   )
 }

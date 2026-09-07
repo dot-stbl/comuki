@@ -1,4 +1,4 @@
-namespace Comuki.Engine.Orchestration.Unit.Eval;
+namespace Comuki.Engine.Orchestration.Unit.Eval.Eval;
 
 /// <summary>
 /// One golden task as it lives on disk: a stable id, a human-readable

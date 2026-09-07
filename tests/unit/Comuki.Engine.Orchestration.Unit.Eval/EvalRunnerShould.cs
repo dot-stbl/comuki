@@ -1,3 +1,6 @@
+using Comuki.Engine.Orchestration.Domain.Runs;
+using Comuki.Engine.Orchestration.Domain.WorkItems;
+using Comuki.Engine.Orchestration.Unit.Eval.Eval;
 using Shouldly;
 using Xunit;
 
@@ -5,13 +8,13 @@ namespace Comuki.Engine.Orchestration.Unit.Eval;
 
 /// <summary>
 /// Unit tests for <see cref="EvalRunner"/>: synthetic tasks driving
-/// <see cref="Comuki.Engine.Orchestration.Domain.Runs.Run"/> +
-/// <see cref="Comuki.Engine.Orchestration.Domain.WorkItems.WorkItem"/>
+/// <see cref="Run"/> +
+/// <see cref="WorkItem"/>
 /// state machines; pass/fail scoring against the expected outcome.
 /// </summary>
 public sealed class EvalRunnerShould
 {
-    private static readonly DateTimeOffset FixedNow = new(2026, 9, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset fixedNow = new(2026, 9, 1, 0, 0, 0, TimeSpan.Zero);
 
     [Fact(DisplayName = "Given a happy-path run task, when Run is called, then it passes with a clean log")]
     public void PassHappyRunPath()
@@ -30,7 +33,7 @@ public sealed class EvalRunnerShould
                 FinalStatus: "Succeeded",
                 TransitionLog: ["Queued", "Running", "Succeeded"]));
 
-        var result = EvalRunner.Run(task, FixedNow);
+        var result = EvalRunner.Run(task, fixedNow);
 
         result.Passed.ShouldBeTrue();
         result.Mismatches.ShouldBeEmpty();
@@ -54,7 +57,7 @@ public sealed class EvalRunnerShould
                 FinalStatus: "Succeeded",
                 TransitionLog: ["Queued", "Running", "Failed"]));
 
-        var result = EvalRunner.Run(task, FixedNow);
+        var result = EvalRunner.Run(task, fixedNow);
 
         result.Passed.ShouldBeFalse();
         result.Mismatches.ShouldHaveSingleItem();
@@ -80,7 +83,7 @@ public sealed class EvalRunnerShould
                 FinalStatus: "Cancelled",
                 TransitionLog: ["Queued", "Running", "Failed", "Queued", "Running", "Cancelled"]));
 
-        var result = EvalRunner.Run(task, FixedNow);
+        var result = EvalRunner.Run(task, fixedNow);
 
         result.Passed.ShouldBeFalse();
         result.Mismatches.ShouldHaveSingleItem();
@@ -109,7 +112,7 @@ public sealed class EvalRunnerShould
                 ExpectsFailure: true,
                 ExpectedFailureMessage: "Succeeded"));
 
-        var result = EvalRunner.Run(task, FixedNow);
+        var result = EvalRunner.Run(task, fixedNow);
 
         result.Passed.ShouldBeTrue();
         result.ActualTransitionLog[^1].ShouldBe("Succeeded");
@@ -133,10 +136,10 @@ public sealed class EvalRunnerShould
                 ExpectsFailure: true,
                 ExpectedFailureMessage: "Succeeded"));
 
-        var result = EvalRunner.Run(task, FixedNow);
+        var result = EvalRunner.Run(task, fixedNow);
 
         result.Passed.ShouldBeFalse();
-        result.Mismatches.ShouldContain(mismatch => mismatch.Field == "expects-failure");
+        result.Mismatches.ShouldContain(static mismatch => mismatch.Field == "expects-failure");
     }
 
     [Fact(DisplayName = "Given a work-item lease-cycle task, when Run is called, then the runner captures every transition including heartbeat")]
@@ -160,7 +163,7 @@ public sealed class EvalRunnerShould
                 FinalStatus: "Succeeded",
                 TransitionLog: ["Queued", "Running", "Running", "Running", "Queued", "Running", "Succeeded"]));
 
-        var result = EvalRunner.Run(task, FixedNow);
+        var result = EvalRunner.Run(task, fixedNow);
 
         result.Passed.ShouldBeTrue();
         result.Mismatches.ShouldBeEmpty();
@@ -184,7 +187,7 @@ public sealed class EvalRunnerShould
                 FinalStatus: "Running",
                 TransitionLog: ["Blocked", "Queued", "Running"]));
 
-        var result = EvalRunner.Run(task, FixedNow);
+        var result = EvalRunner.Run(task, fixedNow);
 
         result.Passed.ShouldBeTrue();
     }

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Comuki.Engine.Orchestration.Unit.Eval.Eval;
 
 namespace Comuki.Engine.Orchestration.Unit.Eval;
 
@@ -16,7 +17,7 @@ public static class EvalReportWriter
     /// <summary>Markdown heading prefix the report starts with.</summary>
     public const string MarkdownHeadingPrefix = "# ";
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly JsonSerializerOptions jsonOptions = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
@@ -130,9 +131,9 @@ public static class EvalReportWriter
             report.RunAt,
             report.PassedCount,
             report.FailedCount,
-            report.Results.Select(ToPayload).ToArray());
+            [.. report.Results.Select(ToPayload)]);
 
-        return JsonSerializer.Serialize(payload, JsonOptions);
+        return JsonSerializer.Serialize(payload, jsonOptions);
     }
 
     private static string SummarizeExpected(EvalTask task)
@@ -151,7 +152,7 @@ public static class EvalReportWriter
             result.Passed,
             result.DurationMs,
             result.ActualTransitionLog,
-            result.Mismatches.Select(static mismatch => new EvalMismatchPayload(mismatch.Field, mismatch.Expected, mismatch.Actual)).ToArray());
+            [.. result.Mismatches.Select(static mismatch => new EvalMismatchPayload(mismatch.Field, mismatch.Expected, mismatch.Actual))]);
     }
 
     private sealed record EvalReportPayload(

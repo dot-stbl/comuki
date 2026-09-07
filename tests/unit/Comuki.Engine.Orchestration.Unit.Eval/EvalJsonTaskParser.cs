@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Comuki.Engine.Orchestration.Unit.Eval.Eval;
 
 namespace Comuki.Engine.Orchestration.Unit.Eval;
 
@@ -10,7 +11,7 @@ namespace Comuki.Engine.Orchestration.Unit.Eval;
 /// </summary>
 public static class EvalJsonTaskParser
 {
-    private static readonly JsonSerializerOptions Options = new()
+    private static readonly JsonSerializerOptions options = new()
     {
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
@@ -54,7 +55,7 @@ public static class EvalJsonTaskParser
         EvalTaskDocument document;
         try
         {
-            document = JsonSerializer.Deserialize<EvalTaskDocument>(body, Options)
+            document = JsonSerializer.Deserialize<EvalTaskDocument>(body, options)
                 ?? throw new EvalParseException("JSON document deserialized to null", source);
         }
         catch (JsonException exception)
@@ -160,15 +161,8 @@ public static class EvalJsonTaskParser
 /// is missing, malformed, or doesn't match the schema. Carries the
 /// source label so the message stays actionable in the test output.
 /// </summary>
-public sealed class EvalParseException : Exception
+public sealed class EvalParseException(string message, string origin, Exception? inner = null) : Exception(message, inner)
 {
     /// <summary>File path or label the parser was reading from.</summary>
-    public string Origin { get; }
-
-    /// <inheritdoc />
-    public EvalParseException(string message, string origin, Exception? inner = null)
-        : base(message, inner)
-    {
-        Origin = origin;
-    }
+    public string Origin { get; } = origin;
 }

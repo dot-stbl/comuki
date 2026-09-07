@@ -10,6 +10,7 @@ export const apiKeyViewSchema = z.object({
   userId: z.uuid(),
   name: z.string(),
   prefix: z.string(),
+  tenantProjectId: z.nullable(z.uuid()),
   createdAt: z.iso.datetime({ offset: true }),
   lastUsedAt: z.nullable(z.iso.datetime({ offset: true })),
   revokedAt: z.nullable(z.iso.datetime({ offset: true })),

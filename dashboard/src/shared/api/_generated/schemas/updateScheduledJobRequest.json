@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "cronExpression": { "type": ["null", "string"] },
+    "briefJson": { "type": ["null", "string"] },
+    "enabled": { "type": ["null", "boolean"] }
+  },
+  "x-readme-ref-name": "UpdateScheduledJobRequest"
+}

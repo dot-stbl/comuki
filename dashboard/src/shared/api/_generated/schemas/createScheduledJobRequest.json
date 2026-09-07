@@ -1,0 +1,12 @@
+{
+  "required": ["cronExpression", "profileKey", "briefJson"],
+  "type": "object",
+  "properties": {
+    "cronExpression": { "type": "string" },
+    "profileKey": { "type": "string" },
+    "briefJson": { "type": "string" },
+    "runOnOnceAt": { "type": ["null", "string"], "format": "date-time" },
+    "enabled": { "type": ["null", "boolean"] }
+  },
+  "x-readme-ref-name": "CreateScheduledJobRequest"
+}

@@ -1,0 +1,30 @@
+{
+  "required": [
+    "id",
+    "projectId",
+    "cronExpression",
+    "profileKey",
+    "briefJson",
+    "runOnOnceAt",
+    "enabled",
+    "lastFiredAt",
+    "nextFireAt",
+    "createdAt",
+    "updatedAt"
+  ],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "projectId": { "type": "string", "format": "uuid" },
+    "cronExpression": { "type": "string" },
+    "profileKey": { "type": "string" },
+    "briefJson": { "type": "string" },
+    "runOnOnceAt": { "type": ["null", "string"], "format": "date-time" },
+    "enabled": { "type": "boolean" },
+    "lastFiredAt": { "type": ["null", "string"], "format": "date-time" },
+    "nextFireAt": { "type": "string", "format": "date-time" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "x-readme-ref-name": "ScheduledJobView"
+}

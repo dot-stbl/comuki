@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { buildIdentitySnapshot } from "@/domains/identity/model/identity"
+import * as projectsDomain from "@/domains/projects/api/mappers"
+import {
+  buildIdentitySnapshot,
+} from "@/domains/identity/model/identity"
 import type {
   CreateApiKeyInput,
   GrantRoleInput,
@@ -27,11 +30,18 @@ import { env } from "@/shared/config/env"
 import type { SessionUser } from "@/shared/session"
 
 import {
+  mapApiKeysPageToApiKeyRows,
+  mapGrantsPageToGrantRows,
+  mapIdentityUsersPageToUserRows,
   mapMeResponseToSessionUser,
   mapOidcStartToAuthorizationUrl,
 } from "./mappers"
 import { getApiV1AuthMe } from "@/shared/api/_generated/clients/getApiV1AuthMe"
 import { getApiV1AuthOidcProviderStart } from "@/shared/api/_generated/clients/getApiV1AuthOidcProviderStart"
+import { getApiV1Grants } from "@/shared/api/_generated/clients/getApiV1Grants"
+import { getApiV1Keys } from "@/shared/api/_generated/clients/getApiV1Keys"
+import { getApiV1Projects } from "@/shared/api/_generated/clients/getApiV1Projects"
+import { getApiV1Users } from "@/shared/api/_generated/clients/getApiV1Users"
 import { postApiV1Grants } from "@/shared/api/_generated/clients/postApiV1Grants"
 import { postApiV1GrantsGrantidRevoke } from "@/shared/api/_generated/clients/postApiV1GrantsGrantidRevoke"
 import { postApiV1Keys } from "@/shared/api/_generated/clients/postApiV1Keys"
@@ -51,14 +61,16 @@ import { patchApiV1UsersUserid } from "@/shared/api/_generated/clients/patchApiV
  * issues #31–#37 (`POST /api/v1/users`, `POST /api/v1/users/{id}/oidc-link`,
  * `PATCH /api/v1/users/{id}`, `POST /api/v1/grants`,
  * `POST /api/v1/grants/{id}/revoke`, `POST /api/v1/keys`,
- * `POST /api/v1/keys/{id}/revoke`). Mock mode still runs the seed store —
- * the dashboard's "wire to real backend" does not change the mock-first
- * contract that storybook / dev-mock depend on.
+ * `POST /api/v1/keys/{id}/revoke`).
  *
- * The read path is mock-only: `loadIdentity` throws on real mode because the
- * host has no `GET /api/v1/identity` (or `/api/v1/users` + `/api/v1/grants`
- * + `/api/v1/keys`) list endpoint. A misconfigured mock-off lands on the
- * empty state rather than producing phantom success.
+ * The read path now also lands on the host under issue #45 / F13:
+ * `loadIdentityReal` fans three list kubb clients out in parallel
+ * (`GET /api/v1/users`, `GET /api/v1/grants`, `GET /api/v1/keys`, plus
+ * `GET /api/v1/projects` for the registry), passes the wire through the
+ * seed-shape mappers in `./mappers` and rejoins in
+ * `buildIdentitySnapshot` so the screen receives the same
+ * `IdentitySnapshot` it always did. Mock mode still runs the mutable seed
+ * store — storybook / dev:mock remain a real-mode-fidelity v1.
  */
 
 export const identityQueryKey = ["identity"] as const
@@ -94,22 +106,69 @@ function snapshot(): IdentitySnapshot {
 }
 
 /**
- * Real-mode status: throws — the host's identity module exposes only the
- * session endpoints (`/api/v1/auth/{login,logout,me,oidc/{provider}/start,
- * oidc/{provider}/callback}`) and the per-resource write endpoints shipped
- * under #31–#37. There is no `GET /api/v1/identity` (or
- * `/api/v1/users` + `/api/v1/grants` + `/api/v1/keys`) list endpoint on
- * the wire yet — a real-mode caller lands on the empty-state branch
- * rather than producing phantom success. Mock-first is the contract for
- * the read path until those list endpoints land.
+ * The real-mode read path (issue #45 / F13). Three kubb list endpoints
+ * are dispatched in parallel — the screen joins them in `buildIdentitySnapshot`,
+ * the same helper the mock path uses, so the screen receives an identical
+ * `IdentitySnapshot` and stops branching on `env.useMock` for the result
+ * type. Projects come from the existing kubb `/api/v1/projects` client;
+ * when that round-trips empty in a misconfigured dev environment the
+ * grants column falls back to the raw project id (the same behaviour the
+ * mock path applies to a missing registry entry).
+ *
+ * The wire is intentionally narrower than the seed — no OIDC subject,
+ * no `lastSeenAt`, no `invited` user state, no key `expiresAt`. The
+ * mappers document each gap and fill it with the honest default so the
+ * screen renders a real-mode account row rather than a placeholder.
+ */
+async function loadIdentityReal(): Promise<IdentitySnapshot> {
+  const [users, grants, keys, projectsPage] = await Promise.all([
+    getApiV1Users({ Page: 1, PageSize: 100 }),
+    getApiV1Grants({ Page: 1, PageSize: 200 }),
+    getApiV1Keys({ Page: 1, PageSize: 100 }),
+    getApiV1Projects({ includeArchived: true }),
+  ]);
+
+  const seedUsers = mapIdentityUsersPageToUserRows(users);
+  const seedGrants = mapGrantsPageToGrantRows(grants);
+  const seedKeys = mapApiKeysPageToApiKeyRows(keys);
+  // `getApiV1Projects` returns `any` — the projects endpoint has no
+  // explicit response schema. The hand-written `mapProjectViewToDetail`
+  // path already drives the registry from the same client.
+  const projectRows = projectsDomain.mapProjectsPageToSummaries(
+    projectsPage as unknown as Parameters<
+      typeof projectsDomain.mapProjectsPageToSummaries
+    >[0],
+  );
+
+  return buildIdentitySnapshot(
+    seedUsers,
+    seedGrants,
+    seedKeys,
+    projectRows.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      gitProfileRepo: row.gitProfileRepo,
+      createdAt: row.createdAt,
+    })),
+    new Date(),
+  );
+}
+
+/**
+ * The whole screen in one payload.
+ *
+ * Mock mode reads the mutable seed store (the reason that store
+ * exists — a `queryFn` returning a module constant undoes an optimistic
+ * write on the next refetch).
+ *
+ * Real mode (`VITE_USE_MOCK=false`) calls the three list endpoints that
+ * landed under issue #45 + the projects registry. See
+ * `loadIdentityReal`'s note for the wire-shape gaps that the mappers
+ * paper over.
  */
 async function loadIdentity(): Promise<IdentitySnapshot> {
-  if (!env.useMock) {
-    throw new Error(
-      "identity API not implemented — set VITE_USE_MOCK=true (see issues #31–#37)",
-    )
-  }
-  return snapshot()
+  return env.useMock ? snapshot() : loadIdentityReal();
 }
 
 /**
@@ -179,10 +238,9 @@ export function useStartOidcQuery(provider: string) {
  * `POST /api/v1/users`. Mock mode writes to the seed store; the mutation
  * returns `snapshot()` either way so the caller's cache stays consistent.
  *
- * The page-level `useIdentityQuery` is mock-only because the host has no
- * `GET /api/v1/identity` (or split list endpoints) — see the file header.
- * A real-mode caller of `useIdentityQuery` throws; a real-mode caller of
- * this mutation lands against the host. See issue #31.
+ * The page-level `useIdentityQuery` is now wired to the read endpoints
+ * under #45 (see `loadIdentityReal`); mutations still invalidate the
+ * snapshot so the list refetches. See issue #31.
  */
 export function useInviteUserMutation() {
   const queryClient = useQueryClient()

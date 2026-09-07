@@ -47,6 +47,17 @@ public interface IIntakeStore
     /// <returns></returns>
     public Task UpdateConnectionAsync(SourceConnection connection, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Persists a secret-rotated connection (issue #46). Same write path
+    /// as <see cref="UpdateConnectionAsync"/>; declared separately so the
+    /// service does not hand the rotated secret material to a generic
+    /// mutator — the contract reads "this is a rotation, not an edit".
+    /// </summary>
+    /// <param name="connection"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public Task RotateSecretAsync(SourceConnection connection, CancellationToken cancellationToken = default);
+
     /// <summary>Deletes a connection; missing ids are a no-op.</summary>
     /// <param name="connectionId"></param>
     /// <param name="cancellationToken"></param>

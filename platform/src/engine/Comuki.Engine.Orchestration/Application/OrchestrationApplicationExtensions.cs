@@ -1,8 +1,10 @@
 using Comuki.Engine.Orchestration.Application.Handlers;
+using Comuki.Engine.Orchestration.Application.MergeQueue;
 using Comuki.Engine.Orchestration.Application.Models;
 using Comuki.Engine.Orchestration.Application.Validation;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Comuki.Engine.Orchestration.Application;
 
@@ -21,6 +23,12 @@ public static class OrchestrationApplicationExtensions
         services.AddSingleton<WorkItemStatusMachine>();
         services.AddSingleton<IValidator<ClaimWorkItemCommand>, ClaimWorkItemValidator>();
         services.AddScoped<ClaimWorkItemHandler>();
+
+        // Merge-queue (issue #11 sub-slice): validators + service.
+        services.AddSingleton<IValidator<EnqueueMergeRequestCommand>, MergeQueueValidator>();
+        services.AddSingleton<IValidator<UpdateMergeQueueCommand>, UpdateMergeQueueValidator>();
+        services.AddScoped<MergeQueueService>();
+        services.TryAddSingleton(TimeProvider.System);
 
         return services;
     }

@@ -1,4 +1,3 @@
-using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -14,7 +13,7 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
             migrationBuilder.CreateTable(
                 name: "merge_queue",
                 schema: "orchestration",
-                columns: table => new
+                columns: static table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     project_id = table.Column<Guid>(type: "uuid", nullable: true),
@@ -30,9 +29,9 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                     abandoned_reason = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: true),
                     notes = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: true)
                 },
-                constraints: table =>
+                constraints: static table =>
                 {
-                    table.PrimaryKey("pk_merge_queue", x => x.id);
+                    table.PrimaryKey("pk_merge_queue", static x => x.id);
                 });
 
             migrationBuilder.CreateIndex(
@@ -45,7 +44,7 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                 name: "ix_merge_queue_status_enqueued_at",
                 schema: "orchestration",
                 table: "merge_queue",
-                columns: new[] { "status", "enqueued_at" });
+                columns: ["status", "enqueued_at"]);
         }
 
         /// <inheritdoc />

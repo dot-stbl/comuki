@@ -163,7 +163,9 @@ file static class ProjectsEndpointMapper
             request.VerifyEnabled,
             request.ProxyEnabled,
             request.SoftBudgetUsdMicros,
-            request.HardBudgetUsdMicros);
+            request.HardBudgetUsdMicros,
+            request.DomainType,
+            request.CustomDomainTypesJson);
     }
 }
 

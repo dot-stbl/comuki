@@ -179,7 +179,9 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
                     VerifyEnabled: false,
                     ProxyEnabled: true,
                     SoftBudgetUsdMicros: null,
-                    HardBudgetUsdMicros: null),
+                    HardBudgetUsdMicros: null,
+                    DomainType: ProjectDomainType.Standard,
+                    CustomDomainTypesJson: null),
                 cancellationToken);
 
             updated.Version.ShouldBe(2);
@@ -209,7 +211,8 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
             current.ShouldNotBeNull();
 
             _ = await handler.HandleAsync(
-                new UpdateSettingsCommand(projectId, current.Version, 1, 6, null, false, false, false, false, null, null),
+                new UpdateSettingsCommand(projectId, current.Version, 1, 6, null, false, false, false, false, null, null,
+                    ProjectDomainType.Standard, null),
                 cancellationToken);
         }
 
@@ -220,7 +223,8 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
             () => staleHandler.HandleAsync(
                 new UpdateSettingsCommand(projectId, Version: 1, MinIdle: 0, MaxConcurrent: 4,
                     IdleTtlSeconds: null, ApproveRequired: false, KnowledgeEnabled: false,
-                    VerifyEnabled: false, ProxyEnabled: false, SoftBudgetUsdMicros: null, HardBudgetUsdMicros: null),
+                    VerifyEnabled: false, ProxyEnabled: false, SoftBudgetUsdMicros: null, HardBudgetUsdMicros: null,
+                    DomainType: ProjectDomainType.Standard, CustomDomainTypesJson: null),
                 cancellationToken));
 
         stale.CurrentVersion.ShouldBe(2);

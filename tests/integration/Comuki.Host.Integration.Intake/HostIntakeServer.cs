@@ -95,7 +95,9 @@ public sealed class HostIntakeServer : IAsyncLifetime
         // Program wires orchestration persistence before Compose (the
         // worker runtime contract) — the intake endpoints resolve scoped
         // orchestration services through the same wiring.
-        builder.Services.AddOrchestrationPersistence(ConnectionString);
+        builder.Services
+            .AddOrchestrationPersistence(ConnectionString)
+            .AddOrchestrationQueue(builder.Configuration);
 
         // The fake sync port pre-registers BEFORE Compose so the provider
         // registry's first-match resolution shadows the real GitHub client.

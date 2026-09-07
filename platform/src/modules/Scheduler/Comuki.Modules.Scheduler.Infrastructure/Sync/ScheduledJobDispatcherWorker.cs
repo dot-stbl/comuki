@@ -1,8 +1,9 @@
 using System.Data.Common;
 using System.Text.Json;
+using Comuki.Modules.Scheduler.Application.Observers;
 using Comuki.Modules.Scheduler.Application.Options;
 using Comuki.Modules.Scheduler.Application.Ports;
-using Comuki.Modules.Scheduler.Domain.Ids;
+using Comuki.Modules.Scheduler.Domain.Jobs;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Comuki.Shared.Telemetry;
@@ -21,23 +22,29 @@ namespace Comuki.Modules.Scheduler.Infrastructure.Sync;
 /// <c>FOR UPDATE SKIP LOCKED</c>, so two host replicas never double-fire
 /// the same job on the same tick.
 /// <para>
-/// Journal event: <c>run.scheduled_fired</c> appended after a successful
-/// dispatch (S15 / sentry integration — operators can subscribe to the
-/// realtime hub). The worker is a singleton hosted service — no
-/// per-request state, no DI graph held beyond what
-/// <see cref="IServiceScopeFactory"/> resolves per cycle.
+/// Side-channel: every successful fire is fanned out to the registered
+/// <see cref="ISchedulerObserver"/> implementations (journal row,
+/// Sentry capture, future chat notifier). Observers are best-effort — a
+/// thrown observer logs and the rest of the batch continues.
+/// </para>
+/// <para>
+/// The worker is a singleton singleton hosted service — no per-request
+/// state, no DI graph held beyond what <see cref="IServiceScopeFactory"/>
+/// resolves per cycle.
 /// </para>
 /// </summary>
 /// <param name="scopeFactory">Scope factory — resolves the scoped store + dispatcher per cycle.</param>
-/// <param name="scopeAccessor">Ambient scope — the dispatcher runs AsSystem so journal appends have a clear actor.</param>
+/// <param name="scopeAccessor">AmbientScope — the dispatcher runs toAsSystem so journal appends have a clear actor.</param>
 /// <param name="clock">Wall-clock source for the polling cadence.</param>
 /// <param name="options">Tunables (poll interval, batch size).</param>
+/// <param name="observers">Side-channel observers the dispatcher notifies after every fire.</param>
 /// <param name="logger">Structured logger.</param>
 public sealed class ScheduledJobDispatcherWorker(
     IServiceScopeFactory scopeFactory,
     ISubjectScopeAccessor scopeAccessor,
     TimeProvider clock,
     IOptions<SchedulerOptions> options,
+    IEnumerable<ISchedulerObserver> observers,
     ILogger<ScheduledJobDispatcherWorker> logger) : BackgroundService
 {
     /// <inheritdoc />
@@ -97,7 +104,6 @@ public sealed class ScheduledJobDispatcherWorker(
         await using var scope = scopeFactory.CreateAsyncScope();
         var store = scope.ServiceProvider.GetRequiredService<IScheduledJobStore>();
         var dispatcher = scope.ServiceProvider.GetRequiredService<ISchedulerDispatcher>();
-        var journalSource = scope.ServiceProvider.GetService<ISchedulerJournalSource>();
 
         var now = clock.GetUtcNow();
         var due = await store.ListDueAsync(now, options.Value.BatchSize, cancellationToken);
@@ -116,10 +122,13 @@ public sealed class ScheduledJobDispatcherWorker(
                     "Scheduled job {JobId} fired run {RunId} (profile={ProfileKey}, cron={CronExpression})",
                     job.Id.Value, runId.Value, job.ProfileKey, job.CronExpression);
 
-                if (journalSource is not null)
-                {
-                    await journalSource.AppendScheduledFiredAsync(job.Id, runId, now, cancellationToken);
-                }
+                await DispatcherObservers.NotifyFiredAsync(
+                    observers,
+                    job,
+                    runId,
+                    now,
+                    logger,
+                    cancellationToken);
 
                 ComukiTelemetry.RunsStarted.Add(1);
             }
@@ -140,22 +149,56 @@ public sealed class ScheduledJobDispatcherWorker(
 }
 
 /// <summary>
-/// Optional journal sink the host composes — when the host registers an
-/// implementation the worker appends a <c>run.scheduled_fired</c> event
-/// for every fired job; when no implementation is registered the worker
-/// silently skips the journal append. The abstraction keeps the
-/// scheduler module out of the engine's domain types.
+/// File-scoped static helpers for the dispatcher worker. The
+/// observer-fan-out logic is a pure pipeline (no DI dependencies of
+/// its own beyond what the worker passes in) and a single static
+/// method is the smallest unit that keeps the worker free of private
+/// methods (rule code-shape §9 / class-layout-and-tooling §1a).
 /// </summary>
-public interface ISchedulerJournalSource
+file static class DispatcherObservers
 {
-    /// <summary>Append a single <c>run.scheduled_fired</c> event.</summary>
-    /// <param name="jobId"></param>
-    /// <param name="runId"></param>
-    /// <param name="firedAt"></param>
+    /// <summary>
+    /// Fans a single fire out to every registered observer. Each observer
+    /// runs in isolation — one throwing observer logs a warning and the
+    /// rest of the observers still fire.
+    /// </summary>
+    /// <param name="observers">Side-channel observers registered in DI.</param>
+    /// <param name="job">The job that fired.</param>
+    /// <param name="runId">Id of the orchestration run the dispatcher created.</param>
+    /// <param name="firedAt">Wall-clock instant the fire was stamped.</param>
+    /// <param name="logger">Structured logger for the per-observer catch.</param>
     /// <param name="cancellationToken"></param>
-    public Task AppendScheduledFiredAsync(
-        ScheduledJobId jobId,
+    public static async Task NotifyFiredAsync(
+        IEnumerable<ISchedulerObserver> observers,
+        ScheduledJob job,
         RunId runId,
         DateTimeOffset firedAt,
-        CancellationToken cancellationToken = default);
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        foreach (var observer in observers)
+        {
+            try
+            {
+                await observer.OnJobFiredAsync(
+                    job.Id,
+                    job.ProjectId,
+                    job.ProfileKey,
+                    runId,
+                    firedAt,
+                    cancellationToken);
+            }
+            catch (Exception exception) when (exception is HttpRequestException or TimeoutException
+                                       or DbException or JsonException)
+            {
+                // boundary: observers are best-effort side-channels. The
+                // run + fire trail are already persisted; an observer
+                // failure must not abort the cycle or the remaining
+                // observers.
+                logger.LogWarning(exception,
+                    "Scheduler observer {ObserverType} threw; fire is unaffected",
+                    observer.GetType().Name);
+            }
+        }
+    }
 }

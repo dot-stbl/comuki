@@ -3,6 +3,7 @@ using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Host;
 using Comuki.Host.OpenApi;
 using Comuki.Host.Workers;
+using Comuki.Modules.Scheduler.Infrastructure.Observers;
 using Comuki.Shared.Contracts.ControlPlane.ChatCommands;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 
@@ -19,6 +20,14 @@ using Comuki.Shared.Contracts.ControlPlane.Profiles;
 // an explicit dummy connection string for the introspection pass only; the
 // introspection never opens the socket and never starts the migrator.
 var builder = WebApplication.CreateBuilder(args);
+
+// Sentry side-channel for the scheduler dispatcher (S15 / sentry):
+// initialises the SDK once if Scheduler:Sentry:Dsn is set; otherwise
+// stays a no-op and the SDK never enters the process. Must run before
+// HostComposer.Compose wires the scheduler hosted service — the
+// observer's CaptureEvent relies on the SDK being initialised when DSN
+// is configured.
+SchedulerSentryBootstrap.TryInitialize(builder.Configuration);
 
 var database = OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration
     ? HostDatabase.Explicit("Host=build-time-openapi;Username=openapi;Password=openapi;Database=openapi")

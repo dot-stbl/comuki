@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  mapApiKeyViewToSeed,
+  mapApiKeysPageToSeedKeys,
+  mapGrantsPageToSeedGrants,
+  mapIdentityUsersPageToSeedUsers,
   mapLoginRequestFromInput,
   mapLoginResponseToSessionUser,
   mapMeResponseToSessionUser,
   mapOidcStartToAuthorizationUrl,
+  mapRoleAssignmentViewToSeed,
+  mapUserAccountViewToSeed,
 } from "@/domains/identity/api/mappers"
+import type { ApiKeyView } from "@/shared/api/_generated/types/ApiKeyView"
 import type { MeResponse } from "@/shared/api/_generated/types/MeResponse"
+import type { RoleAssignmentView } from "@/shared/api/_generated/types/RoleAssignmentView"
+import type { UserAccountView } from "@/shared/api/_generated/types/UserAccountView"
 
 /**
  * Wire → domain for the auth surface.
@@ -157,5 +166,154 @@ describe("mapOidcStartToAuthorizationUrl", () => {
     expect(() => mapOidcStartToAuthorizationUrl(42)).toThrow(
       /OIDC start did not return a string URL/i,
     )
+  })
+})
+
+/**
+ * Wire → domain for the identity-admin list endpoints (F13 / issue #45).
+ *
+ * The kubb wire carries less than the seed the snapshot builder expects;
+ * these tests pin the gap-fill behaviour documented in each mapper.
+ * Anything that becomes a "real" wire column tomorrow is a one-test edit.
+ */
+
+const SAMPLE_USER_VIEW: UserAccountView = {
+  id: { value: "u_alice" },
+  email: "alice@example.com",
+  displayName: "Alice",
+  disabled: false,
+  tokensVersion: 1,
+  createdAt: "2026-01-01T00:00:00+00:00",
+}
+
+describe("mapUserAccountViewToSeed", () => {
+  it("carries id, displayName->name, email and createdAt through", () => {
+    const seed = mapUserAccountViewToSeed(SAMPLE_USER_VIEW)
+
+    expect(seed.id).toBe("u_alice")
+    expect(seed.name).toBe("Alice")
+    expect(seed.email).toBe("alice@example.com")
+    expect(seed.createdAt).toBe("2026-01-01T00:00:00+00:00")
+  })
+
+  it("fills the disabled -> status gap with 'disabled'", () => {
+    const seed = mapUserAccountViewToSeed({ ...SAMPLE_USER_VIEW, disabled: true })
+
+    expect(seed.status).toBe("disabled")
+  })
+
+  it("fills the disabled -> status gap with 'active'", () => {
+    const seed = mapUserAccountViewToSeed(SAMPLE_USER_VIEW)
+
+    expect(seed.status).toBe("active")
+  })
+
+  it("sets oidcSubject and lastSeenAt to null because the wire does not carry them", () => {
+    const seed = mapUserAccountViewToSeed(SAMPLE_USER_VIEW)
+
+    expect(seed.oidcSubject).toBeNull()
+    expect(seed.lastSeenAt).toBeNull()
+  })
+})
+
+const SAMPLE_GRANT_VIEW: RoleAssignmentView = {
+  id: { value: "g1" },
+  role: "platform-admin",
+  scopeLevel: "platform",
+  scopeProjectId: null,
+  subjectType: "user",
+  subjectId: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  grantedBy: null,
+  createdAt: "2026-02-02T00:00:00+00:00",
+  revokedAt: null,
+  isActive: true,
+}
+
+describe("mapRoleAssignmentViewToSeed", () => {
+  it("carries subject kind/id, role, scope and grantedAt through", () => {
+    const seed = mapRoleAssignmentViewToSeed(SAMPLE_GRANT_VIEW)
+
+    expect(seed.id).toBe("g1")
+    expect(seed.subjectKind).toBe("user")
+    expect(seed.subjectId).toBe(SAMPLE_GRANT_VIEW.subjectId)
+    expect(seed.role).toBe("platform-admin")
+    expect(seed.projectId).toBeNull()
+    expect(seed.grantedAt).toBe("2026-02-02T00:00:00+00:00")
+  })
+
+  it("maps api-key subjects through to the seed kinds", () => {
+    const seed = mapRoleAssignmentViewToSeed({
+      ...SAMPLE_GRANT_VIEW,
+      subjectType: "api-key",
+      subjectId: "k1",
+    })
+
+    expect(seed.subjectKind).toBe("api-key")
+    expect(seed.subjectId).toBe("k1")
+  })
+
+  it("maps a project-scope grant to a non-null project id", () => {
+    const seed = mapRoleAssignmentViewToSeed({
+      ...SAMPLE_GRANT_VIEW,
+      scopeLevel: "project",
+      scopeProjectId: "p_comuki",
+    })
+
+    expect(seed.projectId).toBe("p_comuki")
+  })
+})
+
+const SAMPLE_KEY_VIEW: ApiKeyView = {
+  id: "k1",
+  userId: "u1",
+  name: "ci-pipeline",
+  prefix: "cmk_4e9c",
+  tenantProjectId: null,
+  createdAt: "2026-03-03T00:00:00+00:00",
+  lastUsedAt: "2026-03-04T00:00:00+00:00",
+  revokedAt: null,
+  isActive: true,
+}
+
+describe("mapApiKeyViewToSeed", () => {
+  it("carries id, name, prefix and createdAt through and never exposes a secret", () => {
+    const seed = mapApiKeyViewToSeed(SAMPLE_KEY_VIEW)
+
+    expect(seed.id).toBe("k1")
+    expect(seed.name).toBe("ci-pipeline")
+    expect(seed.prefix).toBe("cmk_4e9c")
+    expect(seed.createdAt).toBe("2026-03-03T00:00:00+00:00")
+    expect(seed.lastUsedAt).toBe("2026-03-04T00:00:00+00:00")
+    // The wire view carries no field that exposes a secret — we leave it
+    // at the type-level to make the contract explicit in unit tests.
+    expect("Plaintext" in (seed as unknown as Record<string, unknown>)).toBe(false)
+  })
+
+  it("maps isActive onto the active / revoked status", () => {
+    const active = mapApiKeyViewToSeed(SAMPLE_KEY_VIEW)
+    const revoked = mapApiKeyViewToSeed({ ...SAMPLE_KEY_VIEW, isActive: false })
+
+    expect(active.status).toBe("active")
+    expect(revoked.status).toBe("revoked")
+  })
+
+  it("fills expiresAt with null because the wire does not carry an expiry", () => {
+    const seed = mapApiKeyViewToSeed(SAMPLE_KEY_VIEW)
+
+    expect(seed.expiresAt).toBeNull()
+  })
+})
+
+describe("page-level list mappers", () => {
+  it("maps an identity users page to seed users", () => {
+    expect(mapIdentityUsersPageToSeedUsers({ items: [SAMPLE_USER_VIEW] })).toHaveLength(1)
+  })
+
+  it("maps a grants page to seed grants", () => {
+    expect(mapGrantsPageToSeedGrants({ items: [SAMPLE_GRANT_VIEW] })).toHaveLength(1)
+  })
+
+  it("maps an api-keys page to seed keys", () => {
+    expect(mapApiKeysPageToSeedKeys({ items: [SAMPLE_KEY_VIEW] })).toHaveLength(1)
   })
 })

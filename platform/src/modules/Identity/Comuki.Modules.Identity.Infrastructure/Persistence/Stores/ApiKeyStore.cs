@@ -35,4 +35,29 @@ public sealed class ApiKeyStore(IdentityDbContext db) : IApiKeyStore
 
         await db.SaveChangesAsync(cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<(IReadOnlyList<ApiKey> Items, int Total)> ListAsync(
+        UserId? userId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        var query = db.ApiKeys.AsNoTracking();
+
+        if (userId is { } id)
+        {
+            query = query.Where(apiKey => apiKey.UserId == id);
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(apiKey => apiKey.CreatedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
 }

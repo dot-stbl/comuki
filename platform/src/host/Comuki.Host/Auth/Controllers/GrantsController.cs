@@ -1,6 +1,7 @@
 using Comuki.Host.Auth.Models;
 using Comuki.Host.Auth.Security;
 using Comuki.Modules.Identity.Application.Assignments.Grant;
+using Comuki.Modules.Identity.Application.Assignments.List;
 using Comuki.Modules.Identity.Application.Assignments.Revoke;
 using Comuki.Modules.Identity.Application.Permissions;
 using Comuki.Modules.Identity.Domain.Ids;
@@ -14,17 +15,20 @@ using Microsoft.AspNetCore.Mvc;
 namespace Comuki.Host.Auth.Controllers;
 
 /// <summary>
-/// Role-grant surface (issues #32, #36): grant a role to a user at
-/// platform or project scope, revoke an active grant. Each mutation
-/// demands <c>identity:write</c>; the controller resolves the acting
-/// subject from the cookie / api-key principal so the seniority guard
-/// runs. Validators are per-action via <c>[FromServices]</c>.
+/// Role-grant surface (issues #32, #36, #45): grant a role to a user at
+/// platform or project scope, revoke an active grant, and list role
+/// assignments paged. Mutations demand <c>identity:write</c>; the new
+/// read endpoint demands <c>identity:read</c>. The controller resolves
+/// the acting subject from the cookie / api-key principal so the
+/// seniority guard runs. Validators are per-action via
+/// <c>[FromServices]</c>.
 /// </summary>
 [ApiController]
 [Route("api/v1/grants")]
 public sealed class GrantsController(
     GrantRoleHandler grantRole,
     RevokeRoleHandler revokeRole,
+    ListGrantsHandler listGrants,
     ILogger<GrantsController> logger) : ControllerBase
 {
     /// <summary>Grants a role (issue #32). Permission <c>identity:write</c>.</summary>
@@ -84,6 +88,35 @@ public sealed class GrantsController(
         logger.LogInformation("Grant {GrantId} revoked", grantId);
 
         return Ok(view);
+    }
+
+    /// <summary>
+    /// Lists role assignments (issue #45 / F13 — read side of the identity admin).
+    /// Permission <c>identity:read</c>; returns a paged
+    /// <c>{ items, total }</c> envelope of <see cref="Modules.Identity.Application.Views.RoleAssignmentView"/>.
+    /// Optional <c>subjectKind</c> + <c>subjectId</c> narrow to a single user or key.
+    /// </summary>
+    [HttpGet]
+    [RequiresPermission("identity:read")]
+    [ProducesResponseType<IdentityAdminGrantsPage>(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IdentityAdminGrantsPage>> ListAsync(
+        [FromQuery] ListGrantsQueryRequest query,
+        [FromServices] IValidator<ListGrantsQueryRequest> listGrantsValidator,
+        CancellationToken cancellationToken = default)
+    {
+        if (await ValidateAsync(listGrantsValidator, query, cancellationToken) is { } problem)
+        {
+            return problem;
+        }
+
+        var subjectKind = SubjectTypeKeys.Parse(query.SubjectKind);
+
+        var (items, total) = await listGrants.HandleAsync(
+            new ListGrantsQuery(subjectKind, query.SubjectId, query.Page, query.PageSize),
+            cancellationToken);
+
+        return Ok(new IdentityAdminGrantsPage(items, total));
     }
 
     private static async Task<ActionResult?> ValidateAsync<T>(IValidator<T> validator, T instance, CancellationToken cancellationToken)

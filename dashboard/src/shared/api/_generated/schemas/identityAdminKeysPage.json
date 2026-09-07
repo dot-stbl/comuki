@@ -1,0 +1,41 @@
+{
+  "required": ["items", "total"],
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "required": [
+          "id",
+          "userId",
+          "name",
+          "prefix",
+          "tenantProjectId",
+          "createdAt",
+          "lastUsedAt",
+          "revokedAt",
+          "isActive"
+        ],
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "userId": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "prefix": { "type": "string" },
+          "tenantProjectId": { "type": ["null", "string"], "format": "uuid" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "lastUsedAt": { "type": ["null", "string"], "format": "date-time" },
+          "revokedAt": { "type": ["null", "string"], "format": "date-time" },
+          "isActive": { "type": "boolean" }
+        },
+        "x-readme-ref-name": "ApiKeyView"
+      }
+    },
+    "total": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int32"
+    }
+  },
+  "x-readme-ref-name": "IdentityAdminKeysPage"
+}

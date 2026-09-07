@@ -1,6 +1,8 @@
 using Comuki.Modules.Identity.Application.ApiKeys;
 using Comuki.Modules.Identity.Application.ApiKeys.Issue;
+using Comuki.Modules.Identity.Application.ApiKeys.List;
 using Comuki.Modules.Identity.Application.Assignments.Grant;
+using Comuki.Modules.Identity.Application.Assignments.List;
 using Comuki.Modules.Identity.Application.Assignments.Revoke;
 using Comuki.Modules.Identity.Application.Authorization;
 using Comuki.Modules.Identity.Application.Options;
@@ -279,6 +281,79 @@ public sealed class IdentityHandlersShould
 
         await Should.ThrowAsync<InvalidOperationException>(
             () => handler.HandleAsync(new IssueApiKeyCommand(UserId.New(), "ci", null), TestContext.Current.CancellationToken));
+    }
+
+    [Fact(DisplayName = "Given a page of users, when ListUsers runs, then store is delegated and views carry the page/total")]
+    public async Task ListUsersDelegatesAndProjectsAsync()
+    {
+        var store = Substitute.For<IUserAccountStore>();
+        var alice = User.Create("alice@example.com", "Alice", "hash", now);
+        var bob = User.Create("bob@example.com", "Bob", "hash", now);
+        store.ListAsync("example.com", 50, 25, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<(IReadOnlyList<User> Items, int Total)>(([alice, bob], 2)));
+
+        var handler = new ListUsersHandler(store);
+
+        var (items, total) = await handler.HandleAsync(
+            new ListUsersQuery("example.com", Page: 3, PageSize: 25),
+            TestContext.Current.CancellationToken);
+
+        total.ShouldBe(2);
+        items.Count.ShouldBe(2);
+        items[0].Email.ShouldBe("alice@example.com");
+        items[1].Email.ShouldBe("bob@example.com");
+        items[0].Disabled.ShouldBeFalse();
+        await store.Received(1).ListAsync("example.com", 50, 25, Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given an empty page of grants, when ListGrants runs, then total carries the filtered count")]
+    public async Task ListGrantsDelegatesAndProjectsAsync()
+    {
+        var store = Substitute.For<IRoleAssignmentStore>();
+        store.ListAsync(
+                Arg.Any<SubjectType?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<int>(),
+                Arg.Any<int>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<(IReadOnlyList<RoleAssignment> Items, int Total)>(([], 7)));
+
+        var handler = new ListGrantsHandler(store);
+
+        var (items, total) = await handler.HandleAsync(
+            new ListGrantsQuery(SubjectKind: null, SubjectId: null, Page: 1, PageSize: 100),
+            TestContext.Current.CancellationToken);
+
+        total.ShouldBe(7);
+        items.ShouldBeEmpty();
+        await store.Received(1).ListAsync(null, null, 0, 100, Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given a page of api keys, when ListApiKeys runs, then views are projected without plaintext")]
+    public async Task ListApiKeysDelegatesAndProjectsAsync()
+    {
+        var store = Substitute.For<IApiKeyStore>();
+        var owner = new UserId(Guid.NewGuid());
+        var key = ApiKey.Create(owner, "ci", "cmk_abcd", "hmac-deadbeef", now);
+        store.ListAsync(Arg.Any<UserId?>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<(IReadOnlyList<ApiKey> Items, int Total)>(([key], 1)));
+
+        var handler = new ListApiKeysHandler(store);
+
+        var (items, total) = await handler.HandleAsync(
+            new ListApiKeysQuery(UserId: null, Page: 1, PageSize: 100),
+            TestContext.Current.CancellationToken);
+
+        total.ShouldBe(1);
+        items.Count.ShouldBe(1);
+        items[0].Name.ShouldBe("ci");
+        items[0].Prefix.ShouldBe("cmk_abcd");
+        items[0].IsActive.ShouldBeTrue();
+        // The wire view carries no field that exposes a secret — no
+        // KeyHmac, no plaintext. Asserting by the type alone is enough.
+        typeof(ApiKeyView).GetProperty("KeyHmac").ShouldBeNull();
+        typeof(ApiKeyView).GetProperty("Plaintext").ShouldBeNull();
+        await store.Received(1).ListAsync(null, 0, 100, Arg.Any<CancellationToken>());
     }
 
     private sealed class FakeTime(DateTimeOffset utcNow) : TimeProvider

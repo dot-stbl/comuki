@@ -27,6 +27,24 @@ vi.mock("@/shared/api/_generated/clients/getApiV1AuthMe", () => ({
 vi.mock("@/shared/api/_generated/clients/getApiV1AuthOidcProviderStart", () => ({
   getApiV1AuthOidcProviderStart: vi.fn(),
 }))
+// vi.mock factories type their exports as the original kubb function so we
+// cast through `vi.fn` to access mock controls — see "kubb-client mock"
+// pattern in other domains. The mocks return the wire shapes by contract.
+function mockFn<T>(): ReturnType<typeof vi.fn> & { mockResolvedValue(v: T): void } {
+  return vi.fn() as ReturnType<typeof vi.fn> & { mockResolvedValue(v: T): void }
+}
+vi.mock("@/shared/api/_generated/clients/getApiV1Users", () => ({
+  getApiV1Users: mockFn(),
+}))
+vi.mock("@/shared/api/_generated/clients/getApiV1Grants", () => ({
+  getApiV1Grants: mockFn(),
+}))
+vi.mock("@/shared/api/_generated/clients/getApiV1Keys", () => ({
+  getApiV1Keys: mockFn(),
+}))
+vi.mock("@/shared/api/_generated/clients/getApiV1Projects", () => ({
+  getApiV1Projects: mockFn(),
+}))
 
 describe("queries.ts mock-first path", () => {
   it("hands the seeded duty engineer to useCurrentUserQuery in mock mode", async () => {
@@ -123,5 +141,138 @@ describe("queries.ts mock-first path", () => {
     await expect(
       import("@/domains/identity/api/queries"),
     ).resolves.toBeDefined()
+  })
+})
+
+describe("queries.ts real-mode F13 read path (#45)", () => {
+  it("loads the snapshot from the three list kubb clients in real mode", async () => {
+    vi.stubEnv("VITE_USE_MOCK", "false")
+    vi.stubEnv("VITE_API_BASE_URL", "http://localhost")
+    vi.resetModules()
+
+    const usersMod = await import(
+      "@/shared/api/_generated/clients/getApiV1Users"
+    )
+    const grantsMod = await import(
+      "@/shared/api/_generated/clients/getApiV1Grants"
+    )
+    const keysMod = await import("@/shared/api/_generated/clients/getApiV1Keys")
+    const projectsMod = await import(
+      "@/shared/api/_generated/clients/getApiV1Projects"
+    )
+
+    ;(usersMod.getApiV1Users as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      items: [
+        {
+          id: { value: "u_alice" },
+          email: "alice@example.com",
+          displayName: "Alice",
+          disabled: false,
+          tokensVersion: 1,
+          createdAt: "2026-01-01T00:00:00+00:00",
+        },
+      ],
+      total: 1,
+    })
+    ;(grantsMod.getApiV1Grants as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      items: [
+        {
+          id: { value: "g_alice_platform" },
+          role: "platform-admin",
+          scopeLevel: "platform",
+          scopeProjectId: null,
+          subjectType: "user",
+          subjectId: "u_alice",
+          grantedBy: null,
+          createdAt: "2026-01-02T00:00:00+00:00",
+          revokedAt: null,
+          isActive: true,
+        },
+      ],
+      total: 1,
+    })
+    ;(keysMod.getApiV1Keys as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [], total: 0 })
+    ;(projectsMod.getApiV1Projects as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([])
+
+    const { useIdentityQuery } = await import(
+      "@/domains/identity/api/queries"
+    )
+    const { QueryClient, QueryClientProvider } = await import(
+      "@tanstack/react-query"
+    )
+    const { renderHook, waitFor } = await import("@testing-library/react")
+    const React = await import("react")
+
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client }, children)
+
+    const { result } = renderHook(() => useIdentityQuery(), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    const snapshot = result.current.data
+    expect(snapshot?.users).toHaveLength(1)
+    expect(snapshot?.users[0]?.email).toBe("alice@example.com")
+    expect(snapshot?.users[0]?.oidcSubject).toBeNull()
+    expect(snapshot?.grants).toHaveLength(1)
+    expect(snapshot?.grants[0]?.subjectLabel).toBe("alice@example.com")
+    expect(snapshot?.keys).toEqual([])
+    expect(usersMod.getApiV1Users).toHaveBeenCalledTimes(1)
+    expect(grantsMod.getApiV1Grants).toHaveBeenCalledTimes(1)
+    expect(keysMod.getApiV1Keys).toHaveBeenCalledTimes(1)
+    expect(projectsMod.getApiV1Projects).toHaveBeenCalledTimes(1)
+  })
+
+  it("logs a real-mode caller that previously threw: no exception on load", async () => {
+    // The pre-#45 contract: a real-mode caller of useIdentityQuery
+    // surfaced as an empty-state branch because loadIdentity threw.
+    // After the F13 wiring this is the regression that keeps the screen
+    // honest — the query resolves a snapshot (possibly empty), it never
+    // rejects on the env.useMock=false branch alone.
+    vi.stubEnv("VITE_USE_MOCK", "false")
+    vi.stubEnv("VITE_API_BASE_URL", "http://localhost")
+    vi.resetModules()
+
+    const usersMod = await import(
+      "@/shared/api/_generated/clients/getApiV1Users"
+    )
+    const grantsMod = await import(
+      "@/shared/api/_generated/clients/getApiV1Grants"
+    )
+    const keysMod = await import("@/shared/api/_generated/clients/getApiV1Keys")
+    const projectsMod = await import(
+      "@/shared/api/_generated/clients/getApiV1Projects"
+    )
+
+    // vi.mock keeps the kubb client signature on the export; cast through
+  //   vi.fn so test code can reach .mockResolvedValue / .toHaveBeenCalled*.
+  ;(usersMod.getApiV1Users as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [], total: 0 })
+  ;(grantsMod.getApiV1Grants as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [], total: 0 })
+  ;(keysMod.getApiV1Keys as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [], total: 0 })
+  ;(projectsMod.getApiV1Projects as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([])
+
+    const { useIdentityQuery } = await import(
+      "@/domains/identity/api/queries"
+    )
+    const { QueryClient, QueryClientProvider } = await import(
+      "@tanstack/react-query"
+    )
+    const { renderHook, waitFor } = await import("@testing-library/react")
+    const React = await import("react")
+
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client }, children)
+
+    const { result } = renderHook(() => useIdentityQuery(), { wrapper })
+
+    // Empty-state resolves with no error rather than re-throwing.
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.isError).toBe(false)
   })
 })

@@ -14,18 +14,21 @@ import { postApiV1AdmissionRules } from "@/shared/api/_generated/clients/postApi
 import { postApiV1Sources } from "@/shared/api/_generated/clients/postApiV1Sources"
 import { postApiV1SourcesProbe } from "@/shared/api/_generated/clients/postApiV1SourcesProbe"
 import { postApiV1SourcesSourceidProbe } from "@/shared/api/_generated/clients/postApiV1SourcesSourceidProbe"
+import { postApiV1SourcesSourceidRotateSecret } from "@/shared/api/_generated/clients/postApiV1SourcesSourceidRotateSecret"
 import { postApiV1Tickets } from "@/shared/api/_generated/clients/postApiV1Tickets"
 import { putApiV1AdmissionRulesRuleid } from "@/shared/api/_generated/clients/putApiV1AdmissionRulesRuleid"
 import { putApiV1SourcesSourceid } from "@/shared/api/_generated/clients/putApiV1SourcesSourceid"
 import { deleteApiV1SourcesSourceid } from "@/shared/api/_generated/clients/deleteApiV1SourcesSourceid"
 import type { AdmissionRuleView } from "@/shared/api/_generated/types/AdmissionRuleView"
 import type { CreateNativeTicketRequest } from "@/shared/api/_generated/types/CreateNativeTicketRequest"
+import type { SecretRotationResponse } from "@/shared/api/_generated/types/SecretRotationResponse"
 import {
   connectSeedSource,
   createSeedNativeTicket,
   disconnectSeedSource,
   probeSeedConnection,
   probeSeedSourceDraft,
+  rotateSeedSecret,
   updateSeedConnection,
   updateSeedWatch,
   type SeedSourceDraft,
@@ -310,6 +313,38 @@ export function useDisconnectSource() {
     },
     onSettled: async () => {
       await client.invalidateQueries({queryKey: sourcesQueryKey})
+    },
+  })
+}
+
+/**
+ * Rotate a connection's webhook secret.
+ *
+ * Resolves with the host's `SecretRotationResponse` — `sourceId`, `secret`,
+ * `secretEnvRef`, `rotatedAt` — where the plaintext secret is disclosed
+ * exactly once. The page that called this is responsible for showing it,
+ * copying it into the tracker, and never asking for it again.
+ *
+ * No optimistic write: the secret material only exists in the response.
+ * An optimistic placeholder would either be wrong (mocked hex) or empty
+ * (no value to show), and either way the refetch is the source of truth
+ * for the next rotation. The invalidation is on `settled` so a follow-up
+ * read sees the new `secretStoredAt` stamp the host sets.
+ */
+export function useRotateSecretMutation() {
+  const client = useQueryClient()
+
+  return useMutation<SecretRotationResponse, Error, string>({
+    mutationFn: async (connectionId) => {
+      if (env.useMock) {
+        await wait()
+        return rotateSeedSecret(connectionId)
+      }
+      return postApiV1SourcesSourceidRotateSecret(connectionId)
+    },
+    onSettled: async (_data, _error, connectionId) => {
+      await client.invalidateQueries({queryKey: sourcesQueryKey})
+      void connectionId
     },
   })
 }

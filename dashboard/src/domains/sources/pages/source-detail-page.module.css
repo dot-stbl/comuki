@@ -184,3 +184,48 @@
   border-radius: var(--r-xs);
   background: var(--muted);
 }
+
+/* --- webhook secret rotation --- */
+
+/* A small region that is one paragraph and one button. The plaintext block
+   that surfaces after a click is the one place the secret value is allowed
+   to live on this page — see source-detail-page.tsx for the disclosure
+   contract that backs this block up. */
+.rotation {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.rotationBody {
+  margin: 0;
+  max-inline-size: 60ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+/* A label and a code, stacked inside the notice that surfaces the new
+   secret. The code is the secret — mono because it has to be copy-able
+   verbatim, and wrap-anywhere because a 64-char hex string does not care
+   where it breaks. */
+.rotationSecretLabel {
+  display: block;
+  margin-block-end: var(--s2);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-muted);
+}
+
+.rotationSecretValue {
+  display: block;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+  user-select: all;
+}

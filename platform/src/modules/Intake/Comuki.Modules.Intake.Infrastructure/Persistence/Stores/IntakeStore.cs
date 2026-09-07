@@ -62,9 +62,51 @@ public sealed class IntakeStore(IntakeDbContext db, TimeProvider clock) : IIntak
     /// <inheritdoc />
     public async Task UpdateConnectionAsync(SourceConnection connection, CancellationToken cancellationToken = default)
     {
-        // Updates arrive detached after AsNoTracking reads; explicitly attach as Modified so EF never acts on a Detached entry.
+        // Updates arrive detached after AsNoTracking reads; the original
+        // tracked instance (e.g. from AddConnectionAsync on the same
+        // scope) must be detached first — otherwise EF throws on the
+        // duplicate-key attach. Then explicitly attach as Modified so EF
+        // never acts on a Detached entry.
+        DetachTrackedInstance(connection.Id);
         db.Entry(connection).State = EntityState.Modified;
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Detaches any tracked instance with the given id so the next
+    /// <c>db.Entry(...).State = Modified</c> attach does not collide on
+    /// the duplicate-key guard.
+    /// </summary>
+    /// <param name="connectionId"></param>
+    private void DetachTrackedInstance(SourceConnectionId connectionId)
+    {
+        var tracked = db.ChangeTracker
+            .Entries<SourceConnection>()
+            .FirstOrDefault(entry => entry.Entity.Id == connectionId);
+        tracked?.State = EntityState.Detached;
+    }
+
+    /// <summary>
+    /// Same as <see cref="DetachTrackedInstance"/> for admission rules —
+    /// the rule update path hits the same EF duplicate-key guard when a
+    /// prior request left the entity in the tracker.
+    /// </summary>
+    /// <param name="ruleId"></param>
+    private void DetachTrackedRule(AdmissionRuleId ruleId)
+    {
+        var tracked = db.ChangeTracker
+            .Entries<AdmissionRule>()
+            .FirstOrDefault(entry => entry.Entity.Id == ruleId);
+        tracked?.State = EntityState.Detached;
+    }
+
+    /// <inheritdoc />
+    public Task RotateSecretAsync(SourceConnection connection, CancellationToken cancellationToken = default)
+    {
+        // Same write path as UpdateConnectionAsync — declared separately so
+        // the service hands a rotation-specific contract to a clearly-named
+        // entry point rather than a generic "update anything" mutator.
+        return UpdateConnectionAsync(connection, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -114,6 +156,10 @@ public sealed class IntakeStore(IntakeDbContext db, TimeProvider clock) : IIntak
     /// <inheritdoc />
     public async Task UpdateRuleAsync(AdmissionRule rule, CancellationToken cancellationToken = default)
     {
+        // Same detach-first pattern as UpdateConnectionAsync — Update() on a
+        // duplicate-key entity throws on the EF tracker; detach the
+        // previously-tracked instance before attaching the new one.
+        DetachTrackedRule(rule.Id);
         db.Rules.Update(rule);
         await db.SaveChangesAsync(cancellationToken);
     }

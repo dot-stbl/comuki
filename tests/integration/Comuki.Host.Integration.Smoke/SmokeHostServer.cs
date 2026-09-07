@@ -126,7 +126,13 @@ public sealed class SmokeHostServer : IAsyncLifetime
 
         // Program wires orchestration persistence before Compose (the
         // worker runtime contract); the smoke suite mirrors that wiring.
-        builder.Services.AddOrchestrationPersistence(connectionString);
+        // AddOrchestrationQueue registers IRunJournal / IWorkItemQueue /
+        // the lease reaper — Comuki.Program does both back-to-back; the
+        // smoke suite duplicates that wiring because it composes the
+        // host without going through Program.cs.
+        builder.Services
+            .AddOrchestrationPersistence(connectionString)
+            .AddOrchestrationQueue(builder.Configuration);
 
         // Composition gap: HostComposer does not register Memory
         // persistence; only the Brain host does. The chat/memory path

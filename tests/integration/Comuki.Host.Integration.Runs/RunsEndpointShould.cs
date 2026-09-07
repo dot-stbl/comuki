@@ -114,7 +114,9 @@ public sealed class RunsEndpointShould : IAsyncLifetime
         builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
         builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
         builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
-        builder.Services.AddOrchestrationPersistence(connectionString);
+        builder.Services
+            .AddOrchestrationPersistence(connectionString)
+            .AddOrchestrationQueue(builder.Configuration);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
         await application.StartAsync(cancellationToken);

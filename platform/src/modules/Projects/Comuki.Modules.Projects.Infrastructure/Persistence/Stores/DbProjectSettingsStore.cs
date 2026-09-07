@@ -78,6 +78,8 @@ public sealed class DbProjectSettingsStore(
                 settings.ProxyEnabled,
                 settings.SoftBudgetUsdMicros,
                 settings.HardBudgetUsdMicros,
+                settings.DomainType,
+                settings.CustomDomainTypesJson,
                 settings.UpdatedAt);
             saved = row;
         }

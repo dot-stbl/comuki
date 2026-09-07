@@ -1,3 +1,4 @@
+using Comuki.Modules.Projects.Application.DomainTypes;
 using Comuki.Modules.Projects.Application.Projects.Archive;
 using Comuki.Modules.Projects.Application.Projects.Create;
 using Comuki.Modules.Projects.Application.Projects.Queries;
@@ -27,6 +28,7 @@ public static class ProjectsApplicationExtensions
         services.AddMemoryCache();
 
         services.AddSingleton<ProjectSettingsCache>();
+        services.AddSingleton<IProjectDomainTypeResolver, ProjectDomainTypeResolver>();
 
         services.AddScoped<CreateProjectHandler>();
         services.AddScoped<UpdateProjectHandler>();

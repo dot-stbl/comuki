@@ -19,6 +19,13 @@ public sealed class ProjectSettings
     /// <summary>Default concurrency cap of a fresh project (mirrors the supervisor options default).</summary>
     public const int DefaultMaxConcurrent = 4;
 
+    /// <summary>
+    /// Fixed profile key every Standard / Hybrid project falls back to
+    /// when the domain type has no explicit mapping. Mirrors the default
+    /// profile in the control plane (<c>profiles/implement.md</c>).
+    /// </summary>
+    public const string DefaultDomainProfileKey = "implement";
+
     /// <summary>Project id — primary key, shared with the project row.</summary>
     public ProjectId ProjectId { get; private set; }
 
@@ -55,6 +62,22 @@ public sealed class ProjectSettings
     /// </summary>
     public long? HardBudgetUsdMicros { get; private set; }
 
+    /// <summary>
+    /// Routing mode for user-facing domain types (issue #11 slice 1).
+    /// Standard = default profile only; Custom = JSON map only;
+    /// Hybrid = default then JSON map.
+    /// </summary>
+    public ProjectDomainType DomainType { get; private set; }
+
+    /// <summary>
+    /// Per-project JSON map of <c>domain-type → profile-key</c>.
+    /// Read when <see cref="DomainType"/> is <see cref="ProjectDomainType.Custom"/>
+    /// or <see cref="ProjectDomainType.Hybrid"/>. Ignored for
+    /// <see cref="ProjectDomainType.Standard"/>. Null is allowed; a
+    /// Custom project with null JSON has no resolvable domain.
+    /// </summary>
+    public string? CustomDomainTypesJson { get; private set; }
+
     /// <summary>Last mutation timestamp.</summary>
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -78,6 +101,8 @@ public sealed class ProjectSettings
             ProxyEnabled = false,
             SoftBudgetUsdMicros = null,
             HardBudgetUsdMicros = null,
+            DomainType = ProjectDomainType.Standard,
+            CustomDomainTypesJson = null,
             UpdatedAt = now,
             Version = 1,
         };
@@ -98,6 +123,8 @@ public sealed class ProjectSettings
     /// <param name="proxyEnabled"></param>
     /// <param name="softBudgetUsdMicros"></param>
     /// <param name="hardBudgetUsdMicros"></param>
+    /// <param name="domainType"></param>
+    /// <param name="customDomainTypesJson"></param>
     /// <param name="now"></param>
     public void Apply(
         int minIdle,
@@ -109,6 +136,8 @@ public sealed class ProjectSettings
         bool proxyEnabled,
         long? softBudgetUsdMicros,
         long? hardBudgetUsdMicros,
+        ProjectDomainType domainType,
+        string? customDomainTypesJson,
         DateTimeOffset now)
     {
         MinIdle = minIdle;
@@ -120,6 +149,8 @@ public sealed class ProjectSettings
         ProxyEnabled = proxyEnabled;
         SoftBudgetUsdMicros = softBudgetUsdMicros;
         HardBudgetUsdMicros = hardBudgetUsdMicros;
+        DomainType = domainType;
+        CustomDomainTypesJson = customDomainTypesJson;
         UpdatedAt = now;
         Version++;
     }

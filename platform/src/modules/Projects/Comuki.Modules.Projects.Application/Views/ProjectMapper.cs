@@ -44,6 +44,8 @@ public static class ProjectMapper
             settings.ProxyEnabled,
             settings.SoftBudgetUsdMicros,
             settings.HardBudgetUsdMicros,
+            settings.DomainType,
+            settings.CustomDomainTypesJson,
             settings.UpdatedAt,
             settings.Version);
     }

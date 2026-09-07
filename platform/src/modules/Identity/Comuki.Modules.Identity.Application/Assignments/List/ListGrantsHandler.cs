@@ -28,11 +28,7 @@ public sealed class ListGrantsHandler(IRoleAssignmentStore assignments)
             query.PageSize,
             cancellationToken);
 
-        var items = new RoleAssignmentView[rows.Count];
-        for (var index = 0; index < rows.Count; index++)
-        {
-            items[index] = AccountMapper.ToView(rows[index]);
-        }
+        var items = rows.Select(static row => AccountMapper.ToView(row)).ToArray();
 
         return (items, total);
     }

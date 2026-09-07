@@ -26,11 +26,7 @@ public sealed class ListApiKeysHandler(IApiKeyStore apiKeys)
             query.PageSize,
             cancellationToken);
 
-        var items = new ApiKeyView[rows.Count];
-        for (var index = 0; index < rows.Count; index++)
-        {
-            items[index] = ApiKeyView.Of(rows[index]);
-        }
+        var items = rows.Select(static key => ApiKeyView.Of(key)).ToArray();
 
         return (items, total);
     }

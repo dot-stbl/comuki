@@ -56,7 +56,7 @@ public sealed class UpdateSettingsValidator : AbstractValidator<UpdateSettingsCo
             .WithMessage($"customDomainTypesJson must be at most {MaxCustomDomainTypesJsonLength} characters");
 
         RuleFor(static command => command.CustomDomainTypesJson)
-            .Must(BeValidDomainMapJsonOrNull)
+            .Must(static json => json is null || DomainMapJsonRules.IsValid(json))
             .WithMessage(
                 "customDomainTypesJson must be null or a JSON object whose values are non-empty strings");
 
@@ -65,14 +65,27 @@ public sealed class UpdateSettingsValidator : AbstractValidator<UpdateSettingsCo
             .When(static command => command.DomainType == ProjectDomainType.Custom)
             .WithMessage("customDomainTypesJson is required when domainType is Custom");
     }
+}
 
-    private static bool BeValidDomainMapJsonOrNull(string? json)
+/// <summary>
+/// Validator-internal helpers for the per-project JSON map. Extracted to a
+/// file-scoped static class so the validator itself stays a one-line-per-rule
+/// orchestrator (per <c>code-shape.md</c> §1a — no private methods in
+/// production classes).
+/// </summary>
+file static class DomainMapJsonRules
+{
+    /// <summary>
+    /// True when <paramref name="json"/> is a JSON object whose values are
+    /// non-empty strings (profile keys). Null and whitespace are
+    /// intentionally accepted here — the validator handles those cases
+    /// with a separate <c>NotEmpty</c> rule that depends on
+    /// <see cref="ProjectDomainType"/>.
+    /// </summary>
+    /// <param name="json"></param>
+    /// <returns></returns>
+    public static bool IsValid(string json)
     {
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return true;
-        }
-
         try
         {
             var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonSerializerOptions.Web);

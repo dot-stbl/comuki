@@ -25,8 +25,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: var(--h-button-lg);
-  block-size: var(--h-button-lg);
+  inline-size: var(--h-button-xl);
+  block-size: var(--h-button-xl);
   padding: 0;
   border: var(--hairline) solid var(--rule-strong);
   border-radius: var(--r-md);
@@ -34,17 +34,54 @@
   color: var(--text);
   box-shadow: var(--shadow-lift);
   cursor: pointer;
+  transition:
+    transform 120ms ease-out,
+    box-shadow 120ms ease-out,
+    border-color 120ms ease-out,
+    color 120ms ease-out;
 }
 
+/* The dock trigger is the one icon-only button that floats — the rest sit
+   inside a row, where a translateY would conflict with their neighbours.
+   Here a -1px lift plus a deeper shadow reads as "the button got closer
+   when you reached for it", which is the gesture a floating affordance
+   wants. The shared icon-zoom rule in `index.css` still applies to the
+   inner svg, so the trigger combines a button lift with a mark zoom. */
 .trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-modal);
   border-color: var(--ring);
   color: var(--primary);
+}
+
+.trigger:active {
+  transform: translateY(0);
+  transition-duration: 80ms;
 }
 
 .trigger:focus-visible {
   outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
   outline-offset: 1px;
   border-color: var(--ring);
+}
+
+/* Icon size — the trigger uses `--icon-xl` so the 28px mark fills the 38px
+   square at ~74%, the same ratio the rest of the kit holds between
+   `--icon-lg` and `--h-button-lg`. Direct-child selector to keep a future
+   inline svg (e.g. a status dot) at the kit's default size. */
+.trigger > svg.lucide {
+  inline-size: var(--icon-xl);
+  block-size: var(--icon-xl);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger {
+    transition: none;
+  }
+  .trigger:hover,
+  .trigger:active {
+    transform: none;
+  }
 }
 
 /* The console's own root manages its height and gutters; this wrapper exists

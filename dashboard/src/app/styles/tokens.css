@@ -285,6 +285,12 @@
   --h-button: 1.75rem;
   --h-button-sm: 1.5rem;
   --h-button-lg: 2.125rem;
+  /* One step above lg, for floating chrome that has to read against a busy
+     board. The console dock trigger sits here — 34px read as part of the table
+     it floats over, 38px reads as a distinct affordance. Below the WCAG 2.2
+     large-target recommendation (44px), but the trigger is alone in its
+     corner, not a row of competing targets. */
+  --h-button-xl: 2.375rem;
   --modal-w: 26rem;
 
   /* Data tables. Row height is virtualizer geometry and belongs with the
@@ -306,6 +312,11 @@
   --icon-sm: 0.8125rem;
   --icon-md: 0.9375rem;
   --icon-lg: 1.125rem;
+  /* One step above lg, for the same reason as `--h-button-xl`: the dock
+     trigger's icon needs to be the dominant mark on a corner that already
+     has scrollbars and split separators competing for the eye. 28px fills
+     the 38px trigger at ~74%, close to the kit's standard ratio. */
+  --icon-xl: 1.75rem;
 
   /* Dispatcher surface — shell chrome and the profile flow. */
   --w-rail: 13.5rem;

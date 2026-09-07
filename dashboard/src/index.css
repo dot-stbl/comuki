@@ -112,10 +112,70 @@
   ::placeholder {
     color: var(--text-faint);
     }
-  :focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-    }
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Action-icon animation.
+
+   Every direct-child svg.lucide inside an interactive element gets a subtle
+   scale on hover and a press on click. The transform runs on the svg itself,
+   not the wrapper, so the layout and hit area do not change — a button keeps
+   its click target, and the icon only *moves* inside it.
+
+   Direct-child selector (>) is the load-bearing detail: a button that holds
+   an icon plus prose (icon-only buttons excluded) animates just the mark,
+   while nested decorative svgs deeper in the tree stay put. Inline icons in
+   badges and status pills are mostly outside interactive wrappers anyway, so
+   they are exempt by construction.
+
+   The 120ms hover and 80ms active are tuned to the kit's existing motion
+   language (see `--motion-*` tokens elsewhere in `tokens.css`): slow enough
+   to read, fast enough not to drag. Scale 1.08 / 0.96 — louder than a hair,
+   quieter than a hop. The chat-dock trigger additionally gets a translateY
+   on hover (in its own module) because it floats, and a lift reads differently
+   on a floating button than on one inside a row. */
+button > svg.lucide,
+[role="button"] > svg.lucide,
+a > svg.lucide,
+[role="link"] > svg.lucide {
+  transition: transform 120ms ease-out;
+}
+
+button:hover > svg.lucide,
+[role="button"]:hover > svg.lucide,
+a:hover > svg.lucide,
+[role="link"]:hover > svg.lucide {
+  transform: scale(1.08);
+}
+
+button:active > svg.lucide,
+[role="button"]:active > svg.lucide,
+a:active > svg.lucide,
+[role="link"]:active > svg.lucide {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button > svg.lucide,
+  [role="button"] > svg.lucide,
+  a > svg.lucide,
+  [role="link"] > svg.lucide {
+    transition: none;
+  }
+  button:hover > svg.lucide,
+  [role="button"]:hover > svg.lucide,
+  a:hover > svg.lucide,
+  [role="link"]:hover > svg.lucide,
+  button:active > svg.lucide,
+  [role="button"]:active > svg.lucide,
+  a:active > svg.lucide,
+  [role="link"]:active > svg.lucide {
+    transform: none;
+  }
+}
 }
 
 /* Thin scrollbar — invisible track, accent-bordered thumb.

@@ -27,11 +27,7 @@ public sealed class ListUsersHandler(IUserAccountStore userStore)
             query.PageSize,
             cancellationToken);
 
-        var items = new UserAccountView[users.Count];
-        for (var index = 0; index < users.Count; index++)
-        {
-            items[index] = AccountMapper.ToView(users[index]);
-        }
+        var items = users.Select(static user => AccountMapper.ToView(user)).ToArray();
 
         return (items, total);
     }

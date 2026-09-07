@@ -1,4 +1,4 @@
-namespace Comuki.Engine.Orchestration.Unit.Eval;
+namespace Comuki.Engine.Orchestration.Unit.Eval.Eval;
 
 /// <summary>
 /// The expected outcome of a golden task. The runner diffs the captured

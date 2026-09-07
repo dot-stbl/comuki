@@ -1,4 +1,4 @@
-namespace Comuki.Engine.Orchestration.Unit.Eval;
+namespace Comuki.Engine.Orchestration.Unit.Eval.Eval;
 
 /// <summary>
 /// A single step in a golden task: which <see cref="EvalAction"/> to apply

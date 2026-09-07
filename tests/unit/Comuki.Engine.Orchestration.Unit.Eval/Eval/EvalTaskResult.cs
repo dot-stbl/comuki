@@ -1,4 +1,4 @@
-namespace Comuki.Engine.Orchestration.Unit.Eval;
+namespace Comuki.Engine.Orchestration.Unit.Eval.Eval;
 
 /// <summary>
 /// A single point where the captured run diverged from the expected

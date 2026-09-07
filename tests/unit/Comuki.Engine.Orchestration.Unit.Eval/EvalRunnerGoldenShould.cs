@@ -1,3 +1,4 @@
+using Comuki.Engine.Orchestration.Unit.Eval.Eval;
 using Shouldly;
 using Xunit;
 
@@ -14,7 +15,7 @@ namespace Comuki.Engine.Orchestration.Unit.Eval;
 /// </summary>
 public sealed class EvalRunnerGoldenShould
 {
-    private static readonly DateTimeOffset FixedNow = new(2026, 9, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset fixedNow = new(2026, 9, 1, 0, 0, 0, TimeSpan.Zero);
 
     private static IEnumerable<string> GoldenFiles()
     {
@@ -45,7 +46,7 @@ public sealed class EvalRunnerGoldenShould
         foreach (var path in GoldenFiles())
         {
             var task = Parse(path);
-            var result = EvalRunner.Run(task, FixedNow);
+            var result = EvalRunner.Run(task, fixedNow);
 
             if (!result.Passed)
             {
@@ -77,7 +78,7 @@ public sealed class EvalRunnerGoldenShould
         foreach (var path in paths)
         {
             var task = Parse(path);
-            results.Add(EvalRunner.Run(task, FixedNow));
+            results.Add(EvalRunner.Run(task, fixedNow));
         }
 
         var report = new EvalReport(

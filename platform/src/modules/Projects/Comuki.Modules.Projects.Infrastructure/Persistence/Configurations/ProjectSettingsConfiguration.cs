@@ -56,6 +56,16 @@ public sealed class ProjectSettingsConfiguration : IEntityTypeConfiguration<Proj
         builder.Property(static settings => settings.HardBudgetUsdMicros)
             .HasColumnName("hard_budget_usd_micros");
 
+        builder.Property(static settings => settings.DomainType)
+            .HasColumnName("domain_type")
+            .HasMaxLength(16)
+            .HasConversion<string>()
+            .IsRequired();
+
+        builder.Property(static settings => settings.CustomDomainTypesJson)
+            .HasColumnName("custom_domain_types_json")
+            .HasColumnType("text");
+
         builder.Property(static settings => settings.UpdatedAt)
             .HasColumnName("updated_at");
 

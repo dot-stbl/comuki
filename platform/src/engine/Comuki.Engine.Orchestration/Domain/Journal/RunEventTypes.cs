@@ -26,4 +26,11 @@ public static class RunEventTypes
     /// and the project id. Emitted by the host budget gate before cancel.
     /// </summary>
     public const string BudgetExceeded = "budget.exceeded";
+
+    /// <summary>
+    /// The escalation-timeout sweeper closed an Escalated run that no human
+    /// acted on past the configured window; payload carries the run id,
+    /// from/to status and the age in seconds at the moment of the sweep.
+    /// </summary>
+    public const string RunEscalationTimeout = "run.escalation_timeout";
 }

@@ -295,7 +295,7 @@ operations UI.
 
 | # | Title | What's left |
 |---|-------|-------------|
-| 11 | Post-1.0 backlog | verify v1.1 · fleet · autonomy · merge-queue · domain-user · eval · Redis cache при multi-replica Host. |
+| 11 | Post-1.0 backlog | verify v1.1 · fleet · autonomy · merge-queue · domain-user · eval · Redis cache при multi-replica Host. Autonomy ratchet first sub-slice (escalation-timeout sweeper) shipped on `feature/autonomy`; per-decision confidence + supervisor polling still open. |
 | 31–#42 | FE admin mutations wire-up | Backend endpoints live (12 endpoints landed). Dashboard mutations (identity invite/grant/revoke/link/key/disable + sources connect/update/probe/test-draft/test-connection) still mock-first; kubb clients land per-issue. |
 | 43 | Artifacts e2e test cleanup | Drop dead `postgresSeed` container from `ArtifactsEndToEndShould` (post-`8825387`). |
 

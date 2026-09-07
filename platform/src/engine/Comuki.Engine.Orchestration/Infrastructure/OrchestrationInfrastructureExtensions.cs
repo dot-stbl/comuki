@@ -1,3 +1,4 @@
+using Comuki.Engine.Orchestration.Infrastructure.EscalationTimeout;
 using Comuki.Engine.Orchestration.Infrastructure.Hosting;
 using Comuki.Engine.Orchestration.Infrastructure.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Leases;
@@ -34,7 +35,9 @@ public static class OrchestrationInfrastructureExtensions
     /// <summary>
     /// Wires the work item queue, run journal, lease reaper and the hosted
     /// reaper worker on top of <see cref="AddOrchestrationPersistence"/>.
-    /// Bind the <c>Orchestration:Lease</c> section to tune the lease policy.
+    /// Bind the <c>Orchestration:Lease</c> section to tune the lease policy
+    /// and the <c>Orchestration:EscalationTimeout</c> section to tune the
+    /// passive autonomy ratchet on the Escalated run state.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="configuration"></param>
@@ -47,12 +50,19 @@ public static class OrchestrationInfrastructureExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<EscalationTimeoutOptions>()
+            .Bind(configuration.GetSection(EscalationTimeoutOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.TryAddSingleton(TimeProvider.System);
 
         services.AddScoped<IWorkItemQueue, WorkItemQueueEf>();
         services.AddScoped<IRunJournal, RunJournalEf>();
         services.AddScoped<LeaseReaper>();
         services.AddHostedService<LeaseReaperWorker>();
+        services.AddScoped<EscalationTimeoutSweeper>();
+        services.AddHostedService<EscalationTimeoutWorker>();
 
         return services;
     }

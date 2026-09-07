@@ -1,4 +1,3 @@
-using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -14,7 +13,7 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
             migrationBuilder.CreateTable(
                 name: "domain_type_admissions",
                 schema: "projects",
-                columns: table => new
+                columns: static table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     project_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -25,12 +24,12 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
-                constraints: table =>
+                constraints: static table =>
                 {
-                    table.PrimaryKey("pk_domain_type_admissions", x => x.id);
+                    table.PrimaryKey("pk_domain_type_admissions", static x => x.id);
                     table.ForeignKey(
                         name: "fk_domain_type_admissions_projects_project_id",
-                        column: x => x.project_id,
+                        column: static x => x.project_id,
                         principalSchema: "projects",
                         principalTable: "projects",
                         principalColumn: "id",
@@ -41,7 +40,7 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                 name: "ux_domain_type_admissions_project_domain",
                 schema: "projects",
                 table: "domain_type_admissions",
-                columns: new[] { "project_id", "domain_type" },
+                columns: ["project_id", "domain_type"],
                 unique: true);
         }
 

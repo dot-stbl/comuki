@@ -1,5 +1,6 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Application;
+using Comuki.Modules.Projects.Application.Admission;
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Projects.Application.Projects.Archive;
 using Comuki.Modules.Projects.Application.Projects.Create;
@@ -7,6 +8,7 @@ using Comuki.Modules.Projects.Application.Projects.Queries;
 using Comuki.Modules.Projects.Application.Projects.Update;
 using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Application.Settings.Update;
+using Comuki.Modules.Projects.Domain.DomainTypes;
 using Comuki.Modules.Projects.Domain.Projects;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Modules.Projects.Infrastructure;
@@ -27,6 +29,13 @@ namespace Comuki.Modules.Projects.Integration.Migrations;
 /// settings live-reload contract: create → read → update through the
 /// handlers is visible to every reader immediately (shared cache, change
 /// token), with the optimistic version refusing stale writers.
+/// <para>
+/// Also covers the domain-type admission policies (issue #11 domain-user
+/// intake): the <c>text[]</c> columns round-trip through Npgsql, the unique
+/// (project, domain type) index refuses a duplicate regardless of casing,
+/// the cascade FK takes policies with their project, and the gate service
+/// reads the stored policy — denied while blocked, admitted once cleared.
+/// </para>
 /// </summary>
 public sealed class ProjectsMigrationsShould : IAsyncLifetime
 {
@@ -286,6 +295,183 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
             view.Name.ShouldBe("Patched Name");
             view.Description.ShouldBeNull();
             view.ProfilesGitUrl.ShouldBe("https://git.example.com/acme/profiles.git");
+        }
+    }
+
+    [Fact(DisplayName = "Given migrated domain_type_admissions, when columns are inspected, then keys are uuid and both policy lists are text[]")]
+    public async Task StoreDomainTypeAdmissionColumnTypesAsync()
+    {
+        var columns = await QueryColumnsAsync(ProjectsDatabase.Schema, ProjectsDatabase.DomainTypeAdmissions);
+
+        columns["id"].ShouldBe(new ColumnSpec("uuid", "NO"));
+        columns["project_id"].ShouldBe(new ColumnSpec("uuid", "NO"));
+        columns["domain_type"].ShouldBe(new ColumnSpec("character varying", "NO"));
+        columns["allowed_sources"].ShouldBe(new ColumnSpec("ARRAY", "NO"));
+        columns["denied_reasons"].ShouldBe(new ColumnSpec("ARRAY", "NO"));
+        columns["enabled"].ShouldBe(new ColumnSpec("boolean", "NO"));
+
+        var definitions = await QuerySingleColumnAsync(
+            $"SELECT indexdef FROM pg_indexes WHERE schemaname = '{ProjectsDatabase.Schema}' "
+            + $"AND tablename = '{ProjectsDatabase.DomainTypeAdmissions}'");
+        definitions.ShouldContain(static definition =>
+            definition.Contains("ux_domain_type_admissions_project_domain")
+            && definition.Contains("UNIQUE"));
+    }
+
+    [Fact(DisplayName = "Given a stored admission policy, when it is read back through the store, then the text[] lists round-trip")]
+    public async Task RoundTripAdmissionPolicyAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var projectId = await CreateProjectAsync("admission-roundtrip", cancellationToken);
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IDomainTypeAdmissionStore>();
+            await store.AddAsync(
+                DomainTypeAdmission.Create(
+                    projectId,
+                    "  Code ",
+                    ["GitHub", "native"],
+                    ["needs_human_review"],
+                    DateTimeOffset.UtcNow),
+                cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IDomainTypeAdmissionStore>();
+
+            // looked up as the user typed it — the store normalizes
+            var stored = await store.FindAsync(projectId, "CODE", cancellationToken);
+
+            stored.ShouldNotBeNull();
+            stored.DomainType.ShouldBe("code");
+            stored.AllowedSources.ShouldBe(["github", "native"]);
+            stored.DeniedReasons.ShouldBe(["needs_human_review"]);
+            stored.Enabled.ShouldBeTrue();
+
+            var all = await store.ListAsync(projectId, cancellationToken);
+            all.ShouldHaveSingleItem().DomainType.ShouldBe("code");
+        }
+    }
+
+    [Fact(DisplayName = "Given a policy for a domain type, when a second one is added for the same pair, then the unique index refuses it")]
+    public async Task RefuseDuplicateAdmissionPolicyAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var projectId = await CreateProjectAsync("admission-duplicate", cancellationToken);
+
+        await using var scope = provider.CreateAsyncScope();
+        var store = scope.ServiceProvider.GetRequiredService<IDomainTypeAdmissionStore>();
+        await store.AddAsync(
+            DomainTypeAdmission.Create(projectId, "data", [], [], DateTimeOffset.UtcNow),
+            cancellationToken);
+
+        _ = await Should.ThrowAsync<DbUpdateException>(
+            () => store.AddAsync(
+                // different casing, same normalized key — the index still refuses
+                DomainTypeAdmission.Create(projectId, "DATA", ["github"], [], DateTimeOffset.UtcNow),
+                cancellationToken));
+    }
+
+    [Fact(DisplayName = "Given a blocked policy, when the gate service evaluates it, then the run is denied; clearing the block admits it")]
+    public async Task GateDeniedThenAdmittedAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var projectId = await CreateProjectAsync("admission-gate", cancellationToken);
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IDomainTypeAdmissionStore>();
+            await store.AddAsync(
+                DomainTypeAdmission.Create(projectId, "code", ["native"], ["needs_human_review"], DateTimeOffset.UtcNow),
+                cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var gate = scope.ServiceProvider.GetRequiredService<DomainTypeAdmissionService>();
+            var blocked = await gate.EvaluateAsync(projectId, "code", "native", cancellationToken);
+
+            blocked.Admitted.ShouldBeFalse();
+            blocked.Reasons.ShouldBe(["needs_human_review"]);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IDomainTypeAdmissionStore>();
+            var policy = await store.FindAsync(projectId, "code", cancellationToken);
+            policy.ShouldNotBeNull();
+
+            policy.Update(allowedSources: null, deniedReasons: [], enabled: null, DateTimeOffset.UtcNow);
+            await store.UpdateAsync(policy, cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var gate = scope.ServiceProvider.GetRequiredService<DomainTypeAdmissionService>();
+
+            var admitted = await gate.EvaluateAsync(projectId, "code", "native", cancellationToken);
+            admitted.Admitted.ShouldBeTrue();
+            admitted.ProfileKey.ShouldBe(ProjectSettings.DefaultDomainProfileKey);
+
+            // the allow-list survived the partial update, so another source stays out
+            var wrongSource = await gate.EvaluateAsync(projectId, "code", "github", cancellationToken);
+            wrongSource.Admitted.ShouldBeFalse();
+            wrongSource.Reasons.ShouldBe([DomainTypeAdmission.SourceNotAllowedReason]);
+        }
+    }
+
+    [Fact(DisplayName = "Given a policy, when the project is deleted, then the cascade takes the policy with it")]
+    public async Task CascadeAdmissionPolicyWithProjectAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var projectId = await CreateProjectAsync("admission-cascade", cancellationToken);
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IDomainTypeAdmissionStore>();
+            await store.AddAsync(
+                DomainTypeAdmission.Create(projectId, "infra", [], [], DateTimeOffset.UtcNow),
+                cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
+            _ = await db.Projects.Where(project => project.Id == projectId).ExecuteDeleteAsync(cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IDomainTypeAdmissionStore>();
+            var remaining = await store.ListAsync(projectId, cancellationToken);
+
+            remaining.ShouldBeEmpty();
+        }
+    }
+
+    [Fact(DisplayName = "Given a stored policy, when it is deleted, then delete reports true once and false afterwards")]
+    public async Task DeleteAdmissionPolicyOnceAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var projectId = await CreateProjectAsync("admission-delete", cancellationToken);
+        DomainTypeAdmissionId admissionId;
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IDomainTypeAdmissionStore>();
+            var policy = DomainTypeAdmission.Create(projectId, "research", [], [], DateTimeOffset.UtcNow);
+            await store.AddAsync(policy, cancellationToken);
+            admissionId = policy.Id;
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IDomainTypeAdmissionStore>();
+
+            (await store.DeleteAsync(admissionId, cancellationToken)).ShouldBeTrue();
+            (await store.DeleteAsync(admissionId, cancellationToken)).ShouldBeFalse();
         }
     }
 

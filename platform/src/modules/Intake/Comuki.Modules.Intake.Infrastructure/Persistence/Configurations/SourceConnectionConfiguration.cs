@@ -46,6 +46,11 @@ public sealed class SourceConnectionConfiguration : IEntityTypeConfiguration<Sou
             .HasMaxLength(256)
             .IsRequired();
 
+        builder.Property(static connection => connection.WebhookSecret)
+            .HasColumnName("webhook_secret")
+            .HasMaxLength(128)
+            .IsRequired(false);
+
         builder.Property(static connection => connection.WebhookKey)
             .HasColumnName("webhook_key")
             .HasMaxLength(32)

@@ -39,6 +39,14 @@ public sealed class SourceConnection
     /// <summary>Environment variable name holding the webhook verification secret.</summary>
     public string SecretEnvRef { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Webhook verification secret material (issue #46). Stored only when
+    /// the connection was created or rotated through the secret-rotation
+    /// path. The value never appears in any view (list / get) — the
+    /// rotation response is the one place it is disclosed in plaintext.
+    /// </summary>
+    public string? WebhookSecret { get; private set; }
+
     /// <summary>Generated webhook URL key — the per-connection routing segment.</summary>
     public string WebhookKey { get; private set; } = string.Empty;
 
@@ -111,6 +119,19 @@ public sealed class SourceConnection
             Enabled = nextEnabled;
         }
 
+        UpdatedAt = now;
+    }
+
+    /// <summary>Rotates the webhook-side secret reference.</summary>
+    /// <remarks>
+    /// The caller owns the freshly generated secret value; the row stores
+    /// it in <see cref="WebhookSecret"/> and stamps the rotation time.
+    /// </remarks>
+    /// <param name="newSecret">The new hex secret value (already generated).</param>
+    /// <param name="now">Wall-clock for the rotation stamp.</param>
+    public void RotateSecret(string newSecret, DateTimeOffset now)
+    {
+        WebhookSecret = newSecret;
         UpdatedAt = now;
     }
 }

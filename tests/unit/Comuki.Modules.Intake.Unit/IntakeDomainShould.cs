@@ -55,6 +55,27 @@ public sealed class IntakeDomainShould
         connection.UpdatedAt.ShouldBe(later);
     }
 
+    [Fact(DisplayName = "Given a connection, when RotateSecret runs, then WebhookSecret is set and UpdatedAt advances")]
+    public void RotateConnectionSecret()
+    {
+        var connection = SourceConnection.Create(
+            ProjectId.New(),
+            TicketProvider.GitHub,
+            "Main",
+            "{}",
+            "HOOK",
+            "keykeykeykeykey1",
+            now);
+        connection.WebhookSecret.ShouldBeNull();
+
+        var later = now.AddMinutes(5);
+        connection.RotateSecret("new-secret-value", later);
+
+        connection.WebhookSecret.ShouldBe("new-secret-value");
+        connection.UpdatedAt.ShouldBe(later);
+        connection.SecretEnvRef.ShouldBe("HOOK");
+    }
+
     [Fact(DisplayName = "Given an admission rule, when Create then Update, then mode/filter/enabled mutate")]
     public void CreateAndUpdateRule()
     {

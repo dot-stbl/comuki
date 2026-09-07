@@ -296,6 +296,62 @@ export function disconnectSeedSource(connectionId: string): boolean {
   return true
 }
 
+/**
+ * Result of a mock secret rotation — the new secret is shown once, the
+ * timestamp moves, and the row is left in the same shape otherwise.
+ */
+export interface SeedRotationResult {
+  sourceId: string
+  secret: string
+  secretEnvRef: string
+  rotatedAt: string
+}
+
+/**
+ * Rotate a connection's webhook secret.
+ *
+ * The mock generates a 64-char lowercase hex string to mirror the wire
+ * shape — the real platform rotates a fresh cryptographic secret via the
+ * host. The mock keeps nothing of the secret past the return value, in the
+ * same way the real endpoint does: the value lives in this response and
+ * nothing else.
+ */
+export function rotateSeedSecret(connectionId: string): SeedRotationResult {
+  const connection = state.connections.find((entry) => entry.id === connectionId)
+  if (!connection) {
+    throw new Error(`connection ${connectionId} is gone — there is nothing to rotate.`)
+  }
+  const secret = generateMockSecret()
+  const rotatedAt = new Date().toISOString()
+  state = {
+    ...state,
+    connections: state.connections.map((entry) =>
+      entry.id === connectionId
+        ? { ...entry, secretStoredAt: "just now" }
+        : entry
+    ),
+  }
+  return {
+    sourceId: connection.id,
+    secret,
+    secretEnvRef: connection.secretEnvRef ?? "",
+    rotatedAt,
+  }
+}
+
+/**
+ * Mock-only secret material. 64 lowercase hex chars — the same shape
+ * the wire's `SecretRotationResponse` carries. Crypto-grade randomness is
+ * not the point of the mock; visual fidelity is.
+ */
+function generateMockSecret(): string {
+  let value = ""
+  for (let index = 0; index < 64; index += 1) {
+    value += "0123456789abcdef"[Math.floor(Math.random() * 16)]
+  }
+  return value
+}
+
 export interface SeedWatchPatch {
   enabled: boolean
   filter: string

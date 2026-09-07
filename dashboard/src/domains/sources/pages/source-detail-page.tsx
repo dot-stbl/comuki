@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ArrowLeft, Loader2, PlugZap, RotateCw, Unplug } from "lucide-react"
+import { ArrowLeft, KeyRound, Loader2, PlugZap, RotateCw, Unplug } from "lucide-react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 
@@ -8,6 +8,7 @@ import { useUnsavedGuard } from "@/app/layout/use-unsaved-guard"
 import {
   useAdmissionRules,
   useDisconnectSource,
+  useRotateSecretMutation,
   useSaveWatch,
   useTestConnection,
   useUpdateConnection,
@@ -130,12 +131,15 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
   const disconnect = useDisconnectSource()
   const saveWatch = useSaveWatch()
   const updateConnection = useUpdateConnection()
+  const rotateSecret = useRotateSecretMutation()
 
   /** The header probe's last answer, dropped the moment a detail changes. */
   const [probe, setProbe] = useState<ProbeResult | null>(null)
   const [watchDirty, setWatchDirty] = useState(false)
   const [connectionDirty, setConnectionDirty] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
+  const [rotating, setRotating] = useState(false)
+  const [rotatedSecret, setRotatedSecret] = useState<string | null>(null)
 
   // One guard over both forms: the question the operator is being asked is
   // "you typed something on this page and are leaving it", and which of the two
@@ -327,6 +331,27 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
       },
     })
     setDisconnecting(false)
+  }
+
+  const onRotateSecret = () => {
+    if (editDenial) {
+      setRotating(false)
+      return
+    }
+    rotateSecret.mutate(connection.id, {
+      onSuccess: (response) => {
+        // The plaintext is shown once. The store invalidates the snapshot
+        // (the new secretStoredAt shows up on a follow-up refetch), but the
+        // only place the secret value lives is the local state below.
+        setRotatedSecret(response.secret)
+        toast.success("Webhook secret rotated", {
+          description: `${connection.name} — copy the new value into the tracker`,
+        })
+      },
+      onSettled: () => {
+        setRotating(false)
+      },
+    })
   }
 
   const failure =
@@ -534,6 +559,71 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         </Section>
       )}
 
+      {native ? null : (
+        <Section
+          variant="region"
+          id="source-rotation"
+          title="webhook secret"
+          data-test="source-rotation"
+        >
+          <div className={styles.rotation}>
+            <p className={styles.rotationBody}>
+              {/* The rotation generates a new secret and persists it on the
+                  connection. The plaintext is disclosed once, in the
+                  confirmation dialog after a click — copying it into the
+                  tracker's webhook settings is the operator's next move,
+                  and the dashboard never holds the value past this turn. */}
+              A click generates a fresh webhook secret and shows it
+              once. Copy it into the tracker's webhook settings — this
+              page will not show it again.
+            </p>
+            <Tooltip content={editDenial ?? "Rotate webhook secret"}>
+              <Button
+                variant="outline"
+                data-test="source-rotate-secret"
+                denied={editDenial}
+                disabled={rotateSecret.isPending || rotating}
+                aria-busy={rotateSecret.isPending || rotating || undefined}
+                aria-label={`Rotate the webhook secret for ${connection.name}`}
+                onClick={() => {
+                  if (editDenial) {
+                    return
+                  }
+                  setRotating(true)
+                }}
+              >
+                {rotateSecret.isPending || rotating ? (
+                  <Loader2 className={tableStyles.spin} aria-hidden="true" />
+                ) : (
+                  <KeyRound aria-hidden="true" />
+                )}
+                Rotate secret
+              </Button>
+            </Tooltip>
+            {/* Once the rotation resolves, surface the plaintext in a
+                standalone block — copy-able, and gone the moment the
+                operator navigates away. */}
+            {rotatedSecret ? (
+              <Notice
+                tone="ok"
+                data-test="source-rotated-secret"
+              >
+                <span className={styles.rotationSecretLabel}>
+                  new webhook secret — copy now, this panel does not survive a
+                  navigation
+                </span>
+                <code
+                  className={styles.rotationSecretValue}
+                  data-test="source-rotated-secret-value"
+                >
+                  {rotatedSecret}
+                </code>
+              </Notice>
+            ) : null}
+          </div>
+        </Section>
+      )}
+
       <Section
         variant="region"
         id="source-handoffs"
@@ -613,6 +703,21 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         cancelLabel="Keep it"
         onConfirm={onDisconnect}
         onCancel={() => setDisconnecting(false)}
+      />
+
+      {/* The rotation prompt is a confirmation, not the destructive disconnect
+          — but it still earns a dialog because the act is irreversible: the
+          tracker keeps accepting webhooks signed with the OLD secret until the
+          operator copies the new one in. Naming the project is the same
+          courtesy as the disconnect dialog above. */}
+      <ConfirmDialog
+        open={rotating}
+        title="Rotate this source's webhook secret?"
+        body={`${connection.name} · ${projectKey} — a new secret is generated and shown once. Webhooks signed with the previous secret will be rejected until you copy the new one into the tracker.`}
+        confirmLabel="Rotate"
+        cancelLabel="Keep current"
+        onConfirm={onRotateSecret}
+        onCancel={() => setRotating(false)}
       />
 
       <ConfirmDialog

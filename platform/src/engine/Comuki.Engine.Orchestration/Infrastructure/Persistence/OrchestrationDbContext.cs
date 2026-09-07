@@ -1,4 +1,5 @@
 using Comuki.Engine.Orchestration.Domain.Journal;
+using Comuki.Engine.Orchestration.Domain.MergeQueue;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Configurations;
@@ -86,7 +87,8 @@ public sealed class OrchestrationDbContext(
             .ApplyConfiguration(new RunConfiguration())
             .ApplyConfiguration(new WorkItemConfiguration())
             .ApplyConfiguration(new WorkItemDependencyConfiguration())
-            .ApplyConfiguration(new RunEventConfiguration());
+            .ApplyConfiguration(new RunEventConfiguration())
+            .ApplyConfiguration(new MergeQueueConfiguration());
 
         // The object axis, as row-level filters: a run is visible when its
         // project is in the subject's scope; a work item (no project column
@@ -97,6 +99,13 @@ public sealed class OrchestrationDbContext(
             .HasQueryFilter(run => ScopeUnrestricted || ScopeProjectIds.Contains(run.ProjectId));
         modelBuilder.Entity<WorkItem>()
             .HasQueryFilter(item => ScopeUnrestricted || Runs.Any(run => run.Id == item.RunId));
+        // Merge-queue visibility: project-scoped subjects see entries whose
+        // project is in their scope AND rows with no project (release
+        // trains that span projects are visible to every operator).
+        modelBuilder.Entity<MergeQueueEntry>()
+            .HasQueryFilter(entry => ScopeUnrestricted
+                || entry.ProjectId == null
+                || ScopeProjectIds.Contains(entry.ProjectId.Value));
 
         base.OnModelCreating(modelBuilder);
     }

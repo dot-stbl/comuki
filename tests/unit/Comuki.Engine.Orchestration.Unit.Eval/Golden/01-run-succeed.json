@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "01-run-succeed",
+  "name": "Run: Queued -> Running -> Succeeded",
+  "kind": "Run",
+  "operations": [
+    { "action": "Create" },
+    { "action": "Transition", "status": "Running" },
+    { "action": "Transition", "status": "Succeeded" }
+  ],
+  "expected": {
+    "finalStatus": "Succeeded",
+    "transitionLog": ["Queued", "Running", "Succeeded"]
+  }
+}

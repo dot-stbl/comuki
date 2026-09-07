@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "07-work-item-blocked-to-running",
+  "name": "WorkItem: Blocked -> Queued -> Running -> Failed -> Queued (retry)",
+  "kind": "WorkItem",
+  "operations": [
+    { "action": "Create", "status": "Blocked" },
+    { "action": "Transition", "status": "Queued" },
+    { "action": "AssignLease" },
+    { "action": "Transition", "status": "Failed" },
+    { "action": "Transition", "status": "Queued" }
+  ],
+  "expected": {
+    "finalStatus": "Queued",
+    "transitionLog": ["Blocked", "Queued", "Running", "Failed", "Queued"]
+  }
+}

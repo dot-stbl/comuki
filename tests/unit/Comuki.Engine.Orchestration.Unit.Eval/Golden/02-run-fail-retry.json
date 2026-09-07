@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "02-run-fail-retry",
+  "name": "Run: Queued -> Running -> Failed -> Queued (retry edge)",
+  "kind": "Run",
+  "operations": [
+    { "action": "Create" },
+    { "action": "Transition", "status": "Running" },
+    { "action": "Transition", "status": "Failed" },
+    { "action": "Transition", "status": "Queued" }
+  ],
+  "expected": {
+    "finalStatus": "Queued",
+    "transitionLog": ["Queued", "Running", "Failed", "Queued"]
+  }
+}

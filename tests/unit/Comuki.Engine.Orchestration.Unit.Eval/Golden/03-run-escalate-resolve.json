@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "03-run-escalate-resolve",
+  "name": "Run: Queued -> Escalated -> Running (human approval edge)",
+  "kind": "Run",
+  "operations": [
+    { "action": "Create" },
+    { "action": "Transition", "status": "Escalated" },
+    { "action": "Transition", "status": "Running" }
+  ],
+  "expected": {
+    "finalStatus": "Running",
+    "transitionLog": ["Queued", "Escalated", "Running"]
+  }
+}

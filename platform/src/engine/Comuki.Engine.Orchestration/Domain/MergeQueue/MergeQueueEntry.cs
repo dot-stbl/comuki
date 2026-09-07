@@ -221,4 +221,43 @@ public sealed class MergeQueueEntry
     {
         Notes = notes;
     }
+
+    /// <summary>
+    /// Internal reconstitute for the raw-SQL <c>RETURNING</c> path in
+    /// <c>MergeQueueStoreEf.ClaimNextAsync</c>: the only caller that
+    /// needs to assign the private-set fields from a database row.
+    /// Not part of the public domain API.
+    /// </summary>
+    internal static MergeQueueEntry Reconstitute(
+        Guid id,
+        ProjectId? projectId,
+        string branchName,
+        string pullRequestUrl,
+        MergeQueueStatus status,
+        ConflictResolution conflictResolution,
+        DateTimeOffset enqueuedAt,
+        string? claimedBy,
+        DateTimeOffset? claimedAt,
+        DateTimeOffset? mergedAt,
+        DateTimeOffset? abandonedAt,
+        string? abandonedReason,
+        string? notes)
+    {
+        return new MergeQueueEntry
+        {
+            Id = id,
+            ProjectId = projectId,
+            BranchName = branchName,
+            PullRequestUrl = pullRequestUrl,
+            Status = status,
+            ConflictResolution = conflictResolution,
+            EnqueuedAt = enqueuedAt,
+            ClaimedBy = claimedBy,
+            ClaimedAt = claimedAt,
+            MergedAt = mergedAt,
+            AbandonedAt = abandonedAt,
+            AbandonedReason = abandonedReason,
+            Notes = notes,
+        };
+    }
 }

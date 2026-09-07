@@ -36,4 +36,30 @@ public sealed class UserAccountStore(IdentityDbContext db) : IUserAccountStore
 
         await db.SaveChangesAsync(cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<(IReadOnlyList<User> Items, int Total)> ListAsync(
+        string? emailContains,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        var query = db.Users.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(emailContains))
+        {
+            var needle = emailContains.Trim().ToLowerInvariant();
+            query = query.Where(user => user.Email.Contains(needle));
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderBy(user => user.Email)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
 }

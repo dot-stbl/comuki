@@ -66,4 +66,35 @@ public sealed class RoleAssignmentStore(IdentityDbContext db) : IRoleAssignmentS
 
         await db.SaveChangesAsync(cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<(IReadOnlyList<RoleAssignment> Items, int Total)> ListAsync(
+        SubjectType? subjectKind,
+        Guid? subjectId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        var query = db.RoleAssignments.AsNoTracking();
+
+        if (subjectKind is { } kind)
+        {
+            query = query.Where(assignment => assignment.SubjectType == kind);
+        }
+
+        if (subjectId is { } id)
+        {
+            query = query.Where(assignment => assignment.SubjectId == id);
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(assignment => assignment.CreatedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
 }

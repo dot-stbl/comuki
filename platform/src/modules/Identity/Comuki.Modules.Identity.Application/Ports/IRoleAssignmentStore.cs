@@ -41,4 +41,22 @@ public interface IRoleAssignmentStore
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public Task SaveAsync(RoleAssignment assignment, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists a page of role assignments (active + revoked rows). Optional
+    /// subject-kind / subject-id filter narrows the page to a single user
+    /// or api key.
+    /// </summary>
+    /// <param name="subjectKind">Optional subject kind filter; <c>null</c> for any.</param>
+    /// <param name="subjectId">Optional subject id filter; <c>null</c> for any.</param>
+    /// <param name="skip">Number of rows to skip (<c>(page - 1) * pageSize</c>).</param>
+    /// <param name="take">Page size (1..100).</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>The page slice and the total row count.</returns>
+    public Task<(IReadOnlyList<RoleAssignment> Items, int Total)> ListAsync(
+        SubjectType? subjectKind,
+        Guid? subjectId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default);
 }

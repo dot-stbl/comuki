@@ -229,14 +229,18 @@ internal static class HostComposer
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ProviderExceptionHandler>();
 
-        // Identity-admin surface (issues #31-#37): request-level validators
-        // sit alongside the module-level ones; they share the same DI
-        // pipeline and the startup validator over RequiresPermissionAttribute.
+        // Identity-admin surface (issues #31-#37 + #45 read endpoints):
+        // request-level validators sit alongside the module-level ones;
+        // they share the same DI pipeline and the startup validator over
+        // RequiresPermissionAttribute.
         builder.Services.AddScoped<IValidator<InviteUserRequest>, InviteUserRequestValidator>();
         builder.Services.AddScoped<IValidator<SetUserDisabledRequest>, SetUserDisabledRequestValidator>();
         builder.Services.AddScoped<IValidator<LinkOidcRequest>, LinkOidcRequestValidator>();
         builder.Services.AddScoped<IValidator<GrantRoleRequest>, GrantRoleRequestValidator>();
         builder.Services.AddScoped<IValidator<CreateApiKeyRequest>, CreateApiKeyRequestValidator>();
+        builder.Services.AddScoped<IValidator<ListUsersQueryRequest>, ListUsersQueryRequestValidator>();
+        builder.Services.AddScoped<IValidator<ListGrantsQueryRequest>, ListGrantsQueryRequestValidator>();
+        builder.Services.AddScoped<IValidator<ListApiKeysQueryRequest>, ListApiKeysQueryRequestValidator>();
 
         // Security pass (issue #10 T11.4): CORS allow-list for the
         // dashboard SPA + per-endpoint rate-limit partitions. Both are

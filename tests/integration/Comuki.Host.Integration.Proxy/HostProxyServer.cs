@@ -73,7 +73,9 @@ public sealed class HostProxyServer : IAsyncLifetime
         builder.Configuration["Proxy:VirtualKeys:0:BaseUrl"] = FakeUpstream.BaseAddress.ToString();
         builder.Configuration["Proxy:VirtualKeys:0:ApiKeyEnvRef"] = "FAKE_OPENAI_KEY";
 
-        _ = builder.Services.AddOrchestrationPersistence(connectionString);
+        _ = builder.Services
+            .AddOrchestrationPersistence(connectionString)
+            .AddOrchestrationQueue(builder.Configuration);
         _ = builder.Services.AddOrchestrationApplication();
 
         // The artifact packager BackgroundService polls every 10s on

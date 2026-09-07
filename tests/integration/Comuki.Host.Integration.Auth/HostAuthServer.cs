@@ -114,10 +114,12 @@ public sealed class HostAuthServer : IAsyncLifetime
         builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
         builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
 
-        // Program wires orchestration persistence before Compose (the worker
-        // runtime and the scoped reads below resolve the context); the scope
-        // fixture's run seeds and visibility probes need it too.
-        _ = builder.Services.AddOrchestrationPersistence(connectionString);
+        // Program wires orchestration persistence + queue before Compose (the
+        // worker runtime and the scoped reads below resolve the context);
+        // the scope fixture's run seeds and visibility probes need it too.
+        _ = builder.Services
+            .AddOrchestrationPersistence(connectionString)
+            .AddOrchestrationQueue(builder.Configuration);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
         await application.StartAsync(cancellationToken);

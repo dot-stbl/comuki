@@ -105,10 +105,12 @@ public sealed class HostChatServer : IAsyncLifetime
         builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
         builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
 
-        // Program wires orchestration persistence before Compose (the worker
-        // runtime contract) — the chat endpoints resolve scoped orchestration
-        // services, so the fixture mirrors that wiring.
-        builder.Services.AddOrchestrationPersistence(ConnectionString);
+        // Program wires orchestration persistence + queue before Compose (the
+        // worker runtime contract) — the chat endpoints resolve scoped
+        // orchestration services, so the fixture mirrors that wiring.
+        builder.Services
+            .AddOrchestrationPersistence(ConnectionString)
+            .AddOrchestrationQueue(builder.Configuration);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(ConnectionString));
         await application.StartAsync(cancellationToken);

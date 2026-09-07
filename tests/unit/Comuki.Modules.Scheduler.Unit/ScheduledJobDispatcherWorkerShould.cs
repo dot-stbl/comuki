@@ -1,4 +1,5 @@
 using System.Globalization;
+using Comuki.Modules.Scheduler.Application.Observers;
 using Comuki.Modules.Scheduler.Application.Options;
 using Comuki.Modules.Scheduler.Application.Ports;
 using Comuki.Modules.Scheduler.Domain.Ids;
@@ -18,7 +19,8 @@ namespace Comuki.Modules.Scheduler.Unit;
 /// <summary>
 /// ScheduledJobDispatcherWorker polling cycle: due jobs are dispatched,
 /// the fire trail stamps <c>last_fired_at</c> + the next fire instant,
-/// and one failing job does not poison the rest of the batch.
+/// one failing job does not poison the rest of the batch, and every
+/// registered observer is notified of each successful fire.
 /// </summary>
 public sealed class ScheduledJobDispatcherWorkerShould
 {
@@ -44,7 +46,8 @@ public sealed class ScheduledJobDispatcherWorkerShould
         dispatcher.DispatchAsync(due, Arg.Any<CancellationToken>())
             .Returns(new RunId(Guid.CreateVersion7()));
 
-        var worker = NewWorker(clock, [due], dispatcher, journalSource: null);
+        var observer = Substitute.For<ISchedulerObserver>();
+        var worker = NewWorker(clock, [due], dispatcher, [observer]);
 
         var fired = await worker.PollOnceAsync(TestContext.Current.CancellationToken);
 
@@ -68,7 +71,7 @@ public sealed class ScheduledJobDispatcherWorkerShould
         dispatcher.DispatchAsync(Arg.Any<ScheduledJob>(), Arg.Any<CancellationToken>())
             .Returns(new RunId(Guid.CreateVersion7()));
 
-        var worker = NewWorker(clock, [first, second], dispatcher, journalSource: null);
+        var worker = NewWorker(clock, [first, second], dispatcher, observers: []);
 
         var fired = await worker.PollOnceAsync(TestContext.Current.CancellationToken);
 
@@ -94,7 +97,7 @@ public sealed class ScheduledJobDispatcherWorkerShould
                 Arg.Any<CancellationToken>())
             .Returns(new RunId(Guid.CreateVersion7()));
 
-        var worker = NewWorker(clock, [failing, succeeding], dispatcher, journalSource: null);
+        var worker = NewWorker(clock, [failing, succeeding], dispatcher, observers: []);
 
         var fired = await worker.PollOnceAsync(TestContext.Current.CancellationToken);
 
@@ -112,8 +115,41 @@ public sealed class ScheduledJobDispatcherWorkerShould
         failing.LastFiredAt.ShouldBeNull();
     }
 
-    [Fact(DisplayName = "Given a journal source, when the worker fires a job, then the journal records the run")]
-    public async Task JournalReceivesFiredEventAsync()
+    [Fact(DisplayName = "Given a registered observer, when the worker fires a job, then the observer is notified with the fire metadata")]
+    public async Task ObserversReceiveFiredEventAsync()
+    {
+        var clock = new FixedClock(anchorTime);
+        var firedAt = clock.GetUtcNow();
+        var projectId = new ProjectId(Guid.CreateVersion7());
+        var due = ScheduledJob.Create(
+            projectId,
+            "*/5 * * * *",
+            "ops-sentry",
+            "{}",
+            firedAt,
+            enabled: true,
+            clock.GetUtcNow());
+
+        var dispatcher = Substitute.For<ISchedulerDispatcher>();
+        dispatcher.DispatchAsync(due, Arg.Any<CancellationToken>())
+            .Returns(new RunId(Guid.CreateVersion7()));
+
+        var observer = Substitute.For<ISchedulerObserver>();
+        var worker = NewWorker(clock, [due], dispatcher, [observer]);
+
+        await worker.PollOnceAsync(TestContext.Current.CancellationToken);
+
+        await observer.Received(1).OnJobFiredAsync(
+            Arg.Is<ScheduledJobId>(id => id.Value == due.Id.Value),
+            Arg.Is<ProjectId>(id => id.Value == projectId.Value),
+            Arg.Is("ops-sentry"),
+            Arg.Any<RunId>(),
+            Arg.Is<DateTimeOffset>(value => value == firedAt),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given an observer that throws, when the worker fires, then the fire still counts and the remaining observers still run")]
+    public async Task FailingObserverDoesNotPoisonTheBatchAsync()
     {
         var clock = new FixedClock(anchorTime);
         var firedAt = clock.GetUtcNow();
@@ -130,16 +166,35 @@ public sealed class ScheduledJobDispatcherWorkerShould
         dispatcher.DispatchAsync(due, Arg.Any<CancellationToken>())
             .Returns(new RunId(Guid.CreateVersion7()));
 
-        var journal = Substitute.For<ISchedulerJournalSource>();
+        var failing = Substitute.For<ISchedulerObserver>();
+        failing.OnJobFiredAsync(
+                Arg.Any<ScheduledJobId>(),
+                Arg.Any<ProjectId>(),
+                Arg.Any<string>(),
+                Arg.Any<RunId>(),
+                Arg.Any<DateTimeOffset>(),
+                Arg.Any<CancellationToken>())
+            .Returns(static _ => throw new HttpRequestException("observer down"));
 
-        var worker = NewWorker(clock, [due], dispatcher, journal);
+        var succeeding = Substitute.For<ISchedulerObserver>();
+        var worker = NewWorker(clock, [due], dispatcher, [failing, succeeding]);
 
-        await worker.PollOnceAsync(TestContext.Current.CancellationToken);
+        var fired = await worker.PollOnceAsync(TestContext.Current.CancellationToken);
 
-        await journal.Received(1).AppendScheduledFiredAsync(
-            Arg.Is<ScheduledJobId>(id => id.Value == due.Id.Value),
+        fired.ShouldBe(1);
+        await failing.Received(1).OnJobFiredAsync(
+            Arg.Any<ScheduledJobId>(),
+            Arg.Any<ProjectId>(),
+            Arg.Any<string>(),
             Arg.Any<RunId>(),
-            Arg.Is<DateTimeOffset>(value => value == firedAt),
+            Arg.Any<DateTimeOffset>(),
+            Arg.Any<CancellationToken>());
+        await succeeding.Received(1).OnJobFiredAsync(
+            Arg.Any<ScheduledJobId>(),
+            Arg.Any<ProjectId>(),
+            Arg.Any<string>(),
+            Arg.Any<RunId>(),
+            Arg.Any<DateTimeOffset>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -147,7 +202,7 @@ public sealed class ScheduledJobDispatcherWorkerShould
         TimeProvider clock,
         IReadOnlyList<ScheduledJob> dueJobs,
         ISchedulerDispatcher dispatcher,
-        ISchedulerJournalSource? journalSource)
+        IReadOnlyList<ISchedulerObserver> observers)
     {
         var store = Substitute.For<IScheduledJobStore>();
         store.ListDueAsync(Arg.Any<DateTimeOffset>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -156,10 +211,6 @@ public sealed class ScheduledJobDispatcherWorkerShould
         var services = new ServiceCollection();
         services.AddScoped(_ => store);
         services.AddScoped(_ => dispatcher);
-        if (journalSource is not null)
-        {
-            services.AddScoped(_ => journalSource);
-        }
 
         var scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
@@ -171,6 +222,7 @@ public sealed class ScheduledJobDispatcherWorkerShould
             scopeAccessor,
             clock,
             Options.Create(new SchedulerOptions { PollInterval = TimeSpan.FromSeconds(30) }),
+            observers,
             NullLogger<ScheduledJobDispatcherWorker>.Instance);
     }
 

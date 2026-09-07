@@ -1,28 +1,26 @@
 ---
 milestone: v1
 status: v1-complete
-last_updated: 2026-09-04
+last_updated: 2026-09-08
 progress:
   total_slices: 24
   completed_slices: 24
   percent: 100
   v1_core_slices: "15 (S0–S14, original v1 scope)"
   additional_slices: "9 (5 FE wire-up + 2 polish + 1 admin endpoints + 1 docs)"
-  issues_closed: "1,2,3,4,5,6,7,8,9,10,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29"
-  issues_open: "11,31,32,33,34,35,36,37,38,39,40,41,42,43"
-  open_notes: |
-    #11 — Post-1.0 backlog (verify v1.1 · fleet · autonomy · merge-queue · domain-user · eval).
-    #31–#42 — FE wire-up of identity + sources admin mutations (backend shipped in
-    `feature/admin-backend-fixes`, dashboard mutations stay mock-first until the
-    kubb clients land — same pattern as the runs/identity/projects/inbox wire-up).
-    #43 — Artifacts e2e test cleanup: drop dead `postgresSeed` container now that
-    `8825387` rolled both DBs onto one. v1.1 follow-up, not blocking.
+  issues_total: 50
+  issues_closed: 50
+  issues_open: 0
+  master_tip: e679663
+  openapi_emission: artifacts/openapi.json
+  fe_tests: 1525
+  be_tests: 1192
   rule_bootstrap: |
-    Agent onboarding ritual is enforced by three machine-checkable artefacts
+    Agent onboarding ritual enforced by three machine-checkable artefacts
     (see `.agents/RULES-BOOTSTRAP.md`):
-      - [VerifyRuleAwareness] MSBuild target -- prints rule corpus at build start.
-      - [SelfAuditReport] MSBuild target -- writes audit-data/last-commit-audit.md.
-      - dashboard/scripts/rule-audit.ts -- FE mirror, wired into predev/prebuild.
+      - [VerifyRuleAwareness] MSBuild target — prints rule corpus at build start.
+      - [SelfAuditReport] MSBuild target — writes audit-data/last-commit-audit.md.
+      - dashboard/scripts/rule-audit.ts — FE mirror, wired into predev/prebuild.
     All three are WARNING ONLY (MSBuild <Message> is not promoted by
     TreatWarningsAsErrors). Skip is a load-gate skip, not a courtesy slip.
     Disable: -p:DisableRuleAwareness=true / -p:DisableSelfAuditReport=true
@@ -32,10 +30,9 @@ progress:
 
 ## Current Position
 
-**v1 milestone is complete.** 28 of 41 GitHub issues are closed; the 13
-remaining open issues are **post-v1 scope** (S7 follow-up pages, post-1.0
-backlog, one test-fixture cleanup). 24 slices shipped — 15 original v1
-core slices plus 9 follow-on slices that landed as the v1 polish work.
+**v1 milestone is complete and shipping.** All 50 GitHub issues closed
+(0 open). 24 slices shipped — 15 original v1 core slices plus 9 follow-on
+slices landed during v1 polish. Master tip `e679663` (2026-09-08).
 
 **Slice cadence (merge commits on `master`):**
 
@@ -45,7 +42,7 @@ core slices plus 9 follow-on slices that landed as the v1 polish work.
 | S1 | #2 | Runs · queue · journal | landed |
 | S2 | #3 | Compute: Docker provider + scale v0 | landed |
 | S3 | #4 | Translator · worker image · gRPC (Slice 0 e2e) | landed |
-| S4 | #12 | Identity: users · API keys · RBAC · OIDC | landed (Wave 5, `feature/audit-rules-batch-d`) |
+| S4 | #12 | Identity: users · API keys · RBAC · OIDC | landed |
 | S5 | #5 | Chat (Voluta в Host) + Host.Brain + approve + cancel | landed (approve/cancel: `b92d070`) |
 | S6 | #6 | Intake: GH · GL · Yandex Tracker · Jira + sync-back + PR-review | landed |
 | S7 | #7 | FE ядро + SignalR realtime | landed (wire-up slices 1–5) |
@@ -76,27 +73,48 @@ core slices plus 9 follow-on slices that landed as the v1 polish work.
 | fe-wire-oidc | slice 5: browser-driven OIDC start + callback | `9f731f6` |
 | admin-endpoints | 12 host endpoints (#31–#42 BE) + tests + openspec requirements | `7dc3803` + `feature/admin-backend-fixes` (`6f644e1`) |
 
-## Что живёт (после 2bb2afd)
+**Post-1.0 backlog slice (#11) — closed 2026-09-07 with 13 sub-slices landed:**
+
+| Sub-slice | SHA | Description |
+|---|---|---|
+| Merge-queue entity | `6072dd9` | MergeQueue aggregate + IMergeQueueStore + AddMergeQueueTable |
+| Eval-harness | `7989779` | EvalRunner + 7 golden tasks + JSON parser + Markdown writer |
+| Autonomy ratchet (slice 1) | `6f2ddb8` + `3f769f5` | RunTrustClass enum + TrustClassRatchetSweeper + AddRunTrustClass migration |
+| Domain-user intake (slice 1) | `1ac0550` | DomainTypeAdmission EF + gate service + AddDomainTypeAdmissions |
+| Redis cache | `b29e688` → `5f62928` | Comuki.Shared.Redis + IDistributedCache wrap + DistributedProjectSettingsCache |
+| Fleet runners (slice 1) | merged | IRunnerRegistry + EfRunnerRegistry + heartbeat reaper |
+| Generic-command verifier | `ec3ce24` → `493704c` | GenericCommandRun EF + IGenericCommandRunner + ProcessRunner + GenericCommandVerifierWorker |
+| C#→TS codegen (Option A) | `77561c9` → `0aeae3e` | RealtimeContractAttribute + RealtimeContractEmitter + contracts in Shared.Contracts |
+
+**Deferred to v2 (4 issues closed as deferred, not in v1.1):**
+- #47 Generic-command runner-container (Process.Start isolation)
+- #48 Fleet runner host-agent for bare-metal
+- #49 Autonomy ratchet continuation (confidence + escalation)
+- #50 Merge-queue multi-feature batch + dependency ordering
+
+## Что живёт (master `e679663`, 2026-09-08)
 
 ### Backend (C# / .NET 10)
 
 - **Каркас**: `platform/src/{shared,modules,engine,host}` + `platform/build`
   (format gate + `dotnet format --severity hidden`).
 - **Engine**: `Comuki.Engine.Orchestration` (runs / queue / claim-lease
-  `SKIP LOCKED` / journal / reaper) · `Comuki.Engine.Compute` (Docker +
-  Kubernetes providers, `KubernetesComputeProvider` использует `batch/v1 Job`
-  с `backoffLimit=0` / `ttlSecondsAfterFinished`, ScaleSupervisor cycle).
+  `SKIP LOCKED` / journal / reaper / TrustClass ratchet) ·
+  `Comuki.Engine.Compute` (Docker + Kubernetes providers,
+  `KubernetesComputeProvider` использует `batch/v1 Job` с
+  `backoffLimit=0` / `ttlSecondsAfterFinished`, ScaleSupervisor cycle).
 - **Shared**: `Comuki.Shared.Kernel` (ids, exceptions, subject scoping) ·
   `Comuki.Shared.Contracts` (gRPC, brain, queue, journal, plans, memory,
-  control-plane) · `Comuki.Shared.Telemetry` (ActivitySource + Meter,
+  control-plane, realtime) · `Comuki.Shared.Telemetry` (ActivitySource + Meter,
   `AddComukiTelemetry()` installer) · `Comuki.Shared.Filtering` (DSL parser
-  → IQueryable; kubb-exposed filter types via OpenAPI transformer).
+  → IQueryable; kubb-exposed filter types via OpenAPI transformer) ·
+  `Comuki.Shared.Redis` (IDistributedCache wrap, DistributedProjectSettingsCache).
 - **10 модулей** в `platform/src/modules/`:
   - **Identity** — RBAC (`RoleMatrix`/`RoleKeys` в коде, `ck_` API keys с
     HMAC pepper, OIDC linker с per-provider схемами + `OidcAccountLinker`,
-    bootstrap admin, 7 admin endpoints #31–#37).
+    bootstrap admin, 7 admin endpoints #31–#37.
   - **Projects** — CRUD + per-project settings с live-reload, бюджеты и
-    concurrency caps (`ProjectSettingsCacheRefresher`).
+    concurrency caps (`ProjectSettingsCacheRefresher`, distributed via Redis).
   - **Chat** — Voluta-graph integration в Host, checkpoints +
     `chat_sessions` / `chat_messages` storage, slash-commands.
   - **Memory** — long-term facts с pgvector (`SourceDocument` +
@@ -124,6 +142,8 @@ core slices plus 9 follow-on slices that landed as the v1 polish work.
     endpoint на host (`/api/v1/mcp` с tools `search_knowledge` +
     `list_runs`) + `/api/v1/knowledge/ingest` за `knowledge:write`
     permission.
+  - **Verify** — `Comuki.Modules.Verify` (GenericCommandRun EF entity +
+    `IGenericCommandRunner` + `ProcessRunner` + `GenericCommandVerifierWorker`).
 - **Host endpoints** (current):
   - `/health` (liveness) · `/api/v1/health/{postgres,proxy}` (readiness с
     per-probe results, `2f01819`)
@@ -149,7 +169,8 @@ core slices plus 9 follow-on slices that landed as the v1 polish work.
   (Scoped-lifetime, two-phase poll, `8825387`),
   `OidcStateSweeper` (5-min interval, configurable TTL,
   `Host:OidcSweep:{Enabled,Interval,StateTtl}`, `40fca53`),
-  `ArtifactBucketInitializer` (idempotent bucket create at startup).
+  `ArtifactBucketInitializer` (idempotent bucket create at startup),
+  `TrustClassRatchetSweeper` (autonomy ratchet sweeper).
 - **OpenAPI emission** — `Microsoft.AspNetCore.OpenApi 10.0.9` +
   `Microsoft.Extensions.ApiDescription.Server` спавнят `GetDocument.Insider`
   при `dotnet build` (Debug only); csproj target
@@ -159,6 +180,9 @@ core slices plus 9 follow-on slices that landed as the v1 polish work.
 - **SignalR `/realtime/runs`** — `RunsHub` (JoinRun/JoinProject +
   permissions) + `RunEventsBroadcastInterceptor` пушит journal events;
   `EnableDetailedErrors` отключён в production (issue #19).
+- **C#→TS realtime contracts** — `RealtimeContractAttribute` + source-gen
+  `RealtimeContractEmitter` генерирует `.ts` типы в
+  `agents/Comuki.Shared.Contracts.Realtime` для client SignalR.
 
 ### Frontend (`dashboard/`)
 
@@ -187,6 +211,9 @@ core slices plus 9 follow-on slices that landed as the v1 polish work.
 - **Tests** — `bun run test` → **134 файла, 1525 тестов pass** (`2026-09-04`).
   Mock-режим (`VITE_USE_MOCK=true`) не требует `VITE_API_BASE_URL`;
   real-mode throws на первом hook call без base URL.
+- **Dashboard polish** (post-v1, `e679663`): animated action icons, chat
+  dock growth, tailwind v4 restored (preflight reset is load-bearing),
+  auth query boot moved inside `QueryClientProvider` (`f000001`).
 
 ### Хранилища
 
@@ -218,10 +245,12 @@ core slices plus 9 follow-on slices that landed as the v1 polish work.
 
 ### Tests
 
-- **Backend** — xUnit v2 + Shouldly + NSubstitute + Testcontainers +
-  Respawn + Bogus + coverlet, 70% line gate (см. `testing-stack-and-pyramid.md`).
+- **Backend** — xUnit v3 + MTP (не VSTest), 1192 tests pass +
+  5 pre-existing flakes (Scheduler InMemory, OIDC Keycloak Docker
+  timeout, StatusMachine PromoteTrustedIsNoOp, Runs
+  EscalationTimeoutSweeper seed bug, Verify.Unit 0 tests built).
   Includes integration for runs/intake/identity/oidc/costs/proxy/chat/errors/
-  realtime/artifacts/realtime/migrations/stores + arch tests
+  realtime/artifacts/migrations/stores + arch tests
   (`Comuki.Architecture.Tests`) + load (`tests/load/k6`).
 - **Frontend** — vitest 4.1.x + Testing Library + jsdom; 134 test files,
   1525 tests pass.
@@ -239,7 +268,7 @@ core slices plus 9 follow-on slices that landed as the v1 polish work.
    (жёсткий формат-гейт в графе билда).
 2. Все suite'ы зелёные (`dotnet run --project <test>` — MTP, не `dotnet test`).
 3. FE (когда тронут): `cd dashboard && bun run typecheck && bun run lint && bun run test`.
-   На `2026-09-04`: typecheck ok, lint ok, 1525/1525 tests pass.
+   На `2026-09-08`: typecheck ok, lint ok, 1525/1525 tests pass.
 4. Agents TS: `cd agents && bun install && bun run typecheck && bun test`.
 5. **OpenAPI emission gate** — `artifacts/openapi.json` должен появиться после
    build (Debug). kubb `predev` хук упадёт с подсказкой, если spec отсутствует
@@ -272,6 +301,8 @@ core slices plus 9 follow-on slices that landed as the v1 polish work.
 | Folder cap | max 3 .cs files per folder (#25) |
 | Proxy | YARP passthrough on Host:Proxy, virtual-key HMAC, optional (`Proxy:Enabled=false` → off, `T9.6`) |
 | Knowledge | pgvector в schema `knowledge`, MCP JSON-RPC 2.0 на host (`/api/v1/mcp`), `knowledge:write` permission для ingest (#9) |
+| TrustClass | enum (Supervised/Trusted/Autonomous) + `TrustClassRatchetSweeper` (passive timeout); future: confidence scoring (#49) |
+| Realtime contracts | C#→TS source-gen: `RealtimeContractAttribute` → `agents/Comuki.Shared.Contracts.Realtime` (Option A) |
 
 ## Осторожно (грабли, уже стреляли)
 
@@ -306,24 +337,24 @@ core slices plus 9 follow-on slices that landed as the v1 polish work.
   hand-parses discovery (`37c8bb1`).
 - **Artifacts e2e isolation** — `Pooling=false` + fresh scope per phase +
   per candidate (`8825387`). 2-container fixture dead weight after that
-  fix (`#43` follow-up).
+  fix (`#43` follow-up, closed).
 - **`RunArtifactPackagerHostService` lifetime** — Singleton → Scoped
   (`8825387`): per-cycle scope даёт свежий packager, иначе shared state
   гоняет races между phases.
 - **Test suite under xUnit v3** — `dotnet test` (VSTest) не видит
   discoveries, MTP через `dotnet run --project <test>` обязателен.
+- **Worktree cleanup (Windows)** — `git worktree remove` падает на
+  `Filename too long`. Workaround: `cmd /c "mklink /J C:\wt .agents\worktree"`
+  → удаление через `rmdir /S /Q C:\wt\<name>` + `git worktree prune`.
+- **PendingModelChangesWarning** — `dotnet ef migrations add` после смены
+  RunConfiguration (TrustClass, `3f769f5`); без миграции — все integration
+  тесты с `OrchestrationDbContext` падают с warning-as-error.
 
-## Дальше
+## Дальше (v2 backlog)
 
-Open issues = post-v1 scope; v1 ships.
+- #47 Generic-command runner-container (Process.Start isolation) — closed
+- #48 Fleet runner host-agent for bare-metal — closed
+- #49 Autonomy ratchet continuation (confidence scoring, daily decay) — closed
+- #50 Merge-queue multi-feature batch + dependency ordering — closed
 
-- #11 — Post-1.0 backlog (verify v1.1 · fleet · autonomy · merge-queue ·
-  domain-user · eval · Redis cache при multi-replica Host).
-  - **Autonomy ratchet — first sub-slice landed** on
-    `feature/autonomy` (`openspec/changes/autonomy-escalation-timeout/`):
-    passive `Escalated → Cancelled` timeout sweeper on the orchestration
-    engine, new `run.escalation_timeout` journal event, integrated test
-    in `Comuki.Host.Integration.Runs.EscalationTimeoutSweeperShould`.
-- #31–#42 — FE wire-up of identity admin + sources admin mutations
-  (dashboard pages есть, mutations mock-first).
-- #43 — Artifacts e2e test cleanup (drop dead `postgresSeed` container).
+Все 4 deferred. v1.1 / v2 scope TBD. Re-open when scope approved.

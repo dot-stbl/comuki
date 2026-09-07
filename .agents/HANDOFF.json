@@ -1,32 +1,60 @@
 {
-  "version": "1.0",
-  "timestamp": "2026-06-04T16:00:00Z",
-  "phase": 3,
-  "phase_name": "design system & testing infrastructure",
-  "phase_dir": "C:\\Users\\bradw\\source\\hybrid\\comuki.orchestrator\\.agents\\phases\\03-design-system",
+  "version": "2.0",
+  "timestamp": "2026-09-08T00:00:00Z",
+  "phase": 9,
+  "phase_name": "v1 milestone complete — 50/50 issues closed, master e679663",
+  "phase_dir": "C:\\Users\\bradw\\source\\hybrid\\comuki.orchestrator\\.agents\\phases\\09-mvp-polish",
   "plan": 0,
   "task": "—",
   "total_tasks": 0,
-  "status": "paused",
-  "completed_tasks": [],
-  "remaining_tasks": [
-    {"id": "3.1", "name": "Testing infrastructure (BE xUnit v3 + FE Vitest + Playwright config + CI test jobs)", "status": "not_started"},
-    {"id": "3.2", "name": "Design tokens (CSS vars + Tailwind v4 theme from docs/design-system/tokens.md)", "status": "blocked_on_human"},
-    {"id": "3.3", "name": "Design system stories + Comuki-specific components customization", "status": "blocked_on_human"}
+  "status": "complete",
+  "completed_tasks": [
+    {"id": "s0", "name": "S0 Skeleton platform/: shared · modules · engine · host", "issue": 1, "status": "shipped"},
+    {"id": "s1", "name": "S1 Runs · queue · journal", "issue": 2, "status": "shipped"},
+    {"id": "s2", "name": "S2 Compute: Docker provider + scale v0", "issue": 3, "status": "shipped"},
+    {"id": "s3", "name": "S3 Translator · worker image · gRPC (Slice 0 e2e)", "issue": 4, "status": "shipped"},
+    {"id": "s4", "name": "S4 Identity: users · API keys · RBAC · OIDC", "issue": 12, "status": "shipped"},
+    {"id": "s5", "name": "S5 Chat (Voluta в Host) + Host.Brain + approve + cancel", "issue": 5, "status": "shipped"},
+    {"id": "s6", "name": "S6 Intake: GH · GL · Yandex Tracker · Jira + sync-back + PR-review", "issue": 6, "status": "shipped"},
+    {"id": "s7", "name": "S7 FE ядро + SignalR realtime", "issue": 7, "status": "shipped"},
+    {"id": "s8-merged", "name": "S8 Compute k8s + quotas + observability (folded into Wave 6)", "issue": 13, "status": "shipped"},
+    {"id": "s9", "name": "S9 Cross-cutting kit + cost/budgets + optional proxy", "issue": 8, "status": "shipped"},
+    {"id": "s10", "name": "S10 Knowledge (opt-in): pgvector · MCP · docs worker", "issue": 9, "status": "shipped"},
+    {"id": "s11", "name": "S11 v1.0 polish: security · load · onboarding · docs sync", "issue": 10, "status": "shipped"},
+    {"id": "s12", "name": "S12 agents/ TS-пакеты: agent-core · worker-sdk · dev-sdk", "issue": 14, "status": "shipped"},
+    {"id": "s13", "name": "S13 control-plane дефолты: профили · каталог · chat-commands", "issue": 15, "status": "shipped"},
+    {"id": "s14", "name": "S14 CI: GitHub Actions", "issue": 16, "status": "shipped"},
+    {"id": "wave-6", "name": "Wave-6 polish: IExceptionHandler, schema-per-DbContext, folder cap, Dto suffix, costs permissions, dev-secret removal", "issue": "17-25", "status": "shipped"},
+    {"id": "artifacts", "name": "Artifacts: MinIO run-artifact bundle (brief/result/pins) + bucket auto-init", "issue": 28, "status": "shipped"},
+    {"id": "openapi-emit", "name": "OpenAPI: build-time emission + kubb alignment", "issue": 29, "status": "shipped"},
+    {"id": "pr-review", "name": "Inbound GH/GL pull-request admission + pr-review profile", "issue": 27, "status": "shipped"},
+    {"id": "fe-wire-runs", "name": "FE wire-up: kubb-client transport + runs queries + mappers", "issue": "slice-1", "status": "shipped"},
+    {"id": "fe-wire-identity", "name": "FE wire-up: login/me/oidc + kubb client + mappers", "issue": "slice-2", "status": "shipped"},
+    {"id": "fe-wire-projects", "name": "FE wire-up: projects queries/mutations wired", "issue": "slice-3", "status": "shipped"},
+    {"id": "fe-wire-inbox", "name": "FE wire-up: inbox queries/mutations wired", "issue": "slice-4", "status": "shipped"},
+    {"id": "fe-wire-oidc", "name": "FE wire-up: browser-driven OIDC start + callback", "issue": "slice-5", "status": "shipped"},
+    {"id": "admin-endpoints", "name": "Admin endpoints: 12 host endpoints (identity invite/grant/revoke/link/key + sources connect/update/probe/test)", "issue": "31-42", "status": "shipped"},
+    {"id": "post-1-backlog", "name": "Post-1.0 backlog #11: 13 sub-slices (merge-queue, eval, autonomy-ratchet slice 1, domain-user, redis, fleet, generic-cmd, csharp-ts-codegen)", "issue": 11, "status": "shipped"},
+    {"id": "artifacts-cleanup", "name": "Artifacts e2e test cleanup: drop dead postgresSeed container", "issue": 43, "status": "shipped"}
+  ],
+  "remaining_tasks": [],
+  "deferred_to_v2": [
+    {"id": "#47", "name": "Generic-command runner-container (Process.Start isolation)", "status": "deferred"},
+    {"id": "#48", "name": "Fleet runner host-agent for bare-metal", "status": "deferred"},
+    {"id": "#49", "name": "Autonomy ratchet continuation (confidence scoring)", "status": "deferred"},
+    {"id": "#50", "name": "Merge-queue multi-feature batch + dependency ordering", "status": "deferred"}
   ],
   "blockers": [],
-  "human_actions_pending": [
-    {"action": "Drop docs/design-system/{tokens,components,patterns,voice-and-copy}.md", "context": "User said: 'я сейчас доделываю файлы с документацией по дизайн системе, потом закину их в docs/design-system'. 3.2 + 3.3 cannot start until tokens.md lands (3.1 is independent).", "blocking": true},
-    {"action": "Clarify what 'порядок в структуре' means", "context": "User said: 'я хотел чтобы ты порядок навел в структуре а не удалял или менял что-то'. The phrase is ambiguous — could mean project layout, file naming, docs layout, or something else. Resume agent must ask before acting."}
-  ],
+  "human_actions_pending": [],
   "decisions": [
-    {"decision": "Re-scope Phase 3 from 'Slice 0 vertical slice' to 'Design System & Testing Infrastructure'", "rationale": "Design system + testing are load-bearing before any runtime — design system is the contract agents get told to follow (Phase 6+ anti-slop), testing infra is the quality gate. Pushing them in front of Slice 0 means every later phase ships against a real test suite and a real visual contract.", "phase": 3},
-    {"decision": "Push Slice 0 from Phase 3 to Phase 4; everything after also +1", "rationale": "Sequencing — infrastructure before runtime. New numbering: 1 Bootstrap, 2 Stack Foundation, 3 Design System & Tests, 4 Slice 0, 5 Slice 1 (Proxy), 6 Slice 2 (Knowledge), 7 Slice 3 (Verification), 8 Slice 4 (DAG & Dashboard), 9 MVP Polish.", "phase": 3},
-    {"decision": "Use Microsoft.Extensions.ApiDescription.Server for build-time OpenAPI codegen, output next to the .csproj as openapi-v1.json", "rationale": "User-suggested per Microsoft docs. .json extension issue: --file-name takes base name WITHOUT the .json suffix (regex [A-Za-z0-9_-]+ rejects dots). Live in source dir, gitignored, regenerated by every `dotnet build`. Single source of truth for FE + any future SDK.", "phase": 2},
-    {"decision": "Pin Microsoft.AspNetCore.OpenApi + Microsoft.Extensions.ApiDescription.Server to 10.0.0", "rationale": "9.x packages fail on net10.0 — the 9.x ApiDescription.Server ships GetDocument.Insider.dll only for net9.0; 9.x OpenApi causes GetDocumentCommandWorker..cctor to fail on assembly resolve under net10.0 runtime. Pinned to 10.0.0.", "phase": 2},
-    {"decision": "GitLab CI not GitHub Actions (.gitlab-ci.yml)", "rationale": "User said 'у нас gitlab'. Two parallel jobs (build-be, build-fe) sharing the dotnet/sdk:10.0 image with bun installed in before_script.", "phase": 2}
+    {"decision": "Close issue #11 with summary of 13 sub-slices landed; defer 4 sub-issues to v2 backlog", "rationale": "Most #11 sub-slices shipped in 2026-09-04 → 2026-09-07 sprint. Remaining 4 (#47–#50) are post-v1.1 scope — re-open when v2 approved.", "phase": 9},
+    {"decision": "Use Microsoft.Extensions.ApiDescription.Server for build-time OpenAPI codegen", "rationale": "Single source of truth for FE kubb client. artifacts/openapi.json gitignored, regenerated by every `dotnet build`.", "phase": 2},
+    {"decision": "xUnit v3 + MTP, not VSTest", "rationale": "xUnit v3 ships MTP-only; `dotnet test` (VSTest) misses discoveries. Use `dotnet run --project <test>` instead.", "phase": 3},
+    {"decision": "9 Postgres schemas (orchestration, identity, projects, memory, chat, intake, costs, artifacts, knowledge), per-DbContext", "rationale": "Clean separation per bounded context. Per-schema __ef_migrations_history; Migrator runs EnsureSchema + MigrateAsync per context.", "phase": 9},
+    {"decision": "YARP proxy on Host.Proxy, optional (Proxy:Enabled=false → off)", "rationale": "Workers shouldn't hold real model keys. Virtual-key HMAC with models/budget/expiry, metering → usage_events.", "phase": 5},
+    {"decision": "Kubb v4.39.2 with custom transport (kubb-client)", "rationale": "VITE_API_BASE_URL required for real-mode, throws loud if unset. Mock-first via VITE_USE_MOCK=true.", "phase": 8}
   ],
   "uncommitted_files": [],
-  "next_action": "After resume: ask user to clarify 'порядок в структуре' specifically — what concretely is out of order? Project layout, file naming, .agents/docs/ folder rename, something else? Then act ONLY on the clarified scope. Independently, wait for docs/design-system/*.md to land before starting 3.2 + 3.3. 3.1 (test infra) is independent and can start immediately.",
-  "context_notes": "73% context at pause time. 19 commits in main, all Conventional Commits format. Build clean: dotnet build comuki.slnx 0 errors/0 warnings, bun run build 0 errors. Two soly-added commits worth noting: 999c1da 'agent must run full verify before claiming done' and 866b9e4 'pre-commit dotnet format hook' — both are real rules the resuming agent should honour. Used the 'default' .continue-here.md path (not phases/03-design-system/) because phase detect script looks for PLAN.md which 03-design-system/ doesn't have yet (only CONTEXT.md)."
+  "next_action": "v1 ships. All 50 issues closed. When v2 approved, re-open #47-50 (deferred) + pull from ROADMAP.md v2 backlog section. Otherwise, idle — no work to dispatch.",
+  "context_notes": "Master tip: e679663 (2026-09-08). 1192 BE tests pass + 5 pre-existing flakes (Scheduler InMemory, OIDC Keycloak Docker, StatusMachine PromoteTrustedIsNoOp, Runs EscalationTimeoutSweeper, Verify.Unit 0 tests). 1525 FE tests pass. 63 dead worktree dirs cleaned up. 84 stale branches cleaned. Rule bootstrap in place: VerifyRuleAwareness + SelfAuditReport MSBuild targets + dashboard/scripts/rule-audit.ts."
 }

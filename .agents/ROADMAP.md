@@ -1,12 +1,12 @@
 # Roadmap
 
-> **Status (2026-09-04): v1 milestone is complete on master (`2bb2afd`).**
+> **Status (2026-09-08): v1 milestone is complete on master (`e679663`).**
 > 24 slices landed — 15 original v1 core (S0–S14) plus 9 follow-on slices
-> (5 FE wire-up slices, 2 polish waves, 1 admin endpoints, 1 docs sweep).
-> 28 of 41 GitHub issues are closed; the 13 open issues are post-v1
-> scope (`#11` post-1.0 backlog, `#31–#42` FE admin mutations wire-up,
-> `#43` artifacts e2e test cleanup). Live status lives in
-> [`.agents/STATE.md`](./STATE.md) and on
+> (5 FE wire-up slices, 2 polish waves, 1 admin endpoints, 1 docs sweep)
+> plus the `#11` Post-1.0 backlog slice (13 sub-slices shipped
+> 2026-09-04 → 2026-09-07). **50 of 50 GitHub issues closed** (0 open).
+> 4 deferred issues (#47, #48, #49, #50) closed with "v2 backlog" note.
+> Live status lives in [`.agents/STATE.md`](./STATE.md) and on
 > https://github.com/dot-stbl/comuki/issues.
 >
 > **Phase 3 was re-scoped** from the original Slice 0 vertical slice to
@@ -293,11 +293,49 @@ operations UI.
 
 ## Open slice work (post-v1 scope)
 
-| # | Title | What's left |
-|---|-------|-------------|
-| 11 | Post-1.0 backlog | verify v1.1 · fleet · autonomy · merge-queue · domain-user · eval · Redis cache при multi-replica Host. Autonomy ratchet first sub-slice (escalation-timeout sweeper) shipped on `feature/autonomy`; per-decision confidence + supervisor polling still open. |
-| 31–#42 | FE admin mutations wire-up | Backend endpoints live (12 endpoints landed). Dashboard mutations (identity invite/grant/revoke/link/key/disable + sources connect/update/probe/test-draft/test-connection) still mock-first; kubb clients land per-issue. |
-| 43 | Artifacts e2e test cleanup | Drop dead `postgresSeed` container from `ArtifactsEndToEndShould` (post-`8825387`). |
+**All closed (2026-09-07).** Post-1.0 backlog (issue #11) shipped
+13 sub-slices:
+
+| Sub-slice | SHA | Description |
+|---|---|---|
+| Merge-queue entity | `6072dd9` | MergeQueue aggregate + IMergeQueueStore + AddMergeQueueTable |
+| Eval-harness | `7989779` | EvalRunner + 7 golden tasks |
+| Autonomy ratchet (slice 1) | `6f2ddb8` + `3f769f5` | RunTrustClass enum + TrustClassRatchetSweeper |
+| Domain-user intake (slice 1) | `1ac0550` | DomainTypeAdmission EF + gate service |
+| Redis cache | `b29e688` → `5f62928` | Comuki.Shared.Redis + DistributedProjectSettingsCache |
+| Fleet runners (slice 1) | merged | IRunnerRegistry + EfRunnerRegistry + heartbeat reaper |
+| Generic-command verifier | `ec3ce24` → `493704c` | GenericCommandRun + IGenericCommandRunner + ProcessRunner |
+| C#→TS codegen (Option A) | `77561c9` → `0aeae3e` | RealtimeContractAttribute + RealtimeContractEmitter |
+
+FE admin mutations wire-up (#31–#42) — backend landed, dashboard
+mutations are mock-first (post-v1 follow-up, not blocking).
+
+Artifacts e2e test cleanup (#43) — closed (drop dead `postgresSeed`).
+
+**Deferred to v2 (closed 2026-09-08):**
+
+| Issue | Title |
+|---|---|
+| #47 | Generic-command runner-container (Process.Start isolation) |
+| #48 | Fleet runner host-agent for bare-metal |
+| #49 | Autonomy ratchet continuation (confidence scoring, daily decay) |
+| #50 | Merge-queue multi-feature batch + dependency ordering |
+
+Re-open when v2 scope approved.
+
+## v2 backlog (TBD scope)
+
+When v2 is opened, the deferred #47–#50 issues provide the seed backlog.
+Additional v2 candidates (not yet tracked as issues):
+
+- **Confidence scoring** for TrustClass ratchet (auto-promote / auto-demote)
+- **Fleet host-agent** for bare-metal deployment
+- **Generic-command container isolation** (Process.Start hardening)
+- **Merge-queue multi-feature batch** with dependency graph
+- **Onboarding doc refresh** (post-v1, since v1 is shipped)
+- **Visual regression baselines** (Phase 3.3 deviation, SB 10 only)
+- **Kubb Zod schemas** for FE request validation (replaces manual Zod)
+- **Ladle catalog parity** (v1 used Storybook, v2 may switch)
 
 ## Related
 

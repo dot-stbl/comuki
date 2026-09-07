@@ -57,12 +57,13 @@ operational details in the same place.
 
 ## Status
 
-v1 milestone is complete on `master` (`2bb2afd`) — 24 slices landed
+v1 milestone is complete on `master` (`e679663`) — 24 slices landed
 (15 original v1 core + 9 follow-on: 5 FE wire-up, 2 polish waves,
-1 admin endpoints, 1 docs sweep); 28 of 41 GitHub issues are
-closed; the 13 open issues are post-v1 scope (`#11` post-1.0
-backlog, `#31–#42` FE admin mutations wire-up, `#43` artifacts e2e
-test cleanup). Live status lives in [`.agents/STATE.md`](../STATE.md).
+1 admin endpoints, 1 docs sweep) plus the `#11` Post-1.0 backlog
+slice (13 sub-slices shipped 2026-09-04 → 2026-09-07). **50 of 50
+GitHub issues closed** (0 open) on 2026-09-08. 4 deferred issues
+(#47, #48, #49, #50) closed with "v2 backlog" note. Live status lives
+in [`.agents/STATE.md`](../STATE.md).
 
 See [`.agents/ROADMAP.md`](../ROADMAP.md) for the per-phase status
 table.

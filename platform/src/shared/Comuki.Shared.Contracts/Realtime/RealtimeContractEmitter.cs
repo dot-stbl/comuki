@@ -69,17 +69,30 @@ public static class RealtimeContractEmitter
 
         foreach (var contract in contracts)
         {
-            EmitInterface(builder, contract);
+            RealtimeContractEmitterHelpers.EmitInterface(builder, contract);
             builder.AppendLine();
         }
 
         return builder.ToString();
     }
+}
+
+/// <summary>
+/// Pure-function helpers for <see cref="RealtimeContractEmitter"/>. Lives in a
+/// <c>file static class</c> so the emitter's public API stays free of
+/// <c>private</c> methods (project rule <c>code-shape.md</c> §9). Each helper is
+/// independently testable and a future Roslyn source generator can call them
+/// directly without dragging in the rest of the emitter's surface.
+/// </summary>
+file static class RealtimeContractEmitterHelpers
+{
+    /// <summary>Shared, single-threaded nullability reader (NullabilityInfoContext is not thread-safe).</summary>
+    private static readonly NullabilityInfoContext nullability = new();
 
     /// <summary>Emits one <c>export interface</c> for a single contract type.</summary>
     /// <param name="builder">The string builder receiving the rendered module.</param>
     /// <param name="contract">The contract type. Must carry <see cref="RealtimeContractAttribute"/>.</param>
-    private static void EmitInterface(StringBuilder builder, Type contract)
+    public static void EmitInterface(StringBuilder builder, Type contract)
     {
         builder.Append("export interface ").Append(contract.Name).AppendLine(" {");
 
@@ -107,7 +120,7 @@ public static class RealtimeContractEmitter
     /// <summary>Maps a CLR property to its TypeScript wire-shape, including the null modifier when the property admits null.</summary>
     /// <param name="property">The property to map. Nullable reference annotations and <see cref="Nullable{T}"/> both flow through <see cref="IsPropertyNullable"/>.</param>
     /// <returns>The TypeScript primitive (or <c>"... | null"</c> for nullable shapes).</returns>
-    private static string MapType(PropertyInfo property)
+    public static string MapType(PropertyInfo property)
     {
         var type = property.PropertyType;
         var nullable = IsPropertyNullable(property);
@@ -126,7 +139,7 @@ public static class RealtimeContractEmitter
 
     /// <summary>True when the property admits null on the wire (nullable reference or <see cref="Nullable{T}"/>).</summary>
     /// <param name="property">The property to inspect.</param>
-    private static bool IsPropertyNullable(PropertyInfo property)
+    public static bool IsPropertyNullable(PropertyInfo property)
     {
         if (Nullable.GetUnderlyingType(property.PropertyType) is not null)
         {
@@ -143,18 +156,14 @@ public static class RealtimeContractEmitter
         // positional properties. Reflecting on those attributes by hand is
         // fragile across compiler versions; the public API does the right
         // thing and is the documented way to ask "is this property nullable?".
-        // Note: NullabilityInfoContext is not thread-safe — the emitter is
-        // called once per process so we keep a single instance on the
-        // emitter rather than re-allocating per property.
+        // Note: NullabilityInfoContext is not thread-safe — the helpers file
+        // owns the single instance so callers don't re-allocate per call.
         return nullability.Create(property).ReadState == NullabilityState.Nullable;
     }
 
-    /// <summary>Shared, single-threaded nullability reader (NullabilityInfoContext is not thread-safe).</summary>
-    private static readonly NullabilityInfoContext nullability = new();
-
     /// <summary>Converts a PascalCase CLR member name to camelCase for the TypeScript wire.</summary>
     /// <param name="name">The CLR member name (PascalCase).</param>
-    private static string ToCamelCase(string name)
+    public static string ToCamelCase(string name)
     {
         return string.IsNullOrEmpty(name) || char.IsLower(name[0])
             ? name

@@ -3,6 +3,8 @@ using Comuki.Engine.Orchestration.Infrastructure.Hosting;
 using Comuki.Engine.Orchestration.Infrastructure.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Leases;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
+using Comuki.Engine.Orchestration.Infrastructure.Persistence.Stores;
 using Comuki.Engine.Orchestration.Infrastructure.Queue;
 using Comuki.Engine.Orchestration.Options;
 using Comuki.Shared.Contracts.Journal;
@@ -59,6 +61,7 @@ public static class OrchestrationInfrastructureExtensions
 
         services.AddScoped<IWorkItemQueue, WorkItemQueueEf>();
         services.AddScoped<IRunJournal, RunJournalEf>();
+        services.AddScoped<IMergeQueueStore, MergeQueueStoreEf>();
         services.AddScoped<LeaseReaper>();
         services.AddHostedService<LeaseReaperWorker>();
         services.AddScoped<EscalationTimeoutSweeper>();

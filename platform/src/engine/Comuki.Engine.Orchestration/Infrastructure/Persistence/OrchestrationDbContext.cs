@@ -47,6 +47,14 @@ public sealed class OrchestrationDbContext(
     public DbSet<RunEvent> RunEvents => Set<RunEvent>();
 
     /// <summary>
+    /// Merge-queue entries (issue #11): coordination rows for branches
+    /// awaiting a coordinated merge. The scope query filter is wider
+    /// than runs — merge-queue rows whose <see cref="MergeQueueEntry.ProjectId"/>
+    /// is null (cross-project release trains) surface to every subject.
+    /// </summary>
+    public DbSet<MergeQueueEntry> MergeQueue => Set<MergeQueueEntry>();
+
+    /// <summary>
     /// Left disjunct of the scope filter: true when the current subject
     /// sees every project (a platform-scope role, a system consumer, or a
     /// directly-constructed system context).

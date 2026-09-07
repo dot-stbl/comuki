@@ -1,4 +1,4 @@
-namespace Comuki.Host.Realtime.Models;
+namespace Comuki.Shared.Contracts.Realtime;
 
 /// <summary>
 /// Attention signal broadcast to the <c>project:{id}:attention</c> group on

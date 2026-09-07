@@ -25,4 +25,7 @@ public static class OrchestrationDatabase
 
     /// <summary>Append-only run journal.</summary>
     public const string RunEvents = "run_events";
+
+    /// <summary>Merge-queue entries (issue #11).</summary>
+    public const string MergeQueue = "merge_queue";
 }

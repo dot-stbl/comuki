@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Comuki.Shared.Contracts.Journal;
+using Comuki.Shared.Contracts.Realtime;
 
 namespace Comuki.Host.Realtime.Models;
 

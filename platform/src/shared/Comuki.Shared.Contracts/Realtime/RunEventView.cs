@@ -1,4 +1,4 @@
-namespace Comuki.Host.Realtime.Models;
+namespace Comuki.Shared.Contracts.Realtime;
 
 /// <summary>
 /// Slim journal event broadcast to the <c>run:{id}</c> group after every

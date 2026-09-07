@@ -27,6 +27,8 @@ public sealed class ProjectBudgetSettingsAdapterShould
             proxyEnabled: false,
             softBudgetUsdMicros: 100,
             hardBudgetUsdMicros: 200,
+            domainType: ProjectDomainType.Standard,
+            customDomainTypesJson: null,
             now: DateTimeOffset.UtcNow);
         _ = settings.GetCached(projectId).Returns(row);
 
@@ -55,6 +57,8 @@ public sealed class ProjectBudgetSettingsAdapterShould
             proxyEnabled: false,
             softBudgetUsdMicros: 5,
             hardBudgetUsdMicros: null,
+            domainType: ProjectDomainType.Standard,
+            customDomainTypesJson: null,
             now: DateTimeOffset.UtcNow);
         _ = settings.GetCached(projectId).Returns((ProjectSettings?)null);
         _ = settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns(row);

@@ -2,6 +2,15 @@ import type { Role, SessionUser } from "@/shared/session"
 import type { LoginRequest } from "@/shared/api/_generated/types/LoginRequest"
 import type { LoginResponse } from "@/shared/api/_generated/types/LoginResponse"
 import type { MeResponse } from "@/shared/api/_generated/types/MeResponse"
+import type { ApiKeyView } from "@/shared/api/_generated/types/ApiKeyView"
+import type { RoleAssignmentView } from "@/shared/api/_generated/types/RoleAssignmentView"
+import type { UserAccountView } from "@/shared/api/_generated/types/UserAccountView"
+import type {
+  SeedApiKey,
+  SeedRoleAssignment,
+  SeedSubjectKind,
+  SeedUser,
+} from "@/shared/api/mock/identity.seed"
 
 /**
  * kubb wire → domain mappers for the auth surface.
@@ -109,9 +118,133 @@ export function mapMeResponseToSessionUser(me: MeResponse): SessionUser {
  */
 export function mapOidcStartToAuthorizationUrl(start: unknown): string {
   if (typeof start === "string") {
-    return start
+    return start;
   }
   throw new Error(
     "OIDC start did not return a string URL — kubb follows 302 redirects and the response body is the IdP's page. Use window.location.href against /api/v1/auth/oidc/{provider}/start directly.",
-  )
+  );
 }
+
+// ---------------------------------------------------------------------------
+// Identity-admin lists (issue #45 / F13).
+//
+// The kubb-generated wire shapes (`UserAccountView`, `RoleAssignmentView`,
+// `ApiKeyView`) deliberately differ from the seed types the
+// `buildIdentitySnapshot` helper consumes — the wire is narrower (no
+// OIDC subject, no `lastSeenAt`, no `invited` user state) because the
+// host has not grown the columns yet. The mappers below carry the same
+// gap fill the runs / projects mappers use on their wire shapes: tolerate
+// the missing fields, fall back to the honest default (`null`, "active",
+// missing date), and document what the wire has dropped.
+//
+// The seed-shaped output here (`SeedUser` / `SeedRoleAssignment` /
+// `SeedApiKey`) is deliberate: the existing `buildIdentitySnapshot` is
+// the one place that knows how to join users ↔ grants ↔ keys; rather than
+// refactor it, the wire rows adopt the seed shapes and the screen
+// receives the same `IdentitySnapshot` it always did.
+// ---------------------------------------------------------------------------
+
+/**
+ * Wire `UserAccountView` → seed-shaped `SeedUser`.
+ *
+ * The kubb view carries email, displayName, disabled flag, tokens version
+ * and createdAt only. The dashboard's account row also wants:
+ *
+ * - `oidcSubject`: not on the wire yet (a future OIDC-list endpoint or a
+ *   column on `UserAccountView` would close the gap); `null` is the
+ *   honest answer until then.
+ * - `lastSeenAt`: not on the wire — the host has no last-seen column on
+ *   the `users` table. `null` until a `last_seen_at` migration ships.
+ * - `status`: only `disabled` is on the wire. The dashboard renders
+ *   "active" for everything that is not disabled, "disabled" for
+ *   everything that is. The "invited" state carried by the mock store is
+ *   not in the host's user row yet — when invited accounts land in the
+ *   schema this mapper is the one place to flip them.
+ * - `name`: the wire calls it `displayName`; the seed-row column is `name`.
+ *   The same field carries the same value; the rename is a wire-vs-screen
+ *   vocabulary choice the dashboard pays no mind to.
+ */
+export function mapUserAccountViewToSeed(view: UserAccountView): SeedUser {
+  return {
+    // The kubb wire models `UserId` / `RoleAssignmentId` as
+    // `{ value?: string }` — the dashboard's seed-shape id is a flat
+    // string. Unwrap before crossing the boundary so the snapshot join
+    // (which uses the row id as the Map key) survives.
+    id: view.id.value ?? "",
+    name: view.displayName,
+    email: view.email,
+    oidcSubject: null,
+    status: view.disabled ? "disabled" : "active",
+    lastSeenAt: null,
+    createdAt: view.createdAt,
+  };
+}
+
+/** Wire users page → list of seed-shaped users. */
+export function mapIdentityUsersPageToSeedUsers(
+  page: { items: UserAccountView[] },
+): SeedUser[] {
+  return page.items.map(mapUserAccountViewToSeed);
+}
+
+/**
+ * Wire `RoleAssignmentView` → seed-shaped `SeedRoleAssignment`.
+ *
+ * The kubb view carries `subjectType` as a wire string ("user" /
+ * "api-key") and `subjectId` as a string id; the row matches the seed's
+ * `subjectKind` + `subjectId`. Roles come back as a kebab-case string the
+ * session module already enumerates (`Role`); the mapper types through.
+ */
+export function mapRoleAssignmentViewToSeed(view: RoleAssignmentView): SeedRoleAssignment {
+  return {
+    // `RoleAssignmentId` is `{ value?: string }` on the wire — the seed
+    // join keys by id as a flat string, so unwrap here.
+    id: view.id.value ?? "",
+    subjectKind: view.subjectType as SeedSubjectKind,
+    subjectId: view.subjectId,
+    role: view.role as Role,
+    projectId: view.scopeProjectId,
+    grantedAt: view.createdAt,
+  };
+}
+
+/** Wire grants page → list of seed-shaped role assignments. */
+export function mapGrantsPageToSeedGrants(
+  page: { items: RoleAssignmentView[] },
+): SeedRoleAssignment[] {
+  return page.items.map(mapRoleAssignmentViewToSeed);
+}
+
+/**
+ * Wire `ApiKeyView` → seed-shaped `SeedApiKey`.
+ *
+ * The wire carries the public projection only — no `KeyHmac`, no
+ * plaintext, no `tenantProjectId`. The seed-shape drops `KeyHmac` and
+ * tenant; `expiresAt` is not on the wire yet (the host has no expiry
+ * column), so it lands as `null` until a future wire shape adds it.
+ */
+export function mapApiKeyViewToSeed(view: ApiKeyView): SeedApiKey {
+  return {
+    id: view.id,
+    name: view.name,
+    prefix: view.prefix,
+    status: view.isActive ? "active" : "revoked",
+    createdAt: view.createdAt,
+    lastUsedAt: view.lastUsedAt,
+    expiresAt: null,
+  };
+}
+
+/** Wire keys page → list of seed-shaped api keys. */
+export function mapApiKeysPageToSeedKeys(page: { items: ApiKeyView[] }): SeedApiKey[] {
+  return page.items.map(mapApiKeyViewToSeed);
+}
+
+// Legacy names retained for callers that already imported them before the
+// identity-list wiring (issue #45) landed — they simply call the seed
+// mapper now, so the callsite signature stays.
+export const mapApiKeyViewToKeyView = mapApiKeyViewToSeed;
+export const mapIdentityAdminKeysToKeyView = mapApiKeysPageToSeedKeys;
+export const mapIdentityUsersPageToUserRows = mapIdentityUsersPageToSeedUsers;
+export const mapGrantsPageToGrantRows = mapGrantsPageToSeedGrants;
+export const mapApiKeysPageToApiKeyRows = mapApiKeysPageToSeedKeys;

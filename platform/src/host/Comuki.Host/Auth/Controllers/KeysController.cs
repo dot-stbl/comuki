@@ -1,6 +1,7 @@
 using Comuki.Host.Auth.Models;
 using Comuki.Modules.Identity.Application.ApiKeys;
 using Comuki.Modules.Identity.Application.ApiKeys.Issue;
+using Comuki.Modules.Identity.Application.ApiKeys.List;
 using Comuki.Modules.Identity.Application.ApiKeys.Revoke;
 using Comuki.Modules.Identity.Application.Permissions;
 using Comuki.Modules.Identity.Domain.Ids;
@@ -10,16 +11,19 @@ using Microsoft.AspNetCore.Mvc;
 namespace Comuki.Host.Auth.Controllers;
 
 /// <summary>
-/// API-key surface (issues #33, #37): issue a new API key for a user
-/// (plaintext shown once) and revoke an active key. Each mutation
-/// demands <c>identity:write</c>. Validators are per-action via
-/// <c>[FromServices]</c>.
+/// API-key surface (issues #33, #37, #45): issue a new API key for a user
+/// (plaintext shown once), revoke an active key, and list keys paged.
+/// Mutations demand <c>identity:write</c>; the new read endpoint
+/// demands <c>identity:read</c>. The plaintext token never rides along on
+/// read or list — only on the issue response. Validators are per-action
+/// via <c>[FromServices]</c>.
 /// </summary>
 [ApiController]
 [Route("api/v1/keys")]
 public sealed class KeysController(
     IssueApiKeyHandler issueApiKey,
     RevokeApiKeyHandler revokeApiKey,
+    ListApiKeysHandler listApiKeys,
     ILogger<KeysController> logger) : ControllerBase
 {
     /// <summary>Issues an API key (issue #33). Permission <c>identity:write</c>.</summary>
@@ -71,6 +75,37 @@ public sealed class KeysController(
         logger.LogInformation("API key {KeyId} revoked", keyId);
 
         return Ok(view);
+    }
+
+    /// <summary>
+    /// Lists API keys (issue #45 / F13 — read side of the identity admin).
+    /// Permission <c>identity:read</c>; returns a paged
+    /// <c>{ items, total }</c> envelope of <see cref="ApiKeyView"/>. The
+    /// plaintext token never appears in the response — only public-facing
+    /// fields (prefix, name, status, timestamps). Optional <c>userId</c>
+    /// narrows to a single user.
+    /// </summary>
+    [HttpGet]
+    [RequiresPermission("identity:read")]
+    [ProducesResponseType<IdentityAdminKeysPage>(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IdentityAdminKeysPage>> ListAsync(
+        [FromQuery] ListApiKeysQueryRequest query,
+        [FromServices] IValidator<ListApiKeysQueryRequest> listApiKeysValidator,
+        CancellationToken cancellationToken = default)
+    {
+        if (await ValidateAsync(listApiKeysValidator, query, cancellationToken) is { } problem)
+        {
+            return problem;
+        }
+
+        UserId? userId = query.UserId is { } id ? new UserId(id) : null;
+
+        var (items, total) = await listApiKeys.HandleAsync(
+            new ListApiKeysQuery(userId, query.Page, query.PageSize),
+            cancellationToken);
+
+        return Ok(new IdentityAdminKeysPage(items, total));
     }
 
     private static async Task<ActionResult?> ValidateAsync<T>(IValidator<T> validator, T instance, CancellationToken cancellationToken)

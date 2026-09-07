@@ -21,6 +21,10 @@ export type ApiKeyView = {
    */
   prefix: string
   /**
+   * @type null,string, uuid
+   */
+  tenantProjectId: string | null
+  /**
    * @type string, date-time
    */
   createdAt: string

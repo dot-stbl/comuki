@@ -83,6 +83,7 @@
     <Project Path="tests/unit/Comuki.Modules.Proxy.DomainLayerTests/Comuki.Modules.Proxy.DomainLayerTests.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Filtering.Unit/Comuki.Shared.Filtering.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Telemetry.Unit/Comuki.Shared.Telemetry.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Shared.Contracts.Unit.Realtime/Comuki.Shared.Contracts.Unit.Realtime.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/Comuki.Engine.Orchestration.Integration.Migrations/Comuki.Engine.Orchestration.Integration.Migrations.csproj" />

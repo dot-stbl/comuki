@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Host.Realtime;
 using Comuki.Host.Realtime.Models;
+using Comuki.Shared.Contracts.Realtime;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;

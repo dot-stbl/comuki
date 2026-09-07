@@ -1,7 +1,9 @@
 using Comuki.Modules.Identity.Application.ApiKeys;
 using Comuki.Modules.Identity.Application.ApiKeys.Issue;
+using Comuki.Modules.Identity.Application.ApiKeys.List;
 using Comuki.Modules.Identity.Application.ApiKeys.Revoke;
 using Comuki.Modules.Identity.Application.Assignments.Grant;
+using Comuki.Modules.Identity.Application.Assignments.List;
 using Comuki.Modules.Identity.Application.Assignments.Revoke;
 using Comuki.Modules.Identity.Application.Authorization;
 using Comuki.Modules.Identity.Application.Oidc;
@@ -46,10 +48,13 @@ public static class IdentityApplicationExtensions
 
         services.AddScoped<CreateUserHandler>();
         services.AddScoped<InviteUserHandler>();
+        services.AddScoped<ListUsersHandler>();
         services.AddScoped<LoginHandler>();
         services.AddScoped<GrantRoleHandler>();
+        services.AddScoped<ListGrantsHandler>();
         services.AddScoped<RevokeRoleHandler>();
         services.AddScoped<IssueApiKeyHandler>();
+        services.AddScoped<ListApiKeysHandler>();
         services.AddScoped<RevokeApiKeyHandler>();
         services.AddScoped<LinkOidcSubjectHandler>();
         services.AddScoped<SetUserDisabledHandler>();

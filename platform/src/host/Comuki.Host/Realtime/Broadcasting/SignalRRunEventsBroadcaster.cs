@@ -1,6 +1,7 @@
 using Comuki.Host.Realtime.Models;
 using Comuki.Host.Realtime.Reading;
 using Comuki.Shared.Contracts.Journal;
+using Comuki.Shared.Contracts.Realtime;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.SignalR;
 
@@ -23,12 +24,6 @@ public sealed class SignalRRunEventsBroadcaster(
     IServiceScopeFactory scopeFactory,
     ILogger<SignalRRunEventsBroadcaster> logger) : IRunEventsBroadcaster
 {
-    /// <summary>Client callback name of the run timeline stream.</summary>
-    public const string RunEventMethod = "RunEvent";
-
-    /// <summary>Client callback name of the project attention stream.</summary>
-    public const string AttentionMethod = "Attention";
-
     /// <inheritdoc />
     public async Task BroadcastAsync(IReadOnlyList<RunEventEntry> entries, CancellationToken cancellationToken = default)
     {
@@ -36,7 +31,7 @@ public sealed class SignalRRunEventsBroadcaster(
         {
             await hubContext.Clients
                 .Group(RealtimeGroups.RunGroup(entry.RunId))
-                .SendAsync(RunEventMethod, RunEventViewMapping.ToView(entry), cancellationToken);
+                .SendAsync(RealtimeTransportMethods.RunEvent, RunEventViewMapping.ToView(entry), cancellationToken);
         }
 
         await SignalRRunEventsAttention.SendAsync(hubContext, scopeFactory, logger, entries, cancellationToken);
@@ -90,7 +85,7 @@ file static class SignalRRunEventsAttention
             await hubContext.Clients
                 .Group(RealtimeGroups.ProjectAttentionGroup(project))
                 .SendAsync(
-                    SignalRRunEventsBroadcaster.AttentionMethod,
+                    RealtimeTransportMethods.Attention,
                     new AttentionView(
                         entry.RunId.Value,
                         project.Value,

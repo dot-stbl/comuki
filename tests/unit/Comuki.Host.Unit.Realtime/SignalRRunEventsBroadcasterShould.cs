@@ -3,6 +3,7 @@ using Comuki.Host.Realtime.Broadcasting;
 using Comuki.Host.Realtime.Models;
 using Comuki.Host.Realtime.Reading;
 using Comuki.Shared.Contracts.Journal;
+using Comuki.Shared.Contracts.Realtime;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,7 +40,7 @@ public sealed class SignalRRunEventsBroadcasterShould
         await broadcaster.BroadcastAsync([entry], TestContext.Current.CancellationToken);
 
         await groupClient.Received(1).SendCoreAsync(
-            SignalRRunEventsBroadcaster.RunEventMethod,
+            RealtimeTransportMethods.RunEvent,
             Arg.Is<object?[]>(static args => IsRunEventView(args)),
             Arg.Any<CancellationToken>());
         _ = clients.DidNotReceive().Group(Arg.Is<string>(static name => name.Contains(":attention", StringComparison.Ordinal)));
@@ -80,7 +81,7 @@ public sealed class SignalRRunEventsBroadcasterShould
         await broadcaster.BroadcastAsync([entry], TestContext.Current.CancellationToken);
 
         await attentionClient.Received(1).SendCoreAsync(
-            SignalRRunEventsBroadcaster.AttentionMethod,
+            RealtimeTransportMethods.Attention,
             Arg.Is<object?[]>(args => IsFailedAttention(args, runId, projectId, itemId)),
             Arg.Any<CancellationToken>());
     }
@@ -118,7 +119,7 @@ public sealed class SignalRRunEventsBroadcasterShould
         await broadcaster.BroadcastAsync([entry], TestContext.Current.CancellationToken);
 
         await runGroupClient.Received(1).SendCoreAsync(
-            SignalRRunEventsBroadcaster.RunEventMethod,
+            RealtimeTransportMethods.RunEvent,
             Arg.Any<object?[]>(),
             Arg.Any<CancellationToken>());
         _ = clients.DidNotReceive().Group(Arg.Is<string>(static name => name.Contains(":attention", StringComparison.Ordinal)));

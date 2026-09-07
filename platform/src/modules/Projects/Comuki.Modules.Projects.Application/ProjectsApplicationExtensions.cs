@@ -1,3 +1,4 @@
+using Comuki.Modules.Projects.Application.Admission;
 using Comuki.Modules.Projects.Application.DomainTypes;
 using Comuki.Modules.Projects.Application.Projects.Archive;
 using Comuki.Modules.Projects.Application.Projects.Create;
@@ -37,6 +38,10 @@ public static class ProjectsApplicationExtensions
         services.AddScoped<ListProjectsHandler>();
         services.AddScoped<UpdateSettingsHandler>();
         services.AddScoped<GetProjectSettingsHandler>();
+
+        // Scoped: it reads the scoped admission store (one EF context per
+        // unit of work) on top of the singleton settings store + resolver.
+        services.AddScoped<DomainTypeAdmissionService>();
 
         services.AddScoped<IValidator<CreateProjectCommand>, CreateProjectValidator>();
         services.AddScoped<IValidator<UpdateProjectCommand>, UpdateProjectValidator>();

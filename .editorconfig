@@ -295,6 +295,9 @@ dotnet_diagnostic.CA2008.severity = warning    # do not create tasks without Tas
 # are scoped to this block only.
 #---------------------------------------------------------------------
 [**/Migrations/*.cs]
+dotnet_diagnostic.IDE0001.severity = none     # simplify-name on cref paths is what dotnet-ef emits
+dotnet_diagnostic.IDE0005.severity = none     # using-removal on cref-only usings is what dotnet-ef emits
+dotnet_diagnostic.RemoveUnnecessaryImportsFixable.severity = none   # auto-fix companion to IDE0005
 dotnet_diagnostic.IDE0161.severity = none    # block namespace is what dotnet-ef emits
 dotnet_diagnostic.MA0048.severity = none     # timestamped file names are the EF convention
 dotnet_diagnostic.MA0051.severity = none     # Up()/Down() length is schema-driven

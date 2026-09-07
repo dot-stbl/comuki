@@ -205,3 +205,61 @@ schema in the existing EnsureSchema → MigrateAsync loop.
 - **WHEN** the migrator runs
 - **THEN** schema `scheduled_jobs` and tables `jobs` / `firings` exist
   without colliding with other module histories
+
+### Requirement: Scheduler fire emits a journal event
+
+After every successful fire the dispatcher SHALL notify every registered
+`ISchedulerObserver`. The default journal observer appends one
+`scheduler.job_fired` entry to the orchestration `run_events` journal
+on the fired run, payload `{ jobId, projectId, profileKey, firedAt }`.
+Journal appends are best-effort: a journal failure logs and does not
+abort the fire path or the rest of the observer chain.
+
+#### Scenario: Successful fire journals scheduler.job_fired
+
+- **WHEN** a due job with profile `ops-sentry` fires and the journal is
+  reachable
+- **THEN** the run journal contains one `scheduler.job_fired` entry
+  whose payload carries the fired job id, project id, profile key and
+  fire timestamp, and the fire path continues
+
+#### Scenario: Journal failure does not abort the fire
+
+- **WHEN** the journal observer throws while appending
+- **THEN** the dispatcher logs a warning and the remaining observers
+  still run; the fire trail on the job and the launched run are
+  unaffected
+
+### Requirement: Scheduler fire forwards to Sentry when DSN configured
+
+When `Scheduler:Sentry:Dsn` is non-empty the host SHALL initialise the
+Sentry SDK once at startup (`SentrySdk.Init`) and the Sentry scheduler
+observer SHALL call `SentrySdk.CaptureEvent` for every successful fire.
+Events are informational (`SentryLevel.Info`), tagged with
+`scheduler.job_id`, `scheduler.project_id` and
+`scheduler.profile_key`, with `scheduler.run_id` and
+`scheduler.fired_at` as extras. When the DSN is null or whitespace the
+observer is a no-op and the SDK never enters the process — the dispatcher
+fires the journal observer alone. Sentry transport failures never abort
+the fire path.
+
+#### Scenario: DSN set — fire sends a Sentry event
+
+- **WHEN** `Scheduler:Sentry:Dsn` is set to a non-empty value and a job
+  fires
+- **THEN** the SDK is initialised once at boot, and the Sentry observer
+  captures one `Info` event per fire with the documented tags and
+  extras
+
+#### Scenario: DSN unset — fire skips Sentry entirely
+
+- **WHEN** `Scheduler:Sentry:Dsn` is null or whitespace
+- **THEN** no `SentrySdk.Init` call is made, the Sentry observer does
+  not call `SentrySdk.CaptureEvent`, and no Sentry transport enters
+  the process; the journal observer still fires
+
+#### Scenario: Sentry transport failure does not abort the fire
+
+- **WHEN** `SentrySdk.CaptureEvent` throws (DNS failure, 4xx, etc.)
+- **THEN** the dispatcher logs a warning, the run + fire trail are
+  unaffected, and the rest of the observer chain continues

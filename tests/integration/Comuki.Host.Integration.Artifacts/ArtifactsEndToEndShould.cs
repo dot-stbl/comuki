@@ -113,8 +113,10 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         builder.Configuration["Artifacts:UseSSL"] = "false";
         builder.Configuration["Artifacts:AutoCreateBucket"] = "true";
 
-        // Program wires orchestration persistence before Compose.
-        builder.Services.AddOrchestrationPersistence(hostConnectionString);
+        // Program wires orchestration persistence + queue before Compose.
+        builder.Services
+            .AddOrchestrationPersistence(hostConnectionString)
+            .AddOrchestrationQueue(builder.Configuration);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(hostConnectionString));
         await application.StartAsync(cancellationToken);

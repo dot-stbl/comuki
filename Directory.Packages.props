@@ -125,6 +125,12 @@
   <ItemGroup>
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
+    <!-- Sentry (S15 / sentry): scheduler fire side-channel. The SDK is
+         referenced from the Scheduler.Infrastructure observer only —
+         the SDK is a private transport detail of that observer, the
+         rest of the host does not know it exists. 6.10.0 is the latest
+         stable that targets net10.0 without bringing an extra TFM. -->
+    <PackageVersion Include="Sentry" Version="6.10.0" />
   </ItemGroup>
 
   <!-- Analyzers: IDE code-style + CA Security only (see .editorconfig);

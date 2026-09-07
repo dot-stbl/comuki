@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using DotNet.Testcontainers.Builders;
@@ -167,6 +168,14 @@ public sealed class HostOidcServer : IAsyncLifetime
         builder.Services.AddSingleton<
             Microsoft.Extensions.Options.IPostConfigureOptions<Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectOptions>,
             NoPushedAuthorizationPostConfigure>();
+
+        // The scheduler dispatcher is registered as a hosted service by
+        // HostComposer.Compose and resolves the journal observer on start.
+        // The OIDC suite does not exercise scheduling — wire the queue
+        // stub so the journal observer resolves cleanly.
+        _ = builder.Services
+            .AddOrchestrationPersistence(connectionString)
+            .AddOrchestrationQueue(builder.Configuration);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
         await application.StartAsync(cancellationToken);

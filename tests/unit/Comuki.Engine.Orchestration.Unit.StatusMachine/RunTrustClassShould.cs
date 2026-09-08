@@ -55,12 +55,15 @@ public sealed class RunTrustClassShould
     {
         var createdAt = DateTimeOffset.UtcNow;
         var run = Run.Create(ProjectId.New(), createdAt);
-        var promotedAt = createdAt.AddSeconds(1);
-        run.PromoteTo(promotedAt);
-        run.PromoteTo(promotedAt.AddSeconds(1));
+        var pilotAt = createdAt.AddSeconds(1);
+        run.PromoteTo(pilotAt);
+        var trustedAt = createdAt.AddSeconds(2);
+        run.PromoteTo(trustedAt);
+
+        run.PromoteTo(trustedAt.AddSeconds(1));
 
         run.TrustClass.ShouldBe(RunTrustClass.Trusted);
-        run.UpdatedAt.ShouldBe(promotedAt);
+        run.UpdatedAt.ShouldBe(trustedAt);
     }
 
     [Theory(DisplayName = "Given a non-supervised run, when DemoteTo is called, then it returns to Supervised and updates updated_at")]

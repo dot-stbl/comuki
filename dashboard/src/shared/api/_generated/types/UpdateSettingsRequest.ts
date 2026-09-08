@@ -3,6 +3,8 @@
  * Do not edit manually.
  */
 
+import type { ProjectDomainType } from "./ProjectDomainType"
+
 export type UpdateSettingsRequest = {
   /**
    * @type integer,string, int32
@@ -44,4 +46,9 @@ export type UpdateSettingsRequest = {
    * @type null,integer,string, int64
    */
   hardBudgetUsdMicros: (number | string) | null
+  domainType: ProjectDomainType
+  /**
+   * @type null,string
+   */
+  customDomainTypesJson: string | null
 }

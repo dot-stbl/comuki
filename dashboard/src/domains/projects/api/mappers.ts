@@ -169,6 +169,12 @@ export function mapProjectSettingsToUpdateRequest(
     proxyEnabled: settings.proxyEnabled,
     softBudgetUsdMicros: settings.softBudgetUsdMicros,
     hardBudgetUsdMicros: settings.hardBudgetUsdMicros,
+    // Domain type admission landed in the BE (ProjectDomainType + Custom JSON
+    // map) but the FE settings panel does not yet expose it as a control.
+    // Pass the platform default — the panel keeps working until the BE
+    // surfaces a domain-type control and we wire it through here.
+    domainType: "Standard",
+    customDomainTypesJson: null,
   }
 }
 

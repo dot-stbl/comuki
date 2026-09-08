@@ -9,7 +9,9 @@
     "verifyEnabled",
     "proxyEnabled",
     "softBudgetUsdMicros",
-    "hardBudgetUsdMicros"
+    "hardBudgetUsdMicros",
+    "domainType",
+    "customDomainTypesJson"
   ],
   "type": "object",
   "properties": {
@@ -46,7 +48,12 @@
       "pattern": "^-?(?:0|[1-9]\\d*)$",
       "type": ["null", "integer", "string"],
       "format": "int64"
-    }
+    },
+    "domainType": {
+      "enum": ["Standard", "Custom", "Hybrid"],
+      "x-readme-ref-name": "ProjectDomainType"
+    },
+    "customDomainTypesJson": { "type": ["null", "string"] }
   },
   "x-readme-ref-name": "UpdateSettingsRequest"
 }

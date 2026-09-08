@@ -22,6 +22,9 @@ public static class ApiRoutes
     /// <summary>Run listing surface (filter/sort DSL, permission run:read).</summary>
     public const string Runs = "/api/v1/runs";
 
+    /// <summary>One run by id — full detail (plan, brief, events, revision). Permission run:read.</summary>
+    public const string RunById = "/api/v1/runs/{runId:guid}";
+
     /// <summary>One run by id — operator approval (release the escalation gate).</summary>
     public const string RunApprove = "/api/v1/runs/{runId:guid}/approve";
 

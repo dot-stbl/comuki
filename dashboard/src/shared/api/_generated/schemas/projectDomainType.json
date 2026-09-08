@@ -1,0 +1,4 @@
+{
+  "enum": ["Standard", "Custom", "Hybrid"],
+  "x-readme-ref-name": "ProjectDomainType"
+}

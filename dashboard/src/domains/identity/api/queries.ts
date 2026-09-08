@@ -413,6 +413,7 @@ export function useCreateApiKeyMutation() {
         userId: me.userId ?? me.subjectId,
         label: input.name,
         expiresAt: input.expiresAt,
+        tenantProjectId: input.tenantProjectId,
       })
       return { prefix: created.prefix, plaintext: created.secret }
     },

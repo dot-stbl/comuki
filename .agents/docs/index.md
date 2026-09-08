@@ -22,6 +22,7 @@ operational details in the same place.
 | [backup.md](./operations/backup.md)          | Per-store backup + restore procedure — `pg_dump` per schema, `mc mirror` for MinIO, retention policy. |
 | [storage.md](./operations/storage.md)        | Postgres + MinIO + Victoria retention; per-store policies. |
 | [oauth-oidc.md](./operations/oauth-oidc.md)  | Wiring an OIDC provider; browser-driven start flow; `OidcAccountLinker`. |
+| [security.md](./operations/security.md)      | Operational security posture — token storage, cookie attributes, rate limits, CSRF / XSS / open-redirect defences, audit log scope. |
 | [minio.md](./operations/minio.md)            | Run-artifact bucket topology, lifecycle policy, compose `minio-init`, host config. |
 | [openapi-codegen.md](./operations/openapi-codegen.md) | BE emits `artifacts/openapi.json`; FE regenerates via kubb. Fail-fast guard. |
 | [scheduler.md](./operations/scheduler.md)     | Scheduled-job dispatcher (S15 / #44): cron → ephemeral worker + sentry observability. |

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
 
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
+import { useIdentityQuery } from "@/domains/identity/api/queries"
 import type { CreateApiKeyInput } from "@/domains/identity/model/types"
 import { useCan } from "@/shared/session"
 import { Button, Notice, SelectField, TextField } from "@/shared/ui"
@@ -30,7 +31,8 @@ export interface CreateKeyFormProps {
 }
 
 /**
- * Making a key: a name, a lifetime, and the warning that comes before both.
+ * Making a key: a name, an optional lifetime, an optional tenant scope,
+ * and the warning that comes before all three.
  *
  * The rule this form is built around: **the plaintext is shown exactly once,
  * and the screen says so before it is generated, not after.** A person who did
@@ -38,6 +40,11 @@ export interface CreateKeyFormProps {
  * because the store keeps only the prefix — so the warning is above the button
  * that creates the key rather than beside the value that has already appeared.
  * A rule explained after the fact is not an explanation; it is an apology.
+ *
+ * The tenant scope (Q11 / v1.1) lets the operator mint a key that only
+ * authenticates requests carrying the matching <c>X-Comuki-Tenant</c>
+ * header. The picker is empty by default; a non-empty choice is a key
+ * scoped to one project, the wire shape that the BE accepts today.
  *
  * The showing itself is not here and is not on this page's URL. See
  * `key-secret-dialog.tsx` for why.
@@ -49,11 +56,22 @@ export function CreateKeyForm({
   onDirtyChange,
 }: CreateKeyFormProps) {
   const manage = useCan("identity.manage")
+  const identity = useIdentityQuery()
 
   const [name, setName] = useState("")
   const [lifetime, setLifetime] = useState("0")
+  const [tenantProjectId, setTenantProjectId] = useState<string>("")
 
-  const dirty = name !== "" || lifetime !== "0"
+  const projectOptions = (identity.data?.projects ?? []).map((project) => ({
+    value: project.id,
+    label: `${project.name} (${project.slug})`,
+  }))
+
+  const tenantProjectSelected =
+    tenantProjectId.length > 0 &&
+    projectOptions.some((option) => option.value === tenantProjectId)
+
+  const dirty = name !== "" || lifetime !== "0" || tenantProjectSelected
 
   useEffect(() => {
     onDirtyChange?.(dirty)
@@ -64,7 +82,11 @@ export function CreateKeyForm({
     if (manage.denial || busy || !name.trim()) {
       return
     }
-    onCreate({ name: name.trim(), expiresAt: expiryDay(lifetime) })
+    onCreate({
+      name: name.trim(),
+      expiresAt: expiryDay(lifetime),
+      tenantProjectId: tenantProjectSelected ? tenantProjectId : null,
+    })
   }
 
   return (
@@ -98,6 +120,16 @@ export function CreateKeyForm({
           options={LIFETIMES}
           hint="A key with no expiry is a key nobody will notice is still working."
           onValueChange={setLifetime}
+        />
+
+        <SelectField
+          id="key-tenant"
+          label="tenant project"
+          value={tenantProjectId}
+          disabled={busy}
+          options={[{ value: "", label: "no tenant scope" }, ...projectOptions]}
+          hint="Optional. When set, the key only authenticates requests carrying the matching X-Comuki-Tenant header."
+          onValueChange={setTenantProjectId}
         />
       </FormFields>
 

@@ -3,6 +3,7 @@ using System.Text.Json;
 using Comuki.Modules.Artifacts.Domain;
 using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Comuki.Modules.Artifacts.Application.Packaging;
@@ -123,11 +124,20 @@ public sealed class RunArtifactPackager(
         // ListAsync round-trip is cheap (one prefix query per run).
         var pointers = await store.ListAsync(projectId, runId, cancellationToken);
 
+        // Issue Q26 / v1.1: a long delay here means MinIO / S3 was slow
+        // or unavailable — alert when this crosses the operator's
+        // tolerance threshold. Negative values (clock skew) clamp to 0.
+        var delay = now - snapshot.OccurredAt;
+        var delaySeconds = delay.TotalSeconds < 0 ? 0 : delay.TotalSeconds;
+        ComukiTelemetry.ArtifactBundleDelay.Record(delaySeconds);
+        ComukiTelemetry.ArtifactBundlesWritten.Add(1);
+
         logger.LogInformation(
-            "Bundled {ObjectCount} artifact(s) for run {RunId} (status {Status})",
+            "Bundled {ObjectCount} artifact(s) for run {RunId} (status {Status}, delay {DelaySeconds:F1}s)",
             objectCount,
             runId.Value,
-            snapshot.Status);
+            snapshot.Status,
+            delaySeconds);
 
         return new BundleOutcome(runId.Value, objectCount, pointers);
     }

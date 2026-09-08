@@ -1,6 +1,7 @@
 using Comuki.Modules.Identity.Application.Oidc;
 using Comuki.Modules.Identity.Application.Ports;
 using Comuki.Modules.Identity.Domain.Users;
+using Comuki.Shared.Kernel.Exceptions;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -10,6 +11,8 @@ namespace Comuki.Modules.Identity.Unit;
 /// <summary>
 /// Linker semantics (T4.6): an existing link wins, a matching email links
 /// the known account, anything else provisions a password-less account.
+/// Issue Q36 / v1.1: a disabled user cannot authenticate via OIDC even
+/// when a configured IdP signs a valid subject for them.
 /// </summary>
 public sealed class OidcAccountLinkerShould
 {
@@ -70,6 +73,57 @@ public sealed class OidcAccountLinkerShould
         await linkStore.Received(1).SaveAsync(
             Arg.Is<OidcLink>(static link => link.Provider == "authentik" && link.Subject == "sub-999"),
             TestContext.Current.CancellationToken);
+    }
+
+    [Fact(DisplayName = "Given a stored link to a disabled user, when OIDC login arrives, then the linker throws ProviderForbiddenException")]
+    public async Task RefuseStoredLinkForDisabledUserAsync()
+    {
+        // Issue Q36 / v1.1: a disabled user must not authenticate via
+        // OIDC. The attacker controls a configured IdP — the local
+        // account's Disabled flag is the only thing that protects this
+        // flow once the subject line up.
+        var now = DateTimeOffset.UtcNow;
+        var user = User.Create("disabled@example.com", "Disabled", null, now);
+        user.Disable(now);
+        var link = OidcLink.Create(user.Id, "keycloak", "sub-999", now);
+        _ = linkStore.FindAsync("keycloak", "sub-999", TestContext.Current.CancellationToken).Returns(link);
+        _ = userStore.FindByIdAsync(user.Id, TestContext.Current.CancellationToken).Returns(user);
+
+        var exception = await Should.ThrowAsync<ProviderForbiddenException>(
+            async () => await linker.HandleAsync(
+                new OidcLinkRequest("keycloak", "sub-999", "disabled@example.com", null),
+                TestContext.Current.CancellationToken));
+
+        exception.Code.ShouldBe("user.disabled");
+        exception.Message.ShouldContain("disabled@example.com");
+
+        // The link is not refreshed — the failure short-circuits before
+        // the linker would write back.
+        await linkStore.DidNotReceiveWithAnyArgs().SaveAsync(default!, TestContext.Current.CancellationToken);
+    }
+
+    [Fact(DisplayName = "Given a matching email on a disabled user, when OIDC login arrives, then the linker throws ProviderForbiddenException")]
+    public async Task RefuseEmailMatchForDisabledUserAsync()
+    {
+        // Issue Q36 / v1.1: the email-match path (no stored link yet)
+        // is the wider window — a first-time login from a configured
+        // IdP must not be enough to bypass a disabled local account.
+        var now = DateTimeOffset.UtcNow;
+        var user = User.Create("disabled@example.com", "Disabled", null, now);
+        user.Disable(now);
+        _ = linkStore.FindAsync("authentik", "sub-new", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
+        _ = userStore.FindByEmailAsync("disabled@example.com", TestContext.Current.CancellationToken).Returns(user);
+
+        var exception = await Should.ThrowAsync<ProviderForbiddenException>(
+            async () => await linker.HandleAsync(
+                new OidcLinkRequest("authentik", "sub-new", "disabled@example.com", null),
+                TestContext.Current.CancellationToken));
+
+        exception.Code.ShouldBe("user.disabled");
+
+        // No link written — the disabled check fires before the linker
+        // would mint the link.
+        await linkStore.DidNotReceiveWithAnyArgs().SaveAsync(default!, TestContext.Current.CancellationToken);
     }
 
     private sealed class FrozenTime : TimeProvider;

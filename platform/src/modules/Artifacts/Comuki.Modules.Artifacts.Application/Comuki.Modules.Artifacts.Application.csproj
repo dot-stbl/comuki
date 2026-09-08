@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Comuki.Modules.Artifacts.Domain\Comuki.Modules.Artifacts.Domain.csproj" />
     <ProjectReference Include="..\..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\shared\Comuki.Shared.Telemetry\Comuki.Shared.Telemetry.csproj" />
   </ItemGroup>
 
 </Project>

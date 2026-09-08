@@ -66,6 +66,8 @@ public sealed class OrchestrationBudgetGateShould : IAsyncLifetime
         _ = services.AddOrchestrationPersistence(connectionString);
         _ = services.AddSingleton(TimeProvider.System);
         _ = services.AddScoped<IRunJournal, Engine.Orchestration.Infrastructure.Journal.RunJournalEf>();
+        _ = services.AddSingleton<Shared.Contracts.Costs.IProjectBudgetSettings,
+            Modules.Costs.Application.Budgets.NullProjectBudgetSettings>();
         _ = services.AddScoped<OrchestrationBudgetGate>();
         this.services = services.BuildServiceProvider();
     }

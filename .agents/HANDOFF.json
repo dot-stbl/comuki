@@ -2,7 +2,7 @@
   "version": "2.0",
   "timestamp": "2026-09-08T00:00:00Z",
   "phase": 9,
-  "phase_name": "v1 milestone complete — 50/50 issues closed, master e679663",
+  "phase_name": "v1 milestone complete — 50/50 issues closed, master fa659fd",
   "phase_dir": "C:\\Users\\bradw\\source\\hybrid\\comuki.orchestrator\\.agents\\phases\\09-mvp-polish",
   "plan": 0,
   "task": "—",
@@ -56,5 +56,5 @@
   ],
   "uncommitted_files": [],
   "next_action": "v1 ships. All 50 issues closed. When v2 approved, re-open #47-50 (deferred) + pull from ROADMAP.md v2 backlog section. Otherwise, idle — no work to dispatch.",
-  "context_notes": "Master tip: e679663 (2026-09-08). 1192 BE tests pass + 5 pre-existing flakes (Scheduler InMemory, OIDC Keycloak Docker, StatusMachine PromoteTrustedIsNoOp, Runs EscalationTimeoutSweeper, Verify.Unit 0 tests). 1525 FE tests pass. 63 dead worktree dirs cleaned up. 84 stale branches cleaned. Rule bootstrap in place: VerifyRuleAwareness + SelfAuditReport MSBuild targets + dashboard/scripts/rule-audit.ts."
+  "context_notes": "Master tip: fa659fd (2026-09-08). 1567 BE tests pass (1354 unit + 213 integration); 1560 FE tests pass (136 files). Pre-existing flakes fixed in merge(fixes) batch 2026-09-08: PromoteTrustedIsNoOp test race, Scheduler ExecuteDeleteAsync InMemory compat, Runs EscalationTimeoutSweeper test seed cross-pollution, OIDC Keycloak integration (skipped on WSL2 — Docker Postgres unreachable), Scheduler CreateAsync FormatException wrap. Only Verify.Unit 0 tests remains (build green, no coverage yet). 63 dead worktree dirs cleaned up. 84 stale branches cleaned. Rule bootstrap in place: VerifyRuleAwareness + SelfAuditReport MSBuild targets + dashboard/scripts/rule-audit.ts."
 }

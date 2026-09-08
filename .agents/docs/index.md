@@ -24,8 +24,13 @@ operational details in the same place.
 | [oauth-oidc.md](./operations/oauth-oidc.md)  | Wiring an OIDC provider; browser-driven start flow; `OidcAccountLinker`. |
 | [minio.md](./operations/minio.md)            | Run-artifact bucket topology, lifecycle policy, compose `minio-init`, host config. |
 | [openapi-codegen.md](./operations/openapi-codegen.md) | BE emits `artifacts/openapi.json`; FE regenerates via kubb. Fail-fast guard. |
-| [database-schemas.md](./operations/database-schemas.md) | 8 schemas, one per DbContext; per-schema `__ef_migrations_history`; Migrator loop. |
+| [scheduler.md](./operations/scheduler.md)     | Scheduled-job dispatcher (S15 / #44): cron → ephemeral worker + sentry observability. |
+| [database-schemas.md](./operations/database-schemas.md) | 10 schemas, one per DbContext; per-schema `__ef_migrations_history`; Migrator loop. |
 | [fesettings.md](./operations/fesettings.md)  | `VITE_*` env contract; mock-first vs real-backend switch. |
+| [proxy.md](./operations/proxy.md)            | Optional in-process reverse proxy for OpenAI/Anthropic-compatible endpoints; virtual keys + budgets. |
+| [connect-source.md](./operations/connect-source.md) | Wiring a tracker webhook (GH/GL/YT/Jira) end-to-end; per-provider env-var secret pattern. |
+| [host-internals.md](./operations/host-internals.md) | `HostComposer.Compose` — the orchestrator host's single composition root: every DI registration, every endpoint, every background service. |
+| [observability.md](./operations/observability.md) | ActivitySource / Meter naming convention (`comuki.*`), spans to expect, metrics to alert on; OTLP pipeline to Victoria. |
 
 ### Architecture (read for design intent)
 
@@ -38,6 +43,7 @@ operational details in the same place.
 | [architecture/comuki-project-structure.md](./architecture/comuki-project-structure.md) | Repo layout, C#-layers, agents, deploy. |
 | [architecture/comuki-slice-0.md](./architecture/comuki-slice-0.md)   | The S3 e2e proof — pull-model, Translator/gRPC, pi-as-headless-agent. |
 | [architecture/comuki-v1-scope-draft.md](./architecture/comuki-v1-scope-draft.md) | The v1 milestone scope draft. |
+| [architecture/post-1.0-backlog.md](./architecture/post-1.0-backlog.md) | The 4 v2-deferred issues (#47–#50) and their scope. |
 | [architecture/adr-0001-ui-kit-react-aria.md](./architecture/adr-0001-ui-kit-react-aria.md) | The React Aria decision. |
 
 ### Design system
@@ -57,7 +63,7 @@ operational details in the same place.
 
 ## Status
 
-v1 milestone is complete on `master` (`e679663`) — 24 slices landed
+v1 milestone is complete on `master` (`fa659fd`) — 24 slices landed
 (15 original v1 core + 9 follow-on: 5 FE wire-up, 2 polish waves,
 1 admin endpoints, 1 docs sweep) plus the `#11` Post-1.0 backlog
 slice (13 sub-slices shipped 2026-09-04 → 2026-09-07). **50 of 50

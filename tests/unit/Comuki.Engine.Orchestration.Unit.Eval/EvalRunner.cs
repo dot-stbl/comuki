@@ -106,7 +106,7 @@ public static class EvalRunner
                         profileKey: "implement",
                         image: "ghcr.io/test/worker:latest",
                         profilesRef: "abc1234",
-                        brief: "{\"goal\":\"eval\"}",
+                        brief: /*lang=json,strict*/ "{\"goal\":\"eval\"}",
                         initialStatus: initial,
                         now: now);
                     log.Add(item.Status.ToString());

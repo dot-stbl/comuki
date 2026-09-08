@@ -62,14 +62,22 @@ public sealed class ScheduledJobService(
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
 
-        var job = ScheduledJob.Create(
-            command.ProjectId,
-            command.CronExpression,
-            command.ProfileKey,
-            command.BriefJson,
-            command.RunOnOnceAt,
-            command.Enabled ?? true,
-            clock.GetUtcNow());
+        ScheduledJob job;
+        try
+        {
+            job = ScheduledJob.Create(
+                command.ProjectId,
+                command.CronExpression,
+                command.ProfileKey,
+                command.BriefJson,
+                command.RunOnOnceAt,
+                command.Enabled ?? true,
+                clock.GetUtcNow());
+        }
+        catch (FormatException exception)
+        {
+            throw new InvalidCronExpressionException(command.CronExpression, exception.Message);
+        }
 
         await store.AddAsync(job, cancellationToken);
         logger.LogInformation(
@@ -93,7 +101,15 @@ public sealed class ScheduledJobService(
         var job = await store.FindAsync(command.JobId, cancellationToken)
             ?? throw new ScheduledJobNotFoundException(command.JobId);
 
-        job.Update(command.CronExpression, command.ProfileKey, command.Enabled, clock.GetUtcNow());
+        try
+        {
+            job.Update(command.CronExpression, command.ProfileKey, command.Enabled, clock.GetUtcNow());
+        }
+        catch (FormatException exception)
+        {
+            throw new InvalidCronExpressionException(command.CronExpression!, exception.Message);
+        }
+
         await store.UpdateAsync(job, cancellationToken);
 
         logger.LogInformation(

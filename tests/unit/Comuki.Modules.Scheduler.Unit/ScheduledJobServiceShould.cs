@@ -53,18 +53,16 @@ public sealed class ScheduledJobServiceShould
             TestContext.Current.CancellationToken);
     }
 
-    [Fact(DisplayName = "Given an invalid cron expression, when CreateAsync is called, then the parse failure propagates and the job is not persisted")]
+    [Fact(DisplayName = "Given an invalid cron expression, when CreateAsync is called, then InvalidCronExpressionException is thrown and the job is not persisted")]
     public async Task CreateAsyncWithInvalidCronThrowsAsync()
     {
         var store = Substitute.For<IScheduledJobStore>();
         var service = NewService(store);
 
-        // The production path delegates to CronExpression.Parse which raises FormatException
-        // for malformed input — the domain layer doesn't wrap it. The XML doc on
-        // ScheduledJobService advertises InvalidCronExpressionException but the call
-        // site reaches the parser first. Either way, the contract under test is
-        // "bad cron → exception, no row written".
-        await Should.ThrowAsync<FormatException>(async () =>
+        // ScheduledJobService wraps CronExpression.Parse's FormatException
+        // into the documented InvalidCronExpressionException so callers see
+        // the typed exception matching the XML doc.
+        await Should.ThrowAsync<InvalidCronExpressionException>(async () =>
             await service.CreateAsync(
                 new CreateScheduledJobCommand(
                     ProjectId: new ProjectId(Guid.CreateVersion7()),

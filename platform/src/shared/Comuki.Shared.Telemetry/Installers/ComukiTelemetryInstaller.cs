@@ -50,6 +50,8 @@ public static class ComukiTelemetryInstaller
                 .AddMeter(ComukiInstrumentation.QueueMeterName)
                 .AddMeter(ComukiInstrumentation.RunsMeterName)
                 .AddMeter(ComukiInstrumentation.ComputeMeterName)
+                .AddMeter(ComukiInstrumentation.ArtifactsMeterName)
+                .AddMeter(ComukiInstrumentation.ProjectsMeterName)
                 .AddOtlpExporter(exporter => exporter.Endpoint = telemetryOptions.OtlpEndpoint));
 
         return services;

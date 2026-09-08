@@ -13,6 +13,7 @@ public static class ComukiInstrumentation
     public const string QueueMeterName = "comuki.queue";
     public const string RunsMeterName = "comuki.runs";
     public const string ComputeMeterName = "comuki.compute";
+    public const string ArtifactsMeterName = "comuki.artifacts";
 
     // Activity sources — one per emitting assembly.
     public const string OrchestrationSourceName = "Comuki.Engine.Orchestration";
@@ -35,6 +36,14 @@ public static class ComukiInstrumentation
     public const string WorkerStartDurationName = "comuki.compute.worker.start.duration";
     public const string WorkersStartedName = "comuki.compute.workers.started";
     public const string WorkersStoppedName = "comuki.compute.workers.stopped";
+
+    // Artifacts instruments.
+    public const string ArtifactBundleDelayName = "comuki.artifact.bundle.delay_seconds";
+    public const string ArtifactBundleWrittenName = "comuki.artifact.bundle.written";
+
+    // Project settings cache fallback instrument (Q27 / v1.1).
+    public const string ProjectSettingsCacheFallbackName = "comuki.projectsettings.cache.fallback_total";
+    public const string ProjectsMeterName = "comuki.projects";
 
     // Span/metric tags — bounded cardinality only (no ids, no free text).
     public const string OutcomeTag = "outcome";

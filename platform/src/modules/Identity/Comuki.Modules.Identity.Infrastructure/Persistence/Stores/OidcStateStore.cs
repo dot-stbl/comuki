@@ -61,4 +61,56 @@ public sealed class OidcStateStore(IdentityDbContext db, TimeProvider clock) : I
             .Where(state => state.ExpiresAt <= now)
             .ExecuteDeleteAsync(cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<bool> TableExistsAsync(CancellationToken cancellationToken = default)
+    {
+        // Postgres <c>information_schema.tables</c> is the schema-of-record
+        // for "does this table exist" — EF's model snapshot can lie
+        // (the model is loaded even when the table is not) and a raw
+        // <c>SELECT 1 FROM identity.oidc_states</c> would throw on a
+        // missing table, which is exactly the failure the host
+        // sweeper wants to surface without taking the process down.
+        const string sql = """
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = @schema
+                  AND table_name = @name
+            );
+            """;
+
+        var connection = db.Database.GetDbConnection();
+        var wasOpen = connection.State == System.Data.ConnectionState.Open;
+        if (!wasOpen)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        try
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+
+            var schemaParameter = command.CreateParameter();
+            schemaParameter.ParameterName = "schema";
+            schemaParameter.Value = IdentityDatabase.Schema;
+            command.Parameters.Add(schemaParameter);
+
+            var nameParameter = command.CreateParameter();
+            nameParameter.ParameterName = "name";
+            nameParameter.Value = IdentityDatabase.OidcStates;
+            command.Parameters.Add(nameParameter);
+
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            return result is bool exists && exists;
+        }
+        finally
+        {
+            if (!wasOpen)
+            {
+                await connection.CloseAsync();
+            }
+        }
+    }
 }

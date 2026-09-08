@@ -85,6 +85,12 @@ file static class ExceptionMapping
                 "Resource not found",
                 provider.Message,
                 provider.Code),
+            ProviderForbiddenException provider => new ProblemRow(
+                StatusCodes.Status403Forbidden,
+                TypeUri(provider.Code),
+                "Forbidden",
+                provider.Message,
+                provider.Code),
             ProviderException provider => new ProblemRow(
                 StatusCodes.Status502BadGateway,
                 TypeUri(provider.Code),

@@ -89,6 +89,11 @@ export interface CreateApiKeyInput {
   name: string
   /** ISO day, or `null` for a key with no expiry. */
   expiresAt: string | null
+  /**
+   * Optional tenant scope. When set, the key only authenticates requests
+   * that carry the matching <c>X-Comuki-Tenant</c> header.
+   */
+  tenantProjectId: string | null
 }
 
 /**

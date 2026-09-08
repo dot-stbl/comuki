@@ -48,9 +48,15 @@ public sealed class ScheduledJobStore(SchedulerDbContext db) : IScheduledJobStor
     /// <inheritdoc />
     public async Task DeleteAsync(ScheduledJobId jobId, CancellationToken cancellationToken = default)
     {
-        await db.ScheduledJobs
-            .Where(job => job.Id == jobId)
-            .ExecuteDeleteAsync(cancellationToken);
+        var existing = await db.ScheduledJobs
+            .FirstOrDefaultAsync(job => job.Id == jobId, cancellationToken);
+        if (existing is null)
+        {
+            return;
+        }
+
+        db.ScheduledJobs.Remove(existing);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />

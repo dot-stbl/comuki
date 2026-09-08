@@ -15,7 +15,8 @@ namespace Comuki.Host.Unit.ProductionSecrets;
 /// Unit tests for <see cref="ProductionSecretValidator"/>: refuses to start
 /// the host in <c>Production</c> when the bound <see cref="ArtifactsOptions"/>
 /// MinIO keys or the bootstrap admin password are still on their committed
-/// dev defaults, and returns silently in non-production environments.
+/// dev defaults, and returns silently in non-production environments. Q29
+/// adds the length + character-class check on the bootstrap admin password.
 /// </summary>
 public sealed class ProductionSecretValidatorShould : IDisposable
 {
@@ -29,6 +30,68 @@ public sealed class ProductionSecretValidatorShould : IDisposable
     {
         Environment.SetEnvironmentVariable(BootstrapAdminOptions.EmailEnvVariable, null);
         Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, null);
+    }
+
+    [Fact(DisplayName = "Given Production + bootstrap password too short, when Validate is called, then it throws with a length hint")]
+    public void ThrowWhenProductionBootstrapPasswordIsTooShort()
+    {
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.EmailEnvVariable, "ops@example.com");
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, "Short1!");
+
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden());
+
+        var exception = Should.Throw<InvalidOperationException>(
+            () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+
+        exception.Message.ShouldContain("too weak");
+        exception.Message.ShouldContain("12");
+    }
+
+    [Fact(DisplayName = "Given Production + bootstrap password missing a digit, when Validate is called, then it throws with a digit hint")]
+    public void ThrowWhenProductionBootstrapPasswordHasNoDigit()
+    {
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.EmailEnvVariable, "ops@example.com");
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, "longpasswordnodigit!");
+
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden());
+
+        var exception = Should.Throw<InvalidOperationException>(
+            () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+
+        exception.Message.ShouldContain("too weak");
+    }
+
+    [Fact(DisplayName = "Given Production + bootstrap password missing a non-alphanumeric, when Validate is called, then it throws with a symbol hint")]
+    public void ThrowWhenProductionBootstrapPasswordHasNoSymbol()
+    {
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.EmailEnvVariable, "ops@example.com");
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, "longpassword1234");
+
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden());
+
+        var exception = Should.Throw<InvalidOperationException>(
+            () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+
+        exception.Message.ShouldContain("too weak");
+    }
+
+    [Fact(DisplayName = "Given Production + bootstrap password meeting every rule, when Validate is called, then it returns silently")]
+    public void ReturnSilentlyWhenProductionBootstrapPasswordIsStrong()
+    {
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.EmailEnvVariable, "ops@example.com");
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, "Strong-Production-Pass-2026!");
+
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden());
+
+        Should.NotThrow(() => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
     }
 
     [Fact(DisplayName = "Given Development env and dev defaults, when Validate is called, then it returns silently")]

@@ -68,6 +68,23 @@ public sealed class ProxyOptions
 
         /// <summary>Optional model allow-list; <c>null</c> / empty = every model permitted.</summary>
         public IReadOnlyList<string>? AllowedModels { get; init; }
+
+        /// <summary>
+        /// Per-call max input tokens; <c>null</c> = no cap. Estimated as
+        /// <c>request body chars / 4</c>; the request is refused with 400
+        /// when the estimate exceeds the cap. Keeps a single huge call
+        /// from exhausting the monthly budget in one shot (issue Q19).
+        /// </summary>
+        [Range(1, 2_000_000)]
+        public int? MaxInputTokens { get; init; }
+
+        /// <summary>
+        /// Per-call max output tokens; <c>null</c> = no cap. Refused with
+        /// 400 when the caller's body asks for more than this. Pairs with
+        /// <see cref="MaxInputTokens"/> for the same per-call bound reason.
+        /// </summary>
+        [Range(1, 128_000)]
+        public int? MaxOutputTokens { get; init; }
     }
 
     /// <summary>USD per million tokens for input and output.</summary>

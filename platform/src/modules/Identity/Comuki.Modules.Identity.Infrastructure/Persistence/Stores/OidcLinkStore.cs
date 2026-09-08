@@ -22,6 +22,20 @@ public sealed class OidcLinkStore(IdentityDbContext db) : IOidcLinkStore
     }
 
     /// <inheritdoc />
+    public async Task<OidcLink?> FindByEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+
+        return await db.OidcLinks
+            .Join(db.Users, link => link.UserId, user => user.Id, (link, user) => new { link, user })
+            .Where(joined => joined.user.Email == normalized)
+            .Select(joined => joined.link)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task SaveAsync(OidcLink link, CancellationToken cancellationToken = default)
     {
         if (db.Entry(link).State == EntityState.Detached)

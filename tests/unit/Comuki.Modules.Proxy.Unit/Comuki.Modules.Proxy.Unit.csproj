@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\platform\src\modules\Proxy\Comuki.Modules.Proxy.Application\Comuki.Modules.Proxy.Application.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Proxy\Comuki.Modules.Proxy.Infrastructure\Comuki.Modules.Proxy.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

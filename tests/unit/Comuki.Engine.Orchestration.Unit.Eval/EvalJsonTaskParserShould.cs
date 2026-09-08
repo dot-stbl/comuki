@@ -22,7 +22,8 @@ public sealed class EvalJsonTaskParserShould
                    "  \"operations\": [\n" +
                    "    { \"action\": \"Create\" },\n" +
                    "    { \"action\": \"Transition\", \"status\": \"Running\" },\n" +
-                   "    { \"action\": \"Transition\", \"status\": \"Succeeded\" }\n" +
+                                        /*lang=json,strict*/
+                                        "    { \"action\": \"Transition\", \"status\": \"Succeeded\" }\n" +
                    "  ],\n" +
                    "  \"expected\": {\n" +
                    "    \"finalStatus\": \"Succeeded\",\n" +
@@ -53,7 +54,8 @@ public sealed class EvalJsonTaskParserShould
                    "    { \"action\": \"Create\" },\n" +
                    "    { \"action\": \"Transition\", \"status\": \"Running\" },\n" +
                    "    { \"action\": \"Transition\", \"status\": \"Succeeded\" },\n" +
-                   "    { \"action\": \"TransitionExpectFailure\", \"status\": \"Running\" }\n" +
+                                        /*lang=json,strict*/
+                                        "    { \"action\": \"TransitionExpectFailure\", \"status\": \"Running\" }\n" +
                    "  ],\n" +
                    "  \"expected\": {\n" +
                    "    \"expectsFailure\": true,\n" +
@@ -72,7 +74,7 @@ public sealed class EvalJsonTaskParserShould
     [Fact(DisplayName = "Given a wrong schemaVersion, when parsed, then EvalParseException names the version")]
     public void RejectWrongSchemaVersion()
     {
-        var body = "{ \"schemaVersion\": 999, \"id\": \"x\", \"name\": \"x\", \"kind\": \"Run\", \"operations\": [{\"action\":\"Create\"}], \"expected\": {\"finalStatus\":\"Queued\"} }";
+        var body = /*lang=json,strict*/ "{ \"schemaVersion\": 999, \"id\": \"x\", \"name\": \"x\", \"kind\": \"Run\", \"operations\": [{\"action\":\"Create\"}], \"expected\": {\"finalStatus\":\"Queued\"} }";
 
         var exception = Should.Throw<EvalParseException>(() => EvalJsonTaskParser.Parse(body));
         exception.Message.ShouldContain("schema version mismatch");
@@ -82,7 +84,7 @@ public sealed class EvalJsonTaskParserShould
     [Fact(DisplayName = "Given an empty operations list, when parsed, then EvalParseException names the offending task")]
     public void RejectEmptyOperations()
     {
-        var body = "{ \"schemaVersion\": 1, \"id\": \"empty\", \"name\": \"empty\", \"kind\": \"Run\", \"operations\": [], \"expected\": {\"finalStatus\":\"Queued\"} }";
+        var body = /*lang=json,strict*/ "{ \"schemaVersion\": 1, \"id\": \"empty\", \"name\": \"empty\", \"kind\": \"Run\", \"operations\": [], \"expected\": {\"finalStatus\":\"Queued\"} }";
 
         var exception = Should.Throw<EvalParseException>(() => EvalJsonTaskParser.Parse(body));
         exception.Message.ShouldContain("no operations");
@@ -102,7 +104,7 @@ public sealed class EvalJsonTaskParserShould
     [Fact(DisplayName = "Given a missing expected outcome, when parsed, then EvalParseException names the task")]
     public void RejectEmptyExpected()
     {
-        var body = "{ \"schemaVersion\": 1, \"id\": \"x\", \"name\": \"x\", \"kind\": \"Run\", \"operations\": [{\"action\":\"Create\"}], \"expected\": {} }";
+        var body = /*lang=json,strict*/ "{ \"schemaVersion\": 1, \"id\": \"x\", \"name\": \"x\", \"kind\": \"Run\", \"operations\": [{\"action\":\"Create\"}], \"expected\": {} }";
 
         var exception = Should.Throw<EvalParseException>(() => EvalJsonTaskParser.Parse(body));
         exception.Message.ShouldContain("expected outcome is empty");
@@ -111,7 +113,7 @@ public sealed class EvalJsonTaskParserShould
     [Fact(DisplayName = "Given an unknown action, when parsed, then EvalParseException names the action")]
     public void RejectUnknownAction()
     {
-        var body = "{ \"schemaVersion\": 1, \"id\": \"x\", \"name\": \"x\", \"kind\": \"Run\", \"operations\": [{\"action\":\"Detonate\"}], \"expected\": {\"finalStatus\":\"Queued\"} }";
+        var body = /*lang=json,strict*/ "{ \"schemaVersion\": 1, \"id\": \"x\", \"name\": \"x\", \"kind\": \"Run\", \"operations\": [{\"action\":\"Detonate\"}], \"expected\": {\"finalStatus\":\"Queued\"} }";
 
         var exception = Should.Throw<EvalParseException>(() => EvalJsonTaskParser.Parse(body));
         exception.Message.ShouldContain("Detonate");

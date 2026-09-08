@@ -53,7 +53,8 @@ public sealed class ConnectionStringSourceShould
             ("ASPNETCORE_ENVIRONMENT", "Development"),
             ("DOTNET_ENVIRONMENT", "Development"));
         using var appsScope = AppsettingsScope.Install(
-            """{"ConnectionStrings":{"Comuki":"Host=cfg;Database=db;Username=u;Password="}}""");
+                                 /*lang=json,strict*/
+                                 """{"ConnectionStrings":{"Comuki":"Host=cfg;Database=db;Username=u;Password="}}""");
 
         var result = ConnectionStringSource.Resolve();
 
@@ -71,7 +72,8 @@ public sealed class ConnectionStringSourceShould
             ("ASPNETCORE_ENVIRONMENT", "Production"),
             ("DOTNET_ENVIRONMENT", null));
         using var appsScope = AppsettingsScope.Install(
-            """{"ConnectionStrings":{"Comuki":"Host=cfg;Database=db;Username=u;Password="}}""");
+                                 /*lang=json,strict*/
+                                 """{"ConnectionStrings":{"Comuki":"Host=cfg;Database=db;Username=u;Password="}}""");
 
         Should.Throw<InvalidOperationException>(static () => ConnectionStringSource.Resolve());
     }
@@ -85,7 +87,7 @@ public sealed class ConnectionStringSourceShould
             (ConnectionStringSource.PasswordEnvVariable, null),
             ("ASPNETCORE_ENVIRONMENT", null),
             ("DOTNET_ENVIRONMENT", null));
-        using var appsScope = AppsettingsScope.Install("""{"ConnectionStrings":{}}""");
+        using var appsScope = AppsettingsScope.Install(/*lang=json,strict*/ """{"ConnectionStrings":{}}""");
 
         var result = ConnectionStringSource.Resolve();
 
@@ -101,7 +103,7 @@ public sealed class ConnectionStringSourceShould
             (ConnectionStringSource.PasswordEnvVariable, null),
             ("ASPNETCORE_ENVIRONMENT", null),
             ("DOTNET_ENVIRONMENT", null));
-        using var appsScope = AppsettingsScope.Install("""{"ConnectionStrings":{}}""");
+        using var appsScope = AppsettingsScope.Install(/*lang=json,strict*/ """{"ConnectionStrings":{}}""");
 
         Should.Throw<InvalidOperationException>(static () => ConnectionStringSource.ResolveOrThrow());
     }

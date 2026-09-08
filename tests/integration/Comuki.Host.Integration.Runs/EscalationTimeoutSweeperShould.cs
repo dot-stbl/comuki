@@ -110,7 +110,7 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
     public async Task ArchiveStaleEscalatedRunAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var (staleId, _, _) = await SeedRunsAsync(cancellationToken);
+        var staleId = await SeedStaleEscalatedAsync(cancellationToken);
 
         var archived = await RunSweepAsync(cancellationToken);
         archived.ShouldBe(1);
@@ -130,7 +130,7 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
     public async Task LeaveFreshEscalatedRunAloneAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var (_, freshId, _) = await SeedRunsAsync(cancellationToken);
+        var freshId = await SeedFreshEscalatedAsync(cancellationToken);
 
         var archived = await RunSweepAsync(cancellationToken);
         archived.ShouldBe(0);
@@ -144,7 +144,7 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
     public async Task IgnoreRunningRunAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var (_, _, runningId) = await SeedRunsAsync(cancellationToken);
+        var runningId = await SeedRunningRunAsync(cancellationToken);
 
         var archived = await RunSweepAsync(cancellationToken);
         archived.ShouldBe(0);
@@ -154,33 +154,46 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
         journal.ShouldBeEmpty();
     }
 
-    private async Task<(RunId Stale, RunId Fresh, RunId Running)> SeedRunsAsync(CancellationToken cancellationToken)
+    private async Task<RunId> SeedStaleEscalatedAsync(CancellationToken cancellationToken)
+    {
+        return await SeedEscalatedAsync(age: shortTimeout + TimeSpan.FromHours(2), cancellationToken);
+    }
+
+    private async Task<RunId> SeedFreshEscalatedAsync(CancellationToken cancellationToken)
+    {
+        return await SeedEscalatedAsync(age: TimeSpan.FromMinutes(1), cancellationToken);
+    }
+
+    private async Task<RunId> SeedEscalatedAsync(TimeSpan age, CancellationToken cancellationToken)
     {
         var optionsBuilder = new DbContextOptionsBuilder<OrchestrationDbContext>();
         OrchestrationDbContext.ApplyOptions(optionsBuilder, container.GetConnectionString());
         await using var db = new OrchestrationDbContext(optionsBuilder.Options);
 
         var now = DateTimeOffset.UtcNow;
-        var staleAge = shortTimeout + TimeSpan.FromHours(2);
-        var freshAge = TimeSpan.FromMinutes(1);
-        var runningAge = TimeSpan.FromHours(1);
-
-        var stale = Run.Create(ProjectId.New(), now - staleAge);
-        stale.TransitionTo(RunStatus.Running, now - staleAge + TimeSpan.FromMinutes(1));
-        stale.TransitionTo(RunStatus.Escalated, now - staleAge + TimeSpan.FromMinutes(5));
-        db.Runs.Add(stale);
-
-        var fresh = Run.Create(ProjectId.New(), now - freshAge);
-        fresh.TransitionTo(RunStatus.Running, now - freshAge + TimeSpan.FromMinutes(1));
-        fresh.TransitionTo(RunStatus.Escalated, now - freshAge + TimeSpan.FromMinutes(5));
-        db.Runs.Add(fresh);
-
-        var running = Run.Create(ProjectId.New(), now - runningAge);
-        running.TransitionTo(RunStatus.Running, now - runningAge + TimeSpan.FromMinutes(1));
-        db.Runs.Add(running);
+        var run = Run.Create(ProjectId.New(), now - age);
+        run.TransitionTo(RunStatus.Running, now - age + TimeSpan.FromMinutes(1));
+        run.TransitionTo(RunStatus.Escalated, now - age + TimeSpan.FromMinutes(5));
+        db.Runs.Add(run);
 
         await db.SaveChangesAsync(cancellationToken);
-        return (stale.Id, fresh.Id, running.Id);
+        return run.Id;
+    }
+
+    private async Task<RunId> SeedRunningRunAsync(CancellationToken cancellationToken)
+    {
+        var optionsBuilder = new DbContextOptionsBuilder<OrchestrationDbContext>();
+        OrchestrationDbContext.ApplyOptions(optionsBuilder, container.GetConnectionString());
+        await using var db = new OrchestrationDbContext(optionsBuilder.Options);
+
+        var now = DateTimeOffset.UtcNow;
+        var age = TimeSpan.FromHours(1);
+        var run = Run.Create(ProjectId.New(), now - age);
+        run.TransitionTo(RunStatus.Running, now - age + TimeSpan.FromMinutes(1));
+        db.Runs.Add(run);
+
+        await db.SaveChangesAsync(cancellationToken);
+        return run.Id;
     }
 
     private async Task<int> RunSweepAsync(CancellationToken cancellationToken)

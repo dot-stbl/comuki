@@ -68,6 +68,11 @@ public sealed class OrchestrationBudgetGateShould : IAsyncLifetime
         _ = services.AddScoped<IRunJournal, Engine.Orchestration.Infrastructure.Journal.RunJournalEf>();
         _ = services.AddSingleton<Shared.Contracts.Costs.IProjectBudgetSettings,
             Modules.Costs.Application.Budgets.NullProjectBudgetSettings>();
+        _ = services.AddDbContextFactory<Modules.Costs.Infrastructure.Persistence.CostsDbContext>(
+            (_, builder) => builder.UseNpgsql(connectionString),
+            ServiceLifetime.Singleton);
+        _ = services.AddScoped<Shared.Contracts.Usage.IUsageEventStore,
+            Modules.Costs.Infrastructure.Persistence.Stores.EfUsageEventStore>();
         _ = services.AddScoped<OrchestrationBudgetGate>();
         this.services = services.BuildServiceProvider();
     }

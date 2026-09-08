@@ -73,6 +73,12 @@ file static class ExceptionMapping
     {
         return exception switch
         {
+            BudgetExceededException budget => new ProblemRow(
+                StatusCodes.Status402PaymentRequired,
+                TypeUri(budget.Code),
+                "Budget exceeded",
+                budget.Message,
+                budget.Code),
             ProviderTimeoutException provider => new ProblemRow(
                 StatusCodes.Status504GatewayTimeout,
                 TypeUri("provider.timeout"),

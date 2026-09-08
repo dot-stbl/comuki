@@ -10,13 +10,19 @@ namespace Comuki.Modules.Identity.Application.Users;
 /// hashed with the BCL <see cref="PasswordHasher{User}"/> (PBKDF2) before
 /// persistence; when absent the account lands password-less and waits for
 /// the operator to send a bootstrap link. Duplicate emails are refused
-/// loudly — the unique index on <c>users.email</c> backs the check.
+/// loudly — the unique index on <c>users.email</c> backs the check. An
+/// email that already maps to an OIDC-linked user is refused too
+/// (Q43 — refuse invite when email OIDC-linked), so an admin cannot
+/// quietly create a local shadow of an identity already federated to
+/// another IdP.
 /// </summary>
 /// <param name="userStore"></param>
+/// <param name="linkStore"></param>
 /// <param name="passwordHasher"></param>
 /// <param name="clock"></param>
 public sealed class InviteUserHandler(
     IUserAccountStore userStore,
+    IOidcLinkStore linkStore,
     IPasswordHasher<User> passwordHasher,
     TimeProvider clock)
 {
@@ -25,11 +31,19 @@ public sealed class InviteUserHandler(
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">The email is already taken.</exception>
+    /// <exception cref="OidcLinkConflictException">The email is bound to an existing OIDC-linked user.</exception>
     public async Task<UserAccountView> HandleAsync(InviteUserCommand command, CancellationToken cancellationToken = default)
     {
+        var normalized = command.Email.Trim().ToLowerInvariant();
+
         if (await userStore.FindByEmailAsync(command.Email, cancellationToken) is not null)
         {
-            throw new InvalidOperationException($"user '{command.Email.Trim().ToLowerInvariant()}' already exists");
+            throw new InvalidOperationException($"user '{normalized}' already exists");
+        }
+
+        if (await linkStore.FindByEmailAsync(command.Email, cancellationToken) is not null)
+        {
+            throw new OidcLinkConflictException(normalized);
         }
 
         // boundary: the stock PasswordHasher ignores the user instance entirely
@@ -47,4 +61,19 @@ public sealed class InviteUserHandler(
 
         return AccountMapper.ToView(user);
     }
+}
+
+/// <summary>
+/// Raised when an invite email already maps to a user that has any OIDC
+/// link (Q43). The central <c>ProviderExceptionHandler</c> does not own
+/// this mapping — the Identity module turns it into a 409 Conflict at the
+/// controller boundary. Carries the offending email so the controller can
+/// surface a precise message without re-reading the user store.
+/// </summary>
+/// <param name="Email">Lower-cased email the caller attempted to invite.</param>
+public sealed class OidcLinkConflictException(string Email)
+    : Exception($"user with email '{Email}' is already linked to an OIDC identity; invite refused")
+{
+    /// <summary>Lower-cased email the caller attempted to invite.</summary>
+    public string Email { get; } = Email;
 }

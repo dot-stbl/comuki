@@ -5,7 +5,8 @@ namespace Comuki.Modules.Costs.Application.Budgets;
 
 /// <summary>
 /// No-op budget gate used until the host wires a real cancel+journal
-/// adapter. Safe default: recording still works, hard-stop is a no-op.
+/// adapter. Safe default: recording still works, hard-stop is a no-op,
+/// claim-time enforcement is a no-op (Costs module has no budget caps).
 /// </summary>
 public sealed class NullBudgetGate : IBudgetGate
 {
@@ -15,6 +16,14 @@ public sealed class NullBudgetGate : IBudgetGate
         ProjectId projectId,
         long spentUsdMicros,
         long hardLimitUsdMicros,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task EnforceClaimAsync(
+        ProjectId projectId,
         CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;

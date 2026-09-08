@@ -29,6 +29,12 @@ public static class ComukiTelemetry
     /// <summary>Meter of the compute layer: worker lifecycle.</summary>
     public static Meter ComputeMeter { get; } = new(ComukiInstrumentation.ComputeMeterName);
 
+    /// <summary>Meter of the artifacts layer: packager metrics (issue Q26 / v1.1).</summary>
+    public static Meter ArtifactsMeter { get; } = new(ComukiInstrumentation.ArtifactsMeterName);
+
+    /// <summary>Meter of the projects layer: settings-cache fallback (Q27 / v1.1).</summary>
+    public static Meter ProjectsMeter { get; } = new(ComukiInstrumentation.ProjectsMeterName);
+
     /// <summary>Wall time of one work-item claim attempt, milliseconds.</summary>
     public static Histogram<double> ClaimDuration { get; } =
         QueueMeter.CreateHistogram<double>(ComukiInstrumentation.ClaimDurationName, unit: "ms");
@@ -56,6 +62,31 @@ public static class ComukiTelemetry
     /// <summary>Worker runtimes stopped, by provider and reason.</summary>
     public static Counter<long> WorkersStopped { get; } =
         ComputeMeter.CreateCounter<long>(ComukiInstrumentation.WorkersStoppedName);
+
+    /// <summary>
+    /// Seconds since a run became terminal and the packager actually
+    /// wrote its bundle (Q26 / v1.1). A long value here means an
+    /// upstream store (MinIO / S3) was slow or unavailable — alert
+    /// when this crosses the operator's tolerance threshold.
+    /// </summary>
+    public static Histogram<double> ArtifactBundleDelay { get; } =
+        ArtifactsMeter.CreateHistogram<double>(ComukiInstrumentation.ArtifactBundleDelayName, unit: "s");
+
+    /// <summary>
+    /// Bundles written to the artifact store by the packager, tagged
+    /// with the destination outcome (success / failed).
+    /// </summary>
+    public static Counter<long> ArtifactBundlesWritten { get; } =
+        ArtifactsMeter.CreateCounter<long>(ComukiInstrumentation.ArtifactBundleWrittenName);
+
+    /// <summary>
+    /// Times the settings cache fell back to its in-memory snapshot
+    /// because the underlying store was unreachable (Q27 / v1.1). One
+    /// increment per refresher pass that hit the fallback — not per
+    /// served row.
+    /// </summary>
+    public static Counter<long> ProjectSettingsCacheFallback { get; } =
+        ProjectsMeter.CreateCounter<long>(ComukiInstrumentation.ProjectSettingsCacheFallbackName);
 
     /// <summary>
     /// Records one claim outcome: duration histogram, the claim counter with a

@@ -5,6 +5,7 @@ using Comuki.Modules.Identity.Application.ApiKeys.List;
 using Comuki.Modules.Identity.Application.ApiKeys.Revoke;
 using Comuki.Modules.Identity.Application.Permissions;
 using Comuki.Modules.Identity.Domain.Ids;
+using Comuki.Shared.Kernel.Ids;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
@@ -46,7 +47,10 @@ public sealed class KeysController(
         }
 
         var credential = await issueApiKey.HandleAsync(
-            new IssueApiKeyCommand(new UserId(request.UserId), request.Label),
+            new IssueApiKeyCommand(
+                new UserId(request.UserId),
+                request.Label,
+                request.TenantProjectId is { } projectId ? new ProjectId(projectId) : null),
             cancellationToken);
 
         logger.LogInformation("API key {Prefix} issued for user {UserId}", credential.Prefix, request.UserId);

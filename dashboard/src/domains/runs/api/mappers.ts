@@ -10,6 +10,9 @@ import type {
   WorkItemInspector,
 } from "@/domains/runs/model/types"
 import type { RunArtifactsPage as RunArtifactsPageDto } from "@/shared/api/_generated/types/RunArtifactsPage"
+import type { RunDetail as RunDetailDto } from "@/shared/api/_generated/types/RunDetail"
+import type { RunDetailEvent as RunDetailEventDto } from "@/shared/api/_generated/types/RunDetailEvent"
+import type { RunDetailWorkItem as RunDetailWorkItemDto } from "@/shared/api/_generated/types/RunDetailWorkItem"
 import type { RunView } from "@/shared/api/_generated/types/RunView"
 import type {
   ArtifactPointer as ArtifactPointerDto,
@@ -327,6 +330,179 @@ export function mapRunViewToDetail(view: RunView): RunDetail {
     revision: { rules: "", sdk: "" },
     events: [],
   }
+}
+
+/**
+ * Wire RunDetail → domain RunDetail.
+ *
+ * The detail endpoint (issue #S7) carries the work-item graph, the recent
+ * journal strip, the pinned revisions, and the brief — the four pieces
+ * the detail page was built around and that the list endpoint could not
+ * supply. Cost / tokens / `title` populate from the wire when the host
+ * has them; `current` is the empty work-item id (the screen's plan readers
+ * short-circuit on `""` when there is no standing item, e.g. terminal runs).
+ */
+export function mapRunDetailToDetail(detail: RunDetailDto): RunDetail {
+  return {
+    ...mapRunDetailToSummary(detail),
+    brief: detail.brief,
+    rules: detail.rules,
+    revision: {
+      rules: detail.revision.rules,
+      sdk: detail.revision.sdk,
+    },
+    events: detail.events.map(mapRunDetailEventToTraceEvent),
+  };
+}
+
+/**
+ * Wire detail row → domain summary. The summary needs the same sparse shape
+ * as the list row's mapper, but the detail wire actually carries
+ * `title` / `app` / `model` / `costUsd` / `tokens`, so we read them.
+ */
+function mapRunDetailToSummary(detail: RunDetailDto): RunSummary {
+  const durationSec = Math.max(
+    0,
+    Math.round((Date.parse(detail.updatedAt) - Date.parse(detail.createdAt)) / 1000),
+  );
+
+  return {
+    id: detail.id,
+    projectId: detail.projectId,
+    app: detail.app,
+    title: detail.title,
+    status: detail.status as RunSummary["status"],
+    current: detail.workItems[0]?.id ?? "",
+    model: detail.model === "lead" ? "lead" : "worker",
+    cost: toNumber(detail.costUsd),
+    tokens: toNumber(detail.tokens),
+    durationSec,
+    done:
+      detail.status === "succeeded" ||
+      detail.status === "failed" ||
+      detail.status === "cancelled",
+    workItems: detail.workItems.map(mapRunDetailWorkItemToDomain),
+  };
+}
+
+/**
+ * Wire RunDetailWorkItem → domain WorkItem. The wire shape carries the
+ * same field set as the domain (id / profile / label / status /
+ * dependsOn / cost / tokens / startedAt); the only coercion is
+ * `cost` / `tokens` from the wire's loose `number | string` to a real
+ * `number`, and `startedAt` from the wire's `string | null` to the
+ * domain's optional string.
+ */
+function mapRunDetailWorkItemToDomain(
+  entry: RunDetailWorkItemDto,
+): WorkItem {
+  return {
+    id: entry.id,
+    profile: entry.profile,
+    label: entry.label,
+    status: entry.status as WorkItem["status"],
+    dependsOn: entry.dependsOn,
+    cost: toNumber(entry.cost),
+    tokens: toNumber(entry.tokens),
+    startedAt: entry.startedAt ?? undefined,
+  };
+}
+
+/**
+ * Wire RunDetailEvent → domain TraceEvent.
+ *
+ * The wire carries the journal's raw shape — `type` (`run.status_changed`,
+ * `work_item.status_changed`, …), `occurredAt` (ISO) and `payloadJson` (raw
+ * JSON whose shape is per-type). The domain TraceEvent is what the screen
+ * renders as a timeline row: `time` (`HH:MM`), `status` (a RunStatus),
+ * `text` (a one-line summary).
+ *
+ * The wire is read-only: the screen never asked for a JSON-tree view of
+ * the payload. We parse the minimum we can render — a status hint from
+ * the payload when one is present, the type as the textual label, and the
+ * time formatted as `HH:MM` so the timeline reads like the rest of the
+ * page. When the payload is missing or malformed we fall back to a
+ * neutral reading; never throw on bad wire data.
+ */
+function mapRunDetailEventToTraceEvent(
+  entry: RunDetailEventDto,
+): TraceEvent {
+  const occurredAt = new Date(entry.occurredAt);
+  const time = isNaN(occurredAt.getTime())
+    ? "—"
+    : `${String(occurredAt.getUTCHours()).padStart(2, "0")}:${String(occurredAt.getUTCMinutes()).padStart(2, "0")}`;
+
+  const parsedStatus = readStatusFromPayload(entry.payloadJson);
+  const text = parsedStatus.summary ?? entry.type;
+
+  return {
+    time,
+    status: parsedStatus.status ?? "running",
+    text,
+  };
+}
+
+/**
+ * kubb emits JSON-stringified numbers as `number | string` so they can
+ * round-trip `int64` / `double` without losing precision on big values.
+ * The domain types carry plain `number`; this helper normalises both
+ * branches to a finite number (or 0 when the wire sent nothing).
+ */
+function toNumber(value: number | string): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/**
+ * Minimal payload-reader for status / summary hints.
+ *
+ * The journal payload is open-ended per type; we extract the bits the
+ * screen already knows how to render — `to` / `from` for status, the
+ * event type as a textual fallback. Anything we cannot parse is dropped
+ * silently: the screen's TraceEvent readers treat the default ("running")
+ * status and a free-text `text` as valid.
+ */
+function readStatusFromPayload(
+  payloadJson: string | null,
+): { status: TraceEvent["status"] | null; summary: string | null } {
+  if (!payloadJson) {
+    return { status: null, summary: null };
+  }
+  try {
+    const parsed: unknown = JSON.parse(payloadJson);
+    if (parsed === null || typeof parsed !== "object") {
+      return { status: null, summary: null };
+    }
+    const record = parsed as Record<string, unknown>;
+    const candidate = typeof record["to"] === "string"
+      ? (record["to"] as string).toLowerCase()
+      : null;
+    const status = isTraceEventStatus(candidate) ? candidate : null;
+    const summary = typeof record["type"] === "string"
+      ? (record["type"] as string)
+      : null;
+    return { status, summary };
+  } catch {
+    return { status: null, summary: null };
+  }
+}
+
+function isTraceEventStatus(
+  value: string | null,
+): value is TraceEvent["status"] {
+  if (value === null) return false;
+  return (
+    value === "queued" ||
+    value === "running" ||
+    value === "waiting" ||
+    value === "escalated" ||
+    value === "succeeded" ||
+    value === "failed" ||
+    value === "cancelled"
+  );
 }
 
 /**

@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query"
 
 import {
   mapRunArtifactsPageToArtifacts,
+  mapRunDetailToDetail,
   mapRunsPageToSummaries,
-  mapRunViewToDetail,
   toRunDetail,
   toRunSummary,
   toWorkItemInspector,
@@ -16,6 +16,7 @@ import type {
 } from "@/domains/runs/model/types"
 import { getApiV1Runs } from "@/shared/api/_generated/clients/getApiV1Runs"
 import { runsArtifacts } from "@/shared/api/_generated/clients/runsArtifacts"
+import { runsGetById } from "@/shared/api/_generated/clients/runsGetById"
 import { findSeedRun, listSeedRuns } from "@/shared/api/mock"
 import { env } from "@/shared/config/env"
 
@@ -49,12 +50,10 @@ async function listRuns(): Promise<RunSummary[]> {
 }
 
 /**
- * Single-run detail. The host has no `/api/v1/runs/{runId}` endpoint
- * ([RunArtifactsController] is a sibling controller, not a detail page),
- * so the real-mode path uses the list page and picks the row out of it.
- * The detail screen renders an empty brief / events / rules regardless —
- * the wire `RunView` carries none of that yet. The list-page approach is
- * intentional: when a detail endpoint lands, only this function changes.
+ * Single-run detail. The host's `GET /api/v1/runs/{runId}` is the real-mode
+ * path — it returns the full envelope (work-items + dependencies, the
+ * recent journal, the pinned revisions, the brief). The mock path uses
+ * the seed store so the screen still renders locally without a backend.
  */
 async function getRun(runId: string): Promise<RunDetail> {
   if (env.useMock) {
@@ -64,12 +63,8 @@ async function getRun(runId: string): Promise<RunDetail> {
     }
     return toRunDetail(seed)
   }
-  const page = await getApiV1Runs({ page: 1, pageSize: 100 })
-  const view = page.items.find((entry) => entry.id === runId)
-  if (!view) {
-    throw new Error(`run ${runId} not found`)
-  }
-  return mapRunViewToDetail(view)
+  const detail = await runsGetById(runId)
+  return mapRunDetailToDetail(detail)
 }
 
 /**

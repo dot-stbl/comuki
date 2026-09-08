@@ -1,0 +1,105 @@
+{
+  "required": [
+    "id",
+    "projectId",
+    "status",
+    "createdAt",
+    "updatedAt",
+    "title",
+    "app",
+    "model",
+    "costUsd",
+    "tokens",
+    "brief",
+    "workItems",
+    "events",
+    "rules",
+    "revision"
+  ],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "projectId": { "type": "string", "format": "uuid" },
+    "status": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "title": { "type": "string" },
+    "app": { "type": "string" },
+    "model": { "type": "string" },
+    "costUsd": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+      "type": ["number", "string"],
+      "format": "double"
+    },
+    "tokens": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int64"
+    },
+    "brief": { "type": "string" },
+    "workItems": {
+      "type": "array",
+      "items": {
+        "required": [
+          "id",
+          "profile",
+          "label",
+          "status",
+          "dependsOn",
+          "cost",
+          "tokens",
+          "startedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "profile": { "type": "string" },
+          "label": { "type": "string" },
+          "status": { "type": "string" },
+          "dependsOn": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" }
+          },
+          "cost": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": ["number", "string"],
+            "format": "double"
+          },
+          "tokens": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": ["integer", "string"],
+            "format": "int64"
+          },
+          "startedAt": { "type": ["null", "string"], "format": "date-time" }
+        },
+        "x-readme-ref-name": "RunDetailWorkItem"
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "required": ["id", "workItemId", "type", "occurredAt", "payloadJson"],
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "workItemId": { "type": ["null", "string"], "format": "uuid" },
+          "type": { "type": "string" },
+          "occurredAt": { "type": "string", "format": "date-time" },
+          "payloadJson": { "type": ["null", "string"] }
+        },
+        "x-readme-ref-name": "RunDetailEvent"
+      }
+    },
+    "rules": { "type": "array", "items": { "type": "string" } },
+    "revision": {
+      "required": ["rules", "sdk"],
+      "type": "object",
+      "properties": {
+        "rules": { "type": "string" },
+        "sdk": { "type": "string" }
+      },
+      "x-readme-ref-name": "RunDetailRevision"
+    }
+  },
+  "x-readme-ref-name": "RunDetail"
+}

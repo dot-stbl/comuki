@@ -30,7 +30,7 @@ public sealed class ConfigurationVirtualKeyStoreShould
                 },
             ],
         });
-        var store = new ConfigurationVirtualKeyStore(options, NullLogger<ConfigurationVirtualKeyStore>.Instance);
+        var store = new ConfigurationVirtualKeyStore(options, TimeProvider.System, NullLogger<ConfigurationVirtualKeyStore>.Instance);
 
         var key = await store.FindAsync("vkey_alpha", TestContext.Current.CancellationToken);
 
@@ -55,7 +55,7 @@ public sealed class ConfigurationVirtualKeyStoreShould
                 },
             ],
         });
-        var store = new ConfigurationVirtualKeyStore(options, NullLogger<ConfigurationVirtualKeyStore>.Instance);
+        var store = new ConfigurationVirtualKeyStore(options, TimeProvider.System, NullLogger<ConfigurationVirtualKeyStore>.Instance);
 
         var key = await store.FindAsync("vkey_omega", TestContext.Current.CancellationToken);
 
@@ -86,7 +86,7 @@ public sealed class ConfigurationVirtualKeyStoreShould
                 },
             ],
         });
-        var store = new ConfigurationVirtualKeyStore(options, NullLogger<ConfigurationVirtualKeyStore>.Instance);
+        var store = new ConfigurationVirtualKeyStore(options, TimeProvider.System, NullLogger<ConfigurationVirtualKeyStore>.Instance);
 
         var keys = await store.ListAsync(TestContext.Current.CancellationToken);
 
@@ -117,7 +117,7 @@ public sealed class ConfigurationVirtualKeyStoreShould
                 },
             ],
         });
-        var store = new ConfigurationVirtualKeyStore(options, NullLogger<ConfigurationVirtualKeyStore>.Instance);
+        var store = new ConfigurationVirtualKeyStore(options, TimeProvider.System, NullLogger<ConfigurationVirtualKeyStore>.Instance);
 
         var keys = await store.ListAsync(TestContext.Current.CancellationToken);
 

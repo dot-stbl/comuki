@@ -10,10 +10,15 @@ namespace Comuki.Host.Security.ProductionSecrets;
 /// migrator has its own database-password gate
 /// (<c>ConnectionStringSource.RejectBlankPasswordInProduction</c>); this
 /// one extends the same discipline to <see cref="ArtifactsOptions"/> and
-/// to the bootstrap-admin password (issue #10 T11.4).
+/// to the bootstrap-admin password (issue #10 T11.4). Production-only
+/// length / character-class check on the bootstrap-admin password (Q29)
+/// keeps operators from deploying with <c>password123</c>.
 /// </summary>
 public static class ProductionSecretValidator
 {
+    /// <summary>Minimum password length for the bootstrap admin in <c>Production</c>.</summary>
+    public const int BootstrapPasswordMinLength = 12;
+
     /// <summary>
     /// Inspects the bound <see cref="ArtifactsOptions"/> and
     /// <see cref="BootstrapAdminOptions"/>; throws in <c>Production</c>
@@ -64,9 +69,11 @@ public static class ProductionSecretValidator
 
     /// <summary>
     /// Refuses to start in <c>Production</c> when the bootstrap admin
-    /// password is still the well-known <c>comuki_dev</c> dev default.
-    /// The email default is also rejected as a guard — every install
-    /// should have a unique operator address.
+    /// password is still the well-known <c>comuki_dev</c> dev default,
+    /// or when it is shorter than
+    /// <see cref="BootstrapPasswordMinLength"/> characters, or when it
+    /// lacks at least one ASCII digit and at least one non-alphanumeric
+    /// character (Q29 — weak password check).
     /// </summary>
     private static void ValidateBootstrapAdmin(IServiceProvider services)
     {
@@ -84,5 +91,49 @@ public static class ProductionSecretValidator
                 $"refusing to start the host in Production: {BootstrapAdminOptions.PasswordEnvVariable} (or auth:bootstrap:adminPassword) "
                 + "is still on its committed dev default ('comuki_dev'); set it to a strong password");
         }
+
+        if (IsWeakPassword(bootstrap.AdminPassword))
+        {
+            throw new InvalidOperationException(
+                $"refusing to start the host in Production: {BootstrapAdminOptions.PasswordEnvVariable} (or auth:bootstrap:adminPassword) "
+                + $"is too weak (must be at least {BootstrapPasswordMinLength} characters and contain at least one digit "
+                + "and one non-alphanumeric character); set it to a strong password");
+        }
+    }
+
+    /// <summary>
+    /// True when the password is shorter than the configured minimum, or
+    /// lacks at least one digit and at least one non-alphanumeric
+    /// character. ASCII-only — the check is a deployment gate, not a
+    /// strength meter.
+    /// </summary>
+    /// <param name="password"></param>
+    internal static bool IsWeakPassword(string password)
+    {
+        if (password.Length < BootstrapPasswordMinLength)
+        {
+            return true;
+        }
+
+        var hasDigit = false;
+        var hasSymbol = false;
+        foreach (var character in password)
+        {
+            if (char.IsDigit(character))
+            {
+                hasDigit = true;
+            }
+            else if (!char.IsLetterOrDigit(character))
+            {
+                hasSymbol = true;
+            }
+
+            if (hasDigit && hasSymbol)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

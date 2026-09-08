@@ -44,13 +44,30 @@ public sealed class UsersController(
             return problem;
         }
 
-        var view = await inviteUser.HandleAsync(
-            new InviteUserCommand(request.Email, request.DisplayName, request.Password),
-            cancellationToken);
+        try
+        {
+            var view = await inviteUser.HandleAsync(
+                new InviteUserCommand(request.Email, request.DisplayName, request.Password),
+                cancellationToken);
 
-        logger.LogInformation("User {Email} invited ({UserId})", view.Email, view.Id);
+            logger.LogInformation("User {Email} invited ({UserId})", view.Email, view.Id);
 
-        return Created($"/api/v1/users/{view.Id.Value}", view);
+            return Created($"/api/v1/users/{view.Id.Value}", view);
+        }
+        catch (OidcLinkConflictException exception)
+        {
+            // Q43: refuse to invite an email that already maps to an OIDC-linked user.
+            // 409 Conflict is the right status — the caller's request collides with
+            // an existing identity the operator chose to federate instead.
+            return Conflict(new ProblemDetails
+            {
+                Type = "urn:comuki:error:user.oidc_link_exists",
+                Title = "Email already linked to an OIDC identity",
+                Status = StatusCodes.Status409Conflict,
+                Detail = exception.Message,
+                Extensions = { ["code"] = "user.oidc_link_exists", ["email"] = exception.Email },
+            });
+        }
     }
 
     /// <summary>Toggles the disabled flag (issue #35). Permission <c>identity:write</c>.</summary>

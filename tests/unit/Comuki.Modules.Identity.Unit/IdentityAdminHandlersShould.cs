@@ -36,7 +36,9 @@ public sealed class IdentityAdminHandlersShould
     {
         var store = Substitute.For<IUserAccountStore>();
         store.FindByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
-        var handler = new InviteUserHandler(store, passwordHasher, clock);
+        var linkStore = Substitute.For<IOidcLinkStore>();
+        linkStore.FindByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((OidcLink?)null);
+        var handler = new InviteUserHandler(store, linkStore, passwordHasher, clock);
 
         var view = await handler.HandleAsync(
             new InviteUserCommand("Ada@Example.COM", " Ada ", "password1"),
@@ -55,7 +57,9 @@ public sealed class IdentityAdminHandlersShould
     {
         var store = Substitute.For<IUserAccountStore>();
         store.FindByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
-        var handler = new InviteUserHandler(store, passwordHasher, clock);
+        var linkStore = Substitute.For<IOidcLinkStore>();
+        linkStore.FindByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((OidcLink?)null);
+        var handler = new InviteUserHandler(store, linkStore, passwordHasher, clock);
 
         var view = await handler.HandleAsync(
             new InviteUserCommand("ada@example.com", null, null),
@@ -74,10 +78,31 @@ public sealed class IdentityAdminHandlersShould
         var existing = User.Create("ada@example.com", "Ada", "hash", now);
         var store = Substitute.For<IUserAccountStore>();
         store.FindByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(existing);
-        var handler = new InviteUserHandler(store, passwordHasher, clock);
+        var linkStore = Substitute.For<IOidcLinkStore>();
+        linkStore.FindByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((OidcLink?)null);
+        var handler = new InviteUserHandler(store, linkStore, passwordHasher, clock);
 
         await Should.ThrowAsync<InvalidOperationException>(
             () => handler.HandleAsync(new InviteUserCommand("ada@example.com", "Ada", "password1"), TestContext.Current.CancellationToken));
+    }
+
+    [Fact(DisplayName = "Given an email that already maps to an OIDC-linked user, when InviteUser runs, then OidcLinkConflictException is thrown and no save happens")]
+    public async Task InviteUserRefusesOidcLinkedEmailAsync()
+    {
+        var userId = UserId.New();
+        var existingLink = OidcLink.Create(userId, "keycloak", "sub-abc", now);
+        var store = Substitute.For<IUserAccountStore>();
+        store.FindByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((User?)null);
+        var linkStore = Substitute.For<IOidcLinkStore>();
+        linkStore.FindByEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(existingLink);
+        var handler = new InviteUserHandler(store, linkStore, passwordHasher, clock);
+
+        var exception = await Should.ThrowAsync<OidcLinkConflictException>(
+            () => handler.HandleAsync(new InviteUserCommand("Ada@Example.COM", "Ada", "password1"), TestContext.Current.CancellationToken));
+
+        exception.Email.ShouldBe("ada@example.com");
+        exception.Message.ShouldContain("ada@example.com");
+        await store.DidNotReceiveWithAnyArgs().SaveAsync(default!, TestContext.Current.CancellationToken);
     }
 
     [Fact(DisplayName = "Given a disabled user, when SetUserDisabled runs with disabled=false, then the flag flips and tokens bump")]

@@ -4,6 +4,8 @@ using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Journal;
+using Comuki.Shared.Contracts.Usage;
+using Comuki.Shared.Kernel.Exceptions;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,14 +18,24 @@ namespace Comuki.Host.Costs;
 /// </summary>
 /// <param name="db"></param>
 /// <param name="journal"></param>
+/// <param name="budgets"></param>
+/// <param name="usageEvents"></param>
 /// <param name="clock"></param>
 /// <param name="logger"></param>
 public sealed class OrchestrationBudgetGate(
     OrchestrationDbContext db,
     IRunJournal journal,
+    IProjectBudgetSettings budgets,
+    IUsageEventStore usageEvents,
     TimeProvider clock,
     ILogger<OrchestrationBudgetGate> logger) : IBudgetGate
 {
+    /// <summary>Stable code for the hard-cap denial surfaced to ProblemDetails.</summary>
+    public const string HardExceededCode = "budget.hard_exceeded";
+
+    /// <summary>Stable code for the soft-cap advisory event (logged, not thrown).</summary>
+    public const string SoftExceededCode = "budget.soft_exceeded";
+
     /// <inheritdoc />
     public async Task HardStopAsync(
         RunId runId,
@@ -70,5 +82,37 @@ public sealed class OrchestrationBudgetGate(
             projectId,
             spentUsdMicros,
             hardLimitUsdMicros);
+    }
+
+    /// <inheritdoc />
+    public async Task EnforceClaimAsync(
+        ProjectId projectId,
+        CancellationToken cancellationToken = default)
+    {
+        var caps = await budgets.GetAsync(projectId, cancellationToken);
+        var spent = await usageEvents.SumProjectCostUsdMicrosAsync(projectId, cancellationToken: cancellationToken);
+
+        if (caps.HardLimitUsdMicros is { } hard && spent >= hard)
+        {
+            logger.LogError(
+                "Project {ProjectId} hard budget exceeded at claim time: spent={SpentUsdMicros} hard={HardLimitUsdMicros}",
+                projectId,
+                spent,
+                hard);
+
+            throw new BudgetExceededException(
+                HardExceededCode,
+                "project hard budget exceeded; claim denied",
+                inner: null);
+        }
+
+        if (caps.SoftLimitUsdMicros is { } soft && spent >= soft)
+        {
+            logger.LogWarning(
+                "Project {ProjectId} soft budget exceeded at claim time: spent={SpentUsdMicros} soft={SoftLimitUsdMicros} (claim allowed)",
+                projectId,
+                spent,
+                soft);
+        }
     }
 }

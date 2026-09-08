@@ -52,6 +52,18 @@ public sealed class FakeChatSessionStore : IChatSessionStore
 
     public List<ChatMessage> Messages { get; } = [];
 
+    /// <summary>Pre-populates the session list — used by tests that need read paths to see a known session shape without going through <see cref="AddAsync"/>.</summary>
+    public void Seed(Domain.Sessions.ChatSession session)
+    {
+        sessions.Add(session);
+    }
+
+    /// <summary>How many sessions the store currently holds; used to assert that a service's create path persisted.</summary>
+    public int NewSessionCount()
+    {
+        return sessions.Count;
+    }
+
     /// <inheritdoc />
     public Task AddAsync(
         Domain.Sessions.ChatSession session,

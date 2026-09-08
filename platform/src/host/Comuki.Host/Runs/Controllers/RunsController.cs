@@ -12,11 +12,13 @@ namespace Comuki.Host.Runs.Controllers;
 
 /// <summary>
 /// Run listing surface: paged, filterable and sortable through the filter DSL
-/// (grammar on <see cref="FilterQuery"/>), plus the two operator decision
-/// endpoints (approve / cancel). Subject-scope filtered by the orchestration
-/// context query filters — out-of-scope rows are absent, not 403.
+/// (grammar on <see cref="FilterQuery"/>), the per-run detail read, and the
+/// two operator decision endpoints (approve / cancel). Subject-scope filtered
+/// by the orchestration context query filters — out-of-scope rows are
+/// absent, not 403.
 /// </summary>
 /// <param name="runs">List handler behind <c>GET /api/v1/runs</c>.</param>
+/// <param name="details">Detail handler behind <c>GET /api/v1/runs/{runId}</c>.</param>
 /// <param name="approve">Host-side approve port (issue #S5).</param>
 /// <param name="cancel">Host-side cancel port (issue #S5).</param>
 [ApiController]
@@ -24,6 +26,7 @@ namespace Comuki.Host.Runs.Controllers;
 [RequiresPermission("run:read")]
 public sealed class RunsController(
     RunsListHandler runs,
+    GetRunDetailHandler details,
     IApproveRunPort approve,
     ICancelRunPort cancel) : ControllerBase
 {
@@ -42,6 +45,28 @@ public sealed class RunsController(
     {
         return RunsEndpointRunner.ExecuteAsync(
             async () => new OkObjectResult(await runs.ListAsync(query, cancellationToken)));
+    }
+
+    /// <summary>
+    /// Reads the full detail of one run: work items with their DAG edges, the
+    /// recent journal (top 20), the pinned revisions, and the brief. The
+    /// subject-scope query filter is the only gate beyond <c>run:read</c> —
+    /// a run the subject cannot see reads as 404, not 403.
+    /// </summary>
+    /// <param name="runId">Run to read.</param>
+    /// <param name="cancellationToken"></param>
+    [HttpGet("{runId:guid}", Name = "runs-get-by-id")]
+    [ProducesResponseType<RunDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public Task<ActionResult> GetAsync(Guid runId, CancellationToken cancellationToken = default)
+    {
+        return RunsEndpointRunner.ExecuteAsync(async () =>
+        {
+            var detail = await details.GetAsync(new RunId(runId), cancellationToken);
+            return detail is { } found
+                ? new OkObjectResult(found)
+                : RunsProblems.RunNotFound(new RunId(runId));
+        });
     }
 
     /// <summary>
@@ -153,6 +178,27 @@ public static class RunsProblems
                 ["code"] = "run.terminal_state",
                 ["currentStatus"] = exception.Current.ToString(),
                 ["decision"] = exception.Decision,
+            });
+
+        return new ObjectResult(typed.ProblemDetails)
+        {
+            StatusCode = typed.StatusCode,
+            ContentTypes = { "application/problem+json" },
+        };
+    }
+
+    /// <summary>404 for the detail endpoint when the run is absent or out of subject scope.</summary>
+    /// <param name="runId">Run that was looked up.</param>
+    public static ActionResult RunNotFound(RunId runId)
+    {
+        var typed = TypedResults.Problem(
+            title: "Run not found",
+            detail: $"run '{runId.Value}' not found",
+            statusCode: StatusCodes.Status404NotFound,
+            extensions: new Dictionary<string, object?>
+            {
+                ["code"] = "run.not_found",
+                ["runId"] = runId.Value.ToString(),
             });
 
         return new ObjectResult(typed.ProblemDetails)

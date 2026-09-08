@@ -1,0 +1,6 @@
+{
+  "required": ["rules", "sdk"],
+  "type": "object",
+  "properties": { "rules": { "type": "string" }, "sdk": { "type": "string" } },
+  "x-readme-ref-name": "RunDetailRevision"
+}

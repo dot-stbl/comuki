@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import { projectDomainTypeSchema } from "./projectDomainTypeSchema"
 import { z } from "zod/v4"
 
 export const updateSettingsRequestSchema = z.object({
@@ -22,4 +23,8 @@ export const updateSettingsRequestSchema = z.object({
   hardBudgetUsdMicros: z.nullable(
     z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
   ),
+  get domainType() {
+    return projectDomainTypeSchema
+  },
+  customDomainTypesJson: z.nullable(z.string()),
 })

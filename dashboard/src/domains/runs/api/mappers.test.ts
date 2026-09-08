@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   mapRunArtifactsPageToArtifacts,
+  mapRunDetailToDetail,
   mapRunViewToDetail,
   mapRunViewToSummary,
   mapRunsPageToSummaries,
@@ -9,6 +10,7 @@ import {
 } from "@/domains/runs/api/mappers"
 import { buildProfileFlow } from "@/domains/runs/model/profile-flow"
 import { itemDepths } from "@/domains/runs/model/work-items"
+import type { RunDetail } from "@/shared/api/_generated/types/RunDetail"
 import type { RunView } from "@/shared/api/_generated/types/RunView"
 import type { RunsPage } from "@/shared/api/_generated/types/RunsPage"
 import type { RunArtifactsPage } from "@/shared/api/_generated/types/RunArtifactsPage"
@@ -251,6 +253,160 @@ describe("mapRunViewToDetail", () => {
     expect(detail.rules).toEqual([])
     expect(detail.revision).toEqual({ rules: "", sdk: "" })
     expect(detail.events).toEqual([])
+  })
+})
+
+/**
+ * The detail endpoint is the wire contract the screen was built around.
+ * The mapper must fill every field the screen renders, normalise the
+ * kubb `number | string` decimals to plain numbers, parse journal payloads
+ * to a typed status hint, and never throw on bad wire data.
+ */
+function runDetailFixture(overrides: Partial<RunDetail> = {}): RunDetail {
+  return {
+    id: "00000000-0000-0000-0000-000000000001",
+    projectId: "00000000-0000-0000-0000-0000000000aa",
+    status: "running",
+    createdAt: "2026-09-04T10:00:00.000+00:00",
+    updatedAt: "2026-09-04T10:05:30.000+00:00",
+    title: "ship the detail endpoint",
+    app: "comuki/worker:1.0.0",
+    model: "worker",
+    costUsd: 0.42,
+    tokens: 12345,
+    brief: '{"goal":"wire the page"}',
+    workItems: [
+      {
+        id: "00000000-0000-0000-0000-000000000010",
+        profile: "implement",
+        label: "Wire the page",
+        status: "running",
+        dependsOn: [],
+        cost: 0.21,
+        tokens: 6000,
+        startedAt: "2026-09-04T10:01:00.000+00:00",
+      },
+      {
+        id: "00000000-0000-0000-0000-000000000011",
+        profile: "verify",
+        label: "Run the gate",
+        status: "queued",
+        dependsOn: ["00000000-0000-0000-0000-000000000010"],
+        cost: 0,
+        tokens: 0,
+        startedAt: null,
+      },
+    ],
+    events: [
+      {
+        id: "00000000-0000-0000-0000-000000000020",
+        workItemId: "00000000-0000-0000-0000-000000000010",
+        type: "work_item.status_changed",
+        occurredAt: "2026-09-04T10:01:00.000+00:00",
+        payloadJson: '{"from":"Queued","to":"Running"}',
+      },
+    ],
+    rules: [],
+    revision: { rules: "rules@a1b9e0", sdk: "comuki/worker:1.0.0" },
+    ...overrides,
+  }
+}
+
+describe("mapRunDetailToDetail", () => {
+  it("carries the full wire envelope to the domain", () => {
+    const detail = mapRunDetailToDetail(runDetailFixture())
+
+    expect(detail.id).toBe("00000000-0000-0000-0000-000000000001")
+    expect(detail.projectId).toBe("00000000-0000-0000-0000-0000000000aa")
+    expect(detail.title).toBe("ship the detail endpoint")
+    expect(detail.app).toBe("comuki/worker:1.0.0")
+    expect(detail.brief).toBe('{"goal":"wire the page"}')
+    expect(detail.rules).toEqual([])
+    expect(detail.revision).toEqual({
+      rules: "rules@a1b9e0",
+      sdk: "comuki/worker:1.0.0",
+    })
+  })
+
+  it("fills the summary fields the wire actually carries — title, app, model, cost, tokens", () => {
+    const detail = mapRunDetailToDetail(runDetailFixture())
+
+    expect(detail.title).toBe("ship the detail endpoint")
+    expect(detail.app).toBe("comuki/worker:1.0.0")
+    expect(detail.model).toBe("worker")
+    expect(detail.cost).toBe(0.42)
+    expect(detail.tokens).toBe(12345)
+  })
+
+  it("maps the work-item graph — dependencies and startedAt included", () => {
+    const detail = mapRunDetailToDetail(runDetailFixture())
+
+    expect(detail.workItems).toHaveLength(2)
+    expect(detail.workItems[0]?.dependsOn).toEqual([])
+    expect(detail.workItems[0]?.startedAt).toBe(
+      "2026-09-04T10:01:00.000+00:00",
+    )
+    expect(detail.workItems[1]?.dependsOn).toEqual([
+      "00000000-0000-0000-0000-000000000010",
+    ])
+    expect(detail.workItems[1]?.startedAt).toBeUndefined()
+  })
+
+  it("normalises loose number | string cost/tokens to plain numbers", () => {
+    const detail = mapRunDetailToDetail(
+      runDetailFixture({ costUsd: "0.5", tokens: "9999" }),
+    )
+
+    expect(detail.cost).toBe(0.5)
+    expect(detail.tokens).toBe(9999)
+  })
+
+  it("formats the journal payload as a TraceEvent — UTC HH:MM and to-status hint", () => {
+    const detail = mapRunDetailToDetail(runDetailFixture())
+
+    expect(detail.events).toHaveLength(1)
+    expect(detail.events[0]?.time).toBe("10:01")
+    expect(detail.events[0]?.status).toBe("running")
+    expect(detail.events[0]?.text).toBe("work_item.status_changed")
+  })
+
+  it("falls back gracefully when the journal payload is malformed", () => {
+    const detail = mapRunDetailToDetail(
+      runDetailFixture({
+        events: [
+          {
+            id: "00000000-0000-0000-0000-000000000030",
+            workItemId: null,
+            type: "budget.exceeded",
+            occurredAt: "2026-09-04T10:02:00.000+00:00",
+            payloadJson: "not-json",
+          },
+        ],
+      }),
+    )
+
+    expect(detail.events[0]?.time).toBe("10:02")
+    expect(detail.events[0]?.status).toBe("running")
+    expect(detail.events[0]?.text).toBe("budget.exceeded")
+  })
+
+  it("keeps the page readable when the timestamp is unparseable", () => {
+    const detail = mapRunDetailToDetail(
+      runDetailFixture({
+        events: [
+          {
+            id: "00000000-0000-0000-0000-000000000040",
+            workItemId: null,
+            type: "run.escalation_timeout",
+            occurredAt: "not-a-timestamp",
+            payloadJson: null,
+          },
+        ],
+      }),
+    )
+
+    expect(detail.events[0]?.time).toBe("—")
+    expect(detail.events[0]?.text).toBe("run.escalation_timeout")
   })
 })
 

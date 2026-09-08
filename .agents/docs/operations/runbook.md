@@ -164,10 +164,10 @@ in [`backup.md`](./backup.md). The host's own state fits in two
 artifacts:
 
 - **`pg_dump` of the orchestrator database** — every per-DbContext
-  schema (`orchestration`, `identity`, `projects`, `memory`, `chat`,
-  `intake`, `costs`, `artifacts`) with its own `__ef_migrations_history`
-  table. Per-schema partitioning is documented in
-  [`database-schemas.md`](./database-schemas.md).
+  schema (`orchestration`, `scheduler`, `identity`, `projects`, `memory`,
+  `chat`, `intake`, `costs`, `artifacts`, `knowledge`) with its own
+  `__ef_migrations_history` table. Per-schema partitioning is documented
+  in [`database-schemas.md`](./database-schemas.md).
 - **MinIO `mc mirror` of the `comuki-run-bundles` bucket** — every
   `{projectId}/{runId}/{brief,result,pins}.json` triple the
   `RunArtifactPackager` ever wrote. v1 retention = "never delete";

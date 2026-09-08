@@ -11,10 +11,10 @@ progress:
   issues_total: 50
   issues_closed: 50
   issues_open: 0
-  master_tip: e679663
+  master_tip: fa659fd
   openapi_emission: artifacts/openapi.json
-  fe_tests: 1525
-  be_tests: 1192
+  fe_tests: 1560
+  be_tests: 1567
   rule_bootstrap: |
     Agent onboarding ritual enforced by three machine-checkable artefacts
     (see `.agents/RULES-BOOTSTRAP.md`):
@@ -32,7 +32,7 @@ progress:
 
 **v1 milestone is complete and shipping.** All 50 GitHub issues closed
 (0 open). 24 slices shipped — 15 original v1 core slices plus 9 follow-on
-slices landed during v1 polish. Master tip `e679663` (2026-09-08).
+slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
 
 **Slice cadence (merge commits on `master`):**
 
@@ -92,7 +92,7 @@ slices landed during v1 polish. Master tip `e679663` (2026-09-08).
 - #49 Autonomy ratchet continuation (confidence + escalation)
 - #50 Merge-queue multi-feature batch + dependency ordering
 
-## Что живёт (master `e679663`, 2026-09-08)
+## Что живёт (master `fa659fd`, 2026-09-08)
 
 ### Backend (C# / .NET 10)
 
@@ -107,14 +107,16 @@ slices landed during v1 polish. Master tip `e679663` (2026-09-08).
   `Comuki.Shared.Contracts` (gRPC, brain, queue, journal, plans, memory,
   control-plane, realtime) · `Comuki.Shared.Telemetry` (ActivitySource + Meter,
   `AddComukiTelemetry()` installer) · `Comuki.Shared.Filtering` (DSL parser
-  → IQueryable; kubb-exposed filter types via OpenAPI transformer) ·
-  `Comuki.Shared.Redis` (IDistributedCache wrap, DistributedProjectSettingsCache).
-- **10 модулей** в `platform/src/modules/`:
+  → IQueryable; kubb-exposed filter types via OpenAPI transformer).
+  (`Comuki.Shared.Redis` отложен — кэш settings пока не введён, см.
+  v2 backlog.)
+- **11 модулей** в `platform/src/modules/`:
   - **Identity** — RBAC (`RoleMatrix`/`RoleKeys` в коде, `ck_` API keys с
     HMAC pepper, OIDC linker с per-provider схемами + `OidcAccountLinker`,
     bootstrap admin, 7 admin endpoints #31–#37.
   - **Projects** — CRUD + per-project settings с live-reload, бюджеты и
-    concurrency caps (`ProjectSettingsCacheRefresher`, distributed via Redis).
+    concurrency caps (`ProjectSettingsCacheRefresher` через in-process
+    cache; Redis отложен до v2).
   - **Chat** — Voluta-graph integration в Host, checkpoints +
     `chat_sessions` / `chat_messages` storage, slash-commands.
   - **Memory** — long-term facts с pgvector (`SourceDocument` +
@@ -144,6 +146,10 @@ slices landed during v1 polish. Master tip `e679663` (2026-09-08).
     permission.
   - **Verify** — `Comuki.Modules.Verify` (GenericCommandRun EF entity +
     `IGenericCommandRunner` + `ProcessRunner` + `GenericCommandVerifierWorker`).
+  - **Scheduler** — `Comuki.Modules.Scheduler` (cron + sentry observability
+    via `scheduler.scheduled_jobs` table, `ScheduledJobDispatcherWorker`
+    polls via `FOR UPDATE SKIP LOCKED`, fires ephemeral workers; S15 issue
+    #44; см. [operations/scheduler.md](../docs/operations/scheduler.md)).
 - **Host endpoints** (current):
   - `/health` (liveness) · `/api/v1/health/{postgres,proxy}` (readiness с
     per-probe results, `2f01819`)
@@ -181,8 +187,9 @@ slices landed during v1 polish. Master tip `e679663` (2026-09-08).
   permissions) + `RunEventsBroadcastInterceptor` пушит journal events;
   `EnableDetailedErrors` отключён в production (issue #19).
 - **C#→TS realtime contracts** — `RealtimeContractAttribute` + source-gen
-  `RealtimeContractEmitter` генерирует `.ts` типы в
-  `agents/Comuki.Shared.Contracts.Realtime` для client SignalR.
+  `RealtimeContractEmitter` живёт на BE в `Comuki.Shared.Contracts.Realtime`
+  (отдельный unit-проект; FE-сторона codegen ещё не подключена — slice
+  отложен до v2).
 
 ### Frontend (`dashboard/`)
 
@@ -208,20 +215,21 @@ slices landed during v1 polish. Master tip `e679663` (2026-09-08).
   (`window.location.assign`), `VITE_OIDC_PROVIDER` env, OIDC callback
   обрабатывает Host (`/api/v1/auth/oidc/{provider}/callback`) и возвращает
   `/` с кукой.
-- **Tests** — `bun run test` → **134 файла, 1525 тестов pass** (`2026-09-04`).
+- **Tests** — `bun run test` → **136 файлов, 1560 тестов pass** (`2026-09-08`).
   Mock-режим (`VITE_USE_MOCK=true`) не требует `VITE_API_BASE_URL`;
   real-mode throws на первом hook call без base URL.
-- **Dashboard polish** (post-v1, `e679663`): animated action icons, chat
+- **Dashboard polish** (post-v1, `fa659fd`): animated action icons, chat
   dock growth, tailwind v4 restored (preflight reset is load-bearing),
   auth query boot moved inside `QueryClientProvider` (`f000001`).
 
 ### Хранилища
 
-- **Postgres** — 9 schemas, по одной на DbContext: `orchestration`,
-  `identity`, `projects`, `memory`, `chat`, `intake`, `costs`, `artifacts`,
-  `knowledge` (issue #26 + #9). Каждая schema имеет собственную
-  `__ef_migrations_history` таблицу; `Comuki.Migrator/Program.cs` цикл
-  `EnsureSchema` → `MigrateAsync` per context.
+- **Postgres** — 10 schemas, по одной на DbContext: `orchestration`,
+  `scheduler`, `identity`, `projects`, `memory`, `chat`, `intake`,
+  `costs`, `artifacts`, `knowledge` (issue #26 + #9 + #44 Scheduler).
+  Каждая schema имеет собственную `__ef_migrations_history` таблицу;
+  `Comuki.Migrator/Program.cs` цикл `EnsureSchema` → `MigrateAsync`
+  per context.
 - **MinIO (S3)** — `comuki-run-bundles` бакет, ключи
   `{projectId}/{runId}/{brief,result,pins}.json`; compose `minio-init`
   job создаёт бакет + 30-day non-current-version lifecycle; bucket
@@ -245,15 +253,21 @@ slices landed during v1 polish. Master tip `e679663` (2026-09-08).
 
 ### Tests
 
-- **Backend** — xUnit v3 + MTP (не VSTest), 1192 tests pass +
-  5 pre-existing flakes (Scheduler InMemory, OIDC Keycloak Docker
-  timeout, StatusMachine PromoteTrustedIsNoOp, Runs
-  EscalationTimeoutSweeper seed bug, Verify.Unit 0 tests built).
-  Includes integration for runs/intake/identity/oidc/costs/proxy/chat/errors/
-  realtime/artifacts/migrations/stores + arch tests
-  (`Comuki.Architecture.Tests`) + load (`tests/load/k6`).
-- **Frontend** — vitest 4.1.x + Testing Library + jsdom; 134 test files,
-  1525 tests pass.
+- **Backend** — xUnit v3 + MTP (не VSTest), 1567 tests pass
+  (1354 unit + 213 integration). Pre-existing flakes fixed in
+  merge(fixes) batch 2026-09-08: StatusMachine PromoteTrustedIsNoOp
+  (test race on `Run.UpdatedAt`), Scheduler ExecuteDeleteAsync
+  (InMemory compat via Find+Remove), Runs EscalationTimeoutSweeper
+  (test seed cross-pollution), Scheduler CreateAsync exception type
+  mismatch (`FormatException` wrapped in `InvalidCronExpressionException`),
+  OIDC Keycloak integration tests (skipped on WSL2 — Docker Postgres
+  unreachable). Remaining: `Comuki.Modules.Verify.Unit` ships 0 tests
+  (build green, no coverage). Includes integration for runs/intake/
+  identity/oidc/costs/proxy/chat/errors/realtime/artifacts/migrations/
+  stores + arch tests (`Comuki.Architecture.Tests`) + load
+  (`tests/load/k6`).
+- **Frontend** — vitest 4.1.x + Testing Library + jsdom; 136 test files,
+  1560 tests pass.
 - **CI** — GitHub Actions (`S14` / #16); see `.github/workflows/`.
 
 ### Agents (`agents/`)
@@ -268,7 +282,7 @@ slices landed during v1 polish. Master tip `e679663` (2026-09-08).
    (жёсткий формат-гейт в графе билда).
 2. Все suite'ы зелёные (`dotnet run --project <test>` — MTP, не `dotnet test`).
 3. FE (когда тронут): `cd dashboard && bun run typecheck && bun run lint && bun run test`.
-   На `2026-09-08`: typecheck ok, lint ok, 1525/1525 tests pass.
+   На `2026-09-08`: typecheck ok, lint ok, 1560/1560 tests pass.
 4. Agents TS: `cd agents && bun install && bun run typecheck && bun test`.
 5. **OpenAPI emission gate** — `artifacts/openapi.json` должен появиться после
    build (Debug). kubb `predev` хук упадёт с подсказкой, если spec отсутствует
@@ -287,7 +301,7 @@ slices landed during v1 polish. Master tip `e679663` (2026-09-08).
 | Program.cs | top-level, **без** `public partial class Program` — тесты через `internal HostComposer.Compose` + IVT |
 | Entity ids | UUIDv7 (PG uuid), строки в API |
 | Ключи | `ck_` prefix + HMAC(pepper env); worker token opaque+TTL |
-| Postgres schemas | 9 schemas, по одной на DbContext; per-schema `__ef_migrations_history` (#26 + #9) |
+| Postgres schemas | 10 schemas, по одной на DbContext; per-schema `__ef_migrations_history` (#26 + #9 + #44) |
 | Миграции | tool-generated only; `Migrator/Program.cs` цикл `EnsureSchema` → `MigrateAsync` |
 | MinIO | `comuki-run-bundles`, `s3://{bucket}/{projectId}/{runId}/...`, 30-day non-current lifecycle (#28); bucket auto-init на старте хоста (#28 follow-up) |
 | OIDC | `auth:oidc:providers[]`, per-provider scheme + secret env var (#12); `OidcStateSweeper` чистит expired states каждые 5 минут (`Host:OidcSweep:*`) |

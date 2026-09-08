@@ -88,7 +88,7 @@ Two scripts you will run often:
 
 ```bash
 # Backend unit tests (xUnit v3 — VSTest can't discover it)
-dotnet run --project tests/Comuki.Platform.Orchestration.Unit.Lease
+dotnet run --project tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine
 
 # Frontend build + test cycle
 cd dashboard && bun run typecheck && bun run lint && bun run test

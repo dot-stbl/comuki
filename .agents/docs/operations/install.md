@@ -1,7 +1,7 @@
 # Operations notes — install
 
 > New here? Read [`storage.md`](./storage.md) for the overall storage
-> layout, [`database-schemas.md`](./database-schemas.md) for the eight
+> layout, [`database-schemas.md`](./database-schemas.md) for the ten
 > per-DbContext Postgres schemas, and [`../index.md`](../index.md) for
 > the rest of the operations docs (OIDC, MinIO, OpenAPI codegen, FE
 > settings).
@@ -28,9 +28,9 @@ has no password — the migrator exits with a setup hint pointing at
 - [storage.md](./storage.md) — Postgres + MinIO + Victoria layout
   and retention policies.
 - [database-schemas.md](./database-schemas.md) — per-context schemas
-  (`orchestration`, `identity`, `projects`, `memory`, `chat`, `intake`,
-  `costs`, `artifacts`), per-schema `__ef_migrations_history`, Migrator
-  loop semantics.
+  (`orchestration`, `scheduler`, `identity`, `projects`, `memory`, `chat`,
+  `intake`, `costs`, `artifacts`, `knowledge`), per-schema
+  `__ef_migrations_history`, Migrator loop semantics.
 - [minio.md](./minio.md) — `Artifacts:Minio:*` env-var mapping; same
   env-only-secret discipline as `COMUKI_MIGRATOR_DB_PASSWORD`.
 - [oauth-oidc.md](./oauth-oidc.md) — `COMUKI_OIDC_CLIENT_SECRET` and

@@ -1,4 +1,5 @@
 using Comuki.Host.Projects.Models;
+using Comuki.Modules.Identity.Application.Permissions;
 using Comuki.Modules.Projects.Application.Projects;
 using Comuki.Modules.Projects.Application.Projects.Archive;
 using Comuki.Modules.Projects.Application.Projects.Create;
@@ -16,6 +17,13 @@ namespace Comuki.Host.Projects;
 /// map requests to commands, run the FluentValidation validator and hand
 /// off to a handler — no business logic here. Typed exceptions become
 /// ProblemDetails responses (404 / 409 / 400) in one place.
+///
+/// Permissions are enforced by the host-wide filter
+/// (<see cref="RequiresPermissionAttribute"/>) — read endpoints demand
+/// <c>project:read</c>, mutating endpoints demand <c>project:admin</c>.
+/// The object axis (out-of-scope project rows) is enforced by the
+/// project's global query filter; the filter surface misses as 404,
+/// never 403.
 /// </summary>
 public static class ProjectsModuleEndpoints
 {
@@ -24,7 +32,6 @@ public static class ProjectsModuleEndpoints
     /// <returns></returns>
     public static IEndpointRouteBuilder MapProjectsEndpoints(this IEndpointRouteBuilder app)
     {
-        // TODO(auth): project:admin — wire [RequiresPermission] host-wide with the auth slice
         var group = app.MapGroup(ApiRoutes.Projects).WithTags("Projects");
 
         group.MapPost("", CreateAsync);
@@ -38,6 +45,7 @@ public static class ProjectsModuleEndpoints
         return app;
     }
 
+    [RequiresPermission("project:admin")]
     private static async Task<IResult> CreateAsync(
         CreateProjectRequest request,
         CreateProjectHandler handler,
@@ -54,6 +62,7 @@ public static class ProjectsModuleEndpoints
         });
     }
 
+    [RequiresPermission("project:read")]
     private static async Task<IResult> ListAsync(
         bool includeArchived,
         ListProjectsHandler handler,
@@ -63,6 +72,7 @@ public static class ProjectsModuleEndpoints
             async () => Results.Ok(await handler.HandleAsync(includeArchived, cancellationToken)));
     }
 
+    [RequiresPermission("project:read")]
     private static async Task<IResult> GetAsync(
         Guid projectId,
         GetProjectHandler handler,
@@ -72,6 +82,7 @@ public static class ProjectsModuleEndpoints
             async () => Results.Ok(await handler.HandleAsync(new ProjectId(projectId), cancellationToken)));
     }
 
+    [RequiresPermission("project:admin")]
     private static async Task<IResult> UpdateAsync(
         Guid projectId,
         UpdateProjectRequest request,
@@ -88,6 +99,7 @@ public static class ProjectsModuleEndpoints
         });
     }
 
+    [RequiresPermission("project:admin")]
     private static async Task<IResult> ArchiveAsync(
         Guid projectId,
         ArchiveProjectHandler handler,
@@ -101,6 +113,7 @@ public static class ProjectsModuleEndpoints
         });
     }
 
+    [RequiresPermission("project:read")]
     private static async Task<IResult> GetSettingsAsync(
         Guid projectId,
         GetProjectSettingsHandler handler,
@@ -110,6 +123,7 @@ public static class ProjectsModuleEndpoints
             async () => Results.Ok(await handler.HandleAsync(new ProjectId(projectId), cancellationToken)));
     }
 
+    [RequiresPermission("project:admin")]
     private static async Task<IResult> UpdateSettingsAsync(
         Guid projectId,
         UpdateSettingsRequest request,

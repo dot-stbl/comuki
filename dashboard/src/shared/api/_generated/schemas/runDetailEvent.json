@@ -1,0 +1,12 @@
+{
+  "required": ["id", "workItemId", "type", "occurredAt", "payloadJson"],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "workItemId": { "type": ["null", "string"], "format": "uuid" },
+    "type": { "type": "string" },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "payloadJson": { "type": ["null", "string"] }
+  },
+  "x-readme-ref-name": "RunDetailEvent"
+}

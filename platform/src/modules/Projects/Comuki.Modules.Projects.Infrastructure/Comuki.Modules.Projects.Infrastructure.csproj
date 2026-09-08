@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Comuki.Modules.Projects.Unit" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
@@ -15,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Comuki.Modules.Projects.Application\Comuki.Modules.Projects.Application.csproj" />
+    <ProjectReference Include="..\..\..\shared\Comuki.Shared.Telemetry\Comuki.Shared.Telemetry.csproj" />
   </ItemGroup>
 
 </Project>

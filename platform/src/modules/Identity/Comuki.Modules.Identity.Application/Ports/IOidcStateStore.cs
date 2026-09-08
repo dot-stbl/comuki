@@ -29,4 +29,15 @@ public interface IOidcStateStore
     /// <param name="cancellationToken"></param>
     /// <returns>The number of rows deleted.</returns>
     public Task<int> DeleteExpiredAsync(DateTimeOffset now, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns <c>true</c> when the underlying table exists in the
+    /// database the store is configured against (Q30 / v1.1). The host
+    /// sweeper calls this once at startup so a fresh deploy whose
+    /// migrator has not yet run is loud (a <c>Critical</c> log line)
+    /// without being fatal — the loop continues and retries on each
+    /// interval until the migrator lands.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    public Task<bool> TableExistsAsync(CancellationToken cancellationToken = default);
 }

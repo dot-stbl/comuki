@@ -84,6 +84,14 @@ const envSchema = z.object({
    * but is out of scope for this slice and the host has no such endpoint today.
    */
   VITE_OIDC_PROVIDER: z.string().optional(),
+  /**
+   * Bearer token for the OpenAI / Anthropic-compatible proxy at
+   * <c>GET /v1/models</c>. The proxy authenticates by virtual-key, not by
+   * cookie, so the kubb-client transport (cookie-only) cannot reach it.
+   * Optional in mock mode; in real mode the absence makes the models
+   * page fall back to the seed instead of calling the proxy.
+   */
+  VITE_PROXY_KEY: z.string().optional(),
 })
 
 const parsed = envSchema.parse({
@@ -95,6 +103,7 @@ const parsed = envSchema.parse({
   VITE_DEPLOY_ENV: import.meta.env.VITE_DEPLOY_ENV ?? "local",
   VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL ?? "",
   VITE_OIDC_PROVIDER: import.meta.env.VITE_OIDC_PROVIDER ?? "",
+  VITE_PROXY_KEY: import.meta.env.VITE_PROXY_KEY ?? "",
 })
 
 export const env = {
@@ -117,6 +126,12 @@ export const env = {
    * is the one fact the SPA has about whether an identity provider is wired.
    */
   oidcProvider: (parsed.VITE_OIDC_PROVIDER ?? "").trim() || null,
+  /**
+   * Bearer token for the model proxy (<c>GET /v1/models</c>). Empty when
+   * unset; the models page reads it as `null` and falls back to the
+   * seed rather than calling the proxy.
+   */
+  proxyKey: (parsed.VITE_PROXY_KEY ?? "").trim() || null,
 }
 
 export type Env = typeof env

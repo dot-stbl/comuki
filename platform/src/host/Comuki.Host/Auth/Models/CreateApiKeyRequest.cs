@@ -13,6 +13,14 @@ public sealed class CreateApiKeyRequest
 
     /// <summary>Optional expiry timestamp (UTC).</summary>
     public DateTimeOffset? ExpiresAt { get; init; }
+
+    /// <summary>
+    /// Optional tenant scope. When set, the key only authenticates
+    /// requests that carry the matching <c>X-Comuki-Tenant</c> header.
+    /// The host validates that the requesting subject has the right to
+    /// scope a key to this project — admin-only today.
+    /// </summary>
+    public Guid? TenantProjectId { get; init; }
 }
 
 /// <summary>Validation of <see cref="CreateApiKeyRequest"/>.</summary>
@@ -31,5 +39,9 @@ public sealed class CreateApiKeyRequestValidator : AbstractValidator<CreateApiKe
         RuleFor(static request => request.ExpiresAt)
             .GreaterThan(static _ => DateTimeOffset.UtcNow)
             .When(static request => request.ExpiresAt.HasValue);
+
+        RuleFor(static request => request.TenantProjectId)
+            .NotEqual(Guid.Empty)
+            .When(static request => request.TenantProjectId.HasValue);
     }
 }

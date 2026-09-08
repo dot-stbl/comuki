@@ -11,9 +11,9 @@ records what lives where and the retention policy for each.
 ## Postgres
 
 The platform's transactional store. Holds runs, work items, the
-run journal, identity, projects, costs, chat sessions, intake
-metadata, memory embeddings and the artifact bookkeeping. Tables
-live in eight per-DbContext schemas (see
+run journal, scheduled jobs, identity, projects, costs, chat
+sessions, intake metadata, memory embeddings and the artifact
+bookkeeping. Tables live in ten per-DbContext schemas (see
 [database-schemas.md](./database-schemas.md)).
 
 - **Backups** — operator concern (pg_dump / WAL archiving);, not in

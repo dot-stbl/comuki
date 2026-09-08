@@ -9,51 +9,67 @@ variable mapping, the component conventions, and how to theme. Values here match
 
 ## 1. Aesthetic
 
-**Premium monospace.** One typographic voice, cool-ink neutrals, a single slate-blue
-brand accent, generous air, ~6px radius. Calm and exact — premiality comes from
-restraint, hairline borders, and spacing, never from gradients, glow, or extra color.
+**Two voices, one accent.** Cool-ink neutrals with a single slate-blue brand
+accent; Archivo carries meaning (headings, prose, labels), JetBrains Mono
+Variable carries values (numbers, ids, machine text). Generous air,
+hairline borders, ~6 px radius. Calm and exact — premium quality comes
+from restraint, hairline borders, and spacing, never from gradients,
+glow, or extra color.
 
 Principles:
-- **One typeface: IBM Plex Mono.** Headings, UI, body, and machine text are all mono.
-  Do not introduce a serif or a second sans.
-- **Monochrome + one accent + danger.** The brand accent (slate-blue) is reserved for
-  the primary action, focus rings, links, and the *active* status. Danger (terracotta)
-  is the only other loud color. Everything else lives on the cool-neutral ramp.
-- **Status is carried by icon shape first, color second.** Statuses use muted, distinct
-  hues so they read at a glance, but the icon always disambiguates (works in mono / for
-  color-blind users).
-- **Air over density.** Roomy padding, hairline (1px) borders, ~6px radius. Panels are
-  quiet wells, not heavy cards. Soft shadows only.
-- **Two themes, equally polished.** Dark is the default product theme; light is paper.
-  Toggle with `data-theme="light" | "dark"` on `<html>`.
+- **Two typefaces, each with a role.** Archivo = copy (headings, prose,
+  labels). JetBrains Mono = values (numbers, ids, machine text). Do not
+  mix them (no mono chrome, no sans prose).
+- **Monochrome + one accent + danger.** The brand accent (slate-blue,
+  `--primary`) is reserved for the primary action, focus rings, links,
+  and the *active* status. Danger (terracotta, `--destructive`) is the
+  only other loud color. Everything else lives on the cool-neutral ramp.
+- **Status is carried by icon shape first, color second.** Statuses use
+  muted, distinct hues so they read at a glance, but the icon always
+  disambiguates (works in mono / for color-blind users).
+- **Air over density.** Roomy padding, hairline (1px) borders, ~6px
+  radius. Panels are quiet wells, not heavy cards. Soft shadows only.
+- **Two themes, equally polished.** Dark is the default product theme;
+  light is paper. Toggle with `.dark` on `<html>` (Tailwind v4
+  convention).
 
-Avoid: neon, gradient fills, emoji, heavy drop shadows, tight 2–3px radii, multiple
-accent colors, decorative icons/stats that don't carry information.
+Avoid: neon, gradient fills, emoji, heavy drop shadows, tight 2–3px
+radii, multiple accent colors, decorative icons/stats that don't carry
+information.
 
 ---
 
 ## 2. Type
 
+Two voices: **Archivo** (sans, meaning-bearing copy — headings, prose, labels)
+and **JetBrains Mono Variable** (mono, values — numbers, ids, machine text).
+The old single-IBM-Plex-Mono system was retired; the sans carries the body, the
+mono carries anything numeric, and the two don't bleed into each other.
+
 | Family | Stack |
 |---|---|
-| All text (`--font-console` / `--font-ui` / `--font-display` / `--font-mono`) | `'IBM Plex Mono', Consolas, Menlo, 'DejaVu Sans Mono', ui-monospace, monospace` |
+| `--font-ui` / `--font-sans` / `--font-heading` | `"Archivo Variable", "Archivo", system-ui, sans-serif` |
+| `--font-data` / `--font-mono` / `--font-mono` | `"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace` |
 
-Load: `@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');`
-Enable `font-feature-settings: "ss01","zero"` on body.
+Load (the kit owns both): `@import "@fontsource-variable/archivo";` and
+`@import "@fontsource-variable/jetbrains-mono";`. Numbers/ids/machine text use
+`font-mono` + `tabular-nums` so columns align.
 
-### Scale (`--t-*`)
-| Token | px | Use |
-|---|---|---|
-| `--t-display` | 28 | hero / page H1 |
-| `--t-h1` | 20 | section titles |
-| `--t-h2` | 15 | sub-titles |
-| `--t-body` | 13 | body / default UI |
-| `--t-sm` | 12 | secondary |
-| `--t-xs` | 11 | meta |
-| `--t-micro` | 10 | uppercase labels |
+### Scale (`--t-*`, in rem)
 
-**Labels / eyebrows:** `--t-micro`, `letter-spacing: 0.12–0.16em`, `text-transform: uppercase`,
-color `--text-faint`. Numbers/ids/machine text use the `.mono` helper (`"zero"` feature).
+| Token | rem | px | Use |
+|---|---|---|---|
+| `--t-display` | 1.5 | 24 | hero / page H1 |
+| `--t-h1` | 1.3125 | 21 | section titles |
+| `--t-h2` | 1 | 16 | sub-titles |
+| `--t-body` | 0.875 | 14 | body / default UI |
+| `--t-sm` | 0.8125 | 13 | secondary |
+| `--t-xs` | 0.75 | 12 | meta |
+| `--t-micro` | 0.6875 | 11 | uppercase labels |
+
+**Labels / eyebrows:** `--t-micro`, `--tracking-label: 0.08em`,
+`text-transform: uppercase`, color `--text-faint`. Numbers/ids use
+`font-feature-settings: "zero"` via `font-mono`.
 
 ---
 
@@ -109,49 +125,57 @@ Tints: `--st-<name>-tint = color-mix(in oklab, var(--st-<name>) 18%, transparent
 
 ## 4. Spacing, radius, depth, motion
 
-**Spacing** (`--s*`, roomy base): `--s1 2` · `--s2 5` · `--s3 7` · `--s4 10` · `--s5 13`
-· `--s6 16` · `--s7 19` · `--s8 22` · `--s10 28` · `--s12 34` · `--s16 44` (px).
-Always lay out rows/groups with flex/grid + `gap` (never bare inline + margins).
+**Spacing** (`--s*`, in rem — px @ 16): `--s1 0.25` (4) · `--s2 0.375` (6) ·
+`--s3 0.5` (8) · `--s4 0.75` (12) · `--s5 1` (16) · `--s6 1.25` (20) ·
+`--s7 1.5` (24) · `--s8 2` (32). Nothing below `--s1` exists; a gap smaller
+than 4 px is a mistake, not a decision. Always lay out rows/groups with
+flex/grid + `gap` (never bare inline + margins).
 
-**Radius:** `--r-card 8px` · `--r-sm 6px` · `--r-pill 6px`.
+**Radius:** `--radius: 0.375rem` (~6 px). Tailwind bridge maps `--r-{xs,sm,md,lg}`
+from the kit's own corner scale (`--r-xs` ... `--r-lg`).
 
 **Depth** (surface + hairline border do most of the work; shadows are soft):
-`--edge-hi` (1px lit top edge), `--shadow-sm`, `--shadow-card`, `--shadow-lift`,
-`--shadow-pop`. Don't exceed `--shadow-pop` for popovers/dialogs.
+`--shadow-sm`, `--shadow-card`, `--shadow-lift`, `--shadow-pop`. Don't exceed
+`--shadow-pop` for popovers/dialogs. `--shadow-pinned` for sticky rails
+(`4px 0 8px 0` with a foreground tint).
 
 **Motion:** `--ease: cubic-bezier(0.2,0.6,0.2,1)`, `--dur: 180ms`. No infinite decorative
-loops; gate any motion behind `@media (prefers-reduced-motion: no-preference)`.
+loops; gate any motion behind `@media (prefers-reduced-motion: reduce)`. Action
+icons inside buttons scale `1.08` on hover (120 ms ease-out) and `0.96` on press
+(80 ms).
 
 ---
 
-## 5. shadcn/ui mapping
+## 5. Tailwind v4 mapping
 
-Use `styles/globals.css` as the drop-in Tailwind v4 theme (it sets the variables below
-in hex, both themes). Key idea: shadcn `--accent` is a **neutral hover surface**, NOT the
-brand — the brand goes in `--primary`.
+The dashboard wires its tokens through `dashboard/src/index.css`'s
+`@theme inline` block. The Tailwind classes below resolve to the same
+`var(--…)` the kit's own primitives use — `bg-background`, `text-foreground`,
+`border-border`, etc. all hit the same hex/oklch values listed in §2–4.
 
-| shadcn variable | Comuki token | role |
+| Tailwind / shadcn name | Comuki token | role |
 |---|---|---|
-| `--background` | `--bg` | app background |
-| `--foreground` | `--text` | primary text |
-| `--card` / `--popover` | `--surface` / `--surface-raised` | panels, popovers |
-| `--primary` | `--accent` (slate-blue) | primary action, brand |
-| `--primary-foreground` | `--on-accent` | text on primary |
-| `--secondary` | `--surface-sunk` (raised in dark) | secondary buttons |
-| `--muted` / `--muted-foreground` | `--surface-sunk` / `--text-muted` | quiet zones / text |
-| `--accent` | `--surface-raised` | **neutral** hover surface (not brand!) |
-| `--destructive` | `--danger` | destructive / failed |
-| `--border` / `--input` | `--border` | borders & fields |
-| `--ring` | `--accent` | branded focus ring |
-| `--radius` | `0.375rem` (~6px) | softened, strict |
-| `--status-*` (ext) | `--st-*` | swarm/run statuses (icon carries) |
+| `bg-background` / `--background` | `--bg` (mapped `--background`) | app background |
+| `text-foreground` / `--foreground` | `--text` | primary text |
+| `bg-card` / `bg-popover` / `--card` / `--popover` | `--card` / `--popover` | panels, popovers |
+| `bg-primary` / `--primary` | `--primary` (brand accent — slate-blue) | primary action, brand |
+| `text-primary-foreground` / `--primary-foreground` | `--primary-foreground` | text on primary |
+| `bg-secondary` / `--secondary` | `--secondary` | secondary buttons / quiet zones |
+| `bg-muted` / `text-muted-foreground` | `--muted` / `--muted-foreground` | quiet zones / text |
+| `bg-accent` / `--accent` | `--accent` (Tailwind shadcn slot — **neutral** hover surface, NOT the brand) | hover surface |
+| `bg-destructive` / `--destructive` | `--destructive` | destructive / failed |
+| `border-border` / `border-input` | `--border` / `--input` | borders & fields |
+| `ring-ring` / `--ring` | `--ring` (slate-blue) | branded focus ring |
+| `--radius` | `0.375rem` (~6 px) | softened, strict |
+| `bg-st-running` / `bg-st-failed` etc. | `--st-running` / `--st-failed` | swarm/run statuses (icon carries) |
 
-**To rebuild a shadcn component in this language:** keep shadcn's structure/variants,
-just consume these variables. Concretely: filled `primary` = `--primary` bg + `--primary-foreground`
-text; `secondary`/`outline`/`ghost` are quieter (surface/transparent + `--border`);
-`destructive` = `--destructive`. Focus = `outline:none; border-color:var(--ring);
-box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 30%, transparent)`. Radius via
-`--radius`. Mono font everywhere.
+**To rebuild a shadcn component in this language:** keep shadcn's structure /
+variants, just consume these variables. Filled `primary` = `--primary` bg +
+`--primary-foreground` text; `secondary` / `outline` / `ghost` are quieter
+(surface/transparent + `--border`); `destructive` = `--destructive`. Focus =
+`outline:none; border-color:var(--ring); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 30%, transparent)`.
+Radius via `--radius`. Archivo carries the body, JetBrains Mono carries the
+values.
 
 ---
 
@@ -189,12 +213,12 @@ primary carrier of status meaning.
 
 ## 7. Theming
 
-- Theme switch: set `data-theme="dark"` (default) or `"light"` on `<html>`; persist in
-  `localStorage` (key `comuki-theme`). All tokens are defined per-theme, components follow.
-- For a real shadcn/Tailwind app: paste `styles/globals.css`, use `.dark` class (shadcn
-  convention) — it carries the same dark values.
-- New colors: don't invent. Pull from the tokens above. If you truly need an intermediate,
-  derive with `color-mix(in oklab, …)` from an existing token.
+- Theme switch: the dashboard uses Tailwind v4's `dark:` variant
+  (`@custom-variant dark (&:is(.dark *))`). Toggle by setting
+  `.dark` on `<html>` (or a wrapping element). All tokens are defined
+  per-theme; components follow.
+- New colors: don't invent. Pull from the tokens above. If you truly need an
+  intermediate, derive with `color-mix(in oklab, …)` from an existing token.
 
 ---
 
@@ -202,44 +226,55 @@ primary carrier of status meaning.
 
 | File | What |
 |---|---|
-| `styles/tokens.css` | **Source of truth** — all color/type/space/radius/shadow tokens, both themes, plus base reset & shared primitives (`.badge`, `.chip`, `.btn`, `.iconbtn`, `.label`, `.ic`). |
-| `styles/components.css` | shadcn/ui primitives recreated in this language (`.ui-*`). |
-| `styles/globals.css` | Drop-in Tailwind v4 theme for a real shadcn project (hex, both themes, `@theme inline`). |
-| `Comuki Foundation.html` | Home / examples — tokens, type, color, status, philosophy. |
-| `Comuki shadcn Components.html` | Live gallery of every component + the shadcn mapping table. |
-| `Comuki Dashboard.html` (+ `dashboard/`) | Full product mock — live runs, stage pipeline + per-stage inspector, approvals, cost, settings. |
+| `dashboard/src/app/styles/themes.css` | Generated palette registry (per-theme primitives). Source of truth for colors. |
+| `dashboard/src/app/styles/tokens.css` | **Token layer** — type, space, radius, shadow, motion tokens; derives everything else from `themes.css`. |
+| `dashboard/src/index.css` | Tailwind v4 entry — `@theme inline` block maps tokens to Tailwind variables (`--color-*`, `--font-*`, `--radius-*`, `--text-*`). |
+| `dashboard/src/shared/ui/primitives/*` | Custom Tailwind primitives (no shadcn). |
+| `dashboard/src/shared/ui/apm/*` | APM-specific components (waterfall, log entry, duration, status pill). |
+| `dashboard/stories/**` | Ladle catalog (live component gallery). |
 
 ---
 
 ## 9. Quick checklist for "rebuild a component / screen"
 
-1. Mono everywhere; sizes from the type scale (min 13px body in UI).
-2. Slate-blue accent only for primary/focus/links/active status; danger for destructive/failed.
-3. On accent fills use `--on-accent` (not `#fff`).
-4. 1px `--border` hairlines, `--r-sm`/`--r-card` radii, `--s*` spacing with flex/grid `gap`.
-5. Status = muted hue (§3) + Lucide icon shape.
-6. Both themes must read well — test light and dark.
-7. Soft shadows only; motion 180ms, reduced-motion safe.
+1. **Two voices** — Archivo for body / headings / labels, JetBrains Mono for
+   numbers / ids / machine text. Don't bleed (no mono chrome, no sans prose).
+2. **Slate-blue accent** (`--primary`) only for primary action / focus / links /
+   active status; danger (`--destructive`) for destructive / failed.
+3. **On accent fills** use `--primary-foreground` (which is dark in dark theme —
+   the accent is light there, so don't hard-code `#fff`).
+4. **1px hairlines** (`border-border`), `--radius` (~6 px), `--s*` spacing with
+   flex/grid `gap`.
+5. **Status = muted hue** (§3) + Lucide icon shape.
+6. **Both themes** must read well — test light and dark.
+7. **Soft shadows only**; motion 180 ms with `--ease`, reduced-motion safe.
+8. **No raw hex / px in module CSS** — tokens only. `font-mono` for tabular
+   numbers; `tabular-nums` for column-aligned figures.
 
 ---
 
 ## 10. Required input for an agent
 
-To build anything in this system, an agent MUST load these three files (they are the
-contract; this doc is the map):
+To build anything in this system, an agent MUST load these three files
+(they are the contract; this doc is the map):
 
-1. `styles/tokens.css` — the variables + base reset + shared primitives. **Always link first.**
-2. `styles/components.css` — the `.ui-*` component classes (depends on tokens).
-3. `styles/globals.css` — only when targeting a real shadcn/Tailwind v4 app (alternative to 1–2).
+1. `dashboard/src/app/styles/themes.css` — generated palette registry (per-theme
+   primitives). Source of truth for colors. **Always load first.**
+2. `dashboard/src/app/styles/tokens.css` — type, space, radius, shadow, motion
+   tokens; derives from `themes.css`.
+3. `dashboard/src/index.css` — Tailwind v4 entry; only when targeting the
+   React dashboard (alternatives 1–2 alone are sufficient for raw HTML /
+   Ladle stories).
 
-Plain HTML page boot:
+Plain HTML page boot (Ladle stories):
 ```html
-<html lang="…" data-theme="dark">
-  <link rel="stylesheet" href="styles/tokens.css">
-  <link rel="stylesheet" href="styles/components.css">
-  <!-- IBM Plex Mono via Google Fonts (see §2) -->
+<html lang="…" class="dark">
+  <link rel="stylesheet" href="/src/app/styles/themes.css">
+  <link rel="stylesheet" href="/src/app/styles/tokens.css">
+  <link rel="stylesheet" href="/src/index.css">
+  <!-- Archivo + JetBrains Mono via @fontsource-variable (see §2) -->
 ```
-Theme = `data-theme="dark|light"` on `<html>`, persisted in `localStorage["comuki-theme"]`.
+Theme = `.dark` on `<html>` (Tailwind v4 convention).
 
 ---
 
@@ -247,30 +282,41 @@ Theme = `data-theme="dark|light"` on `<html>`, persisted in `localStorage["comuk
 
 ```json
 {
-  "radius": { "card": "8px", "sm": "6px", "pill": "6px" },
-  "space":  { "s1":2,"s2":5,"s3":7,"s4":10,"s5":13,"s6":16,"s7":19,"s8":22,"s10":28,"s12":34,"s16":44 },
-  "type":   { "display":28,"h1":20,"h2":15,"body":13,"sm":12,"xs":11,"micro":10, "font":"IBM Plex Mono" },
+  "radius": { "default": "0.375rem" },
+  "space":  { "s1":4,"s2":6,"s3":8,"s4":12,"s5":16,"s6":20,"s7":24,"s8":32 },
+  "type":   { "display":24,"h1":21,"h2":16,"body":14,"sm":13,"xs":12,"micro":11,
+              "uiFont":"Archivo Variable","dataFont":"JetBrains Mono Variable",
+              "trackingLabel":"0.08em","trackingData":"0.02em","trackingDisplay":"-0.02em" },
   "motion": { "ease":"cubic-bezier(0.2,0.6,0.2,1)", "dur":"180ms" },
   "color": {
     "dark": {
       "bg":"#15171B","surface":"#191C21","surfaceRaised":"#22262C","surfaceSunk":"#1C1F25",
-      "navBg":"#131519","barBg":"#17191E","border":"#262A30","borderStrong":"#373C44",
+      "border":"#262A30","borderStrong":"#373C44",
       "text":"#E8EAEE","textMuted":"#969CA6","textFaint":"#5F656E",
-      "accent":"#83A1DC","accentHover":"#97B2E6","onAccent":"#0E1116",
+      "primary":"#83A1DC","primaryForeground":"#0E1116",
       "danger":"#D6685A",
-      "status":{ "running":"#83A1DC","success":"#7BA68C","failed":"#D6685A","waiting":"#C6A35E","queued":"#565C65","escalated":"#9A86C7" }
+      "status":{ "running":"#83A1DC","success":"#7BA68C","failed":"#D6685A",
+                 "waiting":"#C6A35E","queued":"#565C65","escalated":"#9A86C7" }
     },
     "light": {
       "bg":"#FBFBFA","surface":"#FFFFFF","surfaceRaised":"#FFFFFF","surfaceSunk":"#F3F4F3",
-      "navBg":"#F6F7F6","barBg":"#FCFCFB","border":"#E6E7E4","borderStrong":"#D2D4D0",
+      "border":"#E6E7E4","borderStrong":"#D2D4D0",
       "text":"#1B232E","textMuted":"#697080","textFaint":"#A0A4AC",
-      "accent":"#3C5A86","accentHover":"#32507A","onAccent":"#FFFFFF",
+      "primary":"#3C5A86","primaryForeground":"#FFFFFF",
       "danger":"#B0473B",
-      "status":{ "running":"#3C5A86","success":"#4E7C5B","failed":"#B0473B","waiting":"#9C7A3C","queued":"#A0A4AC","escalated":"#6E5BA6" }
+      "status":{ "running":"#3C5A86","success":"#4E7C5B","failed":"#B0473B",
+                 "waiting":"#9C7A3C","queued":"#A0A4AC","escalated":"#6E5BA6" }
     }
   }
 }
 ```
+
+> The hex values above are stable across both the kit and the Tailwind v4
+> bridge — see `dashboard/src/app/styles/themes.css` (generated from the theme
+> registry) and the `@theme inline` block in `dashboard/src/index.css`.
+> Color hues (slate-blue / cool-black / terracotta / muted status) are the
+> same as §3; only the variable names changed (`--accent` → `--primary`,
+> `--bg` → `--background`, etc.) to match Tailwind v4's slot names.
 
 ---
 

@@ -1,19 +1,21 @@
 # Postgres schemas (one per DbContext)
 
-Every `DbContext` owns a Postgres schema. Eight modules, eight
+Every `DbContext` owns a Postgres schema. Ten contexts, ten
 schemas. The Migrator runs `EnsureSchema` → `MigrateAsync` per
 context — applications cannot collide because each context also has
 its own per-schema `__ef_migrations_history` table.
 
-> Issue: #26 — Introduce real Postgres schemas per DbContext
+> Issues: #26 — Introduce real Postgres schemas per DbContext
 > (orchestration / identity / projects / memory / chat / intake /
-> costs / artifacts).
+> costs / artifacts). #44 — Scheduler (#44) lands a tenth context
+> with its own `scheduler` schema.
 
 ## Schema map
 
 | Schema           | Owning context        | Module              | Tables |
 |------------------|-----------------------|---------------------|--------|
 | `orchestration`  | `OrchestrationDbContext` | `Comuki.Engine.Orchestration` | `runs`, `work_items`, `work_item_dependencies`, `run_events` |
+| `scheduler`      | `SchedulerDbContext`     | `Comuki.Modules.Scheduler`    | `scheduled_jobs` |
 | `identity`       | `IdentityDbContext`      | `Comuki.Modules.Identity`     | `users`, `api_keys`, `role_assignments`, `oidc_links` |
 | `projects`       | `ProjectsDbContext`      | `Comuki.Modules.Projects`     | `projects`, `project_settings` |
 | `memory`         | `MemoryDbContext`        | `Comuki.Modules.Memory`       | `chat_messages`, `chat_checkpoints`, `memory_facts`, `learning_candidates` |

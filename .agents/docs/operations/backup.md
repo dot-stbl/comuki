@@ -14,7 +14,7 @@ sequences also live here.
 
 | Component | Tool | Where it lives | Restored to |
 |-----------|------|----------------|-------------|
-| Postgres (orchestrator database) | `pg_dump` | every per-DbContext schema (`orchestration`, `identity`, `projects`, `memory`, `chat`, `intake`, `costs`, `artifacts`) | a fresh empty database; migrations apply on top |
+| Postgres (orchestrator database) | `pg_dump` | every per-DbContext schema (`orchestration`, `scheduler`, `identity`, `projects`, `memory`, `chat`, `intake`, `costs`, `artifacts`, `knowledge`) | a fresh empty database; migrations apply on top |
 | MinIO (`comuki-run-bundles` bucket) | `mc mirror` | one bucket; every `{projectId}/{runId}/{brief,result,pins}.json` | a fresh MinIO with the same access / secret keys |
 | Host config (optional) | tar / git | the secret-bearing config files (`appsettings.json`, `.env`, k8s Secret manifest) | the orchestrator config storage (Vault / Secrets Manager / k8s) |
 
@@ -26,11 +26,12 @@ secrets directly, treat that file as a sensitive artifact.
 
 ## Postgres — `pg_dump`
 
-The orchestrator runs eight DbContext migrations history tables
-(`orchestration.__ef_migrations_history`, `identity.__ef_migrations_history`,
-`projects.__ef_migrations_history`, `memory.__ef_migrations_history`,
-`chat.__ef_migrations_history`, `intake.__ef_migrations_history`,
-`costs.__ef_migrations_history`, `artifacts.__ef_migrations_history`)
+The orchestrator runs ten DbContext migrations history tables
+(`orchestration.__ef_migrations_history`, `scheduler.__ef_migrations_history`,
+`identity.__ef_migrations_history`, `projects.__ef_migrations_history`,
+`memory.__ef_migrations_history`, `chat.__ef_migrations_history`,
+`intake.__ef_migrations_history`, `costs.__ef_migrations_history`,
+`artifacts.__ef_migrations_history`, `knowledge.__ef_migrations_history`)
 inside the same database. Each schema keeps its own history — the
 migrator applies per-context migrations independently, so a partial
 restore that loses only the migrations table for one context can be

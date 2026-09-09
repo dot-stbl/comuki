@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Comuki.Host.Runs;
+using Comuki.Modules.Identity.Application.Authorization;
+using Comuki.Modules.Identity.Domain.Subjects;
 using Comuki.Modules.Knowledge.Application;
 using Comuki.Shared.Filtering.Ports;
 
@@ -11,12 +13,15 @@ namespace Comuki.Host.Mcp;
 /// <c>tools/call</c> convention (without dragging the full MCP SDK
 /// in — the wire format is small and stable). Four tools are
 /// registered; missing <c>tools/call</c> names surface as
-/// <see cref="JsonRpcEnvelope.ErrorCodes.MethodNotFound"/>.
+/// <see cref="JsonRpcEnvelope.ErrorCodes.MethodNotFound"/>. Every tool
+/// is gated by the per-tool permission map (<see cref="McpToolPermissionMap"/>);
+/// the gate fires before the handler runs, with a deny default.
 /// </summary>
 public sealed class McpServer(
     IKnowledgeIngestor knowledgeIngestor,
     IKnowledgeSearcher knowledgeSearcher,
     RunsListHandler runsList,
+    IPermissionEvaluator permissionEvaluator,
     ILogger<McpServer> logger)
 {
     /// <summary>
@@ -25,8 +30,16 @@ public sealed class McpServer(
     /// replies 204 No Content.
     /// </summary>
     /// <param name="request"></param>
+    /// <param name="subject">
+    /// Resolved caller subject from the cookie / api-key principal. Null
+    /// (anonymous) callers are denied every tool — the endpoint accepts
+    /// cookie / api-key auth but never answers unauthenticated traffic.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    public async Task<JsonRpcResponse?> DispatchAsync(JsonRpcRequest request, CancellationToken cancellationToken = default)
+    public async Task<JsonRpcResponse?> DispatchAsync(
+        JsonRpcRequest request,
+        RoleSubject? subject,
+        CancellationToken cancellationToken = default)
     {
         return request is null || request.JsonRpc != JsonRpcEnvelope.Version
             ? JsonRpcResponse.Failure(
@@ -37,7 +50,7 @@ public sealed class McpServer(
             : request.Method switch
             {
                 "tools/list" => ListToolsAsync(request.Id, cancellationToken),
-                "tools/call" => await CallToolAsync(request.Id, request.Params, cancellationToken),
+                "tools/call" => await CallToolAsync(request.Id, request.Params, subject, cancellationToken),
                 _ => JsonRpcResponse.Failure(
                     request.Id,
                     JsonRpcEnvelope.ErrorCodes.MethodNotFound,
@@ -123,7 +136,11 @@ public sealed class McpServer(
         return JsonRpcResponse.Success(id, new { tools });
     }
 
-    private async Task<JsonRpcResponse> CallToolAsync(JsonElement? id, JsonElement? parameters, CancellationToken cancellationToken)
+    private async Task<JsonRpcResponse> CallToolAsync(
+        JsonElement? id,
+        JsonElement? parameters,
+        RoleSubject? subject,
+        CancellationToken cancellationToken)
     {
         if (parameters is null || parameters.Value.ValueKind != JsonValueKind.Object)
         {
@@ -154,6 +171,27 @@ public sealed class McpServer(
                 id,
                 JsonRpcEnvelope.ErrorCodes.InvalidParams,
                 "tools/call requires a non-empty params.name",
+                Data: null);
+        }
+
+        // Per-tool permission gate (security audit A01-1): every tool call
+        // is denied unless the resolved subject carries the required
+        // permission. Anonymous callers (subject == null) are denied
+        // outright; tools not in the map are denied by default. JSON-RPC
+        // -32600 (InvalidRequest) is the wire format for the deny — the
+        // error message carries the stable "permission.denied" code so
+        // clients branch on it.
+        if (!await McpToolPermissionMap.IsAllowedAsync(toolCall.Name, subject, permissionEvaluator, cancellationToken))
+        {
+            logger.LogWarning(
+                "MCP tool {Tool} denied for subject {Subject}",
+                toolCall.Name,
+                subject is null ? "<anonymous>" : subject.ToString());
+
+            return JsonRpcResponse.Failure(
+                id,
+                JsonRpcEnvelope.ErrorCodes.InvalidRequest,
+                McpToolPermissionMap.PermissionDeniedCode,
                 Data: null);
         }
 

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Comuki.Host.Auth.Security;
 
 namespace Comuki.Host.Mcp;
 
@@ -18,19 +19,25 @@ public static class McpModuleEndpoints
     {
         // Anonymous — the global auth + permission filter (when wired)
         // handles identity; MCP shares the host's cookie / api-key auth.
+        // The per-tool permission gate lives in the dispatcher
+        // (security audit A01-1): every tool call is denied unless the
+        // resolved subject carries the required permission key. An
+        // anonymous caller (no subject) is denied at the dispatcher.
         app.MapPost(ApiRoutes.Mcp, DispatchAsync).WithTags("Mcp");
         return app;
     }
 
     private static async Task<IResult> DispatchAsync(
-        HttpRequest request,
+        HttpContext context,
         McpServer server,
         CancellationToken cancellationToken)
     {
+        var subject = HostSubjects.Resolve(context.User);
+
         JsonRpcRequest? envelope;
         try
         {
-            envelope = await JsonSerializer.DeserializeAsync<JsonRpcRequest>(request.Body, JsonSerializerOptions.Web, cancellationToken);
+            envelope = await JsonSerializer.DeserializeAsync<JsonRpcRequest>(context.Request.Body, JsonSerializerOptions.Web, cancellationToken);
         }
         catch (JsonException exception)
         {
@@ -56,7 +63,7 @@ public static class McpModuleEndpoints
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
-        var response = await server.DispatchAsync(envelope, cancellationToken);
+        var response = await server.DispatchAsync(envelope, subject, cancellationToken);
 
         // JSON-RPC notifications carry no id and the spec says the
         // endpoint must not respond. 204 No Content is the closest

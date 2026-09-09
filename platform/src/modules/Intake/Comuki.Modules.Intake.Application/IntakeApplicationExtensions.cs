@@ -24,12 +24,19 @@ public static class IntakeApplicationExtensions
         services.TryAddSingleton(TimeProvider.System);
 
         services.AddSingleton<TicketProviderRegistry>();
-        services.AddSingleton<WebhookIntakeService>();
-        services.AddSingleton<ClaimTicketHandler>();
-        services.AddSingleton<CreateNativeTicketHandler>();
-        services.AddSingleton<InboxCatalogReader>();
-        services.AddSingleton<SourceConnectionService>();
-        services.AddSingleton<AdmissionRuleService>();
+        // Intake handlers + services are Scoped: they each capture
+        // IIntakeStore (Scoped — wraps IntakeDbContext) and, where noted,
+        // IRunLauncher (also Scoped). Singletons here were a captive-
+        // dependency bug; production boot with validateOnBuild: true
+        // threw "Cannot consume scoped service from singleton" (audit
+        // 2026-09-09). TicketProviderRegistry and SourceProbeService
+        // stay Singleton — neither holds a Scoped dep.
+        services.AddScoped<WebhookIntakeService>();
+        services.AddScoped<ClaimTicketHandler>();
+        services.AddScoped<CreateNativeTicketHandler>();
+        services.AddScoped<InboxCatalogReader>();
+        services.AddScoped<SourceConnectionService>();
+        services.AddScoped<AdmissionRuleService>();
         services.AddSingleton<SourceProbeService>();
         services.AddSingleton<IValidator<CreateNativeTicketCommand>, CreateNativeTicketValidator>();
         services.AddSingleton<IValidator<CreateSourceConnectionCommand>, CreateSourceConnectionValidator>();

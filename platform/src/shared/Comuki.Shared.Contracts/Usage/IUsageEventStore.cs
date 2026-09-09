@@ -1,4 +1,3 @@
-using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Shared.Contracts.Usage;
@@ -7,13 +6,17 @@ namespace Comuki.Shared.Contracts.Usage;
 /// Persistence port for usage events. Reads are exposed here so the
 /// proxy pre-flight can sum proxy-source spend without taking a
 /// dependency on the Costs module's internal Application assembly.
+/// All wire types on the boundary are contracts-level records
+/// (<see cref="UsageRecord"/>, <see cref="UsageEventSummary"/>, the
+/// string <paramref name="source"/>) — no entity / no Costs.Domain
+/// reference.
 /// </summary>
 public interface IUsageEventStore
 {
-    /// <summary>Appends one event.</summary>
-    /// <param name="usageEvent"></param>
+    /// <summary>Appends one usage event (built from the wire record inside the Costs module).</summary>
+    /// <param name="record"></param>
     /// <param name="cancellationToken"></param>
-    public Task AddAsync(UsageEvent usageEvent, CancellationToken cancellationToken = default);
+    public Task AddAsync(UsageRecord record, CancellationToken cancellationToken = default);
 
     /// <summary>Sums cost for a project (all time or since <paramref name="since"/>).</summary>
     /// <param name="projectId"></param>
@@ -27,7 +30,8 @@ public interface IUsageEventStore
     /// <summary>
     /// Sums cost for a project, restricted to one usage source. The proxy
     /// pre-flight uses this to keep brain / worker spend out of its
-    /// monthly cap calculation.
+    /// monthly cap calculation. <paramref name="source"/> is one of the
+    /// <see cref="UsageSources"/> constants.
     /// </summary>
     /// <param name="projectId"></param>
     /// <param name="source"></param>
@@ -35,7 +39,7 @@ public interface IUsageEventStore
     /// <param name="cancellationToken"></param>
     public Task<long> SumProjectCostBySourceAsync(
         ProjectId projectId,
-        UsageSource source,
+        string source,
         DateTimeOffset? since = null,
         CancellationToken cancellationToken = default);
 
@@ -48,7 +52,7 @@ public interface IUsageEventStore
     /// <param name="projectId"></param>
     /// <param name="take"></param>
     /// <param name="cancellationToken"></param>
-    public Task<IReadOnlyList<UsageEvent>> ListRecentAsync(
+    public Task<IReadOnlyList<UsageEventSummary>> ListRecentAsync(
         ProjectId projectId,
         int take,
         CancellationToken cancellationToken = default);

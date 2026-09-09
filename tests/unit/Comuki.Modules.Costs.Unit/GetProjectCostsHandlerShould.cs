@@ -1,5 +1,4 @@
 using Comuki.Modules.Costs.Application.Queries;
-using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Usage;
 using Comuki.Shared.Kernel.Ids;
@@ -18,10 +17,10 @@ public sealed class GetProjectCostsHandlerShould
         var projectId = ProjectId.New();
         var store = Substitute.For<IUsageEventStore>();
         var budgets = Substitute.For<IProjectBudgetSettings>();
-        var recent = UsageEvent.Create(
-            projectId,
+        var recent = new UsageEventSummary(
+            Guid.NewGuid(),
             RunId.New(),
-            UsageSource.Proxy,
+            UsageSources.Proxy,
             "model",
             1,
             2,

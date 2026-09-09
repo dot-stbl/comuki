@@ -1,27 +1,28 @@
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Journal;
-using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Engine.Orchestration.Options;
-using Microsoft.EntityFrameworkCore;
+using Comuki.Shared.Kernel.Ids;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Engine.Orchestration.Infrastructure.EscalationTimeout;
 
 /// <summary>
-/// Passive autonomy ratchet on the Escalated state. Each pass queries
-/// <see cref="RunStatus.Escalated"/> runs whose <c>UpdatedAt</c> is older
-/// than the configured idle window, transitions each to
-/// <see cref="RunStatus.Cancelled"/> and journals one
-/// <see cref="RunEventTypes.RunEscalationTimeout"/> audit row in a single
-/// <c>SaveChanges</c>. The query is bounded — only the columns needed for
-/// the cutoff check — and the transitions are guarded by a re-check of
-/// <see cref="Run.Status"/> before the aggregate mutator runs (a second
-/// process may have re-queued the run between the SELECT and the
-/// transition). The sweeper expects to run inside an
-/// <c>AsSystem("escalation-timeout-sweeper")</c> scope (same contract as
-/// <c>LeaseReaper</c>): the orchestration subject-scope filter would
-/// otherwise hide the stale rows.
+/// Passive autonomy ratchet on the Escalated state. Each pass runs one
+/// guarded <c>UPDATE ... WHERE status = 'Escalated' AND updated_at &lt; cutoff
+/// RETURNING</c> inside a transaction, then journals one
+/// <see cref="RunEventTypes.RunEscalationTimeout"/> row per archived run in
+/// a single <c>SaveChanges</c>. The re-check guard that the previous
+/// SELECT-then-<c>FirstOrDefaultAsync</c>-per-id pattern needed is now
+/// baked into the WHERE — a concurrent operator who re-queues a row
+/// between the sweeper opening and the statement commits their update
+/// first, the row's status is no longer <c>Escalated</c>, and our
+/// predicate no longer matches. K stale rows = K rows touched + 1 journal
+/// batch + 1 transaction commit, regardless of K. The sweeper expects
+/// to run inside an <c>AsSystem("escalation-timeout-sweeper")</c> scope
+/// (same contract as <c>LeaseReaper</c>): the orchestration
+/// subject-scope filter would otherwise hide the stale rows.
 /// </summary>
 /// <param name="db"></param>
 /// <param name="clock"></param>
@@ -38,52 +39,54 @@ public sealed class EscalationTimeoutSweeper(
         var now = clock.GetUtcNow();
         var cutoff = now.Subtract(options.Value.EscalationTimeout);
 
-        var staleIds = await db.Runs
-            .AsNoTracking()
-            .Where(run => run.Status == RunStatus.Escalated && run.UpdatedAt < cutoff)
-            .Select(run => run.Id)
-            .ToListAsync(cancellationToken);
-
-        if (staleIds.Count == 0)
+        var archived = new List<ArchivedEscalatedRun>();
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using (var command = EscalationTimeoutSql.CreateArchiveCommand(
+            transaction.GetDbTransaction(), cutoff, now))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
         {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                archived.Add(new ArchivedEscalatedRun(
+                    new RunId(reader.GetGuid(0)),
+                    reader.GetFieldValue<DateTimeOffset>(1)));
+            }
+        }
+
+        if (archived.Count == 0)
+        {
+            await transaction.CommitAsync(cancellationToken);
             return new EscalationTimeoutSwept(0, []);
         }
 
-        var archived = new List<Shared.Kernel.Ids.RunId>(staleIds.Count);
-        var sweepNow = clock.GetUtcNow();
-
-        foreach (var id in staleIds)
+        foreach (var row in archived)
         {
-            var run = await db.Runs.FirstOrDefaultAsync(run => run.Id == id, cancellationToken);
-            if (run is null)
-            {
-                continue;
-            }
-
-            if (run.Status != RunStatus.Escalated)
-            {
-                continue;
-            }
-
-            var ageSeconds = (sweepNow - run.UpdatedAt).TotalSeconds;
-            run.TransitionTo(RunStatus.Cancelled, sweepNow);
+            var ageSeconds = (now - row.OldUpdatedAt).TotalSeconds;
             db.RunEvents.Add(RunEvent.Create(
-                run.Id,
+                row.RunId,
                 RunEventTypes.RunEscalationTimeout,
                 EscalationTimeoutPayloads.EscalationTimeout(
-                    run.Id,
+                    row.RunId,
                     nameof(RunStatus.Escalated),
                     nameof(RunStatus.Cancelled),
                     ageSeconds),
-                sweepNow));
-            archived.Add(run.Id);
+                now));
         }
 
-        if (archived.Count > 0)
-        {
-            await db.SaveChangesAsync(cancellationToken);
-        }
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
-        return new EscalationTimeoutSwept(archived.Count, archived);
+        return new EscalationTimeoutSwept(
+            archived.Count,
+            [.. archived.Select(static row => row.RunId)]);
     }
 }
+
+/// <summary>
+/// One row returned by the archive UPDATE: the run id and the
+/// <c>updated_at</c> value at the moment of the archive, used to compute
+/// the journal <c>ageSeconds</c>.
+/// </summary>
+/// <param name="RunId"></param>
+/// <param name="OldUpdatedAt"></param>
+file sealed record ArchivedEscalatedRun(RunId RunId, DateTimeOffset OldUpdatedAt);

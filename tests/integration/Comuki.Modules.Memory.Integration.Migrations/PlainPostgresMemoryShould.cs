@@ -109,7 +109,7 @@ public sealed class PlainPostgresMemoryShould : IAsyncLifetime
         await store.WriteAsync(
             Write("other-topic", "other", kind: MemoryFactKind.Ephemeral), cancellationToken);
 
-        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken);
+        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken: cancellationToken);
 
         visible.Count.ShouldBe(2);
         visible.Select(static fact => fact.Text).ShouldBe(["second", "other"]);

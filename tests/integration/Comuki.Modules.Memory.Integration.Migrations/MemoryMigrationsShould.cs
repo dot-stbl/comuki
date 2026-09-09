@@ -175,7 +175,7 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
         var swept = await store.SweepExpiredAsync(FixedTime.Now, cancellationToken);
 
         swept.ShouldBe(1);
-        var remaining = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken);
+        var remaining = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken: cancellationToken);
         remaining.ShouldHaveSingleItem().TopicKey.ShouldBe("old-standing");
     }
 
@@ -188,7 +188,7 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
 
         (await store.ForgetAsync(stored.Id, cancellationToken)).ShouldBeTrue();
         (await store.ForgetAsync(stored.Id, cancellationToken)).ShouldBeFalse();
-        (await store.ListAsync(MemoryScope.User, "user-1", cancellationToken)).ShouldBeEmpty();
+        (await store.ListAsync(MemoryScope.User, "user-1", cancellationToken: cancellationToken)).ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Given an embedding with the wrong dimension, when WriteAsync runs, then ArgumentException refuses it before any SQL")]

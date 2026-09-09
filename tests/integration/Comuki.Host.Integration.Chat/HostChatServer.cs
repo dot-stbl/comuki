@@ -92,6 +92,7 @@ public sealed class HostChatServer : IAsyncLifetime
                 // validator (issue #10 T11.4) satisfied by non-dev-default secrets.
                 EnvironmentName = Environments.Development, // test fixture — validator short-circuits on non-Production
             });
+        builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
         builder.Configuration["ControlPlane:Root"] = controlPlane.Root;

@@ -97,6 +97,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
                 // satisfied by the non-dev-default secrets below.
                 EnvironmentName = Environments.Development, // test fixture — validator short-circuits on non-Production
             });
+        builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;

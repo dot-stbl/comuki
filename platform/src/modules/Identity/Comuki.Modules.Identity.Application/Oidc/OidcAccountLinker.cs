@@ -19,6 +19,15 @@ namespace Comuki.Modules.Identity.Application.Oidc;
 /// <see cref="ProviderForbiddenException"/> mapped to HTTP 403 by the
 /// central handler.
 /// </para>
+/// <para>
+/// Security audit A01-2: <see cref="OidcLinkRequest.EmailVerified"/>
+/// must be <c>true</c> on every link / provision decision — the
+/// validator gates upstream, but the linker re-checks (defense in
+/// depth) so a swapped-out validator cannot sneak an unverified
+/// email through. The check throws <see cref="ProviderException"/>
+/// with the stable code
+/// <see cref="OidcIdTokenValidator.EmailUnverifiedCode"/>.
+/// </para>
 /// </summary>
 /// <param name="userStore"></param>
 /// <param name="linkStore"></param>
@@ -37,8 +46,14 @@ public sealed class OidcAccountLinker(
     /// The resolved local user is disabled — OIDC login is refused with
     /// HTTP 403 (<c>user.disabled</c>).
     /// </exception>
+    /// <exception cref="ProviderException">
+    /// The IdP did not verify the email (<c>user.email_unverified</c>) —
+    /// the host refuses to bind a Comuki account to an unverified email.
+    /// </exception>
     public async Task<OidcLinkResult> HandleAsync(OidcLinkRequest request, CancellationToken cancellationToken = default)
     {
+        OidcEmailVerifiedGuard.EnsureVerified(request);
+
         if (await linkStore.FindAsync(request.Provider, request.Subject, cancellationToken) is { } existingLink)
         {
             var linked = await userStore.FindByIdAsync(existingLink.UserId, cancellationToken)
@@ -63,6 +78,27 @@ public sealed class OidcAccountLinker(
         await linkStore.SaveAsync(OidcLink.Create(user.Id, request.Provider, request.Subject, clock.GetUtcNow()), cancellationToken);
 
         return new OidcLinkResult(AccountMapper.ToView(user), Created: true);
+    }
+}
+
+/// <summary>
+/// Pure-function guard for the IdP email_verified claim. The validator
+/// enforces it upstream; the linker re-checks (defense in depth) so a
+/// swapped validator or a hand-built request still cannot bind a
+/// Comuki account to an unverified email (security audit A01-2).
+/// </summary>
+file static class OidcEmailVerifiedGuard
+{
+    public static void EnsureVerified(OidcLinkRequest request)
+    {
+        if (request.EmailVerified)
+        {
+            return;
+        }
+
+        throw new ProviderException(
+            OidcIdTokenValidator.EmailUnverifiedCode,
+            "IdP did not verify email");
     }
 }
 

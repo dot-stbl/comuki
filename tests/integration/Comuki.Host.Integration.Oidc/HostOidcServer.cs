@@ -101,7 +101,7 @@ public sealed class HostOidcServer : IAsyncLifetime
         var linker = scope.ServiceProvider.GetRequiredService<Modules.Identity.Application.Oidc.OidcAccountLinker>();
 
         return await linker.HandleAsync(
-            new Modules.Identity.Application.Oidc.OidcLinkRequest(ProviderName, subject, email, displayName),
+            new Modules.Identity.Application.Oidc.OidcLinkRequest(ProviderName, subject, email, displayName, EmailVerified: true),
             cancellationToken);
     }
 

@@ -109,17 +109,43 @@ public sealed class EfMemoryStore(
             }
         }
 
-        var visible = await MemoryFactQueries.LoadVisibleAsync(db, query.Scope, query.SubjectId, query.Kind, cutoff, cancellationToken);
+        var visible = await MemoryFactQueries.LoadVisibleAsync(
+            db,
+            query.Scope,
+            query.SubjectId,
+            query.Kind,
+            cutoff,
+            query.Limit,
+            0,
+            cancellationToken);
         return MemoryFallbackRanking.Rank(visible.Select(MemoryFactViewMapper.Of), query.Limit);
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<MemoryFactView>> ListAsync(MemoryScope scope, string subjectId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<MemoryFactView>> ListAsync(
+        MemoryScope scope,
+        string subjectId,
+        int limit = IMemoryStore.DefaultListLimit,
+        int offset = 0,
+        CancellationToken cancellationToken = default)
     {
+        if (limit <= 0)
+        {
+            return [];
+        }
+
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var cutoff = clock.GetUtcNow() - MemoryFactPolicy.EphemeralTtl;
-        var visible = await MemoryFactQueries.LoadVisibleAsync(db, scope, MemoryFact.CanonicalKey(subjectId), null, cutoff, cancellationToken);
-        return MemoryFallbackRanking.Rank(visible.Select(MemoryFactViewMapper.Of), int.MaxValue);
+        var visible = await MemoryFactQueries.LoadVisibleAsync(
+            db,
+            scope,
+            MemoryFact.CanonicalKey(subjectId),
+            null,
+            cutoff,
+            limit,
+            offset,
+            cancellationToken);
+        return MemoryFallbackRanking.Rank(visible.Select(MemoryFactViewMapper.Of), limit);
     }
 
     /// <inheritdoc />
@@ -176,6 +202,8 @@ file static class MemoryFactQueries
         string? subjectId,
         MemoryFactKind? kind,
         DateTimeOffset ephemeralCutoff,
+        int limit,
+        int offset,
         CancellationToken cancellationToken)
     {
         return await db.MemoryFacts
@@ -185,6 +213,8 @@ file static class MemoryFactQueries
             .Where(fact => subjectId == null || fact.SubjectId == subjectId)
             .Where(fact => kind == null || fact.Kind == kind)
             .Where(fact => fact.Kind != MemoryFactKind.Ephemeral || fact.CreatedAt >= ephemeralCutoff)
+            .Skip(offset)
+            .Take(limit)
             .ToListAsync(cancellationToken);
     }
 }

@@ -78,7 +78,7 @@ public sealed class MemorySweepWorkerShould : IAsyncLifetime
 
         await worker.SweepOnceAsync(cancellationToken);
 
-        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken);
+        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken: cancellationToken);
         visible.ShouldHaveSingleItem().TopicKey.ShouldBe("standing");
     }
 
@@ -98,7 +98,7 @@ public sealed class MemorySweepWorkerShould : IAsyncLifetime
 
         await worker.SweepOnceAsync(cancellationToken);
 
-        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken);
+        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken: cancellationToken);
         visible.Select(static fact => fact.TopicKey).ShouldBe(["fresh-standing", "fresh-ephemeral"]);
     }
 
@@ -141,7 +141,7 @@ public sealed class MemorySweepWorkerShould : IAsyncLifetime
         // between iterations has not started yet
         await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
 
-        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken);
+        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken: cancellationToken);
         visible.ShouldBeEmpty();
 
         using var stopCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));

@@ -223,6 +223,38 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
         return (run.Status, events);
     }
 
+    [Fact(DisplayName = "Given many stale escalated runs that have been mutated mid-flight, when the sweeper runs, then only rows that are still Escalated at the moment of the UPDATE get archived (guarded WHERE filter)")]
+    public async Task SweepIsGuardedByStatusInWhereAsync()
+    {
+        // Performance audit (2026-09-09) §1.2 fix: the new sweeper is a
+        // single `UPDATE orchestration.runs SET status='Cancelled' WHERE
+        // status='Escalated' AND updated_at < @cutoff RETURNING ...` —
+        // the status guard is baked into the WHERE clause, so a row that
+        // a concurrent operator re-queues between the SELECT and the
+        // UPDATE (which the old code needed a per-row FirstOrDefaultAsync
+        // to detect) is now safe by construction. The behavioural
+        // assertion: seed one stale Escalated run, manually re-queue it
+        // to Running, run the sweeper, and confirm it was NOT archived.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var staleId = await SeedEscalatedAsync(shortTimeout + TimeSpan.FromHours(2), cancellationToken);
+
+        var optionsBuilder = new DbContextOptionsBuilder<OrchestrationDbContext>();
+        OrchestrationDbContext.ApplyOptions(optionsBuilder, container.GetConnectionString());
+        await using (var flipDb = new OrchestrationDbContext(optionsBuilder.Options))
+        {
+            var run = await flipDb.Runs.FirstAsync(r => r.Id == staleId, cancellationToken);
+            run.TransitionTo(RunStatus.Running, DateTimeOffset.UtcNow);
+            await flipDb.SaveChangesAsync(cancellationToken);
+        }
+
+        var archived = await RunSweepAsync(cancellationToken);
+        archived.ShouldBe(0);
+
+        var (status, journal) = await ReadRunStateAsync(staleId, cancellationToken);
+        status.ShouldBe(RunStatus.Running);
+        journal.ShouldBeEmpty();
+    }
+
     private static int FreeTcpPort()
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);

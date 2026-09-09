@@ -29,11 +29,21 @@ public interface IMemoryStore
     /// <param name="cancellationToken"></param>
     public Task<IReadOnlyList<MemoryFactView>> SearchAsync(MemoryFactQuery query, CancellationToken cancellationToken = default);
 
-    /// <summary>Lists every visible fact of one subject in fallback order (the /memory list surface).</summary>
+    /// <summary>Lists visible facts of one subject in fallback order (the /memory list surface).</summary>
     /// <param name="scope"></param>
     /// <param name="subjectId"></param>
+    /// <param name="limit">Maximum facts returned. Default <see cref="DefaultListLimit"/>.</param>
+    /// <param name="offset">Number of facts to skip. Default <c>0</c>.</param>
     /// <param name="cancellationToken"></param>
-    public Task<IReadOnlyList<MemoryFactView>> ListAsync(MemoryScope scope, string subjectId, CancellationToken cancellationToken = default);
+    public Task<IReadOnlyList<MemoryFactView>> ListAsync(
+        MemoryScope scope,
+        string subjectId,
+        int limit = DefaultListLimit,
+        int offset = 0,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Default page size for <see cref="ListAsync"/>; mirrors the search-side <c>Limit</c> default.</summary>
+    public const int DefaultListLimit = 100;
 
     /// <summary>Forgets one fact by id (the /forget tool); true when a row was deleted.</summary>
     /// <param name="id"></param>

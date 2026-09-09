@@ -1,3 +1,4 @@
+using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Modules.Memory.Domain.Facts;
 using Comuki.Modules.Memory.Domain.Facts.Kinds;
 using Comuki.Modules.Memory.Domain.Facts.Scopes;
@@ -36,7 +37,7 @@ public sealed class EfMemoryStoreShould
         }
         var store = session.Store;
 
-        var visible = await store.ListAsync(MemoryScope.User, "user-1", TestContext.Current.CancellationToken);
+        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken: TestContext.Current.CancellationToken);
 
         visible.ShouldHaveSingleItem();
         visible[0].TopicKey.ShouldBe("deploy");
@@ -58,7 +59,7 @@ public sealed class EfMemoryStoreShould
         }
         var store = session.Store;
 
-        var visible = await store.ListAsync(MemoryScope.User, "user-1", TestContext.Current.CancellationToken);
+        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken: TestContext.Current.CancellationToken);
 
         visible.ShouldHaveSingleItem();
         visible[0].Text.ShouldBe("second-version");
@@ -78,7 +79,7 @@ public sealed class EfMemoryStoreShould
         var removed = await store.ForgetAsync(seeded.Id, TestContext.Current.CancellationToken);
 
         removed.ShouldBeTrue();
-        var visible = await store.ListAsync(MemoryScope.User, "user-1", TestContext.Current.CancellationToken);
+        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken: TestContext.Current.CancellationToken);
         visible.ShouldBeEmpty();
     }
 
@@ -92,6 +93,63 @@ public sealed class EfMemoryStoreShould
         var removed = await store.ForgetAsync(unknownId, TestContext.Current.CancellationToken);
 
         removed.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Given more than 100 facts, when ListAsync is called without arguments, then at most the default page is returned")]
+    public async Task ListAsyncDefaultsToHundredFactsAsync()
+    {
+        using var session = NewSession();
+        const int totalFacts = 105;
+        var seeded = new MemoryFact[totalFacts];
+        for (var index = 0; index < totalFacts; index++)
+        {
+            seeded[index] = Fact($"topic-{index:000}", $"text-{index:000}", now.AddSeconds(-index));
+        }
+
+        await using (var seedDb = await session.OpenAsync())
+        {
+            await SeedAsync(seedDb, seeded);
+        }
+        var store = session.Store;
+
+        var visible = await store.ListAsync(MemoryScope.User, "user-1", cancellationToken: TestContext.Current.CancellationToken);
+
+        // Performance audit (2026-09-09) §1.4: the unbounded read became
+        // a hard page cap of IMemoryStore.DefaultListLimit (100).
+        visible.Count.ShouldBe(IMemoryStore.DefaultListLimit);
+    }
+
+    [Fact(DisplayName = "Given more than one page of facts, when ListAsync is called with explicit limit and offset, then the requested slice is returned")]
+    public async Task ListAsyncRespectsLimitAndOffsetAsync()
+    {
+        using var session = NewSession();
+        const int totalFacts = 25;
+        var seeded = new MemoryFact[totalFacts];
+        for (var index = 0; index < totalFacts; index++)
+        {
+            // each fact's CreatedAt is one second apart, so the
+            // freshness order is deterministic in EF Core InMemory.
+            seeded[index] = Fact($"topic-{index:000}", $"text-{index:000}", now.AddSeconds(-index));
+        }
+
+        await using (var seedDb = await session.OpenAsync())
+        {
+            await SeedAsync(seedDb, seeded);
+        }
+        var store = session.Store;
+
+        var firstPage = await store.ListAsync(
+            MemoryScope.User, "user-1", limit: 10, offset: 0, TestContext.Current.CancellationToken);
+        var secondPage = await store.ListAsync(
+            MemoryScope.User, "user-1", limit: 10, offset: 10, TestContext.Current.CancellationToken);
+
+        firstPage.Count.ShouldBe(10);
+        secondPage.Count.ShouldBe(10);
+        // Standing facts rank before ephemeral by freshness — and every
+        // seeded fact here is Standing — so the freshness ordering is
+        // the ranking. The two pages must not overlap.
+        var firstIds = firstPage.Select(static fact => fact.Id).ToHashSet();
+        secondPage.Any(fact => firstIds.Contains(fact.Id)).ShouldBeFalse();
     }
 
     private static MemoryFact Fact(string topicKey, string text, DateTimeOffset? createdAt = null)

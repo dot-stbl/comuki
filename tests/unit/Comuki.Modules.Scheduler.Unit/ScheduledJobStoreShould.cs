@@ -86,6 +86,77 @@ public sealed class ScheduledJobStoreShould
         listA[0].Id.ShouldBe(aJob.Id);
     }
 
+    [Fact(DisplayName = "Given 120 jobs in a project, when ListPagedAsync asks page=2 of size 10, then it returns exactly 10 rows newest first and reports total=120")]
+    public async Task ListPagedAsyncPushesSkipTakeToTheStoreAsync()
+    {
+        // EF Core's in-memory provider does not push Skip/Take down as a
+        // SQL OFFSET/LIMIT, but it does honor the LINQ shape — every row
+        // still flows through the same IQueryable pipeline as a real
+        // Postgres query would, so this assertion catches a regression to
+        // in-memory Skip/Take inside the store (the bug fixed by #fix-audit-perf-high).
+        await using var db = NewContext();
+        var store = new ScheduledJobStore(db);
+        var projectId = new ProjectId(Guid.CreateVersion7());
+        var anchor = DateTimeOffset.UtcNow;
+
+        // 120 jobs created oldest-first. ListPagedAsync orders by CreatedAt
+        // DESC, so the result list is the reverse of `created`. Page 2
+        // (1-based, size 10) is the result's rows 10..19, which are the
+        // 11th- through 20th-newest jobs — insertion index 100..109
+        // (created[100] is the 20th-newest, created[109] is the 11th).
+        var created = new ScheduledJob[120];
+        for (var i = 0; i < 120; i++)
+        {
+            var job = ScheduledJob.Create(
+                projectId,
+                "*/5 * * * *",
+                "general",
+                "{}",
+                null,
+                enabled: true,
+                anchor.AddMinutes(i));
+            await store.AddAsync(job, TestContext.Current.CancellationToken);
+            created[i] = job;
+        }
+
+        var page2 = await store.ListPagedAsync(
+            projectId,
+            page: 2,
+            pageSize: 10,
+            TestContext.Current.CancellationToken);
+
+        page2.Total.ShouldBe(120);
+        page2.Items.Count.ShouldBe(10);
+
+        page2.Items[0].Id.ShouldBe(created[109].Id);
+        page2.Items[9].Id.ShouldBe(created[100].Id);
+    }
+
+    [Fact(DisplayName = "Given a project with 7 jobs and pageSize=20, when ListPagedAsync asks page=1, then it returns all 7 rows with total=7")]
+    public async Task ListPagedAsyncReturnsPartialLastPageAsync()
+    {
+        await using var db = NewContext();
+        var store = new ScheduledJobStore(db);
+        var projectId = new ProjectId(Guid.CreateVersion7());
+        var anchor = DateTimeOffset.UtcNow;
+
+        for (var i = 0; i < 7; i++)
+        {
+            await store.AddAsync(
+                ScheduledJob.Create(projectId, "*/5 * * * *", "general", "{}", null, true, anchor.AddMinutes(i)),
+                TestContext.Current.CancellationToken);
+        }
+
+        var page = await store.ListPagedAsync(
+            projectId,
+            page: 1,
+            pageSize: 20,
+            TestContext.Current.CancellationToken);
+
+        page.Total.ShouldBe(7);
+        page.Items.Count.ShouldBe(7);
+    }
+
     [Fact(DisplayName = "Given an existing job, when updated, then the new fields persist")]
     public async Task UpdateAsync()
     {

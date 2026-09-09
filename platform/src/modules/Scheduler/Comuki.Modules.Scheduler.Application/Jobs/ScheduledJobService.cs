@@ -11,7 +11,7 @@ namespace Comuki.Modules.Scheduler.Application.Jobs;
 /// <summary>
 /// Service-layer façade over <see cref="IScheduledJobStore"/>: owns
 /// validation, the create / update / delete / get / list paths, and the
-/// domain invariants the store alone can't enforce (e.g. cron parsing).
+/// domain invariants the store alone cannot enforce (e.g. cron parsing).
 /// Singleton — stateless; every method opens its own scope through the
 /// injected store.
 /// </summary>
@@ -36,6 +36,36 @@ public sealed class ScheduledJobService(
     {
         var jobs = await store.ListAsync(new Shared.Kernel.Ids.ProjectId(projectId), cancellationToken);
         return ScheduledJobView.OfAll(jobs);
+    }
+
+    /// <summary>
+    /// Lists a page of jobs of a project (newest first) plus the project's
+    /// total count. Pagination is pushed to SQL by
+    /// <see cref="IScheduledJobStore.ListPagedAsync"/> — at most
+    /// <paramref name="pageSize"/> rows are projected, regardless of how
+    /// large the project is. <paramref name="page"/> values below 1 are
+    /// clamped to 1 (the controller already validates this; the clamp is a
+    /// belt-and-braces guard for any non-HTTP caller).
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <param name="page">1-based page index.</param>
+    /// <param name="pageSize">Rows per page; clamped to <c>[1, 500]</c>.</param>
+    /// <param name="cancellationToken"></param>
+    public async Task<ScheduledJobsPageView> ListAsync(
+        Guid projectId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var paged = await store.ListPagedAsync(
+            new Shared.Kernel.Ids.ProjectId(projectId),
+            page,
+            pageSize,
+            cancellationToken);
+
+        return new ScheduledJobsPageView(
+            ScheduledJobView.OfAll(paged.Items),
+            paged.Total);
     }
 
     /// <summary>Reads one job.</summary>

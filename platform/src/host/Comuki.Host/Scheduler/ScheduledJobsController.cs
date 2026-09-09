@@ -42,12 +42,12 @@ public sealed class ScheduledJobsController(ScheduledJobService jobs) : Controll
                 "page must be >= 1");
         }
 
-        var clampedPageSize = Math.Clamp(pageSize, 1, 500);
-        var all = await jobs.ListAsync(projectId, cancellationToken);
-        var skip = (page - 1) * clampedPageSize;
-        var slice = all.Skip(skip).Take(clampedPageSize).ToArray();
+        // Pagination pushed to SQL: the store Skip/Take's in Postgres so at
+        // most `pageSize` rows are read from the project regardless of how
+        // many jobs exist. Pre-fix pulled every row and Skip/Take'd in C#.
+        var view = await jobs.ListAsync(projectId, page, pageSize, cancellationToken);
 
-        return Ok(new ScheduledJobsPage(slice, all.Count));
+        return Ok(new ScheduledJobsPage(view.Items, view.Total));
     }
 
     /// <summary>Reads one scheduled job.</summary>

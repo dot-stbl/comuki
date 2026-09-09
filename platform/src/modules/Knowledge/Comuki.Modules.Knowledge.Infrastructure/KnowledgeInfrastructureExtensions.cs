@@ -31,9 +31,6 @@ public static class KnowledgeInfrastructureExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
-
         services
             .AddOptions<KnowledgeEmbeddingOptions>()
             .Bind(configuration.GetSection(KnowledgeEmbeddingOptions.SectionName))

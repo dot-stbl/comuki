@@ -36,14 +36,14 @@ public sealed class FilterExpressionParserAdversarialShould
     // ── Null / empty / whitespace ────────────────────────────────────────────────
 
     /// <summary>Null filter returns null predicate — caller treats as "no filter".</summary>
-    [Fact]
+    [Fact(DisplayName = "When return Null For Null Filter, then test passes")]
     public void ReturnNullForNullFilter()
     {
         FilterExpression.ParseFor<SampleEntity>(null).ShouldBeNull();
     }
 
     /// <summary>Empty string filter returns null predicate.</summary>
-    [Fact]
+    [Fact(DisplayName = "When return Null For Empty Filter, then test passes")]
     public void ReturnNullForEmptyFilter()
     {
         FilterExpression.ParseFor<SampleEntity>(string.Empty).ShouldBeNull();
@@ -73,7 +73,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>[NotMapped] fields are invisible — querying them throws.</summary>
-    [Fact]
+    [Fact(DisplayName = "When reject Not Mapped Field, then test passes")]
     public void RejectNotMappedField()
     {
         Should.Throw<FilterParseException>(static () => FilterExpression.ParseFor<SampleEntity>("SecretKey==leak"));
@@ -89,7 +89,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>SQL injection payload in field name is rejected as unknown field.</summary>
-    [Fact]
+    [Fact(DisplayName = "When reject Sql Injection In Field Name, then test passes")]
     public void RejectSqlInjectionInFieldName()
     {
         // The parser doesn't care about the payload — "DROP TABLE" is just an unknown field.
@@ -169,21 +169,21 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>Unmatched open paren is rejected.</summary>
-    [Fact]
+    [Fact(DisplayName = "When reject Unmatched Open Paren, then test passes")]
     public void RejectUnmatchedOpenParen()
     {
         Should.Throw<FilterParseException>(static () => FilterExpression.ParseFor<SampleEntity>("(Name==alice"));
     }
 
     /// <summary>Unmatched close paren is rejected.</summary>
-    [Fact]
+    [Fact(DisplayName = "When reject Unmatched Close Paren, then test passes")]
     public void RejectUnmatchedCloseParen()
     {
         Should.Throw<FilterParseException>(static () => FilterExpression.ParseFor<SampleEntity>("Name==alice)"));
     }
 
     /// <summary>Empty parens are rejected.</summary>
-    [Fact]
+    [Fact(DisplayName = "When reject Empty Parens, then test passes")]
     public void RejectEmptyParens()
     {
         Should.Throw<FilterParseException>(static () => FilterExpression.ParseFor<SampleEntity>("()"));
@@ -209,21 +209,21 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>Unterminated string literal is rejected.</summary>
-    [Fact]
+    [Fact(DisplayName = "When reject Unterminated String, then test passes")]
     public void RejectUnterminatedString()
     {
         Should.Throw<FilterParseException>(static () => FilterExpression.ParseFor<SampleEntity>("Name==\"unterminated"));
     }
 
     /// <summary>Empty value list in <c>[]=</c> is rejected.</summary>
-    [Fact]
+    [Fact(DisplayName = "When reject Empty In List, then test passes")]
     public void RejectEmptyInList()
     {
         Should.Throw<FilterParseException>(static () => FilterExpression.ParseFor<SampleEntity>("Status[]="));
     }
 
     /// <summary>Trailing comma in <c>[]=</c> list is rejected.</summary>
-    [Fact]
+    [Fact(DisplayName = "When reject Trailing Comma In In List, then test passes")]
     public void RejectTrailingCommaInInList()
     {
         Should.Throw<FilterParseException>(static () => FilterExpression.ParseFor<SampleEntity>("Status[]=Active,"));
@@ -265,7 +265,7 @@ public sealed class FilterExpressionParserAdversarialShould
     // ── Operator precedence (AND > OR) ───────────────────────────────────────────
 
     /// <summary>AND binds tighter than OR — <c>a;b | c;d</c> = <c>(a;b) | (c;d)</c>.</summary>
-    [Fact]
+    [Fact(DisplayName = "When bind And Tighter Than Or, then test passes")]
     public void BindAndTighterThanOr()
     {
         // (Name==alice ; IsActive==true) | (Name==Bob ; IsActive==false)
@@ -277,7 +277,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>Parens override precedence — <c>(a | b) ; c</c>.</summary>
-    [Fact]
+    [Fact(DisplayName = "When parens Override Precedence, then test passes")]
     public void ParensOverridePrecedence()
     {
         // (Name==alice | Name==Bob) ; IsActive==true → only alice (Bob is inactive)
@@ -290,7 +290,7 @@ public sealed class FilterExpressionParserAdversarialShould
     // ── Quote / value escaping ───────────────────────────────────────────────────
 
     /// <summary>Quoted string with special chars (spaces, parens, operators) is one value.</summary>
-    [Fact]
+    [Fact(DisplayName = "When accept Quoted String With Special Chars, then test passes")]
     public void AcceptQuotedStringWithSpecialChars()
     {
         var data = new List<SampleEntity>
@@ -307,7 +307,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>Empty quoted string is a valid empty-string value.</summary>
-    [Fact]
+    [Fact(DisplayName = "When accept Empty Quoted String, then test passes")]
     public void AcceptEmptyQuotedString()
     {
         var data = new List<SampleEntity>
@@ -324,7 +324,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>Escaped double quote (<c>\"</c>) inside a quoted string is a literal quote.</summary>
-    [Fact]
+    [Fact(DisplayName = "When accept Escaped Double Quote In Quoted String, then test passes")]
     public void AcceptEscapedDoubleQuoteInQuotedString()
     {
         var data = new List<SampleEntity>
@@ -342,7 +342,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>Escaped backslash (<c>\\</c>) inside a quoted string is one literal backslash.</summary>
-    [Fact]
+    [Fact(DisplayName = "When accept Escaped Backslash In Quoted String, then test passes")]
     public void AcceptEscapedBackslashInQuotedString()
     {
         var data = new List<SampleEntity>
@@ -360,7 +360,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>A dangling backslash at the end of a quoted string (no char to escape) is rejected.</summary>
-    [Fact]
+    [Fact(DisplayName = "When reject Dangling Escape In Quoted String, then test passes")]
     public void RejectDanglingEscapeInQuotedString()
     {
         Should.Throw<FilterParseException>(static () => FilterExpression.ParseFor<SampleEntity>("Name==\"bad\\"));
@@ -369,7 +369,7 @@ public sealed class FilterExpressionParserAdversarialShould
     // ── Semantic correctness ─────────────────────────────────────────────────────
 
     /// <summary>Eq on enum works case-insensitively (parser does Enum.Parse ignoreCase).</summary>
-    [Fact]
+    [Fact(DisplayName = "When parse Enum Values Case Insensitively, then test passes")]
     public void ParseEnumValuesCaseInsensitively()
     {
         var resultLower = Run("Status==active");
@@ -381,7 +381,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>Numeric IN with three values matches three rows.</summary>
-    [Fact]
+    [Fact(DisplayName = "When numeric In Matches All Listed Values, then test passes")]
     public void NumericInMatchesAllListedValues()
     {
         var result = Run("Age[]=25,30,40");
@@ -390,7 +390,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>Single-value IN list is valid and behaves like Eq.</summary>
-    [Fact]
+    [Fact(DisplayName = "When single Value In List Behaves Like Eq, then test passes")]
     public void SingleValueInListBehavesLikeEq()
     {
         var result = Run("Status[]=Active");
@@ -400,7 +400,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>Nested parens (deep) parse without stack overflow or wrong precedence.</summary>
-    [Fact]
+    [Fact(DisplayName = "When parse Nested Parens, then test passes")]
     public void ParseNestedParens()
     {
         var predicate = FilterExpression.ParseFor<SampleEntity>(
@@ -412,7 +412,7 @@ public sealed class FilterExpressionParserAdversarialShould
     }
 
     /// <summary>Whitespace between tokens is ignored (not a separator).</summary>
-    [Fact]
+    [Fact(DisplayName = "When ignore Whitespace Between Tokens, then test passes")]
     public void IgnoreWhitespaceBetweenTokens()
     {
         var tight = Run("Name==alice;Status==Active");
@@ -425,7 +425,7 @@ public sealed class FilterExpressionParserAdversarialShould
     ///     Filter with many AND clauses within the token limit parses without error.
     ///     Demonstrates the parser handles arbitrary chain depth (subject to the cap).
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When parse Many Clauses Chain, then test passes")]
     public void ParseManyClausesChain()
     {
         // 50 clauses × ~4 tokens (field, op, value, separator) ≈ 200 tokens,
@@ -440,7 +440,7 @@ public sealed class FilterExpressionParserAdversarialShould
     ///     Filter exceeding the lexer's 256-token hard cap (<c>FilterLexer.MaxTokens</c>)
     ///     is rejected (audit hardening: adversarial clause floods).
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When reject Filter Exceeding Token Limit, then test passes")]
     public void RejectFilterExceedingTokenLimit()
     {
         // 100 clauses × 4 tokens = 400 tokens, well above the 256-token cap.

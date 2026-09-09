@@ -2,7 +2,6 @@ using Comuki.Engine.Orchestration.Application.Handlers;
 using Comuki.Engine.Orchestration.Application.Models;
 using Comuki.Engine.Orchestration.Options;
 using Comuki.Shared.Contracts.Queue;
-using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using FluentValidation;
 using Microsoft.Extensions.Options;
@@ -36,9 +35,9 @@ public static class WorkerEndpoints
         ClaimWorkItemHandler claimHandler,
         CancellationToken cancellationToken)
     {
-        if (AuthenticateWorker(authenticator, httpContext) is not { } workerId)
+        if (WorkerEndpointHelpers.AuthenticateWorker(authenticator, httpContext) is not { } workerId)
         {
-            return Unauthenticated();
+            return WorkerResults.Unauthenticated();
         }
 
         // The claim loop is a platform-system consumer: it claims across
@@ -80,16 +79,16 @@ public static class WorkerEndpoints
         IOptions<LeaseOptions> leaseOptions,
         CancellationToken cancellationToken)
     {
-        if (AuthenticateWorker(authenticator, httpContext) is not { } workerId)
+        if (WorkerEndpointHelpers.AuthenticateWorker(authenticator, httpContext) is not { } workerId)
         {
-            return Unauthenticated();
+            return WorkerResults.Unauthenticated();
         }
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var now = clock.GetUtcNow();
         var extended = await queue.HeartbeatAsync(
             workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
-        return extended ? Results.NoContent() : NotOwner();
+        return extended ? Results.NoContent() : WorkerResults.NotOwner();
     }
 
     private static async Task<IResult> CompleteAsync(
@@ -102,14 +101,14 @@ public static class WorkerEndpoints
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
-        if (AuthenticateWorker(authenticator, httpContext) is not { } workerId)
+        if (WorkerEndpointHelpers.AuthenticateWorker(authenticator, httpContext) is not { } workerId)
         {
-            return Unauthenticated();
+            return WorkerResults.Unauthenticated();
         }
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var completed = await queue.CompleteAsync(workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken);
-        return completed ? Results.NoContent() : NotOwner();
+        return completed ? Results.NoContent() : WorkerResults.NotOwner();
     }
 
     private static async Task<IResult> FailAsync(
@@ -122,36 +121,13 @@ public static class WorkerEndpoints
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
-        if (AuthenticateWorker(authenticator, httpContext) is not { } workerId)
+        if (WorkerEndpointHelpers.AuthenticateWorker(authenticator, httpContext) is not { } workerId)
         {
-            return Unauthenticated();
+            return WorkerResults.Unauthenticated();
         }
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var failed = await queue.FailAsync(workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken);
-        return failed ? Results.NoContent() : NotOwner();
-    }
-
-    private static WorkerId? AuthenticateWorker(WorkerTokenAuthenticator authenticator, HttpContext httpContext)
-    {
-        return authenticator.Authenticate(WorkerTokenHeaders.TryGetFromHttp(httpContext.Request.Headers));
-    }
-
-    private static IResult Unauthenticated()
-    {
-        return TypedResults.Problem(
-            title: "Worker authentication failed",
-            detail: "present a valid worker token in the Authorization header",
-            statusCode: StatusCodes.Status401Unauthorized,
-            extensions: new Dictionary<string, object?> { ["code"] = "worker.unauthenticated" });
-    }
-
-    private static IResult NotOwner()
-    {
-        return TypedResults.Problem(
-            title: "Work item not owned",
-            detail: "the item is unknown, not running, or not leased to this worker (the lease may have expired)",
-            statusCode: StatusCodes.Status409Conflict,
-            extensions: new Dictionary<string, object?> { ["code"] = "work-item.not-owner" });
+        return failed ? Results.NoContent() : WorkerResults.NotOwner();
     }
 }

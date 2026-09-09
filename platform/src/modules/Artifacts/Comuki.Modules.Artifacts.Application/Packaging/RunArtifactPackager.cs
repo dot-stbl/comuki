@@ -1,8 +1,6 @@
-using System.Text;
 using System.Text.Json;
 using Comuki.Modules.Artifacts.Domain;
 using Comuki.Shared.Contracts.Artifacts;
-using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Telemetry;
 using Microsoft.Extensions.Logging;
 
@@ -88,13 +86,13 @@ public sealed class RunArtifactPackager(
         if (snapshot.OriginWorkItemId is { } workItemId
             && await journalSource.ReadWorkItemBriefAsync(workItemId, cancellationToken) is { Length: > 0 } briefJson)
         {
-            await UploadTextAsync(projectId, runId, "brief.json", briefJson, "application/json", cancellationToken);
+            await RunArtifactPackagerHelpers.UploadTextAsync(store, projectId, runId, "brief.json", briefJson, "application/json", cancellationToken);
             objectCount++;
         }
 
         if (!string.IsNullOrWhiteSpace(snapshot.DetailJson))
         {
-            await UploadTextAsync(projectId, runId, "result.json", snapshot.DetailJson, "application/json", cancellationToken);
+            await RunArtifactPackagerHelpers.UploadTextAsync(store, projectId, runId, "result.json", snapshot.DetailJson, "application/json", cancellationToken);
             objectCount++;
         }
 
@@ -103,7 +101,7 @@ public sealed class RunArtifactPackager(
             snapshot.OccurredAt,
             snapshot.Status,
         }, JsonSerializerOptions.Web);
-        await UploadTextAsync(projectId, runId, "pins.json", pins, "application/json", cancellationToken);
+        await RunArtifactPackagerHelpers.UploadTextAsync(store, projectId, runId, "pins.json", pins, "application/json", cancellationToken);
         objectCount++;
 
         var now = clock.GetUtcNow();
@@ -140,25 +138,5 @@ public sealed class RunArtifactPackager(
             delaySeconds);
 
         return new BundleOutcome(runId.Value, objectCount, pointers);
-    }
-
-    /// <summary>Uploads a string body as a fresh <see cref="MemoryStream"/>; UTF-8, no BOM.</summary>
-    /// <param name="projectId"></param>
-    /// <param name="runId"></param>
-    /// <param name="relativePath"></param>
-    /// <param name="content"></param>
-    /// <param name="contentType"></param>
-    /// <param name="cancellationToken"></param>
-    private async Task UploadTextAsync(
-        ProjectId projectId,
-        RunId runId,
-        string relativePath,
-        string content,
-        string contentType,
-        CancellationToken cancellationToken)
-    {
-        var bytes = Encoding.UTF8.GetBytes(content);
-        await using var stream = new MemoryStream(bytes, writable: false);
-        await store.UploadAsync(projectId, runId, relativePath, stream, contentType, cancellationToken);
     }
 }

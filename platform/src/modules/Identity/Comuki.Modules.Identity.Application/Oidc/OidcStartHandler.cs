@@ -1,6 +1,5 @@
 using Comuki.Modules.Identity.Application.Ports;
 using Comuki.Modules.Identity.Domain.Oidc;
-using Microsoft.Extensions.Options;
 
 namespace Comuki.Modules.Identity.Application.Oidc;
 
@@ -11,13 +10,13 @@ namespace Comuki.Modules.Identity.Application.Oidc;
 /// </summary>
 /// <param name="discovery">Cached discovery-doc retriever (authorize + token endpoints + JWKS).</param>
 /// <param name="stateStore">Persistence port for the state row carrying the verifier + returnTo.</param>
-/// <param name="options">Provider configuration.</param>
+/// <param name="providerResolver">Provider configuration lookup (shared with <see cref="OidcCallbackHandler"/>).</param>
 /// <param name="clientSecrets">Map from provider name to the resolved client secret (env-var lookup at startup).</param>
 /// <param name="clock">Time provider — TTL of the state row.</param>
 public sealed class OidcStartHandler(
     IOidcDiscovery discovery,
     IOidcStateStore stateStore,
-    IOptions<OidcOptions> options,
+    OidcProviderResolver providerResolver,
     IOidcClientSecrets clientSecrets,
     TimeProvider clock)
 {
@@ -44,7 +43,7 @@ public sealed class OidcStartHandler(
     /// <exception cref="InvalidOperationException">Unknown provider.</exception>
     public async Task<OidcStartResult> HandleAsync(OidcStartRequest request, CancellationToken cancellationToken = default)
     {
-        var provider = ResolveProvider(request.Provider);
+        var provider = providerResolver.Resolve(request.Provider);
 
         var discoveryDoc = await discovery.GetAsync(provider, cancellationToken);
         if (string.IsNullOrWhiteSpace(discoveryDoc.AuthorizationEndpoint))
@@ -76,16 +75,5 @@ public sealed class OidcStartHandler(
             pair.Challenge);
 
         return new OidcStartResult(url, state.Id.Value.ToString("D"));
-    }
-
-    private OidcProviderOptions ResolveProvider(string name)
-    {
-        var match = options.Value.Providers
-            .FirstOrDefault(configured =>
-                string.Equals(configured.Name, name, StringComparison.OrdinalIgnoreCase));
-
-        return match
-            ?? throw new InvalidOperationException(
-                $"oidc provider '{name}' is not configured");
     }
 }

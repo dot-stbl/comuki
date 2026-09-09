@@ -176,6 +176,7 @@ internal static class HostComposer
         // dispatcher is a singleton — it carries no per-call state and
         // the underlying handlers (IKnowledgeIngestor, IKnowledgeSearcher,
         // RunsListHandler) are resolved per-call by the DI container.
+        builder.Services.AddSingleton<McpToolHandlers>();
         builder.Services.AddSingleton<McpServer>();
 
         // Scheduler module (S15): per-project cron / one-shot admission
@@ -269,7 +270,7 @@ internal static class HostComposer
         // EnableDetailedErrors on IsDevelopment() so production containers
         // never leak stack frames into HubException messages
         // (security audit A05-1).
-        _ = builder.Services.AddComukiRealtime(builder.Environment);
+        builder.Services.AddComukiRealtime(builder.Environment);
 
         // Proxy module (issue #8 / S9 T9.6): optional OpenAI / Anthropic
         // passthrough over YARP. Virtual keys live in Proxy:* configuration

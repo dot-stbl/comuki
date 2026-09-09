@@ -26,7 +26,7 @@ public sealed class UsageRecorder(
         // Reject unknown source keys at the contract boundary — the wire
         // format is the caller's promise; an empty / typo'd source would
         // silently bin into the database otherwise.
-        _ = UsageSourceKeys.Parse(record.Source);
+        UsageSourceKeys.Parse(record.Source);
 
         await store.AddAsync(record, cancellationToken);
 

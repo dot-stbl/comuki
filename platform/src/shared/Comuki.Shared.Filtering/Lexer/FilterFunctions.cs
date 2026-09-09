@@ -181,12 +181,12 @@ public static class FilterFunctions
         {
             OverflowProbe(now, offset);
         }
-        catch (ArgumentOutOfRangeException ex)
+        catch (ArgumentOutOfRangeException exception)
         {
             throw new FilterParseException(
                 $"Duration '{text}' is out of representable range",
                 position,
-                ex);
+                exception);
         }
 
         return offset;

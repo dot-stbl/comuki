@@ -80,7 +80,7 @@ public sealed class KubernetesComputeProviderShould
             });
     }
 
-    [Fact]
+    [Fact(DisplayName = "When create Job Through The Provider Then Echo Its Name Async, then test passes")]
     public async Task CreateJobThroughTheProviderThenEchoItsNameAsync()
     {
         var projectId = ProjectId.New();
@@ -116,7 +116,7 @@ public sealed class KubernetesComputeProviderShould
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Fact(DisplayName = "When honor Pre Issued Worker Id Async, then test passes")]
     public async Task HonorPreIssuedWorkerIdAsync()
     {
         var preIssued = WorkerId.New();
@@ -188,7 +188,7 @@ public sealed class KubernetesComputeProviderShould
             cancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When treat Missing Job As No Op Async, then test passes")]
     public async Task TreatMissingJobAsNoOpAsync()
     {
         _ = batchV1.DeleteNamespacedJobWithHttpMessagesAsync(
@@ -214,7 +214,7 @@ public sealed class KubernetesComputeProviderShould
         await Provider.StopAsync(WorkerId.New(), ComputeStopReason.IdleTtl, TestContext.Current.CancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When rethrow Delete Failures Other Than Not Found Async, then test passes")]
     public async Task RethrowDeleteFailuresOtherThanNotFoundAsync()
     {
         _ = batchV1.DeleteNamespacedJobWithHttpMessagesAsync(
@@ -240,7 +240,7 @@ public sealed class KubernetesComputeProviderShould
             async () => await Provider.StopAsync(WorkerId.New(), ComputeStopReason.Force, TestContext.Current.CancellationToken));
     }
 
-    [Fact]
+    [Fact(DisplayName = "When map Active Jobs With Worker Annotation To Worker Info Async, then test passes")]
     public async Task MapActiveJobsWithWorkerAnnotationToWorkerInfoAsync()
     {
         var workerId = WorkerId.New();
@@ -300,7 +300,7 @@ public sealed class KubernetesComputeProviderShould
             cancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When count Free Slots From Node Allocatable Minus Pod Requests Async, then test passes")]
     public async Task CountFreeSlotsFromNodeAllocatableMinusPodRequestsAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;

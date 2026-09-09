@@ -39,7 +39,7 @@ public sealed class OidcCallbackHandlerShould
         handler = new OidcCallbackHandler(
             stateStore,
             discovery,
-            Options.Create(options),
+            new OidcProviderResolver(Options.Create(options)),
             clientSecrets,
             tokenExchange,
             idTokenValidator,

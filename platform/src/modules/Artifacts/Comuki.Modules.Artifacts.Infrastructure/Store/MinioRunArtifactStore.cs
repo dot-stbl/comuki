@@ -52,7 +52,7 @@ public sealed class MinioRunArtifactStore(
             configuration.Bucket,
             content.Length);
 
-        return BuildObjectUri(objectKey);
+        return BuildObjectUri(configuration, objectKey);
     }
 
     /// <inheritdoc />
@@ -82,7 +82,7 @@ public sealed class MinioRunArtifactStore(
 
             pointers.Add(new ArtifactPointer(
                 Name: name,
-                Uri: BuildObjectUri(item.Key),
+                Uri: BuildObjectUri(configuration, item.Key),
                 Size: (long)item.Size,
                 ContentType: item.ContentType ?? "application/octet-stream"));
         }
@@ -113,7 +113,7 @@ public sealed class MinioRunArtifactStore(
                 cancellationToken);
             logger.LogInformation("Created MinIO bucket {Bucket}", configuration.Bucket);
         }
-        catch (MinioException exception) when (IsAlreadyExists(exception))
+        catch (MinioException exception) when (IsMinioAlreadyExists(exception))
         {
             // Race: another instance just created it.
             logger.LogDebug("MinIO bucket {Bucket} already existed (race)", configuration.Bucket);
@@ -161,8 +161,9 @@ public sealed class MinioRunArtifactStore(
     }
 
     /// <summary>Canonical object URI — the MinIO SDK does not expose the host:port directly, so we construct from options.</summary>
+    /// <param name="configuration"></param>
     /// <param name="objectKey"></param>
-    private Uri BuildObjectUri(string objectKey)
+    internal static Uri BuildObjectUri(ArtifactsOptions configuration, string objectKey)
     {
         var scheme = configuration.UseSSL ? "https" : "http";
         return new Uri($"{scheme}://{configuration.Endpoint}/{configuration.Bucket}/{objectKey}");
@@ -170,7 +171,7 @@ public sealed class MinioRunArtifactStore(
 
     /// <summary>True when the SDK raised "bucket already exists" — a race, not a failure.</summary>
     /// <param name="exception"></param>
-    private static bool IsAlreadyExists(MinioException exception)
+    internal static bool IsMinioAlreadyExists(MinioException exception)
     {
         return exception.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase);
     }

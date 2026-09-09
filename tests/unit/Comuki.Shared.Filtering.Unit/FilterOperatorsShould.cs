@@ -79,7 +79,7 @@ public sealed class FilterOperatorsShould
     // ── Eq / NotEq ───────────────────────────────────────────────────────────────
 
     /// <summary>Eq matches exactly one value.</summary>
-    [Fact]
+    [Fact(DisplayName = "When eq Matches Exact Value, then test passes")]
     public void EqMatchesExactValue()
     {
         var result = Run("Name==alice");
@@ -88,7 +88,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>NotEq excludes the value, returns the rest.</summary>
-    [Fact]
+    [Fact(DisplayName = "When not Eq Excludes Value, then test passes")]
     public void NotEqExcludesValue()
     {
         var result = Run("Name!=alice");
@@ -99,7 +99,7 @@ public sealed class FilterOperatorsShould
     // ── String operators ─────────────────────────────────────────────────────────
 
     /// <summary>Contains matches substrings.</summary>
-    [Fact]
+    [Fact(DisplayName = "When contains Matches Substring, then test passes")]
     public void ContainsMatchesSubstring()
     {
         // "example" is in alice + Bob emails, not in Carol's
@@ -110,7 +110,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>StartsWith matches prefixes.</summary>
-    [Fact]
+    [Fact(DisplayName = "When starts With Matches Prefix, then test passes")]
     public void StartsWithMatchesPrefix()
     {
         var result = Run("Email^=alice");
@@ -119,7 +119,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>EndsWith matches suffixes.</summary>
-    [Fact]
+    [Fact(DisplayName = "When ends With Matches Suffix, then test passes")]
     public void EndsWithMatchesSuffix()
     {
         var result = Run("Email$=io");
@@ -130,7 +130,7 @@ public sealed class FilterOperatorsShould
     // ── Range operators (numbers) ────────────────────────────────────────────────
 
     /// <summary>Gt strictly greater than.</summary>
-    [Fact]
+    [Fact(DisplayName = "When gt Matches Strictly Greater, then test passes")]
     public void GtMatchesStrictlyGreater()
     {
         var result = Run("Age>25");
@@ -139,7 +139,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Gte includes boundary.</summary>
-    [Fact]
+    [Fact(DisplayName = "When gte Includes Boundary, then test passes")]
     public void GteIncludesBoundary()
     {
         var result = Run("Age>=25");
@@ -147,7 +147,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Lt strictly less than.</summary>
-    [Fact]
+    [Fact(DisplayName = "When lt Matches Strictly Less, then test passes")]
     public void LtMatchesStrictlyLess()
     {
         var result = Run("Score<100");
@@ -156,7 +156,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Lte includes boundary.</summary>
-    [Fact]
+    [Fact(DisplayName = "When lte Includes Boundary, then test passes")]
     public void LteIncludesBoundary()
     {
         var result = Run("Score<=100");
@@ -164,7 +164,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Decimal range works.</summary>
-    [Fact]
+    [Fact(DisplayName = "When decimal Range Works, then test passes")]
     public void DecimalRangeWorks()
     {
         var result = Run("Balance>50");
@@ -172,7 +172,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Double range works.</summary>
-    [Fact]
+    [Fact(DisplayName = "When double Range Works, then test passes")]
     public void DoubleRangeWorks()
     {
         var result = Run("Rating>=4.5");
@@ -182,7 +182,7 @@ public sealed class FilterOperatorsShould
     // ── Range operators (dates) ──────────────────────────────────────────────────
 
     /// <summary>Date Gt matches strictly after.</summary>
-    [Fact]
+    [Fact(DisplayName = "When date Gt Matches Strictly After, then test passes")]
     public void DateGtMatchesStrictlyAfter()
     {
         var result = Run($"CreatedAt>{referenceDate:O}");
@@ -191,7 +191,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Date Gte includes boundary.</summary>
-    [Fact]
+    [Fact(DisplayName = "When date Gte Includes Boundary, then test passes")]
     public void DateGteIncludesBoundary()
     {
         var result = Run($"CreatedAt>={referenceDate:O}");
@@ -199,7 +199,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Date Lt matches strictly before.</summary>
-    [Fact]
+    [Fact(DisplayName = "When date Lt Matches Strictly Before, then test passes")]
     public void DateLtMatchesStrictlyBefore()
     {
         var result = Run($"CreatedAt<{referenceDate:O}");
@@ -210,7 +210,7 @@ public sealed class FilterOperatorsShould
     // ── In operator ──────────────────────────────────────────────────────────────
 
     /// <summary>In matches any value in the list.</summary>
-    [Fact]
+    [Fact(DisplayName = "When in Matches Any Listed Value, then test passes")]
     public void InMatchesAnyListedValue()
     {
         var result = Run("Status[]=Active,Archived");
@@ -220,7 +220,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>In on Guid.</summary>
-    [Fact]
+    [Fact(DisplayName = "When in On Guid, then test passes")]
     public void InOnGuid()
     {
         var result = Run("Id[]=00000000-0000-0000-0000-000000000001,00000000-0000-0000-0000-000000000002");
@@ -228,7 +228,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>In with a single value behaves like Eq.</summary>
-    [Fact]
+    [Fact(DisplayName = "When in With Single Value Behaves Like Eq, then test passes")]
     public void InWithSingleValueBehavesLikeEq()
     {
         var result = Run("Status[]=Active");
@@ -239,7 +239,7 @@ public sealed class FilterOperatorsShould
     // ── Bool Eq ──────────────────────────────────────────────────────────────────
 
     /// <summary>Bool Eq with true.</summary>
-    [Fact]
+    [Fact(DisplayName = "When bool Eq True, then test passes")]
     public void BoolEqTrue()
     {
         var result = Run("IsActive==true");
@@ -248,7 +248,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Bool Eq with false.</summary>
-    [Fact]
+    [Fact(DisplayName = "When bool Eq False, then test passes")]
     public void BoolEqFalse()
     {
         var result = Run("IsActive==false");
@@ -258,7 +258,7 @@ public sealed class FilterOperatorsShould
     // ── Combinations ─────────────────────────────────────────────────────────────
 
     /// <summary>AND of two conditions.</summary>
-    [Fact]
+    [Fact(DisplayName = "When and Combines Two Conditions, then test passes")]
     public void AndCombinesTwoConditions()
     {
         var result = Run("Status==Active;Age==25");
@@ -267,7 +267,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>OR of two conditions.</summary>
-    [Fact]
+    [Fact(DisplayName = "When or Combines Two Conditions, then test passes")]
     public void OrCombinesTwoConditions()
     {
         var result = Run("Status==Active|Status==Archived");
@@ -275,7 +275,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Nested AND inside OR.</summary>
-    [Fact]
+    [Fact(DisplayName = "When nested And Inside Or, then test passes")]
     public void NestedAndInsideOr()
     {
         // (Status==Active ; Age==25) | (Status==Archived)
@@ -286,7 +286,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Three-way AND.</summary>
-    [Fact]
+    [Fact(DisplayName = "When three Way And, then test passes")]
     public void ThreeWayAnd()
     {
         var result = Run("Status==Active;Age==25;IsActive==true");
@@ -295,7 +295,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>AND of conditions where one matches none → empty result.</summary>
-    [Fact]
+    [Fact(DisplayName = "When and With No Matches Returns Empty, then test passes")]
     public void AndWithNoMatchesReturnsEmpty()
     {
         var result = Run("Status==Active;Age==999");
@@ -303,7 +303,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>OR where one side is always false still returns the other.</summary>
-    [Fact]
+    [Fact(DisplayName = "When or With False Side Returns True Side, then test passes")]
     public void OrWithFalseSideReturnsTrueSide()
     {
         var result = Run("Status==Active|Age==999");
@@ -314,7 +314,7 @@ public sealed class FilterOperatorsShould
     // ── IsNull / IsNotNull ──────────────────────────────────────────────────────
 
     /// <summary><c>?</c> matches entities where a nullable reference field is null.</summary>
-    [Fact]
+    [Fact(DisplayName = "When is Null Matches Nullable Reference Field, then test passes")]
     public void IsNullMatchesNullableReferenceField()
     {
         var data = new List<SampleEntity>
@@ -333,7 +333,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary><c>!?</c> matches entities where a nullable reference field has a value.</summary>
-    [Fact]
+    [Fact(DisplayName = "When is Not Null Matches Populated Reference Field, then test passes")]
     public void IsNotNullMatchesPopulatedReferenceField()
     {
         var data = new List<SampleEntity>
@@ -350,7 +350,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary><c>?</c> on a <see cref="Nullable{T}" /> value-type field works.</summary>
-    [Fact]
+    [Fact(DisplayName = "When is Null Matches Nullable Value Type Field, then test passes")]
     public void IsNullMatchesNullableValueTypeField()
     {
         var data = new List<SampleEntity>
@@ -371,7 +371,7 @@ public sealed class FilterOperatorsShould
     /// <summary>
     ///     <c>!?</c> on a <see cref="Nullable{T}" /> value-type field works.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When is Not Null Matches Populated Nullable Value Type Field, then test passes")]
     public void IsNotNullMatchesPopulatedNullableValueTypeField()
     {
         var data = new List<SampleEntity>
@@ -388,7 +388,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>IsNull combines with AND normally.</summary>
-    [Fact]
+    [Fact(DisplayName = "When is Null And Other Condition, then test passes")]
     public void IsNullAndOtherCondition()
     {
         var data = new List<SampleEntity>
@@ -412,7 +412,7 @@ public sealed class FilterOperatorsShould
     ///     within that window are matched. Uses relative timestamps so the test
     ///     does not depend on wall-clock time.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When now Minus Seven Days Includes Only Recent Entities, then test passes")]
     public void NowMinusSevenDaysIncludesOnlyRecentEntities()
     {
         var now = DateTimeOffset.UtcNow;
@@ -434,7 +434,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary><c>now(-1h)</c> with hours unit works.</summary>
-    [Fact]
+    [Fact(DisplayName = "When now Minus One Hour Matches Recent, then test passes")]
     public void NowMinusOneHourMatchesRecent()
     {
         var now = DateTimeOffset.UtcNow;
@@ -452,7 +452,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary><c>now(-30m)</c> with minutes unit works.</summary>
-    [Fact]
+    [Fact(DisplayName = "When now Minus Thirty Minutes, then test passes")]
     public void NowMinusThirtyMinutes()
     {
         var now = DateTimeOffset.UtcNow;
@@ -470,7 +470,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary><c>now(-1w)</c> with weeks unit works (7 days).</summary>
-    [Fact]
+    [Fact(DisplayName = "When now Minus One Week, then test passes")]
     public void NowMinusOneWeek()
     {
         var now = DateTimeOffset.UtcNow;
@@ -488,7 +488,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary>Positive offset (future) works.</summary>
-    [Fact]
+    [Fact(DisplayName = "When now With Positive Offset Works, then test passes")]
     public void NowWithPositiveOffsetWorks()
     {
         var now = DateTimeOffset.UtcNow;
@@ -506,7 +506,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary><c>now()</c> works on <see cref="DateTime" /> fields too.</summary>
-    [Fact]
+    [Fact(DisplayName = "When now Works On Date Time Fields, then test passes")]
     public void NowWorksOnDateTimeFields()
     {
         var now = DateTimeOffset.UtcNow;
@@ -588,7 +588,7 @@ public sealed class FilterOperatorsShould
     // ---------------------------------------------------------------------
 
     /// <summary><c>NotIn</c> excludes matching enum values.</summary>
-    [Fact]
+    [Fact(DisplayName = "When not In Excludes Matching Enum Values, then test passes")]
     public void NotInExcludesMatchingEnumValues()
     {
         var data = new List<SampleEntity>
@@ -606,7 +606,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary><c>NotIn</c> excludes matching Guid values.</summary>
-    [Fact]
+    [Fact(DisplayName = "When not In Excludes Matching Guid Values, then test passes")]
     public void NotInExcludesMatchingGuidValues()
     {
         var included = Guid.NewGuid();
@@ -625,7 +625,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary><c>NotIn</c> excludes matching numeric values.</summary>
-    [Fact]
+    [Fact(DisplayName = "When not In Excludes Matching Numeric Values, then test passes")]
     public void NotInExcludesMatchingNumericValues()
     {
         var data = new List<SampleEntity>
@@ -643,7 +643,7 @@ public sealed class FilterOperatorsShould
     }
 
     /// <summary><c>NotIn</c> combined with <c>Eq</c> via AND.</summary>
-    [Fact]
+    [Fact(DisplayName = "When not In And Eq Combine, then test passes")]
     public void NotInAndEqCombine()
     {
         var data = new List<SampleEntity>

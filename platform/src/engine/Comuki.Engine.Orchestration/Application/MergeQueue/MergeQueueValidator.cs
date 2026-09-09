@@ -23,15 +23,15 @@ public sealed class MergeQueueValidator : AbstractValidator<EnqueueMergeRequestC
     /// <summary>Rules.</summary>
     public MergeQueueValidator()
     {
-        _ = RuleFor(static command => command.BranchName)
+        RuleFor(static command => command.BranchName)
             .NotEmpty()
             .MaximumLength(MaxBranchNameLength);
 
-        _ = RuleFor(static command => command.PullRequestUrl)
+        RuleFor(static command => command.PullRequestUrl)
             .NotEmpty()
             .MaximumLength(MaxPullRequestUrlLength);
 
-        _ = RuleFor(static command => command.Notes)
+        RuleFor(static command => command.Notes)
             .MaximumLength(MaxNotesLength);
     }
 }
@@ -48,25 +48,25 @@ public sealed class UpdateMergeQueueValidator : AbstractValidator<UpdateMergeQue
     /// <summary>Rules.</summary>
     public UpdateMergeQueueValidator()
     {
-        _ = RuleFor(static command => command.EntryId)
+        RuleFor(static command => command.EntryId)
             .NotEqual(Guid.Empty);
 
-        _ = RuleFor(static command => command.OperatorId)
+        RuleFor(static command => command.OperatorId)
             .NotEmpty()
             .MaximumLength(MaxOperatorIdLength)
             .When(static command => command.Action is MergeQueueAction.Claim);
 
-        _ = RuleFor(static command => command.OperatorId)
+        RuleFor(static command => command.OperatorId)
             .NotEmpty()
             .MaximumLength(MaxOperatorIdLength)
             .When(static command => command.Action is MergeQueueAction.Abandon);
 
-        _ = RuleFor(static command => command.Reason)
+        RuleFor(static command => command.Reason)
             .NotEmpty()
             .MaximumLength(MaxReasonLength)
             .When(static command => command.Action is MergeQueueAction.Abandon);
 
-        _ = RuleFor(static command => command.Notes)
+        RuleFor(static command => command.Notes)
             .MaximumLength(MergeQueueValidator.MaxNotesLength)
             .When(static command => command.Action is MergeQueueAction.Annotate);
     }

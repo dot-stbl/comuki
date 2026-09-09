@@ -47,9 +47,9 @@ public sealed class ProxyUsageMeter(
         {
             report = await extractor.ExtractAsync(body, key.ProjectId, occurredAt, cancellationToken);
         }
-        catch (JsonException ex)
+        catch (JsonException exception)
         {
-            logger.LogWarning(ex, "Usage extractor for provider {Provider} failed to parse response body", provider);
+            logger.LogWarning(exception, "Usage extractor for provider {Provider} failed to parse response body", provider);
             return;
         }
 
@@ -75,9 +75,9 @@ public sealed class ProxyUsageMeter(
                     OccurredAt: enriched.OccurredAt),
                 cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            logger.LogWarning(ex, "Failed to record usage for project {ProjectId}", enriched.ProjectId);
+            logger.LogWarning(exception, "Failed to record usage for project {ProjectId}", enriched.ProjectId);
         }
     }
 }

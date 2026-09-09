@@ -14,7 +14,7 @@ public sealed class PiEventToWorkerEventShould
 {
     private const string WorkItemId = "0b6d7c1e-49cc-4a30-9b52-52a04c8e0a70";
 
-    [Fact]
+    [Fact(DisplayName = "When forward Text Delta As Text Activity, then test passes")]
     public void ForwardTextDeltaAsTextActivity()
     {
         var forwarded = PiEventToWorkerEvent.ToForwardEvent(
@@ -28,7 +28,7 @@ public sealed class PiEventToWorkerEventShould
         forwarded.Activity.WorkItemId.ShouldBe(WorkItemId);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When forward Authoritative Assistant Text As Text Activity, then test passes")]
     public void ForwardAuthoritativeAssistantTextAsTextActivity()
     {
         var forwarded = PiEventToWorkerEvent.ToForwardEvent(
@@ -40,7 +40,7 @@ public sealed class PiEventToWorkerEventShould
         forwarded.Activity.Text.ShouldBe("Hello world");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When forward Tool Call With Raw Args, then test passes")]
     public void ForwardToolCallWithRawArgs()
     {
         var forwarded = PiEventToWorkerEvent.ToForwardEvent(
@@ -54,7 +54,7 @@ public sealed class PiEventToWorkerEventShould
         forwarded.Activity.Text.ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When not Forward Session Header Or Agent End Or Unknown, then test passes")]
     public void NotForwardSessionHeaderOrAgentEndOrUnknown()
     {
         PiEventToWorkerEvent.ToForwardEvent(WorkItemId, new PiEvent.SessionHeaderEvent(3, "id", "/work")).ShouldBeNull();
@@ -62,7 +62,7 @@ public sealed class PiEventToWorkerEventShould
         PiEventToWorkerEvent.ToForwardEvent(WorkItemId, new PiEvent.ResultEvent("success", 1, 0m, "done")).ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When accumulate Deltas Then Replace With Authoritative Text, then test passes")]
     public void AccumulateDeltasThenReplaceWithAuthoritativeText()
     {
         var summary = new WorkerRunSummary();
@@ -75,7 +75,7 @@ public sealed class PiEventToWorkerEventShould
         summary.ResultText.ShouldBe("Hello world");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When ignore Non Text Events In Summary, then test passes")]
     public void IgnoreNonTextEventsInSummary()
     {
         var summary = new WorkerRunSummary();

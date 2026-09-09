@@ -14,7 +14,7 @@ namespace Comuki.Shared.Filtering.Unit;
 public sealed class FilterableFieldRegistryShould
 {
     /// <summary>[NotMapped] properties are excluded — opt-out is enforced.</summary>
-    [Fact]
+    [Fact(DisplayName = "When exclude Not Mapped Properties, then test passes")]
     public void ExcludeNotMappedProperties()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -33,7 +33,7 @@ public sealed class FilterableFieldRegistryShould
     ///     the declaring type: five <c>Operation</c> subtypes offered a <c>Kind</c> filter that
     ///     no column backed.
     /// </remarks>
-    [Fact]
+    [Fact(DisplayName = "When exclude Not Mapped Property Inherited From Base, then test passes")]
     public void ExcludeNotMappedPropertyInheritedFromBase()
     {
         var fields = FilterableFieldRegistry.For<InheritedExclusionEntity>();
@@ -52,7 +52,7 @@ public sealed class FilterableFieldRegistryShould
     ///     the untyped snapshot. With a shared cache whichever ran second got the other's entry
     ///     and threw <see cref="InvalidCastException" />.
     /// </remarks>
-    [Fact]
+    [Fact(DisplayName = "When serve Typed And Untyped Views Of The Same Entity, then test passes")]
     public void ServeTypedAndUntypedViewsOfTheSameEntity()
     {
         FilterableFieldRegistry.For<EmptyEntity>().All.ShouldBeEmpty();
@@ -63,7 +63,7 @@ public sealed class FilterableFieldRegistryShould
     }
 
     /// <summary>Types with no DSL operators (byte[], object) are excluded silently.</summary>
-    [Fact]
+    [Fact(DisplayName = "When exclude Types That Map To None, then test passes")]
     public void ExcludeTypesThatMapToNone()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -73,7 +73,7 @@ public sealed class FilterableFieldRegistryShould
     }
 
     /// <summary>Empty entity produces an empty field set, not a throw.</summary>
-    [Fact]
+    [Fact(DisplayName = "When return Empty Set For Entity With No Public Properties, then test passes")]
     public void ReturnEmptySetForEntityWithNoPublicProperties()
     {
         var fields = FilterableFieldRegistry.For<EmptyEntity>();
@@ -83,7 +83,7 @@ public sealed class FilterableFieldRegistryShould
     }
 
     /// <summary>Field lookup is case-insensitive — clients may send any casing.</summary>
-    [Fact]
+    [Fact(DisplayName = "When resolve Fields Case Insensitively, then test passes")]
     public void ResolveFieldsCaseInsensitively()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -100,7 +100,7 @@ public sealed class FilterableFieldRegistryShould
     ///     <see cref="FilterOperator.IsNotNull" /> because <see cref="string" /> is a
     ///     reference type.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When infer String Operators For String Properties, then test passes")]
     public void InferStringOperatorsForStringProperties()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -116,7 +116,7 @@ public sealed class FilterableFieldRegistryShould
     ///     <see cref="Nullable{T}" /> value-type fields (e.g. <c>int?</c>) get the
     ///     null operators in addition to their underlying type's set.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When infer Null Operators For Nullable Value Type, then test passes")]
     public void InferNullOperatorsForNullableValueType()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -132,7 +132,7 @@ public sealed class FilterableFieldRegistryShould
     ///     Non-nullable value types (e.g. <see cref="int" />) do NOT get null
     ///     operators — the predicate would always be false at runtime.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When do Not Infer Null Operators For Non Nullable Value Type, then test passes")]
     public void DoNotInferNullOperatorsForNonNullableValueType()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -142,7 +142,7 @@ public sealed class FilterableFieldRegistryShould
     }
 
     /// <summary>Enum fields get Eq, NotEq, In — no Contains (makes no sense).</summary>
-    [Fact]
+    [Fact(DisplayName = "When infer Enum Operators For Enum Properties, then test passes")]
     public void InferEnumOperatorsForEnumProperties()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -181,7 +181,7 @@ public sealed class FilterableFieldRegistryShould
     }
 
     /// <summary>Guid gets Eq, NotEq, In.</summary>
-    [Fact]
+    [Fact(DisplayName = "When infer Guid Operators, then test passes")]
     public void InferGuidOperators()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -191,7 +191,7 @@ public sealed class FilterableFieldRegistryShould
     }
 
     /// <summary>Bool gets only Eq.</summary>
-    [Fact]
+    [Fact(DisplayName = "When infer Bool Operators, then test passes")]
     public void InferBoolOperators()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -201,7 +201,7 @@ public sealed class FilterableFieldRegistryShould
     }
 
     /// <summary>TimeSpan gets Eq + range.</summary>
-    [Fact]
+    [Fact(DisplayName = "When infer Time Span Operators, then test passes")]
     public void InferTimeSpanOperators()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -212,7 +212,7 @@ public sealed class FilterableFieldRegistryShould
     }
 
     /// <summary>Registry caches per type — same instance returned across calls.</summary>
-    [Fact]
+    [Fact(DisplayName = "When cache Per Type, then test passes")]
     public void CachePerType()
     {
         var first = FilterableFieldRegistry.For<SampleEntity>();
@@ -222,7 +222,7 @@ public sealed class FilterableFieldRegistryShould
     }
 
     /// <summary>Accessor expression points at the right property.</summary>
-    [Fact]
+    [Fact(DisplayName = "When build Accessor That Reads The Underlying Property, then test passes")]
     public void BuildAccessorThatReadsTheUnderlyingProperty()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -242,7 +242,7 @@ public sealed class FilterableFieldRegistryShould
     ///     type is unsupported or the property carries <c>[NotMapped]</c> /
     ///     <c>[FilteredIgnore]</c>. Sensitive properties must be marked at declaration time.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When deny List Contract Exposes New Public Property By Default, then test passes")]
     public void DenyListContractExposesNewPublicPropertyByDefault()
     {
         var fields = FilterableFieldRegistry.For<SampleEntity>();
@@ -263,7 +263,7 @@ public sealed class FilterableFieldRegistryShould
     ///     would advertise, in the generated client's filter builder, exactly the probe the
     ///     hiding existed to prevent.
     /// </remarks>
-    [Fact]
+    [Fact(DisplayName = "When exclude Filtered Ignore Properties, then test passes")]
     public void ExcludeFilteredIgnoreProperties()
     {
         FilterableFieldRegistry.For<SampleEntity>().Find("Passphrase").ShouldBeNull();
@@ -278,7 +278,7 @@ public sealed class FilterableFieldRegistryShould
     ///     in the subtype too — same <c>inherit: true</c> rule as <c>[NotMapped]</c>, and it
     ///     matters for the same reason: the subtype is what a repository queries.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When exclude Filtered Ignore Property Inherited From Base, then test passes")]
     public void ExcludeFilteredIgnorePropertyInheritedFromBase()
     {
         var fields = FilterableFieldRegistry.For<InheritedExclusionEntity>();
@@ -295,7 +295,7 @@ public sealed class FilterableFieldRegistryShould
     ///     Asserted as "indistinguishable from no sort at all", and paired with a sort that
     ///     does reorder so the first assertion cannot pass vacuously.
     /// </remarks>
-    [Fact]
+    [Fact(DisplayName = "When skip A Hidden Field In Sort And Fall Back To The Default, then test passes")]
     public void SkipAHiddenFieldInSortAndFallBackToTheDefault()
     {
         var data = new List<SampleEntity>

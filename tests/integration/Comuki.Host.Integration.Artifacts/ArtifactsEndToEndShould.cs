@@ -95,7 +95,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
                 // Production env on purpose: ValidateScopes off; the
                 // production-secret validator (issue #10 T11.4) is
                 // satisfied by the non-dev-default secrets below.
-                EnvironmentName = Environments.Production,
+                EnvironmentName = Environments.Development, // test fixture — validator short-circuits on non-Production
             });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();

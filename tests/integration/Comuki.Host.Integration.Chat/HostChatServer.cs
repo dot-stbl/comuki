@@ -113,7 +113,7 @@ public sealed class HostChatServer : IAsyncLifetime
             .AddOrchestrationPersistence(ConnectionString)
             .AddOrchestrationQueue(builder.Configuration);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(ConnectionString), validateOnBuild: false);
+        application = HostComposer.Compose(builder, HostDatabase.Explicit(ConnectionString));
         await application.StartAsync(cancellationToken);
 
         baseAddress = new Uri(

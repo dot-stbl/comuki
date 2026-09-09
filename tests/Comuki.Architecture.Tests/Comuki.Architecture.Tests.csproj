@@ -27,6 +27,16 @@
     <ProjectReference Include="..\..\platform\src\modules\Costs\Comuki.Modules.Costs.Infrastructure\Comuki.Modules.Costs.Infrastructure.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Intake\Comuki.Modules.Intake.Domain\Comuki.Modules.Intake.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Intake\Comuki.Modules.Intake.Application\Comuki.Modules.Intake.Application.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Intake\Comuki.Modules.Intake.Infrastructure\Comuki.Modules.Intake.Infrastructure.csproj" />
+    
+    <ProjectReference Include="..\..\platform\src\modules\Proxy\Comuki.Modules.Proxy.Application\Comuki.Modules.Proxy.Application.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Proxy\Comuki.Modules.Proxy.Infrastructure\Comuki.Modules.Proxy.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Chat\Comuki.Modules.Chat.Domain\Comuki.Modules.Chat.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Knowledge\Comuki.Modules.Knowledge.Domain\Comuki.Modules.Knowledge.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Memory\Comuki.Modules.Memory.Domain\Comuki.Modules.Memory.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Projects\Comuki.Modules.Projects.Domain\Comuki.Modules.Projects.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Scheduler\Comuki.Modules.Scheduler.Domain\Comuki.Modules.Scheduler.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Artifacts\Comuki.Modules.Artifacts.Domain\Comuki.Modules.Artifacts.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
   </ItemGroup>

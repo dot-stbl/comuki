@@ -23,18 +23,12 @@ public sealed class UsageRecorder(
     /// <inheritdoc />
     public async Task RecordAsync(UsageRecord record, CancellationToken cancellationToken = default)
     {
-        var source = UsageSourceKeys.Parse(record.Source);
-        var usageEvent = UsageEvent.Create(
-            record.ProjectId,
-            record.RunId,
-            source,
-            record.Model,
-            record.InputTokens,
-            record.OutputTokens,
-            record.CostUsdMicros,
-            record.OccurredAt);
+        // Reject unknown source keys at the contract boundary — the wire
+        // format is the caller's promise; an empty / typo'd source would
+        // silently bin into the database otherwise.
+        _ = UsageSourceKeys.Parse(record.Source);
 
-        await store.AddAsync(usageEvent, cancellationToken);
+        await store.AddAsync(record, cancellationToken);
 
         var caps = await budgets.GetAsync(record.ProjectId, cancellationToken);
         var spent = await store.SumProjectCostUsdMicrosAsync(record.ProjectId, cancellationToken: cancellationToken);

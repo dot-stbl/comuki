@@ -30,7 +30,7 @@ public sealed class ProjectBudgetSettingsAdapterShould
             domainType: ProjectDomainType.Standard,
             customDomainTypesJson: null,
             now: DateTimeOffset.UtcNow);
-        _ = settings.GetCached(projectId).Returns(row);
+        settings.GetCached(projectId).Returns(row);
 
         var caps = await new ProjectBudgetSettingsAdapter(settings).GetAsync(
             projectId,
@@ -60,8 +60,8 @@ public sealed class ProjectBudgetSettingsAdapterShould
             domainType: ProjectDomainType.Standard,
             customDomainTypesJson: null,
             now: DateTimeOffset.UtcNow);
-        _ = settings.GetCached(projectId).Returns((ProjectSettings?)null);
-        _ = settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns(row);
+        settings.GetCached(projectId).Returns((ProjectSettings?)null);
+        settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns(row);
 
         var caps = await new ProjectBudgetSettingsAdapter(settings).GetAsync(
             projectId,
@@ -76,8 +76,8 @@ public sealed class ProjectBudgetSettingsAdapterShould
     {
         var projectId = ProjectId.New();
         var settings = Substitute.For<IProjectSettingsStore>();
-        _ = settings.GetCached(projectId).Returns((ProjectSettings?)null);
-        _ = settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns((ProjectSettings?)null);
+        settings.GetCached(projectId).Returns((ProjectSettings?)null);
+        settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns((ProjectSettings?)null);
 
         var caps = await new ProjectBudgetSettingsAdapter(settings).GetAsync(
             projectId,

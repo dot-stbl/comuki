@@ -143,7 +143,7 @@ public sealed class GetRunDetailHandlerShould
         var db = await NewDbContextAsync();
         var now = DateTimeOffset.UtcNow;
         var run = await SeedRunAsync(db, RunStatus.Running, now);
-        _ = await SeedWorkItemAsync(
+        await SeedWorkItemAsync(
                     db, run.Id, profileKey: "explore-readonly",
                     image: "comuki/worker:2.0.0", profilesRef: "rules@main",
                     brief: /*lang=json,strict*/ "{\"scope\":\"read-only\"}");
@@ -188,8 +188,8 @@ public sealed class GetRunDetailHandlerShould
             step = step.AddSeconds(1);
         }
 
-        _ = db.Runs.Add(run);
-        _ = await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.Runs.Add(run);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return run;
     }
 
@@ -209,7 +209,7 @@ public sealed class GetRunDetailHandlerShould
             brief,
             WorkItemStatus.Queued,
             DateTimeOffset.UtcNow);
-        _ = db.WorkItems.Add(item);
+        db.WorkItems.Add(item);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return item;
     }

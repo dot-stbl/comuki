@@ -57,8 +57,8 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
         await orchestrationDb.Database.MigrateAsync(cancellationToken);
 
         var services = new ServiceCollection();
-        _ = services.AddIdentityPersistence(connectionString);
-        _ = services.AddIdentityApplication();
+        services.AddIdentityPersistence(connectionString);
+        services.AddIdentityApplication();
         provider = services.BuildServiceProvider();
 
         var db = provider.GetRequiredService<IdentityDbContext>();
@@ -120,18 +120,18 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
         await using (var scope = provider.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-            _ = db.RoleAssignments.Add(RoleAssignment.Create(
+            db.RoleAssignments.Add(RoleAssignment.Create(
                 subject, Role.Member, AssignmentScope.ForProject(project), null, DateTimeOffset.UtcNow));
-            _ = await db.SaveChangesAsync(cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
         }
 
         await using (var scope = provider.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-            _ = db.RoleAssignments.Add(RoleAssignment.Create(
+            db.RoleAssignments.Add(RoleAssignment.Create(
                 subject, Role.Member, AssignmentScope.ForProject(project), null, DateTimeOffset.UtcNow));
 
-            _ = await Should.ThrowAsync<DbUpdateException>(() => db.SaveChangesAsync(cancellationToken));
+            await Should.ThrowAsync<DbUpdateException>(() => db.SaveChangesAsync(cancellationToken));
         }
     }
 
@@ -144,18 +144,18 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
         await using (var scope = provider.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-            _ = db.RoleAssignments.Add(RoleAssignment.Create(
+            db.RoleAssignments.Add(RoleAssignment.Create(
                 subject, Role.Operator, AssignmentScope.Platform(), null, DateTimeOffset.UtcNow));
-            _ = await db.SaveChangesAsync(cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
         }
 
         await using (var scope = provider.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-            _ = db.RoleAssignments.Add(RoleAssignment.Create(
+            db.RoleAssignments.Add(RoleAssignment.Create(
                 subject, Role.Operator, AssignmentScope.Platform(), null, DateTimeOffset.UtcNow));
 
-            _ = await Should.ThrowAsync<DbUpdateException>(() => db.SaveChangesAsync(cancellationToken));
+            await Should.ThrowAsync<DbUpdateException>(() => db.SaveChangesAsync(cancellationToken));
         }
     }
 
@@ -169,11 +169,11 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         var first = RoleAssignment.Create(subject, Role.Viewer, AssignmentScope.Platform(), null, DateTimeOffset.UtcNow);
         first.Revoke(DateTimeOffset.UtcNow);
-        _ = db.RoleAssignments.Add(first);
-        _ = await db.SaveChangesAsync(cancellationToken);
+        db.RoleAssignments.Add(first);
+        await db.SaveChangesAsync(cancellationToken);
 
-        _ = db.RoleAssignments.Add(RoleAssignment.Create(subject, Role.Viewer, AssignmentScope.Platform(), null, DateTimeOffset.UtcNow));
-        _ = await db.SaveChangesAsync(cancellationToken);
+        db.RoleAssignments.Add(RoleAssignment.Create(subject, Role.Viewer, AssignmentScope.Platform(), null, DateTimeOffset.UtcNow));
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     [Fact(DisplayName = "Given an issued api key, when another key row with the same prefix is stored, then the unique index refuses it")]
@@ -185,13 +185,13 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         var user = User.Create("keys@example.com", "Keys", null, DateTimeOffset.UtcNow);
         var userId = user.Id;
-        _ = db.Users.Add(user);
-        _ = db.ApiKeys.Add(ApiKey.Create(userId, "first", "abcd1234", new string('0', 64), DateTimeOffset.UtcNow));
-        _ = await db.SaveChangesAsync(cancellationToken);
+        db.Users.Add(user);
+        db.ApiKeys.Add(ApiKey.Create(userId, "first", "abcd1234", new string('0', 64), DateTimeOffset.UtcNow));
+        await db.SaveChangesAsync(cancellationToken);
 
-        _ = db.ApiKeys.Add(ApiKey.Create(userId, "second", "abcd1234", new string('1', 64), DateTimeOffset.UtcNow));
+        db.ApiKeys.Add(ApiKey.Create(userId, "second", "abcd1234", new string('1', 64), DateTimeOffset.UtcNow));
 
-        _ = await Should.ThrowAsync<DbUpdateException>(() => db.SaveChangesAsync(cancellationToken));
+        await Should.ThrowAsync<DbUpdateException>(() => db.SaveChangesAsync(cancellationToken));
     }
 
     [Fact(DisplayName = "Given a grant through the handler, when the subject is evaluated and the grant revoked, then permissions appear and disappear immediately")]
@@ -293,11 +293,11 @@ public sealed class IdentityMigrationsShould : IAsyncLifetime
         var schemaParameter = command.CreateParameter();
         schemaParameter.ParameterName = "@schema";
         schemaParameter.Value = schema;
-        _ = command.Parameters.Add(schemaParameter);
+        command.Parameters.Add(schemaParameter);
         var tableNameParameter = command.CreateParameter();
         tableNameParameter.ParameterName = "@tableName";
         tableNameParameter.Value = tableName;
-        _ = command.Parameters.Add(tableNameParameter);
+        command.Parameters.Add(tableNameParameter);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {

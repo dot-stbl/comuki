@@ -31,7 +31,7 @@ public sealed class ControlPlaneDocumentParserShould
 
         var document = ControlPlaneDocumentParser.Parse(text);
 
-        _ = document.ShouldNotBeNull();
+        document.ShouldNotBeNull();
         document.Name.ShouldBe("explore-readonly");
         document.Description.ShouldBe("Read-only explorer.");
         document.AllowedTools.ShouldBe(["Read", "Grep", "Glob"]);
@@ -54,7 +54,7 @@ public sealed class ControlPlaneDocumentParserShould
 
         var document = ControlPlaneDocumentParser.Parse(text);
 
-        _ = document.ShouldNotBeNull();
+        document.ShouldNotBeNull();
         document.AllowedTools.ShouldBe(["Read", "Write", "Bash", "Grep"]);
     }
 
@@ -70,7 +70,7 @@ public sealed class ControlPlaneDocumentParserShould
 
         var document = ControlPlaneDocumentParser.Parse(text);
 
-        _ = document.ShouldNotBeNull();
+        document.ShouldNotBeNull();
         document.AllowedTools.ShouldBe(["Read"]);
     }
 
@@ -130,7 +130,7 @@ public sealed class ControlPlaneDocumentParserShould
 
         var document = ControlPlaneDocumentParser.Parse(text);
 
-        _ = document.ShouldNotBeNull();
+        document.ShouldNotBeNull();
         document.Name.ShouldBe("quoted-name");
         document.Description.ShouldBe("single quoted description");
     }
@@ -142,7 +142,7 @@ public sealed class ControlPlaneDocumentParserShould
 
         var document = ControlPlaneDocumentParser.Parse(text);
 
-        _ = document.ShouldNotBeNull();
+        document.ShouldNotBeNull();
         document.Name.ShouldBe("crlf");
         document.Description.ShouldBe("Windows-authored.");
         document.Body.ShouldBe("\nBody.");
@@ -161,7 +161,7 @@ public sealed class ControlPlaneDocumentParserShould
 
         var document = ControlPlaneDocumentParser.Parse(text);
 
-        _ = document.ShouldNotBeNull();
+        document.ShouldNotBeNull();
         document.AllowedTools.ShouldBeEmpty();
         document.Model.ShouldBeNull();
     }

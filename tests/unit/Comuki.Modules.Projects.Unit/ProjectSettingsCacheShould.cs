@@ -105,7 +105,7 @@ public sealed class ProjectSettingsCacheShould
         var projectId = ProjectId.New();
         var fired = 0;
 
-        _ = ChangeToken.OnChange(
+        ChangeToken.OnChange(
             () => cache.GetChangeToken(projectId),
             () => fired++);
 

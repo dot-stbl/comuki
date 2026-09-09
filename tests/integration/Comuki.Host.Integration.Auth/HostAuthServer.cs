@@ -118,7 +118,7 @@ public sealed class HostAuthServer : IAsyncLifetime
         // Program wires orchestration persistence + queue before Compose (the
         // worker runtime and the scoped reads below resolve the context);
         // the scope fixture's run seeds and visibility probes need it too.
-        _ = builder.Services
+        builder.Services
             .AddOrchestrationPersistence(connectionString)
             .AddOrchestrationQueue(builder.Configuration);
 
@@ -170,7 +170,7 @@ public sealed class HostAuthServer : IAsyncLifetime
     {
         using var scope = application.Services.CreateScope();
 
-        _ = await scope.ServiceProvider.GetRequiredService<GrantRoleHandler>()
+        await scope.ServiceProvider.GetRequiredService<GrantRoleHandler>()
             .HandleAsync(
                 new GrantRoleCommand(subject, role, AssignmentScope.Platform(), ActingAs: null),
                 TestContext.Current.CancellationToken);
@@ -181,7 +181,7 @@ public sealed class HostAuthServer : IAsyncLifetime
     {
         using var scope = application.Services.CreateScope();
 
-        _ = await scope.ServiceProvider.GetRequiredService<GrantRoleHandler>()
+        await scope.ServiceProvider.GetRequiredService<GrantRoleHandler>()
             .HandleAsync(
                 new GrantRoleCommand(subject, role, AssignmentScope.ForProject(projectId), ActingAs: null),
                 TestContext.Current.CancellationToken);
@@ -227,9 +227,9 @@ public sealed class HostAuthServer : IAsyncLifetime
             WorkItemStatus.Queued,
             now);
 
-        _ = db.Runs.Add(run);
-        _ = db.WorkItems.Add(item);
-        _ = await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.Runs.Add(run);
+        db.WorkItems.Add(item);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return run.Id;
     }
@@ -354,7 +354,7 @@ internal sealed class TempControlPlaneRoot : IDisposable
     public void Write(string folderName, string fileName, string content)
     {
         var directory = Path.Combine(Root, folderName);
-        _ = Directory.CreateDirectory(directory);
+        Directory.CreateDirectory(directory);
         File.WriteAllText(Path.Combine(directory, fileName), content, new UTF8Encoding(false));
     }
 

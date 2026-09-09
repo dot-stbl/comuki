@@ -27,7 +27,7 @@ public sealed class RunArtifactPackagerServicePollOnceShould
     public async Task EmptyCandidatesProducesEmptyOutcomesAsync()
     {
         var runSource = Substitute.For<IRunArtifactRunSource>();
-        _ = runSource.ListUnbundledTerminalAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+        runSource.ListUnbundledTerminalAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(EmptyCandidatesAsync());
 
         using var fixture = NewFixture(runSource, out _, NewPackager);
@@ -50,18 +50,18 @@ public sealed class RunArtifactPackagerServicePollOnceShould
         };
 
         var runSource = Substitute.For<IRunArtifactRunSource>();
-        _ = runSource.ListUnbundledTerminalAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+        runSource.ListUnbundledTerminalAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(CandidatesAsync(candidate));
 
         var store = Substitute.For<IRunArtifactStore>();
-        _ = store.UploadAsync(Arg.Any<ProjectId>(), Arg.Any<RunId>(), Arg.Any<string>(),
+        store.UploadAsync(Arg.Any<ProjectId>(), Arg.Any<RunId>(), Arg.Any<string>(),
                 Arg.Any<Stream>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new Uri("https://minio/b/pins.json"));
-        _ = store.ListAsync(Arg.Any<ProjectId>(), Arg.Any<RunId>(), Arg.Any<CancellationToken>())
+        store.ListAsync(Arg.Any<ProjectId>(), Arg.Any<RunId>(), Arg.Any<CancellationToken>())
             .Returns(expectedPointers);
 
         var journal = Substitute.For<IRunArtifactJournalSource>();
-        _ = journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
+        journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
             .Returns(new RunTerminalSnapshot(
                 RunId: runId.Value,
                 Status: "succeeded",
@@ -70,7 +70,7 @@ public sealed class RunArtifactPackagerServicePollOnceShould
                 DetailJson: "{}"));
 
         var bundleStore = Substitute.For<IRunArtifactBundleStore>();
-        _ = bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>()).Returns(false);
+        bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>()).Returns(false);
 
         var packager = new RunArtifactPackager(
             store,
@@ -100,11 +100,11 @@ public sealed class RunArtifactPackagerServicePollOnceShould
         var candidate = new RunArtifactCandidate(runId, projectId);
 
         var runSource = Substitute.For<IRunArtifactRunSource>();
-        _ = runSource.ListUnbundledTerminalAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+        runSource.ListUnbundledTerminalAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(CandidatesAsync(candidate));
 
         var bundleStore = Substitute.For<IRunArtifactBundleStore>();
-        _ = bundleStore.IsBundledAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        bundleStore.IsBundledAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns<Task<bool>>(_ => throw new InvalidOperationException("minio is down"));
 
         var packager = new RunArtifactPackager(
@@ -127,7 +127,7 @@ public sealed class RunArtifactPackagerServicePollOnceShould
         var second = new RunArtifactCandidate(RunId.New(), projectId);
 
         var runSource = Substitute.For<IRunArtifactRunSource>();
-        _ = runSource.ListUnbundledTerminalAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+        runSource.ListUnbundledTerminalAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(CandidatesAsync(first, second));
 
         var instances = new List<RunArtifactPackager>();
@@ -151,7 +151,7 @@ public sealed class RunArtifactPackagerServicePollOnceShould
         var secondCandidate = new RunArtifactCandidate(RunId.New(), projectId);
 
         var runSource = Substitute.For<IRunArtifactRunSource>();
-        _ = runSource.ListUnbundledTerminalAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+        runSource.ListUnbundledTerminalAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(CandidatesAsync(firstCandidate, secondCandidate));
 
         using var fixture = NewTrackingFixture(runSource, out var tracker, NewPackager);

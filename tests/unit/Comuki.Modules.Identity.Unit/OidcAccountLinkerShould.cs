@@ -30,8 +30,8 @@ public sealed class OidcAccountLinkerShould
     {
         var user = User.Create("known@example.com", "Known", null, DateTimeOffset.UtcNow);
         var link = OidcLink.Create(user.Id, "keycloak", "sub-123", DateTimeOffset.UtcNow);
-        _ = linkStore.FindAsync("keycloak", "sub-123", TestContext.Current.CancellationToken).Returns(link);
-        _ = userStore.FindByIdAsync(user.Id, TestContext.Current.CancellationToken).Returns(user);
+        linkStore.FindAsync("keycloak", "sub-123", TestContext.Current.CancellationToken).Returns(link);
+        userStore.FindByIdAsync(user.Id, TestContext.Current.CancellationToken).Returns(user);
 
         var result = await linker.HandleAsync(new OidcLinkRequest("keycloak", "sub-123", "known@example.com", null, EmailVerified: true), TestContext.Current.CancellationToken);
 
@@ -45,8 +45,8 @@ public sealed class OidcAccountLinkerShould
     public async Task LinkKnownAccountByEmailAsync()
     {
         var user = User.Create("known@example.com", "Known", null, DateTimeOffset.UtcNow);
-        _ = linkStore.FindAsync("keycloak", "sub-777", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
-        _ = userStore.FindByEmailAsync("known@example.com", TestContext.Current.CancellationToken).Returns(user);
+        linkStore.FindAsync("keycloak", "sub-777", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
+        userStore.FindByEmailAsync("known@example.com", TestContext.Current.CancellationToken).Returns(user);
 
         var result = await linker.HandleAsync(new OidcLinkRequest("keycloak", "sub-777", "known@example.com", null, EmailVerified: true), TestContext.Current.CancellationToken);
 
@@ -60,8 +60,8 @@ public sealed class OidcAccountLinkerShould
     [Fact(DisplayName = "Given no link and no matching email, when the identity arrives, then a password-less account is provisioned and linked")]
     public async Task ProvisionAccountWhenUnknownAsync()
     {
-        _ = linkStore.FindAsync("authentik", "sub-999", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
-        _ = userStore.FindByEmailAsync("fresh@example.com", TestContext.Current.CancellationToken).Returns((User?)null);
+        linkStore.FindAsync("authentik", "sub-999", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
+        userStore.FindByEmailAsync("fresh@example.com", TestContext.Current.CancellationToken).Returns((User?)null);
 
         var result = await linker.HandleAsync(new OidcLinkRequest("authentik", "sub-999", "fresh@example.com", "Fresh Face", EmailVerified: true), TestContext.Current.CancellationToken);
 
@@ -86,8 +86,8 @@ public sealed class OidcAccountLinkerShould
         var user = User.Create("disabled@example.com", "Disabled", null, now);
         user.Disable(now);
         var link = OidcLink.Create(user.Id, "keycloak", "sub-999", now);
-        _ = linkStore.FindAsync("keycloak", "sub-999", TestContext.Current.CancellationToken).Returns(link);
-        _ = userStore.FindByIdAsync(user.Id, TestContext.Current.CancellationToken).Returns(user);
+        linkStore.FindAsync("keycloak", "sub-999", TestContext.Current.CancellationToken).Returns(link);
+        userStore.FindByIdAsync(user.Id, TestContext.Current.CancellationToken).Returns(user);
 
         var exception = await Should.ThrowAsync<ProviderForbiddenException>(
             async () => await linker.HandleAsync(
@@ -111,8 +111,8 @@ public sealed class OidcAccountLinkerShould
         var now = DateTimeOffset.UtcNow;
         var user = User.Create("disabled@example.com", "Disabled", null, now);
         user.Disable(now);
-        _ = linkStore.FindAsync("authentik", "sub-new", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
-        _ = userStore.FindByEmailAsync("disabled@example.com", TestContext.Current.CancellationToken).Returns(user);
+        linkStore.FindAsync("authentik", "sub-new", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
+        userStore.FindByEmailAsync("disabled@example.com", TestContext.Current.CancellationToken).Returns(user);
 
         var exception = await Should.ThrowAsync<ProviderForbiddenException>(
             async () => await linker.HandleAsync(
@@ -134,9 +134,9 @@ public sealed class OidcAccountLinkerShould
         // validator gates upstream). An unverified email must not bind
         // a Comuki account under any path: stored link, email match,
         // or fresh provision.
-        _ = linkStore.FindAsync(Arg.Any<string>(), Arg.Any<string>(), TestContext.Current.CancellationToken)
+        linkStore.FindAsync(Arg.Any<string>(), Arg.Any<string>(), TestContext.Current.CancellationToken)
             .Returns((OidcLink?)null);
-        _ = userStore.FindByEmailAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
+        userStore.FindByEmailAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
             .Returns((User?)null);
 
         var exception = await Should.ThrowAsync<ProviderException>(
@@ -158,8 +158,8 @@ public sealed class OidcAccountLinkerShould
         // Same setup as the disabled-user refutation tests, but the
         // email is verified — provision proceeds normally. This is the
         // happy-path assertion for the email_verified gate.
-        _ = linkStore.FindAsync("authentik", "sub-999", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
-        _ = userStore.FindByEmailAsync("verified@example.com", TestContext.Current.CancellationToken).Returns((User?)null);
+        linkStore.FindAsync("authentik", "sub-999", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
+        userStore.FindByEmailAsync("verified@example.com", TestContext.Current.CancellationToken).Returns((User?)null);
 
         var result = await linker.HandleAsync(
             new OidcLinkRequest("authentik", "sub-999", "verified@example.com", "Verified Face", EmailVerified: true),

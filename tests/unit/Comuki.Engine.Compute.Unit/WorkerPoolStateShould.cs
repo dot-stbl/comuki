@@ -125,7 +125,7 @@ public sealed class WorkerPoolStateShould
         var workerId = WorkerId.New();
         var state = CreateState();
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = computeProvider.ListAsync(projectId, cancellationToken)
+        computeProvider.ListAsync(projectId, cancellationToken)
             .Returns([new WorkerInfo(workerId, "container-1", "implement", "img:1", "refs/tags/v1")]);
 
         await state.SyncFromProviderAsync(projectId, cancellationToken);
@@ -146,7 +146,7 @@ public sealed class WorkerPoolStateShould
         var handle = CreateHandle(projectId);
         state.Register(handle, handle.Id, projectId, "implement");
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = computeProvider.ListAsync(projectId, cancellationToken).Returns([]);
+        computeProvider.ListAsync(projectId, cancellationToken).Returns([]);
 
         await state.SyncFromProviderAsync(projectId, cancellationToken);
 
@@ -163,7 +163,7 @@ public sealed class WorkerPoolStateShould
         state.MarkBusy(handle.Id);
         var registeredAt = state.List(projectId).ShouldHaveSingleItem().LastActiveAt;
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = computeProvider.ListAsync(projectId, cancellationToken)
+        computeProvider.ListAsync(projectId, cancellationToken)
             .Returns([new WorkerInfo(handle.Id, handle.ProviderRef, "implement", "img:1", "refs/tags/v1")]);
 
         clock.Advance(TimeSpan.FromMinutes(30));

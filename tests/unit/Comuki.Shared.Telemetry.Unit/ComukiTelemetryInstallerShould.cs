@@ -22,7 +22,7 @@ public sealed class ComukiTelemetryInstallerShould
             .Build();
         var services = new ServiceCollection();
 
-        _ = services.AddComukiTelemetry(configuration);
+        services.AddComukiTelemetry(configuration);
 
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<ComukiTelemetryOptions>>().Value;
@@ -46,7 +46,7 @@ public sealed class ComukiTelemetryInstallerShould
             .Build();
         var services = new ServiceCollection();
 
-        _ = services.AddComukiTelemetry(configuration);
+        services.AddComukiTelemetry(configuration);
 
         services.Any(static descriptor =>
                 descriptor.ServiceType.FullName?.Contains("OpenTelemetry", StringComparison.Ordinal) == true
@@ -67,7 +67,7 @@ public sealed class ComukiTelemetryInstallerShould
         var configuration = new ConfigurationBuilder().AddInMemoryCollection().Build();
         var services = new ServiceCollection();
 
-        _ = services.AddComukiTelemetry(configuration);
+        services.AddComukiTelemetry(configuration);
 
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<ComukiTelemetryOptions>>().Value;

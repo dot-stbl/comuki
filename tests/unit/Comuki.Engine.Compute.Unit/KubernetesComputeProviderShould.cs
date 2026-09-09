@@ -41,8 +41,8 @@ public sealed class KubernetesComputeProviderShould
     public KubernetesComputeProviderShould()
     {
         var kubernetes = Substitute.For<IKubernetes>();
-        _ = kubernetes.BatchV1.Returns(batchV1);
-        _ = kubernetes.CoreV1.Returns(coreV1);
+        kubernetes.BatchV1.Returns(batchV1);
+        kubernetes.CoreV1.Returns(coreV1);
         Provider = new KubernetesComputeProvider(kubernetes, Microsoft.Extensions.Options.Options.Create(options));
     }
 
@@ -65,7 +65,7 @@ public sealed class KubernetesComputeProviderShould
 
     private void EchoCreatedJob()
     {
-        _ = batchV1.CreateNamespacedJobWithHttpMessagesAsync(
+        batchV1.CreateNamespacedJobWithHttpMessagesAsync(
                 Arg.Any<V1Job>(),
                 Arg.Any<string>(),
                 Arg.Any<string?>(),
@@ -85,7 +85,7 @@ public sealed class KubernetesComputeProviderShould
     {
         var projectId = ProjectId.New();
         V1Job? created = null;
-        _ = batchV1.CreateNamespacedJobWithHttpMessagesAsync(
+        batchV1.CreateNamespacedJobWithHttpMessagesAsync(
                 Arg.Any<V1Job>(),
                 Arg.Any<string>(),
                 Arg.Any<string?>(),
@@ -105,7 +105,7 @@ public sealed class KubernetesComputeProviderShould
         handle.Id.ShouldNotBe(default);
         handle.ProviderRef.ShouldStartWith("comuki-w-");
         handle.ProviderRef.ShouldBe(created?.Metadata?.Name);
-        _ = await batchV1.Received(1).CreateNamespacedJobWithHttpMessagesAsync(
+        await batchV1.Received(1).CreateNamespacedJobWithHttpMessagesAsync(
             Arg.Any<V1Job>(),
             "comuki",
             Arg.Any<string?>(),
@@ -130,7 +130,7 @@ public sealed class KubernetesComputeProviderShould
         // reuses the caller's id instead of minting its own
         handle.Id.ShouldBe(preIssued);
         handle.ProviderRef.ShouldBe($"comuki-w-{preIssued.Value.ToString("N")[^12..]}");
-        _ = await batchV1.Received(1).CreateNamespacedJobWithHttpMessagesAsync(
+        await batchV1.Received(1).CreateNamespacedJobWithHttpMessagesAsync(
             Arg.Is<V1Job>(job =>
                 job.Metadata != null
                 && job.Metadata.Annotations != null
@@ -156,7 +156,7 @@ public sealed class KubernetesComputeProviderShould
     {
         var workerId = WorkerId.New();
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = batchV1.DeleteNamespacedJobWithHttpMessagesAsync(
+        batchV1.DeleteNamespacedJobWithHttpMessagesAsync(
                 Arg.Any<string>(),
                 Arg.Any<string>(),
                 Arg.Any<V1DeleteOptions>(),
@@ -172,7 +172,7 @@ public sealed class KubernetesComputeProviderShould
 
         await Provider.StopAsync(workerId, reason, cancellationToken);
 
-        _ = await batchV1.Received(1).DeleteNamespacedJobWithHttpMessagesAsync(
+        await batchV1.Received(1).DeleteNamespacedJobWithHttpMessagesAsync(
             $"comuki-w-{workerId.Value.ToString("N")[^12..]}",
             "comuki",
             Arg.Is<V1DeleteOptions>(deleteOptions =>
@@ -191,7 +191,7 @@ public sealed class KubernetesComputeProviderShould
     [Fact]
     public async Task TreatMissingJobAsNoOpAsync()
     {
-        _ = batchV1.DeleteNamespacedJobWithHttpMessagesAsync(
+        batchV1.DeleteNamespacedJobWithHttpMessagesAsync(
                 Arg.Any<string>(),
                 Arg.Any<string>(),
                 Arg.Any<V1DeleteOptions>(),
@@ -217,7 +217,7 @@ public sealed class KubernetesComputeProviderShould
     [Fact]
     public async Task RethrowDeleteFailuresOtherThanNotFoundAsync()
     {
-        _ = batchV1.DeleteNamespacedJobWithHttpMessagesAsync(
+        batchV1.DeleteNamespacedJobWithHttpMessagesAsync(
                 Arg.Any<string>(),
                 Arg.Any<string>(),
                 Arg.Any<V1DeleteOptions>(),
@@ -246,7 +246,7 @@ public sealed class KubernetesComputeProviderShould
         var workerId = WorkerId.New();
         var projectId = ProjectId.New();
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = batchV1.ListNamespacedJobWithHttpMessagesAsync(
+        batchV1.ListNamespacedJobWithHttpMessagesAsync(
                 Arg.Any<string>(),
                 Arg.Any<bool?>(),
                 Arg.Any<string?>(),
@@ -282,7 +282,7 @@ public sealed class KubernetesComputeProviderShould
         worker.ProfileKey.ShouldBe("implement");
         worker.Image.ShouldBe("ghcr.io_comuki_worker@sha256:abc");
         worker.ProfilesGitRef.ShouldBe("refs_tags_v1.2");
-        _ = await batchV1.Received(1).ListNamespacedJobWithHttpMessagesAsync(
+        await batchV1.Received(1).ListNamespacedJobWithHttpMessagesAsync(
             "comuki",
             Arg.Any<bool?>(),
             Arg.Any<string?>(),
@@ -304,7 +304,7 @@ public sealed class KubernetesComputeProviderShould
     public async Task CountFreeSlotsFromNodeAllocatableMinusPodRequestsAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = coreV1.ListNodeWithHttpMessagesAsync(
+        coreV1.ListNodeWithHttpMessagesAsync(
                 Arg.Any<bool?>(),
                 Arg.Any<string?>(),
                 Arg.Any<string?>(),
@@ -322,7 +322,7 @@ public sealed class KubernetesComputeProviderShould
             {
                 Body = new V1NodeList { Items = [Node("4", "8Gi"), Node("4", "8Gi", unschedulable: true)] },
             });
-        _ = coreV1.ListPodForAllNamespacesWithHttpMessagesAsync(
+        coreV1.ListPodForAllNamespacesWithHttpMessagesAsync(
                 Arg.Any<bool?>(),
                 Arg.Any<string?>(),
                 Arg.Any<string?>(),

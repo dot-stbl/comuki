@@ -26,7 +26,7 @@ public sealed class VirtualKeyResolverShould
     public async Task UnknownTokenReturnsMissingAsync()
     {
         var store = Substitute.For<IVirtualKeyStore>();
-        _ = store.FindAsync("vkey_unknown", Arg.Any<CancellationToken>()).Returns((VirtualKey?)null);
+        store.FindAsync("vkey_unknown", Arg.Any<CancellationToken>()).Returns((VirtualKey?)null);
         var resolver = new VirtualKeyResolver(store, TimeProvider.System);
 
         var resolution = await resolver.ResolveAsync(token: "vkey_unknown", requestedModel: null, TestContext.Current.CancellationToken);
@@ -39,7 +39,7 @@ public sealed class VirtualKeyResolverShould
     {
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 9, 5, 12, 0, 0, TimeSpan.Zero));
         var store = Substitute.For<IVirtualKeyStore>();
-        _ = store.FindAsync("vkey_old", Arg.Any<CancellationToken>()).Returns(new VirtualKey(
+        store.FindAsync("vkey_old", Arg.Any<CancellationToken>()).Returns(new VirtualKey(
             Token: "vkey_old",
             ProjectId: ProjectId.New(),
             Upstream: new UpstreamSpec("openai", "https://api.openai.com", "OPENAI_API_KEY"),
@@ -56,7 +56,7 @@ public sealed class VirtualKeyResolverShould
     public async Task DisallowedModelReturnsModelNotAllowedAsync()
     {
         var store = Substitute.For<IVirtualKeyStore>();
-        _ = store.FindAsync("vkey_curated", Arg.Any<CancellationToken>()).Returns(new VirtualKey(
+        store.FindAsync("vkey_curated", Arg.Any<CancellationToken>()).Returns(new VirtualKey(
             Token: "vkey_curated",
             ProjectId: ProjectId.New(),
             Upstream: new UpstreamSpec("openai", "https://api.openai.com", "OPENAI_API_KEY"),
@@ -72,7 +72,7 @@ public sealed class VirtualKeyResolverShould
     public async Task ValidTokenReturnsResolvedAsync()
     {
         var store = Substitute.For<IVirtualKeyStore>();
-        _ = store.FindAsync("vkey_open", Arg.Any<CancellationToken>()).Returns(new VirtualKey(
+        store.FindAsync("vkey_open", Arg.Any<CancellationToken>()).Returns(new VirtualKey(
             Token: "vkey_open",
             ProjectId: ProjectId.New(),
             Upstream: new UpstreamSpec("openai", "https://api.openai.com", "OPENAI_API_KEY")));

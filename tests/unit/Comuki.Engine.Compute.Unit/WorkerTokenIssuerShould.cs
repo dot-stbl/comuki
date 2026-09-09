@@ -52,7 +52,7 @@ public sealed class WorkerTokenIssuerShould
     {
         var issuer = CreateIssuer();
 
-        _ = issuer.Issue(WorkerId.New());
+        issuer.Issue(WorkerId.New());
 
         issuer.Validate("not-a-issued-token").ShouldBeNull();
     }

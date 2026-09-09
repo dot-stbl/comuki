@@ -49,6 +49,7 @@ public sealed class HostProxyServer : IAsyncLifetime
             ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
             EnvironmentName = Environments.Development, // test fixture — validator short-circuits on non-Production
         });
+        builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
         _ = builder.Logging.AddSimpleConsole(static options => { options.IncludeScopes = true; });

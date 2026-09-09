@@ -30,9 +30,9 @@ public sealed class OrchestrationBudgetGateEnforceClaimShould
         var budgets = Substitute.For<IProjectBudgetSettings>();
         var usage = Substitute.For<IUsageEventStore>();
         var journal = Substitute.For<IRunJournal>();
-        _ = budgets.GetAsync(Arg.Any<ProjectId>(), Arg.Any<CancellationToken>())
+        budgets.GetAsync(Arg.Any<ProjectId>(), Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(null, null));
-        _ = usage.SumProjectCostUsdMicrosAsync(Arg.Any<ProjectId>(), since: Arg.Any<DateTimeOffset?>(), cancellationToken: Arg.Any<CancellationToken>())
+        usage.SumProjectCostUsdMicrosAsync(Arg.Any<ProjectId>(), since: Arg.Any<DateTimeOffset?>(), cancellationToken: Arg.Any<CancellationToken>())
             .Returns(1_000L);
         var gate = NewGate(budgets, usage, journal);
 
@@ -48,9 +48,9 @@ public sealed class OrchestrationBudgetGateEnforceClaimShould
         var budgets = Substitute.For<IProjectBudgetSettings>();
         var usage = Substitute.For<IUsageEventStore>();
         var journal = Substitute.For<IRunJournal>();
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 10_000_000, HardLimitUsdMicros: 20_000_000));
-        _ = usage.SumProjectCostUsdMicrosAsync(projectId, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
+        usage.SumProjectCostUsdMicrosAsync(projectId, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
             .Returns(5_000_000L);
         var gate = NewGate(budgets, usage, journal);
 
@@ -66,9 +66,9 @@ public sealed class OrchestrationBudgetGateEnforceClaimShould
         var budgets = Substitute.For<IProjectBudgetSettings>();
         var usage = Substitute.For<IUsageEventStore>();
         var journal = Substitute.For<IRunJournal>();
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 10_000_000, HardLimitUsdMicros: 20_000_000));
-        _ = usage.SumProjectCostUsdMicrosAsync(projectId, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
+        usage.SumProjectCostUsdMicrosAsync(projectId, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
             .Returns(15_000_000L);
         var gate = NewGate(budgets, usage, journal);
 
@@ -84,9 +84,9 @@ public sealed class OrchestrationBudgetGateEnforceClaimShould
         var budgets = Substitute.For<IProjectBudgetSettings>();
         var usage = Substitute.For<IUsageEventStore>();
         var journal = Substitute.For<IRunJournal>();
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 10_000_000, HardLimitUsdMicros: 20_000_000));
-        _ = usage.SumProjectCostUsdMicrosAsync(projectId, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
+        usage.SumProjectCostUsdMicrosAsync(projectId, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
             .Returns(20_000_000L);
         var gate = NewGate(budgets, usage, journal);
 
@@ -105,9 +105,9 @@ public sealed class OrchestrationBudgetGateEnforceClaimShould
         var budgets = Substitute.For<IProjectBudgetSettings>();
         var usage = Substitute.For<IUsageEventStore>();
         var journal = Substitute.For<IRunJournal>();
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 10_000_000, HardLimitUsdMicros: 20_000_000));
-        _ = usage.SumProjectCostUsdMicrosAsync(projectId, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
+        usage.SumProjectCostUsdMicrosAsync(projectId, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
             .Returns(25_000_000L);
         var gate = NewGate(budgets, usage, journal);
 
@@ -124,9 +124,9 @@ public sealed class OrchestrationBudgetGateEnforceClaimShould
         var budgets = Substitute.For<IProjectBudgetSettings>();
         var usage = Substitute.For<IUsageEventStore>();
         var journal = Substitute.For<IRunJournal>();
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 10_000_000, HardLimitUsdMicros: null));
-        _ = usage.SumProjectCostUsdMicrosAsync(projectId, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
+        usage.SumProjectCostUsdMicrosAsync(projectId, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
             .Returns(15_000_000L);
         var gate = NewGate(budgets, usage, journal);
 

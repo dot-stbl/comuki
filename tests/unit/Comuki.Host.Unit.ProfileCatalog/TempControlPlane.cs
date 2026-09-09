@@ -24,7 +24,7 @@ public sealed class TempControlPlane : IDisposable
     public void Write(string folderName, string fileName, string content)
     {
         var directory = Path.Combine(Root, folderName);
-        _ = Directory.CreateDirectory(directory);
+        Directory.CreateDirectory(directory);
         File.WriteAllText(Path.Combine(directory, fileName), content, new UTF8Encoding(false));
     }
 

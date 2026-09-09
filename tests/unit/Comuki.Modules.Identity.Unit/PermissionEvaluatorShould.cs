@@ -35,7 +35,7 @@ public sealed class PermissionEvaluatorShould
     {
         var subject = RoleSubject.ForUser(UserId.New());
         var grant = RoleAssignment.Create(subject, Role.PlatformAdmin, AssignmentScope.Platform(), null, DateTimeOffset.UtcNow);
-        _ = assignments.ListActiveAsync(subject, TestContext.Current.CancellationToken).Returns([grant]);
+        assignments.ListActiveAsync(subject, TestContext.Current.CancellationToken).Returns([grant]);
 
         var authorization = await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
 
@@ -53,7 +53,7 @@ public sealed class PermissionEvaluatorShould
         var otherProject = ProjectId.New();
         var subject = RoleSubject.ForUser(UserId.New());
         var grant = RoleAssignment.Create(subject, Role.Viewer, AssignmentScope.ForProject(project), null, DateTimeOffset.UtcNow);
-        _ = assignments.ListActiveAsync(subject, TestContext.Current.CancellationToken).Returns([grant]);
+        assignments.ListActiveAsync(subject, TestContext.Current.CancellationToken).Returns([grant]);
 
         var authorization = await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
 
@@ -69,7 +69,7 @@ public sealed class PermissionEvaluatorShould
     public async Task ReturnEmptyForSubjectWithoutAssignmentsAsync()
     {
         var subject = RoleSubject.ForApiKey(ApiKeyId.New());
-        _ = assignments.ListActiveAsync(subject, TestContext.Current.CancellationToken).Returns([]);
+        assignments.ListActiveAsync(subject, TestContext.Current.CancellationToken).Returns([]);
 
         var authorization = await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
 
@@ -84,12 +84,12 @@ public sealed class PermissionEvaluatorShould
     {
         var subject = RoleSubject.ForUser(UserId.New());
         var grant = RoleAssignment.Create(subject, Role.Member, AssignmentScope.Platform(), null, DateTimeOffset.UtcNow);
-        _ = assignments.ListActiveAsync(subject, TestContext.Current.CancellationToken).Returns([grant]);
+        assignments.ListActiveAsync(subject, TestContext.Current.CancellationToken).Returns([grant]);
 
-        _ = await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
-        _ = await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
+        await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
+        await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
 
-        _ = await assignments.Received(1).ListActiveAsync(subject, TestContext.Current.CancellationToken);
+        await assignments.Received(1).ListActiveAsync(subject, TestContext.Current.CancellationToken);
     }
 
     [Fact(DisplayName = "Given a cached evaluation, when the subject is invalidated, then the next evaluation re-reads the store")]
@@ -97,13 +97,13 @@ public sealed class PermissionEvaluatorShould
     {
         var subject = RoleSubject.ForUser(UserId.New());
         var grant = RoleAssignment.Create(subject, Role.Member, AssignmentScope.Platform(), null, DateTimeOffset.UtcNow);
-        _ = assignments.ListActiveAsync(subject, TestContext.Current.CancellationToken).Returns([grant]);
+        assignments.ListActiveAsync(subject, TestContext.Current.CancellationToken).Returns([grant]);
 
-        _ = await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
+        await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
         evaluator.Invalidate(subject);
-        _ = await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
+        await evaluator.EvaluateAsync(subject, TestContext.Current.CancellationToken);
 
-        _ = await assignments.Received(2).ListActiveAsync(subject, TestContext.Current.CancellationToken);
+        await assignments.Received(2).ListActiveAsync(subject, TestContext.Current.CancellationToken);
     }
 
     [Fact(DisplayName = "Given two subjects, when one is invalidated, then the other keeps its cache entry")]
@@ -113,16 +113,16 @@ public sealed class PermissionEvaluatorShould
         var second = RoleSubject.ForUser(UserId.New());
         var firstGrant = RoleAssignment.Create(first, Role.Member, AssignmentScope.Platform(), null, DateTimeOffset.UtcNow);
         var secondGrant = RoleAssignment.Create(second, Role.Member, AssignmentScope.Platform(), null, DateTimeOffset.UtcNow);
-        _ = assignments.ListActiveAsync(first, TestContext.Current.CancellationToken).Returns([firstGrant]);
-        _ = assignments.ListActiveAsync(second, TestContext.Current.CancellationToken).Returns([secondGrant]);
+        assignments.ListActiveAsync(first, TestContext.Current.CancellationToken).Returns([firstGrant]);
+        assignments.ListActiveAsync(second, TestContext.Current.CancellationToken).Returns([secondGrant]);
 
-        _ = await evaluator.EvaluateAsync(first, TestContext.Current.CancellationToken);
-        _ = await evaluator.EvaluateAsync(second, TestContext.Current.CancellationToken);
+        await evaluator.EvaluateAsync(first, TestContext.Current.CancellationToken);
+        await evaluator.EvaluateAsync(second, TestContext.Current.CancellationToken);
         evaluator.Invalidate(first);
-        _ = await evaluator.EvaluateAsync(first, TestContext.Current.CancellationToken);
-        _ = await evaluator.EvaluateAsync(second, TestContext.Current.CancellationToken);
+        await evaluator.EvaluateAsync(first, TestContext.Current.CancellationToken);
+        await evaluator.EvaluateAsync(second, TestContext.Current.CancellationToken);
 
-        _ = await assignments.Received(2).ListActiveAsync(first, TestContext.Current.CancellationToken);
-        _ = await assignments.Received(1).ListActiveAsync(second, TestContext.Current.CancellationToken);
+        await assignments.Received(2).ListActiveAsync(first, TestContext.Current.CancellationToken);
+        await assignments.Received(1).ListActiveAsync(second, TestContext.Current.CancellationToken);
     }
 }

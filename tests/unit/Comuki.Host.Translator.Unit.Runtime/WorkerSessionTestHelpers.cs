@@ -21,7 +21,7 @@ internal static class WorkerSessionTestHelpers
     /// <param name="commands"></param>
     public static void StubCommandStream(IWorkerService service, IEnumerable<OrchestratorCommand> commands)
     {
-        _ = service.Connect(Arg.Any<IAsyncEnumerable<WorkerEvent>>(), Arg.Any<CallContext>())
+        service.Connect(Arg.Any<IAsyncEnumerable<WorkerEvent>>(), Arg.Any<CallContext>())
             .Returns(_ => StreamCommandsAsync(commands));
     }
 

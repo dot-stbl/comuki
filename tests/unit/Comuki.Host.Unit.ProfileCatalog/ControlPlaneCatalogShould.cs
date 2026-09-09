@@ -82,7 +82,7 @@ public sealed class ControlPlaneCatalogShould
 
         var profile = await CreateCatalog(tree.Root).GetAsync("implement", TestContext.Current.CancellationToken);
 
-        _ = profile.ShouldNotBeNull();
+        profile.ShouldNotBeNull();
         profile.Key.ShouldBe("implement");
         profile.Description.ShouldBe("Implementation worker.");
     }
@@ -126,7 +126,7 @@ public sealed class ControlPlaneCatalogShould
     public async Task ReturnEmptyWhenFolderMissingAsync()
     {
         using var tree = new TempControlPlane();
-        _ = Directory.CreateDirectory(tree.Root);
+        Directory.CreateDirectory(tree.Root);
 
         var profiles = await CreateCatalog(tree.Root).ListAsync(TestContext.Current.CancellationToken);
         var commands = await CreateCatalog(tree.Root).ListCommandsAsync(TestContext.Current.CancellationToken);
@@ -140,9 +140,9 @@ public sealed class ControlPlaneCatalogShould
     {
         var baseDir = Path.Combine(Path.GetTempPath(), "comuki-probe-" + Guid.NewGuid().ToString("N"));
         var root = Path.Combine(baseDir, ControlPlaneCatalog.RootFolderName);
-        _ = Directory.CreateDirectory(Path.Combine(root, ControlPlaneCatalog.ProfilesFolder));
+        Directory.CreateDirectory(Path.Combine(root, ControlPlaneCatalog.ProfilesFolder));
         var deep = Path.Combine(baseDir, "a", "b", "c");
-        _ = Directory.CreateDirectory(deep);
+        Directory.CreateDirectory(deep);
 
         var found = ControlPlaneCatalog.ProbeControlPlaneRoot(deep);
 
@@ -155,7 +155,7 @@ public sealed class ControlPlaneCatalogShould
     {
         var baseDir = Path.Combine(Path.GetTempPath(), "comuki-probe-" + Guid.NewGuid().ToString("N"));
         var deep = Path.Combine(baseDir, "plain", "tree");
-        _ = Directory.CreateDirectory(deep);
+        Directory.CreateDirectory(deep);
 
         var found = ControlPlaneCatalog.ProbeControlPlaneRoot(deep);
 

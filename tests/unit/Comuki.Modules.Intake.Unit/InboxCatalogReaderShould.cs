@@ -28,7 +28,7 @@ public sealed class InboxCatalogReaderShould
     {
         var connection = NewConnection(TicketProvider.GitHub);
         var store = Substitute.For<IIntakeStore>();
-        _ = store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>())
+        store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>())
             .Returns(connection);
         var provider = Substitute.For<ITicketSourceProvider>();
         provider.SourceKey.Returns(TicketProviderKeys.GitHub);
@@ -45,7 +45,7 @@ public sealed class InboxCatalogReaderShould
             ["bug"],
             InboundTicketKind.Issue,
             now);
-        _ = provider.FetchCatalogAsync(connection, Arg.Any<int>(), Arg.Any<CancellationToken>())
+        provider.FetchCatalogAsync(connection, Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns([pendingTicket]);
         var registry = new TicketProviderRegistry([provider], []);
         var reader = NewReader(store, registry);
@@ -65,7 +65,7 @@ public sealed class InboxCatalogReaderShould
     public async Task UnknownConnectionThrowsSourceConnectionNotFoundAsync()
     {
         var store = Substitute.For<IIntakeStore>();
-        _ = store.FindConnectionAsync(Arg.Any<SourceConnectionId>(), Arg.Any<CancellationToken>())
+        store.FindConnectionAsync(Arg.Any<SourceConnectionId>(), Arg.Any<CancellationToken>())
             .Returns((SourceConnection?)null);
         var provider = Substitute.For<ITicketSourceProvider>();
         provider.SourceKey.Returns(TicketProviderKeys.GitHub);
@@ -84,7 +84,7 @@ public sealed class InboxCatalogReaderShould
     {
         var connection = NewConnection(TicketProvider.Jira);
         var store = Substitute.For<IIntakeStore>();
-        _ = store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>())
+        store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>())
             .Returns(connection);
         var provider = Substitute.For<ITicketSourceProvider>();
         provider.SourceKey.Returns(TicketProviderKeys.GitHub);
@@ -102,11 +102,11 @@ public sealed class InboxCatalogReaderShould
     {
         var connection = NewConnection(TicketProvider.GitHub);
         var store = Substitute.For<IIntakeStore>();
-        _ = store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>())
+        store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>())
             .Returns(connection);
         var provider = Substitute.For<ITicketSourceProvider>();
         provider.SourceKey.Returns(TicketProviderKeys.GitHub);
-        _ = provider.FetchCatalogAsync(connection, Arg.Any<int>(), Arg.Any<CancellationToken>())
+        provider.FetchCatalogAsync(connection, Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns([]);
         var registry = new TicketProviderRegistry([provider], []);
         var reader = NewReader(store, registry);

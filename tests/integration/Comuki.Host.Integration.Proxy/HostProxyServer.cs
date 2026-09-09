@@ -52,7 +52,7 @@ public sealed class HostProxyServer : IAsyncLifetime
         builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();
-        _ = builder.Logging.AddSimpleConsole(static options => { options.IncludeScopes = true; });
+        builder.Logging.AddSimpleConsole(static options => { options.IncludeScopes = true; });
 
         // Production-secret gate (issue #10 T11.4) needs non-dev-defaults.
         builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
@@ -74,10 +74,10 @@ public sealed class HostProxyServer : IAsyncLifetime
         builder.Configuration["Proxy:VirtualKeys:0:BaseUrl"] = FakeUpstream.BaseAddress.ToString();
         builder.Configuration["Proxy:VirtualKeys:0:ApiKeyEnvRef"] = "FAKE_OPENAI_KEY";
 
-        _ = builder.Services
+        builder.Services
             .AddOrchestrationPersistence(connectionString)
             .AddOrchestrationQueue(builder.Configuration);
-        _ = builder.Services.AddOrchestrationApplication();
+        builder.Services.AddOrchestrationApplication();
 
         // The artifact packager BackgroundService polls every 10s on
         // the same Postgres pool the test's HTTP request uses; one cycle
@@ -88,7 +88,7 @@ public sealed class HostProxyServer : IAsyncLifetime
             .ToList();
         foreach (var descriptor in packagerDescriptors)
         {
-            _ = builder.Services.Remove(descriptor);
+            builder.Services.Remove(descriptor);
         }
 
         Application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString), validateOnBuild: false);

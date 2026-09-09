@@ -51,8 +51,8 @@ public sealed class IntakeMigrationsShould : IAsyncLifetime
         await orchestrationDb.Database.MigrateAsync(cancellationToken);
 
         var services = new ServiceCollection();
-        _ = services.AddIntakePersistence(connectionString);
-        _ = services.AddIntakeApplication();
+        services.AddIntakePersistence(connectionString);
+        services.AddIntakeApplication();
         provider = services.BuildServiceProvider();
 
         var db = provider.GetRequiredService<IntakeDbContext>();

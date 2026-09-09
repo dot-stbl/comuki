@@ -27,8 +27,8 @@ public sealed class WorkerTokenIssuerRegistrationShould
             })
             .Build();
         var services = new ServiceCollection();
-        _ = services.AddWorkerRuntime(configuration);
-        _ = services.AddWorkerRuntime(configuration);
+        services.AddWorkerRuntime(configuration);
+        services.AddWorkerRuntime(configuration);
 
         using var provider = services.BuildServiceProvider();
         var issuer = provider.GetService<WorkerTokenIssuer>();
@@ -46,8 +46,8 @@ public sealed class WorkerTokenIssuerRegistrationShould
             })
             .Build();
         var services = new ServiceCollection();
-        _ = services.AddWorkerRuntime(configuration);
-        _ = services.AddWorkerRuntime(configuration);
+        services.AddWorkerRuntime(configuration);
+        services.AddWorkerRuntime(configuration);
 
         using var provider = services.BuildServiceProvider();
         var first = provider.GetRequiredService<WorkerTokenIssuer>();
@@ -66,7 +66,7 @@ public sealed class WorkerTokenIssuerRegistrationShould
             })
             .Build();
         var services = new ServiceCollection();
-        _ = services.AddWorkerRuntime(configuration);
+        services.AddWorkerRuntime(configuration);
 
         using var provider = services.BuildServiceProvider();
         var issuer = provider.GetRequiredService<WorkerTokenIssuer>();

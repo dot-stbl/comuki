@@ -22,7 +22,6 @@ public sealed class WebhooksShould(HostIntakeServer server)
     [Fact(DisplayName = "Given a watch rule and connection, when a signed issue webhook arrives, then a run is created and the replay is a 200 no-op")]
     public async Task CreateRunOnWatchWebhookAsync()
     {
-        _ = TestContext.Current.CancellationToken;
         using var browser = await server.CreateBrowserClientAsync();
         using var anonymous = server.CreateAnonymousClient();
 

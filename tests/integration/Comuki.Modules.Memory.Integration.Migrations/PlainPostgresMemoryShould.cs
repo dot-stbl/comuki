@@ -35,8 +35,8 @@ public sealed class PlainPostgresMemoryShould : IAsyncLifetime
         await container.StartAsync(cancellationToken);
 
         var services = new ServiceCollection();
-        _ = services.AddMemoryPersistence(container.GetConnectionString());
-        _ = services.AddSingleton(TimeProvider.System);
+        services.AddMemoryPersistence(container.GetConnectionString());
+        services.AddSingleton(TimeProvider.System);
         provider = services.BuildServiceProvider();
 
         var db = provider.GetRequiredService<MemoryDbContext>();

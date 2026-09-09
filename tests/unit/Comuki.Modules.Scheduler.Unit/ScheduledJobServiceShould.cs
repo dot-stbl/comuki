@@ -80,7 +80,7 @@ public sealed class ScheduledJobServiceShould
     public async Task GetAsyncWithUnknownIdThrowsAsync()
     {
         var store = Substitute.For<IScheduledJobStore>();
-        _ = store.FindAsync(Arg.Any<ScheduledJobId>(), Arg.Any<CancellationToken>())
+        store.FindAsync(Arg.Any<ScheduledJobId>(), Arg.Any<CancellationToken>())
             .Returns((ScheduledJob?)null);
         var service = NewService(store);
         var unknown = Guid.CreateVersion7();
@@ -101,7 +101,7 @@ public sealed class ScheduledJobServiceShould
             runOnOnceAt: null,
             enabled: true,
             now: anchorTime);
-        _ = store.FindAsync(job.Id, Arg.Any<CancellationToken>()).Returns(job);
+        store.FindAsync(job.Id, Arg.Any<CancellationToken>()).Returns(job);
         var service = NewService(store);
 
         var view = await service.UpdateAsync(

@@ -42,9 +42,9 @@ public sealed class BudgetDefaultsShould
     public void RegisterApplicationDefaults()
     {
         var services = new ServiceCollection();
-        _ = services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
-        _ = services.AddSingleton(Substitute.For<IUsageEventStore>());
-        _ = services.AddCostsApplication();
+        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
+        services.AddSingleton(Substitute.For<IUsageEventStore>());
+        services.AddCostsApplication();
 
         using var provider = services.BuildServiceProvider();
 

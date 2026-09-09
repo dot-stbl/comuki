@@ -111,9 +111,9 @@ public sealed class WorkItemLeaseShould
         item.TransitionTo(WorkItemStatus.Running, now);
         item.TransitionTo(WorkItemStatus.Succeeded, now.AddMinutes(1));
 
-        _ = Should.Throw<InvalidOperationException>(() => item.AssignLease(WorkerId.New(), now.AddMinutes(2), now));
-        _ = Should.Throw<InvalidOperationException>(() => item.Heartbeat(now.AddMinutes(2), now));
-        _ = Should.Throw<InvalidOperationException>(() => item.ReleaseLease(now));
+        Should.Throw<InvalidOperationException>(() => item.AssignLease(WorkerId.New(), now.AddMinutes(2), now));
+        Should.Throw<InvalidOperationException>(() => item.Heartbeat(now.AddMinutes(2), now));
+        Should.Throw<InvalidOperationException>(() => item.ReleaseLease(now));
     }
 
     private static WorkItem CreateQueuedItem()

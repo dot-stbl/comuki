@@ -69,10 +69,10 @@ public sealed class RunsFilteringShould : IAsyncLifetime
                 run.TransitionTo(status, createdAt.AddMinutes(5));
             }
 
-            _ = db.Runs.Add(run);
+            db.Runs.Add(run);
         }
 
-        _ = await db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />

@@ -174,7 +174,7 @@ public sealed class HostOidcServer : IAsyncLifetime
         // HostComposer.Compose and resolves the journal observer on start.
         // The OIDC suite does not exercise scheduling — wire the queue
         // stub so the journal observer resolves cleanly.
-        _ = builder.Services
+        builder.Services
             .AddOrchestrationPersistence(connectionString)
             .AddOrchestrationQueue(builder.Configuration);
 

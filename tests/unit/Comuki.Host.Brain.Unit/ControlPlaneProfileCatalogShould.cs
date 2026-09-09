@@ -90,7 +90,7 @@ public sealed class ControlPlaneProfileCatalogShould
         private static string CreateFolder((string Key, string Content)[] documents)
         {
             var folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"comuki-profiles-{Guid.NewGuid():N}");
-            _ = Directory.CreateDirectory(folder);
+            Directory.CreateDirectory(folder);
             foreach (var (key, content) in documents)
             {
                 File.WriteAllText(System.IO.Path.Combine(folder, $"{key}.md"), content);

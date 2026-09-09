@@ -24,7 +24,7 @@ public sealed class ProxyRequestGuardsShould
     public async Task AllowUncappedKeyAsync()
     {
         var key = BuildKey(BudgetUsd: null, MaxInputTokens: null, MaxOutputTokens: null);
-        _ = enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
+        enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
             .Returns(new ProxyBudgetVerdict(Allowed: true, CapUsdMicros: null, SpentUsdMicros: 0, RetryAfterSeconds: 0));
 
         var rejection = await ProxyRequestGuards.EvaluateAsync(
@@ -37,7 +37,7 @@ public sealed class ProxyRequestGuardsShould
     public async Task DenyOverBudgetKeyAsync()
     {
         var key = BuildKey(BudgetUsd: 10m);
-        _ = enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
+        enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
             .Returns(new ProxyBudgetVerdict(Allowed: false, CapUsdMicros: 10_000_000, SpentUsdMicros: 10_000_000, RetryAfterSeconds: 1024));
 
         var rejection = await ProxyRequestGuards.EvaluateAsync(
@@ -54,7 +54,7 @@ public sealed class ProxyRequestGuardsShould
     public async Task AllowUnderBudgetSmallBodyAsync()
     {
         var key = BuildKey(BudgetUsd: 10m, MaxInputTokens: 1000);
-        _ = enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
+        enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
             .Returns(new ProxyBudgetVerdict(Allowed: true, CapUsdMicros: 10_000_000, SpentUsdMicros: 1_000_000, RetryAfterSeconds: 0));
 
         var rejection = await ProxyRequestGuards.EvaluateAsync(
@@ -67,7 +67,7 @@ public sealed class ProxyRequestGuardsShould
     public async Task DenyOverInputCapAsync()
     {
         var key = BuildKey(MaxInputTokens: 100);
-        _ = enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
+        enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
             .Returns(new ProxyBudgetVerdict(Allowed: true, CapUsdMicros: null, SpentUsdMicros: 0, RetryAfterSeconds: 0));
 
         var rejection = await ProxyRequestGuards.EvaluateAsync(
@@ -83,7 +83,7 @@ public sealed class ProxyRequestGuardsShould
     public async Task DenyOverOutputCapAsync()
     {
         var key = BuildKey(MaxOutputTokens: 256);
-        _ = enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
+        enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
             .Returns(new ProxyBudgetVerdict(Allowed: true, CapUsdMicros: null, SpentUsdMicros: 0, RetryAfterSeconds: 0));
 
         var rejection = await ProxyRequestGuards.EvaluateAsync(
@@ -99,7 +99,7 @@ public sealed class ProxyRequestGuardsShould
     public async Task SkipOutputCapWhenAbsentAsync()
     {
         var key = BuildKey(MaxOutputTokens: 256);
-        _ = enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
+        enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
             .Returns(new ProxyBudgetVerdict(Allowed: true, CapUsdMicros: null, SpentUsdMicros: 0, RetryAfterSeconds: 0));
 
         var rejection = await ProxyRequestGuards.EvaluateAsync(
@@ -112,7 +112,7 @@ public sealed class ProxyRequestGuardsShould
     public async Task OrderIsBudgetFirstAsync()
     {
         var key = BuildKey(BudgetUsd: 10m, MaxInputTokens: 100, MaxOutputTokens: 64);
-        _ = enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
+        enforcer.EvaluateAsync(key, Arg.Any<CancellationToken>())
             .Returns(new ProxyBudgetVerdict(Allowed: true, CapUsdMicros: 10_000_000, SpentUsdMicros: 1_000_000, RetryAfterSeconds: 0));
 
         var rejection = await ProxyRequestGuards.EvaluateAsync(

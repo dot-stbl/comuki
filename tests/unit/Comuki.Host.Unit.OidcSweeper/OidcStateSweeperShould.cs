@@ -57,7 +57,7 @@ public sealed class OidcStateSweeperShould
     public async Task ExecuteAsyncLoopsUntilCancellationAsync()
     {
         var store = Substitute.For<IOidcStateStore>();
-        _ = store.TableExistsAsync(Arg.Any<CancellationToken>()).Returns(true);
+        store.TableExistsAsync(Arg.Any<CancellationToken>()).Returns(true);
         var sut = NewSweeper(store, NewOptions(interval: TimeSpan.Zero));
 
         await RunWorkerUntilCancelledAsync(sut);
@@ -85,7 +85,7 @@ public sealed class OidcStateSweeperShould
         // table is present, no Critical log is emitted and the loop
         // proceeds normally.
         var store = Substitute.For<IOidcStateStore>();
-        _ = store.TableExistsAsync(Arg.Any<CancellationToken>()).Returns(true);
+        store.TableExistsAsync(Arg.Any<CancellationToken>()).Returns(true);
         var logger = new RecordingLogger<OidcStateSweeper>();
         var sut = NewSweeper(store, NewOptions(interval: TimeSpan.Zero), logger);
 
@@ -104,7 +104,7 @@ public sealed class OidcStateSweeperShould
         // does NOT refuse to start — the loop continues and re-probes
         // on every cycle.
         var store = Substitute.For<IOidcStateStore>();
-        _ = store.TableExistsAsync(Arg.Any<CancellationToken>()).Returns(false);
+        store.TableExistsAsync(Arg.Any<CancellationToken>()).Returns(false);
         var logger = new RecordingLogger<OidcStateSweeper>();
         var sut = NewSweeper(store, NewOptions(interval: TimeSpan.Zero), logger);
 

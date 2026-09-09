@@ -115,6 +115,6 @@ public sealed class RunStatusMachineShould
         var run = Run.Create(ProjectId.New(), DateTimeOffset.UtcNow);
         run.TransitionTo(RunStatus.Cancelled, DateTimeOffset.UtcNow);
 
-        _ = Should.Throw<InvalidOperationException>(() => run.TransitionTo(RunStatus.Running, DateTimeOffset.UtcNow));
+        Should.Throw<InvalidOperationException>(() => run.TransitionTo(RunStatus.Running, DateTimeOffset.UtcNow));
     }
 }

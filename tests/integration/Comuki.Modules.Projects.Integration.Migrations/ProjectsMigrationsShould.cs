@@ -63,8 +63,8 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         await orchestrationDb.Database.MigrateAsync(cancellationToken);
 
         var services = new ServiceCollection();
-        _ = services.AddProjectsPersistence(connectionString);
-        _ = services.AddProjectsApplication();
+        services.AddProjectsPersistence(connectionString);
+        services.AddProjectsApplication();
         provider = services.BuildServiceProvider();
 
         var db = provider.GetRequiredService<ProjectsDbContext>();
@@ -117,15 +117,15 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         await using var scope = provider.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
         var first = Project.Create("First", "dup-slug", null, null, null, now);
-        _ = db.Projects.Add(first);
-        _ = db.ProjectSettings.Add(ProjectSettings.CreateDefaults(first.Id, now));
-        _ = await db.SaveChangesAsync(cancellationToken);
+        db.Projects.Add(first);
+        db.ProjectSettings.Add(ProjectSettings.CreateDefaults(first.Id, now));
+        await db.SaveChangesAsync(cancellationToken);
 
         var second = Project.Create("Second", "dup-slug", null, null, null, now);
-        _ = db.Projects.Add(second);
-        _ = db.ProjectSettings.Add(ProjectSettings.CreateDefaults(second.Id, now));
+        db.Projects.Add(second);
+        db.ProjectSettings.Add(ProjectSettings.CreateDefaults(second.Id, now));
 
-        _ = await Should.ThrowAsync<DbUpdateException>(() => db.SaveChangesAsync(cancellationToken));
+        await Should.ThrowAsync<DbUpdateException>(() => db.SaveChangesAsync(cancellationToken));
     }
 
     [Fact(DisplayName = "Given a created project, when settings are read through the handler, then the default row comes back with version 1")]
@@ -165,7 +165,7 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         var settingsStore = provider.GetRequiredService<IProjectSettingsStore>();
 
         // prime the cache and arm the change token
-        _ = await settingsStore.FindAsync(projectId, cancellationToken);
+        await settingsStore.FindAsync(projectId, cancellationToken);
         var changeToken = settingsStore.GetChangeToken(projectId);
         changeToken.HasChanged.ShouldBeFalse();
         settingsStore.GetCached(projectId).ShouldNotBeNull();
@@ -219,7 +219,7 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
             var current = await settingsStore.FindAsync(projectId, cancellationToken);
             current.ShouldNotBeNull();
 
-            _ = await handler.HandleAsync(
+            await handler.HandleAsync(
                 new UpdateSettingsCommand(projectId, current.Version, 1, 6, null, false, false, false, false, null, null,
                     ProjectDomainType.Standard, null),
                 cancellationToken);
@@ -367,7 +367,7 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
             DomainTypeAdmission.Create(projectId, "data", [], [], DateTimeOffset.UtcNow),
             cancellationToken);
 
-        _ = await Should.ThrowAsync<DbUpdateException>(
+        await Should.ThrowAsync<DbUpdateException>(
             () => store.AddAsync(
                 // different casing, same normalized key — the index still refuses
                 DomainTypeAdmission.Create(projectId, "DATA", ["github"], [], DateTimeOffset.UtcNow),
@@ -439,7 +439,7 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         await using (var scope = provider.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
-            _ = await db.Projects.Where(project => project.Id == projectId).ExecuteDeleteAsync(cancellationToken);
+            await db.Projects.Where(project => project.Id == projectId).ExecuteDeleteAsync(cancellationToken);
         }
 
         await using (var scope = provider.CreateAsyncScope())
@@ -542,11 +542,11 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         var schemaParameter = command.CreateParameter();
         schemaParameter.ParameterName = "@schema";
         schemaParameter.Value = schema;
-        _ = command.Parameters.Add(schemaParameter);
+        command.Parameters.Add(schemaParameter);
         var tableNameParameter = command.CreateParameter();
         tableNameParameter.ParameterName = "@tableName";
         tableNameParameter.Value = tableName;
-        _ = command.Parameters.Add(tableNameParameter);
+        command.Parameters.Add(tableNameParameter);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {

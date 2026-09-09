@@ -117,20 +117,20 @@ public sealed class WorkItemStatusMachineShould
     [Fact(DisplayName = "Given an initial status other than queued/blocked, when Create is called, then it throws")]
     public void RejectInvalidInitialStatus()
     {
-        _ = Should.Throw<ArgumentException>(
+        Should.Throw<ArgumentException>(
             static () => WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Running, DateTimeOffset.UtcNow));
     }
 
     [Fact(DisplayName = "Given an empty profile key, image, profiles ref or brief, when Create is called, then it throws")]
     public void RejectEmptyLabelsAndBrief()
     {
-        _ = Should.Throw<ArgumentException>(
+        Should.Throw<ArgumentException>(
             static () => WorkItem.Create(RunId.New(), " ", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
-        _ = Should.Throw<ArgumentException>(
+        Should.Throw<ArgumentException>(
             static () => WorkItem.Create(RunId.New(), "implement", "", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
-        _ = Should.Throw<ArgumentException>(
+        Should.Throw<ArgumentException>(
             static () => WorkItem.Create(RunId.New(), "implement", Image, " ", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
-        _ = Should.Throw<ArgumentException>(
+        Should.Throw<ArgumentException>(
             static () => WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, "", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
     }
 
@@ -152,7 +152,7 @@ public sealed class WorkItemStatusMachineShould
         item.TransitionTo(WorkItemStatus.Running, DateTimeOffset.UtcNow);
         item.TransitionTo(WorkItemStatus.Succeeded, DateTimeOffset.UtcNow);
 
-        _ = Should.Throw<InvalidOperationException>(() => item.TransitionTo(WorkItemStatus.Running, DateTimeOffset.UtcNow));
+        Should.Throw<InvalidOperationException>(() => item.TransitionTo(WorkItemStatus.Running, DateTimeOffset.UtcNow));
     }
 
     [Fact(DisplayName = "Given a self-referencing edge, when WorkItemDependency.Create is called, then it throws")]
@@ -160,7 +160,7 @@ public sealed class WorkItemStatusMachineShould
     {
         var id = Guid.CreateVersion7();
 
-        _ = Should.Throw<ArgumentException>(() => WorkItemDependency.Create(id, id));
+        Should.Throw<ArgumentException>(() => WorkItemDependency.Create(id, id));
     }
 
     [Fact(DisplayName = "Given a legal edge, when WorkItemDependency.Create is called, then both ends are set")]

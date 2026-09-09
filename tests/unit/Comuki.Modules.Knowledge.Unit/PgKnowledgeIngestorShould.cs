@@ -49,6 +49,30 @@ public sealed class PgKnowledgeIngestorShould
         await contextFactory.DidNotReceiveWithAnyArgs().CreateDbContextAsync(TestContext.Current.CancellationToken);
     }
 
+    [Theory(DisplayName = "Given a blank required string (source / sourceRef / mimeType / text), when IngestAsync is called, then it throws InvalidOperationException")]
+    [InlineData("source", "")]
+    [InlineData("sourceRef", "  ")]
+    [InlineData("mimeType", "\t")]
+    [InlineData("text", "\n")]
+    public async Task BlankFieldThrowsAsync(string field, string blankValue)
+    {
+        var contextFactory = Substitute.For<IDbContextFactory<KnowledgeDbContext>>();
+        var embedder = new NoopEmbeddingClient(EmbeddingSql.Dimensions);
+        var ingestor = NewIngestor(contextFactory, embedder);
+
+        await Should.ThrowAsync<InvalidOperationException>(
+            async () => await ingestor.IngestAsync(
+                projectId: null,
+                title: "ok",
+                source: field == "source" ? blankValue : "git",
+                sourceRef: field == "sourceRef" ? blankValue : "abc",
+                mimeType: field == "mimeType" ? blankValue : "text/markdown",
+                text: field == "text" ? blankValue : "body",
+                cancellationToken: TestContext.Current.CancellationToken));
+
+        await contextFactory.DidNotReceiveWithAnyArgs().CreateDbContextAsync(TestContext.Current.CancellationToken);
+    }
+
     [Fact(DisplayName = "Integration contract — DB-bound paths covered by Comuki.Modules.Memory.Integration.Migrations under Testcontainers.PostgreSql")]
     public void DbBoundPathsAreCoveredByIntegrationTests()
     {

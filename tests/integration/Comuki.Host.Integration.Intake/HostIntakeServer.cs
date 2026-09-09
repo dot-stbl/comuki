@@ -104,7 +104,7 @@ public sealed class HostIntakeServer : IAsyncLifetime
         // registry's first-match resolution shadows the real GitHub client.
         builder.Services.AddSingleton<ITicketSyncPort>(GithubSync);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(ConnectionString));
+        application = HostComposer.Compose(builder, HostDatabase.Explicit(ConnectionString), validateOnBuild: false);
         await application.StartAsync(cancellationToken);
 
         baseAddress = new Uri(

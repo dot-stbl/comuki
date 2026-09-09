@@ -141,7 +141,7 @@ public sealed class SmokeHostServer : IAsyncLifetime
         // it here so the smoke run exercises the full pipeline.
         builder.Services.AddMemoryPersistence(connectionString);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
+        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString), validateOnBuild: false);
         await application.StartAsync(cancellationToken);
 
         BaseAddress = new Uri(

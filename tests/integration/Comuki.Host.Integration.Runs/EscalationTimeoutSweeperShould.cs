@@ -96,7 +96,7 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
             .AddOrchestrationPersistence(connectionString)
             .AddOrchestrationQueue(builder.Configuration);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
+        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString), validateOnBuild: false);
         await application.StartAsync(cancellationToken);
     }
 

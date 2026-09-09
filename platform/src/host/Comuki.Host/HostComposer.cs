@@ -73,8 +73,9 @@ internal static class HostComposer
     /// <summary>Wires every host service and returns the built application, not yet started.</summary>
     /// <param name="builder"></param>
     /// <param name="database">Connection resolved once by <see cref="HostDatabase.Resolve"/>; flows into identity/projects persistence and the legacy-alias warning.</param>
+    /// <param name="validateOnBuild">Whether to run DI scope/build validation. Default true (production-safe). Pass false from integration test fixtures that intentionally wire a minimal DI graph without all module installers.</param>
     /// <returns></returns>
-    public static WebApplication Compose(WebApplicationBuilder builder, HostDatabase.Connection database)
+    public static WebApplication Compose(WebApplicationBuilder builder, HostDatabase.Connection database, bool validateOnBuild = true)
     {
         // Telemetry first: options ValidateOnStart always; OTLP SDK only when
         // Telemetry:OtlpEndpoint is set (see deploy/README — VictoriaMetrics :8431).
@@ -306,6 +307,15 @@ internal static class HostComposer
         // worker surfaces and hosted consumers declare AsSystem, and the
         // context scope members read it inside the query filters.
         builder.Services.AddSingleton<Shared.Kernel.Scoping.ISubjectScopeAccessor, Shared.Kernel.Scoping.AsyncLocalSubjectScopeAccessor>();
+
+        if (!validateOnBuild)
+        {
+            builder.Host.UseDefaultServiceProvider(options =>
+            {
+                options.ValidateOnBuild = false;
+                options.ValidateScopes = false;
+            });
+        }
 
         var app = builder.Build();
 

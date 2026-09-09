@@ -1,6 +1,8 @@
+using Comuki.Engine.Compute.Options;
 using Comuki.Host.Auth;
 using Comuki.Host.Security.ProductionSecrets;
 using Comuki.Modules.Artifacts.Infrastructure.Store;
+using Comuki.Modules.Identity.Application.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -13,10 +15,12 @@ namespace Comuki.Host.Unit.ProductionSecrets;
 
 /// <summary>
 /// Unit tests for <see cref="ProductionSecretValidator"/>: refuses to start
-/// the host in <c>Production</c> when the bound <see cref="ArtifactsOptions"/>
-/// MinIO keys or the bootstrap admin password are still on their committed
-/// dev defaults, and returns silently in non-production environments. Q29
-/// adds the length + character-class check on the bootstrap admin password.
+/// the host in <c>Production</c> when any committed dev-default secret
+/// (MinIO keys, bootstrap admin password, API-key pepper, worker-token
+/// pepper) is still on its shipped value, and returns silently in
+/// non-production environments. Q29 adds the length + character-class
+/// check on the bootstrap admin password; security audit A02-1 adds the
+/// pepper checks.
 /// </summary>
 public sealed class ProductionSecretValidatorShould : IDisposable
 {
@@ -24,12 +28,16 @@ public sealed class ProductionSecretValidatorShould : IDisposable
     {
         Environment.SetEnvironmentVariable(BootstrapAdminOptions.EmailEnvVariable, null);
         Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, null);
+        Environment.SetEnvironmentVariable(ApiKeyOptions.PepperEnvironmentVariable, null);
+        Environment.SetEnvironmentVariable(WorkerTokenOptions.PepperEnvironmentVariable, null);
     }
 
     public void Dispose()
     {
         Environment.SetEnvironmentVariable(BootstrapAdminOptions.EmailEnvVariable, null);
         Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, null);
+        Environment.SetEnvironmentVariable(ApiKeyOptions.PepperEnvironmentVariable, null);
+        Environment.SetEnvironmentVariable(WorkerTokenOptions.PepperEnvironmentVariable, null);
     }
 
     [Fact(DisplayName = "Given Production + bootstrap password too short, when Validate is called, then it throws with a length hint")]
@@ -170,16 +178,109 @@ public sealed class ProductionSecretValidatorShould : IDisposable
 
         Should.NotThrow(() => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
     }
+
+    [Fact(DisplayName = "Given Production + API-key pepper on its dev default, when Validate is called, then it throws with the pepper env-var name")]
+    public void ThrowWhenProductionApiKeyPepperStillDefault()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            apiKeyPepper: ProductionSecretsTestArtifacts.DevDefaultApiKeyPepper,
+            workerTokenPepper: ProductionSecretsTestArtifacts.OverriddenWorkerTokenPepper);
+
+        var exception = Should.Throw<InvalidOperationException>(
+            () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+
+        exception.Message.ShouldContain(ApiKeyOptions.PepperEnvironmentVariable);
+        exception.Message.ShouldContain(ProductionSecretsTestArtifacts.DevDefaultApiKeyPepper);
+    }
+
+    [Fact(DisplayName = "Given Production + API-key pepper overridden, when Validate is called, then it returns silently")]
+    public void ReturnSilentlyWhenProductionApiKeyPepperIsOverridden()
+    {
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.EmailEnvVariable, "ops@example.com");
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, "StrongProdP@ss-2026");
+
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            apiKeyPepper: ProductionSecretsTestArtifacts.OverriddenApiKeyPepper,
+            workerTokenPepper: ProductionSecretsTestArtifacts.OverriddenWorkerTokenPepper);
+
+        Should.NotThrow(() => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+    }
+
+    [Fact(DisplayName = "Given Production + worker-token pepper on its dev default, when Validate is called, then it throws with the pepper env-var name")]
+    public void ThrowWhenProductionWorkerTokenPepperStillDefault()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            apiKeyPepper: ProductionSecretsTestArtifacts.OverriddenApiKeyPepper,
+            workerTokenPepper: ProductionSecretsTestArtifacts.DevDefaultWorkerTokenPepper);
+
+        var exception = Should.Throw<InvalidOperationException>(
+            () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+
+        exception.Message.ShouldContain(WorkerTokenOptions.PepperEnvironmentVariable);
+        exception.Message.ShouldContain(ProductionSecretsTestArtifacts.DevDefaultWorkerTokenPepper);
+    }
+
+    [Fact(DisplayName = "Given Production + worker-token pepper overridden, when Validate is called, then it returns silently")]
+    public void ReturnSilentlyWhenProductionWorkerTokenPepperIsOverridden()
+    {
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.EmailEnvVariable, "ops@example.com");
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, "StrongProdP@ss-2026");
+
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            apiKeyPepper: ProductionSecretsTestArtifacts.OverriddenApiKeyPepper,
+            workerTokenPepper: ProductionSecretsTestArtifacts.OverriddenWorkerTokenPepper);
+
+        Should.NotThrow(() => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+    }
+
+    [Fact(DisplayName = "Given Production + only the API-key pepper overridden (worker-token still default), when Validate is called, then it throws on the worker-token pepper")]
+    public void ThrowWhenProductionWorkerTokenPepperStillDefaultEvenWithApiKeyOverridden()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            apiKeyPepper: ProductionSecretsTestArtifacts.OverriddenApiKeyPepper,
+            workerTokenPepper: ProductionSecretsTestArtifacts.DevDefaultWorkerTokenPepper);
+
+        var exception = Should.Throw<InvalidOperationException>(
+            () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+
+        exception.Message.ShouldContain(WorkerTokenOptions.PepperEnvironmentVariable);
+        exception.Message.ShouldNotContain(ApiKeyOptions.PepperEnvironmentVariable);
+    }
 }
 
 file static class ProductionSecretsTestServices
 {
     public static IServiceCollection BuildServices(string environmentName, ArtifactsOptions artifacts)
     {
+        return BuildServices(
+            environmentName,
+            artifacts,
+            apiKeyPepper: ProductionSecretsTestArtifacts.OverriddenApiKeyPepper,
+            workerTokenPepper: ProductionSecretsTestArtifacts.OverriddenWorkerTokenPepper);
+    }
+
+    public static IServiceCollection BuildServices(
+        string environmentName,
+        ArtifactsOptions artifacts,
+        string apiKeyPepper,
+        string workerTokenPepper)
+    {
         var services = new ServiceCollection();
         services.AddSingleton<IHostEnvironment>(new ProductionSecretsTestEnvironment(environmentName));
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.AddSingleton(Options.Create(artifacts));
+        services.AddSingleton(Options.Create(new ApiKeyOptions { Pepper = apiKeyPepper }));
+        services.AddSingleton(Options.Create(new WorkerTokenOptions { Pepper = workerTokenPepper }));
         return services;
     }
 }
@@ -188,6 +289,12 @@ file static class ProductionSecretsTestArtifacts
 {
     public const string Endpoint = "minio:9000";
     public const string Bucket = "comuki-artifacts";
+
+    public const string DevDefaultApiKeyPepper = "comuki-dev-only-apikey-pepper-override-in-production";
+    public const string DevDefaultWorkerTokenPepper = "comuki-dev-only-pepper-override-in-production";
+
+    public const string OverriddenApiKeyPepper = "rotated-strong-apikey-pepper-2026";
+    public const string OverriddenWorkerTokenPepper = "rotated-strong-worker-token-pepper-2026";
 
     public static ArtifactsOptions DevDefaults()
     {

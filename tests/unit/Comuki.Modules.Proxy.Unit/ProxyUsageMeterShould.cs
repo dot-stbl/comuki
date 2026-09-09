@@ -1,4 +1,3 @@
-using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Modules.Proxy.Application.Extraction;
 using Comuki.Modules.Proxy.Application.Metering;
 using Comuki.Modules.Proxy.Application.Models;
@@ -38,7 +37,7 @@ public sealed class ProxyUsageMeterShould
         await recorder.Received(1).RecordAsync(
             Arg.Is<UsageRecord>(record =>
                 record.ProjectId == projectId
-                && record.Source == UsageSourceKeys.Proxy
+                && record.Source == UsageSources.Proxy
                 && record.Model == "gpt-4o-mini"
                 && record.InputTokens == 1000
                 && record.OutputTokens == 500
@@ -78,5 +77,3 @@ public sealed class ProxyUsageMeterShould
         await recorder.DidNotReceiveWithAnyArgs().RecordAsync(default!, TestContext.Current.CancellationToken);
     }
 }
-
-

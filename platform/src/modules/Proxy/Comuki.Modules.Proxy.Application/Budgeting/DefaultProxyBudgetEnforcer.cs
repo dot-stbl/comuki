@@ -1,4 +1,3 @@
-using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Modules.Proxy.Application.Models;
 using Comuki.Modules.Proxy.Application.Ports;
 using Comuki.Shared.Contracts.Usage;
@@ -27,7 +26,7 @@ public sealed class DefaultProxyBudgetEnforcer(IUsageEventStore store, TimeProvi
         var monthStart = ProxyBudgetMath.StartOfMonth(clock.GetUtcNow());
         var spentUsdMicros = await store.SumProjectCostBySourceAsync(
             key.ProjectId,
-            UsageSource.Proxy,
+            UsageSources.Proxy,
             monthStart,
             cancellationToken);
         var capUsdMicros = ProxyBudgetMath.ToMicros(budgetUsd);

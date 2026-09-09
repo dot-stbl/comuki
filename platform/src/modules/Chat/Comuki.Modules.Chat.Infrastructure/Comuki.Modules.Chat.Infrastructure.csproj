@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Comuki.Modules.Chat.Application\Comuki.Modules.Chat.Application.csproj" />
+    <ProjectReference Include="..\..\..\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
   </ItemGroup>
 
 </Project>

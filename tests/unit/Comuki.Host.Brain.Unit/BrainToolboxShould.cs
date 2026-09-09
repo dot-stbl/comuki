@@ -40,7 +40,7 @@ public sealed class BrainToolboxShould
     public void ResolveFunctionsByName()
     {
         var toolbox = Toolbox();
-        _ = toolbox.BuildFunctions();
+        toolbox.BuildFunctions();
 
         toolbox.FindFunction("memory.search").ShouldNotBeNull();
         toolbox.FindFunction("no-such-tool").ShouldBeNull();

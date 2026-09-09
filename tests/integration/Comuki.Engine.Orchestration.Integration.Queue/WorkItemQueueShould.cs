@@ -26,8 +26,8 @@ public sealed class WorkItemQueueShould : QueueDatabase
     public async Task DispenseDistinctItemsToConcurrentClaimersAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = await SeedQueuedItemAsync();
-        _ = await SeedQueuedItemAsync();
+        await SeedQueuedItemAsync();
+        await SeedQueuedItemAsync();
 
         using var scopeA = CreateScope();
         using var scopeB = CreateScope();
@@ -39,8 +39,8 @@ public sealed class WorkItemQueueShould : QueueDatabase
         var claimedA = await claimA;
         var claimedB = await claimB;
 
-        _ = claimedA.ShouldNotBeNull();
-        _ = claimedB.ShouldNotBeNull();
+        claimedA.ShouldNotBeNull();
+        claimedB.ShouldNotBeNull();
         claimedA.WorkItemId.ShouldNotBe(claimedB.WorkItemId);
 
         var itemA = (await LoadItemAsync(claimedA.WorkItemId)).ShouldNotBeNull();
@@ -66,7 +66,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
         var first = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
         var second = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
 
-        _ = first.ShouldNotBeNull();
+        first.ShouldNotBeNull();
         first.WorkItemId.ShouldBe(seeded.Id);
         second.ShouldBeNull();
     }
@@ -75,7 +75,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
     public async Task RefuseClaimOnLabelMismatchAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = await SeedQueuedItemAsync(profileKey: "docs-writer");
+        await SeedQueuedItemAsync(profileKey: "docs-writer");
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
 
@@ -94,7 +94,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
         var reaper = scope.ServiceProvider.GetRequiredService<LeaseReaper>();
 
         var first = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
-        _ = first.ShouldNotBeNull();
+        first.ShouldNotBeNull();
 
         clock.Advance(TimeSpan.FromMinutes(2).Add(TimeSpan.FromSeconds(31)));
         var reaped = await reaper.ReapAsync(cancellationToken);
@@ -119,7 +119,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
 
         // and the requeued item is claimable again by another worker, attempt bumps
         var second = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
-        _ = second.ShouldNotBeNull();
+        second.ShouldNotBeNull();
         second.WorkItemId.ShouldBe(seeded.Id);
         second.Attempt.ShouldBe(2);
     }
@@ -137,11 +137,11 @@ public sealed class WorkItemQueueShould : QueueDatabase
         for (var round = 1; round <= 2; round++)
         {
             var claimed = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
-            _ = claimed.ShouldNotBeNull();
+            claimed.ShouldNotBeNull();
             claimed.Attempt.ShouldBe(round);
 
             clock.Advance(TimeSpan.FromMinutes(2).Add(TimeSpan.FromSeconds(31)));
-            _ = await reaper.ReapAsync(cancellationToken);
+            await reaper.ReapAsync(cancellationToken);
         }
 
         var item = (await LoadItemAsync(seeded.Id)).ShouldNotBeNull();
@@ -168,7 +168,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
         var workerId = WorkerId.New();
 
         var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
-        _ = claimed.ShouldNotBeNull();
+        claimed.ShouldNotBeNull();
 
         clock.Advance(TimeSpan.FromMinutes(1));
         var extended = await queue.HeartbeatAsync(seeded.Id, workerId, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
@@ -192,7 +192,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        _ = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
 
         var stranger = await queue.HeartbeatAsync(seeded.Id, WorkerId.New(), claimAt.AddMinutes(4), claimAt.AddSeconds(30), cancellationToken);
 
@@ -207,7 +207,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        _ = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
 
         clock.Advance(TimeSpan.FromMinutes(3));
         var late = await queue.HeartbeatAsync(seeded.Id, workerId, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
@@ -224,7 +224,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
         var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
-        _ = claimed.ShouldNotBeNull();
+        claimed.ShouldNotBeNull();
 
         var stolen = await queue.CompleteAsync(seeded.Id, WorkerId.New(), /*lang=json,strict*/ """{"summary":"not mine"}""", claimAt.AddSeconds(30), cancellationToken);
         stolen.ShouldBeFalse();
@@ -256,7 +256,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        _ = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
 
         var failed = await queue.FailAsync(seeded.Id, workerId, "OOM killed", claimAt.AddSeconds(30), cancellationToken);
 
@@ -276,9 +276,9 @@ public sealed class WorkItemQueueShould : QueueDatabase
     public async Task CountQueuedItemsWithProfileFilterAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = await SeedQueuedItemAsync("implement");
-        _ = await SeedQueuedItemAsync("implement");
-        _ = await SeedQueuedItemAsync("docs-writer");
+        await SeedQueuedItemAsync("implement");
+        await SeedQueuedItemAsync("implement");
+        await SeedQueuedItemAsync("docs-writer");
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
 
@@ -290,7 +290,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
         implement.ShouldBe(2);
         docs.ShouldBe(1);
 
-        _ = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
         (await queue.CountQueuedAsync(cancellationToken: cancellationToken)).ShouldBe(2);
         (await queue.CountQueuedAsync("implement", cancellationToken)).ShouldBe(1);
     }
@@ -306,11 +306,11 @@ public sealed class WorkItemQueueShould : QueueDatabase
 
         var claimed = await handler.HandleAsync(new ClaimWorkItemCommand(workerId, ImplementLabels), cancellationToken);
 
-        _ = claimed.ShouldNotBeNull();
+        claimed.ShouldNotBeNull();
         claimed.WorkItemId.ShouldBe(seeded.Id);
         claimed.LeaseUntil.ShouldBe(clock.GetUtcNow().AddMinutes(2));
 
-        _ = await Should.ThrowAsync<ValidationException>(
+        await Should.ThrowAsync<ValidationException>(
             () => handler.HandleAsync(new ClaimWorkItemCommand(workerId, new WorkItemLabels("", ProfilesRef, "implement")), cancellationToken));
     }
 
@@ -322,7 +322,7 @@ public sealed class WorkItemQueueShould : QueueDatabase
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var journal = scope.ServiceProvider.GetRequiredService<IRunJournal>();
-        _ = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
 
         var timeline = await journal.ReadTimelineAsync(seeded.RunId, page: 1, pageSize: 10, cancellationToken);
 

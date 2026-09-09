@@ -20,7 +20,7 @@ public sealed class RealtimeExtensionsShould
         var services = new ServiceCollection();
         var environment = new HostingEnvironment { EnvironmentName = Environments.Development };
 
-        _ = services.AddComukiRealtime(environment);
+        services.AddComukiRealtime(environment);
 
         services.Any(static descriptor => descriptor.ServiceType == typeof(IRunEventsBroadcaster)).ShouldBeTrue();
         services.Any(static descriptor => descriptor.ServiceType == typeof(RunEventsBroadcastInterceptor)).ShouldBeTrue();
@@ -40,7 +40,7 @@ public sealed class RealtimeExtensionsShould
         var services = new ServiceCollection();
         var environment = new HostingEnvironment { EnvironmentName = Environments.Production };
 
-        _ = services.AddComukiRealtime(environment);
+        services.AddComukiRealtime(environment);
 
         var detailedErrors = ResolveEnableDetailedErrors(services);
         detailedErrors.ShouldBeFalse();

@@ -44,13 +44,13 @@ public sealed class ComputeInstallerShould
             .AddInMemoryCollection(settings)
             .Build();
         var services = new ServiceCollection();
-        _ = services.AddComukiCompute(configuration);
+        services.AddComukiCompute(configuration);
 
         // Substitute both SDK clients AFTER the installer so neither the
         // docker socket nor a kubeconfig is touched when the concretes
         // resolve — the selection factory itself is what is under test.
-        _ = services.AddSingleton(Substitute.For<IDockerClient>());
-        _ = services.AddSingleton(Substitute.For<IKubernetes>());
+        services.AddSingleton(Substitute.For<IDockerClient>());
+        services.AddSingleton(Substitute.For<IKubernetes>());
 
         return services.BuildServiceProvider();
     }

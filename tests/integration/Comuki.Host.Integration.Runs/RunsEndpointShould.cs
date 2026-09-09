@@ -72,10 +72,10 @@ public sealed class RunsEndpointShould : IAsyncLifetime
                 }
 
                 run.TransitionTo(status, now + age + TimeSpan.FromMinutes(5));
-                _ = orchestrationDb.Runs.Add(run);
+                orchestrationDb.Runs.Add(run);
             }
 
-            _ = await orchestrationDb.SaveChangesAsync(cancellationToken);
+            await orchestrationDb.SaveChangesAsync(cancellationToken);
         }
 
         var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();

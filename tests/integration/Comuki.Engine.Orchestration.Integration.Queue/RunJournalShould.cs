@@ -89,7 +89,7 @@ public sealed class RunJournalShould : QueueDatabase
         using var scope = CreateScope();
         var journal = scope.ServiceProvider.GetRequiredService<IRunJournal>();
 
-        _ = await Should.ThrowAsync<ArgumentException>(() => journal.ReadTimelineAsync(RunId.New(), page: 0, pageSize: 10, cancellationToken));
-        _ = await Should.ThrowAsync<ArgumentException>(() => journal.ReadTimelineAsync(RunId.New(), page: 1, pageSize: 0, cancellationToken));
+        await Should.ThrowAsync<ArgumentException>(() => journal.ReadTimelineAsync(RunId.New(), page: 0, pageSize: 10, cancellationToken));
+        await Should.ThrowAsync<ArgumentException>(() => journal.ReadTimelineAsync(RunId.New(), page: 1, pageSize: 0, cancellationToken));
     }
 }

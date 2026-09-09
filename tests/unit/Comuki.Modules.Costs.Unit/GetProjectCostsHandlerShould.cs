@@ -27,10 +27,10 @@ public sealed class GetProjectCostsHandlerShould
             100,
             DateTimeOffset.UtcNow);
 
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 50, HardLimitUsdMicros: 80));
-        _ = store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>()).Returns(100);
-        _ = store.ListRecentAsync(projectId, GetProjectCostsHandler.DefaultRecentTake, Arg.Any<CancellationToken>())
+        store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>()).Returns(100);
+        store.ListRecentAsync(projectId, GetProjectCostsHandler.DefaultRecentTake, Arg.Any<CancellationToken>())
             .Returns([recent]);
 
         var view = await new GetProjectCostsHandler(store, budgets).HandleAsync(
@@ -53,10 +53,10 @@ public sealed class GetProjectCostsHandlerShould
         var store = Substitute.For<IUsageEventStore>();
         var budgets = Substitute.For<IProjectBudgetSettings>();
 
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(null, null));
-        _ = store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>()).Returns(999_999);
-        _ = store.ListRecentAsync(projectId, GetProjectCostsHandler.DefaultRecentTake, Arg.Any<CancellationToken>())
+        store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>()).Returns(999_999);
+        store.ListRecentAsync(projectId, GetProjectCostsHandler.DefaultRecentTake, Arg.Any<CancellationToken>())
             .Returns([]);
 
         var view = await new GetProjectCostsHandler(store, budgets).HandleAsync(
@@ -75,10 +75,10 @@ public sealed class GetProjectCostsHandlerShould
         var store = Substitute.For<IUsageEventStore>();
         var budgets = Substitute.For<IProjectBudgetSettings>();
 
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 1_000, HardLimitUsdMicros: 10_000));
-        _ = store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>()).Returns(999);
-        _ = store.ListRecentAsync(projectId, GetProjectCostsHandler.DefaultRecentTake, Arg.Any<CancellationToken>())
+        store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>()).Returns(999);
+        store.ListRecentAsync(projectId, GetProjectCostsHandler.DefaultRecentTake, Arg.Any<CancellationToken>())
             .Returns([]);
 
         var view = await new GetProjectCostsHandler(store, budgets).HandleAsync(

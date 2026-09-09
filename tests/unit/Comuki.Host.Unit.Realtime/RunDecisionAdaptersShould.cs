@@ -101,7 +101,7 @@ public sealed class RunDecisionAdaptersShould
     private static ISubjectScopeAccessor NewScopeAccessor()
     {
         var accessor = Substitute.For<ISubjectScopeAccessor>();
-        _ = accessor.AsSystem(Arg.Any<string>()).Returns(static _ => new NoOpScope());
+        accessor.AsSystem(Arg.Any<string>()).Returns(static _ => new NoOpScope());
         return accessor;
     }
 
@@ -140,8 +140,8 @@ public sealed class RunDecisionAdaptersShould
             step = step.AddSeconds(1);
         }
 
-        _ = db.Runs.Add(run);
-        _ = await db.SaveChangesAsync();
+        db.Runs.Add(run);
+        await db.SaveChangesAsync();
         return run;
     }
 }

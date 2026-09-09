@@ -45,7 +45,7 @@ public sealed class ScaleSupervisorCycleShould
             new InMemoryWorkerTokenStore(),
             Microsoft.Extensions.Options.Options.Create(new WorkerTokenOptions()));
 
-        _ = computeProvider.StartAsync(Arg.Any<ComputeStartRequest>(), Arg.Any<CancellationToken>())
+        computeProvider.StartAsync(Arg.Any<ComputeStartRequest>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
                 var request = callInfo.Arg<ComputeStartRequest>();
@@ -55,25 +55,25 @@ public sealed class ScaleSupervisorCycleShould
                 runningHandles.Add(handle);
                 return handle;
             });
-        _ = computeProvider.StopAsync(Arg.Any<WorkerId>(), Arg.Any<ComputeStopReason>(), Arg.Any<CancellationToken>())
+        computeProvider.StopAsync(Arg.Any<WorkerId>(), Arg.Any<ComputeStopReason>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
                 var workerId = callInfo.Arg<WorkerId>();
                 stoppedWorkers.Add(new StopCall(workerId, callInfo.Arg<ComputeStopReason>()));
-                _ = runningHandles.RemoveAll(handle => handle.Id == workerId);
+                runningHandles.RemoveAll(handle => handle.Id == workerId);
                 return Task.CompletedTask;
             });
-        _ = computeProvider.ListAsync(Arg.Any<ProjectId>(), Arg.Any<CancellationToken>())
+        computeProvider.ListAsync(Arg.Any<ProjectId>(), Arg.Any<CancellationToken>())
             .Returns(_ => [.. runningHandles.Select(handle => new WorkerInfo(handle.Id, handle.ProviderRef, "implement", "worker:1", "main"))]);
-        _ = computeProvider.GetCapacityAsync(Arg.Any<CancellationToken>())
+        computeProvider.GetCapacityAsync(Arg.Any<CancellationToken>())
             .Returns(_ => new ComputeCapacity(FreeSlots: 100, RunningWorkers: runningHandles.Count));
-        _ = backlogReader.CountQueuedAsync(Arg.Any<ProjectId>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        backlogReader.CountQueuedAsync(Arg.Any<ProjectId>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(0);
     }
 
     private void Capacity(int freeSlots)
     {
-        _ = computeProvider.GetCapacityAsync(Arg.Any<CancellationToken>())
+        computeProvider.GetCapacityAsync(Arg.Any<CancellationToken>())
             .Returns(_ => new ComputeCapacity(FreeSlots: freeSlots, RunningWorkers: runningHandles.Count));
     }
 
@@ -101,7 +101,7 @@ public sealed class ScaleSupervisorCycleShould
 
     private void Queue(int count, string profileKey = "implement")
     {
-        _ = backlogReader.CountQueuedAsync(Arg.Any<ProjectId>(), profileKey, Arg.Any<CancellationToken>())
+        backlogReader.CountQueuedAsync(Arg.Any<ProjectId>(), profileKey, Arg.Any<CancellationToken>())
             .Returns(count);
     }
 
@@ -119,10 +119,10 @@ public sealed class ScaleSupervisorCycleShould
         startedRequests.ShouldAllBe(request => request.ProfilesGitRef == "main");
         foreach (var request in startedRequests)
         {
-            _ = tokenIssuer.Validate(request.WorkerToken).ShouldNotBeNull();
+            tokenIssuer.Validate(request.WorkerToken).ShouldNotBeNull();
         }
         stoppedWorkers.ShouldBeEmpty();
-        _ = await backlogReader.Received(1).CountQueuedAsync(projectId, "implement", Arg.Any<CancellationToken>());
+        await backlogReader.Received(1).CountQueuedAsync(projectId, "implement", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -272,7 +272,7 @@ public sealed class ScaleSupervisorCycleShould
         await harness.Cycle.RunAsync(TestContext.Current.CancellationToken);
 
         startedRequests.ShouldBeEmpty();
-        _ = await backlogReader.DidNotReceive().CountQueuedAsync(
+        await backlogReader.DidNotReceive().CountQueuedAsync(
             Arg.Any<ProjectId>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -286,7 +286,7 @@ public sealed class ScaleSupervisorCycleShould
         await harness.Cycle.RunAsync(TestContext.Current.CancellationToken);
 
         startedRequests.Count.ShouldBe(1);
-        _ = await computeProvider.Received(1).GetCapacityAsync(Arg.Any<CancellationToken>());
+        await computeProvider.Received(1).GetCapacityAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

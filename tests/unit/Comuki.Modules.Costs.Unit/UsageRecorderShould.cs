@@ -21,9 +21,9 @@ public sealed class UsageRecorderShould
         var budgets = Substitute.For<IProjectBudgetSettings>();
         var gate = Substitute.For<IBudgetGate>();
 
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 500_000, HardLimitUsdMicros: 1_000_000));
-        _ = store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>())
+        store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>())
             .Returns(1_250_000);
 
         var recorder = new UsageRecorder(store, budgets, gate, NullLogger<UsageRecorder>.Instance);
@@ -45,9 +45,9 @@ public sealed class UsageRecorderShould
         var budgets = Substitute.For<IProjectBudgetSettings>();
         var gate = Substitute.For<IBudgetGate>();
 
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 100_000, HardLimitUsdMicros: 10_000_000));
-        _ = store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>())
+        store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>())
             .Returns(200_000);
 
         var recorder = new UsageRecorder(store, budgets, gate, NullLogger<UsageRecorder>.Instance);
@@ -73,9 +73,9 @@ public sealed class UsageRecorderShould
         var budgets = Substitute.For<IProjectBudgetSettings>();
         var gate = Substitute.For<IBudgetGate>();
 
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(null, HardLimitUsdMicros: 1));
-        _ = store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>())
+        store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>())
             .Returns(100);
 
         var recorder = new UsageRecorder(store, budgets, gate, NullLogger<UsageRecorder>.Instance);
@@ -101,9 +101,9 @@ public sealed class UsageRecorderShould
         var budgets = Substitute.For<IProjectBudgetSettings>();
         var gate = Substitute.For<IBudgetGate>();
 
-        _ = budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
+        budgets.GetAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(new ProjectBudgetCaps(SoftLimitUsdMicros: 1_000_000, HardLimitUsdMicros: 2_000_000));
-        _ = store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>())
+        store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>())
             .Returns(10);
 
         var recorder = new UsageRecorder(store, budgets, gate, NullLogger<UsageRecorder>.Instance);

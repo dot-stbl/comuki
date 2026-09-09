@@ -58,10 +58,10 @@ public abstract class QueueDatabase : IAsyncLifetime
             .Build();
 
         var services = new ServiceCollection();
-        _ = services.AddSingleton<TimeProvider>(clock);
-        _ = services.AddOrchestrationPersistence(container.GetConnectionString());
-        _ = services.AddOrchestrationQueue(configuration);
-        _ = services.AddOrchestrationApplication();
+        services.AddSingleton<TimeProvider>(clock);
+        services.AddOrchestrationPersistence(container.GetConnectionString());
+        services.AddOrchestrationQueue(configuration);
+        services.AddOrchestrationApplication();
         provider = services.BuildServiceProvider();
 
         using var scope = provider.CreateScope();
@@ -88,8 +88,8 @@ public abstract class QueueDatabase : IAsyncLifetime
         using var scope = CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
         var run = Run.Create(ProjectId.New(), clock.GetUtcNow());
-        _ = db.Runs.Add(run);
-        _ = await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.Runs.Add(run);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return run;
     }
 
@@ -104,9 +104,9 @@ public abstract class QueueDatabase : IAsyncLifetime
         var item = WorkItem.Create(
             run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"do the thing"}""", WorkItemStatus.Queued, now);
 
-        _ = db.Runs.Add(run);
-        _ = db.WorkItems.Add(item);
-        _ = await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.Runs.Add(run);
+        db.WorkItems.Add(item);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return item;
     }
 

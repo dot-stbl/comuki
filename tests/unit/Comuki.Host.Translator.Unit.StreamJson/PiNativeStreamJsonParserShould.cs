@@ -74,7 +74,7 @@ public sealed class PiNativeStreamJsonParserShould
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("pi-agent-end.json")).ToList();
 
-        _ = events.ShouldHaveSingleItem().ShouldBeOfType<PiEvent.AgentEndEvent>();
+        events.ShouldHaveSingleItem().ShouldBeOfType<PiEvent.AgentEndEvent>();
     }
 
     [Fact]

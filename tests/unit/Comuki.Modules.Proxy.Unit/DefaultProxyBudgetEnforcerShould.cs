@@ -33,7 +33,7 @@ public sealed class DefaultProxyBudgetEnforcerShould
     {
         var projectId = ProjectId.New();
         var store = Substitute.For<IUsageEventStore>();
-        _ = store.SumProjectCostBySourceAsync(projectId, UsageSources.Proxy, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
+        store.SumProjectCostBySourceAsync(projectId, UsageSources.Proxy, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
             .Returns(2_000_000);
         var enforcer = new DefaultProxyBudgetEnforcer(store, TimeProvider.System);
 
@@ -56,7 +56,7 @@ public sealed class DefaultProxyBudgetEnforcerShould
     {
         var projectId = ProjectId.New();
         var store = Substitute.For<IUsageEventStore>();
-        _ = store.SumProjectCostBySourceAsync(projectId, UsageSources.Proxy, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
+        store.SumProjectCostBySourceAsync(projectId, UsageSources.Proxy, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
             .Returns(10_000_000);
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 9, 5, 12, 0, 0, TimeSpan.Zero));
         var enforcer = new DefaultProxyBudgetEnforcer(store, clock);
@@ -80,7 +80,7 @@ public sealed class DefaultProxyBudgetEnforcerShould
     {
         var projectId = ProjectId.New();
         var store = Substitute.For<IUsageEventStore>();
-        _ = store.SumProjectCostBySourceAsync(projectId, UsageSources.Proxy, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
+        store.SumProjectCostBySourceAsync(projectId, UsageSources.Proxy, Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
             .Returns(0);
         var enforcer = new DefaultProxyBudgetEnforcer(store, TimeProvider.System);
 

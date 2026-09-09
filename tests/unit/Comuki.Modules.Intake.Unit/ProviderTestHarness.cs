@@ -74,10 +74,10 @@ internal static class ProviderTestHarness
         };
 
         var services = new ServiceCollection();
-        _ = services.AddHttpClient(TrackerHttp.GitHubClient).ConfigurePrimaryHttpMessageHandler(() => handler);
-        _ = services.AddHttpClient(TrackerHttp.GitLabClient).ConfigurePrimaryHttpMessageHandler(() => handler);
-        _ = services.AddHttpClient(TrackerHttp.YandexTrackerClient).ConfigurePrimaryHttpMessageHandler(() => handler);
-        _ = services.AddHttpClient(TrackerHttp.JiraClient).ConfigurePrimaryHttpMessageHandler(() => handler);
+        services.AddHttpClient(TrackerHttp.GitHubClient).ConfigurePrimaryHttpMessageHandler(() => handler);
+        services.AddHttpClient(TrackerHttp.GitLabClient).ConfigurePrimaryHttpMessageHandler(() => handler);
+        services.AddHttpClient(TrackerHttp.YandexTrackerClient).ConfigurePrimaryHttpMessageHandler(() => handler);
+        services.AddHttpClient(TrackerHttp.JiraClient).ConfigurePrimaryHttpMessageHandler(() => handler);
         var provider = services.BuildServiceProvider();
 
         return (new TrackerClientFactory(provider.GetRequiredService<IHttpClientFactory>()), handler);

@@ -35,9 +35,9 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
         await container.StartAsync(cancellationToken);
 
         var services = new ServiceCollection();
-        _ = services.AddLogging();
-        _ = services.AddMemoryPersistence(container.GetConnectionString());
-        _ = services.AddSingleton(FixedTime.Provider);
+        services.AddLogging();
+        services.AddMemoryPersistence(container.GetConnectionString());
+        services.AddSingleton(FixedTime.Provider);
         provider = services.BuildServiceProvider();
 
         var db = provider.GetRequiredService<MemoryDbContext>();
@@ -238,7 +238,7 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
         var connection = db.Database.GetDbConnection();
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
-        _ = await command.ExecuteNonQueryAsync(cancellationToken);
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private async Task<List<T>> QueryAsync<T>(string sql, Func<System.Data.Common.DbDataReader, T> project)

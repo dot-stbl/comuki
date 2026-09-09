@@ -37,7 +37,7 @@ public sealed class DockerComputeProviderShould
     private DockerComputeProvider CreateProvider(int maxWorkers = 4)
     {
         var docker = Substitute.For<IDockerClient>();
-        _ = docker.Containers.Returns(containers);
+        docker.Containers.Returns(containers);
         var computeOptions = new DockerComputeOptions
         {
             NetworkMode = "comuki-net",
@@ -87,7 +87,7 @@ public sealed class DockerComputeProviderShould
         var projectId = ProjectId.New();
         var request = CreateStartRequest(projectId);
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = containers.CreateContainerAsync(Arg.Any<CreateContainerParameters>(), cancellationToken)
+        containers.CreateContainerAsync(Arg.Any<CreateContainerParameters>(), cancellationToken)
             .Returns(new CreateContainerResponse { ID = "container-1" });
         var provider = CreateProvider();
 
@@ -95,10 +95,10 @@ public sealed class DockerComputeProviderShould
 
         handle.ProviderRef.ShouldBe("container-1");
         handle.Id.ShouldNotBe(default);
-        _ = await containers.Received(1).CreateContainerAsync(
+        await containers.Received(1).CreateContainerAsync(
             Arg.Is<CreateContainerParameters>(parameters => MatchesCreateParameters(parameters, request, handle, projectId)),
             cancellationToken);
-        _ = await containers.Received(1).StartContainerAsync(
+        await containers.Received(1).StartContainerAsync(
             "container-1", Arg.Any<ContainerStartParameters>(), cancellationToken);
     }
 
@@ -109,7 +109,7 @@ public sealed class DockerComputeProviderShould
         var preIssued = WorkerId.New();
         var request = CreateStartRequest(projectId, preIssuedWorkerId: preIssued);
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = containers.CreateContainerAsync(Arg.Any<CreateContainerParameters>(), cancellationToken)
+        containers.CreateContainerAsync(Arg.Any<CreateContainerParameters>(), cancellationToken)
             .Returns(new CreateContainerResponse { ID = "container-pre" });
         var provider = CreateProvider();
 
@@ -120,7 +120,7 @@ public sealed class DockerComputeProviderShould
         handle.Id.ShouldBe(preIssued);
         var expectedNameSuffix = preIssued.Value.ToString("N")[..12];
         var expectedWorkerIdLabel = preIssued.Value.ToString();
-        _ = await containers.Received(1).CreateContainerAsync(
+        await containers.Received(1).CreateContainerAsync(
             Arg.Is<CreateContainerParameters>(parameters =>
                 parameters.Labels != null
                 && string.Equals(
@@ -137,7 +137,7 @@ public sealed class DockerComputeProviderShould
         var projectId = ProjectId.New();
         var request = CreateStartRequest(projectId);
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = containers.CreateContainerAsync(Arg.Any<CreateContainerParameters>(), cancellationToken)
+        containers.CreateContainerAsync(Arg.Any<CreateContainerParameters>(), cancellationToken)
             .Returns(new CreateContainerResponse { ID = "container-mint" });
         var provider = CreateProvider();
 
@@ -152,17 +152,17 @@ public sealed class DockerComputeProviderShould
     {
         var workerId = WorkerId.New();
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = containers.ListContainersAsync(Arg.Any<ContainersListParameters>(), cancellationToken)
+        containers.ListContainersAsync(Arg.Any<ContainersListParameters>(), cancellationToken)
             .Returns([new() { ID = "container-9" }]);
         var provider = CreateProvider();
 
         await provider.StopAsync(workerId, ComputeStopReason.Force, cancellationToken);
 
-        _ = await containers.Received(1).ListContainersAsync(
+        await containers.Received(1).ListContainersAsync(
             Arg.Is<ContainersListParameters>(parameters =>
                 HasLabelFilter(parameters, $"{DockerComputeProvider.WorkerIdLabel}={workerId.Value}", expectAll: true)),
             cancellationToken);
-        _ = await containers.Received(1).StopContainerAsync(
+        await containers.Received(1).StopContainerAsync(
             "container-9",
             Arg.Is<ContainerStopParameters>(parameters => parameters.WaitBeforeKillSeconds == 7),
             cancellationToken);
@@ -176,13 +176,13 @@ public sealed class DockerComputeProviderShould
     public async Task NotTouchDockerWhenStoppingUnknownWorkerAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = containers.ListContainersAsync(Arg.Any<ContainersListParameters>(), cancellationToken)
+        containers.ListContainersAsync(Arg.Any<ContainersListParameters>(), cancellationToken)
             .Returns([]);
         var provider = CreateProvider();
 
         await provider.StopAsync(WorkerId.New(), ComputeStopReason.IdleTtl, cancellationToken);
 
-        _ = await containers.DidNotReceiveWithAnyArgs().StopContainerAsync(
+        await containers.DidNotReceiveWithAnyArgs().StopContainerAsync(
             default, default, cancellationToken);
         await containers.DidNotReceiveWithAnyArgs().RemoveContainerAsync(
             default, default, cancellationToken);
@@ -194,7 +194,7 @@ public sealed class DockerComputeProviderShould
         var projectId = ProjectId.New();
         var workerId = WorkerId.New();
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = containers.ListContainersAsync(Arg.Any<ContainersListParameters>(), cancellationToken)
+        containers.ListContainersAsync(Arg.Any<ContainersListParameters>(), cancellationToken)
             .Returns(
             [
                 new()
@@ -224,7 +224,7 @@ public sealed class DockerComputeProviderShould
         worker.ProfileKey.ShouldBe("implement");
         worker.Image.ShouldBe("ghcr.io_comuki_worker@sha256:abc");
         worker.ProfilesGitRef.ShouldBe("refs_tags_v1.2");
-        _ = await containers.Received(1).ListContainersAsync(
+        await containers.Received(1).ListContainersAsync(
             Arg.Is<ContainersListParameters>(parameters =>
                 HasLabelFilter(parameters, $"{ComputeLabels.Project}={projectId.Value}", expectAll: false)),
             cancellationToken);
@@ -234,7 +234,7 @@ public sealed class DockerComputeProviderShould
     public async Task CountRunningWorkersAgainstMaxWorkersAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = containers.ListContainersAsync(Arg.Any<ContainersListParameters>(), cancellationToken)
+        containers.ListContainersAsync(Arg.Any<ContainersListParameters>(), cancellationToken)
             .Returns([new(), new(), new()]);
         var provider = CreateProvider(maxWorkers: 4);
 
@@ -242,7 +242,7 @@ public sealed class DockerComputeProviderShould
 
         capacity.RunningWorkers.ShouldBe(3);
         capacity.FreeSlots.ShouldBe(1);
-        _ = await containers.Received(1).ListContainersAsync(
+        await containers.Received(1).ListContainersAsync(
             Arg.Is<ContainersListParameters>(static parameters =>
                 HasLabelFilter(parameters, ComputeLabels.Project, expectAll: false)),
             cancellationToken);
@@ -252,7 +252,7 @@ public sealed class DockerComputeProviderShould
     public async Task ClampFreeSlotsToZeroWhenOverCapacityAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = containers.ListContainersAsync(Arg.Any<ContainersListParameters>(), cancellationToken)
+        containers.ListContainersAsync(Arg.Any<ContainersListParameters>(), cancellationToken)
             .Returns([new(), new(), new()]);
         var provider = CreateProvider(maxWorkers: 2);
 

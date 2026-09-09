@@ -37,7 +37,7 @@ public sealed class SubjectScopeMiddlewareShould
             new Dictionary<ProjectId, IReadOnlySet<PermissionKey>> { [project] = FrozenSet<PermissionKey>.Empty }
                 .ToFrozenDictionary(static pair => pair.Key, static pair => pair.Value));
         var observed = new TaskCompletionSource<SubjectScope?>();
-        _ = evaluator.EvaluateAsync(Arg.Any<RoleSubject>(), Arg.Any<CancellationToken>())
+        evaluator.EvaluateAsync(Arg.Any<RoleSubject>(), Arg.Any<CancellationToken>())
             .Returns(authorization);
         var middleware = new SubjectScopeMiddleware(SnapshotScopeAsync(accessor, observed));
         var context = NewContext(
@@ -76,7 +76,7 @@ public sealed class SubjectScopeMiddlewareShould
         var accessor = new AsyncLocalSubjectScopeAccessor();
         var evaluator = Substitute.For<IPermissionEvaluator>();
         var userId = Guid.NewGuid();
-        _ = evaluator.EvaluateAsync(Arg.Any<RoleSubject>(), Arg.Any<CancellationToken>())
+        evaluator.EvaluateAsync(Arg.Any<RoleSubject>(), Arg.Any<CancellationToken>())
             .Returns(SubjectAuthorization.Empty);
         var middleware = new SubjectScopeMiddleware(ThrowingNextAsync);
         var context = NewContext(
@@ -95,7 +95,7 @@ public sealed class SubjectScopeMiddlewareShould
         var accessor = new AsyncLocalSubjectScopeAccessor();
         var evaluator = Substitute.For<IPermissionEvaluator>();
         var userId = Guid.NewGuid();
-        _ = evaluator.EvaluateAsync(Arg.Any<RoleSubject>(), Arg.Any<CancellationToken>())
+        evaluator.EvaluateAsync(Arg.Any<RoleSubject>(), Arg.Any<CancellationToken>())
             .Returns(SubjectAuthorization.Empty);
         var middleware = new SubjectScopeMiddleware(NoopNextAsync);
         var context = NewContext(
@@ -130,11 +130,11 @@ public sealed class SubjectScopeMiddlewareShould
                 .ToFrozenDictionary(pair => pair.Key, pair => pair.Value));
         var firstUser = Guid.NewGuid();
         var secondUser = Guid.NewGuid();
-        _ = evaluator.EvaluateAsync(
+        evaluator.EvaluateAsync(
                 Arg.Is<RoleSubject>(subject => subject.Id == firstUser),
                 Arg.Any<CancellationToken>())
             .Returns(firstAuthorization);
-        _ = evaluator.EvaluateAsync(
+        evaluator.EvaluateAsync(
                 Arg.Is<RoleSubject>(subject => subject.Id == secondUser),
                 Arg.Any<CancellationToken>())
             .Returns(secondAuthorization);
@@ -180,7 +180,7 @@ public sealed class SubjectScopeMiddlewareShould
         var accessor = new AsyncLocalSubjectScopeAccessor();
         var evaluator = Substitute.For<IPermissionEvaluator>();
         var apiKeyId = Guid.NewGuid();
-        _ = evaluator.EvaluateAsync(
+        evaluator.EvaluateAsync(
                 Arg.Is<RoleSubject>(subject => subject.Type == SubjectType.ApiKey && subject.Id == apiKeyId),
                 Arg.Any<CancellationToken>())
             .Returns(SubjectAuthorization.Empty);
@@ -235,8 +235,8 @@ public sealed class SubjectScopeMiddlewareShould
     private static IServiceProvider BuildServices(ISubjectScopeAccessor accessor, IPermissionEvaluator evaluator)
     {
         var services = new ServiceCollection();
-        _ = services.AddSingleton(accessor);
-        _ = services.AddSingleton(evaluator);
+        services.AddSingleton(accessor);
+        services.AddSingleton(evaluator);
         return services.BuildServiceProvider();
     }
 }

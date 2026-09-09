@@ -21,7 +21,7 @@ public sealed class WorkerTokenIssuerShould
         return new(clock, store, Microsoft.Extensions.Options.Options.Create(new WorkerTokenOptions()));
     }
 
-    [Fact]
+    [Fact(DisplayName = "When issue Then Validate Returns Worker Id, then test passes")]
     public void IssueThenValidateReturnsWorkerId()
     {
         var workerId = WorkerId.New();
@@ -35,7 +35,7 @@ public sealed class WorkerTokenIssuerShould
         issuer.Validate(token).ShouldBe(workerId);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When issue With Explicit Ttl Overriding Default, then test passes")]
     public void IssueWithExplicitTtlOverridingDefault()
     {
         var workerId = WorkerId.New();
@@ -47,7 +47,7 @@ public sealed class WorkerTokenIssuerShould
         issuer.Validate(token).ShouldBe(workerId);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When reject Unknown Token, then test passes")]
     public void RejectUnknownToken()
     {
         var issuer = CreateIssuer();
@@ -57,7 +57,7 @@ public sealed class WorkerTokenIssuerShould
         issuer.Validate("not-a-issued-token").ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When reject Expired Token, then test passes")]
     public void RejectExpiredToken()
     {
         var workerId = WorkerId.New();
@@ -69,7 +69,7 @@ public sealed class WorkerTokenIssuerShould
         issuer.Validate(token).ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When reject Tampered Token, then test passes")]
     public void RejectTamperedToken()
     {
         var workerId = WorkerId.New();
@@ -81,7 +81,7 @@ public sealed class WorkerTokenIssuerShould
         issuer.Validate(tampered).ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When reject Revoked Token, then test passes")]
     public void RejectRevokedToken()
     {
         var workerId = WorkerId.New();
@@ -93,7 +93,7 @@ public sealed class WorkerTokenIssuerShould
         issuer.Validate(token).ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When replace Previous Token On Reissue, then test passes")]
     public void ReplacePreviousTokenOnReissue()
     {
         var workerId = WorkerId.New();
@@ -107,7 +107,7 @@ public sealed class WorkerTokenIssuerShould
         issuer.Validate(secondToken).ShouldBe(workerId);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When validate Tokens Of Distinct Workers Independently, then test passes")]
     public void ValidateTokensOfDistinctWorkersIndependently()
     {
         var firstWorkerId = WorkerId.New();

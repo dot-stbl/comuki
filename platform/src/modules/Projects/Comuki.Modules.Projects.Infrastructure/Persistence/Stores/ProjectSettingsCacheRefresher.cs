@@ -4,7 +4,6 @@ using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
-using Comuki.Shared.Telemetry;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -53,7 +52,7 @@ public sealed class ProjectSettingsCacheRefresher(
     /// <summary>Hard upper bound on the in-memory fallback snapshot (Q27 / v1.1).</summary>
     public static readonly TimeSpan FallbackTtl = TimeSpan.FromSeconds(30);
 
-    private readonly ConcurrentDictionary<ProjectId, FallbackEntry> fallbackSnapshots = new();
+    private readonly ConcurrentDictionary<ProjectId, ProjectSettingsCacheRefresherHelpers.FallbackSnapshotEntry> fallbackSnapshots = new();
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -68,7 +67,14 @@ public sealed class ProjectSettingsCacheRefresher(
                 }
                 catch (DbException exception)
                 {
-                    await FallbackAsync(exception, stoppingToken);
+                    await ProjectSettingsCacheRefresherHelpers.FallbackAsync(
+                        cache,
+                        fallbackSnapshots,
+                        FallbackTtl,
+                        clock.GetUtcNow(),
+                        exception,
+                        logger,
+                        stoppingToken);
                 }
 
                 await Task.Delay(RefreshInterval, stoppingToken);
@@ -95,7 +101,7 @@ public sealed class ProjectSettingsCacheRefresher(
         foreach (var settings in rows)
         {
             cache.Warm(settings);
-            fallbackSnapshots[settings.ProjectId] = new FallbackEntry(settings, now);
+            fallbackSnapshots[settings.ProjectId] = new ProjectSettingsCacheRefresherHelpers.FallbackSnapshotEntry(settings, now);
         }
     }
 
@@ -115,57 +121,7 @@ public sealed class ProjectSettingsCacheRefresher(
         foreach (var row in settings)
         {
             cache.Warm(row);
-            fallbackSnapshots[row.ProjectId] = new FallbackEntry(row, now);
+            fallbackSnapshots[row.ProjectId] = new ProjectSettingsCacheRefresherHelpers.FallbackSnapshotEntry(row, now);
         }
     }
-
-    /// <summary>
-    /// Re-warms the cache from the last-known good snapshot when the
-    /// underlying store is unreachable (Q27 / v1.1). Snapshots older
-    /// than <see cref="FallbackTtl"/> are dropped — the cache goes cold
-    /// and reads start returning <c>null</c> rather than serving
-    /// indefinitely-stale data.
-    /// </summary>
-    /// <param name="exception">The DB exception that triggered the fallback.</param>
-    /// <param name="cancellationToken"></param>
-    private Task FallbackAsync(DbException exception, CancellationToken cancellationToken)
-    {
-        var now = clock.GetUtcNow();
-        var warmed = 0;
-        var expired = 0;
-
-        foreach (var entry in fallbackSnapshots)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var age = now - entry.Value.CapturedAt;
-            if (age > FallbackTtl)
-            {
-                fallbackSnapshots.TryRemove(entry.Key, out _);
-                expired++;
-                continue;
-            }
-            cache.Warm(entry.Value.Settings);
-            warmed++;
-        }
-
-        ComukiTelemetry.ProjectSettingsCacheFallback.Add(1);
-
-        logger.LogWarning(
-            exception,
-            "Project settings refresh failed; served {WarmedCount} snapshot(s) from in-memory fallback ({ExpiredCount} expired, ttl {TtlSeconds}s)",
-            warmed,
-            expired,
-            (int)FallbackTtl.TotalSeconds);
-
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// One captured snapshot and the wall-clock stamp it was captured at.
-    /// Backing storage for <see cref="fallbackSnapshots"/>; the stamp
-    /// is what bounds the fallback TTL.
-    /// </summary>
-    /// <param name="Settings"></param>
-    /// <param name="CapturedAt"></param>
-    private sealed record FallbackEntry(ProjectSettings Settings, DateTimeOffset CapturedAt);
 }

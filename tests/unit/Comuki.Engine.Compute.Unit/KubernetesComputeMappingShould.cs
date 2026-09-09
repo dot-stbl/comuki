@@ -27,7 +27,7 @@ public sealed class KubernetesComputeMappingShould
         NodeSelector = new Dictionary<string, string>(StringComparer.Ordinal) { ["pool"] = "workers" },
     };
 
-    [Fact]
+    [Fact(DisplayName = "When build Job With Labels Annotation Env And Policy, then test passes")]
     public void BuildJobWithLabelsAnnotationEnvAndPolicy()
     {
         var projectId = ProjectId.New();
@@ -84,7 +84,7 @@ public sealed class KubernetesComputeMappingShould
         KubernetesCapacityMath.ParseMemoryBytes(requests["memory"].ToString()).ShouldBe(512L * 1024 * 1024);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When omit Node Selector When Not Configured, then test passes")]
     public void OmitNodeSelectorWhenNotConfigured()
     {
         var bareOptions = new KubernetesComputeOptions { Namespace = "comuki" };
@@ -94,7 +94,7 @@ public sealed class KubernetesComputeMappingShould
         job.Spec?.Template?.Spec?.NodeSelector.ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When derive Job Name From Worker Id Alone, then test passes")]
     public void DeriveJobNameFromWorkerIdAlone()
     {
         var workerId = WorkerId.New();
@@ -105,7 +105,7 @@ public sealed class KubernetesComputeMappingShould
         name.ShouldNotBe(KubernetesComputeMapping.ToJobName(WorkerId.New()));
     }
 
-    [Fact]
+    [Fact(DisplayName = "When build Project Label Selector, then test passes")]
     public void BuildProjectLabelSelector()
     {
         var projectId = ProjectId.New();
@@ -127,7 +127,7 @@ public sealed class KubernetesComputeMappingShould
         deleteOptions.PropagationPolicy.ShouldBe("Foreground");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When skip Jobs Without Parsable Worker Annotation, then test passes")]
     public void SkipJobsWithoutParsableWorkerAnnotation()
     {
         KubernetesComputeMapping.ToWorkerInfo(new V1Job()).ShouldBeNull();
@@ -141,7 +141,7 @@ public sealed class KubernetesComputeMappingShould
         }).ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When consider Only Jobs With Active Pods Running, then test passes")]
     public void ConsiderOnlyJobsWithActivePodsRunning()
     {
         KubernetesComputeMapping.IsRunning(new V1Job { Status = new V1JobStatus { Active = 1 } }).ShouldBeTrue();

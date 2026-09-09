@@ -22,7 +22,7 @@ public sealed class InMemoryProjectScaleSettingsShould
         };
     }
 
-    [Fact]
+    [Fact(DisplayName = "When return Option Defaults When No Override Is Set, then test passes")]
     public void ReturnOptionDefaultsWhenNoOverrideIsSet()
     {
         var settings = new InMemoryProjectScaleSettings(Microsoft.Extensions.Options.Options.Create(CreateOptions()));
@@ -36,7 +36,7 @@ public sealed class InMemoryProjectScaleSettingsShould
         effective.ProfilesGitRef.ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When return Override Once Set, then test passes")]
     public void ReturnOverrideOnceSet()
     {
         var projectId = ProjectId.New();
@@ -51,7 +51,7 @@ public sealed class InMemoryProjectScaleSettingsShould
         effective.WorkerImage.ShouldBe("custom/worker:1");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When keep Other Projects On Defaults After Override, then test passes")]
     public void KeepOtherProjectsOnDefaultsAfterOverride()
     {
         var overridden = ProjectId.New();

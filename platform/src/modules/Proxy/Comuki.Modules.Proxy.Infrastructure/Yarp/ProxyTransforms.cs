@@ -112,7 +112,7 @@ public static class ProxyTransforms
         request.Body.Position = 0;
         try
         {
-            using var document = await JsonDocument.ParseAsync(request.Body, cancellationToken: cancellationToken).ConfigureAwait(false);
+            using var document = await JsonDocument.ParseAsync(request.Body, cancellationToken: cancellationToken);
             if (document.RootElement.ValueKind != JsonValueKind.Object)
             {
                 return null;

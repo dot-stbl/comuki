@@ -27,7 +27,7 @@ public sealed class WorkerPoolStateShould
         return new(WorkerId.New(), $"container-{projectId.Value:N}");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When list Only Workers Of The Project, then test passes")]
     public void ListOnlyWorkersOfTheProject()
     {
         var firstProject = ProjectId.New();
@@ -45,7 +45,7 @@ public sealed class WorkerPoolStateShould
         worker.IsBusy.ShouldBeFalse();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When mark Busy Set Busy Flag And Refresh Activity, then test passes")]
     public void MarkBusySetBusyFlagAndRefreshActivity()
     {
         var projectId = ProjectId.New();
@@ -61,7 +61,7 @@ public sealed class WorkerPoolStateShould
         worker.LastActiveAt.ShouldBe(clock.GetUtcNow());
     }
 
-    [Fact]
+    [Fact(DisplayName = "When mark Idle Clear Busy Flag And Refresh Activity, then test passes")]
     public void MarkIdleClearBusyFlagAndRefreshActivity()
     {
         var projectId = ProjectId.New();
@@ -78,7 +78,7 @@ public sealed class WorkerPoolStateShould
         worker.LastActiveAt.ShouldBe(clock.GetUtcNow());
     }
 
-    [Fact]
+    [Fact(DisplayName = "When touch Refresh Activity Without Changing Busy Flag, then test passes")]
     public void TouchRefreshActivityWithoutChangingBusyFlag()
     {
         var projectId = ProjectId.New();
@@ -95,7 +95,7 @@ public sealed class WorkerPoolStateShould
         worker.LastActiveAt.ShouldBe(clock.GetUtcNow());
     }
 
-    [Fact]
+    [Fact(DisplayName = "When ignore Marks Of Unknown Workers, then test passes")]
     public void IgnoreMarksOfUnknownWorkers()
     {
         var state = CreateState();
@@ -105,7 +105,7 @@ public sealed class WorkerPoolStateShould
         state.Touch(WorkerId.New());
     }
 
-    [Fact]
+    [Fact(DisplayName = "When remove Drops The Worker From Listing, then test passes")]
     public void RemoveDropsTheWorkerFromListing()
     {
         var projectId = ProjectId.New();
@@ -118,7 +118,7 @@ public sealed class WorkerPoolStateShould
         state.List(projectId).ShouldBeEmpty();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When sync Adopt Unknown Provider Workers As Idle Async, then test passes")]
     public async Task SyncAdoptUnknownProviderWorkersAsIdleAsync()
     {
         var projectId = ProjectId.New();
@@ -138,7 +138,7 @@ public sealed class WorkerPoolStateShould
         worker.LastActiveAt.ShouldBe(clock.GetUtcNow());
     }
 
-    [Fact]
+    [Fact(DisplayName = "When sync Drop Cached Workers The Provider No Longer Lists Async, then test passes")]
     public async Task SyncDropCachedWorkersTheProviderNoLongerListsAsync()
     {
         var projectId = ProjectId.New();
@@ -153,7 +153,7 @@ public sealed class WorkerPoolStateShould
         state.List(projectId).ShouldBeEmpty();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When sync Keep Known Workers State Untouched Async, then test passes")]
     public async Task SyncKeepKnownWorkersStateUntouchedAsync()
     {
         var projectId = ProjectId.New();

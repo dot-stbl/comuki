@@ -194,9 +194,9 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
                 _ => Convert.ChangeType(text, underlying, CultureInfo.InvariantCulture)
             };
         }
-        catch (Exception ex) when (ex is FormatException or OverflowException or InvalidCastException or ArgumentException)
+        catch (Exception exception) when (exception is FormatException or OverflowException or InvalidCastException or ArgumentException)
         {
-            throw new FilterParseException($"Cannot convert '{text}' to {underlying.Name}", 0, ex);
+            throw new FilterParseException($"Cannot convert '{text}' to {underlying.Name}", 0, exception);
         }
     }
 }

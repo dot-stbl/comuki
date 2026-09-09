@@ -46,7 +46,13 @@ public static class ProxyApplicationExtensions
         services.AddSingleton<VirtualKeyResolver>();
         services.AddSingleton<IProxyBudgetEnforcer, DefaultProxyBudgetEnforcer>();
         services.AddSingleton<ProxyPricingCalculator>();
-        services.AddSingleton<ProxyUsageMeter>();
+        // ProxyUsageMeter is Scoped: it captures IUsageRecorder (Scoped —
+        // wraps CostsDbContext). Singleton was a captive-dependency bug
+        // (audit 2026-09-09). The class is currently dead-code at runtime
+        // (no controller / worker consumes it; only unit tests construct
+        // it directly), but the registration still triggers
+        // ValidateOnBuild at host boot — Scoped is the smallest fix.
+        services.AddScoped<ProxyUsageMeter>();
 
         services.AddSingleton<IProxyUsageExtractor, OpenAiUsageExtractor>();
         services.AddSingleton<IProxyUsageExtractor, AnthropicUsageExtractor>();

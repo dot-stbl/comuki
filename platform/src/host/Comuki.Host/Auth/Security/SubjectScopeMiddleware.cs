@@ -34,7 +34,18 @@ public sealed class SubjectScopeMiddleware(RequestDelegate next)
         }
 
         var evaluator = context.RequestServices.GetRequiredService<IPermissionEvaluator>();
-        var authorization = await evaluator.EvaluateAsync(subject, context.RequestAborted);
+
+        // The permission evaluator needs to read RoleAssignmentStore via the
+        // scoped DbContext; that store has a HasQueryFilter that requires an
+        // ambient subject scope. Wrap the read in AsSystem("permission-eval")
+        // so the store sees a "no subject" filter (read all assignments for
+        // the subject id we pass explicitly), then Begin() the real scope
+        // before continuing the pipeline.
+        SubjectAuthorization authorization;
+        using (accessor.AsSystem("permission-eval"))
+        {
+            authorization = await evaluator.EvaluateAsync(subject, context.RequestAborted);
+        }
 
         using (accessor.Begin(authorization.ToSubjectScope()))
         {

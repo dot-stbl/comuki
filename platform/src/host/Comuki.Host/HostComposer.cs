@@ -264,8 +264,11 @@ internal static class HostComposer
         // interceptor. Registered after orchestration persistence — the
         // interceptor appends to the context options the engine registered
         // (Program wires persistence before Compose; the chat test fixture
-        // mirrors that order).
-        builder.Services.AddComukiRealtime();
+        // mirrors that order). The IHostEnvironment gates
+        // EnableDetailedErrors on IsDevelopment() so production containers
+        // never leak stack frames into HubException messages
+        // (security audit A05-1).
+        _ = builder.Services.AddComukiRealtime(builder.Environment);
 
         // Proxy module (issue #8 / S9 T9.6): optional OpenAI / Anthropic
         // passthrough over YARP. Virtual keys live in Proxy:* configuration

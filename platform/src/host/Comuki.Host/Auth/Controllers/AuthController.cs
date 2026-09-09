@@ -31,6 +31,9 @@ namespace Comuki.Host.Auth.Controllers;
 /// <param name="permissionEvaluator"></param>
 /// <param name="assignments"></param>
 /// <param name="oidc"></param>
+/// <param name="publicHost"></param>
+/// <param name="oidcStart"></param>
+/// <param name="oidcCallback"></param>
 /// <param name="logger"></param>
 [ApiController]
 [Route(ApiRoutes.AuthRoot)]
@@ -41,6 +44,7 @@ public sealed class AuthController(
     IPermissionEvaluator permissionEvaluator,
     IRoleAssignmentStore assignments,
     IOptions<OidcOptions> oidc,
+    IOptions<AuthPublicHostOptions> publicHost,
     OidcStartHandler oidcStart,
     OidcCallbackHandler oidcCallback,
     ILogger<AuthController> logger) : ControllerBase
@@ -170,24 +174,13 @@ public sealed class AuthController(
                 $"oidc provider '{provider}' is not configured");
         }
 
-        var redirectUri = BuildCallbackUri(Request);
+        var redirectUri = PublicHost.RedirectUriBuilder.Build(publicHost.Value.PublicUrl);
 
         var result = await oidcStart.HandleAsync(
             new OidcStartRequest(provider, redirectUri, returnTo),
             cancellationToken);
 
         return Redirect(result.AuthorizeUrl.ToString());
-    }
-
-    private static string BuildCallbackUri(HttpRequest request)
-    {
-        // The unified callback path is a single absolute URL the IdP is
-        // configured with — we append it to the request's host so the
-        // deployment doesn't need a separate config knob for it.
-        var path = $"/{ApiRoutes.AuthOidcRoot}/callback";
-        var baseUrl = $"{request.Scheme}://{request.Host}";
-
-        return $"{baseUrl}{path}";
     }
 
     /// <summary>

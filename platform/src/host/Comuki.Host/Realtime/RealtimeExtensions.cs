@@ -18,16 +18,21 @@ public static class RealtimeExtensions
     /// </summary>
     internal const string DetailedErrorsEnvVar = "COMUKI_REALTIME_DETAILED_ERRORS";
 
+    /// <summary>
+    /// Wires the SignalR hub surface. <c>EnableDetailedErrors</c> is gated
+    /// to <see cref="HostEnvironmentExtensions.IsDevelopment"/> so production
+    /// containers never leak stack frames into <c>HubException</c> messages
+    /// (security audit A05-1). The <see cref="DetailedErrorsEnvVar"/>
+    /// opt-in survives as a support escape hatch; the historical
+    /// <c>DOTNET_RUNNING_IN_CONTAINER</c> shortcut is intentionally
+    /// removed — every .NET base image sets it, including production.
+    /// </summary>
     /// <param name="services"></param>
-    public static IServiceCollection AddComukiRealtime(this IServiceCollection services)
+    /// <param name="environment">Hosting environment; the <c>IsDevelopment</c> gate lives here.</param>
+    public static IServiceCollection AddComukiRealtime(this IServiceCollection services, IHostEnvironment environment)
     {
-        // SignalR detailed errors carry stack frames in HubException
-        // messages — a real attack surface (issue #19). Default off in
-        // production; enable only for explicit diagnostics: dev hosts run
-        // under ASPNETCORE_ENVIRONMENT=Development, container operators
-        // set DOTNET_RUNNING_IN_CONTAINER, and the integration suite flips
-        // the dedicated test-only env var on for its lifetime.
-        var enableDetailedErrors = ShouldEnableDetailedErrors();
+        var enableDetailedErrors = ShouldEnableDetailedErrors(environment);
+
         services.AddSignalR(options => options.EnableDetailedErrors = enableDetailedErrors);
 
         services.AddSingleton<IRunEventsBroadcaster, SignalRRunEventsBroadcaster>();
@@ -39,25 +44,20 @@ public static class RealtimeExtensions
         return services;
     }
 
-    /// <summary>True when one of the three diagnostic opt-ins is set; false otherwise.</summary>
-    private static bool ShouldEnableDetailedErrors()
+    /// <summary>
+    /// True when the host is running under <c>ASPNETCORE_ENVIRONMENT=Development</c>
+    /// (or its <c>DOTNET_ENVIRONMENT</c> mirror) — the canonical local-dev
+    /// signal — or when the dedicated <see cref="DetailedErrorsEnvVar"/>
+    /// support knob is set. Production never reaches either branch.
+    /// </summary>
+    /// <param name="environment"></param>
+    private static bool ShouldEnableDetailedErrors(IHostEnvironment environment)
     {
-        return string.Equals(
-                   Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
-                   "Development",
-                   StringComparison.Ordinal)
+        return environment.IsDevelopment()
             || string.Equals(
-                   Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"),
-                   "Development",
-                   StringComparison.Ordinal)
-            || string.Equals(
-                   Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"),
-                   "true",
-                   StringComparison.Ordinal)
-            || string.Equals(
-                   Environment.GetEnvironmentVariable(DetailedErrorsEnvVar),
-                   "true",
-                   StringComparison.Ordinal);
+                Environment.GetEnvironmentVariable(DetailedErrorsEnvVar),
+                "true",
+                StringComparison.Ordinal);
     }
 
     /// <summary>Maps the runs hub onto the app.</summary>

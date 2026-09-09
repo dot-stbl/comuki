@@ -22,5 +22,9 @@ public interface IOidcIdTokenValidator
         CancellationToken cancellationToken = default);
 }
 
-/// <summary>The claim bundle the linker expects: sub + email + name.</summary>
-public sealed record OidcVerifiedClaims(string Subject, string Email, string? DisplayName);
+/// <summary>The claim bundle the linker expects: sub + email + name + email_verified.</summary>
+/// <param name="Subject">The <c>sub</c> claim — the IdP-side stable identifier.</param>
+/// <param name="Email">The <c>email</c> claim.</param>
+/// <param name="DisplayName">Optional display name.</param>
+/// <param name="EmailVerified">True only when the IdP vouches the email. The validator and the linker both gate on this (security audit A01-2): an unverified email is never enough to bind a Comuki account.</param>
+public sealed record OidcVerifiedClaims(string Subject, string Email, string? DisplayName, bool EmailVerified);

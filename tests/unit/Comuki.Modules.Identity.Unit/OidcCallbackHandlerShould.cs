@@ -127,7 +127,7 @@ public sealed class OidcCallbackHandlerShould
                 TestContext.Current.CancellationToken)
             .Returns(new OidcTokenResponse("fake-id-token", "fake-access", "Bearer", 60));
         _ = idTokenValidator.Validate("fake-id-token", discoveryDoc, "comuki-dashboard", TestContext.Current.CancellationToken)
-            .Returns(new OidcVerifiedClaims("sub-123", "linked@example.com", "Linked"));
+            .Returns(new OidcVerifiedClaims("sub-123", "linked@example.com", "Linked", EmailVerified: true));
         _ = userStore.FindByEmailAsync("linked@example.com", TestContext.Current.CancellationToken).Returns(user);
 
         var result = await handler.HandleAsync(
@@ -164,7 +164,7 @@ public sealed class OidcCallbackHandlerShould
                 TestContext.Current.CancellationToken)
             .Returns(new OidcTokenResponse("fake-id-token", "fake-access", "Bearer", 60));
         _ = idTokenValidator.Validate("fake-id-token", discoveryDoc, "comuki-dashboard", TestContext.Current.CancellationToken)
-            .Returns(new OidcVerifiedClaims("sub-123", "linked@example.com", null));
+            .Returns(new OidcVerifiedClaims("sub-123", "linked@example.com", null, EmailVerified: true));
         _ = userStore.FindByEmailAsync("linked@example.com", TestContext.Current.CancellationToken).Returns(user);
 
         var result = await handler.HandleAsync(

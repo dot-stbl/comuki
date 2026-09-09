@@ -8,4 +8,15 @@ namespace Comuki.Modules.Identity.Application.Oidc;
 /// <param name="Subject">The <c>sub</c> claim.</param>
 /// <param name="Email">The <c>email</c> claim.</param>
 /// <param name="DisplayName">Optional display name for account auto-creation.</param>
-public sealed record OidcLinkRequest(string Provider, string Subject, string Email, string? DisplayName);
+/// <param name="EmailVerified">
+/// The IdP's <c>email_verified</c> claim. The linker enforces it again
+/// (security audit A01-2 defense-in-depth) — even when the validator's
+/// upstream gate fires, a faked validator or a hand-built request
+/// carrying an unverified email still cannot bind a Comuki account.
+/// </param>
+public sealed record OidcLinkRequest(
+    string Provider,
+    string Subject,
+    string Email,
+    string? DisplayName,
+    bool EmailVerified);

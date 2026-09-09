@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Comuki.Modules.Knowledge.Application\Comuki.Modules.Knowledge.Application.csproj" />
     <ProjectReference Include="..\Comuki.Modules.Knowledge.Domain\Comuki.Modules.Knowledge.Domain.csproj" />
+    <ProjectReference Include="..\..\..\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
   </ItemGroup>
 
   <ItemGroup>

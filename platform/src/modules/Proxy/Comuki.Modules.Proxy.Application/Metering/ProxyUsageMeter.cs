@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Modules.Proxy.Application.Models;
 using Comuki.Modules.Proxy.Application.Ports;
 using Comuki.Shared.Contracts.Usage;
@@ -68,7 +67,7 @@ public sealed class ProxyUsageMeter(
                 new UsageRecord(
                     ProjectId: enriched.ProjectId,
                     RunId: null,
-                    Source: UsageSourceKeys.Proxy,
+                    Source: UsageSources.Proxy,
                     Model: enriched.Model,
                     InputTokens: enriched.InputTokens,
                     OutputTokens: enriched.OutputTokens,

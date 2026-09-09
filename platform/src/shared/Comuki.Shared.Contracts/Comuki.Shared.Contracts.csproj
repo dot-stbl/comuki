@@ -6,7 +6,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\modules\Costs\Comuki.Modules.Costs.Domain\Comuki.Modules.Costs.Domain.csproj" />
     <ProjectReference Include="..\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
   </ItemGroup>
 

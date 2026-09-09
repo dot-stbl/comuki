@@ -1,5 +1,4 @@
 using Comuki.Modules.Costs.Application.Recording;
-using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Usage;
 using Comuki.Shared.Kernel.Ids;
@@ -31,10 +30,10 @@ public sealed class UsageRecorderShould
         var cancellationToken = TestContext.Current.CancellationToken;
 
         await recorder.RecordAsync(
-            new UsageRecord(projectId, runId, UsageSourceKeys.Proxy, "model", 10, 5, 250_000, DateTimeOffset.UtcNow),
+            new UsageRecord(projectId, runId, UsageSources.Proxy, "model", 10, 5, 250_000, DateTimeOffset.UtcNow),
             cancellationToken);
 
-        await store.Received(1).AddAsync(Arg.Any<UsageEvent>(), Arg.Any<CancellationToken>());
+        await store.Received(1).AddAsync(Arg.Any<UsageRecord>(), Arg.Any<CancellationToken>());
         await gate.Received(1).HardStopAsync(runId, projectId, 1_250_000, 1_000_000, Arg.Any<CancellationToken>());
     }
 
@@ -55,7 +54,7 @@ public sealed class UsageRecorderShould
         var cancellationToken = TestContext.Current.CancellationToken;
 
         await recorder.RecordAsync(
-            new UsageRecord(projectId, RunId.New(), UsageSourceKeys.Brain, "model", 1, 1, 50_000, DateTimeOffset.UtcNow),
+            new UsageRecord(projectId, RunId.New(), UsageSources.Brain, "model", 1, 1, 50_000, DateTimeOffset.UtcNow),
             cancellationToken);
 
         await gate.DidNotReceive().HardStopAsync(
@@ -83,7 +82,7 @@ public sealed class UsageRecorderShould
         var cancellationToken = TestContext.Current.CancellationToken;
 
         await recorder.RecordAsync(
-            new UsageRecord(projectId, null, UsageSourceKeys.System, "model", 0, 0, 100, DateTimeOffset.UtcNow),
+            new UsageRecord(projectId, null, UsageSources.System, "model", 0, 0, 100, DateTimeOffset.UtcNow),
             cancellationToken);
 
         await gate.DidNotReceive().HardStopAsync(
@@ -110,7 +109,7 @@ public sealed class UsageRecorderShould
         var recorder = new UsageRecorder(store, budgets, gate, NullLogger<UsageRecorder>.Instance);
 
         await recorder.RecordAsync(
-            new UsageRecord(projectId, RunId.New(), UsageSourceKeys.Worker, "model", 1, 1, 10, DateTimeOffset.UtcNow),
+            new UsageRecord(projectId, RunId.New(), UsageSources.Worker, "model", 1, 1, 10, DateTimeOffset.UtcNow),
             TestContext.Current.CancellationToken);
 
         await gate.DidNotReceive().HardStopAsync(
@@ -135,6 +134,6 @@ public sealed class UsageRecorderShould
             new UsageRecord(ProjectId.New(), null, "nope", "model", 0, 0, 1, DateTimeOffset.UtcNow),
             TestContext.Current.CancellationToken));
 
-        await store.DidNotReceive().AddAsync(Arg.Any<UsageEvent>(), Arg.Any<CancellationToken>());
+        await store.DidNotReceive().AddAsync(Arg.Any<UsageRecord>(), Arg.Any<CancellationToken>());
     }
 }

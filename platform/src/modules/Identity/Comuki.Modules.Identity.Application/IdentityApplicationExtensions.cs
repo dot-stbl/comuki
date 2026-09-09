@@ -63,6 +63,7 @@ public static class IdentityApplicationExtensions
         services.AddHttpClient<IOidcDiscovery, OidcDiscoveryCache>();
         services.AddHttpClient<IOidcTokenExchange, OidcTokenExchange>();
         services.AddSingleton<IOidcIdTokenValidator, OidcIdTokenValidator>();
+        services.AddSingleton<OidcProviderResolver>();
         services.AddScoped<OidcStartHandler>();
         services.AddScoped<OidcCallbackHandler>();
 

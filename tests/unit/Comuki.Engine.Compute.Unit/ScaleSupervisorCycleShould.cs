@@ -105,7 +105,7 @@ public sealed class ScaleSupervisorCycleShould
             .Returns(count);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When start One Worker Per Queued Item Async, then test passes")]
     public async Task StartOneWorkerPerQueuedItemAsync()
     {
         var harness = CreateHarness();
@@ -125,7 +125,7 @@ public sealed class ScaleSupervisorCycleShould
         await backlogReader.Received(1).CountQueuedAsync(projectId, "implement", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Fact(DisplayName = "When cap Starts At Project Max Concurrent Async, then test passes")]
     public async Task CapStartsAtProjectMaxConcurrentAsync()
     {
         var harness = CreateHarness(new ScaleSupervisorOptions
@@ -141,7 +141,7 @@ public sealed class ScaleSupervisorCycleShould
         startedRequests.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When not Start When Idle Pool Covers Backlog Async, then test passes")]
     public async Task NotStartWhenIdlePoolCoversBacklogAsync()
     {
         var harness = CreateHarness();
@@ -154,7 +154,7 @@ public sealed class ScaleSupervisorCycleShould
         startedRequests.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When stop Stale Idle Workers With Idle Ttl On Drain Async, then test passes")]
     public async Task StopStaleIdleWorkersWithIdleTtlOnDrainAsync()
     {
         var harness = CreateHarness();
@@ -171,7 +171,7 @@ public sealed class ScaleSupervisorCycleShould
         tokenIssuer.Validate(startedRequests[0].WorkerToken).ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When keep Idle Workers Below Min Idle Floor Async, then test passes")]
     public async Task KeepIdleWorkersBelowMinIdleFloorAsync()
     {
         var harness = CreateHarness(new ScaleSupervisorOptions
@@ -191,7 +191,7 @@ public sealed class ScaleSupervisorCycleShould
         harness.Pool.List(projectId).Count.ShouldBe(1);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When not Reap Busy Workers Past Idle Ttl Async, then test passes")]
     public async Task NotReapBusyWorkersPastIdleTtlAsync()
     {
         var harness = CreateHarness();
@@ -206,7 +206,7 @@ public sealed class ScaleSupervisorCycleShould
         stoppedWorkers.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When respect Project Override For Cap Image And Ref Async, then test passes")]
     public async Task RespectProjectOverrideForCapImageAndRefAsync()
     {
         var harness = CreateHarness();
@@ -227,7 +227,7 @@ public sealed class ScaleSupervisorCycleShould
         request.ProfilesGitRef.ShouldBe("refs/tags/v9");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When scale Profiles Independently Async, then test passes")]
     public async Task ScaleProfilesIndependentlyAsync()
     {
         var harness = CreateHarness(new ScaleSupervisorOptions
@@ -245,7 +245,7 @@ public sealed class ScaleSupervisorCycleShould
         startedRequests.Count(static request => request.ProfileKey == "docs").ShouldBe(1);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When share Max Concurrent Across Profiles Of The Project Async, then test passes")]
     public async Task ShareMaxConcurrentAcrossProfilesOfTheProjectAsync()
     {
         var harness = CreateHarness(new ScaleSupervisorOptions
@@ -263,7 +263,7 @@ public sealed class ScaleSupervisorCycleShould
         startedRequests.ShouldAllBe(static request => request.ProfileKey == "implement");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When do Nothing When No Projects Are Configured Async, then test passes")]
     public async Task DoNothingWhenNoProjectsAreConfiguredAsync()
     {
         var harness = CreateHarness(new ScaleSupervisorOptions());
@@ -276,7 +276,7 @@ public sealed class ScaleSupervisorCycleShould
             Arg.Any<ProjectId>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Fact(DisplayName = "When cap Starts At Provider Free Slots Async, then test passes")]
     public async Task CapStartsAtProviderFreeSlotsAsync()
     {
         var harness = CreateHarness();
@@ -289,7 +289,7 @@ public sealed class ScaleSupervisorCycleShould
         await computeProvider.Received(1).GetCapacityAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Fact(DisplayName = "When share Provider Free Slots Across Profiles Async, then test passes")]
     public async Task ShareProviderFreeSlotsAcrossProfilesAsync()
     {
         var harness = CreateHarness(new ScaleSupervisorOptions

@@ -62,7 +62,7 @@ public static class ProxyRequestGuards
         int? requestedMaxOutputTokens,
         CancellationToken cancellationToken = default)
     {
-        var verdict = await enforcer.EvaluateAsync(key, cancellationToken).ConfigureAwait(false);
+        var verdict = await enforcer.EvaluateAsync(key, cancellationToken);
         if (!verdict.Allowed)
         {
             return new GuardRejection(

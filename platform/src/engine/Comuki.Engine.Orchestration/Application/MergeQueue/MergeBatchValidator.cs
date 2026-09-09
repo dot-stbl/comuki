@@ -23,16 +23,16 @@ public sealed class MergeBatchValidator : AbstractValidator<CreateMergeBatchComm
     /// <summary>Rules.</summary>
     public MergeBatchValidator()
     {
-        _ = RuleFor(static command => command.Name)
+        RuleFor(static command => command.Name)
             .NotEmpty()
             .MaximumLength(MaxNameLength);
 
-        _ = RuleFor(static command => command.PullRequestUrls)
+        RuleFor(static command => command.PullRequestUrls)
             .NotEmpty()
             .Must(static urls => urls.Count <= MaxUrlsPerBatch)
             .WithMessage($"at most {MaxUrlsPerBatch} pull request urls per batch");
 
-        _ = RuleFor(static command => command.PullRequestUrls)
+        RuleFor(static command => command.PullRequestUrls)
             .ForEach(static rule => rule.NotEmpty().MaximumLength(MaxPullRequestUrlLength));
     }
 }
@@ -46,10 +46,10 @@ public sealed class UpdateMergeBatchValidator : AbstractValidator<UpdateMergeBat
     /// <summary>Rules.</summary>
     public UpdateMergeBatchValidator()
     {
-        _ = RuleFor(static command => command.BatchId)
+        RuleFor(static command => command.BatchId)
             .NotEqual(Guid.Empty);
 
-        _ = RuleFor(static command => command.Reason)
+        RuleFor(static command => command.Reason)
             .NotEmpty()
             .MaximumLength(MaxReasonLength)
             .When(static command => command.Action is MergeBatchAction.Abandon);

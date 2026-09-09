@@ -19,15 +19,15 @@ public sealed class MergeQueueStoreEf(OrchestrationDbContext db) : IMergeQueueSt
     /// <inheritdoc />
     public async Task AddAsync(MergeQueueEntry entry, CancellationToken cancellationToken = default)
     {
-        _ = db.MergeQueue.Add(entry);
-        _ = await db.SaveChangesAsync(cancellationToken);
+        db.MergeQueue.Add(entry);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(MergeQueueEntry entry, CancellationToken cancellationToken = default)
     {
-        _ = db.MergeQueue.Update(entry);
-        _ = await db.SaveChangesAsync(cancellationToken);
+        db.MergeQueue.Update(entry);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />

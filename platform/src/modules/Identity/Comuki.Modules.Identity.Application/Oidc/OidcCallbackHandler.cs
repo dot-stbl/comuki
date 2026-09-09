@@ -1,7 +1,6 @@
 using Comuki.Modules.Identity.Application.Ports;
 using Comuki.Modules.Identity.Domain.Oidc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Comuki.Modules.Identity.Application.Oidc;
 
@@ -24,7 +23,7 @@ namespace Comuki.Modules.Identity.Application.Oidc;
 public sealed class OidcCallbackHandler(
     IOidcStateStore stateStore,
     IOidcDiscovery discovery,
-    IOptions<OidcOptions> options,
+    OidcProviderResolver providerResolver,
     IOidcClientSecrets clientSecrets,
     IOidcTokenExchange tokenExchange,
     IOidcIdTokenValidator idTokenValidator,
@@ -56,7 +55,7 @@ public sealed class OidcCallbackHandler(
 
             return new OidcCallbackResult(
                 Success: false,
-                RedirectTarget: BuildLoginRedirect($"oidc.provider_{request.Error}"),
+                RedirectTarget: OidcCallbackHelpers.BuildLoginRedirect($"oidc.provider_{request.Error}"),
                 FailureCode: $"oidc.provider_{request.Error}");
         }
 
@@ -64,7 +63,7 @@ public sealed class OidcCallbackHandler(
         {
             return new OidcCallbackResult(
                 Success: false,
-                RedirectTarget: BuildLoginRedirect("oidc.callback_incomplete"),
+                RedirectTarget: OidcCallbackHelpers.BuildLoginRedirect("oidc.callback_incomplete"),
                 FailureCode: "oidc.callback_incomplete");
         }
 
@@ -72,7 +71,7 @@ public sealed class OidcCallbackHandler(
         {
             return new OidcCallbackResult(
                 Success: false,
-                RedirectTarget: BuildLoginRedirect("oidc.state_malformed"),
+                RedirectTarget: OidcCallbackHelpers.BuildLoginRedirect("oidc.state_malformed"),
                 FailureCode: "oidc.state_malformed");
         }
 
@@ -81,11 +80,11 @@ public sealed class OidcCallbackHandler(
         {
             return new OidcCallbackResult(
                 Success: false,
-                RedirectTarget: BuildLoginRedirect("oidc.state_mismatch"),
+                RedirectTarget: OidcCallbackHelpers.BuildLoginRedirect("oidc.state_mismatch"),
                 FailureCode: "oidc.state_mismatch");
         }
 
-        var provider = ResolveProvider(stateRow.Provider);
+        var provider = providerResolver.Resolve(stateRow.Provider);
         var discoveryDoc = await discovery.GetAsync(provider, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(discoveryDoc.TokenEndpoint))
@@ -93,7 +92,7 @@ public sealed class OidcCallbackHandler(
             logger.LogWarning("Oidc provider {Provider} discovery has no token_endpoint", provider.Name);
             return new OidcCallbackResult(
                 Success: false,
-                RedirectTarget: BuildLoginRedirect("oidc.token_endpoint_missing"),
+                RedirectTarget: OidcCallbackHelpers.BuildLoginRedirect("oidc.token_endpoint_missing"),
                 FailureCode: "oidc.token_endpoint_missing");
         }
 
@@ -111,12 +110,12 @@ public sealed class OidcCallbackHandler(
                 stateRow.CodeVerifier,
                 cancellationToken);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException exception)
         {
-            logger.LogWarning(ex, "Oidc token exchange failed for provider {Provider}", provider.Name);
+            logger.LogWarning(exception, "Oidc token exchange failed for provider {Provider}", provider.Name);
             return new OidcCallbackResult(
                 Success: false,
-                RedirectTarget: BuildLoginRedirect("oidc.token_exchange_failed"),
+                RedirectTarget: OidcCallbackHelpers.BuildLoginRedirect("oidc.token_exchange_failed"),
                 FailureCode: "oidc.token_exchange_failed");
         }
 
@@ -125,12 +124,12 @@ public sealed class OidcCallbackHandler(
         {
             claims = idTokenValidator.Validate(token.IdToken, discoveryDoc, provider.ClientId, cancellationToken);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException exception)
         {
-            logger.LogWarning(ex, "Oidc id_token validation failed for provider {Provider}", provider.Name);
+            logger.LogWarning(exception, "Oidc id_token validation failed for provider {Provider}", provider.Name);
             return new OidcCallbackResult(
                 Success: false,
-                RedirectTarget: BuildLoginRedirect("oidc.id_token_invalid"),
+                RedirectTarget: OidcCallbackHelpers.BuildLoginRedirect("oidc.id_token_invalid"),
                 FailureCode: "oidc.id_token_invalid");
         }
 
@@ -156,19 +155,5 @@ public sealed class OidcCallbackHandler(
             : DefaultReturnTo;
 
         return new OidcCallbackResult(Success: true, RedirectTarget: returnTo, FailureCode: null);
-    }
-
-    private OidcProviderOptions ResolveProvider(string name)
-    {
-        return options.Value.Providers
-            .FirstOrDefault(configured =>
-                string.Equals(configured.Name, name, StringComparison.OrdinalIgnoreCase))
-            ?? throw new InvalidOperationException(
-                $"oidc provider '{name}' is not configured");
-    }
-
-    private static string BuildLoginRedirect(string failureCode)
-    {
-        return $"/login?reason=oidc-failed&error={Uri.EscapeDataString(failureCode)}";
     }
 }

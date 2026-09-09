@@ -46,7 +46,7 @@ public sealed class KubernetesCapacityMathShould
         KubernetesCapacityMath.ParseMemoryBytes(quantity).ShouldBe(expectedBytes);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When take Tighter Of Cpu And Memory Headroom, then test passes")]
     public void TakeTighterOfCpuAndMemoryHeadroom()
     {
         // 4000m cpu / 2Gi memory free-ish: 8 slots by cpu, 2 by memory → 2.
@@ -59,7 +59,7 @@ public sealed class KubernetesCapacityMathShould
         capacity.RunningWorkers.ShouldBe(0);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When exclude Unschedulable Nodes And Terminal Pods, then test passes")]
     public void ExcludeUnschedulableNodesAndTerminalPods()
     {
         var capacity = KubernetesCapacityMath.ToCapacity(
@@ -72,7 +72,7 @@ public sealed class KubernetesCapacityMathShould
         capacity.RunningWorkers.ShouldBe(0);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When count Running Comuki Pods As Workers, then test passes")]
     public void CountRunningComukiPodsAsWorkers()
     {
         var capacity = KubernetesCapacityMath.ToCapacity(
@@ -88,7 +88,7 @@ public sealed class KubernetesCapacityMathShould
         capacity.RunningWorkers.ShouldBe(2);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When clamp Free Slots To Zero When Overcommitted, then test passes")]
     public void ClampFreeSlotsToZeroWhenOvercommitted()
     {
         var capacity = KubernetesCapacityMath.ToCapacity(
@@ -99,7 +99,7 @@ public sealed class KubernetesCapacityMathShould
         capacity.FreeSlots.ShouldBe(0);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When take Min Of Zero When No Schedulable Nodes, then test passes")]
     public void TakeMinOfZeroWhenNoSchedulableNodes()
     {
         var capacity = KubernetesCapacityMath.ToCapacity(

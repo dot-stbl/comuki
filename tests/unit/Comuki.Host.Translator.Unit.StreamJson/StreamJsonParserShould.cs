@@ -20,7 +20,7 @@ public sealed class StreamJsonParserShould
             TestContext.Current.CancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize System Event Async, then test passes")]
     public async Task RecognizeSystemEventAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("event-system.json")).ToList();
@@ -31,7 +31,7 @@ public sealed class StreamJsonParserShould
         system.Tools.ShouldBe(["Read", "Write", "Edit", "Bash"]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize User Event With String Content Async, then test passes")]
     public async Task RecognizeUserEventWithStringContentAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("event-user.json")).ToList();
@@ -40,7 +40,7 @@ public sealed class StreamJsonParserShould
         user.Content.ShouldBe("Say hello in exactly one word");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize Assistant Text Event Async, then test passes")]
     public async Task RecognizeAssistantTextEventAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("event-assistant-text.json")).ToList();
@@ -49,7 +49,7 @@ public sealed class StreamJsonParserShould
         text.Text.ShouldBe("Hello");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize Assistant Tool Use Event Async, then test passes")]
     public async Task RecognizeAssistantToolUseEventAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("event-assistant-tool-use.json")).ToList();
@@ -59,7 +59,7 @@ public sealed class StreamJsonParserShould
         toolUse.InputJson.ShouldContain("ls /work");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize Result Event Async, then test passes")]
     public async Task RecognizeResultEventAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("event-result.json")).ToList();
@@ -71,7 +71,7 @@ public sealed class StreamJsonParserShould
         result.Result.ShouldBe("Hello");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When yield Unparseable Event For Malformed Json Async, then test passes")]
     public async Task YieldUnparseableEventForMalformedJsonAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("event-malformed.txt")).ToList();
@@ -81,7 +81,7 @@ public sealed class StreamJsonParserShould
         unparseable.Error.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When yield Unknown Event For Unmodelled Type Async, then test passes")]
     public async Task YieldUnknownEventForUnmodelledTypeAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("event-unknown.json")).ToList();
@@ -91,7 +91,7 @@ public sealed class StreamJsonParserShould
         unknown.Raw.ValueKind.ShouldBe(JsonValueKind.Object);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When skip Empty And Whitespace Lines, then test passes")]
     public void SkipEmptyAndWhitespaceLines()
     {
         using var reader = new StringReader("\n  \n\t\n");
@@ -100,7 +100,7 @@ public sealed class StreamJsonParserShould
         events.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When stream Over Multiple Lines Async, then test passes")]
     public async Task StreamOverMultipleLinesAsync()
     {
         using var reader = new StringReader(

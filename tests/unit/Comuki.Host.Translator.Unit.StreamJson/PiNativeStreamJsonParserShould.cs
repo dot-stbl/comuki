@@ -19,7 +19,7 @@ public sealed class PiNativeStreamJsonParserShould
             TestContext.Current.CancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize Session Header Async, then test passes")]
     public async Task RecognizeSessionHeaderAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("pi-session.json")).ToList();
@@ -30,7 +30,7 @@ public sealed class PiNativeStreamJsonParserShould
         session.Cwd.ShouldBe("/work");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize Text Delta Async, then test passes")]
     public async Task RecognizeTextDeltaAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("pi-message-update-text-delta.json")).ToList();
@@ -40,7 +40,7 @@ public sealed class PiNativeStreamJsonParserShould
         delta.Delta.ShouldBe("Hello");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize Toolcall Start Async, then test passes")]
     public async Task RecognizeToolcallStartAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("pi-message-update-toolcall-start.json")).ToList();
@@ -50,7 +50,7 @@ public sealed class PiNativeStreamJsonParserShould
         toolCall.ArgsJson.ShouldContain("ls /work");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize Tool Execution Start Async, then test passes")]
     public async Task RecognizeToolExecutionStartAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("pi-tool-execution-start.json")).ToList();
@@ -60,7 +60,7 @@ public sealed class PiNativeStreamJsonParserShould
         toolCall.ArgsJson.ShouldContain("ls /work");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize Authoritative Message End Text Async, then test passes")]
     public async Task RecognizeAuthoritativeMessageEndTextAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("pi-message-end.json")).ToList();
@@ -69,7 +69,7 @@ public sealed class PiNativeStreamJsonParserShould
         text.Text.ShouldBe("Hello world");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When recognize Agent End Async, then test passes")]
     public async Task RecognizeAgentEndAsync()
     {
         var events = StreamJsonParser.ParseLine(await ReadFixtureAsync("pi-agent-end.json")).ToList();
@@ -77,7 +77,7 @@ public sealed class PiNativeStreamJsonParserShould
         events.ShouldHaveSingleItem().ShouldBeOfType<PiEvent.AgentEndEvent>();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When surface Unmodelled Message Update As Unknown Async, then test passes")]
     public Task SurfaceUnmodelledMessageUpdateAsUnknownAsync()
     {
         var events = StreamJsonParser.ParseLine(

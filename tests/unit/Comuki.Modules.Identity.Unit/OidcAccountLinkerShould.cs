@@ -33,7 +33,7 @@ public sealed class OidcAccountLinkerShould
         _ = linkStore.FindAsync("keycloak", "sub-123", TestContext.Current.CancellationToken).Returns(link);
         _ = userStore.FindByIdAsync(user.Id, TestContext.Current.CancellationToken).Returns(user);
 
-        var result = await linker.HandleAsync(new OidcLinkRequest("keycloak", "sub-123", "known@example.com", null), TestContext.Current.CancellationToken);
+        var result = await linker.HandleAsync(new OidcLinkRequest("keycloak", "sub-123", "known@example.com", null, EmailVerified: true), TestContext.Current.CancellationToken);
 
         result.Created.ShouldBeFalse();
         result.User.Id.ShouldBe(user.Id);
@@ -48,7 +48,7 @@ public sealed class OidcAccountLinkerShould
         _ = linkStore.FindAsync("keycloak", "sub-777", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
         _ = userStore.FindByEmailAsync("known@example.com", TestContext.Current.CancellationToken).Returns(user);
 
-        var result = await linker.HandleAsync(new OidcLinkRequest("keycloak", "sub-777", "known@example.com", null), TestContext.Current.CancellationToken);
+        var result = await linker.HandleAsync(new OidcLinkRequest("keycloak", "sub-777", "known@example.com", null, EmailVerified: true), TestContext.Current.CancellationToken);
 
         result.Created.ShouldBeFalse();
         result.User.Id.ShouldBe(user.Id);
@@ -63,7 +63,7 @@ public sealed class OidcAccountLinkerShould
         _ = linkStore.FindAsync("authentik", "sub-999", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
         _ = userStore.FindByEmailAsync("fresh@example.com", TestContext.Current.CancellationToken).Returns((User?)null);
 
-        var result = await linker.HandleAsync(new OidcLinkRequest("authentik", "sub-999", "fresh@example.com", "Fresh Face"), TestContext.Current.CancellationToken);
+        var result = await linker.HandleAsync(new OidcLinkRequest("authentik", "sub-999", "fresh@example.com", "Fresh Face", EmailVerified: true), TestContext.Current.CancellationToken);
 
         result.Created.ShouldBeTrue();
         result.User.Email.ShouldBe("fresh@example.com");
@@ -91,7 +91,7 @@ public sealed class OidcAccountLinkerShould
 
         var exception = await Should.ThrowAsync<ProviderForbiddenException>(
             async () => await linker.HandleAsync(
-                new OidcLinkRequest("keycloak", "sub-999", "disabled@example.com", null),
+                new OidcLinkRequest("keycloak", "sub-999", "disabled@example.com", null, EmailVerified: true),
                 TestContext.Current.CancellationToken));
 
         exception.Code.ShouldBe("user.disabled");
@@ -116,7 +116,7 @@ public sealed class OidcAccountLinkerShould
 
         var exception = await Should.ThrowAsync<ProviderForbiddenException>(
             async () => await linker.HandleAsync(
-                new OidcLinkRequest("authentik", "sub-new", "disabled@example.com", null),
+                new OidcLinkRequest("authentik", "sub-new", "disabled@example.com", null, EmailVerified: true),
                 TestContext.Current.CancellationToken));
 
         exception.Code.ShouldBe("user.disabled");
@@ -124,6 +124,55 @@ public sealed class OidcAccountLinkerShould
         // No link written — the disabled check fires before the linker
         // would mint the link.
         await linkStore.DidNotReceiveWithAnyArgs().SaveAsync(default!, TestContext.Current.CancellationToken);
+    }
+
+    [Fact(DisplayName = "Given email_verified=false, when the linker runs, then the linker throws ProviderException with the email-unverified code")]
+    public async Task RefuseUnverifiedEmailAsync()
+    {
+        // Security audit A01-2: the linker enforces email_verified on
+        // every link / provision decision (defense in depth — the
+        // validator gates upstream). An unverified email must not bind
+        // a Comuki account under any path: stored link, email match,
+        // or fresh provision.
+        _ = linkStore.FindAsync(Arg.Any<string>(), Arg.Any<string>(), TestContext.Current.CancellationToken)
+            .Returns((OidcLink?)null);
+        _ = userStore.FindByEmailAsync(Arg.Any<string>(), TestContext.Current.CancellationToken)
+            .Returns((User?)null);
+
+        var exception = await Should.ThrowAsync<ProviderException>(
+            async () => await linker.HandleAsync(
+                new OidcLinkRequest("keycloak", "sub-123", "unverified@example.com", null, EmailVerified: false),
+                TestContext.Current.CancellationToken));
+
+        exception.Code.ShouldBe(OidcIdTokenValidator.EmailUnverifiedCode);
+
+        // No link written, no user stored — the unverified-email gate
+        // fires before any side effect.
+        await linkStore.DidNotReceiveWithAnyArgs().SaveAsync(default!, TestContext.Current.CancellationToken);
+        await userStore.DidNotReceiveWithAnyArgs().SaveAsync(default!, TestContext.Current.CancellationToken);
+    }
+
+    [Fact(DisplayName = "Given email_verified=true on a fresh identity, when the linker runs, then the linker provisions the password-less account")]
+    public async Task ProvisionWhenEmailVerifiedTrueAsync()
+    {
+        // Same setup as the disabled-user refutation tests, but the
+        // email is verified — provision proceeds normally. This is the
+        // happy-path assertion for the email_verified gate.
+        _ = linkStore.FindAsync("authentik", "sub-999", TestContext.Current.CancellationToken).Returns((OidcLink?)null);
+        _ = userStore.FindByEmailAsync("verified@example.com", TestContext.Current.CancellationToken).Returns((User?)null);
+
+        var result = await linker.HandleAsync(
+            new OidcLinkRequest("authentik", "sub-999", "verified@example.com", "Verified Face", EmailVerified: true),
+            TestContext.Current.CancellationToken);
+
+        result.Created.ShouldBeTrue();
+        result.User.Email.ShouldBe("verified@example.com");
+        await userStore.Received(1).SaveAsync(
+            Arg.Is<User>(static user => user.PasswordHash == null && user.DisplayName == "Verified Face"),
+            TestContext.Current.CancellationToken);
+        await linkStore.Received(1).SaveAsync(
+            Arg.Is<OidcLink>(static link => link.Provider == "authentik" && link.Subject == "sub-999"),
+            TestContext.Current.CancellationToken);
     }
 
     private sealed class FrozenTime : TimeProvider;

@@ -135,7 +135,7 @@ public sealed class OidcCallbackHandler(
         }
 
         var linkResult = await linker.HandleAsync(
-            new OidcLinkRequest(provider.Name, claims.Subject, claims.Email, claims.DisplayName),
+            new OidcLinkRequest(provider.Name, claims.Subject, claims.Email, claims.DisplayName, claims.EmailVerified),
             cancellationToken);
 
         if (linkResult.Created)

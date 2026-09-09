@@ -29,8 +29,8 @@ public sealed class SignalRRunEventsBroadcasterShould
         var clients = Substitute.For<IHubClients>();
         var groupClient = Substitute.For<IClientProxy>();
         var hubContext = Substitute.For<IHubContext<RunsHub>>();
-        _ = hubContext.Clients.Returns(clients);
-        _ = clients.Group(RealtimeGroups.RunGroup(runId)).Returns(groupClient);
+        hubContext.Clients.Returns(clients);
+        clients.Group(RealtimeGroups.RunGroup(runId)).Returns(groupClient);
 
         var broadcaster = new SignalRRunEventsBroadcaster(
             hubContext,
@@ -43,7 +43,7 @@ public sealed class SignalRRunEventsBroadcasterShould
             RealtimeTransportMethods.RunEvent,
             Arg.Is<object?[]>(static args => IsRunEventView(args)),
             Arg.Any<CancellationToken>());
-        _ = clients.DidNotReceive().Group(Arg.Is<string>(static name => name.Contains(":attention", StringComparison.Ordinal)));
+        clients.DidNotReceive().Group(Arg.Is<string>(static name => name.Contains(":attention", StringComparison.Ordinal)));
     }
 
     [Fact(DisplayName = "Given an attention-worthy entry with a known project, when BroadcastAsync, then Attention is sent")]
@@ -61,16 +61,16 @@ public sealed class SignalRRunEventsBroadcasterShould
         var attentionClient = Substitute.For<IClientProxy>();
         var clients = Substitute.For<IHubClients>();
         var hubContext = Substitute.For<IHubContext<RunsHub>>();
-        _ = hubContext.Clients.Returns(clients);
-        _ = clients.Group(RealtimeGroups.RunGroup(runId)).Returns(runGroupClient);
-        _ = clients.Group(RealtimeGroups.ProjectAttentionGroup(projectId)).Returns(attentionClient);
+        hubContext.Clients.Returns(clients);
+        clients.Group(RealtimeGroups.RunGroup(runId)).Returns(runGroupClient);
+        clients.Group(RealtimeGroups.ProjectAttentionGroup(projectId)).Returns(attentionClient);
 
         var projects = Substitute.For<IRealtimeRunProjects>();
-        _ = projects.ReadAsync(Arg.Any<IReadOnlyCollection<RunId>>(), Arg.Any<CancellationToken>())
+        projects.ReadAsync(Arg.Any<IReadOnlyCollection<RunId>>(), Arg.Any<CancellationToken>())
             .Returns(new Dictionary<RunId, ProjectId> { [runId] = projectId });
 
         var services = new ServiceCollection();
-        _ = services.AddSingleton(projects);
+        services.AddSingleton(projects);
         await using var provider = services.BuildServiceProvider();
 
         var broadcaster = new SignalRRunEventsBroadcaster(
@@ -98,17 +98,17 @@ public sealed class SignalRRunEventsBroadcasterShould
         var runGroupClient = Substitute.For<IClientProxy>();
         var clients = Substitute.For<IHubClients>();
         var hubContext = Substitute.For<IHubContext<RunsHub>>();
-        _ = hubContext.Clients.Returns(clients);
-        _ = clients.Group(RealtimeGroups.RunGroup(runId)).Returns(runGroupClient);
-        _ = clients.Group(Arg.Is<string>(static name => name.StartsWith("project:", StringComparison.Ordinal)))
+        hubContext.Clients.Returns(clients);
+        clients.Group(RealtimeGroups.RunGroup(runId)).Returns(runGroupClient);
+        clients.Group(Arg.Is<string>(static name => name.StartsWith("project:", StringComparison.Ordinal)))
             .Returns(Substitute.For<IClientProxy>());
 
         var projects = Substitute.For<IRealtimeRunProjects>();
-        _ = projects.ReadAsync(Arg.Any<IReadOnlyCollection<RunId>>(), Arg.Any<CancellationToken>())
+        projects.ReadAsync(Arg.Any<IReadOnlyCollection<RunId>>(), Arg.Any<CancellationToken>())
             .Returns(new Dictionary<RunId, ProjectId>());
 
         var services = new ServiceCollection();
-        _ = services.AddSingleton(projects);
+        services.AddSingleton(projects);
         await using var provider = services.BuildServiceProvider();
 
         var broadcaster = new SignalRRunEventsBroadcaster(
@@ -122,7 +122,7 @@ public sealed class SignalRRunEventsBroadcasterShould
             RealtimeTransportMethods.RunEvent,
             Arg.Any<object?[]>(),
             Arg.Any<CancellationToken>());
-        _ = clients.DidNotReceive().Group(Arg.Is<string>(static name => name.Contains(":attention", StringComparison.Ordinal)));
+        clients.DidNotReceive().Group(Arg.Is<string>(static name => name.Contains(":attention", StringComparison.Ordinal)));
     }
 
     private static bool IsRunEventView(object?[] args)

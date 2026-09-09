@@ -88,7 +88,7 @@ public sealed class OidcCallbackHandlerShould
     public async Task MissingStateIsMismatchAsync()
     {
         var stateGuid = Guid.Parse("11111111-2222-3333-4444-555555555555");
-        _ = stateStore.ConsumeAsync(Arg.Is<OidcStateId>(id => id.Value == stateGuid), TestContext.Current.CancellationToken)
+        stateStore.ConsumeAsync(Arg.Is<OidcStateId>(id => id.Value == stateGuid), TestContext.Current.CancellationToken)
             .Returns((OidcState?)null);
 
         var result = await handler.HandleAsync(
@@ -114,10 +114,10 @@ public sealed class OidcCallbackHandlerShould
         var user = User.Create("linked@example.com", "Linked", null, DateTimeOffset.UtcNow);
         var userView = new UserAccountView(user.Id, user.Email, user.DisplayName, false, user.TokensVersion, user.CreatedAt);
 
-        _ = stateStore.ConsumeAsync(Arg.Any<OidcStateId>(), TestContext.Current.CancellationToken).Returns(state);
-        _ = discovery.GetAsync(Arg.Any<OidcProviderOptions>(), TestContext.Current.CancellationToken).Returns(discoveryDoc);
-        _ = clientSecrets.GetAsync("keycloak", TestContext.Current.CancellationToken).Returns("secret-value");
-        _ = tokenExchange.ExchangeAsync(
+        stateStore.ConsumeAsync(Arg.Any<OidcStateId>(), TestContext.Current.CancellationToken).Returns(state);
+        discovery.GetAsync(Arg.Any<OidcProviderOptions>(), TestContext.Current.CancellationToken).Returns(discoveryDoc);
+        clientSecrets.GetAsync("keycloak", TestContext.Current.CancellationToken).Returns("secret-value");
+        tokenExchange.ExchangeAsync(
                 Arg.Any<Uri>(),
                 Arg.Any<string>(),
                 Arg.Any<string>(),
@@ -126,9 +126,9 @@ public sealed class OidcCallbackHandlerShould
                 Arg.Any<string>(),
                 TestContext.Current.CancellationToken)
             .Returns(new OidcTokenResponse("fake-id-token", "fake-access", "Bearer", 60));
-        _ = idTokenValidator.Validate("fake-id-token", discoveryDoc, "comuki-dashboard", TestContext.Current.CancellationToken)
+        idTokenValidator.Validate("fake-id-token", discoveryDoc, "comuki-dashboard", TestContext.Current.CancellationToken)
             .Returns(new OidcVerifiedClaims("sub-123", "linked@example.com", "Linked", EmailVerified: true));
-        _ = userStore.FindByEmailAsync("linked@example.com", TestContext.Current.CancellationToken).Returns(user);
+        userStore.FindByEmailAsync("linked@example.com", TestContext.Current.CancellationToken).Returns(user);
 
         var result = await handler.HandleAsync(
             new OidcCallbackRequest("auth-code", stateGuid.ToString("D"), null, null),
@@ -156,16 +156,16 @@ public sealed class OidcCallbackHandlerShould
             TimeSpan.FromMinutes(5));
         var user = User.Create("linked@example.com", "Linked", null, DateTimeOffset.UtcNow);
 
-        _ = stateStore.ConsumeAsync(Arg.Any<OidcStateId>(), TestContext.Current.CancellationToken).Returns(state);
-        _ = discovery.GetAsync(Arg.Any<OidcProviderOptions>(), TestContext.Current.CancellationToken).Returns(discoveryDoc);
-        _ = clientSecrets.GetAsync("keycloak", TestContext.Current.CancellationToken).Returns("secret-value");
-        _ = tokenExchange.ExchangeAsync(
+        stateStore.ConsumeAsync(Arg.Any<OidcStateId>(), TestContext.Current.CancellationToken).Returns(state);
+        discovery.GetAsync(Arg.Any<OidcProviderOptions>(), TestContext.Current.CancellationToken).Returns(discoveryDoc);
+        clientSecrets.GetAsync("keycloak", TestContext.Current.CancellationToken).Returns("secret-value");
+        tokenExchange.ExchangeAsync(
                 Arg.Any<Uri>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
                 TestContext.Current.CancellationToken)
             .Returns(new OidcTokenResponse("fake-id-token", "fake-access", "Bearer", 60));
-        _ = idTokenValidator.Validate("fake-id-token", discoveryDoc, "comuki-dashboard", TestContext.Current.CancellationToken)
+        idTokenValidator.Validate("fake-id-token", discoveryDoc, "comuki-dashboard", TestContext.Current.CancellationToken)
             .Returns(new OidcVerifiedClaims("sub-123", "linked@example.com", null, EmailVerified: true));
-        _ = userStore.FindByEmailAsync("linked@example.com", TestContext.Current.CancellationToken).Returns(user);
+        userStore.FindByEmailAsync("linked@example.com", TestContext.Current.CancellationToken).Returns(user);
 
         var result = await handler.HandleAsync(
             new OidcCallbackRequest("auth-code", stateGuid.ToString("D"), null, null),
@@ -188,10 +188,10 @@ public sealed class OidcCallbackHandlerShould
             DateTimeOffset.UtcNow,
             TimeSpan.FromMinutes(5));
 
-        _ = stateStore.ConsumeAsync(Arg.Any<OidcStateId>(), TestContext.Current.CancellationToken).Returns(state);
-        _ = discovery.GetAsync(Arg.Any<OidcProviderOptions>(), TestContext.Current.CancellationToken).Returns(discoveryDoc);
-        _ = clientSecrets.GetAsync("keycloak", TestContext.Current.CancellationToken).Returns("secret-value");
-        _ = tokenExchange.ExchangeAsync(
+        stateStore.ConsumeAsync(Arg.Any<OidcStateId>(), TestContext.Current.CancellationToken).Returns(state);
+        discovery.GetAsync(Arg.Any<OidcProviderOptions>(), TestContext.Current.CancellationToken).Returns(discoveryDoc);
+        clientSecrets.GetAsync("keycloak", TestContext.Current.CancellationToken).Returns("secret-value");
+        tokenExchange.ExchangeAsync(
                 Arg.Any<Uri>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
                 TestContext.Current.CancellationToken)
             .Returns(Task.FromException<OidcTokenResponse>(new InvalidOperationException("boom")));

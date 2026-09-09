@@ -37,18 +37,18 @@ public sealed class RunArtifactPackagerShould
         var journal = Substitute.For<IRunArtifactJournalSource>();
         var bundleStore = Substitute.For<IRunArtifactBundleStore>();
 
-        _ = bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
+        bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
             .Returns(false);
-        _ = journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
+        journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
             .Returns(new RunTerminalSnapshot(
                 RunId: runId.Value,
                 Status: terminalStatus,
                 OccurredAt: now,
                 OriginWorkItemId: workItemId,
                 DetailJson: /*lang=json,strict*/ """{"summary":"done"}"""));
-        _ = journal.ReadWorkItemBriefAsync(workItemId, Arg.Any<CancellationToken>())
+        journal.ReadWorkItemBriefAsync(workItemId, Arg.Any<CancellationToken>())
             .Returns(/*lang=json,strict*/ """{"goal":"build a thing"}""");
-        _ = store.ListAsync(projectId, runId, Arg.Any<CancellationToken>())
+        store.ListAsync(projectId, runId, Arg.Any<CancellationToken>())
             .Returns(
             [
                 new ArtifactPointer("brief.json", new Uri("https://minio/b/brief.json"), 10, "application/json"),
@@ -110,18 +110,18 @@ public sealed class RunArtifactPackagerShould
         var journal = Substitute.For<IRunArtifactJournalSource>();
         var bundleStore = Substitute.For<IRunArtifactBundleStore>();
 
-        _ = bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
+        bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
             .Returns(false);
-        _ = journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
+        journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
             .Returns(new RunTerminalSnapshot(
                 RunId: runId.Value,
                 Status: "succeeded",
                 OccurredAt: terminalAt,
                 OriginWorkItemId: workItemId,
                 DetailJson: /*lang=json,strict*/ """{"summary":"done"}"""));
-        _ = journal.ReadWorkItemBriefAsync(workItemId, Arg.Any<CancellationToken>())
+        journal.ReadWorkItemBriefAsync(workItemId, Arg.Any<CancellationToken>())
             .Returns(/*lang=json,strict*/ """{"goal":"build a thing"}""");
-        _ = store.ListAsync(projectId, runId, Arg.Any<CancellationToken>())
+        store.ListAsync(projectId, runId, Arg.Any<CancellationToken>())
             .Returns(
             [
                 new ArtifactPointer("brief.json", new Uri("https://minio/b/brief.json"), 10, "application/json"),
@@ -173,18 +173,18 @@ public sealed class RunArtifactPackagerShould
         var journal = Substitute.For<IRunArtifactJournalSource>();
         var bundleStore = Substitute.For<IRunArtifactBundleStore>();
 
-        _ = bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
+        bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
             .Returns(false);
-        _ = journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
+        journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
             .Returns(new RunTerminalSnapshot(
                 RunId: runId.Value,
                 Status: "succeeded",
                 OccurredAt: terminalAt,
                 OriginWorkItemId: workItemId,
                 DetailJson: /*lang=json,strict*/ """{"summary":"done"}"""));
-        _ = journal.ReadWorkItemBriefAsync(workItemId, Arg.Any<CancellationToken>())
+        journal.ReadWorkItemBriefAsync(workItemId, Arg.Any<CancellationToken>())
             .Returns(/*lang=json,strict*/ """{"goal":"build a thing"}""");
-        _ = store.ListAsync(projectId, runId, Arg.Any<CancellationToken>())
+        store.ListAsync(projectId, runId, Arg.Any<CancellationToken>())
             .Returns(
             [
                 new ArtifactPointer("brief.json", new Uri("https://minio/b/brief.json"), 10, "application/json"),
@@ -219,9 +219,9 @@ public sealed class RunArtifactPackagerShould
         var journal = Substitute.For<IRunArtifactJournalSource>();
         var bundleStore = Substitute.For<IRunArtifactBundleStore>();
 
-        _ = bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
+        bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
             .Returns(false);
-        _ = journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
+        journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
             .Returns(new RunTerminalSnapshot(
                 RunId: runId.Value,
                 Status: inFlightStatus,
@@ -258,7 +258,7 @@ public sealed class RunArtifactPackagerShould
         var journal = Substitute.For<IRunArtifactJournalSource>();
         var bundleStore = Substitute.For<IRunArtifactBundleStore>();
 
-        _ = bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
+        bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
             .Returns(true);
 
         var packager = new RunArtifactPackager(
@@ -289,9 +289,9 @@ public sealed class RunArtifactPackagerShould
         var journal = Substitute.For<IRunArtifactJournalSource>();
         var bundleStore = Substitute.For<IRunArtifactBundleStore>();
 
-        _ = bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
+        bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
             .Returns(false);
-        _ = journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
+        journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
             .Returns((RunTerminalSnapshot?)null);
 
         var packager = new RunArtifactPackager(
@@ -322,16 +322,16 @@ public sealed class RunArtifactPackagerShould
         var journal = Substitute.For<IRunArtifactJournalSource>();
         var bundleStore = Substitute.For<IRunArtifactBundleStore>();
 
-        _ = bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
+        bundleStore.IsBundledAsync(runId.Value, Arg.Any<CancellationToken>())
             .Returns(false);
-        _ = journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
+        journal.ReadTerminalAsync(runId, Arg.Any<CancellationToken>())
             .Returns(new RunTerminalSnapshot(
                 RunId: runId.Value,
                 Status: "cancelled",
                 OccurredAt: now,
                 OriginWorkItemId: null,
                 DetailJson: null));
-        _ = store.ListAsync(projectId, runId, Arg.Any<CancellationToken>())
+        store.ListAsync(projectId, runId, Arg.Any<CancellationToken>())
             .Returns(
             [
                 new ArtifactPointer("pins.json", new Uri("https://minio/b/pins.json"), 8, "application/json"),
@@ -364,16 +364,16 @@ public sealed class RunArtifactPackagerShould
     public void RegisterApplicationDefaults()
     {
         var services = new ServiceCollection();
-        _ = services.AddSingleton(typeof(Microsoft.Extensions.Logging.ILogger<>), typeof(NullLogger<>));
+        services.AddSingleton(typeof(Microsoft.Extensions.Logging.ILogger<>), typeof(NullLogger<>));
         // RunArtifactPackagerService now depends on ISubjectScopeAccessor to
         // declare the per-cycle AsSystem scope around the bundle phase
         // (the per-scope refactor in PollOnceAsync moved the scope out of
         // the discovery stream and into the per-candidate bundle scope).
         // The test only verifies registration, not subject-scope behaviour,
         // so the no-op stub is enough to satisfy DI.
-        _ = services.AddSingleton<Shared.Kernel.Scoping.ISubjectScopeAccessor>(
+        services.AddSingleton<Shared.Kernel.Scoping.ISubjectScopeAccessor>(
             new Shared.Kernel.Scoping.AsyncLocalSubjectScopeAccessor());
-        _ = services.AddArtifactsApplication();
+        services.AddArtifactsApplication();
 
         using var provider = services.BuildServiceProvider();
 

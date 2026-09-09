@@ -62,18 +62,18 @@ public sealed class OrchestrationBudgetGateShould : IAsyncLifetime
         }
 
         var services = new ServiceCollection();
-        _ = services.AddLogging();
-        _ = services.AddOrchestrationPersistence(connectionString);
-        _ = services.AddSingleton(TimeProvider.System);
-        _ = services.AddScoped<IRunJournal, Engine.Orchestration.Infrastructure.Journal.RunJournalEf>();
-        _ = services.AddSingleton<Shared.Contracts.Costs.IProjectBudgetSettings,
+        services.AddLogging();
+        services.AddOrchestrationPersistence(connectionString);
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<IRunJournal, Engine.Orchestration.Infrastructure.Journal.RunJournalEf>();
+        services.AddSingleton<Shared.Contracts.Costs.IProjectBudgetSettings,
             Modules.Costs.Application.Budgets.NullProjectBudgetSettings>();
-        _ = services.AddDbContextFactory<Modules.Costs.Infrastructure.Persistence.CostsDbContext>(
+        services.AddDbContextFactory<Modules.Costs.Infrastructure.Persistence.CostsDbContext>(
             (_, builder) => builder.UseNpgsql(connectionString),
             ServiceLifetime.Singleton);
-        _ = services.AddScoped<Shared.Contracts.Usage.IUsageEventStore,
+        services.AddScoped<Shared.Contracts.Usage.IUsageEventStore,
             Modules.Costs.Infrastructure.Persistence.Stores.EfUsageEventStore>();
-        _ = services.AddScoped<OrchestrationBudgetGate>();
+        services.AddScoped<OrchestrationBudgetGate>();
         this.services = services.BuildServiceProvider();
     }
 

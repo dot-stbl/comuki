@@ -30,9 +30,9 @@ public sealed class RoleSeniorityGuardShould
     [Fact(DisplayName = "Given a granter, when the target role is senior to the granter, then EnsureGrantable throws")]
     public void RefuseEscalation()
     {
-        _ = Should.Throw<InvalidOperationException>(static () =>
+        Should.Throw<InvalidOperationException>(static () =>
             RoleSeniorityGuard.EnsureGrantable(Role.PlatformAdmin, RoleMatrix.SeniorityOf(Role.Member)));
-        _ = Should.Throw<InvalidOperationException>(static () =>
+        Should.Throw<InvalidOperationException>(static () =>
             RoleSeniorityGuard.EnsureGrantable(Role.Operator, RoleMatrix.SeniorityOf(Role.ProjectAdmin) - 1));
     }
 

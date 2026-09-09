@@ -33,7 +33,7 @@ public sealed class CookieSignerAdapterShould
     {
         var user = User.Create("linked@example.com", "Linked Display", passwordHash: null, now: anchorTime);
         var userStore = Substitute.For<IUserAccountStore>();
-        _ = userStore.FindByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
+        userStore.FindByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         var authService = Substitute.For<IAuthenticationService>();
         var httpContext = NewHttpContext(authService);
         var accessor = NewAccessor(httpContext);
@@ -53,7 +53,7 @@ public sealed class CookieSignerAdapterShould
     {
         var userId = UserId.New();
         var userStore = Substitute.For<IUserAccountStore>();
-        _ = userStore.FindByIdAsync(userId, Arg.Any<CancellationToken>()).Returns((User?)null);
+        userStore.FindByIdAsync(userId, Arg.Any<CancellationToken>()).Returns((User?)null);
         var authService = Substitute.For<IAuthenticationService>();
         var httpContext = NewHttpContext(authService);
         var accessor = NewAccessor(httpContext);
@@ -83,7 +83,7 @@ public sealed class CookieSignerAdapterShould
     {
         var user = User.Create("name-id@example.com", "Name Id", passwordHash: null, now: anchorTime);
         var userStore = Substitute.For<IUserAccountStore>();
-        _ = userStore.FindByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
+        userStore.FindByIdAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
         var authService = Substitute.For<IAuthenticationService>();
         var httpContext = NewHttpContext(authService);
         var accessor = NewAccessor(httpContext);

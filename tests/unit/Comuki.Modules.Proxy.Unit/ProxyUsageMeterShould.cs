@@ -50,8 +50,8 @@ public sealed class ProxyUsageMeterShould
     {
         var recorder = Substitute.For<IUsageRecorder>();
         var extractor = Substitute.For<IProxyUsageExtractor>();
-        _ = extractor.ProviderId.Returns("openai");
-        _ = extractor.ExtractAsync(Arg.Any<string>(), Arg.Any<ProjectId>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+        extractor.ProviderId.Returns("openai");
+        extractor.ExtractAsync(Arg.Any<string>(), Arg.Any<ProjectId>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<ProxyUsageReport?>(null));
         var pricing = new ProxyPricingCalculator(Options.Create(new ProxyOptions()));
         var meter = new ProxyUsageMeter([extractor], pricing, recorder, NullLogger<ProxyUsageMeter>.Instance);
@@ -67,7 +67,7 @@ public sealed class ProxyUsageMeterShould
     {
         var recorder = Substitute.For<IUsageRecorder>();
         var extractor = Substitute.For<IProxyUsageExtractor>();
-        _ = extractor.ProviderId.Returns("openai");
+        extractor.ProviderId.Returns("openai");
         var pricing = new ProxyPricingCalculator(Options.Create(new ProxyOptions()));
         var meter = new ProxyUsageMeter([extractor], pricing, recorder, NullLogger<ProxyUsageMeter>.Instance);
         var key = new VirtualKey("vkey", ProjectId.New(), new UpstreamSpec("anthropic", "https://api.anthropic.com", "ANTHROPIC_API_KEY"));

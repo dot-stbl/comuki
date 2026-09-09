@@ -40,7 +40,7 @@ public sealed class MigrationsShould : IAsyncLifetime
         await container.StartAsync(TestContext.Current.CancellationToken);
 
         var services = new ServiceCollection();
-        _ = services.AddOrchestrationPersistence(container.GetConnectionString());
+        services.AddOrchestrationPersistence(container.GetConnectionString());
         provider = services.BuildServiceProvider();
         db = provider.GetRequiredService<OrchestrationDbContext>();
         await db.Database.MigrateAsync(TestContext.Current.CancellationToken);
@@ -143,11 +143,11 @@ public sealed class MigrationsShould : IAsyncLifetime
             $$"""{"from":"{{RunStatus.Queued}}","to":"{{RunStatus.Waiting}}"}""",
             now.AddSeconds(5));
 
-        _ = db.Runs.Add(run);
+        db.Runs.Add(run);
         db.WorkItems.AddRange(prerequisite, dependent);
-        _ = db.WorkItemDependencies.Add(dependency);
-        _ = db.RunEvents.Add(runEvent);
-        _ = await db.SaveChangesAsync(cancellationToken);
+        db.WorkItemDependencies.Add(dependency);
+        db.RunEvents.Add(runEvent);
+        await db.SaveChangesAsync(cancellationToken);
         db.ChangeTracker.Clear();
 
         var readOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
@@ -205,11 +205,11 @@ public sealed class MigrationsShould : IAsyncLifetime
         var schemaParameter = command.CreateParameter();
         schemaParameter.ParameterName = "@schema";
         schemaParameter.Value = schema;
-        _ = command.Parameters.Add(schemaParameter);
+        command.Parameters.Add(schemaParameter);
         var tableNameParameter = command.CreateParameter();
         tableNameParameter.ParameterName = "@tableName";
         tableNameParameter.Value = tableName;
-        _ = command.Parameters.Add(tableNameParameter);
+        command.Parameters.Add(tableNameParameter);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {

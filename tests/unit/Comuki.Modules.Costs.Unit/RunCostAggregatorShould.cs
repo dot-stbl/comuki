@@ -15,7 +15,7 @@ public sealed class RunCostAggregatorShould
     {
         var runId = RunId.New();
         var store = Substitute.For<IUsageEventStore>();
-        _ = store.SumRunCostUsdMicrosAsync(runId, Arg.Any<CancellationToken>()).Returns(42_000);
+        store.SumRunCostUsdMicrosAsync(runId, Arg.Any<CancellationToken>()).Returns(42_000);
 
         var total = await new RunCostAggregator(store).SumRunAsync(runId, TestContext.Current.CancellationToken);
 
@@ -29,7 +29,7 @@ public sealed class RunCostAggregatorShould
         var projectId = ProjectId.New();
         var since = DateTimeOffset.Parse("2026-09-01T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
         var store = Substitute.For<IUsageEventStore>();
-        _ = store.SumProjectCostUsdMicrosAsync(projectId, since, Arg.Any<CancellationToken>()).Returns(7);
+        store.SumProjectCostUsdMicrosAsync(projectId, since, Arg.Any<CancellationToken>()).Returns(7);
 
         var total = await new RunCostAggregator(store).SumProjectAsync(
             projectId,
@@ -45,7 +45,7 @@ public sealed class RunCostAggregatorShould
     {
         var projectId = ProjectId.New();
         var store = Substitute.For<IUsageEventStore>();
-        _ = store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>()).Returns(9);
+        store.SumProjectCostUsdMicrosAsync(projectId, null, Arg.Any<CancellationToken>()).Returns(9);
 
         var total = await new RunCostAggregator(store).SumProjectAsync(
             projectId,

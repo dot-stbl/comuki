@@ -245,8 +245,8 @@ public sealed class RunDecisionsEndpointShould : IAsyncLifetime
         }
 
         await using var seedContext = NewSystemDbContext();
-        _ = seedContext.Runs.Add(run);
-        _ = await seedContext.SaveChangesAsync(cancellationToken);
+        seedContext.Runs.Add(run);
+        await seedContext.SaveChangesAsync(cancellationToken);
         return run.Id.Value;
     }
 

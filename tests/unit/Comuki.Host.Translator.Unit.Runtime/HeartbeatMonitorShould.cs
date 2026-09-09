@@ -30,7 +30,7 @@ public sealed class HeartbeatMonitorShould
         sequence.Enqueue(success);
         sequence.Enqueue(success);
         sequence.Enqueue(rejection);
-        _ = api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
+        api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
             .Returns(_ => sequence.Dequeue());
         var monitor = new HeartbeatMonitor(api);
 
@@ -49,7 +49,7 @@ public sealed class HeartbeatMonitorShould
     {
         var api = Substitute.For<IOrchestratorApi>();
         var success = SuccessResponse();
-        _ = api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
+        api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
             .Returns(success);
         var monitor = new HeartbeatMonitor(api);
         using var runSource = new CancellationTokenSource();
@@ -70,7 +70,7 @@ public sealed class HeartbeatMonitorShould
     public async Task HeartbeatExceptionPropagatesAsync()
     {
         var api = Substitute.For<IOrchestratorApi>();
-        _ = api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
+        api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
             .Returns<IApiResponse>(_ => throw new HttpRequestException("upstream dropped"));
         var monitor = new HeartbeatMonitor(api);
 
@@ -87,7 +87,7 @@ public sealed class HeartbeatMonitorShould
     {
         var api = Substitute.For<IOrchestratorApi>();
         var success = SuccessResponse();
-        _ = api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
+        api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
             .Returns(success);
         var monitor = new HeartbeatMonitor(api);
         using var runSource = new CancellationTokenSource();

@@ -142,10 +142,10 @@ public sealed class ProxyTransformsShould
     private static IServiceProvider NewServices(VirtualKey key, bool verdictAllowed, ProxyBudgetVerdict? verdict = null)
     {
         var store = Substitute.For<IVirtualKeyStore>();
-        _ = store.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(key);
+        store.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(key);
 
         var enforcer = Substitute.For<IProxyBudgetEnforcer>();
-        _ = enforcer.EvaluateAsync(Arg.Any<VirtualKey>(), Arg.Any<CancellationToken>())
+        enforcer.EvaluateAsync(Arg.Any<VirtualKey>(), Arg.Any<CancellationToken>())
             .Returns(verdict ?? new ProxyBudgetVerdict(verdictAllowed, null, 0, 0));
 
         var services = new ServiceCollection();

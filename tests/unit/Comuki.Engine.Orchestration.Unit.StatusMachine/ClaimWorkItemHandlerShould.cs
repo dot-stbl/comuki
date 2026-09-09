@@ -30,7 +30,7 @@ public sealed class ClaimWorkItemHandlerShould
         var queue = Substitute.For<IWorkItemQueue>();
         var claimed = new ClaimedWorkItem(Guid.CreateVersion7(), RunId.New(), "implement", /*lang=json,strict*/ """{"goal":"x"}""", now.AddMinutes(5), 1);
         var cancellationToken = TestContext.Current.CancellationToken;
-        _ = queue.ClaimAsync(Arg.Any<WorkerId>(), Arg.Any<WorkItemLabels>(), Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), cancellationToken)
+        queue.ClaimAsync(Arg.Any<WorkerId>(), Arg.Any<WorkItemLabels>(), Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), cancellationToken)
             .Returns(claimed);
         var handler = new ClaimWorkItemHandler(new ClaimWorkItemValidator(), queue, clock, leaseOptions);
         var workerId = WorkerId.New();
@@ -39,7 +39,7 @@ public sealed class ClaimWorkItemHandlerShould
         var result = await handler.HandleAsync(command, cancellationToken);
 
         result.ShouldBe(claimed);
-        _ = await queue.Received(1).ClaimAsync(
+        await queue.Received(1).ClaimAsync(
             workerId,
             labels,
             now.AddMinutes(5),
@@ -54,16 +54,16 @@ public sealed class ClaimWorkItemHandlerShould
         var handler = new ClaimWorkItemHandler(
             new ClaimWorkItemValidator(), queue, new FakeTimeProvider(), OptionsFactory.Create(new LeaseOptions()));
 
-        _ = await Should.ThrowAsync<ValidationException>(
+        await Should.ThrowAsync<ValidationException>(
             () => handler.HandleAsync(new ClaimWorkItemCommand(WorkerId.New(), new WorkItemLabels("", "refs/heads/main", "implement")), TestContext.Current.CancellationToken));
-        _ = await queue.DidNotReceiveWithAnyArgs().ClaimAsync(default, default!, default, default, TestContext.Current.CancellationToken);
+        await queue.DidNotReceiveWithAnyArgs().ClaimAsync(default, default!, default, default, TestContext.Current.CancellationToken);
     }
 
     [Fact(DisplayName = "Given an empty queue, when HandleAsync is called, then it returns null")]
     public async Task ReturnNullWhenQueueEmptyAsync()
     {
         var queue = Substitute.For<IWorkItemQueue>();
-        _ = queue.ClaimAsync(Arg.Any<WorkerId>(), Arg.Any<WorkItemLabels>(), Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), TestContext.Current.CancellationToken)
+        queue.ClaimAsync(Arg.Any<WorkerId>(), Arg.Any<WorkItemLabels>(), Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), TestContext.Current.CancellationToken)
             .Returns((ClaimedWorkItem?)null);
         var handler = new ClaimWorkItemHandler(
             new ClaimWorkItemValidator(), queue, new FakeTimeProvider(), OptionsFactory.Create(new LeaseOptions()));

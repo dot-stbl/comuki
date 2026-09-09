@@ -203,7 +203,7 @@ public sealed class SmokeHostServer : IAsyncLifetime
 
         using (var scope = application.Services.CreateAsyncScope())
         {
-            _ = await scope.ServiceProvider.GetRequiredService<CreateUserHandler>()
+            await scope.ServiceProvider.GetRequiredService<CreateUserHandler>()
                 .HandleAsync(new CreateUserCommand(email, email, password), TestContext.Current.CancellationToken);
         }
 

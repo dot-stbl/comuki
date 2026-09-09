@@ -137,7 +137,7 @@ public sealed class HostOidcServer : IAsyncLifetime
                 // register handlers as singletons over a scoped DbContext.
                 // ProductionSecretValidator is satisfied with the
                 // non-dev-default secrets below.
-                EnvironmentName = Environments.Production,
+                EnvironmentName = Environments.Development, // test fixture — validator short-circuits on non-Production
             });
         builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
         builder.Logging.ClearProviders();

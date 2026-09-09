@@ -3,7 +3,6 @@ using Comuki.Engine.Compute.Pool;
 using Comuki.Engine.Compute.Ports;
 using Comuki.Engine.Compute.Providers;
 using Comuki.Engine.Compute.Providers.Kubernetes;
-using Comuki.Engine.Compute.Security;
 using Comuki.Engine.Compute.Security.Stores;
 using Comuki.Engine.Compute.Settings;
 using Comuki.Engine.Compute.Supervisor;
@@ -20,15 +19,25 @@ namespace Comuki.Engine.Compute.Installers;
 /// <summary>
 /// Registers the compute engine (issue #3 T2.4/T2.5, S8 k8s provider): both
 /// compute providers behind a config-selected <see cref="IComputeProvider"/>,
-/// the worker token issuer and the scale supervisor. Wired only in a host
-/// composition root — nothing else references these concretes. The host must
-/// ALSO register an <see cref="IBacklogReader"/> (the Orchestration queue
-/// adapter lands with the queue slice); without it the supervisor resolution
-/// fails fast.
+/// the in-memory worker-token store, and the scale supervisor. Wired only in
+/// a host composition root — nothing else references these concretes. The
+/// host must ALSO register an <see cref="IBacklogReader"/> (the Orchestration
+/// queue adapter lands with the queue slice); without it the supervisor
+/// resolution fails fast.
 /// </summary>
+/// <remarks>
+/// <see cref="WorkerTokenIssuer"/> itself is registered by
+/// <c>WorkerRuntimeExtensions.AddWorkerRuntime</c> on the host side
+/// (<c>TryAddSingleton</c>) — historically this method registered it as
+/// well, which made the order of <c>AddComukiCompute</c> vs
+/// <c>AddWorkerRuntime</c> load-bearing: whichever ran second would throw on
+/// the duplicate. The host does not call <c>AddComukiCompute</c> from its
+/// composition root today, so this method's issuer line was dead code; the
+/// race-prone duplicate is gone and the canonical site is the host.
+/// </remarks>
 public static class ComputeInstaller
 {
-    /// <summary>Adds the compute engine: options, both providers with Compute:Provider selection, token issuer, scale supervisor.</summary>
+    /// <summary>Adds the compute engine: options, both providers with Compute:Provider selection, the in-memory worker-token store, scale supervisor.</summary>
     /// <param name="services"></param>
     /// <param name="configuration"></param>
     public static IServiceCollection AddComukiCompute(this IServiceCollection services, IConfiguration configuration)
@@ -63,7 +72,6 @@ public static class ComputeInstaller
         services.TryAddSingleton(TimeProvider.System);
 
         services.AddSingleton<IWorkerTokenStore, InMemoryWorkerTokenStore>();
-        services.AddSingleton<WorkerTokenIssuer>();
         services.AddSingleton<IDockerClient>(static _ => new DockerClientConfiguration().CreateClient());
         services.AddSingleton<IKubernetes>(static _ => new Kubernetes(KubernetesClientConfiguration.BuildDefaultConfig()));
         services.AddSingleton<DockerComputeProvider>();

@@ -3,6 +3,7 @@ using Comuki.Modules.Scheduler.Application.Observers;
 using Comuki.Modules.Scheduler.Domain.Ids;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Kernel.Ids;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Comuki.Modules.Scheduler.Infrastructure.Observers;
 
@@ -15,9 +16,20 @@ namespace Comuki.Modules.Scheduler.Infrastructure.Observers;
 /// one so a transient journal failure is logged before the Sentry
 /// capture runs; either failure must not abort the fire path itself
 /// (the dispatcher catches observer exceptions per observer).
+/// <para>
+/// The observer stays Singleton: <see cref="IEnumerable{ISchedulerObserver}"/>
+/// is captured into the dispatcher's Singleton ctor, so a Scoped
+/// observer would be instantiated once at boot and hold the dispatcher's
+/// root-scope <see cref="IRunJournal"/> forever. Instead, the observer
+/// takes <see cref="IServiceScopeFactory"/> and opens its own scope per
+/// <see cref="OnJobFiredAsync"/> call — the journal append sees a fresh
+/// DbContext, the observer itself carries no per-call state, and the
+/// captive-dependency problem disappears without disturbing the
+/// dispatcher's observer fan-out.
+/// </para>
 /// </summary>
-/// <param name="journal">Append-only journal port from the orchestration engine.</param>
-public sealed class JournalSchedulerObserver(IRunJournal journal) : ISchedulerObserver
+/// <param name="scopeFactory">Scope factory used to resolve a per-call <see cref="IRunJournal"/>.</param>
+public sealed class JournalSchedulerObserver(IServiceScopeFactory scopeFactory) : ISchedulerObserver
 {
     /// <summary>The journal type the observer writes.</summary>
     public const string EventType = "scheduler.job_fired";
@@ -44,6 +56,12 @@ public sealed class JournalSchedulerObserver(IRunJournal journal) : ISchedulerOb
             PayloadJson: JsonSerializer.Serialize(payload, JsonSerializerOptions.Web),
             OccurredAt: firedAt);
 
+        // Per-call scope: IRunJournal is Scoped (wraps OrchestrationDbContext),
+        // and the observer itself must not hold it across fires — different
+        // fires are independent DbContext units. The factory is the standard
+        // captive-dependency escape hatch documented in di-lifetimes.md §5.
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var journal = scope.ServiceProvider.GetRequiredService<IRunJournal>();
         await journal.AppendAsync(entry, cancellationToken);
     }
 

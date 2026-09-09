@@ -3,6 +3,7 @@ using Comuki.Modules.Scheduler.Domain.Ids;
 using Comuki.Modules.Scheduler.Infrastructure.Observers;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Kernel.Ids;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -24,7 +25,7 @@ public sealed class JournalSchedulerObserverShould
     public async Task AppendsJournalEntryAsync()
     {
         var journal = Substitute.For<IRunJournal>();
-        var observer = new JournalSchedulerObserver(journal);
+        var observer = new JournalSchedulerObserver(JournalScopeFactory.Build(journal));
         var jobId = new ScheduledJobId(Guid.CreateVersion7());
         var projectId = new ProjectId(Guid.CreateVersion7());
         var runId = new RunId(Guid.CreateVersion7());
@@ -49,7 +50,7 @@ public sealed class JournalSchedulerObserverShould
     public async Task CarriesPayloadFieldsAsync()
     {
         var journal = Substitute.For<IRunJournal>();
-        var observer = new JournalSchedulerObserver(journal);
+        var observer = new JournalSchedulerObserver(JournalScopeFactory.Build(journal));
         var jobId = new ScheduledJobId(Guid.CreateVersion7());
         var projectId = new ProjectId(Guid.CreateVersion7());
         var runId = new RunId(Guid.CreateVersion7());
@@ -79,7 +80,7 @@ public sealed class JournalSchedulerObserverShould
         var journal = Substitute.For<IRunJournal>();
         journal.AppendAsync(Arg.Any<RunEventEntry>(), Arg.Any<CancellationToken>())
             .Returns(_ => throw new InvalidOperationException("journal down"));
-        var observer = new JournalSchedulerObserver(journal);
+        var observer = new JournalSchedulerObserver(JournalScopeFactory.Build(journal));
 
         await Should.ThrowAsync<InvalidOperationException>(() =>
             observer.OnJobFiredAsync(
@@ -89,5 +90,29 @@ public sealed class JournalSchedulerObserverShould
                 new RunId(Guid.CreateVersion7()),
                 anchorTime,
                 TestContext.Current.CancellationToken));
+    }
+}
+
+/// <summary>
+/// Build helper for the journal observer tests: a single
+/// <see cref="IServiceScope"/> backed by the supplied
+/// <see cref="IRunJournal"/> substitute is enough — the observer under
+/// test calls <c>scopeFactory.CreateAsyncScope()</c> and asks the scope
+/// for <c>IRunJournal</c>, so a stub that yields the same scope on every
+/// call is sufficient (a real <see cref="ServiceCollection"/> would, but
+/// here we side-step that with a thin NSubstitute pair).
+/// </summary>
+file static class JournalScopeFactory
+{
+    /// <summary>Builds the scope-factory stub for the supplied journal mock.</summary>
+    /// <param name="journal">Mock the scope will resolve.</param>
+    /// <returns></returns>
+    public static IServiceScopeFactory Build(IRunJournal journal)
+    {
+        var scope = Substitute.For<IServiceScope>();
+        scope.ServiceProvider.GetService(typeof(IRunJournal)).Returns(journal);
+        var factory = Substitute.For<IServiceScopeFactory>();
+        factory.CreateAsyncScope().Returns(scope);
+        return factory;
     }
 }

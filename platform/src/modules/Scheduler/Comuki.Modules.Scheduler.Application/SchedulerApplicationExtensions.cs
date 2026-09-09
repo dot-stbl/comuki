@@ -22,7 +22,12 @@ public static class SchedulerApplicationExtensions
     {
         services.TryAddSingleton(TimeProvider.System);
 
-        services.AddSingleton<ScheduledJobService>();
+        // ScheduledJobService is Scoped: it captures IScheduledJobStore
+        // (Scoped — wraps SchedulerDbContext). Singleton was a captive-
+        // dependency bug (audit 2026-09-09). Validators stay Singleton
+        // — no Scoped deps — and their concrete lifetimes are
+        // independent of the host's per-request DbContext.
+        services.AddScoped<ScheduledJobService>();
         services.AddSingleton<IValidator<CreateScheduledJobCommand>, CreateScheduledJobValidator>();
         services.AddSingleton<IValidator<UpdateScheduledJobCommand>, UpdateScheduledJobValidator>();
 

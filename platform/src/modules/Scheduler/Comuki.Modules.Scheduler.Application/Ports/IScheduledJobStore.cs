@@ -27,6 +27,22 @@ public interface IScheduledJobStore
     /// <param name="cancellationToken"></param>
     public Task<IReadOnlyList<ScheduledJob>> ListAsync(ProjectId projectId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Lists a page of jobs of a project (newest first) plus the project's
+    /// total count. The <c>Skip</c> / <c>Take</c> are pushed to SQL by EF
+    /// Core — at most <paramref name="pageSize"/> rows are read from the
+    /// store, regardless of how large the project is.
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <param name="page">1-based page index; values &lt; 1 are clamped to 1.</param>
+    /// <param name="pageSize">Rows per page; clamped to <c>[1, 500]</c>.</param>
+    /// <param name="cancellationToken"></param>
+    public Task<ScheduledJobPage> ListPagedAsync(
+        ProjectId projectId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Persists a mutated job.</summary>
     /// <param name="job"></param>
     /// <param name="cancellationToken"></param>

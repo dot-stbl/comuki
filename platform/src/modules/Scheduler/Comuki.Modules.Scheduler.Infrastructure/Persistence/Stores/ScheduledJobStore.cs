@@ -39,6 +39,40 @@ public sealed class ScheduledJobStore(SchedulerDbContext db) : IScheduledJobStor
     }
 
     /// <inheritdoc />
+    public async Task<ScheduledJobPage> ListPagedAsync(
+        ProjectId projectId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        // Clamp at the boundary so the controller does not have to know
+        // the storage layer's limits. Same shape the controller used to
+        // apply in-memory: pageSize [1, 500], page >= 1.
+        var clampedPage = page < 1 ? 1 : page;
+        var clampedSize = Math.Clamp(pageSize, 1, 500);
+        var skip = (clampedPage - 1) * clampedSize;
+
+        // The query is composed once and reused for both the count and the
+        // page — EF Core 8+ translates Skip/Take into `OFFSET $skip LIMIT $take`
+        // so Postgres returns at most `clampedSize` rows regardless of how
+        // big the project is. OrderByDescending on a stable column makes
+        // page-to-page order deterministic across requests.
+        var scoped = db.ScheduledJobs
+            .AsNoTracking()
+            .Where(job => job.ProjectId == projectId);
+
+        var total = await scoped.CountAsync(cancellationToken);
+
+        var items = await scoped
+            .OrderByDescending(job => job.CreatedAt)
+            .Skip(skip)
+            .Take(clampedSize)
+            .ToListAsync(cancellationToken);
+
+        return new ScheduledJobPage(items, total);
+    }
+
+    /// <inheritdoc />
     public async Task UpdateAsync(ScheduledJob job, CancellationToken cancellationToken = default)
     {
         db.ScheduledJobs.Update(job);

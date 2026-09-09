@@ -19,7 +19,7 @@ public sealed class KnowledgeDomainLayerTests
     private const string MemoryInfrastructure = "Comuki.Modules.Memory.Infrastructure";
     private const string MemoryDomain = "Comuki.Modules.Memory.Domain";
 
-    [Fact]
+    [Fact(DisplayName = "When knowledge Domain Must Not Depend On Memory Module, then test passes")]
     public void KnowledgeDomainMustNotDependOnMemoryModule()
     {
         // The Knowledge.Domain assembly must be free of any Memory module
@@ -40,7 +40,7 @@ public sealed class KnowledgeDomainLayerTests
             $"Failing types: {string.Join(", ", result.FailingTypeNames ?? [])}");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When knowledge Application Must Not Depend On Memory Module, then test passes")]
     public void KnowledgeApplicationMustNotDependOnMemoryModule()
     {
         // Knowledge.Application used to depend on Memory.Domain.Knowledge
@@ -60,7 +60,7 @@ public sealed class KnowledgeDomainLayerTests
             $"Failing types: {string.Join(", ", result.FailingTypeNames ?? [])}");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When knowledge Infrastructure Must Not Depend On Memory Module, then test passes")]
     public void KnowledgeInfrastructureMustNotDependOnMemoryModule()
     {
         // Knowledge.Infrastructure owns its own DbContext factory +

@@ -116,7 +116,7 @@ public sealed class PgKnowledgeIngestor(
         // embedding column) skips the vector write cleanly instead of
         // throwing "type vector does not exist" mid-transaction.
         var connection = (NpgsqlConnection)context.Database.GetDbConnection();
-        var pgvectorAvailable = await ProbePgvectorAsync(connection, cancellationToken).ConfigureAwait(false);
+        var pgvectorAvailable = await ProbePgvectorAsync(connection, cancellationToken);
 
         if (pgvectorAvailable)
         {
@@ -162,7 +162,7 @@ public sealed class PgKnowledgeIngestor(
     {
         await using var probe = connection.CreateCommand();
         probe.CommandText = EmbeddingSql.EmbeddingColumnExistsSql;
-        var result = await probe.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+        var result = await probe.ExecuteScalarAsync(cancellationToken);
         return result is bool available && available;
     }
 }

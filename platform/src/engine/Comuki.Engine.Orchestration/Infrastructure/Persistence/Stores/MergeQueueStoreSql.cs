@@ -53,10 +53,10 @@ internal static class MergeQueueStoreSql
         {
             Value = projectId is { } pid ? pid.Value : DBNull.Value
         };
-        _ = command.Parameters.Add(projectIdParameter);
+        command.Parameters.Add(projectIdParameter);
 
-        _ = command.Parameters.Add(new NpgsqlParameter("@operatorId", System.Data.DbType.String) { Value = operatorId });
-        _ = command.Parameters.Add(new NpgsqlParameter("@now", System.Data.DbType.DateTimeOffset) { Value = now });
+        command.Parameters.Add(new NpgsqlParameter("@operatorId", System.Data.DbType.String) { Value = operatorId });
+        command.Parameters.Add(new NpgsqlParameter("@now", System.Data.DbType.DateTimeOffset) { Value = now });
 
         return command;
     }

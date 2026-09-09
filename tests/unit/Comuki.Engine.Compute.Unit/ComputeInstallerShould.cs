@@ -19,7 +19,7 @@ namespace Comuki.Engine.Compute.Unit;
 /// </summary>
 public sealed class ComputeInstallerShould
 {
-    [Fact]
+    [Fact(DisplayName = "When resolve Docker Provider By Default, then test passes")]
     public void ResolveDockerProviderByDefault()
     {
         using var provider = BuildProvider([]);
@@ -27,7 +27,7 @@ public sealed class ComputeInstallerShould
         provider.GetRequiredService<IComputeProvider>().ShouldBeOfType<DockerComputeProvider>();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When resolve Kubernetes Provider When Configured, then test passes")]
     public void ResolveKubernetesProviderWhenConfigured()
     {
         using var provider = BuildProvider(new Dictionary<string, string?>

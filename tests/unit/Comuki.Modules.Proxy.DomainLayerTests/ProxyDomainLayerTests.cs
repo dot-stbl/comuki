@@ -17,7 +17,7 @@ public sealed class ProxyDomainLayerTests
     private const string CostsApplication = "Comuki.Modules.Costs.Application";
     private const string CostsInfrastructure = "Comuki.Modules.Costs.Infrastructure";
 
-    [Fact]
+    [Fact(DisplayName = "When proxy Application Must Not Depend On Costs Application, then test passes")]
     public void ProxyApplicationMustNotDependOnCostsApplication()
     {
         // The Proxy module's metering + budgeting used to reach into the
@@ -35,7 +35,7 @@ public sealed class ProxyDomainLayerTests
             $"Failing types: {string.Join(", ", result.FailingTypeNames ?? [])}");
     }
 
-    [Fact]
+    [Fact(DisplayName = "When proxy Infrastructure Must Not Depend On Costs Application, then test passes")]
     public void ProxyInfrastructureMustNotDependOnCostsApplication()
     {
         // Proxy.Infrastructure (YARP transforms + auth handler + options)

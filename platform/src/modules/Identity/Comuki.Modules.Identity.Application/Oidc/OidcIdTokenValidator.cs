@@ -55,10 +55,10 @@ public sealed class OidcIdTokenValidator(ILogger<OidcIdTokenValidator> logger) :
         {
             principal = handler.ValidateToken(idToken, parameters, out var validatedToken);
         }
-        catch (SecurityTokenException ex)
+        catch (SecurityTokenException exception)
         {
-            logger.LogWarning(ex, "Oidc id_token validation failed");
-            throw new InvalidOperationException($"oidc id_token validation failed: {ex.Message}", ex);
+            logger.LogWarning(exception, "Oidc id_token validation failed");
+            throw new InvalidOperationException($"oidc id_token validation failed: {exception.Message}", exception);
         }
 
         var subject = principal.FindFirst("sub")?.Value

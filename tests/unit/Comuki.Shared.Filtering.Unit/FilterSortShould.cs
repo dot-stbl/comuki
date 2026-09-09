@@ -47,7 +47,7 @@ public sealed class FilterSortShould
     }.AsQueryable();
 
     /// <summary>Default sort (no <c>sort</c> param) is stable on first registered field.</summary>
-    [Fact]
+    [Fact(DisplayName = "When apply Default Sort When Spec Is Null, then test passes")]
     public void ApplyDefaultSortWhenSpecIsNull()
     {
         var sorted = data.ApplySort(null).ToList();
@@ -55,7 +55,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort ascending by Name.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Ascending By Name, then test passes")]
     public void SortAscendingByName()
     {
         var sorted = data.ApplySort("Name,asc").ToList();
@@ -66,7 +66,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort descending by Name.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Descending By Name, then test passes")]
     public void SortDescendingByName()
     {
         var sorted = data.ApplySort("Name,desc").ToList();
@@ -77,7 +77,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort without direction defaults to asc.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Without Direction Defaults To Asc, then test passes")]
     public void SortWithoutDirectionDefaultsToAsc()
     {
         var sorted = data.ApplySort("Name").ToList();
@@ -86,7 +86,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort direction is case-insensitive.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Direction Is Case Insensitive, then test passes")]
     public void SortDirectionIsCaseInsensitive()
     {
         var sortedAsc = data.ApplySort("Name,ASC").ToList();
@@ -97,7 +97,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort by numeric field.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort By Numeric Field, then test passes")]
     public void SortByNumericField()
     {
         var asc = data.ApplySort("Age,asc").ToList();
@@ -108,7 +108,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort by date field.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort By Date Field, then test passes")]
     public void SortByDateField()
     {
         var asc = data.ApplySort("CreatedAt,asc").ToList();
@@ -119,7 +119,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort field case-insensitive.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Field Case Insensitive, then test passes")]
     public void SortFieldCaseInsensitive()
     {
         var lower = data.ApplySort("name,asc").ToList();
@@ -130,14 +130,14 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort on unknown field falls back to default (no throw — stale-client safe).</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Unknown Field Falls Back To Default, then test passes")]
     public void SortUnknownFieldFallsBackToDefault()
     {
         Should.NotThrow(static () => data.ApplySort("nonexistent,asc").ToList());
     }
 
     /// <summary>Sort on <c>[NotMapped]</c> field falls back to default.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Not Mapped Field Falls Back To Default, then test passes")]
     public void SortNotMappedFieldFallsBackToDefault()
     {
         Should.NotThrow(static () => data.ApplySort("SecretKey,asc").ToList());
@@ -154,7 +154,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort spec with extra commas ignores them.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Extra Commas Ignored, then test passes")]
     public void SortExtraCommasIgnored()
     {
         // The sort parser only takes parts[0] and parts[1]. Extra commas are dropped
@@ -163,7 +163,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort empty direction string treats as asc.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Empty Direction Is Asc, then test passes")]
     public void SortEmptyDirectionIsAsc()
     {
         var sorted = data.ApplySort("Name,").ToList();
@@ -171,7 +171,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort unknown direction string (not "asc"/"desc") treats as asc.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Unknown Direction Is Asc, then test passes")]
     public void SortUnknownDirectionIsAsc()
     {
         var sorted = data.ApplySort("Name,sideways").ToList();
@@ -185,7 +185,7 @@ public sealed class FilterSortShould
     ///     <c>Age,asc;Name,asc</c> — Alice (25) before Bob (40) before Charlie (30
     ///     would come last) — actually with Age asc: Alice(25), Charlie(30), Bob(40).
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Two Fields Asc Asc, then test passes")]
     public void SortTwoFieldsAscAsc()
     {
         var sorted = data.ApplySort("Age,asc;Name,asc").ToList();
@@ -199,7 +199,7 @@ public sealed class FilterSortShould
     ///     Multi-field sort with secondary descending — secondary breaks ties in
     ///     the opposite direction. Tied Ages would be ordered by Name desc.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Two Fields Asc Desc, then test passes")]
     public void SortTwoFieldsAscDesc()
     {
         // Add a tie-breaker so the secondary sort actually fires.
@@ -245,7 +245,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Multi-field sort with three criteria.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Three Fields, then test passes")]
     public void SortThreeFields()
     {
         var sorted = data.ApplySort("Age,asc;Name,asc").ToList();
@@ -259,7 +259,7 @@ public sealed class FilterSortShould
     ///     Multi-field sort with an unknown secondary field silently drops the
     ///     secondary criterion (the primary still applies) — stale-client safe.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When sort With Unknown Secondary Skips Secondary, then test passes")]
     public void SortWithUnknownSecondarySkipsSecondary()
     {
         var sorted = data.ApplySort("Age,asc;nonexistent,asc").ToList();
@@ -274,14 +274,14 @@ public sealed class FilterSortShould
     ///     Multi-field sort where the primary field is unknown falls back to the
     ///     default sort entirely.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When sort With Unknown Primary Falls Back To Default, then test passes")]
     public void SortWithUnknownPrimaryFallsBackToDefault()
     {
         Should.NotThrow(static () => data.ApplySort("nonexistent,asc;Age,asc").ToList());
     }
 
     /// <summary>Multi-field sort handles extra semicolons gracefully.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Trailing Semicolon Ignored, then test passes")]
     public void SortTrailingSemicolonIgnored()
     {
         var sorted = data.ApplySort("Name,asc;").ToList();
@@ -289,7 +289,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Multi-field sort handles leading semicolon gracefully.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Leading Semicolon Ignored, then test passes")]
     public void SortLeadingSemicolonIgnored()
     {
         var sorted = data.ApplySort(";Name,asc").ToList();
@@ -299,28 +299,28 @@ public sealed class FilterSortShould
     // ── Multi-field sort adversarial ──────────────────────────────────────────────
 
     /// <summary>Sort spec of only commas falls back to default (no criterion survives).</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Only Commas Falls Back To Default, then test passes")]
     public void SortOnlyCommasFallsBackToDefault()
     {
         Should.NotThrow(static () => data.ApplySort(",,,").ToList());
     }
 
     /// <summary>Sort spec of only semicolons falls back to default.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Only Semicolons Falls Back To Default, then test passes")]
     public void SortOnlySemicolonsFallsBackToDefault()
     {
         Should.NotThrow(static () => data.ApplySort(";;;").ToList());
     }
 
     /// <summary>Sort spec of only whitespace falls back to default.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Only Whitespace Falls Back To Default, then test passes")]
     public void SortOnlyWhitespaceFallsBackToDefault()
     {
         Should.NotThrow(static () => data.ApplySort("   ").ToList());
     }
 
     /// <summary>Trailing comma after direction is treated as asc.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Trailing Comma After Direction Falls Back To Asc, then test passes")]
     public void SortTrailingCommaAfterDirectionFallsBackToAsc()
     {
         var sorted = data.ApplySort("Name,asc,").ToList();
@@ -328,7 +328,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Same field twice applies both orders — primary then secondary.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Same Field Twice Applies Both Orders, then test passes")]
     public void SortSameFieldTwiceAppliesBothOrders()
     {
         // Two criteria on Age — primary asc, secondary desc. With unique Ages in data,
@@ -340,7 +340,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort criteria with only direction (no field) are dropped.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Direction Only Criterion Is Dropped, then test passes")]
     public void SortDirectionOnlyCriterionIsDropped()
     {
         // First criterion ",asc" has no field — dropped. Second "Name,asc" applies.
@@ -350,7 +350,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Many criteria (50) all apply as OrderBy + 49 ThenBys.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Many Criteria, then test passes")]
     public void SortManyCriteria()
     {
         // All criteria reference the same field — primary fires, others are no-ops
@@ -362,7 +362,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Mixed-case directions across multiple criteria work.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Mixed Case Directions, then test passes")]
     public void SortMixedCaseDirections()
     {
         var sorted = data.ApplySort("Age,ASC;Name,DESC").ToList();
@@ -372,7 +372,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort by numeric field primary, string field secondary.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort By Number Primary String Secondary, then test passes")]
     public void SortByNumberPrimaryStringSecondary()
     {
         // Add a tie-breaker scenario: two entities with same Age, different Name.
@@ -394,7 +394,7 @@ public sealed class FilterSortShould
     ///     Sort with a typo on the first criterion (unknown field) still works
     ///     if a subsequent criterion resolves.
     /// </summary>
-    [Fact]
+    [Fact(DisplayName = "When sort Unknown Primary Known Secondary Still Falls Back, then test passes")]
     public void SortUnknownPrimaryKnownSecondaryStillFallsBack()
     {
         // First criterion's field is unknown — but our parser SKIPS unknowns
@@ -405,7 +405,7 @@ public sealed class FilterSortShould
     }
 
     /// <summary>Sort where ALL criteria fields are unknown falls back to default.</summary>
-    [Fact]
+    [Fact(DisplayName = "When sort All Unknown Criteria Falls Back To Default, then test passes")]
     public void SortAllUnknownCriteriaFallsBackToDefault()
     {
         Should.NotThrow(static () => data.ApplySort("foo,asc;bar,desc;baz,asc").ToList());
@@ -416,98 +416,98 @@ public sealed class FilterSortShould
 public sealed class FilterQueryNormalizationShould
 {
     /// <summary>Default page is 1.</summary>
-    [Fact]
+    [Fact(DisplayName = "When default Page Is One, then test passes")]
     public void DefaultPageIsOne()
     {
         new FilterQuery().Page.ShouldBe(1);
     }
 
     /// <summary>Default page size is 25.</summary>
-    [Fact]
+    [Fact(DisplayName = "When default Page Size Is Twenty Five, then test passes")]
     public void DefaultPageSizeIsTwentyFive()
     {
         new FilterQuery().PageSize.ShouldBe(25);
     }
 
     /// <summary>Page 0 normalizes to 1.</summary>
-    [Fact]
+    [Fact(DisplayName = "When normalize Page Zero To One, then test passes")]
     public void NormalizePageZeroToOne()
     {
         new FilterQuery { Page = 0 }.Normalized().Page.ShouldBe(1);
     }
 
     /// <summary>Negative page normalizes to 1.</summary>
-    [Fact]
+    [Fact(DisplayName = "When normalize Negative Page To One, then test passes")]
     public void NormalizeNegativePageToOne()
     {
         new FilterQuery { Page = -5 }.Normalized().Page.ShouldBe(1);
     }
 
     /// <summary>Page 1 stays 1.</summary>
-    [Fact]
+    [Fact(DisplayName = "When keep Valid Page, then test passes")]
     public void KeepValidPage()
     {
         new FilterQuery { Page = 1 }.Normalized().Page.ShouldBe(1);
     }
 
     /// <summary>PageSize 0 clamps to 1.</summary>
-    [Fact]
+    [Fact(DisplayName = "When clamp Page Size Zero To One, then test passes")]
     public void ClampPageSizeZeroToOne()
     {
         new FilterQuery { PageSize = 0 }.Normalized().PageSize.ShouldBe(1);
     }
 
     /// <summary>PageSize negative clamps to 1.</summary>
-    [Fact]
+    [Fact(DisplayName = "When clamp Negative Page Size To One, then test passes")]
     public void ClampNegativePageSizeToOne()
     {
         new FilterQuery { PageSize = -100 }.Normalized().PageSize.ShouldBe(1);
     }
 
     /// <summary>PageSize above 100 clamps to 100.</summary>
-    [Fact]
+    [Fact(DisplayName = "When clamp Page Size Above100, then test passes")]
     public void ClampPageSizeAbove100()
     {
         new FilterQuery { PageSize = 1000 }.Normalized().PageSize.ShouldBe(100);
     }
 
     /// <summary>PageSize exactly 100 is allowed.</summary>
-    [Fact]
+    [Fact(DisplayName = "When allow Page Size100, then test passes")]
     public void AllowPageSize100()
     {
         new FilterQuery { PageSize = 100 }.Normalized().PageSize.ShouldBe(100);
     }
 
     /// <summary>PageSize exactly 1 is allowed.</summary>
-    [Fact]
+    [Fact(DisplayName = "When allow Page Size1, then test passes")]
     public void AllowPageSize1()
     {
         new FilterQuery { PageSize = 1 }.Normalized().PageSize.ShouldBe(1);
     }
 
     /// <summary>Skip is zero on page 1.</summary>
-    [Fact]
+    [Fact(DisplayName = "When skip Zero On First Page, then test passes")]
     public void SkipZeroOnFirstPage()
     {
         new FilterQuery { Page = 1, PageSize = 25 }.Skip().ShouldBe(0);
     }
 
     /// <summary>Skip is correct on page 3 with size 25 (offset 50).</summary>
-    [Fact]
+    [Fact(DisplayName = "When skip On Later Page, then test passes")]
     public void SkipOnLaterPage()
     {
         new FilterQuery { Page = 3, PageSize = 25 }.Skip().ShouldBe(50);
     }
 
     /// <summary>Skip uses normalized page (page 0 → skip 0, not -25).</summary>
-    [Fact]
+    [Fact(DisplayName = "When skip Uses Normalized Page, then test passes")]
     public void SkipUsesNormalizedPage()
     {
         new FilterQuery { Page = 0, PageSize = 25 }.Normalized().Skip().ShouldBe(0);
     }
 
     /// <summary>Filter and Sort pass through Normalized unchanged.</summary>
-    [Fact]
+    [Fact(DisplayName = "When pass Filter And Sort Through Normalized, then test passes")]
     public void PassFilterAndSortThroughNormalized()
     {
         var query = new FilterQuery { Filter = "name~x", Sort = "name,desc" };

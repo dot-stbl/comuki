@@ -81,7 +81,7 @@ public sealed class DockerComputeProviderShould
             && labels.ContainsKey(labelFilter);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When create Container With Env Labels And Network Then Start It Async, then test passes")]
     public async Task CreateContainerWithEnvLabelsAndNetworkThenStartItAsync()
     {
         var projectId = ProjectId.New();
@@ -102,7 +102,7 @@ public sealed class DockerComputeProviderShould
             "container-1", Arg.Any<ContainerStartParameters>(), cancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When honor Pre Issued Worker Id When Provided Async, then test passes")]
     public async Task HonorPreIssuedWorkerIdWhenProvidedAsync()
     {
         var projectId = ProjectId.New();
@@ -131,7 +131,7 @@ public sealed class DockerComputeProviderShould
             cancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When mint Fresh Worker Id When None Pre Issued Async, then test passes")]
     public async Task MintFreshWorkerIdWhenNonePreIssuedAsync()
     {
         var projectId = ProjectId.New();
@@ -147,7 +147,7 @@ public sealed class DockerComputeProviderShould
         request.PreIssuedWorkerId.ShouldBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When stop And Remove Worker Container With Configured Grace Async, then test passes")]
     public async Task StopAndRemoveWorkerContainerWithConfiguredGraceAsync()
     {
         var workerId = WorkerId.New();
@@ -172,7 +172,7 @@ public sealed class DockerComputeProviderShould
             cancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When not Touch Docker When Stopping Unknown Worker Async, then test passes")]
     public async Task NotTouchDockerWhenStoppingUnknownWorkerAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -188,7 +188,7 @@ public sealed class DockerComputeProviderShould
             default, default, cancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When map Listed Containers To Worker Info Async, then test passes")]
     public async Task MapListedContainersToWorkerInfoAsync()
     {
         var projectId = ProjectId.New();
@@ -230,7 +230,7 @@ public sealed class DockerComputeProviderShould
             cancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When count Running Workers Against Max Workers Async, then test passes")]
     public async Task CountRunningWorkersAgainstMaxWorkersAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -248,7 +248,7 @@ public sealed class DockerComputeProviderShould
             cancellationToken);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When clamp Free Slots To Zero When Over Capacity Async, then test passes")]
     public async Task ClampFreeSlotsToZeroWhenOverCapacityAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;

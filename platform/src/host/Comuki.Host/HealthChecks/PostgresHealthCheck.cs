@@ -26,9 +26,9 @@ public sealed class PostgresHealthCheck(string connectionString) : IHealthCheck
             await command.ExecuteScalarAsync(cancellationToken);
             return HealthCheckResult.Healthy(description: "Postgres SELECT 1 returned 1");
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            return HealthCheckResult.Unhealthy(description: "Postgres probe failed", exception: ex);
+            return HealthCheckResult.Unhealthy(description: "Postgres probe failed", exception: exception);
         }
     }
 }

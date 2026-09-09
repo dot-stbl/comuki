@@ -48,10 +48,10 @@ public sealed class OidcTokenExchange(HttpClient httpClient, ILogger<OidcTokenEx
         {
             logger.LogWarning("Oidc token exchange returned {Status}: {Body}", (int)response.StatusCode, body);
             throw new InvalidOperationException(
-                $"oidc token endpoint returned {(int)response.StatusCode}: {Truncate(body, 256)}");
+                $"oidc token endpoint returned {(int)response.StatusCode}: {OidcResponseText.Truncate(body, 256)}");
         }
 
-        var doc = System.Text.Json.JsonSerializer.Deserialize<TokenResponseDto>(body)
+        var doc = System.Text.Json.JsonSerializer.Deserialize<TokenExchangeResponse>(body)
             ?? throw new InvalidOperationException("oidc token endpoint returned an empty body");
 
         return string.IsNullOrWhiteSpace(doc.IdToken)
@@ -59,12 +59,7 @@ public sealed class OidcTokenExchange(HttpClient httpClient, ILogger<OidcTokenEx
             : new OidcTokenResponse(doc.IdToken, doc.AccessToken, doc.TokenType, doc.ExpiresIn);
     }
 
-    private static string Truncate(string value, int max)
-    {
-        return value.Length <= max ? value : string.Concat(value.AsSpan(0, max), "…");
-    }
-
-    private sealed record TokenResponseDto(
+    private sealed record TokenExchangeResponse(
         [property: JsonPropertyName("id_token")] string IdToken,
         [property: JsonPropertyName("access_token")] string AccessToken,
         [property: JsonPropertyName("token_type")] string TokenType,

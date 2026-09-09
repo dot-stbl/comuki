@@ -75,7 +75,7 @@ public sealed class ScalePolicyShould
         decision.ClampedByCapacity.ShouldBe(expectedClamped);
     }
 
-    [Fact]
+    [Fact(DisplayName = "When skip Capacity Clamp When Free Slots Is Null, then test passes")]
     public void SkipCapacityClampWhenFreeSlotsIsNull()
     {
         var input = new ScalePolicyInput(
@@ -93,7 +93,7 @@ public sealed class ScalePolicyShould
         decision.ClampedByCapacity.ShouldBeFalse();
     }
 
-    [Fact]
+    [Fact(DisplayName = "When clamp Start To Zero When Running Exceeds Max Concurrent, then test passes")]
     public void ClampStartToZeroWhenRunningExceedsMaxConcurrent()
     {
         var input = new ScalePolicyInput(QueuedCount: 4, IdleCount: 0, StaleIdleCount: 0, RunningCount: 6, MinIdle: 0, MaxConcurrent: 4);

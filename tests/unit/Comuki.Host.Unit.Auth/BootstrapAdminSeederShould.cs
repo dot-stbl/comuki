@@ -8,6 +8,7 @@ using Comuki.Modules.Identity.Domain.Roles;
 using Comuki.Modules.Identity.Domain.Scopes;
 using Comuki.Modules.Identity.Domain.Subjects;
 using Comuki.Modules.Identity.Domain.Users;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
@@ -130,7 +131,9 @@ public sealed class BootstrapAdminSeederShould
 
         var createUser = new CreateUserHandler(userStore, hasher, clock);
         var grantRole = new GrantRoleHandler(assignments, evaluator, clock);
-        var seeder = new BootstrapAdminSeeder(options, createUser, grantRole, userStore, NullLogger<BootstrapAdminSeeder>.Instance);
+        var scopeAccessor = Substitute.For<ISubjectScopeAccessor>();
+        scopeAccessor.AsSystem(Arg.Any<string>()).Returns(Substitute.For<IDisposable>());
+        var seeder = new BootstrapAdminSeeder(options, createUser, grantRole, userStore, scopeAccessor, NullLogger<BootstrapAdminSeeder>.Instance);
         return new Seam(seeder, userStore, assignments);
     }
 

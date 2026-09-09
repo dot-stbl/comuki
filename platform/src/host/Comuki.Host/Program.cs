@@ -47,13 +47,22 @@ builder.Services.RemoveHostedServicesForOpenApiGeneration();
 // Under build-time OpenAPI generation seed minimal config defaults
 // (MinIO env vars etc.) so the [Required] data-annotation validation in
 // HostComposer.Compose does not fail on a fresh clone without an env file.
-// No-op at runtime — real config comes from appsettings / env.
+// No-op at runtime — real config comes from appsettings / env. The HMAC
+// pepper seeds keep the ProductionSecretValidator fail-closed check from
+// rejecting the build-time introspection pass (security audit A02-1).
+// The peppers are sourced via env vars because ApiKeyOptions.Pepper and
+// WorkerTokenOptions.Pepper initializers read their env vars first; the
+// WorkerTokenOptions also picks up the config override via .Bind(), the
+// ApiKeyOptions does not — env-var seeding covers both paths.
 if (OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration)
 {
     builder.Configuration["Artifacts:Endpoint"] = "build-time:9000";
     builder.Configuration["Artifacts:AccessKey"] = "build-time";
     builder.Configuration["Artifacts:SecretKey"] = "build-time";
     builder.Configuration["Artifacts:Bucket"] = "build-time";
+    builder.Configuration["Security:WorkerToken:Pepper"] = "build-time-worker-token-pepper-not-a-secret";
+    Environment.SetEnvironmentVariable("COMUKI_IDENTITY_APIKEY_PEPPER", "build-time-apikey-pepper-not-a-secret");
+    Environment.SetEnvironmentVariable("COMUKI_TOKEN_PEPPER", "build-time-worker-token-pepper-not-a-secret");
 }
 
 var app = HostComposer.Compose(builder, database);

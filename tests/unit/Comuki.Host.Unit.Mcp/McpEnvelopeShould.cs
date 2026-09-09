@@ -234,11 +234,17 @@ public sealed class McpEnvelopeShould
         permission ??= new PermissionKey("run:read");
         var resolvedEvaluator = evaluator ?? BuildEvaluator(permission.Value);
         return new McpServer(
-            knowledgeIngestor: Substitute.For<IKnowledgeIngestor>(),
-            knowledgeSearcher: Substitute.For<IKnowledgeSearcher>(),
-            runsList: NewRunsListHandler(),
+            toolHandlers: BuildToolHandlers(),
             permissionEvaluator: resolvedEvaluator,
             logger: NullLogger<McpServer>.Instance);
+    }
+
+    private static McpToolHandlers BuildToolHandlers()
+    {
+        return new McpToolHandlers(
+            knowledgeSearcher: Substitute.For<IKnowledgeSearcher>(),
+            knowledgeIngestor: Substitute.For<IKnowledgeIngestor>(),
+            runsList: NewRunsListHandler());
     }
 
     private static IPermissionEvaluator BuildEvaluator(PermissionKey key)

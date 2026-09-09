@@ -210,9 +210,14 @@ internal sealed class FakeMemoryStore(IReadOnlyList<MemoryFactView> facts) : IMe
         return Task.FromResult(results);
     }
 
-    public Task<IReadOnlyList<MemoryFactView>> ListAsync(MemoryScope scope, string subjectId, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<MemoryFactView>> ListAsync(
+        MemoryScope scope,
+        string subjectId,
+        int limit = IMemoryStore.DefaultListLimit,
+        int offset = 0,
+        CancellationToken cancellationToken = default)
     {
-        return SearchAsync(new MemoryFactQuery(Scope: scope, SubjectId: subjectId), cancellationToken);
+        return SearchAsync(new MemoryFactQuery(Scope: scope, SubjectId: subjectId, Limit: limit), cancellationToken);
     }
 
     public Task<bool> ForgetAsync(MemoryFactId id, CancellationToken cancellationToken = default)

@@ -16,4 +16,11 @@ public static class ArtifactsDatabase
 
     /// <summary>One row per packaged run — the packager's bookkeeping.</summary>
     public const string RunBundles = "run_bundles";
+
+    /// <summary>
+    /// One row per published visual artifact (issue #51 slice 1) — the
+    /// metadata side of the object store entry. Bytes live in MinIO
+    /// under <c>visual_artifacts/{projectId}/{artifactId}/{version}</c>.
+    /// </summary>
+    public const string VisualArtifacts = "visual_artifacts";
 }

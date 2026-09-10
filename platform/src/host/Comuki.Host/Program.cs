@@ -4,6 +4,9 @@ using Comuki.Host;
 using Comuki.Host.OpenApi;
 using Comuki.Host.Workers;
 using Comuki.Modules.Scheduler.Infrastructure.Observers;
+using Comuki.Shared.Bootstrap;
+using Comuki.Shared.Bootstrap.Config;
+using Comuki.Shared.Bootstrap.Logging;
 using Comuki.Shared.Contracts.ControlPlane.ChatCommands;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 
@@ -19,7 +22,26 @@ using Comuki.Shared.Contracts.ControlPlane.Profiles;
 // would throw on a plain `dotnet build` of a freshly cloned tree — substitute
 // an explicit dummy connection string for the introspection pass only; the
 // introspection never opens the socket and never starts the migrator.
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    EnvironmentName = ComukiEnvironment.Resolve(),
+});
+
+// Comuki-native surface (issue #54): config.toml + COMUKI_* env replace
+// appsettings/bare env sources, [server]/COMUKI_SERVER_PORT pin the
+// listen address when set, and the comuki console formatter owns the
+// log output. No config.toml present → empty configuration, no error:
+// the build-time OpenAPI pass below depends on booting without one.
+builder.Configuration.UseComukiConfiguration();
+builder.WebHost.ConfigureKestrel(static server => server.AddServerHeader = false);
+if (builder.Configuration.TryResolveServerUrl() is { } serverUrl)
+{
+    builder.WebHost.UseUrls(serverUrl);
+}
+
+builder.Logging.ClearProviders();
+builder.Logging.AddComukiConsole();
 
 // Sentry side-channel for the scheduler dispatcher (S15 / sentry):
 // initialises the SDK once if Scheduler:Sentry:Dsn is set; otherwise

@@ -3,11 +3,14 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Comuki.Migrator</RootNamespace>
+    <!-- Comuki-native binary name (issue #54): the apphost ships as
+         `comuki-migrator`; the project/namespace stays Comuki.Migrator. -->
+    <AssemblyName>comuki-migrator</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,12 +24,7 @@
     <ProjectReference Include="..\..\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Infrastructure\Comuki.Modules.Projects.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Scheduler\Comuki.Modules.Scheduler.Infrastructure\Comuki.Modules.Scheduler.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <ProjectReference Include="..\..\shared\Comuki.Shared.Bootstrap\Comuki.Shared.Bootstrap.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -109,6 +109,37 @@ podman compose down -v     # wipe data
 
 Wiping data is fine in dev. In real life, do not.
 
+## Env & config.toml
+
+The platform speaks Comuki, not .NET (issue #54). Four binaries —
+`comuki` (orchestrator host), `comuki-brain`, `comuki-translator`
+(worker), `comuki-migrator` — one configuration contract:
+
+| Concern | Comuki way | Quiet fallback (not documented as the path) |
+|---|---|---|
+| Environment | `COMUKI_ENV=development\|production` (default `production`) | `ASPNETCORE_ENVIRONMENT` / `DOTNET_ENVIRONMENT` |
+| Config file | `config.toml` (see [`config.example.toml`](./config.example.toml)) | — |
+| Config file path | `COMUKI_CONFIG_PATH` → `./config.toml` (cwd) → `/etc/comuki/config.toml` (Linux) | — |
+| Env → config | `COMUKI_A_B` → `a:b` (single underscore = section separator, case-insensitive binding) | `Section__Key` double-underscore form is not read |
+| Listen address | `[server] host/port` in config.toml, env override `COMUKI_SERVER_PORT` | `ASPNETCORE_URLS` / `ASPNETCORE_HTTP_PORTS` |
+
+Notes:
+
+- **No config.toml found → empty configuration, no error.** Build-time
+  OpenAPI generation boots the hosts without one; secrets and endpoints
+  arrive through env anyway.
+- **Secrets never live in config.toml** — `COMUKI_DB`, peppers, MinIO
+  keys, admin password, model API keys are env-only.
+- **Logs**: one line per event —
+  `2026-09-11T10:00:00.123Z info  comuki.host  listening addr=http://localhost:8080` —
+  RFC3339 UTC with milliseconds, lowercase level, lowercase category,
+  structured fields as `key=val`. Kestrel lifetime messages are
+  rewritten to short `comuki.host` lines; no `Server:` header on
+  responses.
+- The migrator's config.toml fallback section is
+  `[connectionStrings] comuki = "…"` with a blank `Password=` filled
+  from `COMUKI_MIGRATOR_DB_PASSWORD`.
+
 ## Grafana dashboards-as-code (S8)
 
 Opt in — Grafana is behind `profiles: ["grafana"]` so a bare `compose up`
@@ -134,7 +165,8 @@ Layout:
 
 1. Compose already starts VictoriaMetrics with `--enableOTLPReceiver`
    (OTLP gRPC on host `:8431`, query/vmui on `:8428`).
-2. Host: set `Telemetry:OtlpEndpoint` (or env `Telemetry__OtlpEndpoint`) to
+2. Host: set `telemetry.otlpEndpoint` in config.toml (or env
+   `COMUKI_TELEMETRY_OTLPENDPOINT`) to
    `http://localhost:8431`. `HostComposer` calls `AddComukiTelemetry` —
    options always `ValidateOnStart`; the OTLP SDK wires only when the
    endpoint is set (otherwise instruments stay cheap no-ops).

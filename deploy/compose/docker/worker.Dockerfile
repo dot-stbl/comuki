@@ -3,7 +3,7 @@
 # stops these.
 #
 # Contents (Translator contract, platform/src/host/Comuki.Host.Translator):
-#   * Comuki.Host.Translator (framework-dependent .NET 10 publish) — the
+#   * comuki-translator (framework-dependent .NET 10 publish) — the
 #     ENTRYPOINT: claims work over REST, runs the bidi gRPC worker
 #     stream, spawns the agent per work item;
 #   * pi (@earendil-works/pi-coding-agent via bun add -g) — the headless
@@ -59,7 +59,8 @@ ENV DOTNET_ROOT=/usr/share/dotnet \
     # slim base has no libicu; the translator does no culture-sensitive work
     DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 
-# The translator (container ENTRYPOINT) + its default worktree mount.
+# The translator (container ENTRYPOINT, apphost binary — issue #54) +
+# its default worktree mount.
 COPY --from=build /app /app/translator
 
 # Comuki agents workspace: comuki-agent-core + comuki-worker-sdk sources
@@ -79,4 +80,4 @@ ENV COMUKI_ORCH_HTTP=http://comuki-host:8080 \
 WORKDIR /work
 VOLUME /work
 
-ENTRYPOINT ["dotnet", "/app/translator/Comuki.Host.Translator.dll"]
+ENTRYPOINT ["/app/translator/comuki-translator"]

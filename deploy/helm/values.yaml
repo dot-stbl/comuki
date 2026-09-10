@@ -22,7 +22,7 @@ fullnameOverride: ""
 # URL users open in the browser.
 publicUrl: http://comuki.localhost
 
-# ASPNETCORE_ENVIRONMENT for the host. Production (default) enables the
+# COMUKI_ENV for the host. Production (default) enables the
 # startup secret validator — the host refuses to boot on dev-default
 # credentials.
 environment: Production
@@ -67,7 +67,7 @@ host:
     limits:
       cpu: "1"
       memory: 1Gi
-  # Extra env vars passed straight to the container (e.g. Host__RateLimit__*).
+  # Extra env vars passed straight to the container (e.g. COMUKI_HOST_RATELIMIT_*).
   extraEnv: []
   podAnnotations: {}
   nodeSelector: {}

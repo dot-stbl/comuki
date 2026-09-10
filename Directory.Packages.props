@@ -77,12 +77,26 @@
     <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.12" />
   </ItemGroup>
 
+  <!-- Caching abstractions (issue #52 slice 2): IMemoryCache consumed by
+       VaultSecretProvider for the per-(address,path,key) TTL. The Memory
+       implementation is referenced by host composition via AddMemoryCache. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.11" />
+  </ItemGroup>
+
   <!-- Integration testing -->
   <ItemGroup>
     <!-- 4.14.0 (not 4.12.0): 4.12.0 pulls vulnerable SSH.NET 2025.1.0
          (GHSA-q939-rpr3-3284, NU1903 -> build error); 4.14.0 references
          the patched SSH.NET 2026.0.0. -->
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
+    <!-- Base Testcontainers package — used by the Vault integration
+         fixture (issue #52 slice 2) to spin the official
+         hashicorp/vault:1.15 image via GenericContainer (the first-party
+         Testcontainers.HashicorpVault module is not on NuGet). The base
+         package is the same line as the specialized PostgreSql / Minio
+         modules above. -->
+    <PackageVersion Include="Testcontainers" Version="4.14.0" />
     <!-- Realtime (issue #7): .NET client the integration suite connects
          to the runs hub with. -->
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.11" />
@@ -149,5 +163,17 @@
        envelope. -->
   <ItemGroup>
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
+
+  <!-- Secret-resolution subsystem — issue #52, slice 2 (Vault provider).
+       VaultSharp 1.17.5.1 is Apache-2.0 (permissive; AGPL/GPL are
+       banned per project licensing rules). K/V v2 engine access lives
+       in the VaultSecretProvider (platform/src/shared/Comuki.Shared.Kernel/Secrets).
+       Testcontainers for Vault uses the GenericContainer + the official
+       hashicorp/vault image (Testcontainers does not ship a first-party
+       HashicorpVault module at the time of this slice — only the
+       LowkeyVault mock module is published). -->
+  <ItemGroup>
+    <PackageVersion Include="VaultSharp" Version="1.17.5.1" />
   </ItemGroup>
 </Project>

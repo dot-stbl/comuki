@@ -56,9 +56,12 @@ using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Secrets;
 using Comuki.Shared.Telemetry.Installers;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
+using VaultSharp;
+using static Comuki.Host.VaultSecretClientFactory;
 
 namespace Comuki.Host;
 
@@ -92,11 +95,11 @@ internal static class HostComposer
 
         // Secret-resolution subsystem (issue #52, slice 1): the env /
         // file providers are always registered (cheap, no I/O at boot);
-        // the file provider is replaced by NullSecretProvider when the
-        // operator did not opt in via [Secrets:File]:Enabled. The
-        // composite resolver is the single ISecretResolver hot-path
-        // callers receive — every existing SecretEnvRef row keeps
-        // working unchanged (bare name -> env).
+        // the file provider short-circuits on [Secrets:File]:Enabled
+        // at resolve time, so an opted-out deployment never touches the
+        // filesystem. The composite resolver is the single
+        // ISecretResolver hot-path callers receive — every existing
+        // SecretEnvRef row keeps working unchanged (bare name -> env).
         builder.Services.AddOptions<SecretsOptions>()
             .Bind(builder.Configuration.GetSection(SecretsOptions.SectionName))
             .ValidateDataAnnotations()
@@ -113,16 +116,46 @@ internal static class HostComposer
             .ValidateOnStart();
         builder.Services.AddSingleton<ISecretResolver, CompositeSecretResolver>();
         builder.Services.AddSingleton<ISecretProvider, EnvSecretProvider>();
+        // The null scheme: ONE explicit registration. The file-secret
+        // factory used to register a SECOND NullSecretProvider when
+        // [Secrets:File]:Enabled = false (the default) — the composite's
+        // duplicate-tolerant GroupBy silently masked it (issue #52
+        // slice-2 audit M1/M6); the duplication is gone.
         builder.Services.AddSingleton<ISecretProvider, NullSecretProvider>();
-        // File provider: gated by [Secrets:File]:Enabled. When false,
-        // NullSecretProvider stands in so a file:/path ref surfaces as a
-        // typed SecretRefUnsetException rather than reading the host
-        // blindly. Slice 2/3 will append Vault / Consul providers here.
+        // File provider: registered unconditionally; FileSecretProvider
+        // itself gates on [Secrets:File]:Enabled — when false it
+        // short-circuits to null before any filesystem access, so a
+        // file:/path ref surfaces as a typed SecretRefUnsetException
+        // through the composite rather than reading the host blindly.
+        // Slice 2/3 append Vault / Consul providers below the same way.
+        builder.Services.AddSingleton<ISecretProvider, FileSecretProvider>();
+
+        // Vault provider (issue #52, slice 2): [Secrets:Vault]:Enabled
+        // gates the IVaultClient bootstrap. When Enabled=true the
+        // factory reads the bootstrap token from the env var named in
+        // VaultSecretOptions.TokenEnvRef at startup and bakes it into
+        // the VaultSharp VaultClient (TokenAuthMethodInfo). When the
+        // env var is unset in Production the boot fails via the
+        // existing ProductionSecretValidator gate; in Development the
+        // factory still throws (a placeholder token would silently
+        // produce 403s on every Vault call). When Enabled=false the
+        // factory uses a placeholder token — VaultSecretProvider's
+        // ResolveAsync short-circuits on Enabled=false, so the client
+        // is never actually used. Memory cache backs the TTL cache
+        // (issue #52 §Design — remote default 60s). Slice 3 (Consul)
+        // mirrors the same pattern.
+        builder.Services.AddOptions<VaultSecretOptions>()
+            .Bind(builder.Configuration.GetSection(VaultSecretOptions.SectionName))
+            .ValidateOnStart();
+        builder.Services.AddSingleton<IValidateOptions<VaultSecretOptions>, VaultSecretOptionsValidator>();
+        builder.Services.AddMemoryCache();
+        builder.Services.AddSingleton(Build);
         builder.Services.AddSingleton<ISecretProvider>(serviceProvider =>
-        {
-            var file = serviceProvider.GetRequiredService<IOptions<FileSecretOptions>>().Value;
-            return file.Enabled ? new FileSecretProvider(serviceProvider.GetRequiredService<IOptions<FileSecretOptions>>()) : new NullSecretProvider();
-        });
+            new VaultSecretProvider(
+                serviceProvider.GetRequiredService<IOptions<VaultSecretOptions>>(),
+                serviceProvider.GetRequiredService<IVaultClient>(),
+                serviceProvider.GetRequiredService<ILogger<VaultSecretProvider>>(),
+                serviceProvider.GetRequiredService<IMemoryCache>()));
 
         builder.Services.AddControlPlaneCatalogCore(builder.Configuration);
 

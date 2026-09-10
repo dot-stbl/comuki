@@ -1,8 +1,9 @@
-# Build context hygiene for deploy/worker.Dockerfile (context = repo root).
+# Build context hygiene for deploy/worker.Dockerfile and deploy/hybrid/*.
+# `agents` is NOT excluded: the hybrid worker image COPYs the agents
+# workspace (comuki-agent-core + comuki-worker-sdk) into the image.
 .git
 .agents
 dashboard
-agents
 control-plane
 tests
 openspec

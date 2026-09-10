@@ -1,0 +1,218 @@
+# Self-host Comuki with Docker Compose.
+#
+# Brings up the full local stack: Postgres (pgvector) + MinIO + the
+# Comuki host (orchestrator API) + the dashboard SPA behind an nginx
+# reverse proxy + a one-shot migrator job. Worker containers are NOT
+# compose services — the host spawns them through the Docker compute
+# provider via the mounted docker socket.
+#
+# Quick start:
+#   cd deploy/compose
+#   cp .env.example .env          # edit if you like; defaults work locally
+#   docker compose up -d --build  # first build takes a while (dotnet + bun)
+#
+# Dashboard:  http://localhost:17173   (nginx: SPA + /api + /realtime proxy)
+# Host API:   http://localhost:17172   (direct Kestrel, /health, /openapi/v1.json)
+#
+# Tear down + wipe data: docker compose down -v
+
+name: comuki
+
+services:
+  postgres:
+    # pgvector image — the knowledge module stores embeddings in the
+    # `vector` column type (schema `knowledge`).
+    image: pgvector/pgvector:pg16
+    container_name: comuki-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${COMUKI_POSTGRES_USER:-comuki}
+      POSTGRES_PASSWORD: ${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
+      POSTGRES_DB: ${COMUKI_POSTGRES_DB:-comuki}
+    ports:
+      - "${COMUKI_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${COMUKI_POSTGRES_USER:-comuki} -d ${COMUKI_POSTGRES_DB:-comuki}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks:
+      - comuki-net
+
+  minio:
+    # S3-compatible object storage — run artifacts (brief/result/pins
+    # bundles per run) land in the bucket below. The host also
+    # auto-creates the bucket on first use (Artifacts__AutoCreateBucket).
+    image: minio/minio:latest
+    container_name: comuki-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${COMUKI_MINIO_ROOT_USER:-comuki}
+      MINIO_ROOT_PASSWORD: ${COMUKI_MINIO_ROOT_PASSWORD:-comuki_dev}
+    ports:
+      - "${COMUKI_MINIO_PORT:-9000}:9000"    # S3 API
+      - "${COMUKI_MINIO_CONSOLE_PORT:-9001}:9001"  # web console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local 2>/dev/null || curl -fsS http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      - comuki-net
+
+  comuki-migrator:
+    # One-shot: applies EF Core migrations for every schema (10 of them,
+    # each with its own __ef_migrations_history). Runs before the host.
+    image: ghcr.io/dot-stbl/comuki:${COMUKI_IMAGE_TAG:-local}
+    build:
+      context: ../..
+      dockerfile: deploy/compose/docker/host.Dockerfile
+      tags:
+        - ghcr.io/dot-stbl/comuki:local
+    container_name: comuki-migrator
+    restart: "no"
+    command: ["dotnet", "/app/migrator/Comuki.Migrator.dll"]
+    environment:
+      COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_POSTGRES_DB:-comuki};Username=${COMUKI_POSTGRES_USER:-comuki};Password=${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - comuki-net
+
+  comuki-host:
+    # The orchestrator: REST API + SignalR realtime + worker claim/gRPC
+    # runtime + scheduler + intake + artifacts packager, all in one
+    # process. Spawns worker containers through the Docker socket.
+    image: ghcr.io/dot-stbl/comuki:${COMUKI_IMAGE_TAG:-local}
+    container_name: comuki-host
+    restart: unless-stopped
+    command: ["dotnet", "/app/host/Comuki.Host.dll"]
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${COMUKI_ENVIRONMENT:-Development}
+      COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_POSTGRES_DB:-comuki};Username=${COMUKI_POSTGRES_USER:-comuki};Password=${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
+      COMUKI_IDENTITY_APIKEY_PEPPER: ${COMUKI_IDENTITY_APIKEY_PEPPER:-comuki-local-apikey-pepper}
+      COMUKI_TOKEN_PEPPER: ${COMUKI_TOKEN_PEPPER:-comuki-local-token-pepper}
+      COMUKI_BOOTSTRAP_ADMIN_EMAIL: ${COMUKI_BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}
+      COMUKI_BOOTSTRAP_ADMIN_PASSWORD: ${COMUKI_BOOTSTRAP_ADMIN_PASSWORD:-comuki_dev}
+      COMUKI_PUBLIC_HOST_URL: ${COMUKI_PUBLIC_HOST_URL:-http://localhost:17173}
+      Host__Cors__AllowedOrigins__0: ${COMUKI_CORS_ORIGIN:-http://localhost:17173}
+      Artifacts__Endpoint: minio:9000
+      Artifacts__AccessKey: ${COMUKI_MINIO_ROOT_USER:-comuki}
+      Artifacts__SecretKey: ${COMUKI_MINIO_ROOT_PASSWORD:-comuki_dev}
+      Artifacts__Bucket: ${COMUKI_MINIO_BUCKET:-comuki-run-bundles}
+      Artifacts__UseSSL: "false"
+      Artifacts__AutoCreateBucket: "true"
+      Compute__Provider: docker
+      Compute__Docker__NetworkMode: ${COMUKI_DOCKER_NETWORK:-comuki-net}
+      Compute__Scale__WorkerImage: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
+      Compute__Scale__OrchestratorGrpcUrl: http://comuki-host:8080
+      Chat__Worker__Image: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
+      Scheduler__Worker__Image: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
+    ports:
+      - "${COMUKI_HOST_PORT:-17172}:8080"
+    volumes:
+      # Docker compute provider: spawns worker containers through the
+      # host's Docker daemon. The app user needs group access to the
+      # socket — set DOCKER_GID to the gid of the docker group on the
+      # host (commonly 999 on Linux; see .env.example).
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    group_add:
+      - "${DOCKER_GID:-999}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      comuki-migrator:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - comuki-net
+
+  comuki-dashboard:
+    # The dashboard SPA (built with VITE_API_BASE_URL pointing at this
+    # origin) served by nginx; nginx also reverse-proxies /api, /realtime
+    # (SignalR websockets) and /openapi to the host — one origin, no CORS
+    # complexity in the browser.
+    image: ghcr.io/dot-stbl/comuki-dashboard:${COMUKI_IMAGE_TAG:-local}
+    build:
+      context: ../..
+      dockerfile: deploy/compose/docker/dashboard.Dockerfile
+      args:
+        VITE_API_BASE_URL: ${COMUKI_PUBLIC_HOST_URL:-http://localhost:17173}
+      tags:
+        - ghcr.io/dot-stbl/comuki-dashboard:local
+    container_name: comuki-dashboard
+    restart: unless-stopped
+    ports:
+      - "${COMUKI_DASHBOARD_PORT:-17173}:80"
+    depends_on:
+      comuki-host:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost/ >/dev/null 2>&1 || wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+    networks:
+      - comuki-net
+
+  worker-image:
+    # Build-only service: produces the worker image (Translator + pi
+    # agent runtime) the host spawns per work item. Exits immediately —
+    # its only job is to have `comuki-worker:local` present locally.
+    image: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
+    build:
+      context: ../..
+      dockerfile: deploy/compose/docker/worker.Dockerfile
+    container_name: comuki-worker-image
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c", "exit 0"]
+    networks:
+      - comuki-net
+
+  comuki-brain:
+    # OPTIONAL (profile `brain`): the standalone brain host. NOTE —
+    # experimental: the current brain binary binds its gRPC listener to
+    # localhost inside the container, and the orchestrator host ships an
+    # in-process brain stub for chat. Run this to evaluate the separate
+    # brain host; expect no cross-container gRPC traffic yet.
+    profiles: ["brain"]
+    image: ghcr.io/dot-stbl/comuki:${COMUKI_IMAGE_TAG:-local}
+    container_name: comuki-brain
+    restart: unless-stopped
+    command: ["dotnet", "/app/brain/Comuki.Host.Brain.dll"]
+    environment:
+      COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_POSTGRES_DB:-comuki};Username=${COMUKI_POSTGRES_USER:-comuki};Password=${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
+      Brain__GrpcPort: "17004"
+      COMUKI_BRAIN_MODEL_ENDPOINT: ${COMUKI_BRAIN_MODEL_ENDPOINT:-}
+      COMUKI_BRAIN_MODEL_API_KEY: ${COMUKI_BRAIN_MODEL_API_KEY:-}
+      COMUKI_BRAIN_MODEL_ID: ${COMUKI_BRAIN_MODEL_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      comuki-migrator:
+        condition: service_completed_successfully
+    networks:
+      - comuki-net
+
+networks:
+  comuki-net:
+    name: ${COMUKI_DOCKER_NETWORK:-comuki-net}
+    driver: bridge
+
+volumes:
+  postgres-data:
+  minio-data:

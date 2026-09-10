@@ -1,0 +1,52 @@
+# The host spawns workers as batch/v1 Jobs (backoffLimit 0, TTL-cleaned)
+# via the Kubernetes compute provider — it needs create/read/delete on
+# jobs plus pod reads, and a ServiceAccount the worker pods run as.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: comuki-host
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: comuki-worker
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: comuki-worker-spawn
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: comuki-worker-spawn
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: comuki-worker-spawn
+subjects:
+  - kind: ServiceAccount
+    name: comuki-host
+    namespace: comuki

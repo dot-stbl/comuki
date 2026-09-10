@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "comuki.fullname" . }}
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+    app.kubernetes.io/component: host
+spec:
+  # MUST be 1: in-memory worker-token store + SignalR connection map.
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "comuki.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: host
+  template:
+    metadata:
+      labels:
+        {{- include "comuki.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: host
+      {{- with .Values.host.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "comuki.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: host
+          image: {{ include "comuki.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["dotnet", "/app/host/Comuki.Host.dll"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # Dependent-env expansion: must precede COMUKI_DB.
+            - name: COMUKI_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "comuki.secretName" . }}
+                  key: postgres-password
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ .Values.environment | quote }}
+            - name: COMUKI_DB
+              value: {{ include "comuki.dbConnectionString" . | quote }}
+            - name: COMUKI_IDENTITY_APIKEY_PEPPER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "comuki.secretName" . }}
+                  key: api-key-pepper
+            - name: COMUKI_TOKEN_PEPPER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "comuki.secretName" . }}
+                  key: token-pepper
+            - name: COMUKI_BOOTSTRAP_ADMIN_EMAIL
+              value: {{ .Values.bootstrapAdmin.email | quote }}
+            - name: COMUKI_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "comuki.secretName" . }}
+                  key: bootstrap-admin-password
+            - name: Artifacts__AccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "comuki.secretName" . }}
+                  key: artifacts-access-key
+            - name: Artifacts__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "comuki.secretName" . }}
+                  key: artifacts-secret-key
+            {{- with .Values.host.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "comuki.fullname" . }}-config
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            # Read-only root filesystem: the host writes nothing outside
+            # /tmp.
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            {{- toYaml .Values.host.resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.host.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.host.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.host.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

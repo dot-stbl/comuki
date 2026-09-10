@@ -1,0 +1,118 @@
+# Comuki Postgres — single node with pgvector (the knowledge module
+# stores embeddings as `vector` columns in the `knowledge` schema).
+apiVersion: v1
+kind: Service
+metadata:
+  name: comuki-postgres
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki
+    app.kubernetes.io/component: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+  selector:
+    app.kubernetes.io/name: comuki
+    app.kubernetes.io/component: postgres
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: comuki-postgres-init
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki
+    app.kubernetes.io/component: postgres
+data:
+  01-schemas.sql: |
+    CREATE EXTENSION IF NOT EXISTS vector;
+    CREATE SCHEMA IF NOT EXISTS orchestration;
+    CREATE SCHEMA IF NOT EXISTS identity;
+    CREATE SCHEMA IF NOT EXISTS projects;
+    CREATE SCHEMA IF NOT EXISTS memory;
+    CREATE SCHEMA IF NOT EXISTS knowledge;
+    CREATE SCHEMA IF NOT EXISTS chat;
+    CREATE SCHEMA IF NOT EXISTS intake;
+    CREATE SCHEMA IF NOT EXISTS costs;
+    CREATE SCHEMA IF NOT EXISTS artifacts;
+    CREATE SCHEMA IF NOT EXISTS scheduler;
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: comuki-postgres
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki
+    app.kubernetes.io/component: postgres
+spec:
+  replicas: 1
+  serviceName: comuki-postgres
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: comuki
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: comuki
+        app.kubernetes.io/component: postgres
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg16
+          env:
+            - name: POSTGRES_USER
+              value: comuki
+            - name: POSTGRES_DB
+              value: comuki
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: comuki-secrets
+                  key: postgres-password
+          ports:
+            - name: postgres
+              containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 12
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: init
+          configMap:
+            name: comuki-postgres-init
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi

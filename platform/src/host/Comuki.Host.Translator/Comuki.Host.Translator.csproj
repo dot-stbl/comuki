@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <RootNamespace>Comuki.Host.Translator</RootNamespace>
+    <!-- Comuki-native binary name (issue #54): the apphost ships as
+         `comuki-translator`; the project/namespace stays Comuki.Host.Translator. -->
+    <AssemblyName>comuki-translator</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\shared\Comuki.Shared.Bootstrap\Comuki.Shared.Bootstrap.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
   </ItemGroup>
 

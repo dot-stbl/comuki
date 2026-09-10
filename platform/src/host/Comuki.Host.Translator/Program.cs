@@ -4,12 +4,20 @@ using Comuki.Host.Translator.Execution.Loop;
 using Comuki.Host.Translator.Grpc;
 using Comuki.Host.Translator.Profiles;
 using Comuki.Host.Translator.Runtime;
+using Comuki.Shared.Bootstrap;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+// Comuki-native bootstrap (issue #54): config.toml + COMUKI_* env
+// sources, COMUKI_ENV with the quiet ASPNETCORE_/DOTNET_ fallbacks,
+// comuki console formatter.
+builder.UseComukiBootstrap();
+
 // COMUKI_* environment → Translator config section (the compute provider
-// stamps these on the worker container at Start).
+// stamps these on the worker container at Start). Kept explicit (instead
+// of convention binding) so the env contract stays visible in one place;
+// added after the bootstrap so it wins over any config.toml values.
 builder.Configuration.AddInMemoryCollection(TranslatorEnvironment.Snapshot());
 
 builder.Services.AddOptions<TranslatorOptions>()

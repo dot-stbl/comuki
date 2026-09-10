@@ -47,9 +47,20 @@ Guard-коммит `[hybrid] chore(git): guard hybrid contour overlay from GitHu
 | `deploy/hybrid/dev.yaml` | values общего чарта hybrid-service (AppSet подставляет tag) |
 | `deploy/hybrid/host.Dockerfile` | образ хоста: `/app/host` (оркестратор) + `/app/migrator` |
 | `deploy/hybrid/worker.Dockerfile` | образ воркера: Translator + pi + agents-пакеты |
-| `deploy/hybrid/infra-dev.yaml` | pgvector + MinIO в ns comuki (ручная джоба `infra:dev`) |
+| `deploy/hybrid/infra-dev.yaml` | pgvector в ns comuki (ручная джоба `infra:dev`; MinIO/OTLP — общие) |
 | `deploy/hybrid/migrate-job-dev.yaml` | batch Job для `migrate:dev` (tag подставляет CI) |
 | `deploy/hybrid/secrets.schema.yml` | schema секретов: имена ключей Consul-блоба |
+
+## Инфраструктура (dev)
+
+Решение владельца 2026-09-10: только Postgres живёт в контуре comuki,
+MinIO и OTLP — общие сервисы кластера.
+
+| Компонент | Где | Как подключён |
+|-----------|-----|---------------|
+| Postgres | pgvector в ns `comuki` (`infra-dev.yaml`, джоба `infra:dev`) | `COMUKI_DB` → `pgvector.comuki.svc.cluster.local:5432` |
+| MinIO | **общий** object-store-01, `s3.nova.adcluster.targetix.net:9000` | `Artifacts__Endpoint` в dev.yaml; креды — Consul-блоб (`Artifacts__{Access,Secret}Key`); бакет `comuki-run-bundles` создаёт сам хост (`Artifacts__AutoCreateBucket=true`) |
+| OTLP | **общий** telemetry-01, `otlp.nova.adcluster.targetix.net:4317` | `Telemetry__OtlpEndpoint` в dev.yaml |
 
 ## Шаги владельца (первый запуск)
 
@@ -65,8 +76,11 @@ Guard-коммит `[hybrid] chore(git): guard hybrid contour overlay from GitHu
      инвалидирует выданные API-ключи/worker-токены;
    - `COMUKI_BOOTSTRAP_ADMIN_EMAIL` / `COMUKI_BOOTSTRAP_ADMIN_PASSWORD`
      (пароль ≥ 12 символов, цифра + спецсимвол);
-   - `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` (хост читает их же как
-     `Artifacts__{Access,Secret}Key`);
+   - `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` — доступ к **общему** MinIO
+     object-store-01 (`s3.nova.adcluster.targetix.net:9000`; выделенная
+     для comuki пара access-key, хост читает их же как
+     `Artifacts__{Access,Secret}Key`; владелец заводит ключ на стороне
+     object-store-01);
    - `POSTGRES_USER` (= `comuki`), `POSTGRES_PASSWORD`.
 2. **Пайплайн**: push на GitLab master → unit + validate + образы зелёные →
    вручную ▶ `infra:dev` → ▶ `migrate:dev` (обе ждут `KUBECONFIG_B64` в CI
@@ -90,8 +104,9 @@ Guard-коммит `[hybrid] chore(git): guard hybrid contour overlay from GitHu
   `secrets:materialize` у console.x; «нет kubeconfig в CI» в locked
   решениях относится к выкату приложения (helm-from-CI), который здесь
   Argo.
-- MinIO `latest` и pgvector 1 реплика — dev-качество; для прода —
-  операторский контур.
+- pgvector 1 реплика — dev-качество; для прода — операторский контур.
+  MinIO и OTLP — общие сервисы (object-store-01 / telemetry-01),
+  обслуживаются вне этого репо.
 - `.dockerignore` на ветке `hybrid` не исключает `agents/` (нужно для
   worker-образа) — на GitHub master строка `agents` осталась: расхождение
   зеркал только в overlay-файлах, это задумано.

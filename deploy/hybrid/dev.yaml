@@ -94,13 +94,22 @@ env:
   # same-origin first, adjust when the SPA lands on its own host.
   Host__Cors__AllowedOrigins__0: http://comuki.nova.adcluster.targetix.net
 
-  # Artifacts store: in-namespace MinIO from deploy/hybrid/infra-dev.yaml.
+  # Artifacts store: SHARED MinIO object-store-01 (owner decision
+  # 2026-09-10) — s3.nova.adcluster.targetix.net:9000, plain HTTP.
   # Keys (Artifacts__{Access,Secret}Key) are NOT here — they arrive via
-  # envFrom from the Consul blob. Plain HTTP inside the cluster.
-  Artifacts__Endpoint: minio.comuki.svc.cluster.local:9000
+  # envFrom from the Consul blob (owner-provisioned shared-MinIO creds).
+  # Bucket comuki-run-bundles is created by the host on first use
+  # (Artifacts__AutoCreateBucket).
+  Artifacts__Endpoint: s3.nova.adcluster.targetix.net:9000
   Artifacts__UseSSL: "false"
   Artifacts__Bucket: comuki-run-bundles
   Artifacts__AutoCreateBucket: "true"
+
+  # Telemetry: SHARED OTLP collector telemetry-01 (owner decision
+  # 2026-09-10) — otlp.nova.adcluster.targetix.net:4317 (gRPC).
+  # ComukiTelemetryInstaller adds the OTLP exporter only when this is
+  # set; unset = traces/metrics stay local no-ops.
+  Telemetry__OtlpEndpoint: http://otlp.nova.adcluster.targetix.net:4317
 
   # Compute engine: workers as batch/v1 Jobs in this cluster. With an empty
   # Compute:Scale:Projects list the supervisor pass is a no-op, so this is

@@ -1,5 +1,5 @@
 # =============================================================================
-# deploy/hybrid/infra-dev.yaml — in-cluster dev storage for comuki.
+# deploy/hybrid/infra-dev.yaml — in-cluster dev database for comuki.
 #
 # Applied manually by the `infra:dev` CI job (KUBECONFIG_B64 + server
 # verification, same contract as secrets:dev). Idempotent — safe to re-run.
@@ -8,7 +8,13 @@
 # the Namespace below carries the same labels so this manifest also works
 # if applied BEFORE the AppSet's first sync).
 #
-# NOT for prod: single replica each, latest MinIO tag, root credentials.
+# Postgres-only (owner decision 2026-09-10): MinIO object storage and OTLP
+# telemetry are SHARED infra outside this contour —
+#   MinIO: object-store-01, s3.nova.adcluster.targetix.net:9000
+#   OTLP:  telemetry-01,    otlp.nova.adcluster.targetix.net:4317
+# (wired in deploy/hybrid/dev.yaml; creds via the Consul blob).
+#
+# NOT for prod: single replica, root credentials.
 # =============================================================================
 
 ---
@@ -116,104 +122,3 @@ spec:
     - name: postgres
       port: 5432
       targetPort: postgres
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: minio
-  namespace: comuki
-  labels:
-    app.kubernetes.io/name: minio
-    app.kubernetes.io/part-of: comuki
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: minio
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: minio
-    spec:
-      containers:
-        - name: minio
-          # TODO(pin): pin a RELEASE tag once dev storage survives its first
-          # rebuild cycle; `latest` is mutable and acceptable for dev only.
-          image: minio/minio:latest
-          command: [server, /data, --console-address, ":9001"]
-          ports:
-            - containerPort: 9000
-              name: s3
-            - containerPort: 9001
-              name: console
-          env:
-            - name: MINIO_ROOT_USER
-              valueFrom:
-                secretKeyRef:
-                  name: comuki-minio-credentials
-                  key: MINIO_ROOT_USER
-            - name: MINIO_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: comuki-minio-credentials
-                  key: MINIO_ROOT_PASSWORD
-          volumeMounts:
-            - name: data
-              mountPath: /data
-          readinessProbe:
-            httpGet:
-              path: /minio/health/ready
-              port: s3
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 12
-          livenessProbe:
-            httpGet:
-              path: /minio/health/live
-              port: s3
-            initialDelaySeconds: 30
-            periodSeconds: 15
-          resources:
-            requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              memory: 1Gi
-      volumes:
-        - name: data
-          persistentVolumeClaim:
-            claimName: minio-data
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: minio-data
-  namespace: comuki
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: minio
-  namespace: comuki
-  labels:
-    app.kubernetes.io/name: minio
-spec:
-  selector:
-    app.kubernetes.io/name: minio
-  ports:
-    - name: s3
-      port: 9000
-      targetPort: s3
-    - name: console
-      port: 9001
-      targetPort: console

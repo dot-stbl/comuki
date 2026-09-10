@@ -12,7 +12,7 @@ namespace Comuki.Migrator.Factories.Artifacts;
 /// config.toml — never used to connect at design time, only to
 /// build the provider model).
 /// </summary>
-public sealed class ArtifactsDesignTimeFactory : IDesignTimeDbContextFactory<ArtifactsDbContext>
+public sealed class ArtifactsDesignTimeFactory() : IDesignTimeDbContextFactory<ArtifactsDbContext>
 {
     /// <inheritdoc />
     public ArtifactsDbContext CreateDbContext(string[] args)

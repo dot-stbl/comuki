@@ -7,5 +7,5 @@ namespace Comuki.Shared.Bootstrap.Unit;
 /// state (env vars). Without this gate, two parallel tests that rewrite the
 /// same env var race.
 /// </summary>
-[CollectionDefinition("BootstrapEnvSafe", DisableParallelization = true)]
+[CollectionDefinition(nameof(BootstrapEnvSafeCollection), DisableParallelization = true)]
 public sealed class BootstrapEnvSafeCollection;

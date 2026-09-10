@@ -18,7 +18,7 @@ namespace Comuki.Shared.Bootstrap.Logging;
 /// started / shutting down / Content root path) are rewritten to short
 /// comuki.host lines.
 /// </summary>
-public sealed class ComukiConsoleFormatter(TimeProvider? clock = null, Func<bool>? ansiEnabled = null) : ConsoleFormatter(FormatterName)
+public sealed class ComukiConsoleFormatter(Func<bool>? ansiEnabled = null, TimeProvider? clock = null) : ConsoleFormatter(FormatterName)
 {
     /// <summary>The formatter name registered under <c>AddConsoleFormatter</c>.</summary>
     public const string FormatterName = "comuki";

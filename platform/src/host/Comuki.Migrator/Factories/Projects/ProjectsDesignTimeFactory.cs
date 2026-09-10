@@ -12,7 +12,7 @@ namespace Comuki.Migrator.Factories.Projects;
 /// never used to connect at design time, only to build the provider
 /// model).
 /// </summary>
-public sealed class ProjectsDesignTimeFactory : IDesignTimeDbContextFactory<ProjectsDbContext>
+public sealed class ProjectsDesignTimeFactory() : IDesignTimeDbContextFactory<ProjectsDbContext>
 {
     /// <inheritdoc />
     public ProjectsDbContext CreateDbContext(string[] args)

@@ -11,7 +11,7 @@ namespace Comuki.Migrator.Factories.Orchestration;
 /// (env <c>COMUKI_DB</c> or config.toml — never used to connect at
 /// design time, only to build the provider model).
 /// </summary>
-public sealed class OrchestrationDesignTimeFactory : IDesignTimeDbContextFactory<OrchestrationDbContext>
+public sealed class OrchestrationDesignTimeFactory() : IDesignTimeDbContextFactory<OrchestrationDbContext>
 {
     /// <inheritdoc />
     public OrchestrationDbContext CreateDbContext(string[] args)

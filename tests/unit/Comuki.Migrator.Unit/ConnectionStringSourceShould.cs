@@ -11,21 +11,21 @@ namespace Comuki.Migrator.Unit;
 /// blank-password guard (issue #21) with the COMUKI_ENV-first
 /// environment resolution (issue #54). Each test scopes its own env-var
 /// + config.toml mutation through <see cref="EnvVarScope"/> and
-/// <see cref="TempConfigTomlScope"/>; the <c>[Collection("MigratorEnvSafe")]</c>
+/// <see cref="TempConfigTomlScope"/>; the <c>[Collection(nameof(MigratorEnvSafeCollection))]</c>
 /// gate keeps the two scopes deterministic.
 /// </summary>
-[Collection("MigratorEnvSafe")]
+[Collection(nameof(MigratorEnvSafeCollection))]
 public sealed class ConnectionStringSourceShould
 {
     [Fact(DisplayName = "Given COMUKI_DB is set with a non-empty value, when Resolve runs, then returns the env var verbatim")]
     public void ResolveHonoursPrimaryEnvVar()
     {
         using var envScope = EnvVarScope.Set(
-            (ConnectionStringSource.EnvVariable, "Host=primary;Database=db1"),
-            (ConnectionStringSource.LegacyEnvVariable, "Host=legacy;Database=db2"),
-            (ComukiEnvironment.EnvironmentVariable, null),
-            (ComukiEnvironment.AspNetCoreFallbackVariable, null),
-            (ComukiEnvironment.DotnetFallbackVariable, null));
+            new(ConnectionStringSource.EnvVariable, "Host=primary;Database=db1"),
+            new(ConnectionStringSource.LegacyEnvVariable, "Host=legacy;Database=db2"),
+            new(ComukiEnvironment.EnvironmentVariable, null),
+            new(ComukiEnvironment.AspNetCoreFallbackVariable, null),
+            new(ComukiEnvironment.DotnetFallbackVariable, null));
 
         var result = ConnectionStringSource.Resolve();
 
@@ -36,11 +36,11 @@ public sealed class ConnectionStringSourceShould
     public void TryResolveHonoursLegacyAlias()
     {
         using var envScope = EnvVarScope.Set(
-            (ConnectionStringSource.EnvVariable, null),
-            (ConnectionStringSource.LegacyEnvVariable, "Host=legacy;Database=db2"),
-            (ComukiEnvironment.EnvironmentVariable, null),
-            (ComukiEnvironment.AspNetCoreFallbackVariable, null),
-            (ComukiEnvironment.DotnetFallbackVariable, null));
+            new(ConnectionStringSource.EnvVariable, null),
+            new(ConnectionStringSource.LegacyEnvVariable, "Host=legacy;Database=db2"),
+            new(ComukiEnvironment.EnvironmentVariable, null),
+            new(ComukiEnvironment.AspNetCoreFallbackVariable, null),
+            new(ComukiEnvironment.DotnetFallbackVariable, null));
 
         var result = ConnectionStringSource.TryResolve(out var fromLegacyAlias);
 
@@ -56,12 +56,12 @@ public sealed class ConnectionStringSourceShould
             comuki = "Host=cfg;Database=db;Username=u;Password="
             """);
         using var envScope = EnvVarScope.Set(
-            (ConnectionStringSource.EnvVariable, null),
-            (ConnectionStringSource.LegacyEnvVariable, null),
-            (ConnectionStringSource.PasswordEnvVariable, "secret-from-env"),
-            (ComukiEnvironment.EnvironmentVariable, null),
-            (ComukiEnvironment.AspNetCoreFallbackVariable, "Development"),
-            (ComukiEnvironment.DotnetFallbackVariable, null));
+            new(ConnectionStringSource.EnvVariable, null),
+            new(ConnectionStringSource.LegacyEnvVariable, null),
+            new(ConnectionStringSource.PasswordEnvVariable, "secret-from-env"),
+            new(ComukiEnvironment.EnvironmentVariable, null),
+            new(ComukiEnvironment.AspNetCoreFallbackVariable, "Development"),
+            new(ComukiEnvironment.DotnetFallbackVariable, null));
 
         var result = ConnectionStringSource.Resolve();
 
@@ -77,12 +77,12 @@ public sealed class ConnectionStringSourceShould
             comuki = "Host=cfg;Database=db;Username=u;Password="
             """);
         using var envScope = EnvVarScope.Set(
-            (ConnectionStringSource.EnvVariable, null),
-            (ConnectionStringSource.LegacyEnvVariable, null),
-            (ConnectionStringSource.PasswordEnvVariable, null),
-            (ComukiEnvironment.EnvironmentVariable, "production"),
-            (ComukiEnvironment.AspNetCoreFallbackVariable, "Development"),
-            (ComukiEnvironment.DotnetFallbackVariable, null));
+            new(ConnectionStringSource.EnvVariable, null),
+            new(ConnectionStringSource.LegacyEnvVariable, null),
+            new(ConnectionStringSource.PasswordEnvVariable, null),
+            new(ComukiEnvironment.EnvironmentVariable, "production"),
+            new(ComukiEnvironment.AspNetCoreFallbackVariable, "Development"),
+            new(ComukiEnvironment.DotnetFallbackVariable, null));
 
         Should.Throw<InvalidOperationException>(static () => ConnectionStringSource.Resolve());
     }
@@ -92,12 +92,12 @@ public sealed class ConnectionStringSourceShould
     {
         using var tomlScope = TempConfigTomlScope.Install(/*lang=toml*/ "[server]\nport = 8080");
         using var envScope = EnvVarScope.Set(
-            (ConnectionStringSource.EnvVariable, null),
-            (ConnectionStringSource.LegacyEnvVariable, null),
-            (ConnectionStringSource.PasswordEnvVariable, null),
-            (ComukiEnvironment.EnvironmentVariable, null),
-            (ComukiEnvironment.AspNetCoreFallbackVariable, null),
-            (ComukiEnvironment.DotnetFallbackVariable, null));
+            new(ConnectionStringSource.EnvVariable, null),
+            new(ConnectionStringSource.LegacyEnvVariable, null),
+            new(ConnectionStringSource.PasswordEnvVariable, null),
+            new(ComukiEnvironment.EnvironmentVariable, null),
+            new(ComukiEnvironment.AspNetCoreFallbackVariable, null),
+            new(ComukiEnvironment.DotnetFallbackVariable, null));
 
         var result = ConnectionStringSource.Resolve();
 
@@ -109,12 +109,12 @@ public sealed class ConnectionStringSourceShould
     {
         using var tomlScope = TempConfigTomlScope.Install(/*lang=toml*/ "[server]\nport = 8080");
         using var envScope = EnvVarScope.Set(
-            (ConnectionStringSource.EnvVariable, null),
-            (ConnectionStringSource.LegacyEnvVariable, null),
-            (ConnectionStringSource.PasswordEnvVariable, null),
-            (ComukiEnvironment.EnvironmentVariable, null),
-            (ComukiEnvironment.AspNetCoreFallbackVariable, null),
-            (ComukiEnvironment.DotnetFallbackVariable, null));
+            new(ConnectionStringSource.EnvVariable, null),
+            new(ConnectionStringSource.LegacyEnvVariable, null),
+            new(ConnectionStringSource.PasswordEnvVariable, null),
+            new(ComukiEnvironment.EnvironmentVariable, null),
+            new(ComukiEnvironment.AspNetCoreFallbackVariable, null),
+            new(ComukiEnvironment.DotnetFallbackVariable, null));
 
         var exception = Should.Throw<InvalidOperationException>(static () => ConnectionStringSource.ResolveOrThrow());
         exception.Message.ShouldContain("config.toml");

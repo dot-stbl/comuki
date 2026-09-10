@@ -10,7 +10,7 @@ namespace Comuki.Migrator.Factories.Chat;
 /// connection-string source as the Migrator itself so
 /// <c>dotnet ef</c> can build the model without booting the host.
 /// </summary>
-public sealed class ChatDesignTimeFactory : IDesignTimeDbContextFactory<ChatDbContext>
+public sealed class ChatDesignTimeFactory() : IDesignTimeDbContextFactory<ChatDbContext>
 {
     /// <inheritdoc />
     public ChatDbContext CreateDbContext(string[] args)

@@ -10,7 +10,7 @@ namespace Comuki.Migrator.Factories.Scheduler;
 /// same connection-string source as the Migrator itself so
 /// <c>dotnet ef</c> can build the model without booting the host.
 /// </summary>
-public sealed class SchedulerDesignTimeFactory : IDesignTimeDbContextFactory<SchedulerDbContext>
+public sealed class SchedulerDesignTimeFactory() : IDesignTimeDbContextFactory<SchedulerDbContext>
 {
     /// <inheritdoc />
     public SchedulerDbContext CreateDbContext(string[] args)

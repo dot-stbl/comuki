@@ -82,16 +82,15 @@ internal static class ConnectionStringSource
             ?? throw new InvalidOperationException(
                 $"connection string not found: set the {EnvVariable} env var or connectionStrings.comuki in config.toml");
     }
-
-    /// <summary>
-    /// If the connection string's password segment is empty and
-    /// <see cref="PasswordEnvVariable"/> is set, replace it with the env
-    /// value. Whitespace passwords are left untouched.
-    /// </summary>
 }
 
 file static class ConnectionStringSourceGuards
 {
+    /// <summary>
+    /// If the connection string's password segment is empty and
+    /// <see cref="ConnectionStringSource.PasswordEnvVariable"/> is set, replace it with the env
+    /// value. Whitespace passwords are left untouched.
+    /// </summary>
     public static string FillPasswordFromEnv(string connectionString)
     {
         var builder = new NpgsqlConnectionStringBuilder(connectionString);

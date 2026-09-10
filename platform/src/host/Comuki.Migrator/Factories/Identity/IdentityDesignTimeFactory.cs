@@ -12,7 +12,7 @@ namespace Comuki.Migrator.Factories.Identity;
 /// never used to connect at design time, only to build the provider
 /// model).
 /// </summary>
-public sealed class IdentityDesignTimeFactory : IDesignTimeDbContextFactory<IdentityDbContext>
+public sealed class IdentityDesignTimeFactory() : IDesignTimeDbContextFactory<IdentityDbContext>
 {
     /// <inheritdoc />
     public IdentityDbContext CreateDbContext(string[] args)

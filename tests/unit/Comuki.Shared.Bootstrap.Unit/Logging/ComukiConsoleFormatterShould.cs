@@ -25,7 +25,7 @@ public sealed class ComukiConsoleFormatterShould
             "Comuki.Host.Workers.WorkerRuntime",
             new EventId(0),
             "claimed work item",
-            ("WorkItemId", "wi-42"));
+            new StateField("WorkItemId", "wi-42"));
 
         line.ShouldBe("2026-09-11T10:00:00.123Z info  comuki.host.workers.workerruntime  claimed work item  WorkItemId=wi-42");
     }
@@ -116,7 +116,7 @@ public sealed class ComukiConsoleFormatterShould
         string category,
         EventId eventId,
         string message,
-        (string Key, object Value)? stateField = null,
+        StateField? stateField = null,
         Exception? exception = null,
         bool ansi = false)
     {
@@ -137,12 +137,15 @@ public sealed class ComukiConsoleFormatterShould
             exception,
             static (state, _) => state is null ? string.Empty : state[0].Value?.ToString() ?? string.Empty);
 
-        var formatter = new ComukiConsoleFormatter(FrozenClock.Instance, () => ansi);
+        var formatter = new ComukiConsoleFormatter(() => ansi, FrozenClock.Instance);
         var writer = new StringBuilderWriter();
         formatter.Write(in entry, null, writer);
 
         return writer.Text.Replace("\r\n", "\n");
     }
+
+    /// <summary>One structured state field handed to <see cref="Render"/>.</summary>
+    private sealed record StateField(string Key, object Value);
 
     /// <summary>Clock pinned to the fixed test timestamp.</summary>
     private sealed class FrozenClock : TimeProvider

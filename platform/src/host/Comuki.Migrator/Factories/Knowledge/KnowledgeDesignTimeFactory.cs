@@ -12,7 +12,7 @@ namespace Comuki.Migrator.Factories.Knowledge;
 /// never used to connect at design time, only to build the provider
 /// model).
 /// </summary>
-public sealed class KnowledgeDesignTimeFactory : IDesignTimeDbContextFactory<KnowledgeDbContext>
+public sealed class KnowledgeDesignTimeFactory() : IDesignTimeDbContextFactory<KnowledgeDbContext>
 {
     /// <inheritdoc />
     public KnowledgeDbContext CreateDbContext(string[] args)

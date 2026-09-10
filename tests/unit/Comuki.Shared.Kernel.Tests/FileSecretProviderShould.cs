@@ -24,16 +24,29 @@ public sealed class FileSecretProviderShould
         var path = Path.Combine(tempDir, "db-pass");
         File.WriteAllText(path, "secret-content\n");
 
-        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions()));
+        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { Enabled = true }));
         var resolved = await provider.ResolveAsync(new SecretRef("file", path, null), TestContext.Current.CancellationToken);
 
         resolved.ShouldBe("secret-content");
     }
 
+    [Fact(DisplayName = "Given Enabled=false and an existing file on disk, when ResolveAsync runs, then null is returned without reading the filesystem (option is the gate, not the DI registration)")]
+    public async Task ResolveAsyncShortCircuitsToNullWhenDisabledAsync()
+    {
+        Directory.CreateDirectory(tempDir);
+        var path = Path.Combine(tempDir, "db-pass");
+        File.WriteAllText(path, "secret-content\n");
+
+        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { Enabled = false }));
+        var resolved = await provider.ResolveAsync(new SecretRef("file", path, null), TestContext.Current.CancellationToken);
+
+        resolved.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "Given a missing file, when ResolveAsync runs, then null is returned (the resolver turns it into SecretRefUnsetException)")]
     public async Task ResolveAsyncReturnsNullForMissingFileAsync()
     {
-        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions()));
+        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { Enabled = true }));
         var path = Path.Combine(tempDir, "does-not-exist");
 
         var resolved = await provider.ResolveAsync(new SecretRef("file", path, null), TestContext.Current.CancellationToken);
@@ -52,7 +65,7 @@ public sealed class FileSecretProviderShould
         // their secret value), so the expected value does not include it.
         File.WriteAllBytes(path, "\uFEFFvalue-with-bom   \n\n"u8.ToArray());
 
-        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions()));
+        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { Enabled = true }));
         var resolved = await provider.ResolveAsync(new SecretRef("file", path, null), TestContext.Current.CancellationToken);
 
         resolved.ShouldBe("value-with-bom");
@@ -61,7 +74,7 @@ public sealed class FileSecretProviderShould
     [Fact(DisplayName = "Given a provider, its Scheme is the lowercase 'file' string")]
     public void SchemeIsFile()
     {
-        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions()));
+        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { Enabled = true }));
         provider.Scheme.ShouldBe("file");
     }
 
@@ -74,7 +87,7 @@ public sealed class FileSecretProviderShould
         // (Linux) and C:\etc\passwd (Windows when /etc/passwd is resolved
         // against the current drive) live outside the test's tempDir.
         var outsidePath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "..", "outside-allowlist.txt"));
-        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { RootPath = tempDir }));
+        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { Enabled = true, RootPath = tempDir }));
 
         var exception = await Should.ThrowAsync<SecretRefFormatException>(
             async () => await provider.ResolveAsync(new SecretRef("file", outsidePath, null), TestContext.Current.CancellationToken));
@@ -90,7 +103,7 @@ public sealed class FileSecretProviderShould
         var path = Path.Combine(tempDir, "db-pass");
         File.WriteAllText(path, "inside-root\n");
 
-        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { RootPath = tempDir }));
+        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { Enabled = true, RootPath = tempDir }));
         var resolved = await provider.ResolveAsync(new SecretRef("file", path, null), TestContext.Current.CancellationToken);
 
         resolved.ShouldBe("inside-root");
@@ -108,7 +121,7 @@ public sealed class FileSecretProviderShould
         var farAway = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "..", "..", "no-boundary.txt"));
         File.WriteAllText(farAway, "far-away\n");
 
-        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions()));
+        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { Enabled = true }));
         var resolved = await provider.ResolveAsync(new SecretRef("file", farAway, null), TestContext.Current.CancellationToken);
 
         resolved.ShouldBe("far-away");
@@ -123,7 +136,7 @@ public sealed class FileSecretProviderShould
         var siblingFile = Path.Combine(siblingDir, "pass");
         File.WriteAllText(siblingFile, "sibling\n");
 
-        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { RootPath = tempDir }));
+        var provider = new FileSecretProvider(Options.Create(new FileSecretOptions { Enabled = true, RootPath = tempDir }));
 
         await Should.ThrowAsync<SecretRefFormatException>(
             async () => await provider.ResolveAsync(new SecretRef("file", siblingFile, null), TestContext.Current.CancellationToken));

@@ -18,7 +18,8 @@ namespace Comuki.Shared.Kernel.Secrets;
 public sealed class CompositeSecretResolver(IEnumerable<ISecretProvider> providers) : ISecretResolver
 {
     private readonly IReadOnlyDictionary<string, ISecretProvider> byScheme = providers
-        .ToDictionary(static provider => provider.Scheme, StringComparer.OrdinalIgnoreCase);
+        .GroupBy(static provider => provider.Scheme, StringComparer.OrdinalIgnoreCase)
+        .ToDictionary(static group => group.Key, static group => group.First(), StringComparer.OrdinalIgnoreCase);
 
     /// <inheritdoc />
     public async Task<string?> ResolveAsync(string? reference, CancellationToken cancellationToken = default)

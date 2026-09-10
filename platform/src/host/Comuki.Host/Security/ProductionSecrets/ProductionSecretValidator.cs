@@ -2,6 +2,7 @@ using Comuki.Engine.Compute.Options;
 using Comuki.Host.Auth;
 using Comuki.Modules.Artifacts.Infrastructure.Store;
 using Comuki.Modules.Identity.Application.Options;
+using Comuki.Shared.Kernel.Secrets;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Host.Security.ProductionSecrets;
@@ -9,8 +10,10 @@ namespace Comuki.Host.Security.ProductionSecrets;
 /// <summary>
 /// Startup validator that refuses to boot the host in <c>Production</c>
 /// when an obvious default-credentials secret is still present: MinIO
-/// keys, bootstrap-admin password, API-key pepper, and worker-token
-/// pepper. The migrator has its own database-password gate
+/// keys, bootstrap-admin password, API-key pepper, worker-token pepper,
+/// and — since issue #52 — a remote secrets provider that's been
+/// enabled but whose bootstrap token env var is unset. The migrator has
+/// its own database-password gate
 /// (<c>ConnectionStringSource.RejectBlankPasswordInProduction</c>); this
 /// one extends the same discipline to the remaining dev-default values
 /// (issue #10 T11.4 + security audit A02-1 — production deployments
@@ -26,10 +29,11 @@ public static class ProductionSecretValidator
 
     /// <summary>
     /// Inspects the bound options for production-unsafe defaults: MinIO
-    /// keys, bootstrap-admin password, API-key pepper, and worker-token
-    /// pepper. Throws in <c>Production</c> when any of those is still on
-    /// its committed dev value — i.e. someone forgot to override the env
-    /// var (or appsettings equivalent).
+    /// keys, bootstrap-admin password, API-key pepper, worker-token
+    /// pepper, and any enabled remote secrets provider whose token env
+    /// is missing. Throws in <c>Production</c> when any of those is still
+    /// on its committed dev value — i.e. someone forgot to override the
+    /// env var (or appsettings equivalent).
     /// </summary>
     /// <param name="services">The host's service collection (used to read <see cref="IHostEnvironment"/> + <see cref="IConfiguration"/>).</param>
     /// <exception cref="InvalidOperationException">A production-unsafe secret is still on its committed default.</exception>
@@ -45,6 +49,7 @@ public static class ProductionSecretValidator
         ProductionSecretValidatorExtensions.ValidateBootstrapAdmin(services);
         ProductionSecretValidatorExtensions.ValidateApiKeyPepper(services);
         ProductionSecretValidatorExtensions.ValidateWorkerTokenPepper(services);
+        ProductionSecretValidatorExtensions.ValidateSecretsProviders(services);
     }
 }
 
@@ -170,6 +175,60 @@ file static class ProductionSecretValidatorExtensions
                 + "is still on its committed dev default ('comuki-dev-only-pepper-override-in-production'); "
                 + "set it to a high-entropy random secret");
         }
+    }
+
+    /// <summary>
+    /// Refuses to start in <c>Production</c> when a remote secrets
+    /// provider section is enabled but its bootstrap token env var is
+    /// unset on the host. Slice 1 only wires env / file (no remote
+    /// token), but the validator ships ahead of slices 2/3 so adding a
+    /// vault/consul provider cannot silently boot in production with a
+    /// missing <c>COMUKI_VAULT_TOKEN</c> / <c>COMUKI_CONSUL_TOKEN</c>.
+    /// The check is opt-in by per-provider <see cref="SecretsOptions"/>
+    /// entries that declare a token-env-var name.
+    /// </summary>
+    /// <param name="services"></param>
+    public static void ValidateSecretsProviders(IServiceProvider services)
+    {
+        var secrets = services.GetRequiredService<IOptions<SecretsOptions>>().Value;
+        foreach (var (scheme, options) in secrets.Providers)
+        {
+            var tokenEnv = ProductionSecretsHelpers.ProviderTokenEnvName(scheme);
+            if (string.IsNullOrWhiteSpace(tokenEnv))
+            {
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(tokenEnv)))
+            {
+                throw new InvalidOperationException(
+                    $"refusing to start the host in Production: the [{SecretsOptions.SectionName}:{scheme}] provider is enabled "
+                    + $"but its bootstrap token env var '{tokenEnv}' is unset; set the {tokenEnv} env var to a real token");
+            }
+        }
+    }
+}
+
+/// <summary>
+/// File-scoped helpers for the production-secret validator — pure
+/// functions, no DI.
+/// </summary>
+file static class ProductionSecretsHelpers
+{
+    /// <summary>
+    /// Maps a provider scheme to the env-var name that holds the
+    /// bootstrap token. Returns <c>null</c> for providers that do not
+    /// require a token (env, file, null).
+    /// </summary>
+    /// <param name="scheme">Lowercase provider scheme.</param>
+    public static string? ProviderTokenEnvName(string scheme)
+    {
+        return scheme switch
+        {
+            "vault" => "COMUKI_VAULT_TOKEN",
+            "consul" => "COMUKI_CONSUL_TOKEN",
+            _ => null,
+        };
     }
 }
 

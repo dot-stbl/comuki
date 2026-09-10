@@ -2,6 +2,7 @@ using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Kernel.Secrets;
 
 namespace Comuki.Modules.Intake.Infrastructure.Providers.YandexTracker;
 
@@ -32,11 +33,12 @@ public sealed class YandexTrackerTicketSourceProvider(
     }
 
     /// <inheritdoc />
-    public bool VerifySignature(SourceConnection connection, WebhookDelivery delivery)
+    public async Task<bool> VerifySignatureAsync(SourceConnection connection, WebhookDelivery delivery, CancellationToken cancellationToken = default)
     {
         var settings = YandexTrackerSettings.Parse(connection.SettingsJson);
+        var secret = await secrets.ResolveAsync(connection.SecretEnvRef, cancellationToken);
         return YandexTrackerWebhookVerifier.Verify(
-            secrets.Resolve(connection.SecretEnvRef),
+            secret,
             delivery.Header(settings.WebhookSecretHeader));
     }
 
@@ -50,7 +52,10 @@ public sealed class YandexTrackerTicketSourceProvider(
     public async Task<IReadOnlyList<IncomingTicket>> FetchCatalogAsync(SourceConnection connection, int page, CancellationToken cancellationToken = default)
     {
         var settings = YandexTrackerSettings.Parse(connection.SettingsJson);
-        var api = clients.YandexTracker(settings.ApiBase, secrets.Resolve(settings.ApiTokenEnv), settings.OrgId);
+        var api = clients.YandexTracker(
+            settings.ApiBase,
+            await secrets.ResolveAsync(settings.ApiTokenEnv, cancellationToken),
+            settings.OrgId);
         var issues = await api.SearchIssuesAsync(
             new TrackerSearchBody($"Queue: \"{settings.Queue}\" Status: \"Open\""),
             cancellationToken);

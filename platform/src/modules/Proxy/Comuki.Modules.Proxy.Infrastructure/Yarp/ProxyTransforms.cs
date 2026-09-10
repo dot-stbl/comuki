@@ -3,6 +3,7 @@ using System.Text.Json;
 using Comuki.Modules.Proxy.Application.Budgeting;
 using Comuki.Modules.Proxy.Application.Ports;
 using Comuki.Modules.Proxy.Infrastructure.Auth;
+using Comuki.Shared.Kernel.Secrets;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -63,7 +64,14 @@ public static class ProxyTransforms
             return;
         }
 
-        var upstreamApiKey = Environment.GetEnvironmentVariable(key.Upstream.ApiKeyEnvRef);
+        // Resolve the upstream API key through the shared-kernel resolver
+        // (issue #52). The ref may name an env var (the common case) or a
+        // file / vault / consul path. An unset ref surfaces as a typed
+        // SecretRefUnsetException — the same shape every other secret
+        // consumer produces — so a missing operator-supplied credential
+        // is visible the same way everywhere instead of NRE-downstream.
+        var secrets = services.GetRequiredService<ISecretResolver>();
+        var upstreamApiKey = await secrets.ResolveAsync(key.Upstream.ApiKeyEnvRef, context.CancellationToken);
         if (string.IsNullOrEmpty(upstreamApiKey))
         {
             logger.LogError(

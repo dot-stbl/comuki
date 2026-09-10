@@ -76,7 +76,7 @@ public sealed class WebhookIntakeService(
         }
 
         // The signature IS the auth on this surface.
-        if (!provider.VerifySignature(connection, delivery))
+        if (!await provider.VerifySignatureAsync(connection, delivery, cancellationToken))
         {
             logger.LogWarning("Webhook signature rejected for source {Source} connection {ConnectionId}", sourceKey, connection.Id);
             await store.MarkDeliveryOutcomeAsync(deliveryRow.Id, DeliveryOutcomes.Rejected, "signature mismatch", cancellationToken);

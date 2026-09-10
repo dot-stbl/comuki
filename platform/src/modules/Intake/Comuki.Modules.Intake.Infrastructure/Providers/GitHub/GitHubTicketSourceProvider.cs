@@ -2,6 +2,7 @@ using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Kernel.Secrets;
 
 namespace Comuki.Modules.Intake.Infrastructure.Providers.GitHub;
 
@@ -35,9 +36,10 @@ public sealed class GitHubTicketSourceProvider(
     }
 
     /// <inheritdoc />
-    public bool VerifySignature(SourceConnection connection, WebhookDelivery delivery)
+    public async Task<bool> VerifySignatureAsync(SourceConnection connection, WebhookDelivery delivery, CancellationToken cancellationToken = default)
     {
-        return GitHubWebhookVerifier.Verify(secrets.Resolve(connection.SecretEnvRef), delivery.Header("X-Hub-Signature-256"), delivery.Body.Span);
+        var secret = await secrets.ResolveAsync(connection.SecretEnvRef, cancellationToken);
+        return GitHubWebhookVerifier.Verify(secret, delivery.Header("X-Hub-Signature-256"), delivery.Body.Span);
     }
 
     /// <inheritdoc />
@@ -50,7 +52,9 @@ public sealed class GitHubTicketSourceProvider(
     public async Task<IReadOnlyList<IncomingTicket>> FetchCatalogAsync(SourceConnection connection, int page, CancellationToken cancellationToken = default)
     {
         var settings = GitHubSettings.Parse(connection.SettingsJson);
-        var api = clients.GitHub(settings.ApiBase, secrets.Resolve(settings.ApiTokenEnv));
+        var api = clients.GitHub(
+            settings.ApiBase,
+            await secrets.ResolveAsync(settings.ApiTokenEnv, cancellationToken));
         var issues = await api.ListIssuesAsync(settings.Owner, settings.Repo, "open", PageSize, page, cancellationToken);
 
         return [.. issues

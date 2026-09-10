@@ -36,6 +36,7 @@ public static class IntakeApplicationExtensions
         services.AddScoped<CreateNativeTicketHandler>();
         services.AddScoped<InboxCatalogReader>();
         services.AddScoped<SourceConnectionService>();
+        services.AddScoped<SecretRefResolverGuard>();
         services.AddScoped<AdmissionRuleService>();
         services.AddSingleton<SourceProbeService>();
         services.AddSingleton<IValidator<CreateNativeTicketCommand>, CreateNativeTicketValidator>();

@@ -102,7 +102,7 @@ public sealed class TrackerCatalogsShould
     }
 
     [Fact(DisplayName = "Given a Jira delivery with the secret query param, when verified, then the settings-named param is compared")]
-    public void VerifyJiraSecretParam()
+    public async Task VerifyJiraSecretParamAsync()
     {
         var (factory, _) = ProviderTestHarness.CreateFactory();
         var secrets = new FakeSecretResolver { Map = { ["COMUKI_JIRA_HOOK"] = "hook-secret" } };
@@ -113,8 +113,8 @@ public sealed class TrackerCatalogsShould
             ProviderTestHarness.NoHeaders,
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["secret"] = "hook-secret" });
 
-        provider.VerifySignature(JiraConnection(), delivery).ShouldBeTrue();
-        provider.VerifySignature(JiraConnection(), delivery with { Query = ProviderTestHarness.NoQuery }).ShouldBeFalse();
+        (await provider.VerifySignatureAsync(JiraConnection(), delivery, TestContext.Current.CancellationToken)).ShouldBeTrue();
+        (await provider.VerifySignatureAsync(JiraConnection(), delivery with { Query = ProviderTestHarness.NoQuery }, TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     private static SourceConnection GitLabConnection()

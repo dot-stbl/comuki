@@ -1,8 +1,8 @@
-using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Kernel.Secrets;
 
 namespace Comuki.Modules.Intake.Infrastructure.Providers.GitLab;
 
@@ -31,7 +31,9 @@ public sealed class GitLabTicketSync(
         }
 
         var settings = GitLabSettings.Parse(connection.SettingsJson);
-        var api = clients.GitLab(settings.ApiBase, secrets.Resolve(settings.ApiTokenEnv));
+        var api = clients.GitLab(
+            settings.ApiBase,
+            await secrets.ResolveAsync(settings.ApiTokenEnv, cancellationToken));
 
         await api.PostNoteAsync(settings.ProjectId, issueIid, new GitLabNoteBody(TrackerSyncComments.Of(transition)), cancellationToken);
 

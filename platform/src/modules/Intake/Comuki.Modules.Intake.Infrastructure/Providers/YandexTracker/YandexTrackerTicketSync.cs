@@ -1,8 +1,8 @@
-using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Kernel.Secrets;
 
 namespace Comuki.Modules.Intake.Infrastructure.Providers.YandexTracker;
 
@@ -24,7 +24,10 @@ public sealed class YandexTrackerTicketSync(
     public async Task TransitionAsync(SourceConnection connection, TicketTransition transition, CancellationToken cancellationToken = default)
     {
         var settings = YandexTrackerSettings.Parse(connection.SettingsJson);
-        var api = clients.YandexTracker(settings.ApiBase, secrets.Resolve(settings.ApiTokenEnv), settings.OrgId);
+        var api = clients.YandexTracker(
+            settings.ApiBase,
+            await secrets.ResolveAsync(settings.ApiTokenEnv, cancellationToken),
+            settings.OrgId);
 
         await api.PostCommentAsync(transition.ExternalId, new TrackerCommentBody(TrackerSyncComments.Of(transition)), cancellationToken);
 

@@ -9,7 +9,9 @@ namespace Comuki.Modules.Intake.Application.Ports.Sources;
 /// signature verification, payload normalization) plus the inbox-mode
 /// catalog fetch. Implementations live in Infrastructure — one per
 /// tracker, each a Refit client over the provider API plus a static
-/// payload mapper.
+/// payload mapper. <see cref="VerifySignatureAsync"/> is async because
+/// the secret reference may resolve through a remote provider
+/// (issue #52, slice 2/3); sync wrappers would deadlock.
 /// </summary>
 public interface ITicketSourceProvider
 {
@@ -28,12 +30,16 @@ public interface ITicketSourceProvider
     /// Verifies the webhook's authenticity — the signature IS the auth on
     /// the hook surface. The verification secret resolves from
     /// <see cref="SourceConnection.SecretEnvRef"/>; a missing secret or a
-    /// mismatch answers false.
+    /// mismatch answers false. Async so the secret lookup may hit a remote
+    /// provider (issue #52, slice 2/3).
     /// </summary>
     /// <param name="connection"></param>
     /// <param name="delivery"></param>
-    /// <returns></returns>
-    public bool VerifySignature(SourceConnection connection, WebhookDelivery delivery);
+    /// <param name="cancellationToken"></param>
+    public Task<bool> VerifySignatureAsync(
+        SourceConnection connection,
+        WebhookDelivery delivery,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Normalizes the payload into a pending ticket; null when the event

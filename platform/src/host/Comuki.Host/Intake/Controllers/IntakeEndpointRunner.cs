@@ -1,5 +1,6 @@
 using Comuki.Modules.Intake.Application.Sources;
 using Comuki.Modules.Intake.Application.Tickets;
+using Comuki.Shared.Kernel.Secrets;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,7 +41,7 @@ public static class IntakeEndpointRunner
                 "Admission rule not found",
                 exception.Message);
         }
-        catch (SecretEnvRefUnsetException exception)
+        catch (SecretRefUnsetException exception)
         {
             return IntakeProblems.Problem(
                 StatusCodes.Status400BadRequest,

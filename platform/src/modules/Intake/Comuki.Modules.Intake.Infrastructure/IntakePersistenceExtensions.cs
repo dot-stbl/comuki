@@ -1,4 +1,3 @@
-using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Comuki.Modules.Intake.Infrastructure.Persistence.Stores;
@@ -14,8 +13,9 @@ public static class IntakePersistenceExtensions
     /// Registers <see cref="IntakeDbContext"/> (Npgsql + snake_case +
     /// private migrations history via
     /// <see cref="IntakeDbContext.ApplyOptions"/>), the intake store
-    /// (scoped — one context per unit of work), the env secret resolver
-    /// and the run status bridge worker.
+    /// (scoped — one context per unit of work) and the run status bridge
+    /// worker. The shared-kernel <c>ISecretResolver</c> is registered by
+    /// the host composition root — there is no Intake-local copy.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="connectionString"></param>
@@ -28,7 +28,6 @@ public static class IntakePersistenceExtensions
             IntakeDbContext.ApplyOptions(options, connectionString));
 
         services.AddScoped<IIntakeStore, IntakeStore>();
-        services.AddSingleton<ISecretResolver, EnvSecretResolver>();
         services.AddHostedService<RunStatusBridgeWorker>();
 
         return services;

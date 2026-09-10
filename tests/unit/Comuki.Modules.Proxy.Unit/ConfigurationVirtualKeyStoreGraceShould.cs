@@ -75,7 +75,10 @@ public sealed class ConfigurationVirtualKeyStoreGraceShould
             ],
         });
 
-        return new ConfigurationVirtualKeyStore(options, clock, NullLogger<ConfigurationVirtualKeyStore>.Instance);
+        return new ConfigurationVirtualKeyStore(
+            clock,
+            new VirtualKeySeed(options, new ConfigurableSecretResolver(), NullLogger<VirtualKeySeed>.Instance),
+            NullLogger<ConfigurationVirtualKeyStore>.Instance);
     }
 
     private sealed class MutableTimeProvider(DateTimeOffset initial) : TimeProvider

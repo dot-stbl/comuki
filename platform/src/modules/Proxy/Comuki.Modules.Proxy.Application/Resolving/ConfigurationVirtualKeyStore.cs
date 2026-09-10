@@ -1,64 +1,72 @@
 using System.Collections.Concurrent;
 using Comuki.Modules.Proxy.Application.Models;
-using Comuki.Modules.Proxy.Application.Options;
 using Comuki.Modules.Proxy.Application.Ports;
-using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Comuki.Modules.Proxy.Application.Resolving;
 
 /// <summary>
 /// Reads virtual keys from <see cref="ProxyOptions"/> at startup, resolves
-/// env-var references for upstream API keys and exposes the snapshot through
-/// <see cref="IVirtualKeyStore"/>. Hot-reload is out of scope for v1 — a
-/// restart picks up new keys. Removed keys live on for a short grace
-/// period (Q31 — 60s default) so an operator deleting a key mid-call
-/// does not produce a 401 for the in-flight request.
+/// the upstream API-key reference through <see cref="ISecretResolver"/>,
+/// and exposes the snapshot through <see cref="IVirtualKeyStore"/>.
+/// Hot-reload is out of scope for v1 — a restart picks up new keys.
+/// Removed keys live on for a short grace period (Q31 — 60s default) so
+/// an operator deleting a key mid-call does not produce a 401 for the
+/// in-flight request. The seed step runs lazily on the first
+/// <see cref="FindAsync"/> / <see cref="ListAsync"/> call via
+/// <see cref="VirtualKeySeed"/> (separate class per
+/// <c>code-shape.md</c> §1a — no private methods in production).
 /// </summary>
-/// <param name="options">Bound <c>Proxy:*</c> configuration.</param>
 /// <param name="clock">Wall-clock for the grace window boundary.</param>
-/// <param name="logger">Structured logger; warns when a referenced env var is unset.</param>
+/// <param name="seed">Lazy seed step that builds the in-memory snapshot from options + resolver.</param>
+/// <param name="logger">Structured logger; warns when a referenced ref resolves empty.</param>
 public sealed class ConfigurationVirtualKeyStore(
-    IOptions<ProxyOptions> options,
     TimeProvider clock,
+    VirtualKeySeed seed,
     ILogger<ConfigurationVirtualKeyStore> logger) : IVirtualKeyStore
 {
     /// <summary>Default grace window for a deleted key (Q31).</summary>
     public static readonly TimeSpan DefaultGracePeriod = TimeSpan.FromSeconds(60);
 
-    /// <summary>Active virtual keys (seeded once from <see cref="ProxyOptions"/>).</summary>
-    private readonly ConcurrentDictionary<string, VirtualKey> byToken = new(BuildSeed(options.Value, logger), StringComparer.Ordinal);
+    /// <summary>Active virtual keys (populated by the seed step above).</summary>
+    private readonly ConcurrentDictionary<string, VirtualKey> byToken = new(StringComparer.Ordinal);
 
     /// <summary>Recently-deleted keys — value = original key + UTC expiry of the grace window.</summary>
     private readonly ConcurrentDictionary<string, (VirtualKey Key, DateTimeOffset ExpiresAt)> grace = new(StringComparer.Ordinal);
 
     /// <inheritdoc />
-    public Task<VirtualKey?> FindAsync(string token, CancellationToken cancellationToken = default)
-    {
-        return string.IsNullOrWhiteSpace(token)
-            ? Task.FromResult<VirtualKey?>(null)
-            : byToken.TryGetValue(token, out var match)
-            ? Task.FromResult<VirtualKey?>(match)
-            : grace.TryGetValue(token, out var ghosted) && clock.GetUtcNow() < ghosted.ExpiresAt
-            ? Task.FromResult<VirtualKey?>(ghosted.Key)
-            : Task.FromResult<VirtualKey?>(null);
-    }
-
-    /// <inheritdoc />
-    public Task<IReadOnlyList<VirtualKey>> ListAsync(CancellationToken cancellationToken = default)
-    {
-        IReadOnlyList<VirtualKey> snapshot = [.. byToken.Values];
-        return Task.FromResult(snapshot);
-    }
-
-    /// <inheritdoc />
-    public Task RemoveAsync(string token, CancellationToken cancellationToken = default)
+    public async Task<VirtualKey?> FindAsync(string token, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            return Task.CompletedTask;
+            return null;
         }
+
+        await seed.EnsureAppliedAsync(byToken, cancellationToken);
+
+        return byToken.TryGetValue(token, out var match)
+            ? match
+            : grace.TryGetValue(token, out var ghosted) && clock.GetUtcNow() < ghosted.ExpiresAt
+                ? ghosted.Key
+                : null;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<VirtualKey>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        await seed.EnsureAppliedAsync(byToken, cancellationToken);
+        return [.. byToken.Values];
+    }
+
+    /// <inheritdoc />
+    public async Task RemoveAsync(string token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return;
+        }
+
+        await seed.EnsureAppliedAsync(byToken, cancellationToken);
 
         if (byToken.TryRemove(token, out var removed))
         {
@@ -68,45 +76,5 @@ public sealed class ConfigurationVirtualKeyStore(
                 token[..Math.Min(8, token.Length)],
                 grace[token].ExpiresAt);
         }
-
-        return Task.CompletedTask;
-    }
-
-    private static IDictionary<string, VirtualKey> BuildSeed(ProxyOptions snapshot, ILogger logger)
-    {
-        var index = new Dictionary<string, VirtualKey>(StringComparer.Ordinal);
-        foreach (var config in snapshot.VirtualKeys ?? [])
-        {
-            if (string.IsNullOrWhiteSpace(config.Token) || config.ProjectId == Guid.Empty)
-            {
-                logger.LogWarning("Skipping invalid virtual key configuration entry (token or project id missing)");
-                continue;
-            }
-
-            var apiKey = Environment.GetEnvironmentVariable(config.ApiKeyEnvRef);
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                logger.LogWarning(
-                    "Virtual key for project {ProjectId} references env var {EnvRef} which is unset; key will be rejected at request time",
-                    config.ProjectId,
-                    config.ApiKeyEnvRef);
-            }
-
-            index[config.Token] = new VirtualKey(
-                Token: config.Token,
-                ProjectId: new ProjectId(config.ProjectId),
-                Upstream: new UpstreamSpec(
-                    Provider: config.Provider,
-                    BaseUrl: config.BaseUrl,
-                    ApiKeyEnvRef: config.ApiKeyEnvRef,
-                    DefaultModel: config.DefaultModel),
-                BudgetUsd: config.BudgetUsd,
-                ExpiresAt: config.ExpiresAt,
-                AllowedModels: config.AllowedModels,
-                MaxInputTokens: config.MaxInputTokens,
-                MaxOutputTokens: config.MaxOutputTokens);
-        }
-
-        return index;
     }
 }

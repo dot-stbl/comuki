@@ -53,6 +53,7 @@ using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Contracts.Runs;
+using Comuki.Shared.Kernel.Secrets;
 using Comuki.Shared.Telemetry.Installers;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -88,6 +89,40 @@ internal static class HostComposer
         // Telemetry first: options ValidateOnStart always; OTLP SDK only when
         // Telemetry:OtlpEndpoint is set (see deploy/README — VictoriaMetrics :8431).
         builder.Services.AddComukiTelemetry(builder.Configuration);
+
+        // Secret-resolution subsystem (issue #52, slice 1): the env /
+        // file providers are always registered (cheap, no I/O at boot);
+        // the file provider is replaced by NullSecretProvider when the
+        // operator did not opt in via [Secrets:File]:Enabled. The
+        // composite resolver is the single ISecretResolver hot-path
+        // callers receive — every existing SecretEnvRef row keeps
+        // working unchanged (bare name -> env).
+        builder.Services.AddOptions<SecretsOptions>()
+            .Bind(builder.Configuration.GetSection(SecretsOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        // FileSecretOptions is bound separately under [Secrets:File] so
+        // FileSecretProvider can enforce the RootPath allowlist (issue #52
+        // slice-1 security boundary). Without this registration the
+        // provider would receive FileSecretOptions() with RootPath = null
+        // and the allowlist would be silently disabled — see H1 in the
+        // issue-52-slice-1 audit (2026-09-10).
+        builder.Services.AddOptions<FileSecretOptions>()
+            .Bind(builder.Configuration.GetSection(FileSecretOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder.Services.AddSingleton<ISecretResolver, CompositeSecretResolver>();
+        builder.Services.AddSingleton<ISecretProvider, EnvSecretProvider>();
+        builder.Services.AddSingleton<ISecretProvider, NullSecretProvider>();
+        // File provider: gated by [Secrets:File]:Enabled. When false,
+        // NullSecretProvider stands in so a file:/path ref surfaces as a
+        // typed SecretRefUnsetException rather than reading the host
+        // blindly. Slice 2/3 will append Vault / Consul providers here.
+        builder.Services.AddSingleton<ISecretProvider>(serviceProvider =>
+        {
+            var file = serviceProvider.GetRequiredService<IOptions<FileSecretOptions>>().Value;
+            return file.Enabled ? new FileSecretProvider(serviceProvider.GetRequiredService<IOptions<FileSecretOptions>>()) : new NullSecretProvider();
+        });
 
         builder.Services.AddControlPlaneCatalogCore(builder.Configuration);
 

@@ -13,9 +13,12 @@
 # promote exists as the console.x-style one-button sync/health wait.
 #
 # Shared modules (nova/devops/cicd.modules) — pin SHA; bump deliberately.
-# CI vars (group `nova`): CI_REGISTRY_USER / CI_REGISTRY_PASSWORD (Harbor
-# push), ARGOCD_DEV_AUTH_TOKEN, CONSUL_URL / CONSUL_HTTP_TOKEN,
-# KUBECONFIG_B64 (dev; scoped to secrets + jobs in ns comuki).
+# CI vars (group `nova`): ARGOCD_DEV_AUTH_TOKEN, CONSUL_URL / CONSUL_HTTP_TOKEN,
+# KUBECONFIG_B64 (dev; scoped to secrets + jobs in ns comuki), NOVA_RUNNER_*.
+# Registry push = PROJECT-level CI_REGISTRY_USER / CI_REGISTRY_PASSWORD
+# (Harbor robot robot$comuki+ci-push; local copy in the secrets store).
+# They override the group-level nova robot — which has NO grant on the
+# comuki project — but only while non-empty (pipeline #11 lesson).
 #
 # Dev DB is IN-CLUSTER (pgvector, deploy/hybrid/infra-dev.yaml): the runner
 # cannot reach a Cluster-only Postgres, so migrate:dev applies a batch/v1
@@ -169,6 +172,32 @@ build:image:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
     - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+  # Fail fast on registry creds BEFORE the build: Harbor's token service
+  # silently downgrades bad/mismatched basic auth to an anonymous token,
+  # which kaniko only surfaces as a cryptic push-permission 401 (pipeline
+  # #11: empty project CI_REGISTRY_PASSWORD fell back to the group-level
+  # robot of another project). Inherited by build:image:worker via extends.
+  before_script:
+    - |
+      set -eu
+      AUTH=$(printf '%s:%s' "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')
+      if BODY=$(wget -q -O - --header "Authorization: Basic ${AUTH}" \
+          "https://${REGISTRY}/service/token?service=harbor-registry&scope=repository:${IMAGE_NAME}:push,pull"); then
+        JWT=$(printf '%s' "$BODY" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+        PAYLOAD=$(printf '%s' "$JWT" | cut -d. -f2 | tr '_-' '/+')
+        MOD=$(( ${#PAYLOAD} % 4 ))
+        if [ "${MOD}" -ne 0 ]; then
+          PAYLOAD="${PAYLOAD}$(printf '%*s' $((4 - MOD)) '' | tr ' ' '=')"
+        fi
+        if ! printf '%s' "${PAYLOAD}" | base64 -d 2>/dev/null | grep -q '"actions":\[[^]]*"push"'; then
+          echo "ERROR: ${CI_REGISTRY_USER} has no push grant on ${REGISTRY}/${IMAGE_NAME}." >&2
+          echo "Check CI_REGISTRY_USER / CI_REGISTRY_PASSWORD — an empty project var lets the group-level robot leak in." >&2
+          exit 1
+        fi
+        echo "registry push grant OK: ${CI_REGISTRY_USER} -> ${REGISTRY}/${IMAGE_NAME}"
+      else
+        echo "WARN: registry pre-flight probe unreachable; kaniko will verify auth itself"
+      fi
 
 build:image:worker:
   extends: build:image

@@ -172,14 +172,23 @@ build:image:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
     - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
-  # Fail fast on registry creds BEFORE the build: Harbor's token service
-  # silently downgrades bad/mismatched basic auth to an anonymous token,
-  # which kaniko only surfaces as a cryptic push-permission 401 (pipeline
-  # #11: empty project CI_REGISTRY_PASSWORD fell back to the group-level
-  # robot of another project). Inherited by build:image:worker via extends.
+  # Fail fast on registry creds BEFORE the build. Two traps this guards
+  # (both live in pipeline #11/#12):
+  #   1. GitLab runner expands $VAR inside CI variable VALUES, so Harbor's
+  #      robot$<project>+<name> username arrives mangled (robot$comuki+ci-push
+  #      → robot+ci-push; $comuki resolves as an undefined variable).
+  #   2. Harbor's token service silently downgrades bad/mismatched basic
+  #      auth to an anonymous token, which kaniko only surfaces as a cryptic
+  #      push-permission 401 (empty project CI_REGISTRY_PASSWORD also falls
+  #      back to the group-level robot of an unrelated project).
+  # Script text is never runner-expanded, so the single-quoted literal below
+  # restores the real username; the export persists into the template script.
+  # Inherited by build:image:worker via extends.
   before_script:
     - |
       set -eu
+      echo "injected CI_REGISTRY_USER: [${CI_REGISTRY_USER}] (len ${#CI_REGISTRY_USER})"
+      export CI_REGISTRY_USER='robot$comuki+ci-push'
       AUTH=$(printf '%s:%s' "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')
       if BODY=$(wget -q -O - --header "Authorization: Basic ${AUTH}" \
           "https://${REGISTRY}/service/token?service=harbor-registry&scope=repository:${IMAGE_NAME}:push,pull"); then

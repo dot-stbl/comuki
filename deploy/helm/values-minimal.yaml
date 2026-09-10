@@ -1,0 +1,49 @@
+# Bare-minimum values: single node, small storage, no frills.
+#
+#   helm install comuki ./deploy/helm -f deploy/helm/values-minimal.yaml \
+#     --set secrets.postgresPassword=$(openssl rand -hex 16) \
+#     --set secrets.apiKeyPepper=$(openssl rand -hex 32) \
+#     --set secrets.tokenPepper=$(openssl rand -hex 32) \
+#     --set secrets.bootstrapAdminPassword='ChangeMe-2026!' \
+#     --set secrets.artifactsAccessKey=comuki-minio \
+#     --set secrets.artifactsSecretKey=$(openssl rand -hex 16)
+
+image:
+  tag: ""
+
+publicUrl: http://comuki.localhost
+
+environment: Production
+
+replicaCount: 1
+
+host:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+postgresql:
+  persistence:
+    size: 3Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+artifacts:
+  persistence:
+    size: 3Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+dashboard:
+  enabled: true
+
+brain:
+  enabled: false
+
+ingress:
+  enabled: false

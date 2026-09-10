@@ -1,0 +1,54 @@
+# One-shot migration job: applies EF Core migrations for all ten
+# schemas (each with its own __ef_migrations_history). Retries absorb
+# the Postgres startup window.
+#
+# Re-run on every upgrade: kubectl delete job comuki-migrator &&
+# kubectl apply -f migrator-job.yaml && kubectl wait --for=condition=complete \
+#   job/comuki-migrator -n comuki --timeout=300s
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: comuki-migrator
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki
+    app.kubernetes.io/component: migrator
+spec:
+  backoffLimit: 12
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: comuki
+        app.kubernetes.io/component: migrator
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrator
+          image: ghcr.io/dot-stbl/comuki:latest
+          command: ["dotnet", "/app/migrator/Comuki.Migrator.dll"]
+          env:
+            # Dependent-env expansion: must precede COMUKI_DB.
+            - name: COMUKI_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: comuki-secrets
+                  key: postgres-password
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: COMUKI_DB
+              value: "Host=comuki-postgres;Port=5432;Database=comuki;Username=comuki;Password=$(COMUKI_POSTGRES_PASSWORD)"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1654
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi

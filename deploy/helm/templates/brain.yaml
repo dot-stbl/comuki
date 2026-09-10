@@ -1,0 +1,65 @@
+{{- if .Values.brain.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "comuki.fullname" . }}-brain
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+    app.kubernetes.io/component: brain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "comuki.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: brain
+  template:
+    metadata:
+      labels:
+        {{- include "comuki.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: brain
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: brain
+          image: {{ include "comuki.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["dotnet", "/app/brain/Comuki.Host.Brain.dll"]
+          env:
+            # Dependent-env expansion: must precede COMUKI_DB.
+            - name: COMUKI_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "comuki.secretName" . }}
+                  key: postgres-password
+            - name: COMUKI_DB
+              value: {{ include "comuki.dbConnectionString" . | quote }}
+            - name: Brain__GrpcPort
+              value: {{ .Values.brain.grpcPort | quote }}
+            - name: COMUKI_BRAIN_MODEL_ENDPOINT
+              value: {{ .Values.brain.model.endpoint | quote }}
+            - name: COMUKI_BRAIN_MODEL_ID
+              value: {{ .Values.brain.model.modelId | quote }}
+            {{- if .Values.secrets.brainModelApiKey }}
+            - name: COMUKI_BRAIN_MODEL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "comuki.secretName" . }}
+                  key: brain-model-api-key
+            {{- end }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            {{- toYaml .Values.brain.resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

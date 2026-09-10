@@ -10,6 +10,7 @@
     <Project Path="platform/src/shared/Comuki.Shared.Contracts/Comuki.Shared.Contracts.csproj" />
     <Project Path="platform/src/shared/Comuki.Shared.Filtering/Comuki.Shared.Filtering.csproj" />
     <Project Path="platform/src/shared/Comuki.Shared.Telemetry/Comuki.Shared.Telemetry.csproj" />
+    <Project Path="platform/src/shared/Comuki.Shared.Bootstrap/Comuki.Shared.Bootstrap.csproj" />
   </Folder>
   <Folder Name="/platform/src/modules/">
     <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Domain/Comuki.Modules.Identity.Domain.csproj" />
@@ -88,6 +89,7 @@
     <Project Path="tests/unit/Comuki.Modules.Proxy.DomainLayerTests/Comuki.Modules.Proxy.DomainLayerTests.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Filtering.Unit/Comuki.Shared.Filtering.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Telemetry.Unit/Comuki.Shared.Telemetry.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Shared.Bootstrap.Unit/Comuki.Shared.Bootstrap.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Kernel.Tests/Comuki.Shared.Kernel.Tests.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Contracts.Unit.Realtime/Comuki.Shared.Contracts.Unit.Realtime.csproj" />
     <Project Path="tests/unit/Comuki.Migrator.Unit/Comuki.Migrator.Unit.csproj" />

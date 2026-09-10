@@ -2,6 +2,7 @@ using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Kernel.Secrets;
 
 namespace Comuki.Modules.Intake.Infrastructure.Providers.Jira;
 
@@ -32,11 +33,12 @@ public sealed class JiraTicketSourceProvider(
     }
 
     /// <inheritdoc />
-    public bool VerifySignature(SourceConnection connection, WebhookDelivery delivery)
+    public async Task<bool> VerifySignatureAsync(SourceConnection connection, WebhookDelivery delivery, CancellationToken cancellationToken = default)
     {
         var settings = JiraSettings.Parse(connection.SettingsJson);
+        var secret = await secrets.ResolveAsync(connection.SecretEnvRef, cancellationToken);
         return JiraWebhookVerifier.Verify(
-            secrets.Resolve(connection.SecretEnvRef),
+            secret,
             delivery.QueryParam(settings.WebhookSecretParam));
     }
 
@@ -51,7 +53,9 @@ public sealed class JiraTicketSourceProvider(
     public async Task<IReadOnlyList<IncomingTicket>> FetchCatalogAsync(SourceConnection connection, int page, CancellationToken cancellationToken = default)
     {
         var settings = JiraSettings.Parse(connection.SettingsJson);
-        var api = clients.Jira(settings.Site, secrets.Resolve(settings.ApiTokenEnv));
+        var api = clients.Jira(
+            settings.Site,
+            await secrets.ResolveAsync(settings.ApiTokenEnv, cancellationToken));
         var result = await api.SearchAsync(settings.Jql, PageSize, (page - 1) * PageSize, cancellationToken);
 
         return [.. result.Issues.Select(issue => JiraPayloadMapper.ToTicket(issue, settings.Site, connection.ProjectId, clock.GetUtcNow()))];

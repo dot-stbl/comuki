@@ -116,8 +116,8 @@ public sealed class GitHubTicketSourceProviderShould
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["X-Hub-Signature-256"] = signature },
             ProviderTestHarness.NoQuery);
 
-        provider.VerifySignature(connection, good).ShouldBeTrue();
-        provider.VerifySignature(connection, good with { Headers = ProviderTestHarness.NoHeaders }).ShouldBeFalse();
+        (await provider.VerifySignatureAsync(connection, good, TestContext.Current.CancellationToken)).ShouldBeTrue();
+        (await provider.VerifySignatureAsync(connection, good with { Headers = ProviderTestHarness.NoHeaders }, TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Given an opened payload, when normalized through the provider, then the ticket maps (integration of provider + mapper)")]

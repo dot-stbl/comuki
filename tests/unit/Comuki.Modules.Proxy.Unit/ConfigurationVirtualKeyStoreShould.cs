@@ -1,4 +1,3 @@
-using Comuki.Modules.Proxy.Application.Models;
 using Comuki.Modules.Proxy.Application.Options;
 using Comuki.Modules.Proxy.Application.Resolving;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -30,7 +29,7 @@ public sealed class ConfigurationVirtualKeyStoreShould
                 },
             ],
         });
-        var store = new ConfigurationVirtualKeyStore(options, TimeProvider.System, NullLogger<ConfigurationVirtualKeyStore>.Instance);
+        var store = NewStore(options);
 
         var key = await store.FindAsync("vkey_alpha", TestContext.Current.CancellationToken);
 
@@ -55,7 +54,7 @@ public sealed class ConfigurationVirtualKeyStoreShould
                 },
             ],
         });
-        var store = new ConfigurationVirtualKeyStore(options, TimeProvider.System, NullLogger<ConfigurationVirtualKeyStore>.Instance);
+        var store = NewStore(options);
 
         var key = await store.FindAsync("vkey_omega", TestContext.Current.CancellationToken);
 
@@ -86,7 +85,7 @@ public sealed class ConfigurationVirtualKeyStoreShould
                 },
             ],
         });
-        var store = new ConfigurationVirtualKeyStore(options, TimeProvider.System, NullLogger<ConfigurationVirtualKeyStore>.Instance);
+        var store = NewStore(options);
 
         var keys = await store.ListAsync(TestContext.Current.CancellationToken);
 
@@ -117,11 +116,80 @@ public sealed class ConfigurationVirtualKeyStoreShould
                 },
             ],
         });
-        var store = new ConfigurationVirtualKeyStore(options, TimeProvider.System, NullLogger<ConfigurationVirtualKeyStore>.Instance);
+        var store = NewStore(options);
 
         var keys = await store.ListAsync(TestContext.Current.CancellationToken);
 
         keys.Count.ShouldBe(1);
         keys[0].Token.ShouldBe("vkey_valid");
+    }
+
+    [Fact(DisplayName = "Given a virtual key whose ApiKeyEnvRef resolves through the secret resolver, when the store builds, then the resolved value is available without a direct env read")]
+    public async Task ResolverBackedSeedAsync()
+    {
+        var projectId = Guid.NewGuid();
+        var resolver = new ConfigurableSecretResolver();
+        resolver.Map["RESOLVER_BACKED_KEY"] = "sk-resolver";
+
+        var options = Options.Create(new ProxyOptions
+        {
+            VirtualKeys = [
+                new ProxyOptions.VirtualKeyConfiguration
+                {
+                    Token = "vkey_resolver",
+                    ProjectId = projectId,
+                    Provider = "openai",
+                    BaseUrl = "https://api.openai.com",
+                    ApiKeyEnvRef = "RESOLVER_BACKED_KEY",
+                },
+            ],
+        });
+        var store = new ConfigurationVirtualKeyStore(
+            TimeProvider.System,
+            new VirtualKeySeed(options, resolver, NullLogger<VirtualKeySeed>.Instance),
+            NullLogger<ConfigurationVirtualKeyStore>.Instance);
+
+        var key = await store.FindAsync("vkey_resolver", TestContext.Current.CancellationToken);
+
+        key.ShouldNotBeNull();
+        key.Upstream.ApiKeyEnvRef.ShouldBe("RESOLVER_BACKED_KEY");
+        resolver.Received.ShouldContain("RESOLVER_BACKED_KEY");
+    }
+
+    [Fact(DisplayName = "Given a virtual key whose ApiKeyEnvRef resolves empty, when the store builds, then the row still lands (a runtime 502 surfaces the missing value)")]
+    public async Task EmptyResolvedRefStillSeedsAsync()
+    {
+        var projectId = Guid.NewGuid();
+        var resolver = new ConfigurableSecretResolver();
+
+        var options = Options.Create(new ProxyOptions
+        {
+            VirtualKeys = [
+                new ProxyOptions.VirtualKeyConfiguration
+                {
+                    Token = "vkey_empty",
+                    ProjectId = projectId,
+                    Provider = "openai",
+                    BaseUrl = "https://api.openai.com",
+                    ApiKeyEnvRef = "UNSET_REF",
+                },
+            ],
+        });
+        var store = new ConfigurationVirtualKeyStore(
+            TimeProvider.System,
+            new VirtualKeySeed(options, resolver, NullLogger<VirtualKeySeed>.Instance),
+            NullLogger<ConfigurationVirtualKeyStore>.Instance);
+
+        var key = await store.FindAsync("vkey_empty", TestContext.Current.CancellationToken);
+
+        key.ShouldNotBeNull();
+    }
+
+    private static ConfigurationVirtualKeyStore NewStore(IOptions<ProxyOptions> options)
+    {
+        return new ConfigurationVirtualKeyStore(
+            TimeProvider.System,
+            new VirtualKeySeed(options, new ConfigurableSecretResolver(), NullLogger<VirtualKeySeed>.Instance),
+            NullLogger<ConfigurationVirtualKeyStore>.Instance);
     }
 }

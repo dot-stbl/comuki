@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
-using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Infrastructure.Providers;
+using Comuki.Shared.Kernel.Secrets;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Comuki.Modules.Intake.Unit;
@@ -9,7 +9,7 @@ namespace Comuki.Modules.Intake.Unit;
 /// <summary>
 /// Test plumbing for provider tests: a recording HTTP handler (no real
 /// network — the Refit proxies run over it) and a fake secret resolver
-/// keyed by env-var name. Request bodies are snapshotted on arrival —
+/// keyed by reference string. Request bodies are snapshotted on arrival —
 /// Refit disposes the content stream after the call.
 /// </summary>
 internal sealed class RecordedRequest
@@ -48,14 +48,24 @@ internal sealed class RecordingHandler : HttpMessageHandler
     }
 }
 
+/// <summary>
+/// Test double for the shared-kernel <see cref="ISecretResolver"/>.
+/// Keyed by reference string — bare names, <c>env:NAME</c>, and
+/// <c>file:/path</c> all match against the same map so tests do not
+/// have to care which scheme the production code parsed. Returns
+/// <c>null</c> for unknown refs so the test author can stage a missing
+/// secret without a stub.
+/// </summary>
 internal sealed class FakeSecretResolver : ISecretResolver
 {
-    public string? Resolve(string? envName)
-    {
-        return envName is { Length: > 0 } && Map.TryGetValue(envName, out var value) ? value : null;
-    }
-
     public Dictionary<string, string> Map { get; } = [];
+
+    public Task<string?> ResolveAsync(string? reference, CancellationToken cancellationToken = default)
+    {
+        return reference is { Length: > 0 } && Map.TryGetValue(reference, out var value)
+            ? Task.FromResult<string?>(value)
+            : Task.FromResult<string?>(null);
+    }
 }
 
 internal static class ProviderTestHarness

@@ -43,6 +43,7 @@ public static class ProxyApplicationExtensions
         services.AddSingleton<IValidateOptions<ProxyOptions>, ProxyOptionsValidator>();
 
         services.TryAddSingleton<IVirtualKeyStore, ConfigurationVirtualKeyStore>();
+        services.TryAddSingleton<VirtualKeySeed>();
         services.AddSingleton<VirtualKeyResolver>();
         services.AddSingleton<IProxyBudgetEnforcer, DefaultProxyBudgetEnforcer>();
         services.AddSingleton<ProxyPricingCalculator>();

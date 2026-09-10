@@ -3,6 +3,7 @@ using Comuki.Host.Auth;
 using Comuki.Host.Security.ProductionSecrets;
 using Comuki.Modules.Artifacts.Infrastructure.Store;
 using Comuki.Modules.Identity.Application.Options;
+using Comuki.Shared.Kernel.Secrets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -17,10 +18,11 @@ namespace Comuki.Host.Unit.ProductionSecrets;
 /// Unit tests for <see cref="ProductionSecretValidator"/>: refuses to start
 /// the host in <c>Production</c> when any committed dev-default secret
 /// (MinIO keys, bootstrap admin password, API-key pepper, worker-token
-/// pepper) is still on its shipped value, and returns silently in
+/// pepper, enabled remote secrets provider without its bootstrap token)
+/// is still on its shipped value, and returns silently in
 /// non-production environments. Q29 adds the length + character-class
 /// check on the bootstrap admin password; security audit A02-1 adds the
-/// pepper checks.
+/// pepper checks; issue #52 adds the secrets-provider check.
 /// </summary>
 public sealed class ProductionSecretValidatorShould : IDisposable
 {
@@ -30,6 +32,8 @@ public sealed class ProductionSecretValidatorShould : IDisposable
         Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, null);
         Environment.SetEnvironmentVariable(ApiKeyOptions.PepperEnvironmentVariable, null);
         Environment.SetEnvironmentVariable(WorkerTokenOptions.PepperEnvironmentVariable, null);
+        Environment.SetEnvironmentVariable("COMUKI_VAULT_TOKEN", null);
+        Environment.SetEnvironmentVariable("COMUKI_CONSUL_TOKEN", null);
     }
 
     public void Dispose()
@@ -38,6 +42,8 @@ public sealed class ProductionSecretValidatorShould : IDisposable
         Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, null);
         Environment.SetEnvironmentVariable(ApiKeyOptions.PepperEnvironmentVariable, null);
         Environment.SetEnvironmentVariable(WorkerTokenOptions.PepperEnvironmentVariable, null);
+        Environment.SetEnvironmentVariable("COMUKI_VAULT_TOKEN", null);
+        Environment.SetEnvironmentVariable("COMUKI_CONSUL_TOKEN", null);
     }
 
     [Fact(DisplayName = "Given Production + bootstrap password too short, when Validate is called, then it throws with a length hint")]
@@ -256,6 +262,58 @@ public sealed class ProductionSecretValidatorShould : IDisposable
         exception.Message.ShouldContain(WorkerTokenOptions.PepperEnvironmentVariable);
         exception.Message.ShouldNotContain(ApiKeyOptions.PepperEnvironmentVariable);
     }
+
+    [Fact(DisplayName = "Given Production + vault provider enabled but COMUKI_VAULT_TOKEN unset, when Validate is called, then it throws naming the env var")]
+    public void ThrowWhenProductionVaultProviderEnabledWithoutToken()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            secrets: ProductionSecretsTestArtifacts.VaultEnabledButTokenUnset());
+
+        var exception = Should.Throw<InvalidOperationException>(
+            () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+
+        exception.Message.ShouldContain("COMUKI_VAULT_TOKEN");
+        exception.Message.ShouldContain("vault");
+    }
+
+    [Fact(DisplayName = "Given Production + vault provider enabled with COMUKI_VAULT_TOKEN set, when Validate is called, then it returns silently")]
+    public void ReturnSilentlyWhenProductionVaultProviderEnabledAndTokenSet()
+    {
+        Environment.SetEnvironmentVariable("COMUKI_VAULT_TOKEN", "real-vault-token-2026");
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            secrets: ProductionSecretsTestArtifacts.VaultEnabledAndTokenSet());
+
+        Should.NotThrow(() => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+    }
+
+    [Fact(DisplayName = "Given Production + consul provider enabled but COMUKI_CONSUL_TOKEN unset, when Validate is called, then it throws naming the env var")]
+    public void ThrowWhenProductionConsulProviderEnabledWithoutToken()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            secrets: ProductionSecretsTestArtifacts.ConsulEnabledButTokenUnset());
+
+        var exception = Should.Throw<InvalidOperationException>(
+            () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+
+        exception.Message.ShouldContain("COMUKI_CONSUL_TOKEN");
+    }
+
+    [Fact(DisplayName = "Given Production + no remote providers enabled, when Validate is called, then it returns silently (env / file providers are token-less)")]
+    public void ReturnSilentlyWhenNoRemoteProvidersEnabled()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            secrets: ProductionSecretsTestArtifacts.NoRemoteProviders());
+
+        Should.NotThrow(() => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+    }
 }
 
 file static class ProductionSecretsTestServices
@@ -269,11 +327,22 @@ file static class ProductionSecretsTestServices
             workerTokenPepper: ProductionSecretsTestArtifacts.OverriddenWorkerTokenPepper);
     }
 
+    public static IServiceCollection BuildServices(string environmentName, ArtifactsOptions artifacts, SecretsOptions secrets)
+    {
+        return BuildServices(
+            environmentName,
+            artifacts,
+            apiKeyPepper: ProductionSecretsTestArtifacts.OverriddenApiKeyPepper,
+            workerTokenPepper: ProductionSecretsTestArtifacts.OverriddenWorkerTokenPepper,
+            secrets: secrets);
+    }
+
     public static IServiceCollection BuildServices(
         string environmentName,
         ArtifactsOptions artifacts,
         string apiKeyPepper,
-        string workerTokenPepper)
+        string workerTokenPepper,
+        SecretsOptions? secrets = null)
     {
         var services = new ServiceCollection();
         services.AddSingleton<IHostEnvironment>(new ProductionSecretsTestEnvironment(environmentName));
@@ -281,6 +350,7 @@ file static class ProductionSecretsTestServices
         services.AddSingleton(Options.Create(artifacts));
         services.AddSingleton(Options.Create(new ApiKeyOptions { Pepper = apiKeyPepper }));
         services.AddSingleton(Options.Create(new WorkerTokenOptions { Pepper = workerTokenPepper }));
+        services.AddSingleton(Options.Create(secrets ?? ProductionSecretsTestArtifacts.NoRemoteProviders()));
         return services;
     }
 }
@@ -337,6 +407,47 @@ file static class ProductionSecretsTestArtifacts
             AccessKey = "service-account",
             SecretKey = "rotated-strong-secret",
             Bucket = Bucket,
+        };
+    }
+
+    public static SecretsOptions NoRemoteProviders()
+    {
+        return new SecretsOptions
+        {
+            Providers = new Dictionary<string, FileSecretOptions>(StringComparer.OrdinalIgnoreCase),
+        };
+    }
+
+    public static SecretsOptions VaultEnabledButTokenUnset()
+    {
+        return new SecretsOptions
+        {
+            Providers = new Dictionary<string, FileSecretOptions>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["vault"] = new FileSecretOptions { Enabled = true },
+            },
+        };
+    }
+
+    public static SecretsOptions VaultEnabledAndTokenSet()
+    {
+        return new SecretsOptions
+        {
+            Providers = new Dictionary<string, FileSecretOptions>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["vault"] = new FileSecretOptions { Enabled = true },
+            },
+        };
+    }
+
+    public static SecretsOptions ConsulEnabledButTokenUnset()
+    {
+        return new SecretsOptions
+        {
+            Providers = new Dictionary<string, FileSecretOptions>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["consul"] = new FileSecretOptions { Enabled = true },
+            },
         };
     }
 }

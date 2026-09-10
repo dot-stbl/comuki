@@ -148,7 +148,7 @@ public sealed class WebhookIntakeServiceShould
         store.FindConnectionByWebhookAsync(TicketProviderKeys.GitHub, connection.WebhookKey, Arg.Any<CancellationToken>())
             .Returns(connection);
         store.TryInsertDeliveryAsync(Arg.Any<IntakeDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
-        provider.VerifySignature(connection, Arg.Any<WebhookDelivery>()).Returns(false);
+        provider.VerifySignatureAsync(connection, Arg.Any<WebhookDelivery>(), Arg.Any<CancellationToken>()).Returns(false);
         var service = BuildService();
 
         var receipt = await service.HandleAsync(
@@ -173,7 +173,7 @@ public sealed class WebhookIntakeServiceShould
         store.FindConnectionByWebhookAsync(TicketProviderKeys.GitHub, connection.WebhookKey, Arg.Any<CancellationToken>())
             .Returns(connection);
         store.TryInsertDeliveryAsync(Arg.Any<IntakeDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
-        provider.VerifySignature(connection, Arg.Any<WebhookDelivery>()).Returns(true);
+        provider.VerifySignatureAsync(connection, Arg.Any<WebhookDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
         provider.Normalize(Arg.Any<WebhookDelivery>(), connection).Returns((IncomingTicket?)null);
         var service = BuildService();
 
@@ -211,7 +211,7 @@ public sealed class WebhookIntakeServiceShould
         store.FindConnectionByWebhookAsync(TicketProviderKeys.GitHub, connection.WebhookKey, Arg.Any<CancellationToken>())
             .Returns(connection);
         store.TryInsertDeliveryAsync(Arg.Any<IntakeDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
-        provider.VerifySignature(connection, Arg.Any<WebhookDelivery>()).Returns(true);
+        provider.VerifySignatureAsync(connection, Arg.Any<WebhookDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
         provider.Normalize(Arg.Any<WebhookDelivery>(), connection).Returns(ticket);
         store.ListEnabledRulesAsync(connection.ProjectId, Arg.Any<CancellationToken>()).Returns([]);
         var service = BuildService();
@@ -253,7 +253,7 @@ public sealed class WebhookIntakeServiceShould
         store.FindConnectionByWebhookAsync(TicketProviderKeys.GitHub, connection.WebhookKey, Arg.Any<CancellationToken>())
             .Returns(connection);
         store.TryInsertDeliveryAsync(Arg.Any<IntakeDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
-        provider.VerifySignature(connection, Arg.Any<WebhookDelivery>()).Returns(true);
+        provider.VerifySignatureAsync(connection, Arg.Any<WebhookDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
         provider.Normalize(Arg.Any<WebhookDelivery>(), connection).Returns(ticket);
         var rule = AdmissionRule.Create(connection.ProjectId, AdmissionMode.Inbox, "{}", now);
         store.ListEnabledRulesAsync(connection.ProjectId, Arg.Any<CancellationToken>()).Returns([rule]);
@@ -291,7 +291,7 @@ public sealed class WebhookIntakeServiceShould
         store.FindConnectionByWebhookAsync(TicketProviderKeys.GitHub, connection.WebhookKey, Arg.Any<CancellationToken>())
             .Returns(connection);
         store.TryInsertDeliveryAsync(Arg.Any<IntakeDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
-        provider.VerifySignature(connection, Arg.Any<WebhookDelivery>()).Returns(true);
+        provider.VerifySignatureAsync(connection, Arg.Any<WebhookDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
         provider.Normalize(Arg.Any<WebhookDelivery>(), connection).Returns(ticket);
         var rule = AdmissionRule.Create(connection.ProjectId, AdmissionMode.Watch, "{}", now);
         store.ListEnabledRulesAsync(connection.ProjectId, Arg.Any<CancellationToken>()).Returns([rule]);
@@ -338,7 +338,7 @@ public sealed class WebhookIntakeServiceShould
         store.FindConnectionByWebhookAsync(TicketProviderKeys.GitHub, connection.WebhookKey, Arg.Any<CancellationToken>())
             .Returns(connection);
         store.TryInsertDeliveryAsync(Arg.Any<IntakeDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
-        provider.VerifySignature(connection, Arg.Any<WebhookDelivery>()).Returns(true);
+        provider.VerifySignatureAsync(connection, Arg.Any<WebhookDelivery>(), Arg.Any<CancellationToken>()).Returns(true);
         provider.Normalize(Arg.Any<WebhookDelivery>(), connection).Returns(ticket);
         var rule = AdmissionRule.Create(connection.ProjectId, AdmissionMode.Inbox, "{}", now);
         store.ListEnabledRulesAsync(connection.ProjectId, Arg.Any<CancellationToken>()).Returns([rule]);

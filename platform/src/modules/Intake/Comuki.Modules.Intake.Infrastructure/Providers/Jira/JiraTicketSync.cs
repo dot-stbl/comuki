@@ -1,8 +1,8 @@
-using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Kernel.Secrets;
 
 namespace Comuki.Modules.Intake.Infrastructure.Providers.Jira;
 
@@ -24,7 +24,9 @@ public sealed class JiraTicketSync(
     public async Task TransitionAsync(SourceConnection connection, TicketTransition transition, CancellationToken cancellationToken = default)
     {
         var settings = JiraSettings.Parse(connection.SettingsJson);
-        var api = clients.Jira(settings.Site, secrets.Resolve(settings.ApiTokenEnv));
+        var api = clients.Jira(
+            settings.Site,
+            await secrets.ResolveAsync(settings.ApiTokenEnv, cancellationToken));
 
         await api.PostCommentAsync(transition.ExternalId, new JiraCommentBody(TrackerSyncComments.Of(transition)), cancellationToken);
 

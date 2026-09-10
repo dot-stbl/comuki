@@ -1,4 +1,3 @@
-using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Application.Sources;
 using Comuki.Modules.Intake.Domain.Connections;
@@ -6,6 +5,7 @@ using Comuki.Modules.Intake.Domain.Ids;
 using Comuki.Modules.Intake.Domain.Rules;
 using Comuki.Modules.Intake.Domain.Tickets;
 using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Secrets;
 using FluentValidation;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -28,21 +28,17 @@ public sealed class IntakeSourceServicesShould
     public IntakeSourceServicesShould()
     {
         clock = new FakeTime(now);
-        // Default: every env-var name resolves to a non-empty value so the
-        // happy-path tests do not need to stub the resolver. The two
+        // Default: every ref resolves to a non-empty value so the
+        // happy-path tests do not need to stub the resolver. The
         // missing-secret tests stub a single name to null/empty.
-        secrets.Resolve(Arg.Any<string?>()).Returns("resolved-secret");
+        secrets.ResolveAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns("resolved-secret");
     }
 
     [Fact(DisplayName = "Given a valid connection command, when Create runs, then the store receives it and the view has a hook path")]
     public async Task CreateConnectionPersistsAsync()
     {
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        var service = NewService();
 
         var view = await service.CreateAsync(
             new CreateSourceConnectionCommand(
@@ -85,12 +81,7 @@ public sealed class IntakeSourceServicesShould
             now);
         store.ListConnectionsAsync(null, Arg.Any<CancellationToken>()).Returns([connection]);
         store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>()).Returns(connection);
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        var service = NewService();
 
         var listed = await service.ListAsync(null, TestContext.Current.CancellationToken);
         var got = await service.GetAsync(connection.Id, TestContext.Current.CancellationToken);
@@ -104,12 +95,7 @@ public sealed class IntakeSourceServicesShould
     public async Task GetMissingConnectionThrowsAsync()
     {
         store.FindConnectionAsync(Arg.Any<SourceConnectionId>(), Arg.Any<CancellationToken>()).Returns((SourceConnection?)null);
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        var service = NewService();
 
         await Should.ThrowAsync<SourceConnectionNotFoundException>(
             () => service.GetAsync(SourceConnectionId.New(), TestContext.Current.CancellationToken));
@@ -127,12 +113,7 @@ public sealed class IntakeSourceServicesShould
             "abcdefghijklmnop",
             now);
         store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>()).Returns(connection);
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        var service = NewService();
 
         var view = await service.UpdateAsync(connection.Id, "New", null, null, false, TestContext.Current.CancellationToken);
 
@@ -231,18 +212,13 @@ public sealed class IntakeSourceServicesShould
             () => service.UpdateAsync(rule.Id, "auto", null, null, TestContext.Current.CancellationToken));
     }
 
-    [Fact(DisplayName = "Given an unset secret env var, when Create runs, then SecretEnvRefUnsetException is thrown and the store stays untouched")]
+    [Fact(DisplayName = "Given an unset secret env var, when Create runs, then SecretRefUnsetException is thrown and the store stays untouched")]
     public async Task CreateConnectionRefusesUnsetSecretEnvRefAsync()
     {
-        secrets.Resolve("MISSING_TOKEN").Returns((string?)null);
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        secrets.ResolveAsync("MISSING_TOKEN", Arg.Any<CancellationToken>()).Returns((string?)null);
+        var service = NewService();
 
-        var exception = await Should.ThrowAsync<SecretEnvRefUnsetException>(
+        var exception = await Should.ThrowAsync<SecretRefUnsetException>(
             () => service.CreateAsync(
                 new CreateSourceConnectionCommand(
                     ProjectId.New(),
@@ -256,18 +232,13 @@ public sealed class IntakeSourceServicesShould
         await store.DidNotReceive().AddConnectionAsync(Arg.Any<SourceConnection>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Given a resolved-but-empty secret, when Create runs, then SecretEnvRefUnsetException is thrown")]
+    [Fact(DisplayName = "Given a resolved-but-empty secret, when Create runs, then SecretRefUnsetException is thrown")]
     public async Task CreateConnectionRefusesEmptyResolvedSecretAsync()
     {
-        secrets.Resolve("EMPTY_TOKEN").Returns(string.Empty);
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        secrets.ResolveAsync("EMPTY_TOKEN", Arg.Any<CancellationToken>()).Returns(string.Empty);
+        var service = NewService();
 
-        await Should.ThrowAsync<SecretEnvRefUnsetException>(
+        await Should.ThrowAsync<SecretRefUnsetException>(
             () => service.CreateAsync(
                 new CreateSourceConnectionCommand(
                     ProjectId.New(),
@@ -280,7 +251,7 @@ public sealed class IntakeSourceServicesShould
         await store.DidNotReceive().AddConnectionAsync(Arg.Any<SourceConnection>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Given a new unset secret env var on Update, when Update runs, then SecretEnvRefUnsetException is thrown")]
+    [Fact(DisplayName = "Given a new unset secret env var on Update, when Update runs, then SecretRefUnsetException is thrown")]
     public async Task UpdateConnectionRefusesUnsetSecretEnvRefAsync()
     {
         var connection = SourceConnection.Create(
@@ -292,16 +263,11 @@ public sealed class IntakeSourceServicesShould
             "abcdefghijklmnop",
             now);
         store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>()).Returns(connection);
-        secrets.Resolve("NEW_MISSING").Returns((string?)null);
+        secrets.ResolveAsync("NEW_MISSING", Arg.Any<CancellationToken>()).Returns((string?)null);
 
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        var service = NewService();
 
-        await Should.ThrowAsync<SecretEnvRefUnsetException>(
+        await Should.ThrowAsync<SecretRefUnsetException>(
             () => service.UpdateAsync(connection.Id, null, null, "NEW_MISSING", null, TestContext.Current.CancellationToken));
 
         await store.DidNotReceive().UpdateConnectionAsync(Arg.Any<SourceConnection>(), Arg.Any<CancellationToken>());
@@ -319,14 +285,9 @@ public sealed class IntakeSourceServicesShould
             "abcdefghijklmnop",
             now);
         store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>()).Returns(connection);
-        secrets.Resolve("OLD_REF").Returns((string?)null);
+        secrets.ResolveAsync("OLD_REF", Arg.Any<CancellationToken>()).Returns((string?)null);
 
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        var service = NewService();
 
         // A null secretEnvRef means "keep the stored value"; the resolver is
         // not consulted, so an already-broken stored connection does not
@@ -334,7 +295,7 @@ public sealed class IntakeSourceServicesShould
         var view = await service.UpdateAsync(connection.Id, "Renamed", null, null, null, TestContext.Current.CancellationToken);
 
         view.Name.ShouldBe("Renamed");
-        secrets.DidNotReceive().Resolve(Arg.Any<string?>());
+        await secrets.DidNotReceive().ResolveAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>());
         await store.Received(1).UpdateConnectionAsync(connection, Arg.Any<CancellationToken>());
     }
 
@@ -351,12 +312,7 @@ public sealed class IntakeSourceServicesShould
             now);
         store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>()).Returns(connection);
 
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        var service = NewService();
 
         var response = await service.RotateSecretAsync(connection.Id, TestContext.Current.CancellationToken);
 
@@ -384,12 +340,7 @@ public sealed class IntakeSourceServicesShould
             now);
         store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>()).Returns(connection);
 
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        var service = NewService();
 
         var first = await service.RotateSecretAsync(connection.Id, TestContext.Current.CancellationToken);
         var second = await service.RotateSecretAsync(connection.Id, TestContext.Current.CancellationToken);
@@ -401,12 +352,7 @@ public sealed class IntakeSourceServicesShould
     public async Task RotateSecretOnMissingConnectionThrowsAsync()
     {
         store.FindConnectionAsync(Arg.Any<SourceConnectionId>(), Arg.Any<CancellationToken>()).Returns((SourceConnection?)null);
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        var service = NewService();
 
         await Should.ThrowAsync<SourceConnectionNotFoundException>(
             () => service.RotateSecretAsync(SourceConnectionId.New(), TestContext.Current.CancellationToken));
@@ -427,18 +373,23 @@ public sealed class IntakeSourceServicesShould
             now);
         store.FindConnectionAsync(connection.Id, Arg.Any<CancellationToken>()).Returns(connection);
 
-        var service = new SourceConnectionService(
-            store,
-            clock,
-            new CreateSourceConnectionValidator(),
-            secrets,
-            NullLogger<SourceConnectionService>.Instance);
+        var service = NewService();
 
         await service.RotateSecretAsync(connection.Id, TestContext.Current.CancellationToken);
 
         // The rotation owns the secret value — the host's resolver is the
         // path for webhook-time verification, not for the rotation itself.
-        secrets.DidNotReceive().Resolve(Arg.Any<string?>());
+        await secrets.DidNotReceive().ResolveAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>());
+    }
+
+    private SourceConnectionService NewService()
+    {
+        return new SourceConnectionService(
+            store,
+            clock,
+            new CreateSourceConnectionValidator(),
+            new SecretRefResolverGuard(secrets),
+            NullLogger<SourceConnectionService>.Instance);
     }
 
     private sealed class FakeTime(DateTimeOffset utcNow) : TimeProvider

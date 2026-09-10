@@ -2,6 +2,7 @@ using Comuki.Modules.Intake.Application.Ports.Sources;
 using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Kernel.Secrets;
 
 namespace Comuki.Modules.Intake.Infrastructure.Providers.GitLab;
 
@@ -35,9 +36,10 @@ public sealed class GitLabTicketSourceProvider(
     }
 
     /// <inheritdoc />
-    public bool VerifySignature(SourceConnection connection, WebhookDelivery delivery)
+    public async Task<bool> VerifySignatureAsync(SourceConnection connection, WebhookDelivery delivery, CancellationToken cancellationToken = default)
     {
-        return GitLabWebhookVerifier.Verify(secrets.Resolve(connection.SecretEnvRef), delivery.Header("X-Gitlab-Token"));
+        var secret = await secrets.ResolveAsync(connection.SecretEnvRef, cancellationToken);
+        return GitLabWebhookVerifier.Verify(secret, delivery.Header("X-Gitlab-Token"));
     }
 
     /// <inheritdoc />
@@ -50,7 +52,9 @@ public sealed class GitLabTicketSourceProvider(
     public async Task<IReadOnlyList<IncomingTicket>> FetchCatalogAsync(SourceConnection connection, int page, CancellationToken cancellationToken = default)
     {
         var settings = GitLabSettings.Parse(connection.SettingsJson);
-        var api = clients.GitLab(settings.ApiBase, secrets.Resolve(settings.ApiTokenEnv));
+        var api = clients.GitLab(
+            settings.ApiBase,
+            await secrets.ResolveAsync(settings.ApiTokenEnv, cancellationToken));
         var now = clock.GetUtcNow();
         var issues = await api.ListIssuesAsync(settings.ProjectId, "opened", PageSize, page, cancellationToken);
 

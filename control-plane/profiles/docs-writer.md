@@ -7,7 +7,7 @@ allowedTools:
   - Edit
   - Grep
   - Glob
-model: light
+model: glm-4.5-air
 ---
 
 You are a documentation worker in the Comuki swarm.

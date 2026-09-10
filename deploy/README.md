@@ -8,6 +8,17 @@ and persist data to named Docker volumes.
 > auth beyond simple passwords. For anything beyond a laptop, swap
 > to a real secrets manager and reverse-proxy with TLS.
 
+## Self-hosting (deploy, don't develop)
+
+Looking to RUN Comuki rather than develop it? Three self-contained
+paths live next to this file — start at [`oss/README.md`](./oss/README.md):
+
+| Path | What |
+|---|---|
+| [`compose/`](./compose/) | full local stack (postgres+pgvector, minio, host, dashboard, worker image) |
+| [`helm/`](./helm/) | Helm chart, works on any k8s >= 1.28 |
+| [`k8s/`](./k8s/) | raw `kubectl apply` manifests |
+
 ## What's here
 
 | File | Purpose |

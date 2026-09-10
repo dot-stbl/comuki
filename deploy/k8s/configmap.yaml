@@ -1,0 +1,29 @@
+# Non-secret Comuki host configuration. Secrets live in the
+# comuki-secrets Secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: comuki-config
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki
+data:
+  # Public absolute URL (scheme + host) — OIDC redirects + CORS origin.
+  # EDIT ME: the URL users open in the browser.
+  COMUKI_PUBLIC_HOST_URL: "http://comuki.localhost"
+  Host__Cors__AllowedOrigins__0: "http://comuki.localhost"
+  # Artifact store (in-cluster MinIO from this directory).
+  Artifacts__Endpoint: "comuki-minio:9000"
+  Artifacts__Bucket: "comuki-run-bundles"
+  Artifacts__UseSSL: "false"
+  Artifacts__AutoCreateBucket: "true"
+  # Compute: workers as batch/v1 Jobs in the comuki namespace.
+  Compute__Provider: "kubernetes"
+  Compute__Scale__WorkerImage: "ghcr.io/dot-stbl/comuki-worker:latest"
+  Compute__Scale__OrchestratorGrpcUrl: "http://comuki:80"
+  Compute__Kubernetes__Namespace: "comuki"
+  Compute__Kubernetes__ServiceAccount: "comuki-worker"
+  Compute__Kubernetes__CpuRequestMillis: "500"
+  Compute__Kubernetes__MemoryRequestMiB: "1024"
+  # Optional: OTLP endpoint for traces/metrics (unset = no OTel SDK).
+  # Telemetry__OtlpEndpoint: "http://otel-collector.observability:4317"

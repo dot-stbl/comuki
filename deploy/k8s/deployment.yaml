@@ -1,0 +1,110 @@
+# The Comuki orchestrator host. MUST stay at replicas=1: the
+# worker-token store and the SignalR connection map are in-process
+# state.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: comuki-host
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki
+    app.kubernetes.io/component: host
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: comuki
+      app.kubernetes.io/component: host
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: comuki
+        app.kubernetes.io/component: host
+    spec:
+      serviceAccountName: comuki-host
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1654
+        fsGroup: 1654
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: host
+          image: ghcr.io/dot-stbl/comuki:latest
+          command: ["dotnet", "/app/host/Comuki.Host.dll"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # Dependent-env expansion: must precede COMUKI_DB.
+            - name: COMUKI_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: comuki-secrets
+                  key: postgres-password
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: COMUKI_DB
+              value: "Host=comuki-postgres;Port=5432;Database=comuki;Username=comuki;Password=$(COMUKI_POSTGRES_PASSWORD)"
+            - name: COMUKI_IDENTITY_APIKEY_PEPPER
+              valueFrom:
+                secretKeyRef:
+                  name: comuki-secrets
+                  key: api-key-pepper
+            - name: COMUKI_TOKEN_PEPPER
+              valueFrom:
+                secretKeyRef:
+                  name: comuki-secrets
+                  key: token-pepper
+            - name: COMUKI_BOOTSTRAP_ADMIN_EMAIL
+              value: "admin@example.com"
+            - name: COMUKI_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: comuki-secrets
+                  key: bootstrap-admin-password
+            - name: Artifacts__AccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: comuki-secrets
+                  key: artifacts-access-key
+            - name: Artifacts__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: comuki-secrets
+                  key: artifacts-secret-key
+          envFrom:
+            - configMapRef:
+                name: comuki-config
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            failureThreshold: 6
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: tmp
+          emptyDir: {}

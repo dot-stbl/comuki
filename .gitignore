@@ -357,6 +357,10 @@ FodyWeavers.xsd
 # Agent worktrees — parallel agent checkouts; never commit
 .agents/worktree/
 
+# hybrid contour deploy overlay — lives only on the GitLab mirror (hybrid remote)
+/.gitlab-ci.yml
+/deploy/hybrid/
+
 
 # format-gate verify log?
 /obj/?

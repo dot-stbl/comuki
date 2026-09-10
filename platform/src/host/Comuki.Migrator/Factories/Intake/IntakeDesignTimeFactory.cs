@@ -10,7 +10,7 @@ namespace Comuki.Migrator.Factories.Intake;
 /// connection-string source as the Migrator itself so
 /// <c>dotnet ef</c> can build the model without booting the host.
 /// </summary>
-public sealed class IntakeDesignTimeFactory : IDesignTimeDbContextFactory<IntakeDbContext>
+public sealed class IntakeDesignTimeFactory() : IDesignTimeDbContextFactory<IntakeDbContext>
 {
     /// <inheritdoc />
     public IntakeDbContext CreateDbContext(string[] args)

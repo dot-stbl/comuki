@@ -7,20 +7,11 @@ namespace Comuki.Migrator.Unit;
 /// <c>COMUKI_CONFIG_PATH</c> at it (the path <c>ConnectionStringSource</c>
 /// resolves the Comuki connection string through); cleans both up on
 /// dispose. Paired with <see cref="EnvVarScope"/> via the
-/// <c>[Collection("MigratorEnvSafe")]</c> gate so the state is invariant
+/// <c>[Collection(nameof(MigratorEnvSafeCollection))]</c> gate so the state is invariant
 /// per test.
 /// </summary>
-internal sealed class TempConfigTomlScope : IDisposable
+internal sealed class TempConfigTomlScope(string path, string? originalConfigPath) : IDisposable
 {
-    private readonly string path;
-    private readonly string? originalConfigPath;
-
-    private TempConfigTomlScope(string path, string? originalConfigPath)
-    {
-        this.path = path;
-        this.originalConfigPath = originalConfigPath;
-    }
-
     /// <summary>Install the supplied TOML content as the scoped config.toml.</summary>
     public static TempConfigTomlScope Install(string content)
     {

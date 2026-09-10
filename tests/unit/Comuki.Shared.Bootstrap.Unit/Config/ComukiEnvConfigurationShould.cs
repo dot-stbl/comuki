@@ -11,7 +11,7 @@ namespace Comuki.Shared.Bootstrap.Unit.Config;
 /// the env values override config.toml. These tests set process env
 /// vars — the BootstrapEnvSafe gate keeps them deterministic.
 /// </summary>
-[Collection("BootstrapEnvSafe")]
+[Collection(nameof(BootstrapEnvSafeCollection))]
 public sealed class ComukiEnvConfigurationShould
 {
     [Theory(DisplayName = "Given a COMUKI_ variable, when the provider loads, then it maps onto the expected key")]
@@ -21,7 +21,7 @@ public sealed class ComukiEnvConfigurationShould
     [InlineData("COMUKI_HOST_CORS_ALLOWEDORIGINS_0", "http://localhost:17173", "host:cors:allowedorigins:0")]
     public void MapSingleUnderscoreToConfigurationPath(string variable, string value, string expectedKey)
     {
-        using var envScope = EnvVarScope.Set((variable, value), (ComukiConfigFile.PathEnvironmentVariable, "/nonexistent/comuki-test.toml"));
+        using var envScope = EnvVarScope.Set(new EnvVarEntry(variable, value), new EnvVarEntry(ComukiConfigFile.PathEnvironmentVariable, "/nonexistent/comuki-test.toml"));
 
         var configuration = new ConfigurationBuilder().UseComukiConfiguration().Build();
 
@@ -31,7 +31,7 @@ public sealed class ComukiEnvConfigurationShould
     [Fact(DisplayName = "Given a COMUKI_A__B variable with a double underscore, when the provider loads, then it collapses to a:b")]
     public void DoubleUnderscoreCollapses()
     {
-        using var envScope = EnvVarScope.Set(("COMUKI_HOST__CORS", "true"), (ComukiConfigFile.PathEnvironmentVariable, "/nonexistent/comuki-test.toml"));
+        using var envScope = EnvVarScope.Set(new EnvVarEntry("COMUKI_HOST__CORS", "true"), new EnvVarEntry(ComukiConfigFile.PathEnvironmentVariable, "/nonexistent/comuki-test.toml"));
 
         var configuration = new ConfigurationBuilder().UseComukiConfiguration().Build();
 
@@ -42,7 +42,7 @@ public sealed class ComukiEnvConfigurationShould
     [Fact(DisplayName = "Given unprefixed variables only, when the provider loads, then no keys appear")]
     public void UnprefixedVariablesAreIgnored()
     {
-        using var envScope = EnvVarScope.Set(("HOST_CORS", "x"), ("OTHER_HOST", "y"), (ComukiConfigFile.PathEnvironmentVariable, "/nonexistent/comuki-test.toml"));
+        using var envScope = EnvVarScope.Set(new EnvVarEntry("HOST_CORS", "x"), new EnvVarEntry("OTHER_HOST", "y"), new EnvVarEntry(ComukiConfigFile.PathEnvironmentVariable, "/nonexistent/comuki-test.toml"));
 
         var configuration = new ConfigurationBuilder().UseComukiConfiguration().Build();
 
@@ -57,7 +57,7 @@ public sealed class ComukiEnvConfigurationShould
             host = "0.0.0.0"
             port = 8080
             """);
-        using var envScope = EnvVarScope.Set(("COMUKI_SERVER_PORT", "18080"));
+        using var envScope = EnvVarScope.Set(new EnvVarEntry("COMUKI_SERVER_PORT", "18080"));
 
         var configuration = new ConfigurationBuilder().UseComukiConfiguration().Build();
 

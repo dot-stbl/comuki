@@ -4,9 +4,9 @@ namespace Comuki.Migrator.Unit;
 
 /// <summary>
 /// xUnit collection that serialises every test that touches process-global
-/// state (env vars + <c>appsettings.json</c>). Without this gate, two
-/// parallel tests that both rewrite <c>appsettings.json</c> race and one
-/// reads the other's staged file.
+/// state (env vars + the COMUKI_CONFIG_PATH override). Without this gate,
+/// two parallel tests that both rewrite the same env var race and one
+/// reads the other's scoped config.toml.
 /// </summary>
-[CollectionDefinition("MigratorEnvSafe", DisableParallelization = true)]
+[CollectionDefinition(nameof(MigratorEnvSafeCollection), DisableParallelization = true)]
 public sealed class MigratorEnvSafeCollection;

@@ -10,7 +10,7 @@ namespace Comuki.Migrator.Factories.Costs;
 /// in Comuki.Modules.Costs.Infrastructure; this host supplies the
 /// connection string (env <c>COMUKI_DB</c> or config.toml).
 /// </summary>
-public sealed class CostsDesignTimeFactory : IDesignTimeDbContextFactory<CostsDbContext>
+public sealed class CostsDesignTimeFactory() : IDesignTimeDbContextFactory<CostsDbContext>
 {
     /// <inheritdoc />
     public CostsDbContext CreateDbContext(string[] args)

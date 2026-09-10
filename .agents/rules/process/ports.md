@@ -17,6 +17,7 @@ always: true
 | 17001 | Api.Public (Kestrel)            | reserved — wire in `launchSettings` / env when host runs |
 | 17002 | Proxy (YARP)                    | reserved |
 | 17003 | MCP / Knowledge                 | reserved |
+| 17004 | Brain gRPC (Kestrel)            | `platform/src/host/Comuki.Host.Brain` → brain.grpcPort (config.toml) |
 | 17010 | Storybook                       | reserved — `storybook -p 17010` when needed |
 | 17020 | VictoriaMetrics                 | reserved — align `deploy/docker-compose.yml` |
 | 17021 | VictoriaLogs                    | reserved |
@@ -26,6 +27,7 @@ always: true
 | 17025 | Nexus                           | reserved |
 | 17026 | Keycloak (compose profile `keycloak`) | `deploy/docker-compose.yml` → keycloak service |
 | 17027 | Grafana (compose profile `grafana`) | `deploy/docker-compose.yml` → grafana service |
+| 17172 | host HTTP (compose host-mapping) | `deploy/compose/docker-compose.yml` → host service published port |
 
 Свободный диапазон для ad-hoc / экспериментов: **17180–17200**.
 Новый постоянный сервис — **добавь строку в эту таблицу** в том же PR,

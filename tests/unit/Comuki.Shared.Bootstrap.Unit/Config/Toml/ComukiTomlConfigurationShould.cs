@@ -9,7 +9,7 @@ namespace Comuki.Shared.Bootstrap.Unit.Config.Toml;
 /// colon keys, arrays become indexed keys, and a missing file yields an
 /// empty configuration root instead of failing.
 /// </summary>
-[Collection("BootstrapEnvSafe")]
+[Collection(nameof(BootstrapEnvSafeCollection))]
 public sealed class ComukiTomlConfigurationShould
 {
     [Fact(DisplayName = "Given config.toml with tables, scalars and arrays, when loaded, then the flattened keys match")]
@@ -57,7 +57,7 @@ public sealed class ComukiTomlConfigurationShould
     [Fact(DisplayName = "Given no config.toml anywhere, when the provider loads, then the configuration is empty and bootable")]
     public void MissingFileYieldsEmptyConfiguration()
     {
-        using var envScope = EnvVarScope.Set(("COMUKI_CONFIG_PATH", "/nonexistent/comuki-test.toml"));
+        using var envScope = EnvVarScope.Set(new EnvVarEntry("COMUKI_CONFIG_PATH", "/nonexistent/comuki-test.toml"));
 
         var configuration = new ConfigurationBuilder().UseComukiConfiguration().Build();
 

@@ -12,7 +12,7 @@ namespace Comuki.Shared.Bootstrap.Config.Toml;
 /// failing — build-time OpenAPI generation relies on that. A malformed
 /// file still throws: broken configuration must fail loudly at boot.
 /// </summary>
-public sealed class ComukiTomlConfigurationSource : IConfigurationSource
+public sealed class ComukiTomlConfigurationSource() : IConfigurationSource
 {
     /// <inheritdoc />
     public IConfigurationProvider Build(IConfigurationBuilder builder)
@@ -22,7 +22,7 @@ public sealed class ComukiTomlConfigurationSource : IConfigurationSource
 }
 
 /// <summary>Loads the discovered config.toml into flattened configuration keys.</summary>
-file sealed class Provider : ConfigurationProvider
+file sealed class Provider() : ConfigurationProvider
 {
     public override void Load()
     {
@@ -31,6 +31,7 @@ file sealed class Provider : ConfigurationProvider
             return;
         }
 
+        // boundary: Tomlyn deserializer output — non-null by the Deserialize(typeof(TomlTable)) contract
         var model = (TomlTable)TomlSerializer.Deserialize(File.ReadAllText(path), typeof(TomlTable), TomlSerializerOptions.Default)!;
         TomlTableFlattener.Flatten(model, string.Empty, Data);
     }

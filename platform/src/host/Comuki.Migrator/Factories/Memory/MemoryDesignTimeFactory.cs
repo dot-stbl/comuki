@@ -12,7 +12,7 @@ namespace Comuki.Migrator.Factories.Memory;
 /// never used to connect at design time, only to build the provider
 /// model).
 /// </summary>
-public sealed class MemoryDesignTimeFactory : IDesignTimeDbContextFactory<MemoryDbContext>
+public sealed class MemoryDesignTimeFactory() : IDesignTimeDbContextFactory<MemoryDbContext>
 {
     /// <inheritdoc />
     public MemoryDbContext CreateDbContext(string[] args)

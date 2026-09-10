@@ -1,23 +1,26 @@
 namespace Comuki.Shared.Bootstrap.Unit;
 
+/// <summary>One env-var assignment for <see cref="EnvVarScope.Set"/>.</summary>
+internal sealed record EnvVarEntry(string Key, string? Value);
+
 /// <summary>
 /// Test-only: snapshots the named env vars, sets the requested values, and
 /// restores the originals on <see cref="Dispose"/>. The bootstrap env
 /// provider and environment resolution read process-global env vars, so
-/// this scope pairs with the <c>[Collection("BootstrapEnvSafe")]</c> gate
+/// this scope pairs with the <c>[Collection(nameof(BootstrapEnvSafeCollection))]</c> gate
 /// to keep these tests deterministic.
 /// </summary>
-internal sealed class EnvVarScope((string key, string? original)[] snapshot) : IDisposable
+internal sealed class EnvVarScope(EnvVarEntry[] snapshot) : IDisposable
 {
     /// <summary>Set the named env vars for the lifetime of the returned scope.</summary>
-    public static EnvVarScope Set(params (string key, string? value)[] entries)
+    public static EnvVarScope Set(params EnvVarEntry[] entries)
     {
         var saved = entries
-            .Select(static entry => (entry.key, original: Environment.GetEnvironmentVariable(entry.key)))
+            .Select(static entry => new EnvVarEntry(entry.Key, Environment.GetEnvironmentVariable(entry.Key)))
             .ToArray();
-        foreach (var (key, value) in entries)
+        foreach (var entry in entries)
         {
-            Environment.SetEnvironmentVariable(key, value);
+            Environment.SetEnvironmentVariable(entry.Key, entry.Value);
         }
 
         return new EnvVarScope(saved);
@@ -26,9 +29,9 @@ internal sealed class EnvVarScope((string key, string? original)[] snapshot) : I
     /// <inheritdoc />
     public void Dispose()
     {
-        foreach (var (key, original) in snapshot)
+        foreach (var entry in snapshot)
         {
-            Environment.SetEnvironmentVariable(key, original);
+            Environment.SetEnvironmentVariable(entry.Key, entry.Value);
         }
     }
 }

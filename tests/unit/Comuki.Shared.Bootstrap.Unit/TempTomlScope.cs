@@ -1,3 +1,5 @@
+using Comuki.Shared.Bootstrap.Config.Toml;
+
 namespace Comuki.Shared.Bootstrap.Unit;
 
 /// <summary>
@@ -5,25 +7,16 @@ namespace Comuki.Shared.Bootstrap.Unit;
 /// <c>COMUKI_CONFIG_PATH</c> at it, and cleans both up on dispose.
 /// Removes the original env value when it lived at the temp path.
 /// </summary>
-internal sealed class TempTomlScope : IDisposable
+internal sealed class TempTomlScope(string path, string? originalConfigPath) : IDisposable
 {
-    private readonly string path;
-    private readonly string? originalConfigPath;
-
-    private TempTomlScope(string path, string? originalConfigPath)
-    {
-        this.path = path;
-        this.originalConfigPath = originalConfigPath;
-    }
-
     /// <summary>Install the supplied TOML content as the scoped config.toml.</summary>
     public static TempTomlScope Install(string content)
     {
         var path = Path.Combine(Path.GetTempPath(), $"comuki-test-{Guid.NewGuid():N}.toml");
         File.WriteAllText(path, content);
 
-        var original = Environment.GetEnvironmentVariable("COMUKI_CONFIG_PATH");
-        Environment.SetEnvironmentVariable("COMUKI_CONFIG_PATH", path);
+        var original = Environment.GetEnvironmentVariable(ComukiConfigFile.PathEnvironmentVariable);
+        Environment.SetEnvironmentVariable(ComukiConfigFile.PathEnvironmentVariable, path);
 
         return new TempTomlScope(path, original);
     }
@@ -36,6 +29,6 @@ internal sealed class TempTomlScope : IDisposable
             File.Delete(path);
         }
 
-        Environment.SetEnvironmentVariable("COMUKI_CONFIG_PATH", originalConfigPath);
+        Environment.SetEnvironmentVariable(ComukiConfigFile.PathEnvironmentVariable, originalConfigPath);
     }
 }

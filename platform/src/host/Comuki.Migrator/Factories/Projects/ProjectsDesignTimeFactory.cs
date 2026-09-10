@@ -8,7 +8,7 @@ namespace Comuki.Migrator.Factories.Projects;
 /// <summary>
 /// Design-time factory for <c>dotnet ef</c>: Projects migrations are
 /// authored in Comuki.Modules.Projects.Infrastructure, this host supplies
-/// the connection string (env <c>COMUKI_DB</c> or appsettings.json —
+/// the connection string (env <c>COMUKI_DB</c> or config.toml —
 /// never used to connect at design time, only to build the provider
 /// model).
 /// </summary>

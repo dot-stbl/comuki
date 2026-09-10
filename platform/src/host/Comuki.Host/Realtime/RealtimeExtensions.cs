@@ -52,7 +52,7 @@ public static class RealtimeExtensions
     /// Production never reaches either branch.
     /// </summary>
     /// <param name="environment"></param>
-    private static bool ShouldEnableDetailedErrors(IHostEnvironment environment)
+    public static bool ShouldEnableDetailedErrors(IHostEnvironment environment)
     {
         return environment.IsDevelopment()
             || string.Equals(

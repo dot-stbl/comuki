@@ -8,7 +8,7 @@ namespace Comuki.Migrator.Factories.Knowledge;
 /// <summary>
 /// Design-time factory for <c>dotnet ef</c>: Knowledge migrations are
 /// authored in Comuki.Modules.Knowledge.Infrastructure, this host supplies
-/// the connection string (env <c>COMUKI_DB</c> or appsettings.json —
+/// the connection string (env <c>COMUKI_DB</c> or config.toml —
 /// never used to connect at design time, only to build the provider
 /// model).
 /// </summary>

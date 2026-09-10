@@ -33,7 +33,7 @@ public static class ProductionSecretValidator
     /// pepper, and any enabled remote secrets provider whose token env
     /// is missing. Throws in <c>Production</c> when any of those is still
     /// on its committed dev value — i.e. someone forgot to override the
-    /// env var (or appsettings equivalent).
+    /// env var (or config.toml equivalent).
     /// </summary>
     /// <param name="services">The host's service collection (used to read <see cref="IHostEnvironment"/> + <see cref="IConfiguration"/>).</param>
     /// <exception cref="InvalidOperationException">A production-unsafe secret is still on its committed default.</exception>
@@ -81,14 +81,14 @@ file static class ProductionSecretValidatorExtensions
         {
             throw new InvalidOperationException(
                 "refusing to start the host in Production: Artifacts:Minio:SecretKey is still on its committed dev default "
-                + "('comuki_dev'); set the Artifacts__Minio__SecretKey env var (or the appsettings equivalent) to a strong secret");
+                + "('comuki_dev'); set the COMUKI_ARTIFACTS_SECRETKEY env var (or the config.toml equivalent) to a strong secret");
         }
 
         if (string.Equals(artifacts.AccessKey, "comuki", StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
                 "refusing to start the host in Production: Artifacts:Minio:AccessKey is still on its committed dev default "
-                + "('comuki'); set the Artifacts__Minio__AccessKey env var to the dedicated service account name");
+                + "('comuki'); set the COMUKI_ARTIFACTS_ACCESSKEY env var to the dedicated service account name");
         }
     }
 

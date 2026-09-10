@@ -29,7 +29,7 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 });
 
 // Comuki-native surface (issue #54): config.toml + COMUKI_* env replace
-// appsettings/bare env sources, [server]/COMUKI_SERVER_PORT pin the
+// the JSON/bare-env sources, [server]/COMUKI_SERVER_PORT pin the
 // listen address when set, and the comuki console formatter owns the
 // log output. No config.toml present → empty configuration, no error:
 // the build-time OpenAPI pass below depends on booting without one.
@@ -69,7 +69,7 @@ builder.Services.RemoveHostedServicesForOpenApiGeneration();
 // Under build-time OpenAPI generation seed minimal config defaults
 // (MinIO env vars etc.) so the [Required] data-annotation validation in
 // HostComposer.Compose does not fail on a fresh clone without an env file.
-// No-op at runtime — real config comes from appsettings / env. The HMAC
+// No-op at runtime — real config comes from config.toml / env. The HMAC
 // pepper seeds keep the ProductionSecretValidator fail-closed check from
 // rejecting the build-time introspection pass (security audit A02-1).
 // The peppers are sourced via env vars because ApiKeyOptions.Pepper and

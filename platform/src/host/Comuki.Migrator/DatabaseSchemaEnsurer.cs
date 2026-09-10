@@ -1,4 +1,5 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Modules.Artifacts.Infrastructure.Persistence;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
@@ -6,6 +7,7 @@ using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Modules.Scheduler.Infrastructure.Persistence;
 using Npgsql;
 
 namespace Comuki.Migrator;
@@ -49,6 +51,8 @@ public static class DatabaseSchemaEnsurer
             IntakeDatabase.Schema => CreateIntakeSchemaDdl,
             CostsDatabase.Schema => CreateCostsSchemaDdl,
             KnowledgeDatabase.Schema => CreateKnowledgeSchemaDdl,
+            ArtifactsDatabase.Schema => CreateArtifactsSchemaDdl,
+            SchedulerDatabase.Schema => CreateSchedulerSchemaDdl,
             _ => throw new ArgumentException($"unknown schema: {schema}", nameof(schema)),
         };
 #pragma warning restore CA2100
@@ -69,4 +73,6 @@ public static class DatabaseSchemaEnsurer
     private const string CreateIntakeSchemaDdl = "CREATE SCHEMA IF NOT EXISTS intake";
     private const string CreateCostsSchemaDdl = "CREATE SCHEMA IF NOT EXISTS costs";
     private const string CreateKnowledgeSchemaDdl = "CREATE SCHEMA IF NOT EXISTS knowledge";
+    private const string CreateArtifactsSchemaDdl = "CREATE SCHEMA IF NOT EXISTS artifacts";
+    private const string CreateSchedulerSchemaDdl = "CREATE SCHEMA IF NOT EXISTS scheduler";
 }

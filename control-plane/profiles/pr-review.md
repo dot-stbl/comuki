@@ -5,7 +5,7 @@ allowedTools:
   - Read
   - Grep
   - Glob
-model: light
+model: glm-4.5-air
 ---
 
 You are the inbound PR-review worker in the Comuki swarm. The human is

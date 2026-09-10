@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "comuki.fullname" . }}-config
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+data:
+  COMUKI_PUBLIC_HOST_URL: {{ .Values.publicUrl | quote }}
+  Host__Cors__AllowedOrigins__0: {{ .Values.publicUrl | quote }}
+  Artifacts__Endpoint: {{ include "comuki.artifactsEndpoint" . | quote }}
+  Artifacts__Bucket: {{ .Values.artifacts.bucket | quote }}
+  Artifacts__UseSSL: {{ include "comuki.artifactsUseSSL" . | quote }}
+  Artifacts__AutoCreateBucket: "true"
+  Compute__Provider: {{ .Values.compute.provider | quote }}
+  Compute__Scale__WorkerImage: {{ .Values.compute.workerImage | quote }}
+  Compute__Scale__OrchestratorGrpcUrl: {{ include "comuki.orchestratorGrpcUrl" . | quote }}
+  {{- if eq .Values.compute.provider "kubernetes" }}
+  Compute__Kubernetes__Namespace: {{ include "comuki.workerNamespace" . | quote }}
+  Compute__Kubernetes__ServiceAccount: {{ .Values.compute.kubernetes.serviceAccount | quote }}
+  Compute__Kubernetes__CpuRequestMillis: {{ .Values.compute.kubernetes.cpuRequestMillis | quote }}
+  Compute__Kubernetes__MemoryRequestMiB: {{ .Values.compute.kubernetes.memoryRequestMiB | quote }}
+  {{- end }}
+  {{- with .Values.telemetry.otlpEndpoint }}
+  Telemetry__OtlpEndpoint: {{ . | quote }}
+  {{- end }}

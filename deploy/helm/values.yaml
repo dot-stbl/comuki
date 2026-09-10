@@ -1,0 +1,211 @@
+# Default values for the Comuki chart.
+#
+# Philosophy: `helm install comuki ./deploy/helm` works on any
+# Kubernetes >= 1.28 out of the box — an in-cluster Postgres (pgvector)
+# and MinIO are deployed unless you opt out. Bring your own by flipping
+# `postgresql.external.enabled` / `artifacts.external.enabled`.
+
+# ── Images ───────────────────────────────────────────────────────────
+image:
+  repository: ghcr.io/dot-stbl/comuki
+  # Defaults to .Chart.AppVersion when empty.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Public absolute URL (scheme + host, no trailing path) — stamped into
+# OIDC redirects and baked into the dashboard bundle. Set this to the
+# URL users open in the browser.
+publicUrl: http://comuki.localhost
+
+# ASPNETCORE_ENVIRONMENT for the host. Production (default) enables the
+# startup secret validator — the host refuses to boot on dev-default
+# credentials.
+environment: Production
+
+# ── Secrets ──────────────────────────────────────────────────────────
+# Two modes:
+#   1. existingSecret — reference a pre-created Secret (recommended for
+#      real deployments; keys listed in templates/secret.yaml).
+#   2. secrets.* — the chart creates the Secret from these values.
+#      REQUIRED (mode 2): postgresPassword, apiKeyPepper, tokenPepper,
+#      bootstrapAdminPassword, plus artifactsAccessKey/artifactsSecretKey
+#      when the in-cluster MinIO is enabled.
+#      Generate peppers with: openssl rand -hex 32
+existingSecret: ""
+
+secrets:
+  postgresPassword: ""
+  apiKeyPepper: ""
+  tokenPepper: ""
+  bootstrapAdminPassword: ""
+  artifactsAccessKey: ""
+  artifactsSecretKey: ""
+  brainModelApiKey: ""
+
+# First operator account, seeded once at startup (idempotent). In
+# Production the password must be >= 12 chars with a digit and a symbol.
+bootstrapAdmin:
+  email: admin@example.com
+  password: ""            # -> secrets.bootstrapAdminPassword
+
+# ── Host (orchestrator) deployment ───────────────────────────────────
+# MUST stay 1: the worker-token store and the SignalR connection map are
+# in-process state. Horizontal scaling needs the DB-backed token store
+# first.
+replicaCount: 1
+
+host:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  # Extra env vars passed straight to the container (e.g. Host__RateLimit__*).
+  extraEnv: []
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+service:
+  type: ClusterIP
+  port: 80
+
+# ── Postgres ──────────────────────────────────────────────────────────
+postgresql:
+  # Bring your own Postgres (must have the pgvector extension available).
+  external:
+    enabled: false
+    host: ""
+    port: 5432
+    database: comuki
+    username: comuki
+
+  # In-cluster single-node Postgres with pgvector.
+  image: pgvector/pgvector:pg16
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+# ── Artifacts (S3 / MinIO) ───────────────────────────────────────────
+artifacts:
+  # Bring your own S3-compatible store.
+  external:
+    enabled: false
+    endpoint: ""        # host:port, no scheme
+    useSSL: true
+
+  bucket: comuki-run-bundles
+
+  # In-cluster single-node MinIO.
+  image: minio/minio:latest
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+# ── Workers (compute engine) ─────────────────────────────────────────
+compute:
+  # docker | kubernetes. In-cluster k8s → kubernetes (workers as
+  # batch/v1 Jobs); set to docker only when the host can reach a Docker
+  # socket (unusual in k8s).
+  provider: kubernetes
+  # Image spawned per work item (Translator + agent runtime).
+  workerImage: ghcr.io/dot-stbl/comuki-worker:latest
+  # Orchestrator gRPC endpoint workers connect back to. Default: the
+  # in-cluster host service.
+  orchestratorGrpcUrl: ""
+  kubernetes:
+    # Namespace worker Jobs are created in. Default: release namespace.
+    namespace: ""
+    serviceAccount: comuki-worker
+    cpuRequestMillis: 500
+    memoryRequestMiB: 1024
+
+# ── Standalone brain host (optional, experimental) ───────────────────
+# NOTE: the current brain binary binds its gRPC listener to localhost
+# inside the container, and the orchestrator ships an in-process brain
+# stub for chat. This deployment exists for evaluation of the separate
+# brain host.
+brain:
+  enabled: false
+  grpcPort: 17004
+  model:
+    # Any OpenAI-compatible endpoint.
+    endpoint: ""
+    modelId: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# ── Dashboard (SPA + nginx reverse proxy) ────────────────────────────
+dashboard:
+  enabled: true
+  image:
+    repository: ghcr.io/dot-stbl/comuki-dashboard
+    tag: ""
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  podAnnotations: {}
+
+# ── Ingress ──────────────────────────────────────────────────────────
+ingress:
+  enabled: false
+  className: nginx
+  host: comuki.example.com
+  # Extra annotations merged onto the Ingress.
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: ""
+
+# ── Telemetry (optional) ─────────────────────────────────────────────
+# OTLP gRPC endpoint (e.g. an OpenTelemetry Collector or VictoriaMetrics
+# OTLP receiver). Unset = no OTel SDK wiring at all.
+telemetry:
+  otlpEndpoint: ""
+
+# ── ServiceAccount / pod security ────────────────────────────────────
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1654
+  fsGroup: 1654
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]

@@ -71,8 +71,8 @@ public sealed class DatabaseSchemaEnsurerShould : IAsyncLifetime
         schemas.ShouldContain(schema);
     }
 
-    [Fact(DisplayName = "Given all eight module schemas in sequence, when EnsureAsync runs once each, then every schema is present in information_schema.schemata")]
-    public async Task CreatesAllEightSchemasAsync()
+    [Fact(DisplayName = "Given all ten module schemas in sequence, when EnsureAsync runs once each, then every schema is present in information_schema.schemata")]
+    public async Task CreatesAllTenSchemasAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var connectionString = container.GetConnectionString();

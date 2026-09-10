@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Shared.Bootstrap.Unit</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- InternalsVisibleTo on Comuki.Shared.Bootstrap grants this test
+         project access to the internal resolution cores. -->
+    <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Bootstrap\Comuki.Shared.Bootstrap.csproj" />
+  </ItemGroup>
+
+</Project>

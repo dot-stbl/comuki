@@ -1,4 +1,5 @@
 using Comuki.Modules.Artifacts.Application.Packaging;
+using Comuki.Modules.Artifacts.Application.VisualArtifacts;
 using Comuki.Shared.Contracts.Artifacts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -43,6 +44,7 @@ public static class ArtifactsApplicationExtensions
         // scoped DbContexts, not a captive instance from a root scope.
         services.AddScoped<RunArtifactPackager>();
         services.AddSingleton<RunArtifactPackagerService>();
+        services.AddVisualArtifactsApplication();
         return services;
     }
 }

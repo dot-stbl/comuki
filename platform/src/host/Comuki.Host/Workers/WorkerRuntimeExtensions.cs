@@ -71,5 +71,6 @@ public static class WorkerRuntimeExtensions
     public static void MapWorkerRest(this WebApplication app)
     {
         WorkerEndpoints.MapWorkerEndpoints(app);
+        UploadArtifactEndpoint.MapUploadArtifactEndpoint(app);
     }
 }

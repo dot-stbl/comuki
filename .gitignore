@@ -37,6 +37,11 @@ audit-data/last-commit-audit-fe.md
 
 # Local credentials — copy deploy/.env.example, never commit the real one
 deploy/.env
+deploy/compose/.env
+
+# Filled-in k8s Secret (copied from deploy/k8s/secret.example.yaml) —
+# never commit the real one.
+deploy/k8s/secret.yaml
 
 # Stray .md files sometimes written to project root by previous LLM sessions
 # (leaked thinking blocks or mis-routed `write` calls). Agents never write

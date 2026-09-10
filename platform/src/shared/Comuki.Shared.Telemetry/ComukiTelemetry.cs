@@ -80,6 +80,22 @@ public static class ComukiTelemetry
         ArtifactsMeter.CreateCounter<long>(ComukiInstrumentation.ArtifactBundleWrittenName);
 
     /// <summary>
+    /// Visual artifacts published to the artifact store, tagged by
+    /// content type and source (worker / brain). One increment per
+    /// accepted publish, regardless of size or version.
+    /// </summary>
+    public static Counter<long> VisualArtifactsPublished { get; } =
+        ArtifactsMeter.CreateCounter<long>(ComukiInstrumentation.VisualArtifactPublishedName);
+
+    /// <summary>
+    /// Size of one accepted visual-artifact payload, in bytes. Tags
+    /// mirror <see cref="VisualArtifactsPublished"/>; the histogram
+    /// feeds the per-mime caps' headroom analysis (issue #51).
+    /// </summary>
+    public static Histogram<long> VisualArtifactBytes { get; } =
+        ArtifactsMeter.CreateHistogram<long>(ComukiInstrumentation.VisualArtifactBytesName, unit: "By");
+
+    /// <summary>
     /// Times the settings cache fell back to its in-memory snapshot
     /// because the underlying store was unreachable (Q27 / v1.1). One
     /// increment per refresher pass that hit the fallback — not per

@@ -41,6 +41,10 @@ public static class ComukiInstrumentation
     public const string ArtifactBundleDelayName = "comuki.artifact.bundle.delay_seconds";
     public const string ArtifactBundleWrittenName = "comuki.artifact.bundle.written";
 
+    // Visual-artifact instruments (issue #51 slice 1).
+    public const string VisualArtifactPublishedName = "comuki.artifact.visual.published";
+    public const string VisualArtifactBytesName = "comuki.artifact.visual.bytes";
+
     // Project settings cache fallback instrument (Q27 / v1.1).
     public const string ProjectSettingsCacheFallbackName = "comuki.projectsettings.cache.fallback_total";
     public const string ProjectsMeterName = "comuki.projects";
@@ -50,10 +54,18 @@ public static class ComukiInstrumentation
     public const string ProviderTag = "provider";
     public const string ProfileTag = "profile";
     public const string ReasonTag = "reason";
+    public const string ContentTypeTag = "content_type";
+    public const string SourceTag = "source";
 
     /// <summary>A claim matched a queued work item.</summary>
     public const string OutcomeHit = "hit";
 
     /// <summary>The queue had nothing for the worker — the normal poll path.</summary>
     public const string OutcomeEmpty = "empty";
+
+    /// <summary>Visual-artifact source — a worker uploaded it.</summary>
+    public const string SourceWorker = "worker";
+
+    /// <summary>Visual-artifact source — the brain / host tool uploaded it.</summary>
+    public const string SourceBrain = "brain";
 }

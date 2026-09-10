@@ -3,6 +3,7 @@ using System;
 using Comuki.Modules.Artifacts.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Comuki.Modules.Artifacts.Infrastructure.Migrations
 {
     [DbContext(typeof(ArtifactsDbContext))]
-    partial class ArtifactsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260910083709_AddVisualArtifacts")]
+    partial class AddVisualArtifacts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -24,6 +24,7 @@ using Comuki.Host.Security.RateLimit;
 using Comuki.Host.Workers;
 using Comuki.Modules.Artifacts.Application;
 using Comuki.Modules.Artifacts.Application.Packaging;
+using Comuki.Modules.Artifacts.Application.VisualArtifacts.Ports;
 using Comuki.Modules.Artifacts.Infrastructure;
 using Comuki.Modules.Chat.Application;
 using Comuki.Modules.Chat.Application.Ports;
@@ -166,6 +167,7 @@ internal static class HostComposer
         builder.Services.AddArtifactsPersistence(database.ConnectionString, builder.Configuration);
         builder.Services.AddScoped<IRunArtifactJournalSource, OrchestrationArtifactJournalSource>();
         builder.Services.AddScoped<IRunArtifactRunSource, OrchestrationArtifactRunSource>();
+        builder.Services.AddScoped<IWorkItemArtifactSource, OrchestrationWorkItemArtifactSource>();
         builder.Services.AddHostedService<RunArtifactPackagerHostService>();
 
         // Knowledge module (S10 #9): ingest + search over the pgvector

@@ -1,7 +1,7 @@
 # Comuki host image — one image, three entrypoints:
-#   /app/host      Comuki.Host        (orchestrator API)
-#   /app/migrator  Comuki.Migrator    (one-shot schema migration job)
-#   /app/brain     Comuki.Host.Brain  (standalone brain host, optional)
+#   /app/host      comuki             (orchestrator API)
+#   /app/migrator  comuki-migrator    (one-shot schema migration job)
+#   /app/brain     comuki-brain       (standalone brain host, optional)
 #
 # Build context = repo root:
 #   docker build -f deploy/compose/docker/host.Dockerfile -t comuki:local .
@@ -24,7 +24,8 @@ RUN dotnet restore platform/src/host/Comuki.Host/Comuki.Host.csproj \
 
 # Publish each host into its own directory: separate dependency
 # closures, one shared image — versions between entrypoints cannot
-# diverge.
+# diverge. AssemblyName ships apphost binaries (comuki, comuki-migrator,
+# comuki-brain — issue #54); entrypoints run the apphost directly.
 RUN dotnet publish platform/src/host/Comuki.Host/Comuki.Host.csproj \
         -c Release --no-restore -o /app/host \
     && dotnet publish platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj \
@@ -45,7 +46,9 @@ COPY --from=build /app/host /app/host
 COPY --from=build /app/migrator /app/migrator
 COPY --from=build /app/brain /app/brain
 
-# aspnet:10.0 runs as non-root `app` (APP_UID 1654); Kestrel binds 8080.
+# aspnet:10.0 runs as non-root `app` (APP_UID 1654); Kestrel binds 8080
+# (ASPNETCORE_HTTP_PORTS from the base image — the quiet fallback; the
+# comuki way is [server] port / COMUKI_SERVER_PORT, see deploy/README.md).
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "/app/host/Comuki.Host.dll"]
+ENTRYPOINT ["/app/host/comuki"]

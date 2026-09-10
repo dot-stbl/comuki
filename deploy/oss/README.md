@@ -105,24 +105,31 @@ Verified against the source (`platform/src/host/*`).
 | Variable | Where | Required | Meaning |
 |---|---|---|---|
 | `COMUKI_DB` | host, migrator, brain | yes | full Npgsql connection string (all ten schemas live in one database) |
+| `COMUKI_ENV` | host, migrator, brain | no | `production` (default) or `development`; `Production` enables the startup secret validator |
 | `COMUKI_IDENTITY_APIKEY_PEPPER` | host | prod: yes | HMAC pepper for stored API keys — rotating invalidates all keys |
 | `COMUKI_TOKEN_PEPPER` | host | prod: yes | HMAC pepper for worker tokens — rotating invalidates all tokens |
 | `COMUKI_BOOTSTRAP_ADMIN_EMAIL` / `_PASSWORD` | host | both or neither | first operator account, seeded idempotently at startup |
 | `COMUKI_PUBLIC_HOST_URL` | host | for OIDC | absolute public URL (scheme + host) used in OIDC redirects |
-| `Artifacts__Endpoint` / `__AccessKey` / `__SecretKey` | host | yes | S3-compatible store for run bundles |
-| `Artifacts__Bucket`, `Artifacts__UseSSL`, `Artifacts__AutoCreateBucket` | host | no | `comuki-run-bundles` / `false` / `true` defaults |
-| `Compute__Provider` | host | no | `docker` (default) or `kubernetes` |
-| `Compute__Scale__WorkerImage` | host | no | worker image spawned per work item |
-| `Compute__Scale__OrchestratorGrpcUrl` | host | no | endpoint workers connect back to |
-| `Compute__Docker__NetworkMode` | host | docker provider | Docker network worker containers join |
-| `Compute__Kubernetes__Namespace` / `__ServiceAccount` / `__CpuRequestMillis` / `__MemoryRequestMiB` | host | k8s provider | worker Job placement |
-| `Host__Cors__AllowedOrigins__0..N` | host | no | browser origins allowed on the API (default `http://localhost:17173`) |
-| `Host__RateLimit__*` | host | no | per-partition rate-limit budgets |
-| `Telemetry__OtlpEndpoint` | host | no | OTLP gRPC endpoint; unset = no OTel SDK |
-| `ASPNETCORE_ENVIRONMENT` | host | no | `Production` enables the startup secret validator |
-| `Brain__GrpcPort` | brain | no | gRPC listen port (default 17004) |
+| `COMUKI_ARTIFACTS_ENDPOINT` / `_ACCESSKEY` / `_SECRETKEY` | host | yes | S3-compatible store for run bundles |
+| `COMUKI_ARTIFACTS_BUCKET`, `_USESSL`, `_AUTOCREATEBUCKET` | host | no | `comuki-run-bundles` / `false` / `true` defaults |
+| `COMUKI_COMPUTE_PROVIDER` | host | no | `docker` (default) or `kubernetes` |
+| `COMUKI_COMPUTE_SCALE_WORKERIMAGE` | host | no | worker image spawned per work item |
+| `COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL` | host | no | endpoint workers connect back to |
+| `COMUKI_COMPUTE_DOCKER_NETWORKMODE` | host | docker provider | Docker network worker containers join |
+| `COMUKI_COMPUTE_KUBERNETES_NAMESPACE` / `_SERVICEACCOUNT` / `_CPUREQUESTMILLIS` / `_MEMORYREQUESTMIB` | host | k8s provider | worker Job placement |
+| `COMUKI_HOST_CORS_ALLOWEDORIGINS_0..N` | host | no | browser origins allowed on the API (default `http://localhost:17173`) |
+| `COMUKI_HOST_RATELIMIT_*` | host | no | per-partition rate-limit budgets |
+| `COMUKI_TELEMETRY_OTLPENDPOINT` | host | no | OTLP gRPC endpoint; unset = no OTel SDK |
+| `COMUKI_BRAIN_GRPCPORT` | brain | no | gRPC listen port (default 17004) |
 | `COMUKI_BRAIN_MODEL_ENDPOINT` / `_API_KEY` / `_MODEL_ID` | brain | for brain calls | any OpenAI-compatible endpoint |
-| `Chat__Worker__Image`, `Scheduler__Worker__Image` | host | no | worker image for chat/scheduler-dispatched items |
+| `COMUKI_CHAT_WORKER_IMAGE`, `COMUKI_SCHEDULER_WORKER_IMAGE` | host | no | worker image for chat/scheduler-dispatched items |
+
+Env → config mapping: `COMUKI_A_B` sets `a:b` (single underscore is the
+section separator; binding is case-insensitive). The same sections can
+live in `config.toml` instead — see
+[`deploy/config.example.toml`](../config.example.toml) and
+[the env/config contract](../README.md#env--configtoml). `ASPNETCORE_*` /
+`DOTNET_*` variables remain a quiet fallback, not the documented path.
 
 Worker containers receive their environment from the orchestrator at
 spawn time (`COMUKI_ORCH_HTTP`, `COMUKI_ORCH_GRPC`, `COMUKI_WORKER_TOKEN`,
@@ -131,7 +138,7 @@ you never set these by hand.
 
 Postgres note: the migrator also accepts `COMUKI_DATABASE` (legacy
 alias, warned) and `COMUKI_MIGRATOR_DB_PASSWORD` (fills a blank
-`Password=` in appsettings). Prefer a full `COMUKI_DB`.
+`Password=` in config.toml). Prefer a full `COMUKI_DB`.
 
 ## Workers
 
@@ -141,11 +148,11 @@ when idle:
 
 - **Docker provider** (compose default): the host talks to the mounted
   `/var/run/docker.sock` and starts worker containers in
-  `Compute__Docker__NetworkMode`. They reach the host directly at
+  `COMUKI_COMPUTE_DOCKER_NETWORKMODE`. They reach the host directly at
   `http://comuki-host:8080`.
 - **Kubernetes provider** (helm/k8s default): the host creates
   `batch/v1` Jobs (`backoffLimit 0`, TTL-cleaned) in
-  `Compute__Kubernetes__Namespace` — needs the Job-creation Role the
+  `COMUKI_COMPUTE_KUBERNETES_NAMESPACE` — needs the Job-creation Role the
   chart/manifests ship.
 
 A worker claims work over REST, streams results over the bidi gRPC
@@ -154,19 +161,19 @@ minted by the host (opaque, TTL'd) and stamped onto the container
 environment automatically.
 
 Model access for workers: set your provider key per worker image or
-through the optional built-in proxy (`Proxy__Enabled`,
-`Proxy__VirtualKeys__N__*`) — see `deploy/.env.example` for the shape.
+through the optional built-in proxy (`COMUKI_PROXY_ENABLED`,
+`COMUKI_PROXY_VIRTUALKEYS_N_*`) — see `deploy/.env.example` for the shape.
 
 ## Troubleshooting
 
 | Symptom | Cause / fix |
 |---|---|
 | Host crashes on boot: `refusing to start the host in Production: ...` | A secret is still on a dev default. Set real peppers / MinIO keys / bootstrap password (`ProductionSecretValidator`). |
-| Host crashes: `connection string not found` | `COMUKI_DB` (or `ConnectionStrings:Comuki`) is unset. |
+| Host crashes: `connection string not found` | `COMUKI_DB` (or `connectionStrings.comuki` in config.toml) is unset. |
 | `relation "artifacts.__ef_migrations_history" does not exist` | Migrator never ran (or ran against a different database). Run the migrator job. |
 | No workers spawn (compose) | Host can't reach the Docker socket — check `DOCKER_GID` in `.env` (`stat -c '%g' /var/run/docker.sock`), and that the `worker-image` service built `comuki-worker:local` (`docker images \| grep comuki-worker`). |
-| No workers spawn (k8s) | `Compute__Provider` must be `kubernetes` and the `comuki-worker-spawn` Role applied (`kubectl auth can-i create jobs -n comuki -as=system:serviceaccount:comuki:comuki-host`). |
-| MinIO 403 on artifact writes | `Artifacts__AccessKey/SecretKey` don't match MinIO's root credentials. |
+| No workers spawn (k8s) | `COMUKI_COMPUTE_PROVIDER` must be `kubernetes` and the `comuki-worker-spawn` Role applied (`kubectl auth can-i create jobs -n comuki -as=system:serviceaccount:comuki:comuki-host`). |
+| MinIO 403 on artifact writes | `COMUKI_ARTIFACTS_ACCESSKEY`/`_SECRETKEY` don't match MinIO's root credentials. |
 | Login 401 `auth.invalid_credentials` | Same answer for unknown email / wrong password / disabled account — no enumeration signal. Check the bootstrap admin vars were set on first boot. |
 | Dashboard loads but every request fails | The SPA's baked `VITE_API_BASE_URL` doesn't match the URL you opened — rebuild the dashboard image with the right `--build-arg VITE_API_BASE_URL`. |
 | Migrator Job loops `connection refused` | Normal during Postgres startup (backoffLimit 12). Persistent failures: check `COMUKI_DB` / secret values. |
@@ -176,7 +183,7 @@ rotation): [`.agents/docs/operations/runbook.md`](../../.agents/docs/operations/
 
 ## Hardening checklist (before exposing beyond localhost)
 
-1. `ASPNETCORE_ENVIRONMENT=Production` (validators on).
+1. `COMUKI_ENV=production` (validators on).
 2. All secrets real: `openssl rand -hex 32` for peppers; strong admin
    password (>= 12 chars, digit + symbol).
 3. `COMUKI_PUBLIC_HOST_URL` / `publicUrl` = the real HTTPS origin.

@@ -31,7 +31,7 @@ spec:
       containers:
         - name: host
           image: ghcr.io/dot-stbl/comuki:latest
-          command: ["dotnet", "/app/host/Comuki.Host.dll"]
+          command: ["/app/host/comuki"]
           ports:
             - name: http
               containerPort: 8080
@@ -42,7 +42,7 @@ spec:
                 secretKeyRef:
                   name: comuki-secrets
                   key: postgres-password
-            - name: ASPNETCORE_ENVIRONMENT
+            - name: COMUKI_ENV
               value: Production
             - name: COMUKI_DB
               value: "Host=comuki-postgres;Port=5432;Database=comuki;Username=comuki;Password=$(COMUKI_POSTGRES_PASSWORD)"
@@ -63,12 +63,12 @@ spec:
                 secretKeyRef:
                   name: comuki-secrets
                   key: bootstrap-admin-password
-            - name: Artifacts__AccessKey
+            - name: COMUKI_ARTIFACTS_ACCESSKEY
               valueFrom:
                 secretKeyRef:
                   name: comuki-secrets
                   key: artifacts-access-key
-            - name: Artifacts__SecretKey
+            - name: COMUKI_ARTIFACTS_SECRETKEY
               valueFrom:
                 secretKeyRef:
                   name: comuki-secrets

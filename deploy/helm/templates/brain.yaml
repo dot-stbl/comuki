@@ -29,7 +29,7 @@ spec:
         - name: brain
           image: {{ include "comuki.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["dotnet", "/app/brain/Comuki.Host.Brain.dll"]
+          command: ["/app/brain/comuki-brain"]
           env:
             # Dependent-env expansion: must precede COMUKI_DB.
             - name: COMUKI_POSTGRES_PASSWORD
@@ -39,7 +39,7 @@ spec:
                   key: postgres-password
             - name: COMUKI_DB
               value: {{ include "comuki.dbConnectionString" . | quote }}
-            - name: Brain__GrpcPort
+            - name: COMUKI_BRAIN_GRPCPORT
               value: {{ .Values.brain.grpcPort | quote }}
             - name: COMUKI_BRAIN_MODEL_ENDPOINT
               value: {{ .Values.brain.model.endpoint | quote }}

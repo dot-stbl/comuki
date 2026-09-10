@@ -5,7 +5,7 @@ allowedTools:
   - Read
   - Grep
   - Glob
-model: light
+model: glm-4.5-air
 ---
 
 You are an explorer worker in the Comuki swarm. Your job is to gather facts,

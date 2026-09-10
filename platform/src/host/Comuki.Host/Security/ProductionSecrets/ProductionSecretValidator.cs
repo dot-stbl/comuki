@@ -179,20 +179,70 @@ file static class ProductionSecretValidatorExtensions
 
     /// <summary>
     /// Refuses to start in <c>Production</c> when a remote secrets
-    /// provider section is enabled but its bootstrap token env var is
-    /// unset on the host. Slice 1 only wires env / file (no remote
-    /// token), but the validator ships ahead of slices 2/3 so adding a
-    /// vault/consul provider cannot silently boot in production with a
-    /// missing <c>COMUKI_VAULT_TOKEN</c> / <c>COMUKI_CONSUL_TOKEN</c>.
-    /// The check is opt-in by per-provider <see cref="SecretsOptions"/>
-    /// entries that declare a token-env-var name.
+    /// provider is enabled but its bootstrap token env var is unset
+    /// on the host. Vault (slice 2) is gated on the env var named by
+    /// the configured <see cref="VaultSecretOptions.TokenEnvRef"/> —
+    /// the same env var <c>VaultSecretClientFactory</c> reads when
+    /// building the client, so a deployment overriding
+    /// <c>TokenEnvRef</c> is validated against the variable that is
+    /// actually consumed (issue #52 slice-2 audit H1: the gate
+    /// previously hard-coded <c>COMUKI_VAULT_TOKEN</c> and drifted
+    /// from the configurable factory path). Future token-ful
+    /// providers (Consul, slice 3) are checked through
+    /// <see cref="SecretsOptions.Providers"/> entries that declare a
+    /// token-env-var name.
     /// </summary>
     /// <param name="services"></param>
     public static void ValidateSecretsProviders(IServiceProvider services)
     {
+        ValidateVaultBootstrapToken(services);
+        ValidateDictionaryProviderBootstrapTokens(services);
+    }
+
+    /// <summary>
+    /// Refuses to start in <c>Production</c> when
+    /// <see cref="VaultSecretOptions.Enabled"/> is true but the env
+    /// var named by the configured
+    /// <see cref="VaultSecretOptions.TokenEnvRef"/> is unset —
+    /// exactly the env var <c>VaultSecretClientFactory</c> reads at
+    /// bootstrap.
+    /// </summary>
+    /// <param name="services"></param>
+    public static void ValidateVaultBootstrapToken(IServiceProvider services)
+    {
+        var vault = services.GetRequiredService<IOptions<VaultSecretOptions>>().Value;
+        if (!vault.Enabled)
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(vault.TokenEnvRef)))
+        {
+            throw new InvalidOperationException(
+                $"refusing to start the host in Production: the [{VaultSecretOptions.SectionName}] provider is enabled "
+                + $"but its bootstrap token env var '{vault.TokenEnvRef}' is unset; set the {vault.TokenEnvRef} env var to a real token");
+        }
+    }
+
+    /// <summary>
+    /// Refuses to start in <c>Production</c> when an enabled
+    /// <see cref="SecretsOptions.Providers"/> entry maps to a
+    /// token-ful scheme whose bootstrap env var is unset. Vault is
+    /// absent from this path on purpose — it owns
+    /// <see cref="VaultSecretOptions"/> and is validated by
+    /// <see cref="ValidateVaultBootstrapToken"/> instead.
+    /// </summary>
+    /// <param name="services"></param>
+    public static void ValidateDictionaryProviderBootstrapTokens(IServiceProvider services)
+    {
         var secrets = services.GetRequiredService<IOptions<SecretsOptions>>().Value;
         foreach (var (scheme, options) in secrets.Providers)
         {
+            if (!options.Enabled)
+            {
+                continue;
+            }
+
             var tokenEnv = ProductionSecretsHelpers.ProviderTokenEnvName(scheme);
             if (string.IsNullOrWhiteSpace(tokenEnv))
             {
@@ -216,16 +266,19 @@ file static class ProductionSecretValidatorExtensions
 file static class ProductionSecretsHelpers
 {
     /// <summary>
-    /// Maps a provider scheme to the env-var name that holds the
-    /// bootstrap token. Returns <c>null</c> for providers that do not
-    /// require a token (env, file, null).
+    /// Maps a dictionary-provider scheme to the env-var name that
+    /// holds the bootstrap token. Vault is deliberately absent — its
+    /// gate reads the configurable
+    /// <see cref="VaultSecretOptions.TokenEnvRef"/> (see
+    /// <see cref="ProductionSecretValidatorExtensions.ValidateVaultBootstrapToken"/>),
+    /// not a hard-coded name. Returns <c>null</c> for providers that
+    /// do not require a token (env, file, null).
     /// </summary>
     /// <param name="scheme">Lowercase provider scheme.</param>
     public static string? ProviderTokenEnvName(string scheme)
     {
         return scheme switch
         {
-            "vault" => "COMUKI_VAULT_TOKEN",
             "consul" => "COMUKI_CONSUL_TOKEN",
             _ => null,
         };

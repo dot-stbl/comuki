@@ -32,7 +32,8 @@ public sealed class ProductionSecretValidatorShould : IDisposable
         Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, null);
         Environment.SetEnvironmentVariable(ApiKeyOptions.PepperEnvironmentVariable, null);
         Environment.SetEnvironmentVariable(WorkerTokenOptions.PepperEnvironmentVariable, null);
-        Environment.SetEnvironmentVariable("COMUKI_VAULT_TOKEN", null);
+        Environment.SetEnvironmentVariable(VaultSecretOptions.DefaultTokenEnvVariable, null);
+        Environment.SetEnvironmentVariable(ProductionSecretsTestArtifacts.CustomVaultTokenEnvRef, null);
         Environment.SetEnvironmentVariable("COMUKI_CONSUL_TOKEN", null);
     }
 
@@ -42,7 +43,8 @@ public sealed class ProductionSecretValidatorShould : IDisposable
         Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, null);
         Environment.SetEnvironmentVariable(ApiKeyOptions.PepperEnvironmentVariable, null);
         Environment.SetEnvironmentVariable(WorkerTokenOptions.PepperEnvironmentVariable, null);
-        Environment.SetEnvironmentVariable("COMUKI_VAULT_TOKEN", null);
+        Environment.SetEnvironmentVariable(VaultSecretOptions.DefaultTokenEnvVariable, null);
+        Environment.SetEnvironmentVariable(ProductionSecretsTestArtifacts.CustomVaultTokenEnvRef, null);
         Environment.SetEnvironmentVariable("COMUKI_CONSUL_TOKEN", null);
     }
 
@@ -263,29 +265,64 @@ public sealed class ProductionSecretValidatorShould : IDisposable
         exception.Message.ShouldNotContain(ApiKeyOptions.PepperEnvironmentVariable);
     }
 
-    [Fact(DisplayName = "Given Production + vault provider enabled but COMUKI_VAULT_TOKEN unset, when Validate is called, then it throws naming the env var")]
+    [Fact(DisplayName = "Given Production + vault provider enabled but the default token env var unset, when Validate is called, then it throws naming the env var")]
     public void ThrowWhenProductionVaultProviderEnabledWithoutToken()
     {
         var services = ProductionSecretsTestServices.BuildServices(
             Environments.Production,
             ProductionSecretsTestArtifacts.AllOverridden(),
-            secrets: ProductionSecretsTestArtifacts.VaultEnabledButTokenUnset());
+            vault: new VaultSecretOptions { Enabled = true });
 
         var exception = Should.Throw<InvalidOperationException>(
             () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
 
-        exception.Message.ShouldContain("COMUKI_VAULT_TOKEN");
-        exception.Message.ShouldContain("vault");
+        exception.Message.ShouldContain(VaultSecretOptions.DefaultTokenEnvVariable);
+        exception.Message.ShouldContain(VaultSecretOptions.SectionName);
     }
 
-    [Fact(DisplayName = "Given Production + vault provider enabled with COMUKI_VAULT_TOKEN set, when Validate is called, then it returns silently")]
+    [Fact(DisplayName = "Given Production + vault provider enabled with the default token env var set, when Validate is called, then it returns silently")]
     public void ReturnSilentlyWhenProductionVaultProviderEnabledAndTokenSet()
     {
-        Environment.SetEnvironmentVariable("COMUKI_VAULT_TOKEN", "real-vault-token-2026");
+        Environment.SetEnvironmentVariable(VaultSecretOptions.DefaultTokenEnvVariable, "real-vault-token-2026");
         var services = ProductionSecretsTestServices.BuildServices(
             Environments.Production,
             ProductionSecretsTestArtifacts.AllOverridden(),
-            secrets: ProductionSecretsTestArtifacts.VaultEnabledAndTokenSet());
+            vault: new VaultSecretOptions { Enabled = true });
+
+        Should.NotThrow(() => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+    }
+
+    [Fact(DisplayName = "Given Production + vault provider enabled with a custom TokenEnvRef that is unset, when Validate is called, then it throws naming the custom env var, not the default")]
+    public void ThrowWhenProductionVaultCustomTokenEnvRefUnset()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            vault: new VaultSecretOptions
+            {
+                Enabled = true,
+                TokenEnvRef = ProductionSecretsTestArtifacts.CustomVaultTokenEnvRef,
+            });
+
+        var exception = Should.Throw<InvalidOperationException>(
+            () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+
+        exception.Message.ShouldContain(ProductionSecretsTestArtifacts.CustomVaultTokenEnvRef);
+        exception.Message.ShouldNotContain(VaultSecretOptions.DefaultTokenEnvVariable);
+    }
+
+    [Fact(DisplayName = "Given Production + vault provider enabled with a custom TokenEnvRef that is set, when Validate is called, then it returns silently")]
+    public void ReturnSilentlyWhenProductionVaultCustomTokenEnvRefSet()
+    {
+        Environment.SetEnvironmentVariable(ProductionSecretsTestArtifacts.CustomVaultTokenEnvRef, "custom-vault-token-2026");
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            vault: new VaultSecretOptions
+            {
+                Enabled = true,
+                TokenEnvRef = ProductionSecretsTestArtifacts.CustomVaultTokenEnvRef,
+            });
 
         Should.NotThrow(() => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
     }
@@ -337,12 +374,23 @@ file static class ProductionSecretsTestServices
             secrets: secrets);
     }
 
+    public static IServiceCollection BuildServices(string environmentName, ArtifactsOptions artifacts, VaultSecretOptions vault)
+    {
+        return BuildServices(
+            environmentName,
+            artifacts,
+            apiKeyPepper: ProductionSecretsTestArtifacts.OverriddenApiKeyPepper,
+            workerTokenPepper: ProductionSecretsTestArtifacts.OverriddenWorkerTokenPepper,
+            vault: vault);
+    }
+
     public static IServiceCollection BuildServices(
         string environmentName,
         ArtifactsOptions artifacts,
         string apiKeyPepper,
         string workerTokenPepper,
-        SecretsOptions? secrets = null)
+        SecretsOptions? secrets = null,
+        VaultSecretOptions? vault = null)
     {
         var services = new ServiceCollection();
         services.AddSingleton<IHostEnvironment>(new ProductionSecretsTestEnvironment(environmentName));
@@ -351,6 +399,7 @@ file static class ProductionSecretsTestServices
         services.AddSingleton(Options.Create(new ApiKeyOptions { Pepper = apiKeyPepper }));
         services.AddSingleton(Options.Create(new WorkerTokenOptions { Pepper = workerTokenPepper }));
         services.AddSingleton(Options.Create(secrets ?? ProductionSecretsTestArtifacts.NoRemoteProviders()));
+        services.AddSingleton(Options.Create(vault ?? new VaultSecretOptions()));
         return services;
     }
 }
@@ -365,6 +414,9 @@ file static class ProductionSecretsTestArtifacts
 
     public const string OverriddenApiKeyPepper = "rotated-strong-apikey-pepper-2026";
     public const string OverriddenWorkerTokenPepper = "rotated-strong-worker-token-pepper-2026";
+
+    /// <summary>Custom bootstrap-token env-var name for the TokenEnvRef override cases (env-var NAME — values stay in env only).</summary>
+    public const string CustomVaultTokenEnvRef = "MY_VAULT_TOKEN";
 
     public static ArtifactsOptions DevDefaults()
     {
@@ -415,28 +467,6 @@ file static class ProductionSecretsTestArtifacts
         return new SecretsOptions
         {
             Providers = new Dictionary<string, FileSecretOptions>(StringComparer.OrdinalIgnoreCase),
-        };
-    }
-
-    public static SecretsOptions VaultEnabledButTokenUnset()
-    {
-        return new SecretsOptions
-        {
-            Providers = new Dictionary<string, FileSecretOptions>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["vault"] = new FileSecretOptions { Enabled = true },
-            },
-        };
-    }
-
-    public static SecretsOptions VaultEnabledAndTokenSet()
-    {
-        return new SecretsOptions
-        {
-            Providers = new Dictionary<string, FileSecretOptions>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["vault"] = new FileSecretOptions { Enabled = true },
-            },
         };
     }
 

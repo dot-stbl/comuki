@@ -150,11 +150,11 @@ migrate:validate:
       echo "postgres:5432 is up"
     - dotnet --version
     - dotnet restore platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj
-    - echo "--- pass 1: apply migrations ---"
+    - 'echo "--- pass 1: apply migrations ---"'
     - dotnet run --project platform/src/host/Comuki.Migrator -c Release --no-restore --no-launch-profile
-    - echo "--- pass 2: idempotent re-run (must stay green) ---"
+    - 'echo "--- pass 2: idempotent re-run (must stay green) ---"'
     - dotnet run --project platform/src/host/Comuki.Migrator -c Release --no-restore --no-launch-profile
-    - echo "migrate:validate OK"
+    - 'echo "migrate:validate OK"'
 
 # -----------------------------------------------------------------------------
 # Images. One host image (orchestrator + migrator entrypoints, console.x

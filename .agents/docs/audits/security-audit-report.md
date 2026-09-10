@@ -1030,5 +1030,5 @@ See A06-2, A06-3, A06-4. Five issues total:
 
 ### Reference docs (3)
 - `audit-product-report.md` (the prior business-logic audit)
-- `product-decisions.md` (Q1–Q43 owner decisions)
+- [`../product/product-decisions.md`](../product/product-decisions.md) (Q1–Q43 owner decisions)
 - `.agents/STATE.md` (the state file)

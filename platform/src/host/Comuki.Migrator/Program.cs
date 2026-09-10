@@ -9,6 +9,7 @@ using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Modules.Scheduler.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 var recreate = args.Contains("--recreate", StringComparer.Ordinal);
@@ -100,6 +101,12 @@ ArtifactsDbContext.ApplyOptions(artifactsOptions, connectionString);
 await using var artifactsDb = new ArtifactsDbContext(artifactsOptions.Options);
 await DatabaseSchemaEnsurer.EnsureAsync(connectionString, ArtifactsDatabase.Schema, CancellationToken.None);
 await ApplyAsync(artifactsDb, "artifacts");
+
+var schedulerOptions = new DbContextOptionsBuilder<SchedulerDbContext>();
+SchedulerDbContext.ApplyOptions(schedulerOptions, connectionString);
+await using var schedulerDb = new SchedulerDbContext(schedulerOptions.Options);
+await DatabaseSchemaEnsurer.EnsureAsync(connectionString, SchedulerDatabase.Schema, CancellationToken.None);
+await ApplyAsync(schedulerDb, "scheduler");
 
 return 0;
 

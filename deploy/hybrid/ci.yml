@@ -227,7 +227,8 @@ secrets:dev:
       fi
       echo "cluster confirmed: ${server}"
 
-# In-cluster dev infra (pgvector + MinIO): manual, idempotent, safe to re-run.
+# In-cluster dev infra (pgvector only — MinIO/OTLP are shared, outside
+# this contour): manual, idempotent, safe to re-run.
 infra:dev:
   extends: .kubectl
   stage: deploy
@@ -239,7 +240,6 @@ infra:dev:
   script:
     - kubectl apply -f deploy/hybrid/infra-dev.yaml
     - kubectl -n comuki rollout status deploy/pgvector --timeout=180s
-    - kubectl -n comuki rollout status deploy/minio --timeout=180s
 
 # migrate:dev — apply the batch/v1 Job that runs Comuki.Migrator inside the
 # cluster against the in-cluster pgvector (COMUKI_DB comes from the

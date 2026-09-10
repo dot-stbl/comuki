@@ -22,10 +22,9 @@ public sealed class EvalJsonTaskParserShould
                    "  \"operations\": [\n" +
                    "    { \"action\": \"Create\" },\n" +
                    "    { \"action\": \"Transition\", \"status\": \"Running\" },\n" +
-                                                                                  /*lang=json,strict*/
-                                                                                  /*lang=json,strict*/
-                                                                                  /*lang=json,strict*/
-                                                                                  "    { \"action\": \"Transition\", \"status\": \"Succeeded\" }\n" +
+                                                                                                                                                                      /*lang=json,strict*/
+                                                                                                                                                                      /*lang=json,strict*/
+                                                                                                                                                                      "    { \"action\": \"Transition\", \"status\": \"Succeeded\" }\n" +
                    "  ],\n" +
                    "  \"expected\": {\n" +
                    "    \"finalStatus\": \"Succeeded\",\n" +
@@ -56,10 +55,9 @@ public sealed class EvalJsonTaskParserShould
                    "    { \"action\": \"Create\" },\n" +
                    "    { \"action\": \"Transition\", \"status\": \"Running\" },\n" +
                    "    { \"action\": \"Transition\", \"status\": \"Succeeded\" },\n" +
-                                                                                  /*lang=json,strict*/
-                                                                                  /*lang=json,strict*/
-                                                                                  /*lang=json,strict*/
-                                                                                  "    { \"action\": \"TransitionExpectFailure\", \"status\": \"Running\" }\n" +
+                                                                                                                                                                      /*lang=json,strict*/
+                                                                                                                                                                      /*lang=json,strict*/
+                                                                                                                                                                      "    { \"action\": \"TransitionExpectFailure\", \"status\": \"Running\" }\n" +
                    "  ],\n" +
                    "  \"expected\": {\n" +
                    "    \"expectsFailure\": true,\n" +

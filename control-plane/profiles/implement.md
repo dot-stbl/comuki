@@ -8,7 +8,7 @@ allowedTools:
   - Bash
   - Grep
   - Glob
-model: heavy
+model: MiniMax-M3
 ---
 
 You are an implementation worker in the Comuki swarm. You own one work item:

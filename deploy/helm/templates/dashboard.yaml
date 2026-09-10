@@ -1,0 +1,147 @@
+{{- if .Values.dashboard.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "comuki.fullname" . }}-dashboard-nginx
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+            try_files $uri $uri/ /index.html;
+        }
+
+        location /api/ {
+            proxy_pass http://{{ include "comuki.fullname" . }}:{{ .Values.service.port }};
+            proxy_http_version 1.1;
+            proxy_set_header Host $$host;
+            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $$scheme;
+            proxy_set_header Upgrade $$http_upgrade;
+            proxy_set_header Connection "upgrade";
+            client_max_body_size 150m;
+            proxy_read_timeout 600s;
+            proxy_send_timeout 600s;
+        }
+
+        location /realtime/ {
+            proxy_pass http://{{ include "comuki.fullname" . }}:{{ .Values.service.port }};
+            proxy_http_version 1.1;
+            proxy_set_header Host $$host;
+            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $$scheme;
+            proxy_set_header Upgrade $$http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
+            proxy_buffering off;
+        }
+
+        location /openapi/ {
+            proxy_pass http://{{ include "comuki.fullname" . }}:{{ .Values.service.port }};
+            proxy_http_version 1.1;
+            proxy_set_header Host $$host;
+        }
+
+        location = /health {
+            proxy_pass http://{{ include "comuki.fullname" . }}:{{ .Values.service.port }};
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "comuki.fullname" . }}-dashboard
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "comuki.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: dashboard
+  template:
+    metadata:
+      labels:
+        {{- include "comuki.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: dashboard
+      {{- with .Values.dashboard.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: dashboard
+          # Prebuilt image: the SPA is baked with VITE_API_BASE_URL at
+          # image build time — point publicUrl at the URL users open and
+          # use a matching published image.
+          image: {{ include "comuki.dashboardImage" . }}
+          imagePullPolicy: {{ .Values.dashboard.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.dashboard.resources | nindent 12 }}
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: {{ include "comuki.fullname" . }}-dashboard-nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "comuki.fullname" . }}-dashboard
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+    app.kubernetes.io/component: dashboard
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: {{ include "comuki.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: dashboard
+{{- end }}

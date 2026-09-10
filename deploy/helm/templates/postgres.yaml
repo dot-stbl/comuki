@@ -1,0 +1,124 @@
+{{- if not .Values.postgresql.external.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "comuki.fullname" . }}-postgres
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+  selector:
+    app.kubernetes.io/name: {{ include "comuki.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: postgres
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "comuki.fullname" . }}-postgres-init
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+data:
+  01-schemas.sql: |
+    CREATE EXTENSION IF NOT EXISTS vector;
+    CREATE SCHEMA IF NOT EXISTS orchestration;
+    CREATE SCHEMA IF NOT EXISTS identity;
+    CREATE SCHEMA IF NOT EXISTS projects;
+    CREATE SCHEMA IF NOT EXISTS memory;
+    CREATE SCHEMA IF NOT EXISTS knowledge;
+    CREATE SCHEMA IF NOT EXISTS chat;
+    CREATE SCHEMA IF NOT EXISTS intake;
+    CREATE SCHEMA IF NOT EXISTS costs;
+    CREATE SCHEMA IF NOT EXISTS artifacts;
+    CREATE SCHEMA IF NOT EXISTS scheduler;
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "comuki.fullname" . }}-postgres
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgres
+spec:
+  # Single node by design: the migrator applies EF migrations serially.
+  replicas: 1
+  serviceName: {{ include "comuki.fullname" . }}-postgres
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "comuki.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: postgres
+  template:
+    metadata:
+      labels:
+        {{- include "comuki.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: {{ .Values.postgresql.image | quote }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: {{ include "comuki.postgresUsername" . | quote }}
+            - name: POSTGRES_DB
+              value: {{ include "comuki.postgresDatabase" . | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "comuki.secretName" . }}
+                  key: postgres-password
+          ports:
+            - name: postgres
+              containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            {{- toYaml .Values.postgresql.resources | nindent 12 }}
+      volumes:
+        - name: init
+          configMap:
+            name: {{ include "comuki.fullname" . }}-postgres-init
+        {{- if not .Values.postgresql.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+  {{- if .Values.postgresql.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.postgresql.persistence.storageClass }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.persistence.size }}
+  {{- end }}
+{{- end }}

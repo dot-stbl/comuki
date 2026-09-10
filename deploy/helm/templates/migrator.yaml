@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "comuki.fullname" . }}-migrator
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrator
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  # Retries absorb the in-cluster Postgres startup window: the hook runs
+  # before the StatefulSet pod is necessarily ready.
+  backoffLimit: 12
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        {{- include "comuki.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migrator
+    spec:
+      restartPolicy: Never
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: migrator
+          image: {{ include "comuki.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["dotnet", "/app/migrator/Comuki.Migrator.dll"]
+          env:
+            # Dependent-env expansion: must precede COMUKI_DB.
+            - name: COMUKI_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "comuki.secretName" . }}
+                  key: postgres-password
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ .Values.environment | quote }}
+            - name: COMUKI_DB
+              value: {{ include "comuki.dbConnectionString" . | quote }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi

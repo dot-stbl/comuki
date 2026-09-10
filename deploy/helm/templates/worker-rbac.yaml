@@ -1,0 +1,46 @@
+{{- if eq .Values.compute.provider "kubernetes" -}}
+# The orchestrator host spawns workers as batch/v1 Jobs (backoffLimit 0,
+# TTL-cleaned). It needs create/read/delete on jobs plus pod reads for
+# status, in the namespace workers land in.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.compute.kubernetes.serviceAccount }}
+  namespace: {{ include "comuki.workerNamespace" . }}
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "comuki.fullname" . }}-worker-spawn
+  namespace: {{ include "comuki.workerNamespace" . }}
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "comuki.fullname" . }}-worker-spawn
+  namespace: {{ include "comuki.workerNamespace" . }}
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "comuki.fullname" . }}-worker-spawn
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "comuki.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

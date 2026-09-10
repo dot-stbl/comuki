@@ -1,0 +1,67 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "comuki.fullname" . }}
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+  annotations:
+    # Large body: run artifact uploads. Long timeout: SignalR.
+    nginx.ingress.kubernetes.io/proxy-body-size: 150m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . | quote }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | default (printf "%s-tls" (include "comuki.fullname" .)) | quote }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          {{- if .Values.dashboard.enabled }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "comuki.fullname" . }}-dashboard
+                port:
+                  number: 80
+          {{- end }}
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "comuki.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+          - path: /realtime
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "comuki.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+          - path: /openapi
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "comuki.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "comuki.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}

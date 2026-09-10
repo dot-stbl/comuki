@@ -1,5 +1,7 @@
 using Comuki.Modules.Artifacts.Application.Packaging;
+using Comuki.Modules.Artifacts.Application.VisualArtifacts.Ports;
 using Comuki.Modules.Artifacts.Infrastructure.Persistence;
+using Comuki.Modules.Artifacts.Infrastructure.Persistence.Stores;
 using Comuki.Modules.Artifacts.Infrastructure.Store;
 using Comuki.Shared.Contracts.Artifacts;
 using Microsoft.Extensions.Configuration;
@@ -50,6 +52,15 @@ public static class ArtifactsPersistenceExtensions
 
         services.AddSingleton<MinioRunArtifactStore>();
         services.AddSingleton<IRunArtifactStore>(sp => sp.GetRequiredService<MinioRunArtifactStore>());
+
+        // Visual-artifact surface (issue #51 slice 1). The MinIO
+        // helper is a singleton (stateless, reuses the SDK client); the
+        // EF-backed store facade is scoped because ArtifactsDbContext
+        // is scoped. The application-layer no-op store is replaced
+        // here via the standard TryAdd → concrete pattern.
+        services.AddSingleton<MinioVisualArtifactStorage>();
+        services.AddScoped<VisualArtifactStoreEf>();
+        services.AddScoped<IVisualArtifactStore>(sp => sp.GetRequiredService<VisualArtifactStoreEf>());
 
         // Startup hook — ensures the configured MinIO bucket exists when
         // ArtifactsOptions.AutoCreateBucket is on. The compose minio-init

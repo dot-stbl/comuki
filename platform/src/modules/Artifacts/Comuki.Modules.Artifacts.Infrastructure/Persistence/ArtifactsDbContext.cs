@@ -1,6 +1,6 @@
 using Comuki.Modules.Artifacts.Domain;
+using Comuki.Modules.Artifacts.Domain.VisualArtifacts;
 using Comuki.Modules.Artifacts.Infrastructure.Persistence.Configurations;
-using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,6 +39,9 @@ public sealed class ArtifactsDbContext(
     /// <summary>One row per packaged run.</summary>
     public DbSet<RunArtifactBundle> RunBundles => Set<RunArtifactBundle>();
 
+    /// <summary>One row per published visual artifact (issue #51 slice 1).</summary>
+    public DbSet<VisualArtifact> VisualArtifacts => Set<VisualArtifact>();
+
     /// <summary>
     /// Left disjunct of the scope filter: true when the current subject
     /// sees every project (a platform-scope role, a system consumer, or a
@@ -47,12 +50,16 @@ public sealed class ArtifactsDbContext(
     public bool ScopeUnrestricted => scopeAccessor?.Current.Unrestricted ?? true;
 
     /// <summary>
-    /// Projects the current subject is confined to; empty means "no
-    /// project", not "any project". Re-materialised per read — a copy of
-    /// the already-resolved scope, not a walk.
+    /// Projects the current subject is confined to, projected onto the
+    /// raw <see cref="Guid"/> values EF Core can translate. Empty means
+    /// "no project", not "any project". Re-materialised per read — a
+    /// copy of the already-resolved scope, not a walk. The query
+    /// filters below compare against this Guid array (not the strongly-
+    /// typed <c>ProjectId</c>) because EF Core's query translator
+    /// cannot lower a custom struct's member access into SQL.
     /// </summary>
-    public ProjectId[] ScopeProjectIds => scopeAccessor is { } accessor
-        ? [.. accessor.Current.ProjectIds]
+    public Guid[] ScopeProjectIds => scopeAccessor is { } accessor
+        ? [.. accessor.Current.ProjectIds.Select(static projectId => projectId.Value)]
         : [];
 
     /// <summary>
@@ -73,14 +80,21 @@ public sealed class ArtifactsDbContext(
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new RunBundleConfiguration());
+        modelBuilder.ApplyConfiguration(new VisualArtifactConfiguration());
 
         // The object axis, as a row-level filter: a bundle is visible when
         // its denormalised project matches one in the subject's scope.
-        // ProjectId is a raw Guid on this entity — we resolve through
-        // ProjectId.Value to compare with the ambient scope's id list.
+        // ProjectId is a raw Guid on this entity; the filter compares
+        // against ScopeProjectIds (Guid[]) so EF Core can translate it.
         modelBuilder.Entity<RunArtifactBundle>()
             .HasQueryFilter(bundle => ScopeUnrestricted
-                || ScopeProjectIds.Any(projectId => projectId.Value == bundle.ProjectId));
+                || ScopeProjectIds.Contains(bundle.ProjectId));
+
+        // Same scope rule for visual artifacts — out-of-scope rows
+        // surface as 404 to the content proxy, never as a deny.
+        modelBuilder.Entity<VisualArtifact>()
+            .HasQueryFilter(artifact => ScopeUnrestricted
+                || ScopeProjectIds.Contains(artifact.ProjectId));
 
         base.OnModelCreating(modelBuilder);
     }

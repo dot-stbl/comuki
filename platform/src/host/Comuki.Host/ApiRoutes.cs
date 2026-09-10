@@ -54,6 +54,9 @@ public static class ApiRoutes
 
     public const string WorkerFail = "/workers/{workItemId}/fail";
 
+    /// <summary>Worker publish endpoint — one multipart artifact per leased work item (issue #51 slice 1).</summary>
+    public const string WorkerUploadArtifact = "/workers/{workItemId:guid}/artifacts";
+
     /// <summary>Root of the anonymous tracker webhook surface (issue #6): /api/hooks/{provider}/{key}.</summary>
     public const string HooksRoot = "api/hooks";
 

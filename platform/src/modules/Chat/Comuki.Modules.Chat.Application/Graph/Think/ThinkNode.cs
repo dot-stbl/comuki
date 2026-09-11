@@ -35,7 +35,11 @@ public sealed class ThinkNode(
     public async Task<NodeResult> InvokeAsync(GraphContext context, CancellationToken cancellationToken = default)
     {
         var task = context.Read<string>(ChatChannels.Task) ?? string.Empty;
-        var brainKind = context.Read<string>(ChatChannels.BrainKind) ?? "chat";
+        // The channel always carries a BrainRequestKindKeys value; the default
+        // is the same "answer a question" mode the router picks for a message
+        // that is not a task. Anything outside that set is InvalidArgument at
+        // the brain service.
+        var brainKind = context.Read<string>(ChatChannels.BrainKind) ?? BrainRequestKindKeys.Answer;
         var sessionId = ChatSessionIdParsing.Parse(context.Read<string>(ChatChannels.SessionId));
         var scope = ChatDigestScope.Of(
             context.Read<string>(ChatChannels.SubjectId) ?? string.Empty,
@@ -49,7 +53,7 @@ public sealed class ThinkNode(
             new BrainRequest { Kind = brainKind, ContextJson = ChatBrainContextJson.ToJson(history, digest), Task = task },
             cancellationToken);
 
-        if (brainKind != "plan")
+        if (brainKind != BrainRequestKindKeys.Plan)
         {
             return NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),

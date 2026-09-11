@@ -88,6 +88,13 @@ file static class MigratorStatusRunner
                     Console.WriteLine(line);
                 }
             }
+            // 42P01 = undefined_table, 3F000 = invalid_schema_name: the schema/history was never provisioned
+            catch (PostgresException exception) when (exception.SqlState is "42P01" or "3F000")
+            {
+                // dry-run keeps zero DDL: a schema that was never provisioned reads as "everything pending"
+                totalPending++;
+                Console.WriteLine($"{target.Label}: schema not provisioned — run comuki-migrator to create and migrate");
+            }
             catch (NpgsqlException exception)
             {
                 Console.Error.WriteLine($"error ({target.Label}): {exception.Message}");
@@ -131,13 +138,12 @@ file sealed class MigratorTarget(string label, string schema, Func<string, DbCon
         }
     }
 
-    /// <summary>Pending migrations of the schema without applying anything.</summary>
+    /// <summary>Pending migrations of the schema without applying anything and without any DDL.</summary>
     public async Task<IReadOnlyList<string>> PendingAsync(string connectionString, CancellationToken cancellationToken)
     {
         var context = createContext(connectionString);
         await using (context)
         {
-            await DatabaseSchemaEnsurer.EnsureAsync(connectionString, schema, cancellationToken);
             return [.. await context.Database.GetPendingMigrationsAsync(cancellationToken)];
         }
     }

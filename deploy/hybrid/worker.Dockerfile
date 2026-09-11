@@ -49,6 +49,7 @@ WORKDIR /src
 
 # Restore first for layer caching: solution-wide pins + the translator graph.
 COPY Directory.Build.props Directory.Packages.props nuget.config .editorconfig ./
+COPY platform/src/shared/Comuki.Shared.Bootstrap/Comuki.Shared.Bootstrap.csproj platform/src/shared/Comuki.Shared.Bootstrap/
 COPY platform/src/shared/Comuki.Shared.Kernel/Comuki.Shared.Kernel.csproj platform/src/shared/Comuki.Shared.Kernel/
 COPY platform/src/shared/Comuki.Shared.Contracts/Comuki.Shared.Contracts.csproj platform/src/shared/Comuki.Shared.Contracts/
 COPY platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj platform/src/host/Comuki.Host.Translator/

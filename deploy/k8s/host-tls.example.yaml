@@ -1,0 +1,63 @@
+# OPTIONAL — direct TLS on the comuki host (no Ingress).
+#
+# Fragments to merge into deployment.yaml + service.yaml — do NOT
+# `kubectl apply` this file (a plain apply would prune fields the
+# original deployment.yaml applied). Use strategic-merge patches:
+#
+#   kubectl -n comuki create secret tls comuki-tls \
+#     --cert=tls.crt --key=tls.key
+#   kubectl -n comuki patch deployment comuki-host --patch-file host-tls.deployment.patch.yaml
+#   kubectl -n comuki patch service comuki --patch-file host-tls.service.patch.yaml
+#
+# The host then listens on :8080 (http) and :8081 (https, mounted PEM
+# pair) and redirects plain HTTP to HTTPS. Probes stay on the HTTP
+# port — kubelet follows the redirect and skips certificate checks.
+---
+# host-tls.deployment.patch.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: comuki-host
+  namespace: comuki
+spec:
+  template:
+    spec:
+      containers:
+        - name: host
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8081
+          env:
+            - name: COMUKI_HOST_TLS_ENABLED
+              value: "true"
+            - name: COMUKI_HOST_TLS_REDIRECTHTTP
+              value: "true"
+            - name: COMUKI_HOST_TLS_CERTIFICATEPATH
+              value: /certs/tls.crt
+            - name: COMUKI_HOST_TLS_CERTIFICATEKEYPATH
+              value: /certs/tls.key
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /certs
+              readOnly: true
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: comuki-tls
+---
+# host-tls.service.patch.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: comuki
+  namespace: comuki
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: https
+      port: 443
+      targetPort: https

@@ -38,6 +38,10 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+            {{- if .Values.tls.enabled }}
+            - name: https
+              containerPort: 8081
+            {{- end }}
           env:
             # Dependent-env expansion: must precede COMUKI_DB.
             - name: COMUKI_POSTGRES_PASSWORD
@@ -76,6 +80,18 @@ spec:
                 secretKeyRef:
                   name: {{ include "comuki.secretName" . }}
                   key: artifacts-secret-key
+            {{- if .Values.tls.enabled }}
+            # Direct TLS on the host ([Host:Tls]): HTTPS listener on
+            # container :8081 from the mounted kubernetes.io/tls secret.
+            - name: COMUKI_HOST_TLS_ENABLED
+              value: "true"
+            - name: COMUKI_HOST_TLS_REDIRECTHTTP
+              value: {{ .Values.tls.redirectHttp | quote }}
+            - name: COMUKI_HOST_TLS_CERTIFICATEPATH
+              value: /certs/tls.crt
+            - name: COMUKI_HOST_TLS_CERTIFICATEKEYPATH
+              value: /certs/tls.key
+            {{- end }}
             {{- with .Values.host.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -105,11 +121,21 @@ spec:
             # /tmp.
             - name: tmp
               mountPath: /tmp
+            {{- if .Values.tls.enabled }}
+            - name: tls-certs
+              mountPath: /certs
+              readOnly: true
+            {{- end }}
           resources:
             {{- toYaml .Values.host.resources | nindent 12 }}
       volumes:
         - name: tmp
           emptyDir: {}
+        {{- if .Values.tls.enabled }}
+        - name: tls-certs
+          secret:
+            secretName: {{ .Values.tls.secretName }}
+        {{- end }}
       {{- with .Values.host.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -2,6 +2,7 @@ using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Host;
 using Comuki.Host.OpenApi;
+using Comuki.Host.Security.Tls;
 using Comuki.Host.Workers;
 using Comuki.Modules.Scheduler.Infrastructure.Observers;
 using Comuki.Shared.Bootstrap;
@@ -39,6 +40,12 @@ if (builder.Configuration.TryResolveServerUrl() is { } serverUrl)
 {
     builder.WebHost.UseUrls(serverUrl);
 }
+
+// TLS ([Host:Tls] / COMUKI_HOST_TLS_*): adds the HTTPS listener next to
+// the plain-HTTP one and registers the HTTP→HTTPS redirect. No-op while
+// Enabled=false (the default) — the address resolution above stays the
+// only listener source, so every existing deployment is unaffected.
+builder.AddComukiTls();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddComukiConsole();

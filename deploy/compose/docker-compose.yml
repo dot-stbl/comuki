@@ -114,14 +114,31 @@ services:
       COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-host:8080
       COMUKI_CHAT_WORKER_IMAGE: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
       COMUKI_SCHEDULER_WORKER_IMAGE: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
+      # TLS ([Host:Tls]): flip COMUKI_TLS_ENABLED=true to add the HTTPS
+      # listener (:8081 inside) next to HTTP (:8080) and redirect plain
+      # HTTP to it. PEM pair comes from COMUKI_TLS_CERT_DIR (→ /certs,
+      # read-only). With no pair mounted the host falls back to the
+      # ASP.NET dev certificate — containers don't have one, so mount a
+      # pair (self-signed is fine locally, see .env.example).
+      COMUKI_HOST_TLS_ENABLED: ${COMUKI_TLS_ENABLED:-false}
+      COMUKI_HOST_TLS_HTTPSPORT: ${COMUKI_TLS_HTTPS_PORT:-8081}
+      COMUKI_HOST_TLS_REDIRECTHTTP: ${COMUKI_TLS_REDIRECT_HTTP:-true}
+      COMUKI_HOST_TLS_CERTIFICATEPATH: ${COMUKI_TLS_CERT_PATH:-}
+      COMUKI_HOST_TLS_CERTIFICATEKEYPATH: ${COMUKI_TLS_KEY_PATH:-}
     ports:
       - "${COMUKI_HOST_PORT:-17172}:8080"
+      # HTTPS listener (container :8081). Published unconditionally —
+      # with TLS off nothing listens and the port just refuses.
+      - "${COMUKI_TLS_HOST_PORT:-17171}:8081"
     volumes:
       # Docker compute provider: spawns worker containers through the
       # host's Docker daemon. The app user needs group access to the
       # socket — set DOCKER_GID to the gid of the docker group on the
       # host (commonly 999 on Linux; see .env.example).
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # TLS PEM pair (optional, read-only at /certs; consumed only when
+      # COMUKI_TLS_ENABLED=true — compose creates the dir when absent).
+      - ${COMUKI_TLS_CERT_DIR:-./certs}:/certs:ro
     group_add:
       - "${DOCKER_GID:-999}"
     depends_on:

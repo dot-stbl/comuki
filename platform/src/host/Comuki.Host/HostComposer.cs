@@ -21,6 +21,7 @@ using Comuki.Host.Scheduler;
 using Comuki.Host.Security.Cors;
 using Comuki.Host.Security.ProductionSecrets;
 using Comuki.Host.Security.RateLimit;
+using Comuki.Host.Security.Tls;
 using Comuki.Host.Workers;
 using Comuki.Modules.Artifacts.Application;
 using Comuki.Modules.Artifacts.Application.Packaging;
@@ -399,6 +400,12 @@ internal static class HostComposer
         ProductionSecretValidator.Validate(app.Services);
 
         app.UseExceptionHandler();
+
+        // TLS redirect ([Host:Tls]): bounces plain-HTTP requests to the
+        // HTTPS listener before any downstream middleware writes a
+        // response. No-op unless Enabled=true and RedirectHttp != false.
+        app.UseComukiTls();
+
         app.UseDefaultFiles();
         app.UseStaticFiles();
         app.UseAuthentication();

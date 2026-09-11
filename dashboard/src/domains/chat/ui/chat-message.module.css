@@ -144,6 +144,16 @@
   color: var(--text-faint);
 }
 
+/* How long it took. A figure that stands in a column of them when several
+   calls stack, so tabular — and never wider than the number needs. */
+.toolClock {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
 .toolResult {
   margin: 0;
   min-inline-size: 0;
@@ -368,4 +378,336 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   color: var(--text);
+}
+
+/* Markdown -----------------------------------------------------------------
+ *
+ * Prose the parser produced, rather than a string in a `<p>`. The rhythm is
+ * the thread's own: one gap between blocks, the body measure held at 68ch,
+ * and nothing that would make a turn read as a document — no rule above a
+ * heading, no card around a quote, no second type scale.
+ *
+ * Everything below is scoped under `.markdown` on purpose. These are element
+ * selectors, and element selectors inside a CSS Module still reach anything
+ * nested under the class — which here is exactly the intent, because the
+ * parser's output has no classes of its own to hang styles on. */
+
+.markdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+  max-inline-size: 68ch;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+/* A code block is the one thing on this surface allowed past the measure: it
+   is a reading with its own geometry, and 68ch of prose is not the right
+   width for a patch. */
+.markdown .mdCodeBlock,
+.markdown .mdTableScroll {
+  max-inline-size: none;
+  inline-size: 100%;
+}
+
+.mdParagraph {
+  margin: 0;
+  min-inline-size: 0;
+}
+
+/* Headings inside a turn. One step up from the body and a weight, and that is
+   the whole hierarchy — three visible sizes inside one message would be a
+   document, and a message is a log entry. */
+.mdHeading {
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.mdList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  min-inline-size: 0;
+  padding-inline-start: var(--s6);
+}
+
+/* A nested list is tighter than the gap between blocks: it belongs to the item
+   above it rather than standing beside it. */
+.mdItem > .mdList {
+  margin-block-start: var(--s1);
+}
+
+.mdItem {
+  min-inline-size: 0;
+}
+
+.mdItem::marker {
+  color: var(--text-faint);
+}
+
+.mdStrong {
+  font-weight: var(--fw-semibold);
+}
+
+.mdDeleted {
+  color: var(--text-faint);
+}
+
+/* Quoted, not boxed. A left rule is how this product marks every aside it
+   has; a tinted box would be the card the design system does not allow. */
+.mdQuote {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  min-inline-size: 0;
+  padding-inline-start: var(--s4);
+  border-inline-start: 2px solid var(--rule-strong);
+  color: var(--text-muted);
+}
+
+.mdRule {
+  margin: 0;
+  border: none;
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+.mdLink {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 0.2em;
+}
+
+.mdLink:hover {
+  color: var(--primary);
+  text-decoration-color: var(--primary);
+}
+
+.mdLink:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* A table keeps its reading and scrolls, rather than crushing its columns —
+   the Shape-Not-Reading Rule. The scroll port is the only horizontally
+   scrolling thing allowed inside a message. */
+.mdTableScroll {
+  min-inline-size: 0;
+  overflow-x: auto;
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+}
+
+.mdTable {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-xs);
+}
+
+/* Column names are data labels in faint text, the same reading the kit's own
+   table gives them, so they never compete with the values beneath. */
+.mdTh {
+  padding: var(--s2) var(--s3);
+  border-block-end: var(--hairline) solid var(--rule);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  text-align: start;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+
+/* Cells are values, so the data voice and tabular figures — a column of
+   numbers in a markdown table is still a column of numbers. */
+.mdTd {
+  padding: var(--s2) var(--s3);
+  border-block-start: var(--hairline) solid var(--rule);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  vertical-align: baseline;
+  color: var(--text-muted);
+}
+
+/* An identifier inside a sentence, quoted rather than referenced — see
+   `message-text.tsx` for why inline code is deliberately never linked. */
+.mdCodeInline {
+  padding: 0 var(--s1);
+  border-radius: var(--r-xs);
+  background: var(--lane-alt);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* A `<pre>` the parser produced without a fence inside it. Rare, and it still
+   gets the block's geometry rather than the browser's. */
+.mdPre {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-x: auto;
+  padding: var(--s3) var(--s4);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* A task list's box is a reading of what the turn said, not a control. It is
+   read-only and out of the tab order, so nothing offers a press that would do
+   nothing. */
+.mdCheck {
+  margin-inline-end: var(--s2);
+  accent-color: var(--primary);
+}
+
+/* Thinking ------------------------------------------------------------------
+ *
+ * Folded, muted, and motionless. It is evidence, not a performance. */
+
+.thinking {
+  min-inline-size: 0;
+  max-inline-size: 68ch;
+  border-inline-start: var(--hairline) solid var(--rule);
+  padding-inline-start: var(--s4);
+}
+
+.thinkingSummary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  cursor: pointer;
+  list-style: none;
+  min-inline-size: 0;
+  color: var(--text-faint);
+}
+
+.thinkingSummary::-webkit-details-marker {
+  display: none;
+}
+
+.thinkingSummary:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* Names a region of the turn, so the wide gesture. */
+.thinkingWords {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+}
+
+.thinkingCount {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.thinkingText {
+  margin: 0;
+  margin-block-start: var(--s2);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* Diagram -------------------------------------------------------------------
+ *
+ * A stub for P2, and it says so rather than pretending to a picture. */
+
+.diagram {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.diagramNote {
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+/* Plan ----------------------------------------------------------------------
+ *
+ * The same two-column rhythm a proposal's steps already use — profile on the
+ * left in the data voice, what it does on the right in the interface voice —
+ * because a plan in a proposal and a plan in a message are the same reading
+ * and must not look like two things. */
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-inline-size: 0;
+  max-inline-size: 68ch;
+}
+
+.planNode {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--s2);
+  align-items: baseline;
+  min-inline-size: 0;
+}
+
+.planProfile {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.planLabel {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+
+/* The dependency, said on the node that waits for it. Quieter than the label,
+   because it is a fact about the plan rather than a step in it. */
+.planAfter {
+  color: var(--text-faint);
+}
+
+/* The empty turn ------------------------------------------------------------
+ *
+ * A body that derived to nothing says so. The composition used to render a
+ * bare row here, and a gap in a log that explains nothing is worse than an
+ * admission. */
+
+.blank {
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
 }

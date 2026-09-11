@@ -28,10 +28,4 @@ public sealed record DoctorCheck(string Name, DoctorCheckStatus Status, string D
             _ => "?",
         };
     }
-
-    /// <summary>Exit code for a completed run: 1 when any check failed, else 0.</summary>
-    public static int ExitCode(IReadOnlyList<DoctorCheck> checks)
-    {
-        return checks.Any(static check => check.Status == DoctorCheckStatus.Fail) ? 1 : 0;
-    }
 }

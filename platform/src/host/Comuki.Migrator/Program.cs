@@ -14,6 +14,7 @@ using Comuki.Modules.Scheduler.Infrastructure.Persistence;
 using Comuki.Shared.Bootstrap.Cli;
 using Comuki.Shared.Bootstrap.Versioning;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 // Operator CLI (issue #56): `comuki-migrator version` runs before any
 // bootstrap; `comuki-migrator status` is a dry-run over every schema.
@@ -72,6 +73,7 @@ return 0;
 /// </summary>
 file static class MigratorStatusRunner
 {
+    /// <summary>Probes every schema for pending migrations and returns the CI exit code.</summary>
     public static async Task<int> RunAsync(string connectionString)
     {
         var totalPending = 0;
@@ -86,7 +88,7 @@ file static class MigratorStatusRunner
                     Console.WriteLine(line);
                 }
             }
-            catch (Exception exception)
+            catch (NpgsqlException exception)
             {
                 Console.Error.WriteLine($"error ({target.Label}): {exception.Message}");
                 return MigratorStatusReport.ErrorExitCode;
@@ -105,8 +107,10 @@ file static class MigratorStatusRunner
 /// </summary>
 file sealed class MigratorTarget(string label, string schema, Func<string, DbContext> createContext)
 {
+    /// <summary>The schema label used in status and apply reporting.</summary>
     public string Label => label;
 
+    /// <summary>Ensures the schema and applies pending migrations with per-schema reporting.</summary>
     public async Task RunAsync(string connectionString, CancellationToken cancellationToken)
     {
         var context = createContext(connectionString);
@@ -148,6 +152,7 @@ file sealed class MigratorTarget(string label, string schema, Func<string, DbCon
 /// </summary>
 file static class MigratorTargets
 {
+    /// <summary>The module migration targets in execution order.</summary>
     public static readonly MigratorTarget[] All =
     [
         new("orchestration", OrchestrationDatabase.Schema, static connectionString =>

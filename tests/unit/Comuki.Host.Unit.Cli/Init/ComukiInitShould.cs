@@ -1,4 +1,3 @@
-using System.Text;
 using Comuki.Host.Cli.Init;
 using Shouldly;
 using Xunit;
@@ -129,25 +128,5 @@ public sealed class ComukiInitShould : IDisposable
     private string EnvFileContent()
     {
         return File.ReadAllText(Path.Combine(workingDirectory, ComukiInit.EnvFileName));
-    }
-
-    /// <summary>Line-capturing TextWriter.</summary>
-    private sealed class LineWriter : TextWriter
-    {
-        private readonly StringBuilder builder = new();
-
-        public IReadOnlyList<string> Lines => builder.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-        public override Encoding Encoding { get; } = Encoding.UTF8;
-
-        public override void Write(string? value)
-        {
-            builder.Append(value);
-        }
-
-        public override void WriteLine(string? value)
-        {
-            builder.Append(value).Append('\n');
-        }
     }
 }

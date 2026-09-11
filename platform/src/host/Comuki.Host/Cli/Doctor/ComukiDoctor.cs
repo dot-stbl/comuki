@@ -67,6 +67,7 @@ internal static class ComukiDoctor
 /// <summary>The doctor's individual checks.</summary>
 file static class ComukiDoctorChecks
 {
+    /// <summary>Resolves the config.toml discovery chain into a check.</summary>
     public static DoctorCheck CheckConfigFile()
     {
         return ComukiConfigFile.Find() is { } path
@@ -77,6 +78,7 @@ file static class ComukiDoctorChecks
                 "no config.toml found (chain: COMUKI_CONFIG_PATH → ./config.toml → /etc/comuki/config.toml); running on env-only configuration");
     }
 
+    /// <summary>Reports the COMUKI_ENV provenance, warning on deprecated fallback variables.</summary>
     public static DoctorCheck CheckEnvironment(Func<string, string?> lookupEnv)
     {
         var resolution = ComukiEnvironment.ResolveDetailed(lookupEnv);
@@ -89,6 +91,7 @@ file static class ComukiDoctorChecks
                 $"env={resolution.Environment} source={source} (deprecated fallback — prefer {ComukiEnvironment.EnvironmentVariable})");
     }
 
+    /// <summary>Probes the resolved database connection; fail when unreachable.</summary>
     public static async Task<DoctorCheck> CheckDatabaseAsync(
         IConfiguration configuration,
         Func<string, CancellationToken, Task<int>>? probeDatabaseAsync,
@@ -116,12 +119,13 @@ file static class ComukiDoctorChecks
             var latencyMs = await probe(connection.ConnectionString, cancellationToken);
             return new DoctorCheck("database", DoctorCheckStatus.Ok, $"connected latency={latencyMs}ms");
         }
-        catch (Exception exception)
+        catch (NpgsqlException exception)
         {
             return new DoctorCheck("database", DoctorCheckStatus.Fail, $"unreachable error={exception.Message}");
         }
     }
 
+    /// <summary>Runs the production-secret audit as doctor checks for the resolved environment.</summary>
     public static IReadOnlyList<DoctorCheck> CheckSecrets(Func<string, string?> lookupEnv)
     {
         var environment = ComukiEnvironment.ResolveDetailed(lookupEnv);
@@ -151,6 +155,7 @@ file static class ComukiDoctorChecks
                 finding.Detail))];
     }
 
+    /// <summary>Appends the pointer to comuki-migrator status (migrations are deliberately not probed here).</summary>
     public static IReadOnlyList<DoctorCheck> WithMigrationsHint(List<DoctorCheck> checks)
     {
         checks.Add(new DoctorCheck("migrations", DoctorCheckStatus.Ok, "not checked here — run `comuki-migrator status`"));
@@ -161,6 +166,7 @@ file static class ComukiDoctorChecks
 /// <summary>Npgsql SELECT 1 round-trip with a 2-second timeout; returns the latency in milliseconds.</summary>
 file static class ComukiDoctorDatabase
 {
+    /// <summary>SELECT 1 round-trip over the connection string; returns the latency in milliseconds.</summary>
     public static async Task<int> ProbeAsync(string connectionString, CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -177,6 +183,7 @@ file static class ComukiDoctorDatabase
 /// <summary>Options plumbing of the secrets check: an absent [artifacts] section is audited as its dev defaults.</summary>
 file static class ComukiDoctorSecrets
 {
+    /// <summary>Binds the [artifacts] section, substituting the dev defaults when it is absent.</summary>
     public static ArtifactsOptions BindArtifacts(IConfiguration configuration)
     {
         // A missing [artifacts] section means the deployment relies on the

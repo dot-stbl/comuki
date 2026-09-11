@@ -20,6 +20,7 @@
 *.sh          text eol=lf
 
 # Binary — no eol processing
+*.tgz         binary
 *.png         binary
 *.jpg         binary
 *.jpeg        binary

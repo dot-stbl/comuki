@@ -1,8 +1,11 @@
+using System.Globalization;
 using Comuki.Modules.Chat.Application.Graph.Channels;
 using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Domain.Ids;
 using Comuki.Modules.Chat.Domain.Messages;
 using Comuki.Modules.Chat.Domain.Sessions;
+using Comuki.Shared.Contracts.Chat;
+using Comuki.Shared.Contracts.Plans;
 using Voluta.Abstractions.Streaming;
 
 namespace Comuki.Modules.Chat.Application.Sessions;
@@ -46,7 +49,7 @@ public sealed class ChatTurnJournalist(
     }
 }
 
-/// <summary>Terminal values → journal rows.</summary>
+/// <summary>Terminal values → journal rows, each one a list of parts.</summary>
 file static class ChatTurnJournalRows
 {
     public static IEnumerable<ChatMessage> Of(
@@ -56,23 +59,88 @@ file static class ChatTurnJournalRows
     {
         if (values.GetValueOrDefault(ChatChannels.Digest) is string { Length: > 0 } digest)
         {
-            yield return ChatMessage.Create(
-                sessionId, ChatMessageRole.System, "memory digest fed to the brain:\n" + digest, toolName: null, now);
+            yield return ChatTranscriptRow.Of(
+                sessionId,
+                ChatMessageRole.System,
+                [new MessagePart.TextPart("memory digest fed to the brain:\n" + digest)],
+                now);
         }
 
         if (values.GetValueOrDefault(ChatChannels.ToolName) is string { Length: > 0 } toolName
             && values.GetValueOrDefault(ChatChannels.ToolResult) is string { Length: > 0 } toolResult)
         {
-            yield return ChatMessage.Create(sessionId, ChatMessageRole.Tool, toolResult, toolName, now);
+            yield return ChatTranscriptRow.Of(
+                sessionId,
+                ChatMessageRole.Tool,
+                [ChatToolPart.Of(toolName, toolResult, values)],
+                now,
+                toolName);
         }
 
         if (values.GetValueOrDefault(ChatChannels.Reply) is string { Length: > 0 } reply)
         {
-            var card = values.GetValueOrDefault(ChatChannels.PlanJson) as string;
-            var content = card is { Length: > 0 }
-                ? reply + "\n\n" + card
-                : reply;
-            yield return ChatMessage.Create(sessionId, ChatMessageRole.Assistant, content, toolName: null, now);
+            yield return ChatTranscriptRow.Of(
+                sessionId,
+                ChatMessageRole.Assistant,
+                ChatReplyParts.Of(reply, values),
+                now);
         }
+    }
+}
+
+/// <summary>The tool channels of one turn → one tool part.</summary>
+file static class ChatToolPart
+{
+    public static MessagePart.ToolPart Of(
+        string toolName,
+        string toolResult,
+        IReadOnlyDictionary<string, object?> values)
+    {
+        var status = values.GetValueOrDefault(ChatChannels.ToolStatus) as string;
+        return new MessagePart.ToolPart(
+            toolName,
+            values.GetValueOrDefault(ChatChannels.ToolInput) as string ?? "{}",
+            status is { Length: > 0 } && ToolPartStatuses.Parse(status) is { } known ? known : ToolPartStatuses.Success,
+            toolResult,
+            ChatToolDuration.Of(values.GetValueOrDefault(ChatChannels.ToolDurationMs) as string));
+    }
+}
+
+/// <summary>Wire-safe duration channel (a string) → milliseconds.</summary>
+file static class ChatToolDuration
+{
+    public static long? Of(string? value)
+    {
+        return long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var milliseconds)
+            ? milliseconds
+            : null;
+    }
+}
+
+/// <summary>
+/// The assistant row of one turn: the brain's reasoning, its prose and —
+/// when the turn produced one — the plan card, as three parts of ONE
+/// message instead of a string concatenation.
+/// </summary>
+file static class ChatReplyParts
+{
+    public static IReadOnlyList<MessagePart> Of(string reply, IReadOnlyDictionary<string, object?> values)
+    {
+        List<MessagePart> parts = [];
+
+        if (values.GetValueOrDefault(ChatChannels.Thinking) is string { Length: > 0 } thinking)
+        {
+            parts.Add(new MessagePart.ThinkingPart(thinking));
+        }
+
+        parts.Add(new MessagePart.TextPart(reply));
+
+        if (values.GetValueOrDefault(ChatChannels.PlanJson) is string { Length: > 0 } planJson
+            && PlanJson.TryParse(planJson, out var plan, out _))
+        {
+            parts.Add(new MessagePart.PlanPart(plan.Nodes, plan.Edges));
+        }
+
+        return parts;
     }
 }

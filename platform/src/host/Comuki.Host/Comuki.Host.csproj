@@ -5,6 +5,10 @@
     <!-- Comuki-native binary name (issue #54): the apphost ships as
          `comuki`; the project/namespace stays Comuki.Host. -->
     <AssemblyName>comuki</AssemblyName>
+    <!-- Comuki build metadata (issue #56): git sha + UTC build date + mode
+         in the binary; surfaced by `comuki version`, doctor and
+         /api/v1/version. -->
+    <GenerateComukiBuildMetadata>true</GenerateComukiBuildMetadata>
     <!--
       Build-time OpenAPI document generation (Microsoft.Extensions.ApiDescription.Server).
       Resolved relative to the csproj: platform/src/host/Comuki.Host

@@ -5,6 +5,9 @@
     <!-- Comuki-native binary name (issue #54): the apphost ships as
          `comuki-brain`; the project/namespace stays Comuki.Host.Brain. -->
     <AssemblyName>comuki-brain</AssemblyName>
+    <!-- Comuki build metadata (issue #56): git sha + UTC build date + mode
+         in the binary; surfaced by <binary> version. -->
+    <GenerateComukiBuildMetadata>true</GenerateComukiBuildMetadata>
   </PropertyGroup>
 
   <ItemGroup>

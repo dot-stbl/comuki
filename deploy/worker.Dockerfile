@@ -59,7 +59,7 @@ VOLUME /work
 # COMUKI_ORCH_HTTP defaults to the orchestrator container on the compose
 # network; the rest of the COMUKI_* contract is stamped at container start.
 ENV COMUKI_ORCH_HTTP=http://comuki-host:8080 \
-    COMUKI_ORCH_GRPC=http://comuki-host:5051 \
+    COMUKI_ORCH_GRPC=http://comuki-host:8080 \
     COMUKI_PI_EXECUTABLE=pi
 
 ENTRYPOINT ["/app/translator/comuki-translator"]

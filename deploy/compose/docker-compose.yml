@@ -79,7 +79,7 @@ services:
     restart: "no"
     command: ["/app/migrator/comuki-migrator"]
     environment:
-      COMUKI_ENV: ${COMUKI_ENVIRONMENT:-Development}
+      COMUKI_ENV: ${COMUKI_ENV:-Development}
       COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_POSTGRES_DB:-comuki};Username=${COMUKI_POSTGRES_USER:-comuki};Password=${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
     depends_on:
       postgres:
@@ -96,7 +96,7 @@ services:
     restart: unless-stopped
     command: ["/app/host/comuki"]
     environment:
-      COMUKI_ENV: ${COMUKI_ENVIRONMENT:-Development}
+      COMUKI_ENV: ${COMUKI_ENV:-Development}
       COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_POSTGRES_DB:-comuki};Username=${COMUKI_POSTGRES_USER:-comuki};Password=${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
       COMUKI_IDENTITY_APIKEY_PEPPER: ${COMUKI_IDENTITY_APIKEY_PEPPER:-comuki-local-apikey-pepper}
       COMUKI_TOKEN_PEPPER: ${COMUKI_TOKEN_PEPPER:-comuki-local-token-pepper}
@@ -196,7 +196,7 @@ services:
     restart: unless-stopped
     command: ["/app/brain/comuki-brain"]
     environment:
-      COMUKI_ENV: ${COMUKI_ENVIRONMENT:-Development}
+      COMUKI_ENV: ${COMUKI_ENV:-Development}
       COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_POSTGRES_DB:-comuki};Username=${COMUKI_POSTGRES_USER:-comuki};Password=${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
       COMUKI_BRAIN_GRPCPORT: "17004"
       COMUKI_BRAIN_MODEL_ENDPOINT: ${COMUKI_BRAIN_MODEL_ENDPOINT:-}

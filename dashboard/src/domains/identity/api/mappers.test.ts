@@ -16,6 +16,7 @@ import type { ApiKeyView } from "@/shared/api/_generated/types/ApiKeyView"
 import type { MeResponse } from "@/shared/api/_generated/types/MeResponse"
 import type { RoleAssignmentView } from "@/shared/api/_generated/types/RoleAssignmentView"
 import type { UserAccountView } from "@/shared/api/_generated/types/UserAccountView"
+import { roleGrants } from "@/shared/session"
 
 /**
  * Wire → domain for the auth surface.
@@ -260,6 +261,32 @@ describe("mapRoleAssignmentViewToSeed", () => {
     })
 
     expect(seed.projectId).toBe("p_comuki")
+  })
+
+  // `role` and `subjectType` are `string` on the wire. A cast used to carry
+  // whatever the host said straight into the session, where `roleGrants`
+  // looked the word up in a table that has no row for it. The guard keeps the
+  // grant visible and reads it at the least privilege the vocabulary has.
+  it("degrades a role it has never heard of to the least-privileged one", () => {
+    const seed = mapRoleAssignmentViewToSeed({
+      ...SAMPLE_GRANT_VIEW,
+      role: "auditor",
+    })
+
+    expect(seed.role).toBe("viewer")
+    expect(roleGrants(seed.role, "identity.manage")).toBe(false)
+  })
+
+  it("degrades a subject kind it has never heard of to `user`", () => {
+    const seed = mapRoleAssignmentViewToSeed({
+      ...SAMPLE_GRANT_VIEW,
+      subjectType: "service-principal",
+    })
+
+    expect(seed.subjectKind).toBe("user")
+    // The subject id still travels, so the grants table names the row rather
+    // than showing a blank subject.
+    expect(seed.subjectId).toBe(SAMPLE_GRANT_VIEW.subjectId)
   })
 })
 

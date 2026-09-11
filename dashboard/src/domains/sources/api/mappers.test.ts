@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import { settingsToJson, sourceConnectionViewToConnection } from "@/domains/sources/api/mappers"
+import {
+  isSourceKind,
+  sourceKindBrand,
+  sourceKindLabel,
+} from "@/domains/sources/model/providers"
 import type { SourceConnectionView } from "@/shared/api/_generated/types/SourceConnectionView"
 
 /**
@@ -187,11 +192,28 @@ describe("sourceConnectionViewToConnection", () => {
 
     const connection = sourceConnectionViewToConnection(view)
 
-    // The cast is the contract — until `SOURCE_KIND_BRAND` and
-    // `SOURCE_KIND_LABEL` know about "linear", the row renders with the
-    // provider's own word. A failing cast would close the row; an unknown
-    // provider is a future the dashboard has to grow into, not a 500.
+    // The word survives, and now the *type* says so: `kind` is a
+    // `ConnectionKind`, which is either one of the five or the host's own
+    // word. It is emphatically not a `SourceKind` — the six exhaustive
+    // `Record<SourceKind, …>` tables would all answer `undefined` for it,
+    // which is how this row used to reach the screen with an empty provider
+    // cell. An unknown provider is a future the dashboard has to grow into,
+    // not a 500 and not a blank.
     expect(connection.kind).toBe("linear")
+    expect(isSourceKind(connection.kind)).toBe(false)
+  })
+
+  it("says an unknown provider in the host's own words on every surface", () => {
+    // The two display helpers, which is what the provider cell and the
+    // source page both read now. `null` is the brand `BrandTag` already
+    // treats as "write it in words"; the words are the host's.
+    expect(sourceKindLabel("linear")).toBe("linear")
+    expect(sourceKindBrand("linear")).toBeNull()
+
+    // And the five it does know are untouched.
+    expect(sourceKindLabel("yandex-tracker")).toBe("yandex tracker")
+    expect(sourceKindBrand("github")).toBe("github")
+    expect(sourceKindBrand("yandex-tracker")).toBeNull()
   })
 })
 

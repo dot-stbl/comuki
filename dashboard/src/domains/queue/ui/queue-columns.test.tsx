@@ -1,5 +1,12 @@
 import { useState } from "react"
-import { fireEvent, render } from "@testing-library/react"
+import { fireEvent, render, waitFor } from "@testing-library/react"
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router"
 import { beforeAll, describe, expect, it } from "vitest"
 
 import type { ProjectRef, Session } from "@/shared/session"
@@ -10,11 +17,15 @@ import {
   type DataTableSorting,
 } from "@/shared/ui"
 
-import { queueOrder } from "@/domains/queue/model/queue"
-import type { QueueItem, Worker } from "@/domains/queue/model/types"
+import { WORKER_STATES, queueOrder } from "@/domains/queue/model/queue"
+import type {
+  QueueItem,
+  Worker,
+  WorkerState,
+} from "@/domains/queue/model/types"
 
 import { createQueueColumns, getQueueItemId } from "./queue-columns"
-import { createWorkerColumns } from "./worker-columns"
+import { createWorkerColumns, getWorkerId } from "./worker-columns"
 
 /* The virtualizer needs a scroll port with a depth and something watching it,
    and jsdom has neither — without these the body renders no rows at all and
@@ -301,5 +312,90 @@ describe("the pool's text box answers to a project key too", () => {
     expect(
       applyDataFilters(WORKERS, { id: "sha256:9c41ab" }, workerColumns)
     ).toHaveLength(2)
+  })
+})
+
+/**
+ * The pool's state column is ordered by a rank, and the rank used to be typed
+ * `Record<string, number>` — a table that could silently lose a state. A state
+ * the rank does not name does not throw: `rankSort` gives it `UNRANKED` and it
+ * drops to the bottom, so "capacity first" quietly stops being true. The type
+ * now covers `WorkerState`; this is the runtime half of the same assertion,
+ * and it is built from `WORKER_STATES` so a seventh state cannot be added to
+ * the union without this case noticing.
+ */
+describe("the pool orders by capacity, not by spelling", () => {
+  function workerInState(state: WorkerState): Worker {
+    return {
+      id: `wk_${state}`,
+      projectId: "p_one",
+      profile: "implementer",
+      state,
+      itemId: null,
+      provider: "docker",
+      handle: `docker/cluster-a/${state}`,
+      heartbeatAgeSec: 1,
+      leaseSec: null,
+      upSec: 60,
+      digest: "sha256:000000",
+    }
+  }
+
+  function StateHarness() {
+    const [sorting, setSorting] = useState<DataTableSorting>([])
+    return (
+      <DataTable
+        columns={workerColumns}
+        data={WORKER_STATES.map(workerInState)}
+        getRowId={getWorkerId}
+        sorting={sorting}
+        onSortingChange={setSorting}
+      />
+    )
+  }
+
+  /* A worker's id cell is a link to that worker's page, so the pool only
+     renders inside a router. A memory router carrying the product's own paths
+     keeps this off the app's generated route tree. */
+  function mountPool() {
+    const rootRoute = createRootRoute({
+      component: () => <StateHarness />,
+    })
+    const router = createRouter({
+      routeTree: rootRoute.addChildren(
+        ['/', '/runs/$runId', '/queue/workers/$workerId'].map((path) =>
+          createRoute({
+            getParentRoute: () => rootRoute,
+            path,
+            component: () => null,
+          })
+        )
+      ),
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    })
+
+    return render(<RouterProvider router={router} />)
+  }
+
+  it("puts what is working, then what is leaving, then what is spare", async () => {
+    const { container } = mountPool()
+
+    // The router mounts its tree asynchronously; wait for the pool itself.
+    await waitFor(() => {
+      expect(
+        container.querySelectorAll('[data-test="worker-state-badge"]')
+      ).toHaveLength(WORKER_STATES.length)
+    })
+
+    const head = [...container.querySelectorAll("th")].find(
+      (node) => node.textContent?.trim() === "state"
+    )
+    fireEvent.click(head!.querySelector("button")!)
+
+    expect(
+      [...container.querySelectorAll('[data-test="worker-state-badge"]')].map(
+        (node) => node.getAttribute("data-state")
+      )
+    ).toEqual(["draining", "busy", "idle"])
   })
 })

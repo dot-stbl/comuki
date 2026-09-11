@@ -397,6 +397,13 @@ internal static class HostComposer
         ProductionSecretValidator.Validate(app.Services);
 
         app.UseExceptionHandler();
+
+        // SPA from wwwroot (console.x single-image pattern): the host image
+        // bakes the dashboard build into /app/host/wwwroot. Registered
+        // before auth so public assets skip the auth pipeline entirely.
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseCors(CorsPolicyNames.Dashboard);
@@ -436,6 +443,11 @@ internal static class HostComposer
         // (Swagger UI, Scalar, curl probes). Anonymous — the document is
         // public metadata, not an authenticated endpoint.
         app.MapOpenApi();
+
+        // SPA fallback for TanStack Router client-side routes (/runs/123
+        // etc.): registered after every API route mapping so the catch-all
+        // never swallows an API endpoint.
+        app.MapFallbackToFile("index.html");
 
         return app;
     }

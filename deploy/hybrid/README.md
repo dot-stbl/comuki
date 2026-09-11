@@ -43,14 +43,11 @@ Guard-коммит `[hybrid] chore(git): guard hybrid contour overlay from GitHu
 | Файл | Роль |
 |------|------|
 | `.gitlab-ci.yml` | entrypoint → include `deploy/hybrid/ci.yml` |
-| `deploy/hybrid/ci.yml` | пайплайн: unit → migrate:validate → build:image{,:worker,:dashboard} → secrets:dev → ▶ migrate:dev / infra:dev / deploy:dashboard / promote:dev |
+| `deploy/hybrid/ci.yml` | пайплайн: unit → migrate:validate → build:image{,:worker} → secrets:dev → ▶ migrate:dev / infra:dev / promote:dev |
 | `deploy/hybrid/dev.yaml` | values общего чарта hybrid-service (AppSet подставляет tag) |
-| `deploy/hybrid/host.Dockerfile` | образ хоста: `/app/host` (оркестратор) + `/app/migrator` |
+| `deploy/hybrid/host.Dockerfile` | образ хоста: `/app/host` (оркестратор) + `/app/migrator` + dashboard SPA в `/app/host/wwwroot` (node:22 stage — bun не умеет qemu64-CPU раннера) |
 | `deploy/hybrid/worker.Dockerfile` | образ воркера: Translator + pi + agents-пакеты |
 | `deploy/hybrid/vendor/*.tgz` | vendored npm-тарболлы (pi, zod). Первопричина pipeline #13 — НЕ сеть: registry.npmjs.org с раннера доступен (curl 200 за ~0.1с), но CPU раннера — qemu64 без SSE4.2, на котором bun не исполняет JS (SIGILL) и installer bun 1.4.0 livelock'ится; для worker-образа bun всё равно нужен в рантайме, поэтому vendoring остаётся. Обновление: `npm pack <pkg>@<ver> --pack-destination deploy/hybrid/vendor` + COPY в worker.Dockerfile |
-| `deploy/hybrid/dashboard.Dockerfile` | образ дашборда: node:22-alpine build (bun не умеет qemu64-CPU раннера — см. заголовок файла) → nginx + SPA |
-| `deploy/hybrid/dashboard.nginx.conf` | nginx: статика SPA + прокси /api,/realtime,/openapi → `comuki:8080` in-cluster |
-| `deploy/hybrid/dashboard-dev.yaml` | Deployment+Service+Ingress дашборда в ns comuki (ручная джоба `deploy:dashboard`) |
 | `deploy/hybrid/infra-dev.yaml` | pgvector в ns comuki (ручная джоба `infra:dev`; MinIO/OTLP — общие) |
 | `deploy/hybrid/migrate-job-dev.yaml` | batch Job для `migrate:dev` (tag подставляет CI) |
 | `deploy/hybrid/secrets.schema.yml` | schema секретов: имена ключей Consul-блоба |
@@ -95,11 +92,19 @@ MinIO и OTLP — общие сервисы кластера.
    (nsupdate-паттерн из `virtual.deploy.dev/docs/dns.md`); после регистрации
    smoke: `GET http://comuki.nova.adcluster.targetix.net/health` → `{"status":"ok"}`,
    `GET /health/ready` → 200 после старта БД.
-5. **Дашборд** (ручная джоба `deploy:dashboard`, после первого билда
-   `build:image:dashboard`): DNS `app.comuki.nova.adcluster.targetix.net` →
-   тот же ingress IP (10.5.21.13), затем ▶ `deploy:dashboard` и smoke
-   `GET http://app.comuki.nova.adcluster.targetix.net/` → HTML SPA;
-   `GET /api/v1/...` через тот же хост → API (прокси nginx).
+5. **Дашборд**: отдельного деплоя больше нет — SPA запечена в образ хоста
+   (`/app/host/wwwroot`, node-stage в `host.Dockerfile`) и отдаётся тем же
+   Kestrel на `http://comuki.nova.adcluster.targetix.net/` (same-origin,
+   `VITE_API_BASE_URL` — публичный origin). Smoke: `GET /` → HTML SPA,
+   client-side маршрут (`/runs/…`) → HTML SPA (SPA fallback), `GET /api/…` → API.
+
+   **Cleanup старого nginx-деплоя дашборда** (один раз; манифесты удалены
+   из оверлея, ресурсы в кластере остаются, пока не снесены руками):
+
+   ```bash
+   kubectl -n comuki delete deploy,svc,ingress comuki-dashboard
+   # опционально: DNS-запись app.comuki.nova.adcluster.targetix.net (nsupdate)
+   ```
 
 ## Известные хвосты (осознанные)
 

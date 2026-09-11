@@ -89,9 +89,9 @@ env:
   # (owner step; nsupdate pattern per virtual.deploy.dev/docs/dns.md).
   COMUKI_PUBLIC_HOST_URL: http://comuki.nova.adcluster.targetix.net
 
-  # CORS allow-list for the dashboard SPA origin (Host__Cors__AllowedOrigins
-  # array binding). The dashboard itself is not deployed in-cluster yet —
-  # same-origin first, adjust when the SPA lands on its own host.
+  # CORS allow-list (Host__Cors__AllowedOrigins array binding). The SPA is
+  # baked into the host image (same origin), so this entry is a no-op for
+  # it — kept for any deliberately cross-origin tooling against the API.
   Host__Cors__AllowedOrigins__0: http://comuki.nova.adcluster.targetix.net
 
   # Artifacts store: SHARED MinIO object-store-01 (owner decision

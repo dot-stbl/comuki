@@ -16,6 +16,14 @@ namespace Comuki.Host.Cli;
 /// </summary>
 internal static class ComukiHostCli
 {
+    /// <summary>The async <c>doctor</c> command — <c>Program</c> awaits it directly (see <see cref="ComukiInit"/> sibling checks).</summary>
+    public const string DoctorCommand = "doctor";
+
+    /// <summary>True when the arguments ask for the (async) doctor command.</summary>
+    public static bool IsDoctorRequested(string[] args)
+    {
+        return ComukiCli.IsCommand(args, DoctorCommand);
+    }
     /// <summary>Handles <c>version</c> / <c>config show</c> / <c>doctor</c> / <c>init</c>; null when the args are not a CLI command.</summary>
     public static int? TryRun(string[] args)
     {

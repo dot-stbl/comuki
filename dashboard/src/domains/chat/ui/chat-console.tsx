@@ -3,6 +3,7 @@ import { useCallback, useMemo } from "react"
 import type { SearchTarget } from "@/app/search"
 import {
   useChatCommandsQuery,
+  useChatMessagesQuery,
   useChatSessionsQuery,
   useProposalDecisionMutation,
   useSendMessageMutation,
@@ -100,6 +101,22 @@ export function ChatConsole({
   const rows = useMemo(() => sessions.data ?? [], [sessions.data])
   const current = rows.find((entry) => entry.id === chosenId) ?? rows[0] ?? null
 
+  /**
+   * The open conversation's transcript, asked for by itself.
+   *
+   * The wire's session row carries no messages — the host pages them behind
+   * `GET /api/v1/chat/sessions/{id}/messages` — so a console that read the
+   * thread off the session list showed an empty thread against a real
+   * backend, forever. The fallback to the session's own `messages` is what
+   * keeps mock mode identical: there the messages live on the record, the
+   * query reads the same store, and the two can only ever agree.
+   */
+  const transcript = useChatMessagesQuery(current?.id ?? "")
+  const messages = useMemo(
+    () => transcript.data ?? current?.messages ?? [],
+    [transcript.data, current]
+  )
+
   const commands = useMemo(
     () => availableCommands(session, custom.data ?? []),
     [session, custom.data]
@@ -135,14 +152,13 @@ export function ChatConsole({
   // box's arrow-up. Derived, not stored: the thread is the history, and a
   // second copy of it would be a second thing to keep true.
   const recall = useMemo(() => {
-    const messages = current?.messages ?? []
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       if (messages[index]?.kind === "person") {
         return messages[index]?.text ?? null
       }
     }
     return null
-  }, [current])
+  }, [messages])
 
   return (
     <div className={styles.screen} data-test="chat-console">
@@ -158,7 +174,7 @@ export function ChatConsole({
 
       <div className={styles.centre}>
         <ChatThread
-          messages={current?.messages ?? []}
+          messages={messages}
           onDecide={onDecide}
           busy={decide.isPending}
         />
@@ -176,7 +192,7 @@ export function ChatConsole({
       </div>
 
       <div className={styles.panel}>
-        <ChatSidePanel messages={current?.messages ?? []} commands={commands} />
+        <ChatSidePanel messages={messages} commands={commands} />
       </div>
     </div>
   )

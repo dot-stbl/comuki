@@ -1,11 +1,9 @@
 import type { ReactNode } from "react"
 import type { Meta, StoryObj } from "@storybook/react"
 
-import type {
-  TaskPriority,
-  TaskSource,
-  TaskStatus,
-} from "@/domains/tasks/model/types"
+import { PROVIDERS } from "@/domains/sources/model/providers"
+import type { ProviderKey } from "@/domains/sources/model/types"
+import type { TaskPriority, TaskStatus } from "@/domains/tasks/model/types"
 
 import {
   TaskPriorityBadge,
@@ -13,12 +11,12 @@ import {
   TaskStatusBadge,
 } from "./tasks-badges"
 
-const SOURCES: TaskSource[] = [
-  "github",
-  "gitlab",
-  "yandex-tracker",
-  "jira",
-  "manual",
+/* Every provider in the registry, plus one that is not in it — the badge has
+   to survive a word the dashboard has never met, and a story nobody can see
+   it in is a story that will not catch it going away. */
+const SOURCES: ProviderKey[] = [
+  ...PROVIDERS.map((provider) => provider.key),
+  "linear",
 ]
 const PRIORITIES: TaskPriority[] = ["high", "normal", "low"]
 const STATUSES: TaskStatus[] = ["new", "queued", "planning"]
@@ -51,8 +49,11 @@ type Story = StoryObj<typeof TaskStatusBadge>
 
 /**
  * Where the ticket came from. A ticket off a branch shows the tracker's own id
- * — for that row this badge *is* the identity — and manual intake has only the
+ * — for that row this badge *is* the identity — and native intake has only the
  * word, which is the honest limit of a column that is a badge.
+ *
+ * The last stamp is a provider with no registry entry: no mark to draw, so it
+ * takes the board glyph, and it still carries its id rather than a blank.
  */
 export const Sources: Story = {
   render: () => (

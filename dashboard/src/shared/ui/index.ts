@@ -23,6 +23,14 @@ export {
   Sparkline,
   type SparklineProps,
 } from "./sparkline"
+export {
+  CODE_LANGUAGES,
+  CodeBlock,
+  PLAIN_LANGUAGE_LABEL,
+  resolveLanguage,
+  type CodeBlockProps,
+  type CodeLanguage,
+} from "./code-block"
 export { ForbiddenState, type ForbiddenStateProps } from "./forbidden-state"
 export {
   SplitPane,

@@ -4,15 +4,15 @@ import { Loader2, PlugZap } from "lucide-react"
 
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
 import {
-  CONNECTABLE_KINDS,
-  SOURCE_KIND_LABEL,
+  CONNECTABLE_PROVIDERS,
+  needsBaseUrl,
   targetLabel,
   targetPlaceholder,
 } from "@/domains/sources/model/providers"
 import type {
   ProbeResult,
+  ProviderKey,
   SourceAuth,
-  SourceKind,
 } from "@/domains/sources/model/types"
 import {
   type SecretReferenceDraft,
@@ -75,7 +75,7 @@ export function ConnectSourceForm({
 }: ConnectSourceFormProps) {
   const session = useSession()
 
-  const [kind, setKind] = useState<SourceKind>("github")
+  const [kind, setKind] = useState<ProviderKey>(CONNECTABLE_PROVIDERS[0].key)
   const [projectId, setProjectId] = useState(session.projects[0]?.id ?? "")
   const [name, setName] = useState("")
   const [auth, setAuth] = useState<SourceAuth>("pat")
@@ -98,7 +98,7 @@ export function ConnectSourceForm({
      drop the one that did. */
   const [touched, setTouched] = useState(false)
 
-  const wantsHost = SELF_HOSTED_SET.has(kind)
+  const wantsHost = needsBaseUrl(kind)
   const settingsJson = JSON.stringify({
     auth,
     account: account.trim(),
@@ -158,13 +158,13 @@ export function ConnectSourceForm({
           label="provider"
           value={kind}
           disabled={busy}
-          options={CONNECTABLE_KINDS.map((entry) => ({
-            value: entry,
-            label: SOURCE_KIND_LABEL[entry],
+          options={CONNECTABLE_PROVIDERS.map((provider) => ({
+            value: provider.key,
+            label: provider.label,
           }))}
           hint="native intake is not here: every project already has one, and there is nothing to point a credential at."
           data-test="connect-kind"
-          onValueChange={edit((next: string) => setKind(next as SourceKind))}
+          onValueChange={edit(setKind)}
         />
 
         <SelectField
@@ -332,8 +332,6 @@ export function ConnectSourceForm({
     </FormLayout>
   )
 }
-
-const SELF_HOSTED_SET: ReadonlySet<SourceKind> = new Set(["gitlab", "jira"])
 
 const AUTH_OPTIONS = [
   {value: "pat", label: "personal access token"},

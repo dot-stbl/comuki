@@ -321,3 +321,29 @@ describe("a project whose git declares nothing", () => {
     ).toBe(PROJECT.source.url)
   })
 })
+
+/**
+ * The last-result column is ordered by a rank, and the rank used to be typed
+ * `Record<string, number>` — a table that could silently lose a reading. A
+ * word the rank does not name does not throw: `rankSort` gives it `UNRANKED`
+ * and it drops to the bottom, so "failing first" quietly stops being true.
+ * The rank is now keyed on `VerifyResultLabel`, the three words the column
+ * actually sorts — **not** `VerifyOutcome`, which is two words and neither of
+ * them the one this screen exists for ("never ran").
+ */
+describe("the last-result column orders by triage, not by spelling", () => {
+  it("puts failing first, then the ones nothing has reached, then the green ones", async () => {
+    await mount()
+
+    const head = [...document.querySelectorAll("th")].find(
+      (node) => node.textContent?.trim() === "last result"
+    )
+    fireEvent.click(head!.querySelector("button")!)
+
+    expect(
+      [...document.querySelectorAll('[data-test="verify-result"]')].map(
+        (node) => node.getAttribute("data-outcome")
+      )
+    ).toEqual(["failed", "never", "passed"])
+  })
+})

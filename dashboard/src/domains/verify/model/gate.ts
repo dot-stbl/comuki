@@ -1,6 +1,7 @@
 import type {
   VerifyCommand,
   VerifyResult,
+  VerifyResultLabel,
   VerifySource,
 } from "@/domains/verify/model/types"
 
@@ -46,7 +47,7 @@ export function sourceLocation(source: VerifySource): string {
 }
 
 /** A result's own one-line reading, for a cell that has to say it in one line. */
-export function resultLabel(result: VerifyResult | null): string {
+export function resultLabel(result: VerifyResult | null): VerifyResultLabel {
   if (!result) {
     return "never ran"
   }

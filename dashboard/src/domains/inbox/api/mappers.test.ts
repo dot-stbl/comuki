@@ -9,6 +9,11 @@ import {
   mapSeedTicketToTicket,
   normalizeTicketStatus,
 } from "@/domains/inbox/api/mappers"
+import {
+  isKnownProvider,
+  providerBrand,
+  providerLabel,
+} from "@/domains/sources/model/providers"
 import type { IntakeTicketView } from "@/shared/api/_generated/types/IntakeTicketView"
 import { SOURCES_SEED } from "@/shared/api/mock/sources.seed"
 
@@ -103,6 +108,56 @@ describe("mapIntakeTicketViewToTicket", () => {
     )
 
     expect(ticket.status).toBe("pending")
+  })
+})
+
+/**
+ * The third catalogue, and the one that had already conceded the point.
+ *
+ * `Ticket.source` was a bare `string` with the five provider words written
+ * out in a doc comment — open, honest about being open, and with nowhere to
+ * look a word up. It is a `ProviderKey` now: the same `string`, with the
+ * registry the sources table and the intake cards read behind it.
+ *
+ * `TicketStatus` next door stays closed, and the contrast is the point. That
+ * set is the *screen's* — four lifecycle states it knows how to draw, and an
+ * unrecognised one is normalised to `pending` because a fifth would have no
+ * rendering. A provider is not like that: the screen needs a word and a mark,
+ * and the registry can hand back the host's own word for the first and `null`
+ * for the second without inventing anything.
+ */
+describe("a ticket's provider", () => {
+  it("passes the host's word through untouched, whatever it is", () => {
+    // No normalisation, no fallback, no 'unknown' bucket — the opposite of
+    // what happens to a status one line above, and for the opposite reason.
+    for (const source of ["github", "native", "linear", "monday.com"]) {
+      expect(mapIntakeTicketViewToTicket(ticketViewFixture({ source })).source)
+        .toBe(source)
+    }
+  })
+
+  it("reads as itself on a screen even with no registry entry", () => {
+    const ticket = mapIntakeTicketViewToTicket(
+      ticketViewFixture({ source: "linear" }),
+    )
+
+    // What any surface showing this row would ask. Never an empty cell, and
+    // never a guessed mark.
+    expect(isKnownProvider(ticket.source)).toBe(false)
+    expect(providerLabel(ticket.source)).toBe("linear")
+    expect(providerBrand(ticket.source)).toBeNull()
+  })
+
+  it("reaches the same registry the sources table does", () => {
+    const ticket = mapIntakeTicketViewToTicket(
+      ticketViewFixture({ source: "yandex-tracker" }),
+    )
+
+    // One vocabulary for one provider, across three domains: the word this
+    // row shows is the word the connection row shows, because it is the same
+    // entry and there is no second table to disagree with.
+    expect(providerLabel(ticket.source)).toBe("yandex tracker")
+    expect(providerBrand(ticket.source)).toBeNull()
   })
 })
 

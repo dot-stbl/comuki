@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   BUILT_IN_COMMANDS,
@@ -77,6 +77,53 @@ describe("which commands the composer offers", () => {
   it("drops a command declared in a project the session cannot see", () => {
     const offered = availableCommands(session(["member"]), CUSTOM)
     expect(offered.map((entry) => entry.name)).not.toContain("/elsewhere")
+  })
+
+  it("lets the built-in win a name collision, and says so", () => {
+    // The host's catalog merges its own built-ins with the control-plane
+    // pack and sends both down one wire, so `/help` arrives here beside the
+    // entry this bundle ships. The platform's wins: `/help` is the way out
+    // of the situation where everything else has stopped making sense, and
+    // a pack that could shadow it could take that exit away.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    const shadow: SlashCommand = {
+      name: "/help",
+      description: "a pack's idea of help",
+      origin: "client",
+      scope: "implied",
+      projectId: "p_one",
+    }
+
+    const offered = availableCommands(session(["member"]), [shadow, ...CUSTOM])
+
+    const helps = offered.filter((entry) => entry.name === "/help")
+    expect(helps).toHaveLength(1)
+    expect(helps[0]?.origin).toBe("built-in")
+    expect(helps[0]?.description).toBe("what the console can do")
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0]?.[0]).toContain("/help")
+    // The rest of the wire's commands are unaffected by one shadowed row.
+    expect(offered.map((entry) => entry.name)).toContain("/release")
+
+    warn.mockRestore()
+  })
+
+  it("hands the menu a unique name per row, which is its React key", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    const collisions: SlashCommand[] = BUILT_IN_COMMANDS.map((entry) => ({
+      ...entry,
+      origin: "client",
+      description: "a pack's idea of it",
+    }))
+
+    const names = availableCommands(session(["member"]), [
+      ...collisions,
+      ...CUSTOM,
+    ]).map((entry) => entry.name)
+
+    expect(new Set(names).size).toBe(names.length)
+
+    warn.mockRestore()
   })
 
   it("offers every built-in command §7 names", () => {

@@ -93,6 +93,7 @@ public sealed class ChatSessionsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public Task<ActionResult> PostMessageAsync(
         Guid sessionId,
         [FromBody] PostChatMessageRequest request,
@@ -147,6 +148,7 @@ public sealed class ChatSessionsController(
     [ProducesResponseType<ChatTurnResultView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public Task<ActionResult> ApproveAsync(
         Guid sessionId,
         [FromBody] ChatApproveRequest request,

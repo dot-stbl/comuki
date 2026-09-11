@@ -1,12 +1,11 @@
 import {
-  SELF_HOSTED_KINDS,
   SOURCES_SEED,
-  STATUS_MAPPINGS,
+  seedSelfHostable,
+  seedStatusMapping,
   type SeedAdmissionMode,
   type SeedNativeTicket,
   type SeedSourceAuth,
   type SeedSourceConnection,
-  type SeedSourceKind,
   type SeedSourcesSnapshot,
   type SeedSourceWatch,
 } from "./sources.seed"
@@ -60,7 +59,13 @@ export function readSeedSources(): SeedSourcesSnapshot {
 /** What a connect form has collected, minus the secret. */
 export interface SeedSourceDraft {
   projectId: string
-  kind: SeedSourceKind
+  /**
+   * The provider word the client chose. A `string`, like the wire's
+   * `provider` field and like `SeedSourceConnection.kind` — this host stores
+   * what it is sent rather than narrowing it to its own connector list, which
+   * is what lets a provider the dashboard has never met exist in mock mode.
+   */
+  kind: string
   name: string
   auth: SeedSourceAuth
   account: string
@@ -99,7 +104,7 @@ export function probeSeedSourceDraft(
   draft: SeedSourceDraft,
   secret: string
 ): SeedProbeResult {
-  const needsHost = SELF_HOSTED_KINDS.includes(draft.kind)
+  const needsHost = seedSelfHostable(draft.kind)
   const trimmed = draft.baseUrl.trim()
 
   if (needsHost && trimmed.length === 0) {
@@ -130,7 +135,7 @@ export function probeSeedSourceDraft(
 }
 
 /** The endpoint a cloud provider answers on, for the sentence's sake. */
-function cloudHost(kind: SeedSourceKind): string {
+function cloudHost(kind: string): string {
   switch (kind) {
     case "github":
       return "api.github.com"
@@ -197,7 +202,7 @@ export function probeSeedConnection(connectionId: string): SeedProbeResult {
  */
 export function connectSeedSource(draft: SeedSourceDraft): SeedSourceConnection {
   const selfHosted =
-    SELF_HOSTED_KINDS.includes(draft.kind) && draft.baseUrl.trim().length > 0
+    seedSelfHostable(draft.kind) && draft.baseUrl.trim().length > 0
   const connection: SeedSourceConnection = {
     id: `src_${draft.kind.replace(/-/g, "")}_${Date.now().toString(36)}`,
     projectId: draft.projectId,
@@ -218,7 +223,7 @@ export function connectSeedSource(draft: SeedSourceDraft): SeedSourceConnection 
       filter: "",
       mode: "inbox-only",
       matched: 0,
-      mapping: STATUS_MAPPINGS[draft.kind],
+      mapping: seedStatusMapping(draft.kind),
     },
   }
 
@@ -262,7 +267,7 @@ export function updateSeedConnection(
       if (entry.id !== connectionId) {
         return entry
       }
-      const wantsHost = SELF_HOSTED_KINDS.includes(entry.kind)
+      const wantsHost = seedSelfHostable(entry.kind)
       const baseUrl = wantsHost ? trimmed : ""
       return {
         ...entry,

@@ -352,3 +352,71 @@
   --shadow-header: 0 6px 14px -10px color-mix(in oklab, #000 70%, transparent);
   --shadow-pinned: 4px 0 10px 0 color-mix(in oklab, #000 55%, transparent);
 }
+
+/* ------------------------------------------------------------------ *
+ * The status declaration.
+ *
+ * A status is never hue alone: `--hue` is the colour and `--weave` is the
+ * hatch, and this block is the only place in the product that pairs a status
+ * word with either of them. It used to be six blocks in six modules, spelled
+ * three different ways — two near-identical six-arm copies, one with an alias
+ * bolted on, and three that reached past `--hue` for `var(--st-…)` directly —
+ * so a seventh status cost fourteen files and an encoding could drift between
+ * two screens without anything failing. A consumer now says `var(--hue)` and
+ * `var(--weave)` and names no status at all; a seventh status is one arm here
+ * plus its two tokens above.
+ *
+ * It is derived, not stated, which is why it sits in this file: both sides
+ * come from tokens that already exist — `--st-*` from whichever theme matched,
+ * `--weave-*` from the block above — and a theme never touches it.
+ *
+ * The attribute rather than a class, because `data-status` is already on every
+ * element that carries a status, so the pair lands wherever the fact does. A
+ * module marks *what it paints* (`background-color: var(--hue)`) and never
+ * *which status* it is painting.
+ *
+ * A consumer may read one channel and not the other, and two deliberately do:
+ * a mark with no words beside it needs both, while the badge and the bar
+ * series spell the status out in words next to themselves and take the hue as
+ * reinforcement. What no consumer may do is invent a value for either.
+ * ------------------------------------------------------------------ */
+
+[data-status="running"] {
+  --hue: var(--st-running);
+  --weave: var(--weave-running);
+}
+
+[data-status="queued"] {
+  --hue: var(--st-queued);
+  --weave: var(--weave-queued);
+}
+
+[data-status="waiting"] {
+  --hue: var(--st-waiting);
+  --weave: var(--weave-waiting);
+}
+
+[data-status="escalated"] {
+  --hue: var(--st-escalated);
+  --weave: var(--weave-escalated);
+}
+
+[data-status="failed"] {
+  --hue: var(--st-failed);
+  --weave: var(--weave-failed);
+}
+
+[data-status="success"] {
+  --hue: var(--st-success);
+  --weave: var(--weave-success);
+}
+
+/* Not a status, and the only value here that is not one of the six. The duty
+   screen's verdict band says `clear` when nothing needs a person, and borrows
+   success's pair to say it. It lives here rather than in that band's module so
+   the attribute has exactly one vocabulary and the audit above stays true —
+   recorded as residue in DESIGN.md's Stated Gaps. */
+[data-status="clear"] {
+  --hue: var(--st-success);
+  --weave: var(--weave-success);
+}

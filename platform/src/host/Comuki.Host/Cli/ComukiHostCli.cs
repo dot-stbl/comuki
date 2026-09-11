@@ -1,4 +1,6 @@
+using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Cli;
+using Comuki.Shared.Bootstrap.Config;
 
 namespace Comuki.Host.Cli;
 
@@ -13,11 +15,44 @@ namespace Comuki.Host.Cli;
 /// </summary>
 internal static class ComukiHostCli
 {
-    /// <summary>Handles <c>version</c>; null when the args are not a CLI command.</summary>
+    /// <summary>Handles <c>version</c> / <c>config show</c> / <c>doctor</c> / <c>init</c>; null when the args are not a CLI command.</summary>
     public static int? TryRun(string[] args)
     {
-        return ComukiCli.IsCommand(args, ComukiCli.VersionCommand)
-            ? ComukiCli.RunVersion("comuki")
-            : null;
+        return ComukiHostCliRouter.Route(args, Console.Out);
+    }
+
+    /// <summary>Prints the effective configuration (config.toml + COMUKI_* env) with secrets masked.</summary>
+    internal static int RunConfigShow(TextWriter writer)
+    {
+        var configuration = new ConfigurationBuilder()
+            .UseComukiConfiguration()
+            .Build();
+
+        foreach (var line in ComukiConfigView.Render((ConfigurationRoot)configuration))
+        {
+            writer.WriteLine(line);
+        }
+
+        return 0;
+    }
+}
+
+/// <summary>Command routing of the comuki operator CLI: first argument selects the command.</summary>
+file static class ComukiHostCliRouter
+{
+    public static int? Route(string[] args, TextWriter writer)
+    {
+        return args switch
+        {
+            [var command, ..] when Matches(command, ComukiCli.VersionCommand) => ComukiCli.RunVersion("comuki", writer),
+            [var command, var subcommand, ..] when Matches(command, "config") && Matches(subcommand, "show")
+                => ComukiHostCli.RunConfigShow(writer),
+            _ => null,
+        };
+    }
+
+    public static bool Matches(string value, string command)
+    {
+        return string.Equals(value, command, StringComparison.OrdinalIgnoreCase);
     }
 }

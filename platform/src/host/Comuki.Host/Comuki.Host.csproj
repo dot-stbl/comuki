@@ -66,6 +66,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Comuki.Host.Unit.Auth" />
+    <InternalsVisibleTo Include="Comuki.Host.Unit.Cli" />
     <InternalsVisibleTo Include="Comuki.Host.Unit.Mcp" />
     <InternalsVisibleTo Include="Comuki.Host.Unit.OidcSweeper" />
     <InternalsVisibleTo Include="Comuki.Host.Unit.WorkerRuntime" />

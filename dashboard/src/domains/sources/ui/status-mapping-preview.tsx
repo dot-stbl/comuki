@@ -1,6 +1,9 @@
 import { Fragment } from "react"
 
-import { providerLabel } from "@/domains/sources/model/providers"
+import {
+  isNativeIntake,
+  providerLabel,
+} from "@/domains/sources/model/providers"
 import type { ProviderKey, StatusMap } from "@/domains/sources/model/types"
 import { StatusBadge } from "@/shared/ui"
 
@@ -36,9 +39,17 @@ export function StatusMappingPreview({
         status written back to {providerLabel(kind)}
       </h3>
       {mapping.length === 0 ? (
+        /* Two different reasons for an empty mapping, and they are not the
+           same sentence. Native intake *is* the tracker, so there is nowhere
+           to write back to — a fact, and final. A provider this build has no
+           entry for has a tracker at the other end and nobody has written
+           down what its words are — a gap, and temporary. Saying the first
+           about the second would tell the operator their tickets are being
+           written back when nothing is. */
         <p className={styles.none}>
-          native intake is the tracker. A run&apos;s status is the ticket&apos;s
-          status, so there is nowhere to write it back to.
+          {isNativeIntake(kind)
+            ? "native intake is the tracker. A run's status is the ticket's status, so there is nowhere to write it back to."
+            : `nothing is written back to ${providerLabel(kind)} — this build has no mapping for that provider, so a run's status stays on the run.`}
         </p>
       ) : (
         // `dt` and `dd` sit directly under the `dl` rather than in the

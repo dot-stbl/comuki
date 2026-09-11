@@ -1,5 +1,7 @@
 import type { SourceConnectionView } from "@/shared/api/_generated/types/SourceConnectionView"
+import { isSourceKind } from "@/domains/sources/model/providers"
 import type {
+  ConnectionKind,
   SourceAuth,
   SourceConnection,
   SourceKind,
@@ -79,7 +81,10 @@ function parseSettings(settingsJson: string): ParsedSettings {
 export function sourceConnectionViewToConnection(
   view: SourceConnectionView
 ): SourceConnection {
-  const kind = providerToKind(view.provider)
+  // A provider the dashboard knows, or the host's own word for one it does
+  // not. The row stays on the screen either way, and the word is what the
+  // provider cell says instead of nothing.
+  const kind: ConnectionKind = providerToKind(view.provider) ?? view.provider
   const settings = parseSettings(view.settingsJson)
 
   return {
@@ -148,24 +153,23 @@ export function settingsToJson(settings: {
   return JSON.stringify(object)
 }
 
-function providerToKind(provider: string): SourceKind {
-  // The host's vocabulary and the dashboard's agree today; the cast is the
-  // form. A future provider the dashboard does not yet know about would
-  // arrive as `unknown` here — caught by `SOURCE_KIND_BRAND` / `SOURCE_KIND_LABEL`
-  // rendering as `undefined`. Until then, the trust is local.
-  switch (provider) {
-    case "github":
-    case "gitlab":
-    case "jira":
-    case "yandex-tracker":
-    case "native":
-      return provider
-    default:
-      // Unknown provider — leave the row on the screen with the host's own
-      // word rather than failing closed; the brand tag and the label map
-      // both degrade to a spelled fallback in `providers.ts`.
-      return provider as SourceKind
-  }
+/**
+ * Wire provider word → domain kind, or `null` when this build has no kind
+ * for it.
+ *
+ * `null` rather than a cast, because a word that is not in `SourceKind` does
+ * not become one by being asserted. Six exhaustive `Record<SourceKind, …>`
+ * tables read that union — labels, marks, auth, self-hosting, filter fields,
+ * status mappings — and a fabricated member makes every one of them answer
+ * `undefined` at runtime. The provider column did not "degrade to the host's
+ * word" the way the old comment claimed; it rendered an empty cell.
+ *
+ * The host's word is not lost: `sourceConnectionViewToConnection` keeps it on
+ * the connection as a `ConnectionKind`, and the display helpers in
+ * `providers.ts` say it out loud.
+ */
+function providerToKind(provider: string): SourceKind | null {
+  return isSourceKind(provider) ? provider : null
 }
 
 /**

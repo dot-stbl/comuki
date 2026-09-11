@@ -5,8 +5,8 @@ import {
   ADMISSION_MODES,
   NATIVE_DISCONNECT_REFUSAL,
   SOURCE_KINDS,
-  SOURCE_KIND_BRAND,
-  SOURCE_KIND_LABEL,
+  sourceKindBrand,
+  sourceKindLabel,
   admissionLabel,
   admittedCount,
   connectionHost,
@@ -180,14 +180,22 @@ export function createSourceColumns({
       accessorKey: "kind",
       header: "provider",
       // The mark, where the provider has one that survives being drained to the
-      // chrome's own colour, and the word where it does not — the fallback is
-      // the component's, not this cell's, so a provider added later cannot end
-      // up as an empty cell. The name goes nowhere: it is still what the filter
-      // offers, what the row announces and what a hover says.
+      // chrome's own colour, and the word where it does not. The name goes
+      // nowhere: it is still what the filter offers, what the row announces and
+      // what a hover says.
+      //
+      // Both halves come from the helpers, not from the tables directly, and
+      // that is the whole of the fix here. `BrandTag` does survive a `null`
+      // brand — it has an honest "write it in words" branch — but the words it
+      // writes are the `label` this cell hands it, and indexing
+      // `SOURCE_KIND_LABEL` with a provider the dashboard has not learned gave
+      // it `undefined`: a component fallback cannot save a cell whose text was
+      // never supplied. `sourceKindLabel` falls back to the host's own word, so
+      // an unknown provider reads as itself rather than as nothing.
       cell: ({ row }) => (
         <BrandTag
-          brand={SOURCE_KIND_BRAND[row.original.kind]}
-          label={SOURCE_KIND_LABEL[row.original.kind]}
+          brand={sourceKindBrand(row.original.kind)}
+          label={sourceKindLabel(row.original.kind)}
         />
       ),
       meta: {
@@ -199,7 +207,7 @@ export function createSourceColumns({
           placeholder: "all providers",
           options: SOURCE_KINDS.map((kind) => ({
             value: kind,
-            label: SOURCE_KIND_LABEL[kind],
+            label: sourceKindLabel(kind),
           })),
         },
       },

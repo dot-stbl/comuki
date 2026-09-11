@@ -18,6 +18,7 @@ import type {
   SourceConnection,
   SourceKind,
 } from "@/domains/sources/model/types"
+import { sourceConnectionViewToConnection } from "@/domains/sources/api/mappers"
 import {
   createSourceColumns,
   getConnectionId,
@@ -111,7 +112,7 @@ const CONNECTIONS: SourceConnection[] = SOURCE_KINDS.map(
   })
 )
 
-function List() {
+function List({ data = CONNECTIONS }: { data?: SourceConnection[] }) {
   const session = useSession()
   const columns = useMemo(
     () =>
@@ -131,17 +132,17 @@ function List() {
   return (
     <DataTable
       columns={columns}
-      data={CONNECTIONS}
+      data={data}
       getRowId={getConnectionId}
       density="compact"
     />
   )
 }
 
-async function mount() {
+async function mount(data: SourceConnection[] = CONNECTIONS) {
   await renderInRouter(
     <TestSession roles={["platform-admin"]}>
-      <List />
+      <List data={data} />
     </TestSession>
   )
 }
@@ -269,5 +270,54 @@ describe("an icon-only act says what it does", () => {
     expect((await screen.findByRole("tooltip")).textContent).toBe(
       "needs project-admin or platform-admin on test"
     )
+  })
+})
+
+/**
+ * A provider the dashboard has not learned yet.
+ *
+ * `SourceConnectionView.provider` is a free `string`, and the mapper used to
+ * assert it into `SourceKind`. The cell then indexed two exhaustive tables
+ * with a key neither of them has: `SOURCE_KIND_BRAND["linear"]` is
+ * `undefined`, which `BrandTag` does survive — it has an honest "write it in
+ * words" branch — but `SOURCE_KIND_LABEL["linear"]` is `undefined` too, and
+ * those are the words. The component's fallback could not save a cell whose
+ * text was never supplied, and the row rendered a connection with no provider
+ * on it at all.
+ */
+describe("a provider the dashboard has never met", () => {
+  const UNKNOWN = sourceConnectionViewToConnection({
+    id: "src_linear",
+    projectId: "p_test",
+    provider: "linear",
+    name: "linear source",
+    settingsJson: "{}",
+    secretEnvRef: "env:LINEAR_TOKEN",
+    webhookPath: "",
+    enabled: true,
+  })
+
+  it("keeps the host's own word on the row rather than an empty cell", async () => {
+    await mount([...CONNECTIONS, UNKNOWN])
+
+    const spelled = tags().filter(
+      (tag) => tag.getAttribute("data-brand") === "none"
+    )
+    // Two now: yandex tracker, which is spelled by decision, and linear,
+    // which is spelled because nobody has decided anything about it yet.
+    expect(spelled.map((tag) => tag.textContent)).toEqual([
+      "yandex tracker",
+      "linear",
+    ])
+  })
+
+  it("draws no mark for it, rather than guessing one", async () => {
+    await mount([...CONNECTIONS, UNKNOWN])
+
+    const drawn = tags()
+      .map((tag) => tag.getAttribute("data-brand"))
+      .filter((brand) => brand !== "none")
+
+    expect(drawn).toEqual(["github", "gitlab", "jira", "comuki"])
   })
 })

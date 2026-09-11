@@ -17,8 +17,8 @@ import { useSourcesQuery } from "@/domains/sources/api/queries"
 import {
   AUTH_LABEL,
   NATIVE_DISCONNECT_REFUSAL,
-  SOURCE_KIND_BRAND,
-  SOURCE_KIND_LABEL,
+  sourceKindBrand,
+  sourceKindLabel,
   admittedCount,
   connectionHost,
   connectionNote,
@@ -361,7 +361,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     <FormPage
       title={connection.name}
       crumbs={crumbs}
-      summary={`${SOURCE_KIND_LABEL[connection.kind]} · ${projectKey} · ${connectionNote(connection, tickets)}`}
+      summary={`${sourceKindLabel(connection.kind)} · ${projectKey} · ${connectionNote(connection, tickets)}`}
       actions={
         <>
           <ConnectionStateBadge state={connection.state} />
@@ -433,8 +433,8 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                   not — the fallback lives in the component, exactly as it does
                   in the list's provider column. */}
               <BrandTag
-                brand={SOURCE_KIND_BRAND[connection.kind]}
-                label={SOURCE_KIND_LABEL[connection.kind]}
+                brand={sourceKindBrand(connection.kind)}
+                label={sourceKindLabel(connection.kind)}
               />
             </span>
           </dd>

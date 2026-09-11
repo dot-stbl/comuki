@@ -17,6 +17,25 @@ export type SourceKind =
   "github" | "gitlab" | "yandex-tracker" | "jira" | "native"
 
 /**
+ * What a *connection* says its provider is: one of the five kinds above, or —
+ * when the host names a provider this build has not learned — the host's own
+ * word, verbatim.
+ *
+ * The two halves are not interchangeable and the difference is load-bearing.
+ * Six exhaustive `Record<SourceKind, …>` tables key on `SourceKind`, and a
+ * member fabricated from wire data (`SourceConnectionView.provider` is a free
+ * `string`) makes every one of them answer `undefined` at runtime — which is
+ * how the provider column came to render an empty cell for a provider the
+ * dashboard had not met yet. So the wider type is spelled here, at the one
+ * place the wider value can arrive, and every reader either narrows it with
+ * `isSourceKind` or degrades to the word itself.
+ *
+ * `string & {}` rather than a plain `string` so the five literals still
+ * autocomplete and still narrow on `===`.
+ */
+export type ConnectionKind = SourceKind | (string & {})
+
+/**
  * How a connection stands. The requirements' three words, verbatim.
  *
  * Deliberately not a run status and deliberately not spelled like one: a
@@ -58,7 +77,8 @@ export interface SourceConnection {
   id: string
   /** The project this connection feeds. An attribute of the row, not a mode. */
   projectId: string
-  kind: SourceKind
+  /** One of the five, or the host's own word for a sixth. See `ConnectionKind`. */
+  kind: ConnectionKind
   name: string
   state: SourceState
   /** Why it is in `error`, in the provider's own words. `error` only. */

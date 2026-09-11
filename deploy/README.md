@@ -172,7 +172,7 @@ The migrator has its own dry-run:
 
 | Command | What it does | Exit codes |
 |---|---|---|
-| `comuki-migrator status` | Lists pending migrations per schema without applying anything (`pending (orchestration): 20260911…` / `orchestration schema is up to date`) — for CI gates. | 0 all applied · 1 pending · 2 error |
+| `comuki-migrator status` | Lists pending migrations per schema without applying anything and with zero DDL (`pending (orchestration): 20260911…` / `orchestration schema is up to date`); a not-yet-provisioned schema reads as pending (`schema not provisioned`) — for CI gates. | 0 all applied · 1 pending · 2 error |
 
 ### Correlation id
 

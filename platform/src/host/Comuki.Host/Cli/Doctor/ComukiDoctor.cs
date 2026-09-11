@@ -49,9 +49,10 @@ internal static class ComukiDoctor
             ComukiDoctorChecks.CheckEnvironment(env),
             await ComukiDoctorChecks.CheckDatabaseAsync(configuration, probeDatabaseAsync, cancellationToken)
         };
-        checks.AddRange(ComukiDoctorChecks.CheckSecrets(env));
+        checks.AddRange(ComukiDoctorChecks.CheckSecrets(configuration, env));
 
-        foreach (var check in ComukiDoctorChecks.WithMigrationsHint(checks))
+        ComukiDoctorChecks.AppendMigrationsHint(checks);
+        foreach (var check in checks)
         {
             writer.WriteLine(check.Render());
         }
@@ -126,16 +127,13 @@ file static class ComukiDoctorChecks
     }
 
     /// <summary>Runs the production-secret audit as doctor checks for the resolved environment.</summary>
-    public static IReadOnlyList<DoctorCheck> CheckSecrets(Func<string, string?> lookupEnv)
+    public static IReadOnlyList<DoctorCheck> CheckSecrets(IConfiguration configuration, Func<string, string?> lookupEnv)
     {
         var environment = ComukiEnvironment.ResolveDetailed(lookupEnv);
-        var configuration = new ConfigurationBuilder()
-            .UseComukiConfiguration()
-            .Build();
 
         var services = new ServiceCollection()
             .AddSingleton<IHostEnvironment>(new ComukiDoctorHostEnvironment(environment.Environment))
-            .AddSingleton<IConfiguration>(configuration)
+            .AddSingleton(configuration)
             .AddSingleton(Options.Create(ComukiDoctorSecrets.BindArtifacts(configuration)))
             .AddSingleton(Options.Create(configuration.GetSection(ApiKeyOptions.SectionName).Get<ApiKeyOptions>() ?? new ApiKeyOptions()))
             .AddSingleton(Options.Create(configuration.GetSection(WorkerTokenOptions.SectionName).Get<WorkerTokenOptions>() ?? new WorkerTokenOptions()))
@@ -155,11 +153,10 @@ file static class ComukiDoctorChecks
                 finding.Detail))];
     }
 
-    /// <summary>Appends the pointer to comuki-migrator status (migrations are deliberately not probed here).</summary>
-    public static IReadOnlyList<DoctorCheck> WithMigrationsHint(List<DoctorCheck> checks)
+    /// <summary>Appends the migrations pointer check; migrations are deliberately not probed here.</summary>
+    public static void AppendMigrationsHint(List<DoctorCheck> checks)
     {
         checks.Add(new DoctorCheck("migrations", DoctorCheckStatus.Ok, "not checked here — run `comuki-migrator status`"));
-        return checks;
     }
 }
 

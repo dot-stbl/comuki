@@ -7,7 +7,14 @@ namespace Comuki.Modules.Chat.Unit;
 
 /// <summary>
 /// Scriptable brain port: records every request, answers plan invocations
-/// with a fixed single-item plan and chat invocations with a fixed reply.
+/// with a fixed single-item plan and answer invocations with a fixed reply.
+/// <para>
+/// It refuses an unknown kind the same way <c>BrainGrpcService.Think</c>
+/// does, so the graph cannot pass a test while routing a value the real
+/// brain would reject with <c>InvalidArgument</c>. The stub composed by the
+/// host answers anything, which is what let <c>brain_kind = "chat"</c> live
+/// here unnoticed.
+/// </para>
 /// </summary>
 public sealed class FakeBrainClient : IBrainClient
 {
@@ -21,7 +28,16 @@ public sealed class FakeBrainClient : IBrainClient
     public Task<BrainReply> InvokeAsync(BrainRequest request, CancellationToken cancellationToken = default)
     {
         Requests.Add(request);
-        var reply = request.Kind == "plan"
+
+        if (BrainRequestKindKeys.Parse(request.Kind) is null)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(request),
+                request.Kind,
+                "brain request kind must be plan | brief | repair | answer");
+        }
+
+        var reply = request.Kind == BrainRequestKindKeys.Plan
             ? new BrainReply([], PlanJson)
             : new BrainReply([], "brain says: " + request.Task);
         return Task.FromResult(reply);

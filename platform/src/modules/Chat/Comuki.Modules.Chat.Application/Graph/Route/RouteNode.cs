@@ -1,6 +1,7 @@
 using Comuki.Modules.Chat.Application.Graph.Catalog;
 using Comuki.Modules.Chat.Application.Graph.Channels;
 using Comuki.Modules.Chat.Application.Slash;
+using Comuki.Shared.Contracts.Brain;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 using Voluta.Graph;
@@ -43,7 +44,12 @@ public sealed class RouteNode(ChatSlashExpander expander) : IGraphNode
 
 /// <summary>Pure routing decision for non-slash messages.</summary>
 /// <param name="Phase">Target phase.</param>
-/// <param name="BrainKind">Brain invocation mode.</param>
+/// <param name="BrainKind">
+/// Brain invocation mode — always a key from
+/// <see cref="BrainRequestKindKeys"/>. The brain service rejects anything
+/// else with <c>InvalidArgument</c>, so an ad-hoc value here faults every
+/// turn the moment a real gRPC client replaces the in-process stub.
+/// </param>
 internal sealed record RouteDecision(string Phase, string BrainKind)
 {
     /// <summary>Task-looking messages without project scope are clarified; the rest thinks.</summary>
@@ -53,7 +59,9 @@ internal sealed record RouteDecision(string Phase, string BrainKind)
     {
         var looksLikeTask = ChatIntent.LooksLikeTask(message);
         return looksLikeTask && !hasProject
-            ? new RouteDecision(ChatPhases.Clarify, "chat")
-            : new RouteDecision(ChatPhases.Think, looksLikeTask ? "plan" : "chat");
+            ? new RouteDecision(ChatPhases.Clarify, BrainRequestKindKeys.Answer)
+            : new RouteDecision(
+                ChatPhases.Think,
+                looksLikeTask ? BrainRequestKindKeys.Plan : BrainRequestKindKeys.Answer);
     }
 }

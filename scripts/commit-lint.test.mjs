@@ -84,7 +84,6 @@ describe('lintSubject — bad examples from commit-format.md', () => {
     const report = lintSubject('feat: Added new endpoint.').join('\n');
 
     assert.match(report, /missing `\[hybrid\] ` prefix/);
-    assert.match(report, /start lowercase/);
     assert.match(report, /must not end with/);
   });
 });
@@ -107,7 +106,22 @@ describe('lintSubject — format contract', () => {
   });
 
   it('rejects an unknown type', () => {
-    assert.match(lintSubject('[hybrid] merge(readme): land the branch').join('\n'), /unknown type/);
+    assert.match(lintSubject('[hybrid] cleanup: drop the scratch files').join('\n'), /unknown type/);
+  });
+
+  it('accepts a hand-written merge commit', () => {
+    assertClean('[hybrid] merge(readme): OSS landing page');
+    assertClean('[hybrid] merge(oss-deploy): self-hosting artifacts — compose + helm + k8s');
+    assertClean('[hybrid] merge: sync github pr #55 (mask .net surface) into hybrid contour');
+  });
+
+  it('does not police the case of the description', () => {
+    // Identifiers and acronyms open a description all the time — the written
+    // rule asks for an imperative, not a lowercase, description.
+    assertClean('[hybrid] fix(host): SubjectScopeMiddleware wraps PermissionEvaluator in AsSystem');
+    assertClean('[hybrid] feat(deploy): OSS deployment artifacts — docker-compose + helm');
+    assertClean('[hybrid] fix(cve): CVE-2026-49451 bump plus 9 captive singletons');
+    assertClean('[hybrid] feat(secrets): VaultSecretProvider — Slice 2 of issue #52');
   });
 
   it('rejects an uppercase type and suggests the lowercase one', () => {
@@ -120,10 +134,6 @@ describe('lintSubject — format contract', () => {
 
   it('rejects an uppercase scope', () => {
     assert.match(lintSubject('[hybrid] feat(Orchestration): add thing').join('\n'), /scope/);
-  });
-
-  it('rejects an uppercase description', () => {
-    assert.match(lintSubject('[hybrid] feat(api): Add thing').join('\n'), /start lowercase/);
   });
 
   it('rejects a trailing period', () => {

@@ -1,0 +1,117 @@
+# =============================================================================
+# deploy/hybrid/dashboard-dev.yaml — dashboard (SPA + reverse proxy) in the
+# comuki dev contour.
+#
+# Applied manually by the `deploy:dashboard` CI job (KUBECONFIG_B64 + server
+# verification, same contract as infra:dev / migrate:dev): __IMAGE_TAG__ is
+# sed-replaced with $CI_COMMIT_SHORT_SHA (the dashboard image the same
+# pipeline built). Idempotent — safe to re-run.
+#
+# Lives in ns `comuki` (created by infra-dev.yaml with the
+# hybrid.contour/pull-secret label that projects the registry.hybrid.ai
+# dockerconfig into the namespace).
+#
+# NOT for prod: single replica, no securityContext (nginx master binds :80
+# as root, same posture as the pgvector pod in infra-dev.yaml).
+#
+# DNS: host app.comuki.nova.adcluster.targetix.net → ingress LB 10.5.21.13
+# (nsupdate against 10.0.0.114, zone nova.adcluster.targetix.net — see
+# virtual.deploy.dev/docs/dns.md; owner step, done once per contour).
+# =============================================================================
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: comuki-dashboard
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki-dashboard
+    app.kubernetes.io/part-of: comuki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: comuki-dashboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: comuki-dashboard
+        app.kubernetes.io/part-of: comuki
+    spec:
+      containers:
+        - name: dashboard
+          image: registry.hybrid.ai/comuki/dashboard:__IMAGE_TAG__
+          ports:
+            - containerPort: 80
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+      imagePullSecrets:
+        - name: registry.hybrid.ai
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: comuki-dashboard
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki-dashboard
+    app.kubernetes.io/part-of: comuki
+spec:
+  selector:
+    app.kubernetes.io/name: comuki-dashboard
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: comuki-dashboard
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki-dashboard
+    app.kubernetes.io/part-of: comuki
+  annotations:
+    # Same annotation set as the API ingress (deploy/hybrid/dev.yaml):
+    # forwarded headers for public-host URL building, large body for
+    # artifact uploads, long timeout for realtime (SignalR) connections.
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "150m"
+    nginx.ingress.kubernetes.io/proxy-timeout: "600s"
+spec:
+  ingressClassName: nginx-internal
+  rules:
+    - host: app.comuki.nova.adcluster.targetix.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: comuki-dashboard
+                port:
+                  number: 80

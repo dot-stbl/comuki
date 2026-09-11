@@ -10,7 +10,18 @@ using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Modules.Scheduler.Infrastructure.Persistence;
+using Comuki.Shared.Bootstrap.Cli;
+using Comuki.Shared.Bootstrap.Versioning;
 using Microsoft.EntityFrameworkCore;
+
+// Operator CLI (issue #56): `comuki-migrator version` runs before any
+// bootstrap and exits without touching config or the database.
+if (ComukiCli.IsCommand(args, ComukiCli.VersionCommand))
+{
+    return ComukiCli.RunVersion("comuki-migrator");
+}
+
+Console.WriteLine(ComukiBuildInfo.Read().ToVersionLine("comuki-migrator"));
 
 var recreate = args.Contains("--recreate", StringComparer.Ordinal);
 

@@ -35,7 +35,7 @@ const TASKS: Task[] = [
   {
     id: "m-3055",
     projectId: "p_test",
-    source: "manual",
+    source: "native",
     title: "retire the legacy webhook",
     app: "checkout-web",
     priority: "high",
@@ -45,7 +45,7 @@ const TASKS: Task[] = [
   {
     id: "m-3056",
     projectId: "p_other",
-    source: "manual",
+    source: "native",
     title: "rotate the signing key",
     app: "identity-svc",
     priority: "normal",
@@ -189,7 +189,7 @@ describe("the backlog's dispatch, by row", () => {
   })
 })
 
-describe("manual intake, by project", () => {
+describe("native intake, by project", () => {
   it("offers only the projects this shift may put work into", () => {
     // The choices behind an act are filtered even though the act itself stays
     // visible: a select is a list of things that can happen.
@@ -211,7 +211,7 @@ describe("manual intake, by project", () => {
       title: "look into the flake",
       app: "checkout-web",
       priority: "normal",
-      source: "manual",
+      source: "native",
       brief: undefined,
     })
   })
@@ -248,7 +248,7 @@ describe("manual intake, by project", () => {
       title: "look into the flake",
       app: "checkout-web",
       priority: "normal",
-      source: "manual",
+      source: "native",
       brief: undefined,
     })
   })

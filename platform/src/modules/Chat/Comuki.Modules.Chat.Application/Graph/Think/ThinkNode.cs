@@ -53,10 +53,15 @@ public sealed class ThinkNode(
             new BrainRequest { Kind = brainKind, ContextJson = ChatBrainContextJson.ToJson(history, digest), Task = task },
             cancellationToken);
 
+        // The brain's progress fragments are its visible reasoning — the
+        // journal keeps them as a thinking part instead of dropping them.
+        var thinking = string.Join("\n", reply.Chunks);
+
         if (brainKind != BrainRequestKindKeys.Plan)
         {
             return NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),
+                new ChannelWrite(ChatChannels.Thinking, thinking),
                 new ChannelWrite(ChatChannels.Reply, reply.FinalJson),
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Done));
         }
@@ -65,10 +70,12 @@ public sealed class ThinkNode(
         return outcome.Plan is null
             ? NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),
+                new ChannelWrite(ChatChannels.Thinking, thinking),
                 new ChannelWrite(ChatChannels.Reply, ChatPlanGate.InvalidPlanMessage),
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Done))
             : NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),
+                new ChannelWrite(ChatChannels.Thinking, thinking),
                 new ChannelWrite(ChatChannels.PlanJson, outcome.CanonicalJson),
                 new ChannelWrite(ChatChannels.Reply, ChatPlanGate.CardPrompt),
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Confirm));

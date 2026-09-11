@@ -157,7 +157,7 @@ comuki version=1.0.0 sha=41d265deae51dbd82291ef85a376a4b123d0521c build=2026-09-
 ```
 
 The same line is the first log record of every starting host, and
-`GET /api/v1/version` (anonymous, like `/health`) serves it as JSON for
+`GET /api/v1/version` (anonymous, like `/api/v1/health`) serves it as JSON for
 the dashboard footer.
 
 The orchestrator host adds first-run and diagnostics commands:

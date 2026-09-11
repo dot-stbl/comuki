@@ -12,7 +12,7 @@
 #   docker compose up -d --build  # first build takes a while (dotnet + bun)
 #
 # Dashboard:  http://localhost:17173   (nginx: SPA + /api + /realtime proxy)
-# Host API:   http://localhost:17172   (direct Kestrel, /health, /openapi/v1.json)
+# Host API:   http://localhost:17172   (direct Kestrel, /api/v1/health, /openapi/v1.json)
 #
 # Tear down + wipe data: docker compose down -v
 
@@ -134,7 +134,7 @@ services:
       comuki-migrator:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/v1/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 20

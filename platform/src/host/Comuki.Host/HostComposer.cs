@@ -419,9 +419,9 @@ internal static class HostComposer
 
         // Build info for operators and the dashboard footer (issue #56 §6):
         // version/sha/build date/mode - the same identity `comuki version`
-        // prints. Anonymous by design, exactly like /health.
+        // prints. Anonymous by design, exactly like the health probes.
         app.MapGet(ApiRoutes.Version, static () => Results.Ok(VersionResponse.From(ComukiBuildInfo.Read())));
-        app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        app.MapHealthChecks(ApiRoutes.HealthReady, new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
         {
             Predicate = static check => check.Tags.Contains("ready"),
         });

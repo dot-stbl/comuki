@@ -1,16 +1,16 @@
 # Comuki worker image — Slice 0 runtime (issue #4, T3.4).
 #
 # Multi-stage:
-#   1. build  — SDK stage compiles Comuki.Host.Translator (the container CMD)
+#   1. build  — SDK stage compiles the translator (the container CMD)
 #   2. final  — oven/bun + pi (@earendil-works/pi-coding-agent via bun add -g)
-#               + the published translator + ENTRYPOINT translator
+#               + the published translator + ENTRYPOINT comuki-translator
 #
 # pi needs bun >= 1.4 (0.84.x crashes on 1.3.x with
 # `webidl.util.markAsUncloneable is not a function` — T3.0 finding).
 #
-# The translator binary is framework-dependent .NET 10; the final stage
-# installs the ASP.NET/Core runtime via the dotnet install script. The
-# worker image intentionally carries no SDK.
+# The translator binary (comuki-translator, issue #54) is
+# framework-dependent .NET 10; the final stage installs the runtime via
+# the dotnet install script. The worker image carries no SDK.
 #
 # Sanity mode (no orchestrator): `podman run --rm --entrypoint pi <img> --version`
 # Reference: comuki-slice-0.md § Шаг 0 / 05; scope-draft § 4 Runtime.
@@ -59,7 +59,7 @@ VOLUME /work
 # COMUKI_ORCH_HTTP defaults to the orchestrator container on the compose
 # network; the rest of the COMUKI_* contract is stamped at container start.
 ENV COMUKI_ORCH_HTTP=http://comuki-host:8080 \
-    COMUKI_ORCH_GRPC=http://comuki-host:5051 \
+    COMUKI_ORCH_GRPC=http://comuki-host:8080 \
     COMUKI_PI_EXECUTABLE=pi
 
-ENTRYPOINT ["dotnet", "/app/translator/Comuki.Host.Translator.dll"]
+ENTRYPOINT ["/app/translator/comuki-translator"]

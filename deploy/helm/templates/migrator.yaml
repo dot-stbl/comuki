@@ -30,7 +30,7 @@ spec:
         - name: migrator
           image: {{ include "comuki.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["dotnet", "/app/migrator/Comuki.Migrator.dll"]
+          command: ["/app/migrator/comuki-migrator"]
           env:
             # Dependent-env expansion: must precede COMUKI_DB.
             - name: COMUKI_POSTGRES_PASSWORD
@@ -38,7 +38,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "comuki.secretName" . }}
                   key: postgres-password
-            - name: ASPNETCORE_ENVIRONMENT
+            - name: COMUKI_ENV
               value: {{ .Values.environment | quote }}
             - name: COMUKI_DB
               value: {{ include "comuki.dbConnectionString" . | quote }}

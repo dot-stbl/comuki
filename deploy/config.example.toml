@@ -1,0 +1,66 @@
+# Comuki platform configuration — example (issue #54).
+#
+# Copy to `config.toml` next to the binary (or set COMUKI_CONFIG_PATH).
+# Search order: $COMUKI_CONFIG_PATH → ./config.toml (working directory)
+# → /etc/comuki/config.toml (Linux only). No file found → empty
+# configuration, never an error.
+#
+# Every value here can be overridden by env: COMUKI_A_B → a:b
+# (single underscore is the section separator, binding case-insensitive).
+# Example: COMUKI_SERVER_PORT=18080 overrides [server] port below.
+#
+# NEVER put secrets in this file — credentials go through env vars:
+#   COMUKI_DB, COMUKI_IDENTITY_APIKEY_PEPPER, COMUKI_TOKEN_PEPPER,
+#   COMUKI_BOOTSTRAP_ADMIN_PASSWORD, COMUKI_ARTIFACTS_ACCESSKEY /
+#   _SECRETKEY, COMUKI_BRAIN_MODEL_API_KEY.
+
+[server]
+# HTTP listener of the orchestrator host. Commented out = the default
+# mechanism (in containers: ASPNETCORE_HTTP_PORTS from the base image).
+# host = "0.0.0.0"
+# port = 8080
+
+[brain]
+# Standalone brain host (comuki-brain): gRPC listener port from the
+# Comuki port pool (17000–17200; 17004 is the brain's row).
+grpcPort = 17004
+# maxToolIterations = 8
+
+[brain.model]
+# Any OpenAI-compatible endpoint. The API key stays in env:
+# COMUKI_BRAIN_MODEL_API_KEY.
+# endpoint = "https://api.example.com/v1"
+# modelId = "glm-4.7"
+
+[host.cors]
+# Browser origins allowed on the API.
+# allowedOrigins = ["http://localhost:17173"]
+
+[artifacts]
+# S3-compatible store for run bundles (MinIO). Keys via env:
+# COMUKI_ARTIFACTS_ACCESSKEY / COMUKI_ARTIFACTS_SECRETKEY.
+# endpoint = "minio:9000"
+# bucket = "comuki-run-bundles"
+# useSSL = false
+# autoCreateBucket = true
+
+[compute]
+# "docker" (default) or "kubernetes" — how worker containers spawn.
+# provider = "docker"
+
+[compute.docker]
+# networkMode = "comuki-net"
+
+[compute.scale]
+# workerImage = "comuki-worker:local"
+# orchestratorGrpcUrl = "http://comuki-host:8080"
+
+[telemetry]
+# OTLP gRPC endpoint (VictoriaMetrics :8431 in the compose stack);
+# unset = no OTel SDK.
+# otlpEndpoint = "http://victoriametrics:8431"
+
+[connectionStrings]
+# Fallback for the migrator when COMUKI_DB / COMUKI_DATABASE are unset.
+# Blank Password= is filled from COMUKI_MIGRATOR_DB_PASSWORD.
+# comuki = "Host=localhost;Port=5432;Database=comuki;Username=comuki;Password="

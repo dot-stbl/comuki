@@ -45,13 +45,14 @@ public static class RealtimeExtensions
     }
 
     /// <summary>
-    /// True when the host is running under <c>ASPNETCORE_ENVIRONMENT=Development</c>
-    /// (or its <c>DOTNET_ENVIRONMENT</c> mirror) — the canonical local-dev
-    /// signal — or when the dedicated <see cref="DetailedErrorsEnvVar"/>
-    /// support knob is set. Production never reaches either branch.
+    /// True when the host runs in Development — resolved from
+    /// <c>COMUKI_ENV</c> (with the quiet <c>ASPNETCORE_ENVIRONMENT</c> /
+    /// <c>DOTNET_ENVIRONMENT</c> fallbacks, issue #54) — or when the
+    /// dedicated <see cref="DetailedErrorsEnvVar"/> support knob is set.
+    /// Production never reaches either branch.
     /// </summary>
     /// <param name="environment"></param>
-    private static bool ShouldEnableDetailedErrors(IHostEnvironment environment)
+    public static bool ShouldEnableDetailedErrors(IHostEnvironment environment)
     {
         return environment.IsDevelopment()
             || string.Equals(

@@ -9,10 +9,10 @@ namespace Comuki.Migrator.Factories.Artifacts;
 /// Design-time factory for <c>dotnet ef</c>: Artifacts migrations are
 /// authored in <c>Comuki.Modules.Artifacts.Infrastructure</c>, this
 /// host supplies the connection string (env <c>COMUKI_DB</c> or
-/// appsettings.json — never used to connect at design time, only to
+/// config.toml — never used to connect at design time, only to
 /// build the provider model).
 /// </summary>
-public sealed class ArtifactsDesignTimeFactory : IDesignTimeDbContextFactory<ArtifactsDbContext>
+public sealed class ArtifactsDesignTimeFactory() : IDesignTimeDbContextFactory<ArtifactsDbContext>
 {
     /// <inheritdoc />
     public ArtifactsDbContext CreateDbContext(string[] args)

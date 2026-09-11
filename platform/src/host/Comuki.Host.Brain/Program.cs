@@ -41,7 +41,7 @@ builder.Configuration.UseComukiConfiguration();
 builder.WebHost.ConfigureKestrel(static server => server.AddServerHeader = false);
 
 builder.Logging.ClearProviders();
-builder.Logging.AddComukiConsole();
+builder.Logging.AddComukiConsole(builder.Configuration);
 
 var options = BrainOptions.Resolve(builder.Configuration);
 var connectionString = BrainDatabase.Resolve(builder.Configuration);

@@ -48,7 +48,7 @@ public static class ComukiBootstrapExtensions
         UseComukiConfiguration(builder.Configuration);
         builder.Environment.EnvironmentName = ComukiEnvironment.Resolve();
         builder.Logging.ClearProviders();
-        builder.Logging.AddComukiConsole();
+        builder.Logging.AddComukiConsole(builder.Configuration);
         return builder;
     }
 

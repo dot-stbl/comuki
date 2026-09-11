@@ -10,11 +10,14 @@ import type {
   ChatMessage,
   ChatSession,
   CommandScope,
+  MessageKind,
   Proposal,
   SlashCommand,
   ToolCall,
 } from "@/domains/chat/model/types"
 
+import type { ChatMessagesPageView } from "@/shared/api/_generated/types/ChatMessagesPageView"
+import type { ChatMessageView } from "@/shared/api/_generated/types/ChatMessageView"
 import type { ChatSessionView } from "@/shared/api/_generated/types/ChatSessionView"
 import type { ChatSlashCommand } from "@/shared/api/_generated/types/ChatSlashCommand"
 
@@ -181,11 +184,12 @@ export function chatSessionViewToDomainSession(
     id: view.id,
     title: view.title,
     age: formatAge(view.updatedAt),
-    // Real-mode conversations load their messages on demand (see
-    // `useChatMessagesQuery`). The session list reads `messages.length` only
-    // to render the empty-state for an unread conversation — the open
-    // conversation replaces the empty list with the fetched messages — so
-    // `[]` is the honest shape.
+    // Real-mode conversations load their messages on demand: the wire's
+    // session row carries none, and the open conversation's own query
+    // (`useChatMessagesQuery` in `queries.ts`, over
+    // `GET /api/v1/chat/sessions/{id}/messages`) lands them. The session list
+    // reads `messages.length` only to render the empty-state for an unread
+    // conversation, so `[]` is the honest shape here.
     messages: [],
   }
 }
@@ -215,4 +219,110 @@ export function chatSessionViewsToDomainSessions(
   views: ChatSessionView[]
 ): ChatSession[] {
   return views.map(chatSessionViewToDomainSession)
+}
+
+/**
+ * The transcript's roles, as the host spells them.
+ *
+ * `ChatMessageView.Role` is `ChatMessageRole` lower-cased — a closed set of
+ * four (`user | assistant | system | tool`) that kubb types as a bare
+ * `string`, so nothing in the type system keeps this table honest.
+ *
+ * Two of the four are obvious and two are decisions:
+ *
+ * - **`system` → `reply`.** The domain has no system kind and this change is
+ *   not the one that adds one. A system row is the memory digest the graph
+ *   fed the brain, journaled for audit (see `ChatMessage`'s docblock on the
+ *   host: "the table is the session history AND the audit journal"). It is
+ *   prose, so `reply` is the only kind that renders it at all — `error`
+ *   would announce a failure with `role="alert"` when nothing failed, and
+ *   `tool` would claim a call the row never made. The cost is that a digest
+ *   reads as something the console said, which is close to true: the console
+ *   is what said it, to the brain.
+ * - **anything else → `reply`**, for the same reason. An unrecognised role
+ *   from a host this bundle is older than still carries text an operator is
+ *   entitled to read, and dropping the row would leave a thread with a hole
+ *   in it that nothing on screen explains.
+ */
+const WIRE_TO_DOMAIN_MESSAGE_KIND: Record<string, MessageKind | undefined> = {
+  user: "person",
+  assistant: "reply",
+  system: "reply",
+  tool: "tool",
+}
+
+const UNKNOWN_MESSAGE_KIND: MessageKind = "reply"
+
+/**
+ * `HH:MM`, local.
+ *
+ * `ChatMessage.at` is a pre-formatted local clock string rather than a
+ * timestamp — a contract the larger console change is on the hook for, not
+ * this one. Until then the two stamps have to agree, so this is `clock()`
+ * from `shared/api/mock/chat.store.ts` reading a wire `date-time` instead of
+ * `Date.now()`; a mock thread and a real one read identically.
+ */
+function clockOf(createdAt: string): string {
+  const at = new Date(createdAt)
+  if (Number.isNaN(at.getTime())) {
+    return ""
+  }
+  const hh = `${at.getHours()}`.padStart(2, "0")
+  const mm = `${at.getMinutes()}`.padStart(2, "0")
+  return `${hh}:${mm}`
+}
+
+/**
+ * One transcript row → one domain message.
+ *
+ * The wire is thinner than the domain in both directions that matter. It has
+ * no proposal and no hand-off, because the host does not yet send either as
+ * a message — the turn result carries `awaitingApproval` instead — and it has
+ * no `streaming`, because a page of history is by definition already
+ * arrived. Those fields stay absent rather than being invented here.
+ *
+ * A tool row is the one that needs assembling: the wire journals the
+ * *observation* (`toolName` plus the result as `content`) and not the call,
+ * so `args` is empty rather than fabricated and the status is `success` —
+ * the host appends a tool row after the call returned, and a turn that
+ * failed is journaled as its own message.
+ */
+export function chatMessageViewToDomainMessage(
+  view: ChatMessageView
+): ChatMessage {
+  const kind = WIRE_TO_DOMAIN_MESSAGE_KIND[view.role] ?? UNKNOWN_MESSAGE_KIND
+  const tool: ToolCall | undefined =
+    kind === "tool"
+      ? {
+          name: view.toolName ?? "",
+          args: "",
+          status: "success",
+          result: view.content,
+        }
+      : undefined
+
+  return {
+    id: view.id,
+    kind,
+    // A tool row's prose *is* its result, and the card reads it off the tool
+    // record. A second copy on `text` would render the same line twice the
+    // day somebody widens the prose branch in `ui/chat-message.tsx`.
+    text: tool ? undefined : view.content,
+    tool,
+    at: clockOf(view.createdAt),
+  }
+}
+
+/**
+ * One page of the transcript → the thread.
+ *
+ * `items` arrive oldest-first and the log renders oldest-first, so the order
+ * is carried through untouched. Paging is not wired: the console asks for the
+ * first page and the query names the size (`queries.ts`), which is the same
+ * "one window of history" the graph's own `HistoryWindow` works with.
+ */
+export function chatMessagesPageToDomainMessages(
+  page: ChatMessagesPageView
+): ChatMessage[] {
+  return page.items.map(chatMessageViewToDomainMessage)
 }

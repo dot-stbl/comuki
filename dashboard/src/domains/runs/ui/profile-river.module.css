@@ -141,39 +141,11 @@
   background: var(--flow-ribbon);
 }
 
-/* Status is carried by weave as well as hue, and both come from tokens: the
-   legend swatch, the collapsed strip and the run graph consume the same two
-   properties, so the cue can never drift apart between the screens. */
-.status[data-status="running"] {
-  --hue: var(--st-running);
-  --weave: var(--weave-running);
-}
-
-.status[data-status="waiting"] {
-  --hue: var(--st-waiting);
-  --weave: var(--weave-waiting);
-}
-
-.status[data-status="escalated"] {
-  --hue: var(--st-escalated);
-  --weave: var(--weave-escalated);
-}
-
-.status[data-status="failed"] {
-  --hue: var(--st-failed);
-  --weave: var(--weave-failed);
-}
-
-.status[data-status="queued"] {
-  --hue: var(--st-queued);
-  --weave: var(--weave-queued);
-}
-
-.status[data-status="success"] {
-  --hue: var(--st-success);
-  --weave: var(--weave-success);
-}
-
+/* Status is carried by weave as well as hue, and this module spells out
+   neither: the pair comes off `[data-status]` in `tokens.css`, so the band
+   segment, the legend swatch beside it, the collapsed strip and the run
+   graph's edge are reading one declaration and cannot drift apart. The six
+   arms that used to sit here are that declaration's first home. */
 .seg,
 .keySwatch {
   background-color: var(--hue);

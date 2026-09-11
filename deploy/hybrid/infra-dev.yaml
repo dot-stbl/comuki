@@ -1,0 +1,124 @@
+# =============================================================================
+# deploy/hybrid/infra-dev.yaml — in-cluster dev database for comuki.
+#
+# Applied manually by the `infra:dev` CI job (KUBECONFIG_B64 + server
+# verification, same contract as secrets:dev). Idempotent — safe to re-run.
+#
+# Lives in ns `comuki` (created by the AppSet with the pull-secret label;
+# the Namespace below carries the same labels so this manifest also works
+# if applied BEFORE the AppSet's first sync).
+#
+# Postgres-only (owner decision 2026-09-10): MinIO object storage and OTLP
+# telemetry are SHARED infra outside this contour —
+#   MinIO: object-store-01, s3.nova.adcluster.targetix.net:9000
+#   OTLP:  telemetry-01,    otlp.nova.adcluster.targetix.net:4317
+# (wired in deploy/hybrid/dev.yaml; creds via the Consul blob).
+#
+# NOT for prod: single replica, root credentials.
+# =============================================================================
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: comuki
+  labels:
+    # Triggers the ESO ClusterExternalSecret that projects the
+    # registry.hybrid.ai dockerconfig pull secret into this ns.
+    hybrid.contour/pull-secret: corp
+    app.kubernetes.io/part-of: hybrid-contour
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgvector
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: pgvector
+    app.kubernetes.io/part-of: comuki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pgvector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pgvector
+    spec:
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg16
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: comuki-pgvector-credentials
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: comuki-pgvector-credentials
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              value: comuki
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: [pg_isready, -U, comuki, -d, comuki]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            exec:
+              command: [pg_isready, -U, comuki, -d, comuki]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pgvector-data
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pgvector-data
+  namespace: comuki
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgvector
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: pgvector
+spec:
+  selector:
+    app.kubernetes.io/name: pgvector
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres

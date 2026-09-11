@@ -129,6 +129,14 @@ export function toCustomCommands(seed: SeedSlashCommand[]): SlashCommand[] {
  * never reached the dashboard's domain — it lived on the seed). `origin` is
  * the dashboard's own taxonomy ("built-in" vs "client"); the host's `source`
  * is the same vocabulary at a different level.
+ *
+ * The two `name` fields are false friends and cost the menu everything it
+ * had: the domain's `name` is "the way it is typed and the way it is shown"
+ * (`/help`), and the wire's is the human label (`Help`, `Initialize
+ * workspace`). Copying one to the other produced menu rows that
+ * `commandMenuQuery` could never match — every query starts with a slash —
+ * so no command from the host was reachable by typing. The typeable name is
+ * the wire's **`key`**, and that is what this mapper builds it from.
  */
 
 /**
@@ -170,13 +178,33 @@ const WIRE_TO_DOMAIN_COMMAND_ORIGIN: Record<
  */
 const UNKNOWN_COMMAND_ORIGIN: SlashCommand["origin"] = "client"
 
+/**
+ * The wire's `key` → the name the operator types.
+ *
+ * The host's keys are bare (`help`, `restart`) and the domain's names carry
+ * the slash, so the slash is added here. Normalised first, because the key
+ * reaches the host from a control-plane document somebody hand-wrote: it is
+ * trimmed and lower-cased (the menu matches a lower-cased query, so a
+ * `Restart` in a pack file would be a command nobody could type), and a
+ * leading slash the author already wrote is stripped rather than doubled —
+ * `//restart` would match no query and `commandOf` would never resolve it.
+ */
+function slashCommandName(key: string): string {
+  return `/${key.trim().toLowerCase().replace(/^\/+/, "")}`
+}
+
 export function chatSlashCommandToDomainCommand(
   command: ChatSlashCommand
 ): SlashCommand {
   const builtIn = command.source === WIRE_COMMAND_SOURCE_BUILTIN
+  const described = command.description.trim()
   return {
-    name: command.name,
-    description: command.description,
+    name: slashCommandName(command.key),
+    // The wire's own `name` is a human label, and the menu already shows the
+    // typed name beside the description — so the label is only worth
+    // carrying when the author wrote no description at all. Never both: a
+    // row reading "Restart — Restart the run" says one thing twice.
+    description: described.length > 0 ? command.description : command.name,
     origin:
       WIRE_TO_DOMAIN_COMMAND_ORIGIN[command.source] ?? UNKNOWN_COMMAND_ORIGIN,
     // The dashboard's seed treats every non-built-in command as `implied`: a

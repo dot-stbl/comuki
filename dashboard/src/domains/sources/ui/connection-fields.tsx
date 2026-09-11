@@ -1,10 +1,10 @@
 import {
-  AUTH_BY_KIND,
   AUTH_LABEL,
-  SOURCE_KIND_LABEL,
   needsBaseUrl,
+  providerAuth,
+  providerLabel,
 } from "@/domains/sources/model/providers"
-import type { SourceAuth, SourceKind } from "@/domains/sources/model/types"
+import type { ProviderKey, SourceAuth } from "@/domains/sources/model/types"
 import { SelectField, TextField } from "@/shared/ui"
 
 export interface ConnectionFieldsProps {
@@ -18,7 +18,7 @@ export interface ConnectionFieldsProps {
    * page's are `connection-*`, and no assertion has to say which form it meant.
    */
   idPrefix: string
-  kind: SourceKind
+  kind: ProviderKey
   baseUrl: string
   account: string
   /**
@@ -52,8 +52,11 @@ export interface ConnectionFieldsProps {
  *   GitHub has no instance to name, and a box asking for one is an invitation
  *   to type something that cannot be right.
  * - **The auth select offers exactly what the chosen connector implements** —
- *   `AUTH_BY_KIND` and nothing else. There is no affordance here that could ask
- *   for a seventh credential kind, which is the point of a closed list.
+ *   the registry's `auth` list and nothing else. There is no affordance here
+ *   that could ask for a credential the dashboard cannot render, which is the
+ *   point of a closed list. For a provider with no registry row the list is
+ *   every credential the dashboard *can* render, which is an admission rather
+ *   than a guess — see `providerAuth`.
  *
  * What is deliberately *not* here is the secret. It belongs to the one form
  * that takes it, it is said once above the box it is typed into, and a
@@ -71,7 +74,7 @@ export function ConnectionFields({
   onAuthChange,
   onAccountChange,
 }: ConnectionFieldsProps) {
-  const allowed = AUTH_BY_KIND[kind]
+  const allowed = providerAuth(kind)
 
   return (
     <>
@@ -98,7 +101,7 @@ export function ConnectionFields({
           value: entry,
           label: AUTH_LABEL[entry],
         }))}
-        hint={`what ${SOURCE_KIND_LABEL[kind]} accepts, and nothing else.`}
+        hint={`what ${providerLabel(kind)} accepts, and nothing else.`}
         data-test={`${idPrefix}-auth`}
         onValueChange={(next: string) => onAuthChange(next as SourceAuth)}
       />

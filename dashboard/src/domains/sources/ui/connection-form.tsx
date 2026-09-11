@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import type { FormEvent } from "react"
 
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
+import { needsBaseUrl } from "@/domains/sources/model/providers"
 import type { SourceAuth, SourceConnection } from "@/domains/sources/model/types"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
 import { Button, Notice, SelectField, TextField } from "@/shared/ui"
@@ -24,11 +25,6 @@ export interface ConnectionFormProps {
   /** Tells the page whether there is anything here worth asking about. */
   onDirtyChange?: (dirty: boolean) => void
 }
-
-const SELF_HOSTED_KINDS: ReadonlySet<SourceConnection["kind"]> = new Set([
-  "gitlab",
-  "jira",
-])
 
 const AUTH_OPTIONS: {value: SourceAuth; label: string}[] = [
   {value: "pat", label: "personal access token"},
@@ -85,7 +81,12 @@ export function ConnectionForm({
   const [baseUrl, setBaseUrl] = useState(connection.baseUrl ?? "")
   const [secretEnvRef, setSecretEnvRef] = useState(connection.secretEnvRef ?? "")
 
-  const wantsHost = SELF_HOSTED_KINDS.has(connection.kind)
+  /* The row before the registry: a connection that already carries a base url
+     keeps its box whatever the registry knows about its provider, which is the
+     difference between editing an unknown provider's instance and losing it.
+     A cloud jira has no `selfHosted` and still gets the box, because its
+     provider can be self-hosted and the operator may be moving it. */
+  const wantsHost = connection.selfHosted || needsBaseUrl(connection.kind)
   const storedBaseUrl = connection.baseUrl ?? ""
   const storedSecret = connection.secretEnvRef ?? ""
 

@@ -122,7 +122,7 @@ export function useTestSourceDraft() {
         return probeSeedSourceDraft(
           {
             projectId: draft.projectId,
-            kind: draft.kind as never,
+            kind: draft.kind,
             name: draft.name,
             auth: draft.auth,
             account: draft.account,
@@ -189,7 +189,7 @@ export function useConnectSource() {
         await wait()
         const seedDraft: SeedSourceDraft = {
           projectId: draft.projectId,
-          kind: draft.kind as never,
+          kind: draft.kind,
           name: draft.name,
           auth: draft.auth,
           account: draft.account,

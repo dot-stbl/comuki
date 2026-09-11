@@ -1,10 +1,9 @@
 import type { SourceConnectionView } from "@/shared/api/_generated/types/SourceConnectionView"
-import { isSourceKind } from "@/domains/sources/model/providers"
+import { isNativeIntake } from "@/domains/sources/model/providers"
 import type {
-  ConnectionKind,
+  ProviderKey,
   SourceAuth,
   SourceConnection,
-  SourceKind,
 } from "@/domains/sources/model/types"
 
 /**
@@ -81,10 +80,12 @@ function parseSettings(settingsJson: string): ParsedSettings {
 export function sourceConnectionViewToConnection(
   view: SourceConnectionView
 ): SourceConnection {
-  // A provider the dashboard knows, or the host's own word for one it does
-  // not. The row stays on the screen either way, and the word is what the
-  // provider cell says instead of nothing.
-  const kind: ConnectionKind = providerToKind(view.provider) ?? view.provider
+  // The host's word, verbatim. It is a registry key when this build has
+  // learned the provider and the host's own word when it has not, and there
+  // is nothing here to translate: `ProviderKey` is `string`, and every reader
+  // downstream degrades by itself.
+  const kind: ProviderKey = view.provider
+  const native = isNativeIntake(kind)
   const settings = parseSettings(view.settingsJson)
 
   return {
@@ -102,7 +103,7 @@ export function sourceConnectionViewToConnection(
     // string for `secretEnvRef`. Every other kind reads its `auth` out of
     // settingsJson and falls back to `"pat"`, the connector's default token
     // shape for the v1 providers the dashboard knows about.
-    auth: kind === "native"
+    auth: native
       ? ("none" as SourceAuth)
       : (settings.auth ?? ("pat" as SourceAuth)),
     // Self-hosted instances carry their `baseUrl` in settings; cloud and
@@ -115,12 +116,10 @@ export function sourceConnectionViewToConnection(
     // is the wire's own contract — the host returns "" rather than omitting
     // the field — and `undefined` keeps the rest of the screens honest.
     secretEnvRef:
-      view.secretEnvRef.length > 0 && kind !== "native"
-        ? view.secretEnvRef
-        : undefined,
+      view.secretEnvRef.length > 0 && !native ? view.secretEnvRef : undefined,
     secretStoredAt: undefined,
     // Native refuses disconnection at the store; the host mirrors that.
-    removable: kind !== "native",
+    removable: !native,
     watch: null,
     lastSyncAt: undefined,
   }
@@ -151,25 +150,6 @@ export function settingsToJson(settings: {
     object.baseUrl = settings.baseUrl
   }
   return JSON.stringify(object)
-}
-
-/**
- * Wire provider word → domain kind, or `null` when this build has no kind
- * for it.
- *
- * `null` rather than a cast, because a word that is not in `SourceKind` does
- * not become one by being asserted. Six exhaustive `Record<SourceKind, …>`
- * tables read that union — labels, marks, auth, self-hosting, filter fields,
- * status mappings — and a fabricated member makes every one of them answer
- * `undefined` at runtime. The provider column did not "degrade to the host's
- * word" the way the old comment claimed; it rendered an empty cell.
- *
- * The host's word is not lost: `sourceConnectionViewToConnection` keeps it on
- * the connection as a `ConnectionKind`, and the display helpers in
- * `providers.ts` say it out loud.
- */
-function providerToKind(provider: string): SourceKind | null {
-  return isSourceKind(provider) ? provider : null
 }
 
 /**

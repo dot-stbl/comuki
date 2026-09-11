@@ -1,14 +1,14 @@
 import { Fragment } from "react"
 
-import { sourceKindLabel } from "@/domains/sources/model/providers"
-import type { ConnectionKind, StatusMap } from "@/domains/sources/model/types"
+import { providerLabel } from "@/domains/sources/model/providers"
+import type { ProviderKey, StatusMap } from "@/domains/sources/model/types"
 import { StatusBadge } from "@/shared/ui"
 
 import styles from "./status-mapping-preview.module.css"
 
 export interface StatusMappingPreviewProps {
-  /** The connection's own kind — the host's word when it is not one of the five. */
-  kind: ConnectionKind
+  /** The connection's own provider — the host's word when it is not in the registry. */
+  kind: ProviderKey
   mapping: StatusMap[]
 }
 
@@ -33,7 +33,7 @@ export function StatusMappingPreview({
   return (
     <section className={styles.preview} data-test="status-mapping">
       <h3 className={styles.head}>
-        status written back to {sourceKindLabel(kind)}
+        status written back to {providerLabel(kind)}
       </h3>
       {mapping.length === 0 ? (
         <p className={styles.none}>

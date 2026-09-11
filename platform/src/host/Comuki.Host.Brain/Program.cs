@@ -6,6 +6,9 @@ using Comuki.Host.Brain.Model;
 using Comuki.Host.Brain.Ports.ActiveRuns;
 using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Modules.Memory.Infrastructure;
+using Comuki.Shared.Bootstrap;
+using Comuki.Shared.Bootstrap.Config;
+using Comuki.Shared.Bootstrap.Logging;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 using Microsoft.Extensions.AI;
 using ProtoBuf.Grpc.Server;
@@ -16,7 +19,20 @@ using ProtoBuf.Grpc.Server;
 // the MEAI chat client over the configured OpenAI-compatible endpoint.
 // The model may be unconfigured at boot (sweep + catalog still run);
 // think calls fail with a setup hint until it is.
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    EnvironmentName = ComukiEnvironment.Resolve(),
+});
+
+// Comuki-native surface (issue #54): config.toml + COMUKI_* env (the
+// brain section and COMUKI_BRAIN_GRPCPORT land on BrainOptions through
+// the env provider), no Server header, comuki console formatter.
+builder.Configuration.UseComukiConfiguration();
+builder.WebHost.ConfigureKestrel(static server => server.AddServerHeader = false);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddComukiConsole();
 
 var options = BrainOptions.Resolve(builder.Configuration);
 var connectionString = BrainDatabase.Resolve(builder.Configuration);
@@ -39,6 +55,7 @@ var app = builder.Build();
 
 app.MapGrpcService<BrainGrpcService>();
 
-app.Logger.LogInformation("Comuki.Host.Brain listening on http://localhost:{GrpcPort}", options.GrpcPort);
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("brain listening addr=http://localhost:{GrpcPort}", options.GrpcPort);
 
 await app.RunAsync();

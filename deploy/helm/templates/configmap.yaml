@@ -6,20 +6,20 @@ metadata:
     {{- include "comuki.labels" . | nindent 4 }}
 data:
   COMUKI_PUBLIC_HOST_URL: {{ .Values.publicUrl | quote }}
-  Host__Cors__AllowedOrigins__0: {{ .Values.publicUrl | quote }}
-  Artifacts__Endpoint: {{ include "comuki.artifactsEndpoint" . | quote }}
-  Artifacts__Bucket: {{ .Values.artifacts.bucket | quote }}
-  Artifacts__UseSSL: {{ include "comuki.artifactsUseSSL" . | quote }}
-  Artifacts__AutoCreateBucket: "true"
-  Compute__Provider: {{ .Values.compute.provider | quote }}
-  Compute__Scale__WorkerImage: {{ .Values.compute.workerImage | quote }}
-  Compute__Scale__OrchestratorGrpcUrl: {{ include "comuki.orchestratorGrpcUrl" . | quote }}
+  COMUKI_HOST_CORS_ALLOWEDORIGINS_0: {{ .Values.publicUrl | quote }}
+  COMUKI_ARTIFACTS_ENDPOINT: {{ include "comuki.artifactsEndpoint" . | quote }}
+  COMUKI_ARTIFACTS_BUCKET: {{ .Values.artifacts.bucket | quote }}
+  COMUKI_ARTIFACTS_USESSL: {{ include "comuki.artifactsUseSSL" . | quote }}
+  COMUKI_ARTIFACTS_AUTOCREATEBUCKET: "true"
+  COMUKI_COMPUTE_PROVIDER: {{ .Values.compute.provider | quote }}
+  COMUKI_COMPUTE_SCALE_WORKERIMAGE: {{ .Values.compute.workerImage | quote }}
+  COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: {{ include "comuki.orchestratorGrpcUrl" . | quote }}
   {{- if eq .Values.compute.provider "kubernetes" }}
-  Compute__Kubernetes__Namespace: {{ include "comuki.workerNamespace" . | quote }}
-  Compute__Kubernetes__ServiceAccount: {{ .Values.compute.kubernetes.serviceAccount | quote }}
-  Compute__Kubernetes__CpuRequestMillis: {{ .Values.compute.kubernetes.cpuRequestMillis | quote }}
-  Compute__Kubernetes__MemoryRequestMiB: {{ .Values.compute.kubernetes.memoryRequestMiB | quote }}
+  COMUKI_COMPUTE_KUBERNETES_NAMESPACE: {{ include "comuki.workerNamespace" . | quote }}
+  COMUKI_COMPUTE_KUBERNETES_SERVICEACCOUNT: {{ .Values.compute.kubernetes.serviceAccount | quote }}
+  COMUKI_COMPUTE_KUBERNETES_CPUREQUESTMILLIS: {{ .Values.compute.kubernetes.cpuRequestMillis | quote }}
+  COMUKI_COMPUTE_KUBERNETES_MEMORYREQUESTMIB: {{ .Values.compute.kubernetes.memoryRequestMiB | quote }}
   {{- end }}
   {{- with .Values.telemetry.otlpEndpoint }}
-  Telemetry__OtlpEndpoint: {{ . | quote }}
+  COMUKI_TELEMETRY_OTLPENDPOINT: {{ . | quote }}
   {{- end }}

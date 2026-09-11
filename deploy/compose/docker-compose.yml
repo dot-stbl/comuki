@@ -45,7 +45,7 @@ services:
   minio:
     # S3-compatible object storage — run artifacts (brief/result/pins
     # bundles per run) land in the bucket below. The host also
-    # auto-creates the bucket on first use (Artifacts__AutoCreateBucket).
+    # auto-creates the bucket on first use (COMUKI_ARTIFACTS_AUTOCREATEBUCKET).
     image: minio/minio:latest
     container_name: comuki-minio
     restart: unless-stopped
@@ -77,8 +77,9 @@ services:
         - ghcr.io/dot-stbl/comuki:local
     container_name: comuki-migrator
     restart: "no"
-    command: ["dotnet", "/app/migrator/Comuki.Migrator.dll"]
+    command: ["/app/migrator/comuki-migrator"]
     environment:
+      COMUKI_ENV: ${COMUKI_ENV:-Development}
       COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_POSTGRES_DB:-comuki};Username=${COMUKI_POSTGRES_USER:-comuki};Password=${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
     depends_on:
       postgres:
@@ -93,28 +94,28 @@ services:
     image: ghcr.io/dot-stbl/comuki:${COMUKI_IMAGE_TAG:-local}
     container_name: comuki-host
     restart: unless-stopped
-    command: ["dotnet", "/app/host/Comuki.Host.dll"]
+    command: ["/app/host/comuki"]
     environment:
-      ASPNETCORE_ENVIRONMENT: ${COMUKI_ENVIRONMENT:-Development}
+      COMUKI_ENV: ${COMUKI_ENV:-Development}
       COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_POSTGRES_DB:-comuki};Username=${COMUKI_POSTGRES_USER:-comuki};Password=${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
       COMUKI_IDENTITY_APIKEY_PEPPER: ${COMUKI_IDENTITY_APIKEY_PEPPER:-comuki-local-apikey-pepper}
       COMUKI_TOKEN_PEPPER: ${COMUKI_TOKEN_PEPPER:-comuki-local-token-pepper}
       COMUKI_BOOTSTRAP_ADMIN_EMAIL: ${COMUKI_BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}
       COMUKI_BOOTSTRAP_ADMIN_PASSWORD: ${COMUKI_BOOTSTRAP_ADMIN_PASSWORD:-comuki_dev}
       COMUKI_PUBLIC_HOST_URL: ${COMUKI_PUBLIC_HOST_URL:-http://localhost:17173}
-      Host__Cors__AllowedOrigins__0: ${COMUKI_CORS_ORIGIN:-http://localhost:17173}
-      Artifacts__Endpoint: minio:9000
-      Artifacts__AccessKey: ${COMUKI_MINIO_ROOT_USER:-comuki}
-      Artifacts__SecretKey: ${COMUKI_MINIO_ROOT_PASSWORD:-comuki_dev}
-      Artifacts__Bucket: ${COMUKI_MINIO_BUCKET:-comuki-run-bundles}
-      Artifacts__UseSSL: "false"
-      Artifacts__AutoCreateBucket: "true"
-      Compute__Provider: docker
-      Compute__Docker__NetworkMode: ${COMUKI_DOCKER_NETWORK:-comuki-net}
-      Compute__Scale__WorkerImage: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
-      Compute__Scale__OrchestratorGrpcUrl: http://comuki-host:8080
-      Chat__Worker__Image: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
-      Scheduler__Worker__Image: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
+      COMUKI_HOST_CORS_ALLOWEDORIGINS_0: ${COMUKI_CORS_ORIGIN:-http://localhost:17173}
+      COMUKI_ARTIFACTS_ENDPOINT: minio:9000
+      COMUKI_ARTIFACTS_ACCESSKEY: ${COMUKI_MINIO_ROOT_USER:-comuki}
+      COMUKI_ARTIFACTS_SECRETKEY: ${COMUKI_MINIO_ROOT_PASSWORD:-comuki_dev}
+      COMUKI_ARTIFACTS_BUCKET: ${COMUKI_MINIO_BUCKET:-comuki-run-bundles}
+      COMUKI_ARTIFACTS_USESSL: "false"
+      COMUKI_ARTIFACTS_AUTOCREATEBUCKET: "true"
+      COMUKI_COMPUTE_PROVIDER: docker
+      COMUKI_COMPUTE_DOCKER_NETWORKMODE: ${COMUKI_DOCKER_NETWORK:-comuki-net}
+      COMUKI_COMPUTE_SCALE_WORKERIMAGE: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
+      COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-host:8080
+      COMUKI_CHAT_WORKER_IMAGE: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
+      COMUKI_SCHEDULER_WORKER_IMAGE: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
     ports:
       - "${COMUKI_HOST_PORT:-17172}:8080"
     volumes:
@@ -193,10 +194,11 @@ services:
     image: ghcr.io/dot-stbl/comuki:${COMUKI_IMAGE_TAG:-local}
     container_name: comuki-brain
     restart: unless-stopped
-    command: ["dotnet", "/app/brain/Comuki.Host.Brain.dll"]
+    command: ["/app/brain/comuki-brain"]
     environment:
+      COMUKI_ENV: ${COMUKI_ENV:-Development}
       COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_POSTGRES_DB:-comuki};Username=${COMUKI_POSTGRES_USER:-comuki};Password=${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
-      Brain__GrpcPort: "17004"
+      COMUKI_BRAIN_GRPCPORT: "17004"
       COMUKI_BRAIN_MODEL_ENDPOINT: ${COMUKI_BRAIN_MODEL_ENDPOINT:-}
       COMUKI_BRAIN_MODEL_API_KEY: ${COMUKI_BRAIN_MODEL_API_KEY:-}
       COMUKI_BRAIN_MODEL_ID: ${COMUKI_BRAIN_MODEL_ID:-}

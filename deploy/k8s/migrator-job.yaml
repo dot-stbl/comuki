@@ -26,7 +26,7 @@ spec:
       containers:
         - name: migrator
           image: ghcr.io/dot-stbl/comuki:latest
-          command: ["dotnet", "/app/migrator/Comuki.Migrator.dll"]
+          command: ["/app/migrator/comuki-migrator"]
           env:
             # Dependent-env expansion: must precede COMUKI_DB.
             - name: COMUKI_POSTGRES_PASSWORD
@@ -34,7 +34,7 @@ spec:
                 secretKeyRef:
                   name: comuki-secrets
                   key: postgres-password
-            - name: ASPNETCORE_ENVIRONMENT
+            - name: COMUKI_ENV
               value: Production
             - name: COMUKI_DB
               value: "Host=comuki-postgres;Port=5432;Database=comuki;Username=comuki;Password=$(COMUKI_POSTGRES_PASSWORD)"

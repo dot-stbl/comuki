@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <RootNamespace>Comuki.Host.Brain</RootNamespace>
+    <!-- Comuki-native binary name (issue #54): the apphost ships as
+         `comuki-brain`; the project/namespace stays Comuki.Host.Brain. -->
+    <AssemblyName>comuki-brain</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\modules\Memory\Comuki.Modules.Memory.Application\Comuki.Modules.Memory.Application.csproj" />
     <ProjectReference Include="..\..\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\shared\Comuki.Shared.Bootstrap\Comuki.Shared.Bootstrap.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
   </ItemGroup>
 

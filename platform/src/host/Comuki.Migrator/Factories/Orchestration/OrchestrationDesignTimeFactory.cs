@@ -8,10 +8,10 @@ namespace Comuki.Migrator.Factories.Orchestration;
 /// <summary>
 /// Design-time factory for <c>dotnet ef</c>: migrations are authored in
 /// Comuki.Engine.Orchestration, this host supplies the connection string
-/// (env <c>COMUKI_DB</c> or appsettings.json — never used to connect at
+/// (env <c>COMUKI_DB</c> or config.toml — never used to connect at
 /// design time, only to build the provider model).
 /// </summary>
-public sealed class OrchestrationDesignTimeFactory : IDesignTimeDbContextFactory<OrchestrationDbContext>
+public sealed class OrchestrationDesignTimeFactory() : IDesignTimeDbContextFactory<OrchestrationDbContext>
 {
     /// <inheritdoc />
     public OrchestrationDbContext CreateDbContext(string[] args)

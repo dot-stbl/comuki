@@ -8,11 +8,11 @@ namespace Comuki.Migrator.Factories.Memory;
 /// <summary>
 /// Design-time factory for <c>dotnet ef</c>: Memory migrations are
 /// authored in Comuki.Modules.Memory.Infrastructure, this host supplies
-/// the connection string (env <c>COMUKI_DB</c> or appsettings.json —
+/// the connection string (env <c>COMUKI_DB</c> or config.toml —
 /// never used to connect at design time, only to build the provider
 /// model).
 /// </summary>
-public sealed class MemoryDesignTimeFactory : IDesignTimeDbContextFactory<MemoryDbContext>
+public sealed class MemoryDesignTimeFactory() : IDesignTimeDbContextFactory<MemoryDbContext>
 {
     /// <inheritdoc />
     public MemoryDbContext CreateDbContext(string[] args)

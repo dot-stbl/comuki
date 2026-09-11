@@ -8,11 +8,11 @@ namespace Comuki.Migrator.Factories.Identity;
 /// <summary>
 /// Design-time factory for <c>dotnet ef</c>: Identity migrations are
 /// authored in Comuki.Modules.Identity.Infrastructure, this host supplies
-/// the connection string (env <c>COMUKI_DB</c> or appsettings.json —
+/// the connection string (env <c>COMUKI_DB</c> or config.toml —
 /// never used to connect at design time, only to build the provider
 /// model).
 /// </summary>
-public sealed class IdentityDesignTimeFactory : IDesignTimeDbContextFactory<IdentityDbContext>
+public sealed class IdentityDesignTimeFactory() : IDesignTimeDbContextFactory<IdentityDbContext>
 {
     /// <inheritdoc />
     public IdentityDbContext CreateDbContext(string[] args)

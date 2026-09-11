@@ -81,5 +81,5 @@ the schema at the image's migration level.
 - Workers run as batch/v1 Jobs created by the host (Role
   `comuki-worker-spawn`); nothing to apply per worker.
 - Bring your own Postgres/MinIO: delete `postgres.yaml` / `minio.yaml`
-  and edit `configmap.yaml` (`Artifacts__Endpoint`) + the `COMUKI_DB`
+  and edit `configmap.yaml` (`COMUKI_ARTIFACTS_ENDPOINT`) + the `COMUKI_DB`
   connection strings in `migrator-job.yaml` / `deployment.yaml`.

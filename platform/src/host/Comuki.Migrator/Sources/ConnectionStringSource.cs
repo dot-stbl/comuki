@@ -1,3 +1,5 @@
+using Comuki.Shared.Bootstrap;
+using Comuki.Shared.Bootstrap.Config;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 
@@ -6,10 +8,11 @@ namespace Comuki.Migrator.Sources;
 /// <summary>
 /// Connection-string resolution for the Migrator and the design-time factory:
 /// <c>COMUKI_DB</c> env var wins, then the legacy <c>COMUKI_DATABASE</c>
-/// alias, then <c>ConnectionStrings:Comuki</c> from appsettings.json.
-/// A blank <c>Password=</c> in the resolved string is filled from
-/// <c>COMUKI_MIGRATOR_DB_PASSWORD</c> when set; Production refuses to
-/// start with a blank password (issue #21).
+/// alias, then <c>connectionStrings.comuki</c> from config.toml. A blank
+/// <c>Password=</c> in the resolved string is filled from
+/// <c>COMUKI_MIGRATOR_DB_PASSWORD</c> when set; Production (per
+/// <c>COMUKI_ENV</c>, with the quiet ASPNETCORE_/DOTNET_ fallbacks)
+/// refuses to start with a blank password (issue #21).
 /// </summary>
 internal static class ConnectionStringSource
 {
@@ -21,8 +24,7 @@ internal static class ConnectionStringSource
 
     /// <summary>
     /// Env var holding the database password when the connection string
-    /// is sourced from <c>appsettings.json</c>. Empty in the committed
-    /// defaults; deployers must set it.
+    /// is sourced from config.toml. Empty by contract; deployers set it.
     /// </summary>
     public const string PasswordEnvVariable = "COMUKI_MIGRATOR_DB_PASSWORD";
 
@@ -57,8 +59,7 @@ internal static class ConnectionStringSource
         }
 
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: true)
+            .UseComukiConfiguration()
             .Build();
 
         var connectionString = configuration.GetConnectionString("Comuki");
@@ -67,8 +68,8 @@ internal static class ConnectionStringSource
             return null;
         }
 
-        connectionString = FillPasswordFromEnv(connectionString);
-        RejectBlankPasswordInProduction(connectionString);
+        connectionString = ConnectionStringSourceGuards.FillPasswordFromEnv(connectionString);
+        ConnectionStringSourceGuards.RejectBlankPasswordInProduction(connectionString);
 
         return connectionString;
     }
@@ -79,15 +80,18 @@ internal static class ConnectionStringSource
     {
         return Resolve()
             ?? throw new InvalidOperationException(
-                $"connection string not found: set the {EnvVariable} env var or ConnectionStrings:Comuki in appsettings.json");
+                $"connection string not found: set the {EnvVariable} env var or connectionStrings.comuki in config.toml");
     }
+}
 
+file static class ConnectionStringSourceGuards
+{
     /// <summary>
     /// If the connection string's password segment is empty and
-    /// <see cref="PasswordEnvVariable"/> is set, replace it with the env
+    /// <see cref="ConnectionStringSource.PasswordEnvVariable"/> is set, replace it with the env
     /// value. Whitespace passwords are left untouched.
     /// </summary>
-    private static string FillPasswordFromEnv(string connectionString)
+    public static string FillPasswordFromEnv(string connectionString)
     {
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
         if (!string.IsNullOrEmpty(builder.Password))
@@ -95,7 +99,7 @@ internal static class ConnectionStringSource
             return connectionString;
         }
 
-        var fromEnv = Environment.GetEnvironmentVariable(PasswordEnvVariable);
+        var fromEnv = Environment.GetEnvironmentVariable(ConnectionStringSource.PasswordEnvVariable);
         if (string.IsNullOrWhiteSpace(fromEnv))
         {
             return connectionString;
@@ -111,7 +115,7 @@ internal static class ConnectionStringSource
     /// start instead.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    private static void RejectBlankPasswordInProduction(string connectionString)
+    public static void RejectBlankPasswordInProduction(string connectionString)
     {
         if (!IsProductionEnvironment())
         {
@@ -125,18 +129,15 @@ internal static class ConnectionStringSource
         }
 
         throw new InvalidOperationException(
-            $"refusing to start the migrator in Production: {PasswordEnvVariable} "
+            $"refusing to start the migrator in Production: {ConnectionStringSource.PasswordEnvVariable} "
             + "is empty and the resolved connection string has no password; "
             + "set the env var or pass a full connection string via "
-            + $"{EnvVariable} before retrying");
+            + $"{ConnectionStringSource.EnvVariable} before retrying");
     }
 
-    /// <summary>True when ASPNETCORE_ENVIRONMENT/DOTNET_ENVIRONMENT is "Production".</summary>
-    private static bool IsProductionEnvironment()
+    /// <summary>True when COMUKI_ENV (or its quiet ASPNETCORE_/DOTNET_ fallbacks) resolves to Production.</summary>
+    public static bool IsProductionEnvironment()
     {
-        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-            ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
-
-        return string.Equals(env, "Production", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(ComukiEnvironment.Resolve(), ComukiEnvironment.ProductionName, StringComparison.OrdinalIgnoreCase);
     }
 }

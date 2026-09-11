@@ -10,16 +10,13 @@ namespace Comuki.Migrator.Factories.Intake;
 /// connection-string source as the Migrator itself so
 /// <c>dotnet ef</c> can build the model without booting the host.
 /// </summary>
-public sealed class IntakeDesignTimeFactory : IDesignTimeDbContextFactory<IntakeDbContext>
+public sealed class IntakeDesignTimeFactory() : IDesignTimeDbContextFactory<IntakeDbContext>
 {
     /// <inheritdoc />
     public IntakeDbContext CreateDbContext(string[] args)
     {
-        var connectionString = ConnectionStringSource.TryResolve(out _)
-            ?? "Host=localhost;Database=comuki;Username=postgres;Password=postgres";
-
         var builder = new DbContextOptionsBuilder<IntakeDbContext>();
-        IntakeDbContext.ApplyOptions(builder, connectionString);
+        IntakeDbContext.ApplyOptions(builder, ConnectionStringSource.ResolveOrThrow());
         return new IntakeDbContext(builder.Options);
     }
 }

@@ -1,5 +1,6 @@
 # Non-secret Comuki host configuration. Secrets live in the
-# comuki-secrets Secret.
+# comuki-secrets Secret. Keys use the COMUKI_ contract (issue #54):
+# single underscore is the section separator — COMUKI_A_B → a:b.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,19 +12,19 @@ data:
   # Public absolute URL (scheme + host) — OIDC redirects + CORS origin.
   # EDIT ME: the URL users open in the browser.
   COMUKI_PUBLIC_HOST_URL: "http://comuki.localhost"
-  Host__Cors__AllowedOrigins__0: "http://comuki.localhost"
+  COMUKI_HOST_CORS_ALLOWEDORIGINS_0: "http://comuki.localhost"
   # Artifact store (in-cluster MinIO from this directory).
-  Artifacts__Endpoint: "comuki-minio:9000"
-  Artifacts__Bucket: "comuki-run-bundles"
-  Artifacts__UseSSL: "false"
-  Artifacts__AutoCreateBucket: "true"
+  COMUKI_ARTIFACTS_ENDPOINT: "comuki-minio:9000"
+  COMUKI_ARTIFACTS_BUCKET: "comuki-run-bundles"
+  COMUKI_ARTIFACTS_USESSL: "false"
+  COMUKI_ARTIFACTS_AUTOCREATEBUCKET: "true"
   # Compute: workers as batch/v1 Jobs in the comuki namespace.
-  Compute__Provider: "kubernetes"
-  Compute__Scale__WorkerImage: "ghcr.io/dot-stbl/comuki-worker:latest"
-  Compute__Scale__OrchestratorGrpcUrl: "http://comuki:80"
-  Compute__Kubernetes__Namespace: "comuki"
-  Compute__Kubernetes__ServiceAccount: "comuki-worker"
-  Compute__Kubernetes__CpuRequestMillis: "500"
-  Compute__Kubernetes__MemoryRequestMiB: "1024"
+  COMUKI_COMPUTE_PROVIDER: "kubernetes"
+  COMUKI_COMPUTE_SCALE_WORKERIMAGE: "ghcr.io/dot-stbl/comuki-worker:latest"
+  COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: "http://comuki:80"
+  COMUKI_COMPUTE_KUBERNETES_NAMESPACE: "comuki"
+  COMUKI_COMPUTE_KUBERNETES_SERVICEACCOUNT: "comuki-worker"
+  COMUKI_COMPUTE_KUBERNETES_CPUREQUESTMILLIS: "500"
+  COMUKI_COMPUTE_KUBERNETES_MEMORYREQUESTMIB: "1024"
   # Optional: OTLP endpoint for traces/metrics (unset = no OTel SDK).
-  # Telemetry__OtlpEndpoint: "http://otel-collector.observability:4317"
+  # COMUKI_TELEMETRY_OTLPENDPOINT: "http://otel-collector.observability:4317"

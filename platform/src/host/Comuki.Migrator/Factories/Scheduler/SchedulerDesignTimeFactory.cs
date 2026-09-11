@@ -15,11 +15,8 @@ public sealed class SchedulerDesignTimeFactory() : IDesignTimeDbContextFactory<S
     /// <inheritdoc />
     public SchedulerDbContext CreateDbContext(string[] args)
     {
-        var connectionString = ConnectionStringSource.TryResolve(out _)
-            ?? "Host=localhost;Database=comuki;Username=postgres;Password=postgres";
-
         var builder = new DbContextOptionsBuilder<SchedulerDbContext>();
-        SchedulerDbContext.ApplyOptions(builder, connectionString);
+        SchedulerDbContext.ApplyOptions(builder, ConnectionStringSource.ResolveOrThrow());
         return new SchedulerDbContext(builder.Options);
     }
 }

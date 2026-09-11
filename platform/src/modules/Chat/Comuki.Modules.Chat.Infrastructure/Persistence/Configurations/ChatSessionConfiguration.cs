@@ -7,6 +7,12 @@ namespace Comuki.Modules.Chat.Infrastructure.Persistence.Configurations;
 /// <summary>chat_sessions mapping: uuid id, optional project scope, lifecycle stamps.</summary>
 public sealed class ChatSessionConfiguration : IEntityTypeConfiguration<ChatSession>
 {
+    /// <summary>Maximum title length.</summary>
+    public const int MaxTitleLength = 200;
+
+    /// <summary>Maximum status name length — the column stores the enum member name.</summary>
+    public const int MaxStatusLength = 16;
+
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ChatSession> builder)
     {
@@ -28,12 +34,14 @@ public sealed class ChatSessionConfiguration : IEntityTypeConfiguration<ChatSess
 
         builder.Property(static session => session.Title)
             .HasColumnName("title")
-            .HasMaxLength(200)
+            .HasMaxLength(MaxTitleLength)
             .IsRequired();
 
+        // String storage, not the ordinal — same reason as chat_messages.role.
         builder.Property(static session => session.Status)
             .HasColumnName("status")
-            .HasConversion<int>()
+            .HasConversion<string>()
+            .HasMaxLength(MaxStatusLength)
             .IsRequired();
 
         builder.Property(static session => session.CreatedAt)

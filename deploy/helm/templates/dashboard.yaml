@@ -50,7 +50,7 @@ data:
             proxy_set_header Host $$host;
         }
 
-        location = /health {
+        location = /api/v1/health {
             proxy_pass http://{{ include "comuki.fullname" . }}:{{ .Values.service.port }};
         }
     }

@@ -3,7 +3,11 @@ namespace Comuki.Host;
 /// <summary>Host route templates - the single source for endpoint mapping; no route literals in Map* calls.</summary>
 public static class ApiRoutes
 {
-    public const string Health = "/health";
+    /// <summary>Anonymous static liveness probe (SPA owns the root, so probes live under the API prefix).</summary>
+    public const string Health = "/api/v1/health";
+
+    /// <summary>Readiness probe: Postgres SELECT 1 + proxy-key catalogue.</summary>
+    public const string HealthReady = "/api/v1/health/ready";
 
     /// <summary>Anonymous build-info endpoint (issue #56 §6): version, sha, build date, mode.</summary>
     public const string Version = "/api/v1/version";

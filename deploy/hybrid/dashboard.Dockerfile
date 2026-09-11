@@ -60,7 +60,9 @@ ENV VITE_USE_MOCK=false \
     VITE_DEPLOY_ENV=${VITE_DEPLOY_ENV} \
     COMMIT_SHA=${COMMIT_SHA}
 
-RUN ./node_modules/.bin/vite build
+RUN ./node_modules/.bin/vite build \
+    && test -f /src/dist/index.html \
+    && echo "SPA build OK: $(ls /src/dist/ | wc -l) files"
 
 # ---------- Stage 2: nginx ----------
 FROM docker.io/library/nginx:1.27-alpine

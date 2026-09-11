@@ -36,7 +36,7 @@
 # SPA is served by the host itself, so every API call is same-origin.
 FROM docker.io/library/node:22-alpine AS spa
 
-ARG VITE_API_BASE_URL=https://comuki.nova.adcluster.targetix.net
+ARG VITE_API_BASE_URL=http://comuki.nova.adcluster.targetix.net
 ARG VITE_DEPLOY_ENV=production
 
 WORKDIR /src

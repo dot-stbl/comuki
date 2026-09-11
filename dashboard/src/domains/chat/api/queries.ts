@@ -1,23 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
+  chatMessagesPageToDomainMessages,
   chatSessionViewsToDomainSessions,
   chatSlashCommandsToDomainCommands,
   toChatSession,
   toCustomCommands,
 } from "@/domains/chat/api/mappers"
 import type {
+  ChatMessage,
   ChatSession,
   ProposalDecision,
   SlashCommand,
 } from "@/domains/chat/model/types"
 import { getApiV1ChatSessions } from "@/shared/api/_generated/clients/getApiV1ChatSessions"
+import { getApiV1ChatSessionsSessionidMessages } from "@/shared/api/_generated/clients/getApiV1ChatSessionsSessionidMessages"
 import { getApiV1ChatSlash } from "@/shared/api/_generated/clients/getApiV1ChatSlash"
 import { postApiV1ChatSessions } from "@/shared/api/_generated/clients/postApiV1ChatSessions"
 import { postApiV1ChatSessionsSessionidApprove } from "@/shared/api/_generated/clients/postApiV1ChatSessionsSessionidApprove"
 import { postApiV1ChatSessionsSessionidMessages } from "@/shared/api/_generated/clients/postApiV1ChatSessionsSessionidMessages"
 import {
   decideChatProposal,
+  findChatSession,
   listChatSessions,
   listCustomCommands,
   sendChatMessage,
@@ -28,6 +32,8 @@ import { env } from "@/shared/config/env"
 
 export const chatSessionsQueryKey = ["chat", "sessions"] as const
 export const chatCommandsQueryKey = ["chat", "commands"] as const
+export const chatMessagesQueryKey = (sessionId: string) =>
+  ["chat", "sessions", sessionId, "messages"] as const
 
 async function listSessions(): Promise<ChatSession[]> {
   if (env.useMock) {
@@ -35,6 +41,46 @@ async function listSessions(): Promise<ChatSession[]> {
   }
   const views = await getApiV1ChatSessions()
   return chatSessionViewsToDomainSessions(views)
+}
+
+/**
+ * How much of a conversation the console reads at once.
+ *
+ * One page, newest conversation's whole recent history in practice. The host
+ * pages this endpoint (`page` / `pageSize`, oldest-first) and the console does
+ * not yet offer "load earlier" — a scrollback control is a screen decision,
+ * not a transport one, and inventing one here would be a second thread the
+ * side panel could disagree with. Fifty is the endpoint's own default and
+ * comfortably wider than the graph's `HistoryWindow` of twenty, so the
+ * operator always sees at least everything the brain was given.
+ */
+const MESSAGES_PAGE = { page: 1, pageSize: 50 } as const
+
+/**
+ * The open conversation's transcript.
+ *
+ * The split is the host's, not a choice: `ChatSessionView` carries no
+ * messages, so real mode has to ask `GET /api/v1/chat/sessions/{id}/messages`
+ * for them — without this query `chatSessionViewToDomainSession`'s honest
+ * `messages: []` was the whole thread, permanently.
+ *
+ * Mock mode keeps its messages on the session record (it has no backend to
+ * page), so the mock branch reads the same store the sessions query reads and
+ * hands back the same array the console has always rendered. Both branches
+ * therefore answer the same question with the same shape, and the mutations
+ * below invalidate this key alongside the session list so a sent message or a
+ * decided proposal lands in the thread in either mode.
+ */
+async function listMessages(sessionId: string): Promise<ChatMessage[]> {
+  if (env.useMock) {
+    const session = findChatSession(sessionId)
+    return session ? toChatSession(session).messages : []
+  }
+  const page = await getApiV1ChatSessionsSessionidMessages(
+    sessionId,
+    MESSAGES_PAGE
+  )
+  return chatMessagesPageToDomainMessages(page)
 }
 
 /**
@@ -68,6 +114,14 @@ export function useChatCommandsQuery() {
   return useQuery({ queryKey: chatCommandsQueryKey, queryFn: listCommands })
 }
 
+export function useChatMessagesQuery(sessionId: string) {
+  return useQuery({
+    queryKey: chatMessagesQueryKey(sessionId),
+    queryFn: () => listMessages(sessionId),
+    enabled: sessionId.length > 0,
+  })
+}
+
 export interface SendMessageInput {
   sessionId: string
   text: string
@@ -93,8 +147,14 @@ export function useSendMessageMutation() {
       void queryClient.invalidateQueries({ queryKey: chatSessionsQueryKey })
       return listSessions()
     },
-    onSuccess: (next) => {
+    onSuccess: (next, { sessionId }) => {
       queryClient.setQueryData(chatSessionsQueryKey, next)
+      // The thread is its own query now, in both modes: mock writes the turn
+      // into the store and real mode leaves it on the host, and neither shows
+      // up in a list of sessions that carries no messages.
+      void queryClient.invalidateQueries({
+        queryKey: chatMessagesQueryKey(sessionId),
+      })
     },
   })
 }
@@ -144,8 +204,13 @@ export function useProposalDecisionMutation() {
       void queryClient.invalidateQueries({ queryKey: runsQueryKey })
       return listSessions()
     },
-    onSuccess: (next) => {
+    onSuccess: (next, { sessionId }) => {
       queryClient.setQueryData(chatSessionsQueryKey, next)
+      // A decided proposal is a changed message, and the message lives in the
+      // thread's own query — the card reads "confirmed" from there.
+      void queryClient.invalidateQueries({
+        queryKey: chatMessagesQueryKey(sessionId),
+      })
     },
   })
 }

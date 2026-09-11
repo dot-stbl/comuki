@@ -25,7 +25,13 @@ import { pathToFileURL } from 'node:url';
 // Contract
 // ---------------------------------------------------------------------------
 
-/** Conventional Commits types accepted by this repo. */
+/**
+ * Conventional Commits types accepted by this repo.
+ *
+ * `merge` is ours, not Conventional: a hand-written merge commit with a real
+ * description (`[hybrid] merge(readme): OSS landing page`). The `Merge branch …`
+ * subject git writes itself never gets here — see {@link EXEMPT_SUBJECT}.
+ */
 export const COMMIT_TYPES = Object.freeze([
   'feat',
   'fix',
@@ -38,6 +44,7 @@ export const COMMIT_TYPES = Object.freeze([
   'chore',
   'style',
   'revert',
+  'merge',
 ]);
 
 export const SUBJECT_MAX_LENGTH = 100;
@@ -348,9 +355,10 @@ export function lintSubject(subject) {
     if (/^\s/.test(description)) {
       problems.push('exactly one space between `:` and the description');
     }
-    if (/^\p{Lu}/u.test(description.trimStart())) {
-      problems.push('description must start lowercase');
-    }
+    // No case check on the description on purpose: `commit-format.md` asks for
+    // lowercase type/scope and an imperative description, not a lowercase one.
+    // Descriptions legitimately open with an identifier or an acronym —
+    // `SubjectScopeMiddleware wraps …`, `CVE-2026-49451 bump`, `OSS artifacts`.
     if (description.endsWith('.')) {
       problems.push('description must not end with `.`');
     }
@@ -379,7 +387,7 @@ const CHEATSHEET = Object.freeze([
   '  Format:  [hybrid] <type>(<scope>)!: <description>',
   `  Types:   ${COMMIT_TYPES.join(' ')}`,
   '  Scope:   optional, lowercase — (orchestration), (dev-sdk), (rules)',
-  `  Subject: imperative, starts lowercase, no trailing dot, <= ${SUBJECT_MAX_LENGTH} chars`,
+  `  Subject: imperative, no trailing dot, <= ${SUBJECT_MAX_LENGTH} chars (aim for 72)`,
   '',
   '  Example: [hybrid] fix(database): correct cascade delete on runs table',
   '',

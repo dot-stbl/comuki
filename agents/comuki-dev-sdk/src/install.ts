@@ -1,6 +1,8 @@
 /**
  * Claude Code settings patcher — wires the Comuki hooks (lock gate +
- * session context) into the user's `.claude/settings.json`.
+ * session context) into the user's `.claude/settings.json`, and turns off
+ * the `Co-Authored-By` / `🤖 Generated with` model byline at the source
+ * (`.agents/rules/process/no-ai-attribution.md`).
  *
  * - idempotent: applying twice yields the identical file (merge by exact
  *   hook command within the matching matcher group);
@@ -37,8 +39,19 @@ export interface HookMatcherGroup {
 
 export interface ClaudeSettings {
   readonly hooks?: Record<string, HookMatcherGroup[]>;
+  readonly includeCoAuthoredBy?: boolean;
   readonly [key: string]: unknown;
 }
+
+/**
+ * Claude Code setting that suppresses both the `Co-Authored-By` commit
+ * trailer and the `🤖 Generated with` PR footer. Killing the byline here is
+ * cheaper than stripping it in the `commit-msg` hook every time.
+ */
+export const CO_AUTHORED_BY_KEY = 'includeCoAuthoredBy';
+
+/** The only value we ever write for {@link CO_AUTHORED_BY_KEY}. */
+export const CO_AUTHORED_BY_VALUE = false;
 
 export const DEFAULT_SETTINGS_PATH = () => join(homedir(), '.claude', 'settings.json');
 
@@ -122,6 +135,26 @@ export function removeHooks(settings: ClaudeSettings, packageDir: string): Claud
   return next;
 }
 
+/** Pure merge — turns the model byline off. Idempotent by construction. */
+export function applyCoAuthoredBy(settings: ClaudeSettings): ClaudeSettings {
+  const next = structuredClone(settings) as MutableClaudeSettings;
+  next[CO_AUTHORED_BY_KEY] = CO_AUTHORED_BY_VALUE;
+  return next;
+}
+
+/**
+ * Pure removal — drops the key only while it still holds the value we wrote.
+ * Someone who deliberately flipped it back to `true` keeps their choice, and
+ * dropping the key restores Claude Code's own default either way.
+ */
+export function removeCoAuthoredBy(settings: ClaudeSettings): ClaudeSettings {
+  const next = structuredClone(settings) as MutableClaudeSettings;
+  if (next[CO_AUTHORED_BY_KEY] === CO_AUTHORED_BY_VALUE) {
+    delete next[CO_AUTHORED_BY_KEY];
+  }
+  return next;
+}
+
 export interface InstallResult {
   readonly changed: boolean;
   readonly backupPath: string | null;
@@ -133,7 +166,7 @@ export async function installHooks(options: {
   readonly defs?: readonly HookCommandDef[];
 }): Promise<InstallResult> {
   const current = readSettingsOrEmpty(options.settingsPath);
-  const next = applyHooks(current, options.defs ?? buildHookDefs(options.packageDir));
+  const next = applyCoAuthoredBy(applyHooks(current, options.defs ?? buildHookDefs(options.packageDir)));
   if (JSON.stringify(next) === JSON.stringify(current)) {
     return { changed: false, backupPath: null };
   }
@@ -145,7 +178,7 @@ export async function uninstallHooks(options: {
   readonly packageDir: string;
 }): Promise<InstallResult> {
   const current = readSettingsOrEmpty(options.settingsPath);
-  const next = removeHooks(current, options.packageDir);
+  const next = removeCoAuthoredBy(removeHooks(current, options.packageDir));
   if (JSON.stringify(next) === JSON.stringify(current)) {
     return { changed: false, backupPath: null };
   }

@@ -20,6 +20,13 @@
 # host = "0.0.0.0"
 # port = 8080
 
+[logging]
+# Console minimum level; the env override COMUKI_LOG_LEVEL
+# (trace|debug|info|warn|error|fatal) wins over this value.
+# COMUKI_LOG_FORMAT=json switches the console renderer to one JSON
+# object per line (env-only; OTLP output is unaffected).
+# level = "info"
+
 [brain]
 # Standalone brain host (comuki-brain): gRPC listener port from the
 # Comuki port pool (17000–17200; 17004 is the brain's row).

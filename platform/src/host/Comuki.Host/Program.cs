@@ -58,7 +58,7 @@ if (builder.Configuration.TryResolveServerUrl() is { } serverUrl)
 }
 
 builder.Logging.ClearProviders();
-builder.Logging.AddComukiConsole();
+builder.Logging.AddComukiConsole(builder.Configuration);
 
 // Sentry side-channel for the scheduler dispatcher (S15 / sentry):
 // initialises the SDK once if Scheduler:Sentry:Dsn is set; otherwise

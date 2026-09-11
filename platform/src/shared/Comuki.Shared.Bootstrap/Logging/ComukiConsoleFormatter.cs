@@ -26,6 +26,30 @@ public sealed class ComukiConsoleFormatter(Func<bool>? ansiEnabled = null, TimeP
     private readonly TimeProvider clock = clock ?? TimeProvider.System;
     private readonly Func<bool> emitAnsi = ansiEnabled ?? (static () => !Console.IsOutputRedirected);
 
+    /// <summary>
+    /// The lowercase comuki label of a level (trace/debug/info/warn/error/fatal) —
+    /// shared with the JSON renderer so both formats agree on level names.
+    /// </summary>
+    /// <param name="logLevel">The level to label.</param>
+    public static string LevelLabel(LogLevel logLevel)
+    {
+        return ComukiConsoleWriter.LevelLabel(logLevel);
+    }
+
+    /// <summary>
+    /// Lifetime-message rewrite shared with the JSON renderer: maps
+    /// Microsoft.Hosting.Lifetime events onto the short comuki.host forms.
+    /// </summary>
+    /// <param name="category">Original category.</param>
+    /// <param name="eventId">Original event id.</param>
+    /// <param name="message">Original message.</param>
+    /// <param name="rewrittenCategory">Rewritten category when it applies.</param>
+    /// <param name="rewrittenMessage">Rewritten message when it applies.</param>
+    public static bool TryRewriteLifetime(string category, int eventId, string message, out string rewrittenCategory, out string rewrittenMessage)
+    {
+        return HostingLifetimeRewrite.TryRewrite(category, eventId, message, out rewrittenCategory, out rewrittenMessage);
+    }
+
     /// <inheritdoc />
     public override void Write<TState>(in LogEntry<TState> entry, IExternalScopeProvider? scopeProvider, TextWriter textWriter)
     {

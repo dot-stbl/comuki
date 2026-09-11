@@ -31,7 +31,7 @@ spec:
       containers:
         - name: migrate
           image: registry.hybrid.ai/comuki/comuki:__IMAGE_TAG__
-          command: [dotnet, /app/migrator/Comuki.Migrator.dll]
+          command: [/app/migrator/comuki-migrator]
           envFrom:
             - secretRef:
                 name: comuki-dev-host-secrets

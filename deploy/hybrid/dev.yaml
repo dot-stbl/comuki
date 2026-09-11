@@ -21,7 +21,7 @@ image:
   repository: registry.hybrid.ai/comuki/comuki
 
 workingDir: /app/host
-command: [dotnet, Comuki.Host.dll]
+command: [/app/host/comuki]
 
 # One replica: SignalR + the in-memory worker-token store (Phase 4 Slice 0
 # shape). Scaling needs the DB-backed token store first.

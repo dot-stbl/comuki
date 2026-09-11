@@ -20,6 +20,14 @@ public static class ComukiCli
         return args.Length > 0 && string.Equals(args[0], command, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>True when <paramref name="args"/> starts with the two-part command <c>command subcommand</c> (case-insensitive).</summary>
+    public static bool IsCommand(string[] args, string command, string subcommand)
+    {
+        return args.Length > 1
+            && string.Equals(args[0], command, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(args[1], subcommand, StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>
     /// Prints the version line of the running entry assembly and returns the
     /// process exit code 0. The product name prefixes the line

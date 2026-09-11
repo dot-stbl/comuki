@@ -122,7 +122,7 @@ function NodeBody({ item, marks }: { item: WorkItem; marks: NodeMarks }) {
   return (
     <>
       <span
-        className={cn(styles.edge, styles.status)}
+        className={styles.edge}
         data-status={item.status}
         aria-hidden="true"
       />

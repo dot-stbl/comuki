@@ -85,7 +85,7 @@ export interface Provider {
    * them; the first is the default. A closed list per provider, because a form
    * must not be able to ask for a credential the connector cannot use.
    */
-  auth: SourceAuth[]
+  auth: readonly SourceAuth[]
   /**
    * Is there a remote system behind this provider?
    *
@@ -116,7 +116,7 @@ export interface Provider {
    * is no operator here, no separator, no precedence and no quoting rule,
    * because none of those has been decided — see `filter-expression-field.tsx`.
    */
-  filterFields: string[]
+  filterFields: readonly string[]
   /**
    * The one line an intake card says about picking this provider.
    *
@@ -234,7 +234,11 @@ export const CONNECTABLE_PROVIDERS: readonly Provider[] = PROVIDERS.filter(
  * closed list, and `pat` leads because it is what the mapper already assumes
  * for a provider whose `settingsJson` did not say.
  */
-const UNKNOWN_PROVIDER_AUTH: SourceAuth[] = ["pat", "oauth", "app-install"]
+const UNKNOWN_PROVIDER_AUTH: readonly SourceAuth[] = [
+  "pat",
+  "oauth",
+  "app-install",
+]
 
 /**
  * The registry row for a key, or `null` when this build has never met it.
@@ -283,7 +287,7 @@ export function isNativeIntake(key: ProviderKey): boolean {
 }
 
 /** The credentials a form may offer for this provider. */
-export function providerAuth(key: ProviderKey): SourceAuth[] {
+export function providerAuth(key: ProviderKey): readonly SourceAuth[] {
   return providerOf(key)?.auth ?? UNKNOWN_PROVIDER_AUTH
 }
 
@@ -332,7 +336,7 @@ export function targetPlaceholder(key: ProviderKey): string {
  * nouns *this* connector has been observed to accept, and offering github's to
  * an unknown tracker would be a guess dressed as a fact.
  */
-export function filterFields(key: ProviderKey): string[] {
+export function filterFields(key: ProviderKey): readonly string[] {
   return providerOf(key)?.filterFields ?? []
 }
 

@@ -177,14 +177,16 @@ internal static class HostComposer
         builder.Services.AddCostsPersistence(database.ConnectionString);
 
         // Chat module (issue #5 slice B): turn services + Voluta graph over
-        // the chat schema. The brain port falls back to the in-process stub
-        // and the memory digest to the empty fallback until the brain host
-        // and the memory store slices land — TryAdd keeps the real
+        // the chat schema. The brain port is the gRPC client when
+        // `brain:endpoint` is configured and the in-process stub when it is
+        // not; the memory digest still falls back to the empty stub until
+        // the memory store slice lands — TryAdd keeps the real
         // implementations winning once registered. The tool executor scopes
         // into orchestration, which Program wires above this call.
         builder.Services
             .AddChatApplication()
             .AddChatPersistence(database.ConnectionString);
+        builder.Services.AddChatBrainClient(builder.Configuration);
         builder.Services.TryAddSingleton<IBrainClient, BrainStub>();
         builder.Services.TryAddSingleton<IMemoryDigest, EmptyMemoryDigest>();
         builder.Services.AddSingleton<IChatToolExecutor, HostChatToolExecutor>();

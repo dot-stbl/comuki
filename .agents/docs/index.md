@@ -8,8 +8,9 @@ operational details in the same place.
 |---------------------------|------------------------------------------------------------------------------------------|
 | [`architecture/`](./architecture/) | Project design artifacts — decisions, architecture, stack, project structure, slice-0 spec. |
 | [`operations/`](./operations/)     | How the platform runs — install, storage, OIDC, MinIO, OpenAPI codegen, Postgres schemas, FE env. |
-| [`product/`](./product/)           | FE requirements and task breakdown (drives the S7 follow-up work). |
+| [`product/`](./product/)           | FE requirements, task breakdown, owner product decisions. |
 | [`design-system/`](./design-system/) | Comuki design tokens + shadcn mappings + dashboard screens (HTML/CSS, source for the Ladle catalog). |
+| [`audits/`](./audits/)             | One-shot architecture / product / security / testing / DI / dependency / performance audits. |
 
 ## What's where
 
@@ -61,6 +62,20 @@ operational details in the same place.
 |--------------------------------------------------------------|-----------|
 | [product/comuki-task-breakdown.md](./product/comuki-task-breakdown.md) | Per-slice task numbering for S5–S11; where individual tasks come from. |
 | [product/comuki-fe-requirements.md](./product/comuki-fe-requirements.md) | FE screens required by the v1 spec. |
+| [product/product-decisions.md](./product/product-decisions.md) | Owner answers to the 43 product-audit questions (2026-09-08). |
+
+### Audits
+
+| Doc | Read when |
+|-----|-----------|
+| [audits/architecture-audit-2026-09-04.md](./audits/architecture-audit-2026-09-04.md) | Earlier architecture scan (godif / csharp / ts / openspec). |
+| [audits/architecture-audit-report.md](./audits/architecture-audit-report.md) | Architecture audit 2026-09-08. |
+| [audits/audit-product-report.md](./audits/audit-product-report.md) | Product / business-logic audit. |
+| [audits/security-audit-report.md](./audits/security-audit-report.md) | Security findings. |
+| [audits/testing-audit-report.md](./audits/testing-audit-report.md) | Testing gaps. |
+| [audits/di-lifetime-audit-report.md](./audits/di-lifetime-audit-report.md) | DI lifetime / scope. |
+| [audits/dependency-audit-report.md](./audits/dependency-audit-report.md) | NuGet / npm / bun deps. |
+| [audits/performance-audit-report.md](./audits/performance-audit-report.md) | Performance findings. |
 
 ## Status
 

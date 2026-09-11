@@ -1,4 +1,3 @@
-using System.Text;
 using Comuki.Host.Cli;
 using Shouldly;
 using Xunit;
@@ -56,25 +55,5 @@ public sealed class ComukiHostCliShould
         ComukiHostCli.TryRun([]).ShouldBeNull();
         ComukiHostCli.TryRun(["serve"]).ShouldBeNull();
         ComukiHostCli.TryRun(["--urls", "http://localhost:8080"]).ShouldBeNull();
-    }
-
-    /// <summary>Line-capturing TextWriter.</summary>
-    private sealed class LineWriter : TextWriter
-    {
-        private readonly StringBuilder builder = new();
-
-        public IReadOnlyList<string> Lines => builder.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-        public override Encoding Encoding { get; } = Encoding.UTF8;
-
-        public override void Write(string? value)
-        {
-            builder.Append(value);
-        }
-
-        public override void WriteLine(string? value)
-        {
-            builder.Append(value).Append('\n');
-        }
     }
 }

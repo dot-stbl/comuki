@@ -55,6 +55,7 @@ internal static class ComukiHostCli
 /// <summary>Command routing of the comuki operator CLI: first argument selects the command.</summary>
 file static class ComukiHostCliRouter
 {
+    /// <summary>Routes the first argument to a command; null when the args are not a CLI command.</summary>
     public static int? Route(string[] args, TextWriter writer)
     {
         return args switch
@@ -67,6 +68,7 @@ file static class ComukiHostCliRouter
         };
     }
 
+    /// <summary>Case-insensitive command-name match.</summary>
     public static bool Matches(string value, string command)
     {
         return string.Equals(value, command, StringComparison.OrdinalIgnoreCase);

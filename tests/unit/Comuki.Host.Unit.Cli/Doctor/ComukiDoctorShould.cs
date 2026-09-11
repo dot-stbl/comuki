@@ -1,5 +1,5 @@
-using System.Text;
 using Comuki.Host.Cli.Doctor;
+using Npgsql;
 using Shouldly;
 using Xunit;
 
@@ -59,7 +59,7 @@ public sealed class ComukiDoctorShould
         var exitCode = await ComukiDoctor.RunAsync(
             writer,
             lookupEnv: static name => name == "COMUKI_ENV" ? "development" : null,
-            probeDatabaseAsync: static (_, _) => Task.FromException<int>(new InvalidOperationException("connection refused")),
+            probeDatabaseAsync: static (_, _) => Task.FromException<int>(new NpgsqlException("connection refused")),
             cancellationToken: TestContext.Current.CancellationToken);
 
         exitCode.ShouldBe(1);
@@ -161,25 +161,5 @@ public sealed class ComukiDoctorShould
 
         exitCode.ShouldBe(1);
         writer.Lines.ShouldContain(static line => line.StartsWith("fail  secrets:apikey-pepper", StringComparison.Ordinal));
-    }
-
-    /// <summary>Line-capturing TextWriter.</summary>
-    private sealed class LineWriter : TextWriter
-    {
-        private readonly StringBuilder builder = new();
-
-        public IReadOnlyList<string> Lines => builder.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-        public override Encoding Encoding { get; } = Encoding.UTF8;
-
-        public override void Write(string? value)
-        {
-            builder.Append(value);
-        }
-
-        public override void WriteLine(string? value)
-        {
-            builder.Append(value).Append('\n');
-        }
     }
 }

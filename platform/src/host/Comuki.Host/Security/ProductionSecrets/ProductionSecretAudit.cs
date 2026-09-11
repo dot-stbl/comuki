@@ -37,8 +37,10 @@ public static class ProductionSecretAudit
 }
 
 /// <summary>Per-secret evaluation shared by the audit and the startup gate.</summary>
+/// <summary>The individual production-secret checks; each appends its findings to the shared list.</summary>
 file static class ProductionSecretAuditChecks
 {
+    /// <summary>Audits the MinIO artifact-store access and secret keys against the dev-default gate.</summary>
     public static void CollectMinio(IServiceProvider services, bool isProduction, List<ProductionSecretFinding> findings)
     {
         var artifacts = services.GetRequiredService<IOptions<ArtifactsOptions>>().Value;
@@ -70,6 +72,7 @@ file static class ProductionSecretAuditChecks
         }
     }
 
+    /// <summary>Audits the bootstrap-admin password: unset ok, dev default or weak → fail-or-warn.</summary>
     public static void CollectBootstrapAdmin(IServiceProvider services, bool isProduction, List<ProductionSecretFinding> findings)
     {
         var configuration = services.GetRequiredService<IConfiguration>();
@@ -111,6 +114,7 @@ file static class ProductionSecretAuditChecks
             "bootstrap admin password is set and passes the strength check"));
     }
 
+    /// <summary>Audits the identity API-key pepper against the dev-default gate.</summary>
     public static void CollectApiKeyPepper(IServiceProvider services, bool isProduction, List<ProductionSecretFinding> findings)
     {
         var apiKey = services.GetRequiredService<IOptions<ApiKeyOptions>>().Value;
@@ -128,6 +132,7 @@ file static class ProductionSecretAuditChecks
                 $"{ApiKeyOptions.PepperEnvironmentVariable} is set"));
     }
 
+    /// <summary>Audits the worker-token pepper against the dev-default gate.</summary>
     public static void CollectWorkerTokenPepper(IServiceProvider services, bool isProduction, List<ProductionSecretFinding> findings)
     {
         var workerToken = services.GetRequiredService<IOptions<WorkerTokenOptions>>().Value;
@@ -145,12 +150,14 @@ file static class ProductionSecretAuditChecks
                 $"{WorkerTokenOptions.PepperEnvironmentVariable} is set"));
     }
 
+    /// <summary>Runs the Vault and dictionary-provider token audits.</summary>
     public static void CollectSecretsProviders(IServiceProvider services, bool isProduction, List<ProductionSecretFinding> findings)
     {
         CollectVault(services, isProduction, findings);
         CollectDictionaryProviders(services, isProduction, findings);
     }
 
+    /// <summary>Audits the Vault provider's bootstrap token when the provider is enabled.</summary>
     public static void CollectVault(IServiceProvider services, bool isProduction, List<ProductionSecretFinding> findings)
     {
         var vault = services.GetRequiredService<IOptions<VaultSecretOptions>>().Value;
@@ -175,6 +182,7 @@ file static class ProductionSecretAuditChecks
                 $"vault provider enabled, bootstrap token env var '{vault.TokenEnvRef}' is set"));
     }
 
+    /// <summary>Audits every enabled dictionary provider that requires a bootstrap-token env var.</summary>
     public static void CollectDictionaryProviders(IServiceProvider services, bool isProduction, List<ProductionSecretFinding> findings)
     {
         var secrets = services.GetRequiredService<IOptions<SecretsOptions>>().Value;
@@ -204,6 +212,7 @@ file static class ProductionSecretAuditChecks
         }
     }
 
+    /// <summary>Fail in Production; outside it a Warn with the gate prefix stripped from the message.</summary>
     public static ProductionSecretFinding FailOrWarn(bool isProduction, string name, string gateMessage)
     {
         return isProduction

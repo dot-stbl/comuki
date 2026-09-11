@@ -3,11 +3,13 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  applyCoAuthoredBy,
   applyHooks,
   backupPath,
   buildHookDefs,
   installHooks,
   isOurCommand,
+  removeCoAuthoredBy,
   removeHooks,
   uninstallHooks,
 } from './install';
@@ -128,6 +130,49 @@ describe('isOurCommand / removeHooks', () => {
   });
 });
 
+describe('applyCoAuthoredBy / removeCoAuthoredBy', () => {
+  test('turns the model byline off in empty settings', () => {
+    expect(applyCoAuthoredBy({})).toEqual({ includeCoAuthoredBy: false });
+  });
+
+  test('is idempotent — applying twice yields the identical document', () => {
+    const once = applyCoAuthoredBy({});
+
+    expect(applyCoAuthoredBy(once)).toEqual(once);
+  });
+
+  test('overrides an explicit opt-in', () => {
+    expect(applyCoAuthoredBy({ includeCoAuthoredBy: true }).includeCoAuthoredBy).toBe(false);
+  });
+
+  test('preserves unrelated settings keys', () => {
+    const next = applyCoAuthoredBy({ model: 'opus', hooks: {} });
+
+    expect(next.model).toBe('opus');
+    expect(next.hooks).toEqual({});
+  });
+
+  test('does not mutate the input settings', () => {
+    const existing: ClaudeSettings = { model: 'opus' };
+
+    applyCoAuthoredBy(existing);
+
+    expect(existing).toEqual({ model: 'opus' });
+  });
+
+  test('removes exactly the key we wrote', () => {
+    expect(removeCoAuthoredBy(applyCoAuthoredBy({ model: 'opus' }))).toEqual({ model: 'opus' });
+  });
+
+  test('keeps a value someone else flipped back on', () => {
+    expect(removeCoAuthoredBy({ includeCoAuthoredBy: true })).toEqual({ includeCoAuthoredBy: true });
+  });
+
+  test('leaves settings without the key untouched', () => {
+    expect(removeCoAuthoredBy({ model: 'opus' })).toEqual({ model: 'opus' });
+  });
+});
+
 describe('installHooks / uninstallHooks — file level', () => {
   test('first install writes settings and backs up the original once', async () => {
     const settingsPath = tempSettings('{\n  "model": "opus"\n}\n');
@@ -191,6 +236,56 @@ describe('installHooks / uninstallHooks — file level', () => {
     const removed = await uninstallHooks({ settingsPath, packageDir: PACKAGE_DIR });
 
     expect(removed.changed).toBe(false);
+  });
+
+  test('install turns off the co-authored-by trailer on disk', async () => {
+    const settingsPath = tempSettings('{\n  "model": "opus"\n}\n');
+
+    await installHooks({ settingsPath, packageDir: PACKAGE_DIR });
+
+    const onDisk = JSON.parse(readFileSync(settingsPath, 'utf8')) as ClaudeSettings;
+    expect(onDisk.includeCoAuthoredBy).toBe(false);
+    expect(onDisk.model).toBe('opus');
+  });
+
+  test('install still patches the byline when the hooks are already in place', async () => {
+    const settingsPath = tempSettings(JSON.stringify(applyHooks({}, DEFS)));
+
+    const result = await installHooks({ settingsPath, packageDir: PACKAGE_DIR });
+
+    expect(result.changed).toBe(true);
+    expect(JSON.parse(readFileSync(settingsPath, 'utf8')).includeCoAuthoredBy).toBe(false);
+  });
+
+  test('uninstall drops the byline setting again', async () => {
+    const settingsPath = tempSettings('{"model":"opus"}');
+    await installHooks({ settingsPath, packageDir: PACKAGE_DIR });
+
+    await uninstallHooks({ settingsPath, packageDir: PACKAGE_DIR });
+
+    expect(JSON.parse(readFileSync(settingsPath, 'utf8'))).toEqual({ model: 'opus' });
+  });
+
+  test('uninstall keeps a byline setting flipped back on after install', async () => {
+    const settingsPath = tempSettings('{}');
+    await installHooks({ settingsPath, packageDir: PACKAGE_DIR });
+    const patched = JSON.parse(readFileSync(settingsPath, 'utf8')) as ClaudeSettings;
+    writeFileSync(settingsPath, JSON.stringify({ ...patched, includeCoAuthoredBy: true }), 'utf8');
+
+    await uninstallHooks({ settingsPath, packageDir: PACKAGE_DIR });
+
+    const onDisk = JSON.parse(readFileSync(settingsPath, 'utf8')) as ClaudeSettings;
+    expect(onDisk.includeCoAuthoredBy).toBe(true);
+    expect(onDisk.hooks).toBeUndefined();
+  });
+
+  test('uninstall clears a settings file that held nothing but our byline', async () => {
+    const settingsPath = tempSettings('{"includeCoAuthoredBy":false}');
+
+    const removed = await uninstallHooks({ settingsPath, packageDir: PACKAGE_DIR });
+
+    expect(removed.changed).toBe(true);
+    expect(JSON.parse(readFileSync(settingsPath, 'utf8'))).toEqual({});
   });
 
   test('refuses to touch unreadable settings instead of clobbering', async () => {

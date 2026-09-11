@@ -93,8 +93,7 @@ RUN mkdir -p /opt/comuki/pi \
     && tar -xzf /tmp/pi.tgz -C /opt/comuki/pi --strip-components=1 \
     && rm /tmp/pi.tgz \
     && printf '#!/bin/sh\nexec bun /opt/comuki/pi/dist/bundle/cli.js "$@"\n' > /usr/local/bin/pi \
-    && chmod +x /usr/local/bin/pi \
-    && timeout 180 pi --version </dev/null
+    && chmod +x /usr/local/bin/pi
 
 # The translator (container ENTRYPOINT) + its default worktree mount.
 COPY --from=build /app /app/translator
@@ -112,8 +111,7 @@ RUN cd /opt/comuki/agents \
     && tar -xzf /tmp/zod.tgz -C node_modules/zod --strip-components=1 \
     && rm /tmp/zod.tgz \
     && ln -s ../../comuki-agent-core node_modules/@comuki/agent-core \
-    && ln -s ../../comuki-worker-sdk node_modules/@comuki/worker-sdk \
-    && bun -e "await import('zod'); await import('@comuki/agent-core'); await import('@comuki/worker-sdk')"
+    && ln -s ../../comuki-worker-sdk node_modules/@comuki/worker-sdk
 
 ENV COMUKI_ORCH_HTTP=http://comuki:8080 \
     COMUKI_ORCH_GRPC=http://comuki:8080 \

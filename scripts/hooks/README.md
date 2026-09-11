@@ -56,10 +56,12 @@ An attribution trailer never costs anyone their commit. See
 [hybrid] <type>(<scope>)!: <description>
 ```
 
-- types: `feat fix refactor docs test perf build ci chore style revert`
+- types: `feat fix refactor docs test perf build ci chore style revert merge`
+  (`merge` = hand-written merge commit; git's own `Merge branch …` is exempt)
 - scope optional, lowercase `[a-z0-9][a-z0-9._/-]*`
-- description: imperative, starts lowercase, no trailing `.`
-- subject ≤ 100 characters
+- description: imperative, no trailing `.` — case is not policed (identifiers
+  and acronyms open a description all the time)
+- subject ≤ 100 characters (aim for 72)
 - `Merge …` / `Revert …` / `fixup!` / `squash!` subjects git writes itself are exempt
 - `#` comment lines and the `--verbose` diff below the scissors line are ignored
 

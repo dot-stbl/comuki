@@ -82,4 +82,4 @@ ENV COMUKI_ORCH_HTTP=http://comuki:8080 \
 WORKDIR /work
 VOLUME /work
 
-ENTRYPOINT ["dotnet", "/app/translator/Comuki.Host.Translator.dll"]
+ENTRYPOINT ["/app/translator/comuki-translator"]

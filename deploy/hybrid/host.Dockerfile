@@ -1,7 +1,7 @@
 # =============================================================================
 # comuki host image — one image, two entrypoints (console.x pattern):
-#   /app/host      Comuki.Host       (this Deployment via chart command)
-#   /app/migrator  Comuki.Migrator   (batch Job, deploy/hybrid/migrate-job-dev.yaml)
+#   /app/host      comuki             (this Deployment via chart command)
+#   /app/migrator  comuki-migrator    (batch Job, deploy/hybrid/migrate-job-dev.yaml)
 #
 # Build context = repo root (kaniko: KANIKO_DOCKERFILE=deploy/hybrid/
 # host.Dockerfile, context .). nuget.config restores from nuget.org only —
@@ -39,8 +39,8 @@ COPY --from=build /app/migrator /app/migrator
 
 # aspnet:10.0 already runs as non-root `app` (APP_UID 1654) and Kestrel
 # binds 8080 by default. chart values set workingDir /app/host + command
-# [dotnet, Comuki.Host.dll].
+# [/app/host/comuki].
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "Comuki.Host.dll"]
+ENTRYPOINT ["/app/host/comuki"]
 WORKDIR /app/host

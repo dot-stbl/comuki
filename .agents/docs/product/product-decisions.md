@@ -2,7 +2,7 @@
 
 > **Owner:** bradw (acting as product owner for v1) — 2026-09-08
 >
-> **Source:** `audit-product-report.md` (§5 Product Questions for the Owner)
+> **Source:** [`../audits/audit-product-report.md`](../audits/audit-product-report.md) (§5 Product Questions for the Owner)
 >
 > **Convention:** каждое решение краткое, с конкретным next-step. Где решение требует кода, отмечено как `[FIX]` (для немедленного фикса) или `[V2]` (deferred).
 

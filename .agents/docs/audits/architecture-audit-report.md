@@ -721,7 +721,7 @@ during refactor.
 - `.agents/docs/architecture/comuki-decisions.md`
 - `.agents/docs/architecture/comuki-stack.md`
 - `.agents/docs/architecture/comuki-project-structure.md`
-- `audit-product-report.md` (already-known product audit — used for cross-reference)
+- [`audit-product-report.md`](./audit-product-report.md) (already-known product audit — used for cross-reference)
 
 **Code (selected reads).**
 - `comuki.slnx` (full)

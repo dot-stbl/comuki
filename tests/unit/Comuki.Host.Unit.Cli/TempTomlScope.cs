@@ -8,6 +8,12 @@ namespace Comuki.Host.Unit.Cli;
 /// </summary>
 internal sealed class TempTomlScope(string path, string? originalConfigPath) : IDisposable
 {
+    /// <summary>The temp file backing this scope.</summary>
+    public string PathOf()
+    {
+        return path;
+    }
+
     /// <summary>Install the supplied TOML content as the scoped config.toml.</summary>
     public static TempTomlScope Install(string content)
     {

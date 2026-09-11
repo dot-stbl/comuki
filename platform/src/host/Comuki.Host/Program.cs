@@ -2,6 +2,7 @@ using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Host;
 using Comuki.Host.Cli;
+using Comuki.Host.Cli.Doctor;
 using Comuki.Host.OpenApi;
 using Comuki.Host.Workers;
 using Comuki.Modules.Scheduler.Infrastructure.Observers;
@@ -16,6 +17,11 @@ using Comuki.Shared.Contracts.ControlPlane.Profiles;
 // run before any host bootstrap — no config, no database and no logging
 // pipeline are touched. Build-time OpenAPI generation arrives with empty
 // args, so the introspection path never enters these branches.
+if (ComukiHostCli.IsDoctorRequested(args))
+{
+    return await ComukiDoctor.RunAsync(Console.Out);
+}
+
 if (ComukiHostCli.TryRun(args) is { } cliExitCode)
 {
     return cliExitCode;

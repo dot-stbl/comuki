@@ -1,0 +1,253 @@
+/* A block of code, and the one place in the product where a *syntax* palette
+ * has to exist.
+ *
+ * ## Why the palette is built here rather than picked
+ *
+ * `DESIGN.md` forbids a hex in a component and puts every colour in the theme
+ * registry, and the registry states twenty primitives that describe a
+ * dispatcher's board — a floor, a rail, two text greys, an accent, six
+ * statuses. None of them is "string literal". So the syntax roles are
+ * *derived* here, as local custom properties on the block, from tokens that
+ * already exist. Two consequences, both wanted:
+ *
+ * 1. A new theme highlights code without knowing this file exists, because
+ *    every role below resolves through `--text`, `--text-muted`,
+ *    `--text-faint` and `--primary`, which every theme must state anyway.
+ * 2. The day the registry grows a real syntax palette, this block is the only
+ *    thing that changes — nine declarations, not a rewrite.
+ *
+ * ## Why it is nearly monochrome
+ *
+ * Because the product is. Chrome here is colourless by construction and
+ * saturation is reserved for status inside the data; a status hue on a string
+ * literal would be `--st-success` meaning "success" in one place on the screen
+ * and "this is a quoted value" in another, which is exactly the drift the
+ * Real Words Rule exists to stop. So code reads on three channels the product
+ * already owns — the neutral ramp, weight, and slant — with the single accent
+ * carrying literals, the one role a reader scans for. A diff's additions and
+ * deletions take a wash of the same two, and the `+` and `-` in the source are
+ * the second channel, already written into the text.
+ */
+
+.block {
+  /* The syntax roles. Derived, never picked — see the header. */
+  --code-quiet: var(--text-faint);
+  --code-structure: var(--text-muted);
+  --code-plain: var(--text);
+  --code-literal: var(--primary);
+  --code-added: color-mix(in oklab, var(--primary) 12%, transparent);
+  --code-removed: color-mix(in oklab, var(--text-faint) 16%, transparent);
+  /* Unitless, so the collapsed height is a count of lines rather than a
+     guess at one. It must stay equal to `.pre`'s own line-height. */
+  --code-line: 1.55;
+  --code-lines: 24;
+
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+/* The head is chrome on a data surface, so it is bounded by a hairline and
+   carries no fill of its own. */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+  padding: var(--s2) var(--s3);
+  border-block-end: var(--hairline) solid var(--rule);
+}
+
+/* Names a value — which grammar — so the data voice at the small furniture
+   step. Not a badge and not a pill: it carries no status and no wash. */
+.chip {
+  flex: 0 0 auto;
+  padding: 0 var(--s2);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-muted);
+}
+
+/* Where the code came from. A path and a line number are both values, and the
+   line number is a figure that sits in a column of them when several blocks
+   stack — so tabular. Truncates rather than wrapping: a wrapped path pushes
+   the controls down a row and they have to be found again. */
+.origin {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+/* Pinned to the end whether or not an origin claimed the middle. */
+.actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--s2);
+  margin-inline-start: auto;
+}
+
+.pre {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-x: auto;
+  overflow-y: clip;
+  padding: var(--s3) var(--s4);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  line-height: var(--code-line);
+  color: var(--code-plain);
+  white-space: pre;
+  tab-size: 2;
+}
+
+.pre:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline-offset: -2px;
+}
+
+/* Wrapping is the operator's decision, so it is an attribute rather than a
+   class the call site has to remember. `anywhere` and not `break-word`: a
+   minified line or a base64 blob has no break opportunity at all, and the
+   point of turning wrapping on is that nothing leaves the box. */
+.block[data-wrap] .pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-x: clip;
+}
+
+/* Clipped to a count of lines, never `hidden`: `hidden` would make this a
+   scroll container and give the operator two ways to move the same text. */
+.block[data-collapsed] .pre {
+  max-block-size: calc(var(--code-lines) * var(--code-line) * var(--t-xs));
+  overflow-y: clip;
+}
+
+.code {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+}
+
+/* The control that says how much is behind the fold. Full width and bounded
+   above by the rule, so it reads as the bottom edge of the block rather than
+   as a button somebody left there. */
+.more {
+  justify-content: flex-start;
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  border-block-start: var(--hairline) solid var(--rule);
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------------------- *
+ * The highlighter's own classes.
+ *
+ * highlight.js emits these; the mapping onto the roles above is the whole
+ * theme. Grouped by role rather than by class so the reading is "what does
+ * this mean" and not "what did highlight.js call it".
+ * ---------------------------------------------------------------------- */
+
+/* Quiet — anything that is not the program: comments, shebangs, pragmas. */
+.code :global(.hljs-comment),
+.code :global(.hljs-quote),
+.code :global(.hljs-meta),
+.code :global(.hljs-meta .hljs-keyword),
+.code :global(.hljs-meta .hljs-string) {
+  color: var(--code-quiet);
+  font-style: italic;
+}
+
+/* Structure — the words that hold the program up. Weight rather than hue:
+   the shape of a block is what the eye is following, and it survives a
+   greyscale screenshot. */
+.code :global(.hljs-keyword),
+.code :global(.hljs-built_in),
+.code :global(.hljs-type),
+.code :global(.hljs-selector-tag),
+.code :global(.hljs-doctag),
+.code :global(.hljs-operator),
+.code :global(.hljs-tag) {
+  color: var(--code-structure);
+  font-weight: var(--fw-semibold);
+}
+
+/* Named things — what the reader is usually looking for by name. Full-strength
+   text at weight, so a function name is the darkest thing on the line. */
+.code :global(.hljs-title),
+.code :global(.hljs-title.class_),
+.code :global(.hljs-title.function_),
+.code :global(.hljs-section),
+.code :global(.hljs-name),
+.code :global(.hljs-selector-id),
+.code :global(.hljs-selector-class) {
+  color: var(--code-plain);
+  font-weight: var(--fw-semibold);
+}
+
+/* Literals — the one role carrying the accent, because a value is the thing
+   scanned for in a config file and a payload. */
+.code :global(.hljs-string),
+.code :global(.hljs-number),
+.code :global(.hljs-literal),
+.code :global(.hljs-regexp),
+.code :global(.hljs-symbol),
+.code :global(.hljs-char.escape_),
+.code :global(.hljs-template-variable),
+.code :global(.hljs-subst) {
+  color: var(--code-literal);
+}
+
+/* Bindings — parameters, attributes, keys. Quieter than a name, louder than a
+   comment: they are the scaffolding a value hangs on. */
+.code :global(.hljs-attr),
+.code :global(.hljs-attribute),
+.code :global(.hljs-property),
+.code :global(.hljs-variable),
+.code :global(.hljs-params),
+.code :global(.hljs-punctuation) {
+  color: var(--code-structure);
+}
+
+/* A patch. The hue does not carry this — the `+` and the `-` are in the text
+   and the wash only finds the lines they are on. A band rather than a colour
+   on the glyphs, because what is being read is *which lines moved*. */
+.code :global(.hljs-addition) {
+  display: inline-block;
+  inline-size: 100%;
+  background: var(--code-added);
+  color: var(--code-plain);
+}
+
+.code :global(.hljs-deletion) {
+  display: inline-block;
+  inline-size: 100%;
+  background: var(--code-removed);
+  color: var(--code-quiet);
+}
+
+.code :global(.hljs-strong) {
+  font-weight: var(--fw-semibold);
+}
+
+.code :global(.hljs-emphasis) {
+  font-style: italic;
+}
+
+.code :global(.hljs-link) {
+  color: var(--code-literal);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}

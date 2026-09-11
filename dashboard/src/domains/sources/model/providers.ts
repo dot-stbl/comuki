@@ -1,5 +1,6 @@
 import type {
   AdmissionMode,
+  ConnectionKind,
   NativeTicket,
   SourceAuth,
   SourceConnection,
@@ -33,6 +34,41 @@ export const SOURCE_KINDS: SourceKind[] = [
 export const CONNECTABLE_KINDS: SourceKind[] = SOURCE_KINDS.filter(
   (kind) => kind !== "native"
 )
+
+/** The five kinds as a membership test. `SOURCE_KINDS` is the vocabulary. */
+const KNOWN_KINDS: ReadonlySet<string> = new Set<SourceKind>(SOURCE_KINDS)
+
+/**
+ * Is this word one of the five the dashboard knows?
+ *
+ * The predicate exists because `SourceConnection.kind` is a `ConnectionKind`:
+ * the host may name a provider this build has never met, and the tables below
+ * are exhaustive over the five, not over whatever the wire says. Narrowing is
+ * the only honest way into them — an assertion would put a key in the lookup
+ * that the lookup has no row for.
+ */
+export function isSourceKind(kind: string): kind is SourceKind {
+  return KNOWN_KINDS.has(kind)
+}
+
+/**
+ * The provider's name as a surface says it: the product's word for a kind it
+ * knows, and the host's own word for one it does not. Never an empty cell.
+ */
+export function sourceKindLabel(kind: ConnectionKind): string {
+  return isSourceKind(kind) ? SOURCE_KIND_LABEL[kind] : kind
+}
+
+/**
+ * The mark for a kind, or `null` for a provider this kit has no honest mark
+ * for — which `BrandTag` already reads as "write it in words", the same
+ * branch `yandex-tracker` has always taken. An unknown provider takes it too:
+ * drawing somebody's trademark from memory and inventing one for a provider
+ * we have never seen are the same mistake.
+ */
+export function sourceKindBrand(kind: ConnectionKind): BrandId | null {
+  return isSourceKind(kind) ? SOURCE_KIND_BRAND[kind] : null
+}
 
 export const SOURCE_KIND_LABEL: Record<SourceKind, string> = {
   github: "github",

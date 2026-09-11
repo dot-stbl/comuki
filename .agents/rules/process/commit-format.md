@@ -39,6 +39,7 @@ always: true
 | `chore`    | тулинг, мета-вещи, форматирование, мелочи, не код и не фича                 |
 | `style`    | форматирование без изменения смысла (whitespace, prettier, biome)            |
 | `revert`   | откат предыдущего коммита                                                    |
+| `merge`    | ручной мерж-коммит с осмысленным описанием; `Merge branch …` от git проходит мимо правила |
 
 ## Scope (опционально, рекомендуется)
 
@@ -58,9 +59,14 @@ always: true
 
 - **Императив** — "add", "fix", "bump", "wire" — не "added", "fixed", "bumped".
 - **Без точки** в конце (Conventional Commits convention).
-- **≤72 символа** — рекомендация; **≤100** — жёсткий предел, проверяется хуком.
-- **Lowercase** для type/scope (Conventional Commits convention), и description
-  тоже начинается со строчной.
+- **Длина:** **≤72 символа — рекомендация**, **>100 — гейт валит** коммит.
+  Две разные цифры намеренно: 72 это про читаемость `git log --oneline`,
+  100 это запас, за которым subject перестаёт быть subject.
+- **Lowercase** для type/scope (Conventional Commits convention). На регистр
+  description правило **не смотрит** и хук тоже: описание сплошь и рядом
+  начинается с идентификатора или акронима — `SubjectScopeMiddleware wraps …`,
+  `CVE-2026-49451 bump`, `OSS deployment artifacts`. Требование к description —
+  императив, а не строчная буква.
 - **Префикс `[hybrid]`** — обязателен, с пробелом перед type.
 - **`!` перед `:`** — опциональный маркер breaking change:
   `[hybrid] feat(api)!: change /tasks response shape`.

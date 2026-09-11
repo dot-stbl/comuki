@@ -10,32 +10,24 @@ using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Modules.Scheduler.Infrastructure.Persistence;
-using Comuki.Shared.Bootstrap.Logging;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-
-// Comuki-native log surface (issue #54): one logger over the comuki
-// console formatter; Console.WriteLine is gone.
-using var loggerFactory = LoggerFactory.Create(static logging => logging.AddComukiConsole());
-var logger = loggerFactory.CreateLogger("comuki.migrator");
 
 var recreate = args.Contains("--recreate", StringComparer.Ordinal);
 
 var connectionString = ConnectionStringSource.TryResolve(out var fromLegacyAlias);
 if (string.IsNullOrWhiteSpace(connectionString))
 {
-    logger.LogError(
-        "connection string not found: set the {EnvVariable} env var or connectionStrings.comuki in config.toml",
-        ConnectionStringSource.EnvVariable);
+    Console.Error.WriteLine(
+        $"connection string not found: set the {ConnectionStringSource.EnvVariable} env var "
+        + "or connectionStrings.comuki in config.toml");
     return 1;
 }
 
 if (fromLegacyAlias)
 {
-    logger.LogWarning(
-        "connection string resolved from the legacy {LegacyEnvVariable} env var; rename it to {EnvVariable}",
-        ConnectionStringSource.LegacyEnvVariable,
-        ConnectionStringSource.EnvVariable);
+    Console.Error.WriteLine(
+        $"warning: connection string resolved from the legacy {ConnectionStringSource.LegacyEnvVariable} env var; "
+        + $"rename it to {ConnectionStringSource.EnvVariable}");
 }
 
 if (recreate)
@@ -45,89 +37,114 @@ if (recreate)
     await using var forDrop = new OrchestrationDbContext(dropOptions.Options);
 
     await forDrop.Database.EnsureDeletedAsync();
-    logger.LogInformation("database dropped (--recreate)");
+    Console.WriteLine("database dropped (--recreate)");
 }
 
-// All module contexts migrate the same database; each keeps its own
-// schema and per-schema migration history table
-// (orchestration.__ef_migrations_history, identity.__ef_migrations_history,
-// projects.__ef_migrations_history, memory.__ef_migrations_history,
-// chat.__ef_migrations_history, intake.__ef_migrations_history,
-// costs.__ef_migrations_history, artifacts.__ef_migrations_history,
-// knowledge.__ef_migrations_history),
-// so the applications cannot collide.
-var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
-OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
-await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
-await DatabaseSchemaEnsurer.EnsureAsync(connectionString, OrchestrationDatabase.Schema, CancellationToken.None);
-await ApplyAsync(logger, orchestrationDb, "orchestration");
-
-var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-await using var identityDb = new IdentityDbContext(identityOptions.Options);
-await DatabaseSchemaEnsurer.EnsureAsync(connectionString, IdentityDatabase.Schema, CancellationToken.None);
-await ApplyAsync(logger, identityDb, "identity");
-
-var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-await using var projectsDb = new ProjectsDbContext(projectsOptions.Options);
-await DatabaseSchemaEnsurer.EnsureAsync(connectionString, ProjectsDatabase.Schema, CancellationToken.None);
-await ApplyAsync(logger, projectsDb, "projects");
-
-var memoryOptions = new DbContextOptionsBuilder<MemoryDbContext>();
-MemoryDbContext.ApplyOptions(memoryOptions, connectionString);
-await using var memoryDb = new MemoryDbContext(memoryOptions.Options);
-await DatabaseSchemaEnsurer.EnsureAsync(connectionString, MemoryDatabase.Schema, CancellationToken.None);
-await ApplyAsync(logger, memoryDb, "memory");
-
-var knowledgeOptions = new DbContextOptionsBuilder<KnowledgeDbContext>();
-KnowledgeDbContext.ApplyOptions(knowledgeOptions, connectionString);
-await using var knowledgeDb = new KnowledgeDbContext(knowledgeOptions.Options);
-await DatabaseSchemaEnsurer.EnsureAsync(connectionString, KnowledgeDatabase.Schema, CancellationToken.None);
-await ApplyAsync(logger, knowledgeDb, "knowledge");
-
-var chatOptions = new DbContextOptionsBuilder<ChatDbContext>();
-ChatDbContext.ApplyOptions(chatOptions, connectionString);
-await using var chatDb = new ChatDbContext(chatOptions.Options);
-await DatabaseSchemaEnsurer.EnsureAsync(connectionString, ChatDatabase.Schema, CancellationToken.None);
-await ApplyAsync(logger, chatDb, "chat");
-
-var intakeOptions = new DbContextOptionsBuilder<IntakeDbContext>();
-IntakeDbContext.ApplyOptions(intakeOptions, connectionString);
-await using var intakeDb = new IntakeDbContext(intakeOptions.Options);
-await DatabaseSchemaEnsurer.EnsureAsync(connectionString, IntakeDatabase.Schema, CancellationToken.None);
-await ApplyAsync(logger, intakeDb, "intake");
-
-var costsOptions = new DbContextOptionsBuilder<CostsDbContext>();
-CostsDbContext.ApplyOptions(costsOptions, connectionString);
-await using var costsDb = new CostsDbContext(costsOptions.Options);
-await DatabaseSchemaEnsurer.EnsureAsync(connectionString, CostsDatabase.Schema, CancellationToken.None);
-await ApplyAsync(logger, costsDb, "costs");
-
-var artifactsOptions = new DbContextOptionsBuilder<ArtifactsDbContext>();
-ArtifactsDbContext.ApplyOptions(artifactsOptions, connectionString);
-await using var artifactsDb = new ArtifactsDbContext(artifactsOptions.Options);
-await DatabaseSchemaEnsurer.EnsureAsync(connectionString, ArtifactsDatabase.Schema, CancellationToken.None);
-await ApplyAsync(logger, artifactsDb, "artifacts");
-
-var schedulerOptions = new DbContextOptionsBuilder<SchedulerDbContext>();
-SchedulerDbContext.ApplyOptions(schedulerOptions, connectionString);
-await using var schedulerDb = new SchedulerDbContext(schedulerOptions.Options);
-await DatabaseSchemaEnsurer.EnsureAsync(connectionString, SchedulerDatabase.Schema, CancellationToken.None);
-await ApplyAsync(logger, schedulerDb, "scheduler");
+foreach (var target in MigratorTargets.All)
+{
+    await target.RunAsync(connectionString, CancellationToken.None);
+}
 
 return 0;
 
-static async Task ApplyAsync(ILogger logger, DbContext db, string label)
+/// <summary>
+/// One module migration step: creates the module context, ensures its
+/// schema exists, then applies pending migrations with per-schema
+/// reporting.
+/// </summary>
+file sealed class MigratorTarget(string label, string schema, Func<string, DbContext> createContext)
 {
-    var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
-    await db.Database.MigrateAsync();
-
-    foreach (var migration in pending)
+    public async Task RunAsync(string connectionString, CancellationToken cancellationToken)
     {
-        logger.LogInformation("applied ({Schema}): {Migration}", label, migration);
-    }
+        var context = createContext(connectionString);
+        await using (context)
+        {
+            await DatabaseSchemaEnsurer.EnsureAsync(connectionString, schema, cancellationToken);
 
-    var total = (await db.Database.GetAppliedMigrationsAsync()).ToList();
-    logger.LogInformation("{Schema} schema is up to date ({Count} migration(s) in history)", label, total.Count);
+            var pending = (await context.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
+            await context.Database.MigrateAsync(cancellationToken);
+
+            foreach (var migration in pending)
+            {
+                Console.WriteLine($"applied ({label}): {migration}");
+            }
+
+            var total = (await context.Database.GetAppliedMigrationsAsync(cancellationToken)).ToList();
+            Console.WriteLine($"{label} schema is up to date ({total.Count} migration(s) in history)");
+        }
+    }
+}
+
+/// <summary>
+/// The module contexts in migration order. All of them migrate the same
+/// database; each keeps its own schema and per-schema migration history
+/// table (orchestration.__ef_migrations_history,
+/// identity.__ef_migrations_history, …) so the applications cannot
+/// collide.
+/// </summary>
+file static class MigratorTargets
+{
+    public static readonly MigratorTarget[] All =
+    [
+        new("orchestration", OrchestrationDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<OrchestrationDbContext>();
+            OrchestrationDbContext.ApplyOptions(builder, connectionString);
+            return new OrchestrationDbContext(builder.Options);
+        }),
+        new("identity", IdentityDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<IdentityDbContext>();
+            IdentityDbContext.ApplyOptions(builder, connectionString);
+            return new IdentityDbContext(builder.Options);
+        }),
+        new("projects", ProjectsDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<ProjectsDbContext>();
+            ProjectsDbContext.ApplyOptions(builder, connectionString);
+            return new ProjectsDbContext(builder.Options);
+        }),
+        new("memory", MemoryDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<MemoryDbContext>();
+            MemoryDbContext.ApplyOptions(builder, connectionString);
+            return new MemoryDbContext(builder.Options);
+        }),
+        new("knowledge", KnowledgeDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<KnowledgeDbContext>();
+            KnowledgeDbContext.ApplyOptions(builder, connectionString);
+            return new KnowledgeDbContext(builder.Options);
+        }),
+        new("chat", ChatDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<ChatDbContext>();
+            ChatDbContext.ApplyOptions(builder, connectionString);
+            return new ChatDbContext(builder.Options);
+        }),
+        new("intake", IntakeDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<IntakeDbContext>();
+            IntakeDbContext.ApplyOptions(builder, connectionString);
+            return new IntakeDbContext(builder.Options);
+        }),
+        new("costs", CostsDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<CostsDbContext>();
+            CostsDbContext.ApplyOptions(builder, connectionString);
+            return new CostsDbContext(builder.Options);
+        }),
+        new("artifacts", ArtifactsDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<ArtifactsDbContext>();
+            ArtifactsDbContext.ApplyOptions(builder, connectionString);
+            return new ArtifactsDbContext(builder.Options);
+        }),
+        new("scheduler", SchedulerDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<SchedulerDbContext>();
+            SchedulerDbContext.ApplyOptions(builder, connectionString);
+            return new SchedulerDbContext(builder.Options);
+        }),
+    ];
 }

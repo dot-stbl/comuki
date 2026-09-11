@@ -15,11 +15,8 @@ public sealed class IntakeDesignTimeFactory() : IDesignTimeDbContextFactory<Inta
     /// <inheritdoc />
     public IntakeDbContext CreateDbContext(string[] args)
     {
-        var connectionString = ConnectionStringSource.TryResolve(out _)
-            ?? "Host=localhost;Database=comuki;Username=postgres;Password=postgres";
-
         var builder = new DbContextOptionsBuilder<IntakeDbContext>();
-        IntakeDbContext.ApplyOptions(builder, connectionString);
+        IntakeDbContext.ApplyOptions(builder, ConnectionStringSource.ResolveOrThrow());
         return new IntakeDbContext(builder.Options);
     }
 }

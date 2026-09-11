@@ -4,6 +4,7 @@ import {
   CUSTOM_COMMANDS_SEED,
   type SeedChatMessage,
   type SeedChatSession,
+  type SeedMessagePart,
   type SeedProposalDecision,
   type SeedSlashCommand,
 } from "./chat.seed"
@@ -30,6 +31,11 @@ import { approveSeedRun, cancelSeedRun, listSeedRuns } from "./runs.store"
 function cloneMessage(message: SeedChatMessage): SeedChatMessage {
   return {
     ...message,
+    // Parts are the turn's content and the store hands the same records to
+    // every reader, so the copy has to reach inside the list as well: a plan
+    // shared by reference between a reset and the thread that is showing it
+    // is the same trap `resetChatSessions` exists to close.
+    parts: message.parts?.map(clonePart),
     tool: message.tool ? { ...message.tool } : undefined,
     proposal: message.proposal
       ? {
@@ -38,6 +44,17 @@ function cloneMessage(message: SeedChatMessage): SeedChatMessage {
         }
       : undefined,
   }
+}
+
+/** One part, deeply enough that nothing mutable is shared with the seed. */
+function clonePart(part: SeedMessagePart): SeedMessagePart {
+  return part.kind === "plan"
+    ? {
+        ...part,
+        nodes: part.nodes.map((node) => ({ ...node })),
+        edges: part.edges.map((edge) => ({ ...edge })),
+      }
+    : { ...part }
 }
 
 function cloneSession(session: SeedChatSession): SeedChatSession {

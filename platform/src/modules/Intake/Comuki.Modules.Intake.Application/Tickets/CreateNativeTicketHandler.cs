@@ -59,6 +59,6 @@ public sealed class CreateNativeTicketHandler(
         await store.TryMarkClaimedAsync(stored.Id, runId, cancellationToken);
         logger.LogInformation("Native ticket {ExternalId} launched into run {RunId}", externalId, runId);
 
-        return IntakeTicketView.Of(stored) with { Status = "Claimed", RunId = runId.Value };
+        return IntakeTicketView.Of(stored) with { Status = nameof(IntakeTicketStatus.Claimed), RunId = runId.Value };
     }
 }

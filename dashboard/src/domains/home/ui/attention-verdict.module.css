@@ -19,31 +19,13 @@
   overflow: clip;
 }
 
-/* Hue and weave together, declared once here and read by nothing else — this
-   band is the only consumer, and the values come from the tokens the river and
-   the run graph already share, so the cue cannot drift away from them. */
-.band[data-status="escalated"] {
-  --hue: var(--st-escalated);
-  --weave: var(--weave-escalated);
-}
-
-.band[data-status="failed"] {
-  --hue: var(--st-failed);
-  --weave: var(--weave-failed);
-}
-
-.band[data-status="waiting"] {
-  --hue: var(--st-waiting);
-  --weave: var(--weave-waiting);
-}
-
-.band[data-status="clear"] {
-  --hue: var(--st-success);
-  --weave: var(--weave-success);
-}
-
 /* Two pixels rather than a hairline, because a hairline has no room to carry a
-   weave and hue alone is not allowed to say what state this is. */
+   weave and hue alone is not allowed to say what state this is.
+
+   Neither channel is spelled out in this module. `[data-status]` in
+   `tokens.css` pairs the status word with its hue and its hatch once, for the
+   whole product, and that block also carries `clear` — this band's own word
+   for an empty list, which borrows success's pair. */
 .rail {
   flex: 0 0 var(--s1);
   align-self: stretch;

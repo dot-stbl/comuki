@@ -4,13 +4,14 @@ import { Link } from "@tanstack/react-router"
 import {
   ADMISSION_MODES,
   NATIVE_DISCONNECT_REFUSAL,
-  SOURCE_KINDS,
-  SOURCE_KIND_BRAND,
-  SOURCE_KIND_LABEL,
+  PROVIDERS,
   admissionLabel,
   admittedCount,
   connectionHost,
   connectionNote,
+  isNativeIntake,
+  providerBrand,
+  providerLabel,
 } from "@/domains/sources/model/providers"
 import type {
   NativeTicket,
@@ -180,14 +181,22 @@ export function createSourceColumns({
       accessorKey: "kind",
       header: "provider",
       // The mark, where the provider has one that survives being drained to the
-      // chrome's own colour, and the word where it does not — the fallback is
-      // the component's, not this cell's, so a provider added later cannot end
-      // up as an empty cell. The name goes nowhere: it is still what the filter
-      // offers, what the row announces and what a hover says.
+      // chrome's own colour, and the word where it does not. The name goes
+      // nowhere: it is still what the filter offers, what the row announces and
+      // what a hover says.
+      //
+      // Both halves come from the registry's readers, which have nowhere to
+      // return `undefined` from. `BrandTag` does survive a `null` brand — it
+      // has an honest "write it in words" branch — but the words it writes are
+      // the `label` this cell hands it, and the old exhaustive table answered
+      // `undefined` for a provider the dashboard had not learned: a component
+      // fallback cannot save a cell whose text was never supplied.
+      // `providerLabel` falls back to the host's own word, so an unknown
+      // provider reads as itself rather than as nothing.
       cell: ({ row }) => (
         <BrandTag
-          brand={SOURCE_KIND_BRAND[row.original.kind]}
-          label={SOURCE_KIND_LABEL[row.original.kind]}
+          brand={providerBrand(row.original.kind)}
+          label={providerLabel(row.original.kind)}
         />
       ),
       meta: {
@@ -197,9 +206,12 @@ export function createSourceColumns({
         filter: {
           kind: "select",
           placeholder: "all providers",
-          options: SOURCE_KINDS.map((kind) => ({
-            value: kind,
-            label: SOURCE_KIND_LABEL[kind],
+          // The registry, in its own order. A sixth provider appears in this
+          // filter the moment somebody writes its entry, and never because
+          // anybody remembered this line.
+          options: PROVIDERS.map((provider) => ({
+            value: provider.key,
+            label: provider.label,
           })),
         },
       },
@@ -353,7 +365,7 @@ export function createSourceColumns({
           ? NATIVE_DISCONNECT_REFUSAL
           : editDenial
 
-        const native = connection.kind === "native"
+        const native = isNativeIntake(connection.kind)
 
         // Four icon-only controls in a 116px cell, so each one owes the reader
         // the word its glyph is standing in for. The kit tooltip carries it on

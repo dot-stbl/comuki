@@ -7,6 +7,7 @@ import {
   roleGrants,
   rolesGranting,
   type Permission,
+  type Role,
 } from "./permissions"
 
 describe("the role matrix", () => {
@@ -58,5 +59,40 @@ describe("the role matrix", () => {
       "needs approver, project-admin or platform-admin"
     )
     expect(needsLabel("identity.manage")).toBe("needs platform-admin")
+  })
+})
+
+/**
+ * The wire's roles are `string`, and the mappers that read them cannot promise
+ * otherwise — `MeResponse.roles` and `RoleAssignmentView.role` are both plain
+ * strings. `roleGrants` is therefore the last place a role this build has
+ * never heard of can arrive, and what it does there is a security decision,
+ * not a typing detail.
+ */
+describe("an unknown role", () => {
+  // `as Role` is the test's whole subject: this is exactly the value the wire
+  // can hand a mapper, and the function has to survive it.
+  const unknown = "auditor" as Role
+
+  it("grants nothing rather than throwing", () => {
+    expect(() => roleGrants(unknown, "runs.view")).not.toThrow()
+    expect(roleGrants(unknown, "runs.view")).toBe(false)
+  })
+
+  it("is refused every act in the matrix, not just the dangerous ones", () => {
+    for (const permission of [
+      "runs.view",
+      "runs.stop",
+      "plans.approve",
+      "identity.manage",
+      "settings.git",
+    ] satisfies Permission[]) {
+      expect(roleGrants(unknown, permission)).toBe(false)
+    }
+  })
+
+  it("never appears among the roles a denial sentence names", () => {
+    expect(rolesGranting("runs.view")).toEqual([...ROLES])
+    expect(rolesGranting("runs.view")).not.toContain(unknown)
   })
 })

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Comuki.Engine.Orchestration.Domain;
 using Comuki.Shared.Contracts.Journal;
 
 namespace Comuki.Host.Realtime.Models;
@@ -53,8 +54,8 @@ internal static class AttentionMap
 
         return to switch
         {
-            "Running" => new AttentionDraft(to, KindRunning, RunEventViewMapping.ReadWorkItemId(entry)),
-            "Failed" => new AttentionDraft(to, KindFailed, RunEventViewMapping.ReadWorkItemId(entry)),
+            nameof(WorkItemStatus.Running) => new AttentionDraft(to, KindRunning, RunEventViewMapping.ReadWorkItemId(entry)),
+            nameof(WorkItemStatus.Failed) => new AttentionDraft(to, KindFailed, RunEventViewMapping.ReadWorkItemId(entry)),
             _ => null,
         };
     }
@@ -66,10 +67,10 @@ internal static class AttentionMap
 
         return to switch
         {
-            "Running" => new AttentionDraft(to, KindRunning, null),
-            "Failed" => new AttentionDraft(to, KindFailed, null),
-            "Escalated" => new AttentionDraft(to, KindEscalated, null),
-            "Waiting" => new AttentionDraft(to, KindAwaitingApproval, null),
+            nameof(RunStatus.Running) => new AttentionDraft(to, KindRunning, null),
+            nameof(RunStatus.Failed) => new AttentionDraft(to, KindFailed, null),
+            nameof(RunStatus.Escalated) => new AttentionDraft(to, KindEscalated, null),
+            nameof(RunStatus.Waiting) => new AttentionDraft(to, KindAwaitingApproval, null),
             _ => null,
         };
     }

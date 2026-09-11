@@ -30,7 +30,7 @@ const SAMPLE: Task[] = [
   {
     id: "m-3041",
     projectId: "p_comuki",
-    source: "manual",
+    source: "native",
     title: "Тёмная тема",
     app: "web-app",
     priority: "normal",

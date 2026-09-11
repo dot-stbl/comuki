@@ -17,11 +17,12 @@ import { useSourcesQuery } from "@/domains/sources/api/queries"
 import {
   AUTH_LABEL,
   NATIVE_DISCONNECT_REFUSAL,
-  SOURCE_KIND_BRAND,
-  SOURCE_KIND_LABEL,
   admittedCount,
   connectionHost,
   connectionNote,
+  isNativeIntake,
+  providerBrand,
+  providerLabel,
 } from "@/domains/sources/model/providers"
 import type {
   AdmissionMode,
@@ -258,7 +259,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
   const testing = testConnection.isPending
   const admitted = admittedCount(connection, tickets)
   const projectKey = where ?? connection.projectId
-  const native = connection.kind === "native"
+  const native = isNativeIntake(connection.kind)
 
   const dropProbe = () =>
     setProbe((current) => (current === null ? current : null))
@@ -361,7 +362,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     <FormPage
       title={connection.name}
       crumbs={crumbs}
-      summary={`${SOURCE_KIND_LABEL[connection.kind]} · ${projectKey} · ${connectionNote(connection, tickets)}`}
+      summary={`${providerLabel(connection.kind)} · ${projectKey} · ${connectionNote(connection, tickets)}`}
       actions={
         <>
           <ConnectionStateBadge state={connection.state} />
@@ -433,8 +434,8 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                   not — the fallback lives in the component, exactly as it does
                   in the list's provider column. */}
               <BrandTag
-                brand={SOURCE_KIND_BRAND[connection.kind]}
-                label={SOURCE_KIND_LABEL[connection.kind]}
+                brand={providerBrand(connection.kind)}
+                label={providerLabel(connection.kind)}
               />
             </span>
           </dd>

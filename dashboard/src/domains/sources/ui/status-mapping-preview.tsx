@@ -1,13 +1,17 @@
 import { Fragment } from "react"
 
-import { SOURCE_KIND_LABEL } from "@/domains/sources/model/providers"
-import type { SourceKind, StatusMap } from "@/domains/sources/model/types"
+import {
+  isNativeIntake,
+  providerLabel,
+} from "@/domains/sources/model/providers"
+import type { ProviderKey, StatusMap } from "@/domains/sources/model/types"
 import { StatusBadge } from "@/shared/ui"
 
 import styles from "./status-mapping-preview.module.css"
 
 export interface StatusMappingPreviewProps {
-  kind: SourceKind
+  /** The connection's own provider — the host's word when it is not in the registry. */
+  kind: ProviderKey
   mapping: StatusMap[]
 }
 
@@ -32,12 +36,20 @@ export function StatusMappingPreview({
   return (
     <section className={styles.preview} data-test="status-mapping">
       <h3 className={styles.head}>
-        status written back to {SOURCE_KIND_LABEL[kind]}
+        status written back to {providerLabel(kind)}
       </h3>
       {mapping.length === 0 ? (
+        /* Two different reasons for an empty mapping, and they are not the
+           same sentence. Native intake *is* the tracker, so there is nowhere
+           to write back to — a fact, and final. A provider this build has no
+           entry for has a tracker at the other end and nobody has written
+           down what its words are — a gap, and temporary. Saying the first
+           about the second would tell the operator their tickets are being
+           written back when nothing is. */
         <p className={styles.none}>
-          native intake is the tracker. A run&apos;s status is the ticket&apos;s
-          status, so there is nowhere to write it back to.
+          {isNativeIntake(kind)
+            ? "native intake is the tracker. A run's status is the ticket's status, so there is nowhere to write it back to."
+            : `nothing is written back to ${providerLabel(kind)} — this build has no mapping for that provider, so a run's status stays on the run.`}
         </p>
       ) : (
         // `dt` and `dd` sit directly under the `dl` rather than in the

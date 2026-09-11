@@ -99,7 +99,7 @@ function Segments({ node }: SegmentsProps) {
         return (
           <span
             key={status}
-            className={cn(styles.seg, styles.status)}
+            className={styles.seg}
             data-status={status}
             style={{ flexGrow: count }}
           />
@@ -195,10 +195,7 @@ export function RiverLegend() {
       </li>
       {LEGEND.map(([status, label]) => (
         <li key={status} className={styles.key}>
-          <span
-            className={cn(styles.keySwatch, styles.status)}
-            data-status={status}
-          />
+          <span className={styles.keySwatch} data-status={status} />
           {label}
         </li>
       ))}

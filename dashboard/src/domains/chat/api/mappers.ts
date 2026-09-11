@@ -2,6 +2,7 @@ import type {
   SeedChatMessage,
   SeedChatProposal,
   SeedChatSession,
+  SeedMessagePart,
   SeedSlashCommand,
   SeedToolCall,
 } from "@/shared/api/mock/chat.seed"
@@ -10,6 +11,7 @@ import type {
   ChatMessage,
   ChatSession,
   CommandScope,
+  MessagePart,
   MessageKind,
   Proposal,
   SlashCommand,
@@ -52,10 +54,56 @@ function toProposal(seed: SeedChatProposal): Proposal {
   }
 }
 
+/**
+ * One seeded part → one domain part.
+ *
+ * The two unions are written to be the same union in two places — the seed is
+ * the transport until the Orchestration API arrives, and this is the seam that
+ * says so out loud. The copy is structural rather than a cast, because a cast
+ * would keep compiling on the day one side grows a field the other does not
+ * have, which is exactly the day it needs to stop.
+ */
+function toMessagePart(seed: SeedMessagePart): MessagePart {
+  switch (seed.kind) {
+    case "text":
+      return { kind: "text", markdown: seed.markdown }
+    case "code":
+      return {
+        kind: "code",
+        language: seed.language,
+        source: seed.source,
+        path: seed.path,
+        startLine: seed.startLine,
+      }
+    case "diagram":
+      return { kind: "diagram", dialect: seed.dialect, source: seed.source }
+    case "thinking":
+      return { kind: "thinking", text: seed.text, tokens: seed.tokens }
+    case "tool":
+      return {
+        kind: "tool",
+        name: seed.name,
+        inputJson: seed.inputJson,
+        status: seed.status,
+        outputJson: seed.outputJson,
+        durationMs: seed.durationMs,
+      }
+    case "handoff":
+      return { kind: "handoff", query: seed.query }
+    case "plan":
+      return {
+        kind: "plan",
+        nodes: seed.nodes.map((node) => ({ ...node })),
+        edges: seed.edges.map((edge) => ({ ...edge })),
+      }
+  }
+}
+
 export function toChatMessage(seed: SeedChatMessage): ChatMessage {
   return {
     id: seed.id,
     kind: seed.kind,
+    parts: seed.parts?.map(toMessagePart),
     text: seed.text,
     streaming: seed.streaming,
     tool: seed.tool ? toToolCall(seed.tool) : undefined,
@@ -345,6 +393,37 @@ function clockOf(createdAt: string): string {
  * the host appends a tool row after the call returned, and a turn that
  * failed is journaled as its own message.
  */
+/* ==========================================================================
+ * THE WIRE → DOMAIN PART SEAM. One function, and it is deliberately empty.
+ *
+ * TODO(chat-parts-wire): when the host ships `ChatMessageView.parts`, this is
+ * the only function that has to be written — map each wire part onto the
+ * matching `MessagePart` the way `toMessagePart` maps the seed's, and delete
+ * the `undefined` below. The integration step is:
+ *
+ *   1. the sibling change on `platform/` adds the parts array to
+ *      `ChatMessageView` (the frozen list: text, code, diagram, thinking,
+ *      tool, handoff, plan — `question` and `decision` are P2);
+ *   2. somebody runs `bun run generate-api`, which regenerates
+ *      `shared/api/_generated/types/ChatMessageView.ts`;
+ *   3. this function stops returning `undefined` and starts reading
+ *      `view.parts`, and `chatMessageViewToDomainMessage` below passes the
+ *      result straight through.
+ *
+ * Nothing above this line and nothing in `ui/` changes, because the flat path
+ * stays: a message with no parts is derived from its own fields in
+ * `model/parts.ts`, which is what every wire row does today and what an older
+ * host will keep doing after the field lands.
+ *
+ * The wire types **do not exist yet** and this bundle must not invent them:
+ * `_generated/` is machine-written from the host's OpenAPI document, and a
+ * hand-edited shape there is a lie that survives exactly until the next
+ * generate.
+ * ========================================================================== */
+function wireMessageParts(): MessagePart[] | undefined {
+  return undefined
+}
+
 export function chatMessageViewToDomainMessage(
   view: ChatMessageView
 ): ChatMessage {
@@ -362,6 +441,10 @@ export function chatMessageViewToDomainMessage(
   return {
     id: view.id,
     kind,
+    // `undefined` until the host sends parts — see the seam above. The flat
+    // fields below are what the thread renders in the meantime, through the
+    // same derivation the seed's older messages go through.
+    parts: wireMessageParts(),
     // A tool row's prose *is* its result, and the card reads it off the tool
     // record. A second copy on `text` would render the same line twice the
     // day somebody widens the prose branch in `ui/chat-message.tsx`.

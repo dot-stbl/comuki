@@ -5,6 +5,7 @@ import {
   chatMessageViewToDomainMessage,
   chatSlashCommandsToDomainCommands,
   chatSlashCommandToDomainCommand,
+  toChatMessage,
 } from "@/domains/chat/api/mappers"
 import {
   availableCommands,
@@ -343,5 +344,120 @@ describe("chatMessagesPageToDomainMessages", () => {
         total: 0,
       })
     ).toEqual([])
+  })
+})
+
+/* ------------------------------------------------------------------ *
+ * Message parts.
+ *
+ * Two seams, and they are at different stages on purpose. The seed's parts
+ * are the shape the wire is being written to send, so they map today. The
+ * *wire's* parts do not exist yet — `_generated/` is machine-written from the
+ * host's OpenAPI document and this bundle must not invent a field there — so
+ * the seam is a marked function that returns nothing, and this is the case
+ * that will fail the day somebody fills it in without looking.
+ * ------------------------------------------------------------------ */
+
+describe("toChatMessage carries the part list", () => {
+  it("maps every kind in the frozen list without losing a field", () => {
+    const message = toChatMessage({
+      id: "m1",
+      kind: "reply",
+      at: "09:21",
+      parts: [
+        { kind: "text", markdown: "**bold**" },
+        {
+          kind: "code",
+          language: "ts",
+          source: "const a = 1",
+          path: "src/a.ts",
+          startLine: 12,
+        },
+        { kind: "diagram", dialect: "mermaid", source: "flowchart LR" },
+        { kind: "thinking", text: "weighing", tokens: 42 },
+        {
+          kind: "tool",
+          name: "runs.get",
+          inputJson: "{}",
+          status: "success",
+          outputJson: "ok",
+          durationMs: 412,
+        },
+        { kind: "handoff", query: "waiting" },
+        {
+          kind: "plan",
+          nodes: [{ id: "w1", label: "read", profile: "explorer" }],
+          edges: [{ from: "w1", to: "w2" }],
+        },
+      ],
+    })
+
+    expect(message.parts?.map((part) => part.kind)).toEqual([
+      "text",
+      "code",
+      "diagram",
+      "thinking",
+      "tool",
+      "handoff",
+      "plan",
+    ])
+    expect(message.parts?.[1]).toEqual({
+      kind: "code",
+      language: "ts",
+      source: "const a = 1",
+      path: "src/a.ts",
+      startLine: 12,
+    })
+    expect(message.parts?.[4]).toEqual({
+      kind: "tool",
+      name: "runs.get",
+      inputJson: "{}",
+      status: "success",
+      outputJson: "ok",
+      durationMs: 412,
+    })
+  })
+
+  it("copies a plan rather than sharing the seed's own arrays", () => {
+    const nodes = [{ id: "w1", label: "read" }]
+    const message = toChatMessage({
+      id: "m1",
+      kind: "reply",
+      at: "09:21",
+      parts: [{ kind: "plan", nodes, edges: [] }],
+    })
+
+    const mapped = message.parts?.[0]
+    expect(mapped?.kind).toBe("plan")
+    if (mapped?.kind === "plan") {
+      expect(mapped.nodes).not.toBe(nodes)
+      expect(mapped.nodes[0]).not.toBe(nodes[0])
+    }
+  })
+
+  it("leaves a message with no parts flat, for the derivation to read", () => {
+    const message = toChatMessage({
+      id: "m1",
+      kind: "reply",
+      at: "09:21",
+      text: "plain",
+    })
+    expect(message.parts).toBeUndefined()
+    expect(message.text).toBe("plain")
+  })
+})
+
+describe("the wire does not send parts yet", () => {
+  it("leaves `parts` absent, so the flat derivation still runs", () => {
+    // TODO(chat-parts-wire) points at the one function that changes when the
+    // host ships `ChatMessageView.parts`. Until then this is the contract:
+    // absent, never an empty array — an empty list means "this turn had no
+    // body", and a wire row that carries text plainly did.
+    const message = chatMessageViewToDomainMessage(
+      messageViewFixture({ role: "assistant", content: "**markdown**" })
+    )
+
+    expect(message.parts).toBeUndefined()
+    expect(message.text).toBe("**markdown**")
   })
 })

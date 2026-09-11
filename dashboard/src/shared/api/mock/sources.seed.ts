@@ -30,7 +30,23 @@ import type { SeedStatus } from "./runs.seed"
  * session. The ids are the ones `session.seed.ts` hands the shift.
  */
 
-/** The provider kinds v1 admits work from. `native` is the product's own. */
+/**
+ * The provider kinds **this mock host** implements. `native` is the product's
+ * own.
+ *
+ * A deliberate second copy of the domain's registry (`domains/sources/model/
+ * providers.ts`), and it stays one. The mock sits on the *wire's* side of the
+ * seam: it plays the host, and a host's set of connectors is its own fact,
+ * arrived at by somebody shipping a connector rather than by somebody adding a
+ * row to a dashboard table. Importing the dashboard's registry here would
+ * make the two agree by construction — and then "the host named a provider
+ * this build has not learned", the exact failure this domain is built to
+ * survive, would be unreachable in mock mode and untestable without a backend.
+ *
+ * The cost is real and is paid knowingly: these words are typed twice. What is
+ * bought is that they can *differ*, which is the only interesting thing about
+ * them.
+ */
 export const SOURCE_KINDS = [
   "github",
   "gitlab",
@@ -39,6 +55,7 @@ export const SOURCE_KINDS = [
   "native",
 ] as const
 
+/** The providers this mock host has connectors for. Not the wire's limit. */
 export type SeedSourceKind = (typeof SOURCE_KINDS)[number]
 
 /** How a connection stands. Three words, from the requirements, verbatim. */
@@ -99,7 +116,17 @@ export interface SeedSourceConnection {
   id: string
   /** The project this connection feeds. An attribute of the row, not a mode. */
   projectId: string
-  kind: SeedSourceKind
+  /**
+   * The provider word this row carries — a `string`, exactly as
+   * `SourceConnectionView.provider` is on the real wire.
+   *
+   * The seeded rows below are all `SeedSourceKind`s, because they are rows
+   * this mock host wrote. A row that arrives through `connectSeedSource`
+   * carries whatever the client sent, which is what a host with a free-text
+   * `provider` column does and what makes an unlearned provider reproducible
+   * without a backend.
+   */
+  kind: string
   /** What it points at, in the provider's own words — a repo, a queue, a key. */
   name: string
   state: SeedSourceState
@@ -243,6 +270,38 @@ export const AUTH_BY_KIND: Record<SeedSourceKind, SeedSourceAuth[]> = {
 
 /** The kinds that can be self-hosted, and so may carry a base URL. */
 export const SELF_HOSTED_KINDS: SeedSourceKind[] = ["gitlab", "jira"]
+
+/* ---------------------------------------------------------------------------
+ * Lookups by the client's word.
+ *
+ * A stored connection's `kind` is a `string` (see `SeedSourceConnection.kind`),
+ * so the tables above cannot be indexed with it directly — which is the point:
+ * this mock host answers for a provider it has no connector for rather than
+ * handing back `undefined`, the same way the real one would.
+ * ------------------------------------------------------------------------- */
+
+const MAPPING_BY_KIND = new Map<string, SeedStatusMap[]>(
+  Object.entries(STATUS_MAPPINGS)
+)
+
+const SELF_HOSTED_BY_KIND = new Set<string>(SELF_HOSTED_KINDS)
+
+/**
+ * What this host writes back for a provider, or nothing at all.
+ *
+ * Empty for native (the ticket lives here, so there is nowhere to write to)
+ * and for a provider this host has no connector for (nobody has decided what
+ * its words are). The two are the same answer for different reasons, and the
+ * form says which in prose rather than showing an empty table.
+ */
+export function seedStatusMapping(kind: string): SeedStatusMap[] {
+  return MAPPING_BY_KIND.get(kind) ?? []
+}
+
+/** May a connection of this provider carry a base url on this host? */
+export function seedSelfHostable(kind: string): boolean {
+  return SELF_HOSTED_BY_KIND.has(kind)
+}
 
 /* ---------------------------------------------------------------------------
  * The connections themselves. Five provider kinds across three projects, plus

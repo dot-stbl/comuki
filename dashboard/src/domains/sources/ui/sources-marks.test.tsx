@@ -10,14 +10,8 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
-import {
-  SOURCE_KINDS,
-  SOURCE_KIND_BRAND,
-} from "@/domains/sources/model/providers"
-import type {
-  SourceConnection,
-  SourceKind,
-} from "@/domains/sources/model/types"
+import { PROVIDERS } from "@/domains/sources/model/providers"
+import type { SourceConnection } from "@/domains/sources/model/types"
 import { sourceConnectionViewToConnection } from "@/domains/sources/api/mappers"
 import {
   createSourceColumns,
@@ -86,31 +80,31 @@ async function renderInRouter(node: ReactNode) {
   await screen.findByText("github source")
 }
 
-/** One row per provider, so every branch of the mark rule is on the board. */
-const CONNECTIONS: SourceConnection[] = SOURCE_KINDS.map(
-  (kind: SourceKind) => ({
+/** One row per registry entry, so every branch of the mark rule is on the board. */
+const CONNECTIONS: SourceConnection[] = PROVIDERS.map((provider) => {
+  const kind = provider.key
+  return {
     id: `src_${kind}`,
     projectId: "p_test",
     kind,
     name: `${kind} source`,
     state: "connected",
-    auth: kind === "native" ? "none" : "pat",
+    auth: provider.remote ? "pat" : "none",
     selfHosted: false,
     account: "svc-bot",
-    removable: kind !== "native",
+    removable: provider.remote,
     lastSyncAt: "3 min ago",
-    watch:
-      kind === "native"
-        ? null
-        : {
-            enabled: true,
-            filter: "labels: swarm",
-            mode: "inbox-only",
-            matched: 4,
-            mapping: [],
-          },
-  })
-)
+    watch: provider.remote
+      ? {
+          enabled: true,
+          filter: "labels: swarm",
+          mode: "inbox-only",
+          matched: 4,
+          mapping: [],
+        }
+      : null,
+  }
+})
 
 function List({ data = CONNECTIONS }: { data?: SourceConnection[] }) {
   const session = useSession()
@@ -169,11 +163,9 @@ describe("a provider is shown as its mark", () => {
     // A monochrome glyph at table size is a recognition cue and nothing more.
     // Whoever is not looking at it — or is looking and does not recognise it —
     // gets the same word the column used to spell.
-    for (const kind of SOURCE_KINDS) {
-      if (!SOURCE_KIND_BRAND[kind]) continue
-      expect(
-        screen.getByRole("img", { name: kind === "native" ? "native" : kind })
-      ).not.toBeNull()
+    for (const provider of PROVIDERS) {
+      if (!provider.brand) continue
+      expect(screen.getByRole("img", { name: provider.label })).not.toBeNull()
     }
   })
 
@@ -277,13 +269,15 @@ describe("an icon-only act says what it does", () => {
  * A provider the dashboard has not learned yet.
  *
  * `SourceConnectionView.provider` is a free `string`, and the mapper used to
- * assert it into `SourceKind`. The cell then indexed two exhaustive tables
- * with a key neither of them has: `SOURCE_KIND_BRAND["linear"]` is
- * `undefined`, which `BrandTag` does survive — it has an honest "write it in
- * words" branch — but `SOURCE_KIND_LABEL["linear"]` is `undefined` too, and
- * those are the words. The component's fallback could not save a cell whose
- * text was never supplied, and the row rendered a connection with no provider
- * on it at all.
+ * assert it into a closed `SourceKind`. The cell then indexed two exhaustive
+ * tables with a key neither of them has: the brand table answered `undefined`,
+ * which `BrandTag` does survive — it has an honest "write it in words" branch
+ * — but the *label* table answered `undefined` too, and those are the words.
+ * The component's fallback could not save a cell whose text was never
+ * supplied, and the row rendered a connection with no provider on it at all.
+ *
+ * There is no closed union left to assert into, and the readers the cell
+ * calls have no `undefined` to return. This is what that buys, on the screen.
  */
 describe("a provider the dashboard has never met", () => {
   const UNKNOWN = sourceConnectionViewToConnection({

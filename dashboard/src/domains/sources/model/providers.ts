@@ -1,112 +1,352 @@
 import type {
   AdmissionMode,
-  ConnectionKind,
   NativeTicket,
+  ProviderKey,
   SourceAuth,
   SourceConnection,
-  SourceKind,
 } from "@/domains/sources/model/types"
 import type { BrandId } from "@/shared/ui"
 
 /**
- * What a provider is called, what it can be asked for, and what it means.
+ * **The provider registry.** One row per tracker this build has learned, and
+ * one honest answer for every tracker it has not.
  *
- * The vocabulary lives here rather than in the components because three
- * surfaces read it — the table's filter options, the connect form's selects and
- * the watch form's prose — and three copies of a word list is how a word list
- * drifts.
+ * There used to be three of these. `sources` held five closed kinds and six
+ * exhaustive `Record<SourceKind, …>` tables; `tasks` held the same five under
+ * one different name (`manual` for `native`) and three more tables, with a
+ * comment saying it mirrored the sources half *on purpose*; `inbox` had given
+ * up and typed its ticket's provider as a bare `string` with the vocabulary in
+ * a doc comment. Adding a sixth provider cost eleven files and two dozen edit
+ * points, and forgetting one of them was not a compile error — it was an empty
+ * cell on a table row, which is what actually shipped.
+ *
+ * So the catalogue is an array, and the array is the schema. A provider is one
+ * `Provider` literal: every field is required, so a half-added provider fails
+ * to compile *at the entry*, rather than at whichever of nine tables somebody
+ * remembered. The three domains read this one array — the sources table and
+ * its forms, the intake cards and the backlog badge, the inbox ticket's
+ * source — and there is nothing left for them to drift against.
+ *
+ * ## The open edge is the shape, not a convention
+ *
+ * `ProviderKey` is `string` because the set of trackers is the *host's* fact
+ * (see the type's own note). The only way into this registry is
+ * `providerOf(key)`, which answers `Provider | null`; every reader below is a
+ * function with a stated fallback rather than a table somebody could index
+ * with a key it has no row for. An unknown provider therefore renders the
+ * host's own word everywhere — the precedent is `BrandTag`, which has had an
+ * honest "write it in words" branch since `yandex-tracker` needed one.
+ *
+ * `BrandId` stays closed and is reached through `brand: BrandId | null`. That
+ * set is closed because the artwork is: a mark whose geometry does not exist
+ * cannot be drawn, and guessing at one is inventing a trademark.
+ *
+ * ## Adding a provider
+ *
+ * One entry in `PROVIDERS`. Nothing else in `src/domains` — the marks are the
+ * kit's (`brand-marks.ts`, and `null` is a real answer), and the mock host
+ * keeps its own vocabulary on the other side of the wire on purpose.
  */
 
-/** Every kind, in the order the requirements list them. */
-export const SOURCE_KINDS: SourceKind[] = [
-  "github",
-  "gitlab",
-  "yandex-tracker",
-  "jira",
-  "native",
+/**
+ * One provider, and everything the three domains between them need to say
+ * about it.
+ *
+ * Every field is required. That is the whole mechanism: the exhaustiveness
+ * check that used to live on nine `Record` types now lives on one object
+ * literal, where a reader can see all of it at once and a compiler can insist
+ * on all of it at once.
+ */
+export interface Provider {
+  /**
+   * The kebab-case word the host, the webhook route segment and every screen
+   * agree on. Not a display string — see `label`.
+   */
+  key: ProviderKey
+  /**
+   * What a surface calls it, in the product's lower-case voice. The mark's
+   * accessible name, the filter option, the hover reading, and the whole of
+   * the cell when there is no mark.
+   */
+  label: string
+  /**
+   * The mark it is drawn as, or `null` for one that is spelled instead.
+   *
+   * `null` is a first-class answer and not a gap. `yandex-tracker` takes it
+   * because Yandex publishes no monochrome Tracker mark and the product glyph
+   * is carried by its colour — drained to `currentColor` it is a shape nobody
+   * can name rather than a quieter version of itself, and redrawing somebody's
+   * trademark from memory is worse than spelling their name. An unknown
+   * provider takes the same branch for the same reason.
+   */
+  brand: BrandId | null
+  /**
+   * The credentials this connector implements, in the order a form offers
+   * them; the first is the default. A closed list per provider, because a form
+   * must not be able to ask for a credential the connector cannot use.
+   */
+  auth: SourceAuth[]
+  /**
+   * Is there a remote system behind this provider?
+   *
+   * `false` for exactly one row — the product's own intake — and it is the fact
+   * five separate `kind === "native"` comparisons used to spell for themselves.
+   * Nothing to point a credential at (so the connect form does not offer it),
+   * nothing to disconnect from, nothing to watch, and nowhere to write a status
+   * back to.
+   */
+  remote: boolean
+  /** Can an instance be self-hosted, and so carry a base url? */
+  selfHostable: boolean
+  /**
+   * What the thing a connection points at is called, in this provider's own
+   * word. A repository, a project key and a queue key are three different
+   * objects, and a form that called all three "name" would be asking the
+   * operator to translate on the way in.
+   */
+  target: string
+  /** A shape for the target box, in this provider's own spelling. */
+  targetPlaceholder: string
+  /**
+   * Field names this provider's tickets are known to carry.
+   *
+   * Emphatically **not a grammar**. A list of nouns the connectors have been
+   * observed to accept somewhere, offered so an operator writing a filter does
+   * not have to guess whether this tracker calls it `labels` or `tags`. There
+   * is no operator here, no separator, no precedence and no quoting rule,
+   * because none of those has been decided — see `filter-expression-field.tsx`.
+   */
+  filterFields: string[]
+  /**
+   * The one line an intake card says about picking this provider.
+   *
+   * Two facts, both load-bearing: how work normally arrives from this provider
+   * (through a connection's watch — never through the intake form), and what
+   * writing one down by hand does (stamps it as that provider's, which is all
+   * the backlog reads).
+   */
+  intakeNote: string
+}
+
+/** The product's own intake, by key. The one row with no remote end. */
+export const NATIVE_PROVIDER: ProviderKey = "native"
+
+/**
+ * Every provider this build has learned, in the order the requirements list
+ * them — and the order the intake cards and the provider filter offer them.
+ */
+export const PROVIDERS: readonly Provider[] = [
+  {
+    key: "github",
+    label: "github",
+    brand: "github",
+    auth: ["pat", "app-install"],
+    remote: true,
+    selfHostable: false,
+    target: "repository",
+    targetPlaceholder: "owner/repo",
+    filterFields: ["labels", "repo", "assignee", "milestone", "state"],
+    intakeNote:
+      "issues land from a watched repository. one written here is stamped as the repo's.",
+  },
+  {
+    key: "gitlab",
+    label: "gitlab",
+    brand: "gitlab",
+    auth: ["pat", "oauth"],
+    remote: true,
+    selfHostable: true,
+    target: "repository",
+    targetPlaceholder: "group/project",
+    filterFields: ["labels", "projects", "assignee", "milestone", "state"],
+    intakeNote:
+      "issues land from a watched repository. one written here is stamped as the repo's.",
+  },
+  {
+    key: "yandex-tracker",
+    label: "yandex tracker",
+    /* Spelled, not drawn. See `brand` on `Provider`. */
+    brand: null,
+    auth: ["oauth"],
+    remote: true,
+    selfHostable: false,
+    target: "queue key",
+    targetPlaceholder: "comuki",
+    filterFields: ["queue", "tags", "assignee", "status"],
+    intakeNote:
+      "tickets land from a watched tracker queue. one written here is stamped as the queue's.",
+  },
+  {
+    key: "jira",
+    label: "jira",
+    brand: "jira",
+    /* An api token, in the PAT slot. */
+    auth: ["pat"],
+    remote: true,
+    selfHostable: true,
+    target: "project key",
+    targetPlaceholder: "atlas",
+    filterFields: ["jql", "project", "labels", "status", "assignee"],
+    intakeNote:
+      "tickets land from a watched board. one written here is stamped as the board's.",
+  },
+  {
+    key: NATIVE_PROVIDER,
+    label: "native",
+    /* Not a third party, so no third-party mark: it takes the product's own
+       container, meaning the same thing it means in the topbar. Borrowing an
+       unrelated vendor's glyph would be a lie and a generic inbox icon would
+       say less than the mark this product already owns. */
+    brand: "comuki",
+    auth: ["none"],
+    remote: false,
+    selfHostable: false,
+    target: "name",
+    targetPlaceholder: "",
+    /* No watch, so the field never renders. Empty because there is nothing to
+       filter, not because nobody filled it in. */
+    filterFields: [],
+    intakeNote:
+      "written here, by a person — the product's own intake, with no tracker behind it.",
+  },
 ]
 
-/**
- * The kinds a connect form may offer. Native is missing on purpose: it is the
- * product's own intake, it is already present on every project, and there is
- * nothing to point a credential at.
- */
-export const CONNECTABLE_KINDS: SourceKind[] = SOURCE_KINDS.filter(
-  (kind) => kind !== "native"
+const BY_KEY: ReadonlyMap<ProviderKey, Provider> = new Map(
+  PROVIDERS.map((provider) => [provider.key, provider])
 )
 
-/** The five kinds as a membership test. `SOURCE_KINDS` is the vocabulary. */
-const KNOWN_KINDS: ReadonlySet<string> = new Set<SourceKind>(SOURCE_KINDS)
+/**
+ * The providers a connect form may offer.
+ *
+ * Derived from `remote` rather than from a name: native is missing because
+ * there is nothing to point a credential at, which is the reason, and every
+ * project already has one.
+ */
+export const CONNECTABLE_PROVIDERS: readonly Provider[] = PROVIDERS.filter(
+  (provider) => provider.remote
+)
 
 /**
- * Is this word one of the five the dashboard knows?
+ * The credentials offered for a provider nobody has written a row for.
  *
- * The predicate exists because `SourceConnection.kind` is a `ConnectionKind`:
- * the host may name a provider this build has never met, and the tables below
- * are exhaustive over the five, not over whatever the wire says. Narrowing is
- * the only honest way into them — an assertion would put a key in the lookup
- * that the lookup has no row for.
+ * Not a guess at what it accepts — an admission that we do not know. The form
+ * offers every credential the dashboard can render rather than pretending to a
+ * closed list, and `pat` leads because it is what the mapper already assumes
+ * for a provider whose `settingsJson` did not say.
  */
-export function isSourceKind(kind: string): kind is SourceKind {
-  return KNOWN_KINDS.has(kind)
+const UNKNOWN_PROVIDER_AUTH: SourceAuth[] = ["pat", "oauth", "app-install"]
+
+/**
+ * The registry row for a key, or `null` when this build has never met it.
+ *
+ * `null` and not a thrown error, not a cast, and not a synthesised row: the
+ * host naming a provider the dashboard has not learned is an ordinary Tuesday,
+ * and a fabricated row would have to invent an auth list and an intake
+ * sentence nobody wrote.
+ */
+export function providerOf(key: ProviderKey): Provider | null {
+  return BY_KEY.get(key) ?? null
+}
+
+/** Has this build learned this provider? */
+export function isKnownProvider(key: ProviderKey): boolean {
+  return BY_KEY.has(key)
 }
 
 /**
- * The provider's name as a surface says it: the product's word for a kind it
+ * The provider's name as a surface says it: the product's word for one it
  * knows, and the host's own word for one it does not. Never an empty cell.
  */
-export function sourceKindLabel(kind: ConnectionKind): string {
-  return isSourceKind(kind) ? SOURCE_KIND_LABEL[kind] : kind
+export function providerLabel(key: ProviderKey): string {
+  return providerOf(key)?.label ?? key
 }
 
 /**
- * The mark for a kind, or `null` for a provider this kit has no honest mark
- * for — which `BrandTag` already reads as "write it in words", the same
- * branch `yandex-tracker` has always taken. An unknown provider takes it too:
- * drawing somebody's trademark from memory and inventing one for a provider
- * we have never seen are the same mistake.
+ * The mark for a provider, or `null` for one this kit has no honest mark for —
+ * which `BrandTag` reads as "write it in words". An unknown provider takes that
+ * branch too: drawing somebody's trademark from memory and inventing one for a
+ * provider we have never seen are the same mistake.
  */
-export function sourceKindBrand(kind: ConnectionKind): BrandId | null {
-  return isSourceKind(kind) ? SOURCE_KIND_BRAND[kind] : null
-}
-
-export const SOURCE_KIND_LABEL: Record<SourceKind, string> = {
-  github: "github",
-  gitlab: "gitlab",
-  "yandex-tracker": "yandex tracker",
-  jira: "jira",
-  native: "native",
+export function providerBrand(key: ProviderKey): BrandId | null {
+  return providerOf(key)?.brand ?? null
 }
 
 /**
- * The mark each provider is shown as, or `null` for the one that is spelled.
+ * Is this the product's own intake rather than somebody else's tracker?
  *
- * A provider that publishes a mark is drawn as that mark: an operator scanning
- * a column of sources recognises the octocat before they read the word beside
- * it, and the word was costing a column of width to say something the glyph
- * says instantly. The name never leaves — it is the mark's accessible name and
- * its hover reading — but it stops being the thing on screen.
- *
- * Two of the five are not marks:
- *
- * - **`yandex-tracker`** is `null` on purpose. Yandex publishes no monochrome
- *   Tracker mark, and the product glyph is carried by its colour; drained to
- *   `currentColor` it is a shape nobody can name rather than a quieter version
- *   of itself. The honest options were to spell the provider or to redraw
- *   somebody's trademark from memory, and only one of those is honest. It
- *   renders its name, which is why `BrandTag` takes a label in both branches.
- * - **`native`** is not a third party and has no third-party mark. It takes the
- *   product's own container — the same mark as the topbar, meaning the same
- *   thing it means there: a Comuki worker, a Comuki intake. Borrowing an
- *   unrelated vendor's glyph would be a lie and a generic inbox icon would say
- *   less than the mark this product already owns.
+ * An unknown provider answers `false`: there is a remote end, we just do not
+ * know whose. Degrading the other way would make an unknown connection
+ * unremovable and hide its credential fields.
  */
-export const SOURCE_KIND_BRAND: Record<SourceKind, BrandId | null> = {
-  github: "github",
-  gitlab: "gitlab",
-  "yandex-tracker": null,
-  jira: "jira",
-  native: "comuki",
+export function isNativeIntake(key: ProviderKey): boolean {
+  return providerOf(key)?.remote === false
+}
+
+/** The credentials a form may offer for this provider. */
+export function providerAuth(key: ProviderKey): SourceAuth[] {
+  return providerOf(key)?.auth ?? UNKNOWN_PROVIDER_AUTH
+}
+
+/**
+ * The credential kind a form is *actually* holding, given the provider chosen.
+ *
+ * Derived rather than synced, and the difference matters: changing the provider
+ * must not be able to leave a form holding a credential that provider's
+ * connector cannot use, and an effect that corrected it afterwards would fire
+ * in whatever order React felt like — which is a form that is briefly wrong and
+ * a save that is occasionally wrong. Asked at render, it cannot be either.
+ */
+export function effectiveAuth(
+  key: ProviderKey,
+  auth: SourceAuth
+): SourceAuth {
+  const allowed = providerAuth(key)
+  return allowed.includes(auth) ? auth : allowed[0]
+}
+
+/**
+ * May this provider carry a base url?
+ *
+ * `false` for an unknown provider, which is the form's answer and not the
+ * row's: a connection that already has a `baseUrl` says so on itself, and
+ * `ConnectionForm` asks the connection before it asks the registry.
+ */
+export function needsBaseUrl(key: ProviderKey): boolean {
+  return providerOf(key)?.selfHostable ?? false
+}
+
+/** What the thing a connection points at is called. */
+export function targetLabel(key: ProviderKey): string {
+  return providerOf(key)?.target ?? "name"
+}
+
+/** A shape for the target box, in the provider's own spelling. */
+export function targetPlaceholder(key: ProviderKey): string {
+  return providerOf(key)?.targetPlaceholder ?? ""
+}
+
+/**
+ * Field names to offer beside a filter expression.
+ *
+ * Empty for a provider the dashboard has not learned: the list is a set of
+ * nouns *this* connector has been observed to accept, and offering github's to
+ * an unknown tracker would be a guess dressed as a fact.
+ */
+export function filterFields(key: ProviderKey): string[] {
+  return providerOf(key)?.filterFields ?? []
+}
+
+/**
+ * The line an intake card says about picking this provider.
+ *
+ * The generic sentence for an unknown one says the same two things the written
+ * ones do, minus the noun nobody can supply.
+ */
+export function intakeNote(key: ProviderKey): string {
+  return (
+    providerOf(key)?.intakeNote ??
+    "tickets land from a watched connection. one written here is stamped as that provider's."
+  )
 }
 
 /**
@@ -130,45 +370,6 @@ export const AUTH_LABEL: Record<SourceAuth, string> = {
   none: "none",
 }
 
-/**
- * The auth each kind actually offers.
- *
- * A closed list per provider, because the form must not be able to ask for a
- * credential the connector cannot use.
- */
-export const AUTH_BY_KIND: Record<SourceKind, SourceAuth[]> = {
-  github: ["pat", "app-install"],
-  gitlab: ["pat", "oauth"],
-  "yandex-tracker": ["oauth"],
-  jira: ["pat"],
-  native: ["none"],
-}
-
-/**
- * The credential kind a form is *actually* holding, given the provider chosen.
- *
- * Derived rather than synced, and the difference matters: changing the provider
- * must not be able to leave a form holding a credential that provider's
- * connector cannot use, and an effect that corrected it afterwards would fire
- * in whatever order React felt like — which is a form that is briefly wrong and
- * a save that is occasionally wrong. Asked at render, it cannot be either.
- *
- * Two forms ask it now — the connect form on `/sources/new` and the connection
- * region on a source's own page — which is exactly why it stopped being a line
- * inside one of them.
- */
-export function effectiveAuth(kind: SourceKind, auth: SourceAuth): SourceAuth {
-  const allowed = AUTH_BY_KIND[kind]
-  return allowed.includes(auth) ? auth : allowed[0]
-}
-
-/** The kinds that can be self-hosted, and so may carry a base URL. */
-export const SELF_HOSTED_KINDS: SourceKind[] = ["gitlab", "jira"]
-
-export function needsBaseUrl(kind: SourceKind): boolean {
-  return SELF_HOSTED_KINDS.includes(kind)
-}
-
 /** What the secret box is called for this credential, in the provider's words. */
 export function secretLabel(auth: SourceAuth): string {
   switch (auth) {
@@ -180,43 +381,6 @@ export function secretLabel(auth: SourceAuth): string {
       return "app private key"
     default:
       return "secret"
-  }
-}
-
-/**
- * What the thing a connection points at is called, in the provider's own word.
- *
- * A repository, a project key and a queue key are three different objects, and
- * a form that called all three "name" would be asking the operator to translate
- * on the way in.
- */
-export function targetLabel(kind: SourceKind): string {
-  switch (kind) {
-    case "github":
-    case "gitlab":
-      return "repository"
-    case "jira":
-      return "project key"
-    case "yandex-tracker":
-      return "queue key"
-    default:
-      return "name"
-  }
-}
-
-/** A shape for the box, in the provider's own spelling. */
-export function targetPlaceholder(kind: SourceKind): string {
-  switch (kind) {
-    case "github":
-      return "owner/repo"
-    case "gitlab":
-      return "group/project"
-    case "jira":
-      return "atlas"
-    case "yandex-tracker":
-      return "comuki"
-    default:
-      return ""
   }
 }
 
@@ -266,7 +430,7 @@ export const ADMISSION_LABEL: Record<AdmissionMode, string> = {
  * and the column shows three different words rather than one blank.
  */
 export function connectionHost(connection: SourceConnection): string {
-  if (connection.kind === "native") {
+  if (isNativeIntake(connection.kind)) {
     return "in-platform"
   }
   if (!connection.baseUrl) {
@@ -326,7 +490,7 @@ export function connectionNote(
   if (connection.state === "error") {
     return connection.reason ?? "the provider refused, and said nothing useful."
   }
-  if (connection.kind === "native") {
+  if (isNativeIntake(connection.kind)) {
     const count = admittedCount(connection, tickets)
     return count === 1 ? "1 ticket filed here" : `${count} tickets filed here`
   }

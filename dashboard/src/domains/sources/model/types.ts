@@ -12,28 +12,31 @@ import type { Status } from "@/shared/ui"
  * pick which of those two an operator was looking at.
  */
 
-/** The provider kinds v1 admits work from. `native` is the product's own. */
-export type SourceKind =
-  "github" | "gitlab" | "yandex-tracker" | "jira" | "native"
-
 /**
- * What a *connection* says its provider is: one of the five kinds above, or —
- * when the host names a provider this build has not learned — the host's own
- * word, verbatim.
+ * A provider, named the way the whole platform names one: the kebab-case key
+ * the host puts on the wire, the webhook route uses as its segment, and every
+ * screen keys its lookup on.
  *
- * The two halves are not interchangeable and the difference is load-bearing.
- * Six exhaustive `Record<SourceKind, …>` tables key on `SourceKind`, and a
- * member fabricated from wire data (`SourceConnectionView.provider` is a free
- * `string`) makes every one of them answer `undefined` at runtime — which is
- * how the provider column came to render an empty cell for a provider the
- * dashboard had not met yet. So the wider type is spelled here, at the one
- * place the wider value can arrive, and every reader either narrows it with
- * `isSourceKind` or degrades to the word itself.
+ * **Deliberately `string`, and this is the load-bearing decision of the
+ * domain.** The set of trackers is the host's fact, not the dashboard's — a
+ * build learns about a provider when somebody adds a row to
+ * `providers.ts`, and the host can name one before that happens. A union of
+ * the shipped five asserted a fact about the other side of the wire, and it
+ * was wrong the first time the assertion was tested: the provider column
+ * rendered an empty cell for `linear`, because six exhaustive
+ * `Record<Kind, …>` tables all answered `undefined` for a key none of them
+ * had.
  *
- * `string & {}` rather than a plain `string` so the five literals still
- * autocomplete and still narrow on `===`.
+ * So there is no union, there are no exhaustive tables, and the only way into
+ * the registry is `providerOf(key)`, which returns `Provider | null`. The
+ * unknown branch is not a discipline every reader has to remember; it is the
+ * only shape the lookup has.
+ *
+ * Contrast `BrandId`, which stays closed and should: that set is closed
+ * because the *asset* is closed — nobody can draw a mark whose geometry does
+ * not exist — and a provider reaches it through `brand: BrandId | null`.
  */
-export type ConnectionKind = SourceKind | (string & {})
+export type ProviderKey = string
 
 /**
  * How a connection stands. The requirements' three words, verbatim.
@@ -44,7 +47,13 @@ export type ConnectionKind = SourceKind | (string & {})
  */
 export type SourceState = "connected" | "error" | "disabled"
 
-/** The credential behind a connection. `none` is native's, and is not a gap. */
+/**
+ * The credential behind a connection. `none` is native's, and is not a gap.
+ *
+ * Closed, unlike `ProviderKey`, and for the `BrandId` reason: this names the
+ * credential forms the dashboard can actually *render*. A seventh member would
+ * be a field nobody has built.
+ */
 export type SourceAuth = "pat" | "oauth" | "app-install" | "none"
 
 /** What a watch does with a ticket it admitted. */
@@ -77,8 +86,12 @@ export interface SourceConnection {
   id: string
   /** The project this connection feeds. An attribute of the row, not a mode. */
   projectId: string
-  /** One of the five, or the host's own word for a sixth. See `ConnectionKind`. */
-  kind: ConnectionKind
+  /**
+   * The provider this connection speaks, by key. A row in `providers.ts` when
+   * this build has learned that provider, and the host's own word when it has
+   * not — the row renders either way. See `ProviderKey`.
+   */
+  kind: ProviderKey
   name: string
   state: SourceState
   /** Why it is in `error`, in the provider's own words. `error` only. */

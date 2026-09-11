@@ -4,8 +4,8 @@
 # Branch model:
 #   master (GitLab mirror of local `hybrid`) → dev
 #     test:unit + migrate:validate (gates) → build:image + build:image:worker
-#     + build:image:dashboard + secrets:dev → ▶ migrate:dev → ▶ promote:dev
-#     (manual: infra:dev, deploy:dashboard)
+#     + secrets:dev → ▶ migrate:dev → ▶ promote:dev
+#     (manual: infra:dev)
 #   MR → test:unit + migrate:validate only
 #
 # Dev deploy is AppSet-driven: `hybrid-services-dev` (corp Argo) discovers
@@ -161,8 +161,10 @@ migrate:validate:
     - 'echo "migrate:validate OK"'
 
 # -----------------------------------------------------------------------------
-# Images. One host image (orchestrator + migrator entrypoints, console.x
-# "one image, N commands" pattern) + one worker image (Translator + pi).
+# Images. One host image (orchestrator + migrator entrypoints + the dashboard
+# SPA baked into wwwroot by the Dockerfile's node stage — console.x "one
+# image, N commands" pattern; SPA Vite args are ARG defaults in
+# deploy/hybrid/host.Dockerfile) + one worker image (Translator + pi).
 # Tag = short_sha (what the dev AppSet pins) + 0.1.<iid> + git tag if any.
 # -----------------------------------------------------------------------------
 build:image:
@@ -218,18 +220,6 @@ build:image:worker:
     # until Slice 0 pins the tag properly; short_sha + APP_VERSION stay the
     # identity of record.
     KANIKO_EXTRA_TAGS: "$APP_VERSION latest $CI_COMMIT_TAG"
-
-# Dashboard SPA (node:22 build stage — bun cannot run on runner-01's qemu64
-# CPU, see deploy/hybrid/dashboard.Dockerfile header). VITE_API_BASE_URL
-# must be the NON-EMPTY public origin of this deployment: kubb-client.ts
-# treats "" as mock mode and throws on every API call, so "empty = same
-# origin" is not expressible; nginx proxies /api on the same host instead.
-build:image:dashboard:
-  extends: build:image
-  variables:
-    IMAGE_NAME: comuki/dashboard
-    KANIKO_DOCKERFILE: deploy/hybrid/dashboard.Dockerfile
-    KANIKO_BUILD_ARGS: "VITE_API_BASE_URL=http://app.comuki.nova.adcluster.targetix.net VITE_DEPLOY_ENV=staging COMMIT_SHA=$CI_COMMIT_SHA"
 
 # -----------------------------------------------------------------------------
 # Consul blob → K8s Secret (comuki ns) before promote. Values are an owner
@@ -291,26 +281,6 @@ infra:dev:
   script:
     - kubectl apply -f deploy/hybrid/infra-dev.yaml
     - kubectl -n comuki rollout status deploy/pgvector --timeout=180s
-
-# Dashboard (SPA + nginx reverse proxy): manual, idempotent, same sed-
-# tag pattern as migrate:dev. Rollout waits for the image this pipeline
-# built. DNS for app.comuki.* is an owner step (nsupdate, docs/dns.md).
-deploy:dashboard:
-  extends: .kubectl
-  stage: deploy
-  needs:
-    - job: build:image:dashboard
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
-      when: manual
-      allow_failure: true
-    - when: never
-  environment:
-    name: dev
-  script:
-    - sed "s/__IMAGE_TAG__/${CI_COMMIT_SHORT_SHA}/" deploy/hybrid/dashboard-dev.yaml | kubectl apply -f -
-    - echo "waiting for deploy/comuki-dashboard (image :${CI_COMMIT_SHORT_SHA})"
-    - kubectl -n comuki rollout status deploy/comuki-dashboard --timeout=180s
 
 # migrate:dev — apply the batch/v1 Job that runs Comuki.Migrator inside the
 # cluster against the in-cluster pgvector (COMUKI_DB comes from the

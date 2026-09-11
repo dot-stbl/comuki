@@ -1,0 +1,334 @@
+# =============================================================================
+# deploy/hybrid/ci.yml — live pipeline for comuki (hybrid contour)
+#
+# Branch model:
+#   master (GitLab mirror of local `hybrid`) → dev
+#     test:unit + migrate:validate (gates) → build:image + build:image:worker
+#     + secrets:dev → ▶ migrate:dev → ▶ promote:dev
+#   MR → test:unit + migrate:validate only
+#
+# Dev deploy is AppSet-driven: `hybrid-services-dev` (corp Argo) discovers
+# deploy/hybrid/dev.yaml on master and pins image.tag = short_sha with
+# auto-sync, so the pod usually rolls WITHOUT promote:dev. The manual
+# promote exists as the console.x-style one-button sync/health wait.
+#
+# Shared modules (nova/devops/cicd.modules) — pin SHA; bump deliberately.
+# CI vars (group `nova`): ARGOCD_DEV_AUTH_TOKEN, CONSUL_URL / CONSUL_HTTP_TOKEN,
+# KUBECONFIG_B64 (dev; scoped to secrets + jobs in ns comuki), NOVA_RUNNER_*.
+# Registry push = PROJECT-level CI_REGISTRY_USER / CI_REGISTRY_PASSWORD
+# (Harbor robot robot$comuki+ci-push; local copy in the secrets store).
+# They override the group-level nova robot — which has NO grant on the
+# comuki project — but only while non-empty (pipeline #11 lesson).
+#
+# Dev DB is IN-CLUSTER (pgvector, deploy/hybrid/infra-dev.yaml): the runner
+# cannot reach a Cluster-only Postgres, so migrate:dev applies a batch/v1
+# Job (deploy/hybrid/migrate-job-dev.yaml) instead of running the migrator
+# on the runner the way console.x does against a DBA-hosted database.
+# =============================================================================
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+
+stages:
+  - test
+  - migrate
+  - build
+  - deploy
+
+default:
+  # ONLY nova runners; tag declared via the group var below, not a literal
+  # in every job (skill hybrid-deploy hard rule; ADR-0011).
+  tags:
+    - $NOVA_RUNNER_TAG
+  interruptible: true
+
+variables:
+  GIT_DEPTH: "0"
+  REGISTRY: registry.hybrid.ai
+  IMAGE_NAME: comuki/comuki
+  WORKER_IMAGE_NAME: comuki/worker
+  APP_VERSION: "0.1.$CI_PIPELINE_IID"
+  NOVA_RUNNER_TAG: "nova-dev"
+  NOVA_RUNNER_DOCKER_TAG: "nova-dev-docker"
+  # Same pin as console.x (live consumer of these templates).
+  CICD_MODULES_REF: "6f245f95c09177020adeaef851fdd2f37b6328f2"
+  KANIKO_DOCKERFILE: deploy/hybrid/host.Dockerfile
+  KANIKO_TAG: "$CI_COMMIT_SHORT_SHA"
+  KANIKO_EXTRA_TAGS: "$APP_VERSION $CI_COMMIT_TAG"
+  ARGOCD_DEV_API_URL: "https://argocd.nl.dev.console.adcluster.targetix.net"
+  ARGOCD_TLS_VERIFY: "false"
+  SECRETS_MAPPING_FILE: "deploy/hybrid/secrets.schema.yml"
+  # Dev corp cluster API server. Every job that decodes KUBECONFIG_B64
+  # must verify the kubeconfig points HERE before writing anything
+  # (same class of guard as cicd.modules SECRETS_K8S_SERVER).
+  DEV_K8S_SERVER: "https://10.5.21.11:16443"
+  NUGET_PACKAGES: "$CI_PROJECT_DIR/.nuget/packages"
+
+include:
+  - project: "nova/devops/cicd.modules"
+    ref: "6f245f95c09177020adeaef851fdd2f37b6328f2"
+    file:
+      - "/templates/build/kaniko/template.yml"
+      - "/templates/promote/argocd/template.yml"
+      - "/templates/secrets/materialize/template.yml"
+
+# -----------------------------------------------------------------------------
+# Unit gate: solution build (warnings-as-errors + format gate) + fast suites.
+#
+# xUnit v3 = MTP (Microsoft.Testing.Platform): VSTest discovery does not
+# work, tests run via `dotnet run --project`. Full suite list lives in
+# comuki.slnx; CI keeps 3 fast, deployment-relevant suites for pipeline
+# speed — the rest run on the dev machine (dotnet build is the real gate).
+# -----------------------------------------------------------------------------
+test:unit:
+  stage: test
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  cache:
+    key:
+      files:
+        - Directory.Packages.props
+    paths:
+      - .nuget/packages/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+  script:
+    - dotnet --version
+    - dotnet restore comuki.slnx
+    - dotnet build comuki.slnx -c Debug --no-restore
+    - |
+      set -e
+      PROJECTS="
+        tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine
+        tests/unit/Comuki.Host.Translator.Unit.StreamJson
+        tests/unit/Comuki.Host.Unit.ProductionSecrets
+      "
+      for proj in $PROJECTS; do
+        test -f "$proj/$(basename "$proj").csproj" || { echo "ERROR: missing $proj"; exit 1; }
+        echo "suite: $proj"
+        dotnet run --project "$proj" -c Debug --no-build
+      done
+
+# -----------------------------------------------------------------------------
+# migrate:validate — prove all 9 module schemas apply cleanly + idempotently
+# on an ephemeral pgvector Postgres (never touches dev/prod data).
+# pgvector image (not plain postgres) mirrors the in-cluster dev DB for the
+# knowledge module's vector columns.
+# -----------------------------------------------------------------------------
+migrate:validate:
+  stage: migrate
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  services:
+    - name: pgvector/pgvector:pg16
+      alias: postgres
+  variables:
+    FF_NETWORK_PER_BUILD: "true"
+    POSTGRES_USER: comuki
+    POSTGRES_PASSWORD: comuki_dev
+    POSTGRES_DB: comuki
+    COMUKI_DB: "Host=postgres;Port=5432;Database=comuki;Username=comuki;Password=comuki_dev;Maximum Pool Size=5"
+  cache:
+    key:
+      files:
+        - Directory.Packages.props
+    paths:
+      - .nuget/packages/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+  script:
+    - |
+      set -eu
+      i=0
+      until timeout 2 bash -c '</dev/tcp/postgres/5432' 2>/dev/null; do
+        i=$((i + 1))
+        if [ "$i" -gt 60 ]; then
+          echo "ERROR: postgres service not ready after 60s"
+          exit 1
+        fi
+        sleep 1
+      done
+      echo "postgres:5432 is up"
+    - dotnet --version
+    - dotnet restore platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj
+    - 'echo "--- pass 1: apply migrations ---"'
+    - dotnet run --project platform/src/host/Comuki.Migrator -c Release --no-restore --no-launch-profile
+    - 'echo "--- pass 2: idempotent re-run (must stay green) ---"'
+    - dotnet run --project platform/src/host/Comuki.Migrator -c Release --no-restore --no-launch-profile
+    - 'echo "migrate:validate OK"'
+
+# -----------------------------------------------------------------------------
+# Images. One host image (orchestrator + migrator entrypoints, console.x
+# "one image, N commands" pattern) + one worker image (Translator + pi).
+# Tag = short_sha (what the dev AppSet pins) + 0.1.<iid> + git tag if any.
+# -----------------------------------------------------------------------------
+build:image:
+  needs:
+    - job: test:unit
+      optional: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+  # Fail fast on registry creds BEFORE the build. Two traps this guards
+  # (both live in pipeline #11/#12):
+  #   1. GitLab runner expands $VAR inside CI variable VALUES, so Harbor's
+  #      robot$<project>+<name> username arrives mangled (robot$comuki+ci-push
+  #      → robot+ci-push; $comuki resolves as an undefined variable).
+  #   2. Harbor's token service silently downgrades bad/mismatched basic
+  #      auth to an anonymous token, which kaniko only surfaces as a cryptic
+  #      push-permission 401 (empty project CI_REGISTRY_PASSWORD also falls
+  #      back to the group-level robot of an unrelated project).
+  # Script text is never runner-expanded, so the single-quoted literal below
+  # restores the real username; the export persists into the template script.
+  # Inherited by build:image:worker via extends.
+  before_script:
+    - |
+      set -eu
+      echo "injected CI_REGISTRY_USER: [${CI_REGISTRY_USER}] (len ${#CI_REGISTRY_USER})"
+      export CI_REGISTRY_USER='robot$comuki+ci-push'
+      AUTH=$(printf '%s:%s' "$CI_REGISTRY_USER" "$CI_REGISTRY_PASSWORD" | base64 | tr -d '\n')
+      if BODY=$(wget -q -O - --header "Authorization: Basic ${AUTH}" \
+          "https://${REGISTRY}/service/token?service=harbor-registry&scope=repository:${IMAGE_NAME}:push,pull"); then
+        JWT=$(printf '%s' "$BODY" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+        PAYLOAD=$(printf '%s' "$JWT" | cut -d. -f2 | tr '_-' '/+')
+        MOD=$(( ${#PAYLOAD} % 4 ))
+        if [ "${MOD}" -ne 0 ]; then
+          PAYLOAD="${PAYLOAD}$(printf '%*s' $((4 - MOD)) '' | tr ' ' '=')"
+        fi
+        if ! printf '%s' "${PAYLOAD}" | base64 -d 2>/dev/null | grep -q '"actions":\[[^]]*"push"'; then
+          echo "ERROR: ${CI_REGISTRY_USER} has no push grant on ${REGISTRY}/${IMAGE_NAME}." >&2
+          echo "Check CI_REGISTRY_USER / CI_REGISTRY_PASSWORD — an empty project var lets the group-level robot leak in." >&2
+          exit 1
+        fi
+        echo "registry push grant OK: ${CI_REGISTRY_USER} -> ${REGISTRY}/${IMAGE_NAME}"
+      else
+        echo "WARN: registry pre-flight probe unreachable; kaniko will verify auth itself"
+      fi
+
+build:image:worker:
+  extends: build:image
+  variables:
+    IMAGE_NAME: comuki/worker
+    KANIKO_DOCKERFILE: deploy/hybrid/worker.Dockerfile
+    # `latest` keeps Compute:Scale:WorkerImage (no tag in dev.yaml) pullable
+    # until Slice 0 pins the tag properly; short_sha + APP_VERSION stay the
+    # identity of record.
+    KANIKO_EXTRA_TAGS: "$APP_VERSION latest $CI_COMMIT_TAG"
+
+# -----------------------------------------------------------------------------
+# Consul blob → K8s Secret (comuki ns) before promote. Values are an owner
+# step (see deploy/hybrid/README.md); this job fails until the blob exists —
+# intentional: shipping an image ahead of the schema must be blocked.
+# -----------------------------------------------------------------------------
+secrets:dev:
+  extends: .secrets:materialize
+  stage: build
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+    - when: never
+  variables:
+    SECRETS_ENV: dev
+    SECRETS_MAPPING_FILE: "deploy/hybrid/secrets.schema.yml"
+    SECRETS_K8S_SERVER: "$DEV_K8S_SERVER"
+
+# -----------------------------------------------------------------------------
+# kubectl helper for the two infra-shaped manual jobs (migrate Job apply,
+# infra apply). Same kubecontract as secrets:materialize — KUBECONFIG_B64
+# from CI vars, explicit server verification before any write.
+# -----------------------------------------------------------------------------
+.kubectl:
+  image: docker.io/library/python:3.12-alpine
+  tags:
+    - $NOVA_RUNNER_TAG
+  interruptible: false
+  before_script:
+    - apk add --no-cache curl ca-certificates bash
+    - |
+      set -euo pipefail
+      curl -fsSL "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl
+      chmod +x /usr/local/bin/kubectl
+      kubectl version --client
+      if [ -z "${KUBECONFIG_B64:-}" ]; then
+        echo "ERROR: KUBECONFIG_B64 (dev) CI variable is not set"; exit 2
+      fi
+      echo "$KUBECONFIG_B64" | base64 -d > /tmp/kubeconfig
+      export KUBECONFIG=/tmp/kubeconfig
+      server="$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+      if [ "$server" != "$DEV_K8S_SERVER" ]; then
+        echo "REFUSING: expected cluster ${DEV_K8S_SERVER}, kubeconfig points at ${server}"; exit 1
+      fi
+      echo "cluster confirmed: ${server}"
+
+# In-cluster dev infra (pgvector only — MinIO/OTLP are shared, outside
+# this contour): manual, idempotent, safe to re-run.
+infra:dev:
+  extends: .kubectl
+  stage: deploy
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+      when: manual
+      allow_failure: true
+    - when: never
+  script:
+    - kubectl apply -f deploy/hybrid/infra-dev.yaml
+    - kubectl -n comuki rollout status deploy/pgvector --timeout=180s
+
+# migrate:dev — apply the batch/v1 Job that runs Comuki.Migrator inside the
+# cluster against the in-cluster pgvector (COMUKI_DB comes from the
+# materialized secret via envFrom). Tag = the image this pipeline just built.
+migrate:dev:
+  extends: .kubectl
+  stage: deploy
+  resource_group: dev-migrate
+  needs:
+    - job: migrate:validate
+    - job: build:image
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+      when: manual
+      allow_failure: false
+    - when: never
+  environment:
+    name: dev
+  script:
+    - kubectl -n comuki delete job comuki-migrate-dev --ignore-not-found
+    - sed "s/__IMAGE_TAG__/${CI_COMMIT_SHORT_SHA}/" deploy/hybrid/migrate-job-dev.yaml | kubectl apply -f -
+    - echo "waiting for job/comuki-migrate-dev (image :${CI_COMMIT_SHORT_SHA})"
+    - kubectl -n comuki wait --for=condition=complete job/comuki-migrate-dev --timeout=600s
+    - kubectl -n comuki logs job/comuki-migrate-dev --tail=80
+
+# -----------------------------------------------------------------------------
+# promote:dev — manual Argo sync + health wait. Dev AppSet auto-syncs from
+# short_sha anyway; this is the explicit operator button (console.x pattern).
+# -----------------------------------------------------------------------------
+promote:dev:
+  extends: .promote:argocd
+  tags:
+    - $NOVA_RUNNER_TAG
+  stage: deploy
+  needs:
+    - job: build:image
+    - job: build:image:worker
+    - job: secrets:dev
+    - job: migrate:dev
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+      when: manual
+      allow_failure: true
+    - when: never
+  environment:
+    name: dev
+  variables:
+    PROMOTE_ARGOCD_APP: "comuki-dev"
+    ARGOCD_API_URL: "$ARGOCD_DEV_API_URL"
+    ARGOCD_AUTH_TOKEN: "$ARGOCD_DEV_AUTH_TOKEN"
+    PROMOTE_IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
+    PROMOTE_PRUNE: "true"
+    PROMOTE_PIN_VALUES_REV: "false"
+    ARGOCD_TLS_VERIFY: "false"

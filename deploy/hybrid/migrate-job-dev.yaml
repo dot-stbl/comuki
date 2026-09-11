@@ -1,0 +1,39 @@
+# =============================================================================
+# deploy/hybrid/migrate-job-dev.yaml — in-cluster migrator run (dev).
+#
+# Applied by the `migrate:dev` CI job: __IMAGE_TAG__ is sed-replaced with
+# $CI_COMMIT_SHORT_SHA (the image the same pipeline built), the previous Job
+# object is deleted first so re-runs are clean. COMUKI_DB arrives via envFrom
+# from the materialized comuki-dev-host-secrets.
+#
+# Comuki.Migrator applies all 9 module schemas (orchestration, identity,
+# projects, memory, knowledge, chat, intake, costs, artifacts) with
+# per-schema history tables — idempotent, re-runnable.
+# =============================================================================
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: comuki-migrate-dev
+  namespace: comuki
+  labels:
+    app.kubernetes.io/part-of: comuki
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: comuki
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: registry.hybrid.ai/comuki/comuki:__IMAGE_TAG__
+          command: [dotnet, /app/migrator/Comuki.Migrator.dll]
+          envFrom:
+            - secretRef:
+                name: comuki-dev-host-secrets
+      imagePullSecrets:
+        - name: registry.hybrid.ai

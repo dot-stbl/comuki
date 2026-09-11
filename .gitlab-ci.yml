@@ -1,0 +1,12 @@
+# =============================================================================
+# GitLab CI entrypoint (comuki, hybrid contour).
+#
+# GitHub (origin) carries NO deploy files: this file and deploy/hybrid/ are
+# ignored there via the guard lines in .gitignore and exist only on the
+# GitLab mirror (remote `gitlab`, branch model: local `hybrid` → `master`).
+#
+# Live pipeline: this file → deploy/hybrid/ci.yml
+# =============================================================================
+
+include:
+  - local: deploy/hybrid/ci.yml

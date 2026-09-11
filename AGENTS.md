@@ -75,6 +75,9 @@ Milestone **v1**, phase **3 complete** (design system + testing infra).
 2. **Commits:** `[hybrid] <type>(<scope>): <description>` —
    Conventional Commits + префикс `[hybrid]`. Не `[stbl]`, не `feat/` без
    type. См. [commit-format.md](.agents/rules/process/commit-format.md).
+   Байлайнов модели (`Co-Authored-By: Claude`, `🤖 Generated with …`) нет
+   нигде — хук `commit-msg` их вырезает, см.
+   [no-ai-attribution.md](.agents/rules/process/no-ai-attribution.md).
 
 3. **Python запрещён.** Скрипты только bun/node. См.
    [allowed-scripts.md](.agents/rules/process/allowed-scripts.md).

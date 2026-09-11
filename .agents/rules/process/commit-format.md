@@ -38,6 +38,7 @@ always: true
 | `ci`       | CI конфигурация (workflows, build-verification)                              |
 | `chore`    | тулинг, мета-вещи, форматирование, мелочи, не код и не фича                 |
 | `style`    | форматирование без изменения смысла (whitespace, prettier, biome)            |
+| `revert`   | откат предыдущего коммита                                                    |
 
 ## Scope (опционально, рекомендуется)
 
@@ -57,9 +58,12 @@ always: true
 
 - **Императив** — "add", "fix", "bump", "wire" — не "added", "fixed", "bumped".
 - **Без точки** в конце (Conventional Commits convention).
-- **≤72 символа** (рекомендация).
-- **Lowercase** для type/scope (Conventional Commits convention).
+- **≤72 символа** — рекомендация; **≤100** — жёсткий предел, проверяется хуком.
+- **Lowercase** для type/scope (Conventional Commits convention), и description
+  тоже начинается со строчной.
 - **Префикс `[hybrid]`** — обязателен, с пробелом перед type.
+- **`!` перед `:`** — опциональный маркер breaking change:
+  `[hybrid] feat(api)!: change /tasks response shape`.
 
 ## Body (опционально)
 
@@ -105,6 +109,34 @@ feat add foo                                 ← нет `:` после type
 update stuff                                 ← не описательно
 ```
 
+## Enforcement
+
+Формат больше не «на честном слове» — его проверяет
+[`scripts/commit-lint.mjs`](../../../scripts/commit-lint.mjs) через хук
+`commit-msg` (см. [`pre-commit.md`](pre-commit.md) — установка и обход).
+
+| Что | Поведение хука |
+|-----|----------------|
+| Кривой subject | **Hard fail** — коммит не проходит, в stderr subject, список проблем и шпаргалка по формату |
+| AI-байлайн (`Co-Authored-By: Claude`, `🤖 Generated with …`) | **Вырезается на месте** с предупреждением, коммит проходит. См. [`no-ai-attribution.md`](no-ai-attribution.md) |
+| `Merge …` / `Revert …` / `fixup!` / `squash!` | Пропускаются — эти subject пишет сам git |
+| Строки `#` и diff ниже scissors при `--verbose` | Игнорируются |
+
+Проверить, ничего не коммитя:
+
+```bash
+echo '[hybrid] feat(api): add the thing' | node scripts/commit-lint.mjs --stdin
+node scripts/commit-lint.mjs --range master..HEAD   # ручной аудит диапазона
+node --test scripts/commit-lint.test.mjs            # тесты самого линтера
+```
+
+Обойти на один коммит — `git commit --no-verify`. CI-джобы на это нет
+намеренно: гейт локальный.
+
+`--range` по старой истории будет шуметь — правило применяется **forward**
+(см. ниже), а до хука subject никто не проверял. Гонять `--range` имеет смысл
+по своей ветке (`master..HEAD`), не по всему `git log`.
+
 ## Overrides
 
 Раньше глобальный `~/.claude/rules/git.md` требовал формат
@@ -130,3 +162,10 @@ Body — контекст, риск, trade-off.
 
 Verified: 100-claimer race in tests/, lease loss = 0.
 ```
+
+## Related
+
+- [`no-ai-attribution.md`](no-ai-attribution.md) — байлайны модели в коммитах, PR, коде и доках
+- [`pre-commit.md`](pre-commit.md) — установка git-хуков и обход
+- `scripts/commit-lint.mjs` — реализация проверки, единственный source of truth
+- `scripts/hooks/commit-msg` — хук, который её вызывает

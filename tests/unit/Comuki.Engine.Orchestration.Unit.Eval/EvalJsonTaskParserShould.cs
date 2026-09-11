@@ -14,25 +14,25 @@ public sealed class EvalJsonTaskParserShould
     [Fact(DisplayName = "Given a valid run-kind JSON, when parsed, then it carries the right id + kind + operations + expected")]
     public void ParseHappyRunTask()
     {
-        var body = "{\n" +
-                   "  \"schemaVersion\": 1,\n" +
-                   "  \"id\": \"01-run-succeed\",\n" +
-                   "  \"name\": \"Queued -> Running -> Succeeded\",\n" +
-                   "  \"kind\": \"Run\",\n" +
-                   "  \"operations\": [\n" +
-                   "    { \"action\": \"Create\" },\n" +
-                   "    { \"action\": \"Transition\", \"status\": \"Running\" },\n" +
-                                                                                                                                                                                                                /*lang=json,strict*/
-                                                                                                                                                                                                                /*lang=json,strict*/
-                                                                                                                                                                                                                /*lang=json,strict*/
-                                                                                                                                                                                                                /*lang=json,strict*/
-                                                                                                                                                                                                                "    { \"action\": \"Transition\", \"status\": \"Succeeded\" }\n" +
-                   "  ],\n" +
-                   "  \"expected\": {\n" +
-                   "    \"finalStatus\": \"Succeeded\",\n" +
-                   "    \"transitionLog\": [\"Queued\", \"Running\", \"Succeeded\"]\n" +
-                   "  }\n" +
-                   "}";
+        var body =
+            /*lang=json,strict*/
+            """
+            {
+              "schemaVersion": 1,
+              "id": "01-run-succeed",
+              "name": "Queued -> Running -> Succeeded",
+              "kind": "Run",
+              "operations": [
+                { "action": "Create" },
+                { "action": "Transition", "status": "Running" },
+                { "action": "Transition", "status": "Succeeded" }
+              ],
+              "expected": {
+                "finalStatus": "Succeeded",
+                "transitionLog": ["Queued", "Running", "Succeeded"]
+              }
+            }
+            """;
 
         var task = EvalJsonTaskParser.Parse(body);
 
@@ -48,26 +48,26 @@ public sealed class EvalJsonTaskParserShould
     [Fact(DisplayName = "Given an expectsFailure JSON, when parsed, then the runner expects an exception containing the message")]
     public void ParseFailureExpectation()
     {
-        var body = "{\n" +
-                   "  \"schemaVersion\": 1,\n" +
-                   "  \"id\": \"negative\",\n" +
-                   "  \"name\": \"illegal transition\",\n" +
-                   "  \"kind\": \"Run\",\n" +
-                   "  \"operations\": [\n" +
-                   "    { \"action\": \"Create\" },\n" +
-                   "    { \"action\": \"Transition\", \"status\": \"Running\" },\n" +
-                   "    { \"action\": \"Transition\", \"status\": \"Succeeded\" },\n" +
-                                                                                                                                                                                                                /*lang=json,strict*/
-                                                                                                                                                                                                                /*lang=json,strict*/
-                                                                                                                                                                                                                /*lang=json,strict*/
-                                                                                                                                                                                                                /*lang=json,strict*/
-                                                                                                                                                                                                                "    { \"action\": \"TransitionExpectFailure\", \"status\": \"Running\" }\n" +
-                   "  ],\n" +
-                   "  \"expected\": {\n" +
-                   "    \"expectsFailure\": true,\n" +
-                   "    \"expectedFailureMessage\": \"Succeeded\"\n" +
-                   "  }\n" +
-                   "}";
+        var body =
+            /*lang=json,strict*/
+            """
+            {
+              "schemaVersion": 1,
+              "id": "negative",
+              "name": "illegal transition",
+              "kind": "Run",
+              "operations": [
+                { "action": "Create" },
+                { "action": "Transition", "status": "Running" },
+                { "action": "Transition", "status": "Succeeded" },
+                { "action": "TransitionExpectFailure", "status": "Running" }
+              ],
+              "expected": {
+                "expectsFailure": true,
+                "expectedFailureMessage": "Succeeded"
+              }
+            }
+            """;
 
         var task = EvalJsonTaskParser.Parse(body);
 

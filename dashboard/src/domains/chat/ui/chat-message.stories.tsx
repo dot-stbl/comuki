@@ -296,3 +296,309 @@ export const Decided: Story = {
     />
   ),
 }
+
+/* ------------------------------------------------------------------ *
+ * The parts.
+ *
+ * One story per kind in the frozen list, plus the compositions worth
+ * screenshotting: a turn made of several parts at once, a thread long enough
+ * to virtualize, and the empty turn the old composition drew as a blank row.
+ * ------------------------------------------------------------------ */
+
+/**
+ * **Markdown.** The backend has claimed markdown since `ChatMessage.cs` was
+ * written; the console rendered a `<p>` with `white-space: pre-wrap`, so every
+ * list arrived as hyphens and every table as pipes. Raw HTML is not parsed —
+ * there is no `rehype-raw` — so nothing on this surface is an element the
+ * component map did not write.
+ */
+export const Markdown: Story = {
+  render: () => (
+    <One
+      message={{
+        id: "m1",
+        kind: "reply",
+        at: "09:21",
+        parts: [
+          {
+            kind: "text",
+            markdown: `### Что изменилось
+
+Воркер закрыл гонку на повторной доставке. Ключ берётся из
+\`Stripe-Signature\`, а не из тела запроса.
+
+- запись в \`webhook_deliveries\` идёт **до** обработки
+- повтор с тем же ключом отвечает \`200\` и не трогает ledger
+- ~~ретрай по таймауту~~ убран: Stripe ретраит сам
+
+| проверка | было | стало |
+| --- | --- | --- |
+| дубликаты за час | 41 | 0 |
+| p95 обработки | 310 | 128 |
+
+> TTL записи — 24 часа, а Stripe ретраит до трёх суток.
+
+- [x] обработчик
+- [ ] TTL в миграции`,
+          },
+        ],
+      }}
+    />
+  ),
+}
+
+/**
+ * **A code block.** The kit's own primitive, not a second `<pre>`: the same
+ * language chip, copy control, wrap toggle and fold a screen would get.
+ * Highlighting is classes rather than inline colour, so it follows every
+ * theme — see `shared/ui/code-block`.
+ */
+export const Code: Story = {
+  render: () => (
+    <One
+      message={{
+        id: "m1",
+        kind: "reply",
+        at: "09:21",
+        parts: [
+          { kind: "text", markdown: "Вот сама правка:" },
+          {
+            kind: "code",
+            language: "diff",
+            path: "src/webhooks/stripe.ts",
+            startLine: 61,
+            source: `@@ -61,8 +61,12 @@ export async function handleStripeEvent(req: Request) {
+-  const key = hash(await req.text())
+-  if (await seen(key)) {
+-    return json({ ok: true })
+-  }
++  const key = req.headers.get("stripe-signature")
++  if (!key) {
++    return json({ error: "unsigned" }, 400)
++  }
++  if (!(await claim(key, TTL))) {
++    return json({ ok: true, duplicate: true })
++  }
+`,
+          },
+        ],
+      }}
+    />
+  ),
+}
+
+/**
+ * **Thinking.** Folded, muted, and with no animation at all — the three are
+ * one decision. A console that performs its reasoning on screen is asking to
+ * be watched working; this one is a pult, and the working-out is evidence an
+ * operator opens when an answer surprises them.
+ */
+export const Thinking: Story = {
+  render: () => (
+    <One
+      message={{
+        id: "m1",
+        kind: "reply",
+        at: "09:21",
+        parts: [
+          {
+            kind: "thinking",
+            tokens: 1840,
+            text: "Шаг w4 трогает только обработчик Stripe. Проверил, что ключ идемпотентности берётся из заголовка, а не из тела — тело Stripe пересобирает при ретрае, заголовок нет. Остался вопрос про TTL: в таблице стоит 24 часа, а Stripe ретраит до трёх суток.",
+          },
+          {
+            kind: "text",
+            markdown: "Гонка закрыта. TTL — отдельный разговор.",
+          },
+        ],
+      }}
+    />
+  ),
+}
+
+/**
+ * **A tool call, with how long it took.** The part shape the wire will send —
+ * `inputJson`, `outputJson`, `durationMs` — through the same card the flat
+ * seed renders, because `model/parts.ts` converts one into the other.
+ */
+export const ToolPartWithDuration: Story = {
+  render: () => (
+    <One
+      message={{
+        id: "m1",
+        kind: "tool",
+        at: "09:20",
+        parts: [
+          {
+            kind: "tool",
+            name: "runs.diff",
+            inputJson: '{"run":"8f3c2a91","item":"w4"}',
+            status: "success",
+            outputJson: "1 file changed · +14 −3 · src/webhooks/stripe.ts",
+            durationMs: 412,
+          },
+        ],
+      }}
+    />
+  ),
+}
+
+/**
+ * **A plan — a stub for P2.** The drawing lives on the run's own screen, where
+ * the approve control is; a second picture of one graph is how two pictures
+ * start disagreeing. So this is the reading without the picture: the nodes in
+ * order, each with its profile, and every dependency said on the node that
+ * waits for it.
+ */
+export const Plan: Story = {
+  render: () => (
+    <One
+      message={{
+        id: "m1",
+        kind: "reply",
+        at: "09:23",
+        parts: [
+          {
+            kind: "text",
+            markdown: "Три шага, и последний ждёт человека.",
+          },
+          {
+            kind: "plan",
+            nodes: [
+              { id: "w4", label: "переписать обработчик", profile: "implementer" },
+              { id: "w5", label: "поднять TTL в миграции", profile: "implementer" },
+              { id: "w6", label: "вычитать диф", profile: "reviewer" },
+              { id: "w7", label: "раскатать на стенд", profile: "verifier" },
+            ],
+            edges: [
+              { from: "w4", to: "w5" },
+              { from: "w5", to: "w6" },
+              { from: "w6", to: "w7" },
+            ],
+          },
+        ],
+      }}
+    />
+  ),
+}
+
+/**
+ * **A diagram — also a stub, and honest about it.** It says which dialect it
+ * is and shows the source the turn wrote, rather than pretending to a picture
+ * nobody can check. The source stays copyable, so the operator can put it
+ * somewhere that does draw it.
+ */
+export const Diagram: Story = {
+  render: () => (
+    <One
+      message={{
+        id: "m1",
+        kind: "reply",
+        at: "09:23",
+        parts: [
+          {
+            kind: "diagram",
+            dialect: "mermaid",
+            source: `flowchart LR
+  w1[explorer] --> w2[planner]
+  w2 --> w3[implementer]
+  w3 --> w4[reviewer]
+  w4 --> w5[verifier]`,
+          },
+        ],
+      }}
+    />
+  ),
+}
+
+/**
+ * **Everything at once.** The shape an answer from a coding agent actually
+ * has: the working-out, the call that produced the facts, the prose, the
+ * patch, and the hand-off to the screen that lists the rest.
+ */
+export const AllParts: Story = {
+  render: () => (
+    <One
+      message={{
+        id: "m1",
+        kind: "reply",
+        at: "09:21",
+        parts: [
+          {
+            kind: "thinking",
+            tokens: 620,
+            text: "Сначала посмотрел диф, потом трассу. Расхождение только в одном шаге.",
+          },
+          {
+            kind: "tool",
+            name: "runs.diff",
+            inputJson: '{"run":"8f3c2a91","item":"w4"}',
+            status: "success",
+            outputJson: "1 file changed · +14 −3",
+            durationMs: 412,
+          },
+          {
+            kind: "text",
+            markdown:
+              "Прогон 8f3c2a91 переписал обработчик. Одна правка, и она в `handleStripeEvent`:",
+          },
+          {
+            kind: "code",
+            language: "ts",
+            path: "src/webhooks/stripe.ts",
+            startLine: 61,
+            source: `const key = req.headers.get("stripe-signature")
+if (!key) {
+  return json({ error: "unsigned" }, 400)
+}
+`,
+          },
+          { kind: "handoff", query: "webhook" },
+        ],
+      }}
+    />
+  ),
+}
+
+/**
+ * **A turn with nothing in it.** The state the old composition drew as a
+ * byline over a blank row — a `tool` message whose tool record never arrived
+ * matched none of the four conditionals. A gap in a log that explains nothing
+ * is worse than an admission.
+ */
+export const EmptyTurn: Story = {
+  render: () => <One message={{ id: "m1", kind: "tool", at: "09:20" }} />,
+}
+
+/**
+ * **A long thread.** Past sixty settled turns the log draws a window between
+ * two spacers that stand for everything not mounted, so the scrollbar still
+ * measures the whole conversation. Scroll up and the thread stops following
+ * the conversation — and offers *jump to latest*, which is the whole
+ * compensation for taking the scroll away.
+ */
+export const LongThread: Story = {
+  render: () => (
+    <Frame>
+      <div style={{ blockSize: "32rem" }}>
+        <ChatThread
+          messages={Array.from({ length: 120 }, (_, index) => ({
+            id: `m${index}`,
+            kind: index % 2 === 0 ? ("person" as const) : ("reply" as const),
+            at: `09:${String(index % 60).padStart(2, "0")}`,
+            parts: [
+              {
+                kind: "text" as const,
+                markdown:
+                  index % 2 === 0
+                    ? `что с прогоном ${index}`
+                    : `Прогон ${index} идёт штатно — **без эскалаций**.`,
+              },
+            ],
+          }))}
+          onDecide={() => {}}
+        />
+      </div>
+    </Frame>
+  ),
+}

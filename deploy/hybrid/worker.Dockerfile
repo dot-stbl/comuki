@@ -94,7 +94,7 @@ RUN mkdir -p /opt/comuki/pi \
     && rm /tmp/pi.tgz \
     && printf '#!/bin/sh\nexec bun /opt/comuki/pi/dist/bundle/cli.js "$@"\n' > /usr/local/bin/pi \
     && chmod +x /usr/local/bin/pi \
-    && timeout 60 pi --version
+    && timeout 180 pi --version </dev/null
 
 # The translator (container ENTRYPOINT) + its default worktree mount.
 COPY --from=build /app /app/translator

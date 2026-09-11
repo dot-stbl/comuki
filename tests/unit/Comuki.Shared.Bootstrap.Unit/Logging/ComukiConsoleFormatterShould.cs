@@ -1,4 +1,5 @@
 using System.Text;
+using Comuki.Shared.Bootstrap.Correlation;
 using Comuki.Shared.Bootstrap.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -111,6 +112,28 @@ public sealed class ComukiConsoleFormatterShould
         }
     }
 
+    [Fact(DisplayName = "Given an ambient correlation id, when written, then rid=… follows the state fields")]
+    public void AppendsCorrelationIdAfterStateFields()
+    {
+        var line = Render(
+            LogLevel.Information,
+            "comuki.host.workers",
+            new EventId(0),
+            "claimed work item",
+            new StateField("WorkItemId", "wi-42"),
+            correlation: new FixedCorrelation("req-12345678"));
+
+        line.ShouldBe("2026-09-11T10:00:00.123Z info  comuki.host.workers  claimed work item  WorkItemId=wi-42  rid=req-12345678");
+    }
+
+    [Fact(DisplayName = "Given no correlation accessor, when written, then the line carries no rid")]
+    public void OmitsRidWithoutAccessor()
+    {
+        var line = Render(LogLevel.Information, "comuki.test", new EventId(0), "m");
+
+        line.ShouldNotContain("rid=");
+    }
+
     private static string Render(
         LogLevel logLevel,
         string category,
@@ -118,7 +141,8 @@ public sealed class ComukiConsoleFormatterShould
         string message,
         StateField? stateField = null,
         Exception? exception = null,
-        bool ansi = false)
+        bool ansi = false,
+        ICorrelationIdAccessor? correlation = null)
     {
         var fields = new List<KeyValuePair<string, object?>>
         {
@@ -137,7 +161,7 @@ public sealed class ComukiConsoleFormatterShould
             exception,
             static (state, _) => state is null ? string.Empty : state[0].Value?.ToString() ?? string.Empty);
 
-        var formatter = new ComukiConsoleFormatter(() => ansi, FrozenClock.Instance);
+        var formatter = new ComukiConsoleFormatter(() => ansi, FrozenClock.Instance, correlation);
         var writer = new StringBuilderWriter();
         formatter.Write(in entry, null, writer);
 
@@ -146,6 +170,17 @@ public sealed class ComukiConsoleFormatterShould
 
     /// <summary>One structured state field handed to <see cref="Render"/>.</summary>
     private sealed record StateField(string Key, object Value);
+
+    /// <summary>Correlation accessor pinned to one id — the formatter only reads.</summary>
+    private sealed class FixedCorrelation(string id) : ICorrelationIdAccessor
+    {
+        public string? CurrentId => id;
+
+        public IDisposable Begin(string requestId)
+        {
+            throw new NotSupportedException("the formatter never establishes a scope");
+        }
+    }
 
     /// <summary>Clock pinned to the fixed test timestamp.</summary>
     private sealed class FrozenClock : TimeProvider

@@ -386,6 +386,11 @@ internal static class HostComposer
         // context scope members read it inside the query filters.
         builder.Services.AddSingleton<Shared.Kernel.Scoping.ISubjectScopeAccessor, Shared.Kernel.Scoping.AsyncLocalSubjectScopeAccessor>();
 
+        // Ambient correlation id (issue #56 §5): the console formatters
+        // stamp rid=… from this slot; the middleware below installs one id
+        // per request. Separate accessor from the subject scope by design.
+        builder.Services.AddSingleton<Shared.Bootstrap.Correlation.ICorrelationIdAccessor, Shared.Bootstrap.Correlation.AsyncLocalCorrelationIdAccessor>();
+
         var app = builder.Build();
 
         HostDatabase.WarnLegacyAlias(database, app.Logger);
@@ -395,6 +400,11 @@ internal static class HostComposer
         // Production when MinIO / bootstrap-admin still carry dev
         // defaults.
         ProductionSecretValidator.Validate(app.Services);
+
+        // Correlation id first (issue #56 §5): outermost so even the
+        // exception-handler's error logs carry rid=…; the response header
+        // is set before the pipeline runs, before headers are flushed.
+        app.UseMiddleware<Correlation.CorrelationIdMiddleware>();
 
         app.UseExceptionHandler();
         app.UseAuthentication();

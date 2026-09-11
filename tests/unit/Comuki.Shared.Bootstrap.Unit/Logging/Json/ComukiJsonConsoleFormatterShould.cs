@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Comuki.Shared.Bootstrap.Correlation;
 using Comuki.Shared.Bootstrap.Logging.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -75,13 +76,28 @@ public sealed class ComukiJsonConsoleFormatterShould
         document.RootElement.GetProperty("message").GetString().ShouldBe("quote \" newline \\ end");
     }
 
+    [Fact(DisplayName = "Given an ambient correlation id, when written, then the rid property appears in the JSON object")]
+    public void AppendsRidProperty()
+    {
+        var line = Render(
+            LogLevel.Information,
+            "comuki.host",
+            new EventId(0),
+            "listening addr=http://localhost:8080",
+            correlation: new FixedCorrelation("req-12345678"));
+
+        using var document = JsonDocument.Parse(line);
+        document.RootElement.GetProperty("rid").GetString().ShouldBe("req-12345678");
+    }
+
     private static string Render(
         LogLevel logLevel,
         string category,
         EventId eventId,
         string message,
         StateField? stateField = null,
-        Exception? exception = null)
+        Exception? exception = null,
+        ICorrelationIdAccessor? correlation = null)
     {
         var fields = new List<KeyValuePair<string, object?>>
         {
@@ -100,7 +116,7 @@ public sealed class ComukiJsonConsoleFormatterShould
             exception,
             static (state, _) => state is null ? string.Empty : state[0].Value?.ToString() ?? string.Empty);
 
-        var formatter = new ComukiJsonConsoleFormatter(FrozenClock.Instance);
+        var formatter = new ComukiJsonConsoleFormatter(FrozenClock.Instance, correlation);
         var writer = new StringBuilderWriter();
         formatter.Write(in entry, null, writer);
 
@@ -109,6 +125,17 @@ public sealed class ComukiJsonConsoleFormatterShould
 
     /// <summary>One structured state field handed to <see cref="Render"/>.</summary>
     private sealed record StateField(string Key, object Value);
+
+    /// <summary>Correlation accessor pinned to one id — the formatter only reads.</summary>
+    private sealed class FixedCorrelation(string id) : ICorrelationIdAccessor
+    {
+        public string? CurrentId => id;
+
+        public IDisposable Begin(string requestId)
+        {
+            throw new NotSupportedException("the formatter never establishes a scope");
+        }
+    }
 
     /// <summary>Clock pinned to the fixed test timestamp.</summary>
     private sealed class FrozenClock : TimeProvider

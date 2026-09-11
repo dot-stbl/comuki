@@ -28,11 +28,13 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     EnvironmentName = ComukiEnvironment.Resolve(),
 });
 
-// Comuki-native surface (issue #54): config.toml + COMUKI_* env replace
-// the JSON/bare-env sources, [server]/COMUKI_SERVER_PORT pin the
-// listen address when set, and the comuki console formatter owns the
-// log output. No config.toml present → empty configuration, no error:
-// the build-time OpenAPI pass below depends on booting without one.
+// Comuki-native surface (issue #54): config.toml + COMUKI_* env are
+// added on top of the standard JSON/env sources (double-underscore
+// Helm vars like Artifacts__Endpoint keep working), [server]/
+// COMUKI_SERVER_PORT pin the listen address when set, and the comuki
+// console formatter owns the log output. No config.toml present →
+// empty comuki layer, no error: the build-time OpenAPI pass below
+// depends on booting without one.
 builder.Configuration.UseComukiConfiguration();
 builder.WebHost.ConfigureKestrel(static server => server.AddServerHeader = false);
 if (builder.Configuration.TryResolveServerUrl() is { } serverUrl)

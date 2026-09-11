@@ -118,9 +118,10 @@ export function createTaskColumns({
         <TaskSourceBadge source={row.original.source} id={row.original.id} />
       ),
       // Pinned because it is the backlog's identity, not because it is first:
-      // for a ticket that came off a branch this badge *is* the id. A manual
-      // ticket has only the word "manual" here, which is the honest limit of
-      // pinning a column that is a badge — see the note on `title`.
+      // for a ticket that came off a branch this badge *is* the id. A ticket
+      // filed in the product's own intake has only the word "native" here,
+      // which is the honest limit of pinning a column that is a badge — see
+      // the note on `title`.
       meta: { width: 136, pinned: true },
     },
     {

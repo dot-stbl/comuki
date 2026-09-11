@@ -1,3 +1,4 @@
+using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,21 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Persistence.Configurations;
 /// </summary>
 public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
 {
+    /// <summary>
+    /// Partial-index predicate over both live statuses, composed from
+    /// <see cref="WorkItemStatus"/> via <c>nameof</c> so a rename fails the
+    /// build instead of leaving <c>ix_work_items_active</c> silently stale.
+    /// </summary>
+    internal const string ActiveStatusesFilter =
+        "status IN ('" + nameof(WorkItemStatus.Queued) + "', '" + nameof(WorkItemStatus.Running) + "')";
+
+    /// <summary>
+    /// Partial-index predicate over the queued-only status, composed the
+    /// same way — see <see cref="ActiveStatusesFilter"/>.
+    /// </summary>
+    internal const string QueuedStatusFilter =
+        "status = '" + nameof(WorkItemStatus.Queued) + "'";
+
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<WorkItem> builder)
     {
@@ -85,11 +101,11 @@ public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
         // predicate must match them or the index would never be used.
         builder.HasIndex(static item => new { item.Status, item.CreatedAt })
             .HasDatabaseName("ix_work_items_active")
-            .HasFilter("status IN ('Queued', 'Running')");
+            .HasFilter(ActiveStatusesFilter);
 
         // the claim subselect: profile match + FIFO within one profile, live rows only
         builder.HasIndex(static item => new { item.ProfileKey, item.CreatedAt })
             .HasDatabaseName("ix_work_items_claim")
-            .HasFilter("status = 'Queued'");
+            .HasFilter(QueuedStatusFilter);
     }
 }

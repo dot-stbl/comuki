@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router"
 
 import { resultLabel } from "@/domains/verify/model/gate"
-import type { VerifyCommand } from "@/domains/verify/model/types"
+import type {
+  VerifyCommand,
+  VerifyResultLabel,
+} from "@/domains/verify/model/types"
 import { VerifyResultBadge } from "@/domains/verify/ui/verify-result-badge"
 import { rankSort, type DataColumn } from "@/shared/ui"
 
@@ -11,7 +14,7 @@ import styles from "./verify-table.module.css"
 export const getCommandId = (command: VerifyCommand) => command.id
 
 /** Failing first, then the ones nothing has reached, then the green ones. */
-const RESULT_RANK: Record<string, number> = {
+const RESULT_RANK: Record<VerifyResultLabel, number> = {
   failed: 0,
   "never ran": 1,
   passed: 2,

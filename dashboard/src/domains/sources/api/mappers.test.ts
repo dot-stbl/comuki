@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import { settingsToJson, sourceConnectionViewToConnection } from "@/domains/sources/api/mappers"
+import {
+  isKnownProvider,
+  providerBrand,
+  providerLabel,
+} from "@/domains/sources/model/providers"
 import type { SourceConnectionView } from "@/shared/api/_generated/types/SourceConnectionView"
 
 /**
@@ -187,11 +192,32 @@ describe("sourceConnectionViewToConnection", () => {
 
     const connection = sourceConnectionViewToConnection(view)
 
-    // The cast is the contract — until `SOURCE_KIND_BRAND` and
-    // `SOURCE_KIND_LABEL` know about "linear", the row renders with the
-    // provider's own word. A failing cast would close the row; an unknown
-    // provider is a future the dashboard has to grow into, not a 500.
+    // The word survives untranslated, which is now the only thing the mapper
+    // can do with it: `kind` is a `ProviderKey`, which is a `string`, and
+    // there is no union left for a word to fail to be a member of. The
+    // registry has no row for it, and every reader downstream degrades.
     expect(connection.kind).toBe("linear")
+    expect(isKnownProvider(connection.kind)).toBe(false)
+
+    // The rest of the row is what a connection with a remote end gets: it
+    // can be disconnected, it keeps its credential reference, and its auth
+    // falls back to the connector's default token shape.
+    expect(connection.removable).toBe(true)
+    expect(connection.secretEnvRef).toBe("env:LINEAR_TOKEN")
+    expect(connection.auth).toBe("pat")
+  })
+
+  it("says an unknown provider in the host's own words on every surface", () => {
+    // The two display helpers, which is what the provider cell and the
+    // source page both read now. `null` is the brand `BrandTag` already
+    // treats as "write it in words"; the words are the host's.
+    expect(providerLabel("linear")).toBe("linear")
+    expect(providerBrand("linear")).toBeNull()
+
+    // And the five it does know are untouched.
+    expect(providerLabel("yandex-tracker")).toBe("yandex tracker")
+    expect(providerBrand("github")).toBe("github")
+    expect(providerBrand("yandex-tracker")).toBeNull()
   })
 })
 

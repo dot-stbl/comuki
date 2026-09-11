@@ -130,9 +130,107 @@ export type SeedChatMessageKind =
   | "proposal"
   | "error"
 
+/* --------------------------------------------------------------------------
+ * Message parts.
+ *
+ * The shape the Orchestration API is being written to send, seeded here so
+ * every state of it is reachable by clicking rather than by waiting for a
+ * backend. Mirrors `domains/chat/model/types.ts` exactly — `api/mappers.ts`
+ * is the one file that knows both and the one file that changes when the wire
+ * arrives.
+ *
+ * `question` and `decision` are P2 and are deliberately absent from both
+ * spellings of the list.
+ * ----------------------------------------------------------------------- */
+
+export type SeedPartKind =
+  | "text"
+  | "code"
+  | "diagram"
+  | "thinking"
+  | "tool"
+  | "handoff"
+  | "plan"
+
+export interface SeedTextPart {
+  kind: "text"
+  /** GitHub-flavoured markdown. Raw HTML never enters the thread. */
+  markdown: string
+}
+
+export interface SeedCodePart {
+  kind: "code"
+  /** As the fence spelled it — `ts`, `csharp`, `yml`. Resolved at render. */
+  language: string
+  source: string
+  path?: string
+  startLine?: number
+}
+
+export interface SeedDiagramPart {
+  kind: "diagram"
+  dialect: string
+  source: string
+}
+
+export interface SeedThinkingPart {
+  kind: "thinking"
+  text: string
+  tokens?: number
+}
+
+export interface SeedToolPart {
+  kind: "tool"
+  name: string
+  inputJson: string
+  status: SeedToolStatus
+  outputJson?: string
+  durationMs?: number
+}
+
+export interface SeedHandoffPart {
+  kind: "handoff"
+  query: string
+}
+
+export interface SeedPlanNode {
+  id: string
+  label: string
+  profile?: string
+}
+
+export interface SeedPlanEdge {
+  from: string
+  to: string
+}
+
+export interface SeedPlanPart {
+  kind: "plan"
+  nodes: SeedPlanNode[]
+  edges: SeedPlanEdge[]
+}
+
+export type SeedMessagePart =
+  | SeedTextPart
+  | SeedCodePart
+  | SeedDiagramPart
+  | SeedThinkingPart
+  | SeedToolPart
+  | SeedHandoffPart
+  | SeedPlanPart
+
 export interface SeedChatMessage {
   id: string
   kind: SeedChatMessageKind
+  /**
+   * What the turn is made of, in reading order.
+   *
+   * Absent on every message written before the contract existed, and the
+   * console derives a part list from the flat fields for those — so the two
+   * shapes render through one path and the old seeds did not have to be
+   * rewritten to keep working.
+   */
+  parts?: SeedMessagePart[]
   /** A person's words, or the assistant's prose. Content, so not English-only. */
   text?: string
   /** True while tokens are still arriving. Only ever on a `reply`. */
@@ -355,6 +453,139 @@ export const CHAT_SESSIONS_SEED: SeedChatSession[] = [
   },
 
   {
+    /* The parts session. Every part kind the contract names is on this
+       thread, because a state that cannot be reached by clicking is a state
+       nobody screenshots and nobody notices breaking: markdown with a list, a
+       table and a task list; a fenced patch; the model's working-out folded
+       away; a tool call that reports how long it took; a plan; and a diagram
+       the console is honest about not drawing yet. */
+    id: "cs_patch",
+    title: "Патч под ключ идемпотентности",
+    age: "12 min",
+    messages: [
+      {
+        id: "m_pa_1",
+        kind: "person",
+        text: "покажи, что implementer написал в 8f3c2a91 на шаге w4",
+        at: "09:20",
+      },
+      {
+        id: "m_pa_2",
+        kind: "tool",
+        at: "09:20",
+        parts: [
+          {
+            kind: "tool",
+            name: "runs.diff",
+            inputJson: '{"run":"8f3c2a91","item":"w4"}',
+            status: "success",
+            outputJson: "1 file changed · +14 −3 · src/webhooks/stripe.ts",
+            durationMs: 412,
+          },
+        ],
+      },
+      {
+        id: "m_pa_3",
+        kind: "reply",
+        at: "09:21",
+        parts: [
+          {
+            kind: "thinking",
+            tokens: 1840,
+            text: "Шаг w4 трогает только обработчик Stripe. Проверил, что ключ идемпотентности берётся из заголовка, а не из тела — тело Stripe пересобирает при ретрае, заголовок нет. Остался вопрос про TTL: в таблице стоит 24 часа, а Stripe ретраит до трёх суток.",
+          },
+          {
+            kind: "text",
+            markdown: `Воркер закрыл гонку на повторной доставке. Ключ теперь берётся из заголовка \`Stripe-Signature\`, а не из тела запроса.
+
+**Что изменилось**
+
+- запись в \`webhook_deliveries\` идёт до обработки, а не после
+- повтор с тем же ключом отвечает \`200\` и не трогает ledger
+- ~~ретрай по таймауту~~ убран: Stripe ретраит сам
+
+| проверка | было | стало |
+| --- | --- | --- |
+| дубликаты за час | 41 | 0 |
+| p95 обработки | 310 | 128 |
+
+> TTL записи — 24 часа, а Stripe ретраит до трёх суток. Это дыра, и она не в этом шаге.
+
+- [x] обработчик
+- [ ] TTL в миграции
+- [ ] прогон 5b1d7e40 на стенде`,
+          },
+          {
+            kind: "code",
+            language: "diff",
+            path: "src/webhooks/stripe.ts",
+            startLine: 61,
+            source: `@@ -61,8 +61,14 @@ export async function handleStripeEvent(req: Request) {
+-  const key = hash(await req.text())
+-  if (await seen(key)) {
+-    return json({ ok: true })
+-  }
++  const key = req.headers.get("stripe-signature")
++  if (!key) {
++    return json({ error: "unsigned" }, 400)
++  }
++  if (!(await claim(key, TTL))) {
++    // Already claimed by an earlier delivery — the ledger is not touched.
++    return json({ ok: true, duplicate: true })
++  }
+`,
+          },
+          { kind: "handoff", query: "webhook" },
+        ],
+      },
+      {
+        id: "m_pa_4",
+        kind: "person",
+        text: "а что осталось по плану",
+        at: "09:23",
+      },
+      {
+        id: "m_pa_5",
+        kind: "reply",
+        at: "09:23",
+        parts: [
+          {
+            kind: "text",
+            markdown:
+              "Три шага, и последний ждёт человека — аппрув на раскатку стоит на 5b1d7e40.",
+          },
+          {
+            kind: "plan",
+            nodes: [
+              { id: "w4", label: "переписать обработчик", profile: "implementer" },
+              { id: "w5", label: "поднять TTL в миграции", profile: "implementer" },
+              { id: "w6", label: "вычитать диф", profile: "reviewer" },
+              { id: "w7", label: "раскатать на стенд", profile: "verifier" },
+            ],
+            edges: [
+              { from: "w4", to: "w5" },
+              { from: "w5", to: "w6" },
+              { from: "w6", to: "w7" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    /* The long thread — the only way to reach the virtualized reading, and the
+       only seed in this folder that is generated rather than written out.
+       Sixty turns of hand-written Russian would be sixty turns of noise; what
+       the state needs is *length*, and the generator is honest about that.
+       Everything else in this file stays hand-written. */
+    id: "cs_backlog",
+    title: "Ночная смена, разбор по очереди",
+    age: "6 h",
+    messages: longThread(74),
+  },
+
+  {
     // The empty first session. Every console has one and almost none of them
     // are designed — so it is seeded rather than left to chance.
     id: "cs_new",
@@ -363,6 +594,84 @@ export const CHAT_SESSIONS_SEED: SeedChatSession[] = [
     messages: [],
   },
 ]
+
+/**
+ * A conversation long enough that the thread virtualizes.
+ *
+ * The threshold is sixty settled turns (`ui/chat-thread.tsx`), and there is no
+ * way to look at the windowed reading, the two spacers or the *jump to latest*
+ * control without a thread that crosses it. Generated because the content is
+ * not the point — the length is — and because sixty invented sentences would
+ * read as filler wherever the eye landed. The shape still varies: a question,
+ * the call that answered it, the answer, on a clock that advances.
+ */
+function longThread(count: number): SeedChatMessage[] {
+  const subjects = [
+    "8f3c2a91",
+    "5b1d7e40",
+    "2a6f1c33",
+    "9d72b5f0",
+    "c41a8e27",
+    "7e0b3d19",
+  ]
+  const messages: SeedChatMessage[] = []
+
+  for (let index = 0; index < count; index += 1) {
+    const subject = subjects[index % subjects.length] as string
+    const minute = 10 + index
+    const at = `${String(1 + Math.floor(minute / 60)).padStart(2, "0")}:${String(
+      minute % 60
+    ).padStart(2, "0")}`
+
+    if (index % 3 === 0) {
+      messages.push({
+        id: `m_bl_${index}`,
+        kind: "person",
+        text: `что с ${subject}`,
+        at,
+      })
+      continue
+    }
+
+    if (index % 3 === 1) {
+      messages.push({
+        id: `m_bl_${index}`,
+        kind: "tool",
+        at,
+        parts: [
+          {
+            kind: "tool",
+            name: "runs.get",
+            inputJson: `{"run":"${subject}"}`,
+            status: "success",
+            outputJson: `status=running · current=w${(index % 9) + 1} · $${(
+              0.1 *
+              (index + 1)
+            ).toFixed(2)}`,
+            durationMs: 80 + index * 7,
+          },
+        ],
+      })
+      continue
+    }
+
+    messages.push({
+      id: `m_bl_${index}`,
+      kind: "reply",
+      at,
+      parts: [
+        {
+          kind: "text",
+          markdown: `Прогон ${subject} идёт штатно, шаг w${
+            (index % 9) + 1
+          } — без эскалаций.`,
+        },
+      ],
+    })
+  }
+
+  return messages
+}
 
 /* --------------------------------------------------------------------------
  * The script.
@@ -388,10 +697,33 @@ export interface SeedChatScript {
 export const CHAT_SCRIPT: SeedChatScript[] = [
   {
     when: "/help",
+    /* Markdown, because the backend has always claimed it was and this is the
+       reply an operator reads first. A heading, a list, an inline command and
+       a table — the four things a `<p>` with `pre-wrap` used to flatten. */
     reply: [
       {
         kind: "reply",
-        text: "The console drives the same control plane the screens do. Type a slash to see every command this shift can reach — the built-in set plus whatever this client declared in its own git. Anything that changes state comes back as a proposal you press; nothing here acts on its own.",
+        parts: [
+          {
+            kind: "text",
+            markdown: `### What the console is
+
+The console drives the **same control plane the screens do**. Type a slash to
+see every command this shift can reach — the built-in set plus whatever this
+client declared in its own git.
+
+- anything that changes state comes back as a **proposal you press**
+- nothing here acts on its own, and there is no path from rendering to acting
+- a question whose answer is a list is handed to the screen that draws it
+
+| command | what it does |
+| --- | --- |
+| \`/status\` | what the swarm is doing right now |
+| \`/run\` | start a run from a ticket |
+| \`/stop\` | stop a run and tear its container down |
+| \`/plan\` | read a run's plan, and decide on it |`,
+          },
+        ],
       },
     ],
   },
@@ -450,11 +782,47 @@ export const CHAT_SCRIPT: SeedChatScript[] = [
   },
   {
     when: "/plan",
+    /* The plan and the diagram, both rendered as the stubs they are this
+       phase: the nodes in order with their dependencies said in words, and
+       the diagram's source rather than a picture of it. The hand-off stays —
+       the drawing lives on the run's own screen, which is where the approve
+       control is, and that is the decision this console is built on. */
     reply: [
       {
         kind: "reply",
-        text: "План этого прогона — граф work items, а не текст. Открой карточку прогона: там он нарисован, и там же стоит аппрув.",
-        handoff: "plan",
+        parts: [
+          {
+            kind: "text",
+            markdown:
+              "План этого прогона — граф work items. Здесь он читается по шагам; нарисован он на карточке прогона, и там же стоит аппрув.",
+          },
+          {
+            kind: "plan",
+            nodes: [
+              { id: "w1", label: "прочитать тикет и затронутый код", profile: "explorer" },
+              { id: "w2", label: "разложить работу на шаги", profile: "planner" },
+              { id: "w3", label: "внести правку", profile: "implementer" },
+              { id: "w4", label: "вычитать диф", profile: "reviewer" },
+              { id: "w5", label: "аппрув на раскатку", profile: "verifier" },
+            ],
+            edges: [
+              { from: "w1", to: "w2" },
+              { from: "w2", to: "w3" },
+              { from: "w3", to: "w4" },
+              { from: "w4", to: "w5" },
+            ],
+          },
+          {
+            kind: "diagram",
+            dialect: "mermaid",
+            source: `flowchart LR
+  w1[explorer] --> w2[planner]
+  w2 --> w3[implementer]
+  w3 --> w4[reviewer]
+  w4 --> w5[verifier]`,
+          },
+          { kind: "handoff", query: "plan" },
+        ],
       },
     ],
   },

@@ -8,7 +8,7 @@ import {
   FormMeasure,
   FormRow,
 } from "@/app/layout/form-page"
-import { DEFAULT_TASK_SOURCE } from "@/domains/tasks/model/task-sources"
+import { NATIVE_PROVIDER } from "@/domains/sources/model/providers"
 import type { CreateTaskInput, TaskPriority } from "@/domains/tasks/model/types"
 import { TaskPriorityField } from "@/domains/tasks/ui/task-priority-field"
 import { TaskSourceCards } from "@/domains/tasks/ui/task-source-cards"
@@ -72,7 +72,10 @@ export function CreateTaskForm({
     [session]
   )
 
-  const [source, setSource] = useState(DEFAULT_TASK_SOURCE)
+  /* The default stamp is the product's own intake: somebody typing into this
+     form is, until they say otherwise, filing a ticket with no tracker
+     behind it. */
+  const [source, setSource] = useState(NATIVE_PROVIDER)
   const [title, setTitle] = useState("")
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "")
   const [app, setApp] = useState(apps[0] ?? "")
@@ -89,7 +92,7 @@ export function CreateTaskForm({
   // the source stamp included — choosing a provider is as much a decision the
   // operator would lose as a typed line is.
   const dirty =
-    source !== DEFAULT_TASK_SOURCE ||
+    source !== NATIVE_PROVIDER ||
     title !== "" ||
     brief !== "" ||
     projectId !== (projects[0]?.id ?? "") ||
@@ -128,7 +131,7 @@ export function CreateTaskForm({
           one-line fields readable. */}
       <FormCard
         label="source"
-        note="where the ticket came from. every card but manual expects a connection watching that provider — writing a ticket here records where it came from, it does not file one there."
+        note="where the ticket came from. every card but native expects a connection watching that provider — writing a ticket here records where it came from, it does not file one there."
       >
         <TaskSourceCards
           value={source}

@@ -13,6 +13,23 @@ namespace Comuki.Modules.Intake.Infrastructure.Persistence.Configurations;
 /// </summary>
 public sealed class IncomingTicketConfiguration : IEntityTypeConfiguration<IncomingTicket>
 {
+    /// <summary>
+    /// Partial-index predicate over both active statuses, composed from
+    /// <see cref="IntakeTicketStatus"/> via <c>nameof</c> so a rename fails
+    /// the build instead of leaving <c>ux_intake_tickets_active</c>
+    /// silently stale.
+    /// </summary>
+    internal const string ActiveStatusesFilter =
+        "status IN ('" + nameof(IntakeTicketStatus.Pending) + "', '" + nameof(IntakeTicketStatus.Claimed) + "')";
+
+    /// <summary>Pending-only predicate, composed the same way — see <see cref="ActiveStatusesFilter"/>.</summary>
+    internal const string PendingStatusFilter =
+        "status = '" + nameof(IntakeTicketStatus.Pending) + "'";
+
+    /// <summary>Claimed-only predicate, composed the same way — see <see cref="ActiveStatusesFilter"/>.</summary>
+    internal const string ClaimedStatusFilter =
+        "status = '" + nameof(IntakeTicketStatus.Claimed) + "'";
+
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<IncomingTicket> builder)
     {
@@ -95,14 +112,14 @@ public sealed class IncomingTicketConfiguration : IEntityTypeConfiguration<Incom
         builder.HasIndex(static ticket => new { ticket.ProjectId, ticket.Provider, ticket.ExternalId })
             .IsUnique()
             .HasDatabaseName("ux_intake_tickets_active")
-            .HasFilter("status IN ('Pending', 'Claimed')");
+            .HasFilter(ActiveStatusesFilter);
 
         builder.HasIndex(static ticket => ticket.CreatedAt)
             .HasDatabaseName("ix_intake_tickets_pending")
-            .HasFilter("status = 'Pending'");
+            .HasFilter(PendingStatusFilter);
 
         builder.HasIndex(static ticket => ticket.UpdatedAt)
             .HasDatabaseName("ix_intake_tickets_claimed")
-            .HasFilter("status = 'Claimed'");
+            .HasFilter(ClaimedStatusFilter);
     }
 }

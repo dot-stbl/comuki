@@ -150,7 +150,16 @@ export function permissionScope(permission: Permission): "project" | "platform" 
 }
 
 export function roleGrants(role: Role, permission: Permission): boolean {
-  return GRANTS[role].includes(permission)
+  // Fail closed: a role this build has no row for grants nothing, and does not
+  // throw. `role` is typed, but the values reaching it come off the wire —
+  // `/me` answers `roles: string[]` and `RoleAssignmentView.role` is a
+  // `string` — so the type is a claim about the mapper, not a fact about the
+  // input. Closed-by-default is the only safe direction for a permission
+  // check: a wrong "no" shows the operator a denial sentence naming the role
+  // they need, while a wrong "yes" opens an act they were not granted, and an
+  // unguarded `GRANTS[role]` does neither — it throws on `undefined.includes`
+  // and takes the whole page down on the first render that asks.
+  return GRANTS[role]?.includes(permission) ?? false
 }
 
 /** The roles that would open a denied act — the raw material for the tooltip. */

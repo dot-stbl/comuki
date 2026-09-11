@@ -53,6 +53,18 @@ public static class ChatChannels
     /// <summary>Tool name of the last tool observation.</summary>
     public const string ToolName = "tool_name";
 
+    /// <summary>Tool arguments JSON of the last tool observation.</summary>
+    public const string ToolInput = "tool_input";
+
     /// <summary>Tool result JSON of the last tool observation.</summary>
     public const string ToolResult = "tool_result";
+
+    /// <summary>Tool outcome of the last tool observation (a <c>ToolPartStatuses</c> value).</summary>
+    public const string ToolStatus = "tool_status";
+
+    /// <summary>Wall-clock duration of the last tool observation, milliseconds in string form.</summary>
+    public const string ToolDurationMs = "tool_duration_ms";
+
+    /// <summary>Brain progress fragments of the turn, newline-joined (journaled as a thinking part).</summary>
+    public const string Thinking = "thinking";
 }

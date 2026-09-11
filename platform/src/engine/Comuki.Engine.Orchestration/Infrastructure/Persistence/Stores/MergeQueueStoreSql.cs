@@ -8,19 +8,27 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Persistence.Stores;
 
 /// <summary>
 /// Guarded raw SQL for the merge-queue claim + helpers. PascalCase
-/// status literals mirror <c>HasConversion&lt;string&gt;</c>. Every
+/// status literals mirror <c>HasConversion&lt;string&gt;</c> — sourced from
+/// <see cref="MergeQueueStatus"/> via <c>nameof</c> so a rename fails the
+/// build instead of leaving these predicates silently stale. Every
 /// query is parameterised; everything routes through the
 /// per-module schema constant.
 /// </summary>
 internal static class MergeQueueStoreSql
 {
+    /// <summary>Compiler-checked status name — see the class remarks.</summary>
+    private const string Pending = nameof(MergeQueueStatus.Pending);
+
+    /// <summary>Compiler-checked status name — see the class remarks.</summary>
+    private const string InProgress = nameof(MergeQueueStatus.InProgress);
+
     /// <summary>Atomically claim the oldest pending row in scope; race-safe via FOR UPDATE SKIP LOCKED.</summary>
     public const string ClaimNextSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.MergeQueue + " "
-        + "SET status = 'InProgress', claimed_by = @operatorId, claimed_at = @now "
+        + "SET status = '" + InProgress + "', claimed_by = @operatorId, claimed_at = @now "
         + "WHERE id IN ( "
         + "    SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.MergeQueue + " "
-        + "    WHERE status = 'Pending' "
+        + "    WHERE status = '" + Pending + "' "
         + "      AND (@projectId IS NULL OR project_id = @projectId) "
         + "    ORDER BY enqueued_at "
         + "    LIMIT 1 "

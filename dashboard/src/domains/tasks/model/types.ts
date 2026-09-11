@@ -1,20 +1,23 @@
+import type { ProviderKey } from "@/domains/sources/model/types"
+
 /**
- * Where a ticket came from, in the platform's own provider vocabulary — the
- * same tracker kinds a source connection can speak, plus `manual` for the
- * product's own intake.
+ * The backlog, as the screen sees it.
  *
- * It stayed `"jira" | "manual"` while the only tracker the seed carried was
- * jira. The intake form now asks the question out loud, and a question the
- * model cannot hold an answer to would have had to hard-code one — so the
- * union widened to the four connectable providers rather than the form
- * offering a choice that pretends to exist.
+ * A ticket's provenance is a `ProviderKey` from `domains/sources` — the same
+ * registry a source connection reads, and not a second union that happens to
+ * hold the same words. There was one: `TaskSource` listed the four trackers
+ * plus `manual`, where the sources half said `native` for the same idea, and
+ * `task-sources.ts` said in its own header that it mirrored the other
+ * catalogue *on purpose*. Two spellings of one vendor is two vocabularies for
+ * the operator and two places for a sixth provider to be forgotten.
+ *
+ * `native` is the surviving word for the product's own intake, because it is
+ * the word on the wire: `IntakeTicketView.source` carries it, the webhook
+ * route segment is built from it, and `manual` appears nowhere the host can
+ * see. `manual` also named the wrong thing — it described a gesture (somebody
+ * typed this) rather than a provider, and this form deliberately lets a person
+ * type a ticket and stamp it `github`.
  */
-export type TaskSource =
-  | "github"
-  | "gitlab"
-  | "yandex-tracker"
-  | "jira"
-  | "manual"
 export type TaskPriority = "low" | "normal" | "high"
 export type TaskStatus = "new" | "queued" | "planning"
 export type TaskStatusFilter = TaskStatus | "all"
@@ -29,7 +32,7 @@ export interface Task {
    * refused on the next.
    */
   projectId: string
-  source: TaskSource
+  source: ProviderKey
   title: string
   app: string
   priority: TaskPriority
@@ -41,10 +44,11 @@ export interface CreateTaskInput {
   /** Which project the new ticket lands in — a choice, not a session mode. */
   projectId: string
   /**
-   * The provenance stamp the ticket carries into the backlog — see
-   * `task-sources.ts` for what each value says and where it is read.
+   * The provenance stamp the ticket carries into the backlog — a key from the
+   * provider registry in `domains/sources/model/providers.ts`, which is where
+   * its word, its mark and the line the intake card says all come from.
    */
-  source: TaskSource
+  source: ProviderKey
   title: string
   app: string
   priority: TaskPriority

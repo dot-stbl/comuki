@@ -1,18 +1,16 @@
 # Self-host Comuki with Docker Compose.
 #
 # Brings up the full local stack: Postgres (pgvector) + MinIO + the
-# Comuki host (orchestrator API) + the dashboard SPA behind an nginx
-# reverse proxy + a one-shot migrator job. Worker containers are NOT
+# Comuki host (orchestrator API + dashboard SPA in one process) + a one-shot migrator job. Worker containers are NOT
 # compose services — the host spawns them through the Docker compute
 # provider via the mounted docker socket.
 #
 # Quick start:
 #   cd deploy/compose
 #   cp .env.example .env          # edit if you like; defaults work locally
-#   docker compose up -d --build  # first build takes a while (dotnet + bun)
+#   docker compose up -d --build  # first build takes a while (node + dotnet)
 #
-# Dashboard:  http://localhost:17173   (nginx: SPA + /api + /realtime proxy)
-# Host API:   http://localhost:17172   (direct Kestrel, /api/v1/health, /openapi/v1.json)
+# Dashboard + API: http://localhost:17172  (one origin — SPA served by Kestrel; probes /api/v1/health, /openapi/v1.json)
 #
 # Tear down + wipe data: docker compose down -v
 
@@ -102,8 +100,8 @@ services:
       COMUKI_TOKEN_PEPPER: ${COMUKI_TOKEN_PEPPER:-comuki-local-token-pepper}
       COMUKI_BOOTSTRAP_ADMIN_EMAIL: ${COMUKI_BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}
       COMUKI_BOOTSTRAP_ADMIN_PASSWORD: ${COMUKI_BOOTSTRAP_ADMIN_PASSWORD:-comuki_dev}
-      COMUKI_PUBLIC_HOST_URL: ${COMUKI_PUBLIC_HOST_URL:-http://localhost:17173}
-      COMUKI_HOST_CORS_ALLOWEDORIGINS_0: ${COMUKI_CORS_ORIGIN:-http://localhost:17173}
+      COMUKI_PUBLIC_HOST_URL: ${COMUKI_PUBLIC_HOST_URL:-http://localhost:17172}
+      COMUKI_HOST_CORS_ALLOWEDORIGINS_0: ${COMUKI_CORS_ORIGIN:-http://localhost:17172}
       COMUKI_ARTIFACTS_ENDPOINT: minio:9000
       COMUKI_ARTIFACTS_ACCESSKEY: ${COMUKI_MINIO_ROOT_USER:-comuki}
       COMUKI_ARTIFACTS_SECRETKEY: ${COMUKI_MINIO_ROOT_PASSWORD:-comuki_dev}
@@ -142,33 +140,6 @@ services:
     networks:
       - comuki-net
 
-  comuki-dashboard:
-    # The dashboard SPA (built with VITE_API_BASE_URL pointing at this
-    # origin) served by nginx; nginx also reverse-proxies /api, /realtime
-    # (SignalR websockets) and /openapi to the host — one origin, no CORS
-    # complexity in the browser.
-    image: ghcr.io/dot-stbl/comuki-dashboard:${COMUKI_IMAGE_TAG:-local}
-    build:
-      context: ../..
-      dockerfile: deploy/compose/docker/dashboard.Dockerfile
-      args:
-        VITE_API_BASE_URL: ${COMUKI_PUBLIC_HOST_URL:-http://localhost:17173}
-      tags:
-        - ghcr.io/dot-stbl/comuki-dashboard:local
-    container_name: comuki-dashboard
-    restart: unless-stopped
-    ports:
-      - "${COMUKI_DASHBOARD_PORT:-17173}:80"
-    depends_on:
-      comuki-host:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost/ >/dev/null 2>&1 || wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 12
-    networks:
-      - comuki-net
 
   worker-image:
     # Build-only service: produces the worker image (Translator + pi

@@ -1,20 +1,15 @@
 import { Check, SquareKanban } from "lucide-react"
 
 import { cn } from "@/shared/lib/utils"
-import {
-  TASK_SOURCES,
-  TASK_SOURCE_BRAND,
-  TASK_SOURCE_LABEL,
-  TASK_SOURCE_NOTE,
-} from "@/domains/tasks/model/task-sources"
-import type { TaskSource } from "@/domains/tasks/model/types"
+import { PROVIDERS } from "@/domains/sources/model/providers"
+import type { ProviderKey } from "@/domains/sources/model/types"
 import { BrandIcon } from "@/shared/ui"
 
 import styles from "./task-source-cards.module.css"
 
 export interface TaskSourceCardsProps {
-  value: TaskSource
-  onValueChange: (next: TaskSource) => void
+  value: ProviderKey
+  onValueChange: (next: ProviderKey) => void
   disabled?: boolean
   "data-test"?: string
 }
@@ -22,11 +17,10 @@ export interface TaskSourceCardsProps {
 /**
  * The first question intake asks: where does this task come from.
  *
- * One card per provider in the platform's own vocabulary — the four trackers
- * a connection can speak, and `manual` for the product's own intake — each
- * carrying its drained brand mark, its name, and the line that says what
- * picking it means (`TASK_SOURCE_NOTE`, in the model, because the backlog's
- * badge reads the same vocabulary and the two must not drift).
+ * One card per row of the provider registry, in its order: the trackers a
+ * connection can speak, and `native` for the product's own intake. Each card
+ * is the entry read out — its mark, its word, and the line that says what
+ * picking it means. Adding a provider adds a card and nothing else.
  *
  * A domain component rather than a kit one: `ChoiceField` is the kit's
  * version of a small closed set, and this borrows its construction wholesale
@@ -37,7 +31,7 @@ export interface TaskSourceCardsProps {
  *
  * Yandex Tracker is the one card without a brand mark (no monochrome mark is
  * published; draining the colour glyph leaves an unnameable shape — see
- * `task-sources.ts`). It takes a lucide board glyph so the row keeps its
+ * `Provider.brand`). It takes a lucide board glyph so the row keeps its
  * rhythm, and its name says the rest.
  */
 export function TaskSourceCards({
@@ -58,17 +52,17 @@ export function TaskSourceCards({
       data-test={dataTest}
     >
       <div className={styles.cards}>
-        {TASK_SOURCES.map((source) => {
+        {PROVIDERS.map((provider) => {
+          const source = provider.key
           const selected = value === source
-          const brand = TASK_SOURCE_BRAND[source]
           /* A mark that already says the provider's name — the drained
-             github/gitlab/jira glyphs — does not need the name spelled
-             beside it; a mark that does not (the board glyph standing in
-             for yandex tracker, the product's own mark for manual) keeps
-             its visible name. The name never leaves the radio's
-             `aria-label`, so the group reads the same either way. */
-          const selfNaming =
-            brand !== null && TASK_SOURCE_LABEL[source] === source
+             github/gitlab/jira glyphs, whose brand id *is* this provider —
+             does not need the name spelled beside it; a mark that stands in
+             for something else (the board glyph for yandex tracker, the
+             product's own container for native) keeps its visible name. The
+             name never leaves the radio's `aria-label`, so the group reads
+             the same either way. */
+          const selfNaming = provider.brand === source
           return (
             <label
               key={source}
@@ -84,12 +78,12 @@ export function TaskSourceCards({
                 value={source}
                 checked={selected}
                 disabled={disabled}
-                aria-label={TASK_SOURCE_LABEL[source]}
+                aria-label={provider.label}
                 onChange={() => onValueChange(source)}
               />
               <span className={styles.mark}>
-                {brand ? (
-                  <BrandIcon brand={brand} size="lg" label={null} />
+                {provider.brand ? (
+                  <BrandIcon brand={provider.brand} size="lg" label={null} />
                 ) : (
                   /* Sized by the class to sit exactly where the kit's own
                      scale puts a brand mark, so the spelled card and the
@@ -98,9 +92,9 @@ export function TaskSourceCards({
                 )}
               </span>
               {selfNaming ? null : (
-                <span className={styles.name}>{TASK_SOURCE_LABEL[source]}</span>
+                <span className={styles.name}>{provider.label}</span>
               )}
-              <span className={styles.note}>{TASK_SOURCE_NOTE[source]}</span>
+              <span className={styles.note}>{provider.intakeNote}</span>
               {/* Reserved on every card, filled on one — the ChoiceField
                   device, so a mark that appeared would move the name beside
                   it every time the selection moved. */}

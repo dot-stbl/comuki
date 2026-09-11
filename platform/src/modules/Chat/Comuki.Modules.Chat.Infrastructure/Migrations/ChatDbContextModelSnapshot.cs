@@ -38,8 +38,18 @@ namespace Comuki.Modules.Chat.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("integer")
+                    b.Property<string>("MetaJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("meta");
+
+                    b.Property<string>("PartsJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("parts");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
                         .HasColumnName("role");
 
                     b.Property<Guid>("SessionId")
@@ -74,8 +84,10 @@ namespace Comuki.Modules.Chat.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("project_id");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer")
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
                         .HasColumnName("status");
 
                     b.Property<Guid>("SubjectId")

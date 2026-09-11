@@ -19,4 +19,8 @@
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Comuki.Engine.Orchestration.Unit.StatusMachine" />
+  </ItemGroup>
+
 </Project>

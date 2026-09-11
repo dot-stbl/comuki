@@ -1,6 +1,7 @@
 using Comuki.Modules.Chat.Application.Graph.Catalog;
 using Comuki.Modules.Chat.Application.Graph.Channels;
 using Comuki.Modules.Chat.Application.Slash;
+using Comuki.Shared.Contracts.Brain;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 
@@ -31,7 +32,7 @@ public sealed class ChatSlashExpander(ChatSlashCatalog slashCatalog)
             return NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Think),
                 new ChannelWrite(ChatChannels.Task, message),
-                new ChannelWrite(ChatChannels.BrainKind, "chat"));
+                new ChannelWrite(ChatChannels.BrainKind, BrainRequestKindKeys.Answer));
         }
 
         if (key == ChatSlashBuiltins.InitKey)
@@ -47,7 +48,7 @@ public sealed class ChatSlashExpander(ChatSlashCatalog slashCatalog)
         return NodeResult.Continue(
             new ChannelWrite(ChatChannels.Phase, ChatPhases.Think),
             new ChannelWrite(ChatChannels.Task, ChatSlashTaskBody.Of(command.Body, arguments)),
-            new ChannelWrite(ChatChannels.BrainKind, "chat"));
+            new ChannelWrite(ChatChannels.BrainKind, BrainRequestKindKeys.Answer));
     }
 }
 

@@ -51,6 +51,8 @@ deploy/k8s/secret.yaml
 /plan.md
 /context.md
 /progress.md
+/*-audit-report.md
+/product-decisions.md
 
 # Dashboard — generated artifacts (rebuilt on every Storybook / Vitest / Playwright run)
 # Real sources live in dashboard/src/, dashboard/e2e/, .storybook/. Commit only those.
@@ -188,7 +190,7 @@ dlldata.c
 BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
-artifacts/
+/artifacts/
 ScaffoldingReadMe.txt
 StyleCopReport.xml
 *_i.c
@@ -366,11 +368,5 @@ FodyWeavers.xsd
 /.gitlab-ci.yml
 /deploy/hybrid/
 
-
-# format-gate verify log?
-/obj/?
-.impeccable/?
-!platform/src/modules/Artifacts/
-!platform/src/shared/Comuki.Shared.Contracts/Artifacts/
-!platform/src/host/Comuki.Host/Artifacts/
-!openspec/specs/artifacts/
+# impeccable runtime cache (hook + question logs)
+.impeccable/

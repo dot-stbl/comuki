@@ -35,7 +35,11 @@ public sealed class ThinkNode(
     public async Task<NodeResult> InvokeAsync(GraphContext context, CancellationToken cancellationToken = default)
     {
         var task = context.Read<string>(ChatChannels.Task) ?? string.Empty;
-        var brainKind = context.Read<string>(ChatChannels.BrainKind) ?? "chat";
+        // The channel always carries a BrainRequestKindKeys value; the default
+        // is the same "answer a question" mode the router picks for a message
+        // that is not a task. Anything outside that set is InvalidArgument at
+        // the brain service.
+        var brainKind = context.Read<string>(ChatChannels.BrainKind) ?? BrainRequestKindKeys.Answer;
         var sessionId = ChatSessionIdParsing.Parse(context.Read<string>(ChatChannels.SessionId));
         var scope = ChatDigestScope.Of(
             context.Read<string>(ChatChannels.SubjectId) ?? string.Empty,
@@ -49,10 +53,15 @@ public sealed class ThinkNode(
             new BrainRequest { Kind = brainKind, ContextJson = ChatBrainContextJson.ToJson(history, digest), Task = task },
             cancellationToken);
 
-        if (brainKind != "plan")
+        // The brain's progress fragments are its visible reasoning — the
+        // journal keeps them as a thinking part instead of dropping them.
+        var thinking = string.Join("\n", reply.Chunks);
+
+        if (brainKind != BrainRequestKindKeys.Plan)
         {
             return NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),
+                new ChannelWrite(ChatChannels.Thinking, thinking),
                 new ChannelWrite(ChatChannels.Reply, reply.FinalJson),
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Done));
         }
@@ -61,10 +70,12 @@ public sealed class ThinkNode(
         return outcome.Plan is null
             ? NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),
+                new ChannelWrite(ChatChannels.Thinking, thinking),
                 new ChannelWrite(ChatChannels.Reply, ChatPlanGate.InvalidPlanMessage),
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Done))
             : NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),
+                new ChannelWrite(ChatChannels.Thinking, thinking),
                 new ChannelWrite(ChatChannels.PlanJson, outcome.CanonicalJson),
                 new ChannelWrite(ChatChannels.Reply, ChatPlanGate.CardPrompt),
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Confirm));

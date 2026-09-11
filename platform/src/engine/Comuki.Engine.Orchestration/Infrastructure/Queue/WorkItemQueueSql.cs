@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
@@ -8,21 +9,36 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Queue;
 /// <summary>
 /// Guarded raw SQL + ADO plumbing for <see cref="WorkItemQueueEf"/>. Status
 /// literals are the PascalCase enum names EF's <c>HasConversion&lt;string&gt;</c>
-/// stores. Every mutation is guarded by lease owner (and live status) so
-/// races between a slow worker and the reaper resolve safely in the store.
-/// All SQL references the per-module <see cref="OrchestrationDatabase.Schema"/>
-/// so the queries find the table regardless of <c>search_path</c>.
+/// stores — sourced from <see cref="WorkItemStatus"/> via <c>nameof</c> so a
+/// rename of a status member fails the build instead of leaving these
+/// predicates silently stale. Every mutation is guarded by lease owner (and
+/// live status) so races between a slow worker and the reaper resolve safely
+/// in the store. All SQL references the per-module
+/// <see cref="OrchestrationDatabase.Schema"/> so the queries find the table
+/// regardless of <c>search_path</c>.
 /// </summary>
 internal static class WorkItemQueueSql
 {
+    /// <summary>Compiler-checked status name — see the class remarks.</summary>
+    private const string Queued = nameof(WorkItemStatus.Queued);
+
+    /// <summary>Compiler-checked status name — see the class remarks.</summary>
+    private const string Running = nameof(WorkItemStatus.Running);
+
+    /// <summary>Compiler-checked status name — see the class remarks.</summary>
+    private const string Succeeded = nameof(WorkItemStatus.Succeeded);
+
+    /// <summary>Compiler-checked status name — see the class remarks.</summary>
+    private const string Failed = nameof(WorkItemStatus.Failed);
+
     /// <summary>Claim: oldest queued item matching the labels, row-locked for the update.</summary>
     public const string ClaimSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
-        + "SET status = 'Running', leased_by = @workerId, lease_until = @leaseUntil, "
+        + "SET status = '" + Running + "', leased_by = @workerId, lease_until = @leaseUntil, "
         + "    heartbeat_at = @now, attempt = attempt + 1, updated_at = @now "
         + "WHERE id IN ( "
         + "    SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
-        + "    WHERE status = 'Queued' "
+        + "    WHERE status = '" + Queued + "' "
         + "      AND profile_key = @profileKey "
         + "      AND image = @image "
         + "      AND profiles_ref = @profilesRef "
@@ -37,34 +53,34 @@ internal static class WorkItemQueueSql
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET lease_until = @leaseUntil, heartbeat_at = @now, updated_at = @now "
         + "WHERE id = @workItemId AND leased_by = @workerId "
-        + "  AND status = 'Running' AND lease_until > @now";
+        + "  AND status = '" + Running + "' AND lease_until > @now";
 
     /// <summary>Complete: running item owned by the worker -> succeeded, lease cleared.</summary>
     public const string CompleteSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
-        + "SET status = 'Succeeded', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
-        + "WHERE id = @workItemId AND leased_by = @workerId AND status = 'Running' "
+        + "SET status = '" + Succeeded + "', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
+        + "WHERE id = @workItemId AND leased_by = @workerId AND status = '" + Running + "' "
         + "RETURNING run_id";
 
     /// <summary>Fail: running item owned by the worker -> failed, lease cleared.</summary>
     public const string FailSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
-        + "SET status = 'Failed', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
-        + "WHERE id = @workItemId AND leased_by = @workerId AND status = 'Running' "
+        + "SET status = '" + Failed + "', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
+        + "WHERE id = @workItemId AND leased_by = @workerId AND status = '" + Running + "' "
         + "RETURNING run_id";
 
     /// <summary>Reap requeue: expired running lease with retries left -> back to queued.</summary>
     public const string ReapRequeueSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
-        + "SET status = 'Queued', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
-        + "WHERE status = 'Running' AND lease_until IS NOT NULL AND lease_until <= @cutoff AND attempt < @maxAttempts "
+        + "SET status = '" + Queued + "', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
+        + "WHERE status = '" + Running + "' AND lease_until IS NOT NULL AND lease_until <= @cutoff AND attempt < @maxAttempts "
         + "RETURNING id, run_id, attempt";
 
     /// <summary>Reap fail: expired running lease out of retries -> failed.</summary>
     public const string ReapFailSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
-        + "SET status = 'Failed', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
-        + "WHERE status = 'Running' AND lease_until IS NOT NULL AND lease_until <= @cutoff AND attempt >= @maxAttempts "
+        + "SET status = '" + Failed + "', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
+        + "WHERE status = '" + Running + "' AND lease_until IS NOT NULL AND lease_until <= @cutoff AND attempt >= @maxAttempts "
         + "RETURNING id, run_id, attempt";
 
     /// <summary>Creates a prepared claim command on the transaction's connection.</summary>

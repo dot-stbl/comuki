@@ -24,10 +24,21 @@ public sealed class FakeBrainClient : IBrainClient
 
     public List<BrainRequest> Requests { get; } = [];
 
+    /// <summary>Progress fragments the next invocation reports before its final payload.</summary>
+    public List<string> Chunks { get; } = [];
+
+    /// <summary>When set, every invocation throws it — the brain-is-down path.</summary>
+    public Exception? Fault { get; set; }
+
     /// <inheritdoc />
     public Task<BrainReply> InvokeAsync(BrainRequest request, CancellationToken cancellationToken = default)
     {
         Requests.Add(request);
+
+        if (Fault is { } fault)
+        {
+            throw fault;
+        }
 
         if (BrainRequestKindKeys.Parse(request.Kind) is null)
         {
@@ -38,8 +49,8 @@ public sealed class FakeBrainClient : IBrainClient
         }
 
         var reply = request.Kind == BrainRequestKindKeys.Plan
-            ? new BrainReply([], PlanJson)
-            : new BrainReply([], "brain says: " + request.Task);
+            ? new BrainReply([.. Chunks], PlanJson)
+            : new BrainReply([.. Chunks], "brain says: " + request.Task);
         return Task.FromResult(reply);
     }
 }

@@ -70,16 +70,10 @@
   min-inline-size: 0;
 }
 
-/* The legend swatch reads the same status tokens the bars read, so the word,
-   the hue and the shape can never drift apart. */
-.status[data-status="success"] {
-  background-color: var(--st-success);
-}
-
-.status[data-status="failed"] {
-  background-color: var(--st-failed);
-}
-
-.status[data-status="escalated"] {
-  background-color: var(--st-escalated);
+/* The legend swatch reads the one `[data-status]` declaration the bars beside
+   it read, so the word, the hue and the shape can never drift apart. Hue only,
+   like the bars: this legend names each status in the text next to its swatch,
+   and a 12px square has no room for a hatch to read in anyway. */
+.status {
+  background-color: var(--hue);
 }

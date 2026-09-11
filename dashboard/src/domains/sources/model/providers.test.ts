@@ -2,14 +2,26 @@ import { describe, expect, it } from "vitest"
 
 import {
   ADMISSION_MODES,
-  AUTH_BY_KIND,
-  CONNECTABLE_KINDS,
+  CONNECTABLE_PROVIDERS,
+  NATIVE_PROVIDER,
+  PROVIDERS,
   admissionLabel,
   admittedCount,
   connectionHost,
   connectionNote,
+  filterFields,
+  intakeNote,
+  isKnownProvider,
+  isNativeIntake,
   needsBaseUrl,
   parseTicketLabels,
+  providerAuth,
+  providerBrand,
+  providerLabel,
+  providerOf,
+  targetLabel,
+  targetPlaceholder,
+  type Provider,
 } from "@/domains/sources/model/providers"
 import type {
   NativeTicket,
@@ -159,22 +171,124 @@ describe("what a connection is admitting", () => {
 
 describe("what the connect form may ask for", () => {
   it("never offers native, which every project already has", () => {
-    expect(CONNECTABLE_KINDS).not.toContain("native")
-    expect(CONNECTABLE_KINDS).toHaveLength(4)
+    expect(CONNECTABLE_PROVIDERS.map((entry) => entry.key)).not.toContain(
+      NATIVE_PROVIDER
+    )
+    expect(CONNECTABLE_PROVIDERS).toHaveLength(4)
+    // Derived from the fact rather than from the name: a provider is off the
+    // connect form because there is nothing to point a credential at.
+    for (const provider of CONNECTABLE_PROVIDERS) {
+      expect(provider.remote).toBe(true)
+    }
   })
 
   it("offers each provider only the credentials its connector implements", () => {
-    expect(AUTH_BY_KIND.github).toEqual(["pat", "app-install"])
-    expect(AUTH_BY_KIND.jira).toEqual(["pat"])
-    expect(AUTH_BY_KIND["yandex-tracker"]).toEqual(["oauth"])
-    expect(AUTH_BY_KIND.native).toEqual(["none"])
+    expect(providerAuth("github")).toEqual(["pat", "app-install"])
+    expect(providerAuth("jira")).toEqual(["pat"])
+    expect(providerAuth("yandex-tracker")).toEqual(["oauth"])
+    expect(providerAuth(NATIVE_PROVIDER)).toEqual(["none"])
   })
 
   it("asks for a base url only where an instance can be self-hosted", () => {
     expect(needsBaseUrl("gitlab")).toBe(true)
     expect(needsBaseUrl("jira")).toBe(true)
     expect(needsBaseUrl("github")).toBe(false)
-    expect(needsBaseUrl("native")).toBe(false)
+    expect(needsBaseUrl(NATIVE_PROVIDER)).toBe(false)
+  })
+})
+
+/**
+ * The registry is the schema, and these are the two properties that make it
+ * worth being one.
+ *
+ * The first is that a provider is *one* entry: adding a sixth is a single
+ * object literal, and there is no second table anywhere in `src/domains` that
+ * could be forgotten. The test enforces it the only way a test can — by
+ * writing the entry and then asking every reader in the domain about it.
+ *
+ * The second is that a provider with no entry at all still renders. That was
+ * the failure this registry exists to make unreachable: six exhaustive
+ * `Record<SourceKind, …>` tables all answered `undefined` for `linear`, and
+ * the provider column rendered an empty cell.
+ */
+describe("adding a provider is one registry entry", () => {
+  /** A sixth provider, written once, the way somebody would write it. */
+  const LINEAR: Provider = {
+    key: "linear",
+    label: "linear",
+    brand: null,
+    auth: ["oauth"],
+    remote: true,
+    selfHostable: false,
+    target: "team key",
+    targetPlaceholder: "ENG",
+    filterFields: ["team", "labels", "state"],
+    intakeNote:
+      "issues land from a watched team. one written here is stamped as the team's.",
+  }
+
+  it("is the only thing the type asks for", () => {
+    // Half of this assertion is the compiler's: `LINEAR` is a `Provider`, and
+    // every field of `Provider` is required, so a half-added provider fails
+    // to build rather than rendering an empty cell three screens away. The
+    // other half is that a shipped entry has no field this one lacks —
+    // nowhere for a sixth provider to be quietly incomplete.
+    expect(Object.keys(LINEAR).sort()).toEqual(Object.keys(PROVIDERS[0]).sort())
+  })
+
+  it("is enough, because every reader reads the entry and nothing else", () => {
+    // The property that makes the claim true: there is no second table in
+    // this domain for a provider to be missing from. Each reader answers with
+    // the entry's own field, for every entry, so writing the entry is the
+    // whole of the work — and a reader that grew a lookup of its own would
+    // fail here.
+    for (const provider of PROVIDERS) {
+      expect(providerOf(provider.key)).toBe(provider)
+      expect(providerLabel(provider.key)).toBe(provider.label)
+      expect(providerBrand(provider.key)).toBe(provider.brand)
+      expect(providerAuth(provider.key)).toBe(provider.auth)
+      expect(isNativeIntake(provider.key)).toBe(!provider.remote)
+      expect(needsBaseUrl(provider.key)).toBe(provider.selfHostable)
+      expect(targetLabel(provider.key)).toBe(provider.target)
+      expect(targetPlaceholder(provider.key)).toBe(provider.targetPlaceholder)
+      expect(filterFields(provider.key)).toBe(provider.filterFields)
+      expect(intakeNote(provider.key)).toBe(provider.intakeNote)
+      expect(isKnownProvider(provider.key)).toBe(true)
+    }
+  })
+})
+
+describe("a provider with no entry at all", () => {
+  it("is not in the registry, and says so without throwing", () => {
+    expect(providerOf("linear")).toBeNull()
+    expect(isKnownProvider("linear")).toBe(false)
+  })
+
+  it("renders the host's own word everywhere instead of an empty cell", () => {
+    // Every reader, one after the other. Not one of them can answer
+    // `undefined` — that is the whole difference between this and the nine
+    // `Record` tables it replaced.
+    expect(providerLabel("linear")).toBe("linear")
+    expect(providerBrand("linear")).toBeNull()
+    expect(targetLabel("linear")).toBe("name")
+    expect(targetPlaceholder("linear")).toBe("")
+    expect(filterFields("linear")).toEqual([])
+    expect(intakeNote("linear").length).toBeGreaterThan(24)
+  })
+
+  it("treats it as somebody else's tracker, because that is what it is", () => {
+    // Degrading the other way would make an unknown connection unremovable
+    // and hide its credential fields — the product refusing to manage a row
+    // because it did not recognise a word.
+    expect(isNativeIntake("linear")).toBe(false)
+    expect(needsBaseUrl("linear")).toBe(false)
+  })
+
+  it("admits it does not know the credential rather than guessing one", () => {
+    // Every credential the dashboard can render a form for, and none it
+    // cannot. `none` is native's and would be a lie about a remote provider.
+    expect(providerAuth("linear")).toEqual(["pat", "oauth", "app-install"])
+    expect(providerAuth("linear")).not.toContain("none")
   })
 })
 

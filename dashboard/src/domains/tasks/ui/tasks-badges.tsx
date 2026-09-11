@@ -10,12 +10,13 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/shared/lib/utils"
-import { TASK_SOURCE_BRAND } from "@/domains/tasks/model/task-sources"
-import type {
-  TaskPriority,
-  TaskSource,
-  TaskStatus,
-} from "@/domains/tasks/model/types"
+import {
+  isNativeIntake,
+  providerBrand,
+  providerLabel,
+} from "@/domains/sources/model/providers"
+import type { ProviderKey } from "@/domains/sources/model/types"
+import type { TaskPriority, TaskStatus } from "@/domains/tasks/model/types"
 import { BrandIcon } from "@/shared/ui"
 
 import styles from "./tasks-badges.module.css"
@@ -40,15 +41,15 @@ import styles from "./tasks-badges.module.css"
 
 /**
  * Where a ticket came from, drawn as the provider's own drained mark — the
- * same marks the intake cards and the sources table wear, so one provider is
- * one glyph everywhere it appears. Yandex Tracker is the spelled exception
- * (no monochrome mark exists; see `task-sources.ts`), and takes a board
- * glyph rather than a shape nobody could name. Every mark is decorative
- * here: the badge's own text — the tracker id, or the word "manual" — is
- * the reading.
+ * same registry the intake cards and the sources table read, so one provider
+ * is one glyph everywhere it appears. Yandex Tracker is the spelled exception
+ * (no monochrome mark exists; see `Provider.brand`), and takes a board glyph
+ * rather than a shape nobody could name — as does any provider this build has
+ * not learned. Every mark is decorative here: the badge's own text — the
+ * tracker id, or the intake's own word — is the reading.
  */
-function SourceMark({ source }: { source: TaskSource }) {
-  const brand = TASK_SOURCE_BRAND[source]
+function SourceMark({ source }: { source: ProviderKey }) {
+  const brand = providerBrand(source)
   if (!brand) {
     return <SquareKanban className={styles.icon} aria-hidden="true" />
   }
@@ -58,7 +59,7 @@ function SourceMark({ source }: { source: TaskSource }) {
 }
 
 export interface TaskSourceBadgeProps {
-  source: TaskSource
+  source: ProviderKey
   /** The tracker's own id. For a ticket off a branch this badge *is* the id. */
   id: string
   className?: string
@@ -69,22 +70,27 @@ export function TaskSourceBadge({
   id,
   className,
 }: TaskSourceBadgeProps) {
+  /* The product's own intake has no tracker id to show, so the badge says the
+     provider instead — which is the honest limit of a column that is a badge
+     rather than a value. Every other provider, learned or not, has an id on
+     the other side of a wire. */
+  const native = isNativeIntake(source)
   return (
     <span
       data-test="task-source-badge"
       data-source={source}
-      /* One styling class for the four tracker stamps and one for manual:
-         within the two groups the mark and the id carry which provider it
-         is, and a hue per vendor would be confetti on the Colourless Chrome
-         Rule's one surface it never allowed. */
+      /* One styling class for every tracker stamp and one for the product's
+         own intake: within the two groups the mark and the id carry which
+         provider it is, and a hue per vendor would be confetti on the
+         Colourless Chrome Rule's one surface it never allowed. */
       className={cn(
         styles.badge,
-        source === "manual" ? styles.manual : styles.tracker,
+        native ? styles.native : styles.tracker,
         className
       )}
     >
       <SourceMark source={source} />
-      {source === "manual" ? "manual" : id}
+      {native ? providerLabel(source) : id}
     </span>
   )
 }

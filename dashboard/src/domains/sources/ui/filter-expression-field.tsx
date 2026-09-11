@@ -1,12 +1,13 @@
-import { FILTER_FIELD_NAMES } from "@/domains/sources/ui/filter-field-names"
-import type { SourceKind } from "@/domains/sources/model/types"
+import { filterFields } from "@/domains/sources/model/providers"
+import type { ProviderKey } from "@/domains/sources/model/types"
 import { TextareaField } from "@/shared/ui"
 
 import styles from "./filter-expression-field.module.css"
 
 export interface FilterExpressionFieldProps {
   id: string
-  kind: SourceKind
+  /** The connection's own provider — the host's word when it is not in the registry. */
+  kind: ProviderKey
   value: string
   onValueChange: (next: string) => void
   disabled?: boolean
@@ -45,7 +46,11 @@ export function FilterExpressionField({
   onValueChange,
   disabled = false,
 }: FilterExpressionFieldProps) {
-  const names = FILTER_FIELD_NAMES[kind]
+  // No chips for a provider the dashboard has not learned: the list is a set
+  // of nouns *this* connector has been observed to accept, and offering
+  // github's to an unknown tracker would be a guess dressed as a fact. The
+  // box itself still works — it never parsed anything to begin with.
+  const names = filterFields(kind)
 
   const append = (name: string) => {
     const trimmed = value.trimEnd()

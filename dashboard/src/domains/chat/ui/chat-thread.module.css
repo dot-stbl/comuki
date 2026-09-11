@@ -37,6 +37,40 @@
   min-inline-size: 0;
 }
 
+/* Everything the virtualizer did not mount, as height. Two of them — one above
+   the window and one below — so the scrollbar measures the conversation and
+   not the eight turns currently in the DOM. The value is published by the
+   component that computed it, the way the data table publishes `--dt-row-h`:
+   the reserved space and the number that decided it are one value. */
+.spacer {
+  flex: 0 0 auto;
+  block-size: var(--spacer);
+}
+
+/* Jump to latest ----------------------------------------------------------
+ *
+ * Only present when the thread has stopped following the conversation, and it
+ * is the whole compensation for that: the scroll was taken away the moment the
+ * operator scrolled up, so there has to be one gesture that gives it back.
+ *
+ * Floated over the port rather than pushed into the column, because a control
+ * that appears in the flow shortens the reading it appeared to serve. Centred,
+ * one step up from the bottom edge, clear of the composer beneath.
+ *
+ * Lift and not Modal: this does not leave the page plane, it sits in front of
+ * the turns scrolling under it — the same reading the runs list has over the
+ * flow board — and Lift is cast upward, which is the direction a control
+ * docked to the bottom edge needs. */
+.jump {
+  position: absolute;
+  inset-block-end: var(--s4);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-lift);
+}
+
 /* A reply still arriving. Same shape as a settled one so nothing jumps when it
    lands — only the caret says it is not finished yet. */
 .pending {

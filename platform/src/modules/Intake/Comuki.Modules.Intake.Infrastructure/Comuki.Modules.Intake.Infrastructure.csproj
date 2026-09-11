@@ -21,4 +21,8 @@
     <ProjectReference Include="..\..\..\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Comuki.Modules.Intake.Unit" />
+  </ItemGroup>
+
 </Project>

@@ -19,7 +19,11 @@ import {
 
 import { formatDuration } from "@/domains/runs/model/format"
 import { WORKER_STATES } from "@/domains/queue/model/queue"
-import type { QueueItem, Worker } from "@/domains/queue/model/types"
+import type {
+  QueueItem,
+  Worker,
+  WorkerState,
+} from "@/domains/queue/model/types"
 
 import { LeaseMeter } from "./meters"
 import { WorkerStateBadge } from "./queue-badges"
@@ -29,7 +33,7 @@ import styles from "./queue-table.module.css"
 export const getWorkerId = (worker: Worker) => worker.id
 
 /** Capacity first: what is working, what is leaving, what is spare. */
-const STATE_RANK: Record<string, number> = {
+const STATE_RANK: Record<WorkerState, number> = {
   draining: 0,
   busy: 1,
   idle: 2,

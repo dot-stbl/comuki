@@ -1,3 +1,5 @@
+import type { ProviderKey } from "@/domains/sources/model/types"
+
 /**
  * The inbox — the place work lands before it is claimed into a run.
  *
@@ -28,11 +30,15 @@ export type TicketStatus = "pending" | "claimed" | "done" | "dismissed"
 /**
  * What a ticket represents on the tracker side.
  *
- * Added in #27 (inbound PR-review). The wire row carries no kind field yet —
- * a real connection's `IntakeTicketView` is still the four external
- * trackers + native, all of which look like issues until PR support lands on
- * the read side. The mapper defaults to <c>"issue"</c>; once the backend
- * surfaces the discriminator, a single mapper line is what changes.
+ * Added in #27 (inbound PR-review). The wire row carries no kind field yet,
+ * and every provider the host connects today looks like an issue until PR
+ * support lands on the read side. The mapper defaults to <c>"issue"</c>;
+ * once the backend surfaces the discriminator, a single mapper line is what
+ * changes.
+ *
+ * Closed, unlike <see cref="ProviderKey" />, and for the reason a set is ever
+ * closed here: these are the two shapes the screen knows how to draw, not a
+ * claim about what the host can name.
  */
 export type TicketKind = "issue" | "pull-request"
 
@@ -50,11 +56,22 @@ export interface Ticket {
   /** The project this ticket belongs to, by id. */
   projectId: string
   /**
-   * Kebab-case provider key (<c>"github" | "gitlab" | "yandex-tracker" | "jira"
-   * | "native"</c>). The host normalises to the kebab form so the wire row
-   * matches the webhook route segment, not the enum's PascalCase spelling.
+   * The provider this ticket came from, by key.
+   *
+   * This field was right before the other two domains were: it has always
+   * been a `string`, because the host normalises to the kebab form so the
+   * wire row matches the webhook route segment rather than the enum's
+   * PascalCase spelling, and the set of providers is the host's to grow.
+   * What it lacked was anywhere to look the word up — the vocabulary lived in
+   * this comment, and a screen that wanted a mark or a label for it had to
+   * borrow one of the two closed catalogues next door.
+   *
+   * It is now a `ProviderKey`, which is that same `string` with the registry
+   * behind it: `providerLabel` and `providerBrand` answer for a key the build
+   * has learned and for one it has not, so a ticket from a provider nobody
+   * has written an entry for renders the host's own word rather than a blank.
    */
-  source: string
+  source: ProviderKey
   /** The provider's own id for the issue (issue number, MR iid, etc.). */
   externalId: string
   /** The title the tracker has — what a person sees in their queue. */

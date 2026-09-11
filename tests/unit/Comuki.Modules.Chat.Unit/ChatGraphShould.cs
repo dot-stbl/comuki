@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Comuki.Modules.Chat.Application.Sessions;
 using Comuki.Modules.Chat.Domain.Messages;
+using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.ControlPlane.ChatCommands;
 using Shouldly;
 using Xunit;
@@ -28,7 +29,7 @@ public sealed class ChatGraphShould
         result.AwaitingApproval.ShouldBeFalse();
         var reply = result.NewMessages.Single(static message => message.Role == ChatMessageRole.Assistant);
         reply.Content.ShouldBe("brain says: hello there");
-        harness.Brain.Requests.ShouldHaveSingleItem().Kind.ShouldBe("chat");
+        harness.Brain.Requests.ShouldHaveSingleItem().Kind.ShouldBe(BrainRequestKindKeys.Answer);
     }
 
     [Fact(DisplayName = "Given a task message without project scope, when posted, then the graph asks one clarifying question and skips the brain")]
@@ -62,7 +63,7 @@ public sealed class ChatGraphShould
         using var plan = JsonDocument.Parse(result.PendingPlanJson);
         plan.RootElement.GetProperty("nodes")[0].GetProperty("profileKey").GetString().ShouldBe("implement");
 
-        harness.Brain.Requests.ShouldHaveSingleItem().Kind.ShouldBe("plan");
+        harness.Brain.Requests.ShouldHaveSingleItem().Kind.ShouldBe(BrainRequestKindKeys.Plan);
     }
 
     [Fact(DisplayName = "Given a pending approve, when a new message is posted, then the turn is refused with a pending exception")]
@@ -168,7 +169,7 @@ public sealed class ChatGraphShould
         await harness.Turns.PostAsync(session, "/restart because it hung", TestContext.Current.CancellationToken);
 
         var request = harness.Brain.Requests.ShouldHaveSingleItem();
-        request.Kind.ShouldBe("chat");
+        request.Kind.ShouldBe(BrainRequestKindKeys.Answer);
         request.Task.ShouldContain("Restart the current run now.");
         request.Task.ShouldContain("because it hung");
     }
@@ -183,8 +184,44 @@ public sealed class ChatGraphShould
         await harness.Turns.PostAsync(session, "/nosuchcommand arg", TestContext.Current.CancellationToken);
 
         var request = harness.Brain.Requests.ShouldHaveSingleItem();
-        request.Kind.ShouldBe("chat");
+        request.Kind.ShouldBe(BrainRequestKindKeys.Answer);
         request.Task.ShouldContain("/nosuchcommand");
+    }
+
+    [Fact(DisplayName = "Given every routing branch, when posted, then the brain kind is one the contract accepts")]
+    public async Task RouteOnlyContractBrainKindsAsync()
+    {
+        var commands = new[]
+        {
+            new ChatCommandDefinition("restart", "Restart", "Restart the run.", "Restart the current run now."),
+        };
+        await using var harness = ChatHarness.Create(commands);
+        var chatSessionId = await harness.NewSessionAsync();
+        var planSessionId = await harness.NewSessionAsync(projectGuid.ToString());
+
+        // The three branches that reach the brain: a plain message, a task
+        // with project scope, and a slash command (known and unknown).
+        await harness.Turns.PostAsync(
+            await harness.SessionAsync(chatSessionId), "hello there", TestContext.Current.CancellationToken);
+        await harness.Turns.PostAsync(
+            await harness.SessionAsync(chatSessionId), "/restart because it hung", TestContext.Current.CancellationToken);
+        await harness.Turns.PostAsync(
+            await harness.SessionAsync(chatSessionId), "/nosuchcommand arg", TestContext.Current.CancellationToken);
+        await harness.Turns.PostAsync(
+            await harness.SessionAsync(planSessionId), "fix the login bug", TestContext.Current.CancellationToken);
+
+        // BrainGrpcService.Think throws InvalidArgument on anything Parse
+        // rejects. The router wrote "chat" here, which is not one of the
+        // four — masked only because the host composes BrainStub today.
+        harness.Brain.Requests.Count.ShouldBe(4);
+        harness.Brain.Requests.ShouldAllBe(static request => BrainRequestKindKeys.Parse(request.Kind) != null);
+        harness.Brain.Requests.Select(static request => request.Kind).ShouldBe(
+            [
+                BrainRequestKindKeys.Answer,
+                BrainRequestKindKeys.Answer,
+                BrainRequestKindKeys.Answer,
+                BrainRequestKindKeys.Plan,
+            ]);
     }
 
     [Fact(DisplayName = "Given the slash catalog, when listed, then built-ins and control-plane commands merge ordered with built-ins winning collisions")]

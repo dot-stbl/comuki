@@ -77,7 +77,8 @@ always: false                                # true = обходить glob-пр
 └── process/
     ├── build-verification.md
     ├── commit-format.md         # [hybrid] + Conventional Commits
-    ├── pre-commit.md
+    ├── no-ai-attribution.md     # без байлайнов модели в коммитах/PR/коде
+    ├── pre-commit.md            # git hooks: pre-commit + commit-msg
     ├── worker-audit.md
     └── allowed-scripts.md       # Python banned; bun/node only
 ```

@@ -143,7 +143,12 @@ async function openSession(title: string) {
 describe("the console, on the seeded shift", () => {
   it("opens on the newest conversation and lists the rest", async () => {
     mount()
-    await waitFor(() => expect(all("chat-session").length).toBe(5))
+    // Counted off the seed rather than written down: the seeded shift grows a
+    // conversation whenever a state needs one to be reachable, and a literal
+    // here turns that into a failing test about nothing.
+    const seeded = listChatSessions().length
+    expect(seeded).toBeGreaterThan(1)
+    await waitFor(() => expect(all("chat-session").length).toBe(seeded))
     expect(at("chat-thread")).not.toBeNull()
   })
 

@@ -1,4 +1,4 @@
-import type { Role, SessionUser } from "@/shared/session"
+import { ROLES, type Role, type SessionUser } from "@/shared/session"
 import type { LoginRequest } from "@/shared/api/_generated/types/LoginRequest"
 import type { LoginResponse } from "@/shared/api/_generated/types/LoginResponse"
 import type { MeResponse } from "@/shared/api/_generated/types/MeResponse"
@@ -29,7 +29,35 @@ import type {
  * `MeResponse`) is the path to populating it.
  */
 
-const PLATFORM_SCOPE_ROLES = new Set<Role>(["operator", "platform-admin"])
+const PLATFORM_SCOPE_ROLES: ReadonlySet<string> = new Set<Role>([
+  "operator",
+  "platform-admin",
+])
+
+/** The six roles, as a membership test. `ROLES` is the vocabulary; this reads it. */
+const KNOWN_ROLES: ReadonlySet<string> = new Set<Role>(ROLES)
+
+/**
+ * Is this wire word one of the six roles?
+ *
+ * The file already narrowed `string` → `Role` with a `Set` when it filtered
+ * `me.roles`; the grants mapper answered the same question with a cast 115
+ * lines later. One guard, both callers — a cast cannot fail, and a role the
+ * dashboard has never heard of must not become one it thinks it knows.
+ */
+function isRole(value: string): value is Role {
+  return KNOWN_ROLES.has(value)
+}
+
+/** The two subject kinds a grant can name; the wire types them as `string`. */
+const SUBJECT_KINDS: ReadonlySet<string> = new Set<SeedSubjectKind>([
+  "user",
+  "api-key",
+])
+
+function isSubjectKind(value: string): value is SeedSubjectKind {
+  return SUBJECT_KINDS.has(value)
+}
 
 /**
  * Email + password → login wire.
@@ -86,7 +114,7 @@ export function mapLoginResponseToSessionUser(
 export function mapMeResponseToSessionUser(me: MeResponse): SessionUser {
   const id = me.userId ?? me.subjectId
   const platformRoles = me.roles.filter((role): role is Role =>
-    PLATFORM_SCOPE_ROLES.has(role as Role),
+    PLATFORM_SCOPE_ROLES.has(role),
   )
 
   return {
@@ -193,16 +221,20 @@ export function mapIdentityUsersPageToSeedUsers(
  * The kubb view carries `subjectType` as a wire string ("user" /
  * "api-key") and `subjectId` as a string id; the row matches the seed's
  * `subjectKind` + `subjectId`. Roles come back as a kebab-case string the
- * session module already enumerates (`Role`); the mapper types through.
+ * session module already enumerates (`Role`) — but a `string` is what the
+ * wire actually promises, so both go through the guards above rather than a
+ * cast. A word neither vocabulary contains degrades to the least-privileged
+ * reading (`viewer`, `user`) instead of entering the session as a role no
+ * permission table has a row for.
  */
 export function mapRoleAssignmentViewToSeed(view: RoleAssignmentView): SeedRoleAssignment {
   return {
     // `RoleAssignmentId` is `{ value?: string }` on the wire — the seed
     // join keys by id as a flat string, so unwrap here.
     id: view.id.value ?? "",
-    subjectKind: view.subjectType as SeedSubjectKind,
+    subjectKind: isSubjectKind(view.subjectType) ? view.subjectType : "user",
     subjectId: view.subjectId,
-    role: view.role as Role,
+    role: isRole(view.role) ? view.role : "viewer",
     projectId: view.scopeProjectId,
     grantedAt: view.createdAt,
   };

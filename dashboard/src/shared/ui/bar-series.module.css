@@ -43,37 +43,17 @@
   rx: var(--r-xs);
 }
 
-/* A segment may carry one of the six real statuses; the hue is only ever the
-   second channel, because the figure beside the chart and its legend name every
-   status in words. Declared here rather than inherited from `.status[…]` up in
-   the domains: the weave is a background image and an SVG rect has no
-   background — for a chart, the words are the channel that survives greyscale. */
+/* A segment may carry one of the six real statuses, and it takes the hue off
+   the one `[data-status]` declaration in `tokens.css` like every other
+   consumer. It takes only the hue, and that is a decision rather than an
+   oversight: the weave is a background image and an SVG rect has no
+   background, so the second channel a chart actually survives greyscale on is
+   the figure beside it and the legend under it, both of which name every
+   status in words. The six hexes this rule used to spell out for itself are
+   gone — a seventh status is not this file's business any more. */
 .seg {
   rx: var(--r-xs);
-}
-
-.seg[data-status="running"] {
-  fill: var(--st-running);
-}
-
-.seg[data-status="success"] {
-  fill: var(--st-success);
-}
-
-.seg[data-status="failed"] {
-  fill: var(--st-failed);
-}
-
-.seg[data-status="waiting"] {
-  fill: var(--st-waiting);
-}
-
-.seg[data-status="queued"] {
-  fill: var(--st-queued);
-}
-
-.seg[data-status="escalated"] {
-  fill: var(--st-escalated);
+  fill: var(--hue);
 }
 
 /* --- one authored entrance: the series rises from its baseline --- */

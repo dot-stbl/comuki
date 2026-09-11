@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Commit-msg hook: strips AI attribution, enforces the [hybrid] subject format.
+# Install: ./scripts/install-hooks.sh
+# Bypass:  git commit --no-verify
+set -euo pipefail
+
+MSG_FILE="${1:-}"
+if [ -z "$MSG_FILE" ] || [ ! -f "$MSG_FILE" ]; then
+  echo "⚠️  commit-msg: no message file passed — skipping"
+  exit 0
+fi
+
+# Skip gracefully if node is not available. A broken gate must never brick a
+# commit — the rule stays enforceable by review until node is back.
+if ! command -v node >/dev/null 2>&1; then
+  echo "⚠️  node not in PATH — skipping commit message check"
+  exit 0
+fi
+
+ROOT=$(git rev-parse --show-toplevel)
+LINTER="$ROOT/scripts/commit-lint.mjs"
+if [ ! -f "$LINTER" ]; then
+  echo "⚠️  $LINTER not found — skipping commit message check"
+  exit 0
+fi
+
+# --file mode: rewrites the message in place when it carried AI attribution
+# (warning on stderr), then hard-fails a malformed subject.
+node "$LINTER" --file "$MSG_FILE"

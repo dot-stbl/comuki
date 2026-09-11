@@ -17,8 +17,8 @@
   font-size: var(--t-sm);
   font-weight: var(--fw-medium);
   line-height: 1.2;
-  color: var(--st);
-  background: color-mix(in oklab, var(--st) 10%, transparent);
+  color: var(--hue);
+  background: color-mix(in oklab, var(--hue) 10%, transparent);
 }
 
 .sm {
@@ -27,30 +27,29 @@
   font-size: var(--t-micro);
 }
 
-.running {
-  --st: var(--st-running);
-}
+/* Hue, and deliberately no weave.
+ *
+ * This file used to carry a sixth spelling of the status pair — six arms
+ * setting a private `--st` and nothing else — and the missing `--weave` read
+ * like the oversight in the set. It is not one, and it is not repaired here.
+ * The weave exists so that a *wordless* mark survives greyscale: the river's
+ * band, the legend swatch, the run graph's edge and the verdict rail are
+ * shapes with no text in them, and a hatch is the only second channel they can
+ * carry. A badge is the opposite kind of object — it is the place the status
+ * is written out, in the product's own six words, next to a distinct glyph per
+ * status. It already has two channels that survive a photocopy, and a 45%
+ * black hatch running under 11px mono would cost legibility to restate what
+ * the label says. So the badge reads `--hue` off the one declaration in
+ * `tokens.css` and consumes no weave — see DESIGN.md, the Two-Channel Status
+ * Rule.
+ */
 
-.success {
-  --st: var(--st-success);
-}
-
-.failed {
-  --st: var(--st-failed);
-  border-color: color-mix(in oklab, var(--st-failed) 40%, transparent);
+/* `failed` escalates: a failure should be visible before it is read. The one
+   arm left in this file, and it names a status only to say that this status
+   is louder — the colour itself still comes from `--hue`. */
+.badge[data-status="failed"] {
+  border-color: color-mix(in oklab, var(--hue) 40%, transparent);
   background: var(--st-failed-tint);
-}
-
-.waiting {
-  --st: var(--st-waiting);
-}
-
-.queued {
-  --st: var(--st-queued);
-}
-
-.escalated {
-  --st: var(--st-escalated);
 }
 
 .icon {

@@ -368,21 +368,19 @@
 }
 
 /* The log's own statuses. Colour is a reinforcement here, never the message:
-   every line already says in words what happened. */
-.event[data-status="running"] .eventText {
-  color: var(--st-running);
-}
+   every line already says in words what happened — which is also why the hue
+   arrives through `var(--hue)` off the one `[data-status]` declaration in
+   `tokens.css` and the weave never arrives at all.
 
-.event[data-status="failed"] .eventText {
-  color: var(--st-failed);
-}
-
-.event[data-status="waiting"] .eventText {
-  color: var(--st-waiting);
-}
-
+   The selector list is the decision this rule still owns: four of the six get
+   a coloured line. `success` and `queued` stay in body text, because a log is
+   read downward looking for the moment something went wrong, and colouring the
+   ordinary lines is what makes the extraordinary one stop showing. */
+.event[data-status="running"] .eventText,
+.event[data-status="failed"] .eventText,
+.event[data-status="waiting"] .eventText,
 .event[data-status="escalated"] .eventText {
-  color: var(--st-escalated);
+  color: var(--hue);
 }
 
 /* --- the diff --- */

@@ -1,13 +1,36 @@
 # Comuki host image — one image, three entrypoints:
-#   /app/host      comuki             (orchestrator API)
+#   /app/host      comuki             (orchestrator API + dashboard SPA)
 #   /app/migrator  comuki-migrator    (one-shot schema migration job)
 #   /app/brain     comuki-brain       (standalone brain host, optional)
 #
+# The dashboard SPA is built into /app/host/wwwroot/ and served by the
+# same ASP.NET Core process via UseStaticFiles + MapFallbackToFile —
+# no separate nginx container, one origin, cookies just work.
+#
 # Build context = repo root:
-#   docker build -f deploy/compose/docker/host.Dockerfile -t comuki:local .
+#   docker build -f deploy/compose/docker/host.Dockerfile \
+#     --build-arg VITE_API_BASE_URL=http://localhost:17173 \
+#     -t comuki:local .
 #
 # .NET 10, non-root `app` user (mcr aspnet default, UID 1654).
 # curl is installed for container healthchecks.
+
+# ---------- Stage 0: build the dashboard SPA ----------
+FROM docker.io/library/node:22-alpine AS spa
+
+ARG VITE_API_BASE_URL=http://localhost:17173
+ARG VITE_DEPLOY_ENV=production
+
+WORKDIR /src
+COPY dashboard/package.json ./
+RUN npm install --no-audit --no-fund --ignore-scripts --legacy-peer-deps
+COPY dashboard/ ./
+ENV VITE_USE_MOCK=false \
+    VITE_API_BASE_URL=${VITE_API_BASE_URL} \
+    VITE_DEPLOY_ENV=${VITE_DEPLOY_ENV}
+RUN ./node_modules/.bin/vite build \
+    && test -f /src/dist/index.html \
+    && echo "SPA OK: $(ls /src/dist/ | wc -l) files"
 
 # ---------- Stage 1: build host + migrator + brain ----------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
@@ -43,6 +66,7 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY --from=build /app/host /app/host
+COPY --from=spa /src/dist /app/host/wwwroot
 COPY --from=build /app/migrator /app/migrator
 COPY --from=build /app/brain /app/brain
 

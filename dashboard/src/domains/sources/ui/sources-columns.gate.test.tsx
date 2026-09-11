@@ -10,8 +10,8 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
 import type {
+  ProviderKey,
   SourceConnection,
-  SourceKind,
   SourceState,
 } from "@/domains/sources/model/types"
 import {
@@ -89,7 +89,7 @@ function connection(
   overrides: Partial<SourceConnection> & {
     id: string
     projectId: string
-    kind: SourceKind
+    kind: ProviderKey
     name: string
     state: SourceState
   }

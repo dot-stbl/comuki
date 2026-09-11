@@ -4,6 +4,7 @@ import type {
   GateCheck,
   RunArtifacts,
   RunDetail,
+  RunStatus,
   RunSummary,
   TraceEvent,
   WorkItem,
@@ -28,6 +29,83 @@ import {
   type SeedTrace,
   type SeedWorkItem,
 } from "@/shared/api/mock"
+
+/* ---------------------------------------------------------------------------
+ * Wire status → domain status.
+ *
+ * `RunStatus` is the design system's six words and nothing else (see
+ * `shared/ui/status-badge.tsx` and the Real Words Rule in `DESIGN.md`). The
+ * host's vocabulary is wider — `succeeded` and `cancelled` are real values on
+ * `RunView.status` / `RunDetail.status`, both of which are a plain `string` on
+ * the wire — so the two vocabularies have to be mapped, not asserted.
+ *
+ * A cast did not map them, it only silenced the compiler, and the lie landed
+ * at runtime in two places: `statusIcons[status]` in `StatusBadge` came back
+ * `undefined` and React threw "Element type is invalid" on the first completed
+ * run in real mode, and `TRIAGE_RANK[status]` came back `NaN`, which quietly
+ * unsorted the duty list instead of crashing it.
+ * ------------------------------------------------------------------------- */
+
+/** Closed set of the six words the design system has; see <see cref="RunStatus"/>. */
+const KNOWN_RUN_STATUSES: ReadonlySet<string> = new Set<RunStatus>([
+  "running",
+  "success",
+  "failed",
+  "waiting",
+  "queued",
+  "escalated",
+])
+
+/**
+ * Narrow a wire word to the domain union. A predicate rather than a cast, so
+ * the set above is the only place the six words are written down.
+ */
+function isRunStatus(value: string): value is RunStatus {
+  return KNOWN_RUN_STATUSES.has(value)
+}
+
+/**
+ * The word an unmapped wire status degrades to.
+ *
+ * `failed` is the least misleading of the six for a status the screen cannot
+ * read. It is the only remaining word that is both **terminal** and **not a
+ * success**, which is the pair of facts every unreadable status shares: the
+ * three live words (`running`, `queued`, `waiting`) would promise the operator
+ * that a finished run is still moving, `escalated` would put phantom work at
+ * the top of the duty list claiming a human is blocking it, and `success`
+ * would tell them work landed that did not. `failed` overstates *why* and
+ * understates nothing — the conservative direction for a duty screen.
+ */
+const UNKNOWN_RUN_STATUS: RunStatus = "failed"
+
+/**
+ * Normalise the wire `status` string to the domain union.
+ *
+ * Two known wire words have no design-system counterpart:
+ *
+ * - `succeeded` → `success`. The same fact, the product's own spelling.
+ * - `cancelled` → `failed`, **provisionally**. There is no sixth-and-a-half
+ *   word for "an operator stopped this on purpose", and inventing a seventh
+ *   status is a `DESIGN.md` decision (a hue *and* a hatch — the Two-Channel
+ *   Status Rule), not a mapper's. Until that decision is made, a cancelled run
+ *   reads as `failed`: terminal, not a success, consistent with the `done`
+ *   flag this mapper already sets for it. The cost is severity — a deliberate
+ *   stop is painted as a breakage — and that is the open question for the
+ *   design owner, not something this function should settle.
+ *
+ * Anything else falls through to the same fallback rather than throwing — the
+ * host may have rolled out a status the FE has not been taught. A partial
+ * backend rollout should degrade the row, not take down the screen.
+ */
+export function normalizeRunStatus(value: string): RunStatus {
+  if (value === "succeeded") {
+    return "success"
+  }
+  if (isRunStatus(value)) {
+    return value
+  }
+  return UNKNOWN_RUN_STATUS
+}
 
 function mapStatus(status: SeedStatus) {
   return status
@@ -295,7 +373,7 @@ export function mapRunViewToSummary(view: RunView): RunSummary {
     projectId: view.projectId,
     app: "",
     title: "",
-    status: view.status as RunSummary["status"],
+    status: normalizeRunStatus(view.status),
     current: "",
     model: "worker",
     cost: 0,
@@ -371,7 +449,7 @@ function mapRunDetailToSummary(detail: RunDetailDto): RunSummary {
     projectId: detail.projectId,
     app: detail.app,
     title: detail.title,
-    status: detail.status as RunSummary["status"],
+    status: normalizeRunStatus(detail.status),
     current: detail.workItems[0]?.id ?? "",
     model: detail.model === "lead" ? "lead" : "worker",
     cost: toNumber(detail.costUsd),
@@ -400,7 +478,7 @@ function mapRunDetailWorkItemToDomain(
     id: entry.id,
     profile: entry.profile,
     label: entry.label,
-    status: entry.status as WorkItem["status"],
+    status: normalizeRunStatus(entry.status),
     dependsOn: entry.dependsOn,
     cost: toNumber(entry.cost),
     tokens: toNumber(entry.tokens),
@@ -480,7 +558,10 @@ function readStatusFromPayload(
     const candidate = typeof record["to"] === "string"
       ? (record["to"] as string).toLowerCase()
       : null;
-    const status = isTraceEventStatus(candidate) ? candidate : null;
+    const status =
+      candidate !== null && isWireRunStatus(candidate)
+        ? normalizeRunStatus(candidate)
+        : null;
     const summary = typeof record["type"] === "string"
       ? (record["type"] as string)
       : null;
@@ -490,19 +571,30 @@ function readStatusFromPayload(
   }
 }
 
-function isTraceEventStatus(
-  value: string | null,
-): value is TraceEvent["status"] {
-  if (value === null) return false;
-  return (
-    value === "queued" ||
-    value === "running" ||
-    value === "waiting" ||
-    value === "escalated" ||
-    value === "succeeded" ||
-    value === "failed" ||
-    value === "cancelled"
-  );
+/**
+ * The host's run lifecycle, verbatim — **seven** words, not the domain's six.
+ *
+ * This used to be spelled `value is TraceEvent["status"]`, and the signature
+ * was a lie: it admitted `succeeded` and `cancelled`, which are not members of
+ * that union, and handed them to a `TraceEvent` whose badge then had no icon
+ * to draw. The predicate asks the only question it can honestly answer — "is
+ * this a word the wire's lifecycle uses?" — and `normalizeRunStatus` is what
+ * turns the answer into one of the product's six. A payload word that is in
+ * neither vocabulary stays `null`, so the event keeps its neutral default
+ * rather than being painted as a failure by the unknown-status fallback.
+ */
+const WIRE_RUN_STATUSES: ReadonlySet<string> = new Set([
+  "queued",
+  "running",
+  "waiting",
+  "escalated",
+  "succeeded",
+  "failed",
+  "cancelled",
+]);
+
+function isWireRunStatus(value: string): boolean {
+  return WIRE_RUN_STATUSES.has(value);
 }
 
 /**

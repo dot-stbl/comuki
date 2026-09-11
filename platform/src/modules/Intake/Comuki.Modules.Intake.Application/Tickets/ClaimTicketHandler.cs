@@ -46,6 +46,6 @@ public sealed class ClaimTicketHandler(
 
         logger.LogInformation("Ticket {TicketId} claimed into run {RunId} (inbox)", ticket.Id, runId);
 
-        return IntakeTicketView.Of(ticket) with { Status = "Claimed", RunId = runId.Value };
+        return IntakeTicketView.Of(ticket) with { Status = nameof(IntakeTicketStatus.Claimed), RunId = runId.Value };
     }
 }

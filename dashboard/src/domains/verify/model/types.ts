@@ -18,6 +18,17 @@
 /** A verification result is pass or fail. It is not a run status. */
 export type VerifyOutcome = "success" | "failed"
 
+/**
+ * What a row *says* its last result was — three words, not two.
+ *
+ * Deliberately a wider vocabulary than `VerifyOutcome`: "never ran" is not an
+ * outcome, it is the absence of one, and the screen exists to keep the two
+ * apart (see `neverRanCount`). Every surface that reads a result as a word —
+ * the cell, the sort rank, the filter — is keyed on this, so a fourth reading
+ * cannot be added to one of them and forgotten in the others.
+ */
+export type VerifyResultLabel = "failed" | "never ran" | "passed"
+
 export interface VerifyResult {
   outcome: VerifyOutcome
   /** The run this result came out of — the row's deep link. */

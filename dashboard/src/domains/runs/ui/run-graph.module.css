@@ -154,7 +154,11 @@
 
 /* A full-height bar down the leading edge, sitting flush over the node's own
    border. Wide enough that the hatch actually reads at a glance across forty
-   nodes, which a hairline would not be. */
+   nodes, which a hairline would not be.
+
+   Both channels come off `[data-status]` in `tokens.css` — the same
+   declaration the profile river's segments and legend read — so this edge and
+   that band cannot say the same status two different ways. */
 .edge {
   position: absolute;
   top: calc(var(--hairline) * -1);
@@ -164,36 +168,6 @@
   border-radius: var(--r-md) 0 0 var(--r-md);
   background-color: var(--hue);
   background-image: var(--weave);
-}
-
-.status[data-status="running"] {
-  --hue: var(--st-running);
-  --weave: var(--weave-running);
-}
-
-.status[data-status="success"] {
-  --hue: var(--st-success);
-  --weave: var(--weave-success);
-}
-
-.status[data-status="failed"] {
-  --hue: var(--st-failed);
-  --weave: var(--weave-failed);
-}
-
-.status[data-status="waiting"] {
-  --hue: var(--st-waiting);
-  --weave: var(--weave-waiting);
-}
-
-.status[data-status="queued"] {
-  --hue: var(--st-queued);
-  --weave: var(--weave-queued);
-}
-
-.status[data-status="escalated"] {
-  --hue: var(--st-escalated);
-  --weave: var(--weave-escalated);
 }
 
 /* A plan that has stopped mid-graph, and one that is holding for a person, are

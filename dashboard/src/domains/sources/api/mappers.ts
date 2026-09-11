@@ -1,8 +1,9 @@
 import type { SourceConnectionView } from "@/shared/api/_generated/types/SourceConnectionView"
+import { isNativeIntake } from "@/domains/sources/model/providers"
 import type {
+  ProviderKey,
   SourceAuth,
   SourceConnection,
-  SourceKind,
 } from "@/domains/sources/model/types"
 
 /**
@@ -79,7 +80,12 @@ function parseSettings(settingsJson: string): ParsedSettings {
 export function sourceConnectionViewToConnection(
   view: SourceConnectionView
 ): SourceConnection {
-  const kind = providerToKind(view.provider)
+  // The host's word, verbatim. It is a registry key when this build has
+  // learned the provider and the host's own word when it has not, and there
+  // is nothing here to translate: `ProviderKey` is `string`, and every reader
+  // downstream degrades by itself.
+  const kind: ProviderKey = view.provider
+  const native = isNativeIntake(kind)
   const settings = parseSettings(view.settingsJson)
 
   return {
@@ -97,7 +103,7 @@ export function sourceConnectionViewToConnection(
     // string for `secretEnvRef`. Every other kind reads its `auth` out of
     // settingsJson and falls back to `"pat"`, the connector's default token
     // shape for the v1 providers the dashboard knows about.
-    auth: kind === "native"
+    auth: native
       ? ("none" as SourceAuth)
       : (settings.auth ?? ("pat" as SourceAuth)),
     // Self-hosted instances carry their `baseUrl` in settings; cloud and
@@ -110,12 +116,10 @@ export function sourceConnectionViewToConnection(
     // is the wire's own contract — the host returns "" rather than omitting
     // the field — and `undefined` keeps the rest of the screens honest.
     secretEnvRef:
-      view.secretEnvRef.length > 0 && kind !== "native"
-        ? view.secretEnvRef
-        : undefined,
+      view.secretEnvRef.length > 0 && !native ? view.secretEnvRef : undefined,
     secretStoredAt: undefined,
     // Native refuses disconnection at the store; the host mirrors that.
-    removable: kind !== "native",
+    removable: !native,
     watch: null,
     lastSyncAt: undefined,
   }
@@ -146,26 +150,6 @@ export function settingsToJson(settings: {
     object.baseUrl = settings.baseUrl
   }
   return JSON.stringify(object)
-}
-
-function providerToKind(provider: string): SourceKind {
-  // The host's vocabulary and the dashboard's agree today; the cast is the
-  // form. A future provider the dashboard does not yet know about would
-  // arrive as `unknown` here — caught by `SOURCE_KIND_BRAND` / `SOURCE_KIND_LABEL`
-  // rendering as `undefined`. Until then, the trust is local.
-  switch (provider) {
-    case "github":
-    case "gitlab":
-    case "jira":
-    case "yandex-tracker":
-    case "native":
-      return provider
-    default:
-      // Unknown provider — leave the row on the screen with the host's own
-      // word rather than failing closed; the brand tag and the label map
-      // both degrade to a spelled fallback in `providers.ts`.
-      return provider as SourceKind
-  }
 }
 
 /**

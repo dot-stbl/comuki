@@ -4,6 +4,24 @@ import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
+/**
+ * What the console loads on demand, and must not be swept into a vendor chunk.
+ *
+ * The markdown parser, its whole unified/remark/micromark pipeline and the
+ * syntax highlighter are reached only through a dynamic import inside the chat
+ * thread — the dock's trigger is mounted in the app shell, so anything the
+ * console imports statically is in the first paint of every screen. Leaving
+ * these unassigned lets Rolldown keep them in the async chunk they are reached
+ * through.
+ *
+ * The order matters: this is tested **before** the `react` branch below,
+ * because `react-markdown` carries that substring in its path and would
+ * otherwise land in `vendor-react`, which the entry pulls eagerly — a dynamic
+ * import into an eager chunk is not a dynamic import at all.
+ */
+const LAZY_CONSOLE =
+  /node_modules[\\/](?:highlight\.js|react-markdown|unified|remark-[\w-]+|micromark[\w-]*|mdast-util-[\w-]+|hast-util-[\w-]+|unist-util-[\w-]+|vfile[\w-]*|property-information|space-separated-tokens|comma-separated-tokens|html-url-attributes|character-entities[\w-]*|decode-named-character-reference|stringify-entities|markdown-table|longest-streak|trim-lines|style-to-[\w-]+|estree-util-[\w-]+|zwitch|ccount|devlop|bail|trough)[\\/]/
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -49,6 +67,10 @@ export default defineConfig({
       output: {
         manualChunks: (id) => {
           if (id.includes("node_modules")) {
+            // Named first on purpose — see LAZY_CONSOLE above.
+            if (LAZY_CONSOLE.test(id)) {
+              return undefined
+            }
             if (id.includes("@tanstack")) {
               return "vendor-tanstack"
             }

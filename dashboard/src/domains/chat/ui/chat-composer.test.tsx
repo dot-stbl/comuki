@@ -71,10 +71,11 @@ function sessionFor(
 function mount(
   roles: Role[] = ["member"],
   projectRoles: Record<string, Role[]> = {},
-  seed: SearchTarget | null = null
+  seed: SearchTarget | null = null,
+  custom: SlashCommand[] = CUSTOM
 ) {
   const onSend = vi.fn()
-  const commands = availableCommands(sessionFor(roles, projectRoles), CUSTOM)
+  const commands = availableCommands(sessionFor(roles, projectRoles), custom)
 
   function Harness() {
     const [value, setValue] = useState("")
@@ -153,6 +154,34 @@ describe("the slash menu", () => {
     expect(options[0]?.textContent).toContain(
       "cut a release branch and open the changelog draft"
     )
+  })
+
+  it("names the project a client command came from", () => {
+    const { box } = mount()
+    type(box, "/rel")
+    expect(all("chat-slash-option")[0]?.textContent).toContain("from test")
+  })
+
+  it("says nothing about provenance when there is no project to name", () => {
+    // A control-plane pack command is declared outside the platform and
+    // belongs to no single project, so the wire mapper leaves `projectId`
+    // unset. "from " trailing into nothing would be the row promising an
+    // answer it does not have.
+    const declared: SlashCommand[] = [
+      {
+        name: "/restart",
+        description: "restart the run",
+        origin: "client",
+        scope: "implied",
+      },
+    ]
+    const { box } = mount(["member"], {}, null, declared)
+    type(box, "/restart")
+
+    const option = all("chat-slash-option")[0]
+    expect(option?.getAttribute("data-origin")).toBe("client")
+    expect(option?.textContent).toContain("/restart")
+    expect(option?.textContent).not.toContain("from")
   })
 
   it("mixes the built-in set and the client's in one list", () => {

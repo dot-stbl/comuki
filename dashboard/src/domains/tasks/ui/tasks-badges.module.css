@@ -41,8 +41,8 @@
 /* Source ------------------------------------------------------------------ */
 
 /* A tracker id is the ticket's identity, so it reads at full strength. One
-   class serves the four provider stamps: within them the drained mark and the
-   id say which board it came from, and four vendor hues in this column would
+   class serves every provider stamp: within them the drained mark and the
+   id say which board it came from, and a hue per vendor in this column would
    be the one thing the Colourless Chrome Rule never allowed. */
 .tracker {
   --st: var(--text);
@@ -50,9 +50,9 @@
   background: transparent;
 }
 
-/* Manual intake has no id to show and only the word — which is the honest
+/* Native intake has no id to show and only the word — which is the honest
    limit of a column that is a badge rather than a value. */
-.manual {
+.native {
   --st: var(--text-muted);
 
   background: transparent;

@@ -21,6 +21,8 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
+    <!-- Server side of the worker protocol; client side of the brain protocol. -->
+    <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="protobuf-net.Grpc.AspNetCore" />
     <!-- OpenAPI document in DI (MapOpenApi() serves it at /openapi/v1.json).
          PrivateAssets=all on ApiDescription.Server keeps its source generator

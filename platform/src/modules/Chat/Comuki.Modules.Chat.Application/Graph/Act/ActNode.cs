@@ -1,7 +1,10 @@
+using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using Comuki.Modules.Chat.Application.Graph.Catalog;
 using Comuki.Modules.Chat.Application.Graph.Channels;
 using Comuki.Modules.Chat.Application.Ports;
+using Comuki.Shared.Contracts.Chat;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Results;
 using Voluta.Graph;
@@ -27,11 +30,24 @@ public sealed class ActNode(IChatToolExecutor tools) : IGraphNode
         var call = new ChatToolCall(
             ToolName,
             JsonSerializer.Serialize(new ChatTicketArguments(projectId, planJson), JsonSerializerOptions.Web));
-        var result = await tools.ExecuteAsync(call, cancellationToken);
 
+        var startedAt = Stopwatch.GetTimestamp();
+        var result = await tools.ExecuteAsync(call, cancellationToken);
+        var elapsed = Stopwatch.GetElapsedTime(startedAt);
+
+        // The whole call, not just its payload: the journal turns these
+        // four channels into one tool part the console can render as a
+        // record of what the turn actually did.
         return NodeResult.Continue(
             new ChannelWrite(ChatChannels.ToolName, ToolName),
+            new ChannelWrite(ChatChannels.ToolInput, call.ArgumentsJson),
             new ChannelWrite(ChatChannels.ToolResult, result.ResultJson),
+            new ChannelWrite(
+                ChatChannels.ToolStatus,
+                result.Succeeded ? ToolPartStatuses.Success : ToolPartStatuses.Failed),
+            new ChannelWrite(
+                ChatChannels.ToolDurationMs,
+                ((long)elapsed.TotalMilliseconds).ToString(CultureInfo.InvariantCulture)),
             new ChannelWrite(ChatChannels.Reply, ChatActText.Of(result)),
             new ChannelWrite(ChatChannels.Phase, ChatPhases.Done));
     }

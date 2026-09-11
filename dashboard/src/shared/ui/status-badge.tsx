@@ -53,10 +53,12 @@ export function StatusBadge({
   return (
     <span
       data-test="status-badge"
+      // Load-bearing, not just a test handle: `[data-status]` in `tokens.css`
+      // is what hands this badge its `--hue`, so there is no per-status class
+      // to apply here any more.
       data-status={status}
       className={cn(
         styles.badge,
-        styles[status],
         size === "sm" && styles.sm,
         status === "running" && styles.pulse,
         className

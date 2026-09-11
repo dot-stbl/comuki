@@ -118,16 +118,38 @@ export const BUILT_IN_COMMANDS: SlashCommand[] = [
   },
 ]
 
+const BUILT_IN_NAMES: ReadonlySet<string> = new Set(
+  BUILT_IN_COMMANDS.map((entry) => entry.name)
+)
+
 /**
  * Every command the composer offers.
  *
- * The built-in set, plus whatever the client's git declared — which arrives as
- * data and is never hardcoded here. Custom commands are narrowed to the
- * projects this session can see at all, the same boundary every list in the
- * product uses, and no further. Whether the shift may actually *run* one is
+ * The built-in set, plus whatever was declared outside the platform — which
+ * arrives as data and is never hardcoded here. Declared commands are narrowed
+ * to the projects this session can see at all, the same boundary every list in
+ * the product uses, and no further. Whether the shift may actually *run* one is
  * answered by the proposal it produces, not by hiding the command: a menu is
  * what teaches an operator that the command exists, and the person who cannot
  * run it is often exactly the one asked what it does.
+ *
+ * ## A name collision is won by the built-in
+ *
+ * The host's own catalog merges graph built-ins with the control-plane pack
+ * and sends both down the same wire, so `/help` and `/init` arrive here
+ * beside the entries above. The built-in wins, and not merely to break a tie:
+ * `/help` is the way out of the situation where everything else has stopped
+ * making sense, and a command pack that could shadow it could take that exit
+ * away. The same argument the host makes when *its* built-ins win a key
+ * collision in `ChatSlashCatalog`.
+ *
+ * It is not a silent drop. The author of the pack is the one person who can
+ * fix a shadowed command, and they will be reading a console, so the reason
+ * is written to it — once per merge, named.
+ *
+ * This is also the only place both halves are visible at once, which is why
+ * the dedup lives here rather than in the mapper: the mapper sees one wire
+ * row and has nothing to compare it against.
  */
 export function availableCommands(
   session: Session,
@@ -136,9 +158,15 @@ export function availableCommands(
   const visible = new Set(session.projects.map((project) => project.id))
   return [
     ...BUILT_IN_COMMANDS,
-    ...custom.filter(
-      (entry) => !entry.projectId || visible.has(entry.projectId)
-    ),
+    ...custom.filter((entry) => {
+      if (BUILT_IN_NAMES.has(entry.name)) {
+        console.warn(
+          `chat: declared command ${entry.name} is shadowed by the platform's built-in of the same name and was not offered`
+        )
+        return false
+      }
+      return !entry.projectId || visible.has(entry.projectId)
+    }),
   ]
 }
 

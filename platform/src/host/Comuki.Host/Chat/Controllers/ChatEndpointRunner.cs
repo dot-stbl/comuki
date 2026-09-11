@@ -1,3 +1,4 @@
+using Comuki.Host.Chat.Brain;
 using Comuki.Modules.Chat.Application.Sessions;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +22,14 @@ public static class ChatEndpointRunner
                 StatusCodes.Status409Conflict,
                 "chat.approve_pending",
                 "Plan approval pending",
+                exception.Message);
+        }
+        catch (BrainUnavailableException exception)
+        {
+            return ChatProblems.Problem(
+                StatusCodes.Status503ServiceUnavailable,
+                BrainUnavailableException.ProblemCode,
+                "Brain unavailable",
                 exception.Message);
         }
         catch (ValidationException exception)

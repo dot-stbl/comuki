@@ -241,10 +241,14 @@ export function ChatComposer({
                   </span>
                   {/* A client command says whose it is. It is not a lesser
                       command — it just did not come from the platform, and the
-                      operator has to know which git to go and read. */}
-                  {entry.origin === "client" ? (
+                      operator has to know which git to go and read. Only when
+                      there is a git to name: a control-plane pack command is
+                      declared outside the platform and belongs to no single
+                      project, and "from " trailing into nothing would be the
+                      row promising an answer it does not have. */}
+                  {entry.origin === "client" && entry.projectId ? (
                     <span className={styles.optionOrigin}>
-                      from {entry.projectId?.replace(/^p_/, "")}
+                      from {entry.projectId.replace(/^p_/, "")}
                     </span>
                   ) : null}
                 </button>

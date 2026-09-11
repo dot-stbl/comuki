@@ -1,12 +1,15 @@
+using System.Runtime.ExceptionServices;
 using Comuki.Modules.Chat.Application.Graph.Channels;
 using Comuki.Modules.Chat.Application.Graph.Confirm;
 using Comuki.Modules.Chat.Application.Ports;
 using Comuki.Modules.Chat.Domain.Messages;
 using Comuki.Modules.Chat.Domain.Sessions;
+using Comuki.Shared.Contracts.Chat;
 using Voluta.Abstractions.Channels;
 using Voluta.Abstractions.Checkpoint;
 using Voluta.Abstractions.Runtime;
 using Voluta.Abstractions.Streaming;
+using Voluta.Exceptions.Run;
 using Voluta.Graph;
 
 namespace Comuki.Modules.Chat.Application.Sessions;
@@ -39,7 +42,11 @@ public sealed class ChatTurnService(
         }
 
         await store.AppendAsync(
-            ChatMessage.Create(session.Id, ChatMessageRole.User, message, toolName: null, clock.GetUtcNow()),
+            ChatTranscriptRow.Of(
+                session.Id,
+                ChatMessageRole.User,
+                [new MessagePart.TextPart(message)],
+                clock.GetUtcNow()),
             cancellationToken);
         session.Touch(clock.GetUtcNow());
         await store.SaveAsync(session, cancellationToken);
@@ -47,7 +54,8 @@ public sealed class ChatTurnService(
         // Voluta invokes start from an empty channel store — carry-over
         // channels (wizard state) must be re-seeded from the checkpoint so
         // multi-turn flows survive turn boundaries.
-        var terminal = await graph.InvokeAsync(
+        var terminal = await ChatGraphRun.InvokeAsync(
+            graph,
             ChatTurnSeed.For(session, message, ChatTurnCarry.From(state)),
             new RunOptions { ThreadId = threadId, StreamMode = StreamMode.Values },
             cancellationToken);
@@ -67,11 +75,13 @@ public sealed class ChatTurnService(
         }
 
         await store.AppendAsync(
-            ChatMessage.Create(
+            ChatTranscriptRow.Of(
                 session.Id,
                 ChatMessageRole.User,
-                approved ? "approve" : ("reject" + (reason is { Length: > 0 } ? ": " + reason : string.Empty)),
-                toolName: null,
+                [
+                    new MessagePart.TextPart(
+                        approved ? "approve" : ("reject" + (reason is { Length: > 0 } ? ": " + reason : string.Empty))),
+                ],
                 clock.GetUtcNow()),
             cancellationToken);
         session.Touch(clock.GetUtcNow());
@@ -90,6 +100,34 @@ public sealed class ChatTurnService(
             cancellationToken);
 
         return await journalist.JournalAsync(session, terminal, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Runs one turn and lets a node's own exception through. Voluta wraps
+/// whatever a node threw in <see cref="GraphRunFailedException"/>, which
+/// would hide the typed faults the HTTP surface maps (a pending approve,
+/// an unreachable brain) behind a generic 500. The resume path already
+/// rethrows the node's exception (<see cref="ChatTerminal"/>), so both
+/// paths surface the same thing.
+/// </summary>
+file static class ChatGraphRun
+{
+    public static async Task<StreamEvent> InvokeAsync(
+        CompiledGraph graph,
+        IReadOnlyList<ChannelWrite> seed,
+        RunOptions options,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await graph.InvokeAsync(seed, options, cancellationToken);
+        }
+        catch (GraphRunFailedException exception) when (exception.InnerException is { } inner)
+        {
+            ExceptionDispatchInfo.Capture(inner).Throw();
+            throw;
+        }
     }
 }
 

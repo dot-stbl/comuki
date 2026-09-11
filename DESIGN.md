@@ -183,13 +183,13 @@ The system carries two typefaces with a strict division of labour and two shadow
 - Two typographic voices — Archivo carries meaning, JetBrains Mono carries values
 - Hairline-bounded data surfaces that take a corner but never a card's fill or shadow
 - Exactly two in-page depth planes, both offset-and-blurred, never a halo
-- Status is hue plus weave, consumed identically everywhere it appears
+- Status is hue plus weave, declared in exactly one block and read from there by every mark that carries one
 - Authored motion as moments, all opt-out: the river's two, the bar series' rise, the dialogs' paired entrance and exit
 - Every chart stands beside a figure that says the reading in words
 
 ## Colors
 
-A colourless chrome with the statuses built on the one axis red-green blindness leaves standing — the default theme is a fact of vision, not a style choice. All colour lives in two files that do not intersect: `themes.css` is **generated** (twenty-one colour primitives per theme, from the registry in `src/app/theme/themes.ts` — edit the registry, never the file; a test fails if they disagree), and `tokens.css` derives every semantic token the product reads from those primitives, once, so a new theme never has to know that `--sidebar-ring` exists.
+A colourless chrome with the statuses built on the one axis red-green blindness leaves standing — the default theme is a fact of vision, not a style choice. All colour lives in two files that do not intersect: `themes.css` is **generated** (twenty-one colour primitives per theme, from the registry in `src/app/theme/themes.ts` — edit the registry, never the file; a test fails if they disagree), and `tokens.css` derives every semantic token the product reads from those primitives, once, so a new theme never has to know that `--sidebar-ring` exists. It also holds the product's only non-`:root` rule: the `[data-status]` block that pairs each status word with its hue and its hatch, which is derived from both files and belongs to neither theme nor component.
 
 ### Themes
 Seven in the registry: **Dichromat deck** (default; invariant under protan and deutan simulation by construction), Graphite, Dockside, Blueprint, Bureau, Aperture, and **Dispatcher** — the committed palette of the first year, kept selectable, its four failing status contrasts recorded by a test rather than excused. Each theme carries a dark and a light reading; the mode (dark / light / system) is a separate control beside the palette in the topbar, because the palette is chosen once and the mode flips with the room.
@@ -203,7 +203,9 @@ The six statuses on the default theme are a lightness ladder with warm/cold alte
 ### Named Rules
 **The Colourless Chrome Rule.** Rail, topbar, table chrome, dialogs and toolbars are built from the neutral ramp only. If a new surface wants a saturated fill, it is a data surface or it is wrong.
 
-**The Two-Channel Status Rule.** A status is never hue alone. `.status[data-status="…"]` sets both `--hue` and `--weave`, and every consumer — the flow band, the legend swatch, the collapsed strip — reads those two properties from that one declaration. Adding a seventh status means adding a hatch, not just a colour.
+**The Two-Channel Status Rule.** A status is never hue alone. `[data-status="…"]` in `tokens.css` sets both `--hue` and `--weave`, and it is the only place in the product either property is declared — a component marks *what it paints* (`background-color: var(--hue)`) and never *which status* it is painting. Every wordless mark reads both: the flow band, the river's legend swatch, the collapsed strip, the run graph's node edge, the verdict band's rail. Two marks read the hue and refuse the weave on purpose — the status badge and the bar series, each of which writes the status out in the product's own word right beside itself and so already carries a channel that survives greyscale. Refusing a channel is a decision the declaration allows; inventing a value for one is not. Adding a seventh status means adding a hatch, not just a colour, and it means editing that one block.
+
+The rule was written before it was true. Six modules each carried their own copy of the pair, in three spellings: two near-identical six-arm blocks in the profile river and the run graph, a third in the verdict band with a `clear` alias bolted on, three more that skipped `--hue` altogether and reached for `var(--st-…)` directly, and the status badge, which invented a private `--st` and set no weave at all. Nothing failed when two of them disagreed, because nothing compared them. A seventh status cost about fourteen files; it now costs the registry, its two tokens, one arm in `tokens.css` and the badge's glyph — and of the hand-written stylesheets, exactly one. `app/styles/status-channel.test.ts` is what holds it: it reads the sheets back off disk, runs the real selectors against the real DOM shapes, resolves every `var()` chain, and asserts the pair each consumer ends up with in both modes — none of which jsdom can paint and none of which is visible by eye.
 
 **The Real Words Rule.** Status colours map one-to-one onto the product's six statuses: running, success, failed, waiting, queued, escalated. UI copy says "waiting on a human", never a coined synonym. Internal model names stay in the model and never surface as labels.
 
@@ -292,8 +294,9 @@ The rule used to read *"bounded by hairlines, not wrapped in a rounded, shadowed
 - **Press / Focus:** a 1px downward nudge on active; a 2px 35% ring plus a solid ring-coloured border on focus-visible.
 
 ### Status Badge
-- **Style:** inline-flex, sm radius, 1px rule border, a 10% wash of its own status hue, with an icon at the data icon size.
+- **Style:** inline-flex, sm radius, 1px rule border, a 10% wash of its own status hue, with an icon at the data icon size. The hue arrives as `var(--hue)` off the one `[data-status]` declaration; there are no per-status classes in the module any more, only the one arm `failed` needs.
 - **Semantics:** six variants matching the six statuses. `failed` is the one that escalates — 40% border and a full tint — because a failure should be visible before it is read.
+- **Hue only, and on purpose.** The badge is where a status is written out: the label is the status word verbatim and the glyph differs per status, so it already carries two channels a photocopy survives. A hatch running under 11px mono would cost legibility to restate what the label says. It is the one member of the family that takes `--hue` and not `--weave`, and `status-channel.test.ts` asserts the absence so the next reader does not repair it as an oversight.
 - **Motion:** the `running` variant pulses opacity on a 1.4s loop, disabled under reduced motion.
 
 ### Data Table
@@ -336,7 +339,7 @@ The console is one implementation (`ChatConsole`) in **two containers**: the `/c
 - **State outside the tree:** the open sheet, the chosen conversation and the draft live in module memory, so a navigation (every screen mounts its own shell) neither closes the sheet nor drops a draft. Arrow-up in an empty box recalls the last thing said; the caret lands in the composer the moment the sheet opens.
 
 ### Time series (BarSeries, Sparkline)
-- **Two primitives only, hand-drawn SVG:** a bar series on a shared day axis (geometry in percentages, so the corner token stays honest at any width; stacked segments may carry status tokens with their words in the legend) and a sparkline scaled 0→max — never min→max, because auto-range turns a quiet day into mountains.
+- **Two primitives only, hand-drawn SVG:** a bar series on a shared day axis (geometry in percentages, so the corner token stays honest at any width; a stacked segment takes `fill: var(--hue)` off the one `[data-status]` declaration, and takes no weave, because an SVG rect has no background to hatch and the figure and legend beside the chart are what name every status in words) and a sparkline scaled 0→max — never min→max, because auto-range turns a quiet day into mountains.
 - **The Chart-Beside-Figure Rule.** A chart never carries the reading alone: it stands beside a figure that says it in words, the precedent being the capacity card's ceiling sentence. A screen reader loses nothing; an operator scanning loses everything to a chart that must be decoded first.
 - **Motion:** the bars rise from the baseline on entrance (620ms, 45ms stagger — the river's own moment), opt-out.
 
@@ -356,7 +359,7 @@ The screen's answer to "where is the swarm jammed". Nine stages across one share
 - **Numbers:** two fixed-height lines under every channel — the pool figure, then that same pool split into the statuses it is actually made of, separated by middots. Fixed height, because every node must reserve the identical footprint or the channels stop sharing one axis.
 - **The marked stage:** the stage holding the most blocked runs takes the waiting hue on its border, tint, label and a display-sized bold pool figure. A single reserved line under it reads `N waiting on a human` — reserved on every node, filled on one, because adding a line would shorten that stage's own channel.
 - **Selection:** clicking a stage is an ordinary table filter. The pressed node strengthens its border and lightens its channel; the toolbar shows the same value a second way. There is no invisible coupling between board and list.
-- **Legend:** sits beside the river and consumes the identical `data-status` declaration, so the weave is defined once and read once.
+- **Legend:** sits beside the river and consumes the identical `[data-status]` declaration out of `tokens.css` — the same one the band segment, the collapsed strip and the run graph's node edge read — so the weave really is defined once and read once.
 - **Collapsed:** the same flow, roughly one row tall — lanes and links, no numbers, no labels. A shape, not a reading.
 - **Motion:** exactly two authored moments. The river fills from the source on entrance (620ms, 45ms stagger by column index), and a value that moved while nobody was looking washes once in the accent and leaves (900ms). Both sit behind `prefers-reduced-motion: no-preference`; the wash is driven by a shared `useValueChanged` hook that never fires on first render. The screen rebuild deliberately added no third.
 
@@ -365,7 +368,7 @@ The screen's answer to "where is the swarm jammed". Nine stages across one share
 ### Do:
 - **Do** build new kit components as a triad — `.tsx` + `.module.css` + `.stories.tsx` — exported from `@/shared/ui`, with CSS Modules referencing only `var(--token)`.
 - **Do** put a composite primitive (a table and its toolbar, a pane group and its separator) in its own folder with an `index.ts` re-exported from the root barrel. Flat files remain the rule for single components.
-- **Do** give every status both a hue and a weave, and read them through `.status[data-status]` so the flow band, the legend and the collapsed strip can never drift apart.
+- **Do** give every status both a hue and a weave in the one `[data-status]` block in `tokens.css`, and read them from there with `var(--hue)` / `var(--weave)` so the flow band, the legend, the collapsed strip and the run graph can never drift apart. A component that spells a status word in a selector to pick a colour is declaring the encoding a second time.
 - **Do** set every figure that sits in a column or updates in place in mono with tabular figures.
 - **Do** bound data surfaces with hairlines (`--rule` between rows, `--rule-strong` at the edges) and give them the corner their size deserves, instead of wrapping them in a card's fill and shadow.
 - **Do** let controls size their own icons from `--icon-xs` / `sm` / `md` / `lg`.
@@ -394,6 +397,9 @@ Recorded as evidence rather than papered over. These are known incompletions the
 - ~~`--r-pill` still has one live consumer.~~ **Closed.** It stays defined, forbidden, and out of the four-step scale.
 - **`--t-h1` remains defined-but-unused.** Its sibling `--s7` found work as the page gutter (`--page-x`); the headline step still has no consumer on any shipped surface. Recorded rather than documented as a role.
 - ~~The confirm dialog's entrance is not opt-out.~~ **Closed.** Every motion moment — river, value wash, split grip, status pulse, dialog entrances and exits, the bar series' rise — sits behind the same `prefers-reduced-motion: no-preference` guard, and `responsive.test.ts` holds the whole of `src/app` and `src/shared` to it.
+- ~~The Two-Channel Status Rule described a declaration that did not exist.~~ **Closed.** There were six, in three spellings, and one of them set no weave at all. `tokens.css` now carries the only `[data-status]` block in the product and `status-channel.test.ts` resolves the cascade off disk to prove no consumer moved. Two items of residue survive it, below.
+- **`data-status` carries one word that is not a status.** The duty screen's verdict band says `clear` when nothing needs a person, and `tokens.css` gives `clear` success's hue and success's hatch so the attribute keeps a single vocabulary. It is an alias, not a seventh status — the Real Words Rule still holds, because `clear` is never a run's state and never appears as a status label — but the block that ought to read as exactly the six reads as six plus a borrowed word.
+- **Four meters wear a status hatch to mean something that is not that status.** The compute capacity card's empty channel, the proxy budget meter over its cap, the unenforced model budget and the queue's draining pool all paint `--weave-failed` or `--weave-queued` onto a bar that carries no `data-status`. Reading the token rather than re-drawing the gradient is right, and each says its reading in words as well — but a hatch is supposed to name a status, and in four places it names a condition instead.
 - **No server-side `stage × status` aggregate.** `buildStageFlow` derives the flow client-side from the run list because no endpoint returns a stage axis. Correct for the current page size; the shape in `stage-flow.ts` is what the endpoint must return.
 - **The stage flow's node geometry is hand-computed.** `--h-node-head`, `--h-node-foot` and `--h-node-metrics` are local calcs that must stay in sync with the node's own chrome for connectors to start and stop where the channels do. It works; it is not a general layout mechanism.
 - **The time series are seed-shaped, not server-shaped.** Four readings (spend by day, queue depth, run outcomes, proxy burn) run off day-series added to the mock seeds, with today's columns derived from live store values rather than invented. The backend contract those series imply is the next thing to write down.

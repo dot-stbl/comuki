@@ -13,6 +13,14 @@ namespace Comuki.Modules.Intake.Infrastructure.Persistence.Configurations;
 /// </summary>
 public sealed class SyncJobConfiguration : IEntityTypeConfiguration<SyncJob>
 {
+    /// <summary>
+    /// Pending-only predicate, composed from <see cref="SyncJobStatus"/> via
+    /// <c>nameof</c> so a rename fails the build instead of leaving
+    /// <c>ix_sync_jobs_due</c> silently stale.
+    /// </summary>
+    internal const string PendingStatusFilter =
+        "status = '" + nameof(SyncJobStatus.Pending) + "'";
+
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<SyncJob> builder)
     {
@@ -84,6 +92,6 @@ public sealed class SyncJobConfiguration : IEntityTypeConfiguration<SyncJob>
 
         builder.HasIndex(static job => job.NextAttemptAt)
             .HasDatabaseName("ix_sync_jobs_due")
-            .HasFilter("status = 'Pending'");
+            .HasFilter(PendingStatusFilter);
     }
 }

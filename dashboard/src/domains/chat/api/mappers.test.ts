@@ -6,7 +6,12 @@ import {
   chatSlashCommandsToDomainCommands,
   chatSlashCommandToDomainCommand,
 } from "@/domains/chat/api/mappers"
-import { availableCommands } from "@/domains/chat/model/commands"
+import {
+  availableCommands,
+  commandMenuQuery,
+  commandOf,
+  matchCommands,
+} from "@/domains/chat/model/commands"
 import type { ChatMessageView } from "@/shared/api/_generated/types/ChatMessageView"
 import type { ChatSlashCommand } from "@/shared/api/_generated/types/ChatSlashCommand"
 import type { Session } from "@/shared/session"
@@ -189,11 +194,50 @@ describe("chatSlashCommandToDomainCommand", () => {
 
   it("reads the host's `control-plane` as a declared command", () => {
     const command = chatSlashCommandToDomainCommand(
-      slashCommandFixture({ key: "restart", name: "/restart", source: "control-plane" })
+      slashCommandFixture({ key: "restart", name: "Restart", source: "control-plane" })
     )
 
     expect(command.origin).toBe("client")
     expect(command.scope).toBe("implied")
+  })
+
+  it("builds the typed name out of the wire's key, not its label", () => {
+    // The wire's `name` is the human label ("Restart"); the domain's is what
+    // the operator types. Copying one to the other produced menu rows no
+    // slash query could ever match.
+    const command = chatSlashCommandToDomainCommand(
+      slashCommandFixture({ key: "restart", name: "Restart" })
+    )
+
+    expect(command.name).toBe("/restart")
+  })
+
+  it("normalises a key a pack author hand-wrote", () => {
+    const named = (key: string) =>
+      chatSlashCommandToDomainCommand(slashCommandFixture({ key })).name
+
+    // A leading slash the author already wrote is stripped, not doubled:
+    // `//restart` matches no query and `commandOf` never resolves it.
+    expect(named("/restart")).toBe("/restart")
+    expect(named("//restart")).toBe("/restart")
+    // The menu matches a lower-cased query, so a capitalised key would be a
+    // command nobody could type.
+    expect(named("  Restart  ")).toBe("/restart")
+  })
+
+  it("keeps the author's description, and falls back to the label without one", () => {
+    expect(
+      chatSlashCommandToDomainCommand(
+        slashCommandFixture({ name: "Restart", description: "restart the run" })
+      ).description
+    ).toBe("restart the run")
+
+    // Never both — a row reading "Restart — Restart" says one thing twice.
+    expect(
+      chatSlashCommandToDomainCommand(
+        slashCommandFixture({ name: "Restart", description: "   " })
+      ).description
+    ).toBe("Restart")
   })
 
   it("never hands the menu an undefined origin", () => {
@@ -230,10 +274,10 @@ describe("chatSlashCommandToDomainCommand", () => {
 
   it("keeps every wire command in the composer's menu", () => {
     const wire = chatSlashCommandsToDomainCommands([
-      slashCommandFixture({ key: "audit", name: "/audit", source: "builtin" }),
+      slashCommandFixture({ key: "audit", name: "Audit", source: "builtin" }),
       slashCommandFixture({
         key: "restart",
-        name: "/restart",
+        name: "Restart",
         source: "control-plane",
       }),
     ])
@@ -245,6 +289,32 @@ describe("chatSlashCommandToDomainCommand", () => {
     // wire half of the menu was filtered away.
     expect(offered.some((entry) => entry.name === "/audit")).toBe(true)
     expect(offered.some((entry) => entry.name === "/restart")).toBe(true)
+  })
+
+  it("lands a wire command in the menu the way it is typed", () => {
+    // The whole path, end to end: a control-plane pack row becomes a menu
+    // entry that the composer's query matches and `commandOf` resolves.
+    const wire = chatSlashCommandsToDomainCommands([
+      slashCommandFixture({
+        key: "restart",
+        name: "Restart",
+        description: "restart the run",
+        source: "control-plane",
+      }),
+    ])
+    const offered = availableCommands(sessionFixture(), wire)
+
+    const query = commandMenuQuery("/rest")
+    expect(query).toBe("/rest")
+    expect(
+      matchCommands(query as string, offered).map((entry) => entry.name)
+    ).toEqual(["/restart"])
+
+    expect(commandOf("/restart now", offered)).toMatchObject({
+      name: "/restart",
+      description: "restart the run",
+      origin: "client",
+    })
   })
 })
 

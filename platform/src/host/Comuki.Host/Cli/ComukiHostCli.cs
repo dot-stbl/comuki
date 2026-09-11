@@ -1,3 +1,4 @@
+using Comuki.Host.Cli.Init;
 using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Cli;
 using Comuki.Shared.Bootstrap.Config;
@@ -35,6 +36,12 @@ internal static class ComukiHostCli
 
         return 0;
     }
+
+    /// <summary>Writes the first-run config.toml and .env skeleton; see <see cref="ComukiInit"/>.</summary>
+    internal static int RunInit(string[] args, TextWriter writer)
+    {
+        return ComukiInit.Run(args, writer);
+    }
 }
 
 /// <summary>Command routing of the comuki operator CLI: first argument selects the command.</summary>
@@ -47,6 +54,7 @@ file static class ComukiHostCliRouter
             [var command, ..] when Matches(command, ComukiCli.VersionCommand) => ComukiCli.RunVersion("comuki", writer),
             [var command, var subcommand, ..] when Matches(command, "config") && Matches(subcommand, "show")
                 => ComukiHostCli.RunConfigShow(writer),
+            [var command, ..] when Matches(command, "init") => ComukiHostCli.RunInit(args, writer),
             _ => null,
         };
     }

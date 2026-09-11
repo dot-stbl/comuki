@@ -48,6 +48,7 @@ using Comuki.Modules.Scheduler.Application;
 using Comuki.Modules.Scheduler.Application.Options;
 using Comuki.Modules.Scheduler.Application.Ports;
 using Comuki.Modules.Scheduler.Infrastructure;
+using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
@@ -62,6 +63,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using VaultSharp;
 using static Comuki.Host.VaultSecretClientFactory;
+using VersionResponse = Comuki.Host.Versioning.VersionResponse;
 
 namespace Comuki.Host;
 
@@ -414,6 +416,11 @@ internal static class HostComposer
         app.UseMiddleware<SubjectScopeMiddleware>();
 
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));
+
+        // Build info for operators and the dashboard footer (issue #56 §6):
+        // version/sha/build date/mode - the same identity `comuki version`
+        // prints. Anonymous by design, exactly like /health.
+        app.MapGet(ApiRoutes.Version, static () => Results.Ok(VersionResponse.From(ComukiBuildInfo.Read())));
         app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
         {
             Predicate = static check => check.Tags.Contains("ready"),

@@ -5,6 +5,9 @@ public static class ApiRoutes
 {
     public const string Health = "/health";
 
+    /// <summary>Anonymous build-info endpoint (issue #56 §6): version, sha, build date, mode.</summary>
+    public const string Version = "/api/v1/version";
+
     public const string Profiles = "/profiles";
 
     public const string ProfileByKey = "/profiles/{key}";

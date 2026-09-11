@@ -17,7 +17,6 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next)
     public const string HeaderName = "X-Request-Id";
 
     /// <summary>Installs the correlation id for the rest of the request pipeline.</summary>
-    /// <param name="context"></param>
     public async Task InvokeAsync(HttpContext context)
     {
         var accessor = context.RequestServices.GetRequiredService<ICorrelationIdAccessor>();

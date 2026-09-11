@@ -78,9 +78,9 @@ namespace Comuki.Host;
 internal static class HostComposer
 {
     /// <summary>Wires every host service and returns the built application, not yet started.</summary>
-    /// <param name="builder"></param>
+    /// <param name="builder">The host builder whose services and middleware this call composes.</param>
     /// <param name="database">Connection resolved once by <see cref="HostDatabase.Resolve"/>; flows into identity/projects persistence and the legacy-alias warning.</param>
-    /// <returns></returns>
+    /// <returns>The composed, not-yet-started <see cref="WebApplication"/>.</returns>
     /// <remarks>
     /// DI scope/build validation runs unconditionally — every consumer of
     /// this composition (production boot and integration tests) gets the

@@ -36,7 +36,6 @@ public static class ProductionSecretAudit
     }
 }
 
-/// <summary>Per-secret evaluation shared by the audit and the startup gate.</summary>
 /// <summary>The individual production-secret checks; each appends its findings to the shared list.</summary>
 file static class ProductionSecretAuditChecks
 {

@@ -3,8 +3,13 @@ import { describe, expect, it } from "vitest"
 import {
   chatMessagesPageToDomainMessages,
   chatMessageViewToDomainMessage,
+  chatSlashCommandsToDomainCommands,
+  chatSlashCommandToDomainCommand,
 } from "@/domains/chat/api/mappers"
+import { availableCommands } from "@/domains/chat/model/commands"
 import type { ChatMessageView } from "@/shared/api/_generated/types/ChatMessageView"
+import type { ChatSlashCommand } from "@/shared/api/_generated/types/ChatSlashCommand"
+import type { Session } from "@/shared/session"
 
 /**
  * Wire → domain mappers for the chat console's real mode.
@@ -131,6 +136,115 @@ describe("chatMessageViewToDomainMessage", () => {
       chatMessageViewToDomainMessage(messageViewFixture({ createdAt: "soon" }))
         .at
     ).toBe("")
+  })
+})
+
+/**
+ * The slash catalog's `source`, as the host actually spells it.
+ *
+ * `ChatSlashSources` on the host names `builtin` and `control-plane`. The
+ * mapper was keyed `built_in` / `client`, which nothing has ever sent, so
+ * every real-mode command arrived with `origin: undefined` — and because the
+ * same two literals also decided the scope and the project, every command
+ * carried its own source label as a `projectId` and `availableCommands`
+ * filtered the whole menu away. These cases pin the vocabulary, the
+ * fallback, and the menu that depends on both.
+ */
+
+function slashCommandFixture(
+  overrides: Partial<ChatSlashCommand> = {}
+): ChatSlashCommand {
+  return {
+    key: "help",
+    name: "/help",
+    description: "what the console can do",
+    body: "List the available slash commands.",
+    source: "builtin",
+    ...overrides,
+  }
+}
+
+function sessionFixture(): Session {
+  return {
+    user: {
+      id: "u_test",
+      name: "Test",
+      email: "test@comuki.local",
+      platformRoles: ["operator"],
+      projectRoles: {},
+    },
+    projects: [{ id: "p_one", key: "one", name: "One" }],
+  }
+}
+
+describe("chatSlashCommandToDomainCommand", () => {
+  it("reads the host's `builtin` as a platform command", () => {
+    const command = chatSlashCommandToDomainCommand(
+      slashCommandFixture({ source: "builtin" })
+    )
+
+    expect(command.origin).toBe("built-in")
+    expect(command.scope).toBe("none")
+  })
+
+  it("reads the host's `control-plane` as a declared command", () => {
+    const command = chatSlashCommandToDomainCommand(
+      slashCommandFixture({ key: "restart", name: "/restart", source: "control-plane" })
+    )
+
+    expect(command.origin).toBe("client")
+    expect(command.scope).toBe("implied")
+  })
+
+  it("never hands the menu an undefined origin", () => {
+    // The exact regression: `built_in` is the spelling the mapper used to
+    // key on, and the host has never sent it. An unrecognised source has to
+    // land on a defined value, and on the one this bundle can vouch for.
+    for (const source of ["built_in", "client", "", "something-new"]) {
+      const command = chatSlashCommandToDomainCommand(
+        slashCommandFixture({ source })
+      )
+      expect(command.origin).toBeDefined()
+      expect(["built-in", "client"]).toContain(command.origin)
+    }
+
+    expect(
+      chatSlashCommandToDomainCommand(slashCommandFixture({ source: "built_in" }))
+        .origin
+    ).toBe("client")
+  })
+
+  it("names no project, because neither wire source is one", () => {
+    // `projectId` is what `availableCommands` filters on. Holding the source
+    // label there took every wire command out of the menu.
+    expect(
+      chatSlashCommandToDomainCommand(slashCommandFixture({ source: "builtin" }))
+        .projectId
+    ).toBeUndefined()
+    expect(
+      chatSlashCommandToDomainCommand(
+        slashCommandFixture({ source: "control-plane" })
+      ).projectId
+    ).toBeUndefined()
+  })
+
+  it("keeps every wire command in the composer's menu", () => {
+    const wire = chatSlashCommandsToDomainCommands([
+      slashCommandFixture({ key: "audit", name: "/audit", source: "builtin" }),
+      slashCommandFixture({
+        key: "restart",
+        name: "/restart",
+        source: "control-plane",
+      }),
+    ])
+
+    const offered = availableCommands(sessionFixture(), wire)
+
+    // Before the fix both carried their own source label as a `projectId`,
+    // no session has ever seen a project called `builtin`, and the whole
+    // wire half of the menu was filtered away.
+    expect(offered.some((entry) => entry.name === "/audit")).toBe(true)
+    expect(offered.some((entry) => entry.name === "/restart")).toBe(true)
   })
 })
 

@@ -126,48 +126,78 @@ export function toCustomCommands(seed: SeedSlashCommand[]): SlashCommand[] {
  * The chat console's command menu takes `SlashCommand` shaped per the
  * dashboard's domain. The host's `ChatSlashCommand` is closer to the wire
  * (key, name, description, body, source); we drop `body` (the prompt body
- * never reached the dashboard's domain — it lived on the seed) and map
- * `source` onto `projectId` when it names one. `origin` is the dashboard's
- * own taxonomy ("built-in" vs "client"); the host's `source` is the
- * same vocabulary at a different level.
+ * never reached the dashboard's domain — it lived on the seed). `origin` is
+ * the dashboard's own taxonomy ("built-in" vs "client"); the host's `source`
+ * is the same vocabulary at a different level.
  */
 
+/**
+ * The wire's `source` vocabulary, spelled the way the host spells it.
+ *
+ * `ChatSlashSources` (`Comuki.Modules.Chat.Application.Slash`) is the
+ * authority and it names two: a graph-native built-in is **`builtin`** and a
+ * command that came out of the control plane's `chat-commands/` pack is
+ * **`control-plane`**. This table used to read `built_in` / `client`, which
+ * the host has never sent — so every command came back with
+ * `origin: undefined` and, because the same two literals decided the scope
+ * and the project, with the source label sitting in `projectId`.
+ *
+ * kubb types `source` as a bare `string`, so nothing in the type system keeps
+ * this honest. The constants are here so the next drift is visible in one
+ * place rather than spread over three ternaries.
+ */
+const WIRE_COMMAND_SOURCE_BUILTIN = "builtin"
+const WIRE_COMMAND_SOURCE_CONTROL_PLANE = "control-plane"
+
 const WIRE_TO_DOMAIN_COMMAND_ORIGIN: Record<
-  ChatSlashCommand["source"],
-  SlashCommand["origin"]
+  string,
+  SlashCommand["origin"] | undefined
 > = {
-  built_in: "built-in",
-  client: "client",
+  [WIRE_COMMAND_SOURCE_BUILTIN]: "built-in",
+  [WIRE_COMMAND_SOURCE_CONTROL_PLANE]: "client",
 }
+
+/**
+ * What a source this bundle has never heard of becomes.
+ *
+ * `client`, and never `undefined`: `origin` is required on `SlashCommand` and
+ * a menu row that carries none is the defect this table just had. `client`
+ * rather than `built-in` because the platform's built-in set ships *inside*
+ * this bundle (`model/commands.ts`), so a label this build does not
+ * recognise did not come from it — claiming `built-in` would be the
+ * dashboard vouching for provenance it cannot check, and the menu marks a
+ * client command precisely so an operator can tell the two apart.
+ */
+const UNKNOWN_COMMAND_ORIGIN: SlashCommand["origin"] = "client"
 
 export function chatSlashCommandToDomainCommand(
   command: ChatSlashCommand
 ): SlashCommand {
+  const builtIn = command.source === WIRE_COMMAND_SOURCE_BUILTIN
   return {
     name: command.name,
     description: command.description,
-    origin: WIRE_TO_DOMAIN_COMMAND_ORIGIN[command.source],
-    // The dashboard's seed treats every client command as `implied`: a custom
-    // command exists *because* one project's repository declared it, so the
-    // project is already named by the command itself. The wire's `source` is
-    // the same vocabulary; the scope is therefore `implied` for client
-    // commands and `none` for built-ins.
-    scope:
-      command.source === "built_in"
-        ? ("none" as CommandScope)
-        : ("implied" as CommandScope),
+    origin:
+      WIRE_TO_DOMAIN_COMMAND_ORIGIN[command.source] ?? UNKNOWN_COMMAND_ORIGIN,
+    // The dashboard's seed treats every non-built-in command as `implied`: a
+    // declared command exists *because* something outside the graph declared
+    // it, so what it acts on is already named by the command itself. The
+    // wire's `source` is the same vocabulary; the scope is therefore
+    // `implied` for those and `none` for built-ins.
+    scope: builtIn ? ("none" as CommandScope) : ("implied" as CommandScope),
     // The host does not yet send the act's permission; the chat console's
     // permission gate keys off `permission` to filter the menu, so without
     // it every command is "no permission required". The screen renders an
     // unsorted menu rather than refusing commands when this is missing —
     // a follow-up wire shape can carry it.
     permission: undefined,
-    // The host's `source` is the dashboard's `projectId` for client commands;
-    // built-in commands arrive with `source: "built_in"`, and the dashboard's
-    // domain reads `projectId` as a value, never an enum, so the literal
-    // string is the honest default.
-    projectId:
-      command.source === "built_in" ? undefined : command.source,
+    // Neither source the host sends names a project: `builtin` is the graph's
+    // own command and `control-plane` is a document in the swarm's command
+    // pack. This used to hold the source label itself, which
+    // `availableCommands` then read as a project id — and filtered every wire
+    // command straight back out of the menu. Nothing on `ChatSlashCommand`
+    // names a project today, so the honest answer is none.
+    projectId: undefined,
   }
 }
 

@@ -89,7 +89,7 @@ afterEach(() => {
 
 async function fillIn(identity: string, password: string) {
   const user = userEvent.setup()
-  await user.type(screen.getByLabelText("Email or username"), identity)
+  await user.type(screen.getByLabelText("Email"), identity)
   await user.type(screen.getByLabelText("Password"), password)
   return user
 }
@@ -156,7 +156,7 @@ describe("the three landings", () => {
     setup.useLoginMutation.mockReturnValue(buildLoginMock())
     const { rerender } = render(<LoginPage />, { wrapper: withQuery })
     const fields = () => [
-      screen.getByLabelText("Email or username"),
+      screen.getByLabelText("Email"),
       screen.getByLabelText("Password"),
       screen.getByRole("button", { name: "Sign in" }),
     ]
@@ -177,7 +177,7 @@ describe("the local form", () => {
     const password = screen.getByLabelText("Password")
     expect(password.getAttribute("type")).toBe("password")
     expect(password.getAttribute("autocomplete")).toBe("current-password")
-    expect(screen.getByLabelText("Email or username").getAttribute("autocomplete")).toBe(
+    expect(screen.getByLabelText("Email").getAttribute("autocomplete")).toBe(
       "username"
     )
   })

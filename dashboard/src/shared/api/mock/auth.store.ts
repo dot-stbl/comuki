@@ -44,7 +44,7 @@ export type SignInResult =
   | { ok: false; message: string }
 
 export interface MockCredentials {
-  /** Email or username — the field accepts either. */
+  /** The identity box's contents — the mock accepts any non-empty string. */
   identity: string
   password: string
 }

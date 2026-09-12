@@ -60,9 +60,9 @@ afterEach(() => {
  */
 function buildRouter(initial: string, chrome?: ReactNode) {
   const rootRoute = createRootRoute({
-    beforeLoad: ({ location }) => {
-      guardSession(location)
-    },
+    // Returning the promise (not a block that drops it) — the guard is
+    // async in real mode, and a dropped promise would be a dropped redirect.
+    beforeLoad: ({ location }) => guardSession(location),
     component: () => (
       <>
         {chrome}

@@ -26,9 +26,9 @@ import {
  *   `GET /api/v1/auth/oidc/providers` lands on the host.
  *
  * `endedBy` is `null` in real mode: the cookie carries no record of why
- * the last session ended, and the only consumer that needed it
- * (`guardSession`) still reads the mock store directly — a separate
- * concern from this slice.
+ * the last session ended. The consumer that needed it (`guardSession`)
+ * asks the `me` query directly in real mode — this hook is the render-side
+ * view of the same cache, not the gate.
  */
 export function useAuthState(): MockAuthState {
   const mockState = useSyncExternalStore(

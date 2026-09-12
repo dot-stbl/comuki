@@ -1,21 +1,42 @@
 import type { ReactNode } from "react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "sonner"
 
 import { ThemeProvider } from "@/app/theme-provider"
+import { queryClient, wireUnauthorizedRedirect } from "@/app/query-client"
+import { router } from "@/app/router"
 import { useAuthState } from "@/domains/auth"
 import { PROJECTS_SEED } from "@/shared/api/mock"
 import { SIGNED_OUT_USER } from "@/shared/api/mock/auth.store"
 import { SessionProvider } from "@/shared/session"
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 1,
-      refetchOnWindowFocus: false,
+/**
+ * The mid-session 401 exit: any query that comes back 401 in real mode ends
+ * the visit here, not on the screen that happened to be mounted.
+ *
+ * The session is already dead — no logout call (there is no cookie left to
+ * revoke and the API would 401 that too). Clear the cache so nothing holds
+ * a half-signed-in snapshot, then hand the operator to the sign-in screen
+ * with the path they were on, so signing in puts them back. Already on
+ * `/login` the watcher stands down: the screen's own `me` probe 401s there
+ * by design, and redirecting would be a loop.
+ */
+wireUnauthorizedRedirect(() => {
+  const { pathname, href } = router.state.location
+  if (pathname === "/login") {
+    return
+  }
+
+  queryClient.clear()
+  void router.navigate({
+    to: "/login",
+    search: {
+      reason: "expired",
+      // The board is the default landing anyway — see the guard's take.
+      ...(href === "/" ? {} : { redirect: href }),
     },
-  },
+    replace: true,
+  })
 })
 
 export interface AppProvidersProps {

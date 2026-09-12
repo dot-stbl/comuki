@@ -34,14 +34,28 @@ describe("the three landings", () => {
     expect(out.notice).not.toMatch(/expired/i)
   })
 
+  // The host's OIDC callback redirects here with reason=oidc-failed&error=…
+  // when the provider round trip breaks — the fourth arrival, and the one
+  // the operator cannot diagnose from the address bar alone.
+  it("says the provider round trip failed, and offers the local form", () => {
+    const failed = landingFor("oidc-failed")
+
+    expect(failed.kind).toBe("oidc-failed")
+    expect(failed.notice).toBe("Sign-in with your provider failed")
+    expect(failed.lead).toMatch(/email and password/)
+  })
+
   it("gives each arrival its own words", () => {
     const notices = new Set(
-      [landingFor(), landingFor("expired"), landingFor("signed-out")].map(
-        (copy) => copy.lead
-      )
+      [
+        landingFor(),
+        landingFor("expired"),
+        landingFor("signed-out"),
+        landingFor("oidc-failed"),
+      ].map((copy) => copy.lead)
     )
 
-    expect(notices.size).toBe(3)
+    expect(notices.size).toBe(4)
   })
 })
 
@@ -55,6 +69,12 @@ describe("the login search", () => {
   it("drops an arrival it does not recognise, rather than inventing one", () => {
     expect(parseLoginSearch({ reason: "kicked" })).toEqual({})
     expect(parseLoginSearch({})).toEqual({})
+  })
+
+  it("keeps the OIDC failure arrival the host redirects with", () => {
+    expect(parseLoginSearch({ reason: "oidc-failed" })).toEqual({
+      reason: "oidc-failed",
+    })
   })
 
   it("keeps a search string on the return path", () => {

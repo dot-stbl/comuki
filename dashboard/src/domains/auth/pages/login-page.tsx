@@ -6,8 +6,10 @@ import { startOidcFlow } from "@/domains/auth/api/oidc-start"
 import {
   landingFor,
   signInTarget,
+  type LandingCopy,
   type LoginReason,
 } from "@/domains/auth/model/landing"
+import { loginFailureMessage } from "@/domains/auth/model/login-failure"
 import { useLoginMutation } from "@/domains/identity/api/mutations"
 import { env } from "@/shared/config/env"
 import { signInWithOidcMock } from "@/shared/api/mock/auth.store"
@@ -83,7 +85,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
       })
       land()
     } catch (error) {
-      setFailure(readFailure(error))
+      setFailure(loginFailureMessage(error))
     }
   }
 
@@ -102,7 +104,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
         await signInWithOidcMock()
         land()
       } catch (error) {
-        setFailure(readFailure(error))
+        setFailure(loginFailureMessage(error))
       }
       return
     }
@@ -159,7 +161,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
         >
           <div className={styles.field}>
             <label className={styles.label} htmlFor={identityId}>
-              Email or username
+              Email
             </label>
             <input
               className={styles.input}
@@ -169,7 +171,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
               autoComplete="username"
               autoCapitalize="none"
               spellCheck={false}
-              placeholder="you@comuki.local or your handle"
+              placeholder="you@comuki.local"
               value={identity}
               aria-invalid={failure ? true : undefined}
               aria-describedby={failure ? failureId : undefined}
@@ -262,7 +264,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
 }
 
 interface LandingProps {
-  kind: string
+  kind: LandingCopy["kind"]
   notice: string
   lead: string
   redirect?: string
@@ -271,17 +273,18 @@ interface LandingProps {
 /**
  * The sentence that distinguishes the arrivals.
  *
- * Expired gets a marked block — something happened to them and they need to
- * see it. Signed out gets the same words with the marking taken off, because a
- * departure that worked is not an incident and should not be dressed as one.
+ * Expired and a failed provider round trip get a marked block — something
+ * happened *to* them and they need to see it. Signed out gets the same words
+ * with the marking taken off, because a departure that worked is not an
+ * incident and should not be dressed as one.
  */
 function Landing({ kind, notice, lead, redirect }: LandingProps) {
-  const expired = kind === "expired"
-  const Icon = expired ? TimerOff : Check
+  const incident = kind === "expired" || kind === "oidc-failed"
+  const Icon = kind === "expired" ? TimerOff : kind === "oidc-failed" ? CircleAlert : Check
 
   return (
     <div
-      className={cn(styles.notice, !expired && styles.quiet)}
+      className={cn(styles.notice, !incident && styles.quiet)}
       data-test="login-landing"
       data-landing={kind}
     >
@@ -297,17 +300,4 @@ function Landing({ kind, notice, lead, redirect }: LandingProps) {
       </span>
     </div>
   )
-}
-
-/**
- * Surface the kubb auth error / mock rejection as a string the screen can
- * show. The mutation throws plain `Error` in the mock branch and an
- * `Error`-shaped kubb boundary error in the real branch — either way the
- * `message` is what the operator reads.
- */
-function readFailure(error: unknown): string {
-  if (error instanceof Error && error.message.length > 0) {
-    return error.message
-  }
-  return "Sign-in failed. Check the address and try again."
 }

@@ -1,0 +1,38 @@
+/* The run evidence strip.
+ *
+ * Three things this owns: a label, the strip of thumbnails, and a way
+ * out for the operator who wants to load the body in a new tab. The
+ * label is in the micro voice because the strip is one of several
+ * labelled regions on the run page (brief, plan, inspectors), and the
+ * same voice across them is what lets the eye scan the page. */
+
+.strip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4) var(--s6);
+  border-top: var(--hairline) solid var(--rule);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+.linkLine {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.link {
+  color: var(--muted-foreground);
+  text-decoration: underline;
+  text-underline-offset: var(--s1);
+}

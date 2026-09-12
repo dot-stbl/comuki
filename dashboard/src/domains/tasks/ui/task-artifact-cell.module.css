@@ -1,0 +1,15 @@
+/* The empty slot on rows without an artifact.
+ *
+ * The cell declares its own column width via the table's `meta.width`;
+ * a placeholder slot the same width keeps the column from collapsing
+ * on rows that have nothing to show — the rest of the table stops
+ * shifting because the artifact column became short. The em-dash is
+ * the same one the project column uses to say "the row reaches
+ * further than this shift does"; reusing it is the same rule. */
+
+.empty {
+  display: inline-block;
+  width: var(--icon-sm);
+  text-align: center;
+  color: var(--text-faint);
+}

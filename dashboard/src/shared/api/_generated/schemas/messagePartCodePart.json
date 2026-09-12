@@ -1,0 +1,15 @@
+{
+  "required": ["language", "source"],
+  "properties": {
+    "kind": { "enum": ["code"], "type": "string" },
+    "language": { "type": "string" },
+    "source": { "type": "string" },
+    "path": { "type": ["null", "string"] },
+    "startLine": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "format": "int32"
+    }
+  },
+  "x-readme-ref-name": "MessagePartCodePart"
+}

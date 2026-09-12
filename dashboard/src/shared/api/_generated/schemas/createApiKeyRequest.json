@@ -4,7 +4,8 @@
   "properties": {
     "userId": { "type": "string", "format": "uuid" },
     "label": { "type": "string" },
-    "expiresAt": { "type": ["null", "string"], "format": "date-time" }
+    "expiresAt": { "type": ["null", "string"], "format": "date-time" },
+    "tenantProjectId": { "type": ["null", "string"], "format": "uuid" }
   },
   "x-readme-ref-name": "CreateApiKeyRequest"
 }

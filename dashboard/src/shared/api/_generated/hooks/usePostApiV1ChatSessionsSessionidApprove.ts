@@ -19,6 +19,7 @@ import type {
   PostApiV1ChatSessionsSessionidApprovePathParams,
   PostApiV1ChatSessionsSessionidApprove404,
   PostApiV1ChatSessionsSessionidApprove409,
+  PostApiV1ChatSessionsSessionidApprove503,
 } from "../types/PostApiV1ChatSessionsSessionidApprove"
 import { mutationOptions, useMutation } from "@tanstack/react-query"
 import { postApiV1ChatSessionsSessionidApprove } from "../clients/postApiV1ChatSessionsSessionidApprove"
@@ -43,6 +44,7 @@ export function postApiV1ChatSessionsSessionidApproveMutationOptions<
     ResponseErrorConfig<
       | PostApiV1ChatSessionsSessionidApprove404
       | PostApiV1ChatSessionsSessionidApprove409
+      | PostApiV1ChatSessionsSessionidApprove503
     >,
     {
       sessionId: PostApiV1ChatSessionsSessionidApprovePathParams["sessionId"]
@@ -67,6 +69,7 @@ export function usePostApiV1ChatSessionsSessionidApprove<TContext>(
       ResponseErrorConfig<
         | PostApiV1ChatSessionsSessionidApprove404
         | PostApiV1ChatSessionsSessionidApprove409
+        | PostApiV1ChatSessionsSessionidApprove503
       >,
       {
         sessionId: PostApiV1ChatSessionsSessionidApprovePathParams["sessionId"]
@@ -92,6 +95,7 @@ export function usePostApiV1ChatSessionsSessionidApprove<TContext>(
     ResponseErrorConfig<
       | PostApiV1ChatSessionsSessionidApprove404
       | PostApiV1ChatSessionsSessionidApprove409
+      | PostApiV1ChatSessionsSessionidApprove503
     >,
     {
       sessionId: PostApiV1ChatSessionsSessionidApprovePathParams["sessionId"]
@@ -105,6 +109,7 @@ export function usePostApiV1ChatSessionsSessionidApprove<TContext>(
     ResponseErrorConfig<
       | PostApiV1ChatSessionsSessionidApprove404
       | PostApiV1ChatSessionsSessionidApprove409
+      | PostApiV1ChatSessionsSessionidApprove503
     >,
     {
       sessionId: PostApiV1ChatSessionsSessionidApprovePathParams["sessionId"]
@@ -123,6 +128,7 @@ export function usePostApiV1ChatSessionsSessionidApprove<TContext>(
     ResponseErrorConfig<
       | PostApiV1ChatSessionsSessionidApprove404
       | PostApiV1ChatSessionsSessionidApprove409
+      | PostApiV1ChatSessionsSessionidApprove503
     >,
     {
       sessionId: PostApiV1ChatSessionsSessionidApprovePathParams["sessionId"]

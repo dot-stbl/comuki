@@ -33,6 +33,13 @@ export const postApiV1ChatSessionsSessionidApprove409Schema = z.lazy(
   () => problemDetailsSchema
 )
 
+/**
+ * @description Service Unavailable
+ */
+export const postApiV1ChatSessionsSessionidApprove503Schema = z.lazy(
+  () => problemDetailsSchema
+)
+
 export const postApiV1ChatSessionsSessionidApproveMutationRequestSchema =
   z.lazy(() => chatApproveRequestSchema)
 

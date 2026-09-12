@@ -66,7 +66,7 @@ export interface ToolCall {
  * purpose; nothing else here has to change to make room for them.
  * ----------------------------------------------------------------------- */
 
-/** The seven things a turn can be made of today. `question` and `decision` are P2. */
+/** The eight things a turn can be made of today. `question` and `decision` are P2. */
 export type PartKind =
   | "text"
   | "code"
@@ -75,6 +75,7 @@ export type PartKind =
   | "tool"
   | "handoff"
   | "plan"
+  | "artifact-ref"
 
 /** Prose. Markdown, as `ChatMessage.cs` has always claimed it was. */
 export interface TextPart {
@@ -180,6 +181,25 @@ export interface PlanPart {
   edges: PlanEdge[]
 }
 
+/**
+ * A reference to one or more visual artifacts the turn published
+ * (issue #51 slice 3). The card renders a button per id; clicking opens
+ * the same `EvidencePane` the run and ticket surfaces use, so an
+ * operator who finds a screenshot in chat lands at the same modal.
+ *
+ * The wire carries ids only — never bytes, never a data URL — so a
+ * blob-heavy turn does not bloat the journal and the renderer does
+ * not become the source of truth for what an artifact looks like.
+ * Filtering on `projectId` lives at the calling card, not the part:
+ * the parts come from the journal and the project scope is the page's
+ * business, not the turn's.
+ */
+export interface ArtifactRefPart {
+  kind: "artifact-ref"
+  /** One or more artifact ids the turn is referencing. */
+  artifactIds: string[]
+}
+
 export type MessagePart =
   | TextPart
   | CodePart
@@ -188,6 +208,7 @@ export type MessagePart =
   | ToolPart
   | HandoffPart
   | PlanPart
+  | ArtifactRefPart
 
 /**
  * The act a proposal performs.
@@ -266,6 +287,17 @@ export interface ChatSession {
   id: string
   title: string
   age: string
+  /**
+   * Project scope the session talks about, when the host knows one.
+   *
+   * `null` until `/init` has run (issue #51 §: "A brain mockup in chat
+   * has a session and no run"). The chat console threads this through
+   * to part renderers so an `artifact-ref` card can ask the visual-
+   * artifact list in the right project — `EVBucketDownloadVisual` is a
+   * project-scoped endpoint, and a card without a project id has
+   * nothing to ask.
+   */
+  projectId: string | null
   messages: ChatMessage[]
 }
 

@@ -1,0 +1,53 @@
+/* The viewer — a label + a row of thumbnails + the modal it opens. */
+
+.viewer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+.label {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.strip {
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+
+.inline {
+  flex-wrap: nowrap;
+  gap: var(--s2);
+  overflow-x: auto;
+  padding-bottom: var(--s1);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+}
+
+.emptyLabel {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+.emptyMessage {
+  font-size: var(--t-sm);
+  color: var(--muted-foreground);
+}

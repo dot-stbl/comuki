@@ -18,9 +18,9 @@ interface ThrownRedirect {
 }
 
 /** `redirect()` builds a value to throw, so the guard's answer is its throw. */
-function bounce(location: GuardedLocation): ThrownRedirect | null {
+async function bounce(location: GuardedLocation): Promise<ThrownRedirect | null> {
   try {
-    guardSession(location)
+    await guardSession(location)
     return null
   } catch (thrown) {
     return thrown as ThrownRedirect
@@ -34,62 +34,62 @@ afterEach(() => {
 })
 
 describe("the session guard", () => {
-  it("lets a signed-in shift through", () => {
+  it("lets a signed-in shift through", async () => {
     resetMockAuth()
 
-    expect(bounce(runs)).toBeNull()
+    expect(await bounce(runs)).toBeNull()
   })
 
-  it("never guards the screen that hands out sessions", () => {
+  it("never guards the screen that hands out sessions", async () => {
     clearMockAuth()
 
-    expect(bounce({ pathname: "/login", href: "/login" })).toBeNull()
+    expect(await bounce({ pathname: "/login", href: "/login" })).toBeNull()
     // Trailing slash is the same screen, and a guard that bounced it would
     // bounce it to itself for ever.
-    expect(bounce({ pathname: "/login/", href: "/login/" })).toBeNull()
+    expect(await bounce({ pathname: "/login/", href: "/login/" })).toBeNull()
   })
 
-  it("sends an unidentified visitor to the sign-in screen", () => {
+  it("sends an unidentified visitor to the sign-in screen", async () => {
     clearMockAuth()
 
-    expect(bounce(runs)?.options.to).toBe("/login")
+    expect((await bounce(runs))?.options.to).toBe("/login")
   })
 
   // The whole point of the redirect param: they asked for a screen, and after
   // signing in they get that screen rather than the front door.
-  it("carries the path they wanted, search string and all", () => {
+  it("carries the path they wanted, search string and all", async () => {
     clearMockAuth()
 
-    expect(bounce(runs)?.options.search?.redirect).toBe("/runs?status=waiting")
+    expect((await bounce(runs))?.options.search?.redirect).toBe("/runs?status=waiting")
   })
 
-  it("leaves the board out of the address bar, since it is the default anyway", () => {
+  it("leaves the board out of the address bar, since it is the default anyway", async () => {
     clearMockAuth()
 
-    expect(bounce({ pathname: "/", href: "/" })?.options.search).toEqual({})
+    expect((await bounce({ pathname: "/", href: "/" }))?.options.search).toEqual({})
   })
 
-  it("replaces rather than pushes, so back does not bounce again", () => {
+  it("replaces rather than pushes, so back does not bounce again", async () => {
     clearMockAuth()
 
-    expect(bounce(runs)?.options.replace).toBe(true)
+    expect((await bounce(runs))?.options.replace).toBe(true)
   })
 
-  it("says the session expired when it did", () => {
+  it("says the session expired when it did", async () => {
     expireMockSession()
 
-    expect(bounce(runs)?.options.search?.reason).toBe("expired")
+    expect((await bounce(runs))?.options.search?.reason).toBe("expired")
   })
 
-  it("says they signed out when they chose to", () => {
+  it("says they signed out when they chose to", async () => {
     signOutMock()
 
-    expect(bounce(runs)?.options.search?.reason).toBe("signed-out")
+    expect((await bounce(runs))?.options.search?.reason).toBe("signed-out")
   })
 
-  it("explains nothing to someone who never had a session", () => {
+  it("explains nothing to someone who never had a session", async () => {
     clearMockAuth()
 
-    expect(bounce(runs)?.options.search?.reason).toBeUndefined()
+    expect((await bounce(runs))?.options.search?.reason).toBeUndefined()
   })
 })

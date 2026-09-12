@@ -9,4 +9,5 @@ export {
   type LoginReason,
   type LoginSearch,
 } from "./model/landing"
+export { loginFailureMessage } from "./model/login-failure"
 export { LoginPage, type LoginPageProps } from "./pages/login-page"

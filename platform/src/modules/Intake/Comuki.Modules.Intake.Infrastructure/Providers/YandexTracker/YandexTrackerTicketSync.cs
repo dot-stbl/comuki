@@ -2,6 +2,7 @@ using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Secrets;
 
 namespace Comuki.Modules.Intake.Infrastructure.Providers.YandexTracker;
@@ -31,7 +32,7 @@ public sealed class YandexTrackerTicketSync(
 
         await api.PostCommentAsync(transition.ExternalId, new TrackerCommentBody(TrackerSyncComments.Of(transition)), cancellationToken);
 
-        if (transition.RunStatus == "Succeeded")
+        if (transition.RunStatus == RunStatuses.Succeeded)
         {
             await api.TransitionAsync(transition.ExternalId, settings.ResolvedTransition, cancellationToken);
         }

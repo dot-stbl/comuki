@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { inboxQueryKey } from "@/domains/inbox/api/queries"
 import { intakeTicketViewsToTasks, toTask } from "@/domains/tasks/api/mappers"
 import type { CreateTaskInput, Task } from "@/domains/tasks/model/types"
 import { postApiV1InboxClaim } from "@/shared/api/_generated/clients/postApiV1InboxClaim"
@@ -44,9 +45,12 @@ async function listTasks(): Promise<Task[]> {
 /**
  * File a manual ticket into a project's intake.
  *
- * Mock-first: the seed store appends and returns the full queue. Real mode
- * posts to `POST /api/v1/tickets` (the host's native intake) and re-reads
- * the inbox so the screen picks up the freshly-queued ticket alongside
+ * Mock-first: the seed store appends and returns the full queue, which the
+ * mutation's `onSuccess` writes straight into the cache (the only way a
+ * freshly created task sticks across refetches in mock mode). Real mode
+ * posts to `POST /api/v1/tickets` (the host's native intake) and returns
+ * nothing — `onSuccess` invalidates the tasks key and the inbox domain's
+ * list key, and the refetch picks up the freshly-queued ticket alongside
  * everything else. The form's `source` field is dashboard-only — the wire
  * stamps `native` server-side and the dashboard renders that as `native`
  * in the column.
@@ -55,7 +59,7 @@ async function listTasks(): Promise<Task[]> {
  * optional `body`, which is the same text the operator typed into the
  * brief field on the form.
  */
-async function createTask(input: CreateTaskInput): Promise<Task[]> {
+async function createTask(input: CreateTaskInput): Promise<Task[] | undefined> {
   if (env.useMock) {
     const id = `m-${Math.floor(3042 + Math.random() * 900)}`
     const next: Task = {
@@ -81,10 +85,10 @@ async function createTask(input: CreateTaskInput): Promise<Task[]> {
     // is omitted from the body rather than sent as the literal `null`.
     body: input.brief ?? undefined,
   })
-  return listTasks()
+  return undefined
 }
 
-async function dispatchTask(id: string): Promise<Task[]> {
+async function dispatchTask(id: string): Promise<Task[] | undefined> {
   if (env.useMock) {
     mockQueue = ensureQueue().map((task) =>
       task.id === id ? { ...task, status: "planning" } : task
@@ -93,10 +97,11 @@ async function dispatchTask(id: string): Promise<Task[]> {
   }
   // `POST /api/v1/inbox/claim` launches the ticket's run (the host returns
   // the ticket in `Claimed` status — the run id rides on the same view).
-  // The dashboard's `Task.status` then moves from `"new"` to `"queued"` on
-  // the next refetch via the mapper's `Claimed → queued` mapping.
+  // The mutation returns nothing; the invalidation in `onSuccess` refetches
+  // the inbox, and the claimed ticket leaves the pending list (the host's
+  // `ListPendingAsync` filters it out) — the honest reading of a claim.
   await postApiV1InboxClaim({ ticketId: id })
-  return listTasks()
+  return undefined
 }
 
 export function useTasksQuery() {
@@ -106,14 +111,32 @@ export function useTasksQuery() {
   })
 }
 
+/**
+ * How both write hooks settle the cache: mock mode hands the screen the
+ * seed queue the mutation just returned (setQueryData); real mode
+ * invalidates — the tasks key this screen reads, and the inbox domain's
+ * list key so any reader of the shared inbox layer agrees with the host
+ * after the write. The same discipline the sources domain applies.
+ */
+function settleTasksCache(queryClient: ReturnType<typeof useQueryClient>) {
+  return async (next: Task[] | undefined) => {
+    if (next) {
+      queryClient.setQueryData(tasksQueryKey, next)
+      return
+    }
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: tasksQueryKey }),
+      queryClient.invalidateQueries({ queryKey: inboxQueryKey }),
+    ])
+  }
+}
+
 export function useCreateTaskMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: createTask,
-    onSuccess: (next) => {
-      queryClient.setQueryData(tasksQueryKey, next)
-    },
+    onSuccess: settleTasksCache(queryClient),
   })
 }
 
@@ -122,8 +145,6 @@ export function useDispatchTaskMutation() {
 
   return useMutation({
     mutationFn: (id: string) => dispatchTask(id),
-    onSuccess: (next) => {
-      queryClient.setQueryData(tasksQueryKey, next)
-    },
+    onSuccess: settleTasksCache(queryClient),
   })
 }

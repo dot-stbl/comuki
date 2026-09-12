@@ -157,7 +157,7 @@ public sealed class HostRealtimeServer : IAsyncLifetime
     }
 
     /// <summary>The hub URL of the booted host.</summary>
-    public Uri HubAddress => new(baseAddress, "hubs/runs");
+    public Uri HubAddress => new(baseAddress, "ws/runs");
 
     /// <summary>The host's DI root — tests need it for fixtures that want to append journal rows or seed data through the real DbContext.</summary>
     public IServiceProvider Services => application.Services;

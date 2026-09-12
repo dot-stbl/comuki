@@ -12,14 +12,16 @@ namespace Comuki.Modules.Identity.Infrastructure.Security.Cookies;
 /// Default <see cref="IUserAuthenticationService"/>: local login through
 /// the pure <see cref="LoginHandler"/>, then a signed-in cookie carrying
 /// the account id and security stamp. The stamp (tokens_version) is what
-/// makes a password change or disable kill every outstanding session.
+/// makes a password change, disable or logout kill every outstanding session.
 /// </summary>
 /// <param name="loginHandler"></param>
 /// <param name="userStore"></param>
+/// <param name="clock"></param>
 /// <param name="httpContextAccessor"></param>
 public sealed class UserAuthenticationService(
     LoginHandler loginHandler,
     IUserAccountStore userStore,
+    TimeProvider clock,
     IHttpContextAccessor httpContextAccessor) : IUserAuthenticationService
 {
     /// <inheritdoc />
@@ -44,6 +46,23 @@ public sealed class UserAuthenticationService(
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
         var httpContext = CookieHttpContext.Require(httpContextAccessor);
+
+        // Server-side invalidation: expiring the cookie in this response is
+        // not enough — a copy of the old cookie stays valid until it expires.
+        // Bumping tokens_version makes the outstanding ticket fail the
+        // security-stamp recheck (ValidateCookieAsync) on its next request.
+        // Only cookie principals carry a session to kill; an API-key bearer
+        // has no cookie session (and API keys are unaffected by the stamp).
+        if (httpContext.User.Identity?.AuthenticationType == AuthSchemes.Cookie
+            && httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value is { } userIdText
+            && Guid.TryParse(userIdText, out var rawUserId))
+        {
+            if (await userStore.FindByIdAsync(new UserId(rawUserId), cancellationToken) is { } account)
+            {
+                account.BumpTokensVersion(clock.GetUtcNow());
+                await userStore.SaveAsync(account, cancellationToken);
+            }
+        }
 
         await httpContext.SignOutAsync(AuthSchemes.Cookie);
     }

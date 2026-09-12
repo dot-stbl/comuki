@@ -9,7 +9,7 @@
 #
 # Build context = repo root:
 #   docker build -f deploy/compose/docker/host.Dockerfile \
-#     --build-arg VITE_API_BASE_URL=http://localhost:17173 \
+#     --build-arg VITE_API_BASE_URL=http://localhost:17172 \
 #     -t comuki:local .
 #
 # .NET 10, non-root `app` user (mcr aspnet default, UID 1654).
@@ -18,7 +18,9 @@
 # ---------- Stage 0: build the dashboard SPA ----------
 FROM docker.io/library/node:22-alpine AS spa
 
-ARG VITE_API_BASE_URL=http://localhost:17173
+# Default is the host's compose HTTP mapping (port pool: 17172) — NOT the
+# dashboard dev port (17173), which is the SPA's own origin.
+ARG VITE_API_BASE_URL=http://localhost:17172
 ARG VITE_DEPLOY_ENV=production
 
 WORKDIR /src

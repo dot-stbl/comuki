@@ -119,7 +119,7 @@ file static class UploadArtifactParsingHelpers
 {
     /// <summary>
     /// Reads the multipart body and returns the parsed upload, or a
-    /// <see cref="Failure"/> with the appropriate 400 ProblemDetails
+    /// <see cref="ParsedMultipartFile.Failure"/> with the appropriate 400 ProblemDetails
     /// response. The stream is an <see cref="IFormFile.OpenReadStream"/>
     /// over ASP.NET's buffered body — the caller passes it through to
     /// the store, which streams it to MinIO.

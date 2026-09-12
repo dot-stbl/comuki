@@ -13,6 +13,7 @@ namespace Comuki.Host.Runs;
 /// internals.
 /// </summary>
 /// <param name="db">Orchestration context of the current scope.</param>
+/// <param name="clock">Time source passed through to the filter DSL for relative-date resolution.</param>
 public sealed class RunsListHandler(OrchestrationDbContext db, TimeProvider clock)
 {
     /// <summary>

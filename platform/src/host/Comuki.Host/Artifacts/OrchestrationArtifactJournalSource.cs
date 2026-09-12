@@ -17,6 +17,7 @@ namespace Comuki.Host.Artifacts;
 /// artifacts module never reaches into the engine schema.
 /// </summary>
 /// <param name="db">Scoped orchestration DbContext.</param>
+/// <param name="scopeAccessor">Ambient scope — declares system scope for the journal reads.</param>
 public sealed class OrchestrationArtifactJournalSource(
     OrchestrationDbContext db,
     ISubjectScopeAccessor scopeAccessor) : IRunArtifactJournalSource

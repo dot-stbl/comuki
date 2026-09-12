@@ -17,7 +17,7 @@ namespace Comuki.Host.Runs;
 /// journal row in the same transaction. Terminal runs (<c>Succeeded</c>,
 /// <c>Cancelled</c>) raise <see cref="RunDecisionConflictException"/> — the
 /// caller asked to cancel what is already done. An optional
-/// <paramref name="reason"/> is carried as a <c>reason</c> field in the
+/// <c>reason</c> is carried as a <c>reason</c> field in the
 /// <c>run.status_changed</c> jsonb payload so the operator's note survives
 /// the run timeline.
 /// </summary>

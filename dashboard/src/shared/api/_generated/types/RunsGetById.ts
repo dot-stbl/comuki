@@ -8,6 +8,7 @@ import type { RunDetail } from "./RunDetail"
 
 export type RunsGetByIdPathParams = {
   /**
+   * @description Run to read.
    * @type string, uuid
    */
   runId: string

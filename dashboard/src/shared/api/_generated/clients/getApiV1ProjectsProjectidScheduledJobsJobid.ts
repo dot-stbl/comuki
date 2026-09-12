@@ -27,6 +27,7 @@ function getGetApiV1ProjectsProjectidScheduledJobsJobidUrl(
 }
 
 /**
+ * @summary Reads one scheduled job.
  * {@link /api/v1/projects/:projectId/scheduled-jobs/:jobId}
  */
 export async function getApiV1ProjectsProjectidScheduledJobsJobid(

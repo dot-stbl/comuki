@@ -2,8 +2,15 @@
   "required": ["provider", "subjectId"],
   "type": "object",
   "properties": {
-    "provider": { "type": "string" },
-    "subjectId": { "type": "string" }
+    "provider": {
+      "type": "string",
+      "description": "Provider key (matches an entry in `auth:oidc:providers`)."
+    },
+    "subjectId": {
+      "type": "string",
+      "description": "The external `sub` claim."
+    }
   },
+  "description": "OIDC link body (POST /api/v1/users/{userId}/oidc-link).",
   "x-readme-ref-name": "LinkOidcRequest"
 }

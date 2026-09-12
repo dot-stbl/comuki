@@ -20,6 +20,7 @@ import type {
   PostApiV1ChatSessionsSessionidMessages400,
   PostApiV1ChatSessionsSessionidMessages404,
   PostApiV1ChatSessionsSessionidMessages409,
+  PostApiV1ChatSessionsSessionidMessages503,
 } from "../types/PostApiV1ChatSessionsSessionidMessages"
 import { mutationOptions, useMutation } from "@tanstack/react-query"
 import { postApiV1ChatSessionsSessionidMessages } from "../clients/postApiV1ChatSessionsSessionidMessages"
@@ -45,6 +46,7 @@ export function postApiV1ChatSessionsSessionidMessagesMutationOptions<
       | PostApiV1ChatSessionsSessionidMessages400
       | PostApiV1ChatSessionsSessionidMessages404
       | PostApiV1ChatSessionsSessionidMessages409
+      | PostApiV1ChatSessionsSessionidMessages503
     >,
     {
       sessionId: PostApiV1ChatSessionsSessionidMessagesPathParams["sessionId"]
@@ -60,6 +62,7 @@ export function postApiV1ChatSessionsSessionidMessagesMutationOptions<
 }
 
 /**
+ * @summary Posts one user message and runs the graph turn.
  * {@link /api/v1/chat/sessions/:sessionId/messages}
  */
 export function usePostApiV1ChatSessionsSessionidMessages<TContext>(
@@ -70,6 +73,7 @@ export function usePostApiV1ChatSessionsSessionidMessages<TContext>(
         | PostApiV1ChatSessionsSessionidMessages400
         | PostApiV1ChatSessionsSessionidMessages404
         | PostApiV1ChatSessionsSessionidMessages409
+        | PostApiV1ChatSessionsSessionidMessages503
       >,
       {
         sessionId: PostApiV1ChatSessionsSessionidMessagesPathParams["sessionId"]
@@ -96,6 +100,7 @@ export function usePostApiV1ChatSessionsSessionidMessages<TContext>(
       | PostApiV1ChatSessionsSessionidMessages400
       | PostApiV1ChatSessionsSessionidMessages404
       | PostApiV1ChatSessionsSessionidMessages409
+      | PostApiV1ChatSessionsSessionidMessages503
     >,
     {
       sessionId: PostApiV1ChatSessionsSessionidMessagesPathParams["sessionId"]
@@ -110,6 +115,7 @@ export function usePostApiV1ChatSessionsSessionidMessages<TContext>(
       | PostApiV1ChatSessionsSessionidMessages400
       | PostApiV1ChatSessionsSessionidMessages404
       | PostApiV1ChatSessionsSessionidMessages409
+      | PostApiV1ChatSessionsSessionidMessages503
     >,
     {
       sessionId: PostApiV1ChatSessionsSessionidMessagesPathParams["sessionId"]
@@ -129,6 +135,7 @@ export function usePostApiV1ChatSessionsSessionidMessages<TContext>(
       | PostApiV1ChatSessionsSessionidMessages400
       | PostApiV1ChatSessionsSessionidMessages404
       | PostApiV1ChatSessionsSessionidMessages409
+      | PostApiV1ChatSessionsSessionidMessages503
     >,
     {
       sessionId: PostApiV1ChatSessionsSessionidMessagesPathParams["sessionId"]

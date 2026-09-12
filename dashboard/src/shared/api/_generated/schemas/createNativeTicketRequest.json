@@ -2,11 +2,19 @@
   "required": ["projectId", "title"],
   "type": "object",
   "properties": {
-    "projectId": { "type": "string", "format": "uuid" },
-    "title": { "type": "string" },
-    "body": { "type": "string" },
-    "externalId": { "type": ["null", "string"] },
-    "author": { "type": ["null", "string"] }
+    "projectId": {
+      "type": "string",
+      "description": "Project the ticket (and its run) belongs to.",
+      "format": "uuid"
+    },
+    "title": { "type": "string", "description": "Ticket title." },
+    "body": { "type": "string", "description": "Ticket body." },
+    "externalId": {
+      "type": ["null", "string"],
+      "description": "Caller-supplied dedupe id; generated when empty."
+    },
+    "author": { "type": ["null", "string"], "description": "Author label." }
   },
+  "description": "Native ticket creation body (POST /api/v1/tickets).",
   "x-readme-ref-name": "CreateNativeTicketRequest"
 }

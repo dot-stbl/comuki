@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Strong-typed identifier of a role assignment row. UUIDv7 like every\r\nIdentity entity id.
+ */
 export type RoleAssignmentId = {
   /**
    * @type string | undefined, uuid

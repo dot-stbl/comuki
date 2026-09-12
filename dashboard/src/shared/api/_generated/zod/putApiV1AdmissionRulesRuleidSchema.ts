@@ -15,9 +15,9 @@ export const putApiV1AdmissionRulesRuleidPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const putApiV1AdmissionRulesRuleid200Schema = z.lazy(
-  () => admissionRuleViewSchema
-)
+export const putApiV1AdmissionRulesRuleid200Schema = z
+  .lazy(() => admissionRuleViewSchema)
+  .describe("Read-model of an admission rule.")
 
 /**
  * @description Not Found
@@ -26,9 +26,11 @@ export const putApiV1AdmissionRulesRuleid404Schema = z.lazy(
   () => problemDetailsSchema
 )
 
-export const putApiV1AdmissionRulesRuleidMutationRequestSchema = z.lazy(
-  () => updateAdmissionRuleRequestSchema
-)
+export const putApiV1AdmissionRulesRuleidMutationRequestSchema = z
+  .lazy(() => updateAdmissionRuleRequestSchema)
+  .describe(
+    "Admission rule partial update body (PUT /api/v1/admission-rules/{id})."
+  )
 
 export const putApiV1AdmissionRulesRuleidMutationResponseSchema = z.lazy(
   () => putApiV1AdmissionRulesRuleid200Schema

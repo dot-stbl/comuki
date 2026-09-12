@@ -17,6 +17,7 @@ function getGetApiV1ChatSessionsUrl() {
 }
 
 /**
+ * @summary Lists the acting subject's recent active sessions.
  * {@link /api/v1/chat/sessions}
  */
 export async function getApiV1ChatSessions(

@@ -8,5 +8,6 @@
       "additionalProperties": { "type": "array", "items": { "type": "string" } }
     }
   },
+  "description": "Platform-wide and per-project permission keys.",
   "x-readme-ref-name": "PermissionsView"
 }

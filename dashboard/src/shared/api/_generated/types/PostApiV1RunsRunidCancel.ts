@@ -8,6 +8,7 @@ import type { ProblemDetails } from "./ProblemDetails"
 
 export type PostApiV1RunsRunidCancelPathParams = {
   /**
+   * @description Run to cancel.
    * @type string, uuid
    */
   runId: string

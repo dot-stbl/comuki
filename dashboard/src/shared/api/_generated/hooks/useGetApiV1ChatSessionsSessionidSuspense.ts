@@ -58,6 +58,7 @@ export function getApiV1ChatSessionsSessionidSuspenseQueryOptions(
 }
 
 /**
+ * @summary Reads one session of the acting subject.
  * {@link /api/v1/chat/sessions/:sessionId}
  */
 export function useGetApiV1ChatSessionsSessionidSuspense<

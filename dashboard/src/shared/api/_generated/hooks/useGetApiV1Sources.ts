@@ -48,6 +48,7 @@ export function getApiV1SourcesQueryOptions(
 }
 
 /**
+ * @summary Lists connections, optionally per project.
  * {@link /api/v1/sources}
  */
 export function useGetApiV1Sources<

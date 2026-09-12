@@ -12,7 +12,9 @@ export const getApiV1AuthOidcProviderStartPathParamsSchema = z.object({
 
 export const getApiV1AuthOidcProviderStartQueryParamsSchema = z
   .object({
-    returnTo: z.optional(z.string()),
+    returnTo: z.optional(
+      z.string().describe("Optional in-app path the operator was bounced from.")
+    ),
   })
   .optional()
 

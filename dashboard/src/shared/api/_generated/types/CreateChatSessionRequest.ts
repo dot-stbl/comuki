@@ -3,12 +3,17 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Create-session request body.
+ */
 export type CreateChatSessionRequest = {
   /**
+   * @description Optional project scope the session talks about.
    * @type null,string, uuid
    */
   projectId?: string | null
   /**
+   * @description Optional human title; defaults to a placeholder.
    * @type null,string
    */
   title?: string | null

@@ -46,6 +46,7 @@ export function postApiV1GrantsGrantidRevokeMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Revokes a role assignment (issue #36). Permission `identity:write`.
  * {@link /api/v1/grants/:grantId/revoke}
  */
 export function usePostApiV1GrantsGrantidRevoke<TContext>(

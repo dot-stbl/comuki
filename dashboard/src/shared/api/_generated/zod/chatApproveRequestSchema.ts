@@ -5,7 +5,12 @@
 
 import { z } from "zod/v4"
 
-export const chatApproveRequestSchema = z.object({
-  approved: z.boolean(),
-  reason: z.string().nullish(),
-})
+/**
+ * @description Approve-request body: resolves the pending plan interrupt.
+ */
+export const chatApproveRequestSchema = z
+  .object({
+    approved: z.boolean().describe("Approve when true, reject otherwise."),
+    reason: z.string().describe("Optional rejection reason.").nullish(),
+  })
+  .describe("Approve-request body: resolves the pending plan interrupt.")

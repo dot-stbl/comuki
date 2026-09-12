@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Platform-wide and per-project permission keys.
+ */
 export type PermissionsView = {
   /**
    * @type array

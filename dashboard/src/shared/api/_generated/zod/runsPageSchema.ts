@@ -6,11 +6,28 @@
 import { runViewSchema } from "./runViewSchema"
 import { z } from "zod/v4"
 
-export const runsPageSchema = z.object({
-  get items() {
-    return z.array(runViewSchema)
-  },
-  page: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  pageSize: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  total: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-})
+/**
+ * @description One page of runs plus the paging envelope.
+ */
+export const runsPageSchema = z
+  .object({
+    get items() {
+      return z
+        .array(
+          runViewSchema.describe(
+            "Wire row of one run — mirrors the RunSummary contract fields."
+          )
+        )
+        .describe("Page rows.")
+    },
+    page: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("1-based page number."),
+    pageSize: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Rows per page."),
+    total: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Total rows matching the filter (subject-visible)."),
+  })
+  .describe("One page of runs plus the paging envelope.")

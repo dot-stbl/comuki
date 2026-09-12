@@ -15,9 +15,9 @@ export const patchApiV1UsersUseridPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const patchApiV1UsersUserid200Schema = z.lazy(
-  () => userAccountViewSchema
-)
+export const patchApiV1UsersUserid200Schema = z
+  .lazy(() => userAccountViewSchema)
+  .describe("Read model of a user account — no secrets ride along.")
 
 /**
  * @description Bad Request
@@ -29,9 +29,9 @@ export const patchApiV1UsersUserid400Schema = z.lazy(() => problemDetailsSchema)
  */
 export const patchApiV1UsersUserid404Schema = z.lazy(() => problemDetailsSchema)
 
-export const patchApiV1UsersUseridMutationRequestSchema = z.lazy(
-  () => setUserDisabledRequestSchema
-)
+export const patchApiV1UsersUseridMutationRequestSchema = z
+  .lazy(() => setUserDisabledRequestSchema)
+  .describe("Toggle the disabled flag (PATCH /api/v1/users/{userId}).")
 
 export const patchApiV1UsersUseridMutationResponseSchema = z.lazy(
   () => patchApiV1UsersUserid200Schema

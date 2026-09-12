@@ -16,6 +16,7 @@ import type {
   PostApiV1ChatSessionsSessionidMessages400,
   PostApiV1ChatSessionsSessionidMessages404,
   PostApiV1ChatSessionsSessionidMessages409,
+  PostApiV1ChatSessionsSessionidMessages503,
 } from "../types/PostApiV1ChatSessionsSessionidMessages"
 
 function getPostApiV1ChatSessionsSessionidMessagesUrl(
@@ -29,6 +30,7 @@ function getPostApiV1ChatSessionsSessionidMessagesUrl(
 }
 
 /**
+ * @summary Posts one user message and runs the graph turn.
  * {@link /api/v1/chat/sessions/:sessionId/messages}
  */
 export async function postApiV1ChatSessionsSessionidMessages(
@@ -48,6 +50,7 @@ export async function postApiV1ChatSessionsSessionidMessages(
       | PostApiV1ChatSessionsSessionidMessages400
       | PostApiV1ChatSessionsSessionidMessages404
       | PostApiV1ChatSessionsSessionidMessages409
+      | PostApiV1ChatSessionsSessionidMessages503
     >,
     PostApiV1ChatSessionsSessionidMessagesMutationRequest
   >({

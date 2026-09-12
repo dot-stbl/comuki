@@ -6,25 +6,38 @@
 import { projectDomainTypeSchema } from "./projectDomainTypeSchema"
 import { z } from "zod/v4"
 
-export const updateSettingsRequestSchema = z.object({
-  version: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  minIdle: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  maxConcurrent: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  idleTtlSeconds: z.nullable(
-    z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
-  ),
-  approveRequired: z.boolean(),
-  knowledgeEnabled: z.boolean(),
-  verifyEnabled: z.boolean(),
-  proxyEnabled: z.boolean(),
-  softBudgetUsdMicros: z.nullable(
-    z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
-  ),
-  hardBudgetUsdMicros: z.nullable(
-    z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
-  ),
-  get domainType() {
-    return projectDomainTypeSchema
-  },
-  customDomainTypesJson: z.nullable(z.string()),
-})
+/**
+ * @description Wire body of PUT /api/v1/projects/{projectId}/settings.\r\nint UpdateSettingsRequest.Version is the version the client read — a stale version\r\nis refused with 409.
+ */
+export const updateSettingsRequestSchema = z
+  .object({
+    version: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
+    minIdle: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
+    maxConcurrent: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
+    idleTtlSeconds: z.nullable(
+      z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+    ),
+    approveRequired: z.boolean(),
+    knowledgeEnabled: z.boolean(),
+    verifyEnabled: z.boolean(),
+    proxyEnabled: z.boolean(),
+    softBudgetUsdMicros: z.nullable(
+      z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+    ),
+    hardBudgetUsdMicros: z.nullable(
+      z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+    ),
+    get domainType() {
+      return projectDomainTypeSchema.describe(
+        "Per-project routing mode for user-facing domain types\r\n(`code`, `data`, `infra`, `research`, …).\r\nA Standard project sends every domain through the fixed default\r\nprofile. A Custom project routes only via the\r\nstring? ProjectSettings.CustomDomainTypesJson map. A Hybrid\r\nproject tries the default first, falls back to the JSON map."
+      )
+    },
+    customDomainTypesJson: z.nullable(
+      z
+        .string()
+        .describe("Per-project JSON map of `domain-type → profile-key`.")
+    ),
+  })
+  .describe(
+    "Wire body of PUT /api/v1/projects/{projectId}/settings.\r\nint UpdateSettingsRequest.Version is the version the client read — a stale version\r\nis refused with 409."
+  )

@@ -23,7 +23,9 @@ export const getApiV1RunsQueryParamsSchema = z
 /**
  * @description OK
  */
-export const getApiV1Runs200Schema = z.lazy(() => runsPageSchema)
+export const getApiV1Runs200Schema = z
+  .lazy(() => runsPageSchema)
+  .describe("One page of runs plus the paging envelope.")
 
 /**
  * @description Bad Request

@@ -2,13 +2,35 @@
   "required": ["userId", "subjectType", "subjectId", "roles", "permissions"],
   "type": "object",
   "properties": {
-    "userId": { "type": ["null", "string"], "format": "uuid" },
-    "subjectType": { "type": "string" },
-    "subjectId": { "type": "string", "format": "uuid" },
-    "email": { "type": ["null", "string"] },
-    "displayName": { "type": ["null", "string"] },
-    "roles": { "type": "array", "items": { "type": "string" } },
+    "userId": {
+      "type": ["null", "string"],
+      "description": "The owning user account id; null when the principal carries none.",
+      "format": "uuid"
+    },
+    "subjectType": {
+      "type": "string",
+      "description": "Stable subject-type key: `user` or `api-key`."
+    },
+    "subjectId": {
+      "type": "string",
+      "description": "The subject permissions are computed for (user id or api key id).",
+      "format": "uuid"
+    },
+    "email": {
+      "type": ["null", "string"],
+      "description": "Email claim when the session is a user cookie."
+    },
+    "displayName": {
+      "type": ["null", "string"],
+      "description": "Display-name claim (user name, or the api key's label)."
+    },
+    "roles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Keys of the active role assignments, distinct and ordered."
+    },
     "permissions": {
+      "description": "Effective permissions split by scope.",
       "required": ["platform", "projects"],
       "type": "object",
       "properties": {
@@ -24,5 +46,6 @@
       "x-readme-ref-name": "PermissionsView"
     }
   },
+  "description": "The authenticated caller's identity for SPA session bootstrap:\r\nwho the principal resolves to, the roles it holds, and the\r\neffective permission sets per scope. Permissions are computed for\r\nthe request's subject — an API-key request reports the key's\r\nassignments, not its owner's.",
   "x-readme-ref-name": "MeResponse"
 }

@@ -15,9 +15,11 @@ export const patchApiV1ProjectsProjectidPathParamsSchema = z.object({
  */
 export const patchApiV1ProjectsProjectid200Schema = z.any()
 
-export const patchApiV1ProjectsProjectidMutationRequestSchema = z.lazy(
-  () => updateProjectRequestSchema
-)
+export const patchApiV1ProjectsProjectidMutationRequestSchema = z
+  .lazy(() => updateProjectRequestSchema)
+  .describe(
+    "Wire body of PATCH /api/v1/projects/{projectId} — null fields are left untouched."
+  )
 
 export const patchApiV1ProjectsProjectidMutationResponseSchema = z.lazy(
   () => patchApiV1ProjectsProjectid200Schema

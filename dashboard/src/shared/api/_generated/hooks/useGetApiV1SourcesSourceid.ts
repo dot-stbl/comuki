@@ -56,6 +56,7 @@ export function getApiV1SourcesSourceidQueryOptions(
 }
 
 /**
+ * @summary Reads one connection.
  * {@link /api/v1/sources/:sourceId}
  */
 export function useGetApiV1SourcesSourceid<

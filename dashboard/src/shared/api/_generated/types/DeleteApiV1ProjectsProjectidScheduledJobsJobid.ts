@@ -5,10 +5,12 @@
 
 export type DeleteApiV1ProjectsProjectidScheduledJobsJobidPathParams = {
   /**
+   * @description Owning project (route context).
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description Job id.
    * @type string, uuid
    */
   jobId: string

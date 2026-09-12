@@ -2,9 +2,20 @@
   "required": ["keyId", "prefix", "secret"],
   "type": "object",
   "properties": {
-    "keyId": { "type": "string", "format": "uuid" },
-    "prefix": { "type": "string" },
-    "secret": { "type": "string" }
+    "keyId": {
+      "type": "string",
+      "description": "Strong-typed api key id.",
+      "format": "uuid"
+    },
+    "prefix": {
+      "type": "string",
+      "description": "8-char public lookup prefix."
+    },
+    "secret": {
+      "type": "string",
+      "description": "Full `ck_…` token; shown once."
+    }
   },
+  "description": "The wire shape of `POST /api/v1/keys`. The plaintext is shown\r\nexactly once — the host keeps the prefix + HMAC and never returns the\r\nsecret again.",
   "x-readme-ref-name": "IssuedApiKeyResponse"
 }

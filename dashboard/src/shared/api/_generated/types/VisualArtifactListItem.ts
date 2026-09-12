@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description One row in the visual-artifacts list — metadata only, no body.
+ */
 export type VisualArtifactListItem = {
   /**
    * @type string, uuid

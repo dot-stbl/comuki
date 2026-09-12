@@ -45,6 +45,7 @@ export function deleteApiV1SourcesSourceidMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Deletes a connection (idempotent).
  * {@link /api/v1/sources/:sourceId}
  */
 export function useDeleteApiV1SourcesSourceid<TContext>(

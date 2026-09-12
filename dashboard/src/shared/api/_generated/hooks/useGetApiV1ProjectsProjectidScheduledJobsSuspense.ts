@@ -65,6 +65,7 @@ export function getApiV1ProjectsProjectidScheduledJobsSuspenseQueryOptions(
 }
 
 /**
+ * @summary Lists scheduled jobs for a project, newest first.
  * {@link /api/v1/projects/:projectId/scheduled-jobs}
  */
 export function useGetApiV1ProjectsProjectidScheduledJobsSuspense<

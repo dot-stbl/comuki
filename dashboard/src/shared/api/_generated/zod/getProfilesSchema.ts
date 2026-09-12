@@ -10,7 +10,11 @@ import { z } from "zod/v4"
  * @description OK
  */
 export const getProfiles200Schema = z.array(
-  z.lazy(() => profileDefinitionSchema)
+  z
+    .lazy(() => profileDefinitionSchema)
+    .describe(
+      "Catalog-facing profile metadata. The system-prompt body is deliberately not part of it."
+    )
 )
 
 export const getProfilesQueryResponseSchema = z.lazy(() => getProfiles200Schema)

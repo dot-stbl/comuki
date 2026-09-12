@@ -38,6 +38,7 @@ export const TOKEN_MAP = [
   ["--st-escalated", "escalated"],
   ["--st-failed", "failed"],
   ["--st-success", "success"],
+  ["--st-cancelled", "cancelled"],
 ] as const satisfies readonly (readonly [string, keyof Palette])[]
 
 /** The custom properties a theme block sets, in emission order. */

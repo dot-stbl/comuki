@@ -17,6 +17,7 @@ const meta = {
         "waiting",
         "queued",
         "escalated",
+        "cancelled",
       ],
     },
     size: {
@@ -51,6 +52,10 @@ export const Queued: Story = {
 
 export const Escalated: Story = {
   args: { status: "escalated" },
+}
+
+export const Cancelled: Story = {
+  args: { status: "cancelled" },
 }
 
 export const Small: Story = {

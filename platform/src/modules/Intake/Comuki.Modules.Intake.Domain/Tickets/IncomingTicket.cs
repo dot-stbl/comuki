@@ -61,8 +61,8 @@ public sealed class IncomingTicket
 
     /// <summary>
     /// What kind of tracker-side object this ticket represents. The
-    /// webhook mapper sets it; <see cref="IntakeTicketKind.Issue"/> for
-    /// regular issues, <see cref="IntakeTicketKind.PullRequest"/> for
+    /// webhook mapper sets it; <see cref="InboundTicketKind.Issue"/> for
+    /// regular issues, <see cref="InboundTicketKind.PullRequest"/> for
     /// pull-request / merge-request events (inbound review surface).
     /// Drives the profile router's default choice.
     /// </summary>

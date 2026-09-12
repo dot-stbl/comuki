@@ -4,7 +4,7 @@ namespace Comuki.Modules.Identity.Application.ApiKeys;
 
 /// <summary>
 /// Read-model of an API key row. The plaintext token is NOT carried —
-/// it lives in <see cref="Issue.IssuedApiKeyCredential"/>
+/// it lives in <see cref="IssuedApiKeyCredential"/>
 /// only at issue time.
 /// </summary>
 /// <param name="Id"></param>

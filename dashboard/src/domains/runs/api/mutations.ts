@@ -1,31 +1,36 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-import { runsQueryKey } from "@/domains/runs/api/queries"
+import { runQueryKey, runsQueryKey } from "@/domains/runs/api/queries"
 import type { RunSummary } from "@/domains/runs/model/types"
+import { postApiV1RunsRunidApprove } from "@/shared/api/_generated/clients/postApiV1RunsRunidApprove"
+import { postApiV1RunsRunidCancel } from "@/shared/api/_generated/clients/postApiV1RunsRunidCancel"
 import { approveSeedRun, cancelSeedRun } from "@/shared/api/mock"
 import { env } from "@/shared/config/env"
 
 /**
  * Run decisions — the two things the duty screen exists to let a human do.
  *
- * The host's `RunsController` ships only `GET /api/v1/runs` (paged list).
- * `POST /api/v1/runs/{runId}/approve` and `…/{runId}/cancel` are not on
- * the wire today, so the real-mode branch throws rather than pretending
- * to have succeeded — an optimistic write would be undone by the next
- * refetch and the decision would look like a 220ms animation.
+ * Real mode (`VITE_USE_MOCK=false`) calls the kubb-generated clients for
+ * `POST /api/v1/runs/{runId}/approve` and `…/{runId}/cancel` (the host's
+ * `RunsController` endpoints); cancel carries the request body the wire
+ * declares, with `reason` unset because the dashboard asks for no
+ * sentence today. Mock mode writes to the shared seed store, which the
+ * runs query reads; that round-trip is what keeps the UI honest in
+ * storybook and dev:mock.
  *
- * Mock mode writes to the shared seed store, which the runs query reads;
- * that round-trip is what keeps the UI honest in storybook and dev:mock.
- * When the host grows a decision endpoint, the real-mode branch becomes
- * `postApiV1RunsRunidApprove(runId, …)` / `…/cancel` (kubb-generated);
- * the mock-mode path stays as-is.
+ * Both hooks keep their optimistic transition (below) and settle by
+ * invalidating the runs list **and** the run's own detail key, so the
+ * board and an open detail page agree with the host after the decision.
  */
 
 async function postDecision(runId: string, decision: "approve" | "cancel") {
   if (!env.useMock) {
-    throw new Error(
-      `run ${decision} not implemented — set VITE_USE_MOCK=true, or wire POST /api/v1/runs/${runId}/${decision}`
-    )
+    if (decision === "approve") {
+      await postApiV1RunsRunidApprove(runId)
+    } else {
+      await postApiV1RunsRunidCancel(runId, { reason: null })
+    }
+    return { runId, decision }
   }
   await new Promise((resolve) => setTimeout(resolve, 220))
   if (decision === "approve") {
@@ -69,8 +74,9 @@ export function useApproveRun() {
         client.setQueryData(runsQueryKey, context.previous)
       }
     },
-    onSettled: async () => {
+    onSettled: async (_data, _error, runId) => {
       await client.invalidateQueries({ queryKey: runsQueryKey })
+      await client.invalidateQueries({ queryKey: runQueryKey(runId) })
     },
   })
 }
@@ -96,8 +102,9 @@ export function useCancelRun() {
         client.setQueryData(runsQueryKey, context.previous)
       }
     },
-    onSettled: async () => {
+    onSettled: async (_data, _error, runId) => {
       await client.invalidateQueries({ queryKey: runsQueryKey })
+      await client.invalidateQueries({ queryKey: runQueryKey(runId) })
     },
   })
 }

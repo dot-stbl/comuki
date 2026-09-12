@@ -5,7 +5,16 @@ using Comuki.Host.Translator.Grpc;
 using Comuki.Host.Translator.Profiles;
 using Comuki.Host.Translator.Runtime;
 using Comuki.Shared.Bootstrap;
+using Comuki.Shared.Bootstrap.Cli;
+using Comuki.Shared.Bootstrap.Versioning;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+
+// Operator CLI (issue #56): `comuki-translator version` runs before any
+// bootstrap and exits without touching config or the worker environment.
+if (ComukiCli.IsCommand(args, ComukiCli.VersionCommand))
+{
+    return ComukiCli.RunVersion("comuki-translator");
+}
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -36,7 +45,14 @@ builder.Services
     .AddOrchestratorApi()
     .AddWorkerGrpcClient();
 
-await builder.Build().RunAsync();
+var app = builder.Build();
+
+// Build banner (issue #56): the version line is the first comuki-format
+// log record of the starting worker.
+ComukiStartupBanner.Emit(app.Services.GetRequiredService<ILoggerFactory>(), "comuki-translator", ComukiBuildInfo.Read());
+
+await app.RunAsync();
+return 0;
 
 /// <summary>
 /// Maps the worker container's COMUKI_* environment onto the Translator

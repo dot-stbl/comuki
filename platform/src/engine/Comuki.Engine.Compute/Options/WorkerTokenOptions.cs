@@ -24,7 +24,7 @@ public sealed class WorkerTokenOptions
             ? pepper
             : DevDefaultPepper;
 
-    /// <summary>Token lifetime used when <see cref="WorkerTokenIssuer.Issue"/> gets no explicit TTL.</summary>
+    /// <summary>Token lifetime used when <see cref="Security.WorkerTokenIssuer.Issue(Shared.Kernel.Ids.WorkerId, TimeSpan?)"/> gets no explicit TTL.</summary>
     [Range(typeof(TimeSpan), "00:01:00", "24:00:00")]
     public TimeSpan TokenTtl { get; init; } = TimeSpan.FromMinutes(15);
 }

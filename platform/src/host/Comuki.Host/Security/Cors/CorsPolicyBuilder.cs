@@ -21,7 +21,7 @@ public static class ComukiCorsInstaller
     /// <summary>Configures CORS, validates options, and binds the named policy on the service collection.</summary>
     /// <param name="services">The host's service collection.</param>
     /// <param name="configuration">Configuration root — binds <see cref="ComukiCorsOptions"/> from <c>Host:Cors</c>.</param>
-    /// <param name="environment">Hosting environment; the builder reads <see cref="IHostEnvironment.IsProduction"/> for the wildcard gate.</param>
+    /// <param name="environment">Hosting environment; the builder reads <see cref="HostEnvironmentEnvExtensions.IsProduction(IHostEnvironment)"/> for the wildcard gate.</param>
     /// <returns>The same <paramref name="services"/> instance, for chaining.</returns>
     public static IServiceCollection AddComukiCors(
         this IServiceCollection services,

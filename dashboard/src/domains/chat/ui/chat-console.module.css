@@ -60,6 +60,36 @@
   block-size: 100%;
 }
 
+/* --- error states ---
+   The same reading the pages give when their query fails (runs, tasks,
+   cost): a named state, the wire's own sentence, and one retry — never a
+   silently empty console, which in real mode is indistinguishable from
+   "no conversations" and reads as a lie. */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s8) var(--s6);
+  font-family: var(--font-ui);
+  min-block-size: 0;
+}
+
+.stateTitle {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.stateBody {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--muted-foreground);
+  max-width: 52ch;
+  line-height: var(--lh-body);
+}
+
 /* Two breakpoints exist product-wide and there is no third; this screen uses
    one of them and needs no more. The side panel goes and the conversation list
    stays, because the panel is a second reading of something already on screen

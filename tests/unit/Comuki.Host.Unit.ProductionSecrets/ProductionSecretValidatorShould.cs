@@ -351,6 +351,50 @@ public sealed class ProductionSecretValidatorShould : IDisposable
 
         Should.NotThrow(() => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
     }
+    [Fact(DisplayName = "Given Development + dev defaults, when the audit is collected, then the findings warn instead of failing")]
+    public void CollectWarnsOnDevDefaultsOutsideProduction()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Development,
+            ProductionSecretsTestArtifacts.DevDefaults(),
+            ProductionSecretsTestArtifacts.DevDefaultApiKeyPepper,
+            ProductionSecretsTestArtifacts.DevDefaultWorkerTokenPepper);
+
+        var findings = ProductionSecretAudit.Collect(services.BuildServiceProvider());
+
+        var apiKey = findings.Single(static finding => finding.Name == "apikey-pepper");
+        apiKey.SeverityLevel.ShouldBe(ProductionSecretFinding.Severity.Warn);
+        apiKey.Detail.ShouldContain("allowed outside Production");
+        findings.ShouldContain(static finding => finding.Name == "minio.secretkey" && finding.SeverityLevel == ProductionSecretFinding.Severity.Warn);
+    }
+
+    [Fact(DisplayName = "Given Production + dev defaults, when the audit is collected, then the findings fail with the startup-gate messages")]
+    public void CollectFailsOnDevDefaultsInProduction()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.DevDefaults(),
+            ProductionSecretsTestArtifacts.DevDefaultApiKeyPepper,
+            ProductionSecretsTestArtifacts.DevDefaultWorkerTokenPepper);
+
+        var findings = ProductionSecretAudit.Collect(services.BuildServiceProvider());
+
+        findings.ShouldContain(static finding => finding.Name == "apikey-pepper" && finding.SeverityLevel == ProductionSecretFinding.Severity.Fail);
+        findings.ShouldContain(static finding => finding.Name == "minio.secretkey" && finding.SeverityLevel == ProductionSecretFinding.Severity.Fail);
+        findings.Single(static finding => finding.Name == "apikey-pepper").Detail.ShouldContain("refusing to start the host in Production");
+    }
+
+    [Fact(DisplayName = "Given every secret overridden, when the audit is collected, then all findings are ok")]
+    public void CollectReportsOkWhenEverythingOverridden()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden());
+
+        var findings = ProductionSecretAudit.Collect(services.BuildServiceProvider());
+
+        findings.ShouldAllBe(static finding => finding.SeverityLevel == ProductionSecretFinding.Severity.Ok);
+    }
 }
 
 file static class ProductionSecretsTestServices

@@ -13,6 +13,7 @@ import { FailureAnalytics } from "@/domains/cost/ui/failure-analytics"
 import { ProxyBudgetMeter } from "@/domains/cost/ui/proxy-budget-meter"
 import { SpendByApp } from "@/domains/cost/ui/spend-by-app"
 import { SpendByDay } from "@/domains/cost/ui/spend-by-day"
+import { env } from "@/shared/config/env"
 import { Button, Section, Tooltip } from "@/shared/ui"
 
 import styles from "./cost-page.module.css"
@@ -150,11 +151,23 @@ export function CostPage() {
               </Section>
             </div>
 
-            {/* Seeded numbers are fictional and stay marked as such. */}
-            <p className={styles.mock} data-test="cost-mock-mark">
-              <DollarSign className={styles.mockIcon} aria-hidden="true" />
-              mock snapshot · VITE_USE_MOCK
-            </p>
+            {/* Seeded numbers are fictional and stay marked as such. Mock
+                mode names the switch; real mode names the gap — the
+                per-project feed is live but this page is a platform-wide
+                rollup, and pretending otherwise is the lie the badge
+                exists to prevent. */}
+            {env.useMock ? (
+              <p className={styles.mock} data-test="cost-mock-mark">
+                <DollarSign className={styles.mockIcon} aria-hidden="true" />
+                mock snapshot · VITE_USE_MOCK
+              </p>
+            ) : (
+              <p className={styles.mock} data-test="cost-demo-mark">
+                <DollarSign className={styles.mockIcon} aria-hidden="true" />
+                demo data · no platform-wide cost endpoint yet — per-project
+                costs are live on the host
+              </p>
+            )}
           </>
         ) : null}
       </div>

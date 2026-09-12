@@ -11,7 +11,7 @@ namespace Comuki.Modules.Knowledge.Unit;
 /// Unit coverage for <see cref="KnowledgeIngestBackgroundService"/>:
 /// the periodic doc worker must log its start / stop lifecycle and
 /// honour cancellation between iterations. The ingest path itself
-/// (per-source <see cref="IKnowledgeIngestor"/> scope) lands in a later
+/// (per-source <see cref="Application.IKnowledgeIngestor"/> scope) lands in a later
 /// slice — these tests cover the v0 heartbeat.
 /// </summary>
 public sealed class KnowledgeIngestBackgroundServiceShould

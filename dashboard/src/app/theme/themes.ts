@@ -49,13 +49,17 @@ export interface Palette {
   /** Destructive controls. */
   destructive: string
 
-  /* The six real run statuses. No invented vocabulary, and no seventh. */
+  /* The seven real run statuses. No invented vocabulary: every one of these is
+     a word the host already puts on the wire. `cancelled` was the seventh and
+     it was being folded onto `failed` by the mapper for want of a rung here,
+     which painted a board red for work nobody failed at. */
   running: string
   queued: string
   waiting: string
   escalated: string
   failed: string
   success: string
+  cancelled: string
 }
 
 /**
@@ -117,19 +121,37 @@ export interface Theme {
  * idea — bone on dark, ink on light, a filled button rather than a hue — and it
  * is what leaves the chrome colourless.
  *
- * The six statuses could *not* be taken from the projection. Six hues squeezed
+ * The statuses could *not* be taken from the projection. Six hues squeezed
  * into two dimensions collapse: `failed` and `success` both landed on olive,
  * 1.2 L* apart from their neighbours. So they were rebuilt inside the plane
  * instead, on two axes and only two — lightness, and the blue↔yellow offset
- * that survives. The ladder is six rungs about 5.3 L* apart in dark and 5.6 in
- * light, and consecutive rungs alternate warm and cool so that no two statuses
- * ever share both a rung and a direction.
+ * that survives. The ladder is seven rungs about 5.3 L* apart in dark and 5.6
+ * in light, and consecutive rungs alternate warm and cool so that no two
+ * statuses ever share both a rung and a direction.
  *
- * `running` and `success` get the widest berth of the six — 26 L* and ΔEok 0.24
- * apart — because they are the only two statuses with `--weave-*: none`. Every
- * other status carries a hatch, so hue is its second channel rather than its
- * only one; those two are separated by colour alone and are placed at opposite
- * ends of the ladder for it.
+ * `running` and `success` are held 26 L* and ΔEok 0.24 apart — the widest
+ * berth on the ladder — because they are the only two statuses with
+ * `--weave-*: none`. Every other status carries a hatch, so hue is its second
+ * channel rather than its only one; those two are separated by colour alone
+ * and are placed near opposite ends of the ladder for it.
+ *
+ * `cancelled` came seventh, and the plane chose its rung rather than a
+ * designer. With the six in place and the floors held — 4.5:1 on the lane,
+ * 5 L* between any two rungs — the only lightness left anywhere in the gamut
+ * was past `success`: below `running` the label stops being readable on the
+ * lane (58.4 L* is the floor and `running` already sits at 60.7), and every
+ * gap between rungs is 5.3 wide, which halves to 2.65. So it extends the
+ * ladder by one step in the same direction, to 92.3 in dark and 9.4 in light.
+ *
+ * What that leaves free is the axis that actually carries alarm on a
+ * colourless board: chroma. `failed` shouts at ±170 and `waiting` at ±114;
+ * `queued` is the quietest of the six at ±24 by the old rule that it is the
+ * least saturated status. `cancelled` sits just outside it at ±28 — the second
+ * quietest, warm, and close enough to the neutral point that it reads at body
+ * weight rather than as a signal. It cannot be neutral outright: at a zero
+ * offset it falls to ΔEok 0.069 from `success` and loses the 0.07 floor, so
+ * the smallest warmth that clears it is what it takes. Its real second channel
+ * is the hatch, which is the sparsest in the set.
  *
  * `destructive` is `failed`'s rung at the warm edge of the plane: the same
  * alarm in its imperative mood. In dark that is visibly hotter than `failed`
@@ -163,6 +185,7 @@ const DICHROMAT_DECK: Theme = {
       escalated: "#b7b7fd",
       failed: "#d2d228",
       success: "#d7d7ff",
+      cancelled: "#ebebcf",
     },
     light: {
       floor: "#e9e9f0",
@@ -185,6 +208,7 @@ const DICHROMAT_DECK: Theme = {
       escalated: "#2424b0",
       failed: "#333311",
       success: "#0d0d7d",
+      cancelled: "#1b1b07",
     },
   },
 }
@@ -215,6 +239,7 @@ const GRAPHITE: Theme = {
       escalated: "#d9c6ff",
       failed: "#f77671",
       success: "#75d0ae",
+      cancelled: "#eceef2",
     },
     light: {
       floor: "#f3f7fc",
@@ -237,6 +262,7 @@ const GRAPHITE: Theme = {
       escalated: "#512f7e",
       failed: "#951720",
       success: "#006f53",
+      cancelled: "#272a2d",
     },
   },
 }
@@ -267,6 +293,7 @@ const DOCKSIDE: Theme = {
       escalated: "#ebbfff",
       failed: "#f47b61",
       success: "#99cb8e",
+      cancelled: "#f2ede9",
     },
     light: {
       floor: "#fdefe1",
@@ -289,6 +316,7 @@ const DOCKSIDE: Theme = {
       escalated: "#5d2b72",
       failed: "#921e05",
       success: "#3d6b33",
+      cancelled: "#2e2a25",
     },
   },
 }
@@ -319,6 +347,7 @@ const BLUEPRINT: Theme = {
       escalated: "#cb99f7",
       failed: "#fc7460",
       success: "#62d1ae",
+      cancelled: "#ebeef2",
     },
     light: {
       floor: "#e7f2ff",
@@ -341,6 +370,7 @@ const BLUEPRINT: Theme = {
       escalated: "#5a297e",
       failed: "#980e04",
       success: "#006f55",
+      cancelled: "#272a2f",
     },
   },
 }
@@ -371,6 +401,7 @@ const BUREAU: Theme = {
       escalated: "#dbc5ff",
       failed: "#f77769",
       success: "#89ce92",
+      cancelled: "#ededeb",
     },
     light: {
       floor: "#f3f3ef",
@@ -393,6 +424,7 @@ const BUREAU: Theme = {
       escalated: "#532e7d",
       failed: "#951815",
       success: "#286e37",
+      cancelled: "#2a2a28",
     },
   },
 }
@@ -423,6 +455,7 @@ const APERTURE: Theme = {
       escalated: "#dec3ff",
       failed: "#ff7166",
       success: "#71d19c",
+      cancelled: "#eaeef4",
     },
     light: {
       floor: "#d5dae0",
@@ -445,6 +478,7 @@ const APERTURE: Theme = {
       escalated: "#582982",
       failed: "#9b040f",
       success: "#006f44",
+      cancelled: "#272a2f",
     },
   },
 }
@@ -464,6 +498,12 @@ const APERTURE: Theme = {
  * `raised` between rail and rule, `hover` half a step off the lane, and
  * `faint` walked up from the strong rule until it clears 4.5:1 on the floor
  * rather than sat at a pleasing midpoint that did not.
+ *
+ * `cancelled` is the one value here that is not a reconstruction of anything:
+ * this board never had a seventh status, so it is placed on the chrome's own
+ * grey ramp between `faint` and `muted`, which is the least this palette can
+ * say. It clears 4.5:1 on the dark lane, so the four failures the test below
+ * records stay exactly four.
  *
  * It is the one theme here that fails the fixed-point property: its statuses
  * are a hue set, so `failed` and `success` are a red and a green and they do
@@ -498,6 +538,7 @@ const DISPATCHER: Theme = {
       escalated: "#6e5ba6",
       failed: "#b0473b",
       success: "#4e7c5b",
+      cancelled: "#8e9195",
     },
     light: {
       floor: "#fbfbfa",
@@ -520,6 +561,7 @@ const DISPATCHER: Theme = {
       escalated: "#6e5ba6",
       failed: "#b0473b",
       success: "#4e7c5b",
+      cancelled: "#8e9195",
     },
   },
 }
@@ -558,9 +600,10 @@ export const PALETTE_KEYS = [
   "escalated",
   "failed",
   "success",
+  "cancelled",
 ] as const satisfies readonly (keyof Palette)[]
 
-/** The six statuses, in ladder order. */
+/** The seven statuses, in ladder order. */
 export const STATUS_KEYS = [
   "running",
   "queued",
@@ -568,6 +611,7 @@ export const STATUS_KEYS = [
   "escalated",
   "failed",
   "success",
+  "cancelled",
 ] as const satisfies readonly (keyof Palette)[]
 
 export function findTheme(id: string | null | undefined): Theme | undefined {

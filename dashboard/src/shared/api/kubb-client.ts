@@ -83,17 +83,18 @@ function requireBackendBaseUrl(): string {
 }
 
 /**
- * Reject when the backend sends an auth boundary. React Query treats the
- * rejected promise as an error and the screen falls back to its unauthed
- * branch; we do NOT redirect here — that belongs to a route guard watching
- * `/api/v1/auth/me`, not to the transport.
+ * Reject when the backend answers anything but 2xx. React Query treats the
+ * rejected promise as an error and the screen falls back to its error
+ * branch; we do NOT redirect here — that belongs to the route guard watching
+ * `/api/v1/auth/me` and the 401 watcher on the query cache, not to the
+ * transport.
  *
- * 401 — not authenticated (cookie missing/expired). Surface as a query error.
- * 403 — authenticated but not permitted. Same path; the screen decides.
+ * The thrown error carries `status` and `data` (the ProblemDetails body the
+ * host sends — `code`, `detail`), so callers can map failures to human
+ * messages instead of showing a raw "auth boundary 401". 401/403 used to be
+ * the only rejected statuses; 400/429/5xx returned the problem body as if it
+ * were a success payload, which is worse than no data at all.
  */
-function isAuthBoundary(status: number): boolean {
-  return status === 401 || status === 403;
-}
 
 const kubbClient: Client = async <TResponseData, TError = unknown, TRequestData = unknown>(
   paramsConfig: RequestConfig<TRequestData>,
@@ -153,21 +154,38 @@ const kubbClient: Client = async <TResponseData, TError = unknown, TRequestData 
     signal: paramsConfig.signal ?? null,
   });
 
-  const data = ([204, 205, 304].includes(response.status) || !response.body
-    ? ({} as TResponseData)
-    : ((await response.json()) as TResponseData));
+  // Rate-limited responses (429) and some gateway errors arrive with an
+  // empty body — `response.json()` would throw on them and lose the status
+  // we still need to surface. Read as text, parse what parses, `{}` for the
+  // rest.
+  const text = [204, 205, 304].includes(response.status)
+    ? ""
+    : await response.text();
+  let parsed: unknown = {};
+  if (text.length > 0) {
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = {};
+    }
+  }
+  const data = parsed as TResponseData;
 
-  if (isAuthBoundary(response.status)) {
+  if (!response.ok) {
     const errorPayload = (data ?? { status: response.status }) as unknown;
-    const boundaryError = Object.assign(
-      new Error(`auth boundary ${response.status}`),
+    const failureError = Object.assign(
+      new Error(
+        response.status === 401 || response.status === 403
+          ? `auth boundary ${response.status}`
+          : `request failed ${response.status}`,
+      ),
       {
         status: response.status,
         response,
         data: errorPayload,
       },
     );
-    throw boundaryError as unknown as TError;
+    throw failureError as unknown as TError;
   }
 
   return {

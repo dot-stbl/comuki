@@ -8,7 +8,7 @@ namespace Comuki.Shared.Contracts.Usage;
 /// dependency on the Costs module's internal Application assembly.
 /// All wire types on the boundary are contracts-level records
 /// (<see cref="UsageRecord"/>, <see cref="UsageEventSummary"/>, the
-/// string <paramref name="source"/>) — no entity / no Costs.Domain
+/// string <c>source</c> parameter on <see cref="SumProjectCostBySourceAsync"/>) — no entity / no Costs.Domain
 /// reference.
 /// </summary>
 public interface IUsageEventStore

@@ -48,6 +48,7 @@ export function postApiV1SourcesMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Creates a connection; the view carries the webhook path to configure in the tracker.
  * {@link /api/v1/sources}
  */
 export function usePostApiV1Sources<TContext>(

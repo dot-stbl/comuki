@@ -46,6 +46,7 @@ export function postApiV1SourcesSourceidProbeMutationOptions<
 }
 
 /**
+ * @summary Probes an existing source connection (issue #42).
  * {@link /api/v1/sources/:sourceId/probe}
  */
 export function usePostApiV1SourcesSourceidProbe<TContext>(

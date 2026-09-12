@@ -26,6 +26,7 @@ function getGetApiV1ProjectsProjectidScheduledJobsUrl(
 }
 
 /**
+ * @summary Lists scheduled jobs for a project, newest first.
  * {@link /api/v1/projects/:projectId/scheduled-jobs}
  */
 export async function getApiV1ProjectsProjectidScheduledJobs(

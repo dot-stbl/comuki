@@ -22,6 +22,7 @@ function getPostApiV1GrantsUrl() {
 }
 
 /**
+ * @summary Grants a role (issue #32). Permission `identity:write`.
  * {@link /api/v1/grants}
  */
 export async function postApiV1Grants(

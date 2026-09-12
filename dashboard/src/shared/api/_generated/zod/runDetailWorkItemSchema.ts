@@ -5,13 +5,38 @@
 
 import { z } from "zod/v4"
 
-export const runDetailWorkItemSchema = z.object({
-  id: z.uuid(),
-  profile: z.string(),
-  label: z.string(),
-  status: z.string(),
-  dependsOn: z.array(z.uuid()),
-  cost: z.union([z.number(), z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/)]),
-  tokens: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  startedAt: z.nullable(z.iso.datetime({ offset: true })),
-})
+/**
+ * @description Wire row for one work-item in the run\'s plan.
+ */
+export const runDetailWorkItemSchema = z
+  .object({
+    id: z.uuid().describe("Work-item id."),
+    profile: z
+      .string()
+      .describe("Worker profile key (e.g. `implement`, `explore-readonly`)."),
+    label: z
+      .string()
+      .describe("Brain-authored step name; empty when not provided."),
+    status: z.string().describe("Wire status string (lowercase)."),
+    dependsOn: z
+      .array(z.uuid())
+      .describe(
+        "Ids of prerequisite work items (joined from `work_item_dependencies`)."
+      ),
+    cost: z
+      .union([z.number(), z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/)])
+      .describe(
+        "Reserved per-item spend in USD; `0` until usage_events is wired."
+      ),
+    tokens: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Reserved per-item token count; `0` for the same reason."),
+    startedAt: z.nullable(
+      z.iso
+        .datetime({ offset: true })
+        .describe(
+          "First transition away from `Queued`, or `null` while still queued."
+        )
+    ),
+  })
+  .describe("Wire row for one work-item in the run's plan.")

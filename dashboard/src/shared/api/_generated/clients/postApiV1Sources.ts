@@ -21,6 +21,7 @@ function getPostApiV1SourcesUrl() {
 }
 
 /**
+ * @summary Creates a connection; the view carries the webhook path to configure in the tracker.
  * {@link /api/v1/sources}
  */
 export async function postApiV1Sources(

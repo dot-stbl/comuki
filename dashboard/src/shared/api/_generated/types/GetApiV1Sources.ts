@@ -7,6 +7,7 @@ import type { SourceConnectionView } from "./SourceConnectionView"
 
 export type GetApiV1SourcesQueryParams = {
   /**
+   * @description Optional project filter.
    * @type string | undefined, uuid
    */
   projectId?: string

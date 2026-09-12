@@ -5,12 +5,17 @@
 
 import type { RoleAssignmentView } from "./RoleAssignmentView"
 
+/**
+ * @description Paged envelope for role assignments.
+ */
 export type IdentityAdminGrantsPage = {
   /**
+   * @description Page contents.
    * @type array
    */
   items: RoleAssignmentView[]
   /**
+   * @description Total rows across all pages.
    * @type integer,string, int32
    */
   total: number | string

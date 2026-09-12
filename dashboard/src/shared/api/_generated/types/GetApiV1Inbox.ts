@@ -7,6 +7,7 @@ import type { IntakeTicketView } from "./IntakeTicketView"
 
 export type GetApiV1InboxQueryParams = {
   /**
+   * @description Optional project filter.
    * @type string | undefined, uuid
    */
   projectId?: string

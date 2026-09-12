@@ -5,6 +5,13 @@
 
 import { z } from "zod/v4"
 
-export const roleAssignmentIdSchema = z.object({
-  value: z.optional(z.uuid()),
-})
+/**
+ * @description Strong-typed identifier of a role assignment row. UUIDv7 like every\r\nIdentity entity id.
+ */
+export const roleAssignmentIdSchema = z
+  .object({
+    value: z.optional(z.uuid()),
+  })
+  .describe(
+    "Strong-typed identifier of a role assignment row. UUIDv7 like every\r\nIdentity entity id."
+  )

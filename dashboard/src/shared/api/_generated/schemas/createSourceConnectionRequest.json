@@ -2,11 +2,25 @@
   "required": ["projectId", "provider", "name", "settingsJson", "secretEnvRef"],
   "type": "object",
   "properties": {
-    "projectId": { "type": "string", "format": "uuid" },
-    "provider": { "type": "string" },
-    "name": { "type": "string" },
-    "settingsJson": { "type": "string" },
-    "secretEnvRef": { "type": "string" }
+    "projectId": {
+      "type": "string",
+      "description": "Project the connection feeds.",
+      "format": "uuid"
+    },
+    "provider": {
+      "type": "string",
+      "description": "Provider key: github | gitlab | yandex-tracker | jira."
+    },
+    "name": { "type": "string", "description": "Human-readable name." },
+    "settingsJson": {
+      "type": "string",
+      "description": "Provider-specific, non-secret settings (env-var NAMES only)."
+    },
+    "secretEnvRef": {
+      "type": "string",
+      "description": "Env-var name holding the webhook secret."
+    }
   },
+  "description": "Source connection creation body (POST /api/v1/sources).",
   "x-readme-ref-name": "CreateSourceConnectionRequest"
 }

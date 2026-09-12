@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Read-model of an OIDC identity link — the local user id, the provider\r\nkey, and the external subject claim. Provider / subject are returned\r\nas the operator entered them (the stored form lower-cases the provider\r\nkey; the subject is preserved verbatim).
+ */
 export type OidcLinkView = {
   /**
    * @type string, uuid

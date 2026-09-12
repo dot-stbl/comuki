@@ -17,6 +17,7 @@ function getGetChatCommandsUrl() {
 }
 
 /**
+ * @summary Lists every built-in chat command.
  * {@link /chat-commands}
  */
 export async function getChatCommands(

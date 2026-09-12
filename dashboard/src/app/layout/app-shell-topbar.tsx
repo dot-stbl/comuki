@@ -2,6 +2,7 @@ import { Plus } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
 import { ThemeControl } from "@/app/layout/theme-control"
+import { LiveBadge } from "@/app/layout/live-badge"
 import { ThemePicker } from "@/app/theme"
 import { GlobalSearch } from "@/app/search"
 import { env } from "@/shared/config/env"
@@ -31,6 +32,12 @@ export function AppShellTopbar() {
           to read as one set rather than as four things that drifted apart. */}
       <div className={styles.controls}>
         <GlobalSearch />
+
+        {/* How this screen's data arrives — hub, poll, or seed. It reads as
+            chrome beside the appearance controls because freshness is a
+            property of the machine, not of any one screen: the same socket
+            (or lack of it) stands behind every list the bar looks down on. */}
+        <LiveBadge />
 
         {/* Hidden rather than explained, and the two halves of the access
             rule are what decide it: this looks like an action but it is a

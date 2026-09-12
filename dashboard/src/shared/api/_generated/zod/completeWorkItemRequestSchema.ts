@@ -5,6 +5,13 @@
 
 import { z } from "zod/v4"
 
-export const completeWorkItemRequestSchema = z.object({
-  resultJson: z.string(),
-})
+/**
+ * @description Completion body: the worker-produced result JSON (must be valid, non-empty JSON).
+ */
+export const completeWorkItemRequestSchema = z
+  .object({
+    resultJson: z.string(),
+  })
+  .describe(
+    "Completion body: the worker-produced result JSON (must be valid, non-empty JSON)."
+  )

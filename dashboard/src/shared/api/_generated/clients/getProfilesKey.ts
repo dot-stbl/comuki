@@ -21,6 +21,7 @@ function getGetProfilesKeyUrl(key: GetProfilesKeyPathParams["key"]) {
 }
 
 /**
+ * @summary Returns one worker profile by key; 404 when the key is unknown.
  * {@link /profiles/:key}
  */
 export async function getProfilesKey(

@@ -2,8 +2,12 @@
   "required": ["outcome", "detail"],
   "type": "object",
   "properties": {
-    "outcome": { "type": "string" },
+    "outcome": {
+      "type": "string",
+      "description": "Delivery outcome label (admitted | pending | filtered | skipped | duplicate | replay)."
+    },
     "detail": { "type": ["null", "string"] }
   },
+  "description": "The 200 body of a processed (or deliberately ignored) delivery.",
   "x-readme-ref-name": "WebhookAcceptedResponse"
 }

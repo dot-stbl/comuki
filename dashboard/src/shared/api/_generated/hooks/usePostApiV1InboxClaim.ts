@@ -52,6 +52,7 @@ export function postApiV1InboxClaimMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Claims one pending ticket into a run (exactly once — a repeat answers 409).
  * {@link /api/v1/inbox/claim}
  */
 export function usePostApiV1InboxClaim<TContext>(

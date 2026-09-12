@@ -3,8 +3,12 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Toggle the disabled flag (PATCH /api/v1/users/{userId}).
+ */
 export type SetUserDisabledRequest = {
   /**
+   * @description New disabled flag value.
    * @type boolean
    */
   disabled: boolean

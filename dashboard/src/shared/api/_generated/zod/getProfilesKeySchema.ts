@@ -14,7 +14,11 @@ export const getProfilesKeyPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const getProfilesKey200Schema = z.lazy(() => profileDefinitionSchema)
+export const getProfilesKey200Schema = z
+  .lazy(() => profileDefinitionSchema)
+  .describe(
+    "Catalog-facing profile metadata. The system-prompt body is deliberately not part of it."
+  )
 
 /**
  * @description Not Found

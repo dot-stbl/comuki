@@ -5,10 +5,17 @@
 
 import { z } from "zod/v4"
 
-export const runViewSchema = z.object({
-  id: z.uuid(),
-  projectId: z.uuid(),
-  status: z.string(),
-  createdAt: z.iso.datetime({ offset: true }),
-  updatedAt: z.iso.datetime({ offset: true }),
-})
+/**
+ * @description Wire row of one run — mirrors the RunSummary contract fields.
+ */
+export const runViewSchema = z
+  .object({
+    id: z.uuid().describe("Run id."),
+    projectId: z.uuid().describe("Owning project id."),
+    status: z.string().describe("Run status wire string (queued, running, …)."),
+    createdAt: z.iso
+      .datetime({ offset: true })
+      .describe("When the run was admitted."),
+    updatedAt: z.iso.datetime({ offset: true }).describe("Last status change."),
+  })
+  .describe("Wire row of one run — mirrors the RunSummary contract fields.")

@@ -9,16 +9,20 @@ import { updateAdmissionRuleRequestSchema } from "./updateAdmissionRuleRequestSc
 import { z } from "zod/v4"
 
 export const putApiV1SourcesSourceidRulesRuleidPathParamsSchema = z.object({
-  sourceId: z.uuid(),
-  ruleId: z.uuid(),
+  sourceId: z
+    .uuid()
+    .describe(
+      "Source connection id (route context, not used to filter the rule lookup)."
+    ),
+  ruleId: z.uuid().describe("The admission rule id."),
 })
 
 /**
  * @description OK
  */
-export const putApiV1SourcesSourceidRulesRuleid200Schema = z.lazy(
-  () => admissionRuleViewSchema
-)
+export const putApiV1SourcesSourceidRulesRuleid200Schema = z
+  .lazy(() => admissionRuleViewSchema)
+  .describe("Read-model of an admission rule.")
 
 /**
  * @description Not Found
@@ -27,9 +31,11 @@ export const putApiV1SourcesSourceidRulesRuleid404Schema = z.lazy(
   () => problemDetailsSchema
 )
 
-export const putApiV1SourcesSourceidRulesRuleidMutationRequestSchema = z.lazy(
-  () => updateAdmissionRuleRequestSchema
-)
+export const putApiV1SourcesSourceidRulesRuleidMutationRequestSchema = z
+  .lazy(() => updateAdmissionRuleRequestSchema)
+  .describe(
+    "Admission rule partial update body (PUT /api/v1/admission-rules/{id})."
+  )
 
 export const putApiV1SourcesSourceidRulesRuleidMutationResponseSchema = z.lazy(
   () => putApiV1SourcesSourceidRulesRuleid200Schema

@@ -16,6 +16,7 @@
     "id": {
       "type": "object",
       "properties": { "value": { "type": "string", "format": "uuid" } },
+      "description": "Strong-typed identifier of a role assignment row. UUIDv7 like every\r\nIdentity entity id.",
       "x-readme-ref-name": "RoleAssignmentId"
     },
     "role": { "type": "string" },
@@ -28,5 +29,6 @@
     "revokedAt": { "type": ["null", "string"], "format": "date-time" },
     "isActive": { "type": "boolean" }
   },
+  "description": "Read model of a role assignment. Wire-friendly strings (role key,\r\nscope key) — the API never leaks enum names.",
   "x-readme-ref-name": "RoleAssignmentView"
 }

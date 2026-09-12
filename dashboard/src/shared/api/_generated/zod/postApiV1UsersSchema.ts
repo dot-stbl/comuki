@@ -11,7 +11,9 @@ import { z } from "zod/v4"
 /**
  * @description Created
  */
-export const postApiV1Users201Schema = z.lazy(() => userAccountViewSchema)
+export const postApiV1Users201Schema = z
+  .lazy(() => userAccountViewSchema)
+  .describe("Read model of a user account — no secrets ride along.")
 
 /**
  * @description Bad Request
@@ -23,9 +25,9 @@ export const postApiV1Users400Schema = z.lazy(() => problemDetailsSchema)
  */
 export const postApiV1Users409Schema = z.lazy(() => problemDetailsSchema)
 
-export const postApiV1UsersMutationRequestSchema = z.lazy(
-  () => inviteUserRequestSchema
-)
+export const postApiV1UsersMutationRequestSchema = z
+  .lazy(() => inviteUserRequestSchema)
+  .describe("Invite user body (POST /api/v1/users).")
 
 export const postApiV1UsersMutationResponseSchema = z.lazy(
   () => postApiV1Users201Schema

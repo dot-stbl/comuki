@@ -55,6 +55,11 @@ export function putApiV1SourcesSourceidRulesRuleidMutationOptions<
 }
 
 /**
+ * @summary Partial update of an admission rule nested under a source connection
+ * (issue #40). Wire-compatible with the sibling
+ * `PUT /api/v1/admission-rules/{ruleId}` — the source id is
+ * accepted in the route for the FE's nested form, but the rule row
+ * lives in its own table and is matched by id alone.
  * {@link /api/v1/sources/:sourceId/rules/:ruleId}
  */
 export function usePutApiV1SourcesSourceidRulesRuleid<TContext>(

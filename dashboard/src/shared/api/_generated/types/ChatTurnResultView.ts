@@ -6,12 +6,17 @@
 import type { ChatMessageView } from "./ChatMessageView"
 import type { JsonDocument } from "./JsonDocument"
 
+/**
+ * @description Turn outcome: the reply view plus the pending approve card when the\r\nthread interrupted. The card carries the canonical plan JSON the\r\ndashboard renders; approve/reject posts to\r\n`/api/v1/chat/sessions/{id}/approve`.
+ */
 export type ChatTurnResultView = {
   /**
+   * @description Journal rows the action appended (digest, tool, reply).
    * @type array
    */
   messages: ChatMessageView[]
   /**
+   * @description True when the thread waits for an approve decision.
    * @type boolean
    */
   awaitingApproval: boolean

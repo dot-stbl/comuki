@@ -43,6 +43,7 @@ export function getChatCommandsSuspenseQueryOptions(
 }
 
 /**
+ * @summary Lists every built-in chat command.
  * {@link /chat-commands}
  */
 export function useGetChatCommandsSuspense<

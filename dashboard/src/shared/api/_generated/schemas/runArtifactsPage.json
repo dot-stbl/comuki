@@ -8,20 +8,42 @@
         "required": ["name", "uri", "size", "contentType"],
         "type": "object",
         "properties": {
-          "name": { "type": "string" },
-          "uri": { "type": "string", "format": "uri" },
+          "name": {
+            "type": "string",
+            "description": "Object name under the run prefix (e.g. `brief.json`)."
+          },
+          "uri": {
+            "type": "string",
+            "description": "Canonical URI the host can fetch (typically a MinIO signed URL).",
+            "format": "uri"
+          },
           "size": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": ["integer", "string"],
+            "description": "Object size in bytes; `0` if unknown.",
             "format": "int64"
           },
-          "contentType": { "type": "string" }
+          "contentType": {
+            "type": "string",
+            "description": "MIME type as written at upload time."
+          }
         },
+        "description": "One object inside a run's artifact bundle. URIs, not blobs.",
         "x-readme-ref-name": "ArtifactPointer"
-      }
+      },
+      "description": "Bundle objects, empty when the run has not been packaged yet."
     },
-    "projectId": { "type": "string", "format": "uuid" },
-    "runId": { "type": "string", "format": "uuid" }
+    "projectId": {
+      "type": "string",
+      "description": "Owning project id.",
+      "format": "uuid"
+    },
+    "runId": {
+      "type": "string",
+      "description": "Run id the bundle belongs to.",
+      "format": "uuid"
+    }
   },
+  "description": "One page of run-artifact pointers — wraps ArtifactPointer with the project/run id echo.",
   "x-readme-ref-name": "RunArtifactsPage"
 }

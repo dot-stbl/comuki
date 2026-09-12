@@ -5,20 +5,27 @@
 
 import type { RunView } from "./RunView"
 
+/**
+ * @description One page of runs plus the paging envelope.
+ */
 export type RunsPage = {
   /**
+   * @description Page rows.
    * @type array
    */
   items: RunView[]
   /**
+   * @description 1-based page number.
    * @type integer,string, int32
    */
   page: number | string
   /**
+   * @description Rows per page.
    * @type integer,string, int32
    */
   pageSize: number | string
   /**
+   * @description Total rows matching the filter (subject-visible).
    * @type integer,string, int32
    */
   total: number | string

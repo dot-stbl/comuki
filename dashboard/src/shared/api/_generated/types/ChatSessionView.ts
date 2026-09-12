@@ -3,28 +3,37 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Session read model.
+ */
 export type ChatSessionView = {
   /**
+   * @description Session id.
    * @type string, uuid
    */
   id: string
   /**
+   * @description Project scope; null when the session has none yet.
    * @type null,string, uuid
    */
   projectId?: string | null
   /**
+   * @description Human title.
    * @type string
    */
   title: string
   /**
+   * @description Lifecycle status wire string (lower-cased).
    * @type string
    */
   status: string
   /**
+   * @description When the session was created.
    * @type string, date-time
    */
   createdAt: string
   /**
+   * @description Last activity stamp.
    * @type string, date-time
    */
   updatedAt: string

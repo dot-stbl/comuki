@@ -49,6 +49,7 @@ export function postApiV1TicketsMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Creates a native ticket and launches its run.
  * {@link /api/v1/tickets}
  */
 export function usePostApiV1Tickets<TContext>(

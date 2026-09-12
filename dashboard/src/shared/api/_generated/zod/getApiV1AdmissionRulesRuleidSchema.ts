@@ -14,9 +14,9 @@ export const getApiV1AdmissionRulesRuleidPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const getApiV1AdmissionRulesRuleid200Schema = z.lazy(
-  () => admissionRuleViewSchema
-)
+export const getApiV1AdmissionRulesRuleid200Schema = z
+  .lazy(() => admissionRuleViewSchema)
+  .describe("Read-model of an admission rule.")
 
 /**
  * @description Not Found

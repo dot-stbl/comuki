@@ -9,16 +9,18 @@ import { z } from "zod/v4"
 
 export const getApiV1ProjectsProjectidScheduledJobsJobidPathParamsSchema =
   z.object({
-    projectId: z.uuid(),
-    jobId: z.uuid(),
+    projectId: z
+      .uuid()
+      .describe("Owning project (route context, asserted equal)."),
+    jobId: z.uuid().describe("Job id."),
   })
 
 /**
  * @description OK
  */
-export const getApiV1ProjectsProjectidScheduledJobsJobid200Schema = z.lazy(
-  () => scheduledJobViewSchema
-)
+export const getApiV1ProjectsProjectidScheduledJobsJobid200Schema = z
+  .lazy(() => scheduledJobViewSchema)
+  .describe("Read projection of ScheduledJob for the REST surface.")
 
 /**
  * @description Not Found

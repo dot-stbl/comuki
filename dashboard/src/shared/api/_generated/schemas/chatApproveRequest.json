@@ -2,8 +2,15 @@
   "required": ["approved"],
   "type": "object",
   "properties": {
-    "approved": { "type": "boolean" },
-    "reason": { "type": ["null", "string"] }
+    "approved": {
+      "type": "boolean",
+      "description": "Approve when true, reject otherwise."
+    },
+    "reason": {
+      "type": ["null", "string"],
+      "description": "Optional rejection reason."
+    }
   },
+  "description": "Approve-request body: resolves the pending plan interrupt.",
   "x-readme-ref-name": "ChatApproveRequest"
 }

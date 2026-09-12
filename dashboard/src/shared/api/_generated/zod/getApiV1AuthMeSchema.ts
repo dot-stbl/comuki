@@ -10,7 +10,11 @@ import { z } from "zod/v4"
 /**
  * @description OK
  */
-export const getApiV1AuthMe200Schema = z.lazy(() => meResponseSchema)
+export const getApiV1AuthMe200Schema = z
+  .lazy(() => meResponseSchema)
+  .describe(
+    "The authenticated caller's identity for SPA session bootstrap:\r\nwho the principal resolves to, the roles it holds, and the\r\neffective permission sets per scope. Permissions are computed for\r\nthe request's subject — an API-key request reports the key's\r\nassignments, not its owner's."
+  )
 
 /**
  * @description Unauthorized

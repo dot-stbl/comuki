@@ -2,9 +2,17 @@
   "required": ["projectId", "mode", "filterJson"],
   "type": "object",
   "properties": {
-    "projectId": { "type": "string", "format": "uuid" },
-    "mode": { "type": "string" },
-    "filterJson": { "type": "string" }
+    "projectId": {
+      "type": "string",
+      "description": "Project the rule governs.",
+      "format": "uuid"
+    },
+    "mode": { "type": "string", "description": "watch | inbox." },
+    "filterJson": {
+      "type": "string",
+      "description": "Filter: {\"labelsAny\": [...], \"projects\": [...]}."
+    }
   },
+  "description": "Admission rule creation body (POST /api/v1/admission-rules).",
   "x-readme-ref-name": "CreateAdmissionRuleRequest"
 }

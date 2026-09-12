@@ -3,24 +3,32 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Catalog-facing profile metadata. The system-prompt body is deliberately not part of it.
+ */
 export type ProfileDefinition = {
   /**
+   * @description Stable identity: the file stem of the profile document (e.g. `explore-readonly`); used in plans and work items.
    * @type string
    */
   key: string
   /**
+   * @description Human-readable name from the document frontmatter.
    * @type string
    */
   name: string
   /**
+   * @description What the profile is for; shown in the dashboard and the brain catalog tool.
    * @type string
    */
   description: string
   /**
+   * @description Tool names the profile\'s workers may use (e.g. Read, Grep, Bash). Empty when the document does not restrict tools.
    * @type array
    */
   allowedTools: string[]
   /**
+   * @description Optional model role hint (e.g. light/heavy) for routing; advisory, not a contract.
    * @type null,string
    */
   model: string | null

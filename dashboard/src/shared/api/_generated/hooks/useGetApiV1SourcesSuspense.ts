@@ -51,6 +51,7 @@ export function getApiV1SourcesSuspenseQueryOptions(
 }
 
 /**
+ * @summary Lists connections, optionally per project.
  * {@link /api/v1/sources}
  */
 export function useGetApiV1SourcesSuspense<

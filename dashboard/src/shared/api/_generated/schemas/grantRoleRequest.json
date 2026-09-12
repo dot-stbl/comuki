@@ -2,9 +2,21 @@
   "required": ["userId", "role"],
   "type": "object",
   "properties": {
-    "userId": { "type": "string", "format": "uuid" },
-    "role": { "type": "string" },
-    "projectId": { "type": ["null", "string"], "format": "uuid" }
+    "userId": {
+      "type": "string",
+      "description": "Target user id.",
+      "format": "uuid"
+    },
+    "role": {
+      "type": "string",
+      "description": "Role key (kebab-case: `platform-admin`, `member`, …)."
+    },
+    "projectId": {
+      "type": ["null", "string"],
+      "description": "Optional project id — when present the grant is project-scoped, otherwise platform-scoped.",
+      "format": "uuid"
+    }
   },
+  "description": "Grant role body (POST /api/v1/grants).",
   "x-readme-ref-name": "GrantRoleRequest"
 }

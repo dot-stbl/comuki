@@ -5,10 +5,25 @@
 
 import { z } from "zod/v4"
 
-export const runDetailEventSchema = z.object({
-  id: z.uuid(),
-  workItemId: z.nullable(z.uuid()),
-  type: z.string(),
-  occurredAt: z.iso.datetime({ offset: true }),
-  payloadJson: z.nullable(z.string()),
-})
+/**
+ * @description Wire row for one journal event in the run timeline (newest first).
+ */
+export const runDetailEventSchema = z
+  .object({
+    id: z.uuid().describe("Event id."),
+    workItemId: z.nullable(
+      z
+        .uuid()
+        .describe("Work-item the entry is about, when the payload carries one.")
+    ),
+    type: z.string().describe("Stable dot.case event type."),
+    occurredAt: z.iso
+      .datetime({ offset: true })
+      .describe("When the entry happened."),
+    payloadJson: z.nullable(
+      z.string().describe("Raw payload JSON, or null when omitted.")
+    ),
+  })
+  .describe(
+    "Wire row for one journal event in the run timeline (newest first)."
+  )

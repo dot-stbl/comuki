@@ -15,6 +15,7 @@ import type {
   PostApiV1ChatSessionsSessionidApprovePathParams,
   PostApiV1ChatSessionsSessionidApprove404,
   PostApiV1ChatSessionsSessionidApprove409,
+  PostApiV1ChatSessionsSessionidApprove503,
 } from "../types/PostApiV1ChatSessionsSessionidApprove"
 
 function getPostApiV1ChatSessionsSessionidApproveUrl(
@@ -28,6 +29,7 @@ function getPostApiV1ChatSessionsSessionidApproveUrl(
 }
 
 /**
+ * @summary Resolves the pending plan approve interrupt.
  * {@link /api/v1/chat/sessions/:sessionId/approve}
  */
 export async function postApiV1ChatSessionsSessionidApprove(
@@ -46,6 +48,7 @@ export async function postApiV1ChatSessionsSessionidApprove(
     ResponseErrorConfig<
       | PostApiV1ChatSessionsSessionidApprove404
       | PostApiV1ChatSessionsSessionidApprove409
+      | PostApiV1ChatSessionsSessionidApprove503
     >,
     PostApiV1ChatSessionsSessionidApproveMutationRequest
   >({

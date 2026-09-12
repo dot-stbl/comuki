@@ -5,20 +5,27 @@
 
 import type { ChatMessageView } from "./ChatMessageView"
 
+/**
+ * @description Transcript page read model.
+ */
 export type ChatMessagesPageView = {
   /**
+   * @description Rows of this page, oldest first.
    * @type array
    */
   items: ChatMessageView[]
   /**
+   * @description 1-based page number.
    * @type integer,string, int32
    */
   page: number | string
   /**
+   * @description Page size.
    * @type integer,string, int32
    */
   pageSize: number | string
   /**
+   * @description Total message count of the session.
    * @type integer,string, int32
    */
   total: number | string

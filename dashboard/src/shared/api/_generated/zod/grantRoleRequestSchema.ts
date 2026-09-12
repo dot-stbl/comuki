@@ -5,8 +5,20 @@
 
 import { z } from "zod/v4"
 
-export const grantRoleRequestSchema = z.object({
-  userId: z.uuid(),
-  role: z.string(),
-  projectId: z.uuid().nullish(),
-})
+/**
+ * @description Grant role body (POST /api/v1/grants).
+ */
+export const grantRoleRequestSchema = z
+  .object({
+    userId: z.uuid().describe("Target user id."),
+    role: z
+      .string()
+      .describe("Role key (kebab-case: `platform-admin`, `member`, …)."),
+    projectId: z
+      .uuid()
+      .describe(
+        "Optional project id — when present the grant is project-scoped, otherwise platform-scoped."
+      )
+      .nullish(),
+  })
+  .describe("Grant role body (POST /api/v1/grants).")

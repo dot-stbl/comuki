@@ -48,6 +48,7 @@ export function postApiV1ChatSessionsMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Creates a session for the acting subject.
  * {@link /api/v1/chat/sessions}
  */
 export function usePostApiV1ChatSessions<TContext>(

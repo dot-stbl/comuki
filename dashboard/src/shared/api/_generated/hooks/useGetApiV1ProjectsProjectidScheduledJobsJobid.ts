@@ -70,6 +70,7 @@ export function getApiV1ProjectsProjectidScheduledJobsJobidQueryOptions(
 }
 
 /**
+ * @summary Reads one scheduled job.
  * {@link /api/v1/projects/:projectId/scheduled-jobs/:jobId}
  */
 export function useGetApiV1ProjectsProjectidScheduledJobsJobid<

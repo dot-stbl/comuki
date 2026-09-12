@@ -20,6 +20,7 @@ function getGetApiV1SourcesUrl() {
 }
 
 /**
+ * @summary Lists connections, optionally per project.
  * {@link /api/v1/sources}
  */
 export async function getApiV1Sources(

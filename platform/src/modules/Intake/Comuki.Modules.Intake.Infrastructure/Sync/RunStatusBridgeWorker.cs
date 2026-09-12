@@ -6,6 +6,7 @@ using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Application.Sync;
 using Comuki.Modules.Intake.Domain.Sync;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.DependencyInjection;
@@ -197,11 +198,11 @@ public sealed class RunStatusBridgeWorker(
     }
 }
 
-/// <summary>Terminal run statuses the bridge reacts to (PascalCase enum names).</summary>
+/// <summary>Terminal run statuses the bridge reacts to (<see cref="RunStatuses"/> keys).</summary>
 file static class IntakeRunTerminalStatuses
 {
     public static readonly IReadOnlySet<string> Terminal =
-        new HashSet<string>(["Succeeded", "Failed", "Cancelled"], StringComparer.Ordinal);
+        new HashSet<string>([RunStatuses.Succeeded, RunStatuses.Failed, RunStatuses.Cancelled], StringComparer.Ordinal);
 }
 
 /// <summary>Run URL composition for the sync comments.</summary>

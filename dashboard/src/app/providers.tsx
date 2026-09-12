@@ -4,6 +4,7 @@ import { Toaster } from "sonner"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { queryClient, wireUnauthorizedRedirect } from "@/app/query-client"
+import { RealtimeProvider } from "@/app/realtime-provider"
 import { router } from "@/app/router"
 import { useAuthState } from "@/domains/auth"
 import { PROJECTS_SEED } from "@/shared/api/mock"
@@ -61,7 +62,12 @@ function AuthBoot({ children }: { children: ReactNode }) {
 
   return (
     <SessionProvider user={user ?? SIGNED_OUT_USER} projects={PROJECTS_SEED}>
-      {children}
+      {/* The socket half of live: starts with a resolved real-mode session,
+          stops with a dead one, and turns hub events into invalidation. It
+          sits inside the query client (it invalidates) and inside the
+          session boot (it reads the same `useAuthState` the boot resolves),
+          so socket and REST session share one lifecycle. */}
+      <RealtimeProvider>{children}</RealtimeProvider>
     </SessionProvider>
   )
 }

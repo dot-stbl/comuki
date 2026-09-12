@@ -12,6 +12,7 @@ import type {
   Worker,
   WorkerPool,
 } from "@/domains/queue/model/types"
+import { QUEUE_POLL_INTERVAL_MS, livePolling } from "@/shared/api/polling"
 import { env } from "@/shared/config/env"
 
 /**
@@ -51,5 +52,9 @@ export function useQueueQuery() {
   return useQuery({
     queryKey: queueQueryKey,
     queryFn: getQueueBoard,
+    // Harmless today (real mode has no queue API yet — the queryFn throws,
+    // and the interval backs off while it does); the cadence is in place
+    // for the day the endpoint lands.
+    refetchInterval: livePolling(QUEUE_POLL_INTERVAL_MS),
   })
 }

@@ -22,6 +22,7 @@ function getDeleteApiV1SourcesSourceidUrl(
 }
 
 /**
+ * @summary Deletes a connection (idempotent).
  * {@link /api/v1/sources/:sourceId}
  */
 export async function deleteApiV1SourcesSourceid(

@@ -46,6 +46,7 @@ export function getApiV1ChatSessionsQueryOptions(
 }
 
 /**
+ * @summary Lists the acting subject's recent active sessions.
  * {@link /api/v1/chat/sessions}
  */
 export function useGetApiV1ChatSessions<

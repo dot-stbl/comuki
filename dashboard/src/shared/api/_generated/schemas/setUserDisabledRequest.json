@@ -1,6 +1,9 @@
 {
   "required": ["disabled"],
   "type": "object",
-  "properties": { "disabled": { "type": "boolean" } },
+  "properties": {
+    "disabled": { "type": "boolean", "description": "New disabled flag value." }
+  },
+  "description": "Toggle the disabled flag (PATCH /api/v1/users/{userId}).",
   "x-readme-ref-name": "SetUserDisabledRequest"
 }

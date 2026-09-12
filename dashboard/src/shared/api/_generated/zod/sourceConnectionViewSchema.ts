@@ -5,13 +5,22 @@
 
 import { z } from "zod/v4"
 
-export const sourceConnectionViewSchema = z.object({
-  id: z.uuid(),
-  projectId: z.uuid(),
-  provider: z.string(),
-  name: z.string(),
-  settingsJson: z.string(),
-  secretEnvRef: z.string(),
-  webhookPath: z.string(),
-  enabled: z.boolean(),
-})
+/**
+ * @description Read-model of a source connection. Settings and secret env NAMES are\r\nreturned (never secret values) plus the hook path to paste into the\r\ntracker\'s webhook settings.
+ */
+export const sourceConnectionViewSchema = z
+  .object({
+    id: z.uuid(),
+    projectId: z.uuid(),
+    provider: z.string().describe("Kebab-case provider key."),
+    name: z.string(),
+    settingsJson: z.string(),
+    secretEnvRef: z.string(),
+    webhookPath: z
+      .string()
+      .describe("Hook route to configure in the tracker (relative)."),
+    enabled: z.boolean(),
+  })
+  .describe(
+    "Read-model of a source connection. Settings and secret env NAMES are\r\nreturned (never secret values) plus the hook path to paste into the\r\ntracker's webhook settings."
+  )

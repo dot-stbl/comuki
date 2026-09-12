@@ -2,11 +2,28 @@
   "required": ["cronExpression", "profileKey", "briefJson"],
   "type": "object",
   "properties": {
-    "cronExpression": { "type": "string" },
-    "profileKey": { "type": "string" },
-    "briefJson": { "type": "string" },
-    "runOnOnceAt": { "type": ["null", "string"], "format": "date-time" },
-    "enabled": { "type": ["null", "boolean"] }
+    "cronExpression": {
+      "type": "string",
+      "description": "5-field UTC cron expression."
+    },
+    "profileKey": {
+      "type": "string",
+      "description": "Profile the launched run will resolve."
+    },
+    "briefJson": {
+      "type": "string",
+      "description": "Worker brief payload (jsonb)."
+    },
+    "runOnOnceAt": {
+      "type": ["null", "string"],
+      "description": "Optional one-shot fire-at; null means cron-only.",
+      "format": "date-time"
+    },
+    "enabled": {
+      "type": ["null", "boolean"],
+      "description": "Disable the job at create time (defaults to enabled)."
+    }
   },
+  "description": "Scheduled job creation body\r\n(`POST /api/v1/projects/{projectId}/scheduled-jobs`). The\r\ndispatcher stores the brief jsonb verbatim and the\r\n`profileKey` drives the work item the launched run resolves.\r\n`enabled` defaults to `true` when omitted; a one-shot\r\n`runOnOnceAt` in the past fast-forwards the dispatcher's first\r\npoll (useful for smoke tests).",
   "x-readme-ref-name": "CreateScheduledJobRequest"
 }

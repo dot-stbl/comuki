@@ -40,6 +40,7 @@ export function getProfilesQueryOptions(
 }
 
 /**
+ * @summary Lists every worker profile.
  * {@link /profiles}
  */
 export function useGetProfiles<

@@ -48,6 +48,7 @@ export function postApiV1KeysMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Issues an API key (issue #33). Permission `identity:write`.
  * {@link /api/v1/keys}
  */
 export function usePostApiV1Keys<TContext>(

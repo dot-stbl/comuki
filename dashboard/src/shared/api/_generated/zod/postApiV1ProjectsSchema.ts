@@ -11,9 +11,9 @@ import { z } from "zod/v4"
  */
 export const postApiV1Projects200Schema = z.any()
 
-export const postApiV1ProjectsMutationRequestSchema = z.lazy(
-  () => createProjectRequestSchema
-)
+export const postApiV1ProjectsMutationRequestSchema = z
+  .lazy(() => createProjectRequestSchema)
+  .describe("Wire body of POST /api/v1/projects.")
 
 export const postApiV1ProjectsMutationResponseSchema = z.lazy(
   () => postApiV1Projects200Schema

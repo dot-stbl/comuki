@@ -27,7 +27,7 @@ export type AttentionStatus = "escalated" | "failed" | "waiting"
 export type AttentionAct = "approve" | "stop" | "open"
 
 interface AttentionKind {
-  /** Why these runs are here, in the product's own six words. */
+  /** Why these runs are here, in the product's own seven words. */
   reason: string
   /** The acts, in the order they sit on the row. `open` is always last. */
   acts: readonly AttentionAct[]

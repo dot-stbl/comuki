@@ -5,10 +5,21 @@
 
 import { z } from "zod/v4"
 
-export const createSourceConnectionRequestSchema = z.object({
-  projectId: z.uuid(),
-  provider: z.string(),
-  name: z.string(),
-  settingsJson: z.string(),
-  secretEnvRef: z.string(),
-})
+/**
+ * @description Source connection creation body (POST /api/v1/sources).
+ */
+export const createSourceConnectionRequestSchema = z
+  .object({
+    projectId: z.uuid().describe("Project the connection feeds."),
+    provider: z
+      .string()
+      .describe("Provider key: github | gitlab | yandex-tracker | jira."),
+    name: z.string().describe("Human-readable name."),
+    settingsJson: z
+      .string()
+      .describe("Provider-specific, non-secret settings (env-var NAMES only)."),
+    secretEnvRef: z
+      .string()
+      .describe("Env-var name holding the webhook secret."),
+  })
+  .describe("Source connection creation body (POST /api/v1/sources).")

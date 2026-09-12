@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Read-model of a source connection. Settings and secret env NAMES are\r\nreturned (never secret values) plus the hook path to paste into the\r\ntracker\'s webhook settings.
+ */
 export type SourceConnectionView = {
   /**
    * @type string, uuid
@@ -13,6 +16,7 @@ export type SourceConnectionView = {
    */
   projectId: string
   /**
+   * @description Kebab-case provider key.
    * @type string
    */
   provider: string
@@ -29,6 +33,7 @@ export type SourceConnectionView = {
    */
   secretEnvRef: string
   /**
+   * @description Hook route to configure in the tracker (relative).
    * @type string
    */
   webhookPath: string

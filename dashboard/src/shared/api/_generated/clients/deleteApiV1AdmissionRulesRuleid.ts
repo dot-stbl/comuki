@@ -25,6 +25,7 @@ function getDeleteApiV1AdmissionRulesRuleidUrl(
 }
 
 /**
+ * @summary Deletes a rule (idempotent).
  * {@link /api/v1/admission-rules/:ruleId}
  */
 export async function deleteApiV1AdmissionRulesRuleid(

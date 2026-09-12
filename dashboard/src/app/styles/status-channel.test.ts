@@ -30,7 +30,7 @@
  *   the same painting  every consumer ends up with the exact declarations it
  *                      ended up with before — including the two that take the
  *                      hue and deliberately refuse the weave, and the log,
- *                      which colours four of the six statuses and not all six.
+ *                      which colours four of the seven and not every one.
  */
 import { readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative, sep } from "node:path"
@@ -359,7 +359,7 @@ function everyStylesheet(): string[] {
 }
 
 describe("the status pair is declared once", () => {
-  it("is declared in tokens.css for all six statuses", () => {
+  it("is declared in tokens.css for all seven statuses", () => {
     // Both channels, every status. A status with a hue and no hatch is the
     // shape of the defect this whole file exists to keep out.
     const declared = new Set(
@@ -397,9 +397,10 @@ describe("the status pair is declared once", () => {
   })
 
   it("keeps the one non-status value the attribute carries", () => {
-    // `clear` is the duty screen's verdict word for an empty list, not a
-    // seventh status. It borrows success's pair, and it lives in tokens.css
-    // with the six so the attribute has exactly one vocabulary.
+    // `clear` is the duty screen's verdict word for an empty list, and it is
+    // still not a status — `cancelled` is the seventh, and it is one. `clear`
+    // borrows success's pair and lives in tokens.css with the seven so the
+    // attribute has exactly one vocabulary.
     const band = node("div", "band", { status: "clear" })
     const rail = node("span", "rail", { parent: band })
     for (const mode of MODES) {
@@ -418,9 +419,11 @@ describe("the status pair is declared once", () => {
 
 /**
  * The hatch each status wears, as an angle rather than as a re-read of the
- * token. `running` and `success` have none on purpose — they are the two the
- * palette holds furthest apart in lightness, which `palette.test.ts` enforces
- * and which is only safe while this table stays `null` for exactly those two.
+ * token. `running` and `success` have none on purpose — they are the pair the
+ * palette holds 26 L* apart, the widest berth on the ladder, which
+ * `palette.test.ts` enforces and which is only safe while this table stays
+ * `null` for exactly those two. Every angle here is at least 22.5deg from
+ * every other, so no two hatches read as one on a photocopy.
  */
 const WEAVE_ANGLE: Record<(typeof STATUS_KEYS)[number], string | null> = {
   running: null,
@@ -429,6 +432,7 @@ const WEAVE_ANGLE: Record<(typeof STATUS_KEYS)[number], string | null> = {
   escalated: "45deg",
   failed: "-45deg",
   queued: "90deg",
+  cancelled: "67.5deg",
 }
 
 /** `--weave-<status>`, resolved. The string every consumer has to end up with. */
@@ -470,6 +474,54 @@ describe("a status resolves to its own colour and its own hatch", () => {
           angle === null
             ? "none"
             : expect.stringContaining(`repeating-linear-gradient( ${angle},`),
+      })
+    }
+  })
+
+  it("keeps every hatch angle at least 22.5deg from every other", () => {
+    // Density alone is not enough to tell two hatches apart at a glance, and a
+    // glance is the whole job of the second channel. Angles wrap at 180deg — a
+    // line drawn at -45 and a line drawn at 135 are the same line — so the
+    // distance is measured there. 22.5 is what the seventh status had left:
+    // 0, 45, 90 and -45 were taken, and the widest gap between them halves to
+    // exactly this. An eighth status has no room at this floor, which is the
+    // useful thing for this test to say out loud.
+    const angles = STATUS_KEYS.map((status) => WEAVE_ANGLE[status])
+      .filter((angle): angle is string => angle !== null)
+      .map((angle) => ((Number.parseFloat(angle) % 180) + 180) % 180)
+    const tight: string[] = []
+    for (let i = 0; i < angles.length; i += 1) {
+      for (let j = i + 1; j < angles.length; j += 1) {
+        const raw = Math.abs((angles[i] ?? 0) - (angles[j] ?? 0))
+        const apart = Math.min(raw, 180 - raw)
+        if (apart < 22.5) {
+          tight.push(`${angles[i]}deg/${angles[j]}deg is ${apart}deg apart`)
+        }
+      }
+    }
+    expect(tight).toEqual([])
+  })
+
+  it("paints `cancelled` as neither `failed` nor `success`", () => {
+    // The regression the seventh status exists to end. `normalizeRunStatus`
+    // used to fold the wire's `cancelled` onto `failed` for want of a rung, so
+    // a project that stops runs routinely painted its board red for work
+    // nobody failed at — and `failed` is the one badge that escalates. Both
+    // channels have to differ from both terminal neighbours, or the seventh
+    // status is only a seventh word.
+    for (const mode of MODES) {
+      expect({
+        mode,
+        vsFailedHue: hueOf("cancelled", mode) === hueOf("failed", mode),
+        vsFailedWeave: weaveOf("cancelled", mode) === weaveOf("failed", mode),
+        vsSuccessHue: hueOf("cancelled", mode) === hueOf("success", mode),
+        vsSuccessWeave: weaveOf("cancelled", mode) === weaveOf("success", mode),
+      }).toEqual({
+        mode,
+        vsFailedHue: false,
+        vsFailedWeave: false,
+        vsSuccessHue: false,
+        vsSuccessWeave: false,
       })
     }
   })
@@ -649,11 +701,13 @@ describe("the marks that spell the status out take the hue alone", () => {
   })
 })
 
-describe("the log still colours four statuses and not six", () => {
-  it("tints the four that mean something happened and leaves the other two", () => {
+describe("the log still colours four statuses and not seven", () => {
+  it("tints the four that mean something happened and leaves the rest", () => {
     // The subset is this module's own decision and survived the move: a log is
     // read downward hunting for the moment it went wrong, and colouring the
     // ordinary lines is what stops the extraordinary one from showing.
+    // `cancelled` joined the set the module leaves alone: an operator who
+    // stopped a run does not need the log to point at the line saying so.
     const sheets = sheetsFor(INSPECTOR)
     const COLOURED = new Set(["running", "failed", "waiting", "escalated"])
     for (const mode of MODES) {

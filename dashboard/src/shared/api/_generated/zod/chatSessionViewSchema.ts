@@ -5,11 +5,23 @@
 
 import { z } from "zod/v4"
 
-export const chatSessionViewSchema = z.object({
-  id: z.uuid(),
-  projectId: z.uuid().nullish(),
-  title: z.string(),
-  status: z.string(),
-  createdAt: z.iso.datetime({ offset: true }),
-  updatedAt: z.iso.datetime({ offset: true }),
-})
+/**
+ * @description Session read model.
+ */
+export const chatSessionViewSchema = z
+  .object({
+    id: z.uuid().describe("Session id."),
+    projectId: z
+      .uuid()
+      .describe("Project scope; null when the session has none yet.")
+      .nullish(),
+    title: z.string().describe("Human title."),
+    status: z.string().describe("Lifecycle status wire string (lower-cased)."),
+    createdAt: z.iso
+      .datetime({ offset: true })
+      .describe("When the session was created."),
+    updatedAt: z.iso
+      .datetime({ offset: true })
+      .describe("Last activity stamp."),
+  })
+  .describe("Session read model.")

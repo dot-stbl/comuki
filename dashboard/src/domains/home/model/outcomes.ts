@@ -11,6 +11,12 @@ import type { RunStatus, RunSummary } from "@/domains/runs/model/types"
  * "running" into a day's outcomes would be counting unfinished work as a
  * result of the day it happens to sit in.
  *
+ * `cancelled` is terminal too and is still not one of the three. The day
+ * series is seeded rather than served (`SeedOutcomeDay.byStatus` carries the
+ * six words the seed knows), so a fourth band would be a legend entry with no
+ * bar under it on every day of the week. It goes in when the endpoint behind
+ * this shape does.
+ *
  * Today's column is bounded below by the live list for the same reason the
  * queue's depth is derived rather than authored: a week that finished fewer
  * runs today than the list is showing would be describing a different day than

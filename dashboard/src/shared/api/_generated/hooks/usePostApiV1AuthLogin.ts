@@ -48,6 +48,10 @@ export function postApiV1AuthLoginMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Email+password sign-in; on success the cookie session is set by
+ * IUserAuthenticationService. Any credential failure
+ * answers the same 401 problem — unknown user and wrong password
+ * read identically.
  * {@link /api/v1/auth/login}
  */
 export function usePostApiV1AuthLogin<TContext>(

@@ -13,12 +13,16 @@
   "properties": {
     "id": { "type": "string", "format": "uuid" },
     "projectId": { "type": "string", "format": "uuid" },
-    "provider": { "type": "string" },
+    "provider": { "type": "string", "description": "Kebab-case provider key." },
     "name": { "type": "string" },
     "settingsJson": { "type": "string" },
     "secretEnvRef": { "type": "string" },
-    "webhookPath": { "type": "string" },
+    "webhookPath": {
+      "type": "string",
+      "description": "Hook route to configure in the tracker (relative)."
+    },
     "enabled": { "type": "boolean" }
   },
+  "description": "Read-model of a source connection. Settings and secret env NAMES are\r\nreturned (never secret values) plus the hook path to paste into the\r\ntracker's webhook settings.",
   "x-readme-ref-name": "SourceConnectionView"
 }

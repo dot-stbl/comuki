@@ -10,16 +10,16 @@ import { z } from "zod/v4"
 
 export const patchApiV1ProjectsProjectidScheduledJobsJobidPathParamsSchema =
   z.object({
-    projectId: z.uuid(),
-    jobId: z.uuid(),
+    projectId: z.uuid().describe("Owning project (route context)."),
+    jobId: z.uuid().describe("Job id."),
   })
 
 /**
  * @description OK
  */
-export const patchApiV1ProjectsProjectidScheduledJobsJobid200Schema = z.lazy(
-  () => scheduledJobViewSchema
-)
+export const patchApiV1ProjectsProjectidScheduledJobsJobid200Schema = z
+  .lazy(() => scheduledJobViewSchema)
+  .describe("Read projection of ScheduledJob for the REST surface.")
 
 /**
  * @description Bad Request
@@ -36,7 +36,11 @@ export const patchApiV1ProjectsProjectidScheduledJobsJobid404Schema = z.lazy(
 )
 
 export const patchApiV1ProjectsProjectidScheduledJobsJobidMutationRequestSchema =
-  z.lazy(() => updateScheduledJobRequestSchema)
+  z
+    .lazy(() => updateScheduledJobRequestSchema)
+    .describe(
+      "Scheduled job partial-update body\r\n(`PATCH /api/v1/projects/{projectId}/scheduled-jobs/{jobId}`).\r\nNull fields leave the stored value untouched — the canonical PATCH\r\nsemantics. `cronExpression` is re-parsed on write; a malformed\r\nvalue surfaces `400` with the `scheduler.invalid_cron`\r\ncode."
+    )
 
 export const patchApiV1ProjectsProjectidScheduledJobsJobidMutationResponseSchema =
   z.lazy(() => patchApiV1ProjectsProjectidScheduledJobsJobid200Schema)

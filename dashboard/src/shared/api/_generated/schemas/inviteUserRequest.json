@@ -2,9 +2,16 @@
   "required": ["email"],
   "type": "object",
   "properties": {
-    "email": { "type": "string" },
-    "displayName": { "type": ["null", "string"] },
-    "password": { "type": ["null", "string"] }
+    "email": { "type": "string", "description": "Login email (unique)." },
+    "displayName": {
+      "type": ["null", "string"],
+      "description": "Optional display name; defaults to the email local-part when omitted."
+    },
+    "password": {
+      "type": ["null", "string"],
+      "description": "Optional bootstrap password. When omitted the operator intends to send a\r\nseparate invitation link and the new account lands password-less."
+    }
   },
+  "description": "Invite user body (POST /api/v1/users).",
   "x-readme-ref-name": "InviteUserRequest"
 }

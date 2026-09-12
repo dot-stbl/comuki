@@ -27,6 +27,9 @@ function getRunsArtifactsUrl(
 }
 
 /**
+ * @summary Returns the artifact pointers for one run, empty when the bundle
+ * has not been packaged yet. URIs are the canonical MinIO object
+ * URLs; the FE uses them as named links.
  * {@link /api/v1/projects/:projectId/runs/:runId/artifacts}
  */
 export async function runsArtifacts(

@@ -49,6 +49,10 @@ export function runsGetByIdSuspenseQueryOptions(
 }
 
 /**
+ * @summary Reads the full detail of one run: work items with their DAG edges, the
+ * recent journal (top 20), the pinned revisions, and the brief. The
+ * subject-scope query filter is the only gate beyond `run:read` —
+ * a run the subject cannot see reads as 404, not 403.
  * {@link /api/v1/runs/:runId}
  */
 export function useRunsGetByIdSuspense<

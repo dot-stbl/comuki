@@ -15,6 +15,7 @@ import {
 } from "@/domains/chat/model/commands"
 import type { ChatMessageView } from "@/shared/api/_generated/types/ChatMessageView"
 import type { ChatSlashCommand } from "@/shared/api/_generated/types/ChatSlashCommand"
+import type { MessagePart as WireMessagePart } from "@/shared/api/_generated/types/MessagePart"
 import type { Session } from "@/shared/session"
 
 /**
@@ -195,7 +196,11 @@ describe("chatSlashCommandToDomainCommand", () => {
 
   it("reads the host's `control-plane` as a declared command", () => {
     const command = chatSlashCommandToDomainCommand(
-      slashCommandFixture({ key: "restart", name: "Restart", source: "control-plane" })
+      slashCommandFixture({
+        key: "restart",
+        name: "Restart",
+        source: "control-plane",
+      })
     )
 
     expect(command.origin).toBe("client")
@@ -254,8 +259,9 @@ describe("chatSlashCommandToDomainCommand", () => {
     }
 
     expect(
-      chatSlashCommandToDomainCommand(slashCommandFixture({ source: "built_in" }))
-        .origin
+      chatSlashCommandToDomainCommand(
+        slashCommandFixture({ source: "built_in" })
+      ).origin
     ).toBe("client")
   })
 
@@ -263,8 +269,9 @@ describe("chatSlashCommandToDomainCommand", () => {
     // `projectId` is what `availableCommands` filters on. Holding the source
     // label there took every wire command out of the menu.
     expect(
-      chatSlashCommandToDomainCommand(slashCommandFixture({ source: "builtin" }))
-        .projectId
+      chatSlashCommandToDomainCommand(
+        slashCommandFixture({ source: "builtin" })
+      ).projectId
     ).toBeUndefined()
     expect(
       chatSlashCommandToDomainCommand(
@@ -350,12 +357,21 @@ describe("chatMessagesPageToDomainMessages", () => {
 /* ------------------------------------------------------------------ *
  * Message parts.
  *
- * Two seams, and they are at different stages on purpose. The seed's parts
- * are the shape the wire is being written to send, so they map today. The
- * *wire's* parts do not exist yet — `_generated/` is machine-written from the
- * host's OpenAPI document and this bundle must not invent a field there — so
- * the seam is a marked function that returns nothing, and this is the case
- * that will fail the day somebody fills it in without looking.
+ * Two seams onto the same domain union: the seed's, and the wire's now that
+ * `ChatMessageView.parts` ships. Both are pinned here because the console
+ * renders one shape and a drift on either side is invisible until a thread
+ * comes back wrong.
+ *
+ * Three claims the wire side makes and that these cases are here to keep
+ * true, because each one was a decision rather than a transcription:
+ *
+ *  - a row with no parts stays *absent*, never `[]` — an empty list means
+ *    "this turn had no body", which is the wrong thing to say about a row
+ *    whose prose is sitting in `content`;
+ *  - a `kind` this bundle has never heard of degrades the part and not the
+ *    thread, the way `normalizeTicketStatus` degrades a ticket row;
+ *  - the two sides spell a plan node and an int64 differently, so both go
+ *    through a conversion rather than a copy.
  * ------------------------------------------------------------------ */
 
 describe("toChatMessage carries the part list", () => {
@@ -447,17 +463,225 @@ describe("toChatMessage carries the part list", () => {
   })
 })
 
-describe("the wire does not send parts yet", () => {
-  it("leaves `parts` absent, so the flat derivation still runs", () => {
-    // TODO(chat-parts-wire) points at the one function that changes when the
-    // host ships `ChatMessageView.parts`. Until then this is the contract:
-    // absent, never an empty array — an empty list means "this turn had no
-    // body", and a wire row that carries text plainly did.
+describe("the wire's part list reaches the domain", () => {
+  it("maps every kind in the frozen list without losing a field", () => {
+    const message = chatMessageViewToDomainMessage(
+      messageViewFixture({
+        role: "assistant",
+        content: "flattened prose",
+        parts: [
+          { kind: "text", markdown: "**bold**" },
+          {
+            kind: "code",
+            language: "ts",
+            source: "const a = 1",
+            path: "src/a.ts",
+            startLine: 12,
+          },
+          { kind: "diagram", dialect: "mermaid", source: "flowchart LR" },
+          { kind: "thinking", text: "weighing", tokens: 42 },
+          {
+            kind: "tool",
+            name: "runs.get",
+            inputJson: "{}",
+            status: "success",
+            outputJson: "ok",
+            durationMs: 412,
+          },
+          { kind: "handoff", query: "waiting" },
+          {
+            kind: "plan",
+            nodes: [
+              {
+                id: "w1",
+                title: "read the repository",
+                profileKey: "explorer",
+                brief: "map the modules",
+              },
+            ],
+            edges: [{ from: "w1", to: "w2" }],
+          },
+        ],
+      })
+    )
+
+    expect(message.parts?.map((part) => part.kind)).toEqual([
+      "text",
+      "code",
+      "diagram",
+      "thinking",
+      "tool",
+      "handoff",
+      "plan",
+    ])
+    expect(message.parts?.[1]).toEqual({
+      kind: "code",
+      language: "ts",
+      source: "const a = 1",
+      path: "src/a.ts",
+      startLine: 12,
+    })
+    expect(message.parts?.[4]).toEqual({
+      kind: "tool",
+      name: "runs.get",
+      inputJson: "{}",
+      status: "success",
+      outputJson: "ok",
+      durationMs: 412,
+    })
+    // The two sides spell a plan node differently — `title`/`profileKey` on
+    // the wire's canonical `Plan` shape, `label`/`profile` in the domain —
+    // and `brief` has no home here. Copying the wire's spelling through
+    // would render a step with no label at all.
+    expect(message.parts?.[6]).toEqual({
+      kind: "plan",
+      nodes: [{ id: "w1", label: "read the repository", profile: "explorer" }],
+      edges: [{ from: "w1", to: "w2" }],
+    })
+  })
+
+  it("reads an int64 the wire quoted as a number", () => {
+    // kubb types every int32/int64 as `number | string` because JSON may
+    // carry a 64-bit value quoted rather than lose precision. The renderer
+    // does arithmetic on these, so a string that reaches it is a defect.
+    const message = chatMessageViewToDomainMessage(
+      messageViewFixture({
+        role: "assistant",
+        parts: [
+          {
+            kind: "tool",
+            name: "runs.get",
+            inputJson: "{}",
+            status: "running",
+            durationMs: "9007199254",
+          },
+          { kind: "thinking", text: "weighing", tokens: "1200" },
+        ],
+      })
+    )
+
+    expect(message.parts?.[0]).toMatchObject({ durationMs: 9007199254 })
+    expect(message.parts?.[1]).toMatchObject({ tokens: 1200 })
+  })
+
+  it("reads a tool status it does not know as a finished call", () => {
+    // `status` is a bare `string` on the wire. A journaled part is terminal,
+    // so the failure modes are a spinner that never stops and an alarm about
+    // a call that worked; `success` is the same reading the flat tool path
+    // already takes.
+    const message = chatMessageViewToDomainMessage(
+      messageViewFixture({
+        role: "assistant",
+        parts: [
+          {
+            kind: "tool",
+            name: "runs.get",
+            inputJson: "{}",
+            status: "cancelled",
+          },
+        ],
+      })
+    )
+
+    expect(message.parts?.[0]).toMatchObject({ status: "success" })
+  })
+})
+
+describe("a row with no parts stays flat", () => {
+  it("leaves `parts` absent when the wire sends none", () => {
+    // The contract this pins: absent, never an empty array — an empty list
+    // means "this turn had no body", and a row that carries text plainly
+    // did. Rows written before parts existed arrive exactly like this, and
+    // `model/parts.ts` derives their body from the flat fields.
     const message = chatMessageViewToDomainMessage(
       messageViewFixture({ role: "assistant", content: "**markdown**" })
     )
 
     expect(message.parts).toBeUndefined()
     expect(message.text).toBe("**markdown**")
+  })
+
+  it("reads an explicit null the same way", () => {
+    const message = chatMessageViewToDomainMessage(
+      messageViewFixture({
+        role: "assistant",
+        content: "**markdown**",
+        parts: null,
+      })
+    )
+
+    expect(message.parts).toBeUndefined()
+    expect(message.text).toBe("**markdown**")
+  })
+
+  it("collapses an empty wire array to absent rather than carrying it", () => {
+    const message = chatMessageViewToDomainMessage(
+      messageViewFixture({ role: "assistant", content: "prose", parts: [] })
+    )
+
+    expect(message.parts).toBeUndefined()
+    expect(message.text).toBe("prose")
+  })
+})
+
+/**
+ * A part kind this bundle has never heard of — the P2 `question` part, as a
+ * host one release ahead would send it.
+ *
+ * The cast is the point: the generated union carries seven kinds and this is
+ * not one of them, so there is no honest way to write this fixture in the
+ * wire's own types. That is exactly the situation the mapper has to survive.
+ */
+const unknownWirePart = {
+  kind: "question",
+  prompt: "which branch?",
+} as unknown as WireMessagePart
+
+describe("a part kind the client does not know degrades the part", () => {
+  it("drops it and keeps the parts around it", () => {
+    const message = chatMessageViewToDomainMessage(
+      messageViewFixture({
+        role: "assistant",
+        content: "prose and a question",
+        parts: [
+          { kind: "text", markdown: "prose" },
+          unknownWirePart,
+          { kind: "handoff", query: "waiting" },
+        ],
+      })
+    )
+
+    expect(message.parts?.map((part) => part.kind)).toEqual(["text", "handoff"])
+  })
+
+  it("falls back to the flat projection when nothing survives", () => {
+    // The host guarantees `content` is the flattened projection of the same
+    // row, so the words are still there with the structure removed. A hole
+    // in the thread would be the worse answer, and a throw would take the
+    // whole page with it.
+    const message = chatMessageViewToDomainMessage(
+      messageViewFixture({
+        role: "assistant",
+        content: "which branch?",
+        parts: [unknownWirePart],
+      })
+    )
+
+    expect(message.parts).toBeUndefined()
+    expect(message.text).toBe("which branch?")
+  })
+
+  it("does not throw on a whole page of them", () => {
+    expect(() =>
+      chatMessagesPageToDomainMessages({
+        items: [
+          messageViewFixture({ id: "m1", parts: [unknownWirePart] }),
+          messageViewFixture({ id: "m2", parts: [unknownWirePart] }),
+        ],
+        page: 1,
+        pageSize: 50,
+        total: 2,
+      })
+    ).not.toThrow()
   })
 })

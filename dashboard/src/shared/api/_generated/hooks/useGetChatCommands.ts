@@ -41,6 +41,7 @@ export function getChatCommandsQueryOptions(
 }
 
 /**
+ * @summary Lists every built-in chat command.
  * {@link /chat-commands}
  */
 export function useGetChatCommands<

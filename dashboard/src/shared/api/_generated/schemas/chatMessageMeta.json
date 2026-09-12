@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "properties": {
+    "model": {
+      "type": ["null", "string"],
+      "description": "Model id that produced the message (`glm-4.7`, …); null for rows no model wrote."
+    },
+    "tokensIn": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "description": "Prompt tokens consumed.",
+      "format": "int32"
+    },
+    "tokensOut": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "description": "Completion tokens produced.",
+      "format": "int32"
+    },
+    "costMicros": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "description": "Cost in USD micros (the unit the costs capability journals).",
+      "format": "int64"
+    },
+    "latencyMs": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "description": "Wall-clock time to produce the message, in milliseconds.",
+      "format": "int64"
+    },
+    "stopReason": {
+      "type": ["null", "string"],
+      "description": "Why generation stopped (`stop`, `length`, `tool_use`, …)."
+    }
+  },
+  "description": "What producing one message cost. Everything is optional — a user row\r\nhas no model and a journal row has no tokens — so a partial reading is\r\nexpressible without inventing zeroes.",
+  "x-readme-ref-name": "ChatMessageMeta"
+}

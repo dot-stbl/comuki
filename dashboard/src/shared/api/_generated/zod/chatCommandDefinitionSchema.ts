@@ -5,9 +5,28 @@
 
 import { z } from "zod/v4"
 
-export const chatCommandDefinitionSchema = z.object({
-  key: z.string(),
-  name: z.string(),
-  description: z.string(),
-  body: z.string(),
-})
+/**
+ * @description One built-in chat command as listed to the chat harness and the dashboard.
+ */
+export const chatCommandDefinitionSchema = z
+  .object({
+    key: z
+      .string()
+      .describe(
+        "Stable identity: the file stem of the command document (e.g. `init`); the slash-command name."
+      ),
+    name: z
+      .string()
+      .describe("Human-readable name from the document frontmatter."),
+    description: z
+      .string()
+      .describe("One-line description for command lists and autocomplete."),
+    body: z
+      .string()
+      .describe(
+        "Markdown instructions the brain follows when the command is invoked."
+      ),
+  })
+  .describe(
+    "One built-in chat command as listed to the chat harness and the dashboard."
+  )

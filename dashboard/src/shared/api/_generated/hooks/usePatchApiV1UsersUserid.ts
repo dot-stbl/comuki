@@ -53,6 +53,7 @@ export function patchApiV1UsersUseridMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Toggles the disabled flag (issue #35). Permission `identity:write`.
  * {@link /api/v1/users/:userId}
  */
 export function usePatchApiV1UsersUserid<TContext>(

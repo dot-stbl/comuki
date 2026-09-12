@@ -6,9 +6,24 @@
 import { apiKeyViewSchema } from "./apiKeyViewSchema"
 import { z } from "zod/v4"
 
-export const identityAdminKeysPageSchema = z.object({
-  get items() {
-    return z.array(apiKeyViewSchema)
-  },
-  total: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-})
+/**
+ * @description Paged envelope for API keys. The plaintext is never carried —\r\n    only the public-facing view record (prefix, name, status…).
+ */
+export const identityAdminKeysPageSchema = z
+  .object({
+    get items() {
+      return z
+        .array(
+          apiKeyViewSchema.describe(
+            "Read-model of an API key row. The plaintext token is NOT carried —\r\nit lives in IssuedApiKeyCredential\r\nonly at issue time."
+          )
+        )
+        .describe("Page contents.")
+    },
+    total: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Total rows across all pages."),
+  })
+  .describe(
+    "Paged envelope for API keys. The plaintext is never carried —\r\n    only the public-facing view record (prefix, name, status…)."
+  )

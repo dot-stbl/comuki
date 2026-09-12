@@ -46,6 +46,9 @@ export function getApiV1AuthMeSuspenseQueryOptions(
 }
 
 /**
+ * @summary The current subject: identity, active roles and effective
+ * permissions. An API-key request reports the key's subject and
+ * the key's assignments, not its owner's.
  * {@link /api/v1/auth/me}
  */
 export function useGetApiV1AuthMeSuspense<

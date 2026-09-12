@@ -20,26 +20,62 @@
         ],
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "projectId": { "type": "string", "format": "uuid" },
-          "cronExpression": { "type": "string" },
-          "profileKey": { "type": "string" },
-          "briefJson": { "type": "string" },
-          "runOnOnceAt": { "type": ["null", "string"], "format": "date-time" },
-          "enabled": { "type": "boolean" },
-          "lastFiredAt": { "type": ["null", "string"], "format": "date-time" },
-          "nextFireAt": { "type": "string", "format": "date-time" },
+          "id": {
+            "type": "string",
+            "description": "The job id.",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "description": "Owning project.",
+            "format": "uuid"
+          },
+          "cronExpression": {
+            "type": "string",
+            "description": "5-field UTC cron expression."
+          },
+          "profileKey": {
+            "type": "string",
+            "description": "Profile the launched run will resolve."
+          },
+          "briefJson": {
+            "type": "string",
+            "description": "Worker brief payload."
+          },
+          "runOnOnceAt": {
+            "type": ["null", "string"],
+            "description": "Optional one-shot fire-at.",
+            "format": "date-time"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the dispatcher will fire it."
+          },
+          "lastFiredAt": {
+            "type": ["null", "string"],
+            "description": "Last fire stamp; null until the first dispatch.",
+            "format": "date-time"
+          },
+          "nextFireAt": {
+            "type": "string",
+            "description": "Next computed fire stamp.",
+            "format": "date-time"
+          },
           "createdAt": { "type": "string", "format": "date-time" },
           "updatedAt": { "type": "string", "format": "date-time" }
         },
+        "description": "Read projection of ScheduledJob for the REST surface.",
         "x-readme-ref-name": "ScheduledJobView"
-      }
+      },
+      "description": "Page contents (already-projected views)."
     },
     "total": {
       "pattern": "^-?(?:0|[1-9]\\d*)$",
       "type": ["integer", "string"],
+      "description": "Total jobs in the project (not the page size).",
       "format": "int32"
     }
   },
+  "description": "One paginated read of scheduled jobs for a project.\r\nWire shape: `{ \"items\": [ScheduledJobView], \"total\": N }`.\r\nThe scheduler surface is small (per project, one page per request)\r\n— pagination is opt-in via `?page` + `?pageSize`; the\r\ndefault returns everything.",
   "x-readme-ref-name": "ScheduledJobsPage"
 }

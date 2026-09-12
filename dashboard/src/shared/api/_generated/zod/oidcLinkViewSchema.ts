@@ -5,10 +5,17 @@
 
 import { z } from "zod/v4"
 
-export const oidcLinkViewSchema = z.object({
-  id: z.uuid(),
-  userId: z.uuid(),
-  provider: z.string(),
-  subject: z.string(),
-  createdAt: z.iso.datetime({ offset: true }),
-})
+/**
+ * @description Read-model of an OIDC identity link — the local user id, the provider\r\nkey, and the external subject claim. Provider / subject are returned\r\nas the operator entered them (the stored form lower-cases the provider\r\nkey; the subject is preserved verbatim).
+ */
+export const oidcLinkViewSchema = z
+  .object({
+    id: z.uuid(),
+    userId: z.uuid(),
+    provider: z.string(),
+    subject: z.string(),
+    createdAt: z.iso.datetime({ offset: true }),
+  })
+  .describe(
+    "Read-model of an OIDC identity link — the local user id, the provider\r\nkey, and the external subject claim. Provider / subject are returned\r\nas the operator entered them (the stored form lower-cases the provider\r\nkey; the subject is preserved verbatim)."
+  )

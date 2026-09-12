@@ -10,16 +10,16 @@ import { z } from "zod/v4"
 
 export const postApiV1ProjectsProjectidScheduledJobsPathParamsSchema = z.object(
   {
-    projectId: z.uuid(),
+    projectId: z.uuid().describe("Owning project."),
   }
 )
 
 /**
  * @description Created
  */
-export const postApiV1ProjectsProjectidScheduledJobs201Schema = z.lazy(
-  () => scheduledJobViewSchema
-)
+export const postApiV1ProjectsProjectidScheduledJobs201Schema = z
+  .lazy(() => scheduledJobViewSchema)
+  .describe("Read projection of ScheduledJob for the REST surface.")
 
 /**
  * @description Bad Request
@@ -28,8 +28,11 @@ export const postApiV1ProjectsProjectidScheduledJobs400Schema = z.lazy(
   () => problemDetailsSchema
 )
 
-export const postApiV1ProjectsProjectidScheduledJobsMutationRequestSchema =
-  z.lazy(() => createScheduledJobRequestSchema)
+export const postApiV1ProjectsProjectidScheduledJobsMutationRequestSchema = z
+  .lazy(() => createScheduledJobRequestSchema)
+  .describe(
+    "Scheduled job creation body\r\n(`POST /api/v1/projects/{projectId}/scheduled-jobs`). The\r\ndispatcher stores the brief jsonb verbatim and the\r\n`profileKey` drives the work item the launched run resolves.\r\n`enabled` defaults to `true` when omitted; a one-shot\r\n`runOnOnceAt` in the past fast-forwards the dispatcher's first\r\npoll (useful for smoke tests)."
+  )
 
 export const postApiV1ProjectsProjectidScheduledJobsMutationResponseSchema =
   z.lazy(() => postApiV1ProjectsProjectidScheduledJobs201Schema)

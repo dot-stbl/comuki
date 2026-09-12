@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Email+password login body.
+ */
 export type LoginRequest = {
   /**
    * @type string

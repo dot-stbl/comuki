@@ -46,6 +46,7 @@ export function postApiV1KeysKeyidRevokeMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Revokes an API key (issue #37). Permission `identity:write`.
  * {@link /api/v1/keys/:keyId/revoke}
  */
 export function usePostApiV1KeysKeyidRevoke<TContext>(

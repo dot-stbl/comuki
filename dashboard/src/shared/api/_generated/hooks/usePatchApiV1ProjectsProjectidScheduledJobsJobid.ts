@@ -63,6 +63,7 @@ export function patchApiV1ProjectsProjectidScheduledJobsJobidMutationOptions<
 }
 
 /**
+ * @summary Partial update — null fields leave the stored value untouched.
  * {@link /api/v1/projects/:projectId/scheduled-jobs/:jobId}
  */
 export function usePatchApiV1ProjectsProjectidScheduledJobsJobid<TContext>(

@@ -3,16 +3,22 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Admission rule partial update body (PUT /api/v1/admission-rules/{id}).
+ */
 export type UpdateAdmissionRuleRequest = {
   /**
+   * @description watch | inbox; null = keep.
    * @type null,string
    */
   mode?: string | null
   /**
+   * @description New filter json; null = keep.
    * @type null,string
    */
   filterJson?: string | null
   /**
+   * @description Enable/disable; null = keep.
    * @type null,boolean
    */
   enabled?: boolean | null

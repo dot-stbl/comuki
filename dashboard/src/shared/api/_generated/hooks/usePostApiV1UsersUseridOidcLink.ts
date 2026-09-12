@@ -58,6 +58,7 @@ export function postApiV1UsersUseridOidcLinkMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Manually links an OIDC identity (issue #34). Permission `identity:write`.
  * {@link /api/v1/users/:userId/oidc-link}
  */
 export function usePostApiV1UsersUseridOidcLink<TContext>(

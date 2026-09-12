@@ -20,6 +20,7 @@ function getGetApiV1AdmissionRulesUrl() {
 }
 
 /**
+ * @summary Lists rules, optionally per project.
  * {@link /api/v1/admission-rules}
  */
 export async function getApiV1AdmissionRules(

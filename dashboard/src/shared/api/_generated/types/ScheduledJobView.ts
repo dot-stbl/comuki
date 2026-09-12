@@ -3,40 +3,52 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Read projection of ScheduledJob for the REST surface.
+ */
 export type ScheduledJobView = {
   /**
+   * @description The job id.
    * @type string, uuid
    */
   id: string
   /**
+   * @description Owning project.
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description 5-field UTC cron expression.
    * @type string
    */
   cronExpression: string
   /**
+   * @description Profile the launched run will resolve.
    * @type string
    */
   profileKey: string
   /**
+   * @description Worker brief payload.
    * @type string
    */
   briefJson: string
   /**
+   * @description Optional one-shot fire-at.
    * @type null,string, date-time
    */
   runOnOnceAt: string | null
   /**
+   * @description Whether the dispatcher will fire it.
    * @type boolean
    */
   enabled: boolean
   /**
+   * @description Last fire stamp; null until the first dispatch.
    * @type null,string, date-time
    */
   lastFiredAt: string | null
   /**
+   * @description Next computed fire stamp.
    * @type string, date-time
    */
   nextFireAt: string

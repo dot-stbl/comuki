@@ -46,6 +46,12 @@ export function postApiV1SourcesSourceidRotateSecretMutationOptions<
 }
 
 /**
+ * @summary Rotates a source connection's webhook verification secret (issue #46).
+ * Generates a new 256-bit hex secret, persists it on the connection,
+ * and returns the plaintext exactly once in the response so the
+ * operator can configure the tracker. The structured log carries a
+ * `source.secret_rotated` event id with the connection id and
+ * env-var name — never the secret itself.
  * {@link /api/v1/sources/:sourceId/rotate-secret}
  */
 export function usePostApiV1SourcesSourceidRotateSecret<TContext>(

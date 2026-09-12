@@ -3,24 +3,32 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Wire row of one run — mirrors the RunSummary contract fields.
+ */
 export type RunView = {
   /**
+   * @description Run id.
    * @type string, uuid
    */
   id: string
   /**
+   * @description Owning project id.
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description Run status wire string (queued, running, …).
    * @type string
    */
   status: string
   /**
+   * @description When the run was admitted.
    * @type string, date-time
    */
   createdAt: string
   /**
+   * @description Last status change.
    * @type string, date-time
    */
   updatedAt: string

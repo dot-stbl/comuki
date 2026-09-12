@@ -2,6 +2,7 @@ using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Secrets;
 
 namespace Comuki.Modules.Intake.Infrastructure.Providers.Jira;
@@ -30,7 +31,7 @@ public sealed class JiraTicketSync(
 
         await api.PostCommentAsync(transition.ExternalId, new JiraCommentBody(TrackerSyncComments.Of(transition)), cancellationToken);
 
-        if (transition.RunStatus == "Succeeded" && settings.ResolvedTransitionId is { Length: > 0 } transitionId)
+        if (transition.RunStatus == RunStatuses.Succeeded && settings.ResolvedTransitionId is { Length: > 0 } transitionId)
         {
             await api.TransitionAsync(
                 transition.ExternalId,

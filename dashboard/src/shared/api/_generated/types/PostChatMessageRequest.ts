@@ -3,8 +3,12 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Post-message request body: one chat turn.
+ */
 export type PostChatMessageRequest = {
   /**
+   * @description Raw user message (plain text or a /command).
    * @type string
    */
   message: string

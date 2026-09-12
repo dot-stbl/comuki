@@ -24,6 +24,7 @@ function getPutApiV1SourcesSourceidUrl(
 }
 
 /**
+ * @summary Partial update (PATCH semantics — null fields stay).
  * {@link /api/v1/sources/:sourceId}
  */
 export async function putApiV1SourcesSourceid(

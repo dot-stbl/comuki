@@ -5,8 +5,23 @@
 
 import { z } from "zod/v4"
 
-export const inviteUserRequestSchema = z.object({
-  email: z.string(),
-  displayName: z.string().nullish(),
-  password: z.string().nullish(),
-})
+/**
+ * @description Invite user body (POST /api/v1/users).
+ */
+export const inviteUserRequestSchema = z
+  .object({
+    email: z.string().describe("Login email (unique)."),
+    displayName: z
+      .string()
+      .describe(
+        "Optional display name; defaults to the email local-part when omitted."
+      )
+      .nullish(),
+    password: z
+      .string()
+      .describe(
+        "Optional bootstrap password. When omitted the operator intends to send a\r\nseparate invitation link and the new account lands password-less."
+      )
+      .nullish(),
+  })
+  .describe("Invite user body (POST /api/v1/users).")

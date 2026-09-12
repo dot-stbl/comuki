@@ -7,64 +7,82 @@ import type { RunDetailEvent } from "./RunDetailEvent"
 import type { RunDetailRevision } from "./RunDetailRevision"
 import type { RunDetailWorkItem } from "./RunDetailWorkItem"
 
+/**
+ * @description Full wire shape of one run for `GET /api/v1/runs/{runId}`. Carries\r\neverything the FE `RunDetail` mapper needs without a second round-trip.\r\n\r\nSeveral fields (Title, App, Model, CostUsd, Tokens, Rules) are placeholders\r\nfor data the platform does not yet store on the run row — see\r\nGetRunDetailHandler for what is and is not populated, and\r\naudit-report §2.7 for the broader metering / plan-extent gaps.
+ */
 export type RunDetail = {
   /**
+   * @description Run id (UUIDv7).
    * @type string, uuid
    */
   id: string
   /**
+   * @description Owning project id.
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description Wire status string (lowercase).
    * @type string
    */
   status: string
   /**
+   * @description Run admit timestamp.
    * @type string, date-time
    */
   createdAt: string
   /**
+   * @description Last status-change timestamp.
    * @type string, date-time
    */
   updatedAt: string
   /**
+   * @description Reserved for the brain-authored run title; empty until brain stores it.
    * @type string
    */
   title: string
   /**
+   * @description Reserved for the worker-app key; empty until brain stores it.
    * @type string
    */
   app: string
   /**
+   * @description Reserved for the lead/worker split; `\"worker\"` as the safe default.
    * @type string
    */
   model: string
   /**
+   * @description Per-run token spend in USD; `0` until proxy metering writes `usage_events`.
    * @type number,string, double
    */
   costUsd: number | string
   /**
+   * @description Per-run token count; `0` for the same reason.
    * @type integer,string, int64
    */
   tokens: number | string
   /**
+   * @description First work-item brief (raw jsonb string); empty when the run has no work items yet.
    * @type string
    */
   brief: string
   /**
+   * @description Plan nodes, with their `dependsOn` lists joined from `work_item_dependencies`.
    * @type array
    */
   workItems: RunDetailWorkItem[]
   /**
+   * @description Recent journal rows (top 20, newest first) — run-status, work-item-status, lease-reaper, etc.
    * @type array
    */
   events: RunDetailEvent[]
   /**
+   * @description Control-plane rule names applied; empty until control-plane exposes the lookup.
    * @type array
    */
   rules: string[]
   /**
+   * @description Pinned revisions of the worker image and the control-plane profiles ref.
    * @type object
    */
   revision: RunDetailRevision

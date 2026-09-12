@@ -5,32 +5,42 @@
 
 import type { PermissionsView } from "./PermissionsView"
 
+/**
+ * @description The authenticated caller\'s identity for SPA session bootstrap:\r\nwho the principal resolves to, the roles it holds, and the\r\neffective permission sets per scope. Permissions are computed for\r\nthe request\'s subject — an API-key request reports the key\'s\r\nassignments, not its owner\'s.
+ */
 export type MeResponse = {
   /**
+   * @description The owning user account id; null when the principal carries none.
    * @type null,string, uuid
    */
   userId: string | null
   /**
+   * @description Stable subject-type key: `user` or `api-key`.
    * @type string
    */
   subjectType: string
   /**
+   * @description The subject permissions are computed for (user id or api key id).
    * @type string, uuid
    */
   subjectId: string
   /**
+   * @description Email claim when the session is a user cookie.
    * @type null,string
    */
   email?: string | null
   /**
+   * @description Display-name claim (user name, or the api key\'s label).
    * @type null,string
    */
   displayName?: string | null
   /**
+   * @description Keys of the active role assignments, distinct and ordered.
    * @type array
    */
   roles: string[]
   /**
+   * @description Platform-wide and per-project permission keys.
    * @type object
    */
   permissions: PermissionsView

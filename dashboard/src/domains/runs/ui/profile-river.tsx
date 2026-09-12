@@ -20,7 +20,10 @@ export interface ProfileRiverProps {
   className?: string
 }
 
-/** Worst first: the pool reads top-down in the order a duty engineer triages. */
+/** Worst first: the pool reads top-down in the order a duty engineer triages.
+ *  `cancelled` sits under `success` for the same reason it ranks last in
+ *  `TRIAGE_RANK` — a run somebody stopped is the least interesting band in the
+ *  channel, and putting it at the base keeps the top of the band the alarm. */
 const SEGMENT_ORDER: RunStatus[] = [
   "escalated",
   "failed",
@@ -28,6 +31,7 @@ const SEGMENT_ORDER: RunStatus[] = [
   "running",
   "queued",
   "success",
+  "cancelled",
 ]
 
 function share(value: number, scale: number): number {
@@ -57,7 +61,7 @@ function narrowsAt(flow: ProfileFlow, index: number): boolean {
 }
 
 /**
- * The pool in the domain's own words — the six statuses, nothing invented —
+ * The pool in the domain's own words — the seven statuses, nothing invented —
  * worst-first, so the line under the channel and the channel itself say the
  * same thing in the same order.
  */

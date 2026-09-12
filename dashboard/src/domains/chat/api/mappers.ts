@@ -13,15 +13,21 @@ import type {
   CommandScope,
   MessagePart,
   MessageKind,
+  PlanEdge,
+  PlanNode,
   Proposal,
   SlashCommand,
   ToolCall,
+  ToolStatus,
 } from "@/domains/chat/model/types"
 
 import type { ChatMessagesPageView } from "@/shared/api/_generated/types/ChatMessagesPageView"
 import type { ChatMessageView } from "@/shared/api/_generated/types/ChatMessageView"
 import type { ChatSessionView } from "@/shared/api/_generated/types/ChatSessionView"
 import type { ChatSlashCommand } from "@/shared/api/_generated/types/ChatSlashCommand"
+import type { MessagePart as WireMessagePart } from "@/shared/api/_generated/types/MessagePart"
+import type { PlanEdge as WirePlanEdge } from "@/shared/api/_generated/types/PlanEdge"
+import type { PlanNode as WirePlanNode } from "@/shared/api/_generated/types/PlanNode"
 
 /**
  * The seam between the mock's shapes and the domain's.
@@ -378,6 +384,205 @@ function clockOf(createdAt: string): string {
   return `${hh}:${mm}`
 }
 
+/* ==========================================================================
+ * THE WIRE → DOMAIN PART SEAM.
+ *
+ * The host ships `ChatMessageView.parts` (`Comuki.Shared.Contracts.Chat`
+ * `MessagePart`, a `kind`-discriminated union over the same frozen seven the
+ * domain declares), and kubb emits it as a proper TypeScript discriminated
+ * union — so the mapping below narrows on `kind` rather than casting, and a
+ * kind added to either side without the other stops compiling here.
+ *
+ * Three things the wire does not say the way the domain does:
+ *
+ *  - **Numbers arrive as `number | string`.** kubb widens every `int32` /
+ *    `int64` that way, because JSON may carry a 64-bit value quoted rather
+ *    than lose precision. The domain says `number`, so each one goes through
+ *    `wireInteger`, which drops a value it cannot read rather than handing
+ *    the renderer a `NaN`.
+ *  - **`PlanNode` is spelled differently on each side.** The wire's node is
+ *    `{ id, title, profileKey, brief }` — the canonical `Plan` shape the
+ *    approve card and the run graph share — and the domain's is
+ *    `{ id, label, profile }`. `brief` has nowhere to land: the console's
+ *    plan renderer is a stub that lists the steps and says the dependencies
+ *    in words, so carrying the worker brief into a type nothing reads it
+ *    from would be inventing a field rather than preserving one.
+ *  - **`status` on a tool part is a bare `string`.** `ToolPartStatuses`
+ *    names three and kubb types none of them, so the table below is what
+ *    keeps the domain union honest.
+ *
+ * `meta` (`ChatMessageMeta` — model, tokens, cost, latency, stop reason) is
+ * on the wire now too and is deliberately *not* mapped: `ChatMessage` has no
+ * field for it, and giving it one is a change to what the thread draws
+ * rather than to this seam.
+ * ========================================================================== */
+
+/**
+ * A wire integer, as a number the renderer can use.
+ *
+ * kubb types every `int32` / `int64` as `number | string | null`, because a
+ * 64-bit value may legitimately arrive quoted. Anything that does not read
+ * as a finite number becomes `undefined` — the domain's own spelling for
+ * "the turn did not report this" — rather than a `NaN` that renders as the
+ * word `NaN` beside a line number.
+ */
+function wireInteger(
+  value: number | string | null | undefined
+): number | undefined {
+  if (value === null || value === undefined) {
+    return undefined
+  }
+  const parsed = typeof value === "number" ? value : Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+/** The three statuses `ToolPartStatuses` names; see the seam header. */
+const KNOWN_TOOL_STATUSES = new Set<ToolStatus>([
+  "running",
+  "success",
+  "failed",
+])
+
+/**
+ * What a tool status this bundle does not know becomes.
+ *
+ * `success`, and the choice is between three lies. `running` would spin a
+ * pending indicator forever on a call that is already journaled and
+ * therefore terminal; `failed` would raise an alarm about a call that may
+ * well have worked. `success` is also what the flat tool path above already
+ * assumes, for the same reason — the host appends a tool row *after* the
+ * call returned — so the two paths agree rather than disagreeing per row.
+ */
+const UNKNOWN_TOOL_STATUS: ToolStatus = "success"
+
+function wireToolStatus(value: string): ToolStatus {
+  if (KNOWN_TOOL_STATUSES.has(value as ToolStatus)) {
+    return value as ToolStatus
+  }
+  return UNKNOWN_TOOL_STATUS
+}
+
+function wirePlanNode(node: WirePlanNode): PlanNode {
+  return {
+    id: node.id,
+    label: node.title,
+    profile: node.profileKey,
+  }
+}
+
+function wirePlanEdge(edge: WirePlanEdge): PlanEdge {
+  return { from: edge.from, to: edge.to }
+}
+
+/**
+ * One wire part → one domain part, or nothing at all.
+ *
+ * `undefined` means "this bundle does not know this kind". The union is
+ * frozen at seven and two more (`question`, `decision`) are already named as
+ * P2, so a host newer than this bundle is a certainty rather than a
+ * hypothetical — and the precedent for that is `normalizeTicketStatus` in
+ * `domains/inbox/api/mappers.ts`: a partial backend rollout degrades the
+ * row, never the screen. The host takes the same line one layer down —
+ * `MessagePartsJson` catches the unknown-discriminator exception and reads
+ * the whole row as "no parts", because "the flat content projection is
+ * always there to fall back on".
+ *
+ * So an unknown part is dropped: not thrown on, and not drawn as a
+ * placeholder an operator can do nothing with. `wireMessageParts` below
+ * carries the consequence — when dropping leaves nothing, the row falls back
+ * to the flat `content` the host guarantees is populated, which is the same
+ * words with the structure removed rather than a hole in the thread.
+ */
+function wireMessagePart(part: WireMessagePart): MessagePart | undefined {
+  switch (part.kind) {
+    case "text":
+      return { kind: "text", markdown: part.markdown }
+    case "code":
+      return {
+        kind: "code",
+        language: part.language,
+        source: part.source,
+        path: part.path ?? undefined,
+        startLine: wireInteger(part.startLine),
+      }
+    case "diagram":
+      return { kind: "diagram", dialect: part.dialect, source: part.source }
+    case "thinking":
+      return {
+        kind: "thinking",
+        text: part.text,
+        tokens: wireInteger(part.tokens),
+      }
+    case "tool":
+      return {
+        kind: "tool",
+        name: part.name,
+        inputJson: part.inputJson,
+        status: wireToolStatus(part.status),
+        outputJson: part.outputJson ?? undefined,
+        durationMs: wireInteger(part.durationMs),
+      }
+    case "handoff":
+      return { kind: "handoff", query: part.query }
+    case "plan":
+      return {
+        kind: "plan",
+        nodes: part.nodes.map(wirePlanNode),
+        edges: part.edges.map(wirePlanEdge),
+      }
+    default:
+      return unknownMessagePart(part)
+  }
+}
+
+/**
+ * A `kind` the generated union does not carry.
+ *
+ * The parameter is `never`, which is the compile-time half of the contract:
+ * the switch above is exhaustive today, so nothing reaches here — and the day
+ * the host adds `question`, `part` stops narrowing to `never` and this call
+ * fails to compile until somebody writes the case. At runtime it answers
+ * `undefined` rather than throwing, because a host newer than this bundle
+ * must degrade the part and not the thread.
+ */
+function unknownMessagePart(part: never): undefined {
+  void part
+  return undefined
+}
+
+/**
+ * The parts of one transcript row, or `undefined` when it has none.
+ *
+ * Never `[]`. An empty list is a claim — "this turn had no body" — that
+ * `model/parts.ts` honours by drawing a stated blank, and it is the wrong
+ * claim about a row that carries prose in `content`. Three cases collapse to
+ * `undefined` for that one reason:
+ *
+ *  - `parts: null` — a row written before parts existed, or one whose
+ *    payload no longer parses. `ChatMessageView`'s own docblock on the host
+ *    says exactly that, and the flat derivation renders it the way it
+ *    rendered every row before this function was written.
+ *  - `parts: []` — the host does not send it (`MessagePartsJson.TryParse`
+ *    reads an empty payload as no parts), but if a later one does, the flat
+ *    projection is still the honest reading.
+ *  - every part dropped as unknown — see `wireMessagePart`.
+ */
+function wireMessageParts(view: ChatMessageView): MessagePart[] | undefined {
+  if (!view.parts) {
+    return undefined
+  }
+
+  const parts: MessagePart[] = []
+  for (const part of view.parts) {
+    const mapped = wireMessagePart(part)
+    if (mapped) {
+      parts.push(mapped)
+    }
+  }
+
+  return parts.length > 0 ? parts : undefined
+}
+
 /**
  * One transcript row → one domain message.
  *
@@ -393,37 +598,6 @@ function clockOf(createdAt: string): string {
  * the host appends a tool row after the call returned, and a turn that
  * failed is journaled as its own message.
  */
-/* ==========================================================================
- * THE WIRE → DOMAIN PART SEAM. One function, and it is deliberately empty.
- *
- * TODO(chat-parts-wire): when the host ships `ChatMessageView.parts`, this is
- * the only function that has to be written — map each wire part onto the
- * matching `MessagePart` the way `toMessagePart` maps the seed's, and delete
- * the `undefined` below. The integration step is:
- *
- *   1. the sibling change on `platform/` adds the parts array to
- *      `ChatMessageView` (the frozen list: text, code, diagram, thinking,
- *      tool, handoff, plan — `question` and `decision` are P2);
- *   2. somebody runs `bun run generate-api`, which regenerates
- *      `shared/api/_generated/types/ChatMessageView.ts`;
- *   3. this function stops returning `undefined` and starts reading
- *      `view.parts`, and `chatMessageViewToDomainMessage` below passes the
- *      result straight through.
- *
- * Nothing above this line and nothing in `ui/` changes, because the flat path
- * stays: a message with no parts is derived from its own fields in
- * `model/parts.ts`, which is what every wire row does today and what an older
- * host will keep doing after the field lands.
- *
- * The wire types **do not exist yet** and this bundle must not invent them:
- * `_generated/` is machine-written from the host's OpenAPI document, and a
- * hand-edited shape there is a lie that survives exactly until the next
- * generate.
- * ========================================================================== */
-function wireMessageParts(): MessagePart[] | undefined {
-  return undefined
-}
-
 export function chatMessageViewToDomainMessage(
   view: ChatMessageView
 ): ChatMessage {
@@ -441,10 +615,10 @@ export function chatMessageViewToDomainMessage(
   return {
     id: view.id,
     kind,
-    // `undefined` until the host sends parts — see the seam above. The flat
-    // fields below are what the thread renders in the meantime, through the
-    // same derivation the seed's older messages go through.
-    parts: wireMessageParts(),
+    // The rich body when the row has one. `undefined` when it does not —
+    // and then the flat fields below are what the thread renders, through
+    // the same derivation the seed's older messages go through.
+    parts: wireMessageParts(view),
     // A tool row's prose *is* its result, and the card reads it off the tool
     // record. A second copy on `text` would render the same line twice the
     // day somebody widens the prose branch in `ui/chat-message.tsx`.

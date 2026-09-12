@@ -9,6 +9,7 @@ import type { ScheduledJobView } from "./ScheduledJobView"
 
 export type PostApiV1ProjectsProjectidScheduledJobsPathParams = {
   /**
+   * @description Owning project.
    * @type string, uuid
    */
   projectId: string

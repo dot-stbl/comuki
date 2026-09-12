@@ -16,6 +16,11 @@
     <AnalysisMode>None</AnalysisMode>
     <AnalysisModeSecurity>All</AnalysisModeSecurity>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <!-- XML doc generation is on: the OpenAPI document reads the /// summaries
+         through the generated .xml files, so a missing doc is a missing
+         description in the dashboard's generated client. CS1591 (missing XML
+         comment) only fires while this is on — the two belong together. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Suppress missing XML doc comments — added per-area as code lands. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>

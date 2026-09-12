@@ -49,6 +49,7 @@ export function getProfilesKeySuspenseQueryOptions(
 }
 
 /**
+ * @summary Returns one worker profile by key; 404 when the key is unknown.
  * {@link /profiles/:key}
  */
 export function useGetProfilesKeySuspense<

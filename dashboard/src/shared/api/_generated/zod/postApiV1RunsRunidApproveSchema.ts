@@ -7,7 +7,7 @@ import { problemDetailsSchema } from "./problemDetailsSchema"
 import { z } from "zod/v4"
 
 export const postApiV1RunsRunidApprovePathParamsSchema = z.object({
-  runId: z.uuid(),
+  runId: z.uuid().describe("Run to approve."),
 })
 
 /**

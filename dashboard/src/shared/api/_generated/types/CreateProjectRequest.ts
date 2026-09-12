@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Wire body of POST /api/v1/projects.
+ */
 export type CreateProjectRequest = {
   /**
    * @type string

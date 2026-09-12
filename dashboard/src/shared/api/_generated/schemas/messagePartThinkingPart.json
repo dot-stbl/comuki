@@ -1,0 +1,15 @@
+{
+  "required": ["text"],
+  "properties": {
+    "kind": { "enum": ["thinking"], "type": "string" },
+    "text": { "type": "string", "description": "Reasoning text." },
+    "tokens": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "description": "Reasoning tokens the model reported; null when unknown.",
+      "format": "int32"
+    }
+  },
+  "description": "The model's visible reasoning — collapsed by default in the console.",
+  "x-readme-ref-name": "MessagePartThinkingPart"
+}

@@ -14,9 +14,11 @@ export const postApiV1SourcesSourceidRotateSecretPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const postApiV1SourcesSourceidRotateSecret200Schema = z.lazy(
-  () => secretRotationResponseSchema
-)
+export const postApiV1SourcesSourceidRotateSecret200Schema = z
+  .lazy(() => secretRotationResponseSchema)
+  .describe(
+    "Wire shape of a secret-rotation result (issue #46). Carries the\r\nfreshly-generated secret exactly once — the operator needs it to\r\nconfigure the tracker; it does not appear in any other endpoint\r\nresponse (list / get / source-connection-view)."
+  )
 
 /**
  * @description Not Found

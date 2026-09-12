@@ -3,20 +3,27 @@
  * Do not edit manually.
  */
 
+/**
+ * @description One object inside a run\'s artifact bundle. URIs, not blobs.
+ */
 export type ArtifactPointer = {
   /**
+   * @description Object name under the run prefix (e.g. `brief.json`).
    * @type string
    */
   name: string
   /**
+   * @description Canonical URI the host can fetch (typically a MinIO signed URL).
    * @type string, uri
    */
   uri: string
   /**
+   * @description Object size in bytes; `0` if unknown.
    * @type integer,string, int64
    */
   size: number | string
   /**
+   * @description MIME type as written at upload time.
    * @type string
    */
   contentType: string

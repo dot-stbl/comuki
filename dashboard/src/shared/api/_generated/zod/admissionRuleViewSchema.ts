@@ -5,10 +5,15 @@
 
 import { z } from "zod/v4"
 
-export const admissionRuleViewSchema = z.object({
-  id: z.uuid(),
-  projectId: z.uuid(),
-  mode: z.string(),
-  filterJson: z.string(),
-  enabled: z.boolean(),
-})
+/**
+ * @description Read-model of an admission rule.
+ */
+export const admissionRuleViewSchema = z
+  .object({
+    id: z.uuid(),
+    projectId: z.uuid(),
+    mode: z.string().describe("watch | inbox."),
+    filterJson: z.string(),
+    enabled: z.boolean(),
+  })
+  .describe("Read-model of an admission rule.")

@@ -26,6 +26,7 @@ function getPostApiV1SourcesSourceidProbeUrl(
 }
 
 /**
+ * @summary Probes an existing source connection (issue #42).
  * {@link /api/v1/sources/:sourceId/probe}
  */
 export async function postApiV1SourcesSourceidProbe(

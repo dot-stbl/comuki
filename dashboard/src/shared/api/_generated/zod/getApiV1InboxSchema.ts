@@ -8,7 +8,7 @@ import { z } from "zod/v4"
 
 export const getApiV1InboxQueryParamsSchema = z
   .object({
-    projectId: z.optional(z.uuid()),
+    projectId: z.optional(z.uuid().describe("Optional project filter.")),
   })
   .optional()
 
@@ -16,7 +16,11 @@ export const getApiV1InboxQueryParamsSchema = z
  * @description OK
  */
 export const getApiV1Inbox200Schema = z.array(
-  z.lazy(() => intakeTicketViewSchema)
+  z
+    .lazy(() => intakeTicketViewSchema)
+    .describe(
+      "Read-model of an intake ticket for the inbox and the API surfaces."
+    )
 )
 
 export const getApiV1InboxQueryResponseSchema = z.lazy(

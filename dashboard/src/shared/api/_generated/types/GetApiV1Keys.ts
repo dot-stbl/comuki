@@ -8,14 +8,17 @@ import type { ProblemDetails } from "./ProblemDetails"
 
 export type GetApiV1KeysQueryParams = {
   /**
+   * @description Optional owner user id filter.
    * @type string | undefined, uuid
    */
   UserId?: string
   /**
+   * @description 1-based page index; default 1.
    * @type integer,string | undefined, int32
    */
   Page?: number | string
   /**
+   * @description Page size (1..100); default 100.
    * @type integer,string | undefined, int32
    */
   PageSize?: number | string

@@ -11,14 +11,19 @@ export const getApiV1InboxCatalogQueryParamsSchema = z.object({
   connectionId: z.optional(z.uuid()),
   page: z
     .union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
-    .default(1),
+    .default(1)
+    .describe("1-based page number."),
 })
 
 /**
  * @description OK
  */
 export const getApiV1InboxCatalog200Schema = z.array(
-  z.lazy(() => intakeTicketViewSchema)
+  z
+    .lazy(() => intakeTicketViewSchema)
+    .describe(
+      "Read-model of an intake ticket for the inbox and the API surfaces."
+    )
 )
 
 /**

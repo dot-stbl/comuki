@@ -1,0 +1,26 @@
+{
+  "required": ["language", "source"],
+  "properties": {
+    "kind": { "enum": ["code"], "type": "string" },
+    "language": {
+      "type": "string",
+      "description": "Highlighting language key (`csharp`, `ts`, …)."
+    },
+    "source": {
+      "type": "string",
+      "description": "The listing itself, verbatim."
+    },
+    "path": {
+      "type": ["null", "string"],
+      "description": "Repository-relative file path; null when the snippet is free-standing."
+    },
+    "startLine": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "description": "1-based line the listing starts at; null when unanchored.",
+      "format": "int32"
+    }
+  },
+  "description": "A source listing. Path and\r\nStartLine anchor it in a repository when the\r\nfragment was read from one.",
+  "x-readme-ref-name": "MessagePartCodePart"
+}

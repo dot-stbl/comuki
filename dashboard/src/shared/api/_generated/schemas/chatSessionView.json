@@ -2,12 +2,28 @@
   "required": ["id", "title", "status", "createdAt", "updatedAt"],
   "type": "object",
   "properties": {
-    "id": { "type": "string", "format": "uuid" },
-    "projectId": { "type": ["null", "string"], "format": "uuid" },
-    "title": { "type": "string" },
-    "status": { "type": "string" },
-    "createdAt": { "type": "string", "format": "date-time" },
-    "updatedAt": { "type": "string", "format": "date-time" }
+    "id": { "type": "string", "description": "Session id.", "format": "uuid" },
+    "projectId": {
+      "type": ["null", "string"],
+      "description": "Project scope; null when the session has none yet.",
+      "format": "uuid"
+    },
+    "title": { "type": "string", "description": "Human title." },
+    "status": {
+      "type": "string",
+      "description": "Lifecycle status wire string (lower-cased)."
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "When the session was created.",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "Last activity stamp.",
+      "format": "date-time"
+    }
   },
+  "description": "Session read model.",
   "x-readme-ref-name": "ChatSessionView"
 }

@@ -5,8 +5,15 @@
 
 import { z } from "zod/v4"
 
-export const issuedApiKeyResponseSchema = z.object({
-  keyId: z.uuid(),
-  prefix: z.string(),
-  secret: z.string(),
-})
+/**
+ * @description The wire shape of `POST /api/v1/keys`. The plaintext is shown\r\nexactly once — the host keeps the prefix + HMAC and never returns the\r\nsecret again.
+ */
+export const issuedApiKeyResponseSchema = z
+  .object({
+    keyId: z.uuid().describe("Strong-typed api key id."),
+    prefix: z.string().describe("8-char public lookup prefix."),
+    secret: z.string().describe("Full `ck_…` token; shown once."),
+  })
+  .describe(
+    "The wire shape of `POST /api/v1/keys`. The plaintext is shown\r\nexactly once — the host keeps the prefix + HMAC and never returns the\r\nsecret again."
+  )

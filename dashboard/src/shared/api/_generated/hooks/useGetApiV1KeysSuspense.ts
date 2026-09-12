@@ -52,6 +52,12 @@ export function getApiV1KeysSuspenseQueryOptions(
 }
 
 /**
+ * @summary Lists API keys (issue #45 / F13 — read side of the identity admin).
+ * Permission `identity:read`; returns a paged
+ * `{ items, total }` envelope of ApiKeyView. The
+ * plaintext token never appears in the response — only public-facing
+ * fields (prefix, name, status, timestamps). Optional `userId`
+ * narrows to a single user.
  * {@link /api/v1/keys}
  */
 export function useGetApiV1KeysSuspense<

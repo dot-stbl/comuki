@@ -5,4 +5,11 @@
 
 import { z } from "zod/v4"
 
-export const projectDomainTypeSchema = z.enum(["Standard", "Custom", "Hybrid"])
+/**
+ * @description Per-project routing mode for user-facing domain types\r\n(`code`, `data`, `infra`, `research`, …).\r\nA Standard project sends every domain through the fixed default\r\nprofile. A Custom project routes only via the\r\nstring? ProjectSettings.CustomDomainTypesJson map. A Hybrid\r\nproject tries the default first, falls back to the JSON map.
+ */
+export const projectDomainTypeSchema = z
+  .enum(["Standard", "Custom", "Hybrid"])
+  .describe(
+    "Per-project routing mode for user-facing domain types\r\n(`code`, `data`, `infra`, `research`, …).\r\nA Standard project sends every domain through the fixed default\r\nprofile. A Custom project routes only via the\r\nstring? ProjectSettings.CustomDomainTypesJson map. A Hybrid\r\nproject tries the default first, falls back to the JSON map."
+  )

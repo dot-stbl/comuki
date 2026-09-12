@@ -10,7 +10,7 @@ import { z } from "zod/v4"
  * @description OK
  */
 export const getApiV1ChatSessions200Schema = z.array(
-  z.lazy(() => chatSessionViewSchema)
+  z.lazy(() => chatSessionViewSchema).describe("Session read model.")
 )
 
 export const getApiV1ChatSessionsQueryResponseSchema = z.lazy(

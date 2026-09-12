@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Wire body of PATCH /api/v1/projects/{projectId} — null fields are left untouched.
+ */
 export type UpdateProjectRequest = {
   /**
    * @type null,string

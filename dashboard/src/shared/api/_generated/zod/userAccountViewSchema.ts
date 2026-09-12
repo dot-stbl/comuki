@@ -6,13 +6,20 @@
 import { userIdSchema } from "./userIdSchema"
 import { z } from "zod/v4"
 
-export const userAccountViewSchema = z.object({
-  get id() {
-    return userIdSchema
-  },
-  email: z.string(),
-  displayName: z.string(),
-  disabled: z.boolean(),
-  tokensVersion: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  createdAt: z.iso.datetime({ offset: true }),
-})
+/**
+ * @description Read model of a user account — no secrets ride along.
+ */
+export const userAccountViewSchema = z
+  .object({
+    get id() {
+      return userIdSchema.describe(
+        "Strong-typed identifier of a user account. Entity ids are UUIDv7\r\n(Guid Guid.CreateVersion7()): time-ordered, stored as Postgres\r\n`uuid`, exposed to the API as strings. Lives in the Identity module\r\n(not Shared.Kernel) — other modules learn about users through contracts."
+      )
+    },
+    email: z.string(),
+    displayName: z.string(),
+    disabled: z.boolean(),
+    tokensVersion: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
+    createdAt: z.iso.datetime({ offset: true }),
+  })
+  .describe("Read model of a user account — no secrets ride along.")

@@ -5,12 +5,17 @@
 
 import type { ApiKeyView } from "./ApiKeyView"
 
+/**
+ * @description Paged envelope for API keys. The plaintext is never carried —\r\n    only the public-facing view record (prefix, name, status…).
+ */
 export type IdentityAdminKeysPage = {
   /**
+   * @description Page contents.
    * @type array
    */
   items: ApiKeyView[]
   /**
+   * @description Total rows across all pages.
    * @type integer,string, int32
    */
   total: number | string

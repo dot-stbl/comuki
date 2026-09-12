@@ -11,18 +11,18 @@ import { z } from "zod/v4"
 /**
  * @description Created
  */
-export const postApiV1ChatSessions201Schema = z.lazy(
-  () => chatSessionViewSchema
-)
+export const postApiV1ChatSessions201Schema = z
+  .lazy(() => chatSessionViewSchema)
+  .describe("Session read model.")
 
 /**
  * @description Bad Request
  */
 export const postApiV1ChatSessions400Schema = z.lazy(() => problemDetailsSchema)
 
-export const postApiV1ChatSessionsMutationRequestSchema = z.lazy(
-  () => createChatSessionRequestSchema
-)
+export const postApiV1ChatSessionsMutationRequestSchema = z
+  .lazy(() => createChatSessionRequestSchema)
+  .describe("Create-session request body.")
 
 export const postApiV1ChatSessionsMutationResponseSchema = z.lazy(
   () => postApiV1ChatSessions201Schema

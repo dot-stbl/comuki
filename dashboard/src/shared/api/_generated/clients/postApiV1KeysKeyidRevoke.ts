@@ -23,6 +23,7 @@ function getPostApiV1KeysKeyidRevokeUrl(
 }
 
 /**
+ * @summary Revokes an API key (issue #37). Permission `identity:write`.
  * {@link /api/v1/keys/:keyId/revoke}
  */
 export async function postApiV1KeysKeyidRevoke(

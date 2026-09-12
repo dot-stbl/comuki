@@ -14,7 +14,11 @@ export const postApiV1KeysKeyidRevokePathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const postApiV1KeysKeyidRevoke200Schema = z.lazy(() => apiKeyViewSchema)
+export const postApiV1KeysKeyidRevoke200Schema = z
+  .lazy(() => apiKeyViewSchema)
+  .describe(
+    "Read-model of an API key row. The plaintext token is NOT carried —\r\nit lives in IssuedApiKeyCredential\r\nonly at issue time."
+  )
 
 /**
  * @description Not Found

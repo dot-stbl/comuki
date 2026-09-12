@@ -3,16 +3,22 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Body for `POST /api/v1/sources/probe` — the operator types a\r\ndraft plus a plaintext credential in the connect form and asks the\r\nhost to reach the upstream before saving.
+ */
 export type ProbeSourceDraftRequest = {
   /**
+   * @description Provider key (github | gitlab | yandex-tracker | jira).
    * @type string
    */
   provider: string
   /**
+   * @description Provider-specific, non-secret settings (apiBase, owner/repo, queue, …).
    * @type string
    */
   settingsJson: string
   /**
+   * @description Env-var name holding the outbound / webhook secret.
    * @type string
    */
   secretEnvRef: string

@@ -3,24 +3,41 @@
  * Do not edit manually.
  */
 
+import type { ChatMessageMeta } from "./ChatMessageMeta"
+import type { MessagePart } from "./MessagePart"
+
+/**
+ * @description Transcript row read model. IReadOnlyList&lt;MessagePart&gt;? ChatMessageView.Parts is the rich shape the\r\nconsole renders; string ChatMessageView.Content is the flat projection of the\r\nsame row and stays populated for every reader that predates parts.
+ */
 export type ChatMessageView = {
   /**
+   * @description Message id (uuidv7).
    * @type string, uuid
    */
   id: string
   /**
+   * @description Role wire string: user | assistant | system | tool.
    * @type string
    */
   role: string
   /**
+   * @description Message text.
    * @type string
    */
   content: string
   /**
+   * @description Tool name for role=tool rows; null otherwise.
    * @type null,string
    */
   toolName?: string | null
   /**
+   * @description Ordered message parts, discriminated by `kind`; null on a row\r\nwritten before parts existed or one whose payload no longer parses.
+   * @type null,array
+   */
+  parts?: MessagePart[] | null
+  meta?: null | ChatMessageMeta
+  /**
+   * @description When the row was appended.
    * @type string, date-time
    */
   createdAt: string

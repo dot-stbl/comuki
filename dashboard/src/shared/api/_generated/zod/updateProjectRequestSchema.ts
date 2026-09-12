@@ -5,9 +5,16 @@
 
 import { z } from "zod/v4"
 
-export const updateProjectRequestSchema = z.object({
-  name: z.nullable(z.string()),
-  description: z.nullable(z.string()),
-  profilesGitUrl: z.nullable(z.string()),
-  profilesGitRef: z.nullable(z.string()),
-})
+/**
+ * @description Wire body of PATCH /api/v1/projects/{projectId} — null fields are left untouched.
+ */
+export const updateProjectRequestSchema = z
+  .object({
+    name: z.nullable(z.string()),
+    description: z.nullable(z.string()),
+    profilesGitUrl: z.nullable(z.string()),
+    profilesGitRef: z.nullable(z.string()),
+  })
+  .describe(
+    "Wire body of PATCH /api/v1/projects/{projectId} — null fields are left untouched."
+  )

@@ -2,7 +2,7 @@ namespace Comuki.Modules.Identity.Domain.Ids;
 
 /// <summary>
 /// Strong-typed identifier of a user account. Entity ids are UUIDv7
-/// (<see cref="Guid.CreateVersion7"/>): time-ordered, stored as Postgres
+/// (<see cref="Guid.CreateVersion7()"/>): time-ordered, stored as Postgres
 /// <c>uuid</c>, exposed to the API as strings. Lives in the Identity module
 /// (not Shared.Kernel) — other modules learn about users through contracts.
 /// </summary>

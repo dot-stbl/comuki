@@ -10,6 +10,7 @@ import type { ProjectRow } from "@/domains/projects/model/types"
 import { useQueueQuery } from "@/domains/queue/api/queries"
 import { formatCost } from "@/domains/runs/model/format"
 import { useSourcesQuery } from "@/domains/sources/api/queries"
+import { ScheduledJobsSection } from "@/domains/projects/ui/scheduled-jobs-section"
 import { can, needsLabel, useCan, useSession } from "@/shared/session"
 import {
   Button,
@@ -472,6 +473,19 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
                 />
               )}
             </Section>
+
+            {/* --- what the platform starts on its own --- */}
+
+            {/* Gated on the intake-view permission: the dashboard's session
+                vocabulary has no scheduler keys yet (the backend speaks
+                `scheduler:read`/`scheduler:write`), and `sources.view` is the
+                honest neighbour — a schedule is an admission source. */}
+            {can(session, "sources.view", project.id) ? (
+              <ScheduledJobsSection
+                projectId={project.id}
+                canEdit={can(session, "sources.edit", project.id)}
+              />
+            ) : null}
 
             {/* --- everything else, with a count and a link --- */}
 

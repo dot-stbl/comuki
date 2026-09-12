@@ -4,6 +4,7 @@ import { Cpu, DollarSign, GitBranch, Hash, RotateCw, Timer } from "lucide-react"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
+import { useJoinRunGroup } from "@/app/use-join-run-group"
 import { getWorkItemInspector, useRunQuery } from "@/domains/runs/api/queries"
 import {
   briefSegments,
@@ -40,6 +41,12 @@ export function RunDetailPage() {
   const { data, isLoading, isError, error, refetch } = useRunQuery(runId)
   const session = useSession()
   const [picked, setPicked] = useState<string | null>(null)
+
+  // The run's live timeline: joins the `run:{id}` hub group for exactly as
+  // long as this screen is mounted, so journal appends invalidate the run's
+  // own query instead of waiting for the poll cadence. A no-op in mock mode
+  // and whenever the socket is down — the poll still refreshes.
+  useJoinRunGroup(runId)
 
   // The plan is a graph, so "the items in order" is the dependency order the
   // model derives — not the order they happen to sit in the payload.

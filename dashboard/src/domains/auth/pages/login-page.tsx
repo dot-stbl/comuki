@@ -231,13 +231,13 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
           </div>
         ) : null}
 
-        {/* The footer, anchored at the floor of the screen. What build this
-            is, and where its source lives — the two facts an operator checks
-            before they put a real password in. Pulled off the panel so it
-            does not steal room from the form, and rendered in the data voice
-            because both fields are values (a SHA is a value, a repo URL is a
-            value). The env label reads aloud on every build except
-            production, where the green pill is the env hint. */}
+        {/* The footer, anchored at the floor of the screen. Where the source
+            lives — the one fact an operator checks before they put a real
+            password in. Build and env identity live on the authenticated
+            surface instead: the gate is reached by people who cannot yet be
+            told which deployment they are looking at. Pulled off the panel so
+            it does not steal room from the form, and rendered in the data
+            voice because a repo URL is a value. */}
         <footer className={styles.footer} data-test="login-footer">
           <p className={styles.footerLine}>
             © 2026 dot-stbl · source at{" "}
@@ -253,9 +253,6 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
             ) : (
               <span className={styles.footerLink}>github.com/dot-stbl/comuki</span>
             )}
-          </p>
-          <p className={styles.footerLine}>
-            build {env.commitSha || "—"} · {env.deployEnv}
           </p>
         </footer>
       </div>

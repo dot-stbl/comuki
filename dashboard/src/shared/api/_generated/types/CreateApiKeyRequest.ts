@@ -17,10 +17,7 @@ export type CreateApiKeyRequest = {
    */
   expiresAt?: string | null
   /**
-   * Optional tenant scope. When set, the key only authenticates
-   * requests that carry the matching `X-Comuki-Tenant` header.
-   *
-   * @type string, uuid
+   * @type null,string, uuid
    */
   tenantProjectId?: string | null
 }

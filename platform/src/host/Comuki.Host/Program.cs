@@ -1,6 +1,8 @@
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Host;
+using Comuki.Host.Cli;
+using Comuki.Host.Cli.Doctor;
 using Comuki.Host.OpenApi;
 using Comuki.Host.Security.Tls;
 using Comuki.Host.Workers;
@@ -8,8 +10,23 @@ using Comuki.Modules.Scheduler.Infrastructure.Observers;
 using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Config;
 using Comuki.Shared.Bootstrap.Logging;
+using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.ControlPlane.ChatCommands;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
+
+// Operator CLI surface (issue #56): version / doctor / config show / init
+// run before any host bootstrap — no config, no database and no logging
+// pipeline are touched. Build-time OpenAPI generation arrives with empty
+// args, so the introspection path never enters these branches.
+if (ComukiHostCli.IsDoctorRequested(args))
+{
+    return await ComukiDoctor.RunAsync(Console.Out);
+}
+
+if (ComukiHostCli.TryRun(args) is { } cliExitCode)
+{
+    return cliExitCode;
+}
 
 // One resolved connection wires the whole host. HostDatabase owns the
 // single read — COMUKI_DB env, then the legacy COMUKI_DATABASE alias
@@ -29,11 +46,13 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     EnvironmentName = ComukiEnvironment.Resolve(),
 });
 
-// Comuki-native surface (issue #54): config.toml + COMUKI_* env replace
-// the JSON/bare-env sources, [server]/COMUKI_SERVER_PORT pin the
-// listen address when set, and the comuki console formatter owns the
-// log output. No config.toml present → empty configuration, no error:
-// the build-time OpenAPI pass below depends on booting without one.
+// Comuki-native surface (issue #54): config.toml + COMUKI_* env are
+// added on top of the standard JSON/env sources (double-underscore
+// Helm vars like Artifacts__Endpoint keep working), [server]/
+// COMUKI_SERVER_PORT pin the listen address when set, and the comuki
+// console formatter owns the log output. No config.toml present →
+// empty comuki layer, no error: the build-time OpenAPI pass below
+// depends on booting without one.
 builder.Configuration.UseComukiConfiguration();
 builder.WebHost.ConfigureKestrel(static server => server.AddServerHeader = false);
 if (builder.Configuration.TryResolveServerUrl() is { } serverUrl)
@@ -48,7 +67,7 @@ if (builder.Configuration.TryResolveServerUrl() is { } serverUrl)
 builder.AddComukiTls();
 
 builder.Logging.ClearProviders();
-builder.Logging.AddComukiConsole();
+builder.Logging.AddComukiConsole(builder.Configuration);
 
 // Sentry side-channel for the scheduler dispatcher (S15 / sentry):
 // initialises the SDK once if Scheduler:Sentry:Dsn is set; otherwise
@@ -96,6 +115,10 @@ if (OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration)
 
 var app = HostComposer.Compose(builder, database);
 
+// Build banner (issue #56): the version line is the first comuki-format
+// log record of the starting host.
+ComukiStartupBanner.Emit(app.Services.GetRequiredService<ILoggerFactory>(), "comuki", ComukiBuildInfo.Read());
+
 app.MapGet(
     ApiRoutes.Profiles,
     static async (IProfileCatalog catalog, CancellationToken cancellationToken) =>
@@ -114,3 +137,4 @@ app.MapGet(
 app.MapWorkerRuntime();
 
 await app.RunAsync();
+return 0;

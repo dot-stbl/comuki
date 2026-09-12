@@ -7,11 +7,20 @@ using Comuki.Host.Brain.Ports.ActiveRuns;
 using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Modules.Memory.Infrastructure;
 using Comuki.Shared.Bootstrap;
+using Comuki.Shared.Bootstrap.Cli;
 using Comuki.Shared.Bootstrap.Config;
 using Comuki.Shared.Bootstrap.Logging;
+using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 using Microsoft.Extensions.AI;
 using ProtoBuf.Grpc.Server;
+
+// Operator CLI (issue #56): `comuki-brain version` runs before any
+// bootstrap and exits without touching config or the database.
+if (ComukiCli.IsCommand(args, ComukiCli.VersionCommand))
+{
+    return ComukiCli.RunVersion("comuki-brain");
+}
 
 // The brain host: a console-shaped Kestrel app whose only surface is the
 // code-first gRPC IBrainService. Composition is deliberately flat —
@@ -32,7 +41,7 @@ builder.Configuration.UseComukiConfiguration();
 builder.WebHost.ConfigureKestrel(static server => server.AddServerHeader = false);
 
 builder.Logging.ClearProviders();
-builder.Logging.AddComukiConsole();
+builder.Logging.AddComukiConsole(builder.Configuration);
 
 var options = BrainOptions.Resolve(builder.Configuration);
 var connectionString = BrainDatabase.Resolve(builder.Configuration);
@@ -53,9 +62,14 @@ builder.Services.AddScoped<BrainGrpcService>();
 
 var app = builder.Build();
 
+// Build banner (issue #56): the version line is the first comuki-format
+// log record of the starting host.
+ComukiStartupBanner.Emit(app.Services.GetRequiredService<ILoggerFactory>(), "comuki-brain", ComukiBuildInfo.Read());
+
 app.MapGrpcService<BrainGrpcService>();
 
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("brain listening addr=http://localhost:{GrpcPort}", options.GrpcPort);
 
 await app.RunAsync();
+return 0;

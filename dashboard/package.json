@@ -19,7 +19,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc -b",
     "preview": "vite preview",
-    "generate-api": "dotnet build ../comuki.slnx && bunx @kubb/cli@4.39.2 generate",
+    "generate-api": "dotnet build ../comuki.slnx && bunx @kubb/cli@4.39.2 generate && prettier --write \"src/shared/api/_generated/**/*.ts\"",
     "audit:fe": "bun run scripts/rule-audit.ts",
     "predev": "bun run audit:fe && bun run generate-api",
     "prebuild": "bun run audit:fe",

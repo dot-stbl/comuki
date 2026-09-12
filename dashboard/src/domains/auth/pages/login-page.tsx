@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent } from "react"
-import { Check, CircleAlert, TimerOff } from "lucide-react"
+import { Check, CircleAlert, KeyRound, Mail, TimerOff } from "lucide-react"
 
 import { useAuthState } from "@/domains/auth/api/auth"
 import { startOidcFlow } from "@/domains/auth/api/oidc-start"
@@ -159,6 +159,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
         >
           <div className={styles.field}>
             <label className={styles.label} htmlFor={identityId}>
+              <Mail aria-hidden="true" className={styles.labelIcon} />
               Email or username
             </label>
             <input
@@ -169,7 +170,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
               autoComplete="username"
               autoCapitalize="none"
               spellCheck={false}
-              placeholder="you@comuki.local or your handle"
+              placeholder="admin@example.com"
               value={identity}
               aria-invalid={failure ? true : undefined}
               aria-describedby={failure ? failureId : undefined}
@@ -179,6 +180,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor={passwordId}>
+              <KeyRound aria-hidden="true" className={styles.labelIcon} />
               Password
             </label>
             <input
@@ -187,7 +189,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
               name="password"
               type="password"
               autoComplete="current-password"
-              placeholder="your account password"
+              placeholder="••••••••"
               value={password}
               aria-invalid={failure ? true : undefined}
               aria-describedby={failure ? failureId : undefined}
@@ -229,13 +231,10 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
           </div>
         ) : null}
 
-        {/* The footer, anchored at the floor of the screen. What build this
-            is, and where its source lives — the two facts an operator checks
-            before they put a real password in. Pulled off the panel so it
-            does not steal room from the form, and rendered in the data voice
-            because both fields are values (a SHA is a value, a repo URL is a
-            value). The env label reads aloud on every build except
-            production, where the green pill is the env hint. */}
+        {/* The footer, anchored at the floor of the screen: where the source
+            lives — the one fact worth showing to someone the product has not
+            identified yet. Build/env identity belongs to the authenticated
+            surface (the board footer), not to the gate. */}
         <footer className={styles.footer} data-test="login-footer">
           <p className={styles.footerLine}>
             © 2026 dot-stbl · source at{" "}
@@ -251,9 +250,6 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
             ) : (
               <span className={styles.footerLink}>github.com/dot-stbl/comuki</span>
             )}
-          </p>
-          <p className={styles.footerLine}>
-            build {env.commitSha || "—"} · {env.deployEnv}
           </p>
         </footer>
       </div>

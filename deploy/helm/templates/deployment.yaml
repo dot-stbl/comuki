@@ -100,7 +100,7 @@ spec:
                 name: {{ include "comuki.fullname" . }}-config
           readinessProbe:
             httpGet:
-              path: /health/ready
+              path: /api/v1/health/ready
               port: http
             initialDelaySeconds: 10
             periodSeconds: 15
@@ -108,7 +108,7 @@ spec:
             failureThreshold: 12
           livenessProbe:
             httpGet:
-              path: /health
+              path: /api/v1/health
               port: http
             initialDelaySeconds: 20
             periodSeconds: 30

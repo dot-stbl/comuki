@@ -122,6 +122,8 @@ The platform speaks Comuki, not .NET (issue #54). Four binaries —
 | Config file path | `COMUKI_CONFIG_PATH` → `./config.toml` (cwd) → `/etc/comuki/config.toml` (Linux) | — |
 | Env → config | `COMUKI_A_B` → `a:b` (single underscore = section separator, case-insensitive binding) | `Section__Key` double-underscore form is not read |
 | Listen address | `[server] host/port` in config.toml, env override `COMUKI_SERVER_PORT` | `ASPNETCORE_URLS` / `ASPNETCORE_HTTP_PORTS` |
+| Log level | `COMUKI_LOG_LEVEL=trace\|debug\|info\|warn\|error\|fatal` (wins over `[logging] level`) | `[logging] level` in config.toml |
+| Log format | `COMUKI_LOG_FORMAT=text\|json` (console only; OTLP untouched) | text |
 
 Notes:
 
@@ -135,10 +137,50 @@ Notes:
   RFC3339 UTC with milliseconds, lowercase level, lowercase category,
   structured fields as `key=val`. Kestrel lifetime messages are
   rewritten to short `comuki.host` lines; no `Server:` header on
-  responses.
+  responses. Under `COMUKI_LOG_FORMAT=json` the same fields render as
+  one JSON object per line (`ts`/`level`/`category`/`message`, state
+  fields stringified, `exception`, `rid`) — for collectors that prefer
+  structured input. Every log line of a request carries `rid=…` (see
+  below).
 - The migrator's config.toml fallback section is
   `[connectionStrings] comuki = "…"` with a blank `Password=` filled
   from `COMUKI_MIGRATOR_DB_PASSWORD`.
+
+## Operator CLI (issue #56)
+
+All four binaries understand `version` — it prints the flat build line
+and exits 0 before any bootstrap (no config, no DB needed):
+
+```
+$ comuki version
+comuki version=1.0.0 sha=41d265deae51dbd82291ef85a376a4b123d0521c build=2026-09-11 mode=debug
+```
+
+The same line is the first log record of every starting host, and
+`GET /api/v1/version` (anonymous, like `/api/v1/health`) serves it as JSON for
+the dashboard footer.
+
+The orchestrator host adds first-run and diagnostics commands:
+
+| Command | What it does | Exit codes |
+|---|---|---|
+| `comuki init [--env <development\|production>] [--force]` | Writes `./config.toml` from the built-in template plus a `./.env` skeleton: `COMUKI_ENV`, a `COMUKI_DB` placeholder and fresh random-hex HMAC peppers. Never overwrites without `--force`. | 0 written · 1 existing file skipped · 2 usage error |
+| `comuki doctor` | Pre-flight checklist without booting the host: config.toml location (discovery chain), environment provenance (deprecated fallbacks and the legacy `COMUKI_DATABASE` alias warn), DB `SELECT 1` with a 2s timeout, production-secret posture. Pending migrations are not checked — the migrations line points at `comuki-migrator status`. | 0 no failures · 1 at least one fail (warnings pass) |
+| `comuki config show` | The effective configuration — config.toml with `COMUKI_*` env overrides applied — as sorted `key = value` lines. Secret-marked keys (password/secret/pepper/token/key) print `****`; connection strings keep their shape with `Password=****`. | 0 |
+
+The migrator has its own dry-run:
+
+| Command | What it does | Exit codes |
+|---|---|---|
+| `comuki-migrator status` | Lists pending migrations per schema without applying anything and with zero DDL (`pending (orchestration): 20260911…` / `orchestration schema is up to date`); a not-yet-provisioned schema reads as pending (`schema not provisioned`) — for CI gates. | 0 all applied · 1 pending · 2 error |
+
+### Correlation id
+
+Every request to the orchestrator host carries an `X-Request-Id`: a valid
+incoming header value (8–128 url-safe characters) is reused, anything
+else is replaced by a generated 32-hex id. The id is echoed on the
+response and stamped as `rid=…` on every log line of the request —
+operators can jump from an access log to the exact request flow.
 
 ## Grafana dashboards-as-code (S8)
 

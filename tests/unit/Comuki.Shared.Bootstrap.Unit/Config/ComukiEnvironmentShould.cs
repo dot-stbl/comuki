@@ -73,4 +73,42 @@ public sealed class ComukiEnvironmentShould
 
         resolved.ShouldBe(ComukiEnvironment.ProductionName);
     }
+
+    [Fact(DisplayName = "Given COMUKI_ENV is set, when ResolveDetailed runs, then the resolution names the primary variable")]
+    public void DetailedResolutionNamesPrimaryVariable()
+    {
+        var resolution = ComukiEnvironment.ResolveDetailed(static name => name switch
+        {
+            ComukiEnvironment.EnvironmentVariable => "development",
+            _ => null,
+        });
+
+        resolution.Environment.ShouldBe("development");
+        resolution.Variable.ShouldBe(ComukiEnvironment.EnvironmentVariable);
+        resolution.FromPrimary.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Given only a fallback is set, when ResolveDetailed runs, then the resolution names it and flags the deprecated path")]
+    public void DetailedResolutionNamesFallbackVariable()
+    {
+        var resolution = ComukiEnvironment.ResolveDetailed(static name => name switch
+        {
+            ComukiEnvironment.AspNetCoreFallbackVariable => "Development",
+            _ => null,
+        });
+
+        resolution.Environment.ShouldBe("Development");
+        resolution.Variable.ShouldBe(ComukiEnvironment.AspNetCoreFallbackVariable);
+        resolution.FromPrimary.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Given nothing is set, when ResolveDetailed runs, then the default carries no variable")]
+    public void DetailedResolutionDefaultsWithoutVariable()
+    {
+        var resolution = ComukiEnvironment.ResolveDetailed(static _ => null);
+
+        resolution.Environment.ShouldBe(ComukiEnvironment.ProductionName);
+        resolution.Variable.ShouldBeNull();
+        resolution.FromPrimary.ShouldBeTrue();
+    }
 }

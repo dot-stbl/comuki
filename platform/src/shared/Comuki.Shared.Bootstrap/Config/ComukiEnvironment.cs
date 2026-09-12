@@ -27,26 +27,54 @@ public static class ComukiEnvironment
         DotnetFallbackVariable,
     ];
 
+    /// <summary>
+    /// Outcome of an environment resolution: the effective value plus the
+    /// env var that supplied it (null = the Production default). Consumed
+    /// by <c>comuki doctor</c> (issue #56) to surface deprecated fallback
+    /// usage.
+    /// </summary>
+    /// <param name="Environment">The effective environment name.</param>
+    /// <param name="Variable">The env var that supplied it, or null for the default.</param>
+    public sealed record Resolution(string Environment, string? Variable)
+    {
+        /// <summary>True when the value came from the primary COMUKI_ENV variable or from the default.</summary>
+        public bool FromPrimary => Variable is null || string.Equals(Variable, EnvironmentVariable, StringComparison.Ordinal);
+    }
+
     /// <summary>Resolves the effective environment from the process env.</summary>
     public static string Resolve()
     {
-        return Resolve(Environment.GetEnvironmentVariable);
+        return ResolveDetailed(Environment.GetEnvironmentVariable).Environment;
     }
 
     /// <summary>Resolution core, parameterised by an env lookup for tests.</summary>
     /// <param name="lookup">Env-var accessor (name → value or null).</param>
     /// <returns>The first non-blank value among COMUKI_ENV → ASPNETCORE_ENVIRONMENT → DOTNET_ENVIRONMENT, else Production.</returns>
-    internal static string Resolve(Func<string, string?> lookup)
+    public static string Resolve(Func<string, string?> lookup)
+    {
+        return ResolveDetailed(lookup).Environment;
+    }
+
+    /// <summary>Resolves the effective environment with its provenance, from the process env.</summary>
+    public static Resolution ResolveDetailed()
+    {
+        return ResolveDetailed(Environment.GetEnvironmentVariable);
+    }
+
+    /// <summary>Detailed resolution core, parameterised by an env lookup for tests and tooling.</summary>
+    /// <param name="lookup">Env-var accessor (name → value or null).</param>
+    /// <returns>The resolved value and the variable that supplied it.</returns>
+    public static Resolution ResolveDetailed(Func<string, string?> lookup)
     {
         foreach (var variable in candidateVariables)
         {
             var value = lookup(variable);
             if (!string.IsNullOrWhiteSpace(value))
             {
-                return value.Trim();
+                return new Resolution(value.Trim(), variable);
             }
         }
 
-        return ProductionName;
+        return new Resolution(ProductionName, null);
     }
 }

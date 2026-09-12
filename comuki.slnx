@@ -67,6 +67,7 @@
     <Project Path="tests/unit/Comuki.Engine.Orchestration.Unit.DbContext/Comuki.Engine.Orchestration.Unit.DbContext.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Compute.Unit/Comuki.Engine.Compute.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Auth/Comuki.Host.Unit.Auth.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.Cli/Comuki.Host.Unit.Cli.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Cors/Comuki.Host.Unit.Cors.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Mcp/Comuki.Host.Unit.Mcp.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.OidcSweeper/Comuki.Host.Unit.OidcSweeper.csproj" />

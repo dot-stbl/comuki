@@ -89,8 +89,8 @@ MinIO и OTLP — общие сервисы кластера.
    желании кнопка □ `promote:dev` (app `comuki-dev`) — sync + wait Healthy.
 4. **DNS**: `comuki.nova.adcluster.targetix.net` → A/CNAME на ingress IP
    (nsupdate-паттерн из `virtual.deploy.dev/docs/dns.md`); после регистрации
-   smoke: `GET http://comuki.nova.adcluster.targetix.net/health` → `{"status":"ok"}`,
-   `GET /health/ready` → 200 после старта БД.
+    smoke: `GET http://comuki.nova.adcluster.targetix.net/api/v1/health` → `{"status":"ok"}`,
+    `GET /api/v1/health/ready` → 200 после старта БД.
 
 ## Известные хвосты (осознанные)
 

@@ -9,25 +9,29 @@ import type {
   RequestConfig,
   ResponseErrorConfig,
 } from "@/shared/api/kubb-client"
-import type { GetHealthQueryResponse } from "../types/GetHealth"
+import type { GetApiV1HealthQueryResponse } from "../types/GetApiV1Health"
 
-function getGetHealthUrl() {
-  const res = { method: "GET", url: `/health` as const }
+function getGetApiV1HealthUrl() {
+  const res = { method: "GET", url: `/api/v1/health` as const }
   return res
 }
 
 /**
- * {@link /health}
+ * {@link /api/v1/health}
  */
-export async function getHealth(
+export async function getApiV1Health(
   config: Partial<RequestConfig> & { client?: Client } = {}
 ) {
   const { client: request = fetch, ...requestConfig } = config
 
   const res = await request<
-    GetHealthQueryResponse,
+    GetApiV1HealthQueryResponse,
     ResponseErrorConfig<Error>,
     unknown
-  >({ method: "GET", url: getGetHealthUrl().url.toString(), ...requestConfig })
+  >({
+    method: "GET",
+    url: getGetApiV1HealthUrl().url.toString(),
+    ...requestConfig,
+  })
   return res.data
 }

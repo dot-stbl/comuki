@@ -49,6 +49,7 @@ using Comuki.Modules.Scheduler.Application;
 using Comuki.Modules.Scheduler.Application.Options;
 using Comuki.Modules.Scheduler.Application.Ports;
 using Comuki.Modules.Scheduler.Infrastructure;
+using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
@@ -63,6 +64,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using VaultSharp;
 using static Comuki.Host.VaultSecretClientFactory;
+using VersionResponse = Comuki.Host.Versioning.VersionResponse;
 
 namespace Comuki.Host;
 
@@ -77,9 +79,9 @@ namespace Comuki.Host;
 internal static class HostComposer
 {
     /// <summary>Wires every host service and returns the built application, not yet started.</summary>
-    /// <param name="builder"></param>
+    /// <param name="builder">The host builder whose services and middleware this call composes.</param>
     /// <param name="database">Connection resolved once by <see cref="HostDatabase.Resolve"/>; flows into identity/projects persistence and the legacy-alias warning.</param>
-    /// <returns></returns>
+    /// <returns>The composed, not-yet-started <see cref="WebApplication"/>.</returns>
     /// <remarks>
     /// DI scope/build validation runs unconditionally — every consumer of
     /// this composition (production boot and integration tests) gets the
@@ -389,6 +391,11 @@ internal static class HostComposer
         // context scope members read it inside the query filters.
         builder.Services.AddSingleton<Shared.Kernel.Scoping.ISubjectScopeAccessor, Shared.Kernel.Scoping.AsyncLocalSubjectScopeAccessor>();
 
+        // Ambient correlation id (issue #56 §5): the console formatters
+        // stamp rid=… from this slot; the middleware below installs one id
+        // per request. Separate accessor from the subject scope by design.
+        builder.Services.AddSingleton<Shared.Bootstrap.Correlation.ICorrelationIdAccessor, Shared.Bootstrap.Correlation.AsyncLocalCorrelationIdAccessor>();
+
         var app = builder.Build();
 
         HostDatabase.WarnLegacyAlias(database, app.Logger);
@@ -398,6 +405,11 @@ internal static class HostComposer
         // Production when MinIO / bootstrap-admin still carry dev
         // defaults.
         ProductionSecretValidator.Validate(app.Services);
+
+        // Correlation id first (issue #56 §5): outermost so even the
+        // exception-handler's error logs carry rid=…; the response header
+        // is set before the pipeline runs, before headers are flushed.
+        app.UseMiddleware<Correlation.CorrelationIdMiddleware>();
 
         app.UseExceptionHandler();
 
@@ -415,7 +427,12 @@ internal static class HostComposer
         app.UseMiddleware<SubjectScopeMiddleware>();
 
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));
-        app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+
+        // Build info for operators and the dashboard footer (issue #56 §6):
+        // version/sha/build date/mode - the same identity `comuki version`
+        // prints. Anonymous by design, exactly like the health probes.
+        app.MapGet(ApiRoutes.Version, static () => Results.Ok(VersionResponse.From(ComukiBuildInfo.Read())));
+        app.MapHealthChecks(ApiRoutes.HealthReady, new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
         {
             Predicate = static check => check.Tags.Contains("ready"),
         });

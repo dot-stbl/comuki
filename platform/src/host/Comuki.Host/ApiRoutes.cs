@@ -97,8 +97,8 @@ public static class ApiRoutes
     /// <summary>Rotate a source connection's webhook secret (issue #46).</summary>
     public const string SourceRotateSecret = "/api/v1/sources/{sourceId:guid}/rotate-secret";
 
-    /// <summary>The realtime hub of runs and project attention (issue #7).</summary>
-    public const string HubsRuns = "/hubs/runs";
+    /// <summary>The realtime websocket hub of runs and project attention (issue #7).</summary>
+    public const string HubsRuns = "/ws/runs";
 
     /// <summary>Cost rollup for one project (permission cost:read).</summary>
     public const string ProjectCosts = "/api/v1/projects/{projectId:guid}/costs";

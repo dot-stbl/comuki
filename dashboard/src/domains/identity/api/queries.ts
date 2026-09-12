@@ -214,10 +214,27 @@ export function useIdentityQuery() {
   })
 }
 
-export function useCurrentUserQuery(options?: { enabled?: boolean }) {
-  return useQuery({
+/**
+ * The session query as one options object — the hook below and the route
+ * guard (`guardSession` → `ensureQueryData`) share it, so there is exactly
+ * one place that knows how `/me` is keyed and fetched.
+ *
+ * `retry: false` because a 401 here is the answer, not a hiccup: the
+ * cookie is gone, and a retry re-asks a question that was just refused —
+ * holding the cold visitor's navigation open for a round trip nobody
+ * wanted. The client-wide default (`retry: 1`) stays for everything else.
+ */
+export function meQueryOptions() {
+  return {
     queryKey: meQueryKey,
     queryFn: getCurrentUser,
+    retry: false,
+  }
+}
+
+export function useCurrentUserQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    ...meQueryOptions(),
     enabled: options?.enabled ?? true,
   })
 }

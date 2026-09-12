@@ -1,18 +1,21 @@
 import type { SessionEnd } from "@/shared/api/mock/auth.store"
 
 /**
- * Three ways to arrive at one screen.
+ * The ways to arrive at one screen.
  *
- * §1.3 and §16 name three arrivals — no session, a session that expired, and a
- * departure the operator chose — and they carry three different messages. They
- * are not three screens: the form, the mark and the provider button are
- * identical in all three, and only the sentence above them moves. So the
- * arrival is a search param on `/login` and the screen reads it, which also
- * means every landing is a URL somebody can paste into a ticket.
+ * §1.3 and §16 name three arrivals — no session, a session that expired, and
+ * a departure the operator chose — and they carry three different messages.
+ * The OIDC callback adds a fourth: the provider round trip itself failed, and
+ * the host redirects to `/login?reason=oidc-failed&error=<code>` so the SPA
+ * can say what happened without exposing internals. They are not four
+ * screens: the form, the mark and the provider button are identical in all,
+ * and only the sentence above them moves. So the arrival is a search param on
+ * `/login` and the screen reads it, which also means every landing is a URL
+ * somebody can paste into a ticket.
  */
-export type LoginReason = SessionEnd
+export type LoginReason = SessionEnd | "oidc-failed"
 
-const REASONS: readonly LoginReason[] = ["expired", "signed-out"]
+const REASONS: readonly LoginReason[] = ["expired", "signed-out", "oidc-failed"]
 
 export interface LoginSearch {
   /** Absent is the cold arrival — there is no `reason=cold`. */
@@ -81,6 +84,11 @@ const LANDINGS: Record<LoginReason, LandingCopy> = {
     kind: "signed-out",
     notice: "You're signed out",
     lead: "Sign in again whenever you're ready.",
+  },
+  "oidc-failed": {
+    kind: "oidc-failed",
+    notice: "Sign-in with your provider failed",
+    lead: "Try again, or sign in with your email and password.",
   },
 }
 

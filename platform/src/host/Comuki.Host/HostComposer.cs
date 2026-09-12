@@ -465,6 +465,13 @@ internal static class HostComposer
         // public metadata, not an authenticated endpoint.
         app.MapOpenApi();
 
+        // SPA fallback: any path no endpoint owns answers the dashboard's
+        // index.html, so client routes (/login, /runs) resolve on a cold
+        // visit and after the OIDC callback 302. Registered after every
+        // Map* call — endpoint routing must win over the fallback, or the
+        // API would serve HTML where JSON belongs.
+        app.MapFallbackToFile("index.html");
+
         return app;
     }
 }

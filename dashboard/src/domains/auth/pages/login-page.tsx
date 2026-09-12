@@ -1,13 +1,15 @@
 import { useId, useState, type FormEvent } from "react"
-import { Check, CircleAlert, KeyRound, Mail, TimerOff } from "lucide-react"
+import { Check, CircleAlert, TimerOff } from "lucide-react"
 
 import { useAuthState } from "@/domains/auth/api/auth"
 import { startOidcFlow } from "@/domains/auth/api/oidc-start"
 import {
   landingFor,
   signInTarget,
+  type LandingCopy,
   type LoginReason,
 } from "@/domains/auth/model/landing"
+import { loginFailureMessage } from "@/domains/auth/model/login-failure"
 import { useLoginMutation } from "@/domains/identity/api/mutations"
 import { env } from "@/shared/config/env"
 import { signInWithOidcMock } from "@/shared/api/mock/auth.store"
@@ -83,7 +85,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
       })
       land()
     } catch (error) {
-      setFailure(readFailure(error))
+      setFailure(loginFailureMessage(error))
     }
   }
 
@@ -102,7 +104,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
         await signInWithOidcMock()
         land()
       } catch (error) {
-        setFailure(readFailure(error))
+        setFailure(loginFailureMessage(error))
       }
       return
     }
@@ -159,8 +161,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
         >
           <div className={styles.field}>
             <label className={styles.label} htmlFor={identityId}>
-              <Mail aria-hidden="true" className={styles.labelIcon} />
-              Email or username
+              Email
             </label>
             <input
               className={styles.input}
@@ -170,7 +171,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
               autoComplete="username"
               autoCapitalize="none"
               spellCheck={false}
-              placeholder="admin@example.com"
+              placeholder="you@comuki.local"
               value={identity}
               aria-invalid={failure ? true : undefined}
               aria-describedby={failure ? failureId : undefined}
@@ -180,7 +181,6 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor={passwordId}>
-              <KeyRound aria-hidden="true" className={styles.labelIcon} />
               Password
             </label>
             <input
@@ -189,7 +189,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
               name="password"
               type="password"
               autoComplete="current-password"
-              placeholder="••••••••"
+              placeholder="your account password"
               value={password}
               aria-invalid={failure ? true : undefined}
               aria-describedby={failure ? failureId : undefined}
@@ -231,10 +231,13 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
           </div>
         ) : null}
 
-        {/* The footer, anchored at the floor of the screen: where the source
-            lives — the one fact worth showing to someone the product has not
-            identified yet. Build/env identity belongs to the authenticated
-            surface (the board footer), not to the gate. */}
+        {/* The footer, anchored at the floor of the screen. What build this
+            is, and where its source lives — the two facts an operator checks
+            before they put a real password in. Pulled off the panel so it
+            does not steal room from the form, and rendered in the data voice
+            because both fields are values (a SHA is a value, a repo URL is a
+            value). The env label reads aloud on every build except
+            production, where the green pill is the env hint. */}
         <footer className={styles.footer} data-test="login-footer">
           <p className={styles.footerLine}>
             © 2026 dot-stbl · source at{" "}
@@ -251,6 +254,9 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
               <span className={styles.footerLink}>github.com/dot-stbl/comuki</span>
             )}
           </p>
+          <p className={styles.footerLine}>
+            build {env.commitSha || "—"} · {env.deployEnv}
+          </p>
         </footer>
       </div>
     </main>
@@ -258,7 +264,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
 }
 
 interface LandingProps {
-  kind: string
+  kind: LandingCopy["kind"]
   notice: string
   lead: string
   redirect?: string
@@ -267,17 +273,18 @@ interface LandingProps {
 /**
  * The sentence that distinguishes the arrivals.
  *
- * Expired gets a marked block — something happened to them and they need to
- * see it. Signed out gets the same words with the marking taken off, because a
- * departure that worked is not an incident and should not be dressed as one.
+ * Expired and a failed provider round trip get a marked block — something
+ * happened *to* them and they need to see it. Signed out gets the same words
+ * with the marking taken off, because a departure that worked is not an
+ * incident and should not be dressed as one.
  */
 function Landing({ kind, notice, lead, redirect }: LandingProps) {
-  const expired = kind === "expired"
-  const Icon = expired ? TimerOff : Check
+  const incident = kind === "expired" || kind === "oidc-failed"
+  const Icon = kind === "expired" ? TimerOff : kind === "oidc-failed" ? CircleAlert : Check
 
   return (
     <div
-      className={cn(styles.notice, !expired && styles.quiet)}
+      className={cn(styles.notice, !incident && styles.quiet)}
       data-test="login-landing"
       data-landing={kind}
     >
@@ -293,17 +300,4 @@ function Landing({ kind, notice, lead, redirect }: LandingProps) {
       </span>
     </div>
   )
-}
-
-/**
- * Surface the kubb auth error / mock rejection as a string the screen can
- * show. The mutation throws plain `Error` in the mock branch and an
- * `Error`-shaped kubb boundary error in the real branch — either way the
- * `message` is what the operator reads.
- */
-function readFailure(error: unknown): string {
-  if (error instanceof Error && error.message.length > 0) {
-    return error.message
-  }
-  return "Sign-in failed. Check the address and try again."
 }

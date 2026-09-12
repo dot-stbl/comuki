@@ -102,8 +102,8 @@ describe("useAuthState — real mode", () => {
       expect(result.current.user).toEqual(SESSION_USER_SEED)
     })
     expect(result.current.oidc).toEqual({ id: "comuki", label: "comuki" })
-    // Cookie sessions carry no record of why they ended — the only consumer
-    // that needed it (`guardSession`) reads the mock store directly.
+    // Cookie sessions carry no record of why they ended — the guard asks
+    // the me query directly in real mode; this hook is the render view.
     expect(result.current.endedBy).toBeNull()
   })
 

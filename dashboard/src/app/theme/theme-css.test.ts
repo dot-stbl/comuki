@@ -174,8 +174,8 @@ describe("tokens.css owns the vocabulary and nothing else", () => {
     ])
   })
 
-  it("still declares the weave for all six statuses", () => {
-    // The second channel. It is what lets four of the six statuses survive
+  it("still declares the weave for all seven statuses", () => {
+    // The second channel. It is what lets five of the seven statuses survive
     // greyscale on a hatch rather than on a hue, and it is deliberately
     // theme-independent — a palette changes the colours, never the encoding.
     const tokens = read("tokens.css")
@@ -189,6 +189,7 @@ describe("tokens.css owns the vocabulary and nothing else", () => {
       "escalated",
       "failed",
       "queued",
+      "cancelled",
     ]) {
       expect({ status, declared: declared.has(`--weave-${status}`) }).toEqual({
         status,
@@ -197,22 +198,28 @@ describe("tokens.css owns the vocabulary and nothing else", () => {
     }
   })
 
-  it("keeps the four hatches distinct from one another", () => {
+  it("keeps the five hatches distinct from one another", () => {
     // `running` and `success` are `none` on purpose — they are separated by
-    // colour, which is why `palette.test.ts` holds them furthest apart. The
-    // other four have to differ, or two statuses share an encoding.
+    // colour, which is why `palette.test.ts` holds them 26 L* apart. The other
+    // five have to differ, or two statuses share an encoding.
     const body =
       ruleBlocks(read("tokens.css")).find((rule) => rule.selectors === ":root")
         ?.body ?? ""
-    const hatches = ["waiting", "escalated", "failed", "queued"].map(
+    const hatches = [
+      "waiting",
+      "escalated",
+      "failed",
+      "queued",
+      "cancelled",
+    ].map(
       (status) =>
         new RegExp(`--weave-${status}\\s*:([\\s\\S]*?);`)
           .exec(body)?.[1]
           ?.replace(/\s+/g, " ")
           .trim() ?? ""
     )
-    expect(hatches.filter((hatch) => hatch.length > 0)).toHaveLength(4)
-    expect(new Set(hatches).size).toBe(4)
+    expect(hatches.filter((hatch) => hatch.length > 0)).toHaveLength(5)
+    expect(new Set(hatches).size).toBe(5)
   })
 })
 

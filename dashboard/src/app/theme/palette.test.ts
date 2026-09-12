@@ -9,9 +9,9 @@
  * Three floors, in increasing order of how much they cost to keep:
  *
  *   contrast    text has to be readable on the surface behind it. WCAG 4.5:1.
- *   lightness   the six statuses have to survive greyscale — a projector, a
+ *   lightness   the seven statuses have to survive greyscale — a projector, a
  *               photocopy, a screenshot pasted into a ticket. Only lightness
- *               survives that, so the six are held apart in L\*.
+ *               survives that, so the seven are held apart in L\*.
  *   dichromacy  `running` and `success` are the two statuses with no weave
  *               (`--weave-*: none`), so hue is their *only* channel. They are
  *               therefore held to a separation that has to hold under both
@@ -181,7 +181,7 @@ describe("text clears 4.5:1 in every theme and both modes", () => {
  * Greyscale, and then the two red-green projections.
  * ------------------------------------------------------------------ */
 
-describe("the six statuses stay six statuses without hue", () => {
+describe("the seven statuses stay seven statuses without hue", () => {
   it.each(HELD_CASES.map(([name, palette]) => [name, palette] as const))(
     "%s: no two statuses land within 4 L* of each other",
     (_name, palette) => {
@@ -329,15 +329,25 @@ describe("the default theme is built inside the dichromat's gamut", () => {
    it.
 
    Consecutive rungs alternate side, with one deliberate exception: `queued`
-   is the dullest of the six by design ("admitted but not started", the least
+   is the dullest of the seven by design ("admitted but not started", the least
    saturated status in DESIGN.md), so it sits at a near-zero offset and lands
    on the same side as its neighbour. It is told apart by chroma instead —
    a near-neutral grey beside a full amber. Every other adjacent pair differs
    in side outright.
 
-   `running` and `success` are the pair with no weave; they sit at opposite
-   ends of the ladder and on opposite sides of nothing — both are cool, but 26
-   L\* apart, which is more separation than any other pair gets. */
+   `running` and `success` are the pair with no weave; they are 26 L\* apart,
+   which is more separation than any other pair gets, and on opposite sides of
+   nothing — both are cool.
+
+   `cancelled` is the seventh and the last rung, one step past `success` in
+   both readings. It is there because it is the only place left: below
+   `running` a status label stops clearing 4.5:1 on the lane, and the six rungs
+   are 5.3 apart, so nothing fits between them at a 5 L\* floor. Its offset is
+   the second smallest of the seven — quieter than everything but `queued`,
+   and warm, because the side above it is taken by `success` and the same side
+   would need 60 units of chroma to stay apart, which is the opposite of what
+   a cancelled run should look like. A zero offset would be quieter still and
+   is not available: it lands 0.069 ΔEok from `success`. */
 const LADDER = {
   dark: {
     running: [60.5, 108],
@@ -346,6 +356,7 @@ const LADDER = {
     escalated: [76.4, 70],
     failed: [81.7, -170],
     success: [87, 40],
+    cancelled: [92.3, -28],
     destructive: [81.7, -212],
   },
   light: {
@@ -355,6 +366,7 @@ const LADDER = {
     escalated: [26.2, 140],
     failed: [20.6, -34],
     success: [15, 112],
+    cancelled: [9.4, -20],
     destructive: [20.6, -52],
   },
 } as const
@@ -404,7 +416,7 @@ describe("the default ladder is reproducible from its design", () => {
   )
 
   it.each(CASES.map(([name, palette]) => [name, palette] as const))(
-    "%s: the six statuses are still six after hue is thrown away",
+    "%s: the seven statuses are still seven after hue is thrown away",
     (_name, palette) => {
       // Greyscale is the harshest of the four vision channels — it keeps only
       // lightness — so a palette that survives it survives the other three.
@@ -442,7 +454,7 @@ describe("the legacy palette is exempted from the floors, not excused", () => {
   )
 
   it("records which status labels are unreadable on the lane", () => {
-    // Four of six, and `running` at 2.6:1 is the one that matters — this was
+    // Four of seven, and `running` at 2.6:1 is the one that matters — this was
     // the shipped board. Repairing a value here fails this test, which is the
     // point: the exemption preserves a measurement, not a licence.
     const dark = LEGACY_CASES.find(([name]) => name.endsWith("dark"))![1]

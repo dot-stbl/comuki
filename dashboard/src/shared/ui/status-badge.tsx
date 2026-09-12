@@ -5,6 +5,7 @@ import {
   ChevronUp,
   Circle,
   Clock,
+  Slash,
   X,
 } from "lucide-react"
 
@@ -19,6 +20,7 @@ export type Status =
   | "waiting"
   | "queued"
   | "escalated"
+  | "cancelled"
 
 export interface StatusBadgeProps {
   status: Status
@@ -34,6 +36,10 @@ const statusIcons: Record<Status, ComponentType<{ className?: string }>> = {
   waiting: Clock,
   queued: Circle,
   escalated: ChevronUp,
+  // A bare stroke, and the one silhouette in the set that is neither a ring
+  // nor a cross: `Circle` already belongs to `queued` and `X` to `failed`, and
+  // a cancelled run is neither of those things. It reads as struck through.
+  cancelled: Slash,
 }
 
 export function StatusBadge({
@@ -44,7 +50,7 @@ export function StatusBadge({
 }: StatusBadgeProps) {
   const Icon = statusIcons[status]
   // Verbatim, not title-cased. A status is a value out of a closed vocabulary
-  // — the same six strings the filter offers, the API returns and the seed
+  // — the same seven strings the filter offers, the API returns and the seed
   // writes — and a value is spelled the way it is stored. Capitalising it here
   // made the badge say 'Running' while the filter beside it said 'running',
   // which reads as two different vocabularies rather than one.

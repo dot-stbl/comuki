@@ -60,6 +60,11 @@ export const SignedOut: Story = {
   render: () => <WithProvider provider={OIDC} reason="signed-out" />,
 }
 
+/** Fourth landing: the provider round trip failed — the OIDC callback 302. */
+export const OidcFailed: Story = {
+  render: () => <WithProvider provider={OIDC} reason="oidc-failed" />,
+}
+
 /** The tenant with no identity provider: local sign-in and nothing else. */
 export const NoIdentityProvider: Story = {
   render: () => <WithProvider provider={null} />,

@@ -5,10 +5,25 @@
 
 import { z } from "zod/v4"
 
-export const chatSlashCommandSchema = z.object({
-  key: z.string(),
-  name: z.string(),
-  description: z.string(),
-  body: z.string(),
-  source: z.string(),
-})
+/**
+ * @description One slash command as listed to the dashboard / autocomplete and expanded\r\ninto the brain task by the router.
+ */
+export const chatSlashCommandSchema = z
+  .object({
+    key: z
+      .string()
+      .describe("Command identity without the slash (e.g. `init`)."),
+    name: z.string().describe("Human-readable name."),
+    description: z.string().describe("One-line description."),
+    body: z
+      .string()
+      .describe(
+        "Full instruction body expanded into the brain task (empty for graph-native commands like `init`)."
+      ),
+    source: z
+      .string()
+      .describe("Where the command comes from: `builtin` or `control-plane`."),
+  })
+  .describe(
+    "One slash command as listed to the dashboard / autocomplete and expanded\r\ninto the brain task by the router."
+  )

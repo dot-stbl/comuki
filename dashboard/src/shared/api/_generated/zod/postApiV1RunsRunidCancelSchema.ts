@@ -8,7 +8,7 @@ import { problemDetailsSchema } from "./problemDetailsSchema"
 import { z } from "zod/v4"
 
 export const postApiV1RunsRunidCancelPathParamsSchema = z.object({
-  runId: z.uuid(),
+  runId: z.uuid().describe("Run to cancel."),
 })
 
 /**
@@ -30,9 +30,11 @@ export const postApiV1RunsRunidCancel409Schema = z.lazy(
   () => problemDetailsSchema
 )
 
-export const postApiV1RunsRunidCancelMutationRequestSchema = z.lazy(
-  () => cancelRunRequestSchema
-)
+export const postApiV1RunsRunidCancelMutationRequestSchema = z
+  .lazy(() => cancelRunRequestSchema)
+  .describe(
+    "Body of `POST /api/v1/runs/{runId}/cancel`. The `reason`\r\n(when present) is journalled verbatim on the `run.status_changed`\r\nevent's jsonb payload — the operator's note that survives the run's\r\ntimeline."
+  )
 
 export const postApiV1RunsRunidCancelMutationResponseSchema = z.lazy(
   () => postApiV1RunsRunidCancel204Schema

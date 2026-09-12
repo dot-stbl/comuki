@@ -49,6 +49,7 @@ export function postApiV1GrantsMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Grants a role (issue #32). Permission `identity:write`.
  * {@link /api/v1/grants}
  */
 export function usePostApiV1Grants<TContext>(

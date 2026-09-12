@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Failure body: human-readable reason text.
+ */
 export type FailWorkItemRequest = {
   /**
    * @type string

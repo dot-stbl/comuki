@@ -20,6 +20,7 @@ function getGetApiV1InboxUrl() {
 }
 
 /**
+ * @summary Lists pending tickets (the inbox), newest first.
  * {@link /api/v1/inbox}
  */
 export async function getApiV1Inbox(

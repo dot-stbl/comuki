@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Read-model of an admission rule.
+ */
 export type AdmissionRuleView = {
   /**
    * @type string, uuid
@@ -13,6 +16,7 @@ export type AdmissionRuleView = {
    */
   projectId: string
   /**
+   * @description watch | inbox.
    * @type string
    */
   mode: string

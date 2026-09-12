@@ -26,6 +26,7 @@ function getGetApiV1ChatSessionsSessionidUrl(
 }
 
 /**
+ * @summary Reads one session of the acting subject.
  * {@link /api/v1/chat/sessions/:sessionId}
  */
 export async function getApiV1ChatSessionsSessionid(

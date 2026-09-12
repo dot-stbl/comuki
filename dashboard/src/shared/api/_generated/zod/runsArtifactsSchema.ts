@@ -8,14 +8,18 @@ import { runArtifactsPageSchema } from "./runArtifactsPageSchema"
 import { z } from "zod/v4"
 
 export const runsArtifactsPathParamsSchema = z.object({
-  projectId: z.uuid(),
-  runId: z.uuid(),
+  projectId: z.uuid().describe("Owning project (path)."),
+  runId: z.uuid().describe("Run whose artifacts are requested (path)."),
 })
 
 /**
  * @description OK
  */
-export const runsArtifacts200Schema = z.lazy(() => runArtifactsPageSchema)
+export const runsArtifacts200Schema = z
+  .lazy(() => runArtifactsPageSchema)
+  .describe(
+    "One page of run-artifact pointers — wraps ArtifactPointer with the project/run id echo."
+  )
 
 /**
  * @description Not Found

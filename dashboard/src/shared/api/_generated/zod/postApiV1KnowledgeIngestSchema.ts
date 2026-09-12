@@ -11,9 +11,11 @@ import { z } from "zod/v4"
  */
 export const postApiV1KnowledgeIngest200Schema = z.any()
 
-export const postApiV1KnowledgeIngestMutationRequestSchema = z.lazy(
-  () => knowledgeIngestRequestSchema
-)
+export const postApiV1KnowledgeIngestMutationRequestSchema = z
+  .lazy(() => knowledgeIngestRequestSchema)
+  .describe(
+    "One ingest call — the body of `POST /api/v1/knowledge/ingest`.\r\nstring KnowledgeIngestRequest.Source is a wire key (`git` | `upload` |\r\n`url`); the text is the raw bytes the worker chunks and\r\nembeds. The request is project-scoped (projectId) or global\r\n(projectId omitted)."
+  )
 
 export const postApiV1KnowledgeIngestMutationResponseSchema = z.lazy(
   () => postApiV1KnowledgeIngest200Schema

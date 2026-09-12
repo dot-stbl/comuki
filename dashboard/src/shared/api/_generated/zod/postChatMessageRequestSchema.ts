@@ -5,6 +5,13 @@
 
 import { z } from "zod/v4"
 
-export const postChatMessageRequestSchema = z.object({
-  message: z.string(),
-})
+/**
+ * @description Post-message request body: one chat turn.
+ */
+export const postChatMessageRequestSchema = z
+  .object({
+    message: z
+      .string()
+      .describe("Raw user message (plain text or a /command)."),
+  })
+  .describe("Post-message request body: one chat turn.")

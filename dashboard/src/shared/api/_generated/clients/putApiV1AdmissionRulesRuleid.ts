@@ -27,6 +27,7 @@ function getPutApiV1AdmissionRulesRuleidUrl(
 }
 
 /**
+ * @summary Partial update (PATCH semantics — null fields stay).
  * {@link /api/v1/admission-rules/:ruleId}
  */
 export async function putApiV1AdmissionRulesRuleid(

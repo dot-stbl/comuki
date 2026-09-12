@@ -11,25 +11,46 @@
   ],
   "type": "object",
   "properties": {
-    "id": { "type": "string", "format": "uuid" },
-    "profile": { "type": "string" },
-    "label": { "type": "string" },
-    "status": { "type": "string" },
+    "id": {
+      "type": "string",
+      "description": "Work-item id.",
+      "format": "uuid"
+    },
+    "profile": {
+      "type": "string",
+      "description": "Worker profile key (e.g. `implement`, `explore-readonly`)."
+    },
+    "label": {
+      "type": "string",
+      "description": "Brain-authored step name; empty when not provided."
+    },
+    "status": {
+      "type": "string",
+      "description": "Wire status string (lowercase)."
+    },
     "dependsOn": {
       "type": "array",
-      "items": { "type": "string", "format": "uuid" }
+      "items": { "type": "string", "format": "uuid" },
+      "description": "Ids of prerequisite work items (joined from `work_item_dependencies`)."
     },
     "cost": {
       "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
       "type": ["number", "string"],
+      "description": "Reserved per-item spend in USD; `0` until usage_events is wired.",
       "format": "double"
     },
     "tokens": {
       "pattern": "^-?(?:0|[1-9]\\d*)$",
       "type": ["integer", "string"],
+      "description": "Reserved per-item token count; `0` for the same reason.",
       "format": "int64"
     },
-    "startedAt": { "type": ["null", "string"], "format": "date-time" }
+    "startedAt": {
+      "type": ["null", "string"],
+      "description": "First transition away from `Queued`, or `null` while still queued.",
+      "format": "date-time"
+    }
   },
+  "description": "Wire row for one work-item in the run's plan.",
   "x-readme-ref-name": "RunDetailWorkItem"
 }

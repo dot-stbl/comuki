@@ -51,6 +51,7 @@ export function getApiV1AdmissionRulesQueryOptions(
 }
 
 /**
+ * @summary Lists rules, optionally per project.
  * {@link /api/v1/admission-rules}
  */
 export function useGetApiV1AdmissionRules<

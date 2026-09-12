@@ -1,10 +1,23 @@
 {
   "type": "object",
   "properties": {
-    "name": { "type": ["null", "string"] },
-    "settingsJson": { "type": ["null", "string"] },
-    "secretEnvRef": { "type": ["null", "string"] },
-    "enabled": { "type": ["null", "boolean"] }
+    "name": {
+      "type": ["null", "string"],
+      "description": "New name; null = keep."
+    },
+    "settingsJson": {
+      "type": ["null", "string"],
+      "description": "New settings json; null = keep."
+    },
+    "secretEnvRef": {
+      "type": ["null", "string"],
+      "description": "New secret env name; null = keep."
+    },
+    "enabled": {
+      "type": ["null", "boolean"],
+      "description": "Enable/disable; null = keep."
+    }
   },
+  "description": "Source connection partial update body (PUT /api/v1/sources/{id}).",
   "x-readme-ref-name": "UpdateSourceConnectionRequest"
 }

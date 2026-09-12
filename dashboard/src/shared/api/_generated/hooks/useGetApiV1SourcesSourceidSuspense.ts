@@ -55,6 +55,7 @@ export function getApiV1SourcesSourceidSuspenseQueryOptions(
 }
 
 /**
+ * @summary Reads one connection.
  * {@link /api/v1/sources/:sourceId}
  */
 export function useGetApiV1SourcesSourceidSuspense<

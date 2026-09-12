@@ -3,16 +3,22 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Grant role body (POST /api/v1/grants).
+ */
 export type GrantRoleRequest = {
   /**
+   * @description Target user id.
    * @type string, uuid
    */
   userId: string
   /**
+   * @description Role key (kebab-case: `platform-admin`, `member`, …).
    * @type string
    */
   role: string
   /**
+   * @description Optional project id — when present the grant is project-scoped, otherwise platform-scoped.
    * @type null,string, uuid
    */
   projectId?: string | null

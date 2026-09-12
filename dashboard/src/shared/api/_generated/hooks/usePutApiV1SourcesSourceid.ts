@@ -52,6 +52,7 @@ export function putApiV1SourcesSourceidMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Partial update (PATCH semantics — null fields stay).
  * {@link /api/v1/sources/:sourceId}
  */
 export function usePutApiV1SourcesSourceid<TContext>(

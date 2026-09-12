@@ -9,12 +9,26 @@ import { z } from "zod/v4"
 
 export const getApiV1UsersQueryParamsSchema = z
   .object({
-    EmailContains: z.optional(z.string()),
+    EmailContains: z.optional(
+      z
+        .string()
+        .describe("Optional case-insensitive substring filter on email.")
+    ),
     Page: z.optional(
-      z.union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      z
+        .union([
+          z.coerce.number().int(),
+          z.string().regex(/^-?(?:0|[1-9]\d*)$/),
+        ])
+        .describe("1-based page index; default 1.")
     ),
     PageSize: z.optional(
-      z.union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      z
+        .union([
+          z.coerce.number().int(),
+          z.string().regex(/^-?(?:0|[1-9]\d*)$/),
+        ])
+        .describe("Page size (1..100); default 100.")
     ),
   })
   .optional()
@@ -22,7 +36,11 @@ export const getApiV1UsersQueryParamsSchema = z
 /**
  * @description OK
  */
-export const getApiV1Users200Schema = z.lazy(() => identityAdminPageSchema)
+export const getApiV1Users200Schema = z
+  .lazy(() => identityAdminPageSchema)
+  .describe(
+    "Paged envelope shared by the identity-admin list endpoints\r\n(issue #45 / F13 — `GET /api/v1/users`, `/api/v1/grants`,\r\n`/api/v1/keys`). Wire shape `{ items, total }`: `items` is\r\nthe already-projected view list for the requested page; `total` is\r\nthe count across every page, not the page size."
+  )
 
 /**
  * @description Bad Request

@@ -10,7 +10,11 @@ import { z } from "zod/v4"
  * @description OK
  */
 export const getChatCommands200Schema = z.array(
-  z.lazy(() => chatCommandDefinitionSchema)
+  z
+    .lazy(() => chatCommandDefinitionSchema)
+    .describe(
+      "One built-in chat command as listed to the chat harness and the dashboard."
+    )
 )
 
 export const getChatCommandsQueryResponseSchema = z.lazy(

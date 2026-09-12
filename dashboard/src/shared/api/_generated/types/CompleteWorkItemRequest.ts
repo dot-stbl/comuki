@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Completion body: the worker-produced result JSON (must be valid, non-empty JSON).
+ */
 export type CompleteWorkItemRequest = {
   /**
    * @type string

@@ -1,0 +1,30 @@
+{
+  "required": ["name", "inputJson", "status"],
+  "properties": {
+    "kind": { "enum": ["tool"], "type": "string" },
+    "name": {
+      "type": "string",
+      "description": "Tool name as the runtime knows it (`create_ticket`, …)."
+    },
+    "inputJson": {
+      "type": "string",
+      "description": "Arguments the tool was called with, as JSON."
+    },
+    "status": {
+      "type": "string",
+      "description": "A value from ToolPartStatuses."
+    },
+    "outputJson": {
+      "type": ["null", "string"],
+      "description": "Observation payload as JSON; null while running."
+    },
+    "durationMs": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "description": "Wall-clock duration in milliseconds; null while running.",
+      "format": "int64"
+    }
+  },
+  "description": "One tool invocation. A running call is journalled with\r\nstring ToolPartStatuses.Running and no output; the terminal\r\nform carries the observation.",
+  "x-readme-ref-name": "MessagePartToolPart"
+}

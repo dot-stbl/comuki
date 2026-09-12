@@ -49,6 +49,11 @@ export function postApiV1RunsRunidApproveMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Approves a run that the orchestrator escalated back to a human gate.
+ * The transition is legal from `Escalated` only; every other
+ * source (including terminal statuses) answers 409. Successful approve
+ * returns 204 with no body; the orchestrator's journal
+ * (`run.status_changed`) records the transition.
  * {@link /api/v1/runs/:runId/approve}
  */
 export function usePostApiV1RunsRunidApprove<TContext>(

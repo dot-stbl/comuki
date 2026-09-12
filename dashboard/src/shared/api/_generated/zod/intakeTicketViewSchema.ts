@@ -5,14 +5,21 @@
 
 import { z } from "zod/v4"
 
-export const intakeTicketViewSchema = z.object({
-  id: z.uuid(),
-  projectId: z.uuid(),
-  source: z.string(),
-  externalId: z.string(),
-  title: z.string(),
-  url: z.string(),
-  status: z.string(),
-  runId: z.nullable(z.uuid()),
-  createdAt: z.iso.datetime({ offset: true }),
-})
+/**
+ * @description Read-model of an intake ticket for the inbox and the API surfaces.
+ */
+export const intakeTicketViewSchema = z
+  .object({
+    id: z.uuid(),
+    projectId: z.uuid(),
+    source: z.string().describe("Kebab-case provider key."),
+    externalId: z.string(),
+    title: z.string(),
+    url: z.string(),
+    status: z.string(),
+    runId: z.nullable(z.uuid().describe("The launched run, when claimed.")),
+    createdAt: z.iso.datetime({ offset: true }),
+  })
+  .describe(
+    "Read-model of an intake ticket for the inbox and the API surfaces."
+  )

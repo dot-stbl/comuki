@@ -52,6 +52,10 @@ export function getApiV1UsersSuspenseQueryOptions(
 }
 
 /**
+ * @summary Lists user accounts (issue #45 / F13 — read side of the identity admin).
+ * Permission `identity:read`; returns a paged
+ * `{ items, total }` envelope of UserAccountView.
+ * Optional `emailContains` is a case-insensitive substring filter.
  * {@link /api/v1/users}
  */
 export function useGetApiV1UsersSuspense<

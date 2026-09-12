@@ -21,6 +21,7 @@ function getGetApiV1InboxCatalogUrl() {
 }
 
 /**
+ * @summary Fetches one page of a connection's external issue catalog.
  * {@link /api/v1/inbox/catalog}
  */
 export async function getApiV1InboxCatalog(

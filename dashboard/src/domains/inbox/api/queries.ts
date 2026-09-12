@@ -12,6 +12,7 @@ import type {
 } from "@/domains/inbox/model/types"
 import { getApiV1Inbox } from "@/shared/api/_generated/clients/getApiV1Inbox"
 import { getApiV1InboxCatalog } from "@/shared/api/_generated/clients/getApiV1InboxCatalog"
+import { INBOX_POLL_INTERVAL_MS, livePolling } from "@/shared/api/polling"
 import { findSeedInboxTicket, listSeedInboxTickets } from "@/shared/api/mock/sources.store"
 import { env } from "@/shared/config/env"
 
@@ -133,6 +134,9 @@ export function useInboxQuery(filters: InboxFilters) {
   return useQuery({
     queryKey: [...inboxQueryKey, filters] as const,
     queryFn: () => listInbox(filters),
+    // The intake list — a claimed ticket should leave the pending queue
+    // within a minute even with no socket.
+    refetchInterval: livePolling(INBOX_POLL_INTERVAL_MS),
   })
 }
 

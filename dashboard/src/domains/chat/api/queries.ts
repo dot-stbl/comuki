@@ -28,6 +28,10 @@ import {
   startChatSession,
 } from "@/shared/api/mock/chat.store"
 import { runsQueryKey } from "@/domains/runs/api/queries"
+import {
+  CHAT_MESSAGES_POLL_INTERVAL_MS,
+  livePolling,
+} from "@/shared/api/polling"
 import { env } from "@/shared/config/env"
 
 export const chatSessionsQueryKey = ["chat", "sessions"] as const
@@ -119,6 +123,10 @@ export function useChatMessagesQuery(sessionId: string) {
     queryKey: chatMessagesQueryKey(sessionId),
     queryFn: () => listMessages(sessionId),
     enabled: sessionId.length > 0,
+    // Only an *open* conversation reaches this hook with a non-empty id, so
+    // the cadence ticks exactly while a thread is on screen — the console is
+    // a live surface and a reply should appear without a refocus.
+    refetchInterval: livePolling(CHAT_MESSAGES_POLL_INTERVAL_MS),
   })
 }
 

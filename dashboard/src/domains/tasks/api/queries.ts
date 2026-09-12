@@ -6,6 +6,7 @@ import type { CreateTaskInput, Task } from "@/domains/tasks/model/types"
 import { postApiV1InboxClaim } from "@/shared/api/_generated/clients/postApiV1InboxClaim"
 import { postApiV1Tickets } from "@/shared/api/_generated/clients/postApiV1Tickets"
 import { getApiV1Inbox } from "@/shared/api/_generated/clients/getApiV1Inbox"
+import { INBOX_POLL_INTERVAL_MS, livePolling } from "@/shared/api/polling"
 import { TASKS_SEED } from "@/shared/api/mock/tasks.seed"
 import { env } from "@/shared/config/env"
 
@@ -108,6 +109,8 @@ export function useTasksQuery() {
   return useQuery({
     queryKey: tasksQueryKey,
     queryFn: listTasks,
+    // The backlog reads the same intake as the inbox screen — same cadence.
+    refetchInterval: livePolling(INBOX_POLL_INTERVAL_MS),
   })
 }
 

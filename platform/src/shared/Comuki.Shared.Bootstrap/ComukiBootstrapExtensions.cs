@@ -9,13 +9,14 @@ using Microsoft.Extensions.Logging;
 namespace Comuki.Shared.Bootstrap;
 
 /// <summary>
-/// Host-agnostic bootstrap glue (issue #54): replaces the default
-/// appsettings/env configuration sources with the comuki ones — optional
+/// Host-agnostic bootstrap glue (issue #54): adds the comuki-native
+/// configuration sources on top of the standard ones — optional
 /// config.toml (<see cref="ComukiConfigFile"/>) + the COMUKI_ env
-/// provider — and offers the one-call console-host bootstrap. The
-/// hosting-level DOTNET_/ASPNETCORE_ fallbacks (environment, URLs) are
-/// not part of the cleared application sources, so stock tooling like
-/// ASPNETCORE_URLS keeps working quietly when no comuki value is set.
+/// provider — and offers the one-call console-host bootstrap. Standard
+/// sources (appsettings JSON, double-underscore env vars like
+/// <c>Artifacts__Endpoint</c>, command line) stay registered, so
+/// Helm-style deployments keep working; comuki sources are appended
+/// last and therefore win on key collisions.
 /// </summary>
 public static class ComukiBootstrapExtensions
 {
@@ -26,13 +27,14 @@ public static class ComukiBootstrapExtensions
     public const string ServerPortKey = "server:port";
 
     /// <summary>
-    /// Clears the default application configuration sources (appsettings
-    /// JSON, user secrets, bare env vars, command line) and wires the
-    /// comuki ones: config.toml first, COMUKI_ env overrides second.
+    /// Adds the comuki configuration sources on top of whatever is already
+    /// registered (appsettings JSON, double-underscore env vars, command
+    /// line): config.toml first, COMUKI_ env overrides second. Existing
+    /// sources are kept — later sources win, so comuki values override
+    /// the standard ones on the same key.
     /// </summary>
     public static IConfigurationBuilder UseComukiConfiguration(this IConfigurationBuilder builder)
     {
-        builder.Sources.Clear();
         builder.Add(new ComukiTomlConfigurationSource());
         builder.Add(new ComukiEnvConfigurationSource());
         return builder;

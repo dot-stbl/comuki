@@ -27,6 +27,7 @@ internal static class WorkerSessionTestHelpers
 
     /// <summary>Async-enumerable that yields each element and completes.</summary>
     /// <param name="source"></param>
+    /// <param name="cancellationToken">Stops the enumeration between yields.</param>
     private static async IAsyncEnumerable<T> StreamCommandsAsync<T>(
         IEnumerable<T> source,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)

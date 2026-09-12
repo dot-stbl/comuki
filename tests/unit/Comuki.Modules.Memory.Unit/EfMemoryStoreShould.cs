@@ -16,7 +16,7 @@ namespace Comuki.Modules.Memory.Unit;
 /// <summary>
 /// Round-trip and forget semantics of <see cref="EfMemoryStore"/> over
 /// the EF Core in-memory provider. The pgvector and Npgsql-specific paths
-/// (<see cref="MemoryFactVectors"/>) are out of scope for the in-memory
+/// (<c>MemoryFactVectors</c>) are out of scope for the in-memory
 /// provider; <see cref="EfMemoryStore.WriteAsync"/> uses
 /// <c>ExecuteUpdateAsync</c> which the in-memory provider does not
 /// implement — that surface is covered by the Testcontainers-Postgres

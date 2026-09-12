@@ -45,7 +45,7 @@ public sealed class TestWorkerHost : IAsyncDisposable
     }
 
     /// <summary>Builds and starts the host with the caller's extra services.</summary>
-    /// <param name="configureServices"></param>
+    /// <param name="ConfigureServices">Extra services registered into the host DI container before it starts.</param>
     /// <param name="mapRest">Map the worker REST surface; requires orchestration application services registered.</param>
     public static async Task<TestWorkerHost> StartAsync(Action<IServiceCollection> ConfigureServices, bool mapRest = true)
     {

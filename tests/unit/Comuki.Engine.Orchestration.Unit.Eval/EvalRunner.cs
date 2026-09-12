@@ -12,7 +12,7 @@ namespace Comuki.Engine.Orchestration.Unit.Eval;
 /// machines and scores the captured outcome against
 /// <see cref="EvalTask.Expected"/>. The runner is intentionally pure:
 /// no DB, no clock injection, no DI. Time is supplied by the caller via
-/// the <paramref name="now"/> parameter so tests stay deterministic.
+/// the <c>now</c> parameter so tests stay deterministic.
 /// </summary>
 public static class EvalRunner
 {

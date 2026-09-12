@@ -26,7 +26,7 @@ namespace Comuki.Engine.Compute.Installers;
 /// resolution fails fast.
 /// </summary>
 /// <remarks>
-/// <see cref="WorkerTokenIssuer"/> itself is registered by
+/// <see cref="Security.WorkerTokenIssuer"/> itself is registered by
 /// <c>WorkerRuntimeExtensions.AddWorkerRuntime</c> on the host side
 /// (<c>TryAddSingleton</c>) — historically this method registered it as
 /// well, which made the order of <c>AddComukiCompute</c> vs

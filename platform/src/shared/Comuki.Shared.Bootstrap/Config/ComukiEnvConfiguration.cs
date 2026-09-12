@@ -1,5 +1,6 @@
 using System.Collections;
 using Comuki.Shared.Bootstrap.Config.Toml;
+using Comuki.Shared.Bootstrap.Logging;
 using Microsoft.Extensions.Configuration;
 
 namespace Comuki.Shared.Bootstrap.Config;
@@ -25,6 +26,8 @@ public sealed class ComukiEnvConfigurationSource(string prefix = "COMUKI_") : IC
     {
         ComukiEnvironment.EnvironmentVariable,
         ComukiConfigFile.PathEnvironmentVariable,
+        ComukiLogEnvironment.LevelVariable,
+        ComukiLogEnvironment.FormatVariable,
     };
 
     /// <inheritdoc />

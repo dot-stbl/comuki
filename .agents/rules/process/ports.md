@@ -28,6 +28,7 @@ always: true
 | 17026 | Keycloak (compose profile `keycloak`) | `deploy/docker-compose.yml` → keycloak service |
 | 17027 | Grafana (compose profile `grafana`) | `deploy/docker-compose.yml` → grafana service |
 | 17172 | host HTTP (compose host-mapping) | `deploy/compose/docker-compose.yml` → host service published port |
+| 17171 | host HTTPS (compose host-mapping, optional TLS) | `deploy/compose/docker-compose.yml` → `COMUKI_TLS_HOST_PORT` |
 
 Свободный диапазон для ad-hoc / экспериментов: **17180–17200**.
 Новый постоянный сервис — **добавь строку в эту таблицу** в том же PR,

@@ -20,6 +20,13 @@
 # host = "0.0.0.0"
 # port = 8080
 
+[logging]
+# Console minimum level; the env override COMUKI_LOG_LEVEL
+# (trace|debug|info|warn|error|fatal) wins over this value.
+# COMUKI_LOG_FORMAT=json switches the console renderer to one JSON
+# object per line (env-only; OTLP output is unaffected).
+# level = "info"
+
 [brain]
 # Standalone brain host (comuki-brain): gRPC listener port from the
 # Comuki port pool (17000–17200; 17004 is the brain's row).
@@ -35,6 +42,22 @@ grpcPort = 17004
 [host.cors]
 # Browser origins allowed on the API.
 # allowedOrigins = ["http://localhost:17173"]
+
+[host.tls]
+# HTTPS listener next to the plain-HTTP one ([server] port / 8080).
+# Disabled by default — plain HTTP only, exactly as before. When
+# enabled, both listeners stay up: HTTP keeps its port, HTTPS takes
+# httpsPort, and plain HTTP is redirected (set redirectHttp = false to
+# serve both without redirects).
+# enabled = true
+# httpsPort = 8081
+# redirectHttp = true
+# PEM certificate pair; unset = the ASP.NET Core dev certificate
+# (Development only — containers don't ship one, mount a pair there).
+# certificatePath = "/certs/tls.crt"
+# certificateKeyPath = "/certs/tls.key"
+# Env overrides: COMUKI_HOST_TLS_ENABLED / _HTTPSPORT / _REDIRECTHTTP /
+# _CERTIFICATEPATH / _CERTIFICATEKEYPATH.
 
 [artifacts]
 # S3-compatible store for run bundles (MinIO). Keys via env:

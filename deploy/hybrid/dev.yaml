@@ -44,11 +44,11 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-timeout: "600s"
 
 # Verified against Comuki.Host/HostComposer + ApiRoutes:
-#   GET /health        — static liveness (anonymous)
-#   GET /health/ready  — readiness: Postgres SELECT 1 + proxy-key catalogue
+#   GET /api/v1/health        — static liveness (anonymous)
+#   GET /api/v1/health/ready  — readiness: Postgres SELECT 1 + proxy-key catalogue
 probes:
-  liveness: /health
-  readiness: /health/ready
+  liveness: /api/v1/health
+  readiness: /api/v1/health/ready
 
 resources:
   requests:

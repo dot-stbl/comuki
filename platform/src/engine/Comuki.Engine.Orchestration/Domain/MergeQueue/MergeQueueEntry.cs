@@ -110,7 +110,7 @@ public sealed class MergeQueueEntry
 
     /// <summary>Applies a status transition; illegal transitions throw — see <see cref="MergeQueueTransitions"/>.</summary>
     /// <param name="to"></param>
-    /// <exception cref="InvalidOperationException"></param>
+    /// <exception cref="InvalidOperationException"></exception>
     public void TransitionTo(MergeQueueStatus to)
     {
         if (!MergeQueueTransitions.IsLegal(Status, to))

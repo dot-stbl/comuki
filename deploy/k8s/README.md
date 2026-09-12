@@ -83,3 +83,7 @@ the schema at the image's migration level.
 - Bring your own Postgres/MinIO: delete `postgres.yaml` / `minio.yaml`
   and edit `configmap.yaml` (`COMUKI_ARTIFACTS_ENDPOINT`) + the `COMUKI_DB`
   connection strings in `migrator-job.yaml` / `deployment.yaml`.
+- Direct TLS on the host (no Ingress): see
+  [`host-tls.example.yaml`](host-tls.example.yaml) — a TLS secret
+  mounted at `/certs` plus the `COMUKI_HOST_TLS_*` env; HTTPS listens
+  on container `:8081` next to HTTP `:8080` with plain-HTTP redirect.

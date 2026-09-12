@@ -26,7 +26,7 @@ namespace Comuki.Modules.Intake.Infrastructure.Sync;
 /// across every project, ambient subject scope does not apply.
 /// </summary>
 /// <param name="scopeFactory"></param>
-/// <scopeAccessor></scopeAccessor>
+/// <param name="scopeAccessor">Establishes the AsSystem subject scope for each cycle.</param>
 /// <param name="options"></param>
 /// <param name="logger"></param>
 public sealed class RunStatusBridgeWorker(

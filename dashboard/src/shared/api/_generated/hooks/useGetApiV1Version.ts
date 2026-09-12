@@ -14,43 +14,44 @@ import type {
   QueryObserverOptions,
   UseQueryResult,
 } from "@tanstack/react-query"
-import type { GetHealthQueryResponse } from "../types/GetHealth"
+import type { GetApiV1VersionQueryResponse } from "../types/GetApiV1Version"
 import { queryOptions, useQuery } from "@tanstack/react-query"
-import { getHealth } from "../clients/getHealth"
+import { getApiV1Version } from "../clients/getApiV1Version"
 
-export const getHealthQueryKey = () => [{ url: "/health" }] as const
+export const getApiV1VersionQueryKey = () =>
+  [{ url: "/api/v1/version" }] as const
 
-export type GetHealthQueryKey = ReturnType<typeof getHealthQueryKey>
+export type GetApiV1VersionQueryKey = ReturnType<typeof getApiV1VersionQueryKey>
 
-export function getHealthQueryOptions(
+export function getApiV1VersionQueryOptions(
   config: Partial<RequestConfig> & { client?: Client } = {}
 ) {
-  const queryKey = getHealthQueryKey()
+  const queryKey = getApiV1VersionQueryKey()
   return queryOptions<
-    GetHealthQueryResponse,
+    GetApiV1VersionQueryResponse,
     ResponseErrorConfig<Error>,
-    GetHealthQueryResponse,
+    GetApiV1VersionQueryResponse,
     typeof queryKey
   >({
     queryKey,
     queryFn: async ({ signal }) => {
-      return getHealth({ ...config, signal: config.signal ?? signal })
+      return getApiV1Version({ ...config, signal: config.signal ?? signal })
     },
   })
 }
 
 /**
- * {@link /health}
+ * {@link /api/v1/version}
  */
-export function useGetHealth<
-  TData = GetHealthQueryResponse,
-  TQueryData = GetHealthQueryResponse,
-  TQueryKey extends QueryKey = GetHealthQueryKey,
+export function useGetApiV1Version<
+  TData = GetApiV1VersionQueryResponse,
+  TQueryData = GetApiV1VersionQueryResponse,
+  TQueryKey extends QueryKey = GetApiV1VersionQueryKey,
 >(
   options: {
     query?: Partial<
       QueryObserverOptions<
-        GetHealthQueryResponse,
+        GetApiV1VersionQueryResponse,
         ResponseErrorConfig<Error>,
         TData,
         TQueryData,
@@ -62,11 +63,11 @@ export function useGetHealth<
 ) {
   const { query: queryConfig = {}, client: config = {} } = options ?? {}
   const { client: queryClient, ...resolvedOptions } = queryConfig
-  const queryKey = resolvedOptions?.queryKey ?? getHealthQueryKey()
+  const queryKey = resolvedOptions?.queryKey ?? getApiV1VersionQueryKey()
 
   const query = useQuery(
     {
-      ...getHealthQueryOptions(config),
+      ...getApiV1VersionQueryOptions(config),
       ...resolvedOptions,
       queryKey,
     } as unknown as QueryObserverOptions,

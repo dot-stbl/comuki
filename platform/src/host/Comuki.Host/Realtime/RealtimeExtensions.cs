@@ -20,7 +20,7 @@ public static class RealtimeExtensions
 
     /// <summary>
     /// Wires the SignalR hub surface. <c>EnableDetailedErrors</c> is gated
-    /// to <see cref="HostEnvironmentExtensions.IsDevelopment"/> so production
+    /// to <see cref="HostEnvironmentEnvExtensions.IsDevelopment(IHostEnvironment)"/> so production
     /// containers never leak stack frames into <c>HubException</c> messages
     /// (security audit A05-1). The <see cref="DetailedErrorsEnvVar"/>
     /// opt-in survives as a support escape hatch; the historical

@@ -1,3 +1,4 @@
+import type { QueryClient } from "@tanstack/react-query"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import * as projectsDomain from "@/domains/projects/api/mappers"
@@ -56,12 +57,14 @@ import { patchApiV1UsersUserid } from "@/shared/api/_generated/clients/patchApiV
  * Real mode (`VITE_USE_MOCK=false`) for the session path is wired: `me`,
  * `oidc/{provider}/start`, login, logout. The seven admin mutations on this
  * page (invite, link OIDC, set disabled, grant role, revoke role, revoke key,
- * create key) are also wired — each carries a real-mode branch that calls
- * the kubb-generated client for the host endpoint that landed under
- * issues #31–#37 (`POST /api/v1/users`, `POST /api/v1/users/{id}/oidc-link`,
- * `PATCH /api/v1/users/{id}`, `POST /api/v1/grants`,
- * `POST /api/v1/grants/{id}/revoke`, `POST /api/v1/keys`,
- * `POST /api/v1/keys/{id}/revoke`).
+ * create key) are also wired — each calls the kubb-generated client for the
+ * host endpoint that landed under issues #31–#37 (`POST /api/v1/users`,
+ * `POST /api/v1/users/{id}/oidc-link`, `PATCH /api/v1/users/{id}`,
+ * `POST /api/v1/grants`, `POST /api/v1/grants/{id}/revoke`,
+ * `POST /api/v1/keys`, `POST /api/v1/keys/{id}/revoke`) and then
+ * **invalidates** — the mock seed snapshot never crosses into the real
+ * cache. Mock mode keeps the synchronous `setQueryData(snapshot())`
+ * behaviour it always had (see `settleIdentityCache`).
  *
  * The read path now also lands on the host under issue #45 / F13:
  * `loadIdentityReal` fans three list kubb clients out in parallel
@@ -232,15 +235,45 @@ export function useStartOidcQuery(provider: string) {
 }
 
 /**
- * Every mutation here ends the same way: the snapshot the store now holds.
+ * The one way every mutation on this file settles the identity cache.
  *
+ * Mock mode wrote to the seed store, so the store's next snapshot goes
+ * straight into the cache (`setQueryData`) — the synchronous read the
+ * local flow has always had.
+ *
+ * Real mode must NOT snapshot: `snapshot()` reads the seed store, and
+ * pasting it over the wire-fed cache would swap the operator's real
+ * users, grants and keys for the mock roster mid-session. The real
+ * branch invalidates instead, and TanStack refetches the host lists
+ * through `loadIdentityReal` — the same discipline the sources domain
+ * applies after its writes.
+ *
+ * `extraQueryKeys` covers mutations whose write reaches further than
+ * this screen's own list (disabling a user also settles what `/me`
+ * reports about the session).
+ */
+async function settleIdentityCache(
+  queryClient: QueryClient,
+  extraQueryKeys: readonly (readonly unknown[])[] = [],
+): Promise<void> {
+  if (env.useMock) {
+    queryClient.setQueryData(identityQueryKey, snapshot())
+    return
+  }
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: identityQueryKey }),
+    ...extraQueryKeys.map((queryKey) =>
+      queryClient.invalidateQueries({ queryKey })
+    ),
+  ])
+}
+
+/**
  * Real mode (`VITE_USE_MOCK=false`) calls the kubb-generated client for
- * `POST /api/v1/users`. Mock mode writes to the seed store; the mutation
- * returns `snapshot()` either way so the caller's cache stays consistent.
- *
- * The page-level `useIdentityQuery` is now wired to the read endpoints
- * under #45 (see `loadIdentityReal`); mutations still invalidate the
- * snapshot so the list refetches. See issue #31.
+ * `POST /api/v1/users`. Mock mode writes to the seed store; either way
+ * the cache settles through `settleIdentityCache` — the store snapshot
+ * in mock, an invalidation-driven refetch against the host in real
+ * mode. See issue #31.
  */
 export function useInviteUserMutation() {
   const queryClient = useQueryClient()
@@ -249,17 +282,16 @@ export function useInviteUserMutation() {
     mutationFn: async (input: InviteUserInput) => {
       if (env.useMock) {
         createSeedUser(input)
-      } else {
-        await postApiV1Users({
-          email: input.email,
-          displayName: input.name,
-          password: input.invite ? null : null,
-        })
+        return
       }
-      return snapshot()
+      await postApiV1Users({
+        email: input.email,
+        displayName: input.name,
+        password: input.invite ? null : null,
+      })
     },
-    onSuccess: (next) => {
-      queryClient.setQueryData(identityQueryKey, next)
+    onSuccess: async () => {
+      await settleIdentityCache(queryClient)
     },
   })
 }
@@ -276,23 +308,24 @@ export function useLinkOidcMutation() {
     mutationFn: async (input: LinkOidcInput) => {
       if (env.useMock) {
         linkSeedOidcSubject(input.userId, input.subject)
-      } else {
-        await postApiV1UsersUseridOidcLink(input.userId, {
-          provider: "oidc",
-          subjectId: input.subject,
-        })
+        return
       }
-      return snapshot()
+      await postApiV1UsersUseridOidcLink(input.userId, {
+        provider: "oidc",
+        subjectId: input.subject,
+      })
     },
-    onSuccess: (next) => {
-      queryClient.setQueryData(identityQueryKey, next)
+    onSuccess: async () => {
+      await settleIdentityCache(queryClient)
     },
   })
 }
 
 /**
  * Real mode calls `PATCH /api/v1/users/{id}` with `{ disabled }` via the
- * kubb client. See issue #35.
+ * kubb client. The write also settles what `/me` reports when the row
+ * being disabled is the session's own, so the mutation invalidates the
+ * `me` key alongside the identity list. See issue #35.
  */
 export function useSetUserDisabledMutation() {
   const queryClient = useQueryClient()
@@ -301,13 +334,12 @@ export function useSetUserDisabledMutation() {
     mutationFn: async (input: SetUserDisabledInput) => {
       if (env.useMock) {
         setSeedUserDisabled(input.userId, input.disabled)
-      } else {
-        await patchApiV1UsersUserid(input.userId, { disabled: input.disabled })
+        return
       }
-      return snapshot()
+      await patchApiV1UsersUserid(input.userId, { disabled: input.disabled })
     },
-    onSuccess: (next) => {
-      queryClient.setQueryData(identityQueryKey, next)
+    onSuccess: async () => {
+      await settleIdentityCache(queryClient, [meQueryKey])
     },
   })
 }
@@ -323,17 +355,16 @@ export function useGrantRoleMutation() {
     mutationFn: async (input: GrantRoleInput) => {
       if (env.useMock) {
         grantSeedRole(input)
-      } else {
-        await postApiV1Grants({
-          userId: input.subjectId,
-          role: input.role,
-          projectId: input.projectId,
-        })
+        return
       }
-      return snapshot()
+      await postApiV1Grants({
+        userId: input.subjectId,
+        role: input.role,
+        projectId: input.projectId,
+      })
     },
-    onSuccess: (next) => {
-      queryClient.setQueryData(identityQueryKey, next)
+    onSuccess: async () => {
+      await settleIdentityCache(queryClient)
     },
   })
 }
@@ -350,13 +381,12 @@ export function useRevokeRoleMutation() {
     mutationFn: async (grantId: string) => {
       if (env.useMock) {
         revokeSeedRole(grantId)
-      } else {
-        await postApiV1GrantsGrantidRevoke(grantId)
+        return
       }
-      return snapshot()
+      await postApiV1GrantsGrantidRevoke(grantId)
     },
-    onSuccess: (next) => {
-      queryClient.setQueryData(identityQueryKey, next)
+    onSuccess: async () => {
+      await settleIdentityCache(queryClient)
     },
   })
 }
@@ -372,13 +402,12 @@ export function useRevokeApiKeyMutation() {
     mutationFn: async (keyId: string) => {
       if (env.useMock) {
         revokeSeedApiKey(keyId)
-      } else {
-        await postApiV1KeysKeyidRevoke(keyId)
+        return
       }
-      return snapshot()
+      await postApiV1KeysKeyidRevoke(keyId)
     },
-    onSuccess: (next) => {
-      queryClient.setQueryData(identityQueryKey, next)
+    onSuccess: async () => {
+      await settleIdentityCache(queryClient)
     },
   })
 }
@@ -397,6 +426,8 @@ export function useRevokeApiKeyMutation() {
  * current user from `GET /api/v1/auth/me` to fill `userId`. The wire shape
  * (`prefix` + `plaintext` shown once) is the dashboard's own projection;
  * the host's response is unpacked into that shape by the mapper.
+ * The key list settles through `settleIdentityCache` — mock snapshot in
+ * mock mode, invalidation against the host otherwise.
  * See issue #33.
  */
 export function useCreateApiKeyMutation() {
@@ -417,8 +448,8 @@ export function useCreateApiKeyMutation() {
       })
       return { prefix: created.prefix, plaintext: created.secret }
     },
-    onSuccess: () => {
-      queryClient.setQueryData(identityQueryKey, snapshot())
+    onSuccess: async () => {
+      await settleIdentityCache(queryClient)
     },
   })
 }

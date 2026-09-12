@@ -36,7 +36,7 @@ public sealed class ProxyAndHealthShould(SmokeHostServer server) : IClassFixture
         var cancellationToken = TestContext.Current.CancellationToken;
         using var client = server.CreateAnonymousClient();
 
-        var response = await client.GetAsync("/health", cancellationToken);
+        var response = await client.GetAsync("/api/v1/health", cancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var payload = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);

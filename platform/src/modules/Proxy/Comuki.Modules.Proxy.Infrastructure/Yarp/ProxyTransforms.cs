@@ -104,7 +104,7 @@ public static class ProxyTransforms
     /// field. The body must be JSON; anything else (including content that
     /// overflows the safe-read cap) returns <c>null</c> so the caller
     /// treats the cap as not exercised. Uses
-    /// <see cref="HttpRequest.EnableBuffering"/> so the transform does
+    /// <c>HttpRequest.EnableBuffering()</c> so the transform does
     /// not consume the stream YARP needs to forward.
     /// </summary>
     /// <param name="request">Inbound request — body may be rewound.</param>

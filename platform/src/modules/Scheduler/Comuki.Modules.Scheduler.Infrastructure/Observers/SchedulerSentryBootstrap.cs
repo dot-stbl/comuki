@@ -5,9 +5,10 @@ namespace Comuki.Modules.Scheduler.Infrastructure.Observers;
 
 /// <summary>
 /// One-shot initialiser for the Sentry SDK used by the scheduler
-/// side-channel. The dispatcher needs <see cref="SentrySdk.CaptureEvent"/>
+/// side-channel. The dispatcher needs
+/// <see cref="SentrySdk.CaptureEvent(SentryEvent, Sentry.Scope?, Sentry.SentryHint?)"/>
 /// to work even though the SDK is otherwise invisible to the host —
-/// calling <see cref="SentrySdk.Init"/> here keeps the rest of the host
+/// calling <see cref="SentrySdk.Init(Action{SentryOptions})"/> here keeps the rest of the host
 /// from knowing Sentry exists.
 /// <para>
 /// When <see cref="SchedulerSentryOptions.Dsn"/> is null or whitespace
@@ -22,7 +23,7 @@ public static class SchedulerSentryBootstrap
     /// <summary>
     /// Reads the bound <see cref="SchedulerSentryOptions"/> from
     /// configuration and, when a DSN is present, calls
-    /// <see cref="SentrySdk.Init"/> with that DSN + environment.
+    /// <see cref="SentrySdk.Init(Action{SentryOptions})"/> with that DSN + environment.
     /// </summary>
     /// <param name="configuration">Application configuration root.</param>
     /// <returns><see langword="true"/> when the SDK was initialised, <see langword="false"/> otherwise.</returns>

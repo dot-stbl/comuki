@@ -107,15 +107,16 @@ describe("the sign-in screen", () => {
     expect(footer).not.toBeNull()
   })
 
-  it("names the build at the floor of the screen", () => {
+  it("carries the source link at the floor, without the build line", () => {
     setup.useLoginMutation.mockReturnValue(buildLoginMock())
     render(<LoginPage />, { wrapper: withQuery })
 
     const footer = document.querySelector("[data-test='login-footer']")
     expect(footer).not.toBeNull()
-    // Build line carries the deploy env — the thing an operator checks
-    // before typing their real password in.
-    expect(footer?.textContent ?? "").toMatch(/build/)
+    // Build/env identity moved to the authenticated surface; the gate shows
+    // only where the source lives.
+    expect(footer?.textContent ?? "").not.toMatch(/build/)
+    expect(footer?.textContent ?? "").toMatch(/source at/)
   })
 })
 

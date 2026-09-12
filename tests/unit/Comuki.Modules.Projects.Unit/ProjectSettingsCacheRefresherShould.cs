@@ -141,8 +141,8 @@ public sealed class ProjectSettingsCacheRefresherShould
         public DateTimeOffset UtcNow => source.GetUtcNow();
     }
 
-    /// <summary>Test-only <see cref="DbException"/> — the production
-    /// catch narrows to <see cref="DbException"/>, so any concrete
+    /// <summary>Test-only <see cref="System.Data.Common.DbException"/> — the production
+    /// catch narrows to <see cref="System.Data.Common.DbException"/>, so any concrete
     /// subtype routes through the fallback path.</summary>
     private sealed class TestDbException(string message) : System.Data.Common.DbException(message);
 

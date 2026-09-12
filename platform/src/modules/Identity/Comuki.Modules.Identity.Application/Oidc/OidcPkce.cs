@@ -15,8 +15,8 @@ public static class OidcPkce
     private const int VerifierByteLength = 32;
 
     /// <summary>One PKCE verifier + S256 challenge pair.</summary>
-    /// <param name="verifier"></param>
-    /// <param name="challenge"></param>
+    /// <param name="Verifier">The PKCE code verifier.</param>
+    /// <param name="Challenge">The S256 challenge derived from <paramref name="Verifier"/>.</param>
     public readonly record struct Pair(string Verifier, string Challenge);
 
     /// <summary>Generates a fresh <c>S256</c> pair.</summary>

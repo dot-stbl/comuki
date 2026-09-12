@@ -17,7 +17,7 @@ namespace Comuki.Modules.Proxy.Application;
 /// extractors and the meter that hands reports to the costs module. The
 /// <see cref="AddProxyApplication"/> extension wires everything that is
 /// provider-agnostic; the YARP-side wiring lives in
-/// <see cref="Infrastructure.ProxyInfrastructureExtensions"/>.
+/// <c>ProxyInfrastructureExtensions</c> (Infrastructure layer).
 /// </summary>
 public static class ProxyApplicationExtensions
 {

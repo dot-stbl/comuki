@@ -24,6 +24,7 @@ public static class QueryableFilterExtensions
     /// <param name="source"></param>
     /// <param name="filter"></param>
     /// <param name="fields"></param>
+    /// <param name="clock">Optional clock used to anchor <c>now(offset)</c> calls; defaults to <see cref="TimeProvider.System" />.</param>
     public static IQueryable<TEntity> ApplyFilter<TEntity>(
         this IQueryable<TEntity> source,
         string? filter,

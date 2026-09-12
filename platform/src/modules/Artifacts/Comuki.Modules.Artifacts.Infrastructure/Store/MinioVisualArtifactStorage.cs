@@ -66,12 +66,14 @@ public sealed class MinioVisualArtifactStorage(
     }
 
     /// <summary>
-    /// Opens a stream over the artifact body and reports the object size
-    /// + the canonical content-type. Returns <c>null</c> when the
-    /// artifact id does not exist (caller maps to 404). The returned
-    /// stream is owned by the caller — it must be disposed.
+    /// Opens a stream over one version of the artifact body and reports
+    /// the object size + the canonical content-type. Returns <c>null</c>
+    /// when the artifact id does not exist (caller maps to 404). The
+    /// returned stream is owned by the caller — it must be disposed.
     /// </summary>
-    /// <param name="artifactId">Artifact id — the latest version is fetched.</param>
+    /// <param name="projectId">Owning project — scopes the object key.</param>
+    /// <param name="artifactId">Artifact id — second scope.</param>
+    /// <param name="version">Monotonic per-id version to fetch.</param>
     /// <param name="cancellationToken"></param>
     public async Task<VisualArtifactObject?> OpenReadAsync(
         ProjectId projectId,

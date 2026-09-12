@@ -27,8 +27,10 @@ public sealed class KubernetesComputeOptions
 
     /// <summary>
     /// Grace seconds passed to the Job delete for soft stop reasons
-    /// (<see cref="ComputeStopReason.IdleTtl"/>, <see cref="ComputeStopReason.Draining"/>,
-    /// <see cref="ComputeStopReason.LeaseExpired"/>); <see cref="ComputeStopReason.Force"/>
+    /// (<see cref="Shared.Contracts.Compute.ComputeStopReason.IdleTtl"/>,
+    /// <see cref="Shared.Contracts.Compute.ComputeStopReason.Draining"/>,
+    /// <see cref="Shared.Contracts.Compute.ComputeStopReason.LeaseExpired"/>);
+    /// <see cref="Shared.Contracts.Compute.ComputeStopReason.Force"/>
     /// always deletes with grace 0.
     /// </summary>
     [Range(0, 600)]

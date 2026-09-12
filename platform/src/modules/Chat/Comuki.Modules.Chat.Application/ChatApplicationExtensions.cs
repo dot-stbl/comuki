@@ -21,7 +21,8 @@ public static class ChatApplicationExtensions
     /// validators. Everything is singleton — the nodes are stateless and
     /// resolve their ports per invocation through the graph's service
     /// provider. The host composition additionally provides
-    /// <see cref="IBrainClient"/>, <see cref="IMemoryDigest"/>-ports and the
+    /// <see cref="Shared.Contracts.Brain.IBrainClient"/>,
+    /// <see cref="Shared.Contracts.Memory.IMemoryDigest"/>-ports and the
     /// compiled graph itself.
     /// </summary>
     /// <param name="services"></param>

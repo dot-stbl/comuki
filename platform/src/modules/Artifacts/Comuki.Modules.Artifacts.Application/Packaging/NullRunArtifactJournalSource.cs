@@ -8,7 +8,7 @@ namespace Comuki.Modules.Artifacts.Application.Packaging;
 /// "no terminal snapshot" — used when the application layer composes
 /// without the EF-backed source (unit tests, design-time). The host
 /// replaces this with the EF implementation via
-/// <see cref="AddArtifactsPersistence"/>.
+/// <c>AddArtifactsPersistence</c>.
 /// </summary>
 public sealed class NullRunArtifactJournalSource : IRunArtifactJournalSource
 {

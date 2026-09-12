@@ -12,7 +12,7 @@ namespace Comuki.Modules.Artifacts.Application;
 /// default <see cref="IRunArtifactBundleStore"/> is the no-op stub
 /// (always reports <em>not bundled</em>) — the host replaces it with the
 /// EF-backed implementation over the <c>artifacts</c> schema via
-/// <see cref="TryAddSingleton{TService,TImplementation}"/>.
+/// <c>TryAddSingleton</c>.
 ///
 /// The actual <see cref="Microsoft.Extensions.Hosting.BackgroundService"/>
 /// driver lives in the host (see

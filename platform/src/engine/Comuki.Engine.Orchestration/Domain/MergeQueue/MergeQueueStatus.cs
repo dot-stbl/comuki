@@ -2,7 +2,7 @@ namespace Comuki.Engine.Orchestration.Domain.MergeQueue;
 
 /// <summary>
 /// Lifecycle status of a single merge-queue entry. Mirrors the
-/// <see cref="WorkItems.WorkItemStatus"/> shape but is independent — the
+/// <see cref="WorkItemStatus"/> shape but is independent — the
 /// merge-queue is an operator-facing coordination tool, not a worker
 /// lease, and its transitions are gated by the table in
 /// <see cref="MergeQueueTransitions"/>.

@@ -2,7 +2,7 @@ namespace Comuki.Modules.Costs.Domain.Ids;
 
 /// <summary>
 /// Strong-typed identifier of a usage event. Entity ids are UUIDv7
-/// (<see cref="Guid.CreateVersion7"/>): time-ordered, stored as Postgres
+/// (<see cref="Guid.CreateVersion7()"/>): time-ordered, stored as Postgres
 /// <c>uuid</c>, exposed as strings.
 /// </summary>
 /// <param name="Value"></param>

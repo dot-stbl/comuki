@@ -44,9 +44,9 @@ public static class ProxyInfrastructureExtensions
     /// <summary>
     /// Registers the <see cref="VirtualKeyAuthenticationHandler"/> scheme
     /// on the existing authentication configuration. We chain onto the
-    /// builder <see cref="AddAuthenticationCore"/> returned by the host
+    /// builder <c>AddAuthenticationCore()</c> returned by the host
     /// so cookie / API-key schemes (Identity) and the proxy's bearer
-    /// scheme all coexist; calling <see cref="AddAuthenticationCore"/>
+    /// scheme all coexist; calling <c>AddAuthenticationCore()</c>
     /// with the default options would otherwise reset the cookie scheme.
     /// </summary>
     /// <param name="services">DI container.</param>

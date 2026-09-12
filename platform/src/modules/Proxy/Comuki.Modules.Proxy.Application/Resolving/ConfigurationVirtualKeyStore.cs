@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 namespace Comuki.Modules.Proxy.Application.Resolving;
 
 /// <summary>
-/// Reads virtual keys from <see cref="ProxyOptions"/> at startup, resolves
-/// the upstream API-key reference through <see cref="ISecretResolver"/>,
+/// Reads virtual keys from <see cref="Options.ProxyOptions"/> at startup, resolves
+/// the upstream API-key reference through <see cref="Shared.Kernel.Secrets.ISecretResolver"/>,
 /// and exposes the snapshot through <see cref="IVirtualKeyStore"/>.
 /// Hot-reload is out of scope for v1 — a restart picks up new keys.
 /// Removed keys live on for a short grace period (Q31 — 60s default) so

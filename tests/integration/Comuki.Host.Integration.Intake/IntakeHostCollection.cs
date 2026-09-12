@@ -9,7 +9,8 @@ namespace Comuki.Host.Integration.Intake;
 /// delivery ids, so a shared database stays clean.
 /// </summary>
 /// <remarks>
-/// <see cref="DisableParallelization"/> is set because the intake module's
+/// <see cref="CollectionDefinitionAttribute.DisableParallelization"/>
+/// is set because the intake module's
 /// EF Core change-tracker has pre-existing bugs (detached entity on
 /// background worker writes; tracked-conflict under simultaneous
 /// writes) that surface when several test classes hit the same

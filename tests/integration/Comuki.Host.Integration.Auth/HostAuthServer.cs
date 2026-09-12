@@ -40,8 +40,8 @@ namespace Comuki.Host.Integration.Auth;
 /// random loopback port against a migrated Testcontainers Postgres:
 /// both module contexts migrated, a temp control-plane root, a
 /// configured bootstrap admin. One browser-like client carries the
-/// cookie session; <see cref="ApiKeyClient"/> is cookie-less for
-/// bearer flows.
+/// cookie session; the client from <see cref="CreateApiKeyClient"/> is
+/// cookie-less for bearer flows.
 /// </summary>
 public sealed class HostAuthServer : IAsyncLifetime
 {

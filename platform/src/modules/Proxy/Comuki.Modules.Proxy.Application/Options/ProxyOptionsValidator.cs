@@ -8,7 +8,7 @@ namespace Comuki.Modules.Proxy.Application.Options;
 /// <see cref="ProxyOptions.VirtualKeyConfiguration"/> is required and each
 /// row's token / base URL / API-key env ref must be non-empty. The
 /// DataAnnotation attributes on the type only cover per-field invariants;
-/// the <see cref="Proxy:Enabled"/> → <see cref="Proxy:VirtualKeys"/>
+/// the <c>Proxy:Enabled</c> → <c>Proxy:VirtualKeys</c>
 /// relationship is here so the DataAnnotation pass doesn't trip on the
 /// default empty <c>VirtualKeys</c> array when the proxy is disabled.
 /// </summary>

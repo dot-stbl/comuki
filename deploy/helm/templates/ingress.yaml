@@ -57,7 +57,7 @@ spec:
                 name: {{ include "comuki.fullname" . }}
                 port:
                   number: {{ .Values.service.port }}
-          - path: /health
+          - path: /api/v1/health
             pathType: Prefix
             backend:
               service:

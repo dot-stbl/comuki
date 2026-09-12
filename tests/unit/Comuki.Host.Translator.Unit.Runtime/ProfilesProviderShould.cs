@@ -14,8 +14,8 @@ namespace Comuki.Host.Translator.Unit.Runtime;
 /// otherwise the provider logs a warning and skips. Idempotent on a
 /// second call (the <c>profiles/</c> target directory already exists on
 /// disk). The git-clone path is exercised through a mocked
-/// <see cref="IRunArtifactStore"/>-style surrogate — we never hit the
-/// network from a unit test.
+/// <see cref="Shared.Contracts.Artifacts.IRunArtifactStore"/>-style
+/// surrogate — we never hit the network from a unit test.
 /// </summary>
 public sealed class ProfilesProviderShould
 {

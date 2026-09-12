@@ -36,4 +36,43 @@
     <ThresholdStat>total</ThresholdStat>
   </PropertyGroup>
 
+  <!--
+    Comuki build metadata (issue #56). Host projects opt in with
+    <GenerateComukiBuildMetadata>true</GenerateComukiBuildMetadata>.
+
+    The git commit hash flows into AssemblyInformationalVersion through
+    SourceRevisionId ("1.0.0+<sha>"). Deliberately NOT SourceLink: the
+    repository carries non-GitHub remotes and the embedded sha must not
+    depend on which remotes happen to be configured — a plain
+    `git rev-parse HEAD` (IgnoreExitCode: a treeless build just omits the
+    sha) is host-agnostic. The SDK reads SourceRevisionId inside its
+    GenerateAssemblyInfo target, so setting it BeforeTargets is the
+    documented SourceLink-equivalent hook.
+
+    The UTC build date (day granularity — keeps incremental rebuilds
+    untouched within a day) and the build mode ride as assembly metadata
+    and are read back through Comuki.Shared.Bootstrap ComukiBuildInfo.
+  -->
+  <Target Name="SetComukiSourceRevisionId"
+          BeforeTargets="GenerateAssemblyInfo"
+          Condition="'$(GenerateComukiBuildMetadata)' == 'true' and '$(SourceRevisionId)' == ''">
+    <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" IgnoreExitCode="true" StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="ComukiGitCommit" />
+    </Exec>
+    <PropertyGroup Condition="'$(ComukiGitCommit)' != ''">
+      <SourceRevisionId>$(ComukiGitCommit)</SourceRevisionId>
+    </PropertyGroup>
+  </Target>
+
+  <ItemGroup Condition="'$(GenerateComukiBuildMetadata)' == 'true'">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ComukiBuildDate</_Parameter1>
+      <_Parameter2>$([System.DateTime]::UtcNow.ToString('yyyy-MM-dd'))</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ComukiBuildMode</_Parameter1>
+      <_Parameter2>$(Configuration)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>

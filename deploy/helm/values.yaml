@@ -174,6 +174,20 @@ dashboard:
       memory: 64Mi
   podAnnotations: {}
 
+# ── Host TLS (direct HTTPS on the host) ──────────────────────────────
+# Terminates TLS directly on the host container: an HTTPS listener
+# (container port 8081) is added next to HTTP 8080 and plain HTTP is
+# redirected to it. secretName points at a `kubernetes.io/tls` secret
+# (tls.crt / tls.key) mounted read-only at /certs.
+# For public hostnames prefer an Ingress in front (ingress.enabled +
+# ingress.tls) — the redirect here targets the container port, not a
+# public hostname. Leave disabled for the default in-cluster shape.
+tls:
+  enabled: false
+  secretName: comuki-tls
+  # Set false to keep both listeners serving without redirects.
+  redirectHttp: true
+
 # ── Ingress ──────────────────────────────────────────────────────────
 ingress:
   enabled: false

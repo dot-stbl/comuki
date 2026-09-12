@@ -6,6 +6,9 @@
     <!-- Comuki-native binary name (issue #54): the apphost ships as
          `comuki-migrator`; the project/namespace stays Comuki.Migrator. -->
     <AssemblyName>comuki-migrator</AssemblyName>
+    <!-- Comuki build metadata (issue #56): git sha + UTC build date + mode
+         in the binary; surfaced by <binary> version. -->
+    <GenerateComukiBuildMetadata>true</GenerateComukiBuildMetadata>
   </PropertyGroup>
 
   <ItemGroup>

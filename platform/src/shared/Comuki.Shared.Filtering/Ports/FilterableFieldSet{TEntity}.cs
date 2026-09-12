@@ -30,7 +30,7 @@ public sealed class FilterableFieldSet<TEntity>(IReadOnlyDictionary<string, Filt
     /// <summary>
     ///     Looks up a field by name (case-insensitive). Returns <c>null</c> when the
     ///     field is unknown or excluded from the registry — the parser surfaces this as
-    ///     a <see cref="FilterParseException" />.
+    ///     a <see cref="Parser.FilterParseException" />.
     /// </summary>
     /// <param name="name"></param>
     public FilterableField<TEntity>? Find(string name)

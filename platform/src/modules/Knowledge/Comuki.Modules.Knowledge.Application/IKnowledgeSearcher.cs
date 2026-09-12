@@ -4,7 +4,7 @@ namespace Comuki.Modules.Knowledge.Application;
 /// Search the knowledge corpus by semantic similarity. The query is
 /// embedded with the configured provider and matched against
 /// <c>memory_embeddings</c> via pgvector cosine distance; null
-/// <paramref name="projectId"/> widens the search to the global corpus.
+/// <c>projectId</c> widens the search to the global corpus.
 /// </summary>
 public interface IKnowledgeSearcher
 {

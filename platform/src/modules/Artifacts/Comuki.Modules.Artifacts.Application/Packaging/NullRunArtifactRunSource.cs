@@ -6,7 +6,7 @@ namespace Comuki.Modules.Artifacts.Application.Packaging;
 /// Stub <see cref="IRunArtifactRunSource"/> that yields nothing — used
 /// when the application layer composes without the EF-backed source
 /// (unit tests, design-time). The host replaces this with the EF
-/// implementation via <see cref="AddArtifactsPersistence"/>.
+/// implementation via <c>AddArtifactsPersistence</c>.
 /// </summary>
 public sealed class NullRunArtifactRunSource : IRunArtifactRunSource
 {

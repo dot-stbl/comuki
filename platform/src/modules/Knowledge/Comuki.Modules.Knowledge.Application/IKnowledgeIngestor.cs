@@ -4,14 +4,14 @@ namespace Comuki.Modules.Knowledge.Application;
 /// Ingest one source of knowledge content — split into chunks,
 /// embed each chunk, write one <c>memory_embeddings</c> row per chunk.
 /// Project-scoped (projectId set) or global (projectId null). The
-/// ingestion is idempotent at the <see cref="SourceDocument"/> level:
+/// ingestion is idempotent at the <see cref="Domain.SourceDocument"/> level:
 /// re-ingesting the same (projectId, source, sourceRef) supersedes the
 /// previous row and replaces its chunks.
 /// </summary>
 public interface IKnowledgeIngestor
 {
     /// <summary>
-    /// Ingest one source document; returns the <see cref="SourceDocumentId"/>
+    /// Ingest one source document; returns the <see cref="Domain.SourceDocumentId"/>
     /// it was written under and the chunk count produced.
     /// </summary>
     /// <param name="projectId"></param>

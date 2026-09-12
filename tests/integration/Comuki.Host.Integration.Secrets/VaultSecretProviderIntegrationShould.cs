@@ -22,7 +22,7 @@ namespace Comuki.Host.Integration.Secrets;
 /// All tests skip gracefully when Docker is unavailable on the host
 /// (no <c>docker</c> on PATH, no DOCKER_HOST, etc.); see
 /// <see cref="VaultFixture"/> for the skip-on-no-Docker detection and
-/// <see cref="Assert.SkipUnless(string, bool, string)"/> in every test.
+/// <see cref="Assert.SkipUnless(bool, string)"/> in every test.
 /// </summary>
 public sealed class VaultSecretProviderIntegrationShould(VaultSecretProviderIntegrationShould.VaultFixture fixture) : IClassFixture<VaultSecretProviderIntegrationShould.VaultFixture>
 {
@@ -137,7 +137,7 @@ public sealed class VaultSecretProviderIntegrationShould(VaultSecretProviderInte
     /// and constructs the <see cref="IVaultClient"/> the production
     /// provider shares. <see cref="VaultAvailable"/> is <c>false</c> when
     /// Docker is not reachable on this host — the integration test class
-    /// calls <see cref="Assert.SkipUnless(string, bool, string)"/> to
+    /// calls <see cref="Assert.SkipUnless(bool, string)"/> to
     /// skip every test in that case so the suite reports a clean
     /// "skipped" instead of a failed run.
     /// </summary>

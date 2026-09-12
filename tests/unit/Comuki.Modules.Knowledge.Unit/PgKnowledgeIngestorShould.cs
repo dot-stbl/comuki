@@ -23,8 +23,7 @@ namespace Comuki.Modules.Knowledge.Unit;
 ///   Testcontainers integration tests — the unit project stays
 ///   sandbox-friendly because the production class uses raw SQL (Npg
 ///   connection cast, transactions, pgvector UPDATE) that EF's in-memory
-///   provider cannot simulate. See <see cref="ReadFileAsync"/> below for
-///   the integration contract.</item>
+///   provider cannot simulate.</item>
 /// </list>
 /// </summary>
 public sealed class PgKnowledgeIngestorShould

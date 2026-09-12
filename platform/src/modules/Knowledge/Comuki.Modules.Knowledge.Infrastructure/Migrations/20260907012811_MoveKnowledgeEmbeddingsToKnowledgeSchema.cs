@@ -10,7 +10,7 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Migrations
     /// same conditional pgvector <c>embedding</c> column on
     /// <c>memory_embeddings</c> — the only difference is the schema
     /// namespace, which lets the knowledge module own its tables without
-    /// sharing the <see cref="Modules.Memory.Infrastructure.Persistence.MemoryDbContext"/>.
+    /// sharing the memory module's <c>MemoryDbContext</c>.
     ///
     /// The migration is hand-authored (see <c>ef-migrations.md</c>): the
     /// EF tool would generate a half of the move at a time, but the move

@@ -2,7 +2,7 @@ namespace Comuki.Modules.Knowledge.Domain;
 
 /// <summary>
 /// Strong-typed identifier of a <see cref="MemoryEmbedding"/> chunk.
-/// UUIDv7 (<see cref="Guid.CreateVersion7"/>); stored as Postgres
+/// UUIDv7 (<see cref="Guid.CreateVersion7()"/>); stored as Postgres
 /// <c>uuid</c>.
 /// </summary>
 /// <param name="Value"></param>

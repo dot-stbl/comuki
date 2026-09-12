@@ -4,8 +4,7 @@ namespace Comuki.Modules.Knowledge.Application;
 /// Embedding provider abstraction — vectorises text into a
 /// fixed-length <c>float[]</c>. Implementations include OpenAI (prod)
 /// and a deterministic Noop (dev/test). The vector dimensionality is
-/// provider-specific but always
-/// <see cref="Knowledge.Infrastructure.Persistence.Stores.EmbeddingSql.Dimensions"/>
+/// provider-specific but always <c>EmbeddingSql.Dimensions</c>
 /// (1536) so pgvector cosine-distance stays valid.
 /// </summary>
 public interface IEmbeddingClient

@@ -10,9 +10,7 @@ export const Route = createRootRoute({
    * away — and the screen added next week inherits the guard instead of
    * remembering it. `/login` is the one exemption, and `guardSession` owns it.
    */
-  beforeLoad: ({ location }) => {
-    guardSession(location)
-  },
+  beforeLoad: ({ location }) => guardSession(location),
   component: RootComponent,
 })
 

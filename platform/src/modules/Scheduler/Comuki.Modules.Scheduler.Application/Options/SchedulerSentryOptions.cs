@@ -2,7 +2,7 @@ namespace Comuki.Modules.Scheduler.Application.Options;
 
 /// <summary>
 /// Sentry side-channel settings for the scheduler dispatcher.
-/// <see cref="Sentry:Dsn"/> binds as <c>Scheduler:Sentry:Dsn</c>. When
+/// <c>Sentry:Dsn</c> binds as <c>Scheduler:Sentry:Dsn</c>. When
 /// the DSN is null or whitespace the <c>SentrySchedulerObserver</c> is
 /// a no-op and the host skips <c>SentrySdk.Init</c> entirely — both the
 /// wire egress and the SDK footprint stay out of the process.

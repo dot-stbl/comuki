@@ -14,14 +14,14 @@ namespace Comuki.Modules.Proxy.Infrastructure.Yarp;
 /// <see cref="Auth.VirtualKeyAuthenticationHandler"/> store is not
 /// flushed on option reload — restart picks up new keys for v1.
 /// </summary>
-/// <param name="options">Bound proxy options.</param>
-/// <param name="logger">Structured logger.</param>
 public sealed class ProxyConfigProvider : IProxyConfigProvider, IDisposable
 {
     private readonly InMemoryConfigProvider inner;
     private readonly IDisposable changeSubscription = null!;
 
     /// <summary>Constructs the provider with the initial snapshot.</summary>
+    /// <param name="options">Bound proxy options.</param>
+    /// <param name="logger">Structured logger.</param>
     public ProxyConfigProvider(IOptionsMonitor<ProxyOptions> options, ILogger<ProxyConfigProvider> logger)
     {
         var (routes, clusters) = BuildConfig(options.CurrentValue, logger);

@@ -4,7 +4,7 @@ namespace Comuki.Modules.Proxy.Application.Ports;
 
 /// <summary>
 /// Reports whether a virtual key is still inside its monthly USD budget.
-/// The caller (<see cref>comuki.host.proxy</see> middleware) consults the
+/// The caller (<c>comuki.host.proxy</c> middleware) consults the
 /// result before forwarding a request; on hard exceedance the call is
 /// rejected with 429 and a Retry-After header.
 /// </summary>

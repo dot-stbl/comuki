@@ -7,7 +7,7 @@ namespace Comuki.Host.Proxy;
 /// Endpoints the proxy surface adds to the host composition:
 /// <list type="bullet">
 ///   <item><c>GET /v1/models</c> — static catalogue the host holds in <see cref="ProxyOptions.KnownModels"/>; the <c>VirtualKey</c> authentication scheme enforces a valid bearer.</item>
-///   <item><c>POST /v1/chat/completions</c> and <c>POST /v1/messages</c> — handled by YARP (<see cref="Builder.YarpEndpointExtensions.MapReverseProxy"/>); the <see cref="Modules.Proxy.Infrastructure.Auth.VirtualKeyAuthenticationHandler"/> authenticates and the YARP pipeline rewrites the auth header to the upstream key.</item>
+///   <item><c>POST /v1/chat/completions</c> and <c>POST /v1/messages</c> — handled by YARP (<c>MapReverseProxy</c>); the <see cref="Modules.Proxy.Infrastructure.Auth.VirtualKeyAuthenticationHandler"/> authenticates and the YARP pipeline rewrites the auth header to the upstream key.</item>
 /// </list>
 /// </summary>
 public static class ProxyModuleEndpoints

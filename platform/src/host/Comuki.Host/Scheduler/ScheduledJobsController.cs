@@ -22,7 +22,7 @@ public sealed class ScheduledJobsController(ScheduledJobService jobs) : Controll
     /// <summary>Lists scheduled jobs for a project, newest first.</summary>
     /// <param name="projectId">Owning project.</param>
     /// <param name="page">1-based page index (default 1).</param>
-    /// <param name="pageSize">Page size (default 100, max 500).</summary>
+    /// <param name="pageSize">Page size (default 100, max 500).</param>
     /// <param name="cancellationToken"></param>
     [HttpGet]
     [RequiresPermission("scheduler:read")]

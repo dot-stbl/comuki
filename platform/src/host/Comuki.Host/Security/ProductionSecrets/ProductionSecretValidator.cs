@@ -66,8 +66,8 @@ file static class ProductionSecretValidatorExtensions
     /// <summary>
     /// Refuses to start the host in <c>Production</c> when the bound
     /// <see cref="ArtifactsOptions.SecretKey"/> still carries the
-    /// committed <c>comuki_dev</c> default (matched against
-    /// <see cref="Modules.Artifacts.Infrastructure.Store.Minio"/>).
+    /// committed <c>comuki_dev</c> default (matched against the MinIO
+    /// root credentials seeded in <c>deploy/compose/docker-compose.yml</c>).
     /// The committed <see cref="ArtifactsOptions.AccessKey"/> default
     /// <c>comuki</c> is also rejected — real deployments use a dedicated
     /// service account name.

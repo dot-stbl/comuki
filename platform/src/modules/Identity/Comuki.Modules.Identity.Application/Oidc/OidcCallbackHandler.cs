@@ -13,7 +13,7 @@ namespace Comuki.Modules.Identity.Application.Oidc;
 /// </summary>
 /// <param name="stateStore">Persistence port for the single-use state row.</param>
 /// <param name="discovery">Cached discovery doc (authorize + token + JWKS).</param>
-/// <param name="options">Configured providers list.</param>
+/// <param name="providerResolver">Resolves the configured OIDC provider by name.</param>
 /// <param name="clientSecrets">Env-var lookup for the per-provider client secret.</param>
 /// <param name="tokenExchange">Token endpoint POST (form-encoded + Basic auth).</param>
 /// <param name="idTokenValidator">JWKS-backed JWT signature verification.</param>

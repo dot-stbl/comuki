@@ -12,7 +12,7 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Hosted;
 /// pgvector availability). When the KnowledgeSource table lands in a
 /// later slice, this loop becomes the dispatcher: every pending source
 /// row triggers a per-document <see cref="IKnowledgeIngestor"/> call
-/// resolved through an <see cref="IServiceScopeFactory"/> injected at
+/// resolved through an <see cref="Microsoft.Extensions.DependencyInjection.IServiceScopeFactory"/> injected at
 /// that point (per-source scope, scoped DbContext lifetime).
 /// </summary>
 public sealed class KnowledgeIngestBackgroundService(

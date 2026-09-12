@@ -26,7 +26,7 @@ public static class ProxyClaimNames
 /// Authentication scheme that turns <c>Authorization: Bearer vkey_xxx</c>
 /// into a <see cref="ClaimsPrincipal"/> the YARP transformer reads. The
 /// scheme is registered through
-/// <see cref="ProxyAuthenticationExtensions.AddVirtualKeyAuth"/>; it has
+/// <see cref="ProxyInfrastructureExtensions.AddVirtualKeyAuth"/>; it has
 /// no options (no configuration knobs beyond presence/absence).
 /// </summary>
 public sealed class VirtualKeyAuthenticationHandler(

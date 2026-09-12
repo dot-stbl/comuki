@@ -4,7 +4,7 @@ namespace Comuki.Modules.Identity.Application.Oidc;
 
 /// <summary>
 /// One configured OIDC provider. The client secret is never in the
-/// config file — <paramref name="ClientSecretEnv"/> names the
+/// config file — <see cref="ClientSecretEnv"/> names the
 /// environment variable that holds it, resolved once at startup.
 /// </summary>
 public sealed class OidcProviderOptions

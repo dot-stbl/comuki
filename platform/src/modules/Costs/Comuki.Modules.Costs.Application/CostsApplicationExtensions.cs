@@ -16,7 +16,7 @@ public static class CostsApplicationExtensions
     /// Registers Costs application services (recorder, aggregator, queries).
     /// Budget ports default to unlimited / no-op; the host replaces them with
     /// Projects settings + cancel/journal adapters via <c>AddSingleton</c>
-    /// before or after this call (<see cref="TryAddSingleton{TService,TImplementation}"/>).
+    /// before or after this call (<c>TryAddSingleton</c>).
     /// </summary>
     /// <param name="services"></param>
     public static IServiceCollection AddCostsApplication(this IServiceCollection services)

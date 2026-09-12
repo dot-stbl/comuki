@@ -7,7 +7,7 @@ using Xunit;
 namespace Comuki.Host.Unit.Realtime;
 
 /// <summary>
-/// Journal entry → <see cref="RunEventView"/> mapping: the slim wire shape
+/// Journal entry → <see cref="Shared.Contracts.Realtime.RunEventView"/> mapping: the slim wire shape
 /// (unix-ms timestamps, work-item id extraction, payload size cap).
 /// </summary>
 public sealed class RunEventViewMappingShould

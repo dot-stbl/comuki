@@ -30,9 +30,9 @@ public sealed record EvalTaskResult(
     long DurationMs);
 
 /// <summary>
-/// Top-level report: one <see cref="EvalSuite"/> run against a set of
-/// golden tasks. Aggregates pass/fail counts so the markdown writer can
-/// surface the headline number.
+/// Top-level report: one run of the named <see cref="Suite"/> against a
+/// set of golden tasks. Aggregates pass/fail counts so the markdown
+/// writer can surface the headline number.
 /// </summary>
 /// <param name="Suite">Logical suite name (e.g. <c>"engine.orchestration.status-machines"</c>).</param>
 /// <param name="RunAt">When the suite was run.</param>

@@ -5,12 +5,12 @@ namespace Comuki.Shared.Filtering.Attributes;
 ///     Binds a read DTO (the wire shape a list endpoint returns) to the entity the
 ///     server actually filters and sorts. The published <c>x-filterable</c> /
 ///     <c>x-sortable</c> contract is built from
-///     <see cref="FilterableFieldRegistry" /> for <see cref="EntityType" />, not from
+///     <see cref="Ports.FilterableFieldRegistry" /> for <see cref="EntityType" />, not from
 ///     the DTO's own properties.
 /// </summary>
 /// <param name="entityType">
 ///     The entity the endpoint's repository applies <c>ApplyFilter</c> / <c>ApplySort</c>
-///     to — the type passed to <see cref="FilterableFieldRegistry.For{TEntity}" />.
+///     to — the type passed to <see cref="Ports.FilterableFieldRegistry.For{TEntity}" />.
 /// </param>
 /// <remarks>
 ///     <para>

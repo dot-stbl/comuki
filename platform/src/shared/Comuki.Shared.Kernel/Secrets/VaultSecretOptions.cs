@@ -68,7 +68,7 @@ public sealed class VaultSecretOptions
 
 /// <summary>
 /// Validator for <see cref="VaultSecretOptions"/> that skips the
-/// <see cref="Required"/> + <see cref="Url"/> checks when the provider is
+/// required-field and URL-format checks when the provider is
 /// disabled. The disabled path is the common case in deployments that
 /// ship only env/file refs — running the full OpenAPI document capture
 /// (which builds the host in a stub environment without any

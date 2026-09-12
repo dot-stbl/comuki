@@ -16,7 +16,7 @@ namespace Comuki.Host.Cli;
 /// </summary>
 internal static class ComukiHostCli
 {
-    /// <summary>True when the arguments ask for the (async) doctor command; <c>Program</c> awaits <see cref="ComukiDoctor.RunAsync"/> directly.</summary>
+    /// <summary>The verb that selects the doctor command; <c>Program</c> awaits <see cref="Doctor.ComukiDoctor.RunAsync"/> directly.</summary>
     public const string DoctorCommand = "doctor";
 
     /// <summary>True when the arguments ask for the (async) doctor command.</summary>

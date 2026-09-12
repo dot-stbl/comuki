@@ -1,7 +1,7 @@
 namespace Comuki.Modules.Scheduler.Domain.Ids;
 
 /// <summary>
-/// Strong-typed identifier of a <see cref="ScheduledJob"/>.
+/// Strong-typed identifier of a <see cref="Jobs.ScheduledJob"/>.
 /// </summary>
 /// <param name="Value"></param>
 public readonly record struct ScheduledJobId(Guid Value)

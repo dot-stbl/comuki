@@ -105,7 +105,7 @@ public sealed class ComukiCorsInstallerShould
     }
 }
 
-/// <summary>Lightweight <see cref="IHostEnvironment"/> stub — only <see cref="IHostEnvironment.IsProduction"/> is read by the installer.</summary>
+/// <summary>Lightweight <see cref="IHostEnvironment"/> stub — only <c>IsProduction()</c> is read by the installer.</summary>
 file sealed class StubEnvironment : IHostEnvironment
 {
     public static readonly StubEnvironment Development = new() { EnvironmentName = Environments.Development };

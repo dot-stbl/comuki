@@ -47,6 +47,7 @@ Guard-коммит `[hybrid] chore(git): guard hybrid contour overlay from GitHu
 | `deploy/hybrid/dev.yaml` | values общего чарта hybrid-service (AppSet подставляет tag) |
 | `deploy/hybrid/host.Dockerfile` | образ хоста: `/app/host` (оркестратор) + `/app/migrator` |
 | `deploy/hybrid/worker.Dockerfile` | образ воркера: Translator + pi + agents-пакеты |
+| `deploy/hybrid/vendor/*.tgz` | vendored npm-тарболлы (pi, zod) — kaniko-раннер не достаёт registry.npmjs.org; обновление: `npm pack <pkg>@<ver> --pack-destination deploy/hybrid/vendor` + COPY в worker.Dockerfile |
 | `deploy/hybrid/infra-dev.yaml` | pgvector в ns comuki (ручная джоба `infra:dev`; MinIO/OTLP — общие) |
 | `deploy/hybrid/migrate-job-dev.yaml` | batch Job для `migrate:dev` (tag подставляет CI) |
 | `deploy/hybrid/secrets.schema.yml` | schema секретов: имена ключей Consul-блоба |
@@ -89,8 +90,8 @@ MinIO и OTLP — общие сервисы кластера.
    желании кнопка □ `promote:dev` (app `comuki-dev`) — sync + wait Healthy.
 4. **DNS**: `comuki.nova.adcluster.targetix.net` → A/CNAME на ingress IP
    (nsupdate-паттерн из `virtual.deploy.dev/docs/dns.md`); после регистрации
-   smoke: `GET http://comuki.nova.adcluster.targetix.net/health` → `{"status":"ok"}`,
-   `GET /health/ready` → 200 после старта БД.
+    smoke: `GET http://comuki.nova.adcluster.targetix.net/api/v1/health` → `{"status":"ok"}`,
+    `GET /api/v1/health/ready` → 200 после старта БД.
 
 ## Известные хвосты (осознанные)
 

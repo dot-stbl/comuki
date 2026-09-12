@@ -45,7 +45,7 @@ public sealed class AuthEndpointsShould(HostAuthServer server) : IClassFixture<H
     {
         using var client = server.CreateApiKeyClient();
 
-        var response = await client.GetAsync("/health", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync("/api/v1/health", TestContext.Current.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }

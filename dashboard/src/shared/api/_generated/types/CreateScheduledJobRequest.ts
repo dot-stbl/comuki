@@ -3,24 +3,32 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Scheduled job creation body\r\n(`POST /api/v1/projects/{projectId}/scheduled-jobs`). The\r\ndispatcher stores the brief jsonb verbatim and the\r\n`profileKey` drives the work item the launched run resolves.\r\n`enabled` defaults to `true` when omitted; a one-shot\r\n`runOnOnceAt` in the past fast-forwards the dispatcher\'s first\r\npoll (useful for smoke tests).
+ */
 export type CreateScheduledJobRequest = {
   /**
+   * @description 5-field UTC cron expression.
    * @type string
    */
   cronExpression: string
   /**
+   * @description Profile the launched run will resolve.
    * @type string
    */
   profileKey: string
   /**
+   * @description Worker brief payload (jsonb).
    * @type string
    */
   briefJson: string
   /**
+   * @description Optional one-shot fire-at; null means cron-only.
    * @type null,string, date-time
    */
   runOnOnceAt?: string | null
   /**
+   * @description Disable the job at create time (defaults to enabled).
    * @type null,boolean
    */
   enabled?: boolean | null

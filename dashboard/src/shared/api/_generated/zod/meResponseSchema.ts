@@ -6,14 +6,43 @@
 import { permissionsViewSchema } from "./permissionsViewSchema"
 import { z } from "zod/v4"
 
-export const meResponseSchema = z.object({
-  userId: z.nullable(z.uuid()),
-  subjectType: z.string(),
-  subjectId: z.uuid(),
-  email: z.string().nullish(),
-  displayName: z.string().nullish(),
-  roles: z.array(z.string()),
-  get permissions() {
-    return permissionsViewSchema
-  },
-})
+/**
+ * @description The authenticated caller\'s identity for SPA session bootstrap:\r\nwho the principal resolves to, the roles it holds, and the\r\neffective permission sets per scope. Permissions are computed for\r\nthe request\'s subject — an API-key request reports the key\'s\r\nassignments, not its owner\'s.
+ */
+export const meResponseSchema = z
+  .object({
+    userId: z.nullable(
+      z
+        .uuid()
+        .describe(
+          "The owning user account id; null when the principal carries none."
+        )
+    ),
+    subjectType: z
+      .string()
+      .describe("Stable subject-type key: `user` or `api-key`."),
+    subjectId: z
+      .uuid()
+      .describe(
+        "The subject permissions are computed for (user id or api key id)."
+      ),
+    email: z
+      .string()
+      .describe("Email claim when the session is a user cookie.")
+      .nullish(),
+    displayName: z
+      .string()
+      .describe("Display-name claim (user name, or the api key's label).")
+      .nullish(),
+    roles: z
+      .array(z.string())
+      .describe("Keys of the active role assignments, distinct and ordered."),
+    get permissions() {
+      return permissionsViewSchema.describe(
+        "Platform-wide and per-project permission keys."
+      )
+    },
+  })
+  .describe(
+    "The authenticated caller's identity for SPA session bootstrap:\r\nwho the principal resolves to, the roles it holds, and the\r\neffective permission sets per scope. Permissions are computed for\r\nthe request's subject — an API-key request reports the key's\r\nassignments, not its owner's."
+  )

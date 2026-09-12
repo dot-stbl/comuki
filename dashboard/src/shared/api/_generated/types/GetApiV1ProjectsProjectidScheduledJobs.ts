@@ -7,6 +7,7 @@ import type { ScheduledJobsPage } from "./ScheduledJobsPage"
 
 export type GetApiV1ProjectsProjectidScheduledJobsPathParams = {
   /**
+   * @description Owning project.
    * @type string, uuid
    */
   projectId: string
@@ -14,11 +15,13 @@ export type GetApiV1ProjectsProjectidScheduledJobsPathParams = {
 
 export type GetApiV1ProjectsProjectidScheduledJobsQueryParams = {
   /**
+   * @description 1-based page index (default 1).
    * @default 1
    * @type integer,string | undefined, int32
    */
   page?: number | string
   /**
+   * @description Page size (default 100, max 500).
    * @default 100
    * @type integer,string | undefined, int32
    */

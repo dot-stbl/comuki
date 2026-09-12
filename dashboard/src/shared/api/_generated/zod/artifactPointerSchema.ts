@@ -5,9 +5,22 @@
 
 import { z } from "zod/v4"
 
-export const artifactPointerSchema = z.object({
-  name: z.string(),
-  uri: z.url(),
-  size: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  contentType: z.string(),
-})
+/**
+ * @description One object inside a run\'s artifact bundle. URIs, not blobs.
+ */
+export const artifactPointerSchema = z
+  .object({
+    name: z
+      .string()
+      .describe("Object name under the run prefix (e.g. `brief.json`)."),
+    uri: z
+      .url()
+      .describe(
+        "Canonical URI the host can fetch (typically a MinIO signed URL)."
+      ),
+    size: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Object size in bytes; `0` if unknown."),
+    contentType: z.string().describe("MIME type as written at upload time."),
+  })
+  .describe("One object inside a run's artifact bundle. URIs, not blobs.")

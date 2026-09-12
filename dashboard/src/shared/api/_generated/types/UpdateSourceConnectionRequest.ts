@@ -3,20 +3,27 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Source connection partial update body (PUT /api/v1/sources/{id}).
+ */
 export type UpdateSourceConnectionRequest = {
   /**
+   * @description New name; null = keep.
    * @type null,string
    */
   name?: string | null
   /**
+   * @description New settings json; null = keep.
    * @type null,string
    */
   settingsJson?: string | null
   /**
+   * @description New secret env name; null = keep.
    * @type null,string
    */
   secretEnvRef?: string | null
   /**
+   * @description Enable/disable; null = keep.
    * @type null,boolean
    */
   enabled?: boolean | null

@@ -18,25 +18,58 @@
   ],
   "type": "object",
   "properties": {
-    "id": { "type": "string", "format": "uuid" },
-    "projectId": { "type": "string", "format": "uuid" },
-    "status": { "type": "string" },
-    "createdAt": { "type": "string", "format": "date-time" },
-    "updatedAt": { "type": "string", "format": "date-time" },
-    "title": { "type": "string" },
-    "app": { "type": "string" },
-    "model": { "type": "string" },
+    "id": {
+      "type": "string",
+      "description": "Run id (UUIDv7).",
+      "format": "uuid"
+    },
+    "projectId": {
+      "type": "string",
+      "description": "Owning project id.",
+      "format": "uuid"
+    },
+    "status": {
+      "type": "string",
+      "description": "Wire status string (lowercase)."
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "Run admit timestamp.",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "Last status-change timestamp.",
+      "format": "date-time"
+    },
+    "title": {
+      "type": "string",
+      "description": "Reserved for the brain-authored run title; empty until brain stores it."
+    },
+    "app": {
+      "type": "string",
+      "description": "Reserved for the worker-app key; empty until brain stores it."
+    },
+    "model": {
+      "type": "string",
+      "description": "Reserved for the lead/worker split; `\"worker\"` as the safe default."
+    },
     "costUsd": {
       "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
       "type": ["number", "string"],
+      "description": "Per-run token spend in USD; `0` until proxy metering writes `usage_events`.",
       "format": "double"
     },
     "tokens": {
       "pattern": "^-?(?:0|[1-9]\\d*)$",
       "type": ["integer", "string"],
+      "description": "Per-run token count; `0` for the same reason.",
       "format": "int64"
     },
-    "brief": { "type": "string" },
+    "brief": {
+      "type": "string",
+      "description": "First work-item brief (raw jsonb string); empty when the run has no work items yet."
+    },
     "workItems": {
       "type": "array",
       "items": {
@@ -52,28 +85,50 @@
         ],
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "profile": { "type": "string" },
-          "label": { "type": "string" },
-          "status": { "type": "string" },
+          "id": {
+            "type": "string",
+            "description": "Work-item id.",
+            "format": "uuid"
+          },
+          "profile": {
+            "type": "string",
+            "description": "Worker profile key (e.g. `implement`, `explore-readonly`)."
+          },
+          "label": {
+            "type": "string",
+            "description": "Brain-authored step name; empty when not provided."
+          },
+          "status": {
+            "type": "string",
+            "description": "Wire status string (lowercase)."
+          },
           "dependsOn": {
             "type": "array",
-            "items": { "type": "string", "format": "uuid" }
+            "items": { "type": "string", "format": "uuid" },
+            "description": "Ids of prerequisite work items (joined from `work_item_dependencies`)."
           },
           "cost": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
             "type": ["number", "string"],
+            "description": "Reserved per-item spend in USD; `0` until usage_events is wired.",
             "format": "double"
           },
           "tokens": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": ["integer", "string"],
+            "description": "Reserved per-item token count; `0` for the same reason.",
             "format": "int64"
           },
-          "startedAt": { "type": ["null", "string"], "format": "date-time" }
+          "startedAt": {
+            "type": ["null", "string"],
+            "description": "First transition away from `Queued`, or `null` while still queued.",
+            "format": "date-time"
+          }
         },
+        "description": "Wire row for one work-item in the run's plan.",
         "x-readme-ref-name": "RunDetailWorkItem"
-      }
+      },
+      "description": "Plan nodes, with their `dependsOn` lists joined from `work_item_dependencies`."
     },
     "events": {
       "type": "array",
@@ -81,25 +136,57 @@
         "required": ["id", "workItemId", "type", "occurredAt", "payloadJson"],
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "workItemId": { "type": ["null", "string"], "format": "uuid" },
-          "type": { "type": "string" },
-          "occurredAt": { "type": "string", "format": "date-time" },
-          "payloadJson": { "type": ["null", "string"] }
+          "id": {
+            "type": "string",
+            "description": "Event id.",
+            "format": "uuid"
+          },
+          "workItemId": {
+            "type": ["null", "string"],
+            "description": "Work-item the entry is about, when the payload carries one.",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "description": "Stable dot.case event type."
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "When the entry happened.",
+            "format": "date-time"
+          },
+          "payloadJson": {
+            "type": ["null", "string"],
+            "description": "Raw payload JSON, or null when omitted."
+          }
         },
+        "description": "Wire row for one journal event in the run timeline (newest first).",
         "x-readme-ref-name": "RunDetailEvent"
-      }
+      },
+      "description": "Recent journal rows (top 20, newest first) — run-status, work-item-status, lease-reaper, etc."
     },
-    "rules": { "type": "array", "items": { "type": "string" } },
+    "rules": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Control-plane rule names applied; empty until control-plane exposes the lookup."
+    },
     "revision": {
+      "description": "Pinned SDK + control-plane revisions (image digest + profiles git ref).",
       "required": ["rules", "sdk"],
       "type": "object",
       "properties": {
-        "rules": { "type": "string" },
-        "sdk": { "type": "string" }
+        "rules": {
+          "type": "string",
+          "description": "Git ref of the control-plane / profiles repo (pinned on the work item)."
+        },
+        "sdk": {
+          "type": "string",
+          "description": "Worker image + digest (pinned on the work item)."
+        }
       },
       "x-readme-ref-name": "RunDetailRevision"
     }
   },
+  "description": "Full wire shape of one run for `GET /api/v1/runs/{runId}`. Carries\r\neverything the FE `RunDetail` mapper needs without a second round-trip.\r\n\r\nSeveral fields (Title, App, Model, CostUsd, Tokens, Rules) are placeholders\r\nfor data the platform does not yet store on the run row — see\r\nGetRunDetailHandler for what is and is not populated, and\r\naudit-report §2.7 for the broader metering / plan-extent gaps.",
   "x-readme-ref-name": "RunDetail"
 }

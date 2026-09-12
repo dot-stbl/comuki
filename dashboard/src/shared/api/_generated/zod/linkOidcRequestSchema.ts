@@ -5,7 +5,14 @@
 
 import { z } from "zod/v4"
 
-export const linkOidcRequestSchema = z.object({
-  provider: z.string(),
-  subjectId: z.string(),
-})
+/**
+ * @description OIDC link body (POST /api/v1/users/{userId}/oidc-link).
+ */
+export const linkOidcRequestSchema = z
+  .object({
+    provider: z
+      .string()
+      .describe("Provider key (matches an entry in `auth:oidc:providers`)."),
+    subjectId: z.string().describe("The external `sub` claim."),
+  })
+  .describe("OIDC link body (POST /api/v1/users/{userId}/oidc-link).")

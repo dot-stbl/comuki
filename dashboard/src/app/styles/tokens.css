@@ -12,8 +12,8 @@
 
    What lives where:
 
-     themes.css  the twenty primitives each theme states — floor, rail, lane,
-                 the two text greys, the accent, the six statuses.
+     themes.css  the twenty-one primitives each theme states — floor, rail,
+                 lane, the two text greys, the accent, the seven statuses.
      tokens.css  everything derived from those primitives, plus every token
                  that is not a colour at all: type, spacing, corners, motion,
                  geometry. A new theme never touches this file.
@@ -60,7 +60,7 @@
   --chart-4: var(--st-waiting);
   --chart-5: var(--st-escalated);
 
-  /* The wash a status paints behind itself. One percentage for all six, so a
+  /* The wash a status paints behind itself. One percentage for all seven, so a
      badge cannot quietly become louder than its neighbour. */
   --st-running-tint: color-mix(in oklab, var(--st-running) 18%, transparent);
   --st-success-tint: color-mix(in oklab, var(--st-success) 18%, transparent);
@@ -70,6 +70,11 @@
   --st-escalated-tint: color-mix(
     in oklab,
     var(--st-escalated) 18%,
+    transparent
+  );
+  --st-cancelled-tint: color-mix(
+    in oklab,
+    var(--st-cancelled) 18%,
     transparent
   );
 
@@ -146,6 +151,18 @@
     90deg,
     color-mix(in oklab, #000 40%, transparent) 0 1px,
     transparent 1px 6px
+  );
+  /* The seventh, and the quietest hatch in the set. 67.5deg is the bisector of
+     the widest gap left between the angles already taken (45deg escalated,
+     90deg queued), so it is 22.5deg from its nearest neighbour on either side;
+     1px of ink in an 8px period is half what `failed` carries and a third less
+     than `queued`. The ink stays at 40% rather than dropping with the density,
+     because a hatch has to survive being photocopied and a threshold eats a
+     faint line whole — sparse is what makes it quiet, not pale. */
+  --weave-cancelled: repeating-linear-gradient(
+    67.5deg,
+    color-mix(in oklab, #000 40%, transparent) 0 1px,
+    transparent 1px 8px
   );
 
   /* Depth, mode-only.
@@ -363,8 +380,12 @@
  * bolted on, and three that reached past `--hue` for `var(--st-…)` directly —
  * so a seventh status cost fourteen files and an encoding could drift between
  * two screens without anything failing. A consumer now says `var(--hue)` and
- * `var(--weave)` and names no status at all; a seventh status is one arm here
- * plus its two tokens above.
+ * `var(--weave)` and names no status at all. `cancelled` was the seventh and
+ * it cost exactly what this comment promised: one arm below, one `--weave-*`
+ * above, and its hue in the registry. An eighth costs the same everywhere but
+ * the hatch: every angle here is 22.5deg from its neighbour and there is no
+ * gap left that clears it, so the next status has to buy its second channel
+ * some other way. Recorded in DESIGN.md's Stated Gaps.
  *
  * It is derived, not stated, which is why it sits in this file: both sides
  * come from tokens that already exist — `--st-*` from whichever theme matched,
@@ -411,7 +432,14 @@
   --weave: var(--weave-success);
 }
 
-/* Not a status, and the only value here that is not one of the six. The duty
+/* The seventh, and the whole of what it cost this sheet. It used to arrive as
+   `failed` out of the runs mapper for want of these two lines. */
+[data-status="cancelled"] {
+  --hue: var(--st-cancelled);
+  --weave: var(--weave-cancelled);
+}
+
+/* Not a status, and the only value here that is not one of the seven. The duty
    screen's verdict band says `clear` when nothing needs a person, and borrows
    success's pair to say it. It lives here rather than in that band's module so
    the attribute has exactly one vocabulary and the audit above stays true —

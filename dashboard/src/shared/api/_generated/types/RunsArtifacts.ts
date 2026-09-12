@@ -8,10 +8,12 @@ import type { RunArtifactsPage } from "./RunArtifactsPage"
 
 export type RunsArtifactsPathParams = {
   /**
+   * @description Owning project (path).
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description Run whose artifacts are requested (path).
    * @type string, uuid
    */
   runId: string

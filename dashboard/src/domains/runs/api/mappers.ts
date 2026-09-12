@@ -33,11 +33,11 @@ import {
 /* ---------------------------------------------------------------------------
  * Wire status → domain status.
  *
- * `RunStatus` is the design system's six words and nothing else (see
+ * `RunStatus` is the design system's seven words and nothing else (see
  * `shared/ui/status-badge.tsx` and the Real Words Rule in `DESIGN.md`). The
- * host's vocabulary is wider — `succeeded` and `cancelled` are real values on
- * `RunView.status` / `RunDetail.status`, both of which are a plain `string` on
- * the wire — so the two vocabularies have to be mapped, not asserted.
+ * host's vocabulary still differs in one place — `succeeded` is a real value
+ * on `RunView.status` / `RunDetail.status`, both of which are a plain `string`
+ * on the wire — so the two vocabularies have to be mapped, not asserted.
  *
  * A cast did not map them, it only silenced the compiler, and the lie landed
  * at runtime in two places: `statusIcons[status]` in `StatusBadge` came back
@@ -46,7 +46,7 @@ import {
  * unsorted the duty list instead of crashing it.
  * ------------------------------------------------------------------------- */
 
-/** Closed set of the six words the design system has; see <see cref="RunStatus"/>. */
+/** Closed set of the seven words the design system has; see <see cref="RunStatus"/>. */
 const KNOWN_RUN_STATUSES: ReadonlySet<string> = new Set<RunStatus>([
   "running",
   "success",
@@ -54,6 +54,7 @@ const KNOWN_RUN_STATUSES: ReadonlySet<string> = new Set<RunStatus>([
   "waiting",
   "queued",
   "escalated",
+  "cancelled",
 ])
 
 /**
@@ -67,33 +68,34 @@ function isRunStatus(value: string): value is RunStatus {
 /**
  * The word an unmapped wire status degrades to.
  *
- * `failed` is the least misleading of the six for a status the screen cannot
+ * `failed` is the least misleading of the seven for a status the screen cannot
  * read. It is the only remaining word that is both **terminal** and **not a
  * success**, which is the pair of facts every unreadable status shares: the
  * three live words (`running`, `queued`, `waiting`) would promise the operator
  * that a finished run is still moving, `escalated` would put phantom work at
- * the top of the duty list claiming a human is blocking it, and `success`
- * would tell them work landed that did not. `failed` overstates *why* and
- * understates nothing — the conservative direction for a duty screen.
+ * the top of the duty list claiming a human is blocking it, `success` would
+ * tell them work landed that did not, and `cancelled` would claim somebody
+ * chose this. `failed` overstates *why* and understates nothing — the
+ * conservative direction for a duty screen.
  */
 const UNKNOWN_RUN_STATUS: RunStatus = "failed"
 
 /**
  * Normalise the wire `status` string to the domain union.
  *
- * Two known wire words have no design-system counterpart:
+ * One known wire word has no design-system counterpart: `succeeded` →
+ * `success`, the same fact in the product's own spelling.
  *
- * - `succeeded` → `success`. The same fact, the product's own spelling.
- * - `cancelled` → `failed`, **provisionally**. There is no sixth-and-a-half
- *   word for "an operator stopped this on purpose", and inventing a seventh
- *   status is a `DESIGN.md` decision (a hue *and* a hatch — the Two-Channel
- *   Status Rule), not a mapper's. Until that decision is made, a cancelled run
- *   reads as `failed`: terminal, not a success, consistent with the `done`
- *   flag this mapper already sets for it. The cost is severity — a deliberate
- *   stop is painted as a breakage — and that is the open question for the
- *   design owner, not something this function should settle.
+ * `cancelled` used to be a second one. It was folded onto `failed` because the
+ * design system had no word for "an operator stopped this on purpose", and
+ * inventing a seventh status is a `DESIGN.md` decision (a hue *and* a hatch —
+ * the Two-Channel Status Rule), not a mapper's. That decision has since been
+ * made: `cancelled` is a status of its own, with its own rung on every
+ * palette's ladder and the sparsest hatch in the set, and it arrives here
+ * unchanged. A board that cancels runs routinely no longer paints itself red
+ * for work nobody failed at.
  *
- * Anything else falls through to the same fallback rather than throwing — the
+ * Anything else falls through to the fallback above rather than throwing — the
  * host may have rolled out a status the FE has not been taught. A partial
  * backend rollout should degrade the row, not take down the screen.
  */

@@ -1,6 +1,12 @@
 {
   "required": ["message"],
   "type": "object",
-  "properties": { "message": { "type": "string" } },
+  "properties": {
+    "message": {
+      "type": "string",
+      "description": "Raw user message (plain text or a /command)."
+    }
+  },
+  "description": "Post-message request body: one chat turn.",
   "x-readme-ref-name": "PostChatMessageRequest"
 }

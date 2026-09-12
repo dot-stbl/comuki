@@ -8,16 +8,20 @@ import { webhookAcceptedResponseSchema } from "./webhookAcceptedResponseSchema"
 import { z } from "zod/v4"
 
 export const postApiHooksProviderKeyPathParamsSchema = z.object({
-  provider: z.string(),
-  key: z.string(),
+  provider: z
+    .string()
+    .describe(
+      "Kebab-case source key (github | gitlab | yandex-tracker | jira)."
+    ),
+  key: z.string().describe("Per-connection webhook routing key."),
 })
 
 /**
  * @description OK
  */
-export const postApiHooksProviderKey200Schema = z.lazy(
-  () => webhookAcceptedResponseSchema
-)
+export const postApiHooksProviderKey200Schema = z
+  .lazy(() => webhookAcceptedResponseSchema)
+  .describe("The 200 body of a processed (or deliberately ignored) delivery.")
 
 /**
  * @description Unauthorized

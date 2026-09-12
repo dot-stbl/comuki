@@ -5,6 +5,13 @@
 
 import { z } from "zod/v4"
 
-export const userIdSchema = z.object({
-  value: z.optional(z.uuid()),
-})
+/**
+ * @description Strong-typed identifier of a user account. Entity ids are UUIDv7\r\n(Guid Guid.CreateVersion7()): time-ordered, stored as Postgres\r\n`uuid`, exposed to the API as strings. Lives in the Identity module\r\n(not Shared.Kernel) — other modules learn about users through contracts.
+ */
+export const userIdSchema = z
+  .object({
+    value: z.optional(z.uuid()),
+  })
+  .describe(
+    "Strong-typed identifier of a user account. Entity ids are UUIDv7\r\n(Guid Guid.CreateVersion7()): time-ordered, stored as Postgres\r\n`uuid`, exposed to the API as strings. Lives in the Identity module\r\n(not Shared.Kernel) — other modules learn about users through contracts."
+  )

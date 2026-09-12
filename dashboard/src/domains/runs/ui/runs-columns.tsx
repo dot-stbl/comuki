@@ -53,7 +53,7 @@ export interface RunColumnsOptions {
 /** Row identity for the virtualized body. Module scope keeps it stable. */
 export const getRunId = (run: RunSummary) => run.id
 
-/** The six statuses the whole product speaks: DB, contract, mocks, tokens. */
+/** The seven statuses the whole product speaks: DB, contract, mocks, tokens. */
 const RUN_STATUSES: RunStatus[] = [
   "running",
   "waiting",
@@ -61,6 +61,7 @@ const RUN_STATUSES: RunStatus[] = [
   "escalated",
   "failed",
   "success",
+  "cancelled",
 ]
 
 /**

@@ -15,9 +15,9 @@ export const postWorkersWorkitemidFailPathParamsSchema = z.object({
  */
 export const postWorkersWorkitemidFail200Schema = z.any()
 
-export const postWorkersWorkitemidFailMutationRequestSchema = z.lazy(
-  () => failWorkItemRequestSchema
-)
+export const postWorkersWorkitemidFailMutationRequestSchema = z
+  .lazy(() => failWorkItemRequestSchema)
+  .describe("Failure body: human-readable reason text.")
 
 export const postWorkersWorkitemidFailMutationResponseSchema = z.lazy(
   () => postWorkersWorkitemidFail200Schema

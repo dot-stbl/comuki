@@ -42,6 +42,7 @@ export function postApiV1AuthLogoutMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Clears the cookie session.
  * {@link /api/v1/auth/logout}
  */
 export function usePostApiV1AuthLogout<TContext>(

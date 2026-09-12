@@ -52,6 +52,10 @@ export function getApiV1GrantsSuspenseQueryOptions(
 }
 
 /**
+ * @summary Lists role assignments (issue #45 / F13 — read side of the identity admin).
+ * Permission `identity:read`; returns a paged
+ * `{ items, total }` envelope of RoleAssignmentView.
+ * Optional `subjectKind` + `subjectId` narrow to a single user or key.
  * {@link /api/v1/grants}
  */
 export function useGetApiV1GrantsSuspense<

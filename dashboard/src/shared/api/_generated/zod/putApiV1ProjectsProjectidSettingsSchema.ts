@@ -15,9 +15,11 @@ export const putApiV1ProjectsProjectidSettingsPathParamsSchema = z.object({
  */
 export const putApiV1ProjectsProjectidSettings200Schema = z.any()
 
-export const putApiV1ProjectsProjectidSettingsMutationRequestSchema = z.lazy(
-  () => updateSettingsRequestSchema
-)
+export const putApiV1ProjectsProjectidSettingsMutationRequestSchema = z
+  .lazy(() => updateSettingsRequestSchema)
+  .describe(
+    "Wire body of PUT /api/v1/projects/{projectId}/settings.\r\nint UpdateSettingsRequest.Version is the version the client read — a stale version\r\nis refused with 409."
+  )
 
 export const putApiV1ProjectsProjectidSettingsMutationResponseSchema = z.lazy(
   () => putApiV1ProjectsProjectidSettings200Schema

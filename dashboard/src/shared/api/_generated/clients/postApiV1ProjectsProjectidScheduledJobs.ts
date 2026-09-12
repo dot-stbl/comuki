@@ -27,6 +27,7 @@ function getPostApiV1ProjectsProjectidScheduledJobsUrl(
 }
 
 /**
+ * @summary Creates a scheduled job for a project.
  * {@link /api/v1/projects/:projectId/scheduled-jobs}
  */
 export async function postApiV1ProjectsProjectidScheduledJobs(

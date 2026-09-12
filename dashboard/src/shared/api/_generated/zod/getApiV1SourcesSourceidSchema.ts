@@ -14,9 +14,11 @@ export const getApiV1SourcesSourceidPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const getApiV1SourcesSourceid200Schema = z.lazy(
-  () => sourceConnectionViewSchema
-)
+export const getApiV1SourcesSourceid200Schema = z
+  .lazy(() => sourceConnectionViewSchema)
+  .describe(
+    "Read-model of a source connection. Settings and secret env NAMES are\r\nreturned (never secret values) plus the hook path to paste into the\r\ntracker's webhook settings."
+  )
 
 /**
  * @description Not Found

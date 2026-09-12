@@ -5,10 +5,23 @@
 
 import { z } from "zod/v4"
 
-export const createScheduledJobRequestSchema = z.object({
-  cronExpression: z.string(),
-  profileKey: z.string(),
-  briefJson: z.string(),
-  runOnOnceAt: z.iso.datetime({ offset: true }).nullish(),
-  enabled: z.boolean().nullish(),
-})
+/**
+ * @description Scheduled job creation body\r\n(`POST /api/v1/projects/{projectId}/scheduled-jobs`). The\r\ndispatcher stores the brief jsonb verbatim and the\r\n`profileKey` drives the work item the launched run resolves.\r\n`enabled` defaults to `true` when omitted; a one-shot\r\n`runOnOnceAt` in the past fast-forwards the dispatcher\'s first\r\npoll (useful for smoke tests).
+ */
+export const createScheduledJobRequestSchema = z
+  .object({
+    cronExpression: z.string().describe("5-field UTC cron expression."),
+    profileKey: z.string().describe("Profile the launched run will resolve."),
+    briefJson: z.string().describe("Worker brief payload (jsonb)."),
+    runOnOnceAt: z.iso
+      .datetime({ offset: true })
+      .describe("Optional one-shot fire-at; null means cron-only.")
+      .nullish(),
+    enabled: z
+      .boolean()
+      .describe("Disable the job at create time (defaults to enabled).")
+      .nullish(),
+  })
+  .describe(
+    "Scheduled job creation body\r\n(`POST /api/v1/projects/{projectId}/scheduled-jobs`). The\r\ndispatcher stores the brief jsonb verbatim and the\r\n`profileKey` drives the work item the launched run resolves.\r\n`enabled` defaults to `true` when omitted; a one-shot\r\n`runOnOnceAt` in the past fast-forwards the dispatcher's first\r\npoll (useful for smoke tests)."
+  )

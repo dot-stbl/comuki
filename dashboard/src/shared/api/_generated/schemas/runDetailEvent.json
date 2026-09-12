@@ -2,11 +2,23 @@
   "required": ["id", "workItemId", "type", "occurredAt", "payloadJson"],
   "type": "object",
   "properties": {
-    "id": { "type": "string", "format": "uuid" },
-    "workItemId": { "type": ["null", "string"], "format": "uuid" },
-    "type": { "type": "string" },
-    "occurredAt": { "type": "string", "format": "date-time" },
-    "payloadJson": { "type": ["null", "string"] }
+    "id": { "type": "string", "description": "Event id.", "format": "uuid" },
+    "workItemId": {
+      "type": ["null", "string"],
+      "description": "Work-item the entry is about, when the payload carries one.",
+      "format": "uuid"
+    },
+    "type": { "type": "string", "description": "Stable dot.case event type." },
+    "occurredAt": {
+      "type": "string",
+      "description": "When the entry happened.",
+      "format": "date-time"
+    },
+    "payloadJson": {
+      "type": ["null", "string"],
+      "description": "Raw payload JSON, or null when omitted."
+    }
   },
+  "description": "Wire row for one journal event in the run timeline (newest first).",
   "x-readme-ref-name": "RunDetailEvent"
 }

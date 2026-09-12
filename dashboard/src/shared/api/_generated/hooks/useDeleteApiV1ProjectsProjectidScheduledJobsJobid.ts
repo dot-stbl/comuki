@@ -52,6 +52,7 @@ export function deleteApiV1ProjectsProjectidScheduledJobsJobidMutationOptions<
 }
 
 /**
+ * @summary Deletes a scheduled job (idempotent — missing ids are a no-op).
  * {@link /api/v1/projects/:projectId/scheduled-jobs/:jobId}
  */
 export function useDeleteApiV1ProjectsProjectidScheduledJobsJobid<TContext>(

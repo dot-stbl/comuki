@@ -8,7 +8,7 @@ import { z } from "zod/v4"
 
 export const getApiV1AdmissionRulesQueryParamsSchema = z
   .object({
-    projectId: z.optional(z.uuid()),
+    projectId: z.optional(z.uuid().describe("Optional project filter.")),
   })
   .optional()
 
@@ -16,7 +16,9 @@ export const getApiV1AdmissionRulesQueryParamsSchema = z
  * @description OK
  */
 export const getApiV1AdmissionRules200Schema = z.array(
-  z.lazy(() => admissionRuleViewSchema)
+  z
+    .lazy(() => admissionRuleViewSchema)
+    .describe("Read-model of an admission rule.")
 )
 
 export const getApiV1AdmissionRulesQueryResponseSchema = z.lazy(

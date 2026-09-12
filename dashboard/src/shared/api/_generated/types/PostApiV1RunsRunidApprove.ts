@@ -7,6 +7,7 @@ import type { ProblemDetails } from "./ProblemDetails"
 
 export type PostApiV1RunsRunidApprovePathParams = {
   /**
+   * @description Run to approve.
    * @type string, uuid
    */
   runId: string

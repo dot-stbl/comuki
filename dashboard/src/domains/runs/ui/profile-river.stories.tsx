@@ -11,6 +11,18 @@ const fullSwarm = buildProfileFlow(RUNS_SEED.map(toRunSummary))
 const smallSwarm = buildProfileFlow(RUNS_SEED.slice(0, 4).map(toRunSummary))
 const emptySwarm = buildProfileFlow([])
 
+/**
+ * The same shift with three runs stopped by hand. The seed cannot produce a
+ * cancelled run — `SeedStatus` predates the status — so the shift is bent
+ * here instead: the band picks up a seventh segment at its base, the legend a
+ * seventh swatch, and neither of them reads as a failure.
+ */
+const cancelledSwarm = buildProfileFlow(
+  RUNS_SEED.map(toRunSummary).map((run, index) =>
+    index % 5 === 2 ? { ...run, status: "cancelled" as const } : run
+  )
+)
+
 /** Selection is the table's `profile` filter, so nothing is pressed to begin with. */
 function Interactive({ flow }: { flow: typeof fullSwarm }) {
   const [selected, setSelected] = useState<string | null>(null)
@@ -64,6 +76,11 @@ export const ProfileSelected: Story = {
   render: () => (
     <ProfileRiver flow={fullSwarm} selected="implementer" onSelect={() => {}} />
   ),
+}
+
+/** Three runs stopped by hand, so the seventh status has a band and a swatch. */
+export const WithCancelled: Story = {
+  render: () => <Interactive flow={cancelledSwarm} />,
 }
 
 /** The board collapsed: the same flow, one row tall, no numbers, no labels. */

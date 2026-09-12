@@ -77,6 +77,22 @@ const longEdge: WorkItem[] = orderedItems([
   work("w7", "tester", "прогнать смоук", "queued", ["w6"]),
 ])
 
+/**
+ * An operator stopped this one two steps in. The seventh status: the stopped
+ * node takes its own hue and the sparsest hatch in the set, and the items
+ * behind it are going nowhere for a reason nobody has to open the run to read.
+ * The seed cannot produce this — `SeedStatus` predates the status — so the
+ * plan is written out here.
+ */
+const cancelled: WorkItem[] = orderedItems([
+  work("w1", "explorer", "снять карту модуля", "success"),
+  work("w2", "planner", "разбить задачу на два лейна", "success", ["w1"]),
+  work("w3", "implementer", "вынести ретраи в слой", "cancelled", ["w2"]),
+  work("w4", "implementer", "прокинуть тайм-аут", "cancelled", ["w2"]),
+  work("w5", "reviewer", "сверить с контрактом", "queued", ["w3", "w4"]),
+  work("w6", "tester", "прогнать смоук", "queued", ["w5"]),
+])
+
 const meta: Meta<typeof RunGraph> = {
   title: "Runs/Run graph",
   component: RunGraph,
@@ -140,6 +156,15 @@ export const StaticPreview: Story = {
       label="Plan — work item graph"
     />
   ),
+}
+
+/**
+ * A run an operator stopped on purpose. Beside `FailedAndBlocked` this is the
+ * whole argument for the seventh status: the same shape of terminal plan, and
+ * nothing on the board reads as an alarm.
+ */
+export const Cancelled: Story = {
+  render: () => <Board items={cancelled} current="w3" />,
 }
 
 /** No plan at all. The detail screen answers this at screen scale; a graph

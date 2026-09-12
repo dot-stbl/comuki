@@ -35,6 +35,7 @@
   --st-escalated: #2424b0;
   --st-failed: #333311;
   --st-success: #0d0d7d;
+  --st-cancelled: #1b1b07;
 }
 
 :root.dark,
@@ -60,6 +61,7 @@
   --st-escalated: #b7b7fd;
   --st-failed: #d2d228;
   --st-success: #d7d7ff;
+  --st-cancelled: #ebebcf;
 }
 
 /* Graphite — The colourless rule executed properly — cold near-black, with wide enough steps between floor, lane and rail that the chrome reads as structure rather than as dirt. */
@@ -86,6 +88,7 @@
   --st-escalated: #512f7e;
   --st-failed: #951720;
   --st-success: #006f53;
+  --st-cancelled: #272a2d;
 }
 
 :root[data-theme="graphite"].dark {
@@ -110,6 +113,7 @@
   --st-escalated: #d9c6ff;
   --st-failed: #f77671;
   --st-success: #75d0ae;
+  --st-cancelled: #eceef2;
 }
 
 /* Dockside — A warm room for a long shift — rail, topbar and lanes carry a real umber tint instead of being drained to neutral, and the filled button is copper. */
@@ -136,6 +140,7 @@
   --st-escalated: #5d2b72;
   --st-failed: #921e05;
   --st-success: #3d6b33;
+  --st-cancelled: #2e2a25;
 }
 
 :root[data-theme="dockside"].dark {
@@ -160,6 +165,7 @@
   --st-escalated: #ebbfff;
   --st-failed: #f47b61;
   --st-success: #99cb8e;
+  --st-cancelled: #f2ede9;
 }
 
 /* Blueprint — The board as a cyanotype — the chrome is blue, so the plane the operator reads on is a material rather than an absence, and the accent is the paper's own ice-white. */
@@ -186,6 +192,7 @@
   --st-escalated: #5a297e;
   --st-failed: #980e04;
   --st-success: #006f55;
+  --st-cancelled: #272a2f;
 }
 
 :root[data-theme="blueprint"].dark {
@@ -210,6 +217,7 @@
   --st-escalated: #cb99f7;
   --st-failed: #fc7460;
   --st-success: #62d1ae;
+  --st-cancelled: #ebeef2;
 }
 
 /* Bureau — Built light first and darkened afterwards — paper chrome, ink text and a stamp-violet accent that belongs to a document rather than to a screen. */
@@ -236,6 +244,7 @@
   --st-escalated: #532e7d;
   --st-failed: #951815;
   --st-success: #286e37;
+  --st-cancelled: #2a2a28;
 }
 
 :root[data-theme="bureau"].dark {
@@ -260,6 +269,7 @@
   --st-escalated: #dbc5ff;
   --st-failed: #f77769;
   --st-success: #89ce92;
+  --st-cancelled: #ededeb;
 }
 
 /* Aperture — Depth inverted — the chrome comes up to a mid grey and the data drops to near-black, so the table reads as a window cut in the wall rather than a panel laid on it. */
@@ -286,6 +296,7 @@
   --st-escalated: #582982;
   --st-failed: #9b040f;
   --st-success: #006f44;
+  --st-cancelled: #272a2f;
 }
 
 :root[data-theme="aperture"].dark {
@@ -310,6 +321,7 @@
   --st-escalated: #dec3ff;
   --st-failed: #ff7166;
   --st-success: #71d19c;
+  --st-cancelled: #eaeef4;
 }
 
 /* Dispatcher — The original board — near-black floor, colourless chrome, one turquoise accent, and six status hues. The palette every earlier decision in this product was made against. */
@@ -336,6 +348,7 @@
   --st-escalated: #6e5ba6;
   --st-failed: #b0473b;
   --st-success: #4e7c5b;
+  --st-cancelled: #8e9195;
 }
 
 :root[data-theme="dispatcher"].dark {
@@ -360,6 +373,7 @@
   --st-escalated: #6e5ba6;
   --st-failed: #b0473b;
   --st-success: #4e7c5b;
+  --st-cancelled: #8e9195;
 }
 
 /* Preview swatches — every theme's own colours, readable from any theme. */

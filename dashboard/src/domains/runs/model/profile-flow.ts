@@ -103,6 +103,7 @@ const EMPTY_STATUS: Record<RunStatus, number> = {
   waiting: 0,
   queued: 0,
   escalated: 0,
+  cancelled: 0,
 }
 
 const BLOCKING: RunStatus[] = ["waiting", "escalated", "failed"]
@@ -336,6 +337,11 @@ export function buildProfileFlow(runs: RunSummary[]): ProfileFlow {
  * — so this is the order the duty screen means whenever it orders by status,
  * whether that is the default list order (`triageOrder`) or the user clicking
  * the status header. One rank, both consumers; a second copy would drift.
+ *
+ * `cancelled` ranks below `success`, which is the bottom of the list: a run
+ * that landed still has a diff somebody may want to read, and a run somebody
+ * stopped on purpose has neither a result nor a question. It used to arrive
+ * here as `failed` and sort second.
  */
 export const TRIAGE_RANK: Record<RunStatus, number> = {
   escalated: 0,
@@ -344,6 +350,7 @@ export const TRIAGE_RANK: Record<RunStatus, number> = {
   running: 3,
   queued: 4,
   success: 5,
+  cancelled: 6,
 }
 
 /**

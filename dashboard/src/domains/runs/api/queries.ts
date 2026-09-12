@@ -17,6 +17,10 @@ import type {
 import { getApiV1Runs } from "@/shared/api/_generated/clients/getApiV1Runs"
 import { runsArtifacts } from "@/shared/api/_generated/clients/runsArtifacts"
 import { runsGetById } from "@/shared/api/_generated/clients/runsGetById"
+import {
+  RUNS_POLL_INTERVAL_MS,
+  livePolling,
+} from "@/shared/api/polling"
 import { findSeedRun, listSeedRuns } from "@/shared/api/mock"
 import { env } from "@/shared/config/env"
 
@@ -89,6 +93,10 @@ export function useRunsQuery() {
   return useQuery({
     queryKey: runsQueryKey,
     queryFn: listRuns,
+    // The polling fallback: the duty list stays fresh at this cadence when
+    // the socket is down (and the socket's invalidations land between ticks
+    // when it is up). Off in mock mode — seed data does not go stale.
+    refetchInterval: livePolling(RUNS_POLL_INTERVAL_MS),
   })
 }
 

@@ -78,6 +78,49 @@ jobs:
       - name: Run tests
         run: dotnet run --project ${{ matrix.project }} -c Debug
 
+  # Integration suites boot a real Postgres through Testcontainers. They had
+  # never run in CI, and that is how a broken anonymous-webhook path and a
+  # broken api-key lookup survived unnoticed: every local check for a container
+  # runtime asked `docker --version`, found no CLI, and stopped there. The
+  # GitHub runner has a Docker daemon, so here they simply work.
+  #
+  # One job rather than a matrix: each project starts its own container, and
+  # twenty-one runners paying that startup separately costs more than it saves.
+  test-integration:
+    name: test backend (integration)
+    needs: build-be
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Comuki.Host.Testing is the shared harness library, not a suite — it has
+      # no entry point and is skipped by the glob below on purpose.
+      - name: Run integration suites
+        run: |
+          set -euo pipefail
+          for project in tests/integration/*/; do
+            name=$(basename "$project")
+            if [ "$name" = "Comuki.Host.Testing" ]; then
+              continue
+            fi
+            echo "::group::$name"
+            dotnet run --project "$project" -c Debug
+            echo "::endgroup::"
+          done
+
   build-fe:
     name: build frontend (dashboard)
     runs-on: ubuntu-latest

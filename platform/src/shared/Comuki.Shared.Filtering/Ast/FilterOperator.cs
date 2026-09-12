@@ -3,7 +3,7 @@ namespace Comuki.Shared.Filtering.Ast;
 
 /// <summary>
 ///     Comparison operators supported by the filter DSL. A field's allowed set is
-///     inferred from its CLR type (see <see cref="FilterOperatorInference" />); the parser
+///     inferred from its CLR type (see <see cref="Evaluator.FilterOperatorInference" />); the parser
 ///     rejects a query that uses an operator the field does not allow.
 /// </summary>
 /// <remarks>

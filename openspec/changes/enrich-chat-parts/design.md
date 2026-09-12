@@ -35,6 +35,27 @@ is built, it serializes the parts and it derives `content` from them
 the module composes `content` by hand — that is what let the plan JSON get
 glued onto the reply.
 
+### Why not owned types
+
+`~/.agents/rules/csharp/ef-owned-types.md` prefers EF `OwnsOne` / `OwnsMany`
+with `HasDiscriminator` over a manual serialize-to-`jsonb`, and names a
+"type column plus value_json column" pair among its anti-patterns. The rule
+carries its own exception for this shape: *many-to-one polymorphic
+collections belong in a dedicated aggregate with its own repository,
+because owned types model one owned entity per parent*. `parts` is an
+array of polymorphic values per message, so `OwnsMany` does not model it
+and the escape applies.
+
+That escape points at a `chat_message_parts` table. It was considered and
+declined: a jsonb column is one migration and no new store, it keeps
+`ChatTranscriptRow.Of` the single seam that writes a row, and nothing
+today addresses a part on its own. The cost is accepted rather than
+overlooked — a part has no id, and paging a long turn means paging the
+message.
+
+Revisit when a part needs to be addressed or edited independently. That is
+the signal the table was the right shape after all.
+
 ### Enum columns
 
 `HasConversion<string>()` + `HasMaxLength(16)` on `chat_messages.role` and

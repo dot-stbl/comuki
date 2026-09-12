@@ -2,6 +2,7 @@ using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Secrets;
 
 namespace Comuki.Modules.Intake.Infrastructure.Providers.GitLab;
@@ -38,7 +39,7 @@ public sealed class GitLabTicketSync(
         await api.PostNoteAsync(settings.ProjectId, issueIid, new GitLabNoteBody(TrackerSyncComments.Of(transition)), cancellationToken);
 
         // Comuki does not decide to merge an MR — close-on-success applies to issues only.
-        if (transition.RunStatus == "Succeeded" && transition.Kind == InboundTicketKind.Issue)
+        if (transition.RunStatus == RunStatuses.Succeeded && transition.Kind == InboundTicketKind.Issue)
         {
             await api.UpdateIssueAsync(settings.ProjectId, issueIid, new GitLabIssueUpdate("close"), cancellationToken);
         }

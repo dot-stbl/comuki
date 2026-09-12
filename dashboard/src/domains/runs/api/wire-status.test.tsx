@@ -11,11 +11,11 @@ import type { RunView } from "@/shared/api/_generated/types/RunView"
 import { StatusBadge } from "@/shared/ui"
 
 /**
- * The seam between the host's seven lifecycle words and the design system's
- * six.
+ * The seam between the host's lifecycle words and the design system's seven.
  *
- * The wire carries `succeeded` and `cancelled`; `RunStatus` has neither. A
- * cast used to carry them across, and two consumers paid for it at runtime —
+ * The wire carries `succeeded`, which `RunStatus` does not have, and
+ * `cancelled`, which it now does. A cast used to carry both across, and two
+ * consumers paid for it at runtime —
  * `StatusBadge` looked an icon up by status and got `undefined` (React then
  * throws "Element type is invalid", so the first completed run in real mode
  * took the page down), and `TRIAGE_RANK` looked a rank up and got `NaN`, which
@@ -47,25 +47,29 @@ function runViewFixture(overrides: Partial<RunView> = {}): RunView {
 }
 
 describe("normalizeRunStatus", () => {
-  it("passes the six design-system words through unchanged", () => {
+  it("passes the seven design-system words through unchanged", () => {
     expect(normalizeRunStatus("running")).toBe("running")
     expect(normalizeRunStatus("success")).toBe("success")
     expect(normalizeRunStatus("failed")).toBe("failed")
     expect(normalizeRunStatus("waiting")).toBe("waiting")
     expect(normalizeRunStatus("queued")).toBe("queued")
     expect(normalizeRunStatus("escalated")).toBe("escalated")
+    expect(normalizeRunStatus("cancelled")).toBe("cancelled")
   })
 
   it("spells the host's `succeeded` as the product's `success`", () => {
     expect(normalizeRunStatus("succeeded")).toBe("success")
   })
 
-  it("degrades `cancelled` to the safest existing word rather than inventing a seventh", () => {
-    // Provisional, and deliberately not `success`: a stopped run did not land
-    // its work. `failed` is the only remaining word that is both terminal and
-    // not a success. The real answer is a DESIGN.md decision (a seventh status
-    // needs a hue *and* a hatch); until it is made the mapper must not coin one.
-    expect(normalizeRunStatus("cancelled")).toBe("failed")
+  it("stops folding `cancelled` onto `failed`", () => {
+    // It used to, for want of a word: `failed` was the only one that was both
+    // terminal and not a success, so a board that cancels runs routinely
+    // painted itself red for work nobody failed at. The DESIGN.md decision the
+    // old comment was waiting on has been made — `cancelled` has a hue on
+    // every palette and the sparsest hatch in the set — so the word survives
+    // the seam intact, and `failed` goes back to meaning a breakage.
+    expect(normalizeRunStatus("cancelled")).toBe("cancelled")
+    expect(normalizeRunStatus("cancelled")).not.toBe("failed")
   })
 
   it("degrades anything it has never been taught to the same fallback", () => {
@@ -99,12 +103,19 @@ describe("a `succeeded` run off the wire", () => {
     expect(badge.textContent).toContain("success")
   })
 
-  it("renders a badge for a cancelled run too", () => {
+  it("renders a cancelled run as itself, in the wire's own word", () => {
     const summary = mapRunViewToSummary(runViewFixture({ status: "cancelled" }))
+
+    expect(summary.status).toBe("cancelled")
+    expect(summary.done).toBe(true)
 
     render(<StatusBadge status={summary.status} />)
 
-    expect(renderedBadge().getAttribute("data-status")).toBe("failed")
+    // Both channels the badge carries: the attribute `tokens.css` hands the
+    // hue off, and the word itself — the Real Words Rule, verbatim.
+    const badge = renderedBadge()
+    expect(badge.getAttribute("data-status")).toBe("cancelled")
+    expect(badge.textContent).toContain("cancelled")
   })
 })
 
@@ -152,6 +163,22 @@ describe("the duty list's triage sort", () => {
       "escalated",
       "running",
       "success",
+    ])
+  })
+
+  it("sorts a cancelled run below a successful one, at the bottom", () => {
+    // The rank it lost when it stopped being `failed`: a deliberate stop is
+    // the least interesting row on a duty screen, not the second-worst.
+    const runs = [
+      summaryFixture("cancelled", 10),
+      summaryFixture("succeeded", 20),
+      summaryFixture("failed", 30),
+    ]
+
+    expect(triageOrder(runs).map((run) => run.status)).toEqual([
+      "failed",
+      "success",
+      "cancelled",
     ])
   })
 })

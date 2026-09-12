@@ -36,7 +36,7 @@
  * band, the legend swatch, the run graph's edge and the verdict rail are
  * shapes with no text in them, and a hatch is the only second channel they can
  * carry. A badge is the opposite kind of object — it is the place the status
- * is written out, in the product's own six words, next to a distinct glyph per
+ * is written out, in the product's own seven words, next to a distinct glyph per
  * status. It already has two channels that survive a photocopy, and a 45%
  * black hatch running under 11px mono would cost legibility to restate what
  * the label says. So the badge reads `--hue` off the one declaration in

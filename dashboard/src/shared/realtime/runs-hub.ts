@@ -12,7 +12,7 @@ import { env } from "@/shared/config/env"
  * The dashboard's client half of the runs hub.
  *
  * The server half lives in `platform/src/host/Comuki.Host/Realtime/`:
- * `RunsHub` is mapped at `/hubs/runs` (`RealtimeExtensions.MapComukiRealtime`)
+ * `RunsHub` is mapped at `/ws/runs` (`RealtimeExtensions.MapComukiRealtime`)
  * and speaks two client callbacks — `RunEvent` (one journal append, to the
  * `run:{id}` group) and `Attention` (an attention-worthy transition, to the
  * `project:{id}:attention` group). Both broadcasts are **group-addressed**,
@@ -70,10 +70,10 @@ export interface AttentionView {
  * The hub's address under the same base URL the kubb transport uses
  * (`VITE_API_BASE_URL`). Trailing slashes are stripped the same way
  * `kubb-client.ts` strips them, so `http://host/` and `http://host` both
- * produce `http://host/hubs/runs`.
+ * produce `http://host/ws/runs`.
  */
 export function runsHubUrl(baseUrl: string): string {
-  return baseUrl.replace(/\/+$/, "") + "/hubs/runs"
+  return baseUrl.replace(/\/+$/, "") + "/ws/runs"
 }
 
 /**

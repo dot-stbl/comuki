@@ -18,7 +18,7 @@ import {
 
 /**
  * The contract with the runs hub, pinned. The server half lives in
- * `platform/src/host/Comuki.Host/Realtime/` — `RunsHub` at `/hubs/runs`
+ * `platform/src/host/Comuki.Host/Realtime/` — `RunsHub` at `/ws/runs`
  * sends `RunEvent` (RunEventView) and `Attention` (AttentionView) — and
  * these tests hold the dashboard half to the same names and shapes:
  *
@@ -56,10 +56,10 @@ const attention: AttentionView = {
 describe("runsHubUrl", () => {
   it("appends the hub path under the API base URL and strips trailing slashes", () => {
     expect(runsHubUrl("http://localhost:17180")).toBe(
-      "http://localhost:17180/hubs/runs",
+      "http://localhost:17180/ws/runs",
     )
     expect(runsHubUrl("http://localhost:17180///")).toBe(
-      "http://localhost:17180/hubs/runs",
+      "http://localhost:17180/ws/runs",
     )
   })
 })

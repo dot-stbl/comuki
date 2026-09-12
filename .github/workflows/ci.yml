@@ -82,11 +82,6 @@ jobs:
     name: build frontend (dashboard)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Dashboard is mid-migration: `lint` currently fails (eslint config references
-    # rules whose plugins are not installed, e.g. jsx-a11y/anchor-is-valid,
-    # @typescript-eslint/naming-convention — 46 errors). typecheck and vitest are
-    # green. Non-blocking until the eslint config is fixed — then remove this line.
-    continue-on-error: true
     defaults:
       run:
         working-directory: dashboard

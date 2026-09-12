@@ -1,0 +1,120 @@
+.jobs {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  overflow: clip;
+}
+
+/* A schedule row: what runs (profile + brief), when it fires (cron is the
+   operator's own words; next fire is a value), whether it is live, and the
+   two acts. The grid reads left to right in the order a duty question is
+   asked. */
+.job {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem 11rem 8rem auto;
+  align-items: center;
+  gap: var(--s5);
+  padding: var(--s3) var(--s5);
+}
+
+.job + .job {
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+.jobWhat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+/* The profile key is the identity of the step that will run — a value out
+   of a closed catalog in the client's git, so the data voice at full
+   strength. */
+.jobProfile {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+
+/* The brief's title, read out of the JSON rather than the raw document —
+   the row says what the job does, and the raw `briefJson` is one `details`
+   away for whoever needs the whole thing. */
+.jobBrief {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}
+
+/* Cron is the operator's own configuration, verbatim — a value. */
+.jobCron {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text-muted);
+}
+
+.jobWhen {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.jobActs {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+/* A quiet answer where a list would read as a broken render. */
+.quiet {
+  margin: 0;
+  max-inline-size: 62ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.head {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: var(--s3);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+/* The narrow desk: the reading survives by stacking, the acts stay on their
+   own row rather than crushing into the corner. */
+@media (max-width: 1000px) {
+  .job {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .jobCron,
+  .jobWhen {
+    grid-column: 1 / -1;
+  }
+}

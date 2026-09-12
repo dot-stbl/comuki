@@ -5,8 +5,15 @@
 
 import { z } from "zod/v4"
 
-export const loginResponseSchema = z.object({
-  userId: z.uuid(),
-  email: z.string(),
-  displayName: z.string(),
-})
+/**
+ * @description Body of a successful login — the session itself lives in the cookie.
+ */
+export const loginResponseSchema = z
+  .object({
+    userId: z.uuid(),
+    email: z.string(),
+    displayName: z.string(),
+  })
+  .describe(
+    "Body of a successful login — the session itself lives in the cookie."
+  )

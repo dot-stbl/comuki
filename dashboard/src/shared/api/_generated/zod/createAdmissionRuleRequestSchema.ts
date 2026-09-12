@@ -5,8 +5,15 @@
 
 import { z } from "zod/v4"
 
-export const createAdmissionRuleRequestSchema = z.object({
-  projectId: z.uuid(),
-  mode: z.string(),
-  filterJson: z.string(),
-})
+/**
+ * @description Admission rule creation body (POST /api/v1/admission-rules).
+ */
+export const createAdmissionRuleRequestSchema = z
+  .object({
+    projectId: z.uuid().describe("Project the rule governs."),
+    mode: z.string().describe("watch | inbox."),
+    filterJson: z
+      .string()
+      .describe('Filter: {"labelsAny": [...], "projects": [...]}.'),
+  })
+  .describe("Admission rule creation body (POST /api/v1/admission-rules).")

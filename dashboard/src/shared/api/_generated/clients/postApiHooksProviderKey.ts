@@ -25,6 +25,7 @@ function getPostApiHooksProviderKeyUrl(
 }
 
 /**
+ * @summary Accepts one tracker webhook delivery.
  * {@link /api/hooks/:provider/:key}
  */
 export async function postApiHooksProviderKey(

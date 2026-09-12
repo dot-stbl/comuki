@@ -3,12 +3,17 @@
  * Do not edit manually.
  */
 
+/**
+ * @description OIDC link body (POST /api/v1/users/{userId}/oidc-link).
+ */
 export type LinkOidcRequest = {
   /**
+   * @description Provider key (matches an entry in `auth:oidc:providers`).
    * @type string
    */
   provider: string
   /**
+   * @description The external `sub` claim.
    * @type string
    */
   subjectId: string

@@ -11,7 +11,11 @@ import { z } from "zod/v4"
 /**
  * @description Created
  */
-export const postApiV1Grants201Schema = z.lazy(() => roleAssignmentViewSchema)
+export const postApiV1Grants201Schema = z
+  .lazy(() => roleAssignmentViewSchema)
+  .describe(
+    "Read model of a role assignment. Wire-friendly strings (role key,\r\nscope key) — the API never leaks enum names."
+  )
 
 /**
  * @description Bad Request
@@ -23,9 +27,9 @@ export const postApiV1Grants400Schema = z.lazy(() => problemDetailsSchema)
  */
 export const postApiV1Grants409Schema = z.lazy(() => problemDetailsSchema)
 
-export const postApiV1GrantsMutationRequestSchema = z.lazy(
-  () => grantRoleRequestSchema
-)
+export const postApiV1GrantsMutationRequestSchema = z
+  .lazy(() => grantRoleRequestSchema)
+  .describe("Grant role body (POST /api/v1/grants).")
 
 export const postApiV1GrantsMutationResponseSchema = z.lazy(
   () => postApiV1Grants201Schema

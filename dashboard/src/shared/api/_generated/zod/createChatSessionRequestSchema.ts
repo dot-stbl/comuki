@@ -5,7 +5,18 @@
 
 import { z } from "zod/v4"
 
-export const createChatSessionRequestSchema = z.object({
-  projectId: z.uuid().nullish(),
-  title: z.string().nullish(),
-})
+/**
+ * @description Create-session request body.
+ */
+export const createChatSessionRequestSchema = z
+  .object({
+    projectId: z
+      .uuid()
+      .describe("Optional project scope the session talks about.")
+      .nullish(),
+    title: z
+      .string()
+      .describe("Optional human title; defaults to a placeholder.")
+      .nullish(),
+  })
+  .describe("Create-session request body.")

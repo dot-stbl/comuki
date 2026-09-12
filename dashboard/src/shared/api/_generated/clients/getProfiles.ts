@@ -17,6 +17,7 @@ function getGetProfilesUrl() {
 }
 
 /**
+ * @summary Lists every worker profile.
  * {@link /profiles}
  */
 export async function getProfiles(

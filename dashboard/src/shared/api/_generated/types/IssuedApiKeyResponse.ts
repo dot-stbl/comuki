@@ -3,16 +3,22 @@
  * Do not edit manually.
  */
 
+/**
+ * @description The wire shape of `POST /api/v1/keys`. The plaintext is shown\r\nexactly once — the host keeps the prefix + HMAC and never returns the\r\nsecret again.
+ */
 export type IssuedApiKeyResponse = {
   /**
+   * @description Strong-typed api key id.
    * @type string, uuid
    */
   keyId: string
   /**
+   * @description 8-char public lookup prefix.
    * @type string
    */
   prefix: string
   /**
+   * @description Full `ck_…` token; shown once.
    * @type string
    */
   secret: string

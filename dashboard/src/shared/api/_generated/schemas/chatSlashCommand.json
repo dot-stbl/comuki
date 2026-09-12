@@ -2,11 +2,21 @@
   "required": ["key", "name", "description", "body", "source"],
   "type": "object",
   "properties": {
-    "key": { "type": "string" },
-    "name": { "type": "string" },
-    "description": { "type": "string" },
-    "body": { "type": "string" },
-    "source": { "type": "string" }
+    "key": {
+      "type": "string",
+      "description": "Command identity without the slash (e.g. `init`)."
+    },
+    "name": { "type": "string", "description": "Human-readable name." },
+    "description": { "type": "string", "description": "One-line description." },
+    "body": {
+      "type": "string",
+      "description": "Full instruction body expanded into the brain task (empty for graph-native commands like `init`)."
+    },
+    "source": {
+      "type": "string",
+      "description": "Where the command comes from: `builtin` or `control-plane`."
+    }
   },
+  "description": "One slash command as listed to the dashboard / autocomplete and expanded\r\ninto the brain task by the router.",
   "x-readme-ref-name": "ChatSlashCommand"
 }

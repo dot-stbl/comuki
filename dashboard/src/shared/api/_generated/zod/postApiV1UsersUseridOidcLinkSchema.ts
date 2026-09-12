@@ -15,9 +15,11 @@ export const postApiV1UsersUseridOidcLinkPathParamsSchema = z.object({
 /**
  * @description Created
  */
-export const postApiV1UsersUseridOidcLink201Schema = z.lazy(
-  () => oidcLinkViewSchema
-)
+export const postApiV1UsersUseridOidcLink201Schema = z
+  .lazy(() => oidcLinkViewSchema)
+  .describe(
+    "Read-model of an OIDC identity link — the local user id, the provider\r\nkey, and the external subject claim. Provider / subject are returned\r\nas the operator entered them (the stored form lower-cases the provider\r\nkey; the subject is preserved verbatim)."
+  )
 
 /**
  * @description Bad Request
@@ -40,9 +42,9 @@ export const postApiV1UsersUseridOidcLink409Schema = z.lazy(
   () => problemDetailsSchema
 )
 
-export const postApiV1UsersUseridOidcLinkMutationRequestSchema = z.lazy(
-  () => linkOidcRequestSchema
-)
+export const postApiV1UsersUseridOidcLinkMutationRequestSchema = z
+  .lazy(() => linkOidcRequestSchema)
+  .describe("OIDC link body (POST /api/v1/users/{userId}/oidc-link).")
 
 export const postApiV1UsersUseridOidcLinkMutationResponseSchema = z.lazy(
   () => postApiV1UsersUseridOidcLink201Schema

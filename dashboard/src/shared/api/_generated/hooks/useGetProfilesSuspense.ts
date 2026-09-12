@@ -42,6 +42,7 @@ export function getProfilesSuspenseQueryOptions(
 }
 
 /**
+ * @summary Lists every worker profile.
  * {@link /profiles}
  */
 export function useGetProfilesSuspense<

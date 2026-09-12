@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Strong-typed identifier of a user account. Entity ids are UUIDv7\r\n(Guid Guid.CreateVersion7()): time-ordered, stored as Postgres\r\n`uuid`, exposed to the API as strings. Lives in the Identity module\r\n(not Shared.Kernel) — other modules learn about users through contracts.
+ */
 export type UserId = {
   /**
    * @type string | undefined, uuid

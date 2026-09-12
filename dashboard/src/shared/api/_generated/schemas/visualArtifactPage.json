@@ -42,10 +42,17 @@
             "format": "int32"
           }
         },
+        "description": "One row in the visual-artifacts list — metadata only, no body.",
         "x-readme-ref-name": "VisualArtifactListItem"
-      }
+      },
+      "description": "Artifacts, oldest first. Empty when the project has none."
     },
-    "projectId": { "type": "string", "format": "uuid" }
+    "projectId": {
+      "type": "string",
+      "description": "Project id echoed back to the caller.",
+      "format": "uuid"
+    }
   },
+  "description": "Page envelope returned by the visual-artifacts list endpoint.",
   "x-readme-ref-name": "VisualArtifactPage"
 }

@@ -14,5 +14,6 @@
     "profilesGitUrl": { "type": ["null", "string"] },
     "profilesGitRef": { "type": ["null", "string"] }
   },
+  "description": "Wire body of POST /api/v1/projects.",
   "x-readme-ref-name": "CreateProjectRequest"
 }

@@ -45,6 +45,7 @@ export function deleteApiV1AdmissionRulesRuleidMutationOptions<
 }
 
 /**
+ * @summary Deletes a rule (idempotent).
  * {@link /api/v1/admission-rules/:ruleId}
  */
 export function useDeleteApiV1AdmissionRulesRuleid<TContext>(

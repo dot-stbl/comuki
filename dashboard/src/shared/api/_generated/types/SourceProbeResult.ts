@@ -3,20 +3,27 @@
  * Do not edit manually.
  */
 
+/**
+ * @description The outcome of a probe — does the upstream answer, how fast, what id\r\nwould the host suggest for a follow-up create. The `latencyMs`\r\nis measured end-to-end (HTTP request to first response byte) and is\r\nonly meaningful when `reachable` is true.
+ */
 export type SourceProbeResult = {
   /**
+   * @description Upstream answered (any HTTP status counts as reachable).
    * @type boolean
    */
   reachable: boolean
   /**
+   * @description Round-trip latency when reachable; 0 otherwise.
    * @type integer,string, int64
    */
   latencyMs: number | string
   /**
+   * @description Optional id the provider returned (e.g. GitHub repo id) — null when unknown.
    * @type null,string
    */
   suggestedId: string | null
   /**
+   * @description Provider-specific short status sentence (e.g. `\"github: 200 OK\"`) for the operator.
    * @type string
    */
   message: string

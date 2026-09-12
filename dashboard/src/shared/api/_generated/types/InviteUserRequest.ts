@@ -3,16 +3,22 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Invite user body (POST /api/v1/users).
+ */
 export type InviteUserRequest = {
   /**
+   * @description Login email (unique).
    * @type string
    */
   email: string
   /**
+   * @description Optional display name; defaults to the email local-part when omitted.
    * @type null,string
    */
   displayName?: string | null
   /**
+   * @description Optional bootstrap password. When omitted the operator intends to send a\r\nseparate invitation link and the new account lands password-less.
    * @type null,string
    */
   password?: string | null

@@ -1,0 +1,12 @@
+{
+  "required": ["query"],
+  "properties": {
+    "kind": { "enum": ["handoff"], "type": "string" },
+    "query": {
+      "type": "string",
+      "description": "Search query that opens the destination."
+    }
+  },
+  "description": "A hand-off to a screen. The console resolves the query through the\r\nsame search shapes the command palette uses, so chat and palette\r\ncannot disagree about where an answer lives.",
+  "x-readme-ref-name": "MessagePartHandoffPart"
+}

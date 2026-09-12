@@ -8,19 +8,283 @@
         "required": ["id", "role", "content", "createdAt"],
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "role": { "type": "string" },
-          "content": { "type": "string" },
-          "toolName": { "type": ["null", "string"] },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "description": "Message id (uuidv7).",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "description": "Role wire string: user | assistant | system | tool."
+          },
+          "content": { "type": "string", "description": "Message text." },
+          "toolName": {
+            "type": ["null", "string"],
+            "description": "Tool name for role=tool rows; null otherwise."
+          },
+          "parts": {
+            "type": ["null", "array"],
+            "items": {
+              "required": ["kind"],
+              "type": "object",
+              "anyOf": [
+                {
+                  "required": ["markdown"],
+                  "properties": {
+                    "kind": { "enum": ["text"], "type": "string" },
+                    "markdown": {
+                      "type": "string",
+                      "description": "Message text in markdown."
+                    }
+                  },
+                  "description": "Markdown prose — the default shape of a reply.",
+                  "x-readme-ref-name": "MessagePartTextPart"
+                },
+                {
+                  "required": ["language", "source"],
+                  "properties": {
+                    "kind": { "enum": ["code"], "type": "string" },
+                    "language": {
+                      "type": "string",
+                      "description": "Highlighting language key (`csharp`, `ts`, …)."
+                    },
+                    "source": {
+                      "type": "string",
+                      "description": "The listing itself, verbatim."
+                    },
+                    "path": {
+                      "type": ["null", "string"],
+                      "description": "Repository-relative file path; null when the snippet is free-standing."
+                    },
+                    "startLine": {
+                      "pattern": "^-?(?:0|[1-9]\\d*)$",
+                      "type": ["null", "integer", "string"],
+                      "description": "1-based line the listing starts at; null when unanchored.",
+                      "format": "int32"
+                    }
+                  },
+                  "description": "A source listing. Path and\r\nStartLine anchor it in a repository when the\r\nfragment was read from one.",
+                  "x-readme-ref-name": "MessagePartCodePart"
+                },
+                {
+                  "required": ["dialect", "source"],
+                  "properties": {
+                    "kind": { "enum": ["diagram"], "type": "string" },
+                    "dialect": {
+                      "type": "string",
+                      "description": "Diagram dialect (`mermaid`, `dot`, …)."
+                    },
+                    "source": {
+                      "type": "string",
+                      "description": "Diagram source, verbatim."
+                    }
+                  },
+                  "description": "A diagram carried as its source text; the console renders it.",
+                  "x-readme-ref-name": "MessagePartDiagramPart"
+                },
+                {
+                  "required": ["text"],
+                  "properties": {
+                    "kind": { "enum": ["thinking"], "type": "string" },
+                    "text": {
+                      "type": "string",
+                      "description": "Reasoning text."
+                    },
+                    "tokens": {
+                      "pattern": "^-?(?:0|[1-9]\\d*)$",
+                      "type": ["null", "integer", "string"],
+                      "description": "Reasoning tokens the model reported; null when unknown.",
+                      "format": "int32"
+                    }
+                  },
+                  "description": "The model's visible reasoning — collapsed by default in the console.",
+                  "x-readme-ref-name": "MessagePartThinkingPart"
+                },
+                {
+                  "required": ["name", "inputJson", "status"],
+                  "properties": {
+                    "kind": { "enum": ["tool"], "type": "string" },
+                    "name": {
+                      "type": "string",
+                      "description": "Tool name as the runtime knows it (`create_ticket`, …)."
+                    },
+                    "inputJson": {
+                      "type": "string",
+                      "description": "Arguments the tool was called with, as JSON."
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "A value from ToolPartStatuses."
+                    },
+                    "outputJson": {
+                      "type": ["null", "string"],
+                      "description": "Observation payload as JSON; null while running."
+                    },
+                    "durationMs": {
+                      "pattern": "^-?(?:0|[1-9]\\d*)$",
+                      "type": ["null", "integer", "string"],
+                      "description": "Wall-clock duration in milliseconds; null while running.",
+                      "format": "int64"
+                    }
+                  },
+                  "description": "One tool invocation. A running call is journalled with\r\nstring ToolPartStatuses.Running and no output; the terminal\r\nform carries the observation.",
+                  "x-readme-ref-name": "MessagePartToolPart"
+                },
+                {
+                  "required": ["query"],
+                  "properties": {
+                    "kind": { "enum": ["handoff"], "type": "string" },
+                    "query": {
+                      "type": "string",
+                      "description": "Search query that opens the destination."
+                    }
+                  },
+                  "description": "A hand-off to a screen. The console resolves the query through the\r\nsame search shapes the command palette uses, so chat and palette\r\ncannot disagree about where an answer lives.",
+                  "x-readme-ref-name": "MessagePartHandoffPart"
+                },
+                {
+                  "required": ["nodes", "edges"],
+                  "properties": {
+                    "kind": { "enum": ["plan"], "type": "string" },
+                    "nodes": {
+                      "type": "array",
+                      "items": {
+                        "required": ["id", "title", "profileKey", "brief"],
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Node id, unique inside the plan (e.g. `n1`)."
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "Short human title of the step."
+                          },
+                          "profileKey": {
+                            "type": "string",
+                            "description": "Worker profile key from the catalog (e.g. `implement`)."
+                          },
+                          "brief": {
+                            "type": "string",
+                            "description": "The worker brief — what this step must produce."
+                          }
+                        },
+                        "description": "One step of a plan, executed by one worker with one profile.",
+                        "x-readme-ref-name": "PlanNode"
+                      },
+                      "description": "Plan steps."
+                    },
+                    "edges": {
+                      "type": "array",
+                      "items": {
+                        "required": ["from", "to"],
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "string",
+                            "description": "Id of the upstream node."
+                          },
+                          "to": {
+                            "type": "string",
+                            "description": "Id of the downstream node."
+                          }
+                        },
+                        "description": "A dependency: To starts after From finishes.",
+                        "x-readme-ref-name": "PlanEdge"
+                      },
+                      "description": "Ordering dependencies between steps."
+                    }
+                  },
+                  "description": "The decomposition DAG — the approve card. Nodes and edges are the\r\ncanonical Plan shapes, so a part and a plan payload\r\nnever drift apart.",
+                  "x-readme-ref-name": "MessagePartPlanPart"
+                }
+              ],
+              "description": "            One fragment of a chat message. A message is an ordered list of parts,\r\n            so a single assistant turn can carry prose, three tool calls and a plan\r\n            card without becoming five unrelated transcript rows.\r\n            The union is closed to nested records (private constructor) and\r\ndiscriminated on the wire by kind — the keys live in\r\nMessagePartKinds. New kinds are added here as further\r\nnested records plus a JsonDerivedTypeAttribute line; the\r\nP2 question/decision parts land exactly that way.",
+              "discriminator": {
+                "propertyName": "kind",
+                "mapping": {
+                  "text": "#kubb-inline-0",
+                  "code": "#kubb-inline-1",
+                  "diagram": "#kubb-inline-2",
+                  "thinking": "#kubb-inline-3",
+                  "tool": "#kubb-inline-4",
+                  "handoff": "#kubb-inline-5",
+                  "plan": "#kubb-inline-6"
+                }
+              },
+              "x-readme-ref-name": "MessagePart"
+            },
+            "description": "Ordered message parts, discriminated by `kind`; null on a row\r\nwritten before parts existed or one whose payload no longer parses."
+          },
+          "meta": {
+            "oneOf": [
+              { "type": "null" },
+              {
+                "description": "What producing the row cost; null when unknown.",
+                "type": "object",
+                "properties": {
+                  "model": {
+                    "type": ["null", "string"],
+                    "description": "Model id that produced the message (`glm-4.7`, …); null for rows no model wrote."
+                  },
+                  "tokensIn": {
+                    "pattern": "^-?(?:0|[1-9]\\d*)$",
+                    "type": ["null", "integer", "string"],
+                    "description": "Prompt tokens consumed.",
+                    "format": "int32"
+                  },
+                  "tokensOut": {
+                    "pattern": "^-?(?:0|[1-9]\\d*)$",
+                    "type": ["null", "integer", "string"],
+                    "description": "Completion tokens produced.",
+                    "format": "int32"
+                  },
+                  "costMicros": {
+                    "pattern": "^-?(?:0|[1-9]\\d*)$",
+                    "type": ["null", "integer", "string"],
+                    "description": "Cost in USD micros (the unit the costs capability journals).",
+                    "format": "int64"
+                  },
+                  "latencyMs": {
+                    "pattern": "^-?(?:0|[1-9]\\d*)$",
+                    "type": ["null", "integer", "string"],
+                    "description": "Wall-clock time to produce the message, in milliseconds.",
+                    "format": "int64"
+                  },
+                  "stopReason": {
+                    "type": ["null", "string"],
+                    "description": "Why generation stopped (`stop`, `length`, `tool_use`, …)."
+                  }
+                },
+                "x-readme-ref-name": "ChatMessageMeta"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the row was appended.",
+            "format": "date-time"
+          }
         },
+        "description": "Transcript row read model. IReadOnlyList&lt;MessagePart&gt;? ChatMessageView.Parts is the rich shape the\r\nconsole renders; string ChatMessageView.Content is the flat projection of the\r\nsame row and stays populated for every reader that predates parts.",
         "x-readme-ref-name": "ChatMessageView"
-      }
+      },
+      "description": "Journal rows the action appended (digest, tool, reply)."
     },
-    "awaitingApproval": { "type": "boolean" },
+    "awaitingApproval": {
+      "type": "boolean",
+      "description": "True when the thread waits for an approve decision."
+    },
     "pendingPlan": {
-      "oneOf": [{ "type": "null" }, { "x-readme-ref-name": "JsonDocument" }]
+      "oneOf": [
+        { "type": "null" },
+        {
+          "description": "Parsed plan of the pending card; null when not awaiting.",
+          "x-readme-ref-name": "JsonDocument"
+        }
+      ]
     }
   },
+  "description": "Turn outcome: the reply view plus the pending approve card when the\r\nthread interrupted. The card carries the canonical plan JSON the\r\ndashboard renders; approve/reject posts to\r\n`/api/v1/chat/sessions/{id}/approve`.",
   "x-readme-ref-name": "ChatTurnResultView"
 }

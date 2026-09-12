@@ -6,9 +6,20 @@
 import { visualArtifactListItemSchema } from "./visualArtifactListItemSchema"
 import { z } from "zod/v4"
 
-export const visualArtifactPageSchema = z.object({
-  get items() {
-    return z.array(visualArtifactListItemSchema)
-  },
-  projectId: z.uuid(),
-})
+/**
+ * @description Page envelope returned by the visual-artifacts list endpoint.
+ */
+export const visualArtifactPageSchema = z
+  .object({
+    get items() {
+      return z
+        .array(
+          visualArtifactListItemSchema.describe(
+            "One row in the visual-artifacts list — metadata only, no body."
+          )
+        )
+        .describe("Artifacts, oldest first. Empty when the project has none.")
+    },
+    projectId: z.uuid().describe("Project id echoed back to the caller."),
+  })
+  .describe("Page envelope returned by the visual-artifacts list endpoint.")

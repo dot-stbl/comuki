@@ -10,13 +10,17 @@ import { z } from "zod/v4"
 /**
  * @description OK
  */
-export const postApiV1SourcesProbe200Schema = z.lazy(
-  () => sourceProbeResultSchema
-)
+export const postApiV1SourcesProbe200Schema = z
+  .lazy(() => sourceProbeResultSchema)
+  .describe(
+    "The outcome of a probe — does the upstream answer, how fast, what id\r\nwould the host suggest for a follow-up create. The `latencyMs`\r\nis measured end-to-end (HTTP request to first response byte) and is\r\nonly meaningful when `reachable` is true."
+  )
 
-export const postApiV1SourcesProbeMutationRequestSchema = z.lazy(
-  () => probeSourceDraftRequestSchema
-)
+export const postApiV1SourcesProbeMutationRequestSchema = z
+  .lazy(() => probeSourceDraftRequestSchema)
+  .describe(
+    "Body for `POST /api/v1/sources/probe` — the operator types a\r\ndraft plus a plaintext credential in the connect form and asks the\r\nhost to reach the upstream before saving."
+  )
 
 export const postApiV1SourcesProbeMutationResponseSchema = z.lazy(
   () => postApiV1SourcesProbe200Schema

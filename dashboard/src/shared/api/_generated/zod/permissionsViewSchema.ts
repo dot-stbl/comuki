@@ -5,7 +5,12 @@
 
 import { z } from "zod/v4"
 
-export const permissionsViewSchema = z.object({
-  platform: z.array(z.string()),
-  projects: z.object({}).catchall(z.array(z.string())),
-})
+/**
+ * @description Platform-wide and per-project permission keys.
+ */
+export const permissionsViewSchema = z
+  .object({
+    platform: z.array(z.string()),
+    projects: z.object({}).catchall(z.array(z.string())),
+  })
+  .describe("Platform-wide and per-project permission keys.")

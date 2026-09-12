@@ -1,0 +1,56 @@
+{
+  "required": ["nodes", "edges"],
+  "properties": {
+    "kind": { "enum": ["plan"], "type": "string" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "required": ["id", "title", "profileKey", "brief"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Node id, unique inside the plan (e.g. `n1`)."
+          },
+          "title": {
+            "type": "string",
+            "description": "Short human title of the step."
+          },
+          "profileKey": {
+            "type": "string",
+            "description": "Worker profile key from the catalog (e.g. `implement`)."
+          },
+          "brief": {
+            "type": "string",
+            "description": "The worker brief — what this step must produce."
+          }
+        },
+        "description": "One step of a plan, executed by one worker with one profile.",
+        "x-readme-ref-name": "PlanNode"
+      },
+      "description": "Plan steps."
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "required": ["from", "to"],
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "Id of the upstream node."
+          },
+          "to": {
+            "type": "string",
+            "description": "Id of the downstream node."
+          }
+        },
+        "description": "A dependency: To starts after From finishes.",
+        "x-readme-ref-name": "PlanEdge"
+      },
+      "description": "Ordering dependencies between steps."
+    }
+  },
+  "description": "The decomposition DAG — the approve card. Nodes and edges are the\r\ncanonical Plan shapes, so a part and a plan payload\r\nnever drift apart.",
+  "x-readme-ref-name": "MessagePartPlanPart"
+}

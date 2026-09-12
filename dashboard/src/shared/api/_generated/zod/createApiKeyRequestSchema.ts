@@ -5,9 +5,22 @@
 
 import { z } from "zod/v4"
 
-export const createApiKeyRequestSchema = z.object({
-  userId: z.uuid(),
-  label: z.string(),
-  expiresAt: z.iso.datetime({ offset: true }).nullish(),
-  tenantProjectId: z.uuid().nullish(),
-})
+/**
+ * @description Create API key body (POST /api/v1/keys).
+ */
+export const createApiKeyRequestSchema = z
+  .object({
+    userId: z.uuid().describe("Owner user id."),
+    label: z.string().describe("Human-readable label."),
+    expiresAt: z.iso
+      .datetime({ offset: true })
+      .describe("Optional expiry timestamp (UTC).")
+      .nullish(),
+    tenantProjectId: z
+      .uuid()
+      .describe(
+        "Optional tenant scope. When set, the key only authenticates\r\nrequests that carry the matching `X-Comuki-Tenant` header.\r\nThe host validates that the requesting subject has the right to\r\nscope a key to this project — admin-only today."
+      )
+      .nullish(),
+  })
+  .describe("Create API key body (POST /api/v1/keys).")

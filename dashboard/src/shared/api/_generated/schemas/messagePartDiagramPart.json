@@ -1,0 +1,13 @@
+{
+  "required": ["dialect", "source"],
+  "properties": {
+    "kind": { "enum": ["diagram"], "type": "string" },
+    "dialect": {
+      "type": "string",
+      "description": "Diagram dialect (`mermaid`, `dot`, …)."
+    },
+    "source": { "type": "string", "description": "Diagram source, verbatim." }
+  },
+  "description": "A diagram carried as its source text; the console renders it.",
+  "x-readme-ref-name": "MessagePartDiagramPart"
+}

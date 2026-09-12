@@ -26,6 +26,7 @@ function getGetApiV1AdmissionRulesRuleidUrl(
 }
 
 /**
+ * @summary Reads one rule.
  * {@link /api/v1/admission-rules/:ruleId}
  */
 export async function getApiV1AdmissionRulesRuleid(

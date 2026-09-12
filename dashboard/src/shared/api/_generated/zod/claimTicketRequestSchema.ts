@@ -5,6 +5,11 @@
 
 import { z } from "zod/v4"
 
-export const claimTicketRequestSchema = z.object({
-  ticketId: z.uuid(),
-})
+/**
+ * @description Inbox claim body (POST /api/v1/inbox/claim).
+ */
+export const claimTicketRequestSchema = z
+  .object({
+    ticketId: z.uuid().describe("The pending ticket to claim."),
+  })
+  .describe("Inbox claim body (POST /api/v1/inbox/claim).")

@@ -3,20 +3,27 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Wire shape of a secret-rotation result (issue #46). Carries the\r\nfreshly-generated secret exactly once — the operator needs it to\r\nconfigure the tracker; it does not appear in any other endpoint\r\nresponse (list / get / source-connection-view).
+ */
 export type SecretRotationResponse = {
   /**
+   * @description Connection whose secret was rotated.
    * @type string, uuid
    */
   sourceId: string
   /**
+   * @description Plaintext secret (hex). Disclosed only here.
    * @type string
    */
   secret: string
   /**
+   * @description Env-var name the connection still points to.
    * @type string
    */
   secretEnvRef: string
   /**
+   * @description Wall-clock the rotation was stamped.
    * @type string, date-time
    */
   rotatedAt: string

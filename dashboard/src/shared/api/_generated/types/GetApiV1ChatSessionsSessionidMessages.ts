@@ -15,6 +15,7 @@ export type GetApiV1ChatSessionsSessionidMessagesPathParams = {
 
 export type GetApiV1ChatSessionsSessionidMessagesQueryParams = {
   /**
+   * @description 1-based page number.
    * @default 1
    * @type integer,string | undefined, int32
    */

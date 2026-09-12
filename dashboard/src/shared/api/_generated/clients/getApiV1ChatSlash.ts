@@ -17,6 +17,7 @@ function getGetApiV1ChatSlashUrl() {
 }
 
 /**
+ * @summary Lists every available slash command, ordered by key.
  * {@link /api/v1/chat/slash}
  */
 export async function getApiV1ChatSlash(

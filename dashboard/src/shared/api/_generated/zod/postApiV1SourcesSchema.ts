@@ -11,18 +11,20 @@ import { z } from "zod/v4"
 /**
  * @description Created
  */
-export const postApiV1Sources201Schema = z.lazy(
-  () => sourceConnectionViewSchema
-)
+export const postApiV1Sources201Schema = z
+  .lazy(() => sourceConnectionViewSchema)
+  .describe(
+    "Read-model of a source connection. Settings and secret env NAMES are\r\nreturned (never secret values) plus the hook path to paste into the\r\ntracker's webhook settings."
+  )
 
 /**
  * @description Bad Request
  */
 export const postApiV1Sources400Schema = z.lazy(() => problemDetailsSchema)
 
-export const postApiV1SourcesMutationRequestSchema = z.lazy(
-  () => createSourceConnectionRequestSchema
-)
+export const postApiV1SourcesMutationRequestSchema = z
+  .lazy(() => createSourceConnectionRequestSchema)
+  .describe("Source connection creation body (POST /api/v1/sources).")
 
 export const postApiV1SourcesMutationResponseSchema = z.lazy(
   () => postApiV1Sources201Schema

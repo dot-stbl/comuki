@@ -3,16 +3,22 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Scheduled job partial-update body\r\n(`PATCH /api/v1/projects/{projectId}/scheduled-jobs/{jobId}`).\r\nNull fields leave the stored value untouched — the canonical PATCH\r\nsemantics. `cronExpression` is re-parsed on write; a malformed\r\nvalue surfaces `400` with the `scheduler.invalid_cron`\r\ncode.
+ */
 export type UpdateScheduledJobRequest = {
   /**
+   * @description Null keeps the cron; non-null is re-parsed.
    * @type null,string
    */
   cronExpression?: string | null
   /**
+   * @description Worker brief payload replacement; null keeps the stored value.
    * @type null,string
    */
   briefJson?: string | null
   /**
+   * @description Null keeps the flag; false disables the dispatcher for this job.
    * @type null,boolean
    */
   enabled?: boolean | null

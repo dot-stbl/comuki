@@ -3,36 +3,47 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Wire row for one work-item in the run\'s plan.
+ */
 export type RunDetailWorkItem = {
   /**
+   * @description Work-item id.
    * @type string, uuid
    */
   id: string
   /**
+   * @description Worker profile key (e.g. `implement`, `explore-readonly`).
    * @type string
    */
   profile: string
   /**
+   * @description Brain-authored step name; empty when not provided.
    * @type string
    */
   label: string
   /**
+   * @description Wire status string (lowercase).
    * @type string
    */
   status: string
   /**
+   * @description Ids of prerequisite work items (joined from `work_item_dependencies`).
    * @type array
    */
   dependsOn: string[]
   /**
+   * @description Reserved per-item spend in USD; `0` until usage_events is wired.
    * @type number,string, double
    */
   cost: number | string
   /**
+   * @description Reserved per-item token count; `0` for the same reason.
    * @type integer,string, int64
    */
   tokens: number | string
   /**
+   * @description First transition away from `Queued`, or `null` while still queued.
    * @type null,string, date-time
    */
   startedAt: string | null

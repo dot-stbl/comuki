@@ -6,9 +6,22 @@
 import { roleAssignmentViewSchema } from "./roleAssignmentViewSchema"
 import { z } from "zod/v4"
 
-export const identityAdminGrantsPageSchema = z.object({
-  get items() {
-    return z.array(roleAssignmentViewSchema)
-  },
-  total: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-})
+/**
+ * @description Paged envelope for role assignments.
+ */
+export const identityAdminGrantsPageSchema = z
+  .object({
+    get items() {
+      return z
+        .array(
+          roleAssignmentViewSchema.describe(
+            "Read model of a role assignment. Wire-friendly strings (role key,\r\nscope key) — the API never leaks enum names."
+          )
+        )
+        .describe("Page contents.")
+    },
+    total: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Total rows across all pages."),
+  })
+  .describe("Paged envelope for role assignments.")

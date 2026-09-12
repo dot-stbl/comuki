@@ -3,12 +3,17 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Pinned revisions of the worker image and the control-plane profiles ref.
+ */
 export type RunDetailRevision = {
   /**
+   * @description Git ref of the control-plane / profiles repo (pinned on the work item).
    * @type string
    */
   rules: string
   /**
+   * @description Worker image + digest (pinned on the work item).
    * @type string
    */
   sdk: string

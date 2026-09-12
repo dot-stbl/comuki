@@ -6,5 +6,6 @@
     "email": { "type": "string" },
     "displayName": { "type": "string" }
   },
+  "description": "Body of a successful login — the session itself lives in the cookie.",
   "x-readme-ref-name": "LoginResponse"
 }

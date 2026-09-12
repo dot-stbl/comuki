@@ -5,11 +5,43 @@
 
 import { z } from "zod/v4"
 
-export const knowledgeIngestRequestSchema = z.object({
-  projectId: z.uuid().nullish(),
-  title: z.optional(z.string()),
-  source: z.optional(z.string()),
-  sourceRef: z.optional(z.string()),
-  mimeType: z.optional(z.string()),
-  text: z.optional(z.string()),
-})
+/**
+ * @description One ingest call — the body of `POST /api/v1/knowledge/ingest`.\r\nstring KnowledgeIngestRequest.Source is a wire key (`git` | `upload` |\r\n`url`); the text is the raw bytes the worker chunks and\r\nembeds. The request is project-scoped (projectId) or global\r\n(projectId omitted).
+ */
+export const knowledgeIngestRequestSchema = z
+  .object({
+    projectId: z
+      .uuid()
+      .describe("Owning project; null = global corpus.")
+      .nullish(),
+    title: z.optional(
+      z
+        .string()
+        .describe(
+          "Human-readable title (file name, page heading, repo display name)."
+        )
+    ),
+    source: z.optional(
+      z.string().describe("Origin kind — git | upload | url. Wire key.")
+    ),
+    sourceRef: z.optional(
+      z
+        .string()
+        .describe(
+          "Origin pointer — git URL+ref, uploaded blob id, or fetched URL."
+        )
+    ),
+    mimeType: z.optional(
+      z
+        .string()
+        .describe(
+          "Detected MIME type of the original bytes (text/markdown, text/plain, …)."
+        )
+    ),
+    text: z.optional(
+      z.string().describe("Raw text the worker chunks + embeds.")
+    ),
+  })
+  .describe(
+    "One ingest call — the body of `POST /api/v1/knowledge/ingest`.\r\nstring KnowledgeIngestRequest.Source is a wire key (`git` | `upload` |\r\n`url`); the text is the raw bytes the worker chunks and\r\nembeds. The request is project-scoped (projectId) or global\r\n(projectId omitted)."
+  )

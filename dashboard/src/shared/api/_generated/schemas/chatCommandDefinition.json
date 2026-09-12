@@ -2,10 +2,23 @@
   "required": ["key", "name", "description", "body"],
   "type": "object",
   "properties": {
-    "key": { "type": "string" },
-    "name": { "type": "string" },
-    "description": { "type": "string" },
-    "body": { "type": "string" }
+    "key": {
+      "type": "string",
+      "description": "Stable identity: the file stem of the command document (e.g. `init`); the slash-command name."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name from the document frontmatter."
+    },
+    "description": {
+      "type": "string",
+      "description": "One-line description for command lists and autocomplete."
+    },
+    "body": {
+      "type": "string",
+      "description": "Markdown instructions the brain follows when the command is invoked."
+    }
   },
+  "description": "One built-in chat command as listed to the chat harness and the dashboard.",
   "x-readme-ref-name": "ChatCommandDefinition"
 }

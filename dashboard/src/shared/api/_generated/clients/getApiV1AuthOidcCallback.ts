@@ -20,6 +20,11 @@ function getGetApiV1AuthOidcCallbackUrl() {
 }
 
 /**
+ * @summary The unified OIDC callback: validates the state row, exchanges the
+ * code at the IdP's token endpoint, verifies the id_token signature,
+ * runs account linking, and signs the user in via the cookie
+ * scheme. On any failure, redirects to `/login?reason=oidc-failed&amp;error=...`
+ * so the SPA can show what happened without exposing internals.
  * {@link /api/v1/auth/oidc/callback}
  */
 export async function getApiV1AuthOidcCallback(

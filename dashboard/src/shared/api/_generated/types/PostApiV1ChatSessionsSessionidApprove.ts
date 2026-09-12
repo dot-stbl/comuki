@@ -29,6 +29,11 @@ export type PostApiV1ChatSessionsSessionidApprove404 = ProblemDetails
  */
 export type PostApiV1ChatSessionsSessionidApprove409 = ProblemDetails
 
+/**
+ * @description Service Unavailable
+ */
+export type PostApiV1ChatSessionsSessionidApprove503 = ProblemDetails
+
 export type PostApiV1ChatSessionsSessionidApproveMutationRequest =
   ChatApproveRequest
 
@@ -42,4 +47,5 @@ export type PostApiV1ChatSessionsSessionidApproveMutation = {
   Errors:
     | PostApiV1ChatSessionsSessionidApprove404
     | PostApiV1ChatSessionsSessionidApprove409
+    | PostApiV1ChatSessionsSessionidApprove503
 }

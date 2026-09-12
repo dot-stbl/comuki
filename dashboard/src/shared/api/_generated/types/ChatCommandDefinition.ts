@@ -3,20 +3,27 @@
  * Do not edit manually.
  */
 
+/**
+ * @description One built-in chat command as listed to the chat harness and the dashboard.
+ */
 export type ChatCommandDefinition = {
   /**
+   * @description Stable identity: the file stem of the command document (e.g. `init`); the slash-command name.
    * @type string
    */
   key: string
   /**
+   * @description Human-readable name from the document frontmatter.
    * @type string
    */
   name: string
   /**
+   * @description One-line description for command lists and autocomplete.
    * @type string
    */
   description: string
   /**
+   * @description Markdown instructions the brain follows when the command is invoked.
    * @type string
    */
   body: string

@@ -5,6 +5,11 @@
 
 import { z } from "zod/v4"
 
-export const failWorkItemRequestSchema = z.object({
-  reason: z.string(),
-})
+/**
+ * @description Failure body: human-readable reason text.
+ */
+export const failWorkItemRequestSchema = z
+  .object({
+    reason: z.string(),
+  })
+  .describe("Failure body: human-readable reason text.")

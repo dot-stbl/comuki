@@ -5,10 +5,20 @@
 
 import { z } from "zod/v4"
 
-export const createNativeTicketRequestSchema = z.object({
-  projectId: z.uuid(),
-  title: z.string(),
-  body: z.optional(z.string()),
-  externalId: z.string().nullish(),
-  author: z.string().nullish(),
-})
+/**
+ * @description Native ticket creation body (POST /api/v1/tickets).
+ */
+export const createNativeTicketRequestSchema = z
+  .object({
+    projectId: z
+      .uuid()
+      .describe("Project the ticket (and its run) belongs to."),
+    title: z.string().describe("Ticket title."),
+    body: z.optional(z.string().describe("Ticket body.")),
+    externalId: z
+      .string()
+      .describe("Caller-supplied dedupe id; generated when empty.")
+      .nullish(),
+    author: z.string().describe("Author label.").nullish(),
+  })
+  .describe("Native ticket creation body (POST /api/v1/tickets).")

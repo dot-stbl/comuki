@@ -5,16 +5,22 @@
 
 import type { ArtifactPointer } from "./ArtifactPointer"
 
+/**
+ * @description One page of run-artifact pointers — wraps ArtifactPointer with the project/run id echo.
+ */
 export type RunArtifactsPage = {
   /**
+   * @description Bundle objects, empty when the run has not been packaged yet.
    * @type array
    */
   items: ArtifactPointer[]
   /**
+   * @description Owning project id.
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description Run id the bundle belongs to.
    * @type string, uuid
    */
   runId: string

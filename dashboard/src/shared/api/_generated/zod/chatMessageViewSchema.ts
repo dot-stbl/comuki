@@ -3,12 +3,43 @@
  * Do not edit manually.
  */
 
+import { chatMessageMetaSchema } from "./chatMessageMetaSchema"
+import { messagePartSchema } from "./messagePartSchema"
 import { z } from "zod/v4"
 
-export const chatMessageViewSchema = z.object({
-  id: z.uuid(),
-  role: z.string(),
-  content: z.string(),
-  toolName: z.string().nullish(),
-  createdAt: z.iso.datetime({ offset: true }),
-})
+/**
+ * @description Transcript row read model. IReadOnlyList&lt;MessagePart&gt;? ChatMessageView.Parts is the rich shape the\r\nconsole renders; string ChatMessageView.Content is the flat projection of the\r\nsame row and stays populated for every reader that predates parts.
+ */
+export const chatMessageViewSchema = z
+  .object({
+    id: z.uuid().describe("Message id (uuidv7)."),
+    role: z
+      .string()
+      .describe("Role wire string: user | assistant | system | tool."),
+    content: z.string().describe("Message text."),
+    toolName: z
+      .string()
+      .describe("Tool name for role=tool rows; null otherwise.")
+      .nullish(),
+    get parts() {
+      return z
+        .array(
+          messagePartSchema.describe(
+            "            One fragment of a chat message. A message is an ordered list of parts,\r\n            so a single assistant turn can carry prose, three tool calls and a plan\r\n            card without becoming five unrelated transcript rows.\r\n            The union is closed to nested records (private constructor) and\r\ndiscriminated on the wire by kind — the keys live in\r\nMessagePartKinds. New kinds are added here as further\r\nnested records plus a JsonDerivedTypeAttribute line; the\r\nP2 question/decision parts land exactly that way."
+          )
+        )
+        .describe(
+          "Ordered message parts, discriminated by `kind`; null on a row\r\nwritten before parts existed or one whose payload no longer parses."
+        )
+        .nullish()
+    },
+    get meta() {
+      return z.union([chatMessageMetaSchema, z.null()]).optional()
+    },
+    createdAt: z.iso
+      .datetime({ offset: true })
+      .describe("When the row was appended."),
+  })
+  .describe(
+    "Transcript row read model. IReadOnlyList&lt;MessagePart&gt;? ChatMessageView.Parts is the rich shape the\r\nconsole renders; string ChatMessageView.Content is the flat projection of the\r\nsame row and stays populated for every reader that predates parts."
+  )

@@ -7,10 +7,12 @@ import type { ProblemDetails } from "./ProblemDetails"
 
 export type ArtifactsVisualContentPathParams = {
   /**
+   * @description Owning project (path, scope filter).
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description Artifact id (path).
    * @type string, uuid
    */
   artifactId: string

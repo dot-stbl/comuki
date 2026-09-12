@@ -1,6 +1,13 @@
 {
   "required": ["ticketId"],
   "type": "object",
-  "properties": { "ticketId": { "type": "string", "format": "uuid" } },
+  "properties": {
+    "ticketId": {
+      "type": "string",
+      "description": "The pending ticket to claim.",
+      "format": "uuid"
+    }
+  },
+  "description": "Inbox claim body (POST /api/v1/inbox/claim).",
   "x-readme-ref-name": "ClaimTicketRequest"
 }

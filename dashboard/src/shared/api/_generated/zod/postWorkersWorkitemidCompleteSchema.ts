@@ -15,9 +15,11 @@ export const postWorkersWorkitemidCompletePathParamsSchema = z.object({
  */
 export const postWorkersWorkitemidComplete200Schema = z.any()
 
-export const postWorkersWorkitemidCompleteMutationRequestSchema = z.lazy(
-  () => completeWorkItemRequestSchema
-)
+export const postWorkersWorkitemidCompleteMutationRequestSchema = z
+  .lazy(() => completeWorkItemRequestSchema)
+  .describe(
+    "Completion body: the worker-produced result JSON (must be valid, non-empty JSON)."
+  )
 
 export const postWorkersWorkitemidCompleteMutationResponseSchema = z.lazy(
   () => postWorkersWorkitemidComplete200Schema

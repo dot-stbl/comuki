@@ -7,8 +7,8 @@ import { problemDetailsSchema } from "./problemDetailsSchema"
 import { z } from "zod/v4"
 
 export const artifactsVisualContentPathParamsSchema = z.object({
-  projectId: z.uuid(),
-  artifactId: z.uuid(),
+  projectId: z.uuid().describe("Owning project (path, scope filter)."),
+  artifactId: z.uuid().describe("Artifact id (path)."),
 })
 
 /**

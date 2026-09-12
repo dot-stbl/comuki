@@ -15,9 +15,11 @@ export const putApiV1SourcesSourceidPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const putApiV1SourcesSourceid200Schema = z.lazy(
-  () => sourceConnectionViewSchema
-)
+export const putApiV1SourcesSourceid200Schema = z
+  .lazy(() => sourceConnectionViewSchema)
+  .describe(
+    "Read-model of a source connection. Settings and secret env NAMES are\r\nreturned (never secret values) plus the hook path to paste into the\r\ntracker's webhook settings."
+  )
 
 /**
  * @description Not Found
@@ -26,9 +28,9 @@ export const putApiV1SourcesSourceid404Schema = z.lazy(
   () => problemDetailsSchema
 )
 
-export const putApiV1SourcesSourceidMutationRequestSchema = z.lazy(
-  () => updateSourceConnectionRequestSchema
-)
+export const putApiV1SourcesSourceidMutationRequestSchema = z
+  .lazy(() => updateSourceConnectionRequestSchema)
+  .describe("Source connection partial update body (PUT /api/v1/sources/{id}).")
 
 export const putApiV1SourcesSourceidMutationResponseSchema = z.lazy(
   () => putApiV1SourcesSourceid200Schema

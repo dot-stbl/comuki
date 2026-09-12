@@ -48,6 +48,7 @@ export function postApiV1AdmissionRulesMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Creates a rule.
  * {@link /api/v1/admission-rules}
  */
 export function usePostApiV1AdmissionRules<TContext>(

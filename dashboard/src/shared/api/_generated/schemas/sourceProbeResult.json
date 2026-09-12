@@ -2,14 +2,25 @@
   "required": ["reachable", "latencyMs", "suggestedId", "message"],
   "type": "object",
   "properties": {
-    "reachable": { "type": "boolean" },
+    "reachable": {
+      "type": "boolean",
+      "description": "Upstream answered (any HTTP status counts as reachable)."
+    },
     "latencyMs": {
       "pattern": "^-?(?:0|[1-9]\\d*)$",
       "type": ["integer", "string"],
+      "description": "Round-trip latency when reachable; 0 otherwise.",
       "format": "int64"
     },
-    "suggestedId": { "type": ["null", "string"] },
-    "message": { "type": "string" }
+    "suggestedId": {
+      "type": ["null", "string"],
+      "description": "Optional id the provider returned (e.g. GitHub repo id) — null when unknown."
+    },
+    "message": {
+      "type": "string",
+      "description": "Provider-specific short status sentence (e.g. `\"github: 200 OK\"`) for the operator."
+    }
   },
+  "description": "The outcome of a probe — does the upstream answer, how fast, what id\r\nwould the host suggest for a follow-up create. The `latencyMs`\r\nis measured end-to-end (HTTP request to first response byte) and is\r\nonly meaningful when `reachable` is true.",
   "x-readme-ref-name": "SourceProbeResult"
 }

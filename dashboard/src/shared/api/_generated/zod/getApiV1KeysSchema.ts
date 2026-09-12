@@ -9,12 +9,22 @@ import { z } from "zod/v4"
 
 export const getApiV1KeysQueryParamsSchema = z
   .object({
-    UserId: z.optional(z.uuid()),
+    UserId: z.optional(z.uuid().describe("Optional owner user id filter.")),
     Page: z.optional(
-      z.union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      z
+        .union([
+          z.coerce.number().int(),
+          z.string().regex(/^-?(?:0|[1-9]\d*)$/),
+        ])
+        .describe("1-based page index; default 1.")
     ),
     PageSize: z.optional(
-      z.union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      z
+        .union([
+          z.coerce.number().int(),
+          z.string().regex(/^-?(?:0|[1-9]\d*)$/),
+        ])
+        .describe("Page size (1..100); default 100.")
     ),
   })
   .optional()
@@ -22,7 +32,11 @@ export const getApiV1KeysQueryParamsSchema = z
 /**
  * @description OK
  */
-export const getApiV1Keys200Schema = z.lazy(() => identityAdminKeysPageSchema)
+export const getApiV1Keys200Schema = z
+  .lazy(() => identityAdminKeysPageSchema)
+  .describe(
+    "Paged envelope for API keys. The plaintext is never carried —\r\n    only the public-facing view record (prefix, name, status…)."
+  )
 
 /**
  * @description Bad Request

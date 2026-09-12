@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Comuki.Modules.Proxy.Unit;
 
-/// <summary>Builds the in-memory <see cref="VirtualKey"/> catalogue from <see cref="ProxyOptions"/>.</summary>
+/// <summary>Builds the in-memory <see cref="Application.Models.VirtualKey"/> catalogue from <see cref="ProxyOptions"/>.</summary>
 public sealed class ConfigurationVirtualKeyStoreShould
 {
     [Fact(DisplayName = "Given a configured token, when FindAsync runs, then the matching VirtualKey is returned")]

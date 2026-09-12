@@ -36,7 +36,8 @@ namespace Comuki.Host.Integration.Artifacts;
 /// </list>
 /// Boots the real host composition on a random loopback port against
 /// one migrated Testcontainers Postgres (every module schema) plus a
-/// Testcontainers MinIO with <see cref="ArtifactsOptions.AutoCreateBucket"/>
+/// Testcontainers MinIO with
+/// <see cref="Modules.Artifacts.Infrastructure.Store.ArtifactsOptions.AutoCreateBucket"/>
 /// on, then drives the worker upload flow against a seeded run.
 /// </summary>
 public sealed class WorkerUploadArtifactShould : IAsyncLifetime

@@ -2,9 +2,9 @@ namespace Comuki.Modules.Artifacts.Domain.VisualArtifacts;
 
 /// <summary>
 /// Bounds on a visual-artifact payload — the per-mime size cap the
-/// store rejects (HTTP 413) before it ever touches MinIO. One
-/// <see cref="MaxBytes"/> per <see cref="Mime"/>; the dictionary is
-/// the single source every publish path consults. Keeping the cap on
+/// store rejects (HTTP 413) before it ever touches MinIO. One size cap
+/// per MIME type, held in <see cref="MaxBytesByMime"/> — the single
+/// source every publish path consults. Keeping the cap on
 /// the entity surface (instead of inside a private helper) makes it
 /// trivial to assert against in unit tests.
 /// </summary>

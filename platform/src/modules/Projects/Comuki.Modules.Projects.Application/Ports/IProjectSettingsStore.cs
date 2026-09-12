@@ -25,7 +25,7 @@ public interface IProjectSettingsStore
     /// Persists a mutated settings row. The caller mutates the entity loaded
     /// from <see cref="FindAsync"/> (its <c>Version</c> is expected-version +
     /// 1); a version mismatch — stale writer or concurrent writer race —
-    /// throws <see cref="ProjectSettingsConflictException"/>.
+    /// throws <see cref="Settings.ProjectSettingsConflictException"/>.
     /// </summary>
     /// <param name="settings"></param>
     /// <param name="cancellationToken"></param>

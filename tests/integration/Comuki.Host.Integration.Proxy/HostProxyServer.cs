@@ -1,15 +1,6 @@
-using System.Net;
-using System.Net.Sockets;
 using Comuki.Engine.Orchestration.Application;
-using Comuki.Engine.Orchestration.Infrastructure;
-using Comuki.Engine.Orchestration.Infrastructure.Persistence;
-using Comuki.Modules.Costs.Infrastructure.Persistence;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Host.Testing;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Testcontainers.PostgreSql;
@@ -19,14 +10,14 @@ namespace Comuki.Host.Integration.Proxy;
 
 /// <summary>
 /// Boots the full host composition (including the YARP proxy module
-/// from issue #8) on a loopback port against a migrated Testcontainers
-/// Postgres. The proxy upstreams are pointed at an in-process fake
-/// HTTP listener so the suite never reaches the real OpenAI / Anthropic
-/// endpoints.
+/// from issue #8) on a loopback port against one migrated Testcontainers
+/// Postgres — every module context, via <see cref="HostDatabaseMigrator"/>.
+/// The proxy upstreams are pointed at an in-process fake HTTP listener so
+/// the suite never reaches the real OpenAI / Anthropic endpoints.
 /// </summary>
 public sealed class HostProxyServer : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
+    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("pgvector/pgvector:pg16")
         .Build();
 
     internal WebApplication Application { get; private set; } = null!;
@@ -39,26 +30,14 @@ public sealed class HostProxyServer : IAsyncLifetime
         await container.StartAsync(cancellationToken);
         var connectionString = container.GetConnectionString();
 
-        await MigrateAsync(connectionString, cancellationToken);
+        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
 
         FakeUpstream = new FakeUpstreamServer();
         await FakeUpstream.StartAsync();
 
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-        {
-            ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
-            EnvironmentName = Environments.Development, // test fixture — validator short-circuits on non-Production
-        });
-        builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
-        builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
-        builder.Logging.ClearProviders();
+        var builder = TestHostBuilder.Create(connectionString);
         builder.Logging.AddSimpleConsole(static options => { options.IncludeScopes = true; });
-
-        // Production-secret gate (issue #10 T11.4) needs non-dev-defaults.
-        builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
-        builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
-        builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
-        builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
+        TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
 
         // Enable the proxy with a single virtual key pointing at the
         // in-process fake upstream; the upstream API key is sourced
@@ -74,9 +53,6 @@ public sealed class HostProxyServer : IAsyncLifetime
         builder.Configuration["Proxy:VirtualKeys:0:BaseUrl"] = FakeUpstream.BaseAddress.ToString();
         builder.Configuration["Proxy:VirtualKeys:0:ApiKeyEnvRef"] = "FAKE_OPENAI_KEY";
 
-        builder.Services
-            .AddOrchestrationPersistence(connectionString)
-            .AddOrchestrationQueue(builder.Configuration);
         builder.Services.AddOrchestrationApplication();
 
         // The artifact packager BackgroundService polls every 10s on
@@ -92,12 +68,7 @@ public sealed class HostProxyServer : IAsyncLifetime
         }
 
         Application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
-        await Application.StartAsync(cancellationToken);
-
-        BaseAddress = new Uri(Application.Services
-            .GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>()
-            .Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!
-            .Addresses.Single());
+        BaseAddress = await TestHostBuilder.StartAsync(Application, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -113,10 +84,7 @@ public sealed class HostProxyServer : IAsyncLifetime
             await FakeUpstream.DisposeAsync();
         }
 
-        if (container is not null)
-        {
-            await container.DisposeAsync();
-        }
+        await container.DisposeAsync();
     }
 
     /// <summary>Base address the host listens on (where requests go).</summary>
@@ -126,37 +94,5 @@ public sealed class HostProxyServer : IAsyncLifetime
     public HttpClient CreateClient()
     {
         return new HttpClient { BaseAddress = BaseAddress };
-    }
-
-    private static async Task MigrateAsync(string connectionString, CancellationToken cancellationToken)
-    {
-        var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
-        await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
-        await orchestrationDb.Database.MigrateAsync(cancellationToken);
-
-        var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-        await using var identityDb = new IdentityDbContext(identityOptions.Options);
-        await identityDb.Database.MigrateAsync(cancellationToken);
-
-        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-        await using var projectsDb = new ProjectsDbContext(projectsOptions.Options);
-        await projectsDb.Database.MigrateAsync(cancellationToken);
-
-        var costsOptions = new DbContextOptionsBuilder<CostsDbContext>();
-        CostsDbContext.ApplyOptions(costsOptions, connectionString);
-        await using var costsDb = new CostsDbContext(costsOptions.Options);
-        await costsDb.Database.MigrateAsync(cancellationToken);
-    }
-
-    private static int FreeTcpPort()
-    {
-        var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-        return port;
     }
 }

@@ -22,6 +22,7 @@
     <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host\Comuki.Host.csproj" />
     <ProjectReference Include="..\..\..\platform\src\modules\Knowledge\Comuki.Modules.Knowledge.Infrastructure\Comuki.Modules.Knowledge.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\platform\src\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
+    <ProjectReference Include="..\Comuki.Host.Testing\Comuki.Host.Testing.csproj" />
   </ItemGroup>
 
 </Project>

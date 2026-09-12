@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react"
+import { RotateCw } from "lucide-react"
 
 import type { SearchTarget } from "@/app/search"
 import {
@@ -16,6 +17,7 @@ import { ChatSessions } from "@/domains/chat/ui/chat-sessions"
 import { ChatSidePanel } from "@/domains/chat/ui/chat-side-panel"
 import { ChatThread } from "@/domains/chat/ui/chat-thread"
 import { useSession } from "@/shared/session"
+import { Button, Tooltip } from "@/shared/ui"
 
 import styles from "./chat-console.module.css"
 
@@ -160,6 +162,18 @@ export function ChatConsole({
     return null
   }, [messages])
 
+  // A failed read is a state, not an empty console. `data ?? []` on the
+  // queries below is what mock mode needs (the store cannot fail), but in
+  // real mode a swallowed error renders "no conversations" for a dead wire
+  // — indistinguishable from the truth and therefore a lie. The sessions
+  // failure takes the whole column (nothing else on the console can be
+  // true without the list); a transcript failure with nothing to fall
+  // back to takes the thread's place. Both offer the same one retry the
+  // pages give (runs, tasks, cost).
+  const sessionsFailed = sessions.isError
+  const transcriptFailed =
+    !sessionsFailed && transcript.isError && messages.length === 0
+
   return (
     <div className={styles.screen} data-test="chat-console">
       <div className={styles.rail}>
@@ -173,27 +187,94 @@ export function ChatConsole({
       </div>
 
       <div className={styles.centre}>
-        <ChatThread
-          messages={messages}
-          onDecide={onDecide}
-          busy={decide.isPending}
-        />
-        <ChatComposer
-          commands={commands}
-          onSend={onSend}
-          busy={send.isPending || !current}
-          value={draft}
-          onValueChange={onDraftChange}
-          seed={seed}
-          onSeedChange={onSeedChange}
-          recall={recall}
-          autoFocus={focusComposerOnMount}
-        />
+        {sessionsFailed ? (
+          <ConsoleErrorState
+            title="The console did not load"
+            message={
+              sessions.error instanceof Error
+                ? sessions.error.message
+                : "Unknown error"
+            }
+            onRetry={() => {
+              void sessions.refetch()
+            }}
+            dataTest="chat-console-error"
+          />
+        ) : transcriptFailed ? (
+          <ConsoleErrorState
+            title="The transcript did not load"
+            message={
+              transcript.error instanceof Error
+                ? transcript.error.message
+                : "Unknown error"
+            }
+            onRetry={() => {
+              void transcript.refetch()
+            }}
+            dataTest="chat-transcript-error"
+          />
+        ) : (
+          <>
+            <ChatThread
+              messages={messages}
+              onDecide={onDecide}
+              busy={decide.isPending}
+            />
+            <ChatComposer
+              commands={commands}
+              onSend={onSend}
+              busy={send.isPending || !current}
+              value={draft}
+              onValueChange={onDraftChange}
+              seed={seed}
+              onSeedChange={onSeedChange}
+              recall={recall}
+              autoFocus={focusComposerOnMount}
+            />
+          </>
+        )}
       </div>
 
       <div className={styles.panel}>
         <ChatSidePanel messages={messages} commands={commands} />
       </div>
+    </div>
+  )
+}
+
+/**
+ * The console's reading of a failed read — the same shape the pages give
+ * (runs, tasks, cost): a named state, the wire's own sentence, one retry.
+ * Local to this file because only the console renders it, and the two
+ * call sites above are the whole catalogue of ways a read here can fail.
+ */
+function ConsoleErrorState({
+  title,
+  message,
+  onRetry,
+  dataTest,
+}: {
+  title: string
+  message: string
+  onRetry: () => void
+  dataTest: string
+}) {
+  return (
+    <div className={styles.state} role="alert" data-test={dataTest}>
+      <p className={styles.stateTitle}>{title}</p>
+      <p className={styles.stateBody}>{message}</p>
+      <span>
+        <Tooltip content="Retry">
+          <Button
+            size="icon-sm"
+            data-test={`${dataTest}-retry`}
+            aria-label="Retry"
+            onClick={onRetry}
+          >
+            <RotateCw aria-hidden="true" />
+          </Button>
+        </Tooltip>
+      </span>
     </div>
   )
 }

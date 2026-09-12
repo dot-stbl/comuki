@@ -11,7 +11,11 @@ import { z } from "zod/v4"
 /**
  * @description OK
  */
-export const postApiV1InboxClaim200Schema = z.lazy(() => intakeTicketViewSchema)
+export const postApiV1InboxClaim200Schema = z
+  .lazy(() => intakeTicketViewSchema)
+  .describe(
+    "Read-model of an intake ticket for the inbox and the API surfaces."
+  )
 
 /**
  * @description Bad Request
@@ -28,9 +32,9 @@ export const postApiV1InboxClaim404Schema = z.lazy(() => problemDetailsSchema)
  */
 export const postApiV1InboxClaim409Schema = z.lazy(() => problemDetailsSchema)
 
-export const postApiV1InboxClaimMutationRequestSchema = z.lazy(
-  () => claimTicketRequestSchema
-)
+export const postApiV1InboxClaimMutationRequestSchema = z
+  .lazy(() => claimTicketRequestSchema)
+  .describe("Inbox claim body (POST /api/v1/inbox/claim).")
 
 export const postApiV1InboxClaimMutationResponseSchema = z.lazy(
   () => postApiV1InboxClaim200Schema

@@ -6,10 +6,25 @@
 import { artifactPointerSchema } from "./artifactPointerSchema"
 import { z } from "zod/v4"
 
-export const runArtifactsPageSchema = z.object({
-  get items() {
-    return z.array(artifactPointerSchema)
-  },
-  projectId: z.uuid(),
-  runId: z.uuid(),
-})
+/**
+ * @description One page of run-artifact pointers — wraps ArtifactPointer with the project/run id echo.
+ */
+export const runArtifactsPageSchema = z
+  .object({
+    get items() {
+      return z
+        .array(
+          artifactPointerSchema.describe(
+            "One object inside a run's artifact bundle. URIs, not blobs."
+          )
+        )
+        .describe(
+          "Bundle objects, empty when the run has not been packaged yet."
+        )
+    },
+    projectId: z.uuid().describe("Owning project id."),
+    runId: z.uuid().describe("Run id the bundle belongs to."),
+  })
+  .describe(
+    "One page of run-artifact pointers — wraps ArtifactPointer with the project/run id echo."
+  )

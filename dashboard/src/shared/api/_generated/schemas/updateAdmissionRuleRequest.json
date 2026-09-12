@@ -1,9 +1,19 @@
 {
   "type": "object",
   "properties": {
-    "mode": { "type": ["null", "string"] },
-    "filterJson": { "type": ["null", "string"] },
-    "enabled": { "type": ["null", "boolean"] }
+    "mode": {
+      "type": ["null", "string"],
+      "description": "watch | inbox; null = keep."
+    },
+    "filterJson": {
+      "type": ["null", "string"],
+      "description": "New filter json; null = keep."
+    },
+    "enabled": {
+      "type": ["null", "boolean"],
+      "description": "Enable/disable; null = keep."
+    }
   },
+  "description": "Admission rule partial update body (PUT /api/v1/admission-rules/{id}).",
   "x-readme-ref-name": "UpdateAdmissionRuleRequest"
 }

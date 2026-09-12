@@ -11,7 +11,11 @@ import { z } from "zod/v4"
 /**
  * @description Created
  */
-export const postApiV1Keys201Schema = z.lazy(() => issuedApiKeyResponseSchema)
+export const postApiV1Keys201Schema = z
+  .lazy(() => issuedApiKeyResponseSchema)
+  .describe(
+    "The wire shape of `POST /api/v1/keys`. The plaintext is shown\r\nexactly once — the host keeps the prefix + HMAC and never returns the\r\nsecret again."
+  )
 
 /**
  * @description Bad Request
@@ -23,9 +27,9 @@ export const postApiV1Keys400Schema = z.lazy(() => problemDetailsSchema)
  */
 export const postApiV1Keys404Schema = z.lazy(() => problemDetailsSchema)
 
-export const postApiV1KeysMutationRequestSchema = z.lazy(
-  () => createApiKeyRequestSchema
-)
+export const postApiV1KeysMutationRequestSchema = z
+  .lazy(() => createApiKeyRequestSchema)
+  .describe("Create API key body (POST /api/v1/keys).")
 
 export const postApiV1KeysMutationResponseSchema = z.lazy(
   () => postApiV1Keys201Schema

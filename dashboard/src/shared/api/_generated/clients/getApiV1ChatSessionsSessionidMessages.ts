@@ -27,6 +27,7 @@ function getGetApiV1ChatSessionsSessionidMessagesUrl(
 }
 
 /**
+ * @summary Reads a page of the transcript, oldest first.
  * {@link /api/v1/chat/sessions/:sessionId/messages}
  */
 export async function getApiV1ChatSessionsSessionidMessages(

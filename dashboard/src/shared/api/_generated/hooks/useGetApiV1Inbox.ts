@@ -48,6 +48,7 @@ export function getApiV1InboxQueryOptions(
 }
 
 /**
+ * @summary Lists pending tickets (the inbox), newest first.
  * {@link /api/v1/inbox}
  */
 export function useGetApiV1Inbox<

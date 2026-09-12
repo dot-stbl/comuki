@@ -5,8 +5,23 @@
 
 import { z } from "zod/v4"
 
-export const probeSourceDraftRequestSchema = z.object({
-  provider: z.string(),
-  settingsJson: z.string(),
-  secretEnvRef: z.string(),
-})
+/**
+ * @description Body for `POST /api/v1/sources/probe` — the operator types a\r\ndraft plus a plaintext credential in the connect form and asks the\r\nhost to reach the upstream before saving.
+ */
+export const probeSourceDraftRequestSchema = z
+  .object({
+    provider: z
+      .string()
+      .describe("Provider key (github | gitlab | yandex-tracker | jira)."),
+    settingsJson: z
+      .string()
+      .describe(
+        "Provider-specific, non-secret settings (apiBase, owner/repo, queue, …)."
+      ),
+    secretEnvRef: z
+      .string()
+      .describe("Env-var name holding the outbound / webhook secret."),
+  })
+  .describe(
+    "Body for `POST /api/v1/sources/probe` — the operator types a\r\ndraft plus a plaintext credential in the connect form and asks the\r\nhost to reach the upstream before saving."
+  )

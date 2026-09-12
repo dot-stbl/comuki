@@ -22,6 +22,7 @@ function getPostApiV1TicketsUrl() {
 }
 
 /**
+ * @summary Creates a native ticket and launches its run.
  * {@link /api/v1/tickets}
  */
 export async function postApiV1Tickets(

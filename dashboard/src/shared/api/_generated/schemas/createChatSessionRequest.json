@@ -1,8 +1,16 @@
 {
   "type": "object",
   "properties": {
-    "projectId": { "type": ["null", "string"], "format": "uuid" },
-    "title": { "type": ["null", "string"] }
+    "projectId": {
+      "type": ["null", "string"],
+      "description": "Optional project scope the session talks about.",
+      "format": "uuid"
+    },
+    "title": {
+      "type": ["null", "string"],
+      "description": "Optional human title; defaults to a placeholder."
+    }
   },
+  "description": "Create-session request body.",
   "x-readme-ref-name": "CreateChatSessionRequest"
 }

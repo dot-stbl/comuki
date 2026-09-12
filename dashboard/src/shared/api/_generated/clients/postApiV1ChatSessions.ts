@@ -21,6 +21,7 @@ function getPostApiV1ChatSessionsUrl() {
 }
 
 /**
+ * @summary Creates a session for the acting subject.
  * {@link /api/v1/chat/sessions}
  */
 export async function postApiV1ChatSessions(

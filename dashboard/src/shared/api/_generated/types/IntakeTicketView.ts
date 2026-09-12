@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Read-model of an intake ticket for the inbox and the API surfaces.
+ */
 export type IntakeTicketView = {
   /**
    * @type string, uuid
@@ -13,6 +16,7 @@ export type IntakeTicketView = {
    */
   projectId: string
   /**
+   * @description Kebab-case provider key.
    * @type string
    */
   source: string
@@ -33,6 +37,7 @@ export type IntakeTicketView = {
    */
   status: string
   /**
+   * @description The launched run, when claimed.
    * @type null,string, uuid
    */
   runId: string | null

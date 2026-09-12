@@ -6,9 +6,24 @@
 import { scheduledJobViewSchema } from "./scheduledJobViewSchema"
 import { z } from "zod/v4"
 
-export const scheduledJobsPageSchema = z.object({
-  get items() {
-    return z.array(scheduledJobViewSchema)
-  },
-  total: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-})
+/**
+ * @description One paginated read of scheduled jobs for a project.\r\nWire shape: `{ \"items\": [ScheduledJobView], \"total\": N }`.\r\nThe scheduler surface is small (per project, one page per request)\r\n— pagination is opt-in via `?page` + `?pageSize`; the\r\ndefault returns everything.
+ */
+export const scheduledJobsPageSchema = z
+  .object({
+    get items() {
+      return z
+        .array(
+          scheduledJobViewSchema.describe(
+            "Read projection of ScheduledJob for the REST surface."
+          )
+        )
+        .describe("Page contents (already-projected views).")
+    },
+    total: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Total jobs in the project (not the page size)."),
+  })
+  .describe(
+    'One paginated read of scheduled jobs for a project.\r\nWire shape: `{ "items": [ScheduledJobView], "total": N }`.\r\nThe scheduler surface is small (per project, one page per request)\r\n— pagination is opt-in via `?page` + `?pageSize`; the\r\ndefault returns everything.'
+  )

@@ -5,7 +5,16 @@
 
 import { z } from "zod/v4"
 
-export const webhookAcceptedResponseSchema = z.object({
-  outcome: z.string(),
-  detail: z.nullable(z.string()),
-})
+/**
+ * @description The 200 body of a processed (or deliberately ignored) delivery.
+ */
+export const webhookAcceptedResponseSchema = z
+  .object({
+    outcome: z
+      .string()
+      .describe(
+        "Delivery outcome label (admitted | pending | filtered | skipped | duplicate | replay)."
+      ),
+    detail: z.nullable(z.string()),
+  })
+  .describe("The 200 body of a processed (or deliberately ignored) delivery.")

@@ -52,6 +52,7 @@ export function postApiHooksProviderKeyMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Accepts one tracker webhook delivery.
  * {@link /api/hooks/:provider/:key}
  */
 export function usePostApiHooksProviderKey<TContext>(

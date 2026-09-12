@@ -14,13 +14,18 @@
   "properties": {
     "id": { "type": "string", "format": "uuid" },
     "projectId": { "type": "string", "format": "uuid" },
-    "source": { "type": "string" },
+    "source": { "type": "string", "description": "Kebab-case provider key." },
     "externalId": { "type": "string" },
     "title": { "type": "string" },
     "url": { "type": "string" },
     "status": { "type": "string" },
-    "runId": { "type": ["null", "string"], "format": "uuid" },
+    "runId": {
+      "type": ["null", "string"],
+      "description": "The launched run, when claimed.",
+      "format": "uuid"
+    },
     "createdAt": { "type": "string", "format": "date-time" }
   },
+  "description": "Read-model of an intake ticket for the inbox and the API surfaces.",
   "x-readme-ref-name": "IntakeTicketView"
 }

@@ -12,6 +12,7 @@ export type GetApiV1InboxCatalogQueryParams = {
    */
   connectionId?: string
   /**
+   * @description 1-based page number.
    * @default 1
    * @type integer,string | undefined, int32
    */

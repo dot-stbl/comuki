@@ -15,9 +15,11 @@ export const postApiV1ChatSessionsSessionidMessagesPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const postApiV1ChatSessionsSessionidMessages200Schema = z.lazy(
-  () => chatTurnResultViewSchema
-)
+export const postApiV1ChatSessionsSessionidMessages200Schema = z
+  .lazy(() => chatTurnResultViewSchema)
+  .describe(
+    "Turn outcome: the reply view plus the pending approve card when the\r\nthread interrupted. The card carries the canonical plan JSON the\r\ndashboard renders; approve/reject posts to\r\n`/api/v1/chat/sessions/{id}/approve`."
+  )
 
 /**
  * @description Bad Request
@@ -40,8 +42,16 @@ export const postApiV1ChatSessionsSessionidMessages409Schema = z.lazy(
   () => problemDetailsSchema
 )
 
-export const postApiV1ChatSessionsSessionidMessagesMutationRequestSchema =
-  z.lazy(() => postChatMessageRequestSchema)
+/**
+ * @description Service Unavailable
+ */
+export const postApiV1ChatSessionsSessionidMessages503Schema = z.lazy(
+  () => problemDetailsSchema
+)
+
+export const postApiV1ChatSessionsSessionidMessagesMutationRequestSchema = z
+  .lazy(() => postChatMessageRequestSchema)
+  .describe("Post-message request body: one chat turn.")
 
 export const postApiV1ChatSessionsSessionidMessagesMutationResponseSchema =
   z.lazy(() => postApiV1ChatSessionsSessionidMessages200Schema)

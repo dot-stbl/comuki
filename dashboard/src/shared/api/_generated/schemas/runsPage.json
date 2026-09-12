@@ -8,30 +8,55 @@
         "required": ["id", "projectId", "status", "createdAt", "updatedAt"],
         "type": "object",
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "projectId": { "type": "string", "format": "uuid" },
-          "status": { "type": "string" },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "description": "Run id.",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "description": "Owning project id.",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "description": "Run status wire string (queued, running, …)."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the run was admitted.",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last status change.",
+            "format": "date-time"
+          }
         },
+        "description": "Wire row of one run — mirrors the RunSummary contract fields.",
         "x-readme-ref-name": "RunView"
-      }
+      },
+      "description": "Page rows."
     },
     "page": {
       "pattern": "^-?(?:0|[1-9]\\d*)$",
       "type": ["integer", "string"],
+      "description": "1-based page number.",
       "format": "int32"
     },
     "pageSize": {
       "pattern": "^-?(?:0|[1-9]\\d*)$",
       "type": ["integer", "string"],
+      "description": "Rows per page.",
       "format": "int32"
     },
     "total": {
       "pattern": "^-?(?:0|[1-9]\\d*)$",
       "type": ["integer", "string"],
+      "description": "Total rows matching the filter (subject-visible).",
       "format": "int32"
     }
   },
+  "description": "One page of runs plus the paging envelope.",
   "x-readme-ref-name": "RunsPage"
 }

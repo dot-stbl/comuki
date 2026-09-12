@@ -5,6 +5,11 @@
 
 import { z } from "zod/v4"
 
-export const setUserDisabledRequestSchema = z.object({
-  disabled: z.boolean(),
-})
+/**
+ * @description Toggle the disabled flag (PATCH /api/v1/users/{userId}).
+ */
+export const setUserDisabledRequestSchema = z
+  .object({
+    disabled: z.boolean().describe("New disabled flag value."),
+  })
+  .describe("Toggle the disabled flag (PATCH /api/v1/users/{userId}).")

@@ -23,6 +23,7 @@ function getGetApiV1SourcesSourceidUrl(
 }
 
 /**
+ * @summary Reads one connection.
  * {@link /api/v1/sources/:sourceId}
  */
 export async function getApiV1SourcesSourceid(

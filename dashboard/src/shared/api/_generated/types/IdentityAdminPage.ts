@@ -5,12 +5,17 @@
 
 import type { UserAccountView } from "./UserAccountView"
 
+/**
+ * @description Paged envelope shared by the identity-admin list endpoints\r\n(issue #45 / F13 — `GET /api/v1/users`, `/api/v1/grants`,\r\n`/api/v1/keys`). Wire shape `{ items, total }`: `items` is\r\nthe already-projected view list for the requested page; `total` is\r\nthe count across every page, not the page size.
+ */
 export type IdentityAdminPage = {
   /**
+   * @description Page contents.
    * @type array
    */
   items: UserAccountView[]
   /**
+   * @description Total rows across all pages.
    * @type integer,string, int32
    */
   total: number | string

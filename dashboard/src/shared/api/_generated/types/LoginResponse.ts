@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Body of a successful login — the session itself lives in the cookie.
+ */
 export type LoginResponse = {
   /**
    * @type string, uuid

@@ -21,6 +21,7 @@ function getPostApiV1AdmissionRulesUrl() {
 }
 
 /**
+ * @summary Creates a rule.
  * {@link /api/v1/admission-rules}
  */
 export async function postApiV1AdmissionRules(

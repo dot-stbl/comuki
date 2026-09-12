@@ -2,11 +2,28 @@
   "required": ["key", "name", "description", "allowedTools", "model"],
   "type": "object",
   "properties": {
-    "key": { "type": "string" },
-    "name": { "type": "string" },
-    "description": { "type": "string" },
-    "allowedTools": { "type": "array", "items": { "type": "string" } },
-    "model": { "type": ["null", "string"] }
+    "key": {
+      "type": "string",
+      "description": "Stable identity: the file stem of the profile document (e.g. `explore-readonly`); used in plans and work items."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name from the document frontmatter."
+    },
+    "description": {
+      "type": "string",
+      "description": "What the profile is for; shown in the dashboard and the brain catalog tool."
+    },
+    "allowedTools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tool names the profile's workers may use (e.g. Read, Grep, Bash). Empty when the document does not restrict tools."
+    },
+    "model": {
+      "type": ["null", "string"],
+      "description": "Optional model role hint (e.g. light/heavy) for routing; advisory, not a contract."
+    }
   },
+  "description": "Catalog-facing profile metadata. The system-prompt body is deliberately not part of it.",
   "x-readme-ref-name": "ProfileDefinition"
 }

@@ -43,6 +43,7 @@ export function getApiV1ChatSlashQueryOptions(
 }
 
 /**
+ * @summary Lists every available slash command, ordered by key.
  * {@link /api/v1/chat/slash}
  */
 export function useGetApiV1ChatSlash<

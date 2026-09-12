@@ -11,9 +11,9 @@ import { z } from "zod/v4"
 /**
  * @description Created
  */
-export const postApiV1AdmissionRules201Schema = z.lazy(
-  () => admissionRuleViewSchema
-)
+export const postApiV1AdmissionRules201Schema = z
+  .lazy(() => admissionRuleViewSchema)
+  .describe("Read-model of an admission rule.")
 
 /**
  * @description Bad Request
@@ -22,9 +22,9 @@ export const postApiV1AdmissionRules400Schema = z.lazy(
   () => problemDetailsSchema
 )
 
-export const postApiV1AdmissionRulesMutationRequestSchema = z.lazy(
-  () => createAdmissionRuleRequestSchema
-)
+export const postApiV1AdmissionRulesMutationRequestSchema = z
+  .lazy(() => createAdmissionRuleRequestSchema)
+  .describe("Admission rule creation body (POST /api/v1/admission-rules).")
 
 export const postApiV1AdmissionRulesMutationResponseSchema = z.lazy(
   () => postApiV1AdmissionRules201Schema

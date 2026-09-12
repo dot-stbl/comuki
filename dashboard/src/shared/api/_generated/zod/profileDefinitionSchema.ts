@@ -5,10 +5,37 @@
 
 import { z } from "zod/v4"
 
-export const profileDefinitionSchema = z.object({
-  key: z.string(),
-  name: z.string(),
-  description: z.string(),
-  allowedTools: z.array(z.string()),
-  model: z.nullable(z.string()),
-})
+/**
+ * @description Catalog-facing profile metadata. The system-prompt body is deliberately not part of it.
+ */
+export const profileDefinitionSchema = z
+  .object({
+    key: z
+      .string()
+      .describe(
+        "Stable identity: the file stem of the profile document (e.g. `explore-readonly`); used in plans and work items."
+      ),
+    name: z
+      .string()
+      .describe("Human-readable name from the document frontmatter."),
+    description: z
+      .string()
+      .describe(
+        "What the profile is for; shown in the dashboard and the brain catalog tool."
+      ),
+    allowedTools: z
+      .array(z.string())
+      .describe(
+        "Tool names the profile's workers may use (e.g. Read, Grep, Bash). Empty when the document does not restrict tools."
+      ),
+    model: z.nullable(
+      z
+        .string()
+        .describe(
+          "Optional model role hint (e.g. light/heavy) for routing; advisory, not a contract."
+        )
+    ),
+  })
+  .describe(
+    "Catalog-facing profile metadata. The system-prompt body is deliberately not part of it."
+  )

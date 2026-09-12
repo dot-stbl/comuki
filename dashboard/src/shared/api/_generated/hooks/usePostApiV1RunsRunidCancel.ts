@@ -55,6 +55,11 @@ export function postApiV1RunsRunidCancelMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Cancels a run that's still in flight. Legal from `Queued`,
+ * `Waiting`, `Running`, `Escalated`; terminal runs
+ * (`Succeeded`, `Cancelled`) answer 409. When `reason`
+ * is supplied it is journalled as a `reason` field on the
+ * `run.status_changed` event. Successful cancel returns 204.
  * {@link /api/v1/runs/:runId/cancel}
  */
 export function usePostApiV1RunsRunidCancel<TContext>(

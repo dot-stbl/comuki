@@ -10,7 +10,11 @@ import { z } from "zod/v4"
  * @description OK
  */
 export const getApiV1ChatSlash200Schema = z.array(
-  z.lazy(() => chatSlashCommandSchema)
+  z
+    .lazy(() => chatSlashCommandSchema)
+    .describe(
+      "One slash command as listed to the dashboard / autocomplete and expanded\r\ninto the brain task by the router."
+    )
 )
 
 export const getApiV1ChatSlashQueryResponseSchema = z.lazy(

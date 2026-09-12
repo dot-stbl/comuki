@@ -5,7 +5,12 @@
 
 import { z } from "zod/v4"
 
-export const loginRequestSchema = z.object({
-  email: z.string(),
-  password: z.string(),
-})
+/**
+ * @description Email+password login body.
+ */
+export const loginRequestSchema = z
+  .object({
+    email: z.string(),
+    password: z.string(),
+  })
+  .describe("Email+password login body.")

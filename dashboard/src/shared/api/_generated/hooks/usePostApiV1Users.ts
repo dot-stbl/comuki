@@ -49,6 +49,7 @@ export function postApiV1UsersMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Invites a user (issue #31). Permission `identity:write`.
  * {@link /api/v1/users}
  */
 export function usePostApiV1Users<TContext>(

@@ -7,8 +7,8 @@ import { z } from "zod/v4"
 
 export const deleteApiV1ProjectsProjectidScheduledJobsJobidPathParamsSchema =
   z.object({
-    projectId: z.uuid(),
-    jobId: z.uuid(),
+    projectId: z.uuid().describe("Owning project (route context)."),
+    jobId: z.uuid().describe("Job id."),
   })
 
 /**

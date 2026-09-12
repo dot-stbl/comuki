@@ -13,8 +13,8 @@ public interface IVisualArtifactStore
 {
     /// <summary>
     /// Persists one artifact — uploads the bytes to MinIO and inserts
-    /// the metadata row. When <paramref name="explicitId"/> is supplied
-    /// and an artifact with that id already exists, the store bumps
+    /// the metadata row. When <see cref="VisualArtifactUploadRequest.ExplicitId"/>
+    /// is supplied and an artifact with that id already exists, the store bumps
     /// its version and overwrites the bytes; otherwise it mints a new
     /// UUIDv7.
     /// </summary>

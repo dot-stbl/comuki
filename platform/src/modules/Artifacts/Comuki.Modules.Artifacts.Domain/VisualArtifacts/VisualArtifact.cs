@@ -34,7 +34,7 @@ public sealed class VisualArtifact
     /// <summary>UTC wall-clock when the publish landed.</summary>
     public DateTimeOffset CreatedAt { get; set; }
 
-    /// <summary>Who published — see <see cref="VisualArtifactCreatedBy"/>.</summary>
+    /// <summary>Who published — see <see cref="VisualArtifactCreatedByWire"/>.</summary>
     public string CreatedBy { get; set; } = string.Empty;
 
     /// <summary>Optional run id the artifact is linked to (always set for worker publishes).</summary>

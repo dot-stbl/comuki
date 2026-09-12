@@ -8,7 +8,7 @@ namespace Comuki.Modules.Artifacts.Application.Packaging;
 /// on any real call — used when the application layer composes without
 /// the MinIO-backed store (unit tests, design-time). The host replaces
 /// this with the real MinIO store via
-/// <see cref="AddArtifactsPersistence"/>.
+/// <c>AddArtifactsPersistence</c>.
 /// </summary>
 public sealed class NullRunArtifactStore : IRunArtifactStore
 {

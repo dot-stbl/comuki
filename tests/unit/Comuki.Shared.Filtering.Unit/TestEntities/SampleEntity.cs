@@ -64,10 +64,10 @@ public sealed class SampleEntity
     [FilteredIgnore]
     public string Passphrase { get; set; } = string.Empty;
 
-    /// <summary>Must be excluded — byte arrays map to <see cref="FilterOperator.None" />.</summary>
+    /// <summary>Must be excluded — byte arrays map to <see cref="Ast.FilterOperator.None" />.</summary>
     public byte[]? Payload { get; set; }
 
-    /// <summary>Must be excluded — object maps to <see cref="FilterOperator.None" />.</summary>
+    /// <summary>Must be excluded — object maps to <see cref="Ast.FilterOperator.None" />.</summary>
     public object? Bag { get; set; }
 }
 

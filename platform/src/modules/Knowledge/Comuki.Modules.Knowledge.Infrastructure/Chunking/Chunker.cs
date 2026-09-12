@@ -4,7 +4,7 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Chunking;
 /// Fixed-size paragraph-aware text chunker. Splits on double-newline
 /// boundaries (paragraph) and packs consecutive paragraphs into a
 /// chunk until the running estimated-token count crosses
-/// <see cref="TargetTokens"/>; an over-sized paragraph (longer than
+/// <c>targetTokens</c>; an over-sized paragraph (longer than
 /// the target on its own) becomes its own chunk — never split mid-word.
 /// The token estimate is <c>whitespace-separated word count ÷ 0.75</c>;
 /// deliberately cheap (no tokenizer dependency) and over-estimates by

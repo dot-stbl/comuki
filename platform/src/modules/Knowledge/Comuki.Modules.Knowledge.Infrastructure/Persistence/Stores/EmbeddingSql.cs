@@ -38,7 +38,7 @@ public static class EmbeddingSql
     /// parameters widen the scope (they must arrive text-typed — an
     /// untyped NULL parameter fails with 42P08). The vector parameter
     /// carries an untyped literal typed by the explicit <c>::vector</c>
-    /// cast. <paramref name="minSimilarity"/> converts to a maximum
+    /// cast. <c>@minSimilarity</c> converts to a maximum
     /// cosine-distance bound (<c>1 - similarity</c>).
     /// </summary>
     public const string CosineSearchSql =

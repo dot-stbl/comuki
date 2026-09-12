@@ -7,7 +7,7 @@ namespace Comuki.Host.Security.ProductionSecrets;
 /// throws them verbatim, <c>comuki doctor</c> prints them as fail lines.
 /// </summary>
 /// <param name="Name">Short check name (e.g. <c>apikey-pepper</c>).</param>
-/// <param name="Severity">Ok when overridden, Warn when a dev default is tolerated outside Production, Fail when the startup gate would refuse.</param>
+/// <param name="SeverityLevel">Ok when overridden, Warn when a dev default is tolerated outside Production, Fail when the startup gate would refuse.</param>
 /// <param name="Detail">Human-readable outcome.</param>
 public sealed record ProductionSecretFinding(string Name, ProductionSecretFinding.Severity SeverityLevel, string Detail)
 {

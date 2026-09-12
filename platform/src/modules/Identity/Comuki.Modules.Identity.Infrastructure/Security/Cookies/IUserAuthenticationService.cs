@@ -18,7 +18,11 @@ public interface IUserAuthenticationService
     /// <returns></returns>
     public Task<LoginResult> LoginAsync(LoginCommand command, CancellationToken cancellationToken = default);
 
-    /// <summary>Signs out the cookie.</summary>
+    /// <summary>
+    /// Signs out the cookie and invalidates the session server-side: the
+    /// account's tokens_version is bumped, so an outstanding cookie (the
+    /// browser's copy or a stolen one) fails the next security-stamp recheck.
+    /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public Task LogoutAsync(CancellationToken cancellationToken = default);

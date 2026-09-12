@@ -8,7 +8,7 @@ import { z } from "zod/v4"
 
 export const getApiV1SourcesQueryParamsSchema = z
   .object({
-    projectId: z.optional(z.uuid()),
+    projectId: z.optional(z.uuid().describe("Optional project filter.")),
   })
   .optional()
 
@@ -16,7 +16,11 @@ export const getApiV1SourcesQueryParamsSchema = z
  * @description OK
  */
 export const getApiV1Sources200Schema = z.array(
-  z.lazy(() => sourceConnectionViewSchema)
+  z
+    .lazy(() => sourceConnectionViewSchema)
+    .describe(
+      "Read-model of a source connection. Settings and secret env NAMES are\r\nreturned (never secret values) plus the hook path to paste into the\r\ntracker's webhook settings."
+    )
 )
 
 export const getApiV1SourcesQueryResponseSchema = z.lazy(

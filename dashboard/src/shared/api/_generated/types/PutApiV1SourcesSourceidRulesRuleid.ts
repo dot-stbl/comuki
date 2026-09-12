@@ -9,10 +9,12 @@ import type { UpdateAdmissionRuleRequest } from "./UpdateAdmissionRuleRequest"
 
 export type PutApiV1SourcesSourceidRulesRuleidPathParams = {
   /**
+   * @description Source connection id (route context, not used to filter the rule lookup).
    * @type string, uuid
    */
   sourceId: string
   /**
+   * @description The admission rule id.
    * @type string, uuid
    */
   ruleId: string

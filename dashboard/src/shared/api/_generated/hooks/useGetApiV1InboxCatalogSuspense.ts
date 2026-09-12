@@ -52,6 +52,7 @@ export function getApiV1InboxCatalogSuspenseQueryOptions(
 }
 
 /**
+ * @summary Fetches one page of a connection's external issue catalog.
  * {@link /api/v1/inbox/catalog}
  */
 export function useGetApiV1InboxCatalogSuspense<

@@ -29,6 +29,7 @@ function getPostApiV1UsersUseridOidcLinkUrl(
 }
 
 /**
+ * @summary Manually links an OIDC identity (issue #34). Permission `identity:write`.
  * {@link /api/v1/users/:userId/oidc-link}
  */
 export async function postApiV1UsersUseridOidcLink(

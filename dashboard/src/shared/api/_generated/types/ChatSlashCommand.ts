@@ -3,24 +3,32 @@
  * Do not edit manually.
  */
 
+/**
+ * @description One slash command as listed to the dashboard / autocomplete and expanded\r\ninto the brain task by the router.
+ */
 export type ChatSlashCommand = {
   /**
+   * @description Command identity without the slash (e.g. `init`).
    * @type string
    */
   key: string
   /**
+   * @description Human-readable name.
    * @type string
    */
   name: string
   /**
+   * @description One-line description.
    * @type string
    */
   description: string
   /**
+   * @description Full instruction body expanded into the brain task (empty for graph-native commands like `init`).
    * @type string
    */
   body: string
   /**
+   * @description Where the command comes from: `builtin` or `control-plane`.
    * @type string
    */
   source: string

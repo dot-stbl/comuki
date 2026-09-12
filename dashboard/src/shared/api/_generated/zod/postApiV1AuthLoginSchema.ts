@@ -11,16 +11,20 @@ import { z } from "zod/v4"
 /**
  * @description OK
  */
-export const postApiV1AuthLogin200Schema = z.lazy(() => loginResponseSchema)
+export const postApiV1AuthLogin200Schema = z
+  .lazy(() => loginResponseSchema)
+  .describe(
+    "Body of a successful login — the session itself lives in the cookie."
+  )
 
 /**
  * @description Unauthorized
  */
 export const postApiV1AuthLogin401Schema = z.lazy(() => problemDetailsSchema)
 
-export const postApiV1AuthLoginMutationRequestSchema = z.lazy(
-  () => loginRequestSchema
-)
+export const postApiV1AuthLoginMutationRequestSchema = z
+  .lazy(() => loginRequestSchema)
+  .describe("Email+password login body.")
 
 export const postApiV1AuthLoginMutationResponseSchema = z.lazy(
   () => postApiV1AuthLogin200Schema

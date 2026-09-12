@@ -3,16 +3,22 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Admission rule creation body (POST /api/v1/admission-rules).
+ */
 export type CreateAdmissionRuleRequest = {
   /**
+   * @description Project the rule governs.
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description watch | inbox.
    * @type string
    */
   mode: string
   /**
+   * @description Filter: {\"labelsAny\": [...], \"projects\": [...]}.
    * @type string
    */
   filterJson: string

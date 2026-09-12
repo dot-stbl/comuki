@@ -6,9 +6,24 @@
 import { userAccountViewSchema } from "./userAccountViewSchema"
 import { z } from "zod/v4"
 
-export const identityAdminPageSchema = z.object({
-  get items() {
-    return z.array(userAccountViewSchema)
-  },
-  total: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-})
+/**
+ * @description Paged envelope shared by the identity-admin list endpoints\r\n(issue #45 / F13 — `GET /api/v1/users`, `/api/v1/grants`,\r\n`/api/v1/keys`). Wire shape `{ items, total }`: `items` is\r\nthe already-projected view list for the requested page; `total` is\r\nthe count across every page, not the page size.
+ */
+export const identityAdminPageSchema = z
+  .object({
+    get items() {
+      return z
+        .array(
+          userAccountViewSchema.describe(
+            "Read model of a user account — no secrets ride along."
+          )
+        )
+        .describe("Page contents.")
+    },
+    total: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Total rows across all pages."),
+  })
+  .describe(
+    "Paged envelope shared by the identity-admin list endpoints\r\n(issue #45 / F13 — `GET /api/v1/users`, `/api/v1/grants`,\r\n`/api/v1/keys`). Wire shape `{ items, total }`: `items` is\r\nthe already-projected view list for the requested page; `total` is\r\nthe count across every page, not the page size."
+  )

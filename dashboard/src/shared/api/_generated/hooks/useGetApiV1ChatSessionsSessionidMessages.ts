@@ -68,6 +68,7 @@ export function getApiV1ChatSessionsSessionidMessagesQueryOptions(
 }
 
 /**
+ * @summary Reads a page of the transcript, oldest first.
  * {@link /api/v1/chat/sessions/:sessionId/messages}
  */
 export function useGetApiV1ChatSessionsSessionidMessages<

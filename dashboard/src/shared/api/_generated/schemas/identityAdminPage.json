@@ -18,6 +18,7 @@
           "id": {
             "type": "object",
             "properties": { "value": { "type": "string", "format": "uuid" } },
+            "description": "Strong-typed identifier of a user account. Entity ids are UUIDv7\r\n(Guid Guid.CreateVersion7()): time-ordered, stored as Postgres\r\n`uuid`, exposed to the API as strings. Lives in the Identity module\r\n(not Shared.Kernel) — other modules learn about users through contracts.",
             "x-readme-ref-name": "UserId"
           },
           "email": { "type": "string" },
@@ -30,14 +31,18 @@
           },
           "createdAt": { "type": "string", "format": "date-time" }
         },
+        "description": "Read model of a user account — no secrets ride along.",
         "x-readme-ref-name": "UserAccountView"
-      }
+      },
+      "description": "Page contents."
     },
     "total": {
       "pattern": "^-?(?:0|[1-9]\\d*)$",
       "type": ["integer", "string"],
+      "description": "Total rows across all pages.",
       "format": "int32"
     }
   },
+  "description": "Paged envelope shared by the identity-admin list endpoints\r\n(issue #45 / F13 — `GET /api/v1/users`, `/api/v1/grants`,\r\n`/api/v1/keys`). Wire shape `{ items, total }`: `items` is\r\nthe already-projected view list for the requested page; `total` is\r\nthe count across every page, not the page size.",
   "x-readme-ref-name": "IdentityAdminPage"
 }

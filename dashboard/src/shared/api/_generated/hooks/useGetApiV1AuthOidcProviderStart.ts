@@ -63,6 +63,11 @@ export function getApiV1AuthOidcProviderStartQueryOptions(
 }
 
 /**
+ * @summary Starts the manual OIDC code-flow for a configured provider:
+ * generates a PKCE pair, persists a state row carrying the verifier
+ * + returnTo, and 302s the browser to the IdP's authorize endpoint
+ * with all OAuth2 params. Unknown providers are 404 before any
+ * redirect happens — the redirect URL is never built for them.
  * {@link /api/v1/auth/oidc/:provider/start}
  */
 export function useGetApiV1AuthOidcProviderStart<

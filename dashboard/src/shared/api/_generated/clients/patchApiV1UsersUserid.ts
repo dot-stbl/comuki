@@ -25,6 +25,7 @@ function getPatchApiV1UsersUseridUrl(
 }
 
 /**
+ * @summary Toggles the disabled flag (issue #35). Permission `identity:write`.
  * {@link /api/v1/users/:userId}
  */
 export async function patchApiV1UsersUserid(

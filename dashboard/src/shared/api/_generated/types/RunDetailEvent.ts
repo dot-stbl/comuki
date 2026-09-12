@@ -3,24 +3,32 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Wire row for one journal event in the run timeline (newest first).
+ */
 export type RunDetailEvent = {
   /**
+   * @description Event id.
    * @type string, uuid
    */
   id: string
   /**
+   * @description Work-item the entry is about, when the payload carries one.
    * @type null,string, uuid
    */
   workItemId: string | null
   /**
+   * @description Stable dot.case event type.
    * @type string
    */
   type: string
   /**
+   * @description When the entry happened.
    * @type string, date-time
    */
   occurredAt: string
   /**
+   * @description Raw payload JSON, or null when omitted.
    * @type null,string
    */
   payloadJson: string | null

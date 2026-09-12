@@ -8,29 +8,81 @@ import { runDetailRevisionSchema } from "./runDetailRevisionSchema"
 import { runDetailWorkItemSchema } from "./runDetailWorkItemSchema"
 import { z } from "zod/v4"
 
-export const runDetailSchema = z.object({
-  id: z.uuid(),
-  projectId: z.uuid(),
-  status: z.string(),
-  createdAt: z.iso.datetime({ offset: true }),
-  updatedAt: z.iso.datetime({ offset: true }),
-  title: z.string(),
-  app: z.string(),
-  model: z.string(),
-  costUsd: z.union([
-    z.number(),
-    z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/),
-  ]),
-  tokens: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  brief: z.string(),
-  get workItems() {
-    return z.array(runDetailWorkItemSchema)
-  },
-  get events() {
-    return z.array(runDetailEventSchema)
-  },
-  rules: z.array(z.string()),
-  get revision() {
-    return runDetailRevisionSchema
-  },
-})
+/**
+ * @description Full wire shape of one run for `GET /api/v1/runs/{runId}`. Carries\r\neverything the FE `RunDetail` mapper needs without a second round-trip.\r\n\r\nSeveral fields (Title, App, Model, CostUsd, Tokens, Rules) are placeholders\r\nfor data the platform does not yet store on the run row — see\r\nGetRunDetailHandler for what is and is not populated, and\r\naudit-report §2.7 for the broader metering / plan-extent gaps.
+ */
+export const runDetailSchema = z
+  .object({
+    id: z.uuid().describe("Run id (UUIDv7)."),
+    projectId: z.uuid().describe("Owning project id."),
+    status: z.string().describe("Wire status string (lowercase)."),
+    createdAt: z.iso
+      .datetime({ offset: true })
+      .describe("Run admit timestamp."),
+    updatedAt: z.iso
+      .datetime({ offset: true })
+      .describe("Last status-change timestamp."),
+    title: z
+      .string()
+      .describe(
+        "Reserved for the brain-authored run title; empty until brain stores it."
+      ),
+    app: z
+      .string()
+      .describe(
+        "Reserved for the worker-app key; empty until brain stores it."
+      ),
+    model: z
+      .string()
+      .describe(
+        'Reserved for the lead/worker split; `"worker"` as the safe default.'
+      ),
+    costUsd: z
+      .union([z.number(), z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/)])
+      .describe(
+        "Per-run token spend in USD; `0` until proxy metering writes `usage_events`."
+      ),
+    tokens: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Per-run token count; `0` for the same reason."),
+    brief: z
+      .string()
+      .describe(
+        "First work-item brief (raw jsonb string); empty when the run has no work items yet."
+      ),
+    get workItems() {
+      return z
+        .array(
+          runDetailWorkItemSchema.describe(
+            "Wire row for one work-item in the run's plan."
+          )
+        )
+        .describe(
+          "Plan nodes, with their `dependsOn` lists joined from `work_item_dependencies`."
+        )
+    },
+    get events() {
+      return z
+        .array(
+          runDetailEventSchema.describe(
+            "Wire row for one journal event in the run timeline (newest first)."
+          )
+        )
+        .describe(
+          "Recent journal rows (top 20, newest first) — run-status, work-item-status, lease-reaper, etc."
+        )
+    },
+    rules: z
+      .array(z.string())
+      .describe(
+        "Control-plane rule names applied; empty until control-plane exposes the lookup."
+      ),
+    get revision() {
+      return runDetailRevisionSchema.describe(
+        "Pinned revisions of the worker image and the control-plane profiles ref."
+      )
+    },
+  })
+  .describe(
+    "Full wire shape of one run for `GET /api/v1/runs/{runId}`. Carries\r\neverything the FE `RunDetail` mapper needs without a second round-trip.\r\n\r\nSeveral fields (Title, App, Model, CostUsd, Tokens, Rules) are placeholders\r\nfor data the platform does not yet store on the run row — see\r\nGetRunDetailHandler for what is and is not populated, and\r\naudit-report §2.7 for the broader metering / plan-extent gaps."
+  )

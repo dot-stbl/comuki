@@ -3,8 +3,12 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Inbox claim body (POST /api/v1/inbox/claim).
+ */
 export type ClaimTicketRequest = {
   /**
+   * @description The pending ticket to claim.
    * @type string, uuid
    */
   ticketId: string

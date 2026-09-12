@@ -47,6 +47,7 @@ export function postApiV1SourcesProbeMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Probes a draft source connection before save (issue #41).
  * {@link /api/v1/sources/probe}
  */
 export function usePostApiV1SourcesProbe<TContext>(

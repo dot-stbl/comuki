@@ -5,9 +5,30 @@
 
 import { z } from "zod/v4"
 
-export const sourceProbeResultSchema = z.object({
-  reachable: z.boolean(),
-  latencyMs: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  suggestedId: z.nullable(z.string()),
-  message: z.string(),
-})
+/**
+ * @description The outcome of a probe — does the upstream answer, how fast, what id\r\nwould the host suggest for a follow-up create. The `latencyMs`\r\nis measured end-to-end (HTTP request to first response byte) and is\r\nonly meaningful when `reachable` is true.
+ */
+export const sourceProbeResultSchema = z
+  .object({
+    reachable: z
+      .boolean()
+      .describe("Upstream answered (any HTTP status counts as reachable)."),
+    latencyMs: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Round-trip latency when reachable; 0 otherwise."),
+    suggestedId: z.nullable(
+      z
+        .string()
+        .describe(
+          "Optional id the provider returned (e.g. GitHub repo id) — null when unknown."
+        )
+    ),
+    message: z
+      .string()
+      .describe(
+        'Provider-specific short status sentence (e.g. `"github: 200 OK"`) for the operator.'
+      ),
+  })
+  .describe(
+    "The outcome of a probe — does the upstream answer, how fast, what id\r\nwould the host suggest for a follow-up create. The `latencyMs`\r\nis measured end-to-end (HTTP request to first response byte) and is\r\nonly meaningful when `reachable` is true."
+  )

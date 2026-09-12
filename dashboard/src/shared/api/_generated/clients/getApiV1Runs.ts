@@ -21,6 +21,10 @@ function getGetApiV1RunsUrl() {
 }
 
 /**
+ * @summary Lists runs with optional `filter` and `sort` DSL expressions
+ * (e.g. `status==running`, `createdAt&gt;=now(-7d)`,
+ * `sort=updatedAt,desc`). Filterable fields: `Status`
+ * (eq/in/notIn), `CreatedAt` + `UpdatedAt` (range, now()).
  * {@link /api/v1/runs}
  */
 export async function getApiV1Runs(

@@ -6,11 +6,28 @@
 import { chatMessageViewSchema } from "./chatMessageViewSchema"
 import { z } from "zod/v4"
 
-export const chatMessagesPageViewSchema = z.object({
-  get items() {
-    return z.array(chatMessageViewSchema)
-  },
-  page: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  pageSize: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  total: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-})
+/**
+ * @description Transcript page read model.
+ */
+export const chatMessagesPageViewSchema = z
+  .object({
+    get items() {
+      return z
+        .array(
+          chatMessageViewSchema.describe(
+            "Transcript row read model. IReadOnlyList&lt;MessagePart&gt;? ChatMessageView.Parts is the rich shape the\r\nconsole renders; string ChatMessageView.Content is the flat projection of the\r\nsame row and stays populated for every reader that predates parts."
+          )
+        )
+        .describe("Rows of this page, oldest first.")
+    },
+    page: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("1-based page number."),
+    pageSize: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Page size."),
+    total: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Total message count of the session."),
+  })
+  .describe("Transcript page read model.")

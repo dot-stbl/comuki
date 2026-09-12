@@ -20,6 +20,7 @@ function getPostApiV1SourcesProbeUrl() {
 }
 
 /**
+ * @summary Probes a draft source connection before save (issue #41).
  * {@link /api/v1/sources/probe}
  */
 export async function postApiV1SourcesProbe(

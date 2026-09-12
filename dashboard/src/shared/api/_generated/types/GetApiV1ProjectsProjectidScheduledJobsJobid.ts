@@ -8,10 +8,12 @@ import type { ScheduledJobView } from "./ScheduledJobView"
 
 export type GetApiV1ProjectsProjectidScheduledJobsJobidPathParams = {
   /**
+   * @description Owning project (route context, asserted equal).
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description Job id.
    * @type string, uuid
    */
   jobId: string

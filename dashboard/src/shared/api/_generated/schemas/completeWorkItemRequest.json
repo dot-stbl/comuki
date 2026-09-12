@@ -2,5 +2,6 @@
   "required": ["resultJson"],
   "type": "object",
   "properties": { "resultJson": { "type": "string" } },
+  "description": "Completion body: the worker-produced result JSON (must be valid, non-empty JSON).",
   "x-readme-ref-name": "CompleteWorkItemRequest"
 }

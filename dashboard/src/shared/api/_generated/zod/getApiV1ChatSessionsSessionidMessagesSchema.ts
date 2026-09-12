@@ -14,7 +14,8 @@ export const getApiV1ChatSessionsSessionidMessagesPathParamsSchema = z.object({
 export const getApiV1ChatSessionsSessionidMessagesQueryParamsSchema = z.object({
   page: z
     .union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
-    .default(1),
+    .default(1)
+    .describe("1-based page number."),
   pageSize: z
     .union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
     .default(50),
@@ -23,9 +24,9 @@ export const getApiV1ChatSessionsSessionidMessagesQueryParamsSchema = z.object({
 /**
  * @description OK
  */
-export const getApiV1ChatSessionsSessionidMessages200Schema = z.lazy(
-  () => chatMessagesPageViewSchema
-)
+export const getApiV1ChatSessionsSessionidMessages200Schema = z
+  .lazy(() => chatMessagesPageViewSchema)
+  .describe("Transcript page read model.")
 
 /**
  * @description Not Found

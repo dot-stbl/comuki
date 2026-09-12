@@ -3,12 +3,17 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Approve-request body: resolves the pending plan interrupt.
+ */
 export type ChatApproveRequest = {
   /**
+   * @description Approve when true, reject otherwise.
    * @type boolean
    */
   approved: boolean
   /**
+   * @description Optional rejection reason.
    * @type null,string
    */
   reason?: string | null

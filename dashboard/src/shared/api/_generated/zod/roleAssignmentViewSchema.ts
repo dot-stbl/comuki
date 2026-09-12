@@ -6,17 +6,26 @@
 import { roleAssignmentIdSchema } from "./roleAssignmentIdSchema"
 import { z } from "zod/v4"
 
-export const roleAssignmentViewSchema = z.object({
-  get id() {
-    return roleAssignmentIdSchema
-  },
-  role: z.string(),
-  scopeLevel: z.string(),
-  scopeProjectId: z.nullable(z.string()),
-  subjectType: z.string(),
-  subjectId: z.string(),
-  grantedBy: z.nullable(z.string()),
-  createdAt: z.iso.datetime({ offset: true }),
-  revokedAt: z.nullable(z.iso.datetime({ offset: true })),
-  isActive: z.boolean(),
-})
+/**
+ * @description Read model of a role assignment. Wire-friendly strings (role key,\r\nscope key) — the API never leaks enum names.
+ */
+export const roleAssignmentViewSchema = z
+  .object({
+    get id() {
+      return roleAssignmentIdSchema.describe(
+        "Strong-typed identifier of a role assignment row. UUIDv7 like every\r\nIdentity entity id."
+      )
+    },
+    role: z.string(),
+    scopeLevel: z.string(),
+    scopeProjectId: z.nullable(z.string()),
+    subjectType: z.string(),
+    subjectId: z.string(),
+    grantedBy: z.nullable(z.string()),
+    createdAt: z.iso.datetime({ offset: true }),
+    revokedAt: z.nullable(z.iso.datetime({ offset: true })),
+    isActive: z.boolean(),
+  })
+  .describe(
+    "Read model of a role assignment. Wire-friendly strings (role key,\r\nscope key) — the API never leaks enum names."
+  )

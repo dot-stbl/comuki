@@ -22,6 +22,7 @@ function getPostApiV1UsersUrl() {
 }
 
 /**
+ * @summary Invites a user (issue #31). Permission `identity:write`.
  * {@link /api/v1/users}
  */
 export async function postApiV1Users(

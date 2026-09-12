@@ -14,9 +14,11 @@ export const postApiV1GrantsGrantidRevokePathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const postApiV1GrantsGrantidRevoke200Schema = z.lazy(
-  () => roleAssignmentViewSchema
-)
+export const postApiV1GrantsGrantidRevoke200Schema = z
+  .lazy(() => roleAssignmentViewSchema)
+  .describe(
+    "Read model of a role assignment. Wire-friendly strings (role key,\r\nscope key) — the API never leaks enum names."
+  )
 
 /**
  * @description Not Found

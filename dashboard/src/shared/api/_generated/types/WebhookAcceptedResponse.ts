@@ -3,8 +3,12 @@
  * Do not edit manually.
  */
 
+/**
+ * @description The 200 body of a processed (or deliberately ignored) delivery.
+ */
 export type WebhookAcceptedResponse = {
   /**
+   * @description Delivery outcome label (admitted | pending | filtered | skipped | duplicate | replay).
    * @type string
    */
   outcome: string

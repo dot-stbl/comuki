@@ -29,6 +29,7 @@ function getPatchApiV1ProjectsProjectidScheduledJobsJobidUrl(
 }
 
 /**
+ * @summary Partial update — null fields leave the stored value untouched.
  * {@link /api/v1/projects/:projectId/scheduled-jobs/:jobId}
  */
 export async function patchApiV1ProjectsProjectidScheduledJobsJobid(

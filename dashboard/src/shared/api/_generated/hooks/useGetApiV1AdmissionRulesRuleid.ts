@@ -56,6 +56,7 @@ export function getApiV1AdmissionRulesRuleidQueryOptions(
 }
 
 /**
+ * @summary Reads one rule.
  * {@link /api/v1/admission-rules/:ruleId}
  */
 export function useGetApiV1AdmissionRulesRuleid<

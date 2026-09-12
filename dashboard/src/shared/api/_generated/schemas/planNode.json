@@ -1,0 +1,24 @@
+{
+  "required": ["id", "title", "profileKey", "brief"],
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Node id, unique inside the plan (e.g. `n1`)."
+    },
+    "title": {
+      "type": "string",
+      "description": "Short human title of the step."
+    },
+    "profileKey": {
+      "type": "string",
+      "description": "Worker profile key from the catalog (e.g. `implement`)."
+    },
+    "brief": {
+      "type": "string",
+      "description": "The worker brief — what this step must produce."
+    }
+  },
+  "description": "One step of a plan, executed by one worker with one profile.",
+  "x-readme-ref-name": "PlanNode"
+}

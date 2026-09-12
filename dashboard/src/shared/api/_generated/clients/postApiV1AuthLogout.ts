@@ -17,6 +17,7 @@ function getPostApiV1AuthLogoutUrl() {
 }
 
 /**
+ * @summary Clears the cookie session.
  * {@link /api/v1/auth/logout}
  */
 export async function postApiV1AuthLogout(

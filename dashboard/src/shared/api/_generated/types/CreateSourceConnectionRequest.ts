@@ -3,24 +3,32 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Source connection creation body (POST /api/v1/sources).
+ */
 export type CreateSourceConnectionRequest = {
   /**
+   * @description Project the connection feeds.
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description Provider key: github | gitlab | yandex-tracker | jira.
    * @type string
    */
   provider: string
   /**
+   * @description Human-readable name.
    * @type string
    */
   name: string
   /**
+   * @description Provider-specific, non-secret settings (env-var NAMES only).
    * @type string
    */
   settingsJson: string
   /**
+   * @description Env-var name holding the webhook secret.
    * @type string
    */
   secretEnvRef: string

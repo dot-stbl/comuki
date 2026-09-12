@@ -7,26 +7,30 @@ import { scheduledJobsPageSchema } from "./scheduledJobsPageSchema"
 import { z } from "zod/v4"
 
 export const getApiV1ProjectsProjectidScheduledJobsPathParamsSchema = z.object({
-  projectId: z.uuid(),
+  projectId: z.uuid().describe("Owning project."),
 })
 
 export const getApiV1ProjectsProjectidScheduledJobsQueryParamsSchema = z.object(
   {
     page: z
       .union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
-      .default(1),
+      .default(1)
+      .describe("1-based page index (default 1)."),
     pageSize: z
       .union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
-      .default(100),
+      .default(100)
+      .describe("Page size (default 100, max 500)."),
   }
 )
 
 /**
  * @description OK
  */
-export const getApiV1ProjectsProjectidScheduledJobs200Schema = z.lazy(
-  () => scheduledJobsPageSchema
-)
+export const getApiV1ProjectsProjectidScheduledJobs200Schema = z
+  .lazy(() => scheduledJobsPageSchema)
+  .describe(
+    'One paginated read of scheduled jobs for a project.\r\nWire shape: `{ "items": [ScheduledJobView], "total": N }`.\r\nThe scheduler surface is small (per project, one page per request)\r\n— pagination is opt-in via `?page` + `?pageSize`; the\r\ndefault returns everything.'
+  )
 
 export const getApiV1ProjectsProjectidScheduledJobsQueryResponseSchema = z.lazy(
   () => getApiV1ProjectsProjectidScheduledJobs200Schema

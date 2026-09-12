@@ -5,8 +5,15 @@
 
 import { z } from "zod/v4"
 
-export const updateAdmissionRuleRequestSchema = z.object({
-  mode: z.string().nullish(),
-  filterJson: z.string().nullish(),
-  enabled: z.boolean().nullish(),
-})
+/**
+ * @description Admission rule partial update body (PUT /api/v1/admission-rules/{id}).
+ */
+export const updateAdmissionRuleRequestSchema = z
+  .object({
+    mode: z.string().describe("watch | inbox; null = keep.").nullish(),
+    filterJson: z.string().describe("New filter json; null = keep.").nullish(),
+    enabled: z.boolean().describe("Enable/disable; null = keep.").nullish(),
+  })
+  .describe(
+    "Admission rule partial update body (PUT /api/v1/admission-rules/{id})."
+  )

@@ -1,6 +1,16 @@
 {
   "required": ["rules", "sdk"],
   "type": "object",
-  "properties": { "rules": { "type": "string" }, "sdk": { "type": "string" } },
+  "properties": {
+    "rules": {
+      "type": "string",
+      "description": "Git ref of the control-plane / profiles repo (pinned on the work item)."
+    },
+    "sdk": {
+      "type": "string",
+      "description": "Worker image + digest (pinned on the work item)."
+    }
+  },
+  "description": "Pinned revisions of the worker image and the control-plane profiles ref.",
   "x-readme-ref-name": "RunDetailRevision"
 }

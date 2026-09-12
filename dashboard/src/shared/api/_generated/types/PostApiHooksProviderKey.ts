@@ -8,10 +8,12 @@ import type { WebhookAcceptedResponse } from "./WebhookAcceptedResponse"
 
 export type PostApiHooksProviderKeyPathParams = {
   /**
+   * @description Kebab-case source key (github | gitlab | yandex-tracker | jira).
    * @type string
    */
   provider: string
   /**
+   * @description Per-connection webhook routing key.
    * @type string
    */
   key: string

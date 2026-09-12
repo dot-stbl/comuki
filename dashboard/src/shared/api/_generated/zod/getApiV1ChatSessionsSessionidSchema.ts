@@ -14,9 +14,9 @@ export const getApiV1ChatSessionsSessionidPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const getApiV1ChatSessionsSessionid200Schema = z.lazy(
-  () => chatSessionViewSchema
-)
+export const getApiV1ChatSessionsSessionid200Schema = z
+  .lazy(() => chatSessionViewSchema)
+  .describe("Session read model.")
 
 /**
  * @description Not Found

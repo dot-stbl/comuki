@@ -5,9 +5,20 @@
 
 import { z } from "zod/v4"
 
-export const secretRotationResponseSchema = z.object({
-  sourceId: z.uuid(),
-  secret: z.string(),
-  secretEnvRef: z.string(),
-  rotatedAt: z.iso.datetime({ offset: true }),
-})
+/**
+ * @description Wire shape of a secret-rotation result (issue #46). Carries the\r\nfreshly-generated secret exactly once — the operator needs it to\r\nconfigure the tracker; it does not appear in any other endpoint\r\nresponse (list / get / source-connection-view).
+ */
+export const secretRotationResponseSchema = z
+  .object({
+    sourceId: z.uuid().describe("Connection whose secret was rotated."),
+    secret: z.string().describe("Plaintext secret (hex). Disclosed only here."),
+    secretEnvRef: z
+      .string()
+      .describe("Env-var name the connection still points to."),
+    rotatedAt: z.iso
+      .datetime({ offset: true })
+      .describe("Wall-clock the rotation was stamped."),
+  })
+  .describe(
+    "Wire shape of a secret-rotation result (issue #46). Carries the\r\nfreshly-generated secret exactly once — the operator needs it to\r\nconfigure the tracker; it does not appear in any other endpoint\r\nresponse (list / get / source-connection-view)."
+  )

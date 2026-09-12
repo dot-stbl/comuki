@@ -1,0 +1,9 @@
+{
+  "required": ["markdown"],
+  "properties": {
+    "kind": { "enum": ["text"], "type": "string" },
+    "markdown": { "type": "string", "description": "Message text in markdown." }
+  },
+  "description": "Markdown prose — the default shape of a reply.",
+  "x-readme-ref-name": "MessagePartTextPart"
+}

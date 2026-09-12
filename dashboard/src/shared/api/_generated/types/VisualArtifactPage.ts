@@ -5,12 +5,17 @@
 
 import type { VisualArtifactListItem } from "./VisualArtifactListItem"
 
+/**
+ * @description Page envelope returned by the visual-artifacts list endpoint.
+ */
 export type VisualArtifactPage = {
   /**
+   * @description Artifacts, oldest first. Empty when the project has none.
    * @type array
    */
   items: VisualArtifactListItem[]
   /**
+   * @description Project id echoed back to the caller.
    * @type string, uuid
    */
   projectId: string

@@ -7,6 +7,7 @@ import type { AdmissionRuleView } from "./AdmissionRuleView"
 
 export type GetApiV1AdmissionRulesQueryParams = {
   /**
+   * @description Optional project filter.
    * @type string | undefined, uuid
    */
   projectId?: string

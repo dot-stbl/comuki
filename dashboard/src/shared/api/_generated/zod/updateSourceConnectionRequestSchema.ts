@@ -5,9 +5,20 @@
 
 import { z } from "zod/v4"
 
-export const updateSourceConnectionRequestSchema = z.object({
-  name: z.string().nullish(),
-  settingsJson: z.string().nullish(),
-  secretEnvRef: z.string().nullish(),
-  enabled: z.boolean().nullish(),
-})
+/**
+ * @description Source connection partial update body (PUT /api/v1/sources/{id}).
+ */
+export const updateSourceConnectionRequestSchema = z
+  .object({
+    name: z.string().describe("New name; null = keep.").nullish(),
+    settingsJson: z
+      .string()
+      .describe("New settings json; null = keep.")
+      .nullish(),
+    secretEnvRef: z
+      .string()
+      .describe("New secret env name; null = keep.")
+      .nullish(),
+    enabled: z.boolean().describe("Enable/disable; null = keep.").nullish(),
+  })
+  .describe("Source connection partial update body (PUT /api/v1/sources/{id}).")

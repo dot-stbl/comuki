@@ -22,20 +22,28 @@
           "userId": { "type": "string", "format": "uuid" },
           "name": { "type": "string" },
           "prefix": { "type": "string" },
-          "tenantProjectId": { "type": ["null", "string"], "format": "uuid" },
+          "tenantProjectId": {
+            "type": ["null", "string"],
+            "description": "Tenant scope the key was issued under. Null when the key has no\r\ntenant scope and accepts any `X-Comuki-Tenant` header value.",
+            "format": "uuid"
+          },
           "createdAt": { "type": "string", "format": "date-time" },
           "lastUsedAt": { "type": ["null", "string"], "format": "date-time" },
           "revokedAt": { "type": ["null", "string"], "format": "date-time" },
           "isActive": { "type": "boolean" }
         },
+        "description": "Read-model of an API key row. The plaintext token is NOT carried —\r\nit lives in IssuedApiKeyCredential\r\nonly at issue time.",
         "x-readme-ref-name": "ApiKeyView"
-      }
+      },
+      "description": "Page contents."
     },
     "total": {
       "pattern": "^-?(?:0|[1-9]\\d*)$",
       "type": ["integer", "string"],
+      "description": "Total rows across all pages.",
       "format": "int32"
     }
   },
+  "description": "Paged envelope for API keys. The plaintext is never carried —\r\n    only the public-facing view record (prefix, name, status…).",
   "x-readme-ref-name": "IdentityAdminKeysPage"
 }

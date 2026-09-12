@@ -5,7 +5,20 @@
 
 import { z } from "zod/v4"
 
-export const runDetailRevisionSchema = z.object({
-  rules: z.string(),
-  sdk: z.string(),
-})
+/**
+ * @description Pinned revisions of the worker image and the control-plane profiles ref.
+ */
+export const runDetailRevisionSchema = z
+  .object({
+    rules: z
+      .string()
+      .describe(
+        "Git ref of the control-plane / profiles repo (pinned on the work item)."
+      ),
+    sdk: z
+      .string()
+      .describe("Worker image + digest (pinned on the work item)."),
+  })
+  .describe(
+    "Pinned revisions of the worker image and the control-plane profiles ref."
+  )

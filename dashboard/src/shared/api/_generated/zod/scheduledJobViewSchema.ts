@@ -5,16 +5,29 @@
 
 import { z } from "zod/v4"
 
-export const scheduledJobViewSchema = z.object({
-  id: z.uuid(),
-  projectId: z.uuid(),
-  cronExpression: z.string(),
-  profileKey: z.string(),
-  briefJson: z.string(),
-  runOnOnceAt: z.nullable(z.iso.datetime({ offset: true })),
-  enabled: z.boolean(),
-  lastFiredAt: z.nullable(z.iso.datetime({ offset: true })),
-  nextFireAt: z.iso.datetime({ offset: true }),
-  createdAt: z.iso.datetime({ offset: true }),
-  updatedAt: z.iso.datetime({ offset: true }),
-})
+/**
+ * @description Read projection of ScheduledJob for the REST surface.
+ */
+export const scheduledJobViewSchema = z
+  .object({
+    id: z.uuid().describe("The job id."),
+    projectId: z.uuid().describe("Owning project."),
+    cronExpression: z.string().describe("5-field UTC cron expression."),
+    profileKey: z.string().describe("Profile the launched run will resolve."),
+    briefJson: z.string().describe("Worker brief payload."),
+    runOnOnceAt: z.nullable(
+      z.iso.datetime({ offset: true }).describe("Optional one-shot fire-at.")
+    ),
+    enabled: z.boolean().describe("Whether the dispatcher will fire it."),
+    lastFiredAt: z.nullable(
+      z.iso
+        .datetime({ offset: true })
+        .describe("Last fire stamp; null until the first dispatch.")
+    ),
+    nextFireAt: z.iso
+      .datetime({ offset: true })
+      .describe("Next computed fire stamp."),
+    createdAt: z.iso.datetime({ offset: true }),
+    updatedAt: z.iso.datetime({ offset: true }),
+  })
+  .describe("Read projection of ScheduledJob for the REST surface.")

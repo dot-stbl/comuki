@@ -15,9 +15,11 @@ export const postApiV1ChatSessionsSessionidApprovePathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const postApiV1ChatSessionsSessionidApprove200Schema = z.lazy(
-  () => chatTurnResultViewSchema
-)
+export const postApiV1ChatSessionsSessionidApprove200Schema = z
+  .lazy(() => chatTurnResultViewSchema)
+  .describe(
+    "Turn outcome: the reply view plus the pending approve card when the\r\nthread interrupted. The card carries the canonical plan JSON the\r\ndashboard renders; approve/reject posts to\r\n`/api/v1/chat/sessions/{id}/approve`."
+  )
 
 /**
  * @description Not Found
@@ -33,8 +35,16 @@ export const postApiV1ChatSessionsSessionidApprove409Schema = z.lazy(
   () => problemDetailsSchema
 )
 
-export const postApiV1ChatSessionsSessionidApproveMutationRequestSchema =
-  z.lazy(() => chatApproveRequestSchema)
+/**
+ * @description Service Unavailable
+ */
+export const postApiV1ChatSessionsSessionidApprove503Schema = z.lazy(
+  () => problemDetailsSchema
+)
+
+export const postApiV1ChatSessionsSessionidApproveMutationRequestSchema = z
+  .lazy(() => chatApproveRequestSchema)
+  .describe("Approve-request body: resolves the pending plan interrupt.")
 
 export const postApiV1ChatSessionsSessionidApproveMutationResponseSchema =
   z.lazy(() => postApiV1ChatSessionsSessionidApprove200Schema)

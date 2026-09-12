@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Read-model of an API key row. The plaintext token is NOT carried —\r\nit lives in IssuedApiKeyCredential\r\nonly at issue time.
+ */
 export type ApiKeyView = {
   /**
    * @type string, uuid
@@ -21,6 +24,7 @@ export type ApiKeyView = {
    */
   prefix: string
   /**
+   * @description Tenant scope the key was issued under. Null when the key has no\r\ntenant scope and accepts any `X-Comuki-Tenant` header value.
    * @type null,string, uuid
    */
   tenantProjectId: string | null

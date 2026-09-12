@@ -5,14 +5,27 @@
 
 import { z } from "zod/v4"
 
-export const apiKeyViewSchema = z.object({
-  id: z.uuid(),
-  userId: z.uuid(),
-  name: z.string(),
-  prefix: z.string(),
-  tenantProjectId: z.nullable(z.uuid()),
-  createdAt: z.iso.datetime({ offset: true }),
-  lastUsedAt: z.nullable(z.iso.datetime({ offset: true })),
-  revokedAt: z.nullable(z.iso.datetime({ offset: true })),
-  isActive: z.boolean(),
-})
+/**
+ * @description Read-model of an API key row. The plaintext token is NOT carried —\r\nit lives in IssuedApiKeyCredential\r\nonly at issue time.
+ */
+export const apiKeyViewSchema = z
+  .object({
+    id: z.uuid(),
+    userId: z.uuid(),
+    name: z.string(),
+    prefix: z.string(),
+    tenantProjectId: z.nullable(
+      z
+        .uuid()
+        .describe(
+          "Tenant scope the key was issued under. Null when the key has no\r\ntenant scope and accepts any `X-Comuki-Tenant` header value."
+        )
+    ),
+    createdAt: z.iso.datetime({ offset: true }),
+    lastUsedAt: z.nullable(z.iso.datetime({ offset: true })),
+    revokedAt: z.nullable(z.iso.datetime({ offset: true })),
+    isActive: z.boolean(),
+  })
+  .describe(
+    "Read-model of an API key row. The plaintext token is NOT carried —\r\nit lives in IssuedApiKeyCredential\r\nonly at issue time."
+  )

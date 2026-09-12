@@ -9,13 +9,27 @@ import { z } from "zod/v4"
 
 export const getApiV1GrantsQueryParamsSchema = z
   .object({
-    SubjectKind: z.optional(z.string()),
-    SubjectId: z.optional(z.uuid()),
+    SubjectKind: z.optional(
+      z
+        .string()
+        .describe('Optional subject-kind filter (`"user"` or `"api-key"`).')
+    ),
+    SubjectId: z.optional(z.uuid().describe("Optional subject id filter.")),
     Page: z.optional(
-      z.union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      z
+        .union([
+          z.coerce.number().int(),
+          z.string().regex(/^-?(?:0|[1-9]\d*)$/),
+        ])
+        .describe("1-based page index; default 1.")
     ),
     PageSize: z.optional(
-      z.union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      z
+        .union([
+          z.coerce.number().int(),
+          z.string().regex(/^-?(?:0|[1-9]\d*)$/),
+        ])
+        .describe("Page size (1..100); default 100.")
     ),
   })
   .optional()
@@ -23,9 +37,9 @@ export const getApiV1GrantsQueryParamsSchema = z
 /**
  * @description OK
  */
-export const getApiV1Grants200Schema = z.lazy(
-  () => identityAdminGrantsPageSchema
-)
+export const getApiV1Grants200Schema = z
+  .lazy(() => identityAdminGrantsPageSchema)
+  .describe("Paged envelope for role assignments.")
 
 /**
  * @description Bad Request

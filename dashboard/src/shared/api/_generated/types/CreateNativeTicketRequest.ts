@@ -3,24 +3,32 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Native ticket creation body (POST /api/v1/tickets).
+ */
 export type CreateNativeTicketRequest = {
   /**
+   * @description Project the ticket (and its run) belongs to.
    * @type string, uuid
    */
   projectId: string
   /**
+   * @description Ticket title.
    * @type string
    */
   title: string
   /**
+   * @description Ticket body.
    * @type string | undefined
    */
   body?: string
   /**
+   * @description Caller-supplied dedupe id; generated when empty.
    * @type null,string
    */
   externalId?: string | null
   /**
+   * @description Author label.
    * @type null,string
    */
   author?: string | null

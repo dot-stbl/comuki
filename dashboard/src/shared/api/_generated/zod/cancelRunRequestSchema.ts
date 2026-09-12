@@ -5,6 +5,18 @@
 
 import { z } from "zod/v4"
 
-export const cancelRunRequestSchema = z.object({
-  reason: z.string().nullish(),
-})
+/**
+ * @description Body of `POST /api/v1/runs/{runId}/cancel`. The `reason`\r\n(when present) is journalled verbatim on the `run.status_changed`\r\nevent\'s jsonb payload — the operator\'s note that survives the run\'s\r\ntimeline.
+ */
+export const cancelRunRequestSchema = z
+  .object({
+    reason: z
+      .string()
+      .describe(
+        "Optional human-readable reason; empty / null → no reason field in the journal payload."
+      )
+      .nullish(),
+  })
+  .describe(
+    "Body of `POST /api/v1/runs/{runId}/cancel`. The `reason`\r\n(when present) is journalled verbatim on the `run.status_changed`\r\nevent's jsonb payload — the operator's note that survives the run's\r\ntimeline."
+  )

@@ -1,5 +1,6 @@
 {
   "type": "object",
   "properties": { "value": { "type": "string", "format": "uuid" } },
+  "description": "Strong-typed identifier of a role assignment row. UUIDv7 like every\r\nIdentity entity id.",
   "x-readme-ref-name": "RoleAssignmentId"
 }

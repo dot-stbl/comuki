@@ -52,6 +52,7 @@ export function putApiV1AdmissionRulesRuleidMutationOptions<TContext = unknown>(
 }
 
 /**
+ * @summary Partial update (PATCH semantics — null fields stay).
  * {@link /api/v1/admission-rules/:ruleId}
  */
 export function usePutApiV1AdmissionRulesRuleid<TContext>(

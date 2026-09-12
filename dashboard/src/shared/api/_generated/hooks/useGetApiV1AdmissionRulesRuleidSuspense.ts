@@ -55,6 +55,7 @@ export function getApiV1AdmissionRulesRuleidSuspenseQueryOptions(
 }
 
 /**
+ * @summary Reads one rule.
  * {@link /api/v1/admission-rules/:ruleId}
  */
 export function useGetApiV1AdmissionRulesRuleidSuspense<

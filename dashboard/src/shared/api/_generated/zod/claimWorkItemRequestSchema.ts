@@ -5,8 +5,15 @@
 
 import { z } from "zod/v4"
 
-export const claimWorkItemRequestSchema = z.object({
-  image: z.string(),
-  profilesRef: z.string(),
-  profileKey: z.string(),
-})
+/**
+ * @description Claim request body: the labels the worker presents (from its\r\n`COMUKI_*` environment). The claiming worker\'s id comes from its\r\nbearer token — never from the body.
+ */
+export const claimWorkItemRequestSchema = z
+  .object({
+    image: z.string(),
+    profilesRef: z.string(),
+    profileKey: z.string(),
+  })
+  .describe(
+    "Claim request body: the labels the worker presents (from its\r\n`COMUKI_*` environment). The claiming worker's id comes from its\r\nbearer token — never from the body."
+  )

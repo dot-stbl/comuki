@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Claim request body: the labels the worker presents (from its\r\n`COMUKI_*` environment). The claiming worker\'s id comes from its\r\nbearer token — never from the body.
+ */
 export type ClaimWorkItemRequest = {
   /**
    * @type string

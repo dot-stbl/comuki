@@ -7,12 +7,27 @@ import { chatMessageViewSchema } from "./chatMessageViewSchema"
 import { jsonDocumentSchema } from "./jsonDocumentSchema"
 import { z } from "zod/v4"
 
-export const chatTurnResultViewSchema = z.object({
-  get messages() {
-    return z.array(chatMessageViewSchema)
-  },
-  awaitingApproval: z.boolean(),
-  get pendingPlan() {
-    return z.union([jsonDocumentSchema, z.null()]).optional()
-  },
-})
+/**
+ * @description Turn outcome: the reply view plus the pending approve card when the\r\nthread interrupted. The card carries the canonical plan JSON the\r\ndashboard renders; approve/reject posts to\r\n`/api/v1/chat/sessions/{id}/approve`.
+ */
+export const chatTurnResultViewSchema = z
+  .object({
+    get messages() {
+      return z
+        .array(
+          chatMessageViewSchema.describe(
+            "Transcript row read model. IReadOnlyList&lt;MessagePart&gt;? ChatMessageView.Parts is the rich shape the\r\nconsole renders; string ChatMessageView.Content is the flat projection of the\r\nsame row and stays populated for every reader that predates parts."
+          )
+        )
+        .describe("Journal rows the action appended (digest, tool, reply).")
+    },
+    awaitingApproval: z
+      .boolean()
+      .describe("True when the thread waits for an approve decision."),
+    get pendingPlan() {
+      return z.union([jsonDocumentSchema, z.null()]).optional()
+    },
+  })
+  .describe(
+    "Turn outcome: the reply view plus the pending approve card when the\r\nthread interrupted. The card carries the canonical plan JSON the\r\ndashboard renders; approve/reject posts to\r\n`/api/v1/chat/sessions/{id}/approve`."
+  )

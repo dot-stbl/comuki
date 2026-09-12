@@ -5,10 +5,15 @@
 
 import { z } from "zod/v4"
 
-export const createProjectRequestSchema = z.object({
-  name: z.string(),
-  slug: z.string(),
-  description: z.nullable(z.string()),
-  profilesGitUrl: z.nullable(z.string()),
-  profilesGitRef: z.nullable(z.string()),
-})
+/**
+ * @description Wire body of POST /api/v1/projects.
+ */
+export const createProjectRequestSchema = z
+  .object({
+    name: z.string(),
+    slug: z.string(),
+    description: z.nullable(z.string()),
+    profilesGitUrl: z.nullable(z.string()),
+    profilesGitRef: z.nullable(z.string()),
+  })
+  .describe("Wire body of POST /api/v1/projects.")

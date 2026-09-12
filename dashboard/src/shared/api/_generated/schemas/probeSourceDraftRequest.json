@@ -2,9 +2,19 @@
   "required": ["provider", "settingsJson", "secretEnvRef"],
   "type": "object",
   "properties": {
-    "provider": { "type": "string" },
-    "settingsJson": { "type": "string" },
-    "secretEnvRef": { "type": "string" }
+    "provider": {
+      "type": "string",
+      "description": "Provider key (github | gitlab | yandex-tracker | jira)."
+    },
+    "settingsJson": {
+      "type": "string",
+      "description": "Provider-specific, non-secret settings (apiBase, owner/repo, queue, …)."
+    },
+    "secretEnvRef": {
+      "type": "string",
+      "description": "Env-var name holding the outbound / webhook secret."
+    }
   },
+  "description": "Body for `POST /api/v1/sources/probe` — the operator types a\r\ndraft plus a plaintext credential in the connect form and asks the\r\nhost to reach the upstream before saving.",
   "x-readme-ref-name": "ProbeSourceDraftRequest"
 }

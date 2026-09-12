@@ -14,6 +14,7 @@ export type GetApiV1AuthOidcProviderStartPathParams = {
 
 export type GetApiV1AuthOidcProviderStartQueryParams = {
   /**
+   * @description Optional in-app path the operator was bounced from.
    * @type string | undefined
    */
   returnTo?: string

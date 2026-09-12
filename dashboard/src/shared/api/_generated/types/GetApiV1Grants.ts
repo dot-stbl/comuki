@@ -8,18 +8,22 @@ import type { ProblemDetails } from "./ProblemDetails"
 
 export type GetApiV1GrantsQueryParams = {
   /**
+   * @description Optional subject-kind filter (`\"user\"` or `\"api-key\"`).
    * @type string | undefined
    */
   SubjectKind?: string
   /**
+   * @description Optional subject id filter.
    * @type string | undefined, uuid
    */
   SubjectId?: string
   /**
+   * @description 1-based page index; default 1.
    * @type integer,string | undefined, int32
    */
   Page?: number | string
   /**
+   * @description Page size (1..100); default 100.
    * @type integer,string | undefined, int32
    */
   PageSize?: number | string

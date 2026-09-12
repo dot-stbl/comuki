@@ -54,6 +54,7 @@ export function postApiV1ProjectsProjectidScheduledJobsMutationOptions<
 }
 
 /**
+ * @summary Creates a scheduled job for a project.
  * {@link /api/v1/projects/:projectId/scheduled-jobs}
  */
 export function usePostApiV1ProjectsProjectidScheduledJobs<TContext>(

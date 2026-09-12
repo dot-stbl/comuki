@@ -165,13 +165,22 @@
 }
 
 /* Names a value, so it takes the tight gesture — the same one the table's
-   column names take. */
+   column names take. Inline-flex so the lucide mark sits with the text. */
 .label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
   font-family: var(--font-ui);
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--tracking-data);
   color: var(--text-faint);
+}
+
+.labelIcon {
+  width: 12px;
+  height: 12px;
+  flex: none;
 }
 
 /* An address and a secret are both values: data voice, tabular by default. */

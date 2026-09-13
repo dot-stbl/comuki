@@ -16,7 +16,6 @@ namespace Comuki.Host.Proxy;
 public static class ProxyKeyAdminEndpoints
 {
     /// <summary>Maps the proxy key admin endpoints.</summary>
-    /// <param name="app"></param>
     public static IEndpointRouteBuilder MapProxyKeyAdminEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet(ApiRoutes.ProxyKeys, ListKeysAsync).WithTags("Proxy");

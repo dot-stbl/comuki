@@ -175,6 +175,37 @@ public sealed class BrainHostOptionsShould
         options.ModelEndpointRef.ShouldBe("vault:models/brain#endpoint");
     }
 
+    [Fact(DisplayName = "Given model creds only in COMUKI_ env vars (absent from IConfiguration), when IOptions<BrainOptions> resolves, then consumers see the resolved instance with the env fallback")]
+    public void OptionsRegistrationServesResolvedInstanceOverFactoryBound()
+    {
+        // The env var is deliberately NOT mapped into IConfiguration: a
+        // factory-bound instance would leave Model.Endpoint null, only
+        // the pinned Resolve output (env fallback applied) carries it.
+        Environment.SetEnvironmentVariable(BrainOptions.ModelEndpointEnvVariable, "https://env-fallback.example.com/v4");
+        try
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["brain:GrpcPort"] = "17014",
+                })
+                .Build();
+            var resolved = BrainOptions.Resolve(configuration);
+            var services = new ServiceCollection();
+            services.AddBrainOptions(configuration, resolved);
+
+            var options = services.BuildServiceProvider()
+                .GetRequiredService<IOptions<BrainOptions>>().Value;
+
+            options.GrpcPort.ShouldBe(17014);
+            options.Model.Endpoint.ShouldBe("https://env-fallback.example.com/v4");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(BrainOptions.ModelEndpointEnvVariable, null);
+        }
+    }
+
     [Fact(DisplayName = "Given a GrpcPort outside the port pool, when the options pipeline materialises, then the DataAnnotations Range gate rejects it")]
     public void OptionsRegistrationEnforcesRangeValidation()
     {

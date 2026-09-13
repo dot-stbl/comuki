@@ -21,9 +21,9 @@ public sealed class ScheduledJobsController(ScheduledJobService jobs) : Controll
 {
     /// <summary>Lists scheduled jobs for a project, newest first.</summary>
     /// <param name="projectId">Owning project.</param>
-    /// <param name="page">1-based page index (default 1).</param>
-    /// <param name="pageSize">Page size (default 100, max 500).</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="page">1-based page index (default 1); the store clamps out-of-range values.</param>
+    /// <param name="pageSize">Page size (default 100, max 500); clamped by the store.</param>
+    /// <param name="cancellationToken">Cooperative cancellation for the store query.</param>
     [HttpGet]
     [RequiresPermission("scheduler:read")]
     [ProducesResponseType<ScheduledJobsPage>(StatusCodes.Status200OK)]
@@ -33,18 +33,11 @@ public sealed class ScheduledJobsController(ScheduledJobService jobs) : Controll
         [FromQuery] int pageSize = 100,
         CancellationToken cancellationToken = default)
     {
-        if (page < 1)
-        {
-            return SchedulerProblems.Problem(
-                StatusCodes.Status400BadRequest,
-                "scheduler.bad_page",
-                "Invalid pagination",
-                "page must be >= 1");
-        }
-
         // Pagination pushed to SQL: the store Skip/Take's in Postgres so at
         // most `pageSize` rows are read from the project regardless of how
         // many jobs exist. Pre-fix pulled every row and Skip/Take'd in C#.
+        // Out-of-range page / pageSize values are clamped by the store —
+        // the same normalization the runs / knowledge surfaces apply.
         var view = await jobs.ListAsync(projectId, page, pageSize, cancellationToken);
 
         return Ok(new ScheduledJobsPage(view.Items, view.Total));

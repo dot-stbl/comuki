@@ -14,7 +14,6 @@ namespace Comuki.Host.Costs;
 public static class CostsModuleEndpoints
 {
     /// <summary>Maps the costs endpoints.</summary>
-    /// <param name="app"></param>
     public static IEndpointRouteBuilder MapCostsEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet(ApiRoutes.ProjectCosts, GetCostsAsync).WithTags("Costs");

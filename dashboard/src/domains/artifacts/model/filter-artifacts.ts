@@ -20,11 +20,9 @@ import type { VisualArtifact } from "./types"
  */
 export function evidenceForRun(
   items: readonly VisualArtifact[],
-  runId: string,
+  runId: string
 ): VisualArtifact[] {
-  return items.filter(
-    (entry) => entry.runId !== null && entry.runId === runId,
-  )
+  return items.filter((entry) => entry.runId !== null && entry.runId === runId)
 }
 
 /**
@@ -40,7 +38,7 @@ export function evidenceForRun(
  */
 export function latestPngForTicket(
   items: readonly VisualArtifact[],
-  ticketId: string,
+  ticketId: string
 ): VisualArtifact | null {
   let newest: VisualArtifact | null = null
   for (const entry of items) {

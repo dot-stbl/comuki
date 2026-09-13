@@ -17,10 +17,7 @@ import type {
 import { getApiV1Runs } from "@/shared/api/_generated/clients/getApiV1Runs"
 import { runsArtifacts } from "@/shared/api/_generated/clients/runsArtifacts"
 import { runsGetById } from "@/shared/api/_generated/clients/runsGetById"
-import {
-  RUNS_POLL_INTERVAL_MS,
-  livePolling,
-} from "@/shared/api/polling"
+import { RUNS_POLL_INTERVAL_MS, livePolling } from "@/shared/api/polling"
 import { findSeedRun, listSeedRuns } from "@/shared/api/mock"
 import { env } from "@/shared/config/env"
 
@@ -80,7 +77,7 @@ async function getRun(runId: string): Promise<RunDetail> {
  */
 async function getRunArtifacts(
   projectId: string,
-  runId: string,
+  runId: string
 ): Promise<RunArtifacts> {
   if (env.useMock) {
     return { projectId, runId, items: [] }

@@ -1,8 +1,6 @@
 import type { ReactNode } from "react"
 
-import type {
-  PlatformSettings,
-} from "@/domains/settings/model/types"
+import type { PlatformSettings } from "@/domains/settings/model/types"
 import { Section } from "@/shared/ui"
 
 import styles from "./settings-panel.module.css"
@@ -45,7 +43,9 @@ export interface PlatformSettingsPanelProps {
   settings: PlatformSettings
 }
 
-export function PlatformSettingsPanel({ settings }: PlatformSettingsPanelProps) {
+export function PlatformSettingsPanel({
+  settings,
+}: PlatformSettingsPanelProps) {
   const lease = settings.orchestration.lease
   const escalation = settings.orchestration.escalationTimeout
   const scale = settings.compute.scale
@@ -64,13 +64,19 @@ export function PlatformSettingsPanel({ settings }: PlatformSettingsPanelProps) 
         data-test="settings-orchestration"
       >
         <div className={styles.platformRows}>
-          <Row label="lease ttl" note="handed out on claim, extended by heartbeat">
+          <Row
+            label="lease ttl"
+            note="handed out on claim, extended by heartbeat"
+          >
             {seconds(lease.leaseTtlSeconds)}
           </Row>
           <Row label="reap interval" note="lease reaper sweep cadence">
             {seconds(lease.reapIntervalSeconds)}
           </Row>
-          <Row label="reap grace" note="buffer past expiry before the reaper acts">
+          <Row
+            label="reap grace"
+            note="buffer past expiry before the reaper acts"
+          >
             {seconds(lease.reapGraceSeconds)}
           </Row>
           <Row label="max attempts" note="claims before a stalled item fails">

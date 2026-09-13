@@ -51,7 +51,11 @@ export const Cold: Story = {
 /** Second landing: thrown out mid-shift, and put back afterwards. */
 export const SessionExpired: Story = {
   render: () => (
-    <WithProvider provider={OIDC} reason="expired" redirect="/runs?status=waiting" />
+    <WithProvider
+      provider={OIDC}
+      reason="expired"
+      redirect="/runs?status=waiting"
+    />
   ),
 }
 

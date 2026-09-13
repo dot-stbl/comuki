@@ -68,7 +68,9 @@ export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
     [grants]
   )
 
-  const revokingId = revokeRole.isPending ? (revokeRole.variables ?? null) : null
+  const revokingId = revokeRole.isPending
+    ? (revokeRole.variables ?? null)
+    : null
 
   const columns = useMemo(
     () =>

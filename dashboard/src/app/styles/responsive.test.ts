@@ -118,8 +118,10 @@ describe("the header band grows downward, never sideways", () => {
 
   it("keeps the toolbar's own boxes shrinkable", () => {
     for (const selector of [".bar", ".controls", ".chips", ".tail"]) {
-      expect({ selector, min: declared(toolbar, selector, "min-inline-size") })
-        .toEqual({ selector, min: "0" })
+      expect({
+        selector,
+        min: declared(toolbar, selector, "min-inline-size"),
+      }).toEqual({ selector, min: "0" })
     }
   })
 
@@ -309,20 +311,27 @@ function unguardedMotion(sheet: string): string[] {
 }
 
 describe("motion is opt-out everywhere the kit and the shell author it", () => {
-  const sheets = [...stylesheets(join(SRC, "app")), ...stylesheets(join(SRC, "shared"))]
+  const sheets = [
+    ...stylesheets(join(SRC, "app")),
+    ...stylesheets(join(SRC, "shared")),
+  ]
 
   it("finds the stylesheets it is meant to be reading", () => {
     // A traversal that silently found nothing would make every case below pass.
     expect(sheets.length).toBeGreaterThan(8)
   })
 
-  it.each(sheets.map((path) => [relative(SRC, path).replace(/\\/g, "/"), path]))(
+  it.each(
+    sheets.map((path) => [relative(SRC, path).replace(/\\/g, "/"), path])
+  )(
     "%s starts no motion outside a prefers-reduced-motion guard",
     (_name, path) => {
       // Two spellings count as a guard, and both are in use: the declaration
       // sits inside `no-preference`, or a `reduce` block cancels it. What is
       // not allowed is a third: motion with no opt-out at all.
-      expect(unguardedMotion(readFileSync(path, "utf8").replace(COMMENTS, ""))).toEqual([])
+      expect(
+        unguardedMotion(readFileSync(path, "utf8").replace(COMMENTS, ""))
+      ).toEqual([])
     }
   )
 })

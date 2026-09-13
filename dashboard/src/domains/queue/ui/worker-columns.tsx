@@ -204,7 +204,9 @@ export function createWorkerColumns({
     {
       id: "current",
       accessorFn: (worker) =>
-        worker.itemId ? (itemsById.get(worker.itemId)?.label ?? worker.itemId) : "",
+        worker.itemId
+          ? (itemsById.get(worker.itemId)?.label ?? worker.itemId)
+          : "",
       header: "current work",
       cell: ({ row }) => {
         const worker = row.original
@@ -341,10 +343,7 @@ export function createWorkerColumns({
         const allowed = can(session, "runs.stop", projectId)
         const denial = allowed
           ? null
-          : needsLabel(
-              "runs.stop",
-              projectOf(session, projectId)?.key
-            )
+          : needsLabel("runs.stop", projectOf(session, projectId)?.key)
 
         const draining = drainingId === worker.id
         const stopping = stoppingId === worker.id

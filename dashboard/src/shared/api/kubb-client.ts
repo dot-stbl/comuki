@@ -41,31 +41,31 @@ import type {
   Client,
   RequestConfig,
   ResponseConfig,
-} from "@kubb/plugin-client/clients/fetch";
+} from "@kubb/plugin-client/clients/fetch"
 
 // Re-export the kubb plugin-client types so generated hooks/clients can pull
 // the full surface from a single import (`@/shared/api/kubb-client`). The
 // transport itself is the default export; the types below match kubb's own
 // `@kubb/plugin-client/clients/fetch` shape so generated code that imports
 // types resolves identically regardless of which file it pulls from.
-export type { Client, RequestConfig, ResponseConfig };
-export type { ResponseErrorConfig } from "@kubb/plugin-client/clients/fetch";
+export type { Client, RequestConfig, ResponseConfig }
+export type { ResponseErrorConfig } from "@kubb/plugin-client/clients/fetch"
 
 /** Empty / unset → "operator hasn't pointed me at a backend yet". */
 const rawBaseUrl =
   typeof import.meta.env.VITE_API_BASE_URL === "string"
     ? import.meta.env.VITE_API_BASE_URL.trim()
-    : "";
+    : ""
 
 /** Trailing slash would double-emit at request time (`//api/v1/...`). */
-const baseURL = rawBaseUrl.replace(/\/+$/, "");
+const baseURL = rawBaseUrl.replace(/\/+$/, "")
 
 /**
  * Surface a clear error when the operator calls a generated hook without
  * setting `VITE_API_BASE_URL`. Better than the kubb default, which silently
  * fetches relative to the SPA origin and gets a Vite-served 404.
  */
-const isMockMode = baseURL === "";
+const isMockMode = baseURL === ""
 
 function requireBackendBaseUrl(): string {
   if (isMockMode) {
@@ -76,10 +76,10 @@ function requireBackendBaseUrl(): string {
         "  (src/shared/api/mock/*) is hand-written and not visible to kubb.",
         "  Set VITE_API_BASE_URL=http://localhost:17173 (or your host port)",
         "  in .env.local and restart vite.",
-      ].join("\n"),
-    );
+      ].join("\n")
+    )
   }
-  return baseURL;
+  return baseURL
 }
 
 /**
@@ -96,21 +96,25 @@ function requireBackendBaseUrl(): string {
  * were a success payload, which is worse than no data at all.
  */
 
-const kubbClient: Client = async <TResponseData, TError = unknown, TRequestData = unknown>(
-  paramsConfig: RequestConfig<TRequestData>,
+const kubbClient: Client = async <
+  TResponseData,
+  TError = unknown,
+  TRequestData = unknown,
+>(
+  paramsConfig: RequestConfig<TRequestData>
 ): Promise<ResponseConfig<TResponseData>> => {
-  const resolvedBaseUrl = requireBackendBaseUrl();
+  const resolvedBaseUrl = requireBackendBaseUrl()
 
-  const headers = new Headers();
+  const headers = new Headers()
   if (paramsConfig.headers) {
     if (Array.isArray(paramsConfig.headers)) {
       for (const [key, value] of paramsConfig.headers) {
-        headers.set(key, value);
+        headers.set(key, value)
       }
     } else {
       for (const [key, value] of Object.entries(paramsConfig.headers)) {
         if (typeof value === "string") {
-          headers.set(key, value);
+          headers.set(key, value)
         }
       }
     }
@@ -119,30 +123,30 @@ const kubbClient: Client = async <TResponseData, TError = unknown, TRequestData 
   const queryString =
     paramsConfig.params !== undefined && paramsConfig.params !== null
       ? new URLSearchParams(
-          Object.entries(
-            paramsConfig.params as Record<string, unknown>,
-          ).reduce<Record<string, string>>((acc, [key, value]) => {
+          Object.entries(paramsConfig.params as Record<string, unknown>).reduce<
+            Record<string, string>
+          >((acc, [key, value]) => {
             if (value === undefined || value === null) {
-              return acc;
+              return acc
             }
-            acc[key] = String(value);
-            return acc;
-          }, {}),
+            acc[key] = String(value)
+            return acc
+          }, {})
         ).toString()
-      : "";
+      : ""
 
   const url =
     resolvedBaseUrl +
     (paramsConfig.url ?? "") +
-    (queryString.length > 0 ? `?${queryString}` : "");
+    (queryString.length > 0 ? `?${queryString}` : "")
 
-  let body: BodyInit | undefined;
+  let body: BodyInit | undefined
   if (paramsConfig.data !== undefined && paramsConfig.data !== null) {
     if (paramsConfig.data instanceof FormData) {
-      body = paramsConfig.data;
+      body = paramsConfig.data
     } else {
-      headers.set("Content-Type", "application/json");
-      body = JSON.stringify(paramsConfig.data);
+      headers.set("Content-Type", "application/json")
+      body = JSON.stringify(paramsConfig.data)
     }
   }
 
@@ -152,7 +156,7 @@ const kubbClient: Client = async <TResponseData, TError = unknown, TRequestData 
     headers,
     body,
     signal: paramsConfig.signal ?? null,
-  });
+  })
 
   // Rate-limited responses (429) and some gateway errors arrive with an
   // empty body — `response.json()` would throw on them and lose the status
@@ -160,31 +164,31 @@ const kubbClient: Client = async <TResponseData, TError = unknown, TRequestData 
   // rest.
   const text = [204, 205, 304].includes(response.status)
     ? ""
-    : await response.text();
-  let parsed: unknown = {};
+    : await response.text()
+  let parsed: unknown = {}
   if (text.length > 0) {
     try {
-      parsed = JSON.parse(text);
+      parsed = JSON.parse(text)
     } catch {
-      parsed = {};
+      parsed = {}
     }
   }
-  const data = parsed as TResponseData;
+  const data = parsed as TResponseData
 
   if (!response.ok) {
     const failureError = Object.assign(
       new Error(
         response.status === 401 || response.status === 403
           ? `auth boundary ${response.status}`
-          : `request failed ${response.status}`,
+          : `request failed ${response.status}`
       ),
       {
         status: response.status,
         response,
         data,
-      },
-    );
-    throw failureError as unknown as TError;
+      }
+    )
+    throw failureError as unknown as TError
   }
 
   return {
@@ -192,7 +196,7 @@ const kubbClient: Client = async <TResponseData, TError = unknown, TRequestData 
     status: response.status,
     statusText: response.statusText,
     headers: response.headers,
-  };
-};
+  }
+}
 
-export default kubbClient;
+export default kubbClient

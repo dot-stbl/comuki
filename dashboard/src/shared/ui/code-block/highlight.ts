@@ -112,7 +112,10 @@ export function resolveLanguage(spelling?: string): CodeLanguage | null {
   if (!spelling) {
     return null
   }
-  const cleaned = spelling.trim().toLowerCase().replace(/^language-/, "")
+  const cleaned = spelling
+    .trim()
+    .toLowerCase()
+    .replace(/^language-/, "")
   return ALIASES[cleaned] ?? null
 }
 

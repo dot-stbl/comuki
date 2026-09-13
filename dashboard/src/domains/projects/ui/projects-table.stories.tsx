@@ -19,7 +19,11 @@ import { RUNS_SEED } from "@/shared/api/mock/runs.seed"
 import { DataTable } from "@/shared/ui"
 
 const columns = createProjectColumns()
-const rows = buildProjectRows(PLATFORM_PROJECTS_SEED, RUNS_SEED, COST_SEED.byApp)
+const rows = buildProjectRows(
+  PLATFORM_PROJECTS_SEED,
+  RUNS_SEED,
+  COST_SEED.byApp
+)
 
 /* The slug cell is a real anchor into the project's own screen, so the table
    only exists inside a router now. A memory router carrying the one

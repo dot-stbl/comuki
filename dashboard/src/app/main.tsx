@@ -21,7 +21,7 @@ async function bootstrap() {
         <AppProviders>
           <RouterProvider router={router} />
         </AppProviders>
-      </StrictMode>,
+      </StrictMode>
     )
   }
 }

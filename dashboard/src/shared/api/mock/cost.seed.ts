@@ -81,7 +81,11 @@ export interface SeedCostSummary {
   byModel: SeedCostByModel[]
   topProjects: SeedCostTopProject[]
   budget: SeedCostBudget
-  forecast: { cap: number; burnRatePerDay: number; projectedEndOfPeriod: number }
+  forecast: {
+    cap: number
+    burnRatePerDay: number
+    projectedEndOfPeriod: number
+  }
   failures: SeedCostFailure[]
   byDay: SeedCostDay[]
 }
@@ -156,7 +160,12 @@ const PROJECTS_TABLE = [
   { id: "p_orbit", key: "orbit", name: "Orbit", cap: 75 },
   { id: "p_quill", key: "quill", name: "Quill", cap: 50 },
   { id: "p_vesta", key: "vesta", name: "Vesta", cap: 35 },
-  { id: "p_sentinel_vault", key: "sentinel-vault", name: "Sentinel Vault", cap: 0 },
+  {
+    id: "p_sentinel_vault",
+    key: "sentinel-vault",
+    name: "Sentinel Vault",
+    cap: 0,
+  },
 ] as const
 
 /**
@@ -207,7 +216,10 @@ function spendByMonth(totalDay: number): SeedCostDay[] {
   const out: SeedCostDay[] = []
   for (let daysAgo = 29; daysAgo >= 0; daysAgo -= 1) {
     const weekday = (today - daysAgo + 7 * Math.ceil(daysAgo / 7) + 7) % 7
-    const label = daysAgo === 0 ? "today" : ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][weekday]
+    const label =
+      daysAgo === 0
+        ? "today"
+        : ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][weekday]
     const weekend = weekday === 0 || weekday === 6
     const factor =
       (DAY_FACTOR[daysAgo] ?? 1) *
@@ -294,14 +306,14 @@ const PREVIOUS_TOTAL_WEEK = 862.4
 const PREVIOUS_TOTAL_MONTH = 3508.0
 
 /* Per-day buckets land the same model spread at three different scales. */
-const SPEND_BY_MODEL_DAY: SeedCostByModel[] = Object.entries(MODEL_LINEUP_DAY).map(
-  ([model, value]) => ({
-    model,
-    spend: value.spend,
-    tokens: value.tokens,
-    runs: value.runs,
-  })
-)
+const SPEND_BY_MODEL_DAY: SeedCostByModel[] = Object.entries(
+  MODEL_LINEUP_DAY
+).map(([model, value]) => ({
+  model,
+  spend: value.spend,
+  tokens: value.tokens,
+  runs: value.runs,
+}))
 
 const SPEND_BY_MODEL_WEEK: SeedCostByModel[] = Object.entries(
   MODEL_LINEUP_WEEK
@@ -474,7 +486,8 @@ export const COST_SEED_BY_PERIOD: Record<
 }
 
 /** The list of model identifiers the seed authors. */
-export const COST_MODEL_LINEUP: readonly string[] = Object.keys(MODEL_LINEUP_DAY)
+export const COST_MODEL_LINEUP: readonly string[] =
+  Object.keys(MODEL_LINEUP_DAY)
 
 /** The project list the top-N table ranks over — exposed so the page can
  *  keep the filter dropdown and the table in sync without duplicating ids. */

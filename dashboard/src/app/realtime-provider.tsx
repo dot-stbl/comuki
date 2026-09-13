@@ -63,10 +63,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     // restarted, so sign-out drops the singleton and the next sign-in builds
     // a new one. Handlers are bound exactly once, at creation.
     let connection = getRunsHubConnection()
-    if (
-      !connection ||
-      connection.state === HubConnectionState.Disconnected
-    ) {
+    if (!connection || connection.state === HubConnectionState.Disconnected) {
       const created = createRunsHubConnection()
       if (!created) {
         // Real mode without a pointed backend (`VITE_API_BASE_URL` empty) —

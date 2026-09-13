@@ -179,7 +179,9 @@ describe("signing out", () => {
     // so the seed-clear happens on the microtask the click schedules — wait for
     // the mock to register the cleared session, then for the route change.
     await vi.waitFor(() => expect(isMockSignedIn()).toBe(false))
-    await vi.waitFor(() => expect(router.state.location.pathname).toBe("/login"))
+    await vi.waitFor(() =>
+      expect(router.state.location.pathname).toBe("/login")
+    )
     expect(router.state.location.search).toMatchObject({ reason: "signed-out" })
   })
 
@@ -189,7 +191,9 @@ describe("signing out", () => {
     const { router, user } = await openAccountMenu()
     await user.click(await screen.findByRole("menuitem", { name: "Sign out" }))
 
-    await vi.waitFor(() => expect(router.state.location.pathname).toBe("/login"))
+    await vi.waitFor(() =>
+      expect(router.state.location.pathname).toBe("/login")
+    )
     expect(router.state.location.search).not.toHaveProperty("redirect")
   })
 })

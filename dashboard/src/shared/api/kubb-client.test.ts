@@ -26,7 +26,7 @@ afterEach(() => {
 })
 
 async function loadClient(
-  baseUrl: string | undefined,
+  baseUrl: string | undefined
 ): Promise<typeof import("@/shared/api/kubb-client")> {
   if (baseUrl === undefined) {
     delete (import.meta.env as Record<string, string | undefined>)
@@ -41,7 +41,7 @@ async function loadClient(
 function fakeResponse(
   status: number,
   body: string,
-  statusText = "",
+  statusText = ""
 ): {
   status: number
   ok: boolean
@@ -63,10 +63,10 @@ describe("kubb-client transport (issue #29)", () => {
     const { default: client } = await loadClient(undefined)
 
     await expect(
-      client({ method: "GET", url: "/api/v1/runs" }),
+      client({ method: "GET", url: "/api/v1/runs" })
     ).rejects.toThrow(/VITE_API_BASE_URL is not set/)
     await expect(
-      client({ method: "GET", url: "/api/v1/runs" }),
+      client({ method: "GET", url: "/api/v1/runs" })
     ).rejects.toThrow(/mock layer/)
   })
 
@@ -96,13 +96,13 @@ describe("kubb-client transport (issue #29)", () => {
             code: "auth.invalid_credentials",
             detail: "email or password is incorrect",
           }),
-          "Unauthorized",
-        ),
-      ),
+          "Unauthorized"
+        )
+      )
     )
 
     await expect(
-      client({ method: "GET", url: "/api/v1/runs" }),
+      client({ method: "GET", url: "/api/v1/runs" })
     ).rejects.toMatchObject({
       status: 401,
       message: expect.stringContaining("auth boundary 401"),
@@ -118,9 +118,7 @@ describe("kubb-client transport (issue #29)", () => {
   it("forwards credentials: 'include' so the cookie session survives the cross-origin hop", async () => {
     const { default: client } = await loadClient("http://localhost:17173")
 
-    const fetchSpy = vi
-      .fn()
-      .mockResolvedValue(fakeResponse(200, "{}"))
+    const fetchSpy = vi.fn().mockResolvedValue(fakeResponse(200, "{}"))
     vi.stubGlobal("fetch", fetchSpy)
 
     await client({ method: "GET", url: "/api/v1/runs" })
@@ -141,11 +139,11 @@ describe("kubb-client transport (issue #29)", () => {
     })
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(fakeResponse(400, problem)),
+      vi.fn().mockResolvedValue(fakeResponse(400, problem))
     )
 
     await expect(
-      client({ method: "POST", url: "/api/v1/auth/login", data: {} }),
+      client({ method: "POST", url: "/api/v1/auth/login", data: {} })
     ).rejects.toMatchObject({
       status: 400,
       message: "request failed 400",
@@ -160,11 +158,11 @@ describe("kubb-client transport (issue #29)", () => {
 
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(fakeResponse(429, "", "Too Many Requests")),
+      vi.fn().mockResolvedValue(fakeResponse(429, "", "Too Many Requests"))
     )
 
     await expect(
-      client({ method: "POST", url: "/api/v1/auth/login", data: {} }),
+      client({ method: "POST", url: "/api/v1/auth/login", data: {} })
     ).rejects.toMatchObject({
       status: 429,
       message: "request failed 429",

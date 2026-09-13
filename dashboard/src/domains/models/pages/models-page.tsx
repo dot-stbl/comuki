@@ -7,10 +7,7 @@ import {
   useRevokeKey,
   useSetProxyEnabled,
 } from "@/domains/models/api/mutations"
-import {
-  useModelsQuery,
-  useProxyKeysQuery,
-} from "@/domains/models/api/queries"
+import { useModelsQuery, useProxyKeysQuery } from "@/domains/models/api/queries"
 import { expiredKeys, keysNearCap } from "@/domains/models/model/keys"
 import type { ModelEndpoint, VirtualKey } from "@/domains/models/model/types"
 import { EndpointsPanel } from "@/domains/models/ui/endpoints-panel"
@@ -39,9 +36,7 @@ function revokeRestartNote(): string {
 
 /** What a confirm is currently asking about. One dialog, two questions. */
 type Pending =
-  | { kind: "revoke"; entry: VirtualKey }
-  | { kind: "proxy-off" }
-  | null
+  { kind: "revoke"; entry: VirtualKey } | { kind: "proxy-off" } | null
 
 /**
  * What the swarm is allowed to think with, and what that costs.
@@ -207,10 +202,7 @@ export function ModelsPage() {
                 : "Couldn't load the spend keys"}
             </p>
             <p className={styles.stateBody}>
-              {requestFailureMessage(
-                error ?? proxyKeys.error,
-                "Unknown error",
-              )}
+              {requestFailureMessage(error ?? proxyKeys.error, "Unknown error")}
             </p>
             <span>
               <Tooltip content="Retry">

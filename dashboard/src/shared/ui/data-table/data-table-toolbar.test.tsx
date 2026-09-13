@@ -179,7 +179,9 @@ describe("DataTableToolbar", () => {
   it("shows the search field and the button, and no chip strip, when nothing is filtered", () => {
     render(<Board />)
 
-    expect(screen.getByRole("searchbox", { name: "Filter by task" })).toBeTruthy()
+    expect(
+      screen.getByRole("searchbox", { name: "Filter by task" })
+    ).toBeTruthy()
     expect(screen.getByRole("button", { name: "Filters" })).toBeTruthy()
     // Not an empty strip — no strip. A row that reserves height for chips it
     // does not have is a row that lies about what is filtered.
@@ -196,7 +198,9 @@ describe("DataTableToolbar", () => {
     // Each chip shows the words the option was picked by, not the stored token.
     expect(chipNames()).toEqual(["waiting on a human", "plexor", "planner"])
     // How many, and which — the same set said twice.
-    expect(screen.getByRole("button", { name: "Filters, 3 active" })).toBeTruthy()
+    expect(
+      screen.getByRole("button", { name: "Filters, 3 active" })
+    ).toBeTruthy()
   })
 
   it("names each remove control by the filter it drops", () => {
@@ -222,22 +226,24 @@ describe("DataTableToolbar", () => {
 
     // The app filter is gone; the status filter is untouched.
     expect(chipNames()).toEqual(["waiting on a human"])
-    expect(screen.getByRole("button", { name: "Filters, 1 active" })).toBeTruthy()
+    expect(
+      screen.getByRole("button", { name: "Filters, 1 active" })
+    ).toBeTruthy()
     expect(shownIds()).toEqual(["r-1", "r-3"])
   })
 
   it("returns the unfiltered list when everything is cleared", async () => {
     const user = userEvent.setup()
     render(
-      <Board
-        initial={{ status: "waiting", app: "plexor", title: "billing" }}
-      />
+      <Board initial={{ status: "waiting", app: "plexor", title: "billing" }} />
     )
 
     expect(shownIds()).toEqual(["r-1"])
 
     const sheet = await openSheet(user)
-    await user.click(within(sheet).getByRole("button", { name: "Clear all filters" }))
+    await user.click(
+      within(sheet).getByRole("button", { name: "Clear all filters" })
+    )
     // An open popover hides the rest of the page from assistive tech, and the
     // row is what is being asserted on — so close it the way an operator would.
     await user.keyboard("{Escape}")
@@ -246,8 +252,9 @@ describe("DataTableToolbar", () => {
     expect(screen.getByRole("button", { name: "Filters" })).toBeTruthy()
     // The search goes with them: it is a filter, it is just not a chip.
     expect(
-      screen.getByRole<HTMLInputElement>("searchbox", { name: "Filter by task" })
-        .value
+      screen.getByRole<HTMLInputElement>("searchbox", {
+        name: "Filter by task",
+      }).value
     ).toBe("")
     expect(shownIds()).toEqual(["r-1", "r-2", "r-3", "r-4"])
   })
@@ -303,7 +310,9 @@ describe("DataTableToolbar", () => {
   it("drops the button on a screen whose only filter is the search", () => {
     render(<Board columns={[searchColumn]} />)
 
-    expect(screen.getByRole("searchbox", { name: "Filter by task" })).toBeTruthy()
+    expect(
+      screen.getByRole("searchbox", { name: "Filter by task" })
+    ).toBeTruthy()
     // Nothing to put behind it, so there is no button to open onto nothing.
     expect(screen.queryByRole("button", { name: /^Filters/ })).toBeNull()
   })
@@ -350,7 +359,10 @@ function sheetPopover(sheet: HTMLElement): HTMLElement {
 }
 
 const SHEET = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), "data-table-toolbar.module.css"),
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    "data-table-toolbar.module.css"
+  ),
   "utf8"
 ).replace(/\/\*[\s\S]*?\*\//g, "")
 

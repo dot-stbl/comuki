@@ -34,15 +34,17 @@ import styles from "./queue-badges.module.css"
  * nothing urgent (`blocked`, `cancelled`) are deliberately given no hue at all.
  */
 
-const statusIcons: Record<WorkItemStatus, ComponentType<{ className?: string }>> =
-  {
-    blocked: Lock,
-    queued: Hourglass,
-    running: Activity,
-    succeeded: Check,
-    failed: X,
-    cancelled: Ban,
-  }
+const statusIcons: Record<
+  WorkItemStatus,
+  ComponentType<{ className?: string }>
+> = {
+  blocked: Lock,
+  queued: Hourglass,
+  running: Activity,
+  succeeded: Check,
+  failed: X,
+  cancelled: Ban,
+}
 
 export interface WorkStatusBadgeProps {
   status: WorkItemStatus

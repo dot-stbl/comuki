@@ -12,13 +12,7 @@ import { RunGraph } from "./run-graph"
  * The graph fills whatever it is given, so every story hands it a definite
  * height — which is also the contract a screen has to honour.
  */
-function Board({
-  items,
-  current,
-}: {
-  items: WorkItem[]
-  current?: string
-}) {
+function Board({ items, current }: { items: WorkItem[]; current?: string }) {
   const [selected, setSelected] = useState<string | undefined>(current)
   return (
     <div style={{ height: "26rem" }}>
@@ -48,8 +42,7 @@ const seeded = RUNS_SEED.map(toRunSummary)
 const chain = seeded.find((run) => run.workItems.length === 3) ?? seeded[0]
 
 /** Four lanes off one plan — the widest branch written by hand. */
-const branching =
-  seeded.find((run) => run.id === "2a6f1c33") ?? seeded[0]
+const branching = seeded.find((run) => run.id === "2a6f1c33") ?? seeded[0]
 
 /** Forty-two items, four lanes wide and eight deep. */
 const large = seeded.reduce((widest, run) =>

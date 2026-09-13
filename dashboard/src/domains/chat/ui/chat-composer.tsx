@@ -108,10 +108,7 @@ export function ChatComposer({
   const [projectId, setProjectId] = useState("")
   const [dismissed, setDismissed] = useState(false)
 
-  const command = useMemo(
-    () => commandOf(value, commands),
-    [value, commands]
-  )
+  const command = useMemo(() => commandOf(value, commands), [value, commands])
   const menuQuery = commandMenuQuery(value)
   const matches = useMemo(
     () => (menuQuery === null ? [] : matchCommands(menuQuery, commands)),
@@ -120,10 +117,7 @@ export function ChatComposer({
   const menuOpen = !dismissed && matches.length > 0
 
   const scope = scopeState(session, command, projectId)
-  const rows = Math.min(
-    MAX_ROWS,
-    Math.max(MIN_ROWS, value.split("\n").length)
-  )
+  const rows = Math.min(MAX_ROWS, Math.max(MIN_ROWS, value.split("\n").length))
 
   const empty = value.trim().length === 0
   const sendDenied = scope.denied

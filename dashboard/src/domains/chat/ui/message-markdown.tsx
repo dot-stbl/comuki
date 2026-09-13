@@ -96,27 +96,45 @@ function fenceOf(node?: Element): { source: string; language?: string } | null {
 }
 
 const COMPONENTS: Components = {
-  p: ({ children }) => <p className={styles.mdParagraph}>{referenced(children)}</p>,
+  p: ({ children }) => (
+    <p className={styles.mdParagraph}>{referenced(children)}</p>
+  ),
 
   /* h1–h6 shift down so the deepest a turn can reach is h6 and the shallowest
      sits under the thread's own h2. Three levels is more outline than any
      message in a console needs. */
-  h1: ({ children }) => <h3 className={styles.mdHeading}>{referenced(children)}</h3>,
-  h2: ({ children }) => <h4 className={styles.mdHeading}>{referenced(children)}</h4>,
-  h3: ({ children }) => <h5 className={styles.mdHeading}>{referenced(children)}</h5>,
-  h4: ({ children }) => <h6 className={styles.mdHeading}>{referenced(children)}</h6>,
-  h5: ({ children }) => <h6 className={styles.mdHeading}>{referenced(children)}</h6>,
-  h6: ({ children }) => <h6 className={styles.mdHeading}>{referenced(children)}</h6>,
+  h1: ({ children }) => (
+    <h3 className={styles.mdHeading}>{referenced(children)}</h3>
+  ),
+  h2: ({ children }) => (
+    <h4 className={styles.mdHeading}>{referenced(children)}</h4>
+  ),
+  h3: ({ children }) => (
+    <h5 className={styles.mdHeading}>{referenced(children)}</h5>
+  ),
+  h4: ({ children }) => (
+    <h6 className={styles.mdHeading}>{referenced(children)}</h6>
+  ),
+  h5: ({ children }) => (
+    <h6 className={styles.mdHeading}>{referenced(children)}</h6>
+  ),
+  h6: ({ children }) => (
+    <h6 className={styles.mdHeading}>{referenced(children)}</h6>
+  ),
 
   ul: ({ children }) => <ul className={styles.mdList}>{children}</ul>,
   ol: ({ children }) => <ol className={styles.mdList}>{children}</ol>,
-  li: ({ children }) => <li className={styles.mdItem}>{referenced(children)}</li>,
+  li: ({ children }) => (
+    <li className={styles.mdItem}>{referenced(children)}</li>
+  ),
 
   strong: ({ children }) => (
     <strong className={styles.mdStrong}>{referenced(children)}</strong>
   ),
   em: ({ children }) => <em>{referenced(children)}</em>,
-  del: ({ children }) => <del className={styles.mdDeleted}>{referenced(children)}</del>,
+  del: ({ children }) => (
+    <del className={styles.mdDeleted}>{referenced(children)}</del>
+  ),
 
   blockquote: ({ children }) => (
     <blockquote className={styles.mdQuote}>{children}</blockquote>
@@ -200,5 +218,7 @@ const COMPONENTS: Components = {
     )
   },
 
-  code: ({ children }) => <code className={styles.mdCodeInline}>{children}</code>,
+  code: ({ children }) => (
+    <code className={styles.mdCodeInline}>{children}</code>
+  ),
 }

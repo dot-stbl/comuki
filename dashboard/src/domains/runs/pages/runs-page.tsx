@@ -193,7 +193,8 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
      derivation rule on `DataTableToolbar`: the first `text` filter a column
      set declares is the row's search. */
   const searchId = useMemo(
-    () => dataFilterSpecs(columns).find((spec) => spec.filter.kind === "text")?.id,
+    () =>
+      dataFilterSpecs(columns).find((spec) => spec.filter.kind === "text")?.id,
     [columns]
   )
 
@@ -234,8 +235,7 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
   // nothing to unwind on the day this list is sorted server-side: `sorting`
   // goes to the query and `triageOrder` goes with it.
   const filteredData = useMemo(
-    () =>
-      anomaliesOnly ? data.filter((run) => run.anomaly !== null) : data,
+    () => (anomaliesOnly ? data.filter((run) => run.anomaly !== null) : data),
     [data, anomaliesOnly]
   )
 

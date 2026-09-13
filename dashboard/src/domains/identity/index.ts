@@ -1,8 +1,4 @@
-export {
-  IDENTITY_TABS,
-  isIdentityTab,
-  type IdentityTab,
-} from "./model/tabs"
+export { IDENTITY_TABS, isIdentityTab, type IdentityTab } from "./model/tabs"
 export { CreateKeyPage } from "./pages/create-key-page"
 export { GrantRolePage } from "./pages/grant-role-page"
 export { IdentityPage } from "./pages/identity-page"

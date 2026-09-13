@@ -32,9 +32,9 @@ const PROJECT_IDS = new Set(PROJECTS_SEED.map((project) => project.id))
  */
 describe("the seeded gate", () => {
   it("covers every project the shift can name", () => {
-    expect(VERIFY_SEED.projects.map((project) => project.projectId).sort()).toEqual(
-      [...PROJECT_IDS].sort()
-    )
+    expect(
+      VERIFY_SEED.projects.map((project) => project.projectId).sort()
+    ).toEqual([...PROJECT_IDS].sort())
   })
 
   it("declares every command against a project that exists", () => {
@@ -72,8 +72,9 @@ describe("the seeded gate", () => {
     expect(off.length).toBeGreaterThan(0)
     for (const project of off) {
       // A switch here does not delete a file over there.
-      expect(commandsFor(VERIFY_SEED.commands, project.projectId).length)
-        .toBeGreaterThan(0)
+      expect(
+        commandsFor(VERIFY_SEED.commands, project.projectId).length
+      ).toBeGreaterThan(0)
     }
   })
 

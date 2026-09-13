@@ -2,10 +2,7 @@ import { useMemo, useState } from "react"
 import { ExternalLink, PowerOff } from "lucide-react"
 
 import { sourceLocation } from "@/domains/verify/model/gate"
-import type {
-  VerifyCommand,
-  VerifyProject,
-} from "@/domains/verify/model/types"
+import type { VerifyCommand, VerifyProject } from "@/domains/verify/model/types"
 import {
   createVerifyColumns,
   getCommandId,

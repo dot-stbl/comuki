@@ -42,13 +42,17 @@ describe("queries.ts mock-first path", () => {
         externalId: seed.id,
         title: seed.title,
         url: `https://comuki.local/inbox/${seed.id}`,
-        status: seed.straightToWork ? ("claimed" as const) : ("pending" as const),
-        runId: seed.straightToWork ? "00000000-0000-0000-0000-runstub000001" : null,
+        status: seed.straightToWork
+          ? ("claimed" as const)
+          : ("pending" as const),
+        runId: seed.straightToWork
+          ? "00000000-0000-0000-0000-runstub000001"
+          : null,
         createdAt:
           seed.createdAt === "just now"
             ? new Date().toISOString()
             : seed.createdAt,
-      })),
+      }))
     )
 
     expect(tickets.length).toBeGreaterThan(0)

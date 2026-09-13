@@ -62,11 +62,7 @@ export function CopyButton({
 
   return (
     <Button variant="outline" size="sm" data-test={dataTest} onClick={copy}>
-      {copied ? (
-        <Check aria-hidden="true" />
-      ) : (
-        <Copy aria-hidden="true" />
-      )}
+      {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
       <span aria-live="polite">{copied ? "copied" : label}</span>
     </Button>
   )

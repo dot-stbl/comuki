@@ -7,13 +7,17 @@ import {
   useRevokeKey,
   useSetProxyEnabled,
 } from "@/domains/models/api/mutations"
-import { useModelsQuery } from "@/domains/models/api/queries"
+import {
+  useModelsQuery,
+  useProxyKeysQuery,
+} from "@/domains/models/api/queries"
 import { expiredKeys, keysNearCap } from "@/domains/models/model/keys"
-import type { VirtualKey } from "@/domains/models/model/types"
+import type { ModelEndpoint, VirtualKey } from "@/domains/models/model/types"
 import { EndpointsPanel } from "@/domains/models/ui/endpoints-panel"
 import { ProxyPanel } from "@/domains/models/ui/proxy-panel"
 import { RoleRoutingPanel } from "@/domains/models/ui/role-routing-panel"
 import { VirtualKeysPanel } from "@/domains/models/ui/virtual-keys-panel"
+import { env } from "@/shared/config/env"
 import { can, useSession } from "@/shared/session"
 import { Button, ConfirmDialog, Section, Tooltip } from "@/shared/ui"
 
@@ -21,9 +25,22 @@ import styles from "./models-page.module.css"
 
 const SKELETON_WIDTHS = ["52%", "84%", "66%", "40%", "74%"]
 
+/**
+ * The revocation caveat the host's store deserves: config-seeded keys come
+ * back with a restart, and a confirm that promised permanence would be the
+ * one lie on this screen that cannot be undone.
+ */
+function revokeRestartNote(): string {
+  return env.useMock
+    ? ""
+    : " The key store is seeded from configuration — a host restart resurrects this key until its Proxy:VirtualKeys row is removed."
+}
+
 /** What a confirm is currently asking about. One dialog, two questions. */
 type Pending =
-  { kind: "revoke"; entry: VirtualKey } | { kind: "proxy-off" } | null
+  | { kind: "revoke"; entry: VirtualKey }
+  | { kind: "proxy-off" }
+  | null
 
 /**
  * What the swarm is allowed to think with, and what that costs.
@@ -49,6 +66,11 @@ type Pending =
  */
 export function ModelsPage() {
   const { data, isLoading, isError, error, refetch } = useModelsQuery()
+  /* Real mode's spend keys come from the proxy's own catalogue rather than
+     the seed registry — fingerprints, caps and expiries, no token material.
+     Each key's upstream also becomes an endpoint row, so the route column
+     names the destination the key actually buys. */
+  const proxyKeys = useProxyKeysQuery()
   const session = useSession()
 
   const [pending, setPending] = useState<Pending>(null)
@@ -56,8 +78,19 @@ export function ModelsPage() {
   const revoke = useRevokeKey()
   const setProxy = useSetProxyEnabled()
 
-  const endpoints = useMemo(() => data?.endpoints ?? [], [data])
-  const keys = useMemo(() => data?.keys ?? [], [data])
+  const endpoints = useMemo<ModelEndpoint[]>(() => {
+    const base = data?.endpoints ?? []
+    if (env.useMock || !proxyKeys.data) {
+      return base
+    }
+    return [...base, ...proxyKeys.data.endpoints]
+  }, [data, proxyKeys.data])
+  const keys = useMemo(() => {
+    if (env.useMock) {
+      return data?.keys ?? []
+    }
+    return proxyKeys.data?.keys ?? []
+  }, [data, proxyKeys.data])
   const routes = useMemo(() => data?.routes ?? [], [data])
   const proxy = data?.proxy
 
@@ -98,7 +131,11 @@ export function ModelsPage() {
 
   const revokingId = revoke.isPending ? (revoke.variables ?? null) : null
   const failure = revoke.error ?? setProxy.error
-  const ready = !isLoading && !isError && proxy !== undefined
+  const ready =
+    !isLoading &&
+    !isError &&
+    proxy !== undefined &&
+    (env.useMock || !proxyKeys.isLoading)
 
   return (
     <AppShell
@@ -204,7 +241,10 @@ export function ModelsPage() {
               <ProxyPanel
                 proxy={proxy}
                 busy={setProxy.isPending}
-                onToggle={onToggleProxy}
+                /* The switch is mock-only: the host's key store is seeded
+                   from configuration and a PATCH answers 501, so real mode
+                   shows the proxy as a fact rather than an act. */
+                onToggle={env.useMock ? onToggleProxy : undefined}
               />
             </Section>
 
@@ -283,7 +323,7 @@ export function ModelsPage() {
         }
         body={
           pending?.kind === "revoke"
-            ? `${pending.entry.prefix} · ${pending.entry.label} — the key stops working immediately and cannot be brought back. A worker holding it loses it with its lease, mid-run.`
+            ? `${pending.entry.prefix} · ${pending.entry.label} — the key stops working immediately and cannot be brought back. A worker holding it loses it with its lease, mid-run.${revokeRestartNote()}`
             : pending?.kind === "proxy-off"
               ? "Workers get a url and a key injected directly. Spend keys stop being checked, every budget below stops being enforced, and no run is metered until it is turned back on."
               : ""

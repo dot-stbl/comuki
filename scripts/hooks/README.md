@@ -68,6 +68,7 @@ An attribution trailer never costs anyone their commit. See
   and acronyms open a description all the time)
 - subject ≤ 100 characters (aim for 72)
 - `Merge …` / `Revert …` / `fixup!` / `squash!` subjects git writes itself are exempt
+- hand-written `merge(<scope>): …` (legacy form, no `[.stbl]` prefix) is exempt — the current form `[.stbl] merge(<scope>): …` lints normally because `merge` is in `COMMIT_TYPES`
 - `#` comment lines and the `--verbose` diff below the scissors line are ignored
 
 See `.agents/rules/process/commit-format.md`.

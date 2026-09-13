@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
-/* Issue Q3 / v1.1: real-mode wiring must not throw. The mock store is
-   irrelevant — the kubb hook and the projects hook are the only
-   real-mode callers, and they are both mocked here. */
+/* The platform rollup is the only real-mode caller now; the kubb client is
+   mocked here and the mapper is asserted in mappers.test.ts. */
 vi.mock("@/shared/config/env", () => ({
   env: {
     useMock: false,
@@ -15,19 +14,21 @@ vi.mock("@/shared/config/env", () => ({
   },
 }))
 
-vi.mock("@/shared/api/_generated/clients/getApiV1ProjectsProjectidCosts", () => ({
-  getApiV1ProjectsProjectidCosts: vi.fn().mockResolvedValue({}),
-}))
-vi.mock("@/shared/api/_generated/clients/getApiV1Projects", () => ({
-  getApiV1Projects: vi.fn().mockResolvedValue([
-    {
-      id: { value: "p_alpha" },
-      slug: "alpha",
-      name: "Alpha",
-      gitProfileRepo: null,
-      createdAt: "2026-01-01T00:00:00+00:00",
-    },
-  ]),
+vi.mock("@/shared/api/_generated/clients/getApiV1Costs", () => ({
+  getApiV1Costs: vi.fn().mockResolvedValue({
+    since: "2026-08-14T00:00:00Z",
+    windowDays: 30,
+    windowUsdMicros: 12_340_000,
+    allTimeUsdMicros: 190_500_000,
+    byProject: [
+      {
+        projectId: "b3d8a402-1111-2222-3333-444444444444",
+        costUsdMicros: 9_100_000,
+        runs: 34,
+      },
+    ],
+    byDay: [{ date: "2026-09-12", costUsdMicros: 820_000 }],
+  }),
 }))
 
 import { renderHook, waitFor } from "@testing-library/react"
@@ -37,7 +38,7 @@ import * as React from "react"
 import { useCostQuery } from "@/domains/cost/api/queries"
 
 describe("cost query, real mode", () => {
-  it("Given a project registry, when useCostQuery runs, then it resolves without throwing", async () => {
+  it("Given the platform rollup, when useCostQuery runs, then it resolves with real dollars", async () => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
@@ -48,9 +49,11 @@ describe("cost query, real mode", () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    // Real-mode success: no throw. The data shape is the same as the
-    // mock branch until a platform-wide cost endpoint lands.
     expect(result.current.isError).toBe(false)
-    expect(result.current.data).toBeDefined()
+    // Micros became dollars exactly once: the window tile reads $12.34.
+    expect(result.current.data?.windowUsd).toBeCloseTo(12.34, 2)
+    expect(result.current.data?.allTimeUsd).toBeCloseTo(190.5, 2)
+    // The seed's demo badge is gone with the seed itself.
+    expect(result.current.data?.perSuccess).toBeNull()
   })
 })

@@ -1,19 +1,17 @@
+import { useMemo } from "react"
 import { DollarSign, RotateCw } from "lucide-react"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
-import { useCostQuery } from "@/domains/cost/api/queries"
-import {
-  budgetHeat,
-  budgetPercent,
-  successPercent,
-} from "@/domains/cost/model/cost"
+import { useCostQuery, COST_WINDOW_DAYS } from "@/domains/cost/api/queries"
+import { budgetHeat, budgetPercent, successPercent } from "@/domains/cost/model/cost"
 import { CostStat } from "@/domains/cost/ui/cost-stat"
 import { FailureAnalytics } from "@/domains/cost/ui/failure-analytics"
 import { ProxyBudgetMeter } from "@/domains/cost/ui/proxy-budget-meter"
 import { SpendByApp } from "@/domains/cost/ui/spend-by-app"
 import { SpendByDay } from "@/domains/cost/ui/spend-by-day"
 import { env } from "@/shared/config/env"
+import { projectOf, useSession } from "@/shared/session"
 import { Button, Section, Tooltip } from "@/shared/ui"
 
 import styles from "./cost-page.module.css"
@@ -38,7 +36,26 @@ const SKELETON_WIDTHS = ["38%", "62%", "50%", "74%"]
  * inside to gate.
  */
 export function CostPage() {
-  const { data, isLoading, isError, error, refetch } = useCostQuery()
+  const query = useCostQuery()
+  const session = useSession()
+
+  /* Real mode's slices name projects by id; the operator's word for a project
+     is its key, and the rollup is the one place the two meet. */
+  const data = useMemo(() => {
+    const summary = query.data
+    if (!summary || env.useMock || summary.windowDays === undefined) {
+      return summary
+    }
+    return {
+      ...summary,
+      byApp: summary.byApp.map((row) => ({
+        ...row,
+        app: projectOf(session, row.app)?.key ?? row.app,
+      })),
+    }
+  }, [query.data, session])
+
+  const { isLoading, isError, error, refetch } = query
 
   return (
     <AppShell
@@ -46,7 +63,7 @@ export function CostPage() {
         <PageHeader
           breadcrumbs={[{ label: "observe", to: "/runs" }, { label: "cost" }]}
           title="Cost & failures"
-          summary="last 24h"
+          summary={env.useMock ? "last 24h" : `last ${COST_WINDOW_DAYS} days`}
         />
       }
     >
@@ -92,30 +109,54 @@ export function CostPage() {
               <CostStat
                 name="per-success"
                 label="Cost per success"
-                prefix="$"
-                value={data.perSuccess.toFixed(2)}
-                sub="key business metric — per successful task, not per call"
+                prefix={data.perSuccess === null ? undefined : "$"}
+                value={
+                  data.perSuccess === null
+                    ? // The rollup counts spend and runs; the price it never
+                      // divided is not ours to invent.
+                      "—"
+                    : data.perSuccess.toFixed(2)
+                }
+                sub={
+                  data.perSuccess === null
+                    ? "not reported by the platform costs api"
+                    : "key business metric — per successful task, not per call"
+                }
               />
               <CostStat
                 name="per-day"
                 label="Per day"
                 prefix="$"
-                value={data.totalDay.toFixed(0)}
-                sub={`${successPercent(data)}% of tasks — green gate`}
+                value={(data.totalDay ?? 0).toFixed(0)}
+                sub={
+                  data.successRate === null
+                    ? `average over the ${data.windowDays ?? data.byDay.length}-day window`
+                    : `${successPercent(data)}% of tasks — green gate`
+                }
               />
               {/* The only tile with a consequence written beside it, so the
                   only one that carries heat. The other two are facts about a
-                  day that has already happened, and a fact gets no hue. */}
-              <CostStat
-                name="proxy-budget"
-                label="Proxy budget"
-                value={String(budgetPercent(data.budget))}
-                suffix="%"
-                heat={budgetHeat(data.budget)}
-                sub={`$${data.budget.used.toFixed(0)} / $${data.budget.cap.toFixed(0)} · kill-switch at cap`}
-              >
-                <ProxyBudgetMeter budget={data.budget} />
-              </CostStat>
+                  window that has already happened, and a fact gets no hue. */}
+              {data.budget ? (
+                <CostStat
+                  name="proxy-budget"
+                  label="Proxy budget"
+                  value={String(budgetPercent(data.budget))}
+                  suffix="%"
+                  heat={budgetHeat(data.budget)}
+                  sub={`$${data.budget.used.toFixed(0)} / $${data.budget.cap.toFixed(0)} · kill-switch at cap`}
+                >
+                  <ProxyBudgetMeter budget={data.budget} />
+                </CostStat>
+              ) : (
+                <CostStat
+                  name="window"
+                  label={`${data.windowDays ?? data.byDay.length}-day window`}
+                  prefix="$"
+                  value={(data.windowUsd ?? 0).toFixed(2)}
+                  sub={`all-time $${(data.allTimeUsd ?? 0).toFixed(2)} · ${data.windowRuns ?? 0} runs across ${data.byApp.length} ${data.byApp.length === 1 ? "project" : "projects"}`}
+                />
+              )}
             </div>
 
             {/* The time half of the report. The three tiles above say what the
@@ -126,7 +167,7 @@ export function CostPage() {
               id="cost-by-day"
               data-test="cost-by-day"
               title="spend by day"
-              note="the last 7 days"
+              note={`the last ${data.byDay.length} days`}
             >
               <SpendByDay days={data.byDay} />
             </Section>
@@ -151,23 +192,15 @@ export function CostPage() {
               </Section>
             </div>
 
-            {/* Seeded numbers are fictional and stay marked as such. Mock
-                mode names the switch; real mode names the gap — the
-                per-project feed is live but this page is a platform-wide
-                rollup, and pretending otherwise is the lie the badge
-                exists to prevent. */}
+            {/* Seeded numbers are fictional and stay marked as such. Real
+                mode renders the platform rollup — real data carries no
+                badge, which is the whole point of having one. */}
             {env.useMock ? (
               <p className={styles.mock} data-test="cost-mock-mark">
                 <DollarSign className={styles.mockIcon} aria-hidden="true" />
                 mock snapshot · VITE_USE_MOCK
               </p>
-            ) : (
-              <p className={styles.mock} data-test="cost-demo-mark">
-                <DollarSign className={styles.mockIcon} aria-hidden="true" />
-                demo data · no platform-wide cost endpoint yet — per-project
-                costs are live on the host
-              </p>
-            )}
+            ) : null}
           </>
         ) : null}
       </div>

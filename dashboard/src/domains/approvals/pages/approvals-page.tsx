@@ -100,6 +100,15 @@ export function ApprovalsPage() {
           </div>
         ) : null}
 
+        {decision.error ? (
+          <p className={styles.stateBody} role="alert" data-test="approvals-decision-failed">
+            {decision.error instanceof Error
+              ? decision.error.message
+              : "The decision did not land."}{" "}
+            The queue is as it was — the run is still waiting.
+          </p>
+        ) : null}
+
         {ready && data.length === 0 ? (
           <div className={styles.empty} data-test="approvals-empty">
             <CheckCheck className={styles.emptyIcon} aria-hidden="true" />

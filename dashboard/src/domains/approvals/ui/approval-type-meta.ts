@@ -1,10 +1,10 @@
 import type { ComponentType } from "react"
-import { GitBranch, Image, Zap } from "lucide-react"
+import { Flag, GitBranch, Image, Zap } from "lucide-react"
 
 import type { ApprovalType } from "@/domains/approvals/model/types"
 
 /**
- * The three kinds of decision, and the glyph each one wears.
+ * The kinds of decision, and the glyph each one wears.
  *
  * Its own file rather than a constant beside the badge that draws it: a module
  * that exports both a component and a value loses fast refresh, which is the
@@ -15,6 +15,11 @@ import type { ApprovalType } from "@/domains/approvals/model/types"
  * deploy for checkout-web"). There used to be a second, title-cased `label` for
  * the chip, which made one value read as two vocabularies; a value is spelled
  * the way it is stored, the way the kit's `StatusBadge` spells a status.
+ *
+ * `gate` is the wire's kind: a run the orchestrator escalated back to a human.
+ * It is not a plan or a deploy — the host does not say *why* it escalated, and
+ * the chip that named a reason it does not have would be the first lie on a
+ * screen whose whole job is a decision.
  */
 export const APPROVAL_TYPE_META: Record<
   ApprovalType,
@@ -23,4 +28,5 @@ export const APPROVAL_TYPE_META: Record<
   plan: { icon: GitBranch, noun: "plan" },
   deploy: { icon: Zap, noun: "deploy" },
   baseline: { icon: Image, noun: "baseline" },
+  gate: { icon: Flag, noun: "gate" },
 }

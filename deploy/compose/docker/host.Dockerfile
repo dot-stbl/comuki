@@ -9,8 +9,21 @@
 #
 # Build context = repo root:
 #   docker build -f deploy/compose/docker/host.Dockerfile \
-#     --build-arg VITE_API_BASE_URL=http://localhost:17172 \
+#     --build-arg COMUKI_VERSION=0.1.0 \
 #     -t comuki:local .
+#
+# Build args:
+#   VITE_API_BASE_URL  SPA API base. Empty default = same-origin: the image
+#                      serves the SPA from the host process itself, so the
+#                      API lives at whatever origin the browser opened
+#                      (works on localhost, LAN IPs and public domains with
+#                      zero rebuilds). Set an absolute URL ONLY when the SPA
+#                      is served from a different origin than the API.
+#   COMUKI_VERSION     Stamped into the binaries via -p:VersionPrefix
+#                      (surfaced by `comuki version` and /api/v1/version;
+#                      the scale supervisor derives the worker image tag
+#                      from it — see RELEASE.md). Default 0.0.0 = unstamped
+#                      local build.
 #
 # .NET 10, non-root `app` user (mcr aspnet default, UID 1654).
 # curl is installed for container healthchecks.
@@ -18,9 +31,7 @@
 # ---------- Stage 0: build the dashboard SPA ----------
 FROM docker.io/library/node:22-alpine AS spa
 
-# Default is the host's compose HTTP mapping (port pool: 17172) — NOT the
-# dashboard dev port (17173), which is the SPA's own origin.
-ARG VITE_API_BASE_URL=http://localhost:17172
+ARG VITE_API_BASE_URL=
 ARG VITE_DEPLOY_ENV=production
 
 WORKDIR /src
@@ -37,6 +48,10 @@ RUN ./node_modules/.bin/vite build \
 # ---------- Stage 1: build host + migrator + brain ----------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
+# Release stamping: 0.0.0 = unstamped local build (worker-image pinning
+# falls back to `latest`); release builds pass the tag's semver.
+ARG COMUKI_VERSION=0.0.0
+
 WORKDIR /src
 
 # Restore first for layer caching: repo-wide pins + the host graphs
@@ -52,11 +67,11 @@ RUN dotnet restore platform/src/host/Comuki.Host/Comuki.Host.csproj \
 # diverge. AssemblyName ships apphost binaries (comuki, comuki-migrator,
 # comuki-brain — issue #54); entrypoints run the apphost directly.
 RUN dotnet publish platform/src/host/Comuki.Host/Comuki.Host.csproj \
-        -c Release --no-restore -o /app/host \
+        -c Release --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app/host \
     && dotnet publish platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj \
-        -c Release --no-restore -o /app/migrator \
+        -c Release --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app/migrator \
     && dotnet publish platform/src/host/Comuki.Host.Brain/Comuki.Host.Brain.csproj \
-        -c Release --no-restore -o /app/brain
+        -c Release --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app/brain
 
 # ---------- Stage 2: runtime ----------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0

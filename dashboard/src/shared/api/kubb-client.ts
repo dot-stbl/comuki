@@ -6,17 +6,24 @@
  * file instead of kubb's built-in `@kubb/plugin-client/clients/fetch`. Two
  * reasons we override:
  *
- * 1. **Mock-first by default.** When `VITE_API_BASE_URL` is empty (fresh
- *    clone, `dev:mock` workflow, Storybook), a generated hook must NOT ping a
- *    random host. We surface the error early — when a screen is wired
- *    against real backend data, the operator must set
- *    `VITE_API_BASE_URL=http://localhost:17173` and restart the dev server.
+ * 1. **Mock-first by default in dev.** When `VITE_API_BASE_URL` is empty
+ *    (fresh clone, `dev:mock` workflow, Storybook), a generated hook must
+ *    NOT ping a random host. We surface the error early — when a screen is
+ *    wired against real backend data on a dev server, the operator must
+ *    set `VITE_API_BASE_URL=http://localhost:17173` and restart the dev
+ *    server.
+ *
+ *    Production builds are the exception: the released image serves the
+ *    SPA from the host process itself (same origin), and `VITE_API_BASE_URL`
+ *    is deliberately baked empty there. An empty base in a production
+ *    build means same-origin relative requests, not an error.
  *
  *    Note: `env.useMock` defaults to `true` when `VITE_USE_MOCK` is unset
  *    (see `shared/config/env.ts`). Mock-first callers never reach this
  *    transport — they branch on `useMock` before invoking a generated hook.
- *    This error fires only when someone opts into real mode
- *    (`VITE_USE_MOCK=false`) without pointing the SPA at a backend.
+ *    The dev-mode error fires only when someone opts into real mode
+ *    (`VITE_USE_MOCK=false`) on a dev server without pointing the SPA at
+ *    a backend.
  * 2. **Cookie auth.** Comuki's orchestrator authn is cookie-based
  *    (cookie session + `ck_` API key passthrough). Fetch defaults to
  *    `credentials: 'same-origin'` which LOSES the cookie on the cross-origin
@@ -61,13 +68,16 @@ const rawBaseUrl =
 const baseURL = rawBaseUrl.replace(/\/+$/, "")
 
 /**
- * Surface a clear error when the operator calls a generated hook without
- * setting `VITE_API_BASE_URL`. Better than the kubb default, which silently
- * fetches relative to the SPA origin and gets a Vite-served 404.
+ * Released images serve the SPA from the host process itself, so an empty
+ * base is the correct same-origin configuration there. Dev servers keep
+ * the guard: an empty base under `vite dev` means "not configured".
  */
-const isMockMode = baseURL === ""
+const isProdBuild = import.meta.env.PROD === true
 
-function requireBackendBaseUrl(): string {
+/** Empty base in a production build = same-origin relative requests. */
+const isMockMode = baseURL === "" && !isProdBuild
+
+function resolveBaseUrl(): string {
   if (isMockMode) {
     throw new Error(
       [
@@ -103,7 +113,7 @@ const kubbClient: Client = async <
 >(
   paramsConfig: RequestConfig<TRequestData>
 ): Promise<ResponseConfig<TResponseData>> => {
-  const resolvedBaseUrl = requireBackendBaseUrl()
+  const resolvedBaseUrl = resolveBaseUrl()
 
   const headers = new Headers()
   if (paramsConfig.headers) {

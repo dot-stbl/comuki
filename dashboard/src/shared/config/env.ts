@@ -63,14 +63,11 @@ const envSchema = z.object({
    */
   VITE_DEPLOY_ENV: z.enum(["local", "staging", "production"]).optional(),
   /**
-   * The host URL kubb-generated clients route through. Read directly by the
-   * kubb-client transport (which throws a single, helpful error when the
-   * variable is missing); exposed here so domain code can branch on "is the
-   * operator pointed at a real backend yet?". Empty when unset.
-   *
-   * The contract on this is "non-empty" in real mode (kubb-client refuses
-   * empty); the schema keeps it `optional()` so mock-first setups parse —
-   * the mock gate (`useMock`) decides whether the value is read at all.
+   * Host URL kubb-generated clients route through. Empty when unset.
+   * In a dev build, `useMock=false` + empty here = operator error
+   * (kubb-client throws at first call); in a production build it means
+   * same-origin (the released image serves the SPA from the host process
+   * itself) — see `apiSameOrigin`.
    */
   VITE_API_BASE_URL: z.string().optional(),
   /**
@@ -106,6 +103,9 @@ const parsed = envSchema.parse({
   VITE_PROXY_KEY: import.meta.env.VITE_PROXY_KEY ?? "",
 })
 
+/** Trimmed API base URL — empty when unset. */
+const apiBaseUrl = (parsed.VITE_API_BASE_URL ?? "").trim()
+
 export const env = {
   useMock: parsed.VITE_USE_MOCK,
   /** The repository link's destination, or `null` when the bar shows none. */
@@ -116,10 +116,18 @@ export const env = {
   deployEnv: parsed.VITE_DEPLOY_ENV,
   /**
    * Host URL kubb-generated clients route through. Empty when unset;
-   * combined with `useMock=false`, kubb-client throws at first call rather
-   * than pinging localhost and returning a Vite-served 404.
+   * in a dev build combined with `useMock=false`, kubb-client throws at
+   * first call rather than pinging localhost and returning a Vite-served
+   * 404.
    */
-  apiBaseUrl: (parsed.VITE_API_BASE_URL ?? "").trim(),
+  apiBaseUrl,
+  /**
+   * True when this is a production build with an EMPTY API base: the
+   * released image serves the SPA from the host process itself, so "no
+   * base configured" means same-origin relative requests, not an error.
+   * Same contract as kubb-client's transport gate.
+   */
+  apiSameOrigin: import.meta.env.PROD === true && apiBaseUrl === "",
   /**
    * Configured OIDC provider name, or `null` when unset. In mock mode this is
    * informational only — `auth.store` owns the button — but in real mode it

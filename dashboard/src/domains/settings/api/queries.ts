@@ -1,15 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { toSettingsSnapshot } from "@/domains/settings/api/mappers"
+import {
+  platformSettingsWireToSettings,
+  toSettingsSnapshot,
+} from "@/domains/settings/api/mappers"
 import type {
   AutonomyMode,
+  PlatformSettings,
   SettingsSaveInput,
   SettingsSnapshot,
 } from "@/domains/settings/model/types"
+import { getApiV1Settings } from "@/shared/api/_generated/clients/getApiV1Settings"
 import { SETTINGS_SEED } from "@/shared/api/mock/settings.seed"
 import { env } from "@/shared/config/env"
 
-export const settingsQueryKey = ["settings"] as const
+/** The real-mode platform snapshot — the read the host actually serves. */
+export const platformSettingsQueryKey = ["settings"] as const
+
+/** The mock control plane — a different shape under a namespaced key. */
+export const settingsQueryKey = ["settings", "control-plane"] as const
 
 let mockSettings: SettingsSnapshot | null = null
 
@@ -104,6 +113,26 @@ export function useSettingsQuery() {
   return useQuery({
     queryKey: settingsQueryKey,
     queryFn: getSettings,
+    // The control plane is the mock's own description; real mode renders the
+    // platform snapshot instead and never asks this query to run (its
+    // queryFn is an honest throw outside mock).
+    enabled: env.useMock,
+  })
+}
+
+/**
+ * The platform snapshot, `GET /api/v1/settings` — the one settings read the
+ * host serves in real mode. Every value is boot-fixed; there is no PUT and
+ * the page says so rather than offering a save that cannot land.
+ */
+export function usePlatformSettingsQuery() {
+  return useQuery({
+    queryKey: platformSettingsQueryKey,
+    queryFn: async (): Promise<PlatformSettings> => {
+      const wire = await getApiV1Settings()
+      return platformSettingsWireToSettings(wire)
+    },
+    enabled: !env.useMock,
   })
 }
 

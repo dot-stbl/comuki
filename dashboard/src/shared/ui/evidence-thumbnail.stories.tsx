@@ -64,7 +64,7 @@ export const Svg: Story = {
   },
 }
 
-/** Unknown mime — the bare icon, no label, the icon stays informative. */
+/** Unknown mime — the labelled tile with the generic `file` word. */
 export const UnknownMime: Story = {
   args: {
     src: "about:blank",

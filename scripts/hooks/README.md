@@ -53,12 +53,17 @@ An attribution trailer never costs anyone their commit. See
 **Rejects** a malformed subject — only the author can fix that one:
 
 ```
-[hybrid] <type>(<scope>)!: <description>
+[hybrid](feat/<area>): <description>            (current)
+[hybrid] <type>(<scope>): <description>           (legacy, accepted)
 ```
 
-- types: `feat fix refactor docs test perf build ci chore style revert merge`
-  (`merge` = hand-written merge commit; git's own `Merge branch …` is exempt)
-- scope optional, lowercase `[a-z0-9][a-z0-9._/-]*`
+- current form: `[hybrid](<feat-area>): <description>` where `<feat-area>` is
+  a kebab-case path starting with `feat/`, `meta/`, or `docs/` (see
+  `.agents/rules/process/commit-format.md` §"Top-level areas" for the menu).
+- legacy form: `[hybrid] <type>(<scope>): <description>` — types
+  `feat fix refactor docs test perf build ci chore style revert merge`
+  (`merge` = hand-written merge commit; git's own `Merge branch …` is exempt),
+  scope optional, lowercase `[a-z0-9][a-z0-9._/-]*`.
 - description: imperative, no trailing `.` — case is not policed (identifiers
   and acronyms open a description all the time)
 - subject ≤ 100 characters (aim for 72)
@@ -70,7 +75,10 @@ See `.agents/rules/process/commit-format.md`.
 ### Checking without committing
 
 ```bash
-# lint a message you have in hand
+# lint a message you have in hand (current form)
+echo '[hybrid](feat/dashboard): wire cost page breakdowns and forecast' | node scripts/commit-lint.mjs --stdin
+
+# …or legacy form (also accepted)
 echo '[hybrid] feat(api): add the thing' | node scripts/commit-lint.mjs --stdin
 
 # audit a range of existing commits (attribution is an error here — you

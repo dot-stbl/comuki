@@ -12,11 +12,19 @@ always: true
 
 ## Формат
 
+Текущая форма (canonical, принята в `commit-lint.mjs`):
+
 ```
-[hybrid] <type>: <description>
+[hybrid](<feat-area>): <description>
 ```
 
-или с scope:
+`<feat-area>` — kebab-case путь, может быть вложенным (`feat/dashboard`, `fe/mocks`,
+`meta`, `host/mtls`, `tests/architecture`). Всегда начинается с префикса `feat/`
+(или `meta/`, `docs/` — см. «Top-level areas» ниже); выдумывать свои корневые
+сегменты нельзя.
+
+Legacy-форма (`<type>(<scope>)`) — также принимается линтером для backward
+compatibility, но для новых коммитов используйте текущую форму.
 
 ```
 [hybrid] <type>(<scope>): <description>
@@ -24,22 +32,28 @@ always: true
 
 Опционально — тело и footer через пустую строку.
 
-## Типы
+## Top-level areas
 
-| Type       | Когда                                                                       |
-|------------|------------------------------------------------------------------------------|
-| `feat`     | новая фича / функциональность                                                |
-| `fix`      | bug fix                                                                      |
-| `refactor` | рефакторинг без изменения наблюдаемого поведения                             |
-| `docs`     | только документация (md, дизайн-система, docs/, README)                     |
-| `test`     | добавление или изменение тестов                                              |
-| `perf`     | улучшение производительности                                                 |
-| `build`    | build-система или external dependencies (Directory.Packages.props, .NET SDK) |
-| `ci`       | CI конфигурация (workflows, build-verification)                              |
-| `chore`    | тулинг, мета-вещи, форматирование, мелочи, не код и не фича                 |
-| `style`    | форматирование без изменения смысла (whitespace, prettier, dotnet format)    |
-| `revert`   | откат предыдущего коммита                                                    |
-| `merge`    | ручной мерж-коммит с осмысленным описанием; `Merge branch …` от git проходит мимо правила |
+Вместо `type` в новой форме — `<feat-area>` (всегда `feat/...`, `meta/...`,
+или `docs/...`):
+
+| Area                 | Когда                                                                |
+|----------------------|----------------------------------------------------------------------|
+| `feat/<module>`      | код в `platform/src/modules/Comuki.Modules.X/`                       |
+| `feat/<shared>`      | код в `platform/src/shared/Comuki.Shared.X/`                          |
+| `feat/<provider>`    | код в `platform/src/providers/Comuki.Providers.X/`                   |
+| `feat/host`          | `platform/src/host/Comuki.Host/` (composition root)                   |
+| `feat/build-tools`   | `platform/src/host/Comuki.Build.Tools/`                              |
+| `feat/fe`            | `dashboard/` (sub-area: `feat/fe/<sub-area>`)                         |
+| `feat/tests`         | `tests/` (unit / integration)                                        |
+| `meta`               | build, CI, deps, scripts, repo-level config, **rules themselves**      |
+| `docs`               | documentation-only (`.agents/docs/`, ADRs, README)                    |
+
+Вложенность: `feat/fe/dashboard`, `feat/tests/architecture`, `meta/format`,
+`meta/deps`, `host/mtls`.
+
+Legacy-форма использует `type` (`feat`/`fix`/`refactor`/`docs`/`test`/`perf`/
+`build`/`ci`/`chore`/`style`/`revert`/`merge`) — Conventional Commits 1.0.0.
 
 ## Scope (опционально, рекомендуется)
 
@@ -92,14 +106,22 @@ Refs: COM-142
 ## Good
 
 ```
+[hybrid](feat/orchestration): add claim/lease loop for pull-queue
+[hybrid](fix/database): correct cascade delete on runs table
+[hybrid](docs/roadmap): clarify Slice 0 DoD with idempotency check
+[hybrid](meta/deps): bump dotnet to 10.0.108
+[hybrid](meta/rules): adopt [hybrid] prefix for comuki commits
+[hybrid](refactor/translator): extract stream-json parser into separate file
+[hybrid](test/orchestration): cover two-claimer race for FOR UPDATE SKIP LOCKED
+[hybrid](meta/ci): enforce extended analyzer rules in build-verification
+[hybrid](feat/fe/dashboard): wire cost page breakdowns and forecast
+```
+
+Legacy (still accepted by linter):
+
+```
 [hybrid] feat(orchestration): add claim/lease loop for pull-queue
 [hybrid] fix(database): correct cascade delete on runs table
-[hybrid] docs(roadmap): clarify Slice 0 DoD with idempotency check
-[hybrid] chore(deps): bump dotnet to 10.0.108
-[hybrid] chore(rules): adopt [hybrid] prefix for comuki commits
-[hybrid] refactor(translator): extract stream-json parser into separate file
-[hybrid] test(orchestration): cover two-claimer race for FOR UPDATE SKIP LOCKED
-[hybrid] ci(be): enforce extended analyzer rules in build-verification
 ```
 
 ## Bad
@@ -108,9 +130,11 @@ Refs: COM-142
 feat(orchestration): add foo                 ← нет [hybrid] префикса
 feat: add foo                                ← нет [hybrid] префикса
 [stbl](feat): add foo                        ← старый префикс, запрещён
-[hybrid](feat): add foo                      ← вариант с parens вокруг type, не наш формат
+[hybrid](feat/Orchestration): add foo        ← path должен быть lowercase
+[hybrid](feat): add foo                      ← пустой path (нет /area)
+[hybrid] feat() add foo                      ← legacy: пустой scope
 feat: Added new endpoint.                    ← прошедшее время + точка
-WIP                                         ← без type
+WIP                                         ← без type/area
 feat add foo                                 ← нет `:` после type
 update stuff                                 ← не описательно
 ```

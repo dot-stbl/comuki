@@ -73,7 +73,13 @@ builder.Services.AddBrainSecrets(builder.Configuration);
 builder.Services.AddSingleton<IModelConfigProvider, ModelConfigProvider>();
 builder.Services.AddSingleton<IBrainChatClientFactory, DefaultBrainChatClientFactory>();
 
-builder.Services.AddSingleton(options);
+// Options (issue #53 audit): the AddOptions pipeline binds [brain] and
+// enforces the [Range] caps at startup; the pre-build instance resolved
+// above (the same values that configured the Kestrel URL) is what
+// IOptions<BrainOptions> consumers (BrainAgent, ModelConfigProvider)
+// receive — the old bare AddSingleton(options) left them with an
+// unbound default, silently skipping the secret-ref resolution.
+builder.Services.AddBrainOptions(builder.Configuration, options);
 builder.Services.AddSingleton<IProfileCatalog, ControlPlaneProfileCatalog>();
 builder.Services.AddSingleton<IActiveRunCatalog, StubActiveRunCatalog>();
 builder.Services.AddSingleton<IExplorerReportReader, StubExplorerReportReader>();

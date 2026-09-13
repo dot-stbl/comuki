@@ -85,8 +85,6 @@ public sealed class BrainOptions
     /// unchanged — the per-call resolution is
     /// <see cref="IModelConfigProvider"/>'s job, not this one's.
     /// </summary>
-    /// <param name="configuration"></param>
-    /// <returns></returns>
     public static BrainOptions Resolve(IConfiguration configuration)
     {
         var bound = configuration.GetSection(SectionName).Get<BrainOptions>() ?? new BrainOptions();

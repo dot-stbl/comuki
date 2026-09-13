@@ -1,5 +1,32 @@
 # Comuki — Design System
 
+> ## ⚠️ Архив. Это **прежний** визуальный мир Comuki.
+>
+> Этот файл описывает дизайн-систему, которой продукт больше не следует:
+> `styles/globals.css` как «shadcn drop-in», Tailwind v4 mapping, рецепт
+> «как пересобрать shadcn-компонент», `dashboard/src/shared/ui/primitives/`.
+> shadcn/ui **вырезан целиком** (175 файлов, 14 зависимостей, вместе с
+> recharts), каталога `primitives/` не существует, а кит живёт плоско в
+> `dashboard/src/shared/ui/`.
+>
+> **Действующие источники истины:**
+>
+> | Что | Где |
+> |-----|-----|
+> | Визуальный мир (палитра, темы, типографика, формы, статусы) | [`DESIGN.md`](../../../DESIGN.md) в корне репозитория |
+> | Токены | [`dashboard/src/app/styles/tokens.css`](../../../dashboard/src/app/styles/tokens.css) |
+> | Кит примитивов | [`dashboard/src/shared/ui/AGENTS.md`](../../../dashboard/src/shared/ui/AGENTS.md) |
+> | Процесс сборки UI | [`.agents/rules/coding/frontend-construct-rules.md`](../../rules/coding/frontend-construct-rules.md) |
+>
+> Файл сохраняется как **история решений**, а не как источник решений
+> (см. `PRODUCT.md` § Brand Commitments). Ничего отсюда не переносить в
+> код, не сверять с ним токены и не «восстанавливать» описанные здесь
+> компоненты. Значения ниже относятся к `styles/tokens.css` **в этой же
+> папке** — это архивная копия, не та, что читает продукт.
+
+---
+
+
 A single reference for rebuilding the UI in this language. Feed this whole file to an
 agent: it contains the philosophy, the exact tokens (both themes), the shadcn/ui
 variable mapping, the component conventions, and how to theme. Values here match

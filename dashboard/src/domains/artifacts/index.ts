@@ -27,7 +27,6 @@ export {
 
 export {
   evidenceForRun,
-  itemsOfPage,
   latestPngForTicket,
 } from "./model/filter-artifacts"
 
@@ -37,7 +36,6 @@ export {
 } from "./api/mappers"
 
 export {
-  useVisualArtifactById,
   useVisualArtifactsQuery,
   visualArtifactContentUrl,
   visualArtifactsQueryKey,

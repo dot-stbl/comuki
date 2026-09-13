@@ -18,8 +18,8 @@ import {
  * The single read against visual artifacts.
  *
  * One query, three surfaces: the run page passes `{ runId }`, the inbox
- * passes `{ ticketId }`, the chat pane passes the artifact id (looked
- * up by `useVisualArtifactById`). The host's EF query accepts the same
+ * passes `{ ticketId }`, the chat pane intersects the artifact ids
+ * against the project's list. The host's EF query accepts the same
  * filter arguments the kubb `ArtifactsVisualListQueryParams` declares;
  * the cubb client routes through `kubb-client.ts`, which carries the
  * cookie auth and rejects 401/403 — the same seam every kubb-shaped
@@ -85,27 +85,6 @@ export function useVisualArtifactsQuery(
     queryFn: () => listVisualArtifacts(projectId, filters),
     enabled: projectId.length > 0,
   })
-}
-
-/**
- * Direct lookup by id.
- *
- * Used by the chat thread's `artifact-ref` part: the turn records the
- * artifact id only (per issue #51 §UI, "not the HTML, not a data-URL"),
- * and the card opens the same pane by id. The page is one fetch — every
- * artifact for the project — and this filter is a single linear pass; on
- * the wire the host could expose `?id={id}` for a dedicated query, but
- * the dashboard's read count is one per part, not one per artifact.
- */
-export function useVisualArtifactById(
-  projectId: string,
-  artifactId: string | null,
-): VisualArtifact | null {
-  const query = useVisualArtifactsQuery(projectId)
-  if (!artifactId || !query.data) {
-    return null
-  }
-  return query.data.items.find((entry) => entry.id === artifactId) ?? null
 }
 
 /**

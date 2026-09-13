@@ -1,4 +1,4 @@
-import type { VisualArtifact, VisualArtifactPage } from "./types"
+import type { VisualArtifact } from "./types"
 
 /**
  * Reading the list.
@@ -55,14 +55,4 @@ export function latestPngForTicket(
     }
   }
   return newest
-}
-
-/**
- * Helper that collapses a fetched page into the bare shape the screens
- * actually iterate. The wire page always echoes `projectId`, but the
- * callers already have it from the URL — they read the field back through
- * `page.projectId` to keep the helper pure.
- */
-export function itemsOfPage(page: VisualArtifactPage): VisualArtifact[] {
-  return page.items
 }

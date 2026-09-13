@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react"
 
 import {
-  isImageMime,
   useVisualArtifactsQuery,
   visualArtifactContentUrl,
   type VisualArtifact,
@@ -73,12 +72,6 @@ export function ArtifactRefCard({
     }
     return { resolved: hit, orphans: miss }
   }, [all, artifactIds])
-
-  // Image-only at the card level — the modal handles documents. A
-  // card can carry documents too, but the thumbnail is still a
-  // labelled tile (see `EvidenceThumbnail`); the modal does the mime
-  // dispatch.
-  void isImageMime
 
   const [openArtifact, setOpenArtifact] = useState<VisualArtifact | null>(null)
 

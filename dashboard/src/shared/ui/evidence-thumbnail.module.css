@@ -4,30 +4,35 @@
  * a wide screenshot from making a tall thumbnail twice the column width
  * — the page already knows what the artifact is, the size is the only
  * read). The document variant is a coloured tile with a label rather
- * than the document body: never the iframe inside a 96px box. */
+ * than the document body: never the iframe inside a 2rem (32px) box. */
 
 .thumb {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--s12);
-  height: var(--s12);
+  width: var(--s8);
+  height: var(--s8);
   padding: 0;
   border: var(--hairline) solid var(--rule);
   border-radius: var(--r-sm);
   background: var(--muted);
   overflow: clip;
   cursor: pointer;
-  transition: border-color var(--dur-fast) var(--easing-standard);
+  transition: border-color var(--dur) var(--ease);
 }
 
 .thumb:hover {
-  border-color: var(--border-2);
+  border-color: var(--rule-strong);
 }
 
+/* Focus ring — same recipe as `button.module.css`: outline off, a 2px
+ * `box-shadow` halo (so it follows the rounded corner), and the border
+ * picks up `--ring` for a non-color-blind cue. The two declarations are
+ * redundant on purpose; a single channel is enough to lose. */
 .thumb:focus-visible {
-  outline: var(--ring-focus);
-  outline-offset: 2px;
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
 }
 
 .sm {
@@ -52,7 +57,7 @@
   width: 100%;
   height: 100%;
   padding: var(--s2);
-  background: var(--surface-2);
+  background: var(--surface);
   color: var(--text-muted);
 }
 

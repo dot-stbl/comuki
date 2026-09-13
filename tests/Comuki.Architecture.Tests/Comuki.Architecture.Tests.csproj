@@ -12,6 +12,7 @@
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Shouldly" />
     <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
     <PackageReference Include="coverlet.collector" />
   </ItemGroup>
 
@@ -34,6 +35,7 @@
     <ProjectReference Include="..\..\platform\src\modules\Chat\Comuki.Modules.Chat.Domain\Comuki.Modules.Chat.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Knowledge\Comuki.Modules.Knowledge.Domain\Comuki.Modules.Knowledge.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Memory\Comuki.Modules.Memory.Domain\Comuki.Modules.Memory.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Projects\Comuki.Modules.Projects.Domain\Comuki.Modules.Projects.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Scheduler\Comuki.Modules.Scheduler.Domain\Comuki.Modules.Scheduler.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Artifacts\Comuki.Modules.Artifacts.Domain\Comuki.Modules.Artifacts.Domain.csproj" />

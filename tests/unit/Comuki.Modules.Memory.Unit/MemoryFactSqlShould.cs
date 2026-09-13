@@ -37,4 +37,19 @@ public sealed class MemoryFactSqlShould
             CultureInfo.CurrentCulture = previousCulture;
         }
     }
+
+    [Fact(DisplayName = "Given CosineSearchSql, when read, then the object axis is scope-gated rather than left to the scope/subject filter parameters alone (leak 2 regression lock)")]
+    public void CosineSearchSqlGatesVisibilityByScope()
+    {
+        // Before the fix this query had no object-axis clause at all —
+        // @scope/@subject only narrowed an already-unrestricted result
+        // set, so a caller naming any other project's or subject's scope
+        // and subject id (and supplying a matching embedding) got that
+        // row back. The fixed predicate ANDs an independent visibility
+        // clause mirroring MemoryDbContext's HasQueryFilter on MemoryFact.
+        MemoryFactSql.CosineSearchSql.ShouldContain("@unrestricted");
+        MemoryFactSql.CosineSearchSql.ShouldContain("@allowedProjectSubjectKeys");
+        MemoryFactSql.CosineSearchSql.ShouldContain("subject_id = ANY(@allowedProjectSubjectKeys::text[])");
+        MemoryFactSql.CosineSearchSql.ShouldContain("scope = 'global'");
+    }
 }

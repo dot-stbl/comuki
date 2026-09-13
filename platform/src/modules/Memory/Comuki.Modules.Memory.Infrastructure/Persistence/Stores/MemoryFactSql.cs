@@ -30,17 +30,29 @@ public static class MemoryFactSql
         + " SET embedding = @vector::vector WHERE id = @id";
 
     /// <summary>
-    /// Cosine-distance search over embedded, visible facts; NULL filter
-    /// parameters widen the scope (they must arrive text-typed — an
-    /// untyped NULL parameter fails with 42P08). The vector parameter
-    /// carries an untyped literal typed by the explicit <c>::vector</c>
-    /// cast.
+    /// Cosine-distance search over embedded, visible facts. This table has
+    /// no project id column to scope by — the object axis here is
+    /// <c>scope</c>/<c>subject_id</c> (see <c>MemoryDbContext</c>'s
+    /// <c>HasQueryFilter</c> on <c>MemoryFact</c>, which this raw SQL
+    /// query reproduces because it runs outside EF's model and that
+    /// filter cannot reach it): <c>@unrestricted</c> or a global row
+    /// widens; a project row must have its subject id in
+    /// <c>@allowedProjectSubjectKeys</c>; a user row is never matched
+    /// unless <c>@unrestricted</c> — there is no per-user identity axis to
+    /// check it against. <c>@allowedProjectSubjectKeys</c> must always be
+    /// a real (possibly empty) array, never NULL (<c>= ANY(NULL)</c> is
+    /// NULL, not true). The narrowing filter parameters (<c>@scope</c> /
+    /// <c>@subject</c> / <c>@kind</c>) widen on NULL and must arrive
+    /// text-typed — an untyped NULL parameter fails with 42P08. The
+    /// vector parameter carries an untyped literal typed by the explicit
+    /// <c>::vector</c> cast.
     /// </summary>
     public const string CosineSearchSql =
         "SELECT id, scope, subject_id, kind, topic_key, text, source, created_by, created_at "
         + "FROM " + MemoryDatabase.Schema + "." + MemoryDatabase.MemoryFacts + " "
         + "WHERE superseded_at IS NULL "
         + "  AND (kind <> 'ephemeral' OR created_at >= @cutoff) "
+        + "  AND (@unrestricted OR scope = 'global' OR (scope = 'project' AND subject_id = ANY(@allowedProjectSubjectKeys::text[]))) "
         + "  AND (@scope IS NULL OR scope = @scope) "
         + "  AND (@subject IS NULL OR subject_id = @subject) "
         + "  AND (@kind IS NULL OR kind = @kind) "

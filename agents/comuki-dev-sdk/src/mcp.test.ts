@@ -98,17 +98,26 @@ function jsonResponse(payload: unknown): Response {
 
 const created: ComukiMcpClient[] = []
 
+/**
+ * Every client gets a capturing logger: it keeps the suite's output clean and
+ * makes the fail-soft reasons assertable, which is the whole point of them
+ * existing — `[]` and `null` say nothing on their own.
+ */
 function client(options: {
   readonly token?: string
   readonly fetchImpl: FetchFn
-}): ComukiMcpClient {
+}): { readonly mcp: ComukiMcpClient; readonly logs: string[] } {
+  const logs: string[] = []
   const instance = ComukiMcpClient.create({
     url: "http://fake/mcp",
     token: options.token,
     fetchImpl: options.fetchImpl,
+    logger: (message, cause) => {
+      logs.push(cause === undefined ? message : `${message}: ${String(cause)}`)
+    },
   })
   created.push(instance)
-  return instance
+  return { mcp: instance, logs }
 }
 
 afterEach(async () => {
@@ -137,7 +146,10 @@ describe("fromEnv", () => {
 describe("connect over streamable http", () => {
   test("connects, sends bearer auth and negotiates initialize", async () => {
     const server = fakeStreamableServer()
-    const mcp = client({ token: "secret-token", fetchImpl: server.fetchImpl })
+    const { mcp } = client({
+      token: "secret-token",
+      fetchImpl: server.fetchImpl,
+    })
 
     await expect(mcp.connect()).resolves.toBe(true)
 
@@ -152,7 +164,7 @@ describe("connect over streamable http", () => {
 
   test("listTools maps tool names and descriptions", async () => {
     const server = fakeStreamableServer()
-    const mcp = client({ fetchImpl: server.fetchImpl })
+    const { mcp } = client({ fetchImpl: server.fetchImpl })
 
     const tools = await mcp.listTools()
 
@@ -163,14 +175,14 @@ describe("connect over streamable http", () => {
 
   test("listTools auto-connects when connect was not called first", async () => {
     const server = fakeStreamableServer()
-    const mcp = client({ fetchImpl: server.fetchImpl })
+    const { mcp } = client({ fetchImpl: server.fetchImpl })
 
     await expect(mcp.listTools()).resolves.toBeArrayOfSize(1)
   })
 
   test("callTool passes arguments and maps the result", async () => {
     const server = fakeStreamableServer()
-    const mcp = client({ fetchImpl: server.fetchImpl })
+    const { mcp } = client({ fetchImpl: server.fetchImpl })
     await mcp.connect()
 
     const result = await mcp.callTool("search", { query: "locks" })
@@ -192,18 +204,30 @@ describe("connect over streamable http", () => {
 describe("fail-soft behaviour", () => {
   test("network failure connects false and yields empty results", async () => {
     const failing: FetchFn = () => Promise.reject(new Error("ECONNREFUSED"))
-    const mcp = client({ fetchImpl: failing })
+    const { mcp, logs } = client({ fetchImpl: failing })
 
     await expect(mcp.connect()).resolves.toBe(false)
     await expect(mcp.listTools()).resolves.toEqual([])
     await expect(mcp.callTool("search")).resolves.toBeNull()
+
+    // Fail-soft, not fail-silent: the caller can tell "never connected" from
+    // "the server offers nothing", which `[]` alone never could.
+    expect(logs.some((line) => line.includes("streamable-http"))).toBe(true)
+    expect(logs.some((line) => line.includes("sse"))).toBe(true)
+    expect(logs.some((line) => line.includes("no transport connected"))).toBe(
+      true
+    )
+    expect(logs.some((line) => line.includes("listTools: not connected"))).toBe(
+      true
+    )
+    expect(logs.some((line) => line.includes("callTool search"))).toBe(true)
   })
 
   test("server rejecting streamable falls back to the SSE transport before giving up", async () => {
     // 404 on initialize POST: streamable fails; the SSE fallback then issues a
     // GET with `Accept: text/event-stream`, which also 404s → connect false.
     const server = fakeStreamableServer({ failWith: 404 })
-    const mcp = client({ fetchImpl: server.fetchImpl })
+    const { mcp } = client({ fetchImpl: server.fetchImpl })
 
     await expect(mcp.connect()).resolves.toBe(false)
 

@@ -242,6 +242,28 @@ describe("decideLockGate — fail-open on unknown shapes", () => {
         .decision
     ).toBe("allow")
   })
+
+  test("marks the unparseable-payload allow as fail-open, the clean one not", () => {
+    expect(decideLockGate(parseHookPayload("not json at all")).failOpen).toBe(
+      true
+    )
+    expect(
+      decideLockGate(parseHookPayload(hookJson("Edit", { file_path: "a.ts" })))
+        .failOpen
+    ).toBeUndefined()
+  })
+
+  test("the fail-open reason reaches stderr in both styles", () => {
+    for (const style of ["json", "exit"] as const) {
+      const output = runLockGate("not json at all", {
+        COMUKI_HOOK_STYLE: style,
+      })
+
+      // Exit 0: the call is allowed through. But not silently.
+      expect(output.exitCode).toBe(0)
+      expect(output.stderr).toContain("failing open")
+    }
+  })
 })
 
 describe("emitDecision — both output shapes behind one emitter", () => {

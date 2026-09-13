@@ -1,0 +1,120 @@
+/* Top-N projects by spend — a small table rather than a chart, because
+   the comparison is four facts about the same row (key, share of total,
+   bar against the largest, dollar figure) and a chart picks three. */
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+.table thead th {
+  text-align: start;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  padding-block: var(--s2);
+  padding-inline: 0;
+  border-block-end: var(--hairline) solid var(--rule);
+}
+
+.headProject {
+  inline-size: auto;
+}
+
+.headShare {
+  inline-size: 4ch;
+  text-align: end;
+}
+
+.headSpend {
+  inline-size: 6ch;
+  text-align: end;
+}
+
+.row {
+  vertical-align: middle;
+}
+
+.row + .row {
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+.projectCell {
+  padding-block: var(--s3);
+  padding-inline: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 5rem) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+.projectKey {
+  font-family: var(--font-data);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.projectKey:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.projectKey:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+.projectBar {
+  position: relative;
+  display: block;
+  block-size: var(--h-meter);
+  min-inline-size: 0;
+  border-radius: var(--r-xs);
+  background: var(--lane-alt);
+  overflow: clip;
+}
+
+.projectBarFill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: block;
+  border-radius: var(--r-xs);
+  background: var(--text-faint);
+}
+
+.share {
+  padding-block: var(--s3);
+  padding-inline: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.spend {
+  padding-block: var(--s3);
+  padding-inline: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}

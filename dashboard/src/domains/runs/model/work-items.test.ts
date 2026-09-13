@@ -36,6 +36,7 @@ function run(current: string, workItems: WorkItem[]): RunSummary {
     durationSec: 0,
     done: false,
     workItems,
+    anomaly: null,
   }
 }
 

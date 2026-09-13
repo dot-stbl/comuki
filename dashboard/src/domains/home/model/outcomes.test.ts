@@ -23,6 +23,7 @@ function run(id: string, status: RunSummary["status"]): RunSummary {
     durationSec: 300,
     done: status === "success",
     workItems: [],
+    anomaly: null,
   }
 }
 
@@ -30,7 +31,7 @@ const days = toOutcomeDays(OUTCOMES_SEED)
 
 describe("the day's arithmetic", () => {
   it("sums a day's finished runs across the stack", () => {
-    expect(outcomeDayTotal(days[days.length - 1])).toBe(26 + 12 + 9)
+    expect(outcomeDayTotal(days[days.length - 1])).toBe(26 + 12 + 10)
     expect(outcomeDayTotal({ label: "quiet", outcomes: [] })).toBe(0)
   })
 

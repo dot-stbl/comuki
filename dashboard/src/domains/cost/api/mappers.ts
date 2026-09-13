@@ -1,10 +1,30 @@
-import type { CostSummary } from "@/domains/cost/model/types"
-import type { SeedCostSummary } from "@/shared/api/mock/cost.seed"
+import type { CostSummary } from "@/domains/cost/model/cost"
+import type {
+  SeedCostPeriod,
+  SeedCostSummary,
+} from "@/shared/api/mock/cost.seed"
 
+/**
+ * One period of the seed → one `CostSummary`. Used both by the mock-first
+ * query (which calls `toCostSummary(COST_SEED)`) and by the period
+ * branches of the seed (`COST_SEED_BY_PERIOD`), so every screen reads the
+ * same shape regardless of period.
+ *
+ * The mapper is also where the forecast's `share` lands: the seed gives the
+ * raw numbers (cap, burn rate, projected end-of-period) and the model fills
+ * in the *share* of the cap so the screen can paint it with the same
+ * `costHeat` reading the budget already uses.
+ */
 export function toCostSummary(seed: SeedCostSummary): CostSummary {
   return {
+    period: seed.period,
+    totalPeriod: seed.totalPeriod,
+    totalPreviousPeriod: seed.totalPreviousPeriod,
+    todaySpend: seed.todaySpend,
+    todayCap: seed.todayCap,
+    monthSpend: seed.monthSpend,
+    monthCap: seed.monthCap,
     perSuccess: seed.perSuccess,
-    totalDay: seed.totalDay,
     successRate: seed.successRate,
     byApp: seed.byApp.map((row) => ({
       app: row.app,
@@ -13,100 +33,55 @@ export function toCostSummary(seed: SeedCostSummary): CostSummary {
       perSuccess: row.perSuccess,
       trend: row.trend,
     })),
+    byModel: seed.byModel.map((row) => ({
+      model: row.model,
+      spend: row.spend,
+      tokens: row.tokens,
+      runs: row.runs,
+    })),
+    byDay: seed.byDay.map((day) => ({
+      label: day.weekday,
+      spend: day.spend,
+    })),
+    topProjects: seed.topProjects.map((row) => ({
+      projectId: row.projectId,
+      projectKey: row.projectKey,
+      projectName: row.projectName,
+      spend: row.spend,
+      runs: row.runs,
+      cap: row.cap,
+    })),
     budget: {
       used: seed.budget.used,
       cap: seed.budget.cap,
+    },
+    forecast: {
+      cap: seed.forecast.cap,
+      burnRatePerDay: seed.forecast.burnRatePerDay,
+      projectedEndOfPeriod: seed.forecast.projectedEndOfPeriod,
+      share:
+        seed.forecast.cap > 0
+          ? seed.forecast.projectedEndOfPeriod / seed.forecast.cap
+          : 1,
     },
     failures: seed.failures.map((row) => ({
       profile: row.profile,
       rate: row.rate,
       note: row.note,
     })),
-    byDay: seed.byDay.map((day) => ({
-      label: day.weekday,
-      spend: day.spend,
-    })),
   }
-}
-
-/* ------------------------------------------------------------------ *
- * The wire — `GET /api/v1/costs?days=N` (`PlatformCostsView`, camelCased
- * by the serializer). Money fields are USD micros (1 USD = 1_000_000) and
- * are converted exactly once, here.
- * ------------------------------------------------------------------ */
-
-/** The host's `PlatformCostsView`. */
-export interface PlatformCostsWire {
-  readonly since: string
-  readonly windowDays: number
-  readonly windowUsdMicros: number
-  readonly allTimeUsdMicros: number
-  readonly byProject: readonly {
-    readonly projectId: string
-    readonly costUsdMicros: number
-    readonly runs: number
-  }[]
-  readonly byDay: readonly {
-    readonly date: string
-    readonly costUsdMicros: number
-  }[]
-}
-
-/** USD micros to dollars — the one place the unit changes. */
-function usd(micros: number): number {
-  return micros / 1_000_000
-}
-
-/** A UTC day ("2026-09-10") as the series' own weekday label ("thu"). */
-function weekday(date: string): string {
-  const parsed = Date.parse(`${date}T00:00:00Z`)
-  if (Number.isNaN(parsed)) {
-    return date
-  }
-  return new Date(parsed)
-    .toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })
-    .toLowerCase()
 }
 
 /**
- * The platform rollup onto the report's summary.
+ * One period from the by-period snapshot → `SeedCostSummary` (the shape
+ * `toCostSummary` already accepts).
  *
- * What the rollup carries, the summary states: window and all-time spend,
- * per-project slices, the day series. What it does not carry — a per-success
- * price, a success rate, a failure rollup, a proxy cap — degrades to the
- * nulls the tiles know how to draw, and the daily figure becomes the
- * window's average (derived, and labelled as an average on the tile).
+ * Stamp the period on the snapshot so the screen can answer "what period
+ * is this?" without having to remember which branch it picked.
  */
-export function platformCostsWireToSummary(
-  wire: PlatformCostsWire,
-  projectName: (projectId: string) => string = (projectId) => projectId
-): CostSummary {
-  const windowUsd = usd(wire.windowUsdMicros)
-  const days = wire.byDay.length
-
-  return {
-    perSuccess: null,
-    totalDay:
-      days > 0
-        ? Math.round((windowUsd / days) * 100) / 100
-        : windowUsd,
-    successRate: null,
-    byApp: wire.byProject.map((slice) => ({
-      app: projectName(slice.projectId),
-      spend: usd(slice.costUsdMicros),
-      runs: slice.runs,
-      perSuccess: null,
-      trend: null,
-    })),
-    budget: null,
-    failures: [],
-    byDay: wire.byDay.map((day) => ({
-      label: weekday(day.date),
-      spend: usd(day.costUsdMicros),
-    })),
-    windowDays: wire.windowDays,
-    windowUsd,
-    allTimeUsd: usd(wire.allTimeUsdMicros),
-    windowRuns: wire.byProject.reduce((total, slice) => total + slice.runs, 0),
-  }
+export function periodSnapshot(
+  period: SeedCostPeriod,
+  snapshot: Omit<SeedCostSummary, "period">
+): SeedCostSummary {
+  return { period, ...snapshot }
 }

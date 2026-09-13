@@ -1,0 +1,37 @@
+/* The anomaly badge — a runaway run's first signal in the duty list.
+   The two channels (hue + label) carry the same fact so a glance in any
+   mode reads it; the only word on the badge is the multiplier. */
+
+.badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s1);
+  padding: var(--s1) var(--s2);
+  border-radius: var(--r-sm);
+  background: var(--st-waiting-tint);
+  color: var(--st-waiting);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-data);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.badge:hover {
+  background: color-mix(in oklab, var(--st-waiting) 28%, transparent);
+}
+
+.badge:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+.icon {
+  font-size: var(--t-xs);
+}
+
+.label {
+  font-weight: var(--fw-medium);
+}

@@ -65,7 +65,6 @@ public sealed record ComputePoolView(
 public static class ComputeSnapshotEndpoints
 {
     /// <summary>Maps the compute snapshot endpoint.</summary>
-    /// <param name="app"></param>
     public static IEndpointRouteBuilder MapComputeSnapshotEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet(ApiRoutes.Compute, GetSnapshotAsync).WithTags("Compute");

@@ -37,7 +37,7 @@ public sealed class OrchestrationArtifactJournalSource(
             return null;
         }
 
-        if (!ArtifactPackageTriggers.IsTerminal(Wire(run.Status)))
+        if (!ArtifactPackageTriggers.IsTerminal(RunStatusWire.Wire(run.Status)))
         {
             return null;
         }
@@ -70,7 +70,7 @@ public sealed class OrchestrationArtifactJournalSource(
 
         return new RunTerminalSnapshot(
             RunId: runId.Value,
-            Status: Wire(run.Status),
+            Status: RunStatusWire.Wire(run.Status),
             OccurredAt: run.UpdatedAt,
             OriginWorkItemId: originWorkItemId,
             DetailJson: detailJson);
@@ -89,18 +89,20 @@ public sealed class OrchestrationArtifactJournalSource(
 
         return brief;
     }
+}
 
+/// <summary>
+/// Lower-case run-status wire mapping — isolated so the adapter holds
+/// only the journal reads (<c>code-shape.md</c> §1a). Every status name
+/// round-trips through <c>ToString().ToLowerInvariant()</c>; the old
+/// hand-written switch duplicated that mapping arm for arm.
+/// </summary>
+file static class RunStatusWire
+{
     /// <summary>Lower-case wire string for a run status — the engine and the journal both use the same form.</summary>
-    /// <param name="status"></param>
-    private static string Wire(RunStatus status)
+    /// <param name="status">Engine status to map onto the wire form.</param>
+    public static string Wire(RunStatus status)
     {
-        return status switch
-        {
-            RunStatus.Succeeded => "succeeded",
-            RunStatus.Failed => "failed",
-            RunStatus.Cancelled => "cancelled",
-            RunStatus.Escalated => "escalated",
-            _ => status.ToString().ToLowerInvariant(),
-        };
+        return status.ToString().ToLowerInvariant();
     }
 }

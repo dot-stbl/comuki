@@ -83,7 +83,6 @@ public sealed record ProxySettingsView(bool Enabled);
 public static class SettingsEndpoints
 {
     /// <summary>Maps the settings snapshot endpoint.</summary>
-    /// <param name="app"></param>
     public static IEndpointRouteBuilder MapSettingsEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet(ApiRoutes.Settings, GetSettingsAsync).WithTags("Settings");

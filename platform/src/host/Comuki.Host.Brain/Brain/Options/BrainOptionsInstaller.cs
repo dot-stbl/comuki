@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Host.Brain.Brain.Options;
@@ -34,7 +32,13 @@ public static class BrainOptionsInstaller
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddSingleton<IOptions<BrainOptions>>(Microsoft.Extensions.Options.Options.Create(resolved));
+        // The pinned registration must stay on the IOptions<BrainOptions>
+        // service type — a type-inferred AddSingleton would register the
+        // concrete Options<T> and consumers would fall back to the
+        // factory-bound instance (env-source precedence, not Resolve's
+        // config-first contract).
+        var pinned = Microsoft.Extensions.Options.Options.Create(resolved);
+        services.AddSingleton(pinned);
 
         return services;
     }

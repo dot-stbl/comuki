@@ -54,9 +54,20 @@ export interface ComputePool {
    * and the reason an empty pool is usually resting rather than broken.
    */
   minIdle: number
-  maxIdle: number
+  /**
+   * The idle ceiling. `null` when the source cannot answer it — the compute
+   * snapshot reports the concurrency cap instead, and pretending one is the
+   * other would put a knob on the card the project never turned.
+   */
+  maxIdle: number | null
+  /** Containers with a live lease. */
   workers: number
-  idle: number
+  /**
+   * Containers warm with no lease. `null` when the source counts only
+   * leased work — the derived snapshot cannot see an idle container, and a
+   * zero would read as "nothing waiting" rather than "not measured".
+   */
+  idle: number | null
   quota: Constraint
   profiles: string[]
 }
@@ -68,9 +79,15 @@ export interface WorkerVersion {
   profilesRef: string
   /** The label a new `Start` uses today. */
   target: boolean
-  workers: number
-  idle: number
-  oldestUpSec: number
+  /**
+   * Containers on this label. `null` when the source cannot count per label —
+   * the snapshot knows only the target configuration, not the fleet on it.
+   */
+  workers: number | null
+  /** Idle containers on this label, same honesty as `workers`. */
+  idle: number | null
+  /** Age of the oldest container on the label; `null` with the counts. */
+  oldestUpSec: number | null
   providerIds: string[]
 }
 

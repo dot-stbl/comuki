@@ -133,7 +133,7 @@ export function useRunsHubStatus(): RunsHubStatus {
   return useSyncExternalStore(
     runsHubStatusStore.subscribe,
     runsHubStatusStore.getSnapshot,
-    runsHubStatusStore.getSnapshot,
+    runsHubStatusStore.getSnapshot
   ).status
 }
 
@@ -199,7 +199,7 @@ const RUNS_ROOT_KEY = ["runs"] as const
  * mapping reads as intent rather than as a prefix accident.
  */
 export function invalidationsForRunEvent(
-  event: RunEventView,
+  event: RunEventView
 ): readonly (readonly unknown[])[] {
   return [RUNS_ROOT_KEY, ["runs", event.runId]]
 }
@@ -212,7 +212,7 @@ export function invalidationsForRunEvent(
  * the mapping until one does.
  */
 export function invalidationsForAttention(
-  event: AttentionView,
+  event: AttentionView
 ): readonly (readonly unknown[])[] {
   return [RUNS_ROOT_KEY, ["runs", event.runId], ["projects"]]
 }
@@ -225,21 +225,18 @@ export function invalidationsForAttention(
  */
 export function bindRunsHubEvents(
   connection: Pick<HubConnection, "on">,
-  invalidate: (queryKey: readonly unknown[]) => void,
+  invalidate: (queryKey: readonly unknown[]) => void
 ): void {
   connection.on(RealtimeTransportMethods.RunEvent, (event: RunEventView) => {
     for (const queryKey of invalidationsForRunEvent(event)) {
       invalidate(queryKey)
     }
   })
-  connection.on(
-    RealtimeTransportMethods.Attention,
-    (event: AttentionView) => {
-      for (const queryKey of invalidationsForAttention(event)) {
-        invalidate(queryKey)
-      }
-    },
-  )
+  connection.on(RealtimeTransportMethods.Attention, (event: AttentionView) => {
+    for (const queryKey of invalidationsForAttention(event)) {
+      invalidate(queryKey)
+    }
+  })
 }
 
 /**
@@ -252,7 +249,7 @@ export function bindRunsHubEvents(
  */
 export async function joinProjectAttentionGroup(
   connection: HubConnection,
-  projectId: string,
+  projectId: string
 ): Promise<void> {
   try {
     await connection.invoke("JoinProjectAsync", projectId)
@@ -263,7 +260,7 @@ export async function joinProjectAttentionGroup(
 
 export async function leaveProjectAttentionGroup(
   connection: HubConnection,
-  projectId: string,
+  projectId: string
 ): Promise<void> {
   try {
     await connection.invoke("LeaveProjectAsync", projectId)
@@ -275,7 +272,7 @@ export async function leaveProjectAttentionGroup(
 
 export async function joinRunGroup(
   connection: HubConnection,
-  runId: string,
+  runId: string
 ): Promise<void> {
   try {
     await connection.invoke("JoinRunAsync", runId)
@@ -287,7 +284,7 @@ export async function joinRunGroup(
 
 export async function leaveRunGroup(
   connection: HubConnection,
-  runId: string,
+  runId: string
 ): Promise<void> {
   try {
     await connection.invoke("LeaveRunAsync", runId)

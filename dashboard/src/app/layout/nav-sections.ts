@@ -210,7 +210,9 @@ export function visibleNavSections(
   session: Session
 ): NavSection[] {
   return sections
-    .filter((section) => !section.permission || can(session, section.permission))
+    .filter(
+      (section) => !section.permission || can(session, section.permission)
+    )
     .map((section) => ({
       ...section,
       items: section.items.filter(

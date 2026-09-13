@@ -24,9 +24,7 @@ describe("AppShellTwoPaneOuter — section buttons in the DOM", () => {
       </TestSession>
     )
 
-    const buttons = container.querySelectorAll(
-      '[data-test="two-pane-section"]'
-    )
+    const buttons = container.querySelectorAll('[data-test="two-pane-section"]')
     expect(buttons.length).toBe(4)
     const labels = [...buttons].map((b) => b.getAttribute("aria-label"))
     expect(labels).toEqual(["Intake", "Observe", "Configure", "Platform"])
@@ -43,9 +41,7 @@ describe("AppShellTwoPaneOuter — section buttons in the DOM", () => {
       </TestSession>
     )
 
-    const buttons = container.querySelectorAll(
-      '[data-test="two-pane-section"]'
-    )
+    const buttons = container.querySelectorAll('[data-test="two-pane-section"]')
     const active = [...buttons].find(
       (b) => b.getAttribute("aria-current") === "true"
     )
@@ -64,9 +60,7 @@ describe("AppShellTwoPaneOuter — section buttons in the DOM", () => {
       </TestSession>
     )
 
-    const buttons = container.querySelectorAll(
-      '[data-test="two-pane-section"]'
-    )
+    const buttons = container.querySelectorAll('[data-test="two-pane-section"]')
     expect(buttons.length).toBe(1)
     expect(buttons[0].getAttribute("aria-label")).toBe("Observe")
   })
@@ -82,9 +76,7 @@ describe("AppShellTwoPaneOuter — section buttons in the DOM", () => {
       </TestSession>
     )
 
-    const buttons = container.querySelectorAll(
-      '[data-test="two-pane-section"]'
-    )
+    const buttons = container.querySelectorAll('[data-test="two-pane-section"]')
     for (const button of buttons) {
       expect(button.querySelector("svg")).not.toBeNull()
     }
@@ -102,9 +94,7 @@ describe("AppShellTwoPaneOuter — section buttons in the DOM", () => {
       </TestSession>
     )
 
-    const buttons = container.querySelectorAll(
-      '[data-test="two-pane-section"]'
-    )
+    const buttons = container.querySelectorAll('[data-test="two-pane-section"]')
     const configureButton = [...buttons].find(
       (b) => b.getAttribute("aria-label") === "Configure"
     )

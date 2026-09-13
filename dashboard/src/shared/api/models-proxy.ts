@@ -38,14 +38,14 @@ export interface ProxyModelsResponse {
  * caller can put the page into its error branch.
  */
 export async function fetchProxyModelsAsync(
-  cancellationToken?: AbortSignal,
+  cancellationToken?: AbortSignal
 ): Promise<ProxyModelsResponse> {
   const apiBaseUrl = env.apiBaseUrl
   const proxyKey = env.proxyKey
 
   if (apiBaseUrl === "" || proxyKey === null) {
     throw new Error(
-      "[proxy] apiBaseUrl or proxyKey is not set — set VITE_API_BASE_URL and VITE_PROXY_KEY to call /v1/models.",
+      "[proxy] apiBaseUrl or proxyKey is not set — set VITE_API_BASE_URL and VITE_PROXY_KEY to call /v1/models."
     )
   }
 

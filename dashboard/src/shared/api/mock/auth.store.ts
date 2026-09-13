@@ -40,8 +40,7 @@ export interface MockAuthState {
 }
 
 export type SignInResult =
-  | { ok: true; user: SessionUser }
-  | { ok: false; message: string }
+  { ok: true; user: SessionUser } | { ok: false; message: string }
 
 export interface MockCredentials {
   /** The identity box's contents — the mock accepts any non-empty string. */

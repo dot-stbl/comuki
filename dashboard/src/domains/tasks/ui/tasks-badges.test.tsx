@@ -80,13 +80,9 @@ describe("the intake's provider cards", () => {
       // The word is on the radio either way — a card whose mark already says
       // the provider's name does not spell it twice, but nobody listening
       // rather than looking loses it.
+      expect(screen.getByRole("radio", { name: provider.label })).not.toBeNull()
       expect(
-        screen.getByRole("radio", { name: provider.label })
-      ).not.toBeNull()
-      expect(
-        cards()
-          .find((card) => card.dataset.value === provider.key)
-          ?.textContent
+        cards().find((card) => card.dataset.value === provider.key)?.textContent
       ).toContain(provider.intakeNote)
     }
   })

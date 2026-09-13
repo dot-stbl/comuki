@@ -37,7 +37,9 @@ const DOC: KnowledgeEntry = {
 
 describe("an entry in the rule set", () => {
   it("says everything the list is scanned for, without opening anything", () => {
-    render(<KnowledgeEntryRow entry={RULE} selected={false} onSelect={vi.fn()} />)
+    render(
+      <KnowledgeEntryRow entry={RULE} selected={false} onSelect={vi.fn()} />
+    )
 
     const text = row()?.textContent ?? ""
     expect(text).toContain("no-secrets")
@@ -52,7 +54,9 @@ describe("an entry in the rule set", () => {
   })
 
   it("leaves out the marks an entry does not carry", () => {
-    render(<KnowledgeEntryRow entry={DOC} selected={false} onSelect={vi.fn()} />)
+    render(
+      <KnowledgeEntryRow entry={DOC} selected={false} onSelect={vi.fn()} />
+    )
 
     // A doc has no rule kind and this one is not pinned: absent, not blank.
     expect(find('[data-test="knowledge-rule-kind"]')).toBeNull()
@@ -62,7 +66,9 @@ describe("an entry in the rule set", () => {
 
   it("is the control, so the whole row opens the entry", () => {
     const onSelect = vi.fn()
-    render(<KnowledgeEntryRow entry={RULE} selected={false} onSelect={onSelect} />)
+    render(
+      <KnowledgeEntryRow entry={RULE} selected={false} onSelect={onSelect} />
+    )
 
     fireEvent.click(screen.getByRole("button"))
     expect(onSelect).toHaveBeenCalledWith("no-secrets")

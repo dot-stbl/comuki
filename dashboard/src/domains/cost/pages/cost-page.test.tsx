@@ -27,7 +27,13 @@ vi.mock("@/shared/config/env", () => ({ env: { useMock: true } }))
    had: jsdom computes no layout, so nothing here was ever going to check one.
    The height chain is hand-traced in `cost-page.module.css`. */
 vi.mock("react-resizable-panels", () => ({
-  Group: ({ children, className }: { children: ReactNode; className?: string }) => (
+  Group: ({
+    children,
+    className,
+  }: {
+    children: ReactNode
+    className?: string
+  }) => (
     <div className={className} data-test="split-pane">
       {children}
     </div>
@@ -128,7 +134,7 @@ describe("the cost report, end to end over the seed", () => {
 
     // Period toggle — three options, day pressed by default.
     expect(
-      all('[data-test="period-toggle-option"][aria-pressed="true"]'),
+      all('[data-test="period-toggle-option"][aria-pressed="true"]')
     ).toHaveLength(1)
 
     // Breakdowns.
@@ -139,7 +145,9 @@ describe("the cost report, end to end over the seed", () => {
     expect(find('[data-test="cost-failures"]')).not.toBeNull()
 
     // Spend-by-model has at least three rows — the minimum lineup.
-    expect(all('[data-test="spend-by-model-row"]').length).toBeGreaterThanOrEqual(3)
+    expect(
+      all('[data-test="spend-by-model-row"]').length
+    ).toBeGreaterThanOrEqual(3)
 
     // Top-projects renders seven rows (the seed's limit).
     expect(all('[data-test="top-projects-row"]').length).toBe(7)
@@ -153,7 +161,9 @@ describe("the cost report, end to end over the seed", () => {
     // Day's burn rate is derived from total / period-days.
     expect(figure).toContain("$148.20 / day")
     // Delta vs yesterday is a small negative — the seeded previous is $152.7.
-    expect(find('[data-test="total-spend-delta"]')?.textContent).toMatch(/▼\s?3%/)
+    expect(find('[data-test="total-spend-delta"]')?.textContent).toMatch(
+      /▼\s?3%/
+    )
   })
 
   it("says end-of-period for the forecast and renders a heat reading", async () => {
@@ -164,7 +174,9 @@ describe("the cost report, end to end over the seed", () => {
     expect(forecast).toContain("end of day")
     expect(forecast).toMatch(/\d+%\s+of\s+\$220 cap/)
     // Day view: $148.2 / $220 = 67% — ok, no hue.
-    expect(find('[data-test="forecast-widget"]')?.getAttribute("data-heat")).toBe("ok")
+    expect(
+      find('[data-test="forecast-widget"]')?.getAttribute("data-heat")
+    ).toBe("ok")
   })
 
   it("shows today's burn and month-to-date as the budget's two readings", async () => {
@@ -176,16 +188,16 @@ describe("the cost report, end to end over the seed", () => {
     expect(budget).toContain("today")
     expect(budget).toContain("month-to-date")
     // 67% today — ok.
-    expect(find('[data-test="budget-progress"]')?.getAttribute("data-heat")).toBe("ok")
+    expect(
+      find('[data-test="budget-progress"]')?.getAttribute("data-heat")
+    ).toBe("ok")
   })
 
   it("renders three model rows with the project's actual lineup", async () => {
     await screenReady()
 
     const rows = all('[data-test="spend-by-model-row"]')
-    const models = rows.map(
-      (node) => node.getAttribute("data-model") ?? ""
-    )
+    const models = rows.map((node) => node.getAttribute("data-model") ?? "")
     expect(models).toContain("glm-5.2")
     expect(models).toContain("glm-4.5")
     expect(models).toContain("MiniMax-M3")
@@ -205,7 +217,11 @@ describe("the cost report, end to end over the seed", () => {
     // The cap column surfaces sentinel-vault's zero cap on hover even when
     // the row is sliced off the visible top-N — proving the seed kept the
     // project in the data set rather than dropping it.
-    expect(find('[data-test="top-projects-row"][data-project="p_prometheus"]')?.querySelector('[data-test="top-projects-spend"]')?.textContent).toBe("$31")
+    expect(
+      find(
+        '[data-test="top-projects-row"][data-project="p_prometheus"]'
+      )?.querySelector('[data-test="top-projects-spend"]')?.textContent
+    ).toBe("$31")
   })
 
   it("names the regions the product names them", async () => {
@@ -253,7 +269,9 @@ describe("the cost report, end to end over the seed", () => {
 
     // Day: 7 columns (the seed's `seedDayAxis()` length).
     await waitFor(() =>
-      expect(all('[data-test="cost-by-day"] [data-test="bar-series-bar"]')).toHaveLength(7)
+      expect(
+        all('[data-test="cost-by-day"] [data-test="bar-series-bar"]')
+      ).toHaveLength(7)
     )
 
     // Flip the period — week starts where day does, but the byDay stays at
@@ -269,6 +287,8 @@ describe("the cost report, end to end over the seed", () => {
     await waitFor(() =>
       expect(weekButton!.getAttribute("aria-pressed")).toBe("true")
     )
-    await waitFor(() => expect(text('[data-test="total-spend"]')).toContain("$917.80"))
+    await waitFor(() =>
+      expect(text('[data-test="total-spend"]')).toContain("$917.80")
+    )
   })
 })

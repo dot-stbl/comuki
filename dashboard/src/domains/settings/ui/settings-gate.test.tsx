@@ -1,10 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
-import type {
-  Budgets,
-  TrackerProvider,
-} from "@/domains/settings/model/types"
+import type { Budgets, TrackerProvider } from "@/domains/settings/model/types"
 import type { BudgetFormValues } from "@/domains/settings/model/budget-form"
 import { BudgetsPanel } from "@/domains/settings/ui/budgets-panel"
 import { TrackerPanel } from "@/domains/settings/ui/tracker-panel"
@@ -34,7 +31,13 @@ const BUDGETS: Budgets = {
 }
 
 const TRACKERS: TrackerProvider[] = [
-  { id: "jira", name: "Jira", connected: true, meta: "PLX board", last: "4 min" },
+  {
+    id: "jira",
+    name: "Jira",
+    connected: true,
+    meta: "PLX board",
+    last: "4 min",
+  },
   { id: "linear", name: "Linear", connected: false, meta: "not linked" },
 ]
 

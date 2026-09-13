@@ -42,7 +42,9 @@ export function SpendByApp({ rows, className }: SpendByAppProps) {
           <span className={styles.channel} aria-hidden="true">
             <span
               className={styles.fill}
-              style={{ inlineSize: `${Math.round(spendShare(row, axis) * 100)}%` }}
+              style={{
+                inlineSize: `${Math.round(spendShare(row, axis) * 100)}%`,
+              }}
             />
           </span>
           {/* One decimal, which is this screen's third precision and each one

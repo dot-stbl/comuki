@@ -182,7 +182,9 @@ describe("the dismissable dark", () => {
 
   it("is not drawn when the caller kept the default", () => {
     render(<Sheet />)
-    expect(document.querySelector('[data-test="bottom-sheet-scrim-hit"]')).toBeNull()
+    expect(
+      document.querySelector('[data-test="bottom-sheet-scrim-hit"]')
+    ).toBeNull()
   })
 })
 

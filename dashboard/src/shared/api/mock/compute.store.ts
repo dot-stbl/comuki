@@ -92,7 +92,11 @@ export function retireSeedComputeIdle(
     return
   }
 
-  const pools = drainPools(state.pools, new Set(version.providerIds), version.idle)
+  const pools = drainPools(
+    state.pools,
+    new Set(version.providerIds),
+    version.idle
+  )
 
   state = {
     ...state,

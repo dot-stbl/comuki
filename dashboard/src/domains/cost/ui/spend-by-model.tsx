@@ -28,17 +28,17 @@ export function SpendByModel({ rows, className }: SpendByModelProps) {
 
   if (rows.length === 0) {
     return (
-      <p className={cn(styles.empty, className)} data-test="spend-by-model-empty">
+      <p
+        className={cn(styles.empty, className)}
+        data-test="spend-by-model-empty"
+      >
         no model spend this period
       </p>
     )
   }
 
   return (
-    <ul
-      className={cn(styles.rows, className)}
-      data-test="spend-by-model"
-    >
+    <ul className={cn(styles.rows, className)} data-test="spend-by-model">
       {rows.map((row) => (
         <li
           key={row.model}
@@ -64,10 +64,7 @@ export function SpendByModel({ rows, className }: SpendByModelProps) {
           >
             {formatTokens(row.tokens)}
           </span>
-          <span
-            className={styles.spend}
-            data-test="spend-by-model-spend"
-          >
+          <span className={styles.spend} data-test="spend-by-model-spend">
             ${row.spend.toFixed(2)}
           </span>
         </li>

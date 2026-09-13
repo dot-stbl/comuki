@@ -55,7 +55,11 @@ function parseSettings(settingsJson: string): ParsedSettings {
   }
   try {
     const parsed: unknown = JSON.parse(trimmed)
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    if (
+      parsed === null ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed)
+    ) {
       return {}
     }
     const result: ParsedSettings = {}

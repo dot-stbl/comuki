@@ -51,8 +51,7 @@ export interface SeedModelEndpoint {
 
 /** Where a virtual key may be used. Platform keys are not project-scoped. */
 export type SeedKeyScope =
-  | { kind: "platform" }
-  | { kind: "project"; projectId: string }
+  { kind: "platform" } | { kind: "project"; projectId: string }
 
 export interface SeedVirtualKey {
   id: string

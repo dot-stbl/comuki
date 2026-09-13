@@ -58,9 +58,7 @@ export function AppShellSidebar({
   // The divider is drawn on the first platform group rather than at a fixed
   // index, so a session with no platform access simply never sees one — an
   // empty tier must not leave a rule floating above the account block.
-  const firstPlatform = visible.findIndex(
-    (group) => group.tier === "platform"
-  )
+  const firstPlatform = visible.findIndex((group) => group.tier === "platform")
 
   // Two live counts, each about the row it rides on. `running` is the runs
   // the board is showing in motion; `needsHuman` is the queue of decisions

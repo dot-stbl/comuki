@@ -13,7 +13,10 @@ import type {
 import { getApiV1Inbox } from "@/shared/api/_generated/clients/getApiV1Inbox"
 import { getApiV1InboxCatalog } from "@/shared/api/_generated/clients/getApiV1InboxCatalog"
 import { INBOX_POLL_INTERVAL_MS, livePolling } from "@/shared/api/polling"
-import { findSeedInboxTicket, listSeedInboxTickets } from "@/shared/api/mock/sources.store"
+import {
+  findSeedInboxTicket,
+  listSeedInboxTickets,
+} from "@/shared/api/mock/sources.store"
 import { env } from "@/shared/config/env"
 
 /* ---------------------------------------------------------------------------
@@ -116,7 +119,9 @@ async function getInboxTicket(ticketId: string): Promise<Ticket | null> {
     }
     // Fall back to the synthesised UUID: the mapper writes the seed id into
     // `externalId`, so we can recover it from any row in the mock list.
-    const candidates = listSeedInboxTickets(undefined).map(mapSeedTicketToTicket)
+    const candidates = listSeedInboxTickets(undefined).map(
+      mapSeedTicketToTicket
+    )
     return candidates.find((entry) => entry.id === ticketId) ?? null
   }
   // Real mode: ask the host's list endpoint and pick the row out. The

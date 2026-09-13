@@ -71,8 +71,9 @@ export function EvidenceViewer({
   // open next", so the modal is closed exactly when there is no id.
   const [openId, setOpenId] = useState<string | null>(null)
   const openArtifact = useMemo(
-    () => (openId ? items.find((entry) => entry.id === openId) ?? null : null),
-    [openId, items],
+    () =>
+      openId ? (items.find((entry) => entry.id === openId) ?? null) : null,
+    [openId, items]
   )
   const close = useCallback(() => setOpenId(null), [])
   const select = useCallback((id: string) => setOpenId(id), [])
@@ -96,7 +97,7 @@ export function EvidenceViewer({
       <div
         className={cn(
           styles.row,
-          variant === "strip" ? styles.strip : styles.inline,
+          variant === "strip" ? styles.strip : styles.inline
         )}
         data-test="evidence-thumbs"
       >

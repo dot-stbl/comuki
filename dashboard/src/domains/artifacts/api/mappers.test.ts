@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  evidenceForRun,
-  latestPngForTicket,
-} from "@/domains/artifacts"
+import { evidenceForRun, latestPngForTicket } from "@/domains/artifacts"
 import {
   ARTIFACT_MIME,
   isImageMime,
@@ -61,7 +58,7 @@ describe("mapVisualArtifactListItemToArtifact", () => {
   it("coerces a stringly-carried size into a number", () => {
     const result = mapVisualArtifactListItemToArtifact(
       withStringNumbers(makeItem({ sizeBytes: 4096 })),
-      "00000000-0000-0000-0000-000000000abc",
+      "00000000-0000-0000-0000-000000000abc"
     )
     expect(result.sizeBytes).toBe(4096)
   })
@@ -69,7 +66,7 @@ describe("mapVisualArtifactListItemToArtifact", () => {
   it("falls back to 0 when the wire sent a non-finite value", () => {
     const result = mapVisualArtifactListItemToArtifact(
       withStringNumbers(makeItem({ sizeBytes: "not-a-number" })),
-      "00000000-0000-0000-0000-000000000abc",
+      "00000000-0000-0000-0000-000000000abc"
     )
     expect(result.sizeBytes).toBe(0)
   })
@@ -77,7 +74,7 @@ describe("mapVisualArtifactListItemToArtifact", () => {
   it("threads the caller's projectId through to the domain row", () => {
     const result = mapVisualArtifactListItemToArtifact(
       makeItem(),
-      "00000000-0000-0000-0000-000000000abc",
+      "00000000-0000-0000-0000-000000000abc"
     )
     expect(result.projectId).toBe("00000000-0000-0000-0000-000000000abc")
   })
@@ -101,7 +98,9 @@ describe("mapVisualArtifactPageToPage", () => {
       "b",
     ])
     expect(
-      result.items.every((entry: VisualArtifact) => entry.projectId === "proj-1"),
+      result.items.every(
+        (entry: VisualArtifact) => entry.projectId === "proj-1"
+      )
     ).toBe(true)
   })
 })
@@ -211,9 +210,7 @@ function makeArtifact(overrides: Partial<VisualArtifact> = {}): VisualArtifact {
   }
 }
 
-function makePage(
-  ...items: VisualArtifactListItem[]
-): VisualArtifactPageDto {
+function makePage(...items: VisualArtifactListItem[]): VisualArtifactPageDto {
   return {
     projectId: "00000000-0000-0000-0000-000000000abc",
     items,

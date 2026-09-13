@@ -1,5 +1,5 @@
 ---
-description: Frontend construction — kit triad + CSS Modules on tokens, Storybook stories, what CI actually gates, no-slop enforcement
+description: frontend construction — kit triad + css modules on tokens, storybook stories, what ci actually gates, no-slop enforcement, documented overrides of user-global rules
 globs: ["dashboard/src/**/*.{ts,tsx,css}", "dashboard/src/index.css", "dashboard/.storybook/**", "dashboard/**/package.json", "dashboard/vite.config.*", "dashboard/vitest.config.*", "dashboard/eslint.config.*"]
 priority: high
 always: true
@@ -279,6 +279,63 @@ addon-a11y, откатывает чужое решение и ломает сб�
 
 ---
 
+## 8. Осознанные отклонения от user-global правил
+
+По `RULES-FORMAT.md` §3 проектные правила (`.agents/rules/`) выигрывают у
+user-global (`~/.agents/rules/`). Ниже — места, где продукт идёт против
+глобального правила **сознательно**. Записано затем, чтобы очередной аудит не
+завёл это в техдолг, а агент не «починил» рабочий код под чужое правило.
+
+Молчаливое противоречие — хуже отклонения: правило, которое просто не
+выполняется, читается как невыполненная работа.
+
+### 8.1. Роутинг — file-based, вопреки `typescript/tanstack-query-and-router.md` §3
+
+**Глобальное правило требует** code-based роуты в `router.tsx`: «no `routes/`
+dir, no `routeTree.gen.ts`».
+
+**Здесь ровно наоборот, и это решение.** Роуты лежат в
+`dashboard/src/routes/` (32 файла на `createFileRoute`), дерево генерируется в
+`dashboard/src/routeTree.gen.ts` плагином `@tanstack/router-plugin`. Плагин
+подключён в `dashboard/vite.config.ts` **первым**, до `react()`.
+
+**Почему.** `tanstackRouter({ target: "react", autoCodeSplitting: true })`
+заворачивает компонент каждого роута в отдельный ленивый чанк. Именно из-за
+этого первый paint несёт только деревья home и login, а runs / chat /
+identity и остальные экраны приезжают по навигации. Code-based дерево такого
+разбиения не даёт: один модуль статически импортирует все компоненты сразу.
+
+`routeTree.gen.ts` — **генерируемый** файл (`@ts-nocheck` и eslint-disable в
+шапке). Руками не править, в ревью не читать, в гите он есть намеренно.
+
+**Что из глобального правила остаётся в силе:** навигация через `<Link>`, а не
+`<a href>` (иначе ломается client routing и preload); параметры через
+`useParams()` / `getRouteApi('/path').useParams()`; path-параметры в форме
+`$name`.
+
+### 8.2. i18n — его нет и не планируется, вопреки `typescript/workspace-and-i18n.md` §4
+
+**Глобальное правило требует** все пользовательские строки через **i18next**
+(`useTranslation`, `t('key')`) с параллельными локалями `en` и `ru`.
+
+**Здесь этого нет намеренно.** Ни `i18next`, ни `react-i18next` в
+`dashboard/package.json`; каталога локалей нет; `useTranslation` в
+`dashboard/src` не встречается ни разу.
+
+**Почему.** `PRODUCT.md` § Brand Commitments фиксирует интерфейсную лексику
+как **английскую и терминальную**. Русский остаётся только в контенте, который
+приходит от бэкенда и от людей: названия задач, тикеты, брифы. Это часть
+визуального мира — инструментальная подача, значения в JetBrains Mono
+(`DESIGN.md`), — а не недоделанная локализация. Второго языка интерфейса не
+будет, поэтому слой перевода оказался бы обёрткой вокруг одной константы.
+
+**На практике:** строки UI пишутся по-английски прямо в компоненте; `t('key')`
+не заводить; файлы локалей не создавать; пакет i18next не ставить. Общение с
+пользователем и проектная документация — по-прежнему на русском
+(`AGENTS.md`); это правило про интерфейс продукта, а не про переписку.
+
+---
+
 ## Related
 
 - [`DESIGN.md`](../../../DESIGN.md) — визуальный мир, авторитет
@@ -286,3 +343,6 @@ addon-a11y, откатывает чужое решение и ломает сб�
 - [`process/ports.md`](../process/ports.md) — пул портов, Storybook = 17010
 - [`process/build-verification.md`](../process/build-verification.md) — гейт сборки
 - [`RULES-FORMAT.md`](RULES-FORMAT.md) — формат и иерархия правил
+- `~/.agents/rules/typescript/tanstack-query-and-router.md`,
+  `~/.agents/rules/typescript/workspace-and-i18n.md` — user-global правила,
+  которые раздел 8 перекрывает (вне репозитория, не править отсюда)

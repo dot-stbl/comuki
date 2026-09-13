@@ -437,8 +437,9 @@ describe("the legacy palette is exempted from the floors, not excused", () => {
   })
 
   it("is not the theme anybody gets without asking", () => {
-    expect(LEGACY_CASES.some(([, , theme]) => theme.id === DEFAULT_THEME_ID))
-      .toBe(false)
+    expect(
+      LEGACY_CASES.some(([, , theme]) => theme.id === DEFAULT_THEME_ID)
+    ).toBe(false)
   })
 
   it.each(LEGACY_CASES.map(([name, palette]) => [name, palette] as const))(
@@ -447,8 +448,10 @@ describe("the legacy palette is exempted from the floors, not excused", () => {
       // The chrome is held even here. What the incumbent fails is its status
       // set, and that is the whole of what it fails.
       for (const role of ["text", "muted", "faint"] as const) {
-        expect({ role, ok: contrast(palette[role], palette.floor) >= 4.5 })
-          .toEqual({ role, ok: true })
+        expect({
+          role,
+          ok: contrast(palette[role], palette.floor) >= 4.5,
+        }).toEqual({ role, ok: true })
       }
     }
   )
@@ -493,9 +496,15 @@ describe("body, muted and faint read as three levels, not two", () => {
       // quiet tiers are derived now, so the rungs come out even by construction
       // and this catches a hand-edit that breaks the derivation.
       const upper = Math.abs(lightness(palette.text) - lightness(palette.muted))
-      const lower = Math.abs(lightness(palette.muted) - lightness(palette.faint))
+      const lower = Math.abs(
+        lightness(palette.muted) - lightness(palette.faint)
+      )
 
-      expect({ even: Math.abs(upper - lower) <= 4, upper, lower }).toMatchObject({
+      expect({
+        even: Math.abs(upper - lower) <= 4,
+        upper,
+        lower,
+      }).toMatchObject({
         even: true,
       })
     }

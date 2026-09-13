@@ -40,7 +40,10 @@ import styles from "./knowledge-badges.module.css"
  * greyscale.
  */
 
-const kindIcons: Record<KnowledgeKind, ComponentType<{ className?: string }>> = {
+const kindIcons: Record<
+  KnowledgeKind,
+  ComponentType<{ className?: string }>
+> = {
   rule: Scale,
   doc: FileText,
   skill: Wrench,
@@ -115,10 +118,7 @@ export interface PinnedMarkProps {
  */
 export function PinnedMark({ revision, className }: PinnedMarkProps) {
   return (
-    <span
-      data-test="knowledge-pinned"
-      className={cn(styles.pinned, className)}
-    >
+    <span data-test="knowledge-pinned" className={cn(styles.pinned, className)}>
       <Pin className={styles.icon} aria-hidden="true" />
       {revision ? `pinned @ ${revision}` : "pinned"}
     </span>

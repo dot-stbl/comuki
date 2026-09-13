@@ -36,7 +36,11 @@ function InformationalStory() {
   return (
     <>
       <Button onClick={() => setOpen(true)}>Open dialog</Button>
-      <Dialog open={open} onOpenChange={setOpen} title="Cost spike · run 8f3c2a91">
+      <Dialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Cost spike · run 8f3c2a91"
+      >
         <p>
           This run spent <strong>$14.21</strong> on a single ticket — 12× the
           median cost across the same project.
@@ -94,8 +98,8 @@ function ConfirmStory() {
         footer={<Button variant="destructive">Stop swarm</Button>}
       >
         <p>
-          This stops every active worker and cancels the running tickets.
-          The decision is not reversible.
+          This stops every active worker and cancels the running tickets. The
+          decision is not reversible.
         </p>
       </Dialog>
     </>

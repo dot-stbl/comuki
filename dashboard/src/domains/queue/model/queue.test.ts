@@ -169,9 +169,9 @@ describe("the lease, and the worker that stopped defending it", () => {
   })
 
   it("marks a lease that is nearly up", () => {
-    expect(
-      leaseHeat(worker("wk_a", { leaseSec: 6, heartbeatAgeSec: 3 }))
-    ).toBe("expiring")
+    expect(leaseHeat(worker("wk_a", { leaseSec: 6, heartbeatAgeSec: 3 }))).toBe(
+      "expiring"
+    )
   })
 
   it("marks the worker that stopped heartbeating, however much lease is left", () => {
@@ -270,9 +270,7 @@ describe("depth over time, and whether today accuses anyone", () => {
 
   it("says today is ordinary when it is", () => {
     const readings = depthReadings(
-      week.map((day) =>
-        day.label === "today" ? { ...day, depth: 5 } : day
-      )
+      week.map((day) => (day.label === "today" ? { ...day, depth: 5 } : day))
     )
 
     expect(readings?.todayIsDeepest).toBe(false)

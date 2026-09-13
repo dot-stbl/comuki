@@ -68,38 +68,40 @@ export const scheduledJobsQueryKey = (projectId: string) =>
  * write on the next refetch.
  * ------------------------------------------------------------------------- */
 
-const SEED_JOBS: ScheduledJob[] = listSeedProjects().flatMap((project, index) => [
-  {
-    id: `sj_nightly_${index + 1}`,
-    projectId: project.id,
-    cronExpression: "0 3 * * *",
-    profileKey: "implementer",
-    briefJson: '{"title":"Nightly dependency sweep"}',
-    runOnOnceAt: null,
-    enabled: true,
-    lastFiredAt: "2026-09-12T03:00:04Z",
-    nextFireAt: "2026-09-13T03:00:00Z",
-    createdAt: "2026-08-30T09:12:00Z",
-    updatedAt: "2026-09-10T14:02:00Z",
-  },
-  ...(index === 0
-    ? [
-        {
-          id: "sj_paused_1",
-          projectId: project.id,
-          cronExpression: "*/30 * * * *",
-          profileKey: "reviewer",
-          briefJson: '{"title":"Re-verify open diffs"}',
-          runOnOnceAt: null,
-          enabled: false,
-          lastFiredAt: "2026-09-08T10:30:00Z",
-          nextFireAt: "2026-09-08T11:00:00Z",
-          createdAt: "2026-08-30T09:12:00Z",
-          updatedAt: "2026-09-08T10:41:00Z",
-        } satisfies ScheduledJob,
-      ]
-    : []),
-])
+const SEED_JOBS: ScheduledJob[] = listSeedProjects().flatMap(
+  (project, index) => [
+    {
+      id: `sj_nightly_${index + 1}`,
+      projectId: project.id,
+      cronExpression: "0 3 * * *",
+      profileKey: "implementer",
+      briefJson: '{"title":"Nightly dependency sweep"}',
+      runOnOnceAt: null,
+      enabled: true,
+      lastFiredAt: "2026-09-12T03:00:04Z",
+      nextFireAt: "2026-09-13T03:00:00Z",
+      createdAt: "2026-08-30T09:12:00Z",
+      updatedAt: "2026-09-10T14:02:00Z",
+    },
+    ...(index === 0
+      ? [
+          {
+            id: "sj_paused_1",
+            projectId: project.id,
+            cronExpression: "*/30 * * * *",
+            profileKey: "reviewer",
+            briefJson: '{"title":"Re-verify open diffs"}',
+            runOnOnceAt: null,
+            enabled: false,
+            lastFiredAt: "2026-09-08T10:30:00Z",
+            nextFireAt: "2026-09-08T11:00:00Z",
+            createdAt: "2026-08-30T09:12:00Z",
+            updatedAt: "2026-09-08T10:41:00Z",
+          } satisfies ScheduledJob,
+        ]
+      : []),
+  ]
+)
 
 let jobsStore: ScheduledJob[] = [...SEED_JOBS]
 
@@ -185,7 +187,7 @@ export function useCreateScheduledJobMutation() {
           cronExpression: input.cronExpression,
           profileKey: input.profileKey,
           briefJson: input.briefJson,
-        },
+        }
       )
       return viewToJob(view)
     },
@@ -226,7 +228,7 @@ export function useSetScheduledJobEnabledMutation() {
       const view = await patchApiV1ProjectsProjectidScheduledJobsJobid(
         input.projectId,
         input.jobId,
-        { enabled: input.enabled },
+        { enabled: input.enabled }
       )
       return viewToJob(view)
     },
@@ -259,7 +261,7 @@ export function useDeleteScheduledJobMutation() {
       }
       await deleteApiV1ProjectsProjectidScheduledJobsJobid(
         input.projectId,
-        input.jobId,
+        input.jobId
       )
       return input.jobId
     },

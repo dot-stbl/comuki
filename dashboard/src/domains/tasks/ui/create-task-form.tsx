@@ -13,12 +13,7 @@ import type { CreateTaskInput, TaskPriority } from "@/domains/tasks/model/types"
 import { TaskPriorityField } from "@/domains/tasks/ui/task-priority-field"
 import { TaskSourceCards } from "@/domains/tasks/ui/task-source-cards"
 import { can, useCan, useSession } from "@/shared/session"
-import {
-  Button,
-  SelectField,
-  TextField,
-  TextareaField,
-} from "@/shared/ui"
+import { Button, SelectField, TextField, TextareaField } from "@/shared/ui"
 
 export interface CreateTaskFormProps {
   apps: string[]
@@ -141,7 +136,10 @@ export function CreateTaskForm({
         />
       </FormCard>
 
-      <FormCard label="the ticket" note="what to do, where it lands, how urgent it is.">
+      <FormCard
+        label="the ticket"
+        note="what to do, where it lands, how urgent it is."
+      >
         <FormMeasure>
           <TextField
             id="task-title"

@@ -97,7 +97,9 @@ describe("the profile filter", () => {
     // Profiles are a closed catalog living in the client's git. A profile with
     // nothing on it is a real answer — "nothing is queued here" — and dropping
     // it from the list would make that answer unaskable.
-    const profile = dataFilterSpecs(columns).find((spec) => spec.id === "profile")
+    const profile = dataFilterSpecs(columns).find(
+      (spec) => spec.id === "profile"
+    )
     const options =
       profile?.filter.kind === "select" ? profile.filter.options : []
 
@@ -173,10 +175,14 @@ describe("age ordering", () => {
 
     // Ascending first: 8s before 6:40 before 11:04 — a string comparison would
     // have put "00:08" first and then "06:40" after "11:04" is 221:00.
-    fireEvent.click(document.querySelector('[data-test="data-table-sort-ageSec"]')!)
+    fireEvent.click(
+      document.querySelector('[data-test="data-table-sort-ageSec"]')!
+    )
     expect(ages()).toEqual(["00:08", "06:40", "11:04", "43:32", "221:00"])
 
-    fireEvent.click(document.querySelector('[data-test="data-table-sort-ageSec"]')!)
+    fireEvent.click(
+      document.querySelector('[data-test="data-table-sort-ageSec"]')!
+    )
     expect(ages()).toEqual(["221:00", "43:32", "11:04", "06:40", "00:08"])
   })
 
@@ -363,7 +369,7 @@ describe("the pool orders by capacity, not by spelling", () => {
     })
     const router = createRouter({
       routeTree: rootRoute.addChildren(
-        ['/', '/runs/$runId', '/queue/workers/$workerId'].map((path) =>
+        ["/", "/runs/$runId", "/queue/workers/$workerId"].map((path) =>
           createRoute({
             getParentRoute: () => rootRoute,
             path,
@@ -371,7 +377,7 @@ describe("the pool orders by capacity, not by spelling", () => {
           })
         )
       ),
-      history: createMemoryHistory({ initialEntries: ['/'] }),
+      history: createMemoryHistory({ initialEntries: ["/"] }),
     })
 
     return render(<RouterProvider router={router} />)

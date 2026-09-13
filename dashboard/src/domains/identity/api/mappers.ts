@@ -68,7 +68,7 @@ function isSubjectKind(value: string): value is SeedSubjectKind {
  */
 export function mapLoginRequestFromInput(
   email: string,
-  password: string,
+  password: string
 ): LoginRequest {
   return { email, password }
 }
@@ -84,7 +84,7 @@ export function mapLoginRequestFromInput(
  * Roles are empty here by design; the host did not answer with them.
  */
 export function mapLoginResponseToSessionUser(
-  response: LoginResponse,
+  response: LoginResponse
 ): SessionUser {
   return {
     id: response.userId,
@@ -114,7 +114,7 @@ export function mapLoginResponseToSessionUser(
 export function mapMeResponseToSessionUser(me: MeResponse): SessionUser {
   const id = me.userId ?? me.subjectId
   const platformRoles = me.roles.filter((role): role is Role =>
-    PLATFORM_SCOPE_ROLES.has(role),
+    PLATFORM_SCOPE_ROLES.has(role)
   )
 
   return {
@@ -146,11 +146,11 @@ export function mapMeResponseToSessionUser(me: MeResponse): SessionUser {
  */
 export function mapOidcStartToAuthorizationUrl(start: unknown): string {
   if (typeof start === "string") {
-    return start;
+    return start
   }
   throw new Error(
-    "OIDC start did not return a string URL — kubb follows 302 redirects and the response body is the IdP's page. Use window.location.href against /api/v1/auth/oidc/{provider}/start directly.",
-  );
+    "OIDC start did not return a string URL — kubb follows 302 redirects and the response body is the IdP's page. Use window.location.href against /api/v1/auth/oidc/{provider}/start directly."
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -205,14 +205,14 @@ export function mapUserAccountViewToSeed(view: UserAccountView): SeedUser {
     status: view.disabled ? "disabled" : "active",
     lastSeenAt: null,
     createdAt: view.createdAt,
-  };
+  }
 }
 
 /** Wire users page → list of seed-shaped users. */
-export function mapIdentityUsersPageToSeedUsers(
-  page: { items: UserAccountView[] },
-): SeedUser[] {
-  return page.items.map(mapUserAccountViewToSeed);
+export function mapIdentityUsersPageToSeedUsers(page: {
+  items: UserAccountView[]
+}): SeedUser[] {
+  return page.items.map(mapUserAccountViewToSeed)
 }
 
 /**
@@ -227,7 +227,9 @@ export function mapIdentityUsersPageToSeedUsers(
  * reading (`viewer`, `user`) instead of entering the session as a role no
  * permission table has a row for.
  */
-export function mapRoleAssignmentViewToSeed(view: RoleAssignmentView): SeedRoleAssignment {
+export function mapRoleAssignmentViewToSeed(
+  view: RoleAssignmentView
+): SeedRoleAssignment {
   return {
     // `RoleAssignmentId` is `{ value?: string }` on the wire — the seed
     // join keys by id as a flat string, so unwrap here.
@@ -237,14 +239,14 @@ export function mapRoleAssignmentViewToSeed(view: RoleAssignmentView): SeedRoleA
     role: isRole(view.role) ? view.role : "viewer",
     projectId: view.scopeProjectId,
     grantedAt: view.createdAt,
-  };
+  }
 }
 
 /** Wire grants page → list of seed-shaped role assignments. */
-export function mapGrantsPageToSeedGrants(
-  page: { items: RoleAssignmentView[] },
-): SeedRoleAssignment[] {
-  return page.items.map(mapRoleAssignmentViewToSeed);
+export function mapGrantsPageToSeedGrants(page: {
+  items: RoleAssignmentView[]
+}): SeedRoleAssignment[] {
+  return page.items.map(mapRoleAssignmentViewToSeed)
 }
 
 /**
@@ -264,19 +266,21 @@ export function mapApiKeyViewToSeed(view: ApiKeyView): SeedApiKey {
     createdAt: view.createdAt,
     lastUsedAt: view.lastUsedAt,
     expiresAt: null,
-  };
+  }
 }
 
 /** Wire keys page → list of seed-shaped api keys. */
-export function mapApiKeysPageToSeedKeys(page: { items: ApiKeyView[] }): SeedApiKey[] {
-  return page.items.map(mapApiKeyViewToSeed);
+export function mapApiKeysPageToSeedKeys(page: {
+  items: ApiKeyView[]
+}): SeedApiKey[] {
+  return page.items.map(mapApiKeyViewToSeed)
 }
 
 // Legacy names retained for callers that already imported them before the
 // identity-list wiring (issue #45) landed — they simply call the seed
 // mapper now, so the callsite signature stays.
-export const mapApiKeyViewToKeyView = mapApiKeyViewToSeed;
-export const mapIdentityAdminKeysToKeyView = mapApiKeysPageToSeedKeys;
-export const mapIdentityUsersPageToUserRows = mapIdentityUsersPageToSeedUsers;
-export const mapGrantsPageToGrantRows = mapGrantsPageToSeedGrants;
-export const mapApiKeysPageToApiKeyRows = mapApiKeysPageToSeedKeys;
+export const mapApiKeyViewToKeyView = mapApiKeyViewToSeed
+export const mapIdentityAdminKeysToKeyView = mapApiKeysPageToSeedKeys
+export const mapIdentityUsersPageToUserRows = mapIdentityUsersPageToSeedUsers
+export const mapGrantsPageToGrantRows = mapGrantsPageToSeedGrants
+export const mapApiKeysPageToApiKeyRows = mapApiKeysPageToSeedKeys

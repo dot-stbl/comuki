@@ -134,8 +134,12 @@ describe("the approvals queue, end to end over the seeds", () => {
     await queueReady()
 
     for (const card of all('[data-test="approval-card"]')) {
-      expect(card.querySelector('[data-test="approval-type-badge"]')).not.toBeNull()
-      expect(card.querySelector('[data-test="approval-risk-badge"]')).not.toBeNull()
+      expect(
+        card.querySelector('[data-test="approval-type-badge"]')
+      ).not.toBeNull()
+      expect(
+        card.querySelector('[data-test="approval-risk-badge"]')
+      ).not.toBeNull()
     }
   })
 

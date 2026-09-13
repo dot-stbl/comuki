@@ -153,10 +153,7 @@ export function AppShell({ children, header, padded = true }: AppShellProps) {
    * remembered, which is the honest answer when the viewport rule would undo it
    * on the next load anyway.
    */
-  const persistRail = useCallback(
-    () => !window.matchMedia(NARROW).matches,
-    []
-  )
+  const persistRail = useCallback(() => !window.matchMedia(NARROW).matches, [])
 
   return (
     <RailContext value={railState}>

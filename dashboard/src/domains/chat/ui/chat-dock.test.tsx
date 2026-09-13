@@ -146,7 +146,11 @@ function mountTree(
 }
 
 /** The tree, once the router has actually painted it. */
-async function mounted(initial: string, user?: SessionUser, chatRoute?: boolean) {
+async function mounted(
+  initial: string,
+  user?: SessionUser,
+  chatRoute?: boolean
+) {
   const tree = mountTree(initial, user, chatRoute)
   await waitFor(() => expect(at("dock-tree-mounted")).not.toBeNull())
   return tree
@@ -174,9 +178,7 @@ describe("the floating trigger", () => {
     const trigger = at("chat-dock-trigger") as HTMLElement
     // The label spells the chord the way this keyboard says it — jsdom's
     // user agent is not an Apple one, so the test hears the ctrl spelling.
-    expect(trigger.getAttribute("aria-label")).toBe(
-      "Open the console — ctrl j"
-    )
+    expect(trigger.getAttribute("aria-label")).toBe("Open the console — ctrl j")
     expect(trigger.getAttribute("aria-expanded")).toBe("true")
   })
 
@@ -303,9 +305,7 @@ describe("the sheet", () => {
 
     fireEvent.click(at("bottom-sheet-expand") as HTMLElement)
     await waitFor(() =>
-      expect(
-        at("bottom-sheet")?.getAttribute("data-expanded")
-      ).not.toBeNull()
+      expect(at("bottom-sheet")?.getAttribute("data-expanded")).not.toBeNull()
     )
 
     // Reversible, by the same control.

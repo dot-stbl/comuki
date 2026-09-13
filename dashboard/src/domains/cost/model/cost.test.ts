@@ -79,7 +79,9 @@ describe("the readings the tiles state in words", () => {
   })
 
   it("rounds a profile's failure rate to whole percent", () => {
-    expect(failurePercent({ profile: "planner", rate: 0.11, note: "" })).toBe(11)
+    expect(failurePercent({ profile: "planner", rate: 0.11, note: "" })).toBe(
+      11
+    )
   })
 })
 

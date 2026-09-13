@@ -17,7 +17,9 @@ namespace Comuki.Modules.Identity.Infrastructure.Security.Authorization;
 /// missing permission answers 403 <c>problem+json</c> with
 /// <c>code=permission.denied</c>; an anonymous caller on a demanding
 /// endpoint answers 401. The object axis is not this filter's business —
-/// out-of-scope rows surface as 404 downstream.
+/// out-of-scope rows surface as 404 downstream. Minimal-API endpoints are
+/// covered by <see cref="RequiresPermissionMiddleware"/>; both share
+/// <see cref="PermissionGate"/> so the decision exists once.
 /// </summary>
 /// <param name="evaluator"></param>
 /// <remarks>
@@ -51,81 +53,95 @@ public sealed class RequiresPermissionFilter(IPermissionEvaluator evaluator) : I
             .OfType<RequiresPermissionAttribute>()
             .LastOrDefault();
 
-        if (demand is null)
+        if (demand is null || await PermissionGate.EvaluateAsync(
+                context.HttpContext.User,
+                evaluator,
+                demand.PermissionKey,
+                context.HttpContext.RequestAborted) is not { } denial)
         {
             await next();
-
             return;
         }
 
-        if (PrincipalSubjectResolver.Resolve(context.HttpContext.User) is not { } subject)
+        context.Result = new ObjectResult(denial.Problem)
         {
-            context.Result = PermissionProblem.Result(
-                StatusCodes.Status401Unauthorized,
-                AuthenticationRequiredCode,
-                $"permission '{demand.PermissionKey}' requires an authenticated subject");
-        }
-        else if (!authorizationAllows(await evaluator.EvaluateAsync(subject, context.HttpContext.RequestAborted), demand.PermissionKey))
-        {
-            context.Result = PermissionProblem.Result(
-                StatusCodes.Status403Forbidden,
-                PermissionDeniedCode,
-                $"permission '{demand.PermissionKey}' is required");
-        }
-        else
-        {
-            await next();
-        }
-    }
-
-    private static bool authorizationAllows(SubjectAuthorization authorization, string permissionKey)
-    {
-        return authorization.IsPermitted(new PermissionKey(permissionKey));
+            StatusCode = denial.StatusCode,
+            ContentTypes = { "application/problem+json" },
+        };
     }
 }
 
 /// <summary>
-/// Principal → <see cref="RoleSubject"/>: an API-key principal carries
-/// the api-key claim and resolves to its own subject; otherwise the
-/// nameidentifier claim resolves to the user subject. Unresolvable
-/// principals (anonymous, foreign) return null — a demand plus no
-/// subject is a 401, never a pass.
+/// The one permission decision shared by the MVC resource filter and the
+/// minimal-API middleware: subject resolution plus evaluation, producing
+/// the canonical 401 / 403 problem or null when the demand is satisfied.
 /// </summary>
-file static class PrincipalSubjectResolver
+internal static class PermissionGate
 {
-    public static RoleSubject? Resolve(ClaimsPrincipal principal)
+    /// <summary>Evaluates the demand; null = allowed.</summary>
+    /// <param name="principal">Request principal.</param>
+    /// <param name="evaluator">RBAC evaluator.</param>
+    /// <param name="permissionKey">Demanded key.</param>
+    /// <param name="cancellationToken"></param>
+    public static async Task<PermissionDenial?> EvaluateAsync(
+        ClaimsPrincipal principal,
+        IPermissionEvaluator evaluator,
+        string permissionKey,
+        CancellationToken cancellationToken)
+    {
+        if (ResolveSubject(principal) is not { } subject)
+        {
+            return Denial(
+                StatusCodes.Status401Unauthorized,
+                RequiresPermissionFilter.AuthenticationRequiredCode,
+                $"permission '{permissionKey}' requires an authenticated subject");
+        }
+
+        var authorization = await evaluator.EvaluateAsync(subject, cancellationToken);
+        return authorization.IsPermitted(new PermissionKey(permissionKey))
+            ? null
+            : Denial(
+                StatusCodes.Status403Forbidden,
+                RequiresPermissionFilter.PermissionDeniedCode,
+                $"permission '{permissionKey}' is required");
+    }
+
+    /// <summary>
+    /// Principal → <see cref="RoleSubject"/>: an API-key principal carries
+    /// the api-key claim and resolves to its own subject; otherwise the
+    /// nameidentifier claim resolves to the user subject. Unresolvable
+    /// principals (anonymous, foreign) return null — a demand plus no
+    /// subject is a 401, never a pass.
+    /// </summary>
+    private static RoleSubject? ResolveSubject(ClaimsPrincipal principal)
     {
         return OfClaim(IdentityClaimNames.ApiKeyId, SubjectType.ApiKey, principal)
             ?? OfClaim(ClaimTypes.NameIdentifier, SubjectType.User, principal);
     }
 
-    public static RoleSubject? OfClaim(string claimName, SubjectType type, ClaimsPrincipal principal)
+    private static RoleSubject? OfClaim(string claimName, SubjectType type, ClaimsPrincipal principal)
     {
         return principal.FindFirst(claimName)?.Value is { Length: > 0 } value
             && Guid.TryParse(value, out var id)
             ? new RoleSubject(type, id)
             : null;
     }
-}
 
-/// <summary>Builds the 401/403 ProblemDetails results this filter returns.</summary>
-file static class PermissionProblem
-{
-    public static IActionResult Result(int statusCode, string code, string detail)
+    private static PermissionDenial Denial(int statusCode, string code, string detail)
     {
         // Build with TypedResults.Problem so the title/type defaults and
-        // extension shape stay canonical (issue #20), then wrap in
-        // ObjectResult for the MVC filter context.
+        // extension shape stay canonical (issue #20).
         var typed = TypedResults.Problem(
             title: statusCode == StatusCodes.Status403Forbidden ? "Permission denied" : "Authentication required",
             detail: detail,
             statusCode: statusCode,
             extensions: new Dictionary<string, object?> { ["code"] = code });
 
-        return new ObjectResult(typed.ProblemDetails)
-        {
-            StatusCode = typed.StatusCode,
-            ContentTypes = { "application/problem+json" },
-        };
+        return new PermissionDenial(statusCode, typed.ProblemDetails);
     }
 }
+
+/// <summary>One deny decision: the status plus the ready ProblemDetails body.</summary>
+/// <param name="StatusCode">401 (anonymous) or 403 (missing permission).</param>
+/// <param name="Problem">ProblemDetails body to serialize.</param>
+internal sealed record PermissionDenial(int StatusCode, ProblemDetails Problem);

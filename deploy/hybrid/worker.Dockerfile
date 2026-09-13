@@ -58,10 +58,14 @@ COPY platform/src/shared/Comuki.Shared.Contracts/Comuki.Shared.Contracts.csproj 
 COPY platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj platform/src/host/Comuki.Host.Translator/
 RUN dotnet restore platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj -r linux-x64
 
+# CI passes the commit short sha — must match the host image tag so the
+# compute engine's pinning resolves this exact worker (see host.Dockerfile).
+ARG COMUKI_VERSION=0.0.0
+
 # Build and publish.
 COPY platform/ platform/
 RUN dotnet publish platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj \
-    -c Release -r linux-x64 --no-restore -o /app
+    -c Release -r linux-x64 --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app
 
 # ---------- Stage 2: donor images for bun + the .NET runtime ----------
 # oven/bun via docker.io and aspnet via mcr — both pulled successfully by

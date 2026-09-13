@@ -15,6 +15,7 @@ import type {
   PostApiV1ChatSessionsSessionidApprovePathParams,
   PostApiV1ChatSessionsSessionidApprove404,
   PostApiV1ChatSessionsSessionidApprove409,
+  PostApiV1ChatSessionsSessionidApprove503,
 } from "../types/PostApiV1ChatSessionsSessionidApprove"
 
 function getPostApiV1ChatSessionsSessionidApproveUrl(
@@ -46,6 +47,7 @@ export async function postApiV1ChatSessionsSessionidApprove(
     ResponseErrorConfig<
       | PostApiV1ChatSessionsSessionidApprove404
       | PostApiV1ChatSessionsSessionidApprove409
+      | PostApiV1ChatSessionsSessionidApprove503
     >,
     PostApiV1ChatSessionsSessionidApproveMutationRequest
   >({

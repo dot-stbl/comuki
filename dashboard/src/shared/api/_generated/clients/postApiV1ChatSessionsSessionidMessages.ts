@@ -16,6 +16,7 @@ import type {
   PostApiV1ChatSessionsSessionidMessages400,
   PostApiV1ChatSessionsSessionidMessages404,
   PostApiV1ChatSessionsSessionidMessages409,
+  PostApiV1ChatSessionsSessionidMessages503,
 } from "../types/PostApiV1ChatSessionsSessionidMessages"
 
 function getPostApiV1ChatSessionsSessionidMessagesUrl(
@@ -48,6 +49,7 @@ export async function postApiV1ChatSessionsSessionidMessages(
       | PostApiV1ChatSessionsSessionidMessages400
       | PostApiV1ChatSessionsSessionidMessages404
       | PostApiV1ChatSessionsSessionidMessages409
+      | PostApiV1ChatSessionsSessionidMessages503
     >,
     PostApiV1ChatSessionsSessionidMessagesMutationRequest
   >({

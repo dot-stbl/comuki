@@ -17,6 +17,15 @@ export interface ChatMessageProps {
   onDecide: (proposalId: string, decision: ProposalDecision) => void
   busy?: boolean
   /**
+   * Project scope the conversation talks about.
+   *
+   * Threaded by `chat-console` rather than read from the message so that
+   * sessions before `/init` (no project) can opt out cleanly. Only the
+   * `artifact-ref` card actually reads it today, but other parts may grow
+   * the same need — passing it once here keeps the contract in one place.
+   */
+  projectId: string | null
+  /**
    * The thread's virtualizer measures the row it drew.
    *
    * Both of these are the virtualizer's contract and nothing else's: it needs
@@ -66,6 +75,7 @@ export function ChatMessage({
   message,
   onDecide,
   busy,
+  projectId,
   ref,
   "data-index": dataIndex,
 }: ChatMessageProps) {
@@ -111,7 +121,9 @@ export function ChatMessage({
              a synthetic id would be a second thing to keep true. The index is
              the honest key: a turn's parts are fixed the moment it is
              journaled, so the list is never reordered or spliced. */
-          <Fragment key={index}>{renderPart(part, message)}</Fragment>
+          <Fragment key={index}>
+            {renderPart(part, message, projectId)}
+          </Fragment>
         ))}
 
         {blank ? (

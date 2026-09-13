@@ -1,0 +1,121 @@
+{
+  "required": ["kind"],
+  "type": "object",
+  "anyOf": [
+    {
+      "required": ["markdown"],
+      "properties": {
+        "kind": { "enum": ["text"], "type": "string" },
+        "markdown": { "type": "string" }
+      },
+      "x-readme-ref-name": "MessagePartTextPart"
+    },
+    {
+      "required": ["language", "source"],
+      "properties": {
+        "kind": { "enum": ["code"], "type": "string" },
+        "language": { "type": "string" },
+        "source": { "type": "string" },
+        "path": { "type": ["null", "string"] },
+        "startLine": {
+          "pattern": "^-?(?:0|[1-9]\\d*)$",
+          "type": ["null", "integer", "string"],
+          "format": "int32"
+        }
+      },
+      "x-readme-ref-name": "MessagePartCodePart"
+    },
+    {
+      "required": ["dialect", "source"],
+      "properties": {
+        "kind": { "enum": ["diagram"], "type": "string" },
+        "dialect": { "type": "string" },
+        "source": { "type": "string" }
+      },
+      "x-readme-ref-name": "MessagePartDiagramPart"
+    },
+    {
+      "required": ["text"],
+      "properties": {
+        "kind": { "enum": ["thinking"], "type": "string" },
+        "text": { "type": "string" },
+        "tokens": {
+          "pattern": "^-?(?:0|[1-9]\\d*)$",
+          "type": ["null", "integer", "string"],
+          "format": "int32"
+        }
+      },
+      "x-readme-ref-name": "MessagePartThinkingPart"
+    },
+    {
+      "required": ["name", "inputJson", "status"],
+      "properties": {
+        "kind": { "enum": ["tool"], "type": "string" },
+        "name": { "type": "string" },
+        "inputJson": { "type": "string" },
+        "status": { "type": "string" },
+        "outputJson": { "type": ["null", "string"] },
+        "durationMs": {
+          "pattern": "^-?(?:0|[1-9]\\d*)$",
+          "type": ["null", "integer", "string"],
+          "format": "int64"
+        }
+      },
+      "x-readme-ref-name": "MessagePartToolPart"
+    },
+    {
+      "required": ["query"],
+      "properties": {
+        "kind": { "enum": ["handoff"], "type": "string" },
+        "query": { "type": "string" }
+      },
+      "x-readme-ref-name": "MessagePartHandoffPart"
+    },
+    {
+      "required": ["nodes", "edges"],
+      "properties": {
+        "kind": { "enum": ["plan"], "type": "string" },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "required": ["id", "title", "profileKey", "brief"],
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "profileKey": { "type": "string" },
+              "brief": { "type": "string" }
+            },
+            "x-readme-ref-name": "PlanNode"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "required": ["from", "to"],
+            "type": "object",
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" }
+            },
+            "x-readme-ref-name": "PlanEdge"
+          }
+        }
+      },
+      "x-readme-ref-name": "MessagePartPlanPart"
+    }
+  ],
+  "discriminator": {
+    "propertyName": "kind",
+    "mapping": {
+      "text": "#kubb-inline-0",
+      "code": "#kubb-inline-1",
+      "diagram": "#kubb-inline-2",
+      "thinking": "#kubb-inline-3",
+      "tool": "#kubb-inline-4",
+      "handoff": "#kubb-inline-5",
+      "plan": "#kubb-inline-6"
+    }
+  },
+  "x-readme-ref-name": "MessagePart"
+}

@@ -1,0 +1,13 @@
+{
+  "required": ["text"],
+  "properties": {
+    "kind": { "enum": ["thinking"], "type": "string" },
+    "text": { "type": "string" },
+    "tokens": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "format": "int32"
+    }
+  },
+  "x-readme-ref-name": "MessagePartThinkingPart"
+}

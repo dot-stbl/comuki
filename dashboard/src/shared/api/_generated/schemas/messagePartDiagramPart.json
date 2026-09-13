@@ -1,0 +1,9 @@
+{
+  "required": ["dialect", "source"],
+  "properties": {
+    "kind": { "enum": ["diagram"], "type": "string" },
+    "dialect": { "type": "string" },
+    "source": { "type": "string" }
+  },
+  "x-readme-ref-name": "MessagePartDiagramPart"
+}

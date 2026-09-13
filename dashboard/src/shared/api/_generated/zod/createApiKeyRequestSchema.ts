@@ -9,4 +9,5 @@ export const createApiKeyRequestSchema = z.object({
   userId: z.uuid(),
   label: z.string(),
   expiresAt: z.iso.datetime({ offset: true }).nullish(),
+  tenantProjectId: z.uuid().nullish(),
 })

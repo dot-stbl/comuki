@@ -1,0 +1,8 @@
+{
+  "required": ["query"],
+  "properties": {
+    "kind": { "enum": ["handoff"], "type": "string" },
+    "query": { "type": "string" }
+  },
+  "x-readme-ref-name": "MessagePartHandoffPart"
+}

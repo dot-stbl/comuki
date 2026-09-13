@@ -177,6 +177,7 @@ export function ChatConsole({
           messages={messages}
           onDecide={onDecide}
           busy={decide.isPending}
+          projectId={current?.projectId ?? null}
         />
         <ChatComposer
           commands={commands}

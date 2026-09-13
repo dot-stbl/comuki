@@ -1,0 +1,51 @@
+{
+  "required": ["items", "projectId"],
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "required": [
+          "id",
+          "filename",
+          "contentType",
+          "sizeBytes",
+          "title",
+          "createdAt",
+          "createdBy",
+          "runId",
+          "workItemId",
+          "sessionId",
+          "ticketId",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "filename": { "type": "string" },
+          "contentType": { "type": "string" },
+          "sizeBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": ["integer", "string"],
+            "format": "int64"
+          },
+          "title": { "type": ["null", "string"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "createdBy": { "type": "string" },
+          "runId": { "type": ["null", "string"], "format": "uuid" },
+          "workItemId": { "type": ["null", "string"], "format": "uuid" },
+          "sessionId": { "type": ["null", "string"], "format": "uuid" },
+          "ticketId": { "type": ["null", "string"], "format": "uuid" },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": ["integer", "string"],
+            "format": "int32"
+          }
+        },
+        "x-readme-ref-name": "VisualArtifactListItem"
+      }
+    },
+    "projectId": { "type": "string", "format": "uuid" }
+  },
+  "x-readme-ref-name": "VisualArtifactPage"
+}

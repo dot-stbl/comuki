@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "model": { "type": ["null", "string"] },
+    "tokensIn": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "format": "int32"
+    },
+    "tokensOut": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "format": "int32"
+    },
+    "costMicros": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "format": "int64"
+    },
+    "latencyMs": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["null", "integer", "string"],
+      "format": "int64"
+    },
+    "stopReason": { "type": ["null", "string"] }
+  },
+  "x-readme-ref-name": "ChatMessageMeta"
+}

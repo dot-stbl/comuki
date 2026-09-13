@@ -37,7 +37,7 @@ always: true
 | `build`    | build-система или external dependencies (Directory.Packages.props, .NET SDK) |
 | `ci`       | CI конфигурация (workflows, build-verification)                              |
 | `chore`    | тулинг, мета-вещи, форматирование, мелочи, не код и не фича                 |
-| `style`    | форматирование без изменения смысла (whitespace, prettier, biome)            |
+| `style`    | форматирование без изменения смысла (whitespace, prettier, dotnet format)    |
 | `revert`   | откат предыдущего коммита                                                    |
 | `merge`    | ручной мерж-коммит с осмысленным описанием; `Merge branch …` от git проходит мимо правила |
 

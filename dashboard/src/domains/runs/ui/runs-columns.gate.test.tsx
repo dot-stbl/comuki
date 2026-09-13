@@ -52,6 +52,7 @@ function waitingRun(id: string, projectId: string, title: string): RunSummary {
         dependsOn: [],
       },
     ],
+    anomaly: null,
   }
 }
 
@@ -76,9 +77,11 @@ const RUNS: RunSummary[] = [
 function DutyList({
   onApprove,
   onCancel,
+  onShowAnomaly = () => undefined,
 }: {
   onApprove: (run: RunSummary) => void
   onCancel: (run: RunSummary) => void
+  onShowAnomaly?: (run: RunSummary) => void
 }) {
   const session = useSession()
 
@@ -92,9 +95,10 @@ function DutyList({
         cancellingId: null,
         onApprove,
         onCancel,
+        onShowAnomaly,
         session,
       }),
-    [onApprove, onCancel, session]
+    [onApprove, onCancel, onShowAnomaly, session]
   )
 
   return (

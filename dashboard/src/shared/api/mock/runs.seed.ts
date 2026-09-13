@@ -220,11 +220,14 @@ function outcomeDays(): SeedOutcomeDay[] {
       weekday: "today",
       // Bounded below by the live list: every run RUNS_SEED shows in a
       // finished state happened on today's shift, so today's column cannot
-      // be smaller than the list that is drawing beside it.
+      // be smaller than the list that is drawing beside it. Counts include
+      // the hand-written runaway in HAND_RUNS (id `d61b7a04`, escalated),
+      // which is why the escalated count is one higher than it would be
+      // from the synthetic pool alone.
       byStatus: [
         { status: "success", count: 26 },
         { status: "failed", count: 12 },
-        { status: "escalated", count: 9 },
+        { status: "escalated", count: 10 },
       ],
     },
   ]
@@ -470,6 +473,40 @@ const HAND_RUNS: SeedRunDraft[] = [
       item("w7", "verifier", "сверить метрики после выката", "success", ["w6"]),
       item("w8", "docs", "записать решение в базу знаний", "success", ["w7"]),
       item("w9", "docs", "добавить пример в гайд", "success", ["w8"]),
+    ],
+  },
+  // A deliberate runaway — same project as the others in `web-app`
+  // (comuki), but a ticket that the swarm looped on for an hour and
+  // burned through the planner's token budget. Status `escalated` so
+  // it lands at the top of the duty list under triage order; cost
+  // $7.42 lands at 9–12× the project's median, the badge's first
+  // visible reading on first load.
+  {
+    id: "d61b7a04",
+    app: "web-app",
+    title: "Сборка метрик дашборда — длинный план с тремя откатами",
+    status: "escalated",
+    current: "w5",
+    model: "lead",
+    cost: 7.42,
+    tokens: 412000,
+    startSec: 1620,
+    items: [
+      item("w1", "explorer", "снять список метрик в проекте", "success"),
+      item("w2", "planner", "план сбора метрик с разбивкой по слоям", "success", [
+        "w1",
+      ]),
+      item("w3", "implementer", "сборщик для фронта", "success", ["w2"]),
+      item("w4", "implementer", "прокинуть сборщик в бэкофис", "escalated", [
+        "w2",
+      ]),
+      item("w5", "implementer", "тестовый запрос на ремоут", "queued", [
+        "w3",
+      ]),
+      item("w6", "reviewer", "вычитать план отката", "queued", ["w5"]),
+      item("w7", "tester", "прогнать на синтетических данных", "queued", [
+        "w6",
+      ]),
     ],
   },
 ]

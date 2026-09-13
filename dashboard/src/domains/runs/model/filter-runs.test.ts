@@ -24,6 +24,7 @@ function run(id: string, app: string, projectId = "p_comuki"): RunSummary {
     durationSec: 0,
     done: false,
     workItems: [],
+    anomaly: null,
   }
 }
 

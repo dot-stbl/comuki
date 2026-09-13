@@ -59,6 +59,33 @@ export interface RunSummary {
   done: boolean
   /** The plan: an arbitrary graph, not a fixed pipeline. */
   workItems: WorkItem[]
+  /**
+   * Whether this row's spend crossed the project's own threshold — the
+   * runaway the cost page's top-N ranking is built to surface.
+   *
+   * Computed in the mapper, never persisted on the wire today. The rule lives
+   * in `./anomaly.ts` so a future platform-wide endpoint can land the same
+   * calculation without re-deriving it on the screen.
+   */
+  anomaly: AnomalyFlag | null
+}
+
+/**
+ * One anomaly reading, computed at mapper time from the seeded run costs.
+ *
+ * The shape is enough for the row's badge (label) and the breakdown modal
+ * (multiplier + median + cap name), and nothing more — a row that gets
+ * clicked lands in the modal, and the modal reads the same fields the row
+ * shows.
+ */
+export interface AnomalyFlag {
+  /** How many times the median cost this run spent. The badge's headline. */
+  multiplier: number
+  /** The project's median run cost in dollars, rounded. */
+  medianCost: number
+  /** The rule that fired — currently a single threshold; reserved for
+   *  future expansion (cost spike, token spike, model mix). */
+  reason: "cost-spike"
 }
 
 export interface DiffLine {

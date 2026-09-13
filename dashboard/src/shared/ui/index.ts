@@ -51,6 +51,7 @@ export { Select, type SelectOption, type SelectProps } from "./select"
 export { StatusBadge, type Status, type StatusBadgeProps } from "./status-badge"
 export { Tooltip, type TooltipProps } from "./tooltip"
 export { ConfirmDialog, type ConfirmDialogProps } from "./confirm-dialog"
+export { Dialog, type DialogProps } from "./dialog"
 export { BottomSheet, type BottomSheetProps } from "./bottom-sheet"
 export {
   ChoiceField,

@@ -1,10 +1,6 @@
 import { Loader2, Power, PowerOff } from "lucide-react"
 
-import {
-  burnPeak,
-  hourLabel,
-  proxySentence,
-} from "@/domains/models/model/keys"
+import { burnPeak, hourLabel, proxySentence } from "@/domains/models/model/keys"
 import type { Proxy } from "@/domains/models/model/types"
 import { formatCost } from "@/domains/runs/model/format"
 import { can, needsLabel, useSession } from "@/shared/session"

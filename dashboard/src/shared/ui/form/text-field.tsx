@@ -4,11 +4,10 @@ import { Field } from "./field"
 import styles from "./form.module.css"
 import { fieldDescriptionId } from "./ids"
 
-export interface TextFieldProps
-  extends Omit<
-    InputHTMLAttributes<HTMLInputElement>,
-    "id" | "value" | "onChange"
-  > {
+export interface TextFieldProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "id" | "value" | "onChange"
+> {
   id: string
   label: string
   /** The label is real but not drawn — see `FieldProps.labelHidden`. */
@@ -37,7 +36,13 @@ export function TextField({
   ...rest
 }: TextFieldProps) {
   return (
-    <Field id={id} label={label} labelHidden={labelHidden} hint={hint} error={error}>
+    <Field
+      id={id}
+      label={label}
+      labelHidden={labelHidden}
+      hint={hint}
+      error={error}
+    >
       <input
         {...rest}
         id={id}

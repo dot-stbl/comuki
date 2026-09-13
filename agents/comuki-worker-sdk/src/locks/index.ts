@@ -13,6 +13,6 @@ export {
   lockMatchesGitRef,
   lockMatchesPath,
   lockMatchesTool,
-} from '@comuki/agent-core';
+} from "@comuki/agent-core"
 
-export type { GlobOptions, LockKind, LockRule } from '@comuki/agent-core';
+export type { GlobOptions, LockKind, LockRule } from "@comuki/agent-core"

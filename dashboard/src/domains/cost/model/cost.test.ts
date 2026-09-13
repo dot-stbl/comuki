@@ -79,7 +79,9 @@ describe("the readings the tiles state in words", () => {
   })
 
   it("rounds a profile's failure rate to whole percent", () => {
-    expect(failurePercent({ profile: "planner", rate: 0.11, note: "" })).toBe(11)
+    expect(failurePercent({ profile: "planner", rate: 0.11, note: "" })).toBe(
+      11
+    )
   })
 })
 
@@ -121,7 +123,7 @@ describe("the seeded week tells the seeded story", () => {
     // One reading said twice: the tile above the chart and the chart's last
     // bar are the same number, or the report argues with itself.
     expect(byDay).toHaveLength(7)
-    expect(byDay[byDay.length - 1]?.spend).toBe(COST_SEED.totalDay)
+    expect(byDay[byDay.length - 1]?.spend).toBe(COST_SEED.totalPeriod)
     expect(byDay[byDay.length - 1]?.daysAgo).toBe(0)
   })
 
@@ -132,7 +134,7 @@ describe("the seeded week tells the seeded story", () => {
     const peak = spendPeakDay(
       byDay.map((day) => ({ label: day.weekday, spend: day.spend }))
     )
-    expect(incident?.spend).toBeGreaterThan(COST_SEED.totalDay)
+    expect(incident?.spend).toBeGreaterThan(COST_SEED.totalPeriod)
     expect(peak?.label).toBe(incident?.weekday)
   })
 

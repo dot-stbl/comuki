@@ -1,0 +1,67 @@
+/* The generic dialog — a scrim, a panel, a title, a body, a footer.
+   Visually it lives in the same idiom as `ConfirmDialog`, with the same
+   width token and the same scrim, so any future dialog lands looking like
+   the rest of the modal family rather than inventing a fifth one. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s4);
+}
+
+.modal {
+  inline-size: 100%;
+  max-inline-size: var(--modal-w);
+  max-block-size: calc(100dvh - var(--s8));
+  display: flex;
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  padding: var(--s6) var(--s6) var(--s5);
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+  min-inline-size: 0;
+  overflow: auto;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s3);
+  padding-block-start: var(--s3);
+}
+
+.footerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-inline-end: auto;
+}

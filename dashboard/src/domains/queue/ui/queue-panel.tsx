@@ -13,7 +13,11 @@ import {
   type DataTableSorting,
 } from "@/shared/ui"
 
-import { queueOrder, unclaimedOver, AGE_STALLED_SEC } from "@/domains/queue/model/queue"
+import {
+  queueOrder,
+  unclaimedOver,
+  AGE_STALLED_SEC,
+} from "@/domains/queue/model/queue"
 import type { QueueItem } from "@/domains/queue/model/types"
 
 import { createQueueColumns, getQueueItemId } from "./queue-columns"
@@ -100,10 +104,7 @@ export function QueuePanel({
     [items, filters, columns]
   )
 
-  const stalled = useMemo(
-    () => unclaimedOver(rows, AGE_STALLED_SEC),
-    [rows]
-  )
+  const stalled = useMemo(() => unclaimedOver(rows, AGE_STALLED_SEC), [rows])
 
   const emptyLabel = filters.profile
     ? "nothing queued on this profile"

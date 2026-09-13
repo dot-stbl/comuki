@@ -71,7 +71,8 @@ export function useQueueQuery() {
  * ------------------------------------------------------------------ */
 
 export const workersQueryKey = ["workers"] as const
-export const workerQueryKey = (workerId: string) => ["workers", workerId] as const
+export const workerQueryKey = (workerId: string) =>
+  ["workers", workerId] as const
 
 /** One page is the whole registry for every deployment this screen has. */
 const WORKERS_PAGE_SIZE = 100

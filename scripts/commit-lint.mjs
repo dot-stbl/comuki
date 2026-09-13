@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * commit-lint — single source of truth for the `[hybrid]` commit subject
+ * commit-lint — single source of truth for the `[.stbl]` commit subject
  * format and for the no-AI-attribution rule.
  *
  * Pure, exported functions (`stripAttribution`, `lintSubject`, `lintMessage`)
@@ -29,7 +29,7 @@ import { pathToFileURL } from 'node:url';
  * Conventional Commits types accepted by this repo.
  *
  * `merge` is ours, not Conventional: a hand-written merge commit with a real
- * description (`[hybrid] merge(readme): OSS landing page`). The `Merge branch …`
+ * description (`[.stbl] merge(readme): OSS landing page`). The `Merge branch …`
  * subject git writes itself never gets here — see {@link EXEMPT_SUBJECT}.
  */
 export const COMMIT_TYPES = Object.freeze([
@@ -52,9 +52,13 @@ export const SUBJECT_MAX_LENGTH = 100;
 export const COMMIT_FORMAT_RULE = '.agents/rules/process/commit-format.md';
 export const NO_ATTRIBUTION_RULE = '.agents/rules/process/no-ai-attribution.md';
 
-/** `[hybrid] <type>(<scope>)!: <description>` */
-const SUBJECT_PATTERN =
-  /^\[hybrid\] (?<type>[A-Za-z][A-Za-z0-9]*)(?:\((?<scope>[^()]*)\))?(?<breaking>!)?: (?<description>.*)$/;
+/** `[.stbl] <type>(<scope>)!: <description>` — legacy form, still accepted. */
+const LEGACY_SUBJECT_PATTERN =
+  /^\[\.stbl\] (?<type>[A-Za-z][A-Za-z0-9]*)(?:\((?<scope>[^()]*)\))?(?<breaking>!)?: (?<description>.*)$/;
+
+/** `[.stbl](feat/<area>): <description>` — current form. Area is a kebab-case path. */
+const FEATURE_SUBJECT_PATTERN =
+  /^\[\.stbl\]\((?<path>[a-z][a-z0-9._\/-]*)\)(?<breaking>!)?: (?<description>.*)$/;
 
 const SCOPE_PATTERN = /^[a-z0-9][a-z0-9._\/-]*$/;
 
@@ -268,41 +272,42 @@ export function extractSubject(message) {
 }
 
 function diagnoseShape(line) {
-  if (/^\[stbl\]/i.test(line)) {
-    return ['prefix `[stbl]` is retired — this repo uses `[hybrid]`'];
+  if (/^\[hybrid\]/i.test(line)) {
+    return ['prefix `[.stbl]` is retired — this repo uses `[.stbl]`'];
   }
-  if (/^\[hybrid\]\s*\(/.test(line)) {
-    return ['`[hybrid](<type>): …` is not our shape — write `[hybrid] <type>(<scope>): …`'];
-  }
-  if (!line.startsWith('[hybrid]')) {
-    if (!/^[A-Za-z]+(?:\([^()]*\))?!?: /.test(line)) {
-      return ['missing `[hybrid] ` prefix'];
+  if (!line.startsWith('[.stbl]')) {
+    if (!/^\([^()]+\): /.test(line) && !/^[A-Za-z]+(?:\([^()]*\))?!?: /.test(line)) {
+      return ['missing `[.stbl]` prefix'];
     }
     // Conventional but unprefixed — lint the rest too, so the author sees
     // every problem at once instead of one per `--amend` round trip.
     // The length check is dropped: the prefix we just added is not theirs.
-    const rest = lintSubject(`[hybrid] ${line}`).filter((problem) => !/^subject is \d+ char/.test(problem));
+    const synthetic = line.startsWith('(') ? `[.stbl]${line}` : `[.stbl] ${line}`;
+    const rest = lintSubject(synthetic).filter((problem) => !/^subject is \d+ char/.test(problem));
     return rest.length === 0
-      ? [`missing \`[hybrid] \` prefix — write \`[hybrid] ${line}\``]
-      : ['missing `[hybrid] ` prefix', ...rest];
+      ? [`missing \`[.stbl]\` prefix — write \`[.stbl]${line.startsWith('(') ? '' : ' '}${line}\``]
+      : ['missing `[.stbl]` prefix', ...rest];
   }
-  if (!line.startsWith('[hybrid] ')) {
-    return ['`[hybrid]` must be followed by exactly one space, then the type'];
+  if (!line.startsWith('[.stbl](') && !line.startsWith('[.stbl] ')) {
+    return ['`[.stbl]` must be followed by either ` ` + `<type>` or `(` + `<feat-area>`'];
   }
 
-  const rest = line.slice('[hybrid] '.length);
+  const rest = line.slice(line.startsWith('[.stbl](') ? '[.stbl]'.length : '[.stbl] '.length);
   const colon = rest.indexOf(':');
   if (colon === -1) {
-    return ['missing `:` between `<type>(<scope>)` and the description'];
+    return ['missing `:` between the type/area and the description'];
   }
   if (rest[colon + 1] !== ' ') {
     return ['`:` must be followed by a single space'];
   }
   const head = rest.slice(0, colon);
   if (head.length === 0) {
-    return ['type is missing — `[hybrid] <type>: <description>`'];
+    return ['type or feature path is missing'];
   }
-  return [`cannot read \`${head}\` as \`<type>(<scope>)!\` — allowed types: ${COMMIT_TYPES.join(', ')}`];
+  if (line.startsWith('[.stbl] ')) {
+    return [`cannot read \`${head}\` as \`<type>(<scope>)!\` — allowed types: ${COMMIT_TYPES.join(', ')}`];
+  }
+  return [`cannot read \`${head}\` as a feature path — use lowercase kebab-case with optional \`/\` (e.g. \`feat/dashboard\`, \`fe/mocks\`, \`meta\`)`];
 }
 
 /**
@@ -324,28 +329,37 @@ export function lintSubject(subject) {
     problems.push(`subject is ${line.length} characters — the limit is ${SUBJECT_MAX_LENGTH}`);
   }
 
-  const match = SUBJECT_PATTERN.exec(line);
-  if (match === null) {
+  const legacyMatch = LEGACY_SUBJECT_PATTERN.exec(line);
+  const featureMatch = legacyMatch === null ? FEATURE_SUBJECT_PATTERN.exec(line) : null;
+
+  if (legacyMatch === null && featureMatch === null) {
     problems.push(...diagnoseShape(line));
     return problems;
   }
 
-  const { type, scope, description } = match.groups;
+  let type, scope, path, description;
+  if (legacyMatch !== null) {
+    ({ type, scope, description } = legacyMatch.groups);
+    if (!COMMIT_TYPES.includes(type)) {
+      const lowered = type.toLowerCase();
+      problems.push(
+        COMMIT_TYPES.includes(lowered)
+          ? `type \`${type}\` must be lowercase — write \`${lowered}\``
+          : `unknown type \`${type}\` — allowed: ${COMMIT_TYPES.join(', ')}`,
+      );
+    }
 
-  if (!COMMIT_TYPES.includes(type)) {
-    const lowered = type.toLowerCase();
-    problems.push(
-      COMMIT_TYPES.includes(lowered)
-        ? `type \`${type}\` must be lowercase — write \`${lowered}\``
-        : `unknown type \`${type}\` — allowed: ${COMMIT_TYPES.join(', ')}`,
-    );
-  }
-
-  if (scope !== undefined) {
-    if (scope.length === 0) {
-      problems.push('empty scope `()` — name the area or drop the parentheses');
-    } else if (!SCOPE_PATTERN.test(scope)) {
-      problems.push(`scope \`${scope}\` must match \`[a-z0-9][a-z0-9._/-]*\``);
+    if (scope !== undefined) {
+      if (scope.length === 0) {
+        problems.push('empty scope `()` — name the area or drop the parentheses');
+      } else if (!SCOPE_PATTERN.test(scope)) {
+        problems.push(`scope \`${scope}\` must match \`[a-z0-9][a-z0-9._/-]*\``);
+      }
+    }
+  } else {
+    ({ path, description } = featureMatch.groups);
+    if (!SCOPE_PATTERN.test(path)) {
+      problems.push(`feature path \`${path}\` must match \`[a-z0-9][a-z0-9._/-]*\``);
     }
   }
 
@@ -384,12 +398,16 @@ export function lintMessage(message) {
 // ---------------------------------------------------------------------------
 
 const CHEATSHEET = Object.freeze([
-  '  Format:  [hybrid] <type>(<scope>)!: <description>',
-  `  Types:   ${COMMIT_TYPES.join(' ')}`,
-  '  Scope:   optional, lowercase — (orchestration), (dev-sdk), (rules)',
+  '  Format:  [.stbl](feat/<area>): <description>    (current)',
+  '           [.stbl] <type>(<scope>): <description>   (legacy, accepted)',
+  '  Types:   feat fix refactor docs test perf build ci chore style revert merge',
+  '  Path:    required after [.stbl](...) — lowercase kebab-case, may nest',
+  '           (feat/dashboard), (fe/mocks), (meta), (host/mtls), (tests/architecture)',
+  '  Scope:   legacy form only — lowercase — (orchestration), (dev-sdk), (rules)',
   `  Subject: imperative, no trailing dot, <= ${SUBJECT_MAX_LENGTH} chars (aim for 72)`,
   '',
-  '  Example: [hybrid] fix(database): correct cascade delete on runs table',
+  '  Example: [.stbl](feat/dashboard): wire cost page breakdowns and forecast',
+  '  Example: [.stbl] fix(database): correct cascade delete on runs table',
   '',
   `  Rule:    ${COMMIT_FORMAT_RULE}`,
   '  Bypass:  git commit --no-verify',
@@ -423,7 +441,7 @@ export function formatAttributionReport(removed, { fixed }) {
 // CLI
 // ---------------------------------------------------------------------------
 
-const USAGE = `commit-lint — [hybrid] commit format + no-AI-attribution gate
+const USAGE = `commit-lint — [.stbl] commit format + no-AI-attribution gate
 
 Usage:
   node scripts/commit-lint.mjs --file <path>     commit-msg mode: strip attribution in place, lint the subject

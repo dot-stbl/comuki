@@ -1,61 +1,76 @@
-import { useMemo } from "react"
+import { useState } from "react"
 import { DollarSign, RotateCw } from "lucide-react"
+import { cn } from "@/shared/lib/utils"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
-import { useCostQuery, COST_WINDOW_DAYS } from "@/domains/cost/api/queries"
-import { budgetHeat, budgetPercent, successPercent } from "@/domains/cost/model/cost"
-import { CostStat } from "@/domains/cost/ui/cost-stat"
+import { useCostQuery } from "@/domains/cost/api/queries"
+import { costHeat, periodDelta } from "@/domains/cost/model/cost"
+import { BudgetProgress } from "@/domains/cost/ui/budget-progress"
 import { FailureAnalytics } from "@/domains/cost/ui/failure-analytics"
-import { ProxyBudgetMeter } from "@/domains/cost/ui/proxy-budget-meter"
+import { ForecastWidget } from "@/domains/cost/ui/forecast-widget"
+import { PeriodToggle } from "@/domains/cost/ui/period-toggle"
 import { SpendByApp } from "@/domains/cost/ui/spend-by-app"
 import { SpendByDay } from "@/domains/cost/ui/spend-by-day"
-import { env } from "@/shared/config/env"
-import { projectOf, useSession } from "@/shared/session"
+import { SpendByModel } from "@/domains/cost/ui/spend-by-model"
+import { TopProjects } from "@/domains/cost/ui/top-projects"
+import { TotalSpend } from "@/domains/cost/ui/total-spend"
 import { Button, Section, Tooltip } from "@/shared/ui"
 
 import styles from "./cost-page.module.css"
 
 const SKELETON_WIDTHS = ["38%", "62%", "50%", "74%"]
 
+/** The three choices the toggle offers, in the order the report reads them. */
+const PERIOD_OPTIONS = [
+  { value: "day" as const, label: "today", note: "1d" },
+  { value: "week" as const, label: "this week", note: "7d" },
+  { value: "month" as const, label: "this month", note: "30d" },
+]
+
+const PERIOD_DAYS = {
+  day: 1,
+  week: 7,
+  month: 30,
+} as const
+
 /**
- * What a day of the swarm costs, and what it is buying nothing.
+ * What the cost page is, in three readings and four breakdowns.
  *
- * A report, not a board: opened on a slow clock and read top to bottom, so it
- * scrolls with its content rather than fitting the viewport. Three readings
- * across the top, then the two breakdowns that say where each of them came
- * from — spend by app, and the profiles that fail.
+ * A report read top to bottom on a slow clock: three tiles across the
+ * top (total spend / forecast / budget progress) and four sections that
+ * say where each of them came from (by-day / by-model / top projects /
+ * per-app / failures). The period toggle re-shapes the picture —
+ * the three tiles track the chosen period; the breakdowns are period-
+ * specific by construction.
  *
- * There is no chart library under any of this and there does not need to be.
- * Both breakdowns are a shared axis and a handful of lengths, every one of them
- * drawn beside a figure that already states the reading — so a runtime
- * dependency would buy axes, tooltips and a legend for a picture that is
- * complete in words with every bar removed.
- *
- * Nothing on this screen writes. The route gates `cost.view`; there is no act
- * inside to gate.
+ * The figures are seeded — `mock snapshot · VITE_USE_MOCK` says so at the
+ * bottom — and the story the page tells is the same one the runs screen
+ * does: a runaway run on `prometheus`, a cap the budget tile is closing
+ * in on, a model mix weighted toward `glm-5.2`. Every breakdown is a
+ * shape the operator can read at a glance, none of them a chart library.
  */
 export function CostPage() {
-  const query = useCostQuery()
-  const session = useSession()
+  const [period, setPeriod] = useState<"day" | "week" | "month">("day")
+  const { data, isLoading, isError, error, refetch } = useCostQuery(period)
 
-  /* Real mode's slices name projects by id; the operator's word for a project
-     is its key, and the rollup is the one place the two meet. */
-  const data = useMemo(() => {
-    const summary = query.data
-    if (!summary || env.useMock || summary.windowDays === undefined) {
-      return summary
-    }
-    return {
-      ...summary,
-      byApp: summary.byApp.map((row) => ({
-        ...row,
-        app: projectOf(session, row.app)?.key ?? row.app,
-      })),
-    }
-  }, [query.data, session])
+  const todayBurn = data?.todaySpend ?? 0
+  const todayCap = data?.todayCap ?? 0
+  const monthToDate = data?.monthSpend ?? 0
+  const monthCap = data?.monthCap ?? 0
 
-  const { isLoading, isError, error, refetch } = query
+  const delta = data
+    ? periodDelta(data.totalPeriod, data.totalPreviousPeriod)
+    : null
+  const burnPerDay =
+    data && data.totalPeriod > 0
+      ? data.totalPeriod / PERIOD_DAYS[data.period]
+      : 0
+
+  const periodLabel =
+    period === "day"
+      ? "today"
+      : `this ${period.replace("week", "week").replace("month", "month")}`
 
   return (
     <AppShell
@@ -63,11 +78,39 @@ export function CostPage() {
         <PageHeader
           breadcrumbs={[{ label: "observe", to: "/runs" }, { label: "cost" }]}
           title="Cost & failures"
-          summary={env.useMock ? "last 24h" : `last ${COST_WINDOW_DAYS} days`}
+          summary={periodLabel}
         />
       }
     >
       <div className={styles.screen}>
+        <div className={styles.periodRow} data-test="cost-period-row">
+          <PeriodToggle
+            value={period}
+            onChange={setPeriod}
+            options={PERIOD_OPTIONS}
+            trailing={
+              data && delta !== null ? (
+                <span
+                  className={cn(
+                    styles.deltaChip,
+                    delta > 0 && styles.deltaChipUp,
+                    delta < 0 && styles.deltaChipDown
+                  )}
+                  data-test="cost-period-delta"
+                >
+                  <span className={styles.deltaChipArrow}>
+                    {delta > 0 ? "▲" : delta < 0 ? "▼" : "◆"}
+                  </span>
+                  <span>
+                    {Math.abs(delta * 100).toFixed(0)}% vs previous{" "}
+                    {periodLabel}
+                  </span>
+                </span>
+              ) : null
+            }
+          />
+        </div>
+
         {isLoading ? (
           <div className={styles.skeleton} data-test="cost-loading">
             {SKELETON_WIDTHS.map((width, index) => (
@@ -105,72 +148,91 @@ export function CostPage() {
 
         {data ? (
           <>
-            <div className={styles.stats}>
-              <CostStat
-                name="per-success"
-                label="Cost per success"
-                prefix={data.perSuccess === null ? undefined : "$"}
-                value={
-                  data.perSuccess === null
-                    ? // The rollup counts spend and runs; the price it never
-                      // divided is not ours to invent.
-                      "—"
-                    : data.perSuccess.toFixed(2)
-                }
-                sub={
-                  data.perSuccess === null
-                    ? "not reported by the platform costs api"
-                    : "key business metric — per successful task, not per call"
+            <div className={styles.tiles} data-test="cost-tiles">
+              <TotalSpend
+                total={data.totalPeriod}
+                previousTotal={data.totalPreviousPeriod}
+                periodLabel={periodLabel}
+                burnNote={
+                  <>
+                    ${burnPerDay.toFixed(2)} / day on average ·{" "}
+                    {data.byDay.length} day{data.byDay.length === 1 ? "" : "s"}{" "}
+                    observed
+                  </>
                 }
               />
-              <CostStat
-                name="per-day"
-                label="Per day"
-                prefix="$"
-                value={(data.totalDay ?? 0).toFixed(0)}
-                sub={
-                  data.successRate === null
-                    ? `average over the ${data.windowDays ?? data.byDay.length}-day window`
-                    : `${successPercent(data)}% of tasks — green gate`
+              <ForecastWidget
+                forecast={data.forecast}
+                burnRateLabel={`$${data.forecast.burnRatePerDay.toFixed(2)} / day`}
+                projectedLabel={`end of ${period.replace("week", "week").replace("month", "month")}`}
+                meter={
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      display: "block",
+                      blockSize: "var(--h-meter)",
+                      borderRadius: "var(--r-xs)",
+                      background: "var(--lane-alt)",
+                      overflow: "clip",
+                      position: "relative",
+                    }}
+                    data-heat={costHeat(data.forecast.share)}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        insetBlock: 0,
+                        insetInlineStart: 0,
+                        display: "block",
+                        borderRadius: "var(--r-xs)",
+                        background:
+                          data.forecast.share >= 1
+                            ? "var(--st-failed)"
+                            : data.forecast.share >= 0.85
+                              ? "var(--st-waiting)"
+                              : "var(--text-faint)",
+                        inlineSize: `${Math.min(100, Math.round(data.forecast.share * 100))}%`,
+                      }}
+                    />
+                  </span>
                 }
               />
-              {/* The only tile with a consequence written beside it, so the
-                  only one that carries heat. The other two are facts about a
-                  window that has already happened, and a fact gets no hue. */}
-              {data.budget ? (
-                <CostStat
-                  name="proxy-budget"
-                  label="Proxy budget"
-                  value={String(budgetPercent(data.budget))}
-                  suffix="%"
-                  heat={budgetHeat(data.budget)}
-                  sub={`$${data.budget.used.toFixed(0)} / $${data.budget.cap.toFixed(0)} · kill-switch at cap`}
-                >
-                  <ProxyBudgetMeter budget={data.budget} />
-                </CostStat>
-              ) : (
-                <CostStat
-                  name="window"
-                  label={`${data.windowDays ?? data.byDay.length}-day window`}
-                  prefix="$"
-                  value={(data.windowUsd ?? 0).toFixed(2)}
-                  sub={`all-time $${(data.allTimeUsd ?? 0).toFixed(2)} · ${data.windowRuns ?? 0} runs across ${data.byApp.length} ${data.byApp.length === 1 ? "project" : "projects"}`}
-                />
-              )}
+              <BudgetProgress
+                todayBurn={todayBurn}
+                todayCap={todayCap}
+                monthToDate={monthToDate}
+                monthCap={monthCap}
+              />
             </div>
 
-            {/* The time half of the report. The three tiles above say what the
-                day is; this band says whether the day is an improvement — full
-                width, because a week of columns asked to share a row with the
-                per-app ranking would crush the one comparison it exists for. */}
             <Section
               id="cost-by-day"
               data-test="cost-by-day"
               title="spend by day"
-              note={`the last ${data.byDay.length} days`}
+              note={`the last ${data.byDay.length} day${data.byDay.length === 1 ? "" : "s"}`}
             >
               <SpendByDay days={data.byDay} />
             </Section>
+
+            <div className={styles.regions}>
+              <Section
+                id="cost-by-model"
+                data-test="cost-by-model"
+                title="spend by model"
+                note="tokens"
+              >
+                <SpendByModel rows={data.byModel} />
+              </Section>
+
+              <Section
+                id="top-projects"
+                data-test="top-projects-section"
+                title="top projects"
+                note="this period"
+              >
+                <TopProjects rows={data.topProjects} />
+              </Section>
+            </div>
 
             <div className={styles.regions}>
               <Section
@@ -192,15 +254,10 @@ export function CostPage() {
               </Section>
             </div>
 
-            {/* Seeded numbers are fictional and stay marked as such. Real
-                mode renders the platform rollup — real data carries no
-                badge, which is the whole point of having one. */}
-            {env.useMock ? (
-              <p className={styles.mock} data-test="cost-mock-mark">
-                <DollarSign className={styles.mockIcon} aria-hidden="true" />
-                mock snapshot · VITE_USE_MOCK
-              </p>
-            ) : null}
+            <p className={styles.mock} data-test="cost-mock-mark">
+              <DollarSign className={styles.mockIcon} aria-hidden="true" />
+              mock snapshot · VITE_USE_MOCK
+            </p>
           </>
         ) : null}
       </div>

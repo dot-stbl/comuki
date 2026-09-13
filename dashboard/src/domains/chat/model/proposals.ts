@@ -68,10 +68,7 @@ export function proposalCheck(
 
   return {
     allowed: false,
-    denial: needsLabel(
-      permission,
-      projectOf(session, proposal.projectId)?.key
-    ),
+    denial: needsLabel(permission, projectOf(session, proposal.projectId)?.key),
   }
 }
 

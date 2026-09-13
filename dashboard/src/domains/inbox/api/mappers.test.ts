@@ -39,7 +39,9 @@ import { SOURCES_SEED } from "@/shared/api/mock/sources.seed"
  * optimistic writes do not flap.
  */
 
-function ticketViewFixture(overrides: Partial<IntakeTicketView> = {}): IntakeTicketView {
+function ticketViewFixture(
+  overrides: Partial<IntakeTicketView> = {}
+): IntakeTicketView {
   return {
     id: "00000000-0000-0000-0000-000000000001",
     projectId: "00000000-0000-0000-0000-0000000000aa",
@@ -62,7 +64,7 @@ describe("normalizeTicketStatus", () => {
     expect(normalizeTicketStatus("dismissed")).toBe("dismissed")
   })
 
-  it("falls back to \"pending\" for unknown values", () => {
+  it('falls back to "pending" for unknown values', () => {
     expect(normalizeTicketStatus("admitted")).toBe("pending")
     expect(normalizeTicketStatus("")).toBe("pending")
     expect(normalizeTicketStatus("Pending")).toBe("pending")
@@ -89,22 +91,22 @@ describe("mapIntakeTicketViewToTicket", () => {
       ticketViewFixture({
         status: "claimed",
         runId: "00000000-0000-0000-0000-00000000beef",
-      }),
+      })
     )
 
     expect(ticket.status).toBe("claimed")
     expect(ticket.runId).toBe("00000000-0000-0000-0000-00000000beef")
   })
 
-  it("defaults the kind to \"issue\" until the wire carries a discriminator", () => {
+  it('defaults the kind to "issue" until the wire carries a discriminator', () => {
     const ticket = mapIntakeTicketViewToTicket(ticketViewFixture())
 
     expect(ticket.kind).toBe("issue")
   })
 
-  it("normalises an unknown status to \"pending\"", () => {
+  it('normalises an unknown status to "pending"', () => {
     const ticket = mapIntakeTicketViewToTicket(
-      ticketViewFixture({ status: "queued-for-claim" }),
+      ticketViewFixture({ status: "queued-for-claim" })
     )
 
     expect(ticket.status).toBe("pending")
@@ -131,14 +133,15 @@ describe("a ticket's provider", () => {
     // No normalisation, no fallback, no 'unknown' bucket — the opposite of
     // what happens to a status one line above, and for the opposite reason.
     for (const source of ["github", "native", "linear", "monday.com"]) {
-      expect(mapIntakeTicketViewToTicket(ticketViewFixture({ source })).source)
-        .toBe(source)
+      expect(
+        mapIntakeTicketViewToTicket(ticketViewFixture({ source })).source
+      ).toBe(source)
     }
   })
 
   it("reads as itself on a screen even with no registry entry", () => {
     const ticket = mapIntakeTicketViewToTicket(
-      ticketViewFixture({ source: "linear" }),
+      ticketViewFixture({ source: "linear" })
     )
 
     // What any surface showing this row would ask. Never an empty cell, and
@@ -150,7 +153,7 @@ describe("a ticket's provider", () => {
 
   it("reaches the same registry the sources table does", () => {
     const ticket = mapIntakeTicketViewToTicket(
-      ticketViewFixture({ source: "yandex-tracker" }),
+      ticketViewFixture({ source: "yandex-tracker" })
     )
 
     // One vocabulary for one provider, across three domains: the word this
@@ -164,7 +167,10 @@ describe("a ticket's provider", () => {
 describe("mapInboxToTickets", () => {
   it("maps every row of a wire list to a domain ticket", () => {
     const list: IntakeTicketView[] = [
-      ticketViewFixture({ id: "00000000-0000-0000-0000-000000000001", status: "pending" }),
+      ticketViewFixture({
+        id: "00000000-0000-0000-0000-000000000001",
+        status: "pending",
+      }),
       ticketViewFixture({
         id: "00000000-0000-0000-0000-000000000002",
         source: "gitlab",
@@ -201,7 +207,7 @@ describe("mapInboxCatalogToConnections", () => {
         ticketViewFixture({ id: "00000000-0000-0000-0000-000000000001" }),
         ticketViewFixture({ id: "00000000-0000-0000-0000-000000000002" }),
       ],
-      "00000000-0000-0000-0000-src00000001",
+      "00000000-0000-0000-0000-src00000001"
     )
 
     expect(projection.connectionId).toBe("00000000-0000-0000-0000-src00000001")
@@ -213,7 +219,7 @@ describe("mapInboxCatalogToConnections", () => {
   it("returns an empty projection when the catalog page is empty", () => {
     const projection = mapInboxCatalogToConnections(
       [],
-      "00000000-0000-0000-0000-src00000001",
+      "00000000-0000-0000-0000-src00000001"
     )
 
     expect(projection.connectionId).toBe("00000000-0000-0000-0000-src00000001")
@@ -223,7 +229,9 @@ describe("mapInboxCatalogToConnections", () => {
 
 describe("mapClaimTicketInputToClaimRequest", () => {
   it("writes the ticketId field verbatim", () => {
-    const body = mapClaimTicketInputToClaimRequest({ ticketId: "00000000-0000-0000-0000-00000000beef" })
+    const body = mapClaimTicketInputToClaimRequest({
+      ticketId: "00000000-0000-0000-0000-00000000beef",
+    })
 
     expect(body).toEqual({ ticketId: "00000000-0000-0000-0000-00000000beef" })
   })
@@ -272,10 +280,12 @@ describe("mapSeedTicketToTicket (mock side)", () => {
 
     // Deterministic — same seed id always maps to the same UUID so a
     // session-stable mock survives a refetch.
-    expect(ticket.id).toBe(`00000000-0000-0000-0000-${seed!.id.padEnd(12, "0").slice(0, 12)}`)
+    expect(ticket.id).toBe(
+      `00000000-0000-0000-0000-${seed!.id.padEnd(12, "0").slice(0, 12)}`
+    )
   })
 
-  it("maps straightToWork=false to status=\"pending\" with no run id", () => {
+  it('maps straightToWork=false to status="pending" with no run id', () => {
     const seed = SOURCES_SEED.tickets.find((ticket) => !ticket.straightToWork)
     expect(seed).toBeDefined()
 
@@ -286,7 +296,7 @@ describe("mapSeedTicketToTicket (mock side)", () => {
     expect(ticket.source).toBe("native")
   })
 
-  it("maps straightToWork=true to status=\"claimed\" with a synthesised run id", () => {
+  it('maps straightToWork=true to status="claimed" with a synthesised run id', () => {
     const seed = SOURCES_SEED.tickets.find((ticket) => ticket.straightToWork)
     expect(seed).toBeDefined()
 
@@ -296,7 +306,7 @@ describe("mapSeedTicketToTicket (mock side)", () => {
     expect(ticket.runId).toBe("00000000-0000-0000-0000-runstub000001")
   })
 
-  it("rewrites \"just now\" createdAt to an ISO string the screen can render", () => {
+  it('rewrites "just now" createdAt to an ISO string the screen can render', () => {
     const before = new Date()
     const ticket = mapSeedTicketToTicket({
       ...SOURCES_SEED.tickets[0]!,
@@ -305,10 +315,10 @@ describe("mapSeedTicketToTicket (mock side)", () => {
     const after = new Date()
 
     expect(new Date(ticket.createdAt).getTime()).toBeGreaterThanOrEqual(
-      before.getTime(),
+      before.getTime()
     )
     expect(new Date(ticket.createdAt).getTime()).toBeLessThanOrEqual(
-      after.getTime(),
+      after.getTime()
     )
   })
 

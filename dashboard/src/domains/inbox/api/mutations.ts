@@ -89,7 +89,9 @@ export function useClaimTicketMutation() {
           createdAt: new Date().toISOString(),
         })
       }
-      const view = await postApiV1InboxClaim(mapClaimTicketInputToClaimRequest(input))
+      const view = await postApiV1InboxClaim(
+        mapClaimTicketInputToClaimRequest(input)
+      )
       return mapIntakeTicketViewToTicket(view)
     },
     onSettled: async () => {
@@ -136,7 +138,9 @@ export function useCreateNativeTicketMutation() {
           createdAt: new Date().toISOString(),
         })
       }
-      const view = await postApiV1Tickets(mapNativeTicketInputToCreateRequest(input))
+      const view = await postApiV1Tickets(
+        mapNativeTicketInputToCreateRequest(input)
+      )
       return mapIntakeTicketViewToTicket(view)
     },
     onSettled: async () => {

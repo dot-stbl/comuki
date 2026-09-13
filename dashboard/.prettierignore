@@ -5,3 +5,8 @@ pnpm-lock.yaml
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+# TanStack Router output — the file's own header says to exclude it from the
+# linter and formatter, and `vite dev` / `vite build` rewrite it on every run.
+# Without this, `format:check` turns red the moment someone builds.
+src/routeTree.gen.ts

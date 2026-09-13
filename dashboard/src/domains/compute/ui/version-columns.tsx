@@ -99,9 +99,7 @@ export function createVersionColumns({
       cell: ({ row }) => (
         // A label the source cannot count per says so; a zero would read as
         // "nothing runs this image", which is a different sentence.
-        <span className={styles.value}>
-          {row.original.workers ?? "—"}
-        </span>
+        <span className={styles.value}>{row.original.workers ?? "—"}</span>
       ),
       meta: { width: 88, numeric: true },
     },

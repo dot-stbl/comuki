@@ -82,7 +82,6 @@ export const Small: Story = {
  *  fixed box regardless of the name. */
 export const LongFilename: Story = {
   args: {
-    filename:
-      "2026-09-13T15-22-04Z_run_2f9c1a_patch-412--38_pr-report-v3.html",
+    filename: "2026-09-13T15-22-04Z_run_2f9c1a_patch-412--38_pr-report-v3.html",
   },
 }

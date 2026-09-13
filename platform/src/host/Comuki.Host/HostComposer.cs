@@ -280,7 +280,9 @@ internal static class HostComposer
             .AddSchedulerPersistence(database.ConnectionString);
         builder.Services.AddScoped<ISchedulerDispatcher, SchedulerRunLauncher>();
         builder.Services.AddOptions<SchedulerOptions>()
-            .Bind(builder.Configuration.GetSection(SchedulerOptions.SectionName));
+            .Bind(builder.Configuration.GetSection(SchedulerOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
         builder.Services.AddOptions<SchedulerWorkerDefaults>()
             .Bind(builder.Configuration.GetSection(SchedulerWorkerDefaults.SectionName))
             .ValidateDataAnnotations()
@@ -310,9 +312,37 @@ internal static class HostComposer
         // provider list for its 404s; OidcOptions is bound here so the
         // manual OIDC code-flow (OidcStartHandler / OidcCallbackHandler
         // in Identity.Application) resolves the same options instance
-        // across the controller and the handlers.
+        // across the controller and the handlers. ValidateOnStart so a
+        // provider entry missing a [Required] field (Name/Authority/
+        // ClientId/ClientSecretEnv) fails the boot rather than the first
+        // /start request against that provider.
         builder.Services.AddOptions<OidcOptions>()
-            .Bind(builder.Configuration.GetSection(OidcOptions.SectionName));
+            .Bind(builder.Configuration.GetSection(OidcOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // Configured public host for the OIDC redirect_uri (security audit
+        // A03-1 / A10-1): AuthController must never build redirect_uri from
+        // the inbound Host header (attacker-controlled behind a poisoned
+        // reverse proxy) — RedirectUriBuilder takes this instead.
+        // AuthPublicHostOptions.Resolve is the ONLY place that reads
+        // auth:publicHost:publicUrl / COMUKI_PUBLIC_HOST_URL (the env var
+        // does not follow the double-underscore nesting convention, so
+        // .Bind() alone would miss it) — called once here, then written
+        // back onto the same key so the standard .Bind() below is what
+        // actually materialises the option (PublicUrl is init-only;
+        // ConfigurationBinder sets it via reflection, an OptionsBuilder
+        // .Configure delegate cannot). [Required] fails
+        // ValidateDataAnnotations on an empty string, so an unconfigured
+        // host refuses to start with a clear message instead of
+        // answering 500 on the first OIDC login.
+        var resolvedPublicHost = AuthPublicHostOptions.Resolve(builder.Configuration);
+        builder.Configuration[$"{AuthPublicHostOptions.SectionName}:publicUrl"] = resolvedPublicHost.PublicUrl;
+        builder.Services.AddOptions<AuthPublicHostOptions>()
+            .Bind(builder.Configuration.GetSection(AuthPublicHostOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         builder.Services.AddScoped<ICookieSigner, CookieSignerAdapter>();
 
         // OIDC state sweep (issue #4 tail): the start handler issues

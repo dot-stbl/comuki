@@ -6,11 +6,10 @@ import { Field } from "./field"
 import styles from "./form.module.css"
 import { fieldDescriptionId } from "./ids"
 
-export interface TextareaFieldProps
-  extends Omit<
-    TextareaHTMLAttributes<HTMLTextAreaElement>,
-    "id" | "value" | "onChange"
-  > {
+export interface TextareaFieldProps extends Omit<
+  TextareaHTMLAttributes<HTMLTextAreaElement>,
+  "id" | "value" | "onChange"
+> {
   id: string
   label: string
   value: string

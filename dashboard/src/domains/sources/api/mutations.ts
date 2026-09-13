@@ -8,7 +8,10 @@ import type {
   SourceConnection,
   SourcesSnapshot,
 } from "@/domains/sources/model/types"
-import { settingsToJson, sourceConnectionViewToConnection } from "@/domains/sources/api/mappers"
+import {
+  settingsToJson,
+  sourceConnectionViewToConnection,
+} from "@/domains/sources/api/mappers"
 import { getApiV1AdmissionRules } from "@/shared/api/_generated/clients/getApiV1AdmissionRules"
 import { postApiV1AdmissionRules } from "@/shared/api/_generated/clients/postApiV1AdmissionRules"
 import { postApiV1Sources } from "@/shared/api/_generated/clients/postApiV1Sources"
@@ -116,7 +119,7 @@ export interface SecretReferenceDraft {
  */
 export function useTestSourceDraft() {
   return useMutation<ProbeResult, Error, TestDraftInput>({
-    mutationFn: async ({draft, secretEnvRef, mockSecret}) => {
+    mutationFn: async ({ draft, secretEnvRef, mockSecret }) => {
       if (env.useMock) {
         await wait()
         return probeSeedSourceDraft(
@@ -140,7 +143,7 @@ export function useTestSourceDraft() {
         }),
         secretEnvRef,
       })
-      return {ok: result.reachable, message: result.message}
+      return { ok: result.reachable, message: result.message }
     },
   })
 }
@@ -161,10 +164,10 @@ export function useTestConnection() {
         return probeSeedConnection(connectionId)
       }
       const result = await postApiV1SourcesSourceidProbe(connectionId)
-      return {ok: result.reachable, message: result.message}
+      return { ok: result.reachable, message: result.message }
     },
     onSettled: async () => {
-      await client.invalidateQueries({queryKey: sourcesQueryKey})
+      await client.invalidateQueries({ queryKey: sourcesQueryKey })
     },
   })
 }
@@ -211,7 +214,7 @@ export function useConnectSource() {
       return sourceConnectionViewToConnection(created)
     },
     onSettled: async () => {
-      await client.invalidateQueries({queryKey: sourcesQueryKey})
+      await client.invalidateQueries({ queryKey: sourcesQueryKey })
     },
   })
 }
@@ -240,20 +243,26 @@ export function useUpdateConnection() {
   const client = useQueryClient()
 
   return useMutation<unknown, Error, UpdateConnectionInput>({
-    mutationFn: async ({connectionId, auth, account, baseUrl, secretEnvRef}) => {
+    mutationFn: async ({
+      connectionId,
+      auth,
+      account,
+      baseUrl,
+      secretEnvRef,
+    }) => {
       if (env.useMock) {
         await wait()
-        updateSeedConnection(connectionId, {baseUrl, account, auth})
+        updateSeedConnection(connectionId, { baseUrl, account, auth })
         return connectionId
       }
       await putApiV1SourcesSourceid(connectionId, {
-        settingsJson: settingsToJson({auth, account, baseUrl}),
+        settingsJson: settingsToJson({ auth, account, baseUrl }),
         secretEnvRef,
       })
       return connectionId
     },
     onSettled: async () => {
-      await client.invalidateQueries({queryKey: sourcesQueryKey})
+      await client.invalidateQueries({ queryKey: sourcesQueryKey })
     },
   })
 }
@@ -288,7 +297,7 @@ export function useDisconnectSource() {
       return connectionId
     },
     onMutate: async (connectionId) => {
-      await client.cancelQueries({queryKey: sourcesQueryKey})
+      await client.cancelQueries({ queryKey: sourcesQueryKey })
       const previous = client.getQueryData<SourcesSnapshot>(sourcesQueryKey)
 
       client.setQueryData<SourcesSnapshot>(sourcesQueryKey, (snapshot) =>
@@ -302,17 +311,17 @@ export function useDisconnectSource() {
           : snapshot
       )
 
-      return {previous}
+      return { previous }
     },
     onError: (_error, _connectionId, context) => {
-      const previous = (context as {previous?: SourcesSnapshot} | undefined)
+      const previous = (context as { previous?: SourcesSnapshot } | undefined)
         ?.previous
       if (previous) {
         client.setQueryData(sourcesQueryKey, previous)
       }
     },
     onSettled: async () => {
-      await client.invalidateQueries({queryKey: sourcesQueryKey})
+      await client.invalidateQueries({ queryKey: sourcesQueryKey })
     },
   })
 }
@@ -343,7 +352,7 @@ export function useRotateSecretMutation() {
       return postApiV1SourcesSourceidRotateSecret(connectionId)
     },
     onSettled: async (_data, _error, connectionId) => {
-      await client.invalidateQueries({queryKey: sourcesQueryKey})
+      await client.invalidateQueries({ queryKey: sourcesQueryKey })
       void connectionId
     },
   })
@@ -391,7 +400,7 @@ export function useSaveWatch() {
     }) => {
       if (env.useMock) {
         await wait()
-        updateSeedWatch(connectionId, {enabled, filter, mode})
+        updateSeedWatch(connectionId, { enabled, filter, mode })
         return connectionId
       }
       const hostMode = dashboardModeToHost(mode)
@@ -413,8 +422,8 @@ export function useSaveWatch() {
       return connectionId
     },
     onSettled: async () => {
-      await client.invalidateQueries({queryKey: sourcesQueryKey})
-      await client.invalidateQueries({queryKey: ["admission-rules"]})
+      await client.invalidateQueries({ queryKey: sourcesQueryKey })
+      await client.invalidateQueries({ queryKey: ["admission-rules"] })
     },
   })
 }
@@ -428,7 +437,9 @@ export const admissionRulesQueryKey = (projectId: string) =>
 
 export function useAdmissionRules(projectId: string | undefined) {
   return useQuery<AdmissionRuleView[]>({
-    queryKey: projectId ? admissionRulesQueryKey(projectId) : ["admission-rules"],
+    queryKey: projectId
+      ? admissionRulesQueryKey(projectId)
+      : ["admission-rules"],
     enabled: projectId !== undefined,
     queryFn: async () => {
       if (env.useMock) {
@@ -437,7 +448,7 @@ export function useAdmissionRules(projectId: string | undefined) {
       if (!projectId) {
         return []
       }
-      return getApiV1AdmissionRules({projectId})
+      return getApiV1AdmissionRules({ projectId })
     },
   })
 }
@@ -480,7 +491,7 @@ export function useCreateNativeTicket() {
       return draft
     },
     onSettled: async () => {
-      await client.invalidateQueries({queryKey: sourcesQueryKey})
+      await client.invalidateQueries({ queryKey: sourcesQueryKey })
     },
   })
 }

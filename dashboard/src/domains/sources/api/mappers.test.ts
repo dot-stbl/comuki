@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { settingsToJson, sourceConnectionViewToConnection } from "@/domains/sources/api/mappers"
+import {
+  settingsToJson,
+  sourceConnectionViewToConnection,
+} from "@/domains/sources/api/mappers"
 import {
   isKnownProvider,
   providerBrand,
@@ -81,7 +84,8 @@ describe("sourceConnectionViewToConnection", () => {
       projectId: "p_plexor",
       provider: "gitlab",
       name: "plexor/identity-svc",
-      settingsJson: /*lang=json*/ '{"auth":"pat","account":"svc","baseUrl":"https://git.plexor.internal"}',
+      settingsJson:
+        /*lang=json*/ '{"auth":"pat","account":"svc","baseUrl":"https://git.plexor.internal"}',
       secretEnvRef: "env:GITLAB_TOKEN",
       webhookPath: "/api/hooks/gitlab",
       enabled: true,

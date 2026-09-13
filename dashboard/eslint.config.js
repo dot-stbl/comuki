@@ -9,8 +9,13 @@ export default defineConfig([
   globalIgnores([
     'dist',
     'storybook-static',
-    // Kubb-generated OpenAPI client — do not hand-lint
-    'src/shared/api/**',
+    // v8 coverage report — html/js written by `test:coverage`, not source.
+    'coverage',
+    // Kubb-generated OpenAPI client — do not hand-lint. Only `_generated/`
+    // is machine-written (see kubb.config.ts `output.path`); the siblings
+    // (kubb-client transport, problem/polling helpers, mock stores) are
+    // hand-written and get linted like the rest of src.
+    'src/shared/api/_generated/**',
   ]),
   {
     files: ['**/*.{ts,tsx}'],

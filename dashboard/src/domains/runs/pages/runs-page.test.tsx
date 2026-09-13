@@ -229,8 +229,8 @@ describe("the duty list's search filter, held in the URL", () => {
     // The two filters take different routes into the same bag now — one
     // through the URL, one through local state — and the risk that creates is
     // exactly this: one of them dropping the other on the way in. Clicking a
-    // stage writes `profile`; typing writes the promoted search; both have to
-    // survive the other.
+    // stage writes `profile`; typing writes the promoted search; both
+    // have to survive the other.
     const node = document.querySelector<HTMLElement>('[data-test="river-node"]')
     expect(node).not.toBeNull()
 
@@ -245,5 +245,72 @@ describe("the duty list's search filter, held in the URL", () => {
     expect(
       document.querySelector('[data-test="data-table-chips"]')
     ).not.toBeNull()
+  })
+
+  it("shows the anomaly badge on the row and on click opens the breakdown", async () => {
+    const user = userEvent.setup()
+    await ready(<AsRoute />)
+
+    // The hand-written runaway lives in the seed and is escalated so
+    // triage order lands it at the top — its cost ($7.42) is well above
+    // the project's median, the badge's first visible reading on first
+    // load.
+    const badges = document.querySelectorAll(
+      '[data-test="anomaly-badge-inline"]'
+    )
+    expect(badges.length).toBeGreaterThanOrEqual(1)
+
+    // The runaway's badge carries the project's actual multiplier; we
+    // check it's a positive number rather than pinning it, because the
+    // synthetic set's median drifts with the LCG seed.
+    const multiplier = Number(badges[0]?.getAttribute("data-multiplier") ?? "0")
+    expect(multiplier).toBeGreaterThan(3)
+
+    // Click → modal opens with the rule written out in words.
+    await user.click(badges[0] as HTMLElement)
+    const dialog = await waitFor(() =>
+      document.querySelector('[data-test="dialog"]')
+    )
+    expect(dialog?.textContent).toMatch(/\d+(\.\d+)?×\s+the median/)
+
+    // The breakdown surfaces the cost figure and the project name.
+    expect(
+      document.querySelector('[data-test="anomaly-breakdown-cost"]')
+        ?.textContent
+    ).toMatch(/\$\d/)
+    expect(
+      document.querySelector('[data-test="anomaly-breakdown-reason"]')
+        ?.textContent
+    ).toMatch(/median/)
+
+    cleanup()
+  })
+
+  it("flips the 'Show only anomalies' toggle and narrows the list", async () => {
+    const user = userEvent.setup()
+    await ready(<AsRoute />)
+
+    const toggle = document.querySelector<HTMLInputElement>(
+      '[data-test="anomalies-only-toggle"]'
+    )
+    expect(toggle).not.toBeNull()
+
+    const allCount = shown()
+
+    // The toggle starts unchecked; flipping it on hides every non-flagged
+    // row. The runaway lives in the seed, so the list is non-empty after
+    // the flip — proving the filter is wired to the data, not to the
+    // toggle alone.
+    await user.click(toggle!)
+    await waitFor(() => expect(shown()).toBeLessThan(allCount))
+    expect(shown()).toBeGreaterThan(0)
+
+    // Every row that survives the toggle carries an anomaly badge.
+    const visibleBadges = document.querySelectorAll(
+      '[data-test="anomaly-badge-inline"]'
+    )
+    expect(visibleBadges.length).toBe(shown())
+
+    cleanup()
   })
 })

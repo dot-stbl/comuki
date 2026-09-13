@@ -216,7 +216,9 @@ describe("force stop asks first", () => {
 
     expect(document.querySelector('[data-test="confirm-dialog"]')).toBeNull()
     // The row is still there, still busy — nothing was decided.
-    expect(screen.getByRole("button", { name: "Force stop wk_live" })).toBeTruthy()
+    expect(
+      screen.getByRole("button", { name: "Force stop wk_live" })
+    ).toBeTruthy()
   })
 
   it("closes once the act is confirmed", () => {
@@ -315,11 +317,11 @@ describe("an empty pool says which kind of empty it is", () => {
 
   it("blames the pool being below target before it reassures anyone", () => {
     const state = (() => {
-      mount(
-        { workers: [], items: [QUEUED], pools: [
-          { projectId: "p_test", minIdle: 2, maxIdle: 12 },
-        ] }
-      )
+      mount({
+        workers: [],
+        items: [QUEUED],
+        pools: [{ projectId: "p_test", minIdle: 2, maxIdle: 12 }],
+      })
       return document.querySelector('[data-test="worker-empty"]')
     })()
 

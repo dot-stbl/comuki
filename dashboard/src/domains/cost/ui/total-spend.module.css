@@ -1,0 +1,95 @@
+/* The headline reading — a large currency figure, the period it covers,
+   a delta vs the previous period, and a one-line burn-rate note. */
+
+.spend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+  padding: var(--s4) var(--s5);
+  border-inline-start: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: 1.875rem;
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.value {
+  color: var(--text);
+}
+
+.unit {
+  font-size: var(--t-sm);
+  font-weight: var(--fw-regular);
+  color: var(--text-faint);
+}
+
+.delta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+
+.deltaUp {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--st-failed);
+}
+
+.deltaDown {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--st-success);
+}
+
+.deltaFlat {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+
+.deltaDash {
+  font-family: var(--font-data);
+}
+
+.deltaLabel {
+  color: var(--text-muted);
+}
+
+.sub {
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}

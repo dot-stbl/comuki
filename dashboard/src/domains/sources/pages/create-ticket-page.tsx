@@ -96,7 +96,10 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
   if (!connection) {
     return (
       <FormPage title="New ticket" crumbs={crumbs}>
-        <Notice tone={isLoading ? "warn" : "bad"} data-test="ticket-source-gone">
+        <Notice
+          tone={isLoading ? "warn" : "bad"}
+          data-test="ticket-source-gone"
+        >
           {isLoading
             ? "Looking this source up."
             : `No connection on this platform has the id ${sourceId}. A source that was disconnected while this tab sat open is the ordinary way to arrive here.`}

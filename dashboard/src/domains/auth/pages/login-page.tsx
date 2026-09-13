@@ -251,7 +251,9 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
                 {new URL(env.repoUrl).host + new URL(env.repoUrl).pathname}
               </a>
             ) : (
-              <span className={styles.footerLink}>github.com/dot-stbl/comuki</span>
+              <span className={styles.footerLink}>
+                github.com/dot-stbl/comuki
+              </span>
             )}
           </p>
         </footer>
@@ -277,7 +279,8 @@ interface LandingProps {
  */
 function Landing({ kind, notice, lead, redirect }: LandingProps) {
   const incident = kind === "expired" || kind === "oidc-failed"
-  const Icon = kind === "expired" ? TimerOff : kind === "oidc-failed" ? CircleAlert : Check
+  const Icon =
+    kind === "expired" ? TimerOff : kind === "oidc-failed" ? CircleAlert : Check
 
   return (
     <div

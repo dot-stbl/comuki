@@ -1,10 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen } from "@testing-library/react"
 
-import type {
-  WorkItem,
-  WorkItemInspector,
-} from "@/domains/runs/model/types"
+import type { WorkItem, WorkItemInspector } from "@/domains/runs/model/types"
 import { dependenciesOf, orderedItems } from "@/domains/runs/model/work-items"
 
 import { WorkItemInspectorPanel } from "./work-item-inspector"
@@ -93,9 +90,7 @@ describe("WorkItemInspectorPanel", () => {
 
   it("counts the long edges in the section head", () => {
     renderPanel("w6")
-    expect(
-      screen.getByText("1 more than one column back")
-    ).toBeTruthy()
+    expect(screen.getByText("1 more than one column back")).toBeTruthy()
   })
 
   it("says an item starts the plan rather than showing an empty list", () => {

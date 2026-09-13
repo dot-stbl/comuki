@@ -721,9 +721,7 @@ describe("toChatSession", () => {
       createdAt: "2026-09-01T09:00:00.000Z",
       updatedAt: "2026-09-01T09:10:00.000Z",
     })
-    expect(session.projectId).toBe(
-      "00000000-0000-0000-0000-0000000000aa",
-    )
+    expect(session.projectId).toBe("00000000-0000-0000-0000-0000000000aa")
   })
 
   it("treats a wire null projectId as null rather than synthesizing one", () => {
@@ -746,9 +744,7 @@ describe("toChatSession", () => {
       projectId: "00000000-0000-0000-0000-0000000000bb",
       messages: [],
     })
-    expect(session.projectId).toBe(
-      "00000000-0000-0000-0000-0000000000bb",
-    )
+    expect(session.projectId).toBe("00000000-0000-0000-0000-0000000000bb")
   })
 
   it("nulls a seed session that predates the projectId field", () => {

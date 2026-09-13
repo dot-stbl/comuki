@@ -34,6 +34,7 @@ const columns = createRunColumns({
   cancellingId: null,
   onApprove: () => {},
   onCancel: () => {},
+  onShowAnomaly: () => {},
   session,
 })
 

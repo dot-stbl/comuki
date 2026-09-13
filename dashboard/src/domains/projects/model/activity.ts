@@ -91,6 +91,8 @@ export function buildProjectRows(
     totalRuns: total.get(project.id) ?? 0,
     // Absent, not zero: a project the cost report has never heard of has not
     // spent nothing, it has not been measured.
-    spendToday: spend.has(project.id) ? (spend.get(project.id) as number) : null,
+    spendToday: spend.has(project.id)
+      ? (spend.get(project.id) as number)
+      : null,
   }))
 }

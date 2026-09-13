@@ -18,7 +18,9 @@ interface ThrownRedirect {
 }
 
 /** `redirect()` builds a value to throw, so the guard's answer is its throw. */
-async function bounce(location: GuardedLocation): Promise<ThrownRedirect | null> {
+async function bounce(
+  location: GuardedLocation
+): Promise<ThrownRedirect | null> {
   try {
     await guardSession(location)
     return null
@@ -27,7 +29,10 @@ async function bounce(location: GuardedLocation): Promise<ThrownRedirect | null>
   }
 }
 
-const runs: GuardedLocation = { pathname: "/runs", href: "/runs?status=waiting" }
+const runs: GuardedLocation = {
+  pathname: "/runs",
+  href: "/runs?status=waiting",
+}
 
 afterEach(() => {
   resetMockAuth()
@@ -60,13 +65,17 @@ describe("the session guard", () => {
   it("carries the path they wanted, search string and all", async () => {
     clearMockAuth()
 
-    expect((await bounce(runs))?.options.search?.redirect).toBe("/runs?status=waiting")
+    expect((await bounce(runs))?.options.search?.redirect).toBe(
+      "/runs?status=waiting"
+    )
   })
 
   it("leaves the board out of the address bar, since it is the default anyway", async () => {
     clearMockAuth()
 
-    expect((await bounce({ pathname: "/", href: "/" }))?.options.search).toEqual({})
+    expect(
+      (await bounce({ pathname: "/", href: "/" }))?.options.search
+    ).toEqual({})
   })
 
   it("replaces rather than pushes, so back does not bounce again", async () => {

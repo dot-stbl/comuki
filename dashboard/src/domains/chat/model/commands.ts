@@ -272,7 +272,9 @@ export function scopeState(
       // The same sentence every refused control in this product says, from the
       // same function — asked without a project, because the fact is that
       // there is no project where it would hold.
-      denied: command.permission ? needsLabel(command.permission) : "not available",
+      denied: command.permission
+        ? needsLabel(command.permission)
+        : "not available",
     }
   }
 

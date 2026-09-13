@@ -47,7 +47,7 @@ export function problemDetail(error: unknown): string | null {
  */
 export function requestFailureMessage(
   error: unknown,
-  fallback: string,
+  fallback: string
 ): string {
   const detail = problemDetail(error)
   if (detail !== null) {

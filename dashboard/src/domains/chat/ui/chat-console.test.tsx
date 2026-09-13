@@ -20,8 +20,7 @@ const wire = vi.hoisted(() => ({
   },
   transcript: {
     data: undefined as
-      | { id: string; kind: string; text?: string; at: string }[]
-      | undefined,
+      { id: string; kind: string; text?: string; at: string }[] | undefined,
     isError: false,
     error: null as Error | null,
     refetch: vi.fn(),
@@ -133,7 +132,14 @@ describe("the console against a dead read", () => {
     wire.sessions = { ...wire.sessions, data: ONE_SESSION }
     wire.transcript = {
       ...wire.transcript,
-      data: [{ id: "m-1", kind: "person", text: "почему очередь стоит", at: "2026-09-13T00:00:00Z" }],
+      data: [
+        {
+          id: "m-1",
+          kind: "person",
+          text: "почему очередь стоит",
+          at: "2026-09-13T00:00:00Z",
+        },
+      ],
     }
 
     mountConsole()

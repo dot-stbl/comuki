@@ -27,9 +27,7 @@ describe("a document onto the library row", () => {
     expect(entry.revision).toBe("docs/runbooks/pricing.md@v3")
     expect(entry.ruleKind).toBeUndefined()
     expect(entry.pinned).toBe(false)
-    expect(entry.summary).toBe(
-      "git · text/markdown · 12 chunks · 8400 tokens"
-    )
+    expect(entry.summary).toBe("git · text/markdown · 12 chunks · 8400 tokens")
     expect(entry.updated).toBe("2026-09-10")
   })
 
@@ -67,7 +65,9 @@ describe("a search hit onto the library row", () => {
     })
 
     expect(entry.title).toBe("match 83%")
-    expect(entry.summary).toBe("migrate the payout computation onto the new price list")
+    expect(entry.summary).toBe(
+      "migrate the payout computation onto the new price list"
+    )
     expect(entry.scope).toBe(DOC.id)
     expect(entry.revision).toBe("c9a1-0001")
   })

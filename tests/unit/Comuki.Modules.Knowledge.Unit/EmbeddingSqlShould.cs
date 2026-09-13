@@ -40,6 +40,21 @@ public sealed class EmbeddingSqlShould
         EmbeddingSql.CosineSearchSql.ShouldContain("@projectId");
     }
 
+    [Fact(DisplayName = "Given CosineSearchSql, when read, then the visibility clause is scope-gated rather than an unconditional widen on a null projectId (leak 1 regression lock)")]
+    public void CosineSearchSqlGatesVisibilityByScope()
+    {
+        // The pre-fix predicate was "(@projectId IS NULL OR project_id =
+        // @projectId::uuid)" — a caller who omitted projectId matched
+        // every row, scoped or not. The fixed predicate ANDs a second,
+        // independent visibility clause that only widens past the
+        // caller's own projects when @unrestricted is true or the row has
+        // no project at all (the global corpus).
+        EmbeddingSql.CosineSearchSql.ShouldContain("@unrestricted");
+        EmbeddingSql.CosineSearchSql.ShouldContain("@allowedProjectIds");
+        EmbeddingSql.CosineSearchSql.ShouldContain("project_id = ANY(@allowedProjectIds::uuid[])");
+        EmbeddingSql.CosineSearchSql.ShouldContain("project_id IS NULL");
+    }
+
     [Fact(DisplayName = "Given an empty vector, when VectorLiteral is called, then it returns \"[]\"")]
     public void VectorLiteralEmptyVector()
     {

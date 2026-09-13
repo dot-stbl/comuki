@@ -34,18 +34,39 @@ public static class EmbeddingSql
         + " SET embedding = @vector::vector WHERE id = @id";
 
     /// <summary>
-    /// Cosine-distance search over embedded, visible chunks; NULL filter
-    /// parameters widen the scope (they must arrive text-typed — an
-    /// untyped NULL parameter fails with 42P08). The vector parameter
-    /// carries an untyped literal typed by the explicit <c>::vector</c>
-    /// cast. <c>@minSimilarity</c> converts to a maximum
-    /// cosine-distance bound (<c>1 - similarity</c>).
+    /// Cosine-distance search over embedded, visible chunks. Two
+    /// independent AND'd clauses do the scoping — this is the object-axis
+    /// enforcement <c>KnowledgeDbContext</c>'s <c>HasQueryFilter</c> gives
+    /// the EF-tracked entities, reproduced here because this query never
+    /// goes through EF's expression tree:
+    /// <list type="bullet">
+    ///   <item><b>Visibility</b> — <c>@unrestricted OR project_id IS NULL OR
+    ///   project_id = ANY(@allowedProjectIds)</c>: an unrestricted caller
+    ///   (a platform-scope role, or a system consumer) sees every row; a
+    ///   restricted one sees the global corpus (null project) plus its own
+    ///   assigned projects. <c>@allowedProjectIds</c> must always be a
+    ///   real (possibly empty) array — never NULL — since
+    ///   <c>= ANY(NULL)</c> is NULL, not true.</item>
+    ///   <item><b>Narrowing</b> — <c>@projectId IS NULL OR project_id =
+    ///   @projectId::uuid</c>: the caller's own <c>projectId</c> argument,
+    ///   unrelated to scope. The caller (<see cref="PgKnowledgeSearcher"/>)
+    ///   refuses before this SQL ever runs when that argument names a
+    ///   project outside the visibility clause, so the two clauses never
+    ///   disagree in practice — this clause alone would still fail closed
+    ///   if that guard were ever removed.</item>
+    /// </list>
+    /// The three filter parameters must arrive typed — an untyped NULL or
+    /// array parameter fails with 42P08. The vector parameter carries an
+    /// untyped literal typed by the explicit <c>::vector</c> cast.
+    /// <c>@minSimilarity</c> converts to a maximum cosine-distance bound
+    /// (<c>1 - similarity</c>).
     /// </summary>
     public const string CosineSearchSql =
         "SELECT id, source_document_id, chunk_index, chunk_text, token_count, created_at, "
         + "       (1 - (embedding <=> @vector::vector)) AS similarity "
         + "FROM " + KnowledgeDatabase.Schema + "." + KnowledgeDatabase.MemoryEmbeddings + " "
         + "WHERE embedding IS NOT NULL "
+        + "  AND (@unrestricted OR project_id IS NULL OR project_id = ANY(@allowedProjectIds::uuid[])) "
         + "  AND (@projectId IS NULL OR project_id = @projectId::uuid) "
         + "  AND (1 - (embedding <=> @vector::vector)) >= @minSimilarity "
         + "ORDER BY embedding <=> @vector::vector "

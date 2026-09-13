@@ -168,5 +168,13 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      # `format` writes `**/*.{ts,tsx}`; the check reads the same glob, so a
+      # green gate means `bun run format` is a no-op. The kubb-generated tree
+      # stays in scope on purpose — `generate-api` chains prettier, so it is
+      # clean and checking it keeps it that way. `src/routeTree.gen.ts` is
+      # excluded in .prettierignore: the router plugin rewrites it on build.
+      - name: Format check
+        run: bun run format:check
+
       - name: Unit tests
         run: bun run test

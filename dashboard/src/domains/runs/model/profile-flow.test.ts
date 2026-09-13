@@ -38,6 +38,7 @@ function run(
     durationSec: 60,
     done: false,
     workItems,
+    anomaly: null,
   }
 }
 

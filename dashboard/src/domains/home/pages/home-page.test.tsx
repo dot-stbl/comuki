@@ -105,6 +105,7 @@ function run(
         dependsOn: [],
       },
     ],
+    anomaly: null,
   }
 }
 

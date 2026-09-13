@@ -1,9 +1,13 @@
 import type {
   CostBudget,
   CostByApp,
+  CostByModel,
   CostDaySpend,
   CostFailure,
+  CostForecast,
+  CostPeriod,
   CostSummary,
+  CostTopProject,
 } from "./types"
 
 /**
@@ -12,35 +16,73 @@ import type {
  * All of this used to live inline in `cost-page.tsx` and in the two panels
  * under it — three files each doing their own division, and the only reason
  * they agreed was that nobody had edited one of them yet. A report whose
- * figures are derived in the components that draw them has no single place to
- * be wrong in, which is exactly the property the screen is for.
+ * figures are derived in the components that draw them has no single place
+ * to be wrong in, which is exactly the property the screen is for.
  */
 
-/** Three readings of the proxy cap. Not a gradient — see `budgetHeat`. */
-export type BudgetHeat = "ok" | "near" | "over"
-
-/** How much of the proxy cap is spent, 0–1 and uncapped above 1. */
-export function budgetShare(budget: CostBudget): number {
-  if (budget.cap <= 0) {
-    // No cap is not "nothing spent" — it is a cap that cannot hold anything,
-    // and the bar says full rather than empty.
-    return 1
-  }
-  return Math.max(0, budget.used / budget.cap)
+// Re-export the domain types this module's helpers operate on, so a caller
+// imports everything from `./cost` without reaching into `./types`.
+export type {
+  CostBudget,
+  CostByApp,
+  CostByModel,
+  CostDaySpend,
+  CostFailure,
+  CostForecast,
+  CostPeriod,
+  CostSummary,
+  CostTopProject,
 }
 
 /**
- * Three readings, not a gradient.
+ * Three readings of a cap, not a gradient — see `budgetHeat` and `costHeat`.
  *
  * `near` starts at 85% because that is where the budget stops being a fact and
  * starts being a thing somebody has to decide about — raise the cap, or let the
  * kill-switch stop the swarm at it. Below that there is nothing to do, and a
  * screen that colours the bar at 40% has taught the operator to ignore the
  * colour by the time it reaches 90%. The same threshold and the same three
- * words as `models/model/keys.ts`, because it is the same question about a
- * different cap.
+ * words across every screen that reads a cap.
  */
-export function budgetHeat(budget: CostBudget): BudgetHeat {
+export type BudgetHeat = "ok" | "near" | "over"
+export type CostHeat = BudgetHeat
+
+export function costHeat(share: number): CostHeat {
+  if (share >= 1) {
+    return "over"
+  }
+  if (share >= 0.85) {
+    return "near"
+  }
+  return "ok"
+}
+
+/** A share of a cap, clamped to 0..1, with NaN-safe defaults. */
+export function capShare(used: number, cap: number): number {
+  if (!(cap > 0)) {
+    return 1
+  }
+  if (!(used >= 0)) {
+    return 0
+  }
+  return Math.min(1, Math.max(0, used / cap))
+}
+
+/**
+ * Delta vs the previous period, as a signed fraction.
+ *
+ * Returns `null` when there is no previous period to compare against — the
+ * period has just opened, or this is the very first report — and the screen
+ * renders an honest dash rather than a "0%" that says nothing happened.
+ */
+export function periodDelta(current: number, previous: number): number | null {
+  if (!(previous > 0)) {
+    return null
+  }
+  return (current - previous) / previous
+}
+
+export function budgetHeat(budget: CostBudget): CostHeat {
   const share = budgetShare(budget)
   if (share >= 1) {
     return "over"
@@ -49,6 +91,16 @@ export function budgetHeat(budget: CostBudget): BudgetHeat {
     return "near"
   }
   return "ok"
+}
+
+/** How much of the cap is spent, 0–1 and uncapped above 1. */
+export function budgetShare(budget: CostBudget): number {
+  if (budget.cap <= 0) {
+    // No cap is not "nothing spent" — it is a cap that cannot hold anything,
+    // and the bar says full rather than empty.
+    return 1
+  }
+  return Math.max(0, budget.used / budget.cap)
 }
 
 /** What is left under the cap, in dollars. Never negative. */
@@ -100,24 +152,12 @@ export function failurePercent(row: CostFailure): number {
 
 /* --------------------------------------------------------------------------
  * The week behind the day — the time half of the report.
- *
- * The day's figures answer "what is now"; the series answers "is it getting
- * better", and its arithmetic lives here for the same reason the rest does:
- * so the figure the screen says and the bars it draws cannot drift apart.
  * ------------------------------------------------------------------------ */
 
-/** What the whole window cost, to the cent. */
 export function spendWeekTotal(days: CostDaySpend[]): number {
   return Math.round(days.reduce((sum, day) => sum + day.spend, 0) * 100) / 100
 }
 
-/**
- * The window's day average, to the cent.
- *
- * Divided by the series' own length rather than a hardcoded week: the reading
- * stays true if the window ever widens, and an empty window is explicitly no
- * average at all rather than a division by zero dressed up as zero.
- */
 export function spendDayAverage(days: CostDaySpend[]): number | null {
   if (days.length === 0) {
     return null
@@ -125,10 +165,75 @@ export function spendDayAverage(days: CostDaySpend[]): number | null {
   return Math.round((spendWeekTotal(days) / days.length) * 100) / 100
 }
 
-/** The heaviest day of the window — the one the figure names out loud. */
 export function spendPeakDay(days: CostDaySpend[]): CostDaySpend | null {
   return days.reduce<CostDaySpend | null>(
     (peak, day) => (peak === null || day.spend > peak.spend ? day : peak),
     null
   )
+}
+
+/**
+ * The model breakdown axis, on the same floor + share contract as
+ * `spendAxis` / `spendShare`. Same reasoning — a day where only one model ran
+ * would draw a full-length bar over five cents, and a breakdown's only job is
+ * to compare.
+ */
+export function modelAxis(rows: CostByModel[]): number {
+  if (rows.length === 0) {
+    return 0
+  }
+  return Math.max(...rows.map((row) => row.spend), 1)
+}
+
+export function modelShare(row: CostByModel, axis: number): number {
+  if (axis <= 0) {
+    return 0
+  }
+  return Math.min(1, Math.max(0, row.spend / axis))
+}
+
+/**
+ * Project ranking axis — the largest spend across the top-N.
+ *
+ * Same floor-and-share rule as the per-app axis; the table sorts itself
+ * by spend before it lands here, so the axis only ever measures across
+ * already-ranked rows.
+ */
+export function projectAxis(rows: CostTopProject[]): number {
+  if (rows.length === 0) {
+    return 0
+  }
+  return Math.max(...rows.map((row) => row.spend), 1)
+}
+
+export function projectShare(row: CostTopProject, axis: number): number {
+  if (axis <= 0) {
+    return 0
+  }
+  return Math.min(1, Math.max(0, row.spend / axis))
+}
+
+/** The whole number of days in a period — used by forecast + period copy. */
+export function periodDays(period: CostPeriod): number {
+  if (period === "day") {
+    return 1
+  }
+  if (period === "week") {
+    return 7
+  }
+  return 30
+}
+
+/**
+ * The portion of the period that has elapsed, in days.
+ *
+ * Returned as the count of past days in the byDay axis — what the seed has
+ * observed so far — divided by the period's full length.
+ */
+export function periodElapsed(daysObserved: number, period: CostPeriod): number {
+  if (daysObserved <= 0) {
+    return 0
+  }
+  const total = periodDays(period)
+  return Math.min(1, daysObserved / total)
 }

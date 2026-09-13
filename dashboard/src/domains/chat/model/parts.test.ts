@@ -133,10 +133,11 @@ describe("what the composition draws itself", () => {
 })
 
 describe("the frozen list", () => {
-  it("names the seven kinds this phase ships, and neither P2 kind", () => {
+  it("names the eight kinds this phase ships, and neither P2 kind", () => {
     // The renderer table in `ui/message-part.tsx` is keyed on the same union,
     // so adding `question` or `decision` to the model breaks that table at
     // its declaration — and this case, which is the reminder of why.
+    // Issue #51 slice 3 adds `artifact-ref` to the list; see `ArtifactRefCard`.
     expect([...PART_KINDS]).toEqual([
       "text",
       "code",
@@ -145,6 +146,7 @@ describe("the frozen list", () => {
       "tool",
       "handoff",
       "plan",
+      "artifact-ref",
     ])
     expect(PART_KINDS).not.toContain("question")
     expect(PART_KINDS).not.toContain("decision")

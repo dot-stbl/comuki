@@ -1,0 +1,11 @@
+{
+  "required": ["id", "title", "profileKey", "brief"],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "title": { "type": "string" },
+    "profileKey": { "type": "string" },
+    "brief": { "type": "string" }
+  },
+  "x-readme-ref-name": "PlanNode"
+}

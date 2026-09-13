@@ -1,0 +1,33 @@
+{
+  "required": ["nodes", "edges"],
+  "properties": {
+    "kind": { "enum": ["plan"], "type": "string" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "required": ["id", "title", "profileKey", "brief"],
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "profileKey": { "type": "string" },
+          "brief": { "type": "string" }
+        },
+        "x-readme-ref-name": "PlanNode"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "required": ["from", "to"],
+        "type": "object",
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" }
+        },
+        "x-readme-ref-name": "PlanEdge"
+      }
+    }
+  },
+  "x-readme-ref-name": "MessagePartPlanPart"
+}

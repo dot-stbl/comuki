@@ -34,6 +34,11 @@ export type PostApiV1ChatSessionsSessionidMessages404 = ProblemDetails
  */
 export type PostApiV1ChatSessionsSessionidMessages409 = ProblemDetails
 
+/**
+ * @description Service Unavailable
+ */
+export type PostApiV1ChatSessionsSessionidMessages503 = ProblemDetails
+
 export type PostApiV1ChatSessionsSessionidMessagesMutationRequest =
   PostChatMessageRequest
 
@@ -48,4 +53,5 @@ export type PostApiV1ChatSessionsSessionidMessagesMutation = {
     | PostApiV1ChatSessionsSessionidMessages400
     | PostApiV1ChatSessionsSessionidMessages404
     | PostApiV1ChatSessionsSessionidMessages409
+    | PostApiV1ChatSessionsSessionidMessages503
 }

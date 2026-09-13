@@ -82,7 +82,11 @@ function One({ message, user }: { message: Message; user?: SessionUser }) {
   return (
     <Frame user={user}>
       <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
-        <ChatMessage message={message} onDecide={() => {}} />
+        <ChatMessage
+          message={message}
+          onDecide={() => {}}
+          projectId={null}
+        />
       </ol>
     </Frame>
   )
@@ -109,6 +113,7 @@ export const Streaming: Story = {
     <Frame>
       <div style={{ blockSize: "14rem" }}>
         <ChatThread
+          projectId={null}
           messages={[
             {
               id: "m1",
@@ -155,6 +160,7 @@ export const ToolCalls: Story = {
             },
           }}
           onDecide={() => {}}
+          projectId={null}
         />
         <ChatMessage
           message={{
@@ -170,6 +176,7 @@ export const ToolCalls: Story = {
             },
           }}
           onDecide={() => {}}
+          projectId={null}
         />
       </ol>
     </Frame>
@@ -582,6 +589,7 @@ export const LongThread: Story = {
     <Frame>
       <div style={{ blockSize: "32rem" }}>
         <ChatThread
+          projectId={null}
           messages={Array.from({ length: 120 }, (_, index) => ({
             id: `m${index}`,
             kind: index % 2 === 0 ? ("person" as const) : ("reply" as const),

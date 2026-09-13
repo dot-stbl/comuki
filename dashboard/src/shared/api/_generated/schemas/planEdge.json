@@ -1,0 +1,6 @@
+{
+  "required": ["from", "to"],
+  "type": "object",
+  "properties": { "from": { "type": "string" }, "to": { "type": "string" } },
+  "x-readme-ref-name": "PlanEdge"
+}

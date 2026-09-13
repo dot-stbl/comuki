@@ -3,6 +3,9 @@
  * Do not edit manually.
  */
 
+import type { ChatMessageMeta } from "./ChatMessageMeta"
+import type { MessagePart } from "./MessagePart"
+
 export type ChatMessageView = {
   /**
    * @type string, uuid
@@ -20,6 +23,11 @@ export type ChatMessageView = {
    * @type null,string
    */
   toolName?: string | null
+  /**
+   * @type null,array
+   */
+  parts?: MessagePart[] | null
+  meta?: null | ChatMessageMeta
   /**
    * @type string, date-time
    */

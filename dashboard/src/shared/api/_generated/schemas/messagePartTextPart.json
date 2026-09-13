@@ -1,0 +1,8 @@
+{
+  "required": ["markdown"],
+  "properties": {
+    "kind": { "enum": ["text"], "type": "string" },
+    "markdown": { "type": "string" }
+  },
+  "x-readme-ref-name": "MessagePartTextPart"
+}

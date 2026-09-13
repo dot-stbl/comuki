@@ -6,6 +6,7 @@ import type {
   TaskStatus,
 } from "@/domains/tasks/model/types"
 import { matchesTaskQuery } from "@/domains/tasks/model/filter-tasks"
+import { TaskArtifactCell } from "@/domains/tasks/ui/task-artifact-cell"
 import {
   TaskPriorityBadge,
   TaskSourceBadge,
@@ -29,6 +30,12 @@ export interface TaskColumnsOptions {
   projects: ProjectRef[]
   dispatching: boolean
   onDispatch: (task: Task) => void
+  /**
+   * Open the visual-artifact pane for a ticket — `taskId` + `projectId`
+   * are passed so the page can resolve the latest png itself rather than
+   * trusting a stale thumbnail.
+   */
+  onArtifactOpen: (ticketId: string, projectId: string) => void
   /**
    * The signed-in shift, so the row can answer its own permission.
    *
@@ -108,6 +115,7 @@ export function createTaskColumns({
   projects,
   dispatching,
   onDispatch,
+  onArtifactOpen,
   session,
 }: TaskColumnsOptions): DataColumn<Task>[] {
   return [
@@ -146,6 +154,19 @@ export function createTaskColumns({
           match: matchesTaskQuery,
         },
       },
+    },
+    {
+      // Issue #51 slice 3 — visual artifact thumbnail.
+      // The latest png linked to the ticket; renders nothing on rows
+      // with no artifacts, and the column's `meta.width` keeps that
+      // empty column from collapsing.
+      id: "artifact",
+      header: "evidence",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <TaskArtifactCell task={row.original} onActivate={onArtifactOpen} />
+      ),
+      meta: { width: 56, label: "evidence" },
     },
     {
       // The ticket's project, as the key the operator reads — the same column

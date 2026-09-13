@@ -3,6 +3,8 @@
  * Do not edit manually.
  */
 
+import { chatMessageMetaSchema } from "./chatMessageMetaSchema"
+import { messagePartSchema } from "./messagePartSchema"
 import { z } from "zod/v4"
 
 export const chatMessageViewSchema = z.object({
@@ -10,5 +12,11 @@ export const chatMessageViewSchema = z.object({
   role: z.string(),
   content: z.string(),
   toolName: z.string().nullish(),
+  get parts() {
+    return z.array(messagePartSchema).nullish()
+  },
+  get meta() {
+    return z.union([chatMessageMetaSchema, z.null()]).optional()
+  },
   createdAt: z.iso.datetime({ offset: true }),
 })

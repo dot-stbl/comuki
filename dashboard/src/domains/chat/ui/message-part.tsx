@@ -7,6 +7,7 @@ import type {
 } from "@/domains/chat/model/types"
 import { CodeBlock } from "@/shared/ui"
 
+import { ArtifactRefCard } from "./artifact-ref-card"
 import { ChatHandoffs } from "./chat-handoff"
 import { MessageProse } from "./message-prose"
 import { PlanSketch } from "./plan-sketch"
@@ -44,7 +45,8 @@ import styles from "./chat-message.module.css"
 type PartRenderers = {
   [K in PartKind]: (
     part: Extract<MessagePart, { kind: K }>,
-    message: Message
+    message: Message,
+    projectId: string | null
   ) => ReactNode
 }
 
@@ -83,6 +85,21 @@ const PART_RENDERERS: PartRenderers = {
   handoff: (part) => <ChatHandoffs query={part.query} />,
 
   plan: (part) => <PlanSketch nodes={part.nodes} edges={part.edges} />,
+
+  /* Issue #51 slice 3 — the `artifact-ref` card needs the project id to
+     ask the right project's artifact list (the proxy is project-scoped
+     and the host's no-row answers a 404 either way). When the chat
+     session predates `/init`, `projectId` is `null` and the card short-
+     circuits to "no card to show" — same as the run page when a run has
+     no artifacts published. */
+  "artifact-ref": (part, _message, projectId) => (
+    projectId ? (
+      <ArtifactRefCard
+        projectId={projectId}
+        artifactIds={part.artifactIds}
+      />
+    ) : null
+  ),
 }
 
 /**
@@ -92,10 +109,15 @@ const PART_RENDERERS: PartRenderers = {
  * the arm's parameter type is the part's type by construction — the compiler
  * simply has no way to say so.
  */
-export function renderPart(part: MessagePart, message: Message): ReactNode {
+export function renderPart(
+  part: MessagePart,
+  message: Message,
+  projectId: string | null,
+): ReactNode {
   const render = PART_RENDERERS[part.kind] as (
     part: MessagePart,
-    message: Message
+    message: Message,
+    projectId: string | null
   ) => ReactNode
-  return render(part, message)
+  return render(part, message, projectId)
 }

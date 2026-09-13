@@ -57,7 +57,7 @@ file static class ModelConfigProviderHelpers
     /// <param name="secrets">Shared-kernel resolver — routes by scheme to the matching provider.</param>
     /// <param name="reference">Per-call <c>*Ref</c> (e.g. <c>vault:models/brain#endpoint</c>) — null/empty keeps the boot-time path.</param>
     /// <param name="fallback">Boot-time value from <see cref="BrainModelOptions"/>; returned as-is when <paramref name="reference"/> is empty.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancels the secret-resolver round-trip.</param>
     public static async Task<string> ResolveFieldAsync(
         ISecretResolver secrets,
         string? reference,

@@ -153,6 +153,7 @@ internal static class HostComposer
         // mirrors the same pattern.
         builder.Services.AddOptions<VaultSecretOptions>()
             .Bind(builder.Configuration.GetSection(VaultSecretOptions.SectionName))
+            .ValidateDataAnnotations()
             .ValidateOnStart();
         builder.Services.AddSingleton<IValidateOptions<VaultSecretOptions>, VaultSecretOptionsValidator>();
         builder.Services.AddMemoryCache();

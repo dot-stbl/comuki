@@ -21,7 +21,6 @@ public static class KnowledgeModuleEndpoints
     public const float DefaultMinSimilarity = 0.2f;
 
     /// <summary>Maps the knowledge endpoints.</summary>
-    /// <param name="app"></param>
     public static IEndpointRouteBuilder MapKnowledgeEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapPost(ApiRoutes.KnowledgeIngest, IngestAsync).WithTags("Knowledge");
@@ -36,14 +35,6 @@ public static class KnowledgeModuleEndpoints
         IKnowledgeIngestor ingestor,
         CancellationToken cancellationToken)
     {
-        if (request is null)
-        {
-            return Results.Problem(
-                title: "Knowledge ingest body required",
-                detail: "POST /api/v1/knowledge/ingest requires a JSON body with title / source / sourceRef / mimeType / text",
-                statusCode: StatusCodes.Status400BadRequest);
-        }
-
         var result = await ingestor.IngestAsync(
             request.ProjectId,
             request.Title,

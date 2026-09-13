@@ -1,3 +1,4 @@
+using Comuki.Host.Testing;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
@@ -47,7 +48,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         .Build();
 
 #pragma warning disable CS0612
-    private readonly MinioContainer minio = new MinioBuilder("minio/minio:latest")
+    private readonly MinioContainer minio = new MinioBuilder(MinioImage.Reference)
         .WithUsername(MinioUser)
         .WithPassword(MinioPassword)
         .Build();

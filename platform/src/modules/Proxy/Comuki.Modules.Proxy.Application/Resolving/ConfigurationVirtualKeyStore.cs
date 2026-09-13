@@ -31,8 +31,8 @@ public sealed class ConfigurationVirtualKeyStore(
     /// <summary>Active virtual keys (populated by the seed step above).</summary>
     private readonly ConcurrentDictionary<string, VirtualKey> byToken = new(StringComparer.Ordinal);
 
-    /// <summary>Recently-deleted keys — value = original key + UTC expiry of the grace window.</summary>
-    private readonly ConcurrentDictionary<string, (VirtualKey Key, DateTimeOffset ExpiresAt)> grace = new(StringComparer.Ordinal);
+    /// <summary>Recently-deleted keys (see <see cref="GraceEntry"/>) — answerable until the grace expiry.</summary>
+    private readonly ConcurrentDictionary<string, GraceEntry> grace = new(StringComparer.Ordinal);
 
     /// <inheritdoc />
     public async Task<VirtualKey?> FindAsync(string token, CancellationToken cancellationToken = default)
@@ -70,11 +70,12 @@ public sealed class ConfigurationVirtualKeyStore(
 
         if (byToken.TryRemove(token, out var removed))
         {
-            grace[token] = (removed, clock.GetUtcNow() + DefaultGracePeriod);
+            var entry = new GraceEntry(removed, clock.GetUtcNow() + DefaultGracePeriod);
+            grace[token] = entry;
             logger.LogInformation(
                 "Virtual key {TokenPrefix} moved to the deletion grace window until {ExpiresAt:o}",
                 token[..Math.Min(8, token.Length)],
-                grace[token].ExpiresAt);
+                entry.ExpiresAt);
         }
     }
 }

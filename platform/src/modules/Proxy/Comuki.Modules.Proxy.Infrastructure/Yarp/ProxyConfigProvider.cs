@@ -17,27 +17,22 @@ namespace Comuki.Modules.Proxy.Infrastructure.Yarp;
 public sealed class ProxyConfigProvider : IProxyConfigProvider, IDisposable
 {
     private readonly InMemoryConfigProvider inner;
-    private readonly IDisposable changeSubscription = null!;
+    private readonly IDisposable? changeSubscription;
 
     /// <summary>Constructs the provider with the initial snapshot.</summary>
     /// <param name="options">Bound proxy options.</param>
     /// <param name="logger">Structured logger.</param>
     public ProxyConfigProvider(IOptionsMonitor<ProxyOptions> options, ILogger<ProxyConfigProvider> logger)
     {
-        var (routes, clusters) = BuildConfig(options.CurrentValue, logger);
-        inner = new InMemoryConfigProvider(routes, clusters);
+        var config = ProxyConfigFactory.Build(options.CurrentValue, logger);
+        inner = new InMemoryConfigProvider(config.Routes, config.Clusters);
 
-        var subscription = options.OnChange((snapshot, _) =>
+        changeSubscription = options.OnChange((snapshot, _) =>
         {
             logger.LogInformation("Rebuilding YARP proxy config after Proxy options change");
-            var (newRoutes, newClusters) = BuildConfig(snapshot, logger);
-            inner.Update(newRoutes, newClusters);
+            var rebuilt = ProxyConfigFactory.Build(snapshot, logger);
+            inner.Update(rebuilt.Routes, rebuilt.Clusters);
         });
-
-        if (subscription is not null)
-        {
-            changeSubscription = subscription;
-        }
     }
 
     /// <inheritdoc />
@@ -49,68 +44,6 @@ public sealed class ProxyConfigProvider : IProxyConfigProvider, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        changeSubscription.Dispose();
-    }
-
-    private static (IReadOnlyList<RouteConfig> Routes, IReadOnlyList<ClusterConfig> Clusters) BuildConfig(ProxyOptions snapshot, ILogger logger)
-    {
-        var routes = new List<RouteConfig>();
-        var providers = snapshot.VirtualKeys
-            .Select(key => key.Provider)
-            .Where(provider => !string.IsNullOrWhiteSpace(provider))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        foreach (var provider in providers)
-        {
-            var routeId = $"proxy-{provider.ToLowerInvariant()}";
-            var clusterId = provider.ToLowerInvariant();
-            var path = ProviderRoute(provider);
-
-            routes.Add(new RouteConfig
-            {
-                RouteId = routeId,
-                ClusterId = clusterId,
-                Match = new RouteMatch { Path = path, Methods = ["POST"] },
-            });
-        }
-
-        var clusters = new List<ClusterConfig>();
-        foreach (var provider in providers)
-        {
-            var baseUrl = snapshot.VirtualKeys
-                .FirstOrDefault(key => string.Equals(key.Provider, provider, StringComparison.OrdinalIgnoreCase))
-                ?.BaseUrl;
-
-            if (string.IsNullOrWhiteSpace(baseUrl))
-            {
-                logger.LogWarning("Skipping YARP cluster {Provider} — no virtual key carries a base URL", provider);
-                continue;
-            }
-
-            clusters.Add(new ClusterConfig
-            {
-                ClusterId = provider.ToLowerInvariant(),
-                Destinations = new Dictionary<string, DestinationConfig>
-                {
-                    [provider.ToLowerInvariant()] = new DestinationConfig
-                    {
-                        Address = baseUrl.TrimEnd('/') + "/",
-                    },
-                },
-            });
-        }
-
-        return (routes, clusters);
-    }
-
-    private static string ProviderRoute(string provider)
-    {
-        return provider.ToLowerInvariant() switch
-        {
-            "openai" => "/v1/chat/completions",
-            "anthropic" => "/v1/messages",
-            _ => $"/v1/{provider.ToLowerInvariant()}/chat/completions",
-        };
+        changeSubscription?.Dispose();
     }
 }

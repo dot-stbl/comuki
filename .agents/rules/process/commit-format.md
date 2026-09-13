@@ -1,12 +1,12 @@
 ---
-description: Comuki repo uses [hybrid] prefix on Conventional Commits 1.0.0
+description: Comuki repo uses [.stbl] prefix on Conventional Commits 1.0.0
 priority: high
 always: true
 ---
 
 # Commit format — Comuki
 
-В репозитории `comuki.orchestrator` коммиты используют префикс `[hybrid]`.
+В репозитории `comuki.orchestrator` коммиты используют префикс `[.stbl]`.
 Тип и scope — по **Conventional Commits 1.0.0**. Применяется во всю ширину
 — включая соло-разработчика (нет смысла в `WIP`/`wip`/`tmp`).
 
@@ -15,7 +15,7 @@ always: true
 Текущая форма (canonical, принята в `commit-lint.mjs`):
 
 ```
-[hybrid](<feat-area>): <description>
+[.stbl](<feat-area>): <description>
 ```
 
 `<feat-area>` — kebab-case путь, может быть вложенным (`feat/dashboard`, `fe/mocks`,
@@ -27,7 +27,7 @@ Legacy-форма (`<type>(<scope>)`) — также принимается ли
 compatibility, но для новых коммитов используйте текущую форму.
 
 ```
-[hybrid] <type>(<scope>): <description>
+[.stbl] <type>(<scope>): <description>
 ```
 
 Опционально — тело и footer через пустую строку.
@@ -81,9 +81,9 @@ Legacy-форма использует `type` (`feat`/`fix`/`refactor`/`docs`/`t
   начинается с идентификатора или акронима — `SubjectScopeMiddleware wraps …`,
   `CVE-2026-49451 bump`, `OSS deployment artifacts`. Требование к description —
   императив, а не строчная буква.
-- **Префикс `[hybrid]`** — обязателен, с пробелом перед type.
+- **Префикс `[.stbl]`** — обязателен, с пробелом перед type.
 - **`!` перед `:`** — опциональный маркер breaking change:
-  `[hybrid] feat(api)!: change /tasks response shape`.
+  `[.stbl] feat(api)!: change /tasks response shape`.
 
 ## Body (опционально)
 
@@ -95,7 +95,7 @@ Legacy-форма использует `type` (`feat`/`fix`/`refactor`/`docs`/`t
 Для breaking changes, ссылок на тикеты, и т.д.
 
 ```
-[hybrid] feat(api): change /tasks response shape
+[.stbl] feat(api): change /tasks response shape
 
 BREAKING CHANGE: /tasks now returns { items, total } instead of array.
 Migration: clients must read .items.
@@ -106,33 +106,33 @@ Refs: COM-142
 ## Good
 
 ```
-[hybrid](feat/orchestration): add claim/lease loop for pull-queue
-[hybrid](fix/database): correct cascade delete on runs table
-[hybrid](docs/roadmap): clarify Slice 0 DoD with idempotency check
-[hybrid](meta/deps): bump dotnet to 10.0.108
-[hybrid](meta/rules): adopt [hybrid] prefix for comuki commits
-[hybrid](refactor/translator): extract stream-json parser into separate file
-[hybrid](test/orchestration): cover two-claimer race for FOR UPDATE SKIP LOCKED
-[hybrid](meta/ci): enforce extended analyzer rules in build-verification
-[hybrid](feat/fe/dashboard): wire cost page breakdowns and forecast
+[.stbl](feat/orchestration): add claim/lease loop for pull-queue
+[.stbl](fix/database): correct cascade delete on runs table
+[.stbl](docs/roadmap): clarify Slice 0 DoD with idempotency check
+[.stbl](meta/deps): bump dotnet to 10.0.108
+[.stbl](meta/rules): adopt [.stbl] prefix for comuki commits
+[.stbl](refactor/translator): extract stream-json parser into separate file
+[.stbl](test/orchestration): cover two-claimer race for FOR UPDATE SKIP LOCKED
+[.stbl](meta/ci): enforce extended analyzer rules in build-verification
+[.stbl](feat/fe/dashboard): wire cost page breakdowns and forecast
 ```
 
 Legacy (still accepted by linter):
 
 ```
-[hybrid] feat(orchestration): add claim/lease loop for pull-queue
-[hybrid] fix(database): correct cascade delete on runs table
+[.stbl] feat(orchestration): add claim/lease loop for pull-queue
+[.stbl] fix(database): correct cascade delete on runs table
 ```
 
 ## Bad
 
 ```
-feat(orchestration): add foo                 ← нет [hybrid] префикса
-feat: add foo                                ← нет [hybrid] префикса
+feat(orchestration): add foo                 ← нет [.stbl] префикса
+feat: add foo                                ← нет [.stbl] префикса
 [stbl](feat): add foo                        ← старый префикс, запрещён
-[hybrid](feat/Orchestration): add foo        ← path должен быть lowercase
-[hybrid](feat): add foo                      ← пустой path (нет /area)
-[hybrid] feat() add foo                      ← legacy: пустой scope
+[.stbl](feat/Orchestration): add foo        ← path должен быть lowercase
+[.stbl](feat): add foo                      ← пустой path (нет /area)
+[.stbl] feat() add foo                      ← legacy: пустой scope
 feat: Added new endpoint.                    ← прошедшее время + точка
 WIP                                         ← без type/area
 feat add foo                                 ← нет `:` после type
@@ -155,7 +155,7 @@ update stuff                                 ← не описательно
 Проверить, ничего не коммитя:
 
 ```bash
-echo '[hybrid] feat(api): add the thing' | node scripts/commit-lint.mjs --stdin
+echo '[.stbl] feat(api): add the thing' | node scripts/commit-lint.mjs --stdin
 node scripts/commit-lint.mjs --range master..HEAD   # ручной аудит диапазона
 node --test scripts/commit-lint.test.mjs            # тесты самого линтера
 ```
@@ -175,7 +175,7 @@ node --test scripts/commit-lint.test.mjs            # тесты самого л
 для формата коммитов в comuki.orchestrator.
 
 Применяется **forward** — коммиты до этого правила не переписываются.
-Если видишь в `git log` коммиты без `[hybrid]` префикса — это до принятия
+Если видишь в `git log` коммиты без `[.stbl]` префикса — это до принятия
 текущего правила. Не правь историю ради единообразия.
 
 ## Commit body когда есть что сказать
@@ -184,7 +184,7 @@ node --test scripts/commit-lint.test.mjs            # тесты самого л
 Body — контекст, риск, trade-off.
 
 ```
-[hybrid] fix(orchestration): make claim transaction atomic with lease insert
+[.stbl] fix(orchestration): make claim transaction atomic with lease insert
 
 Раньше claim читал task, потом отдельным UPDATE ставил lease —
 между ними другой worker мог взять ту же задачу. Склеили в одну

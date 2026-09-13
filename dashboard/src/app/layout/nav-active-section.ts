@@ -62,5 +62,8 @@ export function useActiveNavSection(
   const location = useLocation()
   const pathname = location.pathname
 
-  return useMemo(() => pickActiveSection(sections, pathname), [sections, pathname])
+  return useMemo(
+    () => pickActiveSection(sections, pathname),
+    [sections, pathname]
+  )
 }

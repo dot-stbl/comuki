@@ -8,10 +8,7 @@ import type { SlashCommand } from "@/domains/chat/model/types"
 import { ChatComposer } from "@/domains/chat/ui/chat-composer"
 import type { Role, Session } from "@/shared/session"
 import { TestSession } from "@/shared/session/test-session"
-import {
-  selectValues,
-  setSelectValue,
-} from "@/shared/ui/select/test-select"
+import { selectValues, setSelectValue } from "@/shared/ui/select/test-select"
 
 const at = (name: string) =>
   document.querySelector<HTMLElement>(`[data-test="${name}"]`)
@@ -356,10 +353,7 @@ describe("recalling the last message", () => {
   /** The harness with a recall offering, the way the console derives one. */
   function mountWithRecall(recall: string | null) {
     const onSend = vi.fn()
-    const commands = availableCommands(
-      sessionFor(["member"], {}),
-      CUSTOM
-    )
+    const commands = availableCommands(sessionFor(["member"], {}), CUSTOM)
 
     function Harness() {
       const [value, setValue] = useState("")
@@ -379,9 +373,7 @@ describe("recalling the last message", () => {
     render(<Harness />)
     return {
       onSend,
-      box: screen.getByLabelText(
-        "Message the console"
-      ) as HTMLTextAreaElement,
+      box: screen.getByLabelText("Message the console") as HTMLTextAreaElement,
     }
   }
 

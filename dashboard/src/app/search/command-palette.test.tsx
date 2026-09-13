@@ -41,9 +41,7 @@ const HANDOFF: SearchItem = {
 
 function rows() {
   return Array.from(
-    document.querySelectorAll<HTMLElement>(
-      '[data-test="command-palette-item"]'
-    )
+    document.querySelectorAll<HTMLElement>('[data-test="command-palette-item"]')
   )
 }
 
@@ -146,9 +144,7 @@ describe("the palette's surface", () => {
 
     // A search field would have eaten this key to clear itself, and the
     // palette would still be open. It is a text field for exactly that reason.
-    expect(
-      document.querySelector('[data-test="command-palette"]')
-    ).toBeNull()
+    expect(document.querySelector('[data-test="command-palette"]')).toBeNull()
   })
 
   it("sets identifiers in the data voice and words in the interface one", () => {

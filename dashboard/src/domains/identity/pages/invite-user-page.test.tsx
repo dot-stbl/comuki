@@ -220,9 +220,7 @@ describe("leaving a half-filled form", () => {
 
     // No half-filled form, so the question is never asked.
     await waitFor(() => expect(here(router)).toBe("/identity"))
-    expect(
-      screen.queryByText("Leave without creating the account?")
-    ).toBeNull()
+    expect(screen.queryByText("Leave without creating the account?")).toBeNull()
   })
 
   it("returns where the operator came from on cancel, without asking", async () => {
@@ -235,9 +233,7 @@ describe("leaving a half-filled form", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
 
     await waitFor(() => expect(here(router)).toBe("/identity"))
-    expect(
-      screen.queryByText("Leave without creating the account?")
-    ).toBeNull()
+    expect(screen.queryByText("Leave without creating the account?")).toBeNull()
   })
 })
 

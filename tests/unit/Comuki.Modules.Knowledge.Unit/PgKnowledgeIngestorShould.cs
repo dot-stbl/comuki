@@ -3,9 +3,13 @@ using Comuki.Modules.Knowledge.Infrastructure.Configuration;
 using Comuki.Modules.Knowledge.Infrastructure.Embeddings;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence.Stores;
+using Comuki.Shared.Kernel.Exceptions;
+using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Shouldly;
 using Xunit;
 
@@ -72,6 +76,86 @@ public sealed class PgKnowledgeIngestorShould
         await contextFactory.DidNotReceiveWithAnyArgs().CreateDbContextAsync(TestContext.Current.CancellationToken);
     }
 
+    [Fact(DisplayName = "Given a caller scoped to one project, when IngestAsync targets a different project, then ProviderForbiddenException is thrown before any DB is touched (leak 1 — write)")]
+    public async Task RefuseIngestForProjectOutsideScopeAsync()
+    {
+        // Before the fix IngestAsync did not look at the caller's scope at
+        // all — projectId was written into SourceDocument.ProjectId as
+        // handed, so a caller scoped to project A could plant a document
+        // in project B's knowledge base just by naming it in the request.
+        var contextFactory = Substitute.For<IDbContextFactory<KnowledgeDbContext>>();
+        var embedder = new NoopEmbeddingClient(EmbeddingSql.Dimensions);
+        var ownProject = ProjectId.New();
+        var foreignProject = Guid.NewGuid();
+        var scopeAccessor = Substitute.For<ISubjectScopeAccessor>();
+        scopeAccessor.Current.Returns(new SubjectScope(Unrestricted: false, SystemName: null, ProjectIds: [ownProject]));
+        var ingestor = NewIngestor(contextFactory, embedder, scopeAccessor);
+
+        var exception = await Should.ThrowAsync<ProviderForbiddenException>(
+            async () => await ingestor.IngestAsync(
+                projectId: foreignProject,
+                title: "ok",
+                source: "git",
+                sourceRef: "abc",
+                mimeType: "text/markdown",
+                text: "body",
+                cancellationToken: TestContext.Current.CancellationToken));
+
+        exception.Code.ShouldBe("knowledge.project_out_of_scope");
+        await contextFactory.DidNotReceiveWithAnyArgs().CreateDbContextAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact(DisplayName = "Given a caller scoped to a project, when IngestAsync targets the global (null) corpus, then ProviderForbiddenException is thrown")]
+    public async Task RefuseIngestForGlobalCorpusWhenRestrictedAsync()
+    {
+        // The global corpus (projectId null) is visible to every subject
+        // platform-wide, so writing it is reserved for an unrestricted
+        // caller — a restricted one could otherwise pollute what every
+        // other project sees just by omitting projectId.
+        var contextFactory = Substitute.For<IDbContextFactory<KnowledgeDbContext>>();
+        var embedder = new NoopEmbeddingClient(EmbeddingSql.Dimensions);
+        var scopeAccessor = Substitute.For<ISubjectScopeAccessor>();
+        scopeAccessor.Current.Returns(new SubjectScope(Unrestricted: false, SystemName: null, ProjectIds: [ProjectId.New()]));
+        var ingestor = NewIngestor(contextFactory, embedder, scopeAccessor);
+
+        await Should.ThrowAsync<ProviderForbiddenException>(
+            async () => await ingestor.IngestAsync(
+                projectId: null,
+                title: "ok",
+                source: "git",
+                sourceRef: "abc",
+                mimeType: "text/markdown",
+                text: "body",
+                cancellationToken: TestContext.Current.CancellationToken));
+
+        await contextFactory.DidNotReceiveWithAnyArgs().CreateDbContextAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact(DisplayName = "Given an unrestricted caller, when IngestAsync targets any project, then the scope guard does not refuse it")]
+    public async Task AllowUnrestrictedCallerAnyProjectAsync()
+    {
+        var contextFactory = Substitute.For<IDbContextFactory<KnowledgeDbContext>>();
+        contextFactory
+            .CreateDbContextAsync(Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("no real database in this unit test"));
+        var embedder = new NoopEmbeddingClient(EmbeddingSql.Dimensions);
+        var scopeAccessor = Substitute.For<ISubjectScopeAccessor>();
+        scopeAccessor.Current.Returns(SubjectScope.ForSystem("test"));
+        var ingestor = NewIngestor(contextFactory, embedder, scopeAccessor);
+
+        await Should.ThrowAsync<InvalidOperationException>(
+            async () => await ingestor.IngestAsync(
+                projectId: Guid.NewGuid(),
+                title: "ok",
+                source: "git",
+                sourceRef: "abc",
+                mimeType: "text/markdown",
+                text: "body",
+                cancellationToken: TestContext.Current.CancellationToken));
+
+        await contextFactory.Received(1).CreateDbContextAsync(Arg.Any<CancellationToken>());
+    }
+
     [Fact(DisplayName = "Integration contract — DB-bound paths covered by Comuki.Modules.Memory.Integration.Migrations under Testcontainers.PostgreSql")]
     public void DbBoundPathsAreCoveredByIntegrationTests()
     {
@@ -95,14 +179,23 @@ public sealed class PgKnowledgeIngestorShould
 
     private static PgKnowledgeIngestor NewIngestor(
         IDbContextFactory<KnowledgeDbContext> contextFactory,
-        IEmbeddingClient embedder)
+        IEmbeddingClient embedder,
+        ISubjectScopeAccessor? scopeAccessor = null)
     {
         return new PgKnowledgeIngestor(
             contextFactory,
             embedder,
             Microsoft.Extensions.Options.Options.Create(new KnowledgeIngestOptions()),
+            scopeAccessor ?? UnrestrictedAccessor(),
             TimeProvider.System,
             NullLogger<PgKnowledgeIngestor>.Instance);
+    }
+
+    private static ISubjectScopeAccessor UnrestrictedAccessor()
+    {
+        var accessor = Substitute.For<ISubjectScopeAccessor>();
+        accessor.Current.Returns(SubjectScope.ForSystem("test"));
+        return accessor;
     }
 }
 

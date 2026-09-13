@@ -1,45 +1,59 @@
 ---
-description: Comuki repo uses [hybrid] prefix on Conventional Commits 1.0.0
+description: Comuki repo uses [.stbl] prefix on Conventional Commits 1.0.0
 priority: high
 always: true
 ---
 
 # Commit format — Comuki
 
-В репозитории `comuki.orchestrator` коммиты используют префикс `[hybrid]`.
+В репозитории `comuki.orchestrator` коммиты используют префикс `[.stbl]`.
 Тип и scope — по **Conventional Commits 1.0.0**. Применяется во всю ширину
 — включая соло-разработчика (нет смысла в `WIP`/`wip`/`tmp`).
 
 ## Формат
 
-```
-[hybrid] <type>: <description>
-```
-
-или с scope:
+Текущая форма (canonical, принята в `commit-lint.mjs`):
 
 ```
-[hybrid] <type>(<scope>): <description>
+[.stbl](<feat-area>): <description>
+```
+
+`<feat-area>` — kebab-case путь, может быть вложенным (`feat/dashboard`, `fe/mocks`,
+`meta`, `host/mtls`, `tests/architecture`). Всегда начинается с префикса `feat/`
+(или `meta/`, `docs/` — см. «Top-level areas» ниже); выдумывать свои корневые
+сегменты нельзя.
+
+Legacy-форма (`<type>(<scope>)`) — также принимается линтером для backward
+compatibility, но для новых коммитов используйте текущую форму.
+
+```
+[.stbl] <type>(<scope>): <description>
 ```
 
 Опционально — тело и footer через пустую строку.
 
-## Типы
+## Top-level areas
 
-| Type       | Когда                                                                       |
-|------------|------------------------------------------------------------------------------|
-| `feat`     | новая фича / функциональность                                                |
-| `fix`      | bug fix                                                                      |
-| `refactor` | рефакторинг без изменения наблюдаемого поведения                             |
-| `docs`     | только документация (md, дизайн-система, docs/, README)                     |
-| `test`     | добавление или изменение тестов                                              |
-| `perf`     | улучшение производительности                                                 |
-| `build`    | build-система или external dependencies (Directory.Packages.props, .NET SDK) |
-| `ci`       | CI конфигурация (workflows, build-verification)                              |
-| `chore`    | тулинг, мета-вещи, форматирование, мелочи, не код и не фича                 |
-| `style`    | форматирование без изменения смысла (whitespace, prettier, biome)            |
-| `revert`   | откат предыдущего коммита                                                    |
-| `merge`    | ручной мерж-коммит с осмысленным описанием; `Merge branch …` от git проходит мимо правила |
+Вместо `type` в новой форме — `<feat-area>` (всегда `feat/...`, `meta/...`,
+или `docs/...`):
+
+| Area                 | Когда                                                                |
+|----------------------|----------------------------------------------------------------------|
+| `feat/<module>`      | код в `platform/src/modules/Comuki.Modules.X/`                       |
+| `feat/<shared>`      | код в `platform/src/shared/Comuki.Shared.X/`                          |
+| `feat/<provider>`    | код в `platform/src/providers/Comuki.Providers.X/`                   |
+| `feat/host`          | `platform/src/host/Comuki.Host/` (composition root)                   |
+| `feat/build-tools`   | `platform/src/host/Comuki.Build.Tools/`                              |
+| `feat/fe`            | `dashboard/` (sub-area: `feat/fe/<sub-area>`)                         |
+| `feat/tests`         | `tests/` (unit / integration)                                        |
+| `meta`               | build, CI, deps, scripts, repo-level config, **rules themselves**      |
+| `docs`               | documentation-only (`.agents/docs/`, ADRs, README)                    |
+
+Вложенность: `feat/fe/dashboard`, `feat/tests/architecture`, `meta/format`,
+`meta/deps`, `host/mtls`.
+
+Legacy-форма использует `type` (`feat`/`fix`/`refactor`/`docs`/`test`/`perf`/
+`build`/`ci`/`chore`/`style`/`revert`/`merge`) — Conventional Commits 1.0.0.
 
 ## Scope (опционально, рекомендуется)
 
@@ -67,9 +81,9 @@ always: true
   начинается с идентификатора или акронима — `SubjectScopeMiddleware wraps …`,
   `CVE-2026-49451 bump`, `OSS deployment artifacts`. Требование к description —
   императив, а не строчная буква.
-- **Префикс `[hybrid]`** — обязателен, с пробелом перед type.
+- **Префикс `[.stbl]`** — обязателен, с пробелом перед type.
 - **`!` перед `:`** — опциональный маркер breaking change:
-  `[hybrid] feat(api)!: change /tasks response shape`.
+  `[.stbl] feat(api)!: change /tasks response shape`.
 
 ## Body (опционально)
 
@@ -81,7 +95,7 @@ always: true
 Для breaking changes, ссылок на тикеты, и т.д.
 
 ```
-[hybrid] feat(api): change /tasks response shape
+[.stbl] feat(api): change /tasks response shape
 
 BREAKING CHANGE: /tasks now returns { items, total } instead of array.
 Migration: clients must read .items.
@@ -92,25 +106,35 @@ Refs: COM-142
 ## Good
 
 ```
-[hybrid] feat(orchestration): add claim/lease loop for pull-queue
-[hybrid] fix(database): correct cascade delete on runs table
-[hybrid] docs(roadmap): clarify Slice 0 DoD with idempotency check
-[hybrid] chore(deps): bump dotnet to 10.0.108
-[hybrid] chore(rules): adopt [hybrid] prefix for comuki commits
-[hybrid] refactor(translator): extract stream-json parser into separate file
-[hybrid] test(orchestration): cover two-claimer race for FOR UPDATE SKIP LOCKED
-[hybrid] ci(be): enforce extended analyzer rules in build-verification
+[.stbl](feat/orchestration): add claim/lease loop for pull-queue
+[.stbl](fix/database): correct cascade delete on runs table
+[.stbl](docs/roadmap): clarify Slice 0 DoD with idempotency check
+[.stbl](meta/deps): bump dotnet to 10.0.108
+[.stbl](meta/rules): adopt [.stbl] prefix for comuki commits
+[.stbl](refactor/translator): extract stream-json parser into separate file
+[.stbl](test/orchestration): cover two-claimer race for FOR UPDATE SKIP LOCKED
+[.stbl](meta/ci): enforce extended analyzer rules in build-verification
+[.stbl](feat/fe/dashboard): wire cost page breakdowns and forecast
+```
+
+Legacy (still accepted by linter):
+
+```
+[.stbl] feat(orchestration): add claim/lease loop for pull-queue
+[.stbl] fix(database): correct cascade delete on runs table
 ```
 
 ## Bad
 
 ```
-feat(orchestration): add foo                 ← нет [hybrid] префикса
-feat: add foo                                ← нет [hybrid] префикса
+feat(orchestration): add foo                 ← нет [.stbl] префикса
+feat: add foo                                ← нет [.stbl] префикса
 [stbl](feat): add foo                        ← старый префикс, запрещён
-[hybrid](feat): add foo                      ← вариант с parens вокруг type, не наш формат
+[.stbl](feat/Orchestration): add foo        ← path должен быть lowercase
+[.stbl](feat): add foo                      ← пустой path (нет /area)
+[.stbl] feat() add foo                      ← legacy: пустой scope
 feat: Added new endpoint.                    ← прошедшее время + точка
-WIP                                         ← без type
+WIP                                         ← без type/area
 feat add foo                                 ← нет `:` после type
 update stuff                                 ← не описательно
 ```
@@ -131,7 +155,7 @@ update stuff                                 ← не описательно
 Проверить, ничего не коммитя:
 
 ```bash
-echo '[hybrid] feat(api): add the thing' | node scripts/commit-lint.mjs --stdin
+echo '[.stbl] feat(api): add the thing' | node scripts/commit-lint.mjs --stdin
 node scripts/commit-lint.mjs --range master..HEAD   # ручной аудит диапазона
 node --test scripts/commit-lint.test.mjs            # тесты самого линтера
 ```
@@ -151,7 +175,7 @@ node --test scripts/commit-lint.test.mjs            # тесты самого л
 для формата коммитов в comuki.orchestrator.
 
 Применяется **forward** — коммиты до этого правила не переписываются.
-Если видишь в `git log` коммиты без `[hybrid]` префикса — это до принятия
+Если видишь в `git log` коммиты без `[.stbl]` префикса — это до принятия
 текущего правила. Не правь историю ради единообразия.
 
 ## Commit body когда есть что сказать
@@ -160,7 +184,7 @@ node --test scripts/commit-lint.test.mjs            # тесты самого л
 Body — контекст, риск, trade-off.
 
 ```
-[hybrid] fix(orchestration): make claim transaction atomic with lease insert
+[.stbl] fix(orchestration): make claim transaction atomic with lease insert
 
 Раньше claim читал task, потом отдельным UPDATE ставил lease —
 между ними другой worker мог взять ту же задачу. Склеили в одну

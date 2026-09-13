@@ -137,9 +137,7 @@ const all = (selector: string) =>
 
 async function backlogReady(focus?: string) {
   renderScreen(focus)
-  await waitFor(() =>
-    expect(find('[data-test="data-table"]')).not.toBeNull()
-  )
+  await waitFor(() => expect(find('[data-test="data-table"]')).not.toBeNull())
 }
 
 describe("the backlog, end to end over the seeds", () => {
@@ -190,9 +188,7 @@ describe("the backlog, end to end over the seeds", () => {
 
   it("keeps the intake opener on the screen for a role that cannot use it", async () => {
     renderScreen(undefined, ["viewer"])
-    await waitFor(() =>
-      expect(find('[data-test="task-new"]')).not.toBeNull()
-    )
+    await waitFor(() => expect(find('[data-test="task-new"]')).not.toBeNull())
 
     // Gated rather than hidden: a viewer who lands here should learn that
     // intake exists and what it takes to use it. `aria-disabled`, never

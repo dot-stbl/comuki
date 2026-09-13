@@ -358,9 +358,9 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
             {step === "confirm" ? (
               <>
                 <Notice>
-                  Nothing has been created yet. Confirming starts the
-                  onboarding run, and everything it does is recorded where every
-                  other run is.
+                  Nothing has been created yet. Confirming starts the onboarding
+                  run, and everything it does is recorded where every other run
+                  is.
                 </Notice>
                 <dl className={styles.review} data-test="init-review">
                   <Review label="project" value={draft.projectId || "—"} />
@@ -372,7 +372,10 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                   />
                   <Review label="compute" value={draft.provider} />
                   <Review label="workers" value={draft.maxWorkers} />
-                  <Review label="lead model" value={draft.leadEndpoint || "—"} />
+                  <Review
+                    label="lead model"
+                    value={draft.leadEndpoint || "—"}
+                  />
                   <Review
                     label="worker model"
                     value={draft.workerEndpoint || "same as lead"}

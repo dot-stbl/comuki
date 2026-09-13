@@ -5,7 +5,7 @@ Repo-level git hooks, versioned here and installed per clone. Two of them:
 | Hook | Runs | Does |
 |------|------|------|
 | `pre-commit` | before the message editor opens | `dotnet format whitespace` on staged `.cs` files |
-| `commit-msg` | after the message is written | strips AI attribution, enforces the `[hybrid]` subject format |
+| `commit-msg` | after the message is written | strips AI attribution, enforces the `[.stbl]` subject format |
 
 ## Install (one-time per clone)
 
@@ -53,12 +53,17 @@ An attribution trailer never costs anyone their commit. See
 **Rejects** a malformed subject — only the author can fix that one:
 
 ```
-[hybrid] <type>(<scope>)!: <description>
+[.stbl](feat/<area>): <description>             (current)
+[.stbl] <type>(<scope>): <description>            (legacy, accepted)
 ```
 
-- types: `feat fix refactor docs test perf build ci chore style revert merge`
-  (`merge` = hand-written merge commit; git's own `Merge branch …` is exempt)
-- scope optional, lowercase `[a-z0-9][a-z0-9._/-]*`
+- current form: `[.stbl](<feat-area>): <description>` where `<feat-area>` is
+  a kebab-case path starting with `feat/`, `meta/`, or `docs/` (see
+  `.agents/rules/process/commit-format.md` §"Top-level areas" for the menu).
+- legacy form: `[.stbl] <type>(<scope>): <description>` — types
+  `feat fix refactor docs test perf build ci chore style revert merge`
+  (`merge` = hand-written merge commit; git's own `Merge branch …` is exempt),
+  scope optional, lowercase `[a-z0-9][a-z0-9._/-]*`.
 - description: imperative, no trailing `.` — case is not policed (identifiers
   and acronyms open a description all the time)
 - subject ≤ 100 characters (aim for 72)
@@ -70,8 +75,11 @@ See `.agents/rules/process/commit-format.md`.
 ### Checking without committing
 
 ```bash
-# lint a message you have in hand
-echo '[hybrid] feat(api): add the thing' | node scripts/commit-lint.mjs --stdin
+# lint a message you have in hand (current form)
+echo '[.stbl](feat/dashboard): wire cost page breakdowns and forecast' | node scripts/commit-lint.mjs --stdin
+
+# …or legacy form (also accepted)
+echo '[.stbl] feat(api): add the thing' | node scripts/commit-lint.mjs --stdin
 
 # audit a range of existing commits (attribution is an error here — you
 # cannot rewrite someone's pushed commit)

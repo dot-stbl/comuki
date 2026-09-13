@@ -93,8 +93,9 @@ builder.Services
 builder.Services.RemoveHostedServicesForOpenApiGeneration();
 
 // Under build-time OpenAPI generation seed minimal config defaults
-// (MinIO env vars etc.) so the [Required] data-annotation validation in
-// HostComposer.Compose does not fail on a fresh clone without an env file.
+// (MinIO env vars, the OIDC public-host URL, etc.) so the [Required]
+// data-annotation validation in HostComposer.Compose does not fail on a
+// fresh clone without an env file.
 // No-op at runtime — real config comes from config.toml / env. The HMAC
 // pepper seeds keep the ProductionSecretValidator fail-closed check from
 // rejecting the build-time introspection pass (security audit A02-1).
@@ -104,6 +105,7 @@ builder.Services.RemoveHostedServicesForOpenApiGeneration();
 // ApiKeyOptions does not — env-var seeding covers both paths.
 if (OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration)
 {
+    builder.Configuration["auth:publicHost:publicUrl"] = "http://build-time.invalid";
     builder.Configuration["Artifacts:Endpoint"] = "build-time:9000";
     builder.Configuration["Artifacts:AccessKey"] = "build-time";
     builder.Configuration["Artifacts:SecretKey"] = "build-time";

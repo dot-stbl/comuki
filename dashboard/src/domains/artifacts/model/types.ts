@@ -84,8 +84,7 @@ export const ARTIFACT_MIME = {
   svg: "image/svg+xml",
 } as const
 
-export type ArtifactMime =
-  (typeof ARTIFACT_MIME)[keyof typeof ARTIFACT_MIME]
+export type ArtifactMime = (typeof ARTIFACT_MIME)[keyof typeof ARTIFACT_MIME]
 
 /**
  * Browser-rendered as `<img>` directly. The host sets short cache +

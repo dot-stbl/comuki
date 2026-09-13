@@ -25,10 +25,7 @@ export {
   isSandboxedDocumentMime,
 } from "./model/types"
 
-export {
-  evidenceForRun,
-  latestPngForTicket,
-} from "./model/filter-artifacts"
+export { evidenceForRun, latestPngForTicket } from "./model/filter-artifacts"
 
 export {
   mapVisualArtifactListItemToArtifact,

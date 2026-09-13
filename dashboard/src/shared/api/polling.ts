@@ -39,9 +39,7 @@ interface PollingQuery {
  * the query holds an error. Never `false` — a transient failure must not
  * silently switch a screen to no-refresh; it slows down instead.
  */
-export function pollEvery(
-  intervalMs: number,
-): (query: PollingQuery) => number {
+export function pollEvery(intervalMs: number): (query: PollingQuery) => number {
   return (query) =>
     query.state.error ? intervalMs * ERROR_BACKOFF_FACTOR : intervalMs
 }
@@ -53,7 +51,7 @@ export function pollEvery(
  * flow exactly as it was.
  */
 export function livePolling(
-  intervalMs: number,
+  intervalMs: number
 ): false | ((query: PollingQuery) => number) {
   return env.useMock ? false : pollEvery(intervalMs)
 }

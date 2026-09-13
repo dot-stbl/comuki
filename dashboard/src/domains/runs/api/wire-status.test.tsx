@@ -27,7 +27,7 @@ import { StatusBadge } from "@/shared/ui"
 /** The kit marks its badges with `data-test`, not `data-testid`. */
 function renderedBadge(): HTMLElement {
   const badge = document.querySelector<HTMLElement>(
-    '[data-test="status-badge"]',
+    '[data-test="status-badge"]'
   )
   if (badge === null) {
     throw new Error("no status badge was rendered")
@@ -94,9 +94,7 @@ describe("a `succeeded` run off the wire", () => {
     // The regression: with the cast in place this render threw
     // "Element type is invalid" — `statusIcons["succeeded"]` is `undefined`
     // and React cannot render `undefined` as a component.
-    expect(() =>
-      render(<StatusBadge status={summary.status} />),
-    ).not.toThrow()
+    expect(() => render(<StatusBadge status={summary.status} />)).not.toThrow()
 
     const badge = renderedBadge()
     expect(badge.getAttribute("data-status")).toBe("success")
@@ -126,9 +124,9 @@ describe("the duty list's triage sort", () => {
         status,
         createdAt: "2026-09-04T10:00:00.000+00:00",
         updatedAt: new Date(
-          Date.parse("2026-09-04T10:00:00.000+00:00") + durationSec * 1000,
+          Date.parse("2026-09-04T10:00:00.000+00:00") + durationSec * 1000
         ).toISOString(),
-      }),
+      })
     )
   }
 
@@ -144,10 +142,10 @@ describe("the duty list's triage sort", () => {
       "something-the-fe-has-never-heard-of",
     ]) {
       expect(TRIAGE_RANK[normalizeRunStatus(wireWord)]).toEqual(
-        expect.any(Number),
+        expect.any(Number)
       )
       expect(Number.isNaN(TRIAGE_RANK[normalizeRunStatus(wireWord)])).toBe(
-        false,
+        false
       )
     }
   })

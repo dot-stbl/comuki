@@ -189,10 +189,7 @@ function List({
   )
 }
 
-async function mount(
-  roles: Role[],
-  projectRoles: Record<string, Role[]> = {}
-) {
+async function mount(roles: Role[], projectRoles: Record<string, Role[]> = {}) {
   const onOpenSource = vi.fn()
   const onTest = vi.fn()
   const onDisconnect = vi.fn()

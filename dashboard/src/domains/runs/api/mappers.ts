@@ -10,14 +10,14 @@ import type {
   WorkItem,
   WorkItemInspector,
 } from "@/domains/runs/model/types"
+import { flagAnomalies } from "@/domains/runs/model/anomaly"
+import { listSeedRuns } from "@/shared/api/mock"
 import type { RunArtifactsPage as RunArtifactsPageDto } from "@/shared/api/_generated/types/RunArtifactsPage"
 import type { RunDetail as RunDetailDto } from "@/shared/api/_generated/types/RunDetail"
 import type { RunDetailEvent as RunDetailEventDto } from "@/shared/api/_generated/types/RunDetailEvent"
 import type { RunDetailWorkItem as RunDetailWorkItemDto } from "@/shared/api/_generated/types/RunDetailWorkItem"
 import type { RunView } from "@/shared/api/_generated/types/RunView"
-import type {
-  ArtifactPointer as ArtifactPointerDto,
-} from "@/shared/api/_generated/types/ArtifactPointer"
+import type { ArtifactPointer as ArtifactPointerDto } from "@/shared/api/_generated/types/ArtifactPointer"
 import type { RunsPage } from "@/shared/api/_generated/types/RunsPage"
 import {
   PROFILE_META,
@@ -207,17 +207,45 @@ export function toRunSummary(seed: SeedRun): RunSummary {
     durationSec: seed.startSec,
     done: seed.done ?? false,
     workItems: seed.items.map(mapWorkItem),
+    anomaly: null,
   }
+}
+
+/**
+ * Map a list of seed runs and stamp each one with its anomaly flag.
+ *
+ * The flag is computed across the *whole list*, not per-run, so the
+ * per-project median has the same denominator the rest of the page reads.
+ * `toRunSummary` keeps `anomaly: null` and this is the one callers go
+ * through when they have the whole shift in hand (mock store, storybook).
+ */
+export function toRunSummaries(seedRuns: SeedRun[]): RunSummary[] {
+  const summaries = seedRuns.map(toRunSummary)
+  const flags = flagAnomalies(summaries)
+  for (const summary of summaries) {
+    const flag = flags.get(summary.id)
+    if (flag) {
+      summary.anomaly = flag
+    }
+  }
+  return summaries
 }
 
 export function toRunDetail(seed: SeedRun): RunDetail {
   const trace = TRACE_SEED[seed.id] ?? genericTrace(seed)
+  // `findSeedRun` reads the same store the bulk list mapper reads; computing
+  // the flag once across the shift keeps the median denominator consistent.
+  const allRuns = listSeedRuns()
+  const summaries = toRunSummaries(allRuns)
+  const flag = summaries.find((entry) => entry.id === seed.id)?.anomaly ?? null
+
   return {
     ...toRunSummary(seed),
     brief: trace.brief,
     rules: trace.rules,
     revision: trace.revision,
     events: mapEvents(trace.events),
+    anomaly: flag,
   }
 }
 
@@ -368,7 +396,7 @@ const EMPTY_WORK_ITEMS: WorkItem[] = []
 export function mapRunViewToSummary(view: RunView): RunSummary {
   const durationSec = Math.max(
     0,
-    Math.round((Date.parse(view.updatedAt) - Date.parse(view.createdAt)) / 1000),
+    Math.round((Date.parse(view.updatedAt) - Date.parse(view.createdAt)) / 1000)
   )
   return {
     id: view.id,
@@ -381,8 +409,12 @@ export function mapRunViewToSummary(view: RunView): RunSummary {
     cost: 0,
     tokens: 0,
     durationSec,
-    done: view.status === "succeeded" || view.status === "failed" || view.status === "cancelled",
+    done:
+      view.status === "succeeded" ||
+      view.status === "failed" ||
+      view.status === "cancelled",
     workItems: EMPTY_WORK_ITEMS,
+    anomaly: null,
   }
 }
 
@@ -432,7 +464,7 @@ export function mapRunDetailToDetail(detail: RunDetailDto): RunDetail {
       sdk: detail.revision.sdk,
     },
     events: detail.events.map(mapRunDetailEventToTraceEvent),
-  };
+  }
 }
 
 /**
@@ -443,8 +475,10 @@ export function mapRunDetailToDetail(detail: RunDetailDto): RunDetail {
 function mapRunDetailToSummary(detail: RunDetailDto): RunSummary {
   const durationSec = Math.max(
     0,
-    Math.round((Date.parse(detail.updatedAt) - Date.parse(detail.createdAt)) / 1000),
-  );
+    Math.round(
+      (Date.parse(detail.updatedAt) - Date.parse(detail.createdAt)) / 1000
+    )
+  )
 
   return {
     id: detail.id,
@@ -462,7 +496,8 @@ function mapRunDetailToSummary(detail: RunDetailDto): RunSummary {
       detail.status === "failed" ||
       detail.status === "cancelled",
     workItems: detail.workItems.map(mapRunDetailWorkItemToDomain),
-  };
+    anomaly: null,
+  }
 }
 
 /**
@@ -473,9 +508,7 @@ function mapRunDetailToSummary(detail: RunDetailDto): RunSummary {
  * `number`, and `startedAt` from the wire's `string | null` to the
  * domain's optional string.
  */
-function mapRunDetailWorkItemToDomain(
-  entry: RunDetailWorkItemDto,
-): WorkItem {
+function mapRunDetailWorkItemToDomain(entry: RunDetailWorkItemDto): WorkItem {
   return {
     id: entry.id,
     profile: entry.profile,
@@ -485,7 +518,7 @@ function mapRunDetailWorkItemToDomain(
     cost: toNumber(entry.cost),
     tokens: toNumber(entry.tokens),
     startedAt: entry.startedAt ?? undefined,
-  };
+  }
 }
 
 /**
@@ -504,22 +537,20 @@ function mapRunDetailWorkItemToDomain(
  * page. When the payload is missing or malformed we fall back to a
  * neutral reading; never throw on bad wire data.
  */
-function mapRunDetailEventToTraceEvent(
-  entry: RunDetailEventDto,
-): TraceEvent {
-  const occurredAt = new Date(entry.occurredAt);
+function mapRunDetailEventToTraceEvent(entry: RunDetailEventDto): TraceEvent {
+  const occurredAt = new Date(entry.occurredAt)
   const time = isNaN(occurredAt.getTime())
     ? "—"
-    : `${String(occurredAt.getUTCHours()).padStart(2, "0")}:${String(occurredAt.getUTCMinutes()).padStart(2, "0")}`;
+    : `${String(occurredAt.getUTCHours()).padStart(2, "0")}:${String(occurredAt.getUTCMinutes()).padStart(2, "0")}`
 
-  const parsedStatus = readStatusFromPayload(entry.payloadJson);
-  const text = parsedStatus.summary ?? entry.type;
+  const parsedStatus = readStatusFromPayload(entry.payloadJson)
+  const text = parsedStatus.summary ?? entry.type
 
   return {
     time,
     status: parsedStatus.status ?? "running",
     text,
-  };
+  }
 }
 
 /**
@@ -530,10 +561,10 @@ function mapRunDetailEventToTraceEvent(
  */
 function toNumber(value: number | string): number {
   if (typeof value === "number") {
-    return Number.isFinite(value) ? value : 0;
+    return Number.isFinite(value) ? value : 0
   }
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : 0
 }
 
 /**
@@ -545,31 +576,32 @@ function toNumber(value: number | string): number {
  * silently: the screen's TraceEvent readers treat the default ("running")
  * status and a free-text `text` as valid.
  */
-function readStatusFromPayload(
-  payloadJson: string | null,
-): { status: TraceEvent["status"] | null; summary: string | null } {
+function readStatusFromPayload(payloadJson: string | null): {
+  status: TraceEvent["status"] | null
+  summary: string | null
+} {
   if (!payloadJson) {
-    return { status: null, summary: null };
+    return { status: null, summary: null }
   }
   try {
-    const parsed: unknown = JSON.parse(payloadJson);
+    const parsed: unknown = JSON.parse(payloadJson)
     if (parsed === null || typeof parsed !== "object") {
-      return { status: null, summary: null };
+      return { status: null, summary: null }
     }
-    const record = parsed as Record<string, unknown>;
-    const candidate = typeof record["to"] === "string"
-      ? (record["to"] as string).toLowerCase()
-      : null;
+    const record = parsed as Record<string, unknown>
+    const candidate =
+      typeof record["to"] === "string"
+        ? (record["to"] as string).toLowerCase()
+        : null
     const status =
       candidate !== null && isWireRunStatus(candidate)
         ? normalizeRunStatus(candidate)
-        : null;
-    const summary = typeof record["type"] === "string"
-      ? (record["type"] as string)
-      : null;
-    return { status, summary };
+        : null
+    const summary =
+      typeof record["type"] === "string" ? (record["type"] as string) : null
+    return { status, summary }
   } catch {
-    return { status: null, summary: null };
+    return { status: null, summary: null }
   }
 }
 
@@ -593,10 +625,10 @@ const WIRE_RUN_STATUSES: ReadonlySet<string> = new Set([
   "succeeded",
   "failed",
   "cancelled",
-]);
+])
 
 function isWireRunStatus(value: string): boolean {
-  return WIRE_RUN_STATUSES.has(value);
+  return WIRE_RUN_STATUSES.has(value)
 }
 
 /**
@@ -613,12 +645,19 @@ function mapArtifactPointer(entry: ArtifactPointerDto): ArtifactPointer | null {
     return {
       name: entry.name,
       uri: new URL(entry.uri),
-      size: typeof entry.size === "string" ? Number.parseInt(entry.size, 10) : entry.size,
+      size:
+        typeof entry.size === "string"
+          ? Number.parseInt(entry.size, 10)
+          : entry.size,
       contentType: entry.contentType,
     }
   } catch (error) {
     if (typeof console !== "undefined") {
-      console.warn("[runs] dropping artifact with malformed URI", entry.name, error)
+      console.warn(
+        "[runs] dropping artifact with malformed URI",
+        entry.name,
+        error
+      )
     }
     return null
   }
@@ -629,7 +668,7 @@ function mapArtifactPointer(entry: ArtifactPointerDto): ArtifactPointer | null {
  * been packaged yet — exactly what the host returns.
  */
 export function mapRunArtifactsPageToArtifacts(
-  page: RunArtifactsPageDto,
+  page: RunArtifactsPageDto
 ): RunArtifacts {
   const items = page.items
     .map(mapArtifactPointer)

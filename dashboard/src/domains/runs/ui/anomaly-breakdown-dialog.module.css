@@ -1,0 +1,80 @@
+/* The anomaly breakdown dialog body — every figure on its own row so a
+   screen reader can land each one separately, and a sentence up top
+   that states the rule's actual reading (median + multiplier + cap name)
+   rather than just `flag.reason`. */
+
+.summary {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--foreground);
+}
+
+.kvList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: 12rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+.kv dt {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.kv dd {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.figure {
+  font-family: var(--font-data);
+  font-size: var(--t-h2);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.tokensMuted {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.rule {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+
+.footerLine {
+  margin: 0;
+  padding-block-start: var(--s2);
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+}
+
+.link {
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}

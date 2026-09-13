@@ -8,7 +8,12 @@ import {
   WORKER_POOLS_SEED,
 } from "@/shared/api/mock/queue.seed"
 
-import { backlogOf, unclaimedOver, workerCounts, AGE_STALLED_SEC } from "./queue"
+import {
+  backlogOf,
+  unclaimedOver,
+  workerCounts,
+  AGE_STALLED_SEC,
+} from "./queue"
 
 /**
  * The mock's own contract.
@@ -23,7 +28,10 @@ describe("the seeded queue and pool describe one mechanism", () => {
   it("claims exactly the running items, and nothing else", () => {
     for (const item of QUEUE_SEED) {
       if (item.status === "running") {
-        expect(item.claimedBy, `${item.id} is running and unclaimed`).not.toBeNull()
+        expect(
+          item.claimedBy,
+          `${item.id} is running and unclaimed`
+        ).not.toBeNull()
       } else {
         expect(
           item.claimedBy,
@@ -34,14 +42,19 @@ describe("the seeded queue and pool describe one mechanism", () => {
   })
 
   it("points every claim at a worker that exists, and back again", () => {
-    const workerById = new Map(WORKERS_SEED.map((worker) => [worker.id, worker]))
+    const workerById = new Map(
+      WORKERS_SEED.map((worker) => [worker.id, worker])
+    )
 
     for (const item of QUEUE_SEED) {
       if (!item.claimedBy) {
         continue
       }
       const worker = workerById.get(item.claimedBy)
-      expect(worker, `${item.id} names a worker that is not in the pool`).toBeDefined()
+      expect(
+        worker,
+        `${item.id} names a worker that is not in the pool`
+      ).toBeDefined()
       expect(worker?.itemId).toBe(item.id)
       // A worker only claims what its own profile can run — that is the whole
       // matching rule, and an item queued against a profile nobody runs is the
@@ -56,11 +69,17 @@ describe("the seeded queue and pool describe one mechanism", () => {
 
     for (const worker of WORKERS_SEED) {
       if (worker.state === "idle") {
-        expect(worker.itemId, `${worker.id} is idle and holds an item`).toBeNull()
+        expect(
+          worker.itemId,
+          `${worker.id} is idle and holds an item`
+        ).toBeNull()
         expect(worker.leaseSec).toBeNull()
         continue
       }
-      expect(worker.itemId, `${worker.id} is ${worker.state} and holds nothing`).not.toBeNull()
+      expect(
+        worker.itemId,
+        `${worker.id} is ${worker.state} and holds nothing`
+      ).not.toBeNull()
       const item = itemById.get(worker.itemId as string)
       expect(item?.status).toBe("running")
       expect(item?.claimedBy).toBe(worker.id)
@@ -70,7 +89,10 @@ describe("the seeded queue and pool describe one mechanism", () => {
   it("only names profiles the client actually declared", () => {
     const catalog = new Set<string>(PROFILE_CATALOG)
     for (const item of QUEUE_SEED) {
-      expect(catalog.has(item.profile), `${item.profile} is not in the catalog`).toBe(true)
+      expect(
+        catalog.has(item.profile),
+        `${item.profile} is not in the catalog`
+      ).toBe(true)
     }
     for (const worker of WORKERS_SEED) {
       expect(catalog.has(worker.profile)).toBe(true)
@@ -124,7 +146,9 @@ describe("the seed carries the cases the screen was built for", () => {
     const atlas = QUEUE_SEED.filter((item) => item.projectId === "p_atlas")
     expect(backlogOf(atlas)).toBeGreaterThan(0)
 
-    const pool = WORKER_POOLS_SEED.find((entry) => entry.projectId === "p_atlas")
+    const pool = WORKER_POOLS_SEED.find(
+      (entry) => entry.projectId === "p_atlas"
+    )
     // `min idle = 0`, which is what makes that emptiness correct rather than
     // an outage — and what the other empty state says out loud.
     expect(pool?.minIdle).toBe(0)

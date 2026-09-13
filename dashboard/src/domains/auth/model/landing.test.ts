@@ -61,9 +61,9 @@ describe("the three landings", () => {
 
 describe("the login search", () => {
   it("reads the arrival and the return path", () => {
-    expect(parseLoginSearch({ reason: "expired", redirect: "/runs/r_1" })).toEqual(
-      { reason: "expired", redirect: "/runs/r_1" }
-    )
+    expect(
+      parseLoginSearch({ reason: "expired", redirect: "/runs/r_1" })
+    ).toEqual({ reason: "expired", redirect: "/runs/r_1" })
   })
 
   it("drops an arrival it does not recognise, rather than inventing one", () => {
@@ -78,9 +78,9 @@ describe("the login search", () => {
   })
 
   it("keeps a search string on the return path", () => {
-    expect(parseLoginSearch({ redirect: "/runs?status=waiting" }).redirect).toBe(
-      "/runs?status=waiting"
-    )
+    expect(
+      parseLoginSearch({ redirect: "/runs?status=waiting" }).redirect
+    ).toBe("/runs?status=waiting")
   })
 })
 

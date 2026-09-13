@@ -11,10 +11,15 @@ public sealed class ScaleSupervisorOptions
 {
     public const string SectionName = "Compute:Scale";
 
-    /// <summary>Default worker image (digest-pinned in production).</summary>
+    /// <summary>
+    /// Default worker image — the public GHCR registry, deliberately
+    /// untagged: the supervisor pins it to the running build's version
+    /// (<see cref="WorkerImagePinning"/>), falling back to
+    /// <c>latest</c> on unstamped local builds.
+    /// </summary>
     [Required]
     [MinLength(1)]
-    public string WorkerImage { get; init; } = "ghcr.io/comuki/worker:latest";
+    public string WorkerImage { get; init; } = "ghcr.io/dot-stbl/comuki-worker";
 
     /// <summary>Default pinned git ref of the profiles repo stamped on started workers.</summary>
     [Required]

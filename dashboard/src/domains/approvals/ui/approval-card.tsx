@@ -11,10 +11,7 @@ import { cn } from "@/shared/lib/utils"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
 import { Button, Tooltip } from "@/shared/ui"
 
-import {
-  ApprovalRiskBadge,
-  ApprovalTypeBadge,
-} from "./approval-badges"
+import { ApprovalRiskBadge, ApprovalTypeBadge } from "./approval-badges"
 import { APPROVAL_TYPE_META } from "./approval-type-meta"
 import styles from "./approval-card.module.css"
 

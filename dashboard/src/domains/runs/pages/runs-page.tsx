@@ -12,6 +12,7 @@ import {
   triageOrder,
 } from "@/domains/runs/model/profile-flow"
 import type { RunSummary } from "@/domains/runs/model/types"
+import { AnomalyBreakdownDialog } from "@/domains/runs/ui/anomaly-breakdown-dialog"
 import { createRunColumns, getRunId } from "@/domains/runs/ui/runs-columns"
 import {
   ProfileRiver,
@@ -28,6 +29,7 @@ import {
   SplitPane,
   SplitPanel,
   SplitSeparator,
+  SwitchField,
   Tooltip,
   applyDataFilters,
   dataFilterSpecs,
@@ -97,6 +99,15 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
   // layout already uses, with nothing to change in the kit.
   const [columnSizing, setColumnSizing] = useState<DataTableColumnSizing>({})
   const [cancelling, setCancelling] = useState<RunSummary | null>(null)
+  // The row the operator asked to break down — null when the modal is
+  // closed. Held at the page level rather than inside the cell so the
+  // dialog sits in the page tree, where the sticky header and the rail
+  // already cooperate, rather than inside the table tree.
+  const [anomaly, setAnomaly] = useState<RunSummary | null>(null)
+  // "Show only anomalies" rides beside the toolbar's own filter chips,
+  // out of the column-filter system so a tap on a flag keeps the rest
+  // of the list's filters intact.
+  const [anomaliesOnly, setAnomaliesOnly] = useState(false)
 
   const approve = useApproveRun()
   const cancel = useCancelRun()
@@ -143,6 +154,10 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
     [session]
   )
 
+  const onShowAnomaly = useCallback((run: RunSummary) => {
+    setAnomaly(run)
+  }, [])
+
   const approvingId = approve.isPending ? (approve.variables ?? null) : null
   const cancellingId = cancel.isPending ? (cancel.variables ?? null) : null
 
@@ -156,6 +171,7 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
         cancellingId,
         onApprove,
         onCancel,
+        onShowAnomaly,
         session,
       }),
     [
@@ -166,6 +182,7 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
       cancellingId,
       onApprove,
       onCancel,
+      onShowAnomaly,
       session,
     ]
   )
@@ -176,7 +193,8 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
      derivation rule on `DataTableToolbar`: the first `text` filter a column
      set declares is the row's search. */
   const searchId = useMemo(
-    () => dataFilterSpecs(columns).find((spec) => spec.filter.kind === "text")?.id,
+    () =>
+      dataFilterSpecs(columns).find((spec) => spec.filter.kind === "text")?.id,
     [columns]
   )
 
@@ -216,9 +234,14 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
   // screen is back to opening on the runs that need a human. No mode flag, and
   // nothing to unwind on the day this list is sorted server-side: `sorting`
   // goes to the query and `triageOrder` goes with it.
+  const filteredData = useMemo(
+    () => (anomaliesOnly ? data.filter((run) => run.anomaly !== null) : data),
+    [data, anomaliesOnly]
+  )
+
   const rows = useMemo(
-    () => triageOrder(applyDataFilters(data, filters, columns)),
-    [data, filters, columns]
+    () => triageOrder(applyDataFilters(filteredData, filters, columns)),
+    [filteredData, filters, columns]
   )
 
   const profileFilter = filters.profile ?? ""
@@ -324,7 +347,18 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
                 columnVisibility={columnVisibility}
                 onColumnVisibilityChange={setColumnVisibility}
                 trailing={
-                  <span className={tableStyles.count}>{rows.length} shown</span>
+                  <span className={tableStyles.toolbarTrailing}>
+                    <SwitchField
+                      id="runs-anomalies-only"
+                      label="Show only anomalies"
+                      checked={anomaliesOnly}
+                      onCheckedChange={setAnomaliesOnly}
+                      data-test="anomalies-only-toggle"
+                    />
+                    <span className={tableStyles.count}>
+                      {rows.length} shown
+                    </span>
+                  </span>
                 }
               />
             ) : null
@@ -470,6 +504,16 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
           setCancelling(null)
         }}
         onCancel={() => setCancelling(null)}
+      />
+
+      <AnomalyBreakdownDialog
+        run={anomaly}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAnomaly(null)
+          }
+        }}
+        session={session}
       />
     </AppShell>
   )

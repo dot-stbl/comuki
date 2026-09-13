@@ -38,7 +38,10 @@ export function readSeedVerify(): SeedVerifySnapshot {
 }
 
 /** Turn the gate on or off for one project. The commands do not move. */
-export function setSeedVerifyEnabled(projectId: string, enabled: boolean): void {
+export function setSeedVerifyEnabled(
+  projectId: string,
+  enabled: boolean
+): void {
   state = {
     ...state,
     projects: state.projects.map((project) =>

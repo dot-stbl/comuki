@@ -1,0 +1,154 @@
+# Release publishing — GHCR images for the public (OSS) contour.
+#
+# What triggers what (full contract in RELEASE.md):
+#   push tag v*      → both images tagged vX.Y.Z + X.Y.Z + latest, binaries
+#                      stamped with the semver (COMUKI_VERSION build arg)
+#   push to master   → both images tagged edge-<shortsha>, binaries
+#                      unstamped (0.0.0 — the worker spawn pinning falls
+#                      back to `latest`); guarded by `paths` below
+#
+# NOTE on paths + tags: GitHub evaluates `paths` only for branch pushes;
+#   a tag push always triggers the workflow (there is no file diff to
+#   filter on), which is exactly what a release wants.
+#
+# Images (matches deploy/oss/README.md):
+#   ghcr.io/dot-stbl/comuki         host + migrator + brain + dashboard SPA
+#                                   (deploy/compose/docker/host.Dockerfile)
+#   ghcr.io/dot-stbl/comuki-worker  translator + pi agent runtime
+#                                   (deploy/compose/docker/worker.Dockerfile)
+#
+# The corp contour (registry.hybrid.ai, GitLab CI) is untouched — the
+# dual-build is deliberate: GHCR is the public face, Harbor the corp mirror.
+#
+# GitHub Release NOTES are not created here (contents: read is deliberate):
+#   the tag author runs `gh release create vX.Y.Z --generate-notes` — see
+#   RELEASE.md "Cutting a release".
+name: release
+
+on:
+  push:
+    tags: ['v*']
+    branches: [master]
+    paths:
+      - 'platform/**'
+      - 'agents/**'
+      - 'dashboard/**'
+      - 'deploy/**'
+      - '.github/workflows/release.yml'
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  # Never cancel mid-push: a half-overwritten multi-tag image is worse
+  # than two sequential runs.
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: publish images (ghcr)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # Present for future linux/arm64 targets (homelab clusters); current
+      # builds are amd64-only — qemu-emulated node/bun/dotnet stages would
+      # triple the build time.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tag push v0.1.0 → stamped version 0.1.0, primary image tag v0.1.0.
+      # Master push → unstamped 0.0.0 (pin fallback), primary tag edge-<sha>.
+      - name: Compute version and primary tag
+        id: vars
+        run: |
+          short_sha="${GITHUB_SHA::7}"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+            primary="$GITHUB_REF_NAME"
+          else
+            version="0.0.0"
+            primary="edge-$short_sha"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "primary=$primary" >> "$GITHUB_OUTPUT"
+
+      # vX.Y.Z (the git tag, verbatim) + X.Y.Z (the semver — this is the
+      # tag the host's worker-image pinning derives, so it MUST exist) +
+      # latest (releases only) + edge-<shortsha> (master only).
+      - name: Docker metadata (host)
+        id: meta-host
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/dot-stbl/comuki
+          flavor: latest=false
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=sha,prefix=edge-,format=short,enable=${{ github.ref == 'refs/heads/master' }}
+
+      - name: Docker metadata (worker)
+        id: meta-worker
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/dot-stbl/comuki-worker
+          flavor: latest=false
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=sha,prefix=edge-,format=short,enable=${{ github.ref == 'refs/heads/master' }}
+
+      - name: Build and push host image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/compose/docker/host.Dockerfile
+          platforms: linux/amd64
+          push: true
+          # VITE_API_BASE_URL stays at its empty default (same-origin SPA).
+          build-args: |
+            COMUKI_VERSION=${{ steps.vars.outputs.version }}
+          tags: ${{ steps.meta-host.outputs.tags }}
+          labels: ${{ steps.meta-host.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/compose/docker/worker.Dockerfile
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            COMUKI_VERSION=${{ steps.vars.outputs.version }}
+          tags: ${{ steps.meta-worker.outputs.tags }}
+          labels: ${{ steps.meta-worker.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Lightest proof the images boot: the `version` subcommand runs
+      # before any host bootstrap (no config, no DB, no env — see
+      # ComukiCli) and prints the stamped version, which doubles as a
+      # check that the COMUKI_VERSION build arg actually landed.
+      - name: Smoke test host image
+        run: |
+          out="$(docker run --rm ghcr.io/dot-stbl/comuki:${{ steps.vars.outputs.primary }} /app/host/comuki version)"
+          echo "$out"
+          grep -q "version=${{ steps.vars.outputs.version }}" <<< "$out"
+
+      - name: Smoke test worker image
+        run: |
+          docker run --rm --entrypoint /bin/sh ghcr.io/dot-stbl/comuki-worker:${{ steps.vars.outputs.primary }} \
+            -c '/app/translator/comuki-translator version && pi --version'

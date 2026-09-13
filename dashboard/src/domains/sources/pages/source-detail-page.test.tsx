@@ -355,9 +355,12 @@ describe("the filter expression is stored verbatim and never parsed", () => {
     // And what a hint appended is stored exactly as it stands, punctuation-free
     // and all.
     saveWatch()
-    await waitFor(() => expect(savedWatch(GITHUB)?.filter).toBe("labels\nrepo"), {
-      timeout: 3000,
-    })
+    await waitFor(
+      () => expect(savedWatch(GITHUB)?.filter).toBe("labels\nrepo"),
+      {
+        timeout: 3000,
+      }
+    )
   })
 
   it("asks a different provider for different nouns", async () => {
@@ -471,9 +474,9 @@ describe("what the page says about the connection itself", () => {
     expect(screen.getByText(/resolved on the host/i)).toBeTruthy()
 
     // The title is the connection and the summary says whose it is.
-    expect(
-      (await screen.findByRole("heading", { level: 1 })).textContent
-    ).toBe("plexor/identity-svc")
+    expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe(
+      "plexor/identity-svc"
+    )
     expect(screen.getByText(/gitlab · plexor/)).toBeTruthy()
   })
 
@@ -503,9 +506,13 @@ describe("the acts on the record ride in the header", () => {
     const header = document.querySelector(
       "[data-test='page-header']"
     ) as HTMLElement
-    expect(header.querySelector("[data-test='connection-state']")).not.toBeNull()
+    expect(
+      header.querySelector("[data-test='connection-state']")
+    ).not.toBeNull()
     expect(header.querySelector("[data-test='source-test']")).not.toBeNull()
-    expect(header.querySelector("[data-test='source-disconnect']")).not.toBeNull()
+    expect(
+      header.querySelector("[data-test='source-disconnect']")
+    ).not.toBeNull()
 
     // Disconnecting is not a way of saving a draft, so it is not beside a save.
     expect(header.querySelector("[data-test='watch-submit']")).toBeNull()

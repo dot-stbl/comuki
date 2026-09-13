@@ -4,10 +4,7 @@ import { RotateCw } from "lucide-react"
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
 import { useOutcomesQuery } from "@/domains/home/api/queries"
-import {
-  groupAttention,
-  readAttention,
-} from "@/domains/home/model/attention"
+import { groupAttention, readAttention } from "@/domains/home/model/attention"
 import { AttentionList } from "@/domains/home/ui/attention-list"
 import { AttentionVerdict } from "@/domains/home/ui/attention-verdict"
 import { HomeShortcuts } from "@/domains/home/ui/home-shortcuts"
@@ -194,7 +191,10 @@ export function HomePage() {
                   the top of this screen, and history never outranks a
                   decision that is owed now. */}
               {outcomes.data ? (
-                <OutcomesBand days={outcomes.data} className={styles.outcomes} />
+                <OutcomesBand
+                  days={outcomes.data}
+                  className={styles.outcomes}
+                />
               ) : null}
 
               <RunningNow runs={running} total={reading.running.length} />

@@ -38,14 +38,17 @@ export interface ProxyModelsResponse {
  * caller can put the page into its error branch.
  */
 export async function fetchProxyModelsAsync(
-  cancellationToken?: AbortSignal,
+  cancellationToken?: AbortSignal
 ): Promise<ProxyModelsResponse> {
   const apiBaseUrl = env.apiBaseUrl
   const proxyKey = env.proxyKey
 
-  if (apiBaseUrl === "" || proxyKey === null) {
+  // An empty base is only an error on dev servers; production builds bake
+  // it empty on purpose (same-origin — the released image serves the SPA
+  // from the host process), the same contract as kubb-client.
+  if ((apiBaseUrl === "" && !env.apiSameOrigin) || proxyKey === null) {
     throw new Error(
-      "[proxy] apiBaseUrl or proxyKey is not set — set VITE_API_BASE_URL and VITE_PROXY_KEY to call /v1/models.",
+      "[proxy] apiBaseUrl or proxyKey is not set — set VITE_API_BASE_URL and VITE_PROXY_KEY to call /v1/models."
     )
   }
 

@@ -11,7 +11,12 @@
 import { render } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { SplitPane, SplitPanel, SplitSeparator, type SplitLayout } from "./split-pane"
+import {
+  SplitPane,
+  SplitPanel,
+  SplitSeparator,
+  type SplitLayout,
+} from "./split-pane"
 
 /** The callback the last-rendered group handed the stub. */
 let report: ((layout: SplitLayout) => void) | undefined

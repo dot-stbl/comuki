@@ -5,6 +5,8 @@ using Comuki.Modules.Memory.Domain.Facts;
 using Comuki.Modules.Memory.Domain.Facts.Kinds;
 using Comuki.Modules.Memory.Domain.Facts.Scopes;
 using Comuki.Modules.Memory.Domain.Ids;
+using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -17,15 +19,31 @@ namespace Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
 /// writes supersede same-topic rows inside one transaction, and searches
 /// cosine-ranked when a query embedding is supplied and the pgvector
 /// column exists — everything else falls back to the embedding-free
-/// ranking, which is the contract's hard floor.
+/// ranking, which is the contract's hard floor. The cosine path is raw
+/// SQL against the pgvector column, outside EF's model, so
+/// <see cref="MemoryDbContext"/>'s <c>HasQueryFilter</c> cannot reach it —
+/// <see cref="SearchAsync"/> refuses a plainly out-of-scope request before
+/// ever opening the context, and <c>MemoryFactSql.CosineSearchSql</c>
+/// carries the same rule directly for whatever reaches the SQL anyway.
 /// </summary>
 /// <param name="dbFactory"></param>
 /// <param name="clock"></param>
 /// <param name="logger"></param>
+/// <param name="scopeAccessor">
+/// The ambient caller scope — read directly here (not only through the
+/// <see cref="MemoryDbContext"/> the factory hands back) so a plainly
+/// out-of-scope search can be refused before a context is even opened.
+/// Optional, mirroring <see cref="MemoryDbContext"/>'s own accessor
+/// parameter: a store built without one is by definition a system
+/// consumer and searches unrestricted; a host that cares about scoping
+/// registers a real accessor and this reads it the same way the
+/// DbContext's query filter does.
+/// </param>
 public sealed class EfMemoryStore(
     IDbContextFactory<MemoryDbContext> dbFactory,
     TimeProvider clock,
-    ILogger<EfMemoryStore> logger) : IMemoryStore
+    ILogger<EfMemoryStore> logger,
+    ISubjectScopeAccessor? scopeAccessor = null) : IMemoryStore
 {
     /// <inheritdoc />
     public async Task<MemoryFactView> WriteAsync(MemoryFactWrite write, CancellationToken cancellationToken = default)
@@ -96,6 +114,17 @@ public sealed class EfMemoryStore(
     /// <inheritdoc />
     public async Task<IReadOnlyList<MemoryFactView>> SearchAsync(MemoryFactQuery query, CancellationToken cancellationToken = default)
     {
+        if (!IsQueryReachable(scopeAccessor, query.Scope, query.SubjectId))
+        {
+            // A restricted caller naming a project it is not assigned to,
+            // or the user scope at all (no per-user identity axis exists
+            // to check it against), can never get a row back — refuse
+            // before opening a context rather than let the cosine path's
+            // raw SQL or the LINQ fallback's query filter discover that on
+            // its own.
+            return [];
+        }
+
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
         var cutoff = clock.GetUtcNow() - MemoryFactPolicy.EphemeralTtl;
 
@@ -172,6 +201,39 @@ public sealed class EfMemoryStore(
         return await db.MemoryFacts
             .Where(fact => fact.Kind == MemoryFactKind.Ephemeral && fact.CreatedAt < cutoff)
             .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Whether <paramref name="scopeAccessor"/>'s current scope can ever
+    /// see a row matching <paramref name="requestedScope"/>/
+    /// <paramref name="requestedSubjectId"/>. No accessor at all (a store
+    /// built without one) is by definition a system consumer, same as
+    /// <see cref="MemoryDbContext"/>'s own default; an unrestricted
+    /// established scope always can too. A restricted caller can never
+    /// reach <see cref="MemoryScope.User"/> (no per-user identity axis
+    /// exists on <see cref="SubjectScope"/> to check it against — the
+    /// same fail-closed default <see cref="MemoryDbContext"/>'s query
+    /// filter applies) nor a <see cref="MemoryScope.Project"/> id outside
+    /// its own assignments. Anything else (no scope named, or
+    /// <see cref="MemoryScope.Global"/>) proceeds — the EF query filter
+    /// and, on the cosine path, <c>MemoryFactSql.CosineSearchSql</c>'s own
+    /// clause narrow the rest.
+    /// </summary>
+    private static bool IsQueryReachable(ISubjectScopeAccessor? scopeAccessor, MemoryScope? requestedScope, string? requestedSubjectId)
+    {
+        if (scopeAccessor is null)
+        {
+            return true;
+        }
+
+        var scope = scopeAccessor.Current;
+        return scope.Unrestricted || requestedScope switch
+        {
+            MemoryScope.User => false,
+            MemoryScope.Project when requestedSubjectId is { } subjectId
+                && Guid.TryParse(subjectId, out var projectId) => scope.Allows(new ProjectId(projectId)),
+            _ => true,
+        };
     }
 }
 
@@ -277,6 +339,18 @@ file static class MemoryFactVectors
                 command.CommandText = MemoryFactSql.CosineSearchSql;
                 command.Parameters.Add(VectorParameter("vector", embedding));
                 command.Parameters.Add(new NpgsqlParameter("cutoff", ephemeralCutoff));
+                // Object-axis scoping — this query runs raw SQL outside
+                // EF's model, so MemoryDbContext's HasQueryFilter on
+                // MemoryFact cannot reach it; these two parameters
+                // reproduce the same rule directly (see MemoryFactSql.CosineSearchSql).
+                command.Parameters.Add(new NpgsqlParameter("unrestricted", NpgsqlTypes.NpgsqlDbType.Boolean)
+                {
+                    Value = db.ScopeUnrestricted,
+                });
+                command.Parameters.Add(new NpgsqlParameter("allowedProjectSubjectKeys", NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text)
+                {
+                    Value = db.ScopeProjectSubjectKeys,
+                });
                 command.Parameters.Add(FilterTextParameter(
                     "scope", query.Scope is { } scope ? MemoryScopeKeys.Key(scope) : null));
                 command.Parameters.Add(FilterTextParameter(

@@ -104,7 +104,7 @@ async function loadRealtime(): Promise<Loaded> {
 
 function realtimeTree(
   provider: typeof import("@/app/realtime-provider"),
-  client: QueryClient,
+  client: QueryClient
 ): ReactNode {
   return (
     <QueryClientProvider client={client}>
@@ -137,14 +137,14 @@ describe("RealtimeProvider", () => {
     const connection = harness.built[0]
     await waitFor(() => expect(connection.start).toHaveBeenCalledTimes(1))
     await waitFor(() =>
-      expect(runsHub.runsHubStatusStore.getSnapshot().status).toBe("live"),
+      expect(runsHub.runsHubStatusStore.getSnapshot().status).toBe("live")
     )
 
     // A server event lands on the bound callback and invalidates the cache.
     client.setQueryData(["runs"], [])
     expect(client.getQueryState(["runs"])?.isInvalidated).toBe(false)
     const runEventHandler = connection.on.mock.calls.find(
-      ([method]) => method === "RunEvent",
+      ([method]) => method === "RunEvent"
     )?.[1] as (event: unknown) => void
     expect(runEventHandler).toBeDefined()
     runEventHandler({
@@ -156,7 +156,7 @@ describe("RealtimeProvider", () => {
       payloadOmitted: false,
     })
     await waitFor(() =>
-      expect(client.getQueryState(["runs"])?.isInvalidated).toBe(true),
+      expect(client.getQueryState(["runs"])?.isInvalidated).toBe(true)
     )
 
     // The session dies (cache cleared, user null): the socket goes with it.

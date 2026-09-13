@@ -187,9 +187,7 @@ describe("leaving a half-filled form", () => {
     fireEvent.click(screen.getByRole("link", { name: "identity" }))
 
     await waitFor(() => expect(here(router)).toBe("/identity"))
-    expect(
-      screen.queryByText("Leave without granting the role?")
-    ).toBeNull()
+    expect(screen.queryByText("Leave without granting the role?")).toBeNull()
   })
 
   it("returns where the operator came from on cancel, without asking", async () => {
@@ -199,9 +197,7 @@ describe("leaving a half-filled form", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
 
     await waitFor(() => expect(here(router)).toBe("/identity"))
-    expect(
-      screen.queryByText("Leave without granting the role?")
-    ).toBeNull()
+    expect(screen.queryByText("Leave without granting the role?")).toBeNull()
   })
 
   it("asks before dropping a decision the form has already recorded", async () => {

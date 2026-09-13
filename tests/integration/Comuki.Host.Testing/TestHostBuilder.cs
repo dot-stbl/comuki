@@ -51,8 +51,19 @@ public static class TestHostBuilder
             options.ValidateOnBuild = false;
             options.ValidateScopes = false;
         });
-        builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort.Next()}");
+
+        var port = FreeTcpPort.Next();
+        builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
         builder.Logging.ClearProviders();
+
+        // AuthPublicHostOptions (security audit A03-1/A10-1) now binds
+        // through HostComposer with .ValidateOnStart() — every suite that
+        // boots the real composition needs a non-empty
+        // auth:publicHost:publicUrl or the host refuses to start. The test
+        // loopback address IS this host's "public" address for fixture
+        // purposes, so this also keeps OIDC redirect_uri assertions
+        // against client.BaseAddress correct without per-suite config.
+        builder.Configuration["auth:publicHost:publicUrl"] = $"http://127.0.0.1:{port}";
 
         builder.Services
             .AddOrchestrationPersistence(connectionString)

@@ -68,7 +68,10 @@ const columns: DataColumn<Shard>[] = [
       filter: {
         kind: "select",
         placeholder: "all profiles",
-        options: PROFILES.map((profile) => ({ value: profile, label: profile })),
+        options: PROFILES.map((profile) => ({
+          value: profile,
+          label: profile,
+        })),
       },
     },
   },

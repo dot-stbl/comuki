@@ -26,7 +26,11 @@ export interface ConnectGuideProps {
  * reference for adding the board that is still missing; when one is not, it is
  * the whole page.
  */
-export function ConnectGuide({ grafana, boardsRepo, noBoards }: ConnectGuideProps) {
+export function ConnectGuide({
+  grafana,
+  boardsRepo,
+  noBoards,
+}: ConnectGuideProps) {
   return (
     <div className={styles.guide} data-test="connect-guide">
       {grafana ? (
@@ -39,8 +43,8 @@ export function ConnectGuide({ grafana, boardsRepo, noBoards }: ConnectGuideProp
           <AlertTriangle className={styles.noneIcon} aria-hidden="true" />
           <span>
             No grafana is configured for this platform, so none of the boards
-            above can be opened yet. Their definitions still exist — they live in
-            our repository, not in a database — so importing them is the only
+            above can be opened yet. Their definitions still exist — they live
+            in our repository, not in a database — so importing them is the only
             step between here and a working board.
           </span>
         </p>

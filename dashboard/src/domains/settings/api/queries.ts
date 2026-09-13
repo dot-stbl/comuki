@@ -151,13 +151,8 @@ export function useSettingsStopMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      kind,
-      on,
-    }: {
-      kind: SettingsStopKind
-      on: boolean
-    }) => toggleSettingsStop(kind, on),
+    mutationFn: ({ kind, on }: { kind: SettingsStopKind; on: boolean }) =>
+      toggleSettingsStop(kind, on),
     onSuccess: (next) => {
       queryClient.setQueryData(settingsQueryKey, next)
     },

@@ -1,0 +1,98 @@
+/* The budget progress tile — today's burn at the figure, the month
+   underneath, and the meter in the slot today's reading owns. The
+   visual grammar is the proxy-budget tile's: hairline on the start edge,
+   meter colour from heat, two sub-lines naming the figures already on
+   the tile so a screen reader can read what is drawn without losing
+   anything. */
+
+.budget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+  padding: var(--s4) var(--s5);
+  border-inline-start: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.budget[data-heat="near"] {
+  border-inline-start-color: var(--st-waiting);
+}
+
+.budget[data-heat="over"] {
+  border-inline-start-color: var(--st-failed);
+}
+
+.label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.value {
+  color: var(--text);
+}
+
+.unit {
+  font-size: var(--t-xs);
+  font-weight: var(--fw-regular);
+  color: var(--text-faint);
+}
+
+.figureSep {
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+  margin-inline: var(--s1);
+}
+
+.budget[data-heat="near"] .value {
+  color: var(--st-waiting);
+}
+
+.budget[data-heat="over"] .value {
+  color: var(--st-failed);
+  font-weight: var(--fw-semibold);
+}
+
+.sub {
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.subKey {
+  display: inline-block;
+  min-inline-size: 8rem;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  text-transform: lowercase;
+  color: var(--text-faint);
+}
+
+.subValue {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}

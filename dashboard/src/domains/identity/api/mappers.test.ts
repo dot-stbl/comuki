@@ -40,7 +40,10 @@ describe("mapLoginRequestFromInput", () => {
   it("carries email and password through verbatim", () => {
     const request = mapLoginRequestFromInput("user@comuki.local", "p4ssw0rd")
 
-    expect(request).toEqual({ email: "user@comuki.local", password: "p4ssw0rd" })
+    expect(request).toEqual({
+      email: "user@comuki.local",
+      password: "p4ssw0rd",
+    })
   })
 
   it("does not trim, lowercase, or normalise either field", () => {
@@ -94,7 +97,7 @@ describe("mapMeResponseToSessionUser", () => {
 
   it("falls back to subjectId when userId is null (api-key call)", () => {
     const session = mapMeResponseToSessionUser(
-      meFixture({ userId: null, subjectId: "key-uuid-here" }),
+      meFixture({ userId: null, subjectId: "key-uuid-here" })
     )
 
     expect(session.id).toBe("key-uuid-here")
@@ -102,7 +105,7 @@ describe("mapMeResponseToSessionUser", () => {
 
   it("filters roles to platform-scope for platformRoles", () => {
     const session = mapMeResponseToSessionUser(
-      meFixture({ roles: ["operator", "approver", "viewer", "platform-admin"] }),
+      meFixture({ roles: ["operator", "approver", "viewer", "platform-admin"] })
     )
 
     expect(session.platformRoles).toEqual(["operator", "platform-admin"])
@@ -116,9 +119,9 @@ describe("mapMeResponseToSessionUser", () => {
         roles: ["approver", "viewer"],
         permissions: {
           platform: [],
-          projects: { "p_comuki": ["plans.approve", "runs.view"] },
+          projects: { p_comuki: ["plans.approve", "runs.view"] },
         },
-      }),
+      })
     )
 
     expect(session.projectRoles).toEqual({})
@@ -126,7 +129,7 @@ describe("mapMeResponseToSessionUser", () => {
 
   it("treats missing email and displayName as empty strings rather than null", () => {
     const session = mapMeResponseToSessionUser(
-      meFixture({ email: undefined, displayName: undefined }),
+      meFixture({ email: undefined, displayName: undefined })
     )
 
     expect(session.email).toBe("")
@@ -143,7 +146,7 @@ describe("mapMeResponseToSessionUser", () => {
 describe("mapOidcStartToAuthorizationUrl", () => {
   it("returns a string response as the authorization URL", () => {
     const url = mapOidcStartToAuthorizationUrl(
-      "https://idp.example.com/auth?state=abc",
+      "https://idp.example.com/auth?state=abc"
     )
 
     expect(url).toBe("https://idp.example.com/auth?state=abc")
@@ -156,16 +159,16 @@ describe("mapOidcStartToAuthorizationUrl", () => {
     // from a string that merely looks like one, and the kubb follow-
     // redirect behaviour means real mode will land here often.
     expect(() => mapOidcStartToAuthorizationUrl({ location: "/" })).toThrow(
-      /OIDC start did not return a string URL/i,
+      /OIDC start did not return a string URL/i
     )
     expect(() => mapOidcStartToAuthorizationUrl(null)).toThrow(
-      /OIDC start did not return a string URL/i,
+      /OIDC start did not return a string URL/i
     )
     expect(() => mapOidcStartToAuthorizationUrl(undefined)).toThrow(
-      /OIDC start did not return a string URL/i,
+      /OIDC start did not return a string URL/i
     )
     expect(() => mapOidcStartToAuthorizationUrl(42)).toThrow(
-      /OIDC start did not return a string URL/i,
+      /OIDC start did not return a string URL/i
     )
   })
 })
@@ -198,7 +201,10 @@ describe("mapUserAccountViewToSeed", () => {
   })
 
   it("fills the disabled -> status gap with 'disabled'", () => {
-    const seed = mapUserAccountViewToSeed({ ...SAMPLE_USER_VIEW, disabled: true })
+    const seed = mapUserAccountViewToSeed({
+      ...SAMPLE_USER_VIEW,
+      disabled: true,
+    })
 
     expect(seed.status).toBe("disabled")
   })
@@ -313,7 +319,9 @@ describe("mapApiKeyViewToSeed", () => {
     expect(seed.lastUsedAt).toBe("2026-03-04T00:00:00+00:00")
     // The wire view carries no field that exposes a secret — we leave it
     // at the type-level to make the contract explicit in unit tests.
-    expect("Plaintext" in (seed as unknown as Record<string, unknown>)).toBe(false)
+    expect("Plaintext" in (seed as unknown as Record<string, unknown>)).toBe(
+      false
+    )
   })
 
   it("maps isActive onto the active / revoked status", () => {
@@ -333,14 +341,20 @@ describe("mapApiKeyViewToSeed", () => {
 
 describe("page-level list mappers", () => {
   it("maps an identity users page to seed users", () => {
-    expect(mapIdentityUsersPageToSeedUsers({ items: [SAMPLE_USER_VIEW] })).toHaveLength(1)
+    expect(
+      mapIdentityUsersPageToSeedUsers({ items: [SAMPLE_USER_VIEW] })
+    ).toHaveLength(1)
   })
 
   it("maps a grants page to seed grants", () => {
-    expect(mapGrantsPageToSeedGrants({ items: [SAMPLE_GRANT_VIEW] })).toHaveLength(1)
+    expect(
+      mapGrantsPageToSeedGrants({ items: [SAMPLE_GRANT_VIEW] })
+    ).toHaveLength(1)
   })
 
   it("maps an api-keys page to seed keys", () => {
-    expect(mapApiKeysPageToSeedKeys({ items: [SAMPLE_KEY_VIEW] })).toHaveLength(1)
+    expect(mapApiKeysPageToSeedKeys({ items: [SAMPLE_KEY_VIEW] })).toHaveLength(
+      1
+    )
   })
 })

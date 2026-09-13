@@ -15,11 +15,16 @@ All three reference the same images:
 
 | Image | Contents |
 |---|---|
-| `ghcr.io/dot-stbl/comuki` | one image, three entrypoints — `/app/host` (orchestrator), `/app/migrator` (migrations job), `/app/brain` (standalone brain, experimental) |
+| `ghcr.io/dot-stbl/comuki` | one image, three entrypoints — `/app/host` (orchestrator API + dashboard SPA), `/app/migrator` (migrations job), `/app/brain` (standalone brain, experimental) |
 | `ghcr.io/dot-stbl/comuki-worker` | Translator + pi agent runtime — the container spawned per work item |
-| `ghcr.io/dot-stbl/comuki-dashboard` | the dashboard SPA behind nginx |
 
-From a git checkout you can build all of them locally (see
+There is no separate dashboard image: the SPA is baked into the host
+image (same origin, no nginx hop). Tags are versioned — see
+[`RELEASE.md`](../../RELEASE.md): every `vX.Y.Z` git tag publishes
+`vX.Y.Z` + `X.Y.Z` + `latest` of both images, and `edge-<sha>` rolls on
+master.
+
+From a git checkout you can build both of them locally (see
 `deploy/compose/docker/*.Dockerfile`); set the tags to `local` in the
 respective env/values files.
 
@@ -30,6 +35,14 @@ cd deploy/compose
 cp .env.example .env           # defaults boot a localhost stack
 docker compose up -d --build   # dashboard: http://localhost:17173
 ```
+
+Prefer published release images over `:latest` (which is whatever was
+cut last)? Pin the version instead of building from source: set
+`COMUKI_IMAGE_TAG=v0.1.0` and `COMUKI_WORKER_IMAGE=ghcr.io/dot-stbl/comuki-worker:0.1.0`
+in `.env`, and delete the `build:` blocks of the `comuki-host` /
+`comuki-migrator` / `worker-image` services in `docker-compose.yml` so
+compose pulls instead of building. The versioned-tag rule and the
+host/worker version contract live in [`RELEASE.md`](../../RELEASE.md).
 
 Log in with `COMUKI_BOOTSTRAP_ADMIN_EMAIL` / `COMUKI_BOOTSTRAP_ADMIN_PASSWORD`
 from your `.env` (defaults `admin@example.com` / `comuki_dev` — change them).
@@ -175,7 +188,7 @@ through the optional built-in proxy (`COMUKI_PROXY_ENABLED`,
 | No workers spawn (k8s) | `COMUKI_COMPUTE_PROVIDER` must be `kubernetes` and the `comuki-worker-spawn` Role applied (`kubectl auth can-i create jobs -n comuki -as=system:serviceaccount:comuki:comuki-host`). |
 | MinIO 403 on artifact writes | `COMUKI_ARTIFACTS_ACCESSKEY`/`_SECRETKEY` don't match MinIO's root credentials. |
 | Login 401 `auth.invalid_credentials` | Same answer for unknown email / wrong password / disabled account — no enumeration signal. Check the bootstrap admin vars were set on first boot. |
-| Dashboard loads but every request fails | The SPA's baked `VITE_API_BASE_URL` doesn't match the URL you opened — rebuild the dashboard image with the right `--build-arg VITE_API_BASE_URL`. |
+| Dashboard loads but every request fails | Custom build with a cross-origin API: the SPA's baked `VITE_API_BASE_URL` must match the URL you opened — rebuild the host image with the right `--build-arg VITE_API_BASE_URL`. Shipped images default to same-origin (empty arg) and work on any host. |
 | Migrator Job loops `connection refused` | Normal during Postgres startup (backoffLimit 12). Persistent failures: check `COMUKI_DB` / secret values. |
 
 More operational depth (backup/restore, OIDC setup, bootstrap-admin

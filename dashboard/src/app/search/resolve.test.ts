@@ -66,7 +66,11 @@ describe("the shape catalogue routes without searching", () => {
     ["ap-01", "approval", "/approvals?q=ap-01"],
     ["sha256:9c41ab", "image", "/queue?w=sha256%3A9c41ab"],
     ["cmk_4e9c", "api key", "/identity?tab=keys&q=cmk_4e9c"],
-    ["duty@comuki.local", "person", "/identity?tab=users&q=duty%40comuki.local"],
+    [
+      "duty@comuki.local",
+      "person",
+      "/identity?tab=users&q=duty%40comuki.local",
+    ],
     ["p_comuki", "project", "/projects?q=comuki"],
     ["comuki", "project", "/projects?q=comuki"],
     ["web-app", "app", "/runs?q=web-app"],
@@ -260,9 +264,9 @@ describe("free text hands off instead of inventing rows", () => {
 
   it("offers only the screens this session can open", () => {
     // A viewer watches runs and nothing else: no queue, no inbox.
-    expect(hrefs(of(resolve("webhook", session(["viewer"])), "handoff"))).toEqual(
-      ["/runs?q=webhook"]
-    )
+    expect(
+      hrefs(of(resolve("webhook", session(["viewer"])), "handoff"))
+    ).toEqual(["/runs?q=webhook"])
   })
 
   it("still offers to search when the query also resolved", () => {

@@ -17,7 +17,14 @@ public static class MemoryPersistenceExtensions
     /// the memory store (singleton over the context factory — every method
     /// opens its own context) and the ephemeral sweep worker. Null-logger
     /// fallbacks keep the module resolvable outside a full host; a host
-    /// that already registered logging wins (TryAdd).
+    /// that already registered logging wins (TryAdd). No
+    /// <c>ISubjectScopeAccessor</c> registration is added here on purpose:
+    /// <see cref="MemoryDbContext"/>, <see cref="EfMemoryStore"/> and
+    /// <see cref="MemorySweepWorker"/> all take it optionally and default
+    /// to an unrestricted (system) view when none is registered — a host
+    /// that cares about scoping (<c>Comuki.Host.Brain</c>) registers the
+    /// real <c>AsyncLocalSubjectScopeAccessor</c> itself before calling
+    /// this method.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="connectionString"></param>

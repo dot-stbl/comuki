@@ -27,7 +27,13 @@ vi.mock("@/shared/config/env", () => ({ env: { useMock: true } }))
    had: jsdom computes no layout, so nothing here was ever going to check one.
    The height chain is hand-traced in `cost-page.module.css`. */
 vi.mock("react-resizable-panels", () => ({
-  Group: ({ children, className }: { children: ReactNode; className?: string }) => (
+  Group: ({
+    children,
+    className,
+  }: {
+    children: ReactNode
+    className?: string
+  }) => (
     <div className={className} data-test="split-pane">
       {children}
     </div>
@@ -74,6 +80,7 @@ const routeTree = rootRoute.addChildren(
     "/verify",
     "/settings",
     "/projects",
+    "/projects/$projectId",
     "/identity",
     "/compute",
     "/models",
@@ -110,114 +117,178 @@ async function screenReady() {
     </ThemeProvider>
   )
 
-  await waitFor(() => expect(all('[data-test="cost-stat"]')).toHaveLength(3))
+  // Wait for the three headline tiles to mount — the screen's signature.
+  await waitFor(() =>
+    expect(all('[data-test="cost-tiles"] > article')).toHaveLength(3)
+  )
 }
 
 describe("the cost report, end to end over the seed", () => {
-  it("draws all three readings and both breakdowns rather than a blank strip", async () => {
-    // The failure this project has actually shipped from this shape: every gate
-    // green on a screen that draws nothing. jsdom cannot see layout, so what is
-    // asserted is that every region is in the document once the query answers.
+  it("draws all six widgets on one screen — every headline reading and every breakdown", async () => {
     await screenReady()
 
+    // Headline tiles.
+    expect(find('[data-test="total-spend"]')).not.toBeNull()
+    expect(find('[data-test="forecast-widget"]')).not.toBeNull()
+    expect(find('[data-test="budget-progress"]')).not.toBeNull()
+
+    // Period toggle — three options, day pressed by default.
+    expect(
+      all('[data-test="period-toggle-option"][aria-pressed="true"]')
+    ).toHaveLength(1)
+
+    // Breakdowns.
+    expect(find('[data-test="cost-by-day"]')).not.toBeNull()
+    expect(find('[data-test="cost-by-model"]')).not.toBeNull()
+    expect(find('[data-test="top-projects-section"]')).not.toBeNull()
     expect(find('[data-test="cost-by-app"]')).not.toBeNull()
     expect(find('[data-test="cost-failures"]')).not.toBeNull()
-    expect(all('[data-test="spend-by-app"] li')).toHaveLength(5)
-    expect(all('[data-test="failure-analytics"] li')).toHaveLength(3)
-    expect(find('[data-test="spend-empty"]')).toBeNull()
-  })
 
-  it("keeps each reading at the precision that reading is worth", async () => {
-    // Three precisions on one screen, and each is a decision: cents for a price
-    // per success, whole dollars for a day, whole percent for a cap.
-    await screenReady()
-
-    expect(text('[data-stat="per-success"]')).toContain("$0.42")
-    expect(text('[data-stat="per-day"]')).toContain("$148")
-    expect(text('[data-stat="proxy-budget"]')).toContain("67%")
-  })
-
-  it("keeps the sentence under every figure", async () => {
-    await screenReady()
-
-    expect(text('[data-stat="per-success"]')).toContain(
-      "key business metric — per successful task, not per call"
-    )
-    expect(text('[data-stat="per-day"]')).toContain(
-      "86% of tasks — green gate"
-    )
-    expect(text('[data-stat="proxy-budget"]')).toContain(
-      "$148 / $220 · kill-switch at cap"
-    )
-  })
-
-  it("draws the cap without a hue while there is nothing to decide", async () => {
-    await screenReady()
-
-    // Two thirds spent is a fact, not a decision — so the tile that replaced
-    // the old progress bar looks exactly like the old one did at this reading.
-    // The hue only arrives at 85%, where "kill-switch at cap" stops being a
-    // note and starts being a forecast.
-    expect(find('[data-test="proxy-budget-meter"]')?.getAttribute("data-heat")).toBe("ok")
-    expect(find('[data-stat="proxy-budget"]')?.getAttribute("data-heat")).toBe("ok")
-  })
-
-  it("hides the drawn bar from the a11y tree, because the tile already says it", async () => {
-    await screenReady()
-
-    // Nothing on this screen is announced only as a length.
+    // Spend-by-model has at least three rows — the minimum lineup.
     expect(
-      find('[data-test="proxy-budget-meter"]')?.getAttribute("aria-hidden")
-    ).toBe("true")
+      all('[data-test="spend-by-model-row"]').length
+    ).toBeGreaterThanOrEqual(3)
+
+    // Top-projects renders seven rows (the seed's limit).
+    expect(all('[data-test="top-projects-row"]').length).toBe(7)
+  })
+
+  it("states the period total as the headline figure, with delta vs previous", async () => {
+    await screenReady()
+
+    const figure = text('[data-test="total-spend"]')
+    expect(figure).toContain("$148.20")
+    // Day's burn rate is derived from total / period-days.
+    expect(figure).toContain("$148.20 / day")
+    // Delta vs yesterday is a small negative — the seeded previous is $152.7.
+    expect(find('[data-test="total-spend-delta"]')?.textContent).toMatch(
+      /▼\s?3%/
+    )
+  })
+
+  it("says end-of-period for the forecast and renders a heat reading", async () => {
+    await screenReady()
+
+    const forecast = text('[data-test="forecast-widget"]')
+    expect(forecast).toContain("Forecast")
+    expect(forecast).toContain("end of day")
+    expect(forecast).toMatch(/\d+%\s+of\s+\$220 cap/)
+    // Day view: $148.2 / $220 = 67% — ok, no hue.
+    expect(
+      find('[data-test="forecast-widget"]')?.getAttribute("data-heat")
+    ).toBe("ok")
+  })
+
+  it("shows today's burn and month-to-date as the budget's two readings", async () => {
+    await screenReady()
+
+    const budget = text('[data-test="budget-progress"]')
+    expect(budget).toContain("$148")
+    expect(budget).toContain("$220")
+    expect(budget).toContain("today")
+    expect(budget).toContain("month-to-date")
+    // 67% today — ok.
+    expect(
+      find('[data-test="budget-progress"]')?.getAttribute("data-heat")
+    ).toBe("ok")
+  })
+
+  it("renders three model rows with the project's actual lineup", async () => {
+    await screenReady()
+
+    const rows = all('[data-test="spend-by-model-row"]')
+    const models = rows.map((node) => node.getAttribute("data-model") ?? "")
+    expect(models).toContain("glm-5.2")
+    expect(models).toContain("glm-4.5")
+    expect(models).toContain("MiniMax-M3")
+  })
+
+  it("ranks the top projects by spend and lands the runaway at the top", async () => {
+    await screenReady()
+
+    const rows = all('[data-test="top-projects-row"]')
+    const projectIds = rows.map(
+      (node) => node.getAttribute("data-project") ?? ""
+    )
+    // The runaway is the seed's biggest spender — its 12× median lands it
+    // ahead of comuki, atlas, kafka, even though those projects have higher
+    // caps. The ranking is by spend, not by cap.
+    expect(projectIds[0]).toBe("p_prometheus")
+    // The cap column surfaces sentinel-vault's zero cap on hover even when
+    // the row is sliced off the visible top-N — proving the seed kept the
+    // project in the data set rather than dropping it.
+    expect(
+      find(
+        '[data-test="top-projects-row"][data-project="p_prometheus"]'
+      )?.querySelector('[data-test="top-projects-spend"]')?.textContent
+    ).toBe("$31")
+  })
+
+  it("names the regions the product names them", async () => {
+    await screenReady()
+
+    expect(text('[data-test="cost-by-day"] h2')).toContain("spend by day")
+    expect(text('[data-test="cost-by-model"] h2')).toContain("spend by model")
+    expect(text('[data-test="top-projects-section"] h2')).toContain(
+      "top projects"
+    )
+    expect(text('[data-test="cost-by-app"] h2')).toContain("spend by app")
+    expect(text('[data-test="cost-failures"] h2')).toContain("where runs fail")
   })
 
   it("keeps the seeded-data mark", async () => {
     await screenReady()
 
-    // The figures above are fictional and have to say so.
     expect(text('[data-test="cost-mock-mark"]')).toContain(
       "mock snapshot · VITE_USE_MOCK"
     )
   })
 
-  it("names the region headings the product names them", async () => {
-    await screenReady()
+  it("flips the period with the toggle and re-shapes the byDay length", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup()
+    const router = createRouter({
+      routeTree,
+      history: createMemoryHistory({ initialEntries: ["/"] }),
+    })
 
-    expect(text('[data-test="cost-by-app"] h2')).toContain(
-      "spend by app"
+    render(
+      <ThemeProvider defaultTheme="dark" storageKey="comuki-test-theme">
+        <TestSession roles={["project-admin"]}>
+          <QueryClientProvider
+            client={
+              new QueryClient({
+                defaultOptions: { queries: { retry: false } },
+              })
+            }
+          >
+            <RouterProvider router={router} />
+          </QueryClientProvider>
+        </TestSession>
+      </ThemeProvider>
     )
-    expect(text('[data-test="cost-failures"] h2')).toContain("where runs fail")
-  })
 
-  it("reads a failure rate as whole percent beside its sentence", async () => {
-    await screenReady()
+    // Day: 7 columns (the seed's `seedDayAxis()` length).
+    await waitFor(() =>
+      expect(
+        all('[data-test="cost-by-day"] [data-test="bar-series-bar"]')
+      ).toHaveLength(7)
+    )
 
-    const first = all('[data-test="failure-analytics"] li')[0]
-    expect(first.textContent).toContain("planner")
-    expect(first.textContent).toContain("11%")
-    expect(first.textContent).toContain("types mismatch most often")
-  })
+    // Flip the period — week starts where day does, but the byDay stays at
+    // 7 columns (the seed keeps the day axis for week view); the figure
+    // becomes the week total.
+    const options = all('[data-test="period-toggle-option"]')
+    const weekButton = options.find(
+      (button) => button.getAttribute("data-value") === "week"
+    ) as HTMLButtonElement | undefined
+    expect(weekButton).toBeDefined()
+    await user.click(weekButton!)
 
-  it("draws the week of spend beside the sentence that says it", async () => {
-    await screenReady()
-
-    const section = find('[data-test="cost-by-day"]')
-    expect(section).not.toBeNull()
-    expect(text('[data-test="cost-by-day"] h2')).toContain("spend by day")
-
-    // Seven columns, one per day, and the last is today.
-    const bars = all('[data-test="cost-by-day"] [data-test="bar-series-bar"]')
-    expect(bars).toHaveLength(7)
-    expect(bars[6].getAttribute("data-key")).toBe("today")
-
-    // The figure states the reading in words; the chart's accessible name is
-    // the same sentence, so nothing on this screen is a shape alone.
-    const band = text('[data-test="spend-by-day"]')
-    expect(band).toContain("over the last 7 days")
-    expect(band).toContain("a day")
-    expect(band).toContain("heaviest")
-    expect(
-      find('[data-test="cost-by-day"] [data-test="bar-series"]')?.getAttribute("aria-label")
-    ).toContain("over the last 7 days")
+    await waitFor(() =>
+      expect(weekButton!.getAttribute("aria-pressed")).toBe("true")
+    )
+    await waitFor(() =>
+      expect(text('[data-test="total-spend"]')).toContain("$917.80")
+    )
   })
 })

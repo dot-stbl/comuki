@@ -15,10 +15,7 @@ import {
 } from "@/shared/api/mock/sources.store"
 import type { Role } from "@/shared/session"
 import { TestSession } from "@/shared/session/test-session"
-import {
-  selectValues,
-  setSelectValue,
-} from "@/shared/ui/select/test-select"
+import { selectValues, setSelectValue } from "@/shared/ui/select/test-select"
 
 /* The form moved out of a dialog and onto `/sources/new`, and every rule it
    carried came with it: the four decisions in the order they constrain each

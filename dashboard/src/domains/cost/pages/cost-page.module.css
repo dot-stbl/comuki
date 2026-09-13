@@ -21,21 +21,57 @@
   min-inline-size: 0;
 }
 
-/* The three readings. `auto-fit` rather than `auto-fill`: the count is fixed at
-   three, and `auto-fill` would open a fourth empty track on a wide board and
-   leave the row hanging short of the gutter. */
-.stats {
+/* The three tiles across the top: total spend, forecast, budget progress.
+   `auto-fit` rather than `auto-fill`: the count is fixed at three, and
+   `auto-fill` would open a fourth empty track on a wide board. */
+.tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
   gap: var(--s4);
   min-inline-size: 0;
 }
 
-/* The two regions, side by side while there is room for both to keep their
-   readings, stacked the moment there is not. `min()` rather than a bare length,
-   so a track can never be wider than the column it sits in — a fixed minimum
-   overflows the page the moment the rail is dragged wide, and a report that
-   scrolls sideways is a report nobody reads to the end. */
+/* Period row — the toggle on the left, the figure's delta on the right.
+   Stacks on a narrow board because the toggle and the trailing delta
+   are different shapes and a row that smashes them together is harder
+   to scan than a column that lets them each take their own. */
+.periodRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+/* Delta chip beside the period toggle — same three readings, same
+   palette as the budget tile. Rides beside the toggle rather than
+   inside it, so the toggle stays a pure state control. */
+.deltaChip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s1);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.deltaChipArrow {
+  font-size: var(--t-micro);
+}
+
+.deltaChipUp {
+  color: var(--st-failed);
+}
+
+.deltaChipDown {
+  color: var(--st-success);
+}
+
+/* The two breakdowns side by side while there is room for both to keep
+   their readings, stacked the moment there is not. `min()` rather than a
+   bare length, so a track can never be wider than the column it sits in. */
 .regions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));

@@ -1,11 +1,11 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-import { defineConfig } from "@kubb/core";
-import { pluginClient } from "@kubb/plugin-client";
-import { pluginOas } from "@kubb/plugin-oas";
-import { pluginReactQuery } from "@kubb/plugin-react-query";
-import { pluginTs } from "@kubb/plugin-ts";
-import { pluginZod } from "@kubb/plugin-zod";
+import { existsSync } from "node:fs"
+import { resolve } from "node:path"
+import { defineConfig } from "@kubb/core"
+import { pluginClient } from "@kubb/plugin-client"
+import { pluginOas } from "@kubb/plugin-oas"
+import { pluginReactQuery } from "@kubb/plugin-react-query"
+import { pluginTs } from "@kubb/plugin-ts"
+import { pluginZod } from "@kubb/plugin-zod"
 
 // Kubb v4 (issue #29). Source of truth = the backend-emitted OpenAPI document
 // at /comuki.orchestrator/artifacts/openapi.json, regenerated on every Debug
@@ -25,7 +25,7 @@ import { pluginZod } from "@kubb/plugin-zod";
 // output.clean: true fires, otherwise `output.clean` wipes the generated tree
 // on every miss instead of failing fast (the 1334-files-lost pattern from
 // console.x).
-const SPEC_PATH = "../artifacts/openapi.json";
+const SPEC_PATH = "../artifacts/openapi.json"
 
 if (!existsSync(resolve(process.cwd(), SPEC_PATH))) {
   console.error(
@@ -36,9 +36,9 @@ if (!existsSync(resolve(process.cwd(), SPEC_PATH))) {
       "  ApiDescription.Server спавнит `dotnet` из PATH и иначе\n" +
       "  падает с «command not found» (код 127), собрав при этом всё\n" +
       "  остальное успешно. На macOS: PATH=$HOME/.dotnet:$PATH dotnet build …\n" +
-      "  Генерация остановлена ДО output.clean — дерево generated/ не тронуто.\n",
-  );
-  throw new Error("[kubb] input spec not found — see the message above");
+      "  Генерация остановлена ДО output.clean — дерево generated/ не тронуто.\n"
+  )
+  throw new Error("[kubb] input spec not found — see the message above")
 }
 
 export default defineConfig({
@@ -114,4 +114,4 @@ export default defineConfig({
       },
     }),
   ],
-});
+})

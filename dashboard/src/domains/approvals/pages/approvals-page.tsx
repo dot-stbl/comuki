@@ -101,7 +101,11 @@ export function ApprovalsPage() {
         ) : null}
 
         {decision.error ? (
-          <p className={styles.stateBody} role="alert" data-test="approvals-decision-failed">
+          <p
+            className={styles.stateBody}
+            role="alert"
+            data-test="approvals-decision-failed"
+          >
             {decision.error instanceof Error
               ? decision.error.message
               : "The decision did not land."}{" "}

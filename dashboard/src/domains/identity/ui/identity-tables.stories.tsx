@@ -1,12 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/react"
 
 import { buildIdentitySnapshot } from "@/domains/identity/model/identity"
-import { createGrantColumns, getGrantId } from "@/domains/identity/ui/grants-columns"
+import {
+  createGrantColumns,
+  getGrantId,
+} from "@/domains/identity/ui/grants-columns"
 import {
   createApiKeyColumns,
   getApiKeyId,
 } from "@/domains/identity/ui/keys-columns"
-import { createUserColumns, getUserId } from "@/domains/identity/ui/users-columns"
+import {
+  createUserColumns,
+  getUserId,
+} from "@/domains/identity/ui/users-columns"
 import {
   API_KEYS_SEED,
   ROLE_ASSIGNMENTS_SEED,

@@ -99,7 +99,9 @@ describe("the sign-in screen", () => {
     setup.useLoginMutation.mockReturnValue(buildLoginMock())
     render(<LoginPage />, { wrapper: withQuery })
 
-    expect(document.querySelector("[data-test='login-screen'] svg")).not.toBeNull()
+    expect(
+      document.querySelector("[data-test='login-screen'] svg")
+    ).not.toBeNull()
     // Navigation offered to someone the product has not identified yet —
     // the chrome above the form is a footer with a repo link, not a nav.
     expect(screen.queryByRole("navigation")).toBeNull()
@@ -125,9 +127,13 @@ describe("the three landings", () => {
     setup.useLoginMutation.mockReturnValue(buildLoginMock())
     render(<LoginPage />, { wrapper: withQuery })
 
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Sign in")
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+      "Sign in"
+    )
     expect(document.querySelector("[data-test='login-landing']")).toBeNull()
-    expect(screen.getByText(/Sign in to reach the dispatcher board/)).not.toBeNull()
+    expect(
+      screen.getByText(/Sign in to reach the dispatcher board/)
+    ).not.toBeNull()
   })
 
   it("expired: says so, and says where they will be put back", () => {
@@ -200,7 +206,7 @@ describe("the local form", () => {
       projectRoles: {},
     })
     setup.useLoginMutation.mockReturnValue(
-      buildLoginMock({ mutateAsync, isPending: false, status: "success" }),
+      buildLoginMock({ mutateAsync, isPending: false, status: "success" })
     )
 
     const onSignedIn = vi.fn()
@@ -229,9 +235,12 @@ describe("the local form", () => {
     setup.useLoginMutation.mockReturnValue(buildLoginMock({ mutateAsync }))
 
     const onSignedIn = vi.fn()
-    render(<LoginPage redirect="/runs?status=waiting" onSignedIn={onSignedIn} />, {
-      wrapper: withQuery,
-    })
+    render(
+      <LoginPage redirect="/runs?status=waiting" onSignedIn={onSignedIn} />,
+      {
+        wrapper: withQuery,
+      }
+    )
 
     const user = await fillIn("duty", "anything")
     await user.click(screen.getByRole("button", { name: "Sign in" }))
@@ -266,7 +275,11 @@ describe("the local form", () => {
       .fn()
       .mockRejectedValue(new Error("Those credentials were refused."))
     setup.useLoginMutation.mockReturnValue(
-      buildLoginMock({ mutateAsync, isError: true, error: new Error("rejected") }),
+      buildLoginMock({
+        mutateAsync,
+        isError: true,
+        error: new Error("rejected"),
+      })
     )
 
     render(<LoginPage />, { wrapper: withQuery })
@@ -285,7 +298,9 @@ describe("the identity provider", () => {
     setup.useLoginMutation.mockReturnValue(buildLoginMock())
     render(<LoginPage />, { wrapper: withQuery })
 
-    expect(screen.getByRole("button", { name: /Continue with OIDC/ })).not.toBeNull()
+    expect(
+      screen.getByRole("button", { name: /Continue with OIDC/ })
+    ).not.toBeNull()
   })
 
   // §16 says "if configured". A button that leads nowhere teaches an operator

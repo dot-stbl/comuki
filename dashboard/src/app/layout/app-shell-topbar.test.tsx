@@ -11,6 +11,7 @@ import { render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ThemeProvider } from "@/app/theme-provider"
+import { resetRunsHubStatus } from "@/shared/realtime/runs-hub"
 import type { Role } from "@/shared/session"
 import { TestSession } from "@/shared/session/test-session"
 
@@ -62,15 +63,21 @@ function renderBar(roles?: Role[]) {
   )
 }
 
-const find = (selector: string) =>
-  document.querySelector<HTMLElement>(selector)
+const find = (selector: string) => document.querySelector<HTMLElement>(selector)
 
 beforeEach(() => {
   envState.repoUrl = "https://github.com/dot-stbl/comuki"
+  envState.useMock = true
 })
 
 afterEach(() => {
   vi.restoreAllMocks()
+  // The runs hub keeps module-scoped status state — a previous case that
+  // pinned it to "live" would leak into the next render, so we reset back
+  // to whatever the current env says. The bar's pill is the consumer of
+  // this state, and its truth table is the whole reason this reset lives
+  // here rather than at the top of every demo-pill case.
+  resetRunsHubStatus()
 })
 
 describe("the mark, alone", () => {
@@ -132,7 +139,9 @@ describe("the bar's controls", () => {
 
     // A viewer keeps almost no rail, and can still ask where something is —
     // the palette hides the destinations, not the question.
-    expect(await screen.findByRole("button", { name: /search/i })).not.toBeNull()
+    expect(
+      await screen.findByRole("button", { name: /search/i })
+    ).not.toBeNull()
     expect(find('[data-test="new-run"]')).toBeNull()
   })
 
@@ -142,5 +151,34 @@ describe("the bar's controls", () => {
     await screen.findByRole("link", { name: "Comuki — home" })
     expect(find('[data-test="global-search"]')).not.toBeNull()
     expect(find('[data-test="theme-control"]')).not.toBeNull()
+  })
+})
+
+/* The demo pill is the merged reading — one badge that covers env-driven
+   mock mode and a degraded hub. Both inputs (env.useMock and the hub
+   status) come from module-scoped state the topbar wires into the
+   badge, so each case mutates that state and resets it in afterEach. */
+describe("the demo pill", () => {
+  it("renders when the build is in mock mode — env wins over hub status", async () => {
+    // envState.useMock is true by default; runs-hub reads it at init and
+    // starts the bar at "demo". The pill is the merged reading.
+    renderBar(["member"])
+
+    await screen.findByRole("link", { name: "Comuki — home" })
+    const pill = find('[data-test="demo-badge"]')
+    expect(pill).not.toBeNull()
+    expect(pill?.textContent).toBe("Demo")
+  })
+
+  it("does not render in real mode with a live hub — the absence is the confirmation", async () => {
+    envState.useMock = false
+    // resetRunsHubStatus() in afterEach would re-pin to the previous env,
+    // so the case has to pin the hub itself before the bar mounts.
+    resetRunsHubStatus()
+
+    renderBar(["member"])
+
+    await screen.findByRole("link", { name: "Comuki — home" })
+    expect(find('[data-test="demo-badge"]')).toBeNull()
   })
 })

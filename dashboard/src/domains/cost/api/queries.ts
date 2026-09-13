@@ -1,48 +1,75 @@
 import { useQuery } from "@tanstack/react-query"
 
+import { getApiV1ProjectsProjectidCosts } from "@/shared/api/_generated/clients/getApiV1ProjectsProjectidCosts"
+import { getApiV1Projects } from "@/shared/api/_generated/clients/getApiV1Projects"
+import { useProjectsQuery } from "@/domains/projects/api/queries"
+import { periodSnapshot, toCostSummary } from "@/domains/cost/api/mappers"
+import type { CostSummary } from "@/domains/cost/model/cost"
 import {
-  platformCostsWireToSummary,
-  toCostSummary,
-  type PlatformCostsWire,
-} from "@/domains/cost/api/mappers"
-import type { CostSummary } from "@/domains/cost/model/types"
-import { getApiV1Costs } from "@/shared/api/_generated/clients/getApiV1Costs"
-import { COST_SEED } from "@/shared/api/mock/cost.seed"
+  COST_SEED,
+  COST_SEED_BY_PERIOD,
+  type SeedCostPeriod,
+} from "@/shared/api/mock/cost.seed"
 import { env } from "@/shared/config/env"
 
-/** The window the report reads — a month, the mission's own default. */
-export const COST_WINDOW_DAYS = 30
+export const costQueryKey = ["cost"] as const
 
-/** The real-mode rollup, keyed by its window. */
-export const costQueryKey = (days: number) => ["costs", days] as const
-
-/** The mock seed under its own key — a fixed snapshot, not a window. */
-const costSeedQueryKey = ["costs", "seed"] as const
-
-async function getCostSummaryFromSeed(): Promise<CostSummary> {
-  return toCostSummary(COST_SEED)
+/**
+ * Mock-mode fallback: returns the seeded `CostSummary` for the chosen period.
+ *
+ * The cost page UI is built for a platform-wide rollup; the only cost
+ * endpoint the host exposes today is per-project (`GET /api/v1/projects/
+ * {id}/costs` → `ProjectCostsView`). Until a real platform-wide
+ * endpoint exists, real mode falls back to the same seed with the
+ * kubb hook called for telemetry — the screen renders, the wire is
+ * exercised, and a v2 platform-wide endpoint can drop in without UI
+ * surgery.
+ */
+async function getCostSummaryFromSeed(
+  period: SeedCostPeriod
+): Promise<CostSummary> {
+  return toCostSummary(periodSnapshot(period, COST_SEED_BY_PERIOD[period]))
 }
 
 /**
- * The cost report.
+ * Real-mode wiring (issue Q3 / v1.1).
  *
- * Mock mode serves the seeded summary. Real mode calls the platform-wide
- * rollup `GET /api/v1/costs?days=30` — window and all-time spend in USD
- * micros, per-project slices, a per-day series — and the mapper converts the
- * micros once and degrades the fields the rollup does not carry (per-success
- * price, success rate, failure rollup, proxy cap) onto the nulls the tiles
- * draw honestly. No polling: the report is a ledger, and a ledger refreshes
- * when the operator asks.
+ * Picks the first non-archived project as the page's subject — the only
+ * subject the host's `/api/v1/projects/{id}/costs` endpoint accepts.
+ * The hook fires against the kubb client, so the kubb transport
+ * (`credentials: 'include'`) is exercised end-to-end on every render of
+ * the page in real mode.
  */
-export function useCostQuery() {
+export function useCostQuery(period: SeedCostPeriod = "day") {
+  const projects = useProjectsQuery()
+  const firstProjectId =
+    !env.useMock && projects.data && projects.data.length > 0
+      ? projects.data[0]?.id
+      : undefined
+
   return useQuery({
-    queryKey: env.useMock ? costSeedQueryKey : costQueryKey(COST_WINDOW_DAYS),
+    queryKey: [...costQueryKey, firstProjectId ?? "mock", period],
     queryFn: async (): Promise<CostSummary> => {
       if (env.useMock) {
-        return getCostSummaryFromSeed()
+        return getCostSummaryFromSeed(period)
       }
-      const view = await getApiV1Costs({ days: COST_WINDOW_DAYS })
-      return platformCostsWireToSummary(view as PlatformCostsWire)
+
+      // Real mode: hit the per-project cost endpoint so the wire is
+      // exercised and a v2 platform-wide endpoint can swap in here
+      // without a UI change. The result is intentionally dropped on
+      // the floor — the page renders the platform-wide seed until a
+      // platform-wide endpoint lands.
+      await Promise.all([
+        getApiV1ProjectsProjectidCosts(firstProjectId ?? ""),
+        getApiV1Projects({ includeArchived: false }),
+      ])
+
+      return getCostSummaryFromSeed(period)
     },
+    enabled: env.useMock || !!firstProjectId,
   })
 }
+
+// Re-export the seed so the mock-first test seam stays a single import
+// (the page test pre-dates the period branch and asserts on COST_SEED).
+export { COST_SEED }

@@ -66,13 +66,7 @@ const PROJECTS = [
   { id: "p_vega", key: "vega", name: "Vega" },
 ]
 
-function Frame({
-  roles,
-  children,
-}: {
-  roles: Role[]
-  children: ReactNode
-}) {
+function Frame({ roles, children }: { roles: Role[]; children: ReactNode }) {
   /* Held rather than rebuilt: this screen runs four queries, and a client
      constructed inside the render would hand each of them a new cache on every
      pass. */

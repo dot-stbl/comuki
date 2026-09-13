@@ -1,21 +1,14 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Net.Sockets;
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
-using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Host.Testing;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Shouldly;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -24,16 +17,15 @@ namespace Comuki.Host.Integration.Workers;
 
 /// <summary>
 /// Boots the real host composition on a random loopback port against one
-/// migrated Testcontainers Postgres (same contract as the runs fixture) and
-/// exercises the derived workers read surface: page envelope with a busy
+/// migrated Testcontainers Postgres (every module context, via
+/// <see cref="HostDatabaseMigrator"/> — same contract as the runs fixture)
+/// and exercises the derived workers read surface: page envelope with a busy
 /// row, per-worker detail, the honest 404 / 501 paths and the permission
 /// gate (anonymous 401).
 /// </summary>
+[Collection(nameof(WorkersIntegrationCollection))]
 public sealed class WorkersReadEndpointShould : IAsyncLifetime
 {
-    private const string BootstrapEmail = "bootstrap@comuki.test";
-    private const string BootstrapPassword = "bootstrap-pass-1";
-
     private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
         .Build();
 
@@ -41,6 +33,8 @@ public sealed class WorkersReadEndpointShould : IAsyncLifetime
     /// boundary: initialised in InitializeAsync before any test runs
     /// </summary>
     private WebApplication application = null!;
+
+    private TempControlPlaneRoot controlPlane = null!;
 
     private Uri baseAddress = null!;
 
@@ -56,6 +50,7 @@ public sealed class WorkersReadEndpointShould : IAsyncLifetime
         await container.StartAsync(cancellationToken);
 
         var connectionString = container.GetConnectionString();
+        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
 
         // Relative to the real clock: the derivation runs against the
         // host's TimeProvider at request time, so a fixed past instant
@@ -66,8 +61,6 @@ public sealed class WorkersReadEndpointShould : IAsyncLifetime
         OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
         await using (var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options))
         {
-            await orchestrationDb.Database.MigrateAsync(cancellationToken);
-
             var run = Run.Create(project, now.AddHours(-1));
             run.TransitionTo(RunStatus.Running, now.AddMinutes(-30));
             orchestrationDb.Runs.Add(run);
@@ -96,71 +89,33 @@ public sealed class WorkersReadEndpointShould : IAsyncLifetime
             await orchestrationDb.SaveChangesAsync(cancellationToken);
         }
 
-        var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-        await using (var identityDb = new IdentityDbContext(identityOptions.Options))
-        {
-            await identityDb.Database.MigrateAsync(cancellationToken);
-        }
+        controlPlane = new TempControlPlaneRoot("workers");
 
-        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-        await using (var projectsDb = new ProjectsDbContext(projectsOptions.Options))
-        {
-            await projectsDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions
-            {
-                ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
-                EnvironmentName = Environments.Development,
-            });
-        builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
-        builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
-        builder.Logging.ClearProviders();
-        builder.Configuration["ControlPlane:Root"] = Path.GetTempPath();
-        builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
-        builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
-        builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
-        builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
-        builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
-        builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
-        builder.Services
-            .AddOrchestrationPersistence(connectionString)
-            .AddOrchestrationQueue(builder.Configuration);
+        var builder = TestHostBuilder.Create(connectionString);
+        builder.Configuration["ControlPlane:Root"] = controlPlane.Root;
+        TestBootstrapAdmin.Configure(builder.Configuration);
+        TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
-        await application.StartAsync(cancellationToken);
-
-        baseAddress = new Uri(
-            application.Services
-                .GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>()
-                .Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!
-                .Addresses.Single());
+        baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         await application.DisposeAsync();
+        controlPlane.Dispose();
         await container.DisposeAsync();
     }
 
-    private async Task<HttpClient> CreateAdminClientAsync()
+    private Task<HttpClient> CreateAdminClientAsync()
     {
         var client = new HttpClient(new HttpClientHandler { UseCookies = true, CheckCertificateRevocationList = true })
         {
             BaseAddress = baseAddress,
         };
 
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/auth/login",
-            new { email = BootstrapEmail, password = BootstrapPassword },
-            TestContext.Current.CancellationToken);
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-        return client;
+        return client.LoginAsBootstrapAdminAsync(TestContext.Current.CancellationToken);
     }
 
     private sealed record WorkersPageView(
@@ -249,14 +204,13 @@ public sealed class WorkersReadEndpointShould : IAsyncLifetime
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
-
-    private static int FreeTcpPort()
-    {
-        var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-
-        return port;
-    }
 }
+
+/// <summary>
+/// One container per class, never in parallel: two Testcontainers hosts on
+/// the same Docker daemon starve the bootstrap-admin seed long enough for
+/// the faster class to win and the slower boot to get canceled mid-start —
+/// the same contract <c>CostsIntegrationCollection</c> documents.
+/// </summary>
+[CollectionDefinition(nameof(WorkersIntegrationCollection), DisableParallelization = true)]
+public sealed class WorkersIntegrationCollection;

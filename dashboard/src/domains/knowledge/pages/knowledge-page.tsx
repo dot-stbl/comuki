@@ -10,7 +10,10 @@ import {
 } from "@/domains/knowledge/api/queries"
 import { knowledgeHitToEntry } from "@/domains/knowledge/api/mappers"
 import { filterKnowledgeEntries } from "@/domains/knowledge/model/filter-knowledge"
-import { isKnowledgeTab, type KnowledgeTab } from "@/domains/knowledge/model/tabs"
+import {
+  isKnowledgeTab,
+  type KnowledgeTab,
+} from "@/domains/knowledge/model/tabs"
 import { EvalHarnessTable } from "@/domains/knowledge/ui/eval-harness-table"
 import { GateSummary } from "@/domains/knowledge/ui/gate-summary"
 import { GateTab } from "@/domains/knowledge/ui/gate-tab"
@@ -90,8 +93,7 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
   // Real mode narrows with the host's semantic search (pgvector over the
   // chunks); mock mode narrows lexically over the seed. Same box, two honest
   // engines — and the semantic one only runs on a query worth sending.
-  const searching =
-    !env.useMock && query.trim().length > 0
+  const searching = !env.useMock && query.trim().length > 0
   const search = useKnowledgeSearchQuery(query)
 
   const entries = useMemo(() => data?.entries ?? [], [data?.entries])
@@ -202,113 +204,117 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
 
             <TabPanel id="library" className={styles.tabPanel}>
               <div className={styles.library}>
-              {/* The mock library's three readings about the pinned rule set.
+                {/* The mock library's three readings about the pinned rule set.
                   The documents surface carries none of them, so in real mode
                   this whole section is absent rather than zero-filled — an
                   invented revision is the one lie a knowledge screen must
                   not tell. */}
-              {data.revision ? (
+                {data.revision ? (
+                  <Section
+                    variant="region"
+                    id="knowledge-revision"
+                    title="revision in force"
+                    data-test="knowledge-revision"
+                  >
+                    <div className={styles.readings}>
+                      <div className={styles.reading}>
+                        <span className={styles.readingLabel}>
+                          current revision
+                        </span>
+                        <span className={styles.readingFigure}>
+                          {data.revision.rules}
+                        </span>
+                        <span className={styles.readingNote}>
+                          {data.revision.sdk} · updated {data.revision.updated}
+                        </span>
+                      </div>
+
+                      <div className={styles.reading}>
+                        <span className={styles.readingLabel}>
+                          active rules
+                        </span>
+                        <span className={styles.readingFigure}>
+                          {data.rulesActive}
+                        </span>
+                        <span className={styles.readingNote}>
+                          {data.rulesHard} hard · {data.rulesSoft} soft
+                        </span>
+                      </div>
+
+                      <div className={styles.reading}>
+                        <span className={styles.readingLabel}>
+                          reproducibility
+                        </span>
+                        <span className={styles.readingFigure}>
+                          100
+                          <span className={styles.readingUnit}>%</span>
+                        </span>
+                        <span className={styles.readingNote}>
+                          every run pins the rule set + SDK
+                        </span>
+                      </div>
+                    </div>
+                  </Section>
+                ) : null}
+
                 <Section
                   variant="region"
-                  id="knowledge-revision"
-                  title="revision in force"
-                  data-test="knowledge-revision"
+                  id="knowledge-entries"
+                  title={
+                    searching ? "semantic matches" : "rules, docs and skills"
+                  }
+                  note={
+                    searching
+                      ? `top ${search.data?.length ?? 0} by cosine similarity`
+                      : `${shownEntries.length} of ${entries.length}`
+                  }
+                  data-test="knowledge-entries"
                 >
-                  <div className={styles.readings}>
-                    <div className={styles.reading}>
-                      <span className={styles.readingLabel}>
-                        current revision
-                      </span>
-                      <span className={styles.readingFigure}>
-                        {data.revision.rules}
-                      </span>
-                      <span className={styles.readingNote}>
-                        {data.revision.sdk} · updated {data.revision.updated}
-                      </span>
+                  {search.isError ? (
+                    <div className={styles.empty} data-test="knowledge-empty">
+                      <p className={styles.emptyTitle}>Search did not answer</p>
+                      <p className={styles.emptyBody}>
+                        {search.error instanceof Error
+                          ? search.error.message
+                          : "Unknown error"}
+                      </p>
                     </div>
-
-                    <div className={styles.reading}>
-                      <span className={styles.readingLabel}>active rules</span>
-                      <span className={styles.readingFigure}>
-                        {data.rulesActive}
-                      </span>
-                      <span className={styles.readingNote}>
-                        {data.rulesHard} hard · {data.rulesSoft} soft
-                      </span>
+                  ) : shownEntries.length === 0 ? (
+                    <div className={styles.empty} data-test="knowledge-empty">
+                      <p className={styles.emptyTitle}>No matches</p>
+                      <p className={styles.emptyBody}>
+                        {searching
+                          ? "Nothing in the library is close enough to the query."
+                          : "Try another query over pinned rules and docs."}
+                      </p>
                     </div>
-
-                    <div className={styles.reading}>
-                      <span className={styles.readingLabel}>
-                        reproducibility
-                      </span>
-                      <span className={styles.readingFigure}>
-                        100
-                        <span className={styles.readingUnit}>%</span>
-                      </span>
-                      <span className={styles.readingNote}>
-                        every run pins the rule set + SDK
-                      </span>
+                  ) : (
+                    <div className={styles.entries}>
+                      {shownEntries.map((entry) => (
+                        <KnowledgeEntryRow
+                          key={entry.id}
+                          entry={entry}
+                          selected={entry.id === selectedId}
+                          onSelect={setSelectedId}
+                        />
+                      ))}
                     </div>
-                  </div>
+                  )}
                 </Section>
-              ) : null}
 
-              <Section
-                variant="region"
-                id="knowledge-entries"
-                title={searching ? "semantic matches" : "rules, docs and skills"}
-                note={
-                  searching
-                    ? `top ${search.data?.length ?? 0} by cosine similarity`
-                    : `${shownEntries.length} of ${entries.length}`
-                }
-                data-test="knowledge-entries"
-              >
-                {search.isError ? (
-                  <div className={styles.empty} data-test="knowledge-empty">
-                    <p className={styles.emptyTitle}>Search did not answer</p>
-                    <p className={styles.emptyBody}>
-                      {search.error instanceof Error
-                        ? search.error.message
-                        : "Unknown error"}
-                    </p>
-                  </div>
-                ) : shownEntries.length === 0 ? (
-                  <div className={styles.empty} data-test="knowledge-empty">
-                    <p className={styles.emptyTitle}>No matches</p>
-                    <p className={styles.emptyBody}>
-                      {searching
-                        ? "Nothing in the library is close enough to the query."
-                        : "Try another query over pinned rules and docs."}
-                    </p>
-                  </div>
-                ) : (
-                  <div className={styles.entries}>
-                    {shownEntries.map((entry) => (
-                      <KnowledgeEntryRow
-                        key={entry.id}
-                        entry={entry}
-                        selected={entry.id === selectedId}
-                        onSelect={setSelectedId}
-                      />
-                    ))}
-                  </div>
-                )}
-              </Section>
-
-              {/* The golden tasks are a control-plane feed; the documents
+                {/* The golden tasks are a control-plane feed; the documents
                   surface has none, and an empty before/after table is not a
                   reading this screen owes anybody. */}
-              {data.eval.length > 0 ? (
-                <Section
-                  variant="screen"
-                  data-test="knowledge-eval"
-                  title="golden tasks"
-                  note="before → after on rule edits"
-                >
-                  <EvalHarnessTable cases={data.eval} />
-                </Section>
-              ) : null}
+                {data.eval.length > 0 ? (
+                  <Section
+                    variant="screen"
+                    data-test="knowledge-eval"
+                    title="golden tasks"
+                    note="before → after on rule edits"
+                  >
+                    <EvalHarnessTable cases={data.eval} />
+                  </Section>
+                ) : null}
               </div>
             </TabPanel>
 

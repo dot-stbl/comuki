@@ -232,9 +232,8 @@ describe("the models seed and its store", () => {
     const { proxy } = MODELS_SEED
     expect(proxy.burnHourlyUsd).toHaveLength(24)
     const total =
-      Math.round(
-        proxy.burnHourlyUsd.reduce((sum, usd) => sum + usd, 0) * 100
-      ) / 100
+      Math.round(proxy.burnHourlyUsd.reduce((sum, usd) => sum + usd, 0) * 100) /
+      100
     expect(Math.abs(total - proxy.burnDayUsd)).toBeLessThanOrEqual(0.01)
     // And it is one day of the window the figures report, not a parallel
     // universe: under a seventh of the week would be too cheap for the

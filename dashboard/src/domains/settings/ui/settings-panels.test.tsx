@@ -114,8 +114,9 @@ describe("the filters a column declares match the fields they advertise", () => 
   })
 
   it("offers only the deploy targets the registry actually names", () => {
-    expect(uniqueDeployTargets(snapshot.apps).map((option) => option.value))
-      .toEqual(["Cloudflare", "Fly.io", "Vercel", "k8s"])
+    expect(
+      uniqueDeployTargets(snapshot.apps).map((option) => option.value)
+    ).toEqual(["Cloudflare", "Fly.io", "Vercel", "k8s"])
   })
 
   it("filters rules across id, scope and description", () => {

@@ -44,8 +44,8 @@ export function SpendByDay({ days, className }: SpendByDayProps) {
   return (
     <div className={cn(styles.band, className)} data-test="spend-by-day">
       <p className={styles.figure}>
-        <span className={styles.figureValue}>${total.toFixed(2)}</span> over
-        the last {days.length} days ·{" "}
+        <span className={styles.figureValue}>${total.toFixed(2)}</span> over the
+        last {days.length} days ·{" "}
         <span className={styles.figureValue}>${average.toFixed(2)}</span> a day
         · heaviest <span className={styles.figureValue}>{peak.label}</span> at{" "}
         <span className={styles.figureValue}>${peak.spend.toFixed(2)}</span>

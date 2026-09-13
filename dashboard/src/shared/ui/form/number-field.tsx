@@ -6,11 +6,10 @@ import { Field } from "./field"
 import styles from "./form.module.css"
 import { fieldDescriptionId } from "./ids"
 
-export interface NumberFieldProps
-  extends Omit<
-    InputHTMLAttributes<HTMLInputElement>,
-    "id" | "type" | "value" | "onChange"
-  > {
+export interface NumberFieldProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "id" | "type" | "value" | "onChange"
+> {
   id: string
   label: string
   /** The label is real but not drawn — see `FieldProps.labelHidden`. */
@@ -59,7 +58,13 @@ export function NumberField({
   ...rest
 }: NumberFieldProps) {
   return (
-    <Field id={id} label={label} labelHidden={labelHidden} hint={hint} error={error}>
+    <Field
+      id={id}
+      label={label}
+      labelHidden={labelHidden}
+      hint={hint}
+      error={error}
+    >
       <span className={styles.numberBox}>
         <input
           {...rest}
@@ -75,7 +80,11 @@ export function NumberField({
         {/* The unit is decoration around a value the input already owns, so it
             is neither focusable nor announced — the label carries it when a
             screen reader needs it said aloud. */}
-        <span className={styles.numberUnit} data-test="number-unit" aria-hidden="true">
+        <span
+          className={styles.numberUnit}
+          data-test="number-unit"
+          aria-hidden="true"
+        >
           {unit}
         </span>
       </span>

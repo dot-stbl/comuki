@@ -74,7 +74,10 @@ export function Dialog({
       isDismissable={dismissable}
       className={cn(styles.scrim)}
     >
-      <Modal className={cn(styles.modal)} style={width ? { maxInlineSize: width } : undefined}>
+      <Modal
+        className={cn(styles.modal)}
+        style={width ? { maxInlineSize: width } : undefined}
+      >
         <AriaDialog className={cn(styles.dialog)} data-test={dataTest}>
           <Heading slot="title" className={cn(styles.title)}>
             {title}

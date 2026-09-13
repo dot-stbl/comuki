@@ -39,7 +39,10 @@ function mount() {
       projectRoles={{ p_test: ["approver"], p_other: ["viewer"] }}
     >
       <QueryClientProvider client={client}>
-        <ApprovalCard approval={approval("ap_mine", "p_test")} onAction={onAction} />
+        <ApprovalCard
+          approval={approval("ap_mine", "p_test")}
+          onAction={onAction}
+        />
         <ApprovalCard
           approval={approval("ap_theirs", "p_other")}
           onAction={onAction}

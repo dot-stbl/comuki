@@ -69,8 +69,7 @@ export function EvidencePane({
   const heading = title ?? filename
   const lower = contentType.toLowerCase()
   const isPng = lower === "image/png"
-  const isHtmlOrSvg =
-    lower === "text/html" || lower === "image/svg+xml"
+  const isHtmlOrSvg = lower === "text/html" || lower === "image/svg+xml"
 
   return (
     <ModalOverlay
@@ -123,8 +122,8 @@ export function EvidencePane({
               />
             ) : (
               <p className={styles.empty}>
-                no viewer for {contentType || "unknown"} — bytes live at the
-                URL above
+                no viewer for {contentType || "unknown"} — bytes live at the URL
+                above
               </p>
             )}
           </div>

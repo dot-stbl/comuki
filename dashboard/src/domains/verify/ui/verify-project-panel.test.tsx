@@ -10,10 +10,7 @@ import {
 } from "@tanstack/react-router"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
-import type {
-  VerifyCommand,
-  VerifyProject,
-} from "@/domains/verify/model/types"
+import type { VerifyCommand, VerifyProject } from "@/domains/verify/model/types"
 import { VerifyProjectPanel } from "@/domains/verify/ui/verify-project-panel"
 
 /* The virtualizer needs a scroll port with a depth and something watching it,

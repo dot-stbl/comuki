@@ -61,10 +61,7 @@ export function TasksPage({ focus }: TasksPageProps) {
   return (
     <TaskArtifactViewerHost>
       {({ openArtifact }) => (
-        <TasksBody
-          focus={focus}
-          onArtifactOpen={openArtifact}
-        />
+        <TasksBody focus={focus} onArtifactOpen={openArtifact} />
       )}
     </TaskArtifactViewerHost>
   )
@@ -303,7 +300,6 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
           </>
         ) : null}
       </div>
-
-      </AppShell>
+    </AppShell>
   )
 }

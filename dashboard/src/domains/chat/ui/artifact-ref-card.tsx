@@ -50,7 +50,7 @@ export function ArtifactRefCard({
   const query = useVisualArtifactsQuery(projectId)
   const all = useMemo<VisualArtifact[]>(
     () => query.data?.items ?? [],
-    [query.data?.items],
+    [query.data?.items]
   )
 
   // Resolve the part's ids against the fetched list. The set is what
@@ -91,7 +91,7 @@ export function ArtifactRefCard({
               src={visualArtifactContentUrl(
                 env.apiBaseUrl,
                 projectId,
-                entry.id,
+                entry.id
               )}
               contentType={entry.contentType}
               filename={entry.filename}
@@ -115,7 +115,7 @@ export function ArtifactRefCard({
           src={visualArtifactContentUrl(
             env.apiBaseUrl,
             projectId,
-            openArtifact.id,
+            openArtifact.id
           )}
           contentType={openArtifact.contentType}
           filename={openArtifact.filename}

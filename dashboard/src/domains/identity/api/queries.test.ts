@@ -24,13 +24,18 @@ afterEach(() => {
 vi.mock("@/shared/api/_generated/clients/getApiV1AuthMe", () => ({
   getApiV1AuthMe: vi.fn(),
 }))
-vi.mock("@/shared/api/_generated/clients/getApiV1AuthOidcProviderStart", () => ({
-  getApiV1AuthOidcProviderStart: vi.fn(),
-}))
+vi.mock(
+  "@/shared/api/_generated/clients/getApiV1AuthOidcProviderStart",
+  () => ({
+    getApiV1AuthOidcProviderStart: vi.fn(),
+  })
+)
 // vi.mock factories type their exports as the original kubb function so we
 // cast through `vi.fn` to access mock controls — see "kubb-client mock"
 // pattern in other domains. The mocks return the wire shapes by contract.
-function mockFn<T>(): ReturnType<typeof vi.fn> & { mockResolvedValue(v: T): void } {
+function mockFn<T>(): ReturnType<typeof vi.fn> & {
+  mockResolvedValue(v: T): void
+} {
   return vi.fn() as ReturnType<typeof vi.fn> & { mockResolvedValue(v: T): void }
 }
 vi.mock("@/shared/api/_generated/clients/getApiV1Users", () => ({
@@ -52,13 +57,11 @@ describe("queries.ts mock-first path", () => {
     vi.stubEnv("VITE_API_BASE_URL", "")
     vi.resetModules()
 
-    const { useCurrentUserQuery } = await import(
-      "@/domains/identity/api/queries"
-    )
+    const { useCurrentUserQuery } =
+      await import("@/domains/identity/api/queries")
     const { SESSION_USER_SEED } = await import("@/shared/api/mock/session.seed")
-    const { QueryClient, QueryClientProvider } = await import(
-      "@tanstack/react-query"
-    )
+    const { QueryClient, QueryClientProvider } =
+      await import("@tanstack/react-query")
     const { renderHook, waitFor } = await import("@testing-library/react")
     const React = await import("react")
 
@@ -81,15 +84,11 @@ describe("queries.ts mock-first path", () => {
     vi.stubEnv("VITE_API_BASE_URL", "")
     vi.resetModules()
 
-    const oidcClient = await import(
-      "@/shared/api/_generated/clients/getApiV1AuthOidcProviderStart"
-    )
-    const { useStartOidcQuery } = await import(
-      "@/domains/identity/api/queries"
-    )
-    const { QueryClient, QueryClientProvider } = await import(
-      "@tanstack/react-query"
-    )
+    const oidcClient =
+      await import("@/shared/api/_generated/clients/getApiV1AuthOidcProviderStart")
+    const { useStartOidcQuery } = await import("@/domains/identity/api/queries")
+    const { QueryClient, QueryClientProvider } =
+      await import("@tanstack/react-query")
     const { renderHook, waitFor } = await import("@testing-library/react")
     const React = await import("react")
 
@@ -139,7 +138,7 @@ describe("queries.ts mock-first path", () => {
     vi.resetModules()
 
     await expect(
-      import("@/domains/identity/api/queries"),
+      import("@/domains/identity/api/queries")
     ).resolves.toBeDefined()
   })
 })
@@ -150,18 +149,17 @@ describe("queries.ts real-mode F13 read path (#45)", () => {
     vi.stubEnv("VITE_API_BASE_URL", "http://localhost")
     vi.resetModules()
 
-    const usersMod = await import(
-      "@/shared/api/_generated/clients/getApiV1Users"
-    )
-    const grantsMod = await import(
-      "@/shared/api/_generated/clients/getApiV1Grants"
-    )
+    const usersMod =
+      await import("@/shared/api/_generated/clients/getApiV1Users")
+    const grantsMod =
+      await import("@/shared/api/_generated/clients/getApiV1Grants")
     const keysMod = await import("@/shared/api/_generated/clients/getApiV1Keys")
-    const projectsMod = await import(
-      "@/shared/api/_generated/clients/getApiV1Projects"
-    )
+    const projectsMod =
+      await import("@/shared/api/_generated/clients/getApiV1Projects")
 
-    ;(usersMod.getApiV1Users as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(
+      usersMod.getApiV1Users as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
       items: [
         {
           id: { value: "u_alice" },
@@ -174,7 +172,9 @@ describe("queries.ts real-mode F13 read path (#45)", () => {
       ],
       total: 1,
     })
-    ;(grantsMod.getApiV1Grants as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(
+      grantsMod.getApiV1Grants as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
       items: [
         {
           id: { value: "g_alice_platform" },
@@ -191,15 +191,16 @@ describe("queries.ts real-mode F13 read path (#45)", () => {
       ],
       total: 1,
     })
-    ;(keysMod.getApiV1Keys as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [], total: 0 })
-    ;(projectsMod.getApiV1Projects as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([])
+    ;(
+      keysMod.getApiV1Keys as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({ items: [], total: 0 })
+    ;(
+      projectsMod.getApiV1Projects as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue([])
 
-    const { useIdentityQuery } = await import(
-      "@/domains/identity/api/queries"
-    )
-    const { QueryClient, QueryClientProvider } = await import(
-      "@tanstack/react-query"
-    )
+    const { useIdentityQuery } = await import("@/domains/identity/api/queries")
+    const { QueryClient, QueryClientProvider } =
+      await import("@tanstack/react-query")
     const { renderHook, waitFor } = await import("@testing-library/react")
     const React = await import("react")
 
@@ -236,30 +237,32 @@ describe("queries.ts real-mode F13 read path (#45)", () => {
     vi.stubEnv("VITE_API_BASE_URL", "http://localhost")
     vi.resetModules()
 
-    const usersMod = await import(
-      "@/shared/api/_generated/clients/getApiV1Users"
-    )
-    const grantsMod = await import(
-      "@/shared/api/_generated/clients/getApiV1Grants"
-    )
+    const usersMod =
+      await import("@/shared/api/_generated/clients/getApiV1Users")
+    const grantsMod =
+      await import("@/shared/api/_generated/clients/getApiV1Grants")
     const keysMod = await import("@/shared/api/_generated/clients/getApiV1Keys")
-    const projectsMod = await import(
-      "@/shared/api/_generated/clients/getApiV1Projects"
-    )
+    const projectsMod =
+      await import("@/shared/api/_generated/clients/getApiV1Projects")
 
     // vi.mock keeps the kubb client signature on the export; cast through
-  //   vi.fn so test code can reach .mockResolvedValue / .toHaveBeenCalled*.
-  ;(usersMod.getApiV1Users as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [], total: 0 })
-  ;(grantsMod.getApiV1Grants as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [], total: 0 })
-  ;(keysMod.getApiV1Keys as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [], total: 0 })
-  ;(projectsMod.getApiV1Projects as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([])
+    //   vi.fn so test code can reach .mockResolvedValue / .toHaveBeenCalled*.
+    ;(
+      usersMod.getApiV1Users as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({ items: [], total: 0 })
+    ;(
+      grantsMod.getApiV1Grants as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({ items: [], total: 0 })
+    ;(
+      keysMod.getApiV1Keys as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({ items: [], total: 0 })
+    ;(
+      projectsMod.getApiV1Projects as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue([])
 
-    const { useIdentityQuery } = await import(
-      "@/domains/identity/api/queries"
-    )
-    const { QueryClient, QueryClientProvider } = await import(
-      "@tanstack/react-query"
-    )
+    const { useIdentityQuery } = await import("@/domains/identity/api/queries")
+    const { QueryClient, QueryClientProvider } =
+      await import("@tanstack/react-query")
     const { renderHook, waitFor } = await import("@testing-library/react")
     const React = await import("react")
 

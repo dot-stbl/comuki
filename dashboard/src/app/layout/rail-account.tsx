@@ -49,7 +49,11 @@ export function RailAccount({ collapsed = false }: RailAccountProps) {
         data-test="rail-account"
         aria-label={`Account — ${user.name}`}
       >
-        <span className={styles.avatar} aria-hidden="true" data-initial={initial}>
+        <span
+          className={styles.avatar}
+          aria-hidden="true"
+          data-initial={initial}
+        >
           <span className={styles.avatarMark}>{initial}</span>
         </span>
         <span className={styles.identity}>

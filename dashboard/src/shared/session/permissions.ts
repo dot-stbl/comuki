@@ -145,7 +145,9 @@ export const ROLES: readonly Role[] = [
   "platform-admin",
 ]
 
-export function permissionScope(permission: Permission): "project" | "platform" {
+export function permissionScope(
+  permission: Permission
+): "project" | "platform" {
   return SCOPE[permission]
 }
 

@@ -110,11 +110,11 @@ export function GateTab() {
       {ready ? (
         <>
           <p className={styles.intro}>
-            A run has to clear the client&apos;s own checks before it can
-            land. The checks live in their repository — one file, committed
-            like anything else — so this section turns the gate on and off and
-            shows what each check last said. Editing a command means editing
-            the file; every section below says exactly where its file is.
+            A run has to clear the client&apos;s own checks before it can land.
+            The checks live in their repository — one file, committed like
+            anything else — so this section turns the gate on and off and shows
+            what each check last said. Editing a command means editing the file;
+            every section below says exactly where its file is.
           </p>
 
           {projects.map((project) => {

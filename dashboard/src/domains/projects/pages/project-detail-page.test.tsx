@@ -269,9 +269,7 @@ describe("everything else is a hand-off, with a count and a link", () => {
     // that drew its own queue table would be a second claim queue, and the day
     // the two disagreed the operator would believe the one they were on.
     expect(screen.queryByText("wi_0002")).toBeNull()
-    expect(
-      screen.queryByText("описать новое окно хранения")
-    ).toBeNull()
+    expect(screen.queryByText("описать новое окно хранения")).toBeNull()
   })
 
   it("says out loud that the cost report behind it is not narrowed", async () => {

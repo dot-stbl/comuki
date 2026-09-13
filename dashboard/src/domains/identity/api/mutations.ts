@@ -43,7 +43,7 @@ async function login(email: string, password: string): Promise<SessionUser> {
   }
 
   const response = await postApiV1AuthLogin(
-    mapLoginRequestFromInput(email, password),
+    mapLoginRequestFromInput(email, password)
   )
 
   // The login endpoint answers with the basic identity only (id, email,

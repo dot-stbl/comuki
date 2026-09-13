@@ -111,7 +111,15 @@ function withProject(run: SeedRunDraft): SeedRun {
  * the app is opened, which a fixed list of dates never could.
  * ------------------------------------------------------------------------- */
 
-const WEEKDAY_LABELS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const
+const WEEKDAY_LABELS = [
+  "sun",
+  "mon",
+  "tue",
+  "wed",
+  "thu",
+  "fri",
+  "sat",
+] as const
 
 export interface SeedDay {
   daysAgo: number
@@ -493,16 +501,18 @@ const HAND_RUNS: SeedRunDraft[] = [
     startSec: 1620,
     items: [
       item("w1", "explorer", "снять список метрик в проекте", "success"),
-      item("w2", "planner", "план сбора метрик с разбивкой по слоям", "success", [
-        "w1",
-      ]),
+      item(
+        "w2",
+        "planner",
+        "план сбора метрик с разбивкой по слоям",
+        "success",
+        ["w1"]
+      ),
       item("w3", "implementer", "сборщик для фронта", "success", ["w2"]),
       item("w4", "implementer", "прокинуть сборщик в бэкофис", "escalated", [
         "w2",
       ]),
-      item("w5", "implementer", "тестовый запрос на ремоут", "queued", [
-        "w3",
-      ]),
+      item("w5", "implementer", "тестовый запрос на ремоут", "queued", ["w3"]),
       item("w6", "reviewer", "вычитать план отката", "queued", ["w5"]),
       item("w7", "tester", "прогнать на синтетических данных", "queued", [
         "w6",

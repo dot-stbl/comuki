@@ -73,9 +73,7 @@ describe("Sparkline", () => {
       />
     )
 
-    expect(
-      container.querySelector('[data-test="sparkline-line"]')
-    ).toBeNull()
+    expect(container.querySelector('[data-test="sparkline-line"]')).toBeNull()
     expect(getByRole("img").getAttribute("aria-label")).toContain("nothing")
   })
 
@@ -84,8 +82,6 @@ describe("Sparkline", () => {
       <Sparkline values={[2]} label="Spend by hour: $2 so far." />
     )
 
-    expect(
-      container.querySelector('[data-test="sparkline-line"]')
-    ).toBeNull()
+    expect(container.querySelector('[data-test="sparkline-line"]')).toBeNull()
   })
 })

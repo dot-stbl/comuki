@@ -7,150 +7,230 @@
  * - Fail-soft: a missing URL yields `null` from `fromEnv`; a failed connect
  *   yields `false` / empty results rather than throwing — a dev session must
  *   survive the platform being offline.
+ * - Fail-soft is not fail-silent: every collapsed failure is reported through
+ *   `logger` (default: one line on stderr) with the operation and the cause,
+ *   because `[]` alone cannot tell "the server offers no tools" from "we never
+ *   connected", and the caller has nothing else to go on. Pass `logger` to
+ *   route it somewhere else — or `() => {}` to silence it deliberately.
  * - `fetchImpl` exists for tests; it is handed to the transports directly.
  */
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { Client } from "@modelcontextprotocol/sdk/client/index.js"
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js"
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
 
-export type FetchFn = (url: string | URL, init?: RequestInit) => Promise<Response>;
+export type FetchFn = (
+  url: string | URL,
+  init?: RequestInit
+) => Promise<Response>
+
+/** Where a collapsed failure goes. `cause` is whatever was thrown, if any. */
+export type McpLogger = (message: string, cause?: unknown) => void
 
 export interface ComukiMcpOptions {
-  readonly url: string;
-  readonly token?: string;
-  readonly fetchImpl?: FetchFn;
-  readonly clientName?: string;
-  readonly clientVersion?: string;
+  readonly url: string
+  readonly token?: string
+  readonly fetchImpl?: FetchFn
+  readonly clientName?: string
+  readonly clientVersion?: string
+  readonly logger?: McpLogger
 }
 
 export interface ComukiTool {
-  readonly name: string;
-  readonly description?: string;
+  readonly name: string
+  readonly description?: string
 }
 
 export interface ComukiToolCallResult {
-  readonly content: readonly unknown[];
-  readonly isError: boolean;
+  readonly content: readonly unknown[]
+  readonly isError: boolean
 }
 
-const DEFAULT_CLIENT_NAME = 'comuki-dev-sdk';
-const DEFAULT_CLIENT_VERSION = '0.1.0';
-const CONNECT_TIMEOUT_MS = 5_000;
-const REQUEST_TIMEOUT_MS = 10_000;
+/**
+ * stderr, not stdout: a dev-sdk process can be a Claude Code hook, and
+ * stdout there is the protocol channel.
+ */
+const defaultLogger: McpLogger = (message, cause) => {
+  const detail =
+    cause === undefined
+      ? ""
+      : `: ${cause instanceof Error ? cause.message : String(cause)}`
+  process.stderr.write(`[comuki-mcp] ${message}${detail}
+`)
+}
+
+const DEFAULT_CLIENT_NAME = "comuki-dev-sdk"
+const DEFAULT_CLIENT_VERSION = "0.1.0"
+const CONNECT_TIMEOUT_MS = 5_000
+const REQUEST_TIMEOUT_MS = 10_000
 
 export class ComukiMcpClient {
-  private client: Client | null = null;
+  private client: Client | null = null
 
   private constructor(private readonly options: ComukiMcpOptions) {}
 
   /** `null` when `COMUKI_MCP_URL` is not set — MCP is opt-in. */
-  static fromEnv(env: Record<string, string | undefined> = process.env): ComukiMcpClient | null {
-    const url = env.COMUKI_MCP_URL?.trim();
+  static fromEnv(
+    env: Record<string, string | undefined> = process.env,
+    logger?: McpLogger
+  ): ComukiMcpClient | null {
+    const url = env.COMUKI_MCP_URL?.trim()
     if (url === undefined || url.length === 0) {
-      return null;
+      // Opt-in, not a failure — debug-level noise at most, so no log here.
+      return null
     }
-    const token = env.COMUKI_MCP_TOKEN?.trim();
-    return new ComukiMcpClient({ url, token: token === undefined || token.length === 0 ? undefined : token });
+    const token = env.COMUKI_MCP_TOKEN?.trim()
+    return new ComukiMcpClient({
+      url,
+      token: token === undefined || token.length === 0 ? undefined : token,
+      logger,
+    })
   }
 
   static create(options: ComukiMcpOptions): ComukiMcpClient {
-    return new ComukiMcpClient(options);
+    return new ComukiMcpClient(options)
   }
 
   /** Attempts streamable-HTTP, then legacy SSE. Resolves `false` on failure. */
   async connect(): Promise<boolean> {
-    const headers: Record<string, string> = { accept: 'application/json, text/event-stream' };
+    const headers: Record<string, string> = {
+      accept: "application/json, text/event-stream",
+    }
     if (this.options.token !== undefined) {
-      headers.authorization = `Bearer ${this.options.token}`;
+      headers.authorization = `Bearer ${this.options.token}`
     }
 
     const transports = [
-      (): StreamableHTTPClientTransport =>
-        new StreamableHTTPClientTransport(new URL(this.options.url), {
-          requestInit: { headers },
-          fetch: this.options.fetchImpl,
-        }),
-      (): SSEClientTransport =>
-        new SSEClientTransport(new URL(this.options.url), {
-          requestInit: { headers },
-          fetch: this.options.fetchImpl,
-        }),
-    ];
+      {
+        label: "streamable-http",
+        create: (): StreamableHTTPClientTransport =>
+          new StreamableHTTPClientTransport(new URL(this.options.url), {
+            requestInit: { headers },
+            fetch: this.options.fetchImpl,
+          }),
+      },
+      {
+        label: "sse",
+        create: (): SSEClientTransport =>
+          new SSEClientTransport(new URL(this.options.url), {
+            requestInit: { headers },
+            fetch: this.options.fetchImpl,
+          }),
+      },
+    ]
 
-    for (const createTransport of transports) {
-      const client = new Client(
-        { name: this.options.clientName ?? DEFAULT_CLIENT_NAME, version: this.options.clientVersion ?? DEFAULT_CLIENT_VERSION },
-      );
+    for (const { label, create } of transports) {
+      const client = new Client({
+        name: this.options.clientName ?? DEFAULT_CLIENT_NAME,
+        version: this.options.clientVersion ?? DEFAULT_CLIENT_VERSION,
+      })
       try {
-        await withTimeout(client.connect(createTransport()), CONNECT_TIMEOUT_MS, 'connect');
-        this.client = client;
-        return true;
-      } catch {
-        await client.close().catch(() => undefined);
+        await withTimeout(
+          client.connect(create()),
+          CONNECT_TIMEOUT_MS,
+          "connect"
+        )
+        this.client = client
+        return true
+      } catch (error) {
+        // Falling back to the next transport is routine, not an incident —
+        // but the LAST one's cause is the whole story when connect() ends
+        // up returning false, so every attempt is named.
+        this.log(`connect over ${label} failed`, error)
+        await client.close().catch(() => undefined)
       }
     }
 
-    return false;
+    this.log(`no transport connected to ${this.options.url}`)
+    return false
   }
 
   async listTools(): Promise<ComukiTool[]> {
-    const client = await this.ensureConnected();
+    const client = await this.ensureConnected()
     if (client === null) {
-      return [];
+      // The empty array a caller is about to see does NOT mean "no tools".
+      this.log("listTools: not connected, answering an empty tool list")
+      return []
     }
     try {
-      const result = await withTimeout(client.listTools(), REQUEST_TIMEOUT_MS, 'listTools');
-      return result.tools.map((tool) => ({ name: tool.name, description: tool.description }));
-    } catch {
-      return [];
+      const result = await withTimeout(
+        client.listTools(),
+        REQUEST_TIMEOUT_MS,
+        "listTools"
+      )
+      return result.tools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+      }))
+    } catch (error) {
+      this.log("listTools failed, answering an empty tool list", error)
+      return []
     }
   }
 
-  async callTool(name: string, args: Readonly<Record<string, unknown>> = {}): Promise<ComukiToolCallResult | null> {
-    const client = await this.ensureConnected();
+  async callTool(
+    name: string,
+    args: Readonly<Record<string, unknown>> = {}
+  ): Promise<ComukiToolCallResult | null> {
+    const client = await this.ensureConnected()
     if (client === null) {
-      return null;
+      this.log(`callTool ${name}: not connected`)
+      return null
     }
     try {
       const result = await withTimeout(
         client.callTool({ name, arguments: { ...args } }),
         REQUEST_TIMEOUT_MS,
-        'callTool',
-      );
-      return { content: result.content as readonly unknown[], isError: result.isError === true };
-    } catch {
-      return null;
+        "callTool"
+      )
+      return {
+        content: result.content as readonly unknown[],
+        isError: result.isError === true,
+      }
+    } catch (error) {
+      this.log(`callTool ${name} failed`, error)
+      return null
     }
   }
 
   async close(): Promise<void> {
-    const client = this.client;
-    this.client = null;
+    const client = this.client
+    this.client = null
     if (client !== null) {
-      await client.close().catch(() => undefined);
+      await client.close().catch(() => undefined)
     }
   }
 
   private async ensureConnected(): Promise<Client | null> {
     if (this.client !== null) {
-      return this.client;
+      return this.client
     }
-    return (await this.connect()) ? this.client : null;
+    return (await this.connect()) ? this.client : null
+  }
+
+  private log(message: string, cause?: unknown): void {
+    ;(this.options.logger ?? defaultLogger)(message, cause)
   }
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
   try {
     return await Promise.race([
       promise,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+        timer = setTimeout(
+          () => reject(new Error(`${label} timed out after ${timeoutMs}ms`)),
+          timeoutMs
+        )
       }),
-    ]);
+    ])
   } finally {
     if (timer !== undefined) {
-      clearTimeout(timer);
+      clearTimeout(timer)
     }
   }
 }

@@ -26,9 +26,9 @@ describe("pollEvery", () => {
 
     const interval = pollEvery(15_000)
     expect(interval({ state: { error: null } })).toBe(15_000)
-    expect(interval({ state: { error: new Error("request failed 502") } })).toBe(
-      60_000,
-    )
+    expect(
+      interval({ state: { error: new Error("request failed 502") } })
+    ).toBe(60_000)
   })
 
   it("never turns an error into no polling at all — slow, not silent", async () => {
@@ -36,7 +36,7 @@ describe("pollEvery", () => {
 
     const interval = pollEvery(10_000)
     expect(typeof interval({ state: { error: new Error("down") } })).toBe(
-      "number",
+      "number"
     )
   })
 })
@@ -46,9 +46,8 @@ describe("livePolling", () => {
     vi.stubEnv("VITE_USE_MOCK", "true")
     vi.resetModules()
 
-    const { livePolling, RUNS_POLL_INTERVAL_MS } = await import(
-      "@/shared/api/polling"
-    )
+    const { livePolling, RUNS_POLL_INTERVAL_MS } =
+      await import("@/shared/api/polling")
 
     expect(livePolling(RUNS_POLL_INTERVAL_MS)).toBe(false)
   })
@@ -77,9 +76,9 @@ describe("livePolling", () => {
         state: { error: unknown }
       }) => number
       expect(onCadence({ state: { error: null } })).toBe(cadence)
-      expect(
-        onCadence({ state: { error: new Error("down") } }),
-      ).toBe(cadence * 4)
+      expect(onCadence({ state: { error: new Error("down") } })).toBe(
+        cadence * 4
+      )
     }
   })
 

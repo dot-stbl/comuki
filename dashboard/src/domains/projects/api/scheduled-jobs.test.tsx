@@ -30,16 +30,14 @@ describe("scheduled-jobs mock-first path", () => {
     vi.resetModules()
 
     const api = await import("@/domains/projects/api/scheduled-jobs")
-    const { listSeedProjects } = await import(
-      "@/shared/api/mock/projects.store"
-    )
+    const { listSeedProjects } =
+      await import("@/shared/api/mock/projects.store")
     api.resetSeedScheduledJobs()
 
     const project = listSeedProjects()[0]
-    const { result } = renderHook(
-      () => api.useScheduledJobsQuery(project.id),
-      { wrapper: withQueryClient() },
-    )
+    const { result } = renderHook(() => api.useScheduledJobsQuery(project.id), {
+      wrapper: withQueryClient(),
+    })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data?.length).toBeGreaterThan(0)
@@ -53,9 +51,8 @@ describe("scheduled-jobs mock-first path", () => {
     vi.resetModules()
 
     const api = await import("@/domains/projects/api/scheduled-jobs")
-    const { listSeedProjects } = await import(
-      "@/shared/api/mock/projects.store"
-    )
+    const { listSeedProjects } =
+      await import("@/shared/api/mock/projects.store")
     api.resetSeedScheduledJobs()
 
     const project = listSeedProjects()[0]
@@ -97,9 +94,7 @@ describe("scheduled-jobs mock-first path", () => {
 
     // The mutations invalidated the list key — refetch sees the seed minus
     // nothing (created then deleted) and the paused flip on the seed row.
-    await waitFor(() =>
-      expect(list.result.current.data?.length).toBe(baseline),
-    )
+    await waitFor(() => expect(list.result.current.data?.length).toBe(baseline))
     const untouched = list.result.current.data ?? []
     expect(untouched.some((job) => job.id === created.id)).toBe(false)
   })

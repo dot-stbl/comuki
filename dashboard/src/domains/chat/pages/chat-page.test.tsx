@@ -180,9 +180,7 @@ describe("a confirmed proposal", () => {
 
     fireEvent.click(at("chat-proposal-confirm") as HTMLElement)
 
-    await waitFor(() =>
-      expect(at("chat-proposal-decided")).not.toBeNull()
-    )
+    await waitFor(() => expect(at("chat-proposal-decided")).not.toBeNull())
 
     // The store, not the render: a query whose `queryFn` returns a module
     // constant would revert this about 200ms after the optimistic write.

@@ -18,98 +18,131 @@
  *
  * Fail-open: malformed stdin or an unrecognized payload shape allows the
  * call — a broken gate must not brick the developer's session; stderr
- * carries a note when that happens.
+ * carries a note when that happens (`GateDecision.failOpen` is what makes
+ * that allow distinguishable from the ordinary "no lock matched" one, which
+ * stays silent). Claude Code shows hook stderr on a non-blocking exit 0, so
+ * the note reaches the developer without touching the tool call.
  */
-import { BLOCKED_TOOL_TARGETS, findGitRefLock, findPathLock, findToolLock } from '@comuki/agent-core';
-import type { LockRule } from '@comuki/agent-core';
+import {
+  BLOCKED_TOOL_TARGETS,
+  findGitRefLock,
+  findPathLock,
+  findToolLock,
+} from "@comuki/agent-core"
+import type { LockRule } from "@comuki/agent-core"
 
 export interface GateDecision {
-  readonly decision: 'allow' | 'deny';
-  readonly reason: string;
-  readonly ruleId?: string;
+  readonly decision: "allow" | "deny"
+  readonly reason: string
+  readonly ruleId?: string
+  /**
+   * Set only on the fail-open allow — the gate could not read the payload
+   * and let the call through rather than brick the session. Without this
+   * flag `emitDecision` cannot tell it from a clean allow, and the reason
+   * is dropped: a security gate opening silently on malformed input.
+   */
+  readonly failOpen?: boolean
 }
 
 export interface GateOutput {
-  readonly exitCode: number;
-  readonly stdout: string;
-  readonly stderr: string;
+  readonly exitCode: number
+  readonly stdout: string
+  readonly stderr: string
 }
 
-export type HookStyle = 'json' | 'exit';
+export type HookStyle = "json" | "exit"
 
 /** Claude Code tools whose primary argument is a file path. */
-const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
+const EDIT_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"])
 
 /** `git` global flags that consume a value and therefore hide one token. */
-const GIT_VALUE_FLAGS = new Set(['-C', '-c', '--git-dir', '--work-tree', '--namespace', '--config']);
+const GIT_VALUE_FLAGS = new Set([
+  "-C",
+  "-c",
+  "--git-dir",
+  "--work-tree",
+  "--namespace",
+  "--config",
+])
 
 interface HookPayload {
-  readonly tool_name?: unknown;
+  readonly tool_name?: unknown
   readonly tool_input?: {
-    readonly file_path?: unknown;
-    readonly notebook_path?: unknown;
-    readonly command?: unknown;
-  };
+    readonly file_path?: unknown
+    readonly notebook_path?: unknown
+    readonly command?: unknown
+  }
 }
 
 export function parseHookPayload(text: string): HookPayload | null {
   try {
-    const parsed: unknown = JSON.parse(text);
-    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return null;
+    const parsed: unknown = JSON.parse(text)
+    if (
+      parsed === null ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed)
+    ) {
+      return null
     }
-    return parsed as HookPayload;
+    return parsed as HookPayload
   } catch {
-    return null;
+    return null
   }
 }
 
-export function decideLockGate(payload: HookPayload | null, rules: readonly LockRule[] = BLOCKED_TOOL_TARGETS): GateDecision {
+export function decideLockGate(
+  payload: HookPayload | null,
+  rules: readonly LockRule[] = BLOCKED_TOOL_TARGETS
+): GateDecision {
   if (payload === null) {
-    return { decision: 'allow', reason: 'lock gate: unparseable hook payload, failing open' };
+    return {
+      decision: "allow",
+      reason: "lock gate: unparseable hook payload, failing open",
+      failOpen: true,
+    }
   }
 
-  const toolName = payload.tool_name;
-  const input = payload.tool_input ?? {};
+  const toolName = payload.tool_name
+  const input = payload.tool_input ?? {}
 
-  if (typeof toolName === 'string' && EDIT_TOOLS.has(toolName)) {
-    const target = firstString(input.file_path, input.notebook_path);
+  if (typeof toolName === "string" && EDIT_TOOLS.has(toolName)) {
+    const target = firstString(input.file_path, input.notebook_path)
     if (target !== undefined) {
-      const lock = findPathLock(rules, target);
+      const lock = findPathLock(rules, target)
       if (lock !== undefined) {
-        return deny(lock);
+        return deny(lock)
       }
     }
   }
 
-  if (typeof toolName === 'string' && toolName === 'Bash') {
-    const command = input.command;
-    if (typeof command === 'string') {
-      const toolLock = findToolLock(rules, `Bash(${command})`);
+  if (typeof toolName === "string" && toolName === "Bash") {
+    const command = input.command
+    if (typeof command === "string") {
+      const toolLock = findToolLock(rules, `Bash(${command})`)
       if (toolLock !== undefined) {
-        return deny(toolLock);
+        return deny(toolLock)
       }
-      const gitLock = findGitPushLock(rules, command);
+      const gitLock = findGitPushLock(rules, command)
       if (gitLock !== undefined) {
-        return deny(gitLock);
+        return deny(gitLock)
       }
     }
   }
 
-  return { decision: 'allow', reason: 'no lock matched' };
+  return { decision: "allow", reason: "no lock matched" }
 }
 
 function deny(rule: LockRule): GateDecision {
-  return { decision: 'deny', reason: rule.reason, ruleId: rule.id };
+  return { decision: "deny", reason: rule.reason, ruleId: rule.id }
 }
 
 function firstString(...values: readonly unknown[]): string | undefined {
   for (const value of values) {
-    if (typeof value === 'string' && value.length > 0) {
-      return value;
+    if (typeof value === "string" && value.length > 0) {
+      return value
     }
   }
-  return undefined;
+  return undefined
 }
 
 /**
@@ -120,118 +153,136 @@ function firstString(...values: readonly unknown[]): string | undefined {
  * `refs/heads/` forms so `git-ref` locks match either spelling.
  */
 export function gitPushRefCandidates(command: string): string[] {
-  const tokens = command.trim().split(/\s+/);
-  if (tokens[0] !== 'git' && tokens[0] !== 'git.exe') {
-    return [];
+  const tokens = command.trim().split(/\s+/)
+  if (tokens[0] !== "git" && tokens[0] !== "git.exe") {
+    return []
   }
 
-  let index = 1;
-  while (index < tokens.length && tokens[index] !== 'push') {
-    const token = tokens[index] ?? '';
-    if (token.startsWith('-')) {
-      index++;
+  let index = 1
+  while (index < tokens.length && tokens[index] !== "push") {
+    const token = tokens[index] ?? ""
+    if (token.startsWith("-")) {
+      index++
       if (GIT_VALUE_FLAGS.has(token)) {
-        index++;
+        index++
       }
-      continue;
+      continue
     }
-    return [];
+    return []
   }
-  if (tokens[index] !== 'push') {
-    return [];
+  if (tokens[index] !== "push") {
+    return []
   }
 
   const positionals = tokens
     .slice(index + 1)
     .map(stripQuotes)
-    .filter((token) => token.length > 0 && !token.startsWith('-'));
+    .filter((token) => token.length > 0 && !token.startsWith("-"))
   if (positionals.length === 0) {
-    return [];
+    return []
   }
 
   // With two or more positionals the first is the remote; with exactly one
   // it is the refspec (the remote comes from the git config).
-  const refspecs = positionals.length >= 2 ? positionals.slice(1) : positionals;
+  const refspecs = positionals.length >= 2 ? positionals.slice(1) : positionals
 
-  const candidates: string[] = [];
+  const candidates: string[] = []
   for (const refspec of refspecs) {
-    const destination = refspec.includes(':') ? (refspec.split(':').pop() ?? '') : refspec;
+    const destination = refspec.includes(":")
+      ? (refspec.split(":").pop() ?? "")
+      : refspec
     if (destination.length === 0) {
-      continue;
+      continue
     }
-    candidates.push(destination);
-    candidates.push(destination.startsWith('refs/') ? destination : `refs/heads/${destination}`);
+    candidates.push(destination)
+    candidates.push(
+      destination.startsWith("refs/")
+        ? destination
+        : `refs/heads/${destination}`
+    )
   }
-  return candidates;
+  return candidates
 }
 
 function stripQuotes(token: string): string {
-  const trimmed = token.trim();
+  const trimmed = token.trim()
   if (trimmed.length >= 2) {
-    const first = trimmed.charAt(0);
-    const last = trimmed.charAt(trimmed.length - 1);
+    const first = trimmed.charAt(0)
+    const last = trimmed.charAt(trimmed.length - 1)
     if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
-      return trimmed.slice(1, -1);
+      return trimmed.slice(1, -1)
     }
   }
-  return trimmed;
+  return trimmed
 }
 
-function findGitPushLock(rules: readonly LockRule[], command: string): LockRule | undefined {
+function findGitPushLock(
+  rules: readonly LockRule[],
+  command: string
+): LockRule | undefined {
   // A compound shell line can hide the push (`cd pkg && git push origin main`),
   // so every command segment is inspected, not just the first.
   for (const segment of command.split(/&&|\|\||;|\||\n|\r/)) {
     for (const candidate of gitPushRefCandidates(segment)) {
-      const lock = findGitRefLock(rules, candidate);
+      const lock = findGitRefLock(rules, candidate)
       if (lock !== undefined) {
-        return lock;
+        return lock
       }
     }
   }
-  return undefined;
+  return undefined
 }
 
 export function hookStyleFromEnv(value: string | undefined): HookStyle {
-  return value === 'exit' ? 'exit' : 'json';
+  return value === "exit" ? "exit" : "json"
 }
 
 /** The one emitter both output shapes live behind. */
 export function emitDecision(gate: GateDecision, style: HookStyle): GateOutput {
-  if (gate.decision === 'allow') {
-    return { exitCode: 0, stdout: '', stderr: '' };
+  if (gate.decision === "allow") {
+    // An ordinary allow is silent; the fail-open allow is not. Exit 0 either
+    // way — the note is a report, not a block.
+    return {
+      exitCode: 0,
+      stdout: "",
+      stderr: gate.failOpen === true ? gate.reason : "",
+    }
   }
-  if (style === 'exit') {
-    return { exitCode: 2, stdout: '', stderr: gate.reason };
+  if (style === "exit") {
+    return { exitCode: 2, stdout: "", stderr: gate.reason }
   }
   return {
     exitCode: 0,
     stdout: JSON.stringify({
       hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'deny',
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
         permissionDecisionReason: gate.reason,
       },
     }),
-    stderr: '',
-  };
+    stderr: "",
+  }
 }
 
 /** Pure pipeline: stdin text + env → output. Test-friendly; the CLI is a thin wrapper. */
 export function runLockGate(
   stdinText: string,
   env: Record<string, string | undefined> = process.env,
-  rules: readonly LockRule[] = BLOCKED_TOOL_TARGETS,
+  rules: readonly LockRule[] = BLOCKED_TOOL_TARGETS
 ): GateOutput {
-  return emitDecision(decideLockGate(parseHookPayload(stdinText), rules), hookStyleFromEnv(env.COMUKI_HOOK_STYLE));
+  return emitDecision(
+    decideLockGate(parseHookPayload(stdinText), rules),
+    hookStyleFromEnv(env.COMUKI_HOOK_STYLE)
+  )
 }
 
 if (import.meta.main) {
-  const output = runLockGate(await Bun.stdin.text());
+  const output = runLockGate(await Bun.stdin.text())
   if (output.stdout.length > 0) {
-    process.stdout.write(`${output.stdout}\n`);
+    process.stdout.write(`${output.stdout}\n`)
   }
   if (output.stderr.length > 0) {
-    process.stderr.write(`${output.stderr}\n`);
+    process.stderr.write(`${output.stderr}\n`)
   }
-  process.exit(output.exitCode);
+  process.exit(output.exitCode)
 }

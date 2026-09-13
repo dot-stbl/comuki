@@ -140,11 +140,7 @@ function handoffRows({
       id: "sources",
       what: "sources",
       count:
-        connections === null ? (
-          pending
-        ) : (
-          <>{figure(connections)} connections</>
-        ),
+        connections === null ? pending : <>{figure(connections)} connections</>,
       note: "open the intake narrowed to this project",
       to: "/sources",
       search: q,
@@ -216,8 +212,7 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
   const grants = useMemo(
     () =>
       (identity.data?.grants ?? []).filter(
-        (grant) =>
-          grant.subjectKind === "user" && grant.projectId === projectId
+        (grant) => grant.subjectKind === "user" && grant.projectId === projectId
       ),
     [identity.data, projectId]
   )

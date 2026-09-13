@@ -20,7 +20,9 @@ interface ThrownRedirect {
   }
 }
 
-async function bounce(location: GuardedLocation): Promise<ThrownRedirect | null> {
+async function bounce(
+  location: GuardedLocation
+): Promise<ThrownRedirect | null> {
   try {
     await guardSession(location)
     return null
@@ -29,7 +31,10 @@ async function bounce(location: GuardedLocation): Promise<ThrownRedirect | null>
   }
 }
 
-const runs: GuardedLocation = { pathname: "/runs", href: "/runs?status=waiting" }
+const runs: GuardedLocation = {
+  pathname: "/runs",
+  href: "/runs?status=waiting",
+}
 
 let ensureQueryData: ReturnType<typeof vi.spyOn>
 
@@ -50,21 +55,23 @@ describe("the session guard in real mode", () => {
     expect(ensureQueryData).toHaveBeenCalledTimes(1)
     // One source of truth: the guard asks the same key the provider tree
     // reads, not a second fetch of its own.
-    expect(ensureQueryData.mock.calls[0]?.[0]).toMatchObject({ queryKey: meQueryKey })
+    expect(ensureQueryData.mock.calls[0]?.[0]).toMatchObject({
+      queryKey: meQueryKey,
+    })
   })
 
   it("does not ask the host on the screen that hands out sessions", async () => {
     ensureQueryData.mockResolvedValue({ id: "u_1" })
 
     expect(
-      await bounce({ pathname: "/login", href: "/login?reason=oidc-failed" }),
+      await bounce({ pathname: "/login", href: "/login?reason=oidc-failed" })
     ).toBeNull()
     expect(ensureQueryData).not.toHaveBeenCalled()
   })
 
   it("sends a refused session to the sign-in screen as expired", async () => {
     ensureQueryData.mockRejectedValue(
-      Object.assign(new Error("auth boundary 401"), { status: 401 }),
+      Object.assign(new Error("auth boundary 401"), { status: 401 })
     )
 
     const thrown = await bounce(runs)
@@ -79,11 +86,11 @@ describe("the session guard in real mode", () => {
 
   it("leaves the board out of the redirect, since it is the default anyway", async () => {
     ensureQueryData.mockRejectedValue(
-      Object.assign(new Error("auth boundary 401"), { status: 401 }),
+      Object.assign(new Error("auth boundary 401"), { status: 401 })
     )
 
     expect(
-      (await bounce({ pathname: "/", href: "/" }))?.options.search,
+      (await bounce({ pathname: "/", href: "/" }))?.options.search
     ).toEqual({ reason: "expired" })
   })
 })

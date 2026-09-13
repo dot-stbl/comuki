@@ -9,10 +9,7 @@ import type {
 import { artifactsVisualList } from "@/shared/api/_generated/clients/artifactsVisualList"
 import { env } from "@/shared/config/env"
 
-import {
-  ARTIFACTS_VISUAL_SEED,
-  type SeedVisualArtifact,
-} from "./seed"
+import { ARTIFACTS_VISUAL_SEED, type SeedVisualArtifact } from "./seed"
 
 /**
  * The single read against visual artifacts.
@@ -35,7 +32,7 @@ import {
  */
 export const visualArtifactsQueryKey = (
   projectId: string,
-  filters: VisualArtifactFilters = {},
+  filters: VisualArtifactFilters = {}
 ) =>
   [
     "artifacts-visual",
@@ -49,11 +46,11 @@ export const visualArtifactsQueryKey = (
 
 async function listVisualArtifacts(
   projectId: string,
-  filters: VisualArtifactFilters,
+  filters: VisualArtifactFilters
 ): Promise<VisualArtifactPage> {
   if (env.useMock) {
-    const filtered = ARTIFACTS_VISUAL_SEED.filter(
-      (entry) => matchesMockFilters(entry, projectId, filters),
+    const filtered = ARTIFACTS_VISUAL_SEED.filter((entry) =>
+      matchesMockFilters(entry, projectId, filters)
     )
     return { projectId, items: filtered.map(seedToDomain) }
   }
@@ -78,7 +75,7 @@ async function listVisualArtifacts(
 
 export function useVisualArtifactsQuery(
   projectId: string,
-  filters: VisualArtifactFilters = {},
+  filters: VisualArtifactFilters = {}
 ) {
   return useQuery({
     queryKey: visualArtifactsQueryKey(projectId, filters),
@@ -105,7 +102,7 @@ export function useVisualArtifactsQuery(
 export function visualArtifactContentUrl(
   baseUrl: string,
   projectId: string,
-  artifactId: string,
+  artifactId: string
 ): string {
   const trimmed = baseUrl.replace(/\/+$/, "")
   return `${trimmed}/api/v1/projects/${projectId}/artifacts/${artifactId}/content`
@@ -134,7 +131,7 @@ function seedToDomain(entry: SeedVisualArtifact): VisualArtifact {
 function matchesMockFilters(
   entry: SeedVisualArtifact,
   projectId: string,
-  filters: VisualArtifactFilters,
+  filters: VisualArtifactFilters
 ): boolean {
   if (entry.projectId !== projectId) {
     return false

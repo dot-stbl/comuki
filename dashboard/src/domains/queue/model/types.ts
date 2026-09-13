@@ -17,12 +17,7 @@
  * would be a resting state nothing can leave and nobody can act on.
  */
 export type WorkItemStatus =
-  | "blocked"
-  | "queued"
-  | "running"
-  | "succeeded"
-  | "failed"
-  | "cancelled"
+  "blocked" | "queued" | "running" | "succeeded" | "failed" | "cancelled"
 
 /**
  * Idle, holding one item, or finishing up and refusing new claims — plus

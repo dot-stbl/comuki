@@ -37,9 +37,7 @@ describe("boards are links, and never an embed", () => {
     expect(screen.getByText("Comuki · runs")).toBeTruthy()
     expect(screen.getByText("Comuki · workers")).toBeTruthy()
     expect(screen.getByText("Comuki · cost")).toBeTruthy()
-    expect(
-      document.querySelectorAll('[data-test="board"]')
-    ).toHaveLength(3)
+    expect(document.querySelectorAll('[data-test="board"]')).toHaveLength(3)
   })
 
   it("tells a board that is not imported apart from one that is", () => {
@@ -59,7 +57,9 @@ describe("the platform with no boards at all", () => {
   it("offers nothing to open, and says why rather than showing an empty box", () => {
     render(<BoardsPanel boards={OBSERVABILITY_UNCONFIGURED_SEED.boards} />)
 
-    expect(document.querySelectorAll('[data-test="board-link"]')).toHaveLength(0)
+    expect(document.querySelectorAll('[data-test="board-link"]')).toHaveLength(
+      0
+    )
     // The three entries still render: their definitions exist whether or not
     // anyone has imported them, and a page that listed nothing would read as a
     // load that failed.
@@ -79,7 +79,9 @@ describe("the platform with no boards at all", () => {
     )
 
     expect(document.querySelector('[data-test="no-grafana"]')).not.toBeNull()
-    expect(document.querySelector('[data-test="grafana-configured"]')).toBeNull()
+    expect(
+      document.querySelector('[data-test="grafana-configured"]')
+    ).toBeNull()
     // No "open grafana" button, because there is nothing to open.
     expect(document.querySelector('[data-test="grafana-link"]')).toBeNull()
 
@@ -160,7 +162,9 @@ describe("the seeded boards", () => {
   it("seeds the state every new installation opens in", () => {
     expect(OBSERVABILITY_UNCONFIGURED_SEED.grafana).toBeNull()
     expect(
-      OBSERVABILITY_UNCONFIGURED_SEED.boards.every((board) => board.url === null)
+      OBSERVABILITY_UNCONFIGURED_SEED.boards.every(
+        (board) => board.url === null
+      )
     ).toBe(true)
     // The definitions are still ours, so the repo coordinate survives.
     expect(OBSERVABILITY_UNCONFIGURED_SEED.boardsRepo).toEqual(

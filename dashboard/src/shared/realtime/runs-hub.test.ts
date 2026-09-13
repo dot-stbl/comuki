@@ -56,10 +56,10 @@ const attention: AttentionView = {
 describe("runsHubUrl", () => {
   it("appends the hub path under the API base URL and strips trailing slashes", () => {
     expect(runsHubUrl("http://localhost:17180")).toBe(
-      "http://localhost:17180/ws/runs",
+      "http://localhost:17180/ws/runs"
     )
     expect(runsHubUrl("http://localhost:17180///")).toBe(
-      "http://localhost:17180/ws/runs",
+      "http://localhost:17180/ws/runs"
     )
   })
 })
@@ -102,13 +102,10 @@ describe("bindRunsHubEvents", () => {
 
     bindRunsHubEvents(connection, invalidate)
 
-    expect(connection.on).toHaveBeenCalledWith(
-      "RunEvent",
-      expect.any(Function),
-    )
+    expect(connection.on).toHaveBeenCalledWith("RunEvent", expect.any(Function))
     expect(connection.on).toHaveBeenCalledWith(
       "Attention",
-      expect.any(Function),
+      expect.any(Function)
     )
 
     handlers.get("RunEvent")!(runEvent)

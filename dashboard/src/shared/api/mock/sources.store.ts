@@ -121,7 +121,8 @@ export function probeSeedSourceDraft(
         "plain http refused — the credential would cross the wire in the clear.",
     }
   }
-  const host = trimmed.length > 0 ? hostOf(trimmed, trimmed) : cloudHost(draft.kind)
+  const host =
+    trimmed.length > 0 ? hostOf(trimmed, trimmed) : cloudHost(draft.kind)
   if (secret.trim().length < 8) {
     return {
       ok: false,
@@ -161,14 +162,17 @@ function cloudHost(kind: string): string {
  * refetch, which is the difference between a probe and an animation.
  */
 export function probeSeedConnection(connectionId: string): SeedProbeResult {
-  const connection = state.connections.find((entry) => entry.id === connectionId)
+  const connection = state.connections.find(
+    (entry) => entry.id === connectionId
+  )
   if (!connection) {
     return { ok: false, message: "this connection is gone." }
   }
   if (connection.kind === "native") {
     return {
       ok: true,
-      message: "native intake is the product's own — there is nothing to reach.",
+      message:
+        "native intake is the product's own — there is nothing to reach.",
     }
   }
   if (connection.state === "error") {
@@ -200,7 +204,9 @@ export function probeSeedConnection(connectionId: string): SeedProbeResult {
  * would be a connect form with a hidden second act in it. Turning the watch on
  * is a separate, visible decision on the row.
  */
-export function connectSeedSource(draft: SeedSourceDraft): SeedSourceConnection {
+export function connectSeedSource(
+  draft: SeedSourceDraft
+): SeedSourceConnection {
   const selfHosted =
     seedSelfHostable(draft.kind) && draft.baseUrl.trim().length > 0
   const connection: SeedSourceConnection = {
@@ -290,7 +296,9 @@ export function updateSeedConnection(
  * would be one refactor away from being gone.
  */
 export function disconnectSeedSource(connectionId: string): boolean {
-  const connection = state.connections.find((entry) => entry.id === connectionId)
+  const connection = state.connections.find(
+    (entry) => entry.id === connectionId
+  )
   if (!connection || !connection.removable) {
     return false
   }
@@ -322,9 +330,13 @@ export interface SeedRotationResult {
  * nothing else.
  */
 export function rotateSeedSecret(connectionId: string): SeedRotationResult {
-  const connection = state.connections.find((entry) => entry.id === connectionId)
+  const connection = state.connections.find(
+    (entry) => entry.id === connectionId
+  )
   if (!connection) {
-    throw new Error(`connection ${connectionId} is gone — there is nothing to rotate.`)
+    throw new Error(
+      `connection ${connectionId} is gone — there is nothing to rotate.`
+    )
   }
   const secret = generateMockSecret()
   const rotatedAt = new Date().toISOString()
@@ -456,7 +468,7 @@ export function listSeedInboxTickets(
   projectId: string | undefined
 ): SeedNativeTicket[] {
   return state.tickets.filter(
-    (ticket) => projectId === undefined || ticket.projectId === projectId,
+    (ticket) => projectId === undefined || ticket.projectId === projectId
   )
 }
 

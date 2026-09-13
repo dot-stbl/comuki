@@ -218,10 +218,7 @@ export type MessagePart =
  * that does the same thing without either of them agreeing on a screen name.
  */
 export type ProposalAct =
-  | "run.start"
-  | "run.stop"
-  | "plan.approve"
-  | "settings.debug"
+  "run.start" | "run.stop" | "plan.approve" | "settings.debug"
 
 export type ProposalDecision = "confirmed" | "rejected"
 

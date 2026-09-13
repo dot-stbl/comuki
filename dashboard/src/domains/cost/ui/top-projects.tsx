@@ -43,10 +43,7 @@ export function TopProjects({ rows, limit = 7, className }: TopProjectsProps) {
   const total = rows.reduce((sum, row) => sum + row.spend, 0)
 
   return (
-    <table
-      className={cn(styles.table, className)}
-      data-test="top-projects"
-    >
+    <table className={cn(styles.table, className)} data-test="top-projects">
       <thead>
         <tr>
           <th scope="col" className={styles.headProject}>
@@ -86,9 +83,7 @@ export function TopProjects({ rows, limit = 7, className }: TopProjectsProps) {
               </span>
             </td>
             <td className={styles.share} data-test="top-projects-share">
-              {total > 0
-                ? `${Math.round((row.spend / total) * 100)}%`
-                : "0%"}
+              {total > 0 ? `${Math.round((row.spend / total) * 100)}%` : "0%"}
             </td>
             <td
               className={styles.spend}

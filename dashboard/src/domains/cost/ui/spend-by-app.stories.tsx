@@ -63,7 +63,11 @@ export const InGreyscale: Story = {
  */
 export const AQuietDay: Story = {
   args: {
-    rows: [app("billing-api", 0.41), app("web-app", 0.12), app("docs-site", 0.03)],
+    rows: [
+      app("billing-api", 0.41),
+      app("web-app", 0.12),
+      app("docs-site", 0.03),
+    ],
   },
 }
 

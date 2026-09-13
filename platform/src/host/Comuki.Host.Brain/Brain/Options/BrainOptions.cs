@@ -48,7 +48,7 @@ public sealed class BrainOptions
     /// via <c>ISecretResolver</c> on every invocation — Vault / Consul
     /// rotation therefore lands within the resolver's TTL (60s default)
     /// without a host restart. Empty / null keeps the boot-time
-    /// <see cref="Model.Endpoint"/> path; existing deployments
+    /// <see cref="BrainModelOptions.Endpoint"/> path; existing deployments
     /// (<c>brain:model:*</c> or <c>COMUKI_BRAIN_MODEL_*</c>) keep
     /// working unchanged.
     /// </summary>
@@ -72,7 +72,7 @@ public sealed class BrainOptions
     /// The chat graph asks for the <c>answer</c> kind; this ref lets an
     /// operator route chat through a cheaper model without touching
     /// plan / brief / repair. Falls back to the flagship
-    /// (<see cref="ModelIdRef"/> or boot-time <see cref="Model.ModelId"/>)
+    /// (<see cref="ModelIdRef"/> or boot-time <see cref="BrainModelOptions.ModelId"/>)
     /// when unset.
     /// </summary>
     public string? ChatModelIdRef { get; init; }

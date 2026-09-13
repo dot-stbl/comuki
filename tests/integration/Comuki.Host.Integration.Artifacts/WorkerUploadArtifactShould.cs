@@ -1,4 +1,3 @@
-using Comuki.Host.Testing;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -9,6 +8,7 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Host.Testing;
 using Comuki.Host.Workers;
 using Comuki.Modules.Artifacts.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;

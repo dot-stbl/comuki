@@ -79,4 +79,3 @@ var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("brain listening addr=http://localhost:{GrpcPort}", options.GrpcPort);
 
 await app.RunAsync();
-return 0;

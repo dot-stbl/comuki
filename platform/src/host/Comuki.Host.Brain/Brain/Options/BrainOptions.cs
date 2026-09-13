@@ -109,16 +109,25 @@ public sealed class BrainOptions
                 ApiKey = string.IsNullOrWhiteSpace(apiKey) ? null : apiKey,
                 ModelId = string.IsNullOrWhiteSpace(modelId) ? null : modelId,
             },
-            ModelEndpointRef = NormalizeRef(bound.ModelEndpointRef),
-            ModelApiKeyRef = NormalizeRef(bound.ModelApiKeyRef),
-            ModelIdRef = NormalizeRef(bound.ModelIdRef),
-            ChatModelIdRef = NormalizeRef(bound.ChatModelIdRef),
+            ModelEndpointRef = BrainOptionsHelpers.NormalizeRef(bound.ModelEndpointRef),
+            ModelApiKeyRef = BrainOptionsHelpers.NormalizeRef(bound.ModelApiKeyRef),
+            ModelIdRef = BrainOptionsHelpers.NormalizeRef(bound.ModelIdRef),
+            ChatModelIdRef = BrainOptionsHelpers.NormalizeRef(bound.ChatModelIdRef),
         };
     }
+}
 
+/// <summary>
+/// Pure helpers for <see cref="BrainOptions"/> — isolated so the
+/// production class stays free of private business logic
+/// (<c>code-shape.md</c> §1a). Every helper is stateless and reads
+/// only through its parameters.
+/// </summary>
+file static class BrainOptionsHelpers
+{
     /// <summary>Trim and convert empty / whitespace refs to <c>null</c> so the resolver skip-path is a single null check.</summary>
-    /// <param name="reference"></param>
-    private static string? NormalizeRef(string? reference)
+    /// <param name="reference">Raw <c>*Ref</c> value from config or env; whitespace and null both collapse to null.</param>
+    public static string? NormalizeRef(string? reference)
     {
         return string.IsNullOrWhiteSpace(reference) ? null : reference.Trim();
     }

@@ -1,26 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Net.Sockets;
-using System.Text;
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
-using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Realtime;
-using Comuki.Modules.Chat.Infrastructure.Persistence;
+using Comuki.Host.Testing;
 using Comuki.Modules.Identity.Application.Users;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Shouldly;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -28,22 +19,22 @@ using Xunit;
 namespace Comuki.Host.Integration.Realtime;
 
 /// <summary>
-/// Boots the real host composition (<see cref="HostComposer"/> plus the
-/// worker-runtime orchestration wiring Program does) on a random loopback
-/// port against one migrated Testcontainers Postgres — the HostChatServer
-/// pattern, extended with helpers for the realtime suite: seeding a run
-/// with one queued work item, creating a permission-less member account,
-/// and building cookie-authenticated hub connections.
+/// Boots the real host composition (<see cref="HostComposer"/>) on a
+/// random loopback port against one migrated Testcontainers Postgres —
+/// every module context, via <see cref="HostDatabaseMigrator"/> — the
+/// HostChatServer pattern, extended with helpers for the realtime suite:
+/// seeding a run with one queued work item, creating a permission-less
+/// member account, and building cookie-authenticated hub connections.
 /// </summary>
 public sealed class HostRealtimeServer : IAsyncLifetime
 {
-    public const string BootstrapEmail = "bootstrap@comuki.test";
-    public const string BootstrapPassword = "bootstrap-pass-1";
+    public const string BootstrapEmail = TestBootstrapAdmin.Email;
+    public const string BootstrapPassword = TestBootstrapAdmin.Password;
 
     public const string MemberEmail = "member@comuki.test";
     public const string MemberPassword = "member-pass-1";
 
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
+    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("pgvector/pgvector:pg16")
         .Build();
 
     private WebApplication application = null!;
@@ -70,88 +61,18 @@ public sealed class HostRealtimeServer : IAsyncLifetime
         await container.StartAsync(cancellationToken);
 
         var connectionString = container.GetConnectionString();
+        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
 
-        // The migrator's contract: every module context migrates the same
-        // database, each with its own migrations history table.
-        var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
-        await using (var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options))
-        {
-            await orchestrationDb.Database.MigrateAsync(cancellationToken);
-        }
+        controlPlane = new TempControlPlaneRoot("realtime");
+        controlPlane.WriteDefaultChatCommand();
 
-        var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-        await using (var identityDb = new IdentityDbContext(identityOptions.Options))
-        {
-            await identityDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-        await using (var projectsDb = new ProjectsDbContext(projectsOptions.Options))
-        {
-            await projectsDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var chatOptions = new DbContextOptionsBuilder<ChatDbContext>();
-        ChatDbContext.ApplyOptions(chatOptions, connectionString);
-        await using (var chatDb = new ChatDbContext(chatOptions.Options))
-        {
-            await chatDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        controlPlane = new TempControlPlaneRoot();
-        controlPlane.WriteChatCommand();
-
-        // Production env on purpose: Development turns on ValidateScopes and
-        // the intake installers currently register handlers as singletons
-        // over a scoped DbContext (pre-existing; HostChatServer does the
-        // same). SignalR detailed errors are enabled in AddComukiRealtime.
-        var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions
-            {
-                ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
-                // Production env on purpose: Development turns on ValidateScopes and
-                // the intake installers currently register handlers as singletons
-                // over a scoped DbContext (pre-existing; HostChatServer does the
-                // same). SignalR detailed errors are enabled in AddComukiRealtime.
-                // The production-secret validator (issue #10 T11.4) is satisfied
-                // by the non-dev-default secrets below.
-                EnvironmentName = Environments.Development, // test fixture — validator short-circuits on non-Production
-            });
-        builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
-        builder.WebHost.UseUrls($"http://127.0.0.1:{HostRealtimeBootstrap.FreeTcpPort()}");
-        builder.Logging.ClearProviders();
+        var builder = TestHostBuilder.Create(connectionString);
         builder.Configuration["ControlPlane:Root"] = controlPlane.Root;
-        builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
-        builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
-        // Artifacts module — non-dev-default secrets so the production-secret
-        // validator (issue #10 T11.4) passes through. See HostIntakeServer
-        // for the rationale.
-        builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
-        builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
-        builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
-        builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
-
-        // Program wires orchestration persistence + queue before Compose
-        // (the worker runtime contract). The realtime surface appends its
-        // broadcast interceptor through a second AddDbContext configuration
-        // inside Compose, so mirroring this order exercises exactly the
-        // wiring production boots. Lease defaults are valid — no section
-        // binding required for the claim path the suite drives.
-        builder.Services
-            .AddOrchestrationPersistence(connectionString)
-            .AddOrchestrationQueue(builder.Configuration);
+        TestBootstrapAdmin.Configure(builder.Configuration);
+        TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
-        await application.StartAsync(cancellationToken);
-
-        baseAddress = new Uri(
-            application.Services
-                .GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>()
-                .Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!
-                .Addresses.Single());
+        baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
 
         await HostRealtimeBootstrap.CreateMemberAccountAsync(application.Services);
     }
@@ -291,7 +212,6 @@ public sealed class HostRealtimeServer : IAsyncLifetime
             Environment.SetEnvironmentVariable(RealtimeExtensions.DetailedErrorsEnvVar, null);
         }
     }
-
 }
 
 /// <summary>Bootstrap helpers for the realtime host fixture.</summary>
@@ -310,47 +230,5 @@ file static class HostRealtimeBootstrap
                 HostRealtimeServer.MemberEmail,
                 HostRealtimeServer.MemberPassword),
             cancellationToken);
-    }
-
-    /// <summary>Binds an ephemeral loopback port for the test host.</summary>
-    public static int FreeTcpPort()
-    {
-        var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-
-        return port;
-    }
-}
-
-/// <summary>Throwaway control-plane root with one chat command the slash catalog merges.</summary>
-internal sealed class TempControlPlaneRoot : IDisposable
-{
-    public string Root { get; } = Path.Combine(Path.GetTempPath(), "comuki-host-realtime-" + Guid.NewGuid().ToString("N"));
-
-    public void WriteChatCommand()
-    {
-        var directory = Path.Combine(Root, "chat-commands");
-        Directory.CreateDirectory(directory);
-        File.WriteAllText(
-            Path.Combine(directory, "restart.md"),
-            """
-            ---
-            name: restart
-            description: Restart the current run.
-            ---
-
-            Restart the current run now.
-            """,
-            new UTF8Encoding(false));
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(Root))
-        {
-            Directory.Delete(Root, recursive: true);
-        }
     }
 }

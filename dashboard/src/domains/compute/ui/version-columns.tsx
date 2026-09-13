@@ -97,7 +97,11 @@ export function createVersionColumns({
       accessorKey: "workers",
       header: "workers",
       cell: ({ row }) => (
-        <span className={styles.value}>{row.original.workers}</span>
+        // A label the source cannot count per says so; a zero would read as
+        // "nothing runs this image", which is a different sentence.
+        <span className={styles.value}>
+          {row.original.workers ?? "—"}
+        </span>
       ),
       meta: { width: 88, numeric: true },
     },
@@ -110,7 +114,9 @@ export function createVersionColumns({
       // there until somebody tears it down, and the two must not look alike.
       cell: ({ row }) => {
         const version = row.original
-        const stranded = !version.target && version.idle > 0
+        const idle = version.idle ?? 0
+        const uncounted = version.idle === null
+        const stranded = !version.target && idle > 0
         return (
           <span
             className={stranded ? styles.stranded : styles.value}
@@ -118,11 +124,11 @@ export function createVersionColumns({
             data-stranded={stranded ? "" : undefined}
             title={
               stranded
-                ? `${version.idle} idle on a label nothing is matched to — they will not claim an item`
+                ? `${idle} idle on a label nothing is matched to — they will not claim an item`
                 : undefined
             }
           >
-            {version.idle}
+            {uncounted ? "—" : idle}
           </span>
         )
       },
@@ -133,7 +139,9 @@ export function createVersionColumns({
       header: "oldest up",
       cell: ({ row }) => (
         <span className={styles.value}>
-          {formatDuration(row.original.oldestUpSec)}
+          {row.original.oldestUpSec === null
+            ? "—"
+            : formatDuration(row.original.oldestUpSec)}
         </span>
       ),
       meta: { width: 96, numeric: true, label: "oldest up" },
@@ -165,8 +173,9 @@ export function createVersionColumns({
         const version = row.original
         // Nothing to retire: the target label, or a stale one already down to
         // its busy containers. The act does not exist for this row, which is
-        // not a role being refused it.
-        if (version.target || version.idle === 0) {
+        // not a role being refused it. A label whose idle count the source
+        // cannot answer has nothing countable to retire either.
+        if (version.target || (version.idle ?? 0) === 0) {
           return null
         }
 
@@ -191,7 +200,7 @@ export function createVersionColumns({
                 disabled={busy}
                 denied={denial}
                 aria-busy={busy || undefined}
-                aria-label={`Retire ${version.idle} idle workers on ${versionLabel(version)}`}
+                aria-label={`Retire ${version.idle ?? 0} idle workers on ${versionLabel(version)}`}
                 onClick={(event) => {
                   event.stopPropagation()
                   onRetire(version)

@@ -10,6 +10,7 @@ using Comuki.Modules.Intake.Domain.Ids;
 using Comuki.Modules.Intake.Domain.Rules;
 using Comuki.Modules.Intake.Domain.Tickets;
 using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
@@ -31,17 +32,39 @@ public sealed class WebhookIntakeServiceShould
     private readonly IRunLauncher runLauncher = Substitute.For<IRunLauncher>();
     private readonly ITicketSourceProvider provider = Substitute.For<ITicketSourceProvider>();
     private readonly ITicketSyncPort syncPort = Substitute.For<ITicketSyncPort>();
+    private readonly ISubjectScopeAccessor scopes = Substitute.For<ISubjectScopeAccessor>();
 
     public WebhookIntakeServiceShould()
     {
+        scopes.AsSystem(Arg.Any<string>()).Returns(Substitute.For<IDisposable>());
         provider.SourceKey.Returns(TicketProviderKeys.GitHub);
         provider.DeliveryIdOf(Arg.Any<WebhookDelivery>()).Returns("delivery-1");
+    }
+
+    [Fact]
+    public async Task OpenSystemScopeForTheAnonymousDeliveryAsync()
+    {
+        // A webhook carries no subject, and every Intake table the pipeline
+        // reads is query-filtered by project. Without a system scope the
+        // filter matches nothing and the connection is never found — which
+        // is not a degraded read, it is inbound intake not working at all.
+        store.FindConnectionByWebhookAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns((SourceConnection?)null);
+
+        await BuildService().HandleAsync(
+            TicketProviderKeys.GitHub,
+            "hook-1",
+            NewDelivery(),
+            TestContext.Current.CancellationToken);
+
+        scopes.Received(1).AsSystem("intake-webhook");
     }
 
     private WebhookIntakeService BuildService()
     {
         var registry = new TicketProviderRegistry([provider], [syncPort]);
         return new WebhookIntakeService(
+            scopes,
             store,
             registry,
             runLauncher,

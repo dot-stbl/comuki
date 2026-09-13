@@ -70,6 +70,14 @@ export function ApprovalCard({
   const run = runs.find((item) => item.id === approval.runId)
   const { noun } = APPROVAL_TYPE_META[approval.type]
 
+  // A gate the wire escalated carries no plan graph, no panes and no planner
+  // assumptions — a disclosure that opens on nothing is a button that lies
+  // about what is behind it, so it only renders when something is.
+  const hasDetail =
+    (approval.type === "plan" && Boolean(run)) ||
+    approval.type === "baseline" ||
+    approval.assumptions.length > 0
+
   return (
     <article
       className={styles.card}
@@ -88,21 +96,24 @@ export function ApprovalCard({
       <div className={styles.actions}>
         {/* Reading the plan is not a decision, so the disclosure keeps its word
             and stays open to everyone — the person who cannot approve is often
-            exactly the one asked why. */}
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          data-test="approval-details"
-          aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
-        >
-          <ChevronDown
-            aria-hidden="true"
-            className={cn(styles.chevron, open && styles.chevronOpen)}
-          />
-          {open ? "Hide" : "Details"}
-        </Button>
+            exactly the one asked why. A card with nothing to disclose (a wire
+            gate) offers no such button rather than an empty panel. */}
+        {hasDetail ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            data-test="approval-details"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+          >
+            <ChevronDown
+              aria-hidden="true"
+              className={cn(styles.chevron, open && styles.chevronOpen)}
+            />
+            {open ? "Hide" : "Details"}
+          </Button>
+        ) : null}
 
         <span className={styles.spacer} />
 
@@ -186,19 +197,21 @@ export function ApprovalCard({
             </div>
           ) : null}
 
-          <section className={styles.region}>
-            <h3 className={styles.regionHead}>Planner assumptions</h3>
-            <ul className={styles.assumptions}>
-              {approval.assumptions.map((item) => (
-                <li key={item} className={styles.assumption}>
-                  <span className={styles.arrow} aria-hidden="true">
-                    →
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </section>
+          {approval.assumptions.length > 0 ? (
+            <section className={styles.region}>
+              <h3 className={styles.regionHead}>Planner assumptions</h3>
+              <ul className={styles.assumptions}>
+                {approval.assumptions.map((item) => (
+                  <li key={item} className={styles.assumption}>
+                    <span className={styles.arrow} aria-hidden="true">
+                      →
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </div>
       ) : null}
     </article>

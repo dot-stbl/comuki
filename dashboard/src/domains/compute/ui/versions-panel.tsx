@@ -57,17 +57,19 @@ export function VersionsPanel({
     [target, retiringLabel, onRetire, session]
   )
 
-  // Target first, then most-stranded first. This is the order rows arrive in
-  // even once the head is sortable: the table sorts what it is given and breaks
-  // ties on the incoming index, so an explicit sort is the primary key and this
-  // stays the tiebreak beneath it.
+  // Target first, then most-stranded first. The order rows arrive in
+  // even once the head is sortable: the table sorts what it is given and
+  // breaks ties on the incoming index, so an explicit sort is the primary
+  // key and this stays the tiebreak beneath it. A label whose idle count
+  // the source cannot answer sorts as though it had none — a guess would
+  // reorder the table around a number nobody has.
   const rows = useMemo(() => {
     const filtered = applyDataFilters(versions, filters, columns)
     return [...filtered].sort((a, b) => {
       if (a.target !== b.target) {
         return a.target ? -1 : 1
       }
-      return b.idle - a.idle
+      return (b.idle ?? 0) - (a.idle ?? 0)
     })
   }, [versions, filters, columns])
 

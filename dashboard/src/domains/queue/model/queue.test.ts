@@ -196,9 +196,10 @@ describe("the lease, and the worker that stopped defending it", () => {
         worker("wk_a", { state: "busy" }),
         worker("wk_b", { state: "busy" }),
         worker("wk_c", { state: "draining" }),
+        worker("wk_e", { state: "offline" }),
         worker("wk_d"),
       ])
-    ).toEqual({ total: 4, busy: 2, draining: 1, idle: 1 })
+    ).toEqual({ total: 5, busy: 2, draining: 1, idle: 1, offline: 1 })
   })
 })
 

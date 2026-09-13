@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Comuki.Host.Testing\Comuki.Host.Testing.csproj" />
     <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
     <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host\Comuki.Host.csproj" />
   </ItemGroup>

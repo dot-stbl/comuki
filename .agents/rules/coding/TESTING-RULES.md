@@ -1893,6 +1893,35 @@ dotnet test --filter "FullyQualifiedName~Unit" --logger "console;verbosity=minim
 Integration оставляем на CI — на локали часто Docker не поднят, или
 поднят с другой версией Postgres.
 
+### Podman вместо Docker Desktop
+
+На агентских Windows-машинах этого репо Testcontainers говорит с
+Podman, не с Docker Desktop. Без этого блока `docker --version` не
+находит ничего, и следующий агент делает вывод, что integration-сьюты
+запускать нельзя — так 13 падений мигрировавших-не-всех контекстов
+пролежали незамеченными.
+
+Перед любым `dotnet run --project tests/integration/...`:
+
+```bash
+export DOCKER_HOST=npipe://./pipe/docker_engine
+export TESTCONTAINERS_RYUK_DISABLED=true
+```
+
+- **Ровно два слэша** после `npipe:`. Четыре слэша
+  (`npipe:////./pipe/docker_engine`) — частый вариант в чужих примерах —
+  валится внутри `DockerClientBuilder.Build()`: `Docker.DotNet` не
+  парсит такой URI и бросает исключение до того, как Testcontainers
+  успевает попробовать что-либо поднять.
+- `TESTCONTAINERS_RYUK_DISABLED=true` — Ryuk (ресурс-ривер контейнеров)
+  своей сетевой модели на Podman machine по умолчанию не находит;
+  на разовом агентском прогоне он не нужен — контейнеры и так снимаются
+  в `DisposeAsync` каждого `Host*Server`.
+- Предпосылка: `podman machine start`. Без поднятой VM `DOCKER_HOST`
+  указывает в никуда, и первый же `container.StartAsync()` в
+  `HostDatabaseMigrator`/`Host*Server.InitializeAsync` падает таймаутом
+  вместо понятной ошибки подключения.
+
 ---
 
 ## Quick reference

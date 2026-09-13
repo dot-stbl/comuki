@@ -24,13 +24,13 @@ const DAY = 86_400
  * Two of the three ways a key stops working need nobody to do anything: it runs
  * out of time, or somebody revokes it. Revocation wins over expiry when both
  * are true, because it is the deliberate act and it is what an operator went
- * and did.
+ * and did. A key with no expiry at all can only ever be revoked.
  */
 export function keyState(key: VirtualKey): KeyState {
   if (key.revoked) {
     return "revoked"
   }
-  if (key.expiresInSec <= 0) {
+  if (key.expiresInSec !== null && key.expiresInSec <= 0) {
     return "expired"
   }
   return "live"
@@ -41,12 +41,17 @@ export function isLive(key: VirtualKey): boolean {
   return keyState(key) === "live"
 }
 
-/** How much of the cap is spent, 0–1 and uncapped above 1. */
+/**
+ * How much of the cap is spent, 0–1 and uncapped above 1. An unlimited key
+ * has no fraction of a cap to read, and answers 0 rather than the full bar
+ * a zero cap would draw — "no cap" and "all spent" are different sentences.
+ */
 export function budgetShare(key: VirtualKey): number {
-  if (key.budgetUsd <= 0) {
-    return 1
+  if (key.budgetUsd === null || key.budgetUsd <= 0) {
+    return key.budgetUsd === null ? 0 : 1
   }
-  return Math.max(0, key.spentUsd / key.budgetUsd)
+  const spent = key.spentUsd ?? 0
+  return Math.max(0, spent / key.budgetUsd)
 }
 
 /**
@@ -59,6 +64,10 @@ export function budgetShare(key: VirtualKey): number {
  * one reaches 90%.
  */
 export function budgetHeat(key: VirtualKey): "ok" | "near" | "over" {
+  // An unlimited key never approaches a ceiling it does not have.
+  if (key.budgetUsd === null) {
+    return "ok"
+  }
   const share = budgetShare(key)
   if (share >= 1) {
     return "over"
@@ -71,7 +80,10 @@ export function budgetHeat(key: VirtualKey): "ok" | "near" | "over" {
 
 /** What is left under the cap, in dollars. Never negative. */
 export function budgetLeftUsd(key: VirtualKey): number {
-  return Math.max(0, key.budgetUsd - key.spentUsd)
+  if (key.budgetUsd === null) {
+    return 0
+  }
+  return Math.max(0, key.budgetUsd - (key.spentUsd ?? 0))
 }
 
 /**
@@ -83,6 +95,9 @@ export function budgetLeftUsd(key: VirtualKey): number {
  * a day left and the two must not look alike.
  */
 export function expiryReading(key: VirtualKey): string {
+  if (key.expiresInSec === null) {
+    return "never"
+  }
   const days = Math.round(key.expiresInSec / DAY)
   if (days === 0) {
     return key.expiresInSec > 0 ? "today" : "expired today"

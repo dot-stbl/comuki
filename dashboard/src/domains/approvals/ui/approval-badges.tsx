@@ -58,11 +58,17 @@ const riskIcons: Record<ApprovalRisk, ComponentType<{ className?: string }>> = {
 }
 
 export interface ApprovalRiskBadgeProps {
-  risk: ApprovalRisk
+  risk: ApprovalRisk | null
   className?: string
 }
 
 export function ApprovalRiskBadge({ risk, className }: ApprovalRiskBadgeProps) {
+  // No risk reading on the wire, no badge: an invented medium would carry a
+  // hue a human would weigh, and the queue's judgement must stay its own.
+  if (risk === null) {
+    return null
+  }
+
   const Icon = riskIcons[risk]
 
   return (

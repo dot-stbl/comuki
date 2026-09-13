@@ -78,6 +78,73 @@ jobs:
       - name: Run tests
         run: dotnet run --project ${{ matrix.project }} -c Debug
 
+  # Integration suites boot a real Postgres through Testcontainers. They had
+  # never run in CI, and that is how a broken anonymous-webhook path and a
+  # broken api-key lookup survived unnoticed: every local check for a container
+  # runtime asked `docker --version`, found no CLI, and stopped there. The
+  # GitHub runner has a Docker daemon, so here they simply work.
+  #
+  # One job rather than a matrix: each project starts its own container, and
+  # twenty-one runners paying that startup separately costs more than it saves.
+  test-integration:
+    name: test backend (integration)
+    needs: build-be
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Comuki.Host.Testing is the shared harness library, not a suite — it has
+      # no entry point and is skipped by the glob below on purpose.
+      # The step reads the run summary to tell a skipped suite from a broken
+      # one, so the summary has to say the same words everywhere. Without
+      # this the parse is silently locale-dependent: a developer with a
+      # localised SDK gets a different answer from the runner.
+      - name: Run integration suites
+        env:
+          DOTNET_CLI_UI_LANGUAGE: en
+        run: |
+          set -uo pipefail
+          status=0
+          log=$(mktemp)
+          for project in tests/integration/*/; do
+            name=$(basename "$project")
+            if [ "$name" = "Comuki.Host.Testing" ]; then
+              continue
+            fi
+            echo "::group::$name"
+            if dotnet run --project "$project" -c Debug > "$log" 2>&1; then
+              cat "$log"
+            else
+              code=$?
+              cat "$log"
+              # Exit 8 is the testing platform saying "zero tests ran". A suite
+              # whose cases are all deliberately skipped reports that too, and a
+              # recorded decision to skip is not a failure. Tell them apart by
+              # what the run actually found: a broken discovery reports no tests
+              # at all, a fully skipped suite still counts them.
+              if [ "$code" -eq 8 ] && grep -qE "total: [1-9]" "$log" && grep -qE "failed: 0" "$log"; then
+                echo "::warning title=$name::every test in this suite is skipped"
+              else
+                status=1
+              fi
+            fi
+            echo "::endgroup::"
+          done
+          exit "$status"
+
   build-fe:
     name: build frontend (dashboard)
     runs-on: ubuntu-latest

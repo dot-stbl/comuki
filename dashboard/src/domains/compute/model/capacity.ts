@@ -140,12 +140,17 @@ export function bindingSentence(reading: CapacityReading): string {
  * containers — and only one of them is a fault. The pool that is *configured*
  * to sit empty says so in its own words, so an empty row stops looking like an
  * outage.
+ *
+ * The idle ceiling rides along when the source carries it; a snapshot that
+ * cannot answer it says the floor alone rather than inventing a ceiling.
  */
 export function idleReading(pool: ComputePool): string {
   if (pool.minIdle === 0) {
     return "min idle 0 — create-per-task"
   }
-  return `min idle ${pool.minIdle} · max idle ${pool.maxIdle}`
+  return pool.maxIdle === null
+    ? `min idle ${pool.minIdle}`
+    : `min idle ${pool.minIdle} · max idle ${pool.maxIdle}`
 }
 
 /** True when the pool keeps no warm containers at all, by configuration. */
@@ -180,7 +185,9 @@ export function isStale(version: WorkerVersion): boolean {
 export function strandedIdle(versions: WorkerVersion[]): number {
   return versions
     .filter(isStale)
-    .reduce((total, version) => total + version.idle, 0)
+    // A source that cannot count per label cannot strand a count either; the
+    // honest reading is nothing rather than a guessed fleet.
+    .reduce((total, version) => total + (version.idle ?? 0), 0)
 }
 
 /** Which half of the label moved — the reason a row is stale. */

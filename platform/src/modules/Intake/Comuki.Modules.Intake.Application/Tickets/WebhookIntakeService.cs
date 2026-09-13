@@ -6,6 +6,7 @@ using Comuki.Modules.Intake.Application.Sync;
 using Comuki.Modules.Intake.Domain.Deliveries;
 using Comuki.Modules.Intake.Domain.Rules;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.Logging;
 
 namespace Comuki.Modules.Intake.Application.Tickets;
@@ -19,12 +20,14 @@ namespace Comuki.Modules.Intake.Application.Tickets;
 /// 200 with an outcome label, so trackers never retry letters we
 /// deliberately dropped.
 /// </summary>
+/// <param name="scopeAccessor"></param>
 /// <param name="store"></param>
 /// <param name="providers"></param>
 /// <param name="runLauncher"></param>
 /// <param name="clock"></param>
 /// <param name="logger"></param>
 public sealed class WebhookIntakeService(
+    ISubjectScopeAccessor scopeAccessor,
     IIntakeStore store,
     TicketProviderRegistry providers,
     IRunLauncher runLauncher,
@@ -43,6 +46,16 @@ public sealed class WebhookIntakeService(
         WebhookDelivery delivery,
         CancellationToken cancellationToken = default)
     {
+        // A webhook arrives anonymous — the signature is the auth on this
+        // surface, so no subject is ever established and the ambient scope
+        // is `SubjectScope.Nothing`. Every Intake table this pipeline reads
+        // (connections, tickets, admission rules) is query-filtered by
+        // project, so without a system scope the filter matches nothing and
+        // the connection is never found. The scope wraps the whole method
+        // rather than the lookup: all thirteen store calls below run on
+        // behalf of the tracker, not of a person.
+        using var systemScope = scopeAccessor.AsSystem("intake-webhook");
+
         if (sourceKey == TicketProviderKeys.Native)
         {
             return WebhookReceipt.NotFound(

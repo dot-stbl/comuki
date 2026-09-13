@@ -1,11 +1,20 @@
 import { useQuery } from "@tanstack/react-query"
 
 import { fetchProxyModelsAsync } from "@/shared/api/models-proxy"
+import {
+  proxyKeysWireToMapping,
+  type ProxyKeysMapping,
+  type ProxyKeysResponseWire,
+} from "@/domains/models/api/proxy-keys"
 import type { ModelsSnapshot } from "@/domains/models/model/types"
+import { getApiV1ProxyKeys } from "@/shared/api/_generated/clients/getApiV1ProxyKeys"
 import { readSeedModels } from "@/shared/api/mock/models.store"
 import { env } from "@/shared/config/env"
 
 export const modelsQueryKey = ["models"] as const
+
+/** The proxy's virtual-key catalogue — real mode only, never polled. */
+export const proxyKeysQueryKey = ["proxy-keys"] as const
 
 /**
  * Mock-mode: the registry, read from the mutable store rather than from
@@ -59,5 +68,21 @@ export function useModelsQuery() {
   return useQuery({
     queryKey: modelsQueryKey,
     queryFn: getModels,
+  })
+}
+
+/**
+ * The spend-key catalogue, `GET /api/v1/proxy/keys` — real mode only. Not
+ * polled: keys change by configuration and restart, and the one act this
+ * screen offers (revoke) invalidates the cache itself.
+ */
+export function useProxyKeysQuery() {
+  return useQuery({
+    queryKey: proxyKeysQueryKey,
+    enabled: !env.useMock,
+    queryFn: async (): Promise<ProxyKeysMapping> => {
+      const response = await getApiV1ProxyKeys()
+      return proxyKeysWireToMapping(response as ProxyKeysResponseWire)
+    },
   })
 }

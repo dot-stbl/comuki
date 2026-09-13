@@ -15,6 +15,7 @@ import { toast } from "sonner"
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
 import {
+  usePlatformSettingsQuery,
   useSettingsQuery,
   useSettingsSaveMutation,
   useSettingsStopMutation,
@@ -31,9 +32,11 @@ import { AppsPanel } from "@/domains/settings/ui/apps-panel"
 import { AutonomyPanel } from "@/domains/settings/ui/autonomy-panel"
 import { BudgetsPanel } from "@/domains/settings/ui/budgets-panel"
 import { KeysPanel } from "@/domains/settings/ui/keys-panel"
+import { PlatformSettingsPanel } from "@/domains/settings/ui/platform-settings-panel"
 import { RoutingPanel } from "@/domains/settings/ui/routing-panel"
 import { RulesPanel } from "@/domains/settings/ui/rules-panel"
 import { TrackerPanel } from "@/domains/settings/ui/tracker-panel"
+import { env } from "@/shared/config/env"
 import { useCan } from "@/shared/session"
 import { Button, Tooltip } from "@/shared/ui"
 
@@ -115,7 +118,21 @@ export interface SettingsPageProps {
  * them. The panels whose source is git have nothing to gate.
  */
 export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
-  const { data, isLoading, isError, error, refetch } = useSettingsQuery()
+  /* Two settings screens, one route. Real mode serves the host's read-only
+     platform snapshot — lease policy, escalation ratchet, compute scale, the
+     proxy switch — and nothing else: the seven-section control plane below
+     is the mock's own description of a fuller product, and rendering it
+     against a host that answers none of it would be seven tabs of fiction.
+     The platform query runs in real mode; the control-plane query in mock. */
+  const platform = usePlatformSettingsQuery()
+  const mock = useSettingsQuery()
+
+  const data = env.useMock ? mock.data : undefined
+  const isLoading = env.useMock ? mock.isLoading : platform.isLoading
+  const isError = env.useMock ? mock.isError : platform.isError
+  const error = env.useMock ? mock.error : platform.error
+  const refetch = env.useMock ? mock.refetch : platform.refetch
+
   const save = useSettingsSaveMutation()
   // The stops' own channel: kill-switch and pause act the moment they are
   // pressed and are never buffered behind Save.
@@ -172,7 +189,11 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
         <PageHeader
           breadcrumbs={[{ label: "settings" }]}
           title="Settings"
-          summary="control plane configuration"
+          summary={
+            env.useMock
+              ? "control plane configuration"
+              : "platform configuration — read-only, set at boot"
+          }
         />
       }
     >
@@ -210,6 +231,14 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
               </Tooltip>
             </span>
           </div>
+        ) : null}
+
+        {/* Real mode: the read-only platform snapshot, and nothing else.
+            Every edit affordance the mock plane carried is simply absent —
+            the host has no PUT, and the panel's first sentence says where
+            changes actually go. */}
+        {!env.useMock && platform.data ? (
+          <PlatformSettingsPanel settings={platform.data} />
         ) : null}
 
         {data ? (

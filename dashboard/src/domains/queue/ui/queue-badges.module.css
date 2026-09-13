@@ -84,6 +84,17 @@
   --st: var(--st-waiting);
 }
 
+/* Offline keeps the failure hue's icon weight but not its full tint: a stale
+   lease is the *approaching* failure (the reaper takes the item once the
+   lease lapses), and the pool's own lease column already carries the louder
+   warning triangle. Two full-strength alarms on one row would teach the
+   operator to ignore the first. */
+.offline {
+  --st: var(--st-failed);
+
+  background: transparent;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .running {
     animation: none;

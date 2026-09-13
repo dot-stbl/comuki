@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Host.Testing</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <!-- Not a test project: no [Fact]/[Theory] live here, so IsTestProject
+         and UseMicrosoftTestingPlatformRunner stay unset — CI builds this
+         project but never runs it (TESTING-RULES.md §5/§10). -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Shouldly only, for the login-response assertion in
+         TestBootstrapAdmin's HttpClient extension — no [Fact] here, so no
+         xunit/Testcontainers package: each Host*Server fixture owns its own
+         Testcontainers instance and its own IAsyncLifetime implementation. -->
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Comuki.Host: HostComposer/HostDatabase (internal — see the
+         InternalsVisibleTo grant added to Comuki.Host.csproj) plus every
+         module Infrastructure project it references transitively, except
+         Knowledge and Memory (Comuki.Host does not reference either —
+         see SmokeHostServer's "composition gap" note). -->
+    <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host\Comuki.Host.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Knowledge\Comuki.Modules.Knowledge.Infrastructure\Comuki.Modules.Knowledge.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

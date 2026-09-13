@@ -28,16 +28,18 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
  * nobody chose.
  */
 export function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFKD")
-    // Strip the accents `NFKD` just separated, so `Inés` proposes `ines`
-    // rather than `in-s`.
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, SLUG_MAX)
-    .replace(/-+$/g, "")
+  return (
+    name
+      .toLowerCase()
+      .normalize("NFKD")
+      // Strip the accents `NFKD` just separated, so `Inés` proposes `ines`
+      // rather than `in-s`.
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, SLUG_MAX)
+      .replace(/-+$/g, "")
+  )
 }
 
 /**

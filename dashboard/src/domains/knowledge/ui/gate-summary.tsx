@@ -1,8 +1,5 @@
 import { useVerifyQuery } from "@/domains/verify/api/queries"
-import {
-  failingCount,
-  neverRanCount,
-} from "@/domains/verify/model/gate"
+import { failingCount, neverRanCount } from "@/domains/verify/model/gate"
 
 import styles from "./gate-tab.module.css"
 

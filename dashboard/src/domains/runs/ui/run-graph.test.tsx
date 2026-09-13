@@ -66,7 +66,9 @@ describe("RunGraph", () => {
       container.querySelectorAll('[data-test="run-graph-column"]')
     ).toHaveLength(3)
     // One fewer connector than columns: the last band has nothing after it.
-    expect(container.querySelectorAll('[aria-hidden="true"]').length).toBeGreaterThan(0)
+    expect(
+      container.querySelectorAll('[aria-hidden="true"]').length
+    ).toBeGreaterThan(0)
     expect(nodes(container).map((node) => node.dataset.item)).toEqual([
       "w1",
       "w2",

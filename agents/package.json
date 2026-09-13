@@ -6,10 +6,18 @@
   ],
   "scripts": {
     "typecheck": "bun run --filter './comuki-*' typecheck",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write \"**/*.{ts,mjs}\"",
+    "format:check": "prettier --check \"**/*.{ts,mjs}\"",
     "test": "bun test"
   },
   "devDependencies": {
+    "@eslint/js": "^10",
     "@types/bun": "^1.4.0",
-    "typescript": "^7.0.2"
+    "eslint": "^10",
+    "globals": "^17",
+    "prettier": "^3.8.3",
+    "typescript": "~6",
+    "typescript-eslint": "^8"
   }
 }

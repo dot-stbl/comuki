@@ -30,9 +30,7 @@ export function DepthBand({ days, className }: DepthBandProps) {
     return null
   }
 
-  const deepest = readings.todayIsDeepest
-    ? " · deepest of the week today"
-    : ""
+  const deepest = readings.todayIsDeepest ? " · deepest of the week today" : ""
 
   return (
     <section

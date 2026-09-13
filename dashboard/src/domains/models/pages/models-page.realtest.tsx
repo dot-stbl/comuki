@@ -37,7 +37,9 @@ vi.mock("@/shared/config/env", () => ({
 vi.mock("@/shared/api/models-proxy", () => ({
   fetchProxyModelsAsync: vi.fn().mockResolvedValue({
     object: "list",
-    data: [{ id: "lead-xl-2", object: "model", created: 0, owned_by: "comuki" }],
+    data: [
+      { id: "lead-xl-2", object: "model", created: 0, owned_by: "comuki" },
+    ],
   }),
 }))
 
@@ -98,16 +100,13 @@ beforeAll(() => {
 
 /** The transport's rejection shape: an Error carrying the host's problem body. */
 function catalogueDown(): Error {
-  return Object.assign(
-    new Error("request failed 503"),
-    {
-      status: 503,
-      data: {
-        title: "catalogue unavailable",
-        detail: "the proxy key store is unreachable",
-      },
+  return Object.assign(new Error("request failed 503"), {
+    status: 503,
+    data: {
+      title: "catalogue unavailable",
+      detail: "the proxy key store is unreachable",
     },
-  )
+  })
 }
 
 /** One valid catalogue row, so the success control is a real answer. */
@@ -195,9 +194,7 @@ describe("the spend-key catalogue, over the wire", () => {
     expect(alert.textContent).toContain("Couldn't load the spend keys")
     // The host's own sentence, not "request failed 503" for an operator to
     // translate.
-    expect(alert.textContent).toContain(
-      "the proxy key store is unreachable",
-    )
+    expect(alert.textContent).toContain("the proxy key store is unreachable")
     // The table is not drawn: an empty Spend-keys table would read as "no
     // keys", which is a different lie than the one this panel tells.
     expect(find('[data-test="models-keys"]')).toBeNull()

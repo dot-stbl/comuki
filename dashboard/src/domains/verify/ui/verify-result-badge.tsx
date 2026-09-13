@@ -20,7 +20,10 @@ export interface VerifyResultBadgeProps {
  * as a blank — would hide the one thing on this screen that nobody would
  * otherwise notice.
  */
-export function VerifyResultBadge({ result, className }: VerifyResultBadgeProps) {
+export function VerifyResultBadge({
+  result,
+  className,
+}: VerifyResultBadgeProps) {
   if (!result) {
     return (
       <span
@@ -39,7 +42,11 @@ export function VerifyResultBadge({ result, className }: VerifyResultBadgeProps)
 
   return (
     <span
-      className={cn(styles.badge, failed ? styles.failed : styles.passed, className)}
+      className={cn(
+        styles.badge,
+        failed ? styles.failed : styles.passed,
+        className
+      )}
       data-test="verify-result"
       data-outcome={failed ? "failed" : "passed"}
     >

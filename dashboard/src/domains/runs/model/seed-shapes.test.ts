@@ -55,7 +55,9 @@ describe("the plans the seed actually produces", () => {
   })
 
   it("contains items blocked behind something that stopped", () => {
-    const blocked = runs.filter((run) => planGraph(run.workItems).blocked.size > 0)
+    const blocked = runs.filter(
+      (run) => planGraph(run.workItems).blocked.size > 0
+    )
     expect(blocked.length).toBeGreaterThan(0)
   })
 

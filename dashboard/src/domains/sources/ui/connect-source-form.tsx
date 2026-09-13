@@ -230,7 +230,8 @@ export function ConnectSourceForm({
         />
 
         <Notice data-test="settings-preview">
-          The host stores this as a single settings json: <code>{settingsJson}</code>
+          The host stores this as a single settings json:{" "}
+          <code>{settingsJson}</code>
         </Notice>
 
         <TextField
@@ -249,9 +250,9 @@ export function ConnectSourceForm({
         {env.useMock ? (
           <>
             <Notice data-test="mock-secret-notice">
-              Mock mode only: the form holds a literal credential long enough
-              to probe the seed store. Real mode reads the env var on the
-              host instead and never sees the value.
+              Mock mode only: the form holds a literal credential long enough to
+              probe the seed store. Real mode reads the env var on the host
+              instead and never sees the value.
             </Notice>
             <TextField
               id="connect-mock-secret"
@@ -282,7 +283,11 @@ export function ConnectSourceForm({
                 aria-busy={probing || undefined}
                 aria-label="Test connection"
                 onClick={() =>
-                  onTest({draft, secretEnvRef: draft.secretEnvRef, mockSecret})
+                  onTest({
+                    draft,
+                    secretEnvRef: draft.secretEnvRef,
+                    mockSecret,
+                  })
                 }
               >
                 {probing ? (
@@ -334,7 +339,7 @@ export function ConnectSourceForm({
 }
 
 const AUTH_OPTIONS = [
-  {value: "pat", label: "personal access token"},
-  {value: "oauth", label: "oauth grant"},
-  {value: "app-install", label: "app install"},
+  { value: "pat", label: "personal access token" },
+  { value: "oauth", label: "oauth grant" },
+  { value: "app-install", label: "app install" },
 ]

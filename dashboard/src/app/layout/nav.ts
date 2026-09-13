@@ -39,7 +39,12 @@ export const productNav: SidebarNavGroup[] = [
       // floating trigger over the board (see `domains/chat`, the dock), so a
       // conversation is something you have, not somewhere you go. The `/chat`
       // route remains for a URL somebody pastes, and nothing here links it.
-      { label: "Inbox", href: "/tasks", icon: ListTodo, permission: "inbox.view" },
+      {
+        label: "Inbox",
+        href: "/tasks",
+        icon: ListTodo,
+        permission: "inbox.view",
+      },
     ],
   },
   {

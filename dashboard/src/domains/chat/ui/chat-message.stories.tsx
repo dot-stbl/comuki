@@ -82,11 +82,7 @@ function One({ message, user }: { message: Message; user?: SessionUser }) {
   return (
     <Frame user={user}>
       <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
-        <ChatMessage
-          message={message}
-          onDecide={() => {}}
-          projectId={null}
-        />
+        <ChatMessage message={message} onDecide={() => {}} projectId={null} />
       </ol>
     </Frame>
   )
@@ -472,8 +468,16 @@ export const Plan: Story = {
           {
             kind: "plan",
             nodes: [
-              { id: "w4", label: "переписать обработчик", profile: "implementer" },
-              { id: "w5", label: "поднять TTL в миграции", profile: "implementer" },
+              {
+                id: "w4",
+                label: "переписать обработчик",
+                profile: "implementer",
+              },
+              {
+                id: "w5",
+                label: "поднять TTL в миграции",
+                profile: "implementer",
+              },
               { id: "w6", label: "вычитать диф", profile: "reviewer" },
               { id: "w7", label: "раскатать на стенд", profile: "verifier" },
             ],

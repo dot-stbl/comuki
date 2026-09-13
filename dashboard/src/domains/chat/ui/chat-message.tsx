@@ -109,11 +109,7 @@ export function ChatMessage({
         ) : null}
 
         {proposal ? (
-          <ProposalCard
-            proposal={proposal}
-            onDecide={onDecide}
-            busy={busy}
-          />
+          <ProposalCard proposal={proposal} onDecide={onDecide} busy={busy} />
         ) : null}
 
         {parts.map((part, index) => (

@@ -79,10 +79,7 @@ export const CUSTOM_COMMANDS_SEED: SeedSlashCommand[] = [
 
 /** The act a proposal performs, and therefore the permission it answers to. */
 export type SeedProposalAct =
-  | "run.start"
-  | "run.stop"
-  | "plan.approve"
-  | "settings.debug"
+  "run.start" | "run.stop" | "plan.approve" | "settings.debug"
 
 export type SeedProposalDecision = "confirmed" | "rejected"
 
@@ -124,11 +121,7 @@ export interface SeedToolCall {
 }
 
 export type SeedChatMessageKind =
-  | "person"
-  | "reply"
-  | "tool"
-  | "proposal"
-  | "error"
+  "person" | "reply" | "tool" | "proposal" | "error"
 
 /* --------------------------------------------------------------------------
  * Message parts.
@@ -578,8 +571,16 @@ export const CHAT_SESSIONS_SEED: SeedChatSession[] = [
           {
             kind: "plan",
             nodes: [
-              { id: "w4", label: "переписать обработчик", profile: "implementer" },
-              { id: "w5", label: "поднять TTL в миграции", profile: "implementer" },
+              {
+                id: "w4",
+                label: "переписать обработчик",
+                profile: "implementer",
+              },
+              {
+                id: "w5",
+                label: "поднять TTL в миграции",
+                profile: "implementer",
+              },
               { id: "w6", label: "вычитать диф", profile: "reviewer" },
               { id: "w7", label: "раскатать на стенд", profile: "verifier" },
             ],
@@ -820,8 +821,16 @@ client declared in its own git.
           {
             kind: "plan",
             nodes: [
-              { id: "w1", label: "прочитать тикет и затронутый код", profile: "explorer" },
-              { id: "w2", label: "разложить работу на шаги", profile: "planner" },
+              {
+                id: "w1",
+                label: "прочитать тикет и затронутый код",
+                profile: "explorer",
+              },
+              {
+                id: "w2",
+                label: "разложить работу на шаги",
+                profile: "planner",
+              },
               { id: "w3", label: "внести правку", profile: "implementer" },
               { id: "w4", label: "вычитать диф", profile: "reviewer" },
               { id: "w5", label: "аппрув на раскатку", profile: "verifier" },

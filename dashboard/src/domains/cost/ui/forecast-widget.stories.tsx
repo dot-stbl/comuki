@@ -23,7 +23,12 @@ type Story = StoryObj<typeof ForecastWidget>
 /** Comfortably under cap — green, no hue. */
 export const Under: Story = {
   args: {
-    forecast: { cap: 1450, burnRatePerDay: 131.11, projectedEndOfPeriod: 917.8, share: 0.63 },
+    forecast: {
+      cap: 1450,
+      burnRatePerDay: 131.11,
+      projectedEndOfPeriod: 917.8,
+      share: 0.63,
+    },
     burnRateLabel: "$131.11 / day",
     projectedLabel: "end of week",
     meter: <ProxyBudgetMeter budget={{ used: 917.8, cap: 1450 }} />,
@@ -33,7 +38,12 @@ export const Under: Story = {
 /** Past 85%: amber, the wait that says "raise the cap or stop the swarm". */
 export const Near: Story = {
   args: {
-    forecast: { cap: 480, burnRatePerDay: 137.0, projectedEndOfPeriod: 438.4, share: 0.91 },
+    forecast: {
+      cap: 480,
+      burnRatePerDay: 137.0,
+      projectedEndOfPeriod: 438.4,
+      share: 0.91,
+    },
     burnRateLabel: "$137.00 / day",
     projectedLabel: "end of month",
     meter: <ProxyBudgetMeter budget={{ used: 438.4, cap: 480 }} />,
@@ -43,7 +53,12 @@ export const Near: Story = {
 /** Over the cap — the forecast the operator was warned about last week. */
 export const Over: Story = {
   args: {
-    forecast: { cap: 90, burnRatePerDay: 13.4, projectedEndOfPeriod: 122.7, share: 1.36 },
+    forecast: {
+      cap: 90,
+      burnRatePerDay: 13.4,
+      projectedEndOfPeriod: 122.7,
+      share: 1.36,
+    },
     burnRateLabel: "$13.40 / day",
     projectedLabel: "end of month",
     meter: <ProxyBudgetMeter budget={{ used: 90, cap: 90 }} />,

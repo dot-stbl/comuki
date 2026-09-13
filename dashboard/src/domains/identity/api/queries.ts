@@ -2,9 +2,7 @@ import type { QueryClient } from "@tanstack/react-query"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import * as projectsDomain from "@/domains/projects/api/mappers"
-import {
-  buildIdentitySnapshot,
-} from "@/domains/identity/model/identity"
+import { buildIdentitySnapshot } from "@/domains/identity/model/identity"
 import type {
   CreateApiKeyInput,
   GrantRoleInput,
@@ -104,7 +102,7 @@ function snapshot(): IdentitySnapshot {
     listSeedRoleAssignments(),
     listSeedApiKeys(),
     listSeedProjects(),
-    new Date(),
+    new Date()
   )
 }
 
@@ -129,19 +127,19 @@ async function loadIdentityReal(): Promise<IdentitySnapshot> {
     getApiV1Grants({ Page: 1, PageSize: 200 }),
     getApiV1Keys({ Page: 1, PageSize: 100 }),
     getApiV1Projects({ includeArchived: true }),
-  ]);
+  ])
 
-  const seedUsers = mapIdentityUsersPageToUserRows(users);
-  const seedGrants = mapGrantsPageToGrantRows(grants);
-  const seedKeys = mapApiKeysPageToApiKeyRows(keys);
+  const seedUsers = mapIdentityUsersPageToUserRows(users)
+  const seedGrants = mapGrantsPageToGrantRows(grants)
+  const seedKeys = mapApiKeysPageToApiKeyRows(keys)
   // `getApiV1Projects` returns `any` — the projects endpoint has no
   // explicit response schema. The hand-written `mapProjectViewToDetail`
   // path already drives the registry from the same client.
   const projectRows = projectsDomain.mapProjectsPageToSummaries(
     projectsPage as unknown as Parameters<
       typeof projectsDomain.mapProjectsPageToSummaries
-    >[0],
-  );
+    >[0]
+  )
 
   return buildIdentitySnapshot(
     seedUsers,
@@ -154,8 +152,8 @@ async function loadIdentityReal(): Promise<IdentitySnapshot> {
       gitProfileRepo: row.gitProfileRepo,
       createdAt: row.createdAt,
     })),
-    new Date(),
-  );
+    new Date()
+  )
 }
 
 /**
@@ -171,7 +169,7 @@ async function loadIdentityReal(): Promise<IdentitySnapshot> {
  * paper over.
  */
 async function loadIdentity(): Promise<IdentitySnapshot> {
-  return env.useMock ? snapshot() : loadIdentityReal();
+  return env.useMock ? snapshot() : loadIdentityReal()
 }
 
 /**
@@ -271,7 +269,7 @@ export function useStartOidcQuery(provider: string) {
  */
 async function settleIdentityCache(
   queryClient: QueryClient,
-  extraQueryKeys: readonly (readonly unknown[])[] = [],
+  extraQueryKeys: readonly (readonly unknown[])[] = []
 ): Promise<void> {
   if (env.useMock) {
     queryClient.setQueryData(identityQueryKey, snapshot())

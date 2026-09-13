@@ -52,31 +52,29 @@ function CollapsibleDemo() {
 
   return (
     <Frame>
-        <SplitPane orientation="vertical">
-          <SplitPanel
-            id="board"
-            panelRef={board}
-            defaultSize="55%"
-            minSize="18%"
-            collapsible
-            collapsedSize="2.25rem"
-            onResize={(size) => setCollapsed(size.asPercentage < 8)}
-          >
-            <div style={fill}>{collapsed ? "strip" : "board"}</div>
-          </SplitPanel>
-          <SplitSeparator orientation="vertical" aria-label="Resize the board" />
-          <SplitPanel id="surface" minSize="25%">
-            <div style={{ ...fill, gap: "var(--s4)" }}>
-              <Button
-                size="sm"
-                onClick={() =>
-                  collapsed
-                    ? board.current?.expand()
-                    : board.current?.collapse()
-                }
-              >
-                {collapsed ? "Expand board" : "Collapse board"}
-              </Button>
+      <SplitPane orientation="vertical">
+        <SplitPanel
+          id="board"
+          panelRef={board}
+          defaultSize="55%"
+          minSize="18%"
+          collapsible
+          collapsedSize="2.25rem"
+          onResize={(size) => setCollapsed(size.asPercentage < 8)}
+        >
+          <div style={fill}>{collapsed ? "strip" : "board"}</div>
+        </SplitPanel>
+        <SplitSeparator orientation="vertical" aria-label="Resize the board" />
+        <SplitPanel id="surface" minSize="25%">
+          <div style={{ ...fill, gap: "var(--s4)" }}>
+            <Button
+              size="sm"
+              onClick={() =>
+                collapsed ? board.current?.expand() : board.current?.collapse()
+              }
+            >
+              {collapsed ? "Expand board" : "Collapse board"}
+            </Button>
           </div>
         </SplitPanel>
       </SplitPane>

@@ -41,7 +41,9 @@ function renderHeader(node: ReactNode, rail?: Partial<RailState>) {
   })
 
   return render(
-    <RailContext value={{ railCollapsed: false, toggleRail: () => {}, ...rail }}>
+    <RailContext
+      value={{ railCollapsed: false, toggleRail: () => {}, ...rail }}
+    >
       <SlotContext value={node}>
         <RouterProvider router={router} />
       </SlotContext>
@@ -154,7 +156,11 @@ describe("PageHeader", () => {
           },
         },
       },
-      { accessorKey: "task", header: "task", meta: { filter: { kind: "text" } } },
+      {
+        accessorKey: "task",
+        header: "task",
+        meta: { filter: { kind: "text" } },
+      },
     ]
 
     const { container } = renderHeader(

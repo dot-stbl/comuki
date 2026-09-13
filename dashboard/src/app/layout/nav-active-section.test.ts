@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  productNavSections,
-  type NavSection,
-} from "@/app/layout/nav-sections"
+import { productNavSections, type NavSection } from "@/app/layout/nav-sections"
 import { pickActiveSection } from "@/app/layout/nav-active-section"
 
 describe("pickActiveSection — which section owns this pathname", () => {
@@ -32,8 +29,12 @@ describe("pickActiveSection — which section owns this pathname", () => {
     // `/tasks-archive` is not under `/tasks` — the prefix must be either the
     // whole path or followed by `/`, so a sibling section does not light up
     // by accident.
-    expect(pickActiveSection(productNavSections, "/tasks-archive")).toBeUndefined()
-    expect(pickActiveSection(productNavSections, "/settings-extra")).toBeUndefined()
+    expect(
+      pickActiveSection(productNavSections, "/tasks-archive")
+    ).toBeUndefined()
+    expect(
+      pickActiveSection(productNavSections, "/settings-extra")
+    ).toBeUndefined()
   })
 
   it("returns undefined when no section claims the path", () => {

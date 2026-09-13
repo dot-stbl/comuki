@@ -71,7 +71,8 @@ export function outcomeWindowTotal(
 ): number {
   return days.reduce(
     (total, day) =>
-      total + (day.outcomes.find((entry) => entry.status === status)?.count ?? 0),
+      total +
+      (day.outcomes.find((entry) => entry.status === status)?.count ?? 0),
     0
   )
 }
@@ -95,7 +96,8 @@ export function outcomesNotCovering(
 
   return OUTCOME_STATUSES.filter((status) => {
     const listed = runs.filter((run) => run.status === status).length
-    const finished = today.outcomes.find((entry) => entry.status === status)?.count ?? 0
+    const finished =
+      today.outcomes.find((entry) => entry.status === status)?.count ?? 0
     return finished < listed
   })
 }

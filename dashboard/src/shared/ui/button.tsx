@@ -7,12 +7,7 @@ import { useInTooltip } from "./tooltip-context"
 import styles from "./button.module.css"
 
 type Variant =
-  | "default"
-  | "outline"
-  | "secondary"
-  | "ghost"
-  | "destructive"
-  | "link"
+  "default" | "outline" | "secondary" | "ghost" | "destructive" | "link"
 
 type Size = "default" | "sm" | "lg" | "icon" | "icon-sm" | "icon-lg"
 

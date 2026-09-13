@@ -10,7 +10,8 @@ import {
 
 const find = (test: string) => document.querySelector(`[data-test="${test}"]`)
 
-const glyph = (test: string) => find(test)?.querySelector("svg")?.outerHTML ?? ""
+const glyph = (test: string) =>
+  find(test)?.querySelector("svg")?.outerHTML ?? ""
 
 const words = (test: string) => find(test)?.textContent ?? ""
 

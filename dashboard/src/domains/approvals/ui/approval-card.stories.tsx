@@ -4,7 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import { toApproval } from "@/domains/approvals/api/mappers"
 import type { Approval } from "@/domains/approvals/model/types"
-import { APPROVALS_SEED, PROJECTS_SEED, SESSION_USER_SEED } from "@/shared/api/mock"
+import {
+  APPROVALS_SEED,
+  PROJECTS_SEED,
+  SESSION_USER_SEED,
+} from "@/shared/api/mock"
 import { SessionProvider, type SessionUser } from "@/shared/session"
 
 import { ApprovalCard } from "./approval-card"

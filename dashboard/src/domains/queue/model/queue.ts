@@ -158,8 +158,10 @@ export function depthReadings(days: QueueDepthDay[]): DepthReadings | null {
   const today = days[days.length - 1]?.depth ?? 0
   return {
     today,
-    weekMin: past.length > 0 ? Math.min(...past.map((day) => day.depth)) : today,
-    weekMax: past.length > 0 ? Math.max(...past.map((day) => day.depth)) : today,
+    weekMin:
+      past.length > 0 ? Math.min(...past.map((day) => day.depth)) : today,
+    weekMax:
+      past.length > 0 ? Math.max(...past.map((day) => day.depth)) : today,
     todayIsDeepest: past.every((day) => day.depth <= today),
   }
 }
@@ -256,7 +258,8 @@ export function workerCounts(workers: Worker[]): WorkerCounts {
  * the operator to distrust it.
  * ------------------------------------------------------------------------ */
 
-export type WorkerEmptyKind = "filtered" | "backlog" | "at-rest" | "under-target"
+export type WorkerEmptyKind =
+  "filtered" | "backlog" | "at-rest" | "under-target"
 
 export interface WorkerEmptyInput {
   /**

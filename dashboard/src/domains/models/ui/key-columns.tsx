@@ -172,11 +172,17 @@ export function createKeyColumns({
           // The wire's empty allow-list means *every* model is permitted —
           // a blank cell would read as "none", which is the opposite
           // security reading.
-          <span className={styles.faint} title="empty allow-list — every model permitted">
+          <span
+            className={styles.faint}
+            title="empty allow-list — every model permitted"
+          >
             all models
           </span>
         ) : (
-          <span className={styles.models} title={row.original.models.join(", ")}>
+          <span
+            className={styles.models}
+            title={row.original.models.join(", ")}
+          >
             {row.original.models.map((model, index) => (
               <span key={model} className={styles.model}>
                 {index > 0 ? (

@@ -100,10 +100,7 @@ export function QueuePage({
 
   const counts = useMemo(() => workerCounts(workers), [workers])
   const queued = useMemo(() => backlogOf(items), [items])
-  const stalled = useMemo(
-    () => unclaimedOver(items, AGE_STALLED_SEC),
-    [items]
-  )
+  const stalled = useMemo(() => unclaimedOver(items, AGE_STALLED_SEC), [items])
   const lost = useMemo(() => lostLeases(workers), [workers])
 
   const onPoolResize = useCallback((size: PanelSize) => {
@@ -229,7 +226,10 @@ export function QueuePage({
                 rather than either half's, so it stands where both can see it —
                 and the header's "14 queued" stops being a number and becomes a
                 direction before the table has even been read. */}
-            <DepthBand days={board.data?.depth ?? []} className={styles.depth} />
+            <DepthBand
+              days={board.data?.depth ?? []}
+              className={styles.depth}
+            />
 
             <SplitPane
               orientation="vertical"

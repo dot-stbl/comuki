@@ -129,9 +129,9 @@ describe("the wizard is a routed flow, not a modal", () => {
     expect(here(router)).toBe("/chat/init?step=compute")
     // The step the address named is the step showing.
     expect(
-      all("init-step").find(
-        (node) => node.getAttribute("aria-current") === "step"
-      )?.getAttribute("data-step")
+      all("init-step")
+        .find((node) => node.getAttribute("aria-current") === "step")
+        ?.getAttribute("data-step")
     ).toBe("compute")
   })
 
@@ -139,9 +139,9 @@ describe("the wizard is a routed flow, not a modal", () => {
     mount(["/chat/init?step=banana"])
     await screen.findByRole("heading", { name: "Onboard a repository" })
     expect(
-      all("init-step").find(
-        (node) => node.getAttribute("aria-current") === "step"
-      )?.getAttribute("data-step")
+      all("init-step")
+        .find((node) => node.getAttribute("aria-current") === "step")
+        ?.getAttribute("data-step")
     ).toBe("repo")
   })
 
@@ -180,9 +180,9 @@ describe("the first step decides which project is being onboarded", () => {
       expect(found).not.toBeNull()
       return found as HTMLElement
     })
-    expect(
-      trigger.parentElement?.querySelector("select")?.value
-    ).toBe("p_atlas")
+    expect(trigger.parentElement?.querySelector("select")?.value).toBe(
+      "p_atlas"
+    )
   })
 
   it("ignores a project pasted into the address that this shift cannot touch", async () => {
@@ -204,9 +204,7 @@ describe("a step stops the operator where it can still be fixed", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }))
 
     await waitFor(() =>
-      expect(
-        all("field-error").map((node) => node.textContent)
-      ).toEqual([
+      expect(all("field-error").map((node) => node.textContent)).toEqual([
         "choose the project this repository belongs to",
         "a git remote is required",
       ])

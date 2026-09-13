@@ -39,9 +39,9 @@ describe("the role matrix", () => {
 
   it("gives the platform admin every act", () => {
     for (const permission of ROLES.flatMap((role) =>
-      (["runs.stop", "plans.approve", "identity.manage"] as Permission[]).filter(
-        (entry) => roleGrants(role, entry)
-      )
+      (
+        ["runs.stop", "plans.approve", "identity.manage"] as Permission[]
+      ).filter((entry) => roleGrants(role, entry))
     )) {
       expect(roleGrants("platform-admin", permission)).toBe(true)
     }

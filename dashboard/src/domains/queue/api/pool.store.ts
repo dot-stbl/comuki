@@ -56,15 +56,17 @@ export function forceStopWorker(id: string): void {
 }
 
 export function listWorkers(): Worker[] {
-  return WORKERS_SEED.filter((seed) => !stopped.has(seed.id))
-    .map(toWorker)
-    .map((worker) =>
-      drained.has(worker.id) && worker.state !== "idle"
-        ? { ...worker, state: "draining" as const }
-        : worker
-    )
-    // A drained idle worker has nothing to finish, so it simply goes.
-    .filter((worker) => !(drained.has(worker.id) && worker.state === "idle"))
+  return (
+    WORKERS_SEED.filter((seed) => !stopped.has(seed.id))
+      .map(toWorker)
+      .map((worker) =>
+        drained.has(worker.id) && worker.state !== "idle"
+          ? { ...worker, state: "draining" as const }
+          : worker
+      )
+      // A drained idle worker has nothing to finish, so it simply goes.
+      .filter((worker) => !(drained.has(worker.id) && worker.state === "idle"))
+  )
 }
 
 export function listQueueItems(): QueueItem[] {

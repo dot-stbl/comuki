@@ -193,7 +193,9 @@ describe("the model registry, end to end over the seeds", () => {
     expect(line?.getAttribute("points")?.split(" ")).toHaveLength(24)
     expect(burn?.textContent).toContain("peak $3.42 at 16:00")
     expect(
-      find('[data-test="proxy-burn"] [data-test="sparkline"]')?.getAttribute("aria-label")
+      find('[data-test="proxy-burn"] [data-test="sparkline"]')?.getAttribute(
+        "aria-label"
+      )
     ).toContain("peak $3.42 at 16:00")
   })
 

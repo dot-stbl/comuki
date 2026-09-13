@@ -78,10 +78,7 @@ export function WatchForm({
 
   const denied = can(session, "sources.edit", connection.projectId)
     ? null
-    : needsLabel(
-        "sources.edit",
-        projectOf(session, connection.projectId)?.key
-      )
+    : needsLabel("sources.edit", projectOf(session, connection.projectId)?.key)
 
   /* Measured against the stored watch rather than tracked with a flag: a save
      that lands makes the two agree, so the guard lets go by itself and nothing

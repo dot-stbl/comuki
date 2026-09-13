@@ -25,7 +25,9 @@ export function useSetVerifyEnabled() {
   return useMutation<unknown, Error, SetVerifyEnabledInput>({
     mutationFn: async ({ projectId, enabled }) => {
       if (!env.useMock) {
-        throw new Error("verify settings not implemented — set VITE_USE_MOCK=true")
+        throw new Error(
+          "verify settings not implemented — set VITE_USE_MOCK=true"
+        )
       }
       await new Promise((resolve) => setTimeout(resolve, 220))
       setSeedVerifyEnabled(projectId, enabled)

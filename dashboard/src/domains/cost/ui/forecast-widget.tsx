@@ -50,7 +50,9 @@ export function ForecastWidget({
       <span className={styles.label}>Forecast {projectedLabel}</span>
       <span className={styles.figure}>
         <span className={styles.unit}>$</span>
-        <span className={styles.value}>{forecast.projectedEndOfPeriod.toFixed(2)}</span>
+        <span className={styles.value}>
+          {forecast.projectedEndOfPeriod.toFixed(2)}
+        </span>
       </span>
       {meter}
       <p className={styles.sub}>

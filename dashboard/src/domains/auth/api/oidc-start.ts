@@ -41,11 +41,14 @@ const OIDC_PROVIDER_START_PATH = (provider: string): string =>
 export function startOidcFlow(
   baseUrl: string,
   provider: string,
-  returnTo?: string,
+  returnTo?: string
 ): void {
   const path = OIDC_PROVIDER_START_PATH(provider)
   const target =
-    returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.startsWith("/\\")
+    returnTo &&
+    returnTo.startsWith("/") &&
+    !returnTo.startsWith("//") &&
+    !returnTo.startsWith("/\\")
       ? `${baseUrl}${path}?returnTo=${encodeURIComponent(returnTo)}`
       : `${baseUrl}${path}`
 

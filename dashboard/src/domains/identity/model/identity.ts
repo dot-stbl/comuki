@@ -28,7 +28,10 @@ export const PLATFORM_SCOPE = "platform"
  * is a fact about a pair of dates and a function that reads the clock cannot be
  * asked about a pair.
  */
-export function daysUntil(expiresAt: string | null, today: Date): number | null {
+export function daysUntil(
+  expiresAt: string | null,
+  today: Date
+): number | null {
   if (!expiresAt) {
     return null
   }
@@ -89,8 +92,7 @@ export function buildIdentitySnapshot(
       // A grant on a disabled account or a revoked key is a real row and an
       // inert one. Saying so is the whole reason this screen is worth reading:
       // disabling somebody and un-granting them are different acts.
-      subjectInactive:
-        user?.status === "disabled" || key?.status === "revoked",
+      subjectInactive: user?.status === "disabled" || key?.status === "revoked",
     }
   })
 
@@ -104,8 +106,7 @@ export function buildIdentitySnapshot(
     createdAt: user.createdAt,
     scopes: grantRows
       .filter(
-        (grant) =>
-          grant.subjectKind === "user" && grant.subjectId === user.id
+        (grant) => grant.subjectKind === "user" && grant.subjectId === user.id
       )
       .map((grant) => grant.scopeLabel),
   }))
@@ -121,8 +122,7 @@ export function buildIdentitySnapshot(
     expiresInDays: daysUntil(key.expiresAt, today),
     grants: grantRows
       .filter(
-        (grant) =>
-          grant.subjectKind === "api-key" && grant.subjectId === key.id
+        (grant) => grant.subjectKind === "api-key" && grant.subjectId === key.id
       )
       .map((grant) => `${grant.role} on ${grant.scopeLabel}`),
   }))

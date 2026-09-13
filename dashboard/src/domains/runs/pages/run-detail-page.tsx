@@ -191,10 +191,7 @@ export function RunDetailPage() {
           // Renders nothing when the run has no published png / html /
           // svg — the strip's absence is itself the answer, exactly the
           // "no strip when there are none" the task asks for.
-          <RunEvidenceStrip
-            projectId={data.projectId}
-            runId={data.id}
-          />
+          <RunEvidenceStrip projectId={data.projectId} runId={data.id} />
         ) : null}
 
         {data && items.length === 0 ? (

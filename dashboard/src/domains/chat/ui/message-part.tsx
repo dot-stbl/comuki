@@ -92,14 +92,10 @@ const PART_RENDERERS: PartRenderers = {
      session predates `/init`, `projectId` is `null` and the card short-
      circuits to "no card to show" — same as the run page when a run has
      no artifacts published. */
-  "artifact-ref": (part, _message, projectId) => (
+  "artifact-ref": (part, _message, projectId) =>
     projectId ? (
-      <ArtifactRefCard
-        projectId={projectId}
-        artifactIds={part.artifactIds}
-      />
-    ) : null
-  ),
+      <ArtifactRefCard projectId={projectId} artifactIds={part.artifactIds} />
+    ) : null,
 }
 
 /**
@@ -112,7 +108,7 @@ const PART_RENDERERS: PartRenderers = {
 export function renderPart(
   part: MessagePart,
   message: Message,
-  projectId: string | null,
+  projectId: string | null
 ): ReactNode {
   const render = PART_RENDERERS[part.kind] as (
     part: MessagePart,

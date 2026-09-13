@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom"
 
 /* jsdom implements neither of these, and the duty screen uses both: the stage
    river reads `matchMedia` to honour reduced motion and calls `scrollIntoView`
@@ -15,9 +15,9 @@ if (!window.matchMedia) {
     addListener: () => {},
     removeListener: () => {},
     dispatchEvent: () => false,
-  })) as unknown as typeof window.matchMedia;
+  })) as unknown as typeof window.matchMedia
 }
 
 if (!Element.prototype.scrollIntoView) {
-  Element.prototype.scrollIntoView = () => {};
+  Element.prototype.scrollIntoView = () => {}
 }

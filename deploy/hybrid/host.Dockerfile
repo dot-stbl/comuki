@@ -62,6 +62,11 @@ RUN ./node_modules/.bin/vite build \
 # ---------- Stage 1: build host + migrator ----------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
+# CI passes the commit short sha: stamped into the binaries so the compute
+# engine's worker-image pinning resolves worker:<same sha> (host and worker
+# versions can never diverge). Defaults to 0.0.0 → pin falls back to latest.
+ARG COMUKI_VERSION=0.0.0
+
 WORKDIR /src
 
 # Restore first for layer caching: repo-wide pins + the two host graphs
@@ -74,9 +79,9 @@ RUN dotnet restore platform/src/host/Comuki.Host/Comuki.Host.csproj \
 # Publish each host into its own directory: separate dependency closures,
 # one shared image — versions between entrypoints cannot diverge.
 RUN dotnet publish platform/src/host/Comuki.Host/Comuki.Host.csproj \
-    -c Release --no-restore -o /app/host \
+    -c Release --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app/host \
     && dotnet publish platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj \
-    -c Release --no-restore -o /app/migrator
+    -c Release --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app/migrator
 
 # ---------- Stage 2: runtime ----------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0

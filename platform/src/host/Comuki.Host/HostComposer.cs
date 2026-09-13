@@ -202,6 +202,7 @@ internal static class HostComposer
         builder.Services.AddScoped<IRunsReader, OrchestrationRunsReader>();
         builder.Services.AddScoped<RunsListHandler>();
         builder.Services.AddScoped<GetRunDetailHandler>();
+        builder.Services.AddScoped<WorkersReadQuery>();
         builder.Services.AddScoped<WorkersReadHandler>();
         builder.Services.AddScoped<IApproveRunPort, HostApproveRunAdapter>();
         builder.Services.AddScoped<ICancelRunPort, HostCancelRunAdapter>();

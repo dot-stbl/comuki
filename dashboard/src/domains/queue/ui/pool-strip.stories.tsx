@@ -34,19 +34,19 @@ export const Seeded: Story = {
 /** Saturated — no spare capacity, and the shape says so without a number. */
 export const Saturated: Story = {
   render: () => (
-    <Strip counts={{ total: 12, busy: 12, draining: 0, idle: 0 }} />
+    <Strip counts={{ total: 12, busy: 12, draining: 0, idle: 0, offline: 0 }} />
   ),
 }
 
 /** A rolling image swap: most of the pool is leaving, which is worth noticing. */
 export const MostlyDraining: Story = {
   render: () => (
-    <Strip counts={{ total: 12, busy: 2, draining: 9, idle: 1 }} />
+    <Strip counts={{ total: 12, busy: 2, draining: 9, idle: 1, offline: 0 }} />
   ),
 }
 
 /** No workers at all. The channel is drawn and simply empty — which is a
  *  reading in itself, and the strip's accessible name says it in words. */
 export const Empty: Story = {
-  render: () => <Strip counts={{ total: 0, busy: 0, draining: 0, idle: 0 }} />,
+  render: () => <Strip counts={{ total: 0, busy: 0, draining: 0, idle: 0, offline: 0 }} />,
 }

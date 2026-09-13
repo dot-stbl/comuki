@@ -24,8 +24,15 @@ export type WorkItemStatus =
   | "failed"
   | "cancelled"
 
-/** Idle, holding one item, or finishing up and refusing new claims. */
-export type WorkerState = "idle" | "busy" | "draining"
+/**
+ * Idle, holding one item, or finishing up and refusing new claims — plus
+ * `offline`, the host's reading for a lease whose heartbeat went stale: the
+ * worker still holds the item but is a reaper candidate, which is a different
+ * sentence from `busy` and must not wear its pulse. The wire derives it
+ * (`GET /api/v1/workers`); the mock store never mints it because its seed
+ * heartbeats never go stale without the whole row being reaped.
+ */
+export type WorkerState = "idle" | "busy" | "draining" | "offline"
 
 export type ComputeProvider = "docker" | "kubernetes"
 
@@ -55,23 +62,49 @@ export interface QueueItem {
 
 export interface Worker {
   id: string
-  /** The pool it was raised in. Gates the admin acts on its row. */
-  projectId: string
-  profile: string
+  /**
+   * The pool it was raised in. Gates the admin acts on its row.
+   *
+   * `null` on a wire row the host could not attribute — an idle worker whose
+   * last claim outlived its run's visibility. The project column and the
+   * permission checks both read the absence rather than inventing a project.
+   */
+  projectId: string | null
+  profile: string | null
   state: WorkerState
   /** The item it holds a lease on; `null` while idle. */
   itemId: string | null
-  provider: ComputeProvider
-  /** The provider's own handle for the container. A value, not prose. */
-  handle: string
-  /** Seconds since the last heartbeat landed. */
-  heartbeatAgeSec: number
+  /** The run the held item belongs to; absent while idle or when the source
+   *  (the mock seed) has no run axis to offer. */
+  runId?: string | null
+  /**
+   * The compute provider the container runs on. `null` is the honest reading
+   * for a host that composes no compute engine and therefore cannot say —
+   * the workers API derives rows from leases, not from a provider registry.
+   */
+  provider: ComputeProvider | null
+  /**
+   * The provider's own handle for the container. A value, not prose — and
+   * `null` when no provider is composed to mint one.
+   */
+  handle: string | null
+  /**
+   * Seconds since the last heartbeat landed. `null` while idle — an idle
+   * worker heartbeats against nothing, so there is no age to read.
+   */
+  heartbeatAgeSec: number | null
   /** Seconds until the lease expires; `null` when it holds none. */
   leaseSec: number | null
-  /** Seconds since the container came up. */
-  upSec: number
-  /** Short image digest — the label a claim is matched against. */
-  digest: string
+  /**
+   * Seconds since the container came up. `null` when the wire cannot know —
+   * uptime is a container-runtime fact, and the derived registry has one.
+   */
+  upSec: number | null
+  /**
+   * Short image digest — the label a claim is matched against. `null` while
+   * idle (the lease carries the image, and an idle worker holds no lease).
+   */
+  digest: string | null
 }
 
 /**

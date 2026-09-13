@@ -1,5 +1,15 @@
 import type { ComponentType } from "react"
-import { Activity, Ban, Check, Hourglass, Lock, LogOut, Pause, X } from "lucide-react"
+import {
+  Activity,
+  Ban,
+  Check,
+  Hourglass,
+  Lock,
+  LogOut,
+  Pause,
+  TriangleAlert,
+  X,
+} from "lucide-react"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -58,6 +68,7 @@ const stateIcons: Record<WorkerState, ComponentType<{ className?: string }>> = {
   idle: Pause,
   busy: Activity,
   draining: LogOut,
+  offline: TriangleAlert,
 }
 
 export interface WorkerStateBadgeProps {

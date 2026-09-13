@@ -7,7 +7,7 @@ import { PageHeader } from "@/app/layout/page-header"
 import { useIdentityQuery } from "@/domains/identity/api/queries"
 import { useProjectsQuery } from "@/domains/projects/api/queries"
 import type { ProjectRow } from "@/domains/projects/model/types"
-import { useQueueQuery } from "@/domains/queue/api/queries"
+import { useQueueQuery, useWorkersQuery } from "@/domains/queue/api/queries"
 import { formatCost } from "@/domains/runs/model/format"
 import { useSourcesQuery } from "@/domains/sources/api/queries"
 import { ScheduledJobsSection } from "@/domains/projects/ui/scheduled-jobs-section"
@@ -204,6 +204,7 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
   // What a role does or does not open is a question about what is *drawn*.
   const identity = useIdentityQuery()
   const queue = useQueueQuery()
+  const pool = useWorkersQuery()
   const sources = useSourcesQuery()
 
   // Identity is a platform act: being project-admin of this very project must
@@ -237,10 +238,8 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
         ? queue.data.items.filter((item) => item.projectId === project.id)
             .length
         : null,
-      queueWorkers: queue.data
-        ? queue.data.workers.filter(
-            (worker) => worker.projectId === project.id
-          ).length
+      queueWorkers: pool.data
+        ? pool.data.filter((worker) => worker.projectId === project.id).length
         : null,
       connections: sources.data
         ? sources.data.connections.filter(

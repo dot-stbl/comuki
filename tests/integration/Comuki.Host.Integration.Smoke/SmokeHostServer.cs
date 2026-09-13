@@ -41,7 +41,7 @@ public sealed class SmokeHostServer : IAsyncLifetime
         .Build();
 
 #pragma warning disable CS0612
-    private readonly MinioContainer minio = new MinioBuilder("minio/minio:latest")
+    private readonly MinioContainer minio = new MinioBuilder(MinioImage.Reference)
         .WithUsername(TestArtifactsSecrets.AccessKey)
         .WithPassword(TestArtifactsSecrets.SecretKey)
         .Build();

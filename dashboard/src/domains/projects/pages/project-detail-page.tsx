@@ -258,7 +258,7 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
     }
 
     return rows.filter((row) => allowed[row.id])
-  }, [project, queue.data, sources.data, session])
+  }, [project, queue.data, pool.data, sources.data, session])
 
   return (
     <AppShell

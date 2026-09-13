@@ -9,11 +9,11 @@
  *   `Tool(<primary-arg-prefix>)`, e.g. `Bash(npm install left-pad)`.
  * - `git-ref` — pattern matched against the full git ref, e.g. `refs/heads/main`.
  */
-export type LockKind = 'edit-path' | 'tool-name' | 'git-ref';
+export type LockKind = "edit-path" | "tool-name" | "git-ref"
 
 export interface LockRule {
-  readonly id: string;
-  readonly kind: LockKind;
-  readonly pattern: string;
-  readonly reason: string;
+  readonly id: string
+  readonly kind: LockKind
+  readonly pattern: string
+  readonly reason: string
 }

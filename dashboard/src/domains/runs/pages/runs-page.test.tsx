@@ -255,7 +255,9 @@ describe("the duty list's search filter, held in the URL", () => {
     // triage order lands it at the top — its cost ($7.42) is well above
     // the project's median, the badge's first visible reading on first
     // load.
-    const badges = document.querySelectorAll('[data-test="anomaly-badge-inline"]')
+    const badges = document.querySelectorAll(
+      '[data-test="anomaly-badge-inline"]'
+    )
     expect(badges.length).toBeGreaterThanOrEqual(1)
 
     // The runaway's badge carries the project's actual multiplier; we
@@ -272,8 +274,14 @@ describe("the duty list's search filter, held in the URL", () => {
     expect(dialog?.textContent).toMatch(/\d+(\.\d+)?×\s+the median/)
 
     // The breakdown surfaces the cost figure and the project name.
-    expect(document.querySelector('[data-test="anomaly-breakdown-cost"]')?.textContent).toMatch(/\$\d/)
-    expect(document.querySelector('[data-test="anomaly-breakdown-reason"]')?.textContent).toMatch(/median/)
+    expect(
+      document.querySelector('[data-test="anomaly-breakdown-cost"]')
+        ?.textContent
+    ).toMatch(/\$\d/)
+    expect(
+      document.querySelector('[data-test="anomaly-breakdown-reason"]')
+        ?.textContent
+    ).toMatch(/median/)
 
     cleanup()
   })

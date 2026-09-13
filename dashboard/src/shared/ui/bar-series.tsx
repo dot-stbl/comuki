@@ -111,7 +111,7 @@ export function BarSeries({
         focusable="false"
       >
         {points.map((point, index) => {
-          const x = round2(slot * index + slot * (1 - BAR_SHARE_OF_SLOT) / 2)
+          const x = round2(slot * index + (slot * (1 - BAR_SHARE_OF_SLOT)) / 2)
           let stacked = 0
           return point.segments.map((segment, segmentIndex) => {
             if (segment.value <= 0) {
@@ -140,7 +140,11 @@ export function BarSeries({
         })}
       </svg>
 
-      <div className={styles.axis} data-test="bar-series-axis" aria-hidden="true">
+      <div
+        className={styles.axis}
+        data-test="bar-series-axis"
+        aria-hidden="true"
+      >
         {points.map((point) => (
           <span
             key={point.key}

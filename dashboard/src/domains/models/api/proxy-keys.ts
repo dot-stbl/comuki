@@ -1,7 +1,4 @@
-import type {
-  ModelEndpoint,
-  VirtualKey,
-} from "@/domains/models/model/types"
+import type { ModelEndpoint, VirtualKey } from "@/domains/models/model/types"
 
 /**
  * The wire of `GET /api/v1/proxy/keys` — the admin catalogue over the
@@ -88,21 +85,21 @@ export function proxyKeysWireToMapping(
   response: ProxyKeysResponseWire,
   nowMs: number = Date.now()
 ): ProxyKeysMapping {
-  const keys = response.items.map(
-    (key): VirtualKey => ({
-      id: key.id,
-      prefix: key.prefix,
-      label: key.defaultModel ? `default ${key.defaultModel}` : "no default model",
-      endpointId: `${key.provider}:${key.baseUrl}`,
-      models: [...key.allowedModels],
-      scope: { kind: "project", projectId: key.projectId },
-      budgetUsd: key.budgetUsd,
-      spentUsd: null,
-      expiresInSec: toExpiresInSec(key.expiresAt, nowMs),
-      lastUsedAgoSec: null,
-      revoked: false,
-    })
-  )
+  const keys = response.items.map((key): VirtualKey => ({
+    id: key.id,
+    prefix: key.prefix,
+    label: key.defaultModel
+      ? `default ${key.defaultModel}`
+      : "no default model",
+    endpointId: `${key.provider}:${key.baseUrl}`,
+    models: [...key.allowedModels],
+    scope: { kind: "project", projectId: key.projectId },
+    budgetUsd: key.budgetUsd,
+    spentUsd: null,
+    expiresInSec: toExpiresInSec(key.expiresAt, nowMs),
+    lastUsedAgoSec: null,
+    revoked: false,
+  }))
 
   return { keys, endpoints: toEndpoints(response.items) }
 }

@@ -40,8 +40,9 @@ describe("what is written back, and what is not", () => {
     // native sentence here would think their linear tickets were being
     // closed by the swarm.
     expect(screen.getByText("status written back to linear")).toBeTruthy()
-    expect(screen.getByText(/this build has no mapping for that provider/))
-      .toBeTruthy()
+    expect(
+      screen.getByText(/this build has no mapping for that provider/)
+    ).toBeTruthy()
     expect(screen.queryByText(/native intake is the tracker/)).toBeNull()
   })
 })

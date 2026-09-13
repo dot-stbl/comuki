@@ -19,10 +19,7 @@ export {
   type BarSeriesProps,
   type BarSeriesSegment,
 } from "./bar-series"
-export {
-  Sparkline,
-  type SparklineProps,
-} from "./sparkline"
+export { Sparkline, type SparklineProps } from "./sparkline"
 export {
   CODE_LANGUAGES,
   CodeBlock,

@@ -167,11 +167,9 @@ export function BottomSheet({
                 aria-hidden="true"
                 onClick={() => onOpenChange(false)}
               />
-            ) : (
-              /* `null`, not omitted: the panel is required to state that it
+            ) : /* `null`, not omitted: the panel is required to state that it
                  holds nothing, the same way the comment above does. */
-              null
-            )}
+            null}
           </SplitPanel>
 
           <SplitSeparator

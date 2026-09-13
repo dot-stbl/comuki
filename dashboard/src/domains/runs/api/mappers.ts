@@ -17,9 +17,7 @@ import type { RunDetail as RunDetailDto } from "@/shared/api/_generated/types/Ru
 import type { RunDetailEvent as RunDetailEventDto } from "@/shared/api/_generated/types/RunDetailEvent"
 import type { RunDetailWorkItem as RunDetailWorkItemDto } from "@/shared/api/_generated/types/RunDetailWorkItem"
 import type { RunView } from "@/shared/api/_generated/types/RunView"
-import type {
-  ArtifactPointer as ArtifactPointerDto,
-} from "@/shared/api/_generated/types/ArtifactPointer"
+import type { ArtifactPointer as ArtifactPointerDto } from "@/shared/api/_generated/types/ArtifactPointer"
 import type { RunsPage } from "@/shared/api/_generated/types/RunsPage"
 import {
   PROFILE_META,
@@ -398,7 +396,7 @@ const EMPTY_WORK_ITEMS: WorkItem[] = []
 export function mapRunViewToSummary(view: RunView): RunSummary {
   const durationSec = Math.max(
     0,
-    Math.round((Date.parse(view.updatedAt) - Date.parse(view.createdAt)) / 1000),
+    Math.round((Date.parse(view.updatedAt) - Date.parse(view.createdAt)) / 1000)
   )
   return {
     id: view.id,
@@ -411,7 +409,10 @@ export function mapRunViewToSummary(view: RunView): RunSummary {
     cost: 0,
     tokens: 0,
     durationSec,
-    done: view.status === "succeeded" || view.status === "failed" || view.status === "cancelled",
+    done:
+      view.status === "succeeded" ||
+      view.status === "failed" ||
+      view.status === "cancelled",
     workItems: EMPTY_WORK_ITEMS,
     anomaly: null,
   }
@@ -463,7 +464,7 @@ export function mapRunDetailToDetail(detail: RunDetailDto): RunDetail {
       sdk: detail.revision.sdk,
     },
     events: detail.events.map(mapRunDetailEventToTraceEvent),
-  };
+  }
 }
 
 /**
@@ -474,8 +475,10 @@ export function mapRunDetailToDetail(detail: RunDetailDto): RunDetail {
 function mapRunDetailToSummary(detail: RunDetailDto): RunSummary {
   const durationSec = Math.max(
     0,
-    Math.round((Date.parse(detail.updatedAt) - Date.parse(detail.createdAt)) / 1000),
-  );
+    Math.round(
+      (Date.parse(detail.updatedAt) - Date.parse(detail.createdAt)) / 1000
+    )
+  )
 
   return {
     id: detail.id,
@@ -494,7 +497,7 @@ function mapRunDetailToSummary(detail: RunDetailDto): RunSummary {
       detail.status === "cancelled",
     workItems: detail.workItems.map(mapRunDetailWorkItemToDomain),
     anomaly: null,
-  };
+  }
 }
 
 /**
@@ -505,9 +508,7 @@ function mapRunDetailToSummary(detail: RunDetailDto): RunSummary {
  * `number`, and `startedAt` from the wire's `string | null` to the
  * domain's optional string.
  */
-function mapRunDetailWorkItemToDomain(
-  entry: RunDetailWorkItemDto,
-): WorkItem {
+function mapRunDetailWorkItemToDomain(entry: RunDetailWorkItemDto): WorkItem {
   return {
     id: entry.id,
     profile: entry.profile,
@@ -517,7 +518,7 @@ function mapRunDetailWorkItemToDomain(
     cost: toNumber(entry.cost),
     tokens: toNumber(entry.tokens),
     startedAt: entry.startedAt ?? undefined,
-  };
+  }
 }
 
 /**
@@ -536,22 +537,20 @@ function mapRunDetailWorkItemToDomain(
  * page. When the payload is missing or malformed we fall back to a
  * neutral reading; never throw on bad wire data.
  */
-function mapRunDetailEventToTraceEvent(
-  entry: RunDetailEventDto,
-): TraceEvent {
-  const occurredAt = new Date(entry.occurredAt);
+function mapRunDetailEventToTraceEvent(entry: RunDetailEventDto): TraceEvent {
+  const occurredAt = new Date(entry.occurredAt)
   const time = isNaN(occurredAt.getTime())
     ? "—"
-    : `${String(occurredAt.getUTCHours()).padStart(2, "0")}:${String(occurredAt.getUTCMinutes()).padStart(2, "0")}`;
+    : `${String(occurredAt.getUTCHours()).padStart(2, "0")}:${String(occurredAt.getUTCMinutes()).padStart(2, "0")}`
 
-  const parsedStatus = readStatusFromPayload(entry.payloadJson);
-  const text = parsedStatus.summary ?? entry.type;
+  const parsedStatus = readStatusFromPayload(entry.payloadJson)
+  const text = parsedStatus.summary ?? entry.type
 
   return {
     time,
     status: parsedStatus.status ?? "running",
     text,
-  };
+  }
 }
 
 /**
@@ -562,10 +561,10 @@ function mapRunDetailEventToTraceEvent(
  */
 function toNumber(value: number | string): number {
   if (typeof value === "number") {
-    return Number.isFinite(value) ? value : 0;
+    return Number.isFinite(value) ? value : 0
   }
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : 0
 }
 
 /**
@@ -577,31 +576,32 @@ function toNumber(value: number | string): number {
  * silently: the screen's TraceEvent readers treat the default ("running")
  * status and a free-text `text` as valid.
  */
-function readStatusFromPayload(
-  payloadJson: string | null,
-): { status: TraceEvent["status"] | null; summary: string | null } {
+function readStatusFromPayload(payloadJson: string | null): {
+  status: TraceEvent["status"] | null
+  summary: string | null
+} {
   if (!payloadJson) {
-    return { status: null, summary: null };
+    return { status: null, summary: null }
   }
   try {
-    const parsed: unknown = JSON.parse(payloadJson);
+    const parsed: unknown = JSON.parse(payloadJson)
     if (parsed === null || typeof parsed !== "object") {
-      return { status: null, summary: null };
+      return { status: null, summary: null }
     }
-    const record = parsed as Record<string, unknown>;
-    const candidate = typeof record["to"] === "string"
-      ? (record["to"] as string).toLowerCase()
-      : null;
+    const record = parsed as Record<string, unknown>
+    const candidate =
+      typeof record["to"] === "string"
+        ? (record["to"] as string).toLowerCase()
+        : null
     const status =
       candidate !== null && isWireRunStatus(candidate)
         ? normalizeRunStatus(candidate)
-        : null;
-    const summary = typeof record["type"] === "string"
-      ? (record["type"] as string)
-      : null;
-    return { status, summary };
+        : null
+    const summary =
+      typeof record["type"] === "string" ? (record["type"] as string) : null
+    return { status, summary }
   } catch {
-    return { status: null, summary: null };
+    return { status: null, summary: null }
   }
 }
 
@@ -625,10 +625,10 @@ const WIRE_RUN_STATUSES: ReadonlySet<string> = new Set([
   "succeeded",
   "failed",
   "cancelled",
-]);
+])
 
 function isWireRunStatus(value: string): boolean {
-  return WIRE_RUN_STATUSES.has(value);
+  return WIRE_RUN_STATUSES.has(value)
 }
 
 /**
@@ -645,12 +645,19 @@ function mapArtifactPointer(entry: ArtifactPointerDto): ArtifactPointer | null {
     return {
       name: entry.name,
       uri: new URL(entry.uri),
-      size: typeof entry.size === "string" ? Number.parseInt(entry.size, 10) : entry.size,
+      size:
+        typeof entry.size === "string"
+          ? Number.parseInt(entry.size, 10)
+          : entry.size,
       contentType: entry.contentType,
     }
   } catch (error) {
     if (typeof console !== "undefined") {
-      console.warn("[runs] dropping artifact with malformed URI", entry.name, error)
+      console.warn(
+        "[runs] dropping artifact with malformed URI",
+        entry.name,
+        error
+      )
     }
     return null
   }
@@ -661,7 +668,7 @@ function mapArtifactPointer(entry: ArtifactPointerDto): ArtifactPointer | null {
  * been packaged yet — exactly what the host returns.
  */
 export function mapRunArtifactsPageToArtifacts(
-  page: RunArtifactsPageDto,
+  page: RunArtifactsPageDto
 ): RunArtifacts {
   const items = page.items
     .map(mapArtifactPointer)

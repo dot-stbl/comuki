@@ -34,7 +34,7 @@ export function useAuthState(): MockAuthState {
   const mockState = useSyncExternalStore(
     subscribeMockAuth,
     getMockAuth,
-    getMockAuth,
+    getMockAuth
   )
 
   const meQuery = useCurrentUserQuery({ enabled: !env.useMock })

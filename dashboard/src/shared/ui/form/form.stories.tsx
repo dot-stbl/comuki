@@ -104,7 +104,11 @@ function Numbers() {
         unit="USD"
         value={perTask}
         step="0.01"
-        error={Number(perTask) <= 0 ? "a task cap has to leave room for one step" : null}
+        error={
+          Number(perTask) <= 0
+            ? "a task cap has to leave room for one step"
+            : null
+        }
         onValueChange={setPerTask}
       />
     </Column>
@@ -144,7 +148,9 @@ function Areas() {
   const [body, setBody] = useState(
     "The importer drops the last page of every export. Reproduced on the 40k-row file."
   )
-  const [filter, setFilter] = useState('labels has "agent" and status != "done"')
+  const [filter, setFilter] = useState(
+    'labels has "agent" and status != "done"'
+  )
 
   return (
     <Column>
@@ -221,17 +227,20 @@ function Choices() {
           {
             value: "queue",
             label: "queue only",
-            description: "It lands on the queue and waits for a person to start it.",
+            description:
+              "It lands on the queue and waits for a person to start it.",
           },
           {
             value: "review",
             label: "start, then review",
-            description: "A worker takes it straight away; the result waits for approval.",
+            description:
+              "A worker takes it straight away; the result waits for approval.",
           },
           {
             value: "auto",
             label: "start and merge",
-            description: "No human step at all. Only for projects that have earned it.",
+            description:
+              "No human step at all. Only for projects that have earned it.",
           },
         ]}
         onValueChange={setMode}
@@ -254,10 +263,10 @@ export const NoticeBand: Story = {
         The secret appears once, on the next screen. Copy it there — it is
         stored hashed and cannot be shown again.
       </Notice>
-      <Notice tone="ok">Connected. The credential answered on the first try.</Notice>
-      <Notice tone="bad">
-        No answer from that host. Nothing was saved.
+      <Notice tone="ok">
+        Connected. The credential answered on the first try.
       </Notice>
+      <Notice tone="bad">No answer from that host. Nothing was saved.</Notice>
     </Column>
   ),
 }
@@ -278,7 +287,9 @@ export const Secret: Story = {
 
 /** The copy control alone. It says it copied, because the value cannot be checked twice. */
 export const Copy: Story = {
-  render: () => <CopyButton value="cmk_4e9c_9f3b1c7a02d5486eb1c0d7f4a83e5619" />,
+  render: () => (
+    <CopyButton value="cmk_4e9c_9f3b1c7a02d5486eb1c0d7f4a83e5619" />
+  ),
 }
 
 function Dialog() {

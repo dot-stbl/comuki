@@ -17,7 +17,7 @@ import type { VisualArtifact, VisualArtifactPage } from "../model/types"
  */
 export function mapVisualArtifactListItemToArtifact(
   entry: VisualArtifactListItem,
-  projectId: string,
+  projectId: string
 ): VisualArtifact {
   return {
     id: entry.id,
@@ -44,12 +44,12 @@ export function mapVisualArtifactListItemToArtifact(
  */
 export function mapVisualArtifactPageToPage(
   page: VisualArtifactPageDto,
-  projectId: string,
+  projectId: string
 ): VisualArtifactPage {
   return {
     projectId,
     items: page.items.map((entry) =>
-      mapVisualArtifactListItemToArtifact(entry, projectId),
+      mapVisualArtifactListItemToArtifact(entry, projectId)
     ),
   }
 }

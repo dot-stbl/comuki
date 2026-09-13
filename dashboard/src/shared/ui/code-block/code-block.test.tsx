@@ -30,17 +30,16 @@ const at = (name: string) =>
   document.querySelector<HTMLElement>(`[data-test="${name}"]`)
 
 const lines = (count: number) =>
-  Array.from({ length: count }, (_, index) => `const n${index} = ${index}`).join(
-    "\n"
-  )
+  Array.from(
+    { length: count },
+    (_, index) => `const n${index} = ${index}`
+  ).join("\n")
 
 describe("the language chip", () => {
   it("names the grammar the block is actually being read with", () => {
     render(<CodeBlock source="const a = 1" language="typescript" />)
     expect(at("code-block-language")?.textContent).toBe("ts")
-    expect(at("code-block")?.getAttribute("data-language")).toBe(
-      "ts"
-    )
+    expect(at("code-block")?.getAttribute("data-language")).toBe("ts")
   })
 
   it("says `text` for a language nobody registered, rather than claiming one", () => {
@@ -63,16 +62,14 @@ describe("the language chip", () => {
 describe("the code itself", () => {
   it("is on screen before — and whether or not — the highlighter arrives", () => {
     render(<CodeBlock source="const answer = 42" language="ts" />)
-    expect(at("code-block-body")?.textContent).toContain(
-      "const answer = 42"
-    )
+    expect(at("code-block-body")?.textContent).toContain("const answer = 42")
   })
 
   it("is highlighted into classes, never into inline colour", async () => {
     render(<CodeBlock source={'const answer = "42"'} language="ts" />)
 
     const body = await waitFor(() => {
-      const found = (at("code-block-body") as HTMLElement)
+      const found = at("code-block-body") as HTMLElement
       expect(found.querySelector(".hljs-string")).not.toBeNull()
       return found
     })
@@ -92,19 +89,15 @@ describe("the code itself", () => {
 describe("the fold", () => {
   it("leaves a short block open and offers no control", () => {
     render(<CodeBlock source={lines(8)} language="ts" />)
-    expect(at("code-block")?.getAttribute("data-collapsed")).toBe(
-      null
-    )
+    expect(at("code-block")?.getAttribute("data-collapsed")).toBe(null)
     expect(at("code-block-expand")).toBeNull()
   })
 
   it("folds a long one and says how many lines are behind it", () => {
     render(<CodeBlock source={lines(62)} language="ts" />)
 
-    expect(at("code-block")?.getAttribute("data-collapsed")).toBe(
-      "true"
-    )
-    const control = (at("code-block-expand") as HTMLElement)
+    expect(at("code-block")?.getAttribute("data-collapsed")).toBe("true")
+    const control = at("code-block-expand") as HTMLElement
     expect(control.textContent).toContain("show all 62 lines")
     expect(control.getAttribute("aria-expanded")).toBe("false")
   })
@@ -112,19 +105,15 @@ describe("the fold", () => {
   it("opens on a press and offers the way back", () => {
     render(<CodeBlock source={lines(62)} language="ts" />)
 
-    fireEvent.click((at("code-block-expand") as HTMLElement))
+    fireEvent.click(at("code-block-expand") as HTMLElement)
 
-    expect(at("code-block")?.getAttribute("data-collapsed")).toBe(
-      null
-    )
-    expect(at("code-block-expand")?.textContent).toContain(
-      "show less"
-    )
+    expect(at("code-block")?.getAttribute("data-collapsed")).toBe(null)
+    expect(at("code-block-expand")?.textContent).toContain("show less")
   })
 
   it("takes the call site's threshold and publishes it as the height", () => {
     render(<CodeBlock source={lines(10)} language="ts" collapseAfter={4} />)
-    const block = (at("code-block") as HTMLElement)
+    const block = at("code-block") as HTMLElement
 
     expect(block.getAttribute("data-collapsed")).toBe("true")
     expect(block.style.getPropertyValue("--code-lines")).toBe("4")
@@ -135,20 +124,16 @@ describe("wrapping", () => {
   it("is off by default, so a long line scrolls instead of reflowing", () => {
     render(<CodeBlock source={"a".repeat(400)} language="bash" />)
     expect(at("code-block")?.getAttribute("data-wrap")).toBe(null)
-    expect(at("code-block-wrap")?.getAttribute("aria-pressed")).toBe(
-      "false"
-    )
+    expect(at("code-block-wrap")?.getAttribute("aria-pressed")).toBe("false")
   })
 
   it("is one press away, and says it is on", () => {
     render(<CodeBlock source={"a".repeat(400)} language="bash" />)
 
-    fireEvent.click((at("code-block-wrap") as HTMLElement))
+    fireEvent.click(at("code-block-wrap") as HTMLElement)
 
     expect(at("code-block")?.getAttribute("data-wrap")).toBe("true")
-    expect(at("code-block-wrap")?.getAttribute("aria-pressed")).toBe(
-      "true"
-    )
+    expect(at("code-block-wrap")?.getAttribute("aria-pressed")).toBe("true")
   })
 })
 
@@ -162,9 +147,7 @@ describe("the origin line", () => {
     const { rerender } = render(
       <CodeBlock source="const a = 1" path="src/a.ts" startLine={128} />
     )
-    expect(at("code-block-origin")?.textContent).toBe(
-      "src/a.ts:128"
-    )
+    expect(at("code-block-origin")?.textContent).toBe("src/a.ts:128")
 
     rerender(<CodeBlock source="const a = 1" path="src/a.ts" />)
     expect(at("code-block-origin")?.textContent).toBe("src/a.ts")
@@ -174,7 +157,7 @@ describe("the origin line", () => {
 describe("copying", () => {
   it("offers the kit's own control, over the source without its fence newline", () => {
     render(<CodeBlock source={"one\ntwo\n"} />)
-    expect((at("code-block-copy") as HTMLElement)).not.toBeNull()
+    expect(at("code-block-copy") as HTMLElement).not.toBeNull()
   })
 })
 

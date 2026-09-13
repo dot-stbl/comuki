@@ -1,9 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-import {
-  modelsQueryKey,
-  proxyKeysQueryKey,
-} from "@/domains/models/api/queries"
+import { modelsQueryKey, proxyKeysQueryKey } from "@/domains/models/api/queries"
 import type { ModelsSnapshot, VirtualKey } from "@/domains/models/model/types"
 import { postApiV1ProxyKeysKeyidRevoke } from "@/shared/api/_generated/clients/postApiV1ProxyKeysKeyidRevoke"
 import {
@@ -71,10 +68,10 @@ export function useRevokeKey() {
     onMutate: async (keyId: string) => {
       await client.cancelQueries({ queryKey: modelsQueryKey })
       await client.cancelQueries({ queryKey: proxyKeysQueryKey })
-      const previousModels =
-        client.getQueryData<ModelsSnapshot>(modelsQueryKey)
-      const previousKeys =
-        client.getQueryData<{ keys: VirtualKey[] }>(proxyKeysQueryKey)
+      const previousModels = client.getQueryData<ModelsSnapshot>(modelsQueryKey)
+      const previousKeys = client.getQueryData<{ keys: VirtualKey[] }>(
+        proxyKeysQueryKey
+      )
 
       client.setQueryData<ModelsSnapshot>(modelsQueryKey, (snapshot) =>
         snapshot

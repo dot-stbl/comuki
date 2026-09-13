@@ -5,10 +5,7 @@ import { cn } from "@/shared/lib/utils"
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
 import { useCostQuery } from "@/domains/cost/api/queries"
-import {
-  costHeat,
-  periodDelta,
-} from "@/domains/cost/model/cost"
+import { costHeat, periodDelta } from "@/domains/cost/model/cost"
 import { BudgetProgress } from "@/domains/cost/ui/budget-progress"
 import { FailureAnalytics } from "@/domains/cost/ui/failure-analytics"
 import { ForecastWidget } from "@/domains/cost/ui/forecast-widget"
@@ -62,13 +59,18 @@ export function CostPage() {
   const monthToDate = data?.monthSpend ?? 0
   const monthCap = data?.monthCap ?? 0
 
-  const delta = data ? periodDelta(data.totalPeriod, data.totalPreviousPeriod) : null
+  const delta = data
+    ? periodDelta(data.totalPeriod, data.totalPreviousPeriod)
+    : null
   const burnPerDay =
     data && data.totalPeriod > 0
       ? data.totalPeriod / PERIOD_DAYS[data.period]
       : 0
 
-  const periodLabel = period === "day" ? "today" : `this ${period.replace("week", "week").replace("month", "month")}`
+  const periodLabel =
+    period === "day"
+      ? "today"
+      : `this ${period.replace("week", "week").replace("month", "month")}`
 
   return (
     <AppShell
@@ -100,7 +102,8 @@ export function CostPage() {
                     {delta > 0 ? "▲" : delta < 0 ? "▼" : "◆"}
                   </span>
                   <span>
-                    {Math.abs(delta * 100).toFixed(0)}% vs previous {periodLabel}
+                    {Math.abs(delta * 100).toFixed(0)}% vs previous{" "}
+                    {periodLabel}
                   </span>
                 </span>
               ) : null
@@ -153,8 +156,8 @@ export function CostPage() {
                 burnNote={
                   <>
                     ${burnPerDay.toFixed(2)} / day on average ·{" "}
-                    {data.byDay.length} day{data.byDay.length === 1 ? "" : "s"}
-                    {" "}observed
+                    {data.byDay.length} day{data.byDay.length === 1 ? "" : "s"}{" "}
+                    observed
                   </>
                 }
               />

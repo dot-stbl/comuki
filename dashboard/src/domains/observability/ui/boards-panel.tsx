@@ -61,7 +61,10 @@ export function BoardsPanel({ boards }: BoardsPanelProps) {
               </Tooltip>
             ) : (
               <span className={styles.pending} data-test="board-not-imported">
-                <MinusCircle className={styles.pendingIcon} aria-hidden="true" />
+                <MinusCircle
+                  className={styles.pendingIcon}
+                  aria-hidden="true"
+                />
                 not imported yet
               </span>
             )}

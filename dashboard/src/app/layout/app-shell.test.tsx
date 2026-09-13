@@ -134,11 +134,10 @@ describe("the shell's rail", () => {
     renderShell(<AppShellSidebar groups={productNav} />, ["approver"])
 
     const item = await screen.findByRole("link", { name: /approvals/i })
-    await waitFor(
-      () =>
-        expect(
-          item.querySelector('[data-test="rail-badge"]')?.textContent
-        ).toBe(String(APPROVALS_SEED.length))
+    await waitFor(() =>
+      expect(item.querySelector('[data-test="rail-badge"]')?.textContent).toBe(
+        String(APPROVALS_SEED.length)
+      )
     )
   })
 })
@@ -149,10 +148,7 @@ describe("the shell's rail", () => {
 describe("the collapsed rail", () => {
   it("keeps every item's name, and hands the icon a tooltip as well", async () => {
     const user = userEvent.setup()
-    renderShell(
-      <AppShellSidebar groups={productNav} collapsed />,
-      ["viewer"]
-    )
+    renderShell(<AppShellSidebar groups={productNav} collapsed />, ["viewer"])
 
     // Clipped to zero width, never hidden: the name is still the link's name.
     const item = await screen.findByRole("link", { name: "Live runs" })

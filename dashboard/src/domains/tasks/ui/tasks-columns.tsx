@@ -19,7 +19,13 @@ import {
   type ProjectRef,
   type Session,
 } from "@/shared/session"
-import { Button, Tooltip, keySort, rankSort, type DataColumn } from "@/shared/ui"
+import {
+  Button,
+  Tooltip,
+  keySort,
+  rankSort,
+  type DataColumn,
+} from "@/shared/ui"
 
 import styles from "./tasks-table.module.css"
 
@@ -198,9 +204,7 @@ export function createTaskColumns({
     {
       accessorKey: "app",
       header: "app",
-      cell: ({ row }) => (
-        <span className={styles.app}>{row.original.app}</span>
-      ),
+      cell: ({ row }) => <span className={styles.app}>{row.original.app}</span>,
       meta: {
         width: 144,
         filter: {

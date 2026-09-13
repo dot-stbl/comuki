@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 
 import { RequirePermission } from "@/app/layout/require-permission"
-import { IdentityPage, isIdentityTab, type IdentityTab } from "@/domains/identity"
+import {
+  IdentityPage,
+  isIdentityTab,
+  type IdentityTab,
+} from "@/domains/identity"
 
 export interface IdentitySearch {
   /**
@@ -57,7 +61,11 @@ function RouteComponent() {
           // carrying it across would silently narrow a list the operator
           // switched to in order to see all of it. `replace` because moving
           // between tabs is not a step worth pressing back through.
-          void navigate({ to: "/identity", search: { tab: next }, replace: true })
+          void navigate({
+            to: "/identity",
+            search: { tab: next },
+            replace: true,
+          })
         }}
       />
     </RequirePermission>

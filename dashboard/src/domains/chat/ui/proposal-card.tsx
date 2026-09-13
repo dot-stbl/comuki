@@ -1,7 +1,4 @@
-import {
-  PROPOSAL_WORDS,
-  proposalCheck,
-} from "@/domains/chat/model/proposals"
+import { PROPOSAL_WORDS, proposalCheck } from "@/domains/chat/model/proposals"
 import type { Proposal, ProposalDecision } from "@/domains/chat/model/types"
 import { projectOf, useSession } from "@/shared/session"
 import { Button } from "@/shared/ui"

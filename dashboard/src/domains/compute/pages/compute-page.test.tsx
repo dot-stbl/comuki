@@ -305,7 +305,9 @@ describe("the acts, and who may perform them", () => {
     expect(document.body.contains(take)).toBe(true)
     expect(take.getAttribute("aria-disabled")).toBe("true")
     expect(take.getAttribute("disabled")).toBeNull()
-    expect(take.getAttribute("data-denied")).toBe("needs operator or platform-admin")
+    expect(take.getAttribute("data-denied")).toBe(
+      "needs operator or platform-admin"
+    )
 
     const retire = all('[data-test="version-retire"]')[0] as HTMLElement
     expect(retire.getAttribute("aria-disabled")).toBe("true")
@@ -381,9 +383,7 @@ describe("the boards section, folded in from the observability screen", () => {
 
     // The half that makes it a section rather than a stub: the operator who
     // finds a board they cannot reach is told whose job importing it is.
-    expect(
-      section.querySelector('[data-test="connect-guide"]')
-    ).not.toBeNull()
+    expect(section.querySelector('[data-test="connect-guide"]')).not.toBeNull()
     expect(
       section.querySelector('[data-test="grafana-configured"]')
     ).not.toBeNull()
@@ -429,8 +429,6 @@ describe("the retired observability route", () => {
 
     render(<RouterProvider router={router} />)
 
-    await waitFor(() =>
-      expect(router.state.location.pathname).toBe("/compute")
-    )
+    await waitFor(() => expect(router.state.location.pathname).toBe("/compute"))
   })
 })

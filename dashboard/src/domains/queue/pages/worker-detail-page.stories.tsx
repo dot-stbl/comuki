@@ -225,9 +225,7 @@ type Story = StoryObj<typeof WorkerDetailPage>
 
 /** A container holding an item, heartbeating, most of its lease still ahead. */
 export const Live: Story = {
-  render: () => (
-    <Screen workerId="wk_2f8a" data={board()} worker={worker()} />
-  ),
+  render: () => <Screen workerId="wk_2f8a" data={board()} worker={worker()} />,
 }
 
 /**

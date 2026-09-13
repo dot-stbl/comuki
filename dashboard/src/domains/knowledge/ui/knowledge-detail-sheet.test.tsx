@@ -50,7 +50,9 @@ describe("the entry sheet", () => {
 
   it("closes from the glyph as well as from escape and the scrim", () => {
     const onOpenChange = vi.fn()
-    render(<KnowledgeDetailSheet entry={ENTRY} open onOpenChange={onOpenChange} />)
+    render(
+      <KnowledgeDetailSheet entry={ENTRY} open onOpenChange={onOpenChange} />
+    )
 
     // Named for what it closes, because "×" is not the name of anything.
     fireEvent.click(screen.getByRole("button", { name: "Close the entry" }))

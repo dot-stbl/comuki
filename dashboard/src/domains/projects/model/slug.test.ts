@@ -54,8 +54,12 @@ describe("what makes a slug a handle", () => {
   })
 
   it("refuses anything that is not a letter, a digit or a hyphen", () => {
-    expect(validateSlug("bill_api")).toBe("letters, digits and single hyphens only")
-    expect(validateSlug("bill.api")).toBe("letters, digits and single hyphens only")
+    expect(validateSlug("bill_api")).toBe(
+      "letters, digits and single hyphens only"
+    )
+    expect(validateSlug("bill.api")).toBe(
+      "letters, digits and single hyphens only"
+    )
     expect(validateSlug("bill--api")).toBe(
       "letters, digits and single hyphens only"
     )
@@ -78,7 +82,9 @@ describe("what makes a slug a handle", () => {
   })
 
   it("refuses a handle somebody already has", () => {
-    expect(validateSlug("atlas", ["comuki", "atlas"])).toBe("that slug is taken")
+    expect(validateSlug("atlas", ["comuki", "atlas"])).toBe(
+      "that slug is taken"
+    )
     expect(validateSlug("vega", ["comuki", "atlas"])).toBeNull()
   })
 })

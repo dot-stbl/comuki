@@ -35,13 +35,10 @@ export function TaskArtifactCell({ task, onActivate }: TaskArtifactCellProps) {
   const query = useVisualArtifactsQuery(task.projectId, {
     ticketId: task.id,
   })
-  const items = useMemo(
-    () => query.data?.items ?? [],
-    [query.data?.items],
-  )
+  const items = useMemo(() => query.data?.items ?? [], [query.data?.items])
   const latest = useMemo(
     () => latestPngForTicket(items, task.id),
-    [items, task.id],
+    [items, task.id]
   )
 
   if (!latest) {
@@ -75,22 +72,16 @@ export interface TaskArtifactViewerProps {
   onClose: () => void
 }
 
-export function TaskArtifactViewer({
-  open,
-  onClose,
-}: TaskArtifactViewerProps) {
+export function TaskArtifactViewer({ open, onClose }: TaskArtifactViewerProps) {
   const projectId = open?.projectId ?? ""
   const ticketId = open?.ticketId ?? ""
   const query = useVisualArtifactsQuery(projectId, {
     ticketId: ticketId.length > 0 ? ticketId : undefined,
   })
-  const items = useMemo(
-    () => query.data?.items ?? [],
-    [query.data?.items],
-  )
+  const items = useMemo(() => query.data?.items ?? [], [query.data?.items])
   const latest: VisualArtifact | null = useMemo(
     () => (ticketId ? latestPngForTicket(items, ticketId) : null),
-    [items, ticketId],
+    [items, ticketId]
   )
 
   if (!open || !latest) {
@@ -125,14 +116,14 @@ export interface TaskArtifactViewerHostProps {
 export function TaskArtifactViewerHost({
   children,
 }: TaskArtifactViewerHostProps) {
-  const [open, setOpen] = useState<{ ticketId: string; projectId: string } | null>(
-    null,
-  )
+  const [open, setOpen] = useState<{
+    ticketId: string
+    projectId: string
+  } | null>(null)
   return (
     <>
       {children({
-        openArtifact: (ticketId, projectId) =>
-          setOpen({ ticketId, projectId }),
+        openArtifact: (ticketId, projectId) => setOpen({ ticketId, projectId }),
       })}
       <TaskArtifactViewer open={open} onClose={() => setOpen(null)} />
     </>

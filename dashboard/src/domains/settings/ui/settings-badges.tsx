@@ -63,7 +63,11 @@ export interface KeyStatusMarkProps {
  * takes a hue — and it says the provider's own words rather than the enum, so
  * `budget 67%` reaches the screen instead of being flattened to `warn`.
  */
-export function KeyStatusMark({ status, label, className }: KeyStatusMarkProps) {
+export function KeyStatusMark({
+  status,
+  label,
+  className,
+}: KeyStatusMarkProps) {
   const Icon = status === "ok" ? Check : TriangleAlert
 
   return (

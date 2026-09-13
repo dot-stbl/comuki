@@ -19,7 +19,6 @@ export type KnowledgeTab = (typeof KNOWLEDGE_TABS)[number]
 /** Whether an unknown value off the URL names one of the two. */
 export function isKnowledgeTab(value: unknown): value is KnowledgeTab {
   return (
-    typeof value === "string" &&
-    KNOWLEDGE_TABS.includes(value as KnowledgeTab)
+    typeof value === "string" && KNOWLEDGE_TABS.includes(value as KnowledgeTab)
   )
 }

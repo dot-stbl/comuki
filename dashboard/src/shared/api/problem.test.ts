@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  problemDetail,
-  requestFailureMessage,
-} from "@/shared/api/problem"
+import { problemDetail, requestFailureMessage } from "@/shared/api/problem"
 
 /** The shape `kubb-client` rejects with: message + status + parsed body. */
 function transportError(body: unknown, message = "request failed 501") {

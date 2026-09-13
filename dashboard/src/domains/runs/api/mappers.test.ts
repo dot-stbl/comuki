@@ -165,11 +165,11 @@ describe("mapRunViewToSummary", () => {
     const running = mapRunViewToSummary(runViewFixture({ status: "running" }))
     const queued = mapRunViewToSummary(runViewFixture({ status: "queued" }))
     const succeeded = mapRunViewToSummary(
-      runViewFixture({ status: "succeeded" }),
+      runViewFixture({ status: "succeeded" })
     )
     const failed = mapRunViewToSummary(runViewFixture({ status: "failed" }))
     const cancelled = mapRunViewToSummary(
-      runViewFixture({ status: "cancelled" }),
+      runViewFixture({ status: "cancelled" })
     )
 
     expect(running.done).toBe(false)
@@ -184,7 +184,7 @@ describe("mapRunViewToSummary", () => {
     const updatedAt = "2026-09-04T10:07:25.499+00:00"
 
     const summary = mapRunViewToSummary(
-      runViewFixture({ createdAt, updatedAt }),
+      runViewFixture({ createdAt, updatedAt })
     )
 
     // 7 minutes 25 seconds → rounds to 445 seconds (we keep the integer, not
@@ -197,7 +197,7 @@ describe("mapRunViewToSummary", () => {
       runViewFixture({
         createdAt: "2026-09-04T10:01:00.000+00:00",
         updatedAt: "2026-09-04T10:00:00.000+00:00",
-      }),
+      })
     )
 
     expect(summary.durationSec).toBe(0)
@@ -343,9 +343,7 @@ describe("mapRunDetailToDetail", () => {
 
     expect(detail.workItems).toHaveLength(2)
     expect(detail.workItems[0]?.dependsOn).toEqual([])
-    expect(detail.workItems[0]?.startedAt).toBe(
-      "2026-09-04T10:01:00.000+00:00",
-    )
+    expect(detail.workItems[0]?.startedAt).toBe("2026-09-04T10:01:00.000+00:00")
     expect(detail.workItems[1]?.dependsOn).toEqual([
       "00000000-0000-0000-0000-000000000010",
     ])
@@ -354,7 +352,7 @@ describe("mapRunDetailToDetail", () => {
 
   it("normalises loose number | string cost/tokens to plain numbers", () => {
     const detail = mapRunDetailToDetail(
-      runDetailFixture({ costUsd: "0.5", tokens: "9999" }),
+      runDetailFixture({ costUsd: "0.5", tokens: "9999" })
     )
 
     expect(detail.cost).toBe(0.5)
@@ -382,7 +380,7 @@ describe("mapRunDetailToDetail", () => {
             payloadJson: "not-json",
           },
         ],
-      }),
+      })
     )
 
     expect(detail.events[0]?.time).toBe("10:02")
@@ -402,7 +400,7 @@ describe("mapRunDetailToDetail", () => {
             payloadJson: null,
           },
         ],
-      }),
+      })
     )
 
     expect(detail.events[0]?.time).toBe("—")
@@ -412,7 +410,7 @@ describe("mapRunDetailToDetail", () => {
 
 describe("mapRunArtifactsPageToArtifacts", () => {
   function pageFixture(
-    overrides: Partial<RunArtifactsPage> = {},
+    overrides: Partial<RunArtifactsPage> = {}
   ): RunArtifactsPage {
     return {
       projectId: "00000000-0000-0000-0000-0000000000aa",
@@ -456,7 +454,7 @@ describe("mapRunArtifactsPageToArtifacts", () => {
     expect(artifacts.items[0]?.name).toBe("brief.json")
     expect(artifacts.items[0]?.uri).toBeInstanceOf(URL)
     expect(artifacts.items[0]?.uri.toString()).toBe(
-      "https://minio.example.com/run-1/brief.json?signature=abc",
+      "https://minio.example.com/run-1/brief.json?signature=abc"
     )
     expect(artifacts.items[0]?.size).toBe(1024)
     expect(artifacts.items[0]?.contentType).toBe("application/json")

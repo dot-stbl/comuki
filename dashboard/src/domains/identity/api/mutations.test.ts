@@ -39,24 +39,17 @@ describe("mutations.ts mock-first path", () => {
     vi.stubEnv("VITE_API_BASE_URL", "")
     vi.resetModules()
 
-    const loginClient = await import(
-      "@/shared/api/_generated/clients/postApiV1AuthLogin"
-    )
-    const logoutClient = await import(
-      "@/shared/api/_generated/clients/postApiV1AuthLogout"
-    )
-    const meClient = await import(
-      "@/shared/api/_generated/clients/getApiV1AuthMe"
-    )
-    const { useLoginMutation } = await import(
-      "@/domains/identity/api/mutations"
-    )
-    const { QueryClient, QueryClientProvider } = await import(
-      "@tanstack/react-query"
-    )
-    const { renderHook, act, waitFor } = await import(
-      "@testing-library/react"
-    )
+    const loginClient =
+      await import("@/shared/api/_generated/clients/postApiV1AuthLogin")
+    const logoutClient =
+      await import("@/shared/api/_generated/clients/postApiV1AuthLogout")
+    const meClient =
+      await import("@/shared/api/_generated/clients/getApiV1AuthMe")
+    const { useLoginMutation } =
+      await import("@/domains/identity/api/mutations")
+    const { QueryClient, QueryClientProvider } =
+      await import("@tanstack/react-query")
+    const { renderHook, act, waitFor } = await import("@testing-library/react")
     const React = await import("react")
 
     const client = new QueryClient({
@@ -85,7 +78,7 @@ describe("mutations.ts mock-first path", () => {
 
     // The `me` and `projects` caches were invalidated on success.
     const invalidatedKeys = invalidateSpy.mock.calls.flatMap(
-      ([arg]) => (arg as { queryKey: readonly unknown[] }).queryKey,
+      ([arg]) => (arg as { queryKey: readonly unknown[] }).queryKey
     )
     expect(invalidatedKeys).toContain("me")
     expect(invalidatedKeys).toContain("projects")
@@ -96,18 +89,13 @@ describe("mutations.ts mock-first path", () => {
     vi.stubEnv("VITE_API_BASE_URL", "")
     vi.resetModules()
 
-    const logoutClient = await import(
-      "@/shared/api/_generated/clients/postApiV1AuthLogout"
-    )
-    const { useLogoutMutation } = await import(
-      "@/domains/identity/api/mutations"
-    )
-    const { QueryClient, QueryClientProvider } = await import(
-      "@tanstack/react-query"
-    )
-    const { renderHook, act, waitFor } = await import(
-      "@testing-library/react"
-    )
+    const logoutClient =
+      await import("@/shared/api/_generated/clients/postApiV1AuthLogout")
+    const { useLogoutMutation } =
+      await import("@/domains/identity/api/mutations")
+    const { QueryClient, QueryClientProvider } =
+      await import("@tanstack/react-query")
+    const { renderHook, act, waitFor } = await import("@testing-library/react")
     const React = await import("react")
 
     const client = new QueryClient({
@@ -129,7 +117,7 @@ describe("mutations.ts mock-first path", () => {
     expect(logoutClient.postApiV1AuthLogout).not.toHaveBeenCalled()
 
     const invalidatedKeys = invalidateSpy.mock.calls.flatMap(
-      ([arg]) => (arg as { queryKey: readonly unknown[] }).queryKey,
+      ([arg]) => (arg as { queryKey: readonly unknown[] }).queryKey
     )
     expect(invalidatedKeys).toContain("me")
     expect(invalidatedKeys).toContain("projects")
@@ -141,7 +129,7 @@ describe("mutations.ts mock-first path", () => {
     vi.resetModules()
 
     await expect(
-      import("@/domains/identity/api/mutations"),
+      import("@/domains/identity/api/mutations")
     ).resolves.toBeDefined()
   })
 })

@@ -41,7 +41,9 @@ vi.mock("@/domains/runs/api/queries", async (importOriginal) => {
    query in the product — serves mock data only when the environment says so.
    Pinning it here keeps the band on the screen under test rather than at the
    mercy of whoever's `.env.local` is on disk. */
-vi.mock("@/shared/config/env", () => ({ env: { useMock: true, repoUrl: null } }))
+vi.mock("@/shared/config/env", () => ({
+  env: { useMock: true, repoUrl: null },
+}))
 
 beforeAll(() => {
   if (!("ResizeObserver" in globalThis)) {
@@ -230,9 +232,7 @@ describe("when nothing needs a person", () => {
     await verdictNode()
     // Live figures in the verdict's own line, and the rows behind them below —
     // together they prove the data arrived rather than merely failing quietly.
-    expect(
-      screen.getByText(/the swarm is moving on its own/)
-    ).not.toBeNull()
+    expect(screen.getByText(/the swarm is moving on its own/)).not.toBeNull()
     const running = [
       ...document.querySelectorAll("[data-test='running-now'] [data-run]"),
     ].map((node) => node.getAttribute("data-run"))
@@ -244,9 +244,7 @@ describe("when nothing needs a person", () => {
     mount()
 
     await screen.findByText("Nothing needs you")
-    expect(
-      screen.getByText(/The swarm is empty/)
-    ).not.toBeNull()
+    expect(screen.getByText(/The swarm is empty/)).not.toBeNull()
   })
 })
 
@@ -296,9 +294,7 @@ describe("when a decision is owed", () => {
     expect(
       document.querySelectorAll("[data-test='attention-row']")
     ).toHaveLength(12)
-    expect(
-      screen.getByText("and 3 more — open live runs")
-    ).not.toBeNull()
+    expect(screen.getByText("and 3 more — open live runs")).not.toBeNull()
   })
 
   it("draws the week of outcomes inside the running-now band", async () => {
@@ -317,12 +313,12 @@ describe("when a decision is owed", () => {
     // Seven columns stacked by outcome, today last, and every status word in
     // the legend — hue is never the only channel on this chart.
     const bars = [
-      ...document.querySelectorAll("[data-test='home-outcomes'] [data-test='bar-series-bar']"),
+      ...document.querySelectorAll(
+        "[data-test='home-outcomes'] [data-test='bar-series-bar']"
+      ),
     ]
     expect(bars.length).toBeGreaterThanOrEqual(7 * 2)
-    expect(
-      bars[bars.length - 1].getAttribute("data-key")
-    ).toBe("today")
+    expect(bars[bars.length - 1].getAttribute("data-key")).toBe("today")
     expect(
       bars.filter((bar) => bar.getAttribute("data-status") === "success").length
     ).toBe(7)

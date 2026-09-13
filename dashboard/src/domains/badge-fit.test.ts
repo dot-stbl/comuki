@@ -129,8 +129,11 @@ describe("a badge keeps its own reading and its own box", () => {
     // about text, not a stated intention, and the two sheets that drifted
     // drifted by overriding it. Said out loud, it survives the next edit.
     for (const [path, selector] of FAMILY) {
-      expect({ path, selector, flex: declared(read(path), selector, "flex") })
-        .toEqual({ path, selector, flex: "0 0 auto" })
+      expect({
+        path,
+        selector,
+        flex: declared(read(path), selector, "flex"),
+      }).toEqual({ path, selector, flex: "0 0 auto" })
     }
   })
 

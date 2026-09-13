@@ -64,7 +64,10 @@ export interface CreateSeedUserInput {
 
 export function createSeedUser(input: CreateSeedUserInput): SeedUser {
   const created: SeedUser = {
-    id: `u_${input.email.split("@")[0].replace(/[^a-z0-9]/gi, "").toLowerCase()}`,
+    id: `u_${input.email
+      .split("@")[0]
+      .replace(/[^a-z0-9]/gi, "")
+      .toLowerCase()}`,
     name: input.name,
     email: input.email,
     oidcSubject: null,

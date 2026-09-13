@@ -5,6 +5,7 @@ import { formatCost, formatDuration } from "@/domains/runs/model/format"
 import { TRIAGE_RANK } from "@/domains/runs/model/profile-flow"
 import type { RunStatus, RunSummary } from "@/domains/runs/model/types"
 import { currentLabel, currentProfile } from "@/domains/runs/model/work-items"
+import { AnomalyBadge } from "@/domains/runs/ui/anomaly-badge"
 import {
   can,
   needsLabel,
@@ -33,6 +34,8 @@ export interface RunColumnsOptions {
   cancellingId: string | null
   onApprove: (run: RunSummary) => void
   onCancel: (run: RunSummary) => void
+  /** Open the anomaly breakdown modal for a flagged run. */
+  onShowAnomaly: (run: RunSummary) => void
   /**
    * The signed-in shift itself, not an answer about it.
    *
@@ -108,6 +111,7 @@ export function createRunColumns({
   cancellingId,
   onApprove,
   onCancel,
+  onShowAnomaly,
   session,
 }: RunColumnsOptions): DataColumn<RunSummary>[] {
   // Profiles arrive in the order the board derived from the observed graphs,
@@ -202,11 +206,24 @@ export function createRunColumns({
     {
       accessorKey: "title",
       header: "task",
-      cell: ({ row }) => (
-        <span className={styles.title} title={row.original.title}>
-          {row.original.title}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const run = row.original
+        return (
+          <span className={styles.titleCell}>
+            <span className={styles.title} title={run.title}>
+              {run.title}
+            </span>
+            {run.anomaly ? (
+              <AnomalyBadge
+                flag={run.anomaly}
+                onActivate={() => onShowAnomaly(run)}
+                className={styles.anomalyInline}
+                data-test="anomaly-badge-inline"
+              />
+            ) : null}
+          </span>
+        )
+      },
       meta: {
         label: "task",
         filter: {

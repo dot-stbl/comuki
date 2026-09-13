@@ -43,6 +43,22 @@
   color: var(--text);
 }
 
+/* The task cell — title beside the anomaly badge. The title still
+   truncates to a single line; the badge sits to its right and never
+   wraps the cell, so a runaway row stays one line tall like every
+   other row. */
+.titleCell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.anomalyInline {
+  flex: 0 0 auto;
+}
+
 /* The step name is the brain's prose, not a key: it reads as language beside
    the profile's data voice, and it truncates like every other long cell. */
 .step {
@@ -90,4 +106,13 @@
   letter-spacing: var(--tracking-data);
   color: var(--text-faint);
   white-space: nowrap;
+}
+
+/* The toolbar's trailing slot — the anomalies toggle and the count,
+   beside each other rather than on opposite sides of the bar. */
+.toolbarTrailing {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s4);
+  margin-inline-start: auto;
 }

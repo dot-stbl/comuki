@@ -10,6 +10,8 @@ import type {
   WorkItem,
   WorkItemInspector,
 } from "@/domains/runs/model/types"
+import { flagAnomalies } from "@/domains/runs/model/anomaly"
+import { listSeedRuns } from "@/shared/api/mock"
 import type { RunArtifactsPage as RunArtifactsPageDto } from "@/shared/api/_generated/types/RunArtifactsPage"
 import type { RunDetail as RunDetailDto } from "@/shared/api/_generated/types/RunDetail"
 import type { RunDetailEvent as RunDetailEventDto } from "@/shared/api/_generated/types/RunDetailEvent"
@@ -205,17 +207,45 @@ export function toRunSummary(seed: SeedRun): RunSummary {
     durationSec: seed.startSec,
     done: seed.done ?? false,
     workItems: seed.items.map(mapWorkItem),
+    anomaly: null,
   }
+}
+
+/**
+ * Map a list of seed runs and stamp each one with its anomaly flag.
+ *
+ * The flag is computed across the *whole list*, not per-run, so the
+ * per-project median has the same denominator the rest of the page reads.
+ * `toRunSummary` keeps `anomaly: null` and this is the one callers go
+ * through when they have the whole shift in hand (mock store, storybook).
+ */
+export function toRunSummaries(seedRuns: SeedRun[]): RunSummary[] {
+  const summaries = seedRuns.map(toRunSummary)
+  const flags = flagAnomalies(summaries)
+  for (const summary of summaries) {
+    const flag = flags.get(summary.id)
+    if (flag) {
+      summary.anomaly = flag
+    }
+  }
+  return summaries
 }
 
 export function toRunDetail(seed: SeedRun): RunDetail {
   const trace = TRACE_SEED[seed.id] ?? genericTrace(seed)
+  // `findSeedRun` reads the same store the bulk list mapper reads; computing
+  // the flag once across the shift keeps the median denominator consistent.
+  const allRuns = listSeedRuns()
+  const summaries = toRunSummaries(allRuns)
+  const flag = summaries.find((entry) => entry.id === seed.id)?.anomaly ?? null
+
   return {
     ...toRunSummary(seed),
     brief: trace.brief,
     rules: trace.rules,
     revision: trace.revision,
     events: mapEvents(trace.events),
+    anomaly: flag,
   }
 }
 
@@ -381,6 +411,7 @@ export function mapRunViewToSummary(view: RunView): RunSummary {
     durationSec,
     done: view.status === "succeeded" || view.status === "failed" || view.status === "cancelled",
     workItems: EMPTY_WORK_ITEMS,
+    anomaly: null,
   }
 }
 
@@ -460,6 +491,7 @@ function mapRunDetailToSummary(detail: RunDetailDto): RunSummary {
       detail.status === "failed" ||
       detail.status === "cancelled",
     workItems: detail.workItems.map(mapRunDetailWorkItemToDomain),
+    anomaly: null,
   };
 }
 

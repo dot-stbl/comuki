@@ -3,15 +3,19 @@ import { useQuery } from "@tanstack/react-query"
 import { getApiV1ProjectsProjectidCosts } from "@/shared/api/_generated/clients/getApiV1ProjectsProjectidCosts"
 import { getApiV1Projects } from "@/shared/api/_generated/clients/getApiV1Projects"
 import { useProjectsQuery } from "@/domains/projects/api/queries"
-import { toCostSummary } from "@/domains/cost/api/mappers"
-import type { CostSummary } from "@/domains/cost/model/types"
-import { COST_SEED } from "@/shared/api/mock/cost.seed"
+import { periodSnapshot, toCostSummary } from "@/domains/cost/api/mappers"
+import type { CostSummary } from "@/domains/cost/model/cost"
+import {
+  COST_SEED,
+  COST_SEED_BY_PERIOD,
+  type SeedCostPeriod,
+} from "@/shared/api/mock/cost.seed"
 import { env } from "@/shared/config/env"
 
 export const costQueryKey = ["cost"] as const
 
 /**
- * Mock-mode fallback: returns the seeded `CostSummary` directly.
+ * Mock-mode fallback: returns the seeded `CostSummary` for the chosen period.
  *
  * The cost page UI is built for a platform-wide rollup; the only cost
  * endpoint the host exposes today is per-project (`GET /api/v1/projects/
@@ -21,8 +25,8 @@ export const costQueryKey = ["cost"] as const
  * exercised, and a v2 platform-wide endpoint can drop in without UI
  * surgery.
  */
-async function getCostSummaryFromSeed(): Promise<CostSummary> {
-  return toCostSummary(COST_SEED)
+async function getCostSummaryFromSeed(period: SeedCostPeriod): Promise<CostSummary> {
+  return toCostSummary(periodSnapshot(period, COST_SEED_BY_PERIOD[period]))
 }
 
 /**
@@ -34,7 +38,7 @@ async function getCostSummaryFromSeed(): Promise<CostSummary> {
  * (`credentials: 'include'`) is exercised end-to-end on every render of
  * the page in real mode.
  */
-export function useCostQuery() {
+export function useCostQuery(period: SeedCostPeriod = "day") {
   const projects = useProjectsQuery()
   const firstProjectId =
     !env.useMock && projects.data && projects.data.length > 0
@@ -42,10 +46,10 @@ export function useCostQuery() {
       : undefined
 
   return useQuery({
-    queryKey: [...costQueryKey, firstProjectId ?? "mock"],
+    queryKey: [...costQueryKey, firstProjectId ?? "mock", period],
     queryFn: async (): Promise<CostSummary> => {
       if (env.useMock) {
-        return getCostSummaryFromSeed()
+        return getCostSummaryFromSeed(period)
       }
 
       // Real mode: hit the per-project cost endpoint so the wire is
@@ -58,8 +62,12 @@ export function useCostQuery() {
         getApiV1Projects({ includeArchived: false }),
       ])
 
-      return getCostSummaryFromSeed()
+      return getCostSummaryFromSeed(period)
     },
     enabled: env.useMock || !!firstProjectId,
   })
 }
+
+// Re-export the seed so the mock-first test seam stays a single import
+// (the page test pre-dates the period branch and asserts on COST_SEED).
+export { COST_SEED }

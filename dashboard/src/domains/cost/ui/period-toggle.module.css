@@ -1,0 +1,67 @@
+/* The period toggle — three pills on one row, one pressed at a time. */
+
+.toggle {
+  display: inline-flex;
+  align-items: stretch;
+  gap: var(--s1);
+  padding: var(--s1);
+  border-radius: var(--r-md);
+  background: var(--lane-alt);
+}
+
+.option {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s1);
+  padding: var(--s1) var(--s3);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.option:hover {
+  color: var(--text);
+}
+
+.option:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}
+
+.optionActive,
+.optionActive:hover {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px -1px color-mix(in oklab, var(--foreground) 30%, transparent);
+}
+
+.optionLabel {
+  font-family: var(--font-ui);
+}
+
+.optionNote {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}
+
+.optionActive .optionNote {
+  color: var(--text-muted);
+}
+
+.trailing {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: var(--s2);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}

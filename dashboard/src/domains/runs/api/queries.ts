@@ -5,7 +5,7 @@ import {
   mapRunDetailToDetail,
   mapRunsPageToSummaries,
   toRunDetail,
-  toRunSummary,
+  toRunSummaries,
   toWorkItemInspector,
 } from "@/domains/runs/api/mappers"
 import type {
@@ -43,7 +43,7 @@ export const runArtifactsQueryKey = (projectId: string, runId: string) =>
  */
 async function listRuns(): Promise<RunSummary[]> {
   if (env.useMock) {
-    return listSeedRuns().map(toRunSummary)
+    return toRunSummaries(listSeedRuns())
   }
   const page = await getApiV1Runs({ page: 1, pageSize: 100 })
   return mapRunsPageToSummaries(page)

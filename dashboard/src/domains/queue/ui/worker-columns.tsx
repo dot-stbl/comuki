@@ -34,9 +34,10 @@ export const getWorkerId = (worker: Worker) => worker.id
 
 /** Capacity first: what is working, what is leaving, what is spare. */
 const STATE_RANK: Record<WorkerState, number> = {
-  draining: 0,
-  busy: 1,
-  idle: 2,
+  offline: 0,
+  draining: 1,
+  busy: 2,
+  idle: 3,
 }
 
 const stateSort = rankSort(STATE_RANK)
@@ -152,7 +153,7 @@ export function createWorkerColumns({
              Not advertised in the placeholder: project has its own column and
              its own select filter here too, and this box names containers. */
           match: (worker, needle) =>
-            `${worker.id} ${worker.handle} ${worker.digest} ${projectOf(session, worker.projectId)?.key ?? ""}`
+            `${worker.id} ${worker.handle ?? ""} ${worker.digest ?? ""} ${projectOf(session, worker.projectId ?? undefined)?.key ?? ""}`
               .toLowerCase()
               .includes(needle.toLowerCase()),
         },
@@ -163,7 +164,10 @@ export function createWorkerColumns({
       header: "project",
       cell: ({ row }) => (
         <span className={styles.value}>
-          {projectName.get(row.original.projectId) ?? row.original.projectId}
+          {row.original.projectId
+            ? (projectName.get(row.original.projectId) ??
+              row.original.projectId)
+            : "—"}
         </span>
       ),
       meta: {
@@ -183,7 +187,7 @@ export function createWorkerColumns({
       accessorKey: "profile",
       header: "profile",
       cell: ({ row }) => (
-        <span className={styles.value}>{row.original.profile}</span>
+        <span className={styles.value}>{row.original.profile ?? "—"}</span>
       ),
       meta: {
         width: 116,
@@ -205,10 +209,33 @@ export function createWorkerColumns({
       cell: ({ row }) => {
         const worker = row.original
         const item = worker.itemId ? itemsById.get(worker.itemId) : undefined
-        if (!item) {
+        if (!worker.itemId) {
           // Idle is the honest answer, and it is not a gap: an idle worker is
           // the pool doing its job.
           return <span className={styles.faint}>idle</span>
+        }
+        if (!item) {
+          // Busy on an item this payload does not carry. The queue's items
+          // half has no endpoint in real mode, so every busy wire row lands
+          // here — and the run the lease names is the honest hand-off, not a
+          // blank cell that reads as a rendering fault.
+          return (
+            <span className={styles.current}>
+              {worker.runId ? (
+                <Link
+                  to="/runs/$runId"
+                  params={{ runId: worker.runId }}
+                  className={styles.link}
+                  data-test="worker-run-link"
+                >
+                  {worker.runId}
+                </Link>
+              ) : null}
+              <span className={styles.step} title={worker.itemId}>
+                {worker.itemId}
+              </span>
+            </span>
+          )
         }
         return (
           <span className={styles.current}>
@@ -231,9 +258,14 @@ export function createWorkerColumns({
     {
       accessorKey: "provider",
       header: "compute",
-      cell: ({ row }) => (
-        <span className={styles.value}>{row.original.provider}</span>
-      ),
+      cell: ({ row }) =>
+        row.original.provider ? (
+          <span className={styles.value}>{row.original.provider}</span>
+        ) : (
+          // The derived registry cannot see a provider; an honest dash beats
+          // a guessed "docker".
+          <span className={styles.faint}>—</span>
+        ),
       meta: {
         width: 108,
         label: "compute",
@@ -250,11 +282,14 @@ export function createWorkerColumns({
     {
       accessorKey: "handle",
       header: "handle",
-      cell: ({ row }) => (
-        <span className={styles.value} title={row.original.handle}>
-          {row.original.handle}
-        </span>
-      ),
+      cell: ({ row }) =>
+        row.original.handle ? (
+          <span className={styles.value} title={row.original.handle}>
+            {row.original.handle}
+          </span>
+        ) : (
+          <span className={styles.faint}>—</span>
+        ),
       meta: { width: 240, label: "handle" },
     },
     {
@@ -265,7 +300,7 @@ export function createWorkerColumns({
       accessorKey: "digest",
       header: "image",
       cell: ({ row }) => (
-        <span className={styles.value}>{row.original.digest}</span>
+        <span className={styles.value}>{row.original.digest ?? "—"}</span>
       ),
       meta: { width: 132, label: "image" },
     },
@@ -279,7 +314,14 @@ export function createWorkerColumns({
     {
       accessorKey: "upSec",
       header: "up",
-      cell: ({ row }) => formatDuration(row.original.upSec),
+      cell: ({ row }) =>
+        row.original.upSec === null ? (
+          // Uptime is a container-runtime fact; the derived registry has
+          // none, and a zero would read as "just came up".
+          <span className={styles.faint}>—</span>
+        ) : (
+          formatDuration(row.original.upSec)
+        ),
       meta: { width: 88, numeric: true, label: "up" },
     },
     {
@@ -291,13 +333,17 @@ export function createWorkerColumns({
       cell: ({ row }) => {
         const worker = row.original
         // Resolved per row, because permission is: the same person administers
-        // one project's pool and can only watch the next one's.
-        const allowed = can(session, "runs.stop", worker.projectId)
+        // one project's pool and can only watch the next one's. A row the wire
+        // could not attribute to a project is asked without one — the rail's
+        // "somewhere" reading — because an unattributed worker is still a
+        // worker somebody may stop.
+        const projectId = worker.projectId ?? undefined
+        const allowed = can(session, "runs.stop", projectId)
         const denial = allowed
           ? null
           : needsLabel(
               "runs.stop",
-              projectOf(session, worker.projectId)?.key
+              projectOf(session, projectId)?.key
             )
 
         const draining = drainingId === worker.id

@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from "@/shared/ui"
 
-import { useQueueQuery } from "@/domains/queue/api/queries"
+import { useQueueQuery, useWorkersQuery } from "@/domains/queue/api/queries"
 import {
   AGE_STALLED_SEC,
   backlogOf,
@@ -73,15 +73,30 @@ export function QueuePage({
   workerSearch,
   onWorkerSearchChange,
 }: QueuePageProps = {}) {
-  const { data, isLoading, isError, error, refetch } = useQueueQuery()
+  /* Two queries, one screen. The items half (queue, pools, depth) and the
+     workers half (the pool) were one payload when both were mock seeds; the
+     workers now have their own endpoint, their own cadence and their own
+     cache key, so the halves load separately — the board answers empties in
+     real mode (no queue-items endpoint yet) and the pool carries the wire. */
+  const board = useQueueQuery()
+  const poolQuery = useWorkersQuery()
+
+  const isLoading = board.isLoading || poolQuery.isLoading
+  const isError = board.isError || poolQuery.isError
+  const error = poolQuery.error ?? board.error
+  const refetch = () => {
+    void board.refetch()
+    void poolQuery.refetch()
+  }
+
   const session = useSession()
 
   const pool = useRef<PanelImperativeHandle | null>(null)
   const [poolCollapsed, setPoolCollapsed] = useState(false)
 
-  const items = useMemo(() => data?.items ?? [], [data])
-  const workers = useMemo(() => data?.workers ?? [], [data])
-  const pools = useMemo(() => data?.pools ?? [], [data])
+  const items = useMemo(() => board.data?.items ?? [], [board.data])
+  const workers = useMemo(() => poolQuery.data ?? [], [poolQuery.data])
+  const pools = useMemo(() => board.data?.pools ?? [], [board.data])
 
   const counts = useMemo(() => workerCounts(workers), [workers])
   const queued = useMemo(() => backlogOf(items), [items])
@@ -214,7 +229,7 @@ export function QueuePage({
                 rather than either half's, so it stands where both can see it —
                 and the header's "14 queued" stops being a number and becomes a
                 direction before the table has even been read. */}
-            <DepthBand days={data?.depth ?? []} className={styles.depth} />
+            <DepthBand days={board.data?.depth ?? []} className={styles.depth} />
 
             <SplitPane
               orientation="vertical"

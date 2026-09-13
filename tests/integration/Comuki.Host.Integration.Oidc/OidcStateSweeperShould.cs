@@ -19,16 +19,14 @@ namespace Comuki.Host.Integration.Oidc;
 /// EF scope — the same <see cref="IdentityDbContext"/> tracks the
 /// entity across both writes.
 ///
-/// Skip reason (2026-09-08): HostOidcServer fixture requires a
-/// Testcontainers Postgres reachable from WSL2 within 30s. The host
-/// bootstrap fails with a Postgres connection timeout in this sandbox
-/// (no Docker DNS, only localhost bridge). Re-enable when run on a
-/// host with a properly configured Docker network or against a real
-/// Postgres.
+/// Re-enabled 2026-09-14: a container runtime (podman, docker-compatible
+/// npipe endpoint) is available in the agent sandbox, so HostOidcServer's
+/// Testcontainers Postgres + Keycloak actually come up here. Previously
+/// skipped (2026-09-08) for lack of a reachable Docker daemon.
 /// </summary>
 public sealed class OidcStateSweeperShould(HostOidcServer server) : IClassFixture<HostOidcServer>
 {
-    [Fact(Skip = "Fixture needs Docker Postgres (WSL2 env limitation, see class doc)", DisplayName = "Given an expired state row and a fresh one, when the host's sweeper runs one cycle, then only the fresh row remains")]
+    [Fact(DisplayName = "Given an expired state row and a fresh one, when the host's sweeper runs one cycle, then only the fresh row remains")]
     public async Task SweepDeletesExpiredKeepsFreshAsync()
     {
         await using var setup = server.Services.CreateAsyncScope();

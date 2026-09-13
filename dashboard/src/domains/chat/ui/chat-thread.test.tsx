@@ -63,8 +63,9 @@ describe("the log", () => {
 
   it("holds every message that has finished", () => {
     mount([message("m1"), message("m2", { kind: "person" })])
-    expect(at("chat-log")?.querySelectorAll("[data-test='chat-message']"))
-      .toHaveLength(2)
+    expect(
+      at("chat-log")?.querySelectorAll("[data-test='chat-message']")
+    ).toHaveLength(2)
   })
 })
 
@@ -101,15 +102,17 @@ describe("a reply in flight", () => {
       <TestSession>
         <ChatThread
           messages={[message("m1"), message("m2")]}
-          onDecide={vi.fn()} projectId={null}
+          onDecide={vi.fn()}
+          projectId={null}
         />
       </TestSession>
     )
 
     // Now it is an ordinary addition to a polite log: read once, in full.
     expect(at("chat-streaming")).toBeNull()
-    expect(at("chat-log")?.querySelectorAll("[data-test='chat-message']"))
-      .toHaveLength(2)
+    expect(
+      at("chat-log")?.querySelectorAll("[data-test='chat-message']")
+    ).toHaveLength(2)
     expect(at("chat-announce")?.textContent).toBe("")
   })
 })
@@ -129,7 +132,12 @@ describe("the five states each render as themselves", () => {
       message("m2", {
         kind: "tool",
         text: undefined,
-        tool: { name: "runs.get", args: "run=8f3c2a91", status: "failed", result: "504" },
+        tool: {
+          name: "runs.get",
+          args: "run=8f3c2a91",
+          status: "failed",
+          result: "504",
+        },
       }),
       message("m3", {
         kind: "proposal",
@@ -204,7 +212,11 @@ describe("the scroll follows the operator, not the data", () => {
 
     rerender(
       <TestSession>
-        <ChatThread messages={[message("m1"), message("m2")]} onDecide={vi.fn()} projectId={null} />
+        <ChatThread
+          messages={[message("m1"), message("m2")]}
+          onDecide={vi.fn()}
+          projectId={null}
+        />
       </TestSession>
     )
 
@@ -222,7 +234,11 @@ describe("the scroll follows the operator, not the data", () => {
     port.scrollTo(120)
     rerender(
       <TestSession>
-        <ChatThread messages={[message("m1"), message("m2")]} onDecide={vi.fn()} projectId={null} />
+        <ChatThread
+          messages={[message("m1"), message("m2")]}
+          onDecide={vi.fn()}
+          projectId={null}
+        />
       </TestSession>
     )
 
@@ -280,7 +296,8 @@ describe("the log virtualizes only when the thread is long", () => {
     const log = at("chat-log")
     expect(log?.getAttribute("data-virtualized")).toBe("true")
 
-    const drawn = log?.querySelectorAll("[data-test='chat-message']").length ?? 0
+    const drawn =
+      log?.querySelectorAll("[data-test='chat-message']").length ?? 0
     expect(drawn).toBeGreaterThan(0)
     expect(drawn).toBeLessThan(120)
 

@@ -93,7 +93,10 @@ describe("creating a project", () => {
   })
 
   it("refuses a slug somebody already has", () => {
-    const { name, slug, create, onCreate } = mount(["platform-admin"], ["atlas"])
+    const { name, slug, create, onCreate } = mount(
+      ["platform-admin"],
+      ["atlas"]
+    )
 
     fireEvent.change(name, { target: { value: "Atlas again" } })
     fireEvent.change(slug, { target: { value: "atlas" } })
@@ -163,7 +166,9 @@ describe("a shift that may not create one", () => {
 
     expect(document.body.contains(create)).toBe(true)
     expect(create.getAttribute("aria-disabled")).toBe("true")
-    expect(create.getAttribute("title")).toBe("needs operator or platform-admin")
+    expect(create.getAttribute("title")).toBe(
+      "needs operator or platform-admin"
+    )
     // Not `disabled`: that would put the sentence out of reach of a pointer
     // and out of the tab order both.
     expect(create.hasAttribute("disabled")).toBe(false)

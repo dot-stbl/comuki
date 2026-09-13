@@ -230,7 +230,10 @@ export function periodDays(period: CostPeriod): number {
  * Returned as the count of past days in the byDay axis — what the seed has
  * observed so far — divided by the period's full length.
  */
-export function periodElapsed(daysObserved: number, period: CostPeriod): number {
+export function periodElapsed(
+  daysObserved: number,
+  period: CostPeriod
+): number {
   if (daysObserved <= 0) {
     return 0
   }

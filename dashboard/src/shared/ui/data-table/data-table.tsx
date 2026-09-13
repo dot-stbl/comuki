@@ -324,12 +324,14 @@ const RESIZE_STEP = 8
 const RESIZE_STEP_COARSE = 32
 
 /** `aria-sort` belongs on the `th`, and speaks its own three words. */
-const ARIA_SORT: Record<SortDirection | "none", "ascending" | "descending" | "none"> =
-  {
-    asc: "ascending",
-    desc: "descending",
-    none: "none",
-  }
+const ARIA_SORT: Record<
+  SortDirection | "none",
+  "ascending" | "descending" | "none"
+> = {
+  asc: "ascending",
+  desc: "descending",
+  none: "none",
+}
 
 function resolveUpdater<T>(updater: Updater<T>, current: T): T {
   return typeof updater === "function"
@@ -545,7 +547,8 @@ function ColumnGrip<TData extends RowData>({
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     const head = headOf(event.currentTarget)
-    const step = (event.shiftKey ? RESIZE_STEP_COARSE : RESIZE_STEP) * outward(head)
+    const step =
+      (event.shiftKey ? RESIZE_STEP_COARSE : RESIZE_STEP) * outward(head)
     const from = renderedWidth(head, column)
 
     if (event.key === "ArrowRight") {
@@ -721,7 +724,9 @@ export function DataTable<TData extends RowData>({
     const select = selectionColumn<TData>(selectionNoun)
     return [
       withSize(
-        anyPinned ? { ...select, meta: { ...select.meta, pinned: true } } : select
+        anyPinned
+          ? { ...select, meta: { ...select.meta, pinned: true } }
+          : select
       ),
       ...declared,
     ]
@@ -1060,7 +1065,11 @@ export function DataTable<TData extends RowData>({
           hidden with a zero offset: a seam sitting on the frame's left edge is
           a hairline nobody asked for. */}
       {pinnedWidth > 0 ? (
-        <span className={styles.seam} data-test="data-table-seam" aria-hidden="true" />
+        <span
+          className={styles.seam}
+          data-test="data-table-seam"
+          aria-hidden="true"
+        />
       ) : null}
     </div>
   )

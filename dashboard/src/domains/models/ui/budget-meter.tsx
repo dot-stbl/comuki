@@ -66,7 +66,9 @@ export function BudgetMeter({ entry, enforced, className }: BudgetMeterProps) {
         title="the cap is live but this surface does not meter spend"
       >
         <span className={styles.figures}>
-          <span className={styles.spent}>cap {formatCost(entry.budgetUsd)}</span>
+          <span className={styles.spent}>
+            cap {formatCost(entry.budgetUsd)}
+          </span>
           <span className={styles.left}>spend not metered here</span>
         </span>
       </span>

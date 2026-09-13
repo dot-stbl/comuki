@@ -51,11 +51,7 @@ export function AppShellTwoPaneOuter({
         const Icon = section.icon
         const isActive = activeId === section.id
         return (
-          <Tooltip
-            key={section.id}
-            content={section.label}
-            placement="end"
-          >
+          <Tooltip key={section.id} content={section.label} placement="end">
             <button
               type="button"
               className={styles.sectionButton}
@@ -139,9 +135,7 @@ function Item({ item, counts, testId }: ItemProps) {
         activeProps={{ className: cn(styles.item, styles.itemActive) }}
         data-test={testId}
       >
-        {Icon ? (
-          <Icon aria-hidden="true" className={styles.itemIcon} />
-        ) : null}
+        {Icon ? <Icon aria-hidden="true" className={styles.itemIcon} /> : null}
         <span className={styles.itemLabel}>{item.label}</span>
         {count ? (
           <span

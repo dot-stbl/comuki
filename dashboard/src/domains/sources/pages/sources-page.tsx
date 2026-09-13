@@ -177,7 +177,15 @@ export function SourcesPage({ focus }: SourcesPageProps) {
         onNewTicket,
         session,
       }),
-    [session, tickets, testingId, onOpenSource, onTest, onDisconnect, onNewTicket]
+    [
+      session,
+      tickets,
+      testingId,
+      onOpenSource,
+      onTest,
+      onDisconnect,
+      onNewTicket,
+    ]
   )
 
   // Asked without a project, which is the right question for a page-level

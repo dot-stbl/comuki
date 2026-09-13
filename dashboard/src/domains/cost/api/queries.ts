@@ -25,7 +25,9 @@ export const costQueryKey = ["cost"] as const
  * exercised, and a v2 platform-wide endpoint can drop in without UI
  * surgery.
  */
-async function getCostSummaryFromSeed(period: SeedCostPeriod): Promise<CostSummary> {
+async function getCostSummaryFromSeed(
+  period: SeedCostPeriod
+): Promise<CostSummary> {
   return toCostSummary(periodSnapshot(period, COST_SEED_BY_PERIOD[period]))
 }
 

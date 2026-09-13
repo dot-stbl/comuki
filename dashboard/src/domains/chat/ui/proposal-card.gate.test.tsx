@@ -36,7 +36,10 @@ function mount() {
       roles={["member"]}
       projectRoles={{ p_test: ["approver"], p_other: ["viewer"] }}
     >
-      <ProposalCard proposal={proposal("cp_mine", "p_test")} onDecide={onDecide} />
+      <ProposalCard
+        proposal={proposal("cp_mine", "p_test")}
+        onDecide={onDecide}
+      />
       <ProposalCard
         proposal={proposal("cp_theirs", "p_other")}
         onDecide={onDecide}

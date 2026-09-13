@@ -48,5 +48,7 @@ export const MostlyDraining: Story = {
 /** No workers at all. The channel is drawn and simply empty — which is a
  *  reading in itself, and the strip's accessible name says it in words. */
 export const Empty: Story = {
-  render: () => <Strip counts={{ total: 0, busy: 0, draining: 0, idle: 0, offline: 0 }} />,
+  render: () => (
+    <Strip counts={{ total: 0, busy: 0, draining: 0, idle: 0, offline: 0 }} />
+  ),
 }

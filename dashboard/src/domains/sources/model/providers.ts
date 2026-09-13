@@ -300,10 +300,7 @@ export function providerAuth(key: ProviderKey): readonly SourceAuth[] {
  * in whatever order React felt like — which is a form that is briefly wrong and
  * a save that is occasionally wrong. Asked at render, it cannot be either.
  */
-export function effectiveAuth(
-  key: ProviderKey,
-  auth: SourceAuth
-): SourceAuth {
+export function effectiveAuth(key: ProviderKey, auth: SourceAuth): SourceAuth {
   const allowed = providerAuth(key)
   return allowed.includes(auth) ? auth : allowed[0]
 }

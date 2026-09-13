@@ -89,7 +89,7 @@ export function ScheduledJobsSection({
           setProfileKey("")
           setBriefJson('{"title":""}')
         },
-      },
+      }
     )
   }
 
@@ -254,7 +254,7 @@ export function ScheduledJobsSection({
           if (pendingDelete) {
             deleteJob.mutate(
               { projectId, jobId: pendingDelete.id },
-              { onSettled: () => setPendingDelete(null) },
+              { onSettled: () => setPendingDelete(null) }
             )
           }
         }}

@@ -46,8 +46,8 @@ export function OutcomesBand({ days, className }: OutcomesBandProps) {
         <p className={styles.figure}>
           <span className={styles.figureValue}>{todayTotal}</span> finished
           today so far · <span className={styles.figureValue}>{weekTotal}</span>{" "}
-          this week ·{" "}
-          <span className={styles.figureValue}>{weekFailed}</span> failed
+          this week · <span className={styles.figureValue}>{weekFailed}</span>{" "}
+          failed
         </p>
 
         <ul className={styles.legend} aria-hidden="true">

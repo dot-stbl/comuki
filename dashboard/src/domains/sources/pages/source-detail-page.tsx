@@ -1,5 +1,12 @@
 import { useState } from "react"
-import { ArrowLeft, KeyRound, Loader2, PlugZap, RotateCw, Unplug } from "lucide-react"
+import {
+  ArrowLeft,
+  KeyRound,
+  Loader2,
+  PlugZap,
+  RotateCw,
+  Unplug,
+} from "lucide-react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 
@@ -167,7 +174,11 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
       <FormPage title="Source" crumbs={crumbs}>
         <div className={styles.skeleton} data-test="source-loading">
           {SKELETON_WIDTHS.map((width, index) => (
-            <span key={index} className={styles.skeletonBar} style={{ width }} />
+            <span
+              key={index}
+              className={styles.skeletonBar}
+              style={{ width }}
+            />
           ))}
         </div>
       </FormPage>
@@ -282,7 +293,9 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     // The watch form still owns enabled / filter / mode. The host's
     // admission-rule id and the connection's project id are the only
     // facts the dashboard adds at save time.
-    const ruleId = admissionRules.data?.find((rule) => rule.enabled === patch.enabled)?.id ?? null
+    const ruleId =
+      admissionRules.data?.find((rule) => rule.enabled === patch.enabled)?.id ??
+      null
     saveWatch.mutate(
       {
         connectionId: connection.id,
@@ -453,27 +466,31 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
 
           <dt className={styles.factName}>credential</dt>
           <dd className={styles.factValue}>
-            {connection.secretEnvRef
-              ? /* code-shaped name the host resolves — the dashboard never
-                 * shows the value, only the name, which is the structural
-                 * "no secret leaves the host" answer. */
+            {connection.secretEnvRef ? (
+              /* code-shaped name the host resolves — the dashboard never
+               * shows the value, only the name, which is the structural
+               * "no secret leaves the host" answer. */
               <>
-                <code data-test="source-secret-env">{connection.secretEnvRef}</code>
+                <code data-test="source-secret-env">
+                  {connection.secretEnvRef}
+                </code>
                 <span className={styles.factNote}>
-                  resolved on the host at probe / webhook time. The
-                  dashboard never sees the value — replacing it means
-                  changing the env var on the host and patching the
-                  connection&apos;s <code>secretEnvRef</code>.
+                  resolved on the host at probe / webhook time. The dashboard
+                  never sees the value — replacing it means changing the env var
+                  on the host and patching the connection&apos;s{" "}
+                  <code>secretEnvRef</code>.
                 </span>
               </>
-              : connection.secretStoredAt ?? "none"}
+            ) : (
+              (connection.secretStoredAt ?? "none")
+            )}
             {!connection.secretEnvRef && connection.secretStoredAt ? (
               <span className={styles.factNote}>
                 {/* Mock mode (legacy): the seed stamps a date and the
                  * product will never say anything about the secret itself. */}
-                stored write-only, and never shown again — not on this page,
-                not in a form, not through the api. Replacing it means
-                connecting again.
+                stored write-only, and never shown again — not on this page, not
+                in a form, not through the api. Replacing it means connecting
+                again.
               </span>
             ) : null}
             {!connection.secretEnvRef && !connection.secretStoredAt ? (
@@ -574,9 +591,9 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                   confirmation dialog after a click — copying it into the
                   tracker's webhook settings is the operator's next move,
                   and the dashboard never holds the value past this turn. */}
-              A click generates a fresh webhook secret and shows it
-              once. Copy it into the tracker's webhook settings — this
-              page will not show it again.
+              A click generates a fresh webhook secret and shows it once. Copy
+              it into the tracker's webhook settings — this page will not show
+              it again.
             </p>
             <Tooltip content={editDenial ?? "Rotate webhook secret"}>
               <Button
@@ -605,10 +622,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                 standalone block — copy-able, and gone the moment the
                 operator navigates away. */}
             {rotatedSecret ? (
-              <Notice
-                tone="ok"
-                data-test="source-rotated-secret"
-              >
+              <Notice tone="ok" data-test="source-rotated-secret">
                 <span className={styles.rotationSecretLabel}>
                   new webhook secret — copy now, this panel does not survive a
                   navigation

@@ -59,9 +59,7 @@ export function PeriodToggle({
           </button>
         )
       })}
-      {trailing ? (
-        <span className={styles.trailing}>{trailing}</span>
-      ) : null}
+      {trailing ? <span className={styles.trailing}>{trailing}</span> : null}
     </div>
   )
 }

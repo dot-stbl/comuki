@@ -100,8 +100,7 @@ const all = (selector: string) =>
   Array.from(document.querySelectorAll(selector))
 const entries = () => all('[data-test="knowledge-entry"]')
 const panels = () => all('[data-test="verify-project"]')
-const toggles = () =>
-  all('[data-test="verify-enabled"]') as HTMLInputElement[]
+const toggles = () => all('[data-test="verify-enabled"]') as HTMLInputElement[]
 const sheet = () => find('[data-test="knowledge-sheet"]')
 const searchBox = () =>
   find('[data-test="knowledge-search"]') as HTMLInputElement

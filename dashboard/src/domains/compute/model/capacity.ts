@@ -183,11 +183,13 @@ export function isStale(version: WorkerVersion): boolean {
  * system, because a stranded worker looks exactly like a healthy idle one.
  */
 export function strandedIdle(versions: WorkerVersion[]): number {
-  return versions
-    .filter(isStale)
-    // A source that cannot count per label cannot strand a count either; the
-    // honest reading is nothing rather than a guessed fleet.
-    .reduce((total, version) => total + (version.idle ?? 0), 0)
+  return (
+    versions
+      .filter(isStale)
+      // A source that cannot count per label cannot strand a count either; the
+      // honest reading is nothing rather than a guessed fleet.
+      .reduce((total, version) => total + (version.idle ?? 0), 0)
+  )
 }
 
 /** Which half of the label moved — the reason a row is stale. */

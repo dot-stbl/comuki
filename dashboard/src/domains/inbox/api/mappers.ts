@@ -10,9 +10,7 @@ import type {
   Ticket,
   TicketStatus,
 } from "@/domains/inbox/model/types"
-import type {
-  SeedNativeTicket,
-} from "@/shared/api/mock/sources.seed"
+import type { SeedNativeTicket } from "@/shared/api/mock/sources.seed"
 
 /* ---------------------------------------------------------------------------
  * Wire → domain mappers.
@@ -88,9 +86,7 @@ export function mapIntakeTicketViewToTicket(view: IntakeTicketView): Ticket {
  * mapper handles the claim response's single row (call sites are
  * <c>mapIntakeTicketViewToTicket</c> directly when the response is one row).
  */
-export function mapInboxToTickets(
-  page: IntakeTicketView[]
-): Ticket[] {
+export function mapInboxToTickets(page: IntakeTicketView[]): Ticket[] {
   return page.map(mapIntakeTicketViewToTicket)
 }
 
@@ -174,13 +170,10 @@ export function mapNativeTicketInputToCreateRequest(
  * recognise in the inbox list.
  * ------------------------------------------------------------------------- */
 
-const MOCK_RUN_ID =
-  "00000000-0000-0000-0000-runstub000001"
+const MOCK_RUN_ID = "00000000-0000-0000-0000-runstub000001"
 
 /** Mock-side ticket → domain ticket (synthesises UUID id and run id). */
-export function mapSeedTicketToTicket(
-  ticket: SeedNativeTicket
-): Ticket {
+export function mapSeedTicketToTicket(ticket: SeedNativeTicket): Ticket {
   const claimed = ticket.straightToWork
   return {
     id: mockTicketUuid(ticket.id),

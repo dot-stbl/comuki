@@ -5,7 +5,9 @@ import { BarSeries, barSeriesAxis } from "./bar-series"
 
 function bars(container: HTMLElement): SVGRectElement[] {
   return [
-    ...container.querySelectorAll<SVGRectElement>('[data-test="bar-series-bar"]'),
+    ...container.querySelectorAll<SVGRectElement>(
+      '[data-test="bar-series-bar"]'
+    ),
   ]
 }
 
@@ -45,9 +47,7 @@ describe("BarSeries", () => {
     expect(bars(container)).toHaveLength(7)
     // The axis is the largest total: the heaviest day is the full plot height,
     // and every other bar is its exact share of that same axis.
-    expect(
-      Math.round(heightOf(bars(container)[3]))
-    ).toBe(100)
+    expect(Math.round(heightOf(bars(container)[3]))).toBe(100)
     expect(Math.round(heightOf(bars(container)[1]))).toBe(25)
   })
 
@@ -65,7 +65,10 @@ describe("BarSeries", () => {
 
   it("carries the reading as its accessible name, and nothing else announces", () => {
     const { container, getByRole } = render(
-      <BarSeries points={week} label="Spend by day: $853 over the last 7 days." />
+      <BarSeries
+        points={week}
+        label="Spend by day: $853 over the last 7 days."
+      />
     )
 
     expect(getByRole("img").getAttribute("aria-label")).toBe(
@@ -74,10 +77,14 @@ describe("BarSeries", () => {
     // The drawn geometry is decoration on top of that sentence — the svg and
     // the tick row stay out of the tree the sentence already covers.
     expect(
-      container.querySelector('[data-test="bar-series-plot"]')?.getAttribute("aria-hidden")
+      container
+        .querySelector('[data-test="bar-series-plot"]')
+        ?.getAttribute("aria-hidden")
     ).toBe("true")
     expect(
-      container.querySelector('[data-test="bar-series-axis"]')?.getAttribute("aria-hidden")
+      container
+        .querySelector('[data-test="bar-series-axis"]')
+        ?.getAttribute("aria-hidden")
     ).toBe("true")
   })
 
@@ -87,7 +94,9 @@ describe("BarSeries", () => {
     )
 
     const ticks = [
-      ...container.querySelectorAll<HTMLElement>('[data-test="bar-series-tick"]'),
+      ...container.querySelectorAll<HTMLElement>(
+        '[data-test="bar-series-tick"]'
+      ),
     ]
     expect(ticks.map((tick) => tick.textContent)).toEqual([
       "sat",
@@ -141,7 +150,9 @@ describe("BarSeries", () => {
       />
     )
     expect(
-      neutral.container.querySelector('[data-test="bar-series-bar"]')?.hasAttribute("data-status")
+      neutral.container
+        .querySelector('[data-test="bar-series-bar"]')
+        ?.hasAttribute("data-status")
     ).toBe(false)
 
     const stacked = render(
@@ -150,10 +161,7 @@ describe("BarSeries", () => {
           {
             key: "0",
             label: "today",
-            segments: [
-              { value: 5, status: "failed" },
-              { value: 1 },
-            ],
+            segments: [{ value: 5, status: "failed" }, { value: 1 }],
           },
         ]}
         label="Outcomes."
@@ -163,7 +171,9 @@ describe("BarSeries", () => {
       stacked.container.querySelector('[data-status="failed"]')
     ).not.toBeNull()
     expect(
-      stacked.container.querySelector('[data-test="bar-series-bar"]:not([data-status])')
+      stacked.container.querySelector(
+        '[data-test="bar-series-bar"]:not([data-status])'
+      )
     ).not.toBeNull()
   })
 

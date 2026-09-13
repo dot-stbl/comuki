@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 
 import { RequirePermission } from "@/app/layout/require-permission"
-import { SettingsPage, isSettingsTab, type SettingsTab } from "@/domains/settings"
+import {
+  SettingsPage,
+  isSettingsTab,
+  type SettingsTab,
+} from "@/domains/settings"
 
 export interface SettingsSearch {
   /**

@@ -51,7 +51,7 @@ export const QuietDay: Story = {
   args: {
     points: week.map((point, index) => ({
       ...point,
-      segments: [{ value: index === 2 ? 0 : point.segments[0]?.value ?? 0 }],
+      segments: [{ value: index === 2 ? 0 : (point.segments[0]?.value ?? 0) }],
     })),
     label: "Spend by day: nothing ran on monday.",
   },

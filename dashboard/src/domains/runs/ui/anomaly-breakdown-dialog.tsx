@@ -97,7 +97,10 @@ export function AnomalyBreakdownDialog({
         <dl className={cn(styles.kvList)}>
           <div className={cn(styles.kv)}>
             <dt>cost</dt>
-            <dd className={cn(styles.figure)} data-test="anomaly-breakdown-cost">
+            <dd
+              className={cn(styles.figure)}
+              data-test="anomaly-breakdown-cost"
+            >
               {formatCost(run.cost)}
             </dd>
           </div>
@@ -137,5 +140,3 @@ export function AnomalyBreakdownDialog({
     </Dialog>
   )
 }
-
-

@@ -38,7 +38,8 @@ describe("the day's arithmetic", () => {
   it("totals one status across the window", () => {
     const failed = days.reduce(
       (sum, day) =>
-        sum + (day.outcomes.find((entry) => entry.status === "failed")?.count ?? 0),
+        sum +
+        (day.outcomes.find((entry) => entry.status === "failed")?.count ?? 0),
       0
     )
     expect(outcomeWindowTotal(days, "failed")).toBe(failed)
@@ -88,7 +89,8 @@ describe("the seeded week tells the seeded story", () => {
       .map(outcomeDayTotal)
     const working = days
       .filter(
-        (day) => day.label !== "sat" && day.label !== "sun" && day.label !== "today"
+        (day) =>
+          day.label !== "sat" && day.label !== "sun" && day.label !== "today"
       )
       .map(outcomeDayTotal)
 

@@ -75,7 +75,9 @@ export function AnomalyBadge({
         onClick={handleClick}
         onKeyDown={handleKeyDown}
       >
-        <span className={styles.icon} aria-hidden="true">⚠</span>
+        <span className={styles.icon} aria-hidden="true">
+          ⚠
+        </span>
         <span className={styles.label}>{label}</span>
       </span>
     </Tooltip>

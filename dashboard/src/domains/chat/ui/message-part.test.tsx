@@ -107,7 +107,11 @@ function turn(parts: MessagePart[]): Message {
 const SAMPLES: { [K in PartKind]: Extract<MessagePart, { kind: K }> } = {
   text: { kind: "text", markdown: "a **bold** claim about 8f3c2a91" },
   code: { kind: "code", language: "ts", source: "const a = 1\n" },
-  diagram: { kind: "diagram", dialect: "mermaid", source: "flowchart LR\n a-->b" },
+  diagram: {
+    kind: "diagram",
+    dialect: "mermaid",
+    source: "flowchart LR\n a-->b",
+  },
   thinking: { kind: "thinking", text: "weighing two options", tokens: 1840 },
   tool: {
     kind: "tool",
@@ -224,9 +228,7 @@ describe("the table has an arm for every kind in the frozen list", () => {
       // finds at least an empty lookup and survives the guard.
       const { unmount } = await mount(
         turn([SAMPLES[kind]]),
-        kind === "artifact-ref"
-          ? "00000000-0000-0000-0000-0000000000aa"
-          : null,
+        kind === "artifact-ref" ? "00000000-0000-0000-0000-0000000000aa" : null
       )
 
       // The body is the last child of the row — the byline is the first.

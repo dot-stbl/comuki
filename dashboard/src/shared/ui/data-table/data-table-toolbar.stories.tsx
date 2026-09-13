@@ -27,7 +27,9 @@ const searchColumn: DataColumn<Ticket> = {
       kind: "text",
       placeholder: "search ticket, app, step…",
       match: (ticket, needle) =>
-        `${ticket.id} ${ticket.app}`.toLowerCase().includes(needle.toLowerCase()),
+        `${ticket.id} ${ticket.app}`
+          .toLowerCase()
+          .includes(needle.toLowerCase()),
     },
   },
 }

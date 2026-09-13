@@ -204,7 +204,10 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                 {known.provider ? (
                   <>
                     {" "}
-                    · <span className={styles.summaryValue}>{known.provider}</span>
+                    ·{" "}
+                    <span className={styles.summaryValue}>
+                      {known.provider}
+                    </span>
                   </>
                 ) : null}
               </>
@@ -342,10 +345,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                     : formatDuration(worker.heartbeatAgeSec)}
                 </Reading>
 
-                <Reading
-                  label="up"
-                  note="since the container came up"
-                >
+                <Reading label="up" note="since the container came up">
                   {worker.upSec === null
                     ? // The derived registry has no container start to read;
                       // a dash is the honest figure and the note says what is
@@ -373,9 +373,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
               data-test="worker-container"
             >
               <div className={styles.readings}>
-                <Reading label="compute">
-                  {worker.provider ?? "—"}
-                </Reading>
+                <Reading label="compute">{worker.provider ?? "—"}</Reading>
 
                 <Reading label="handle" wrap>
                   {worker.handle ?? "—"}
@@ -409,9 +407,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                 </Reading>
 
                 <Reading label="project">
-                  {worker.projectId
-                    ? (project?.key ?? worker.projectId)
-                    : "—"}
+                  {worker.projectId ? (project?.key ?? worker.projectId) : "—"}
                 </Reading>
               </div>
             </Section>

@@ -14,7 +14,10 @@ import {
   type DataTableSorting,
 } from "@/shared/ui"
 
-import { useDrainWorker, useForceStopWorker } from "@/domains/queue/api/mutations"
+import {
+  useDrainWorker,
+  useForceStopWorker,
+} from "@/domains/queue/api/mutations"
 import { minIdleFor, resolveWorkerEmpty } from "@/domains/queue/model/queue"
 import type { QueueItem, Worker, WorkerPool } from "@/domains/queue/model/types"
 

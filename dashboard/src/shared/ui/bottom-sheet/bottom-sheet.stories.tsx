@@ -25,7 +25,7 @@ type Story = StoryObj<typeof BottomSheet>
 const LINES = Array.from({ length: 60 }, (_, index) => ({
   worker: `wkr-${String(index + 1).padStart(3, "0")}`,
   stage: index % 9,
-  ms: (index * 137) % 900 + 60,
+  ms: ((index * 137) % 900) + 60,
 }))
 
 /**

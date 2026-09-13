@@ -62,8 +62,7 @@ function renderBar(roles?: Role[]) {
   )
 }
 
-const find = (selector: string) =>
-  document.querySelector<HTMLElement>(selector)
+const find = (selector: string) => document.querySelector<HTMLElement>(selector)
 
 beforeEach(() => {
   envState.repoUrl = "https://github.com/dot-stbl/comuki"
@@ -132,7 +131,9 @@ describe("the bar's controls", () => {
 
     // A viewer keeps almost no rail, and can still ask where something is —
     // the palette hides the destinations, not the question.
-    expect(await screen.findByRole("button", { name: /search/i })).not.toBeNull()
+    expect(
+      await screen.findByRole("button", { name: /search/i })
+    ).not.toBeNull()
     expect(find('[data-test="new-run"]')).toBeNull()
   })
 

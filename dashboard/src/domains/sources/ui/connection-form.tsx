@@ -3,7 +3,10 @@ import type { FormEvent } from "react"
 
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
 import { needsBaseUrl } from "@/domains/sources/model/providers"
-import type { SourceAuth, SourceConnection } from "@/domains/sources/model/types"
+import type {
+  SourceAuth,
+  SourceConnection,
+} from "@/domains/sources/model/types"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
 import { Button, Notice, SelectField, TextField } from "@/shared/ui"
 
@@ -26,10 +29,10 @@ export interface ConnectionFormProps {
   onDirtyChange?: (dirty: boolean) => void
 }
 
-const AUTH_OPTIONS: {value: SourceAuth; label: string}[] = [
-  {value: "pat", label: "personal access token"},
-  {value: "oauth", label: "oauth grant"},
-  {value: "app-install", label: "app install"},
+const AUTH_OPTIONS: { value: SourceAuth; label: string }[] = [
+  { value: "pat", label: "personal access token" },
+  { value: "oauth", label: "oauth grant" },
+  { value: "app-install", label: "app install" },
 ]
 
 /**
@@ -79,7 +82,9 @@ export function ConnectionForm({
   const [auth, setAuth] = useState<SourceAuth>(connection.auth)
   const [account, setAccount] = useState(connection.account)
   const [baseUrl, setBaseUrl] = useState(connection.baseUrl ?? "")
-  const [secretEnvRef, setSecretEnvRef] = useState(connection.secretEnvRef ?? "")
+  const [secretEnvRef, setSecretEnvRef] = useState(
+    connection.secretEnvRef ?? ""
+  )
 
   /* The row before the registry: a connection that already carries a base url
      keeps its box whatever the registry knows about its provider, which is the

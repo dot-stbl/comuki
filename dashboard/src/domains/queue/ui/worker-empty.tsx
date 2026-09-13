@@ -46,8 +46,8 @@ export function WorkerEmpty({
         <>
           <p className={styles.title}>No workers match the filters</p>
           <p className={styles.body}>
-            The pool is up —{" "}
-            <span className={styles.figure}>{poolSize}</span> worker
+            The pool is up — <span className={styles.figure}>{poolSize}</span>{" "}
+            worker
             {poolSize === 1 ? "" : "s"}
             {where} are running, they are just not these.
           </p>

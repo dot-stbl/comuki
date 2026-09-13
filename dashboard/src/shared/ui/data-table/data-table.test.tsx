@@ -484,7 +484,9 @@ describe("DataTable pinned columns", () => {
 
   it("parks a second pinned column beside the first, not on top of it", () => {
     const twoPinned = sizedColumns.map((column, index) =>
-      index === 1 ? { ...column, meta: { ...column.meta, pinned: true } } : column
+      index === 1
+        ? { ...column, meta: { ...column.meta, pinned: true } }
+        : column
     )
     const { container } = render(
       <DataTable columns={twoPinned} data={SHARDS} getRowId={(row) => row.id} />
@@ -577,7 +579,9 @@ describe("DataTable pinned columns", () => {
 
   it("puts the seam where the pinned block actually ends", () => {
     const twoPinned = sizedColumns.map((column, index) =>
-      index === 1 ? { ...column, meta: { ...column.meta, pinned: true } } : column
+      index === 1
+        ? { ...column, meta: { ...column.meta, pinned: true } }
+        : column
     )
     const { container } = render(
       <DataTable columns={twoPinned} data={SHARDS} getRowId={(row) => row.id} />
@@ -806,8 +810,11 @@ describe("DataTable pin (stylesheet contract)", () => {
 
     for (const selector of [".table", ".head", ".headRow", ".body", ".row"]) {
       for (const property of ANCHOR_BREAKERS) {
-        expect({ selector, property, value: declared(selector, property) })
-          .toEqual({ selector, property, value: undefined })
+        expect({
+          selector,
+          property,
+          value: declared(selector, property),
+        }).toEqual({ selector, property, value: undefined })
       }
     }
   })
@@ -845,8 +852,10 @@ describe("DataTable pin (stylesheet contract)", () => {
     // may ever appear here.
     expect(declared(".root", "overflow")).toBe("clip")
     for (const property of ["overflow-x", "overflow-y"]) {
-      expect({ property, value: declared(".root", property) })
-        .toEqual({ property, value: undefined })
+      expect({ property, value: declared(".root", property) }).toEqual({
+        property,
+        value: undefined,
+      })
     }
   })
 
@@ -877,8 +886,10 @@ describe("DataTable pin (stylesheet contract)", () => {
     // any `box-shadow` on a per-cell selector is N shadows, one per row.
     const perCell = [".cell", ".td", ".th", ".pinned", ".pinnedEdge"]
     for (const selector of perCell) {
-      expect({ selector, shadow: declared(selector, "box-shadow") })
-        .toEqual({ selector, shadow: undefined })
+      expect({ selector, shadow: declared(selector, "box-shadow") }).toEqual({
+        selector,
+        shadow: undefined,
+      })
     }
     // `.pinnedEdge` is retired outright rather than left as a dead class: a
     // continuous seam already carries the hairline, and a second one a pixel
@@ -897,12 +908,19 @@ describe("DataTable pin (stylesheet contract)", () => {
   it("leaves the port the only scrolling box in the frame", () => {
     // The whole set, checked as one: exactly one box between the frame and a
     // cell may scroll, and it is the one the pinned cells anchor to.
-    const scrolls = [".root", ".scroll", ".table", ".head", ".headRow", ".body", ".row"]
-      .filter((selector) =>
-        ["auto", "scroll", "hidden", "overlay"].includes(
-          declared(selector, "overflow") ?? ""
-        )
+    const scrolls = [
+      ".root",
+      ".scroll",
+      ".table",
+      ".head",
+      ".headRow",
+      ".body",
+      ".row",
+    ].filter((selector) =>
+      ["auto", "scroll", "hidden", "overlay"].includes(
+        declared(selector, "overflow") ?? ""
       )
+    )
     expect(scrolls).toEqual([".scroll"])
   })
 })

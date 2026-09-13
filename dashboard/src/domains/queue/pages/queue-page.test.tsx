@@ -131,14 +131,13 @@ function renderScreen() {
 }
 
 const find = (selector: string) => document.querySelector(selector)
-const all = (selector: string) => Array.from(document.querySelectorAll(selector))
+const all = (selector: string) =>
+  Array.from(document.querySelectorAll(selector))
 
 /** The screen once its one query has answered — both halves on the board. */
 async function boardReady() {
   renderScreen()
-  await waitFor(() =>
-    expect(all('[data-test="data-table"]')).toHaveLength(2)
-  )
+  await waitFor(() => expect(all('[data-test="data-table"]')).toHaveLength(2))
 }
 
 describe("the queue screen, end to end over the seeds", () => {
@@ -224,7 +223,9 @@ describe("the queue screen, end to end over the seeds", () => {
     // The chart's accessible name is the same reading in words, so the trend
     // is not a shape a screen reader cannot follow.
     expect(
-      find('[data-test="queue-depth"] [data-test="bar-series"]')?.getAttribute("aria-label")
+      find('[data-test="queue-depth"] [data-test="bar-series"]')?.getAttribute(
+        "aria-label"
+      )
     ).toContain("14 queued today")
   })
 })

@@ -23,7 +23,12 @@ vi.mock("@/domains/identity/api/queries", () => ({
 }))
 
 /** Empty-but-defined result — `auth.ts` only reads `.data`. */
-function emptyMeQuery(): { data: undefined; isPending: boolean; isError: boolean; isSuccess: boolean } {
+function emptyMeQuery(): {
+  data: undefined
+  isPending: boolean
+  isError: boolean
+  isSuccess: boolean
+} {
   return {
     data: undefined,
     isPending: false,
@@ -86,7 +91,11 @@ describe("useAuthState — mock mode", () => {
 describe("useAuthState — real mode", () => {
   it("subscribes to useCurrentUserQuery and returns its data", async () => {
     vi.doMock("@/shared/config/env", () => ({
-      env: { useMock: false, apiBaseUrl: "http://localhost:17173", oidcProvider: "comuki" },
+      env: {
+        useMock: false,
+        apiBaseUrl: "http://localhost:17173",
+        oidcProvider: "comuki",
+      },
     }))
     vi.resetModules()
     useCurrentUserQuery.mockReturnValue({
@@ -109,7 +118,11 @@ describe("useAuthState — real mode", () => {
 
   it("returns a null user while the query is loading", async () => {
     vi.doMock("@/shared/config/env", () => ({
-      env: { useMock: false, apiBaseUrl: "http://localhost:17173", oidcProvider: null },
+      env: {
+        useMock: false,
+        apiBaseUrl: "http://localhost:17173",
+        oidcProvider: null,
+      },
     }))
     vi.resetModules()
     useCurrentUserQuery.mockReturnValue({

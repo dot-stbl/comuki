@@ -21,7 +21,9 @@ export const observabilityQueryKey = ["observability"] as const
  */
 async function getObservability(): Promise<ObservabilitySnapshot> {
   if (!env.useMock) {
-    throw new Error("observability API not implemented — set VITE_USE_MOCK=true")
+    throw new Error(
+      "observability API not implemented — set VITE_USE_MOCK=true"
+    )
   }
   return OBSERVABILITY_SEED
 }

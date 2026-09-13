@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import { toTask } from "@/domains/tasks/api/mappers"
-import { uniqueTaskApps, uniqueTaskProjects } from "@/domains/tasks/model/filter-tasks"
+import {
+  uniqueTaskApps,
+  uniqueTaskProjects,
+} from "@/domains/tasks/model/filter-tasks"
 import { createTaskColumns } from "@/domains/tasks/ui/tasks-columns"
 import { PROJECTS_SEED, SESSION_USER_SEED, TASKS_SEED } from "@/shared/api/mock"
 import type { Session } from "@/shared/session"
@@ -34,8 +37,7 @@ const columns = createTaskColumns({
 
 function filterOf(id: string): DataColumnFilter<never> | undefined {
   return dataFilterSpecs(columns).find((entry) => entry.id === id)?.filter as
-    | DataColumnFilter<never>
-    | undefined
+    DataColumnFilter<never> | undefined
 }
 
 describe("the backlog's search filter", () => {

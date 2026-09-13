@@ -43,7 +43,7 @@ const envSchema = z.object({
     .optional()
     .transform(
       (value) =>
-        value === undefined || value === "" || value === "true" || value === "1",
+        value === undefined || value === "" || value === "true" || value === "1"
     ),
   /** Where the platform's source lives — see `REPO_URL_DEFAULT`. */
   VITE_REPO_URL: z.string().optional(),

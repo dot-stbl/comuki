@@ -89,12 +89,30 @@ export const Age: Story = {
   render: () => (
     <Column
       rows={[
-        { note: "queued 8 seconds — the system working", cell: <AgeMeter item={item("queued", 8)} /> },
-        { note: "queued a minute — no longer instant", cell: <AgeMeter item={item("queued", 74)} /> },
-        { note: "queued 11 minutes — nothing is going to claim this", cell: <AgeMeter item={item("queued", 664)} /> },
-        { note: "queued 43 minutes — the profile matches no worker at all", cell: <AgeMeter item={item("queued", 2612)} /> },
-        { note: "running 20 minutes — its worker's lease answers for this one", cell: <AgeMeter item={item("running", 1186)} /> },
-        { note: "blocked 3 hours — waiting on its own run, and fine", cell: <AgeMeter item={item("blocked", 13260)} /> },
+        {
+          note: "queued 8 seconds — the system working",
+          cell: <AgeMeter item={item("queued", 8)} />,
+        },
+        {
+          note: "queued a minute — no longer instant",
+          cell: <AgeMeter item={item("queued", 74)} />,
+        },
+        {
+          note: "queued 11 minutes — nothing is going to claim this",
+          cell: <AgeMeter item={item("queued", 664)} />,
+        },
+        {
+          note: "queued 43 minutes — the profile matches no worker at all",
+          cell: <AgeMeter item={item("queued", 2612)} />,
+        },
+        {
+          note: "running 20 minutes — its worker's lease answers for this one",
+          cell: <AgeMeter item={item("running", 1186)} />,
+        },
+        {
+          note: "blocked 3 hours — waiting on its own run, and fine",
+          cell: <AgeMeter item={item("blocked", 13260)} />,
+        },
       ]}
     />
   ),
@@ -105,10 +123,22 @@ export const Lease: Story = {
   render: () => (
     <Column
       rows={[
-        { note: "idle — no lease to hold", cell: <LeaseMeter worker={worker(null, 1)} /> },
-        { note: "three minutes left, heartbeating", cell: <LeaseMeter worker={worker(214, 3)} /> },
-        { note: "seconds left, still heartbeating — routine", cell: <LeaseMeter worker={worker(18, 4)} /> },
-        { note: "no heartbeat for over a minute — the item is stuck until it lapses", cell: <LeaseMeter worker={worker(6, 74)} /> },
+        {
+          note: "idle — no lease to hold",
+          cell: <LeaseMeter worker={worker(null, 1)} />,
+        },
+        {
+          note: "three minutes left, heartbeating",
+          cell: <LeaseMeter worker={worker(214, 3)} />,
+        },
+        {
+          note: "seconds left, still heartbeating — routine",
+          cell: <LeaseMeter worker={worker(18, 4)} />,
+        },
+        {
+          note: "no heartbeat for over a minute — the item is stuck until it lapses",
+          cell: <LeaseMeter worker={worker(6, 74)} />,
+        },
       ]}
     />
   ),

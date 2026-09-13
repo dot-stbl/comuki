@@ -27,7 +27,11 @@ export function LiveBadge() {
       <span data-test="live-badge">
         <StatusBadge
           status={
-            status === "live" ? "success" : status === "polling" ? "queued" : "waiting"
+            status === "live"
+              ? "success"
+              : status === "polling"
+                ? "queued"
+                : "waiting"
           }
           size="sm"
         >

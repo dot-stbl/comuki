@@ -18,7 +18,10 @@
  *
  * Fail-open: malformed stdin or an unrecognized payload shape allows the
  * call — a broken gate must not brick the developer's session; stderr
- * carries a note when that happens.
+ * carries a note when that happens (`GateDecision.failOpen` is what makes
+ * that allow distinguishable from the ordinary "no lock matched" one, which
+ * stays silent). Claude Code shows hook stderr on a non-blocking exit 0, so
+ * the note reaches the developer without touching the tool call.
  */
 import {
   BLOCKED_TOOL_TARGETS,
@@ -32,6 +35,13 @@ export interface GateDecision {
   readonly decision: "allow" | "deny"
   readonly reason: string
   readonly ruleId?: string
+  /**
+   * Set only on the fail-open allow — the gate could not read the payload
+   * and let the call through rather than brick the session. Without this
+   * flag `emitDecision` cannot tell it from a clean allow, and the reason
+   * is dropped: a security gate opening silently on malformed input.
+   */
+  readonly failOpen?: boolean
 }
 
 export interface GateOutput {
@@ -88,6 +98,7 @@ export function decideLockGate(
     return {
       decision: "allow",
       reason: "lock gate: unparseable hook payload, failing open",
+      failOpen: true,
     }
   }
 
@@ -229,7 +240,13 @@ export function hookStyleFromEnv(value: string | undefined): HookStyle {
 /** The one emitter both output shapes live behind. */
 export function emitDecision(gate: GateDecision, style: HookStyle): GateOutput {
   if (gate.decision === "allow") {
-    return { exitCode: 0, stdout: "", stderr: "" }
+    // An ordinary allow is silent; the fail-open allow is not. Exit 0 either
+    // way — the note is a report, not a block.
+    return {
+      exitCode: 0,
+      stdout: "",
+      stderr: gate.failOpen === true ? gate.reason : "",
+    }
   }
   if (style === "exit") {
     return { exitCode: 2, stdout: "", stderr: gate.reason }

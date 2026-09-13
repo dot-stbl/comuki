@@ -178,3 +178,37 @@ jobs:
 
       - name: Unit tests
         run: bun run test
+
+  # The three TS agent packages (~2.7k lines) were in no job at all — among
+  # them comuki-dev-sdk's PreToolUse lock gate, the thing that decides whether
+  # an agent's tool call is allowed. A clean checkout has no agents/node_modules,
+  # so this installs before it can do anything else.
+  build-agents:
+    name: build agents (ts sdks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: agents
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      # agents/bun.lock IS committed (agents/.gitignore un-ignores it), so the
+      # resolution is pinned and the install must fail rather than drift.
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Format check
+        run: bun run format:check
+
+      - name: Unit tests
+        run: bun test

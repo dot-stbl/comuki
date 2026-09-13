@@ -9,6 +9,9 @@
     <!-- Comuki build metadata (issue #56): git sha + UTC build date + mode
          in the binary; surfaced by <binary> version. -->
     <GenerateComukiBuildMetadata>true</GenerateComukiBuildMetadata>
+    <!-- 0.0.0 = unstamped local build. Release builds override via
+         -p:VersionPrefix=<semver> (COMUKI_VERSION build arg, RELEASE.md). -->
+    <VersionPrefix>0.0.0</VersionPrefix>
   </PropertyGroup>
 
   <ItemGroup>

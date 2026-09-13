@@ -9,6 +9,10 @@
          in the binary; surfaced by `comuki version`, doctor and
          /api/v1/version. -->
     <GenerateComukiBuildMetadata>true</GenerateComukiBuildMetadata>
+    <!-- 0.0.0 = unstamped local build (worker-image pinning falls back to
+         `latest`). Release builds override via -p:VersionPrefix=<semver>
+         (COMUKI_VERSION build arg of the Dockerfiles, see RELEASE.md). -->
+    <VersionPrefix>0.0.0</VersionPrefix>
     <!--
       Build-time OpenAPI document generation (Microsoft.Extensions.ApiDescription.Server).
       Resolved relative to the csproj: platform/src/host/Comuki.Host

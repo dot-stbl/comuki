@@ -5,6 +5,7 @@ using Comuki.Engine.Compute.Security;
 using Comuki.Engine.Compute.Security.Stores;
 using Comuki.Engine.Compute.Settings;
 using Comuki.Engine.Compute.Supervisor;
+using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.Compute;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -77,7 +78,9 @@ public sealed class ScaleSupervisorCycleShould
             .Returns(_ => new ComputeCapacity(FreeSlots: freeSlots, RunningWorkers: runningHandles.Count));
     }
 
-    private SupervisorHarness CreateHarness(ScaleSupervisorOptions? options = null)
+    private SupervisorHarness CreateHarness(
+        ScaleSupervisorOptions? options = null,
+        ComukiBuildInformation? buildInformation = null)
     {
         options ??= new ScaleSupervisorOptions
         {
@@ -89,6 +92,7 @@ public sealed class ScaleSupervisorCycleShould
         var pool = new WorkerPoolState(computeProvider, clock);
         var cycle = new ScaleSupervisorCycle(
             scaleOptions,
+            buildInformation ?? ComukiBuildInformation.Unknown,
             backlogReader,
             pool,
             tokenIssuer,
@@ -115,7 +119,8 @@ public sealed class ScaleSupervisorCycleShould
 
         startedRequests.Count.ShouldBe(3);
         startedRequests.ShouldAllBe(request => request.ProjectId == projectId && request.ProfileKey == "implement");
-        startedRequests.ShouldAllBe(request => request.Image == "ghcr.io/comuki/worker:latest");
+        // Untagged default image + unstamped build (Unknown) → latest.
+        startedRequests.ShouldAllBe(request => request.Image == "ghcr.io/dot-stbl/comuki-worker:latest");
         startedRequests.ShouldAllBe(request => request.ProfilesGitRef == "main");
         foreach (var request in startedRequests)
         {
@@ -204,6 +209,17 @@ public sealed class ScaleSupervisorCycleShould
         await harness.Cycle.RunAsync(TestContext.Current.CancellationToken);
 
         stoppedWorkers.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "When pin Untagged Default Image To Host Build Version, then test passes")]
+    public async Task PinUntaggedDefaultImageToHostBuildVersionAsync()
+    {
+        var harness = CreateHarness(buildInformation: new ComukiBuildInformation("0.3.1", "abc1234", "2026-09-14", "release"));
+        Queue(1);
+
+        await harness.Cycle.RunAsync(TestContext.Current.CancellationToken);
+
+        startedRequests.ShouldHaveSingleItem().Image.ShouldBe("ghcr.io/dot-stbl/comuki-worker:0.3.1");
     }
 
     [Fact(DisplayName = "When respect Project Override For Cap Image And Ref Async, then test passes")]

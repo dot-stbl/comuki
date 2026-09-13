@@ -6,6 +6,7 @@ using Comuki.Engine.Compute.Providers.Kubernetes;
 using Comuki.Engine.Compute.Security.Stores;
 using Comuki.Engine.Compute.Settings;
 using Comuki.Engine.Compute.Supervisor;
+using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.Compute;
 using Docker.DotNet;
 using k8s;
@@ -70,6 +71,10 @@ public static class ComputeInstaller
             .ValidateOnStart();
 
         services.TryAddSingleton(TimeProvider.System);
+
+        // Build identity of the running host: the source the supervisor's
+        // worker-image pinning (WorkerImagePinning) derives the tag from.
+        services.AddSingleton(ComukiBuildInfo.Read());
 
         services.AddSingleton<IWorkerTokenStore, InMemoryWorkerTokenStore>();
         services.AddSingleton<IDockerClient>(static _ => new DockerClientConfiguration().CreateClient());

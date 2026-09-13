@@ -28,7 +28,7 @@ Comuki **не пишет свой код сам** — это инструмен�
 |-------|------|------------|
 | `platform/` | C# / .NET 10 | Оркестратор, proxy (YARP), knowledge, rules, Translator |
 | `agents/` | TypeScript | `comuki-agent-core` + `comuki-worker-sdk` (pi) + `comuki-dev-sdk` (Claude Code) |
-| `dashboard/` | React 19 + Vite + shadcn | Operational UI |
+| `dashboard/` | React 19 + Vite + собственный кит (CSS Modules на токенах) | Operational UI |
 | `control-plane/` | markdown / конфиги | Воркер-правила и скиллы роя (не код продукта) |
 | `deploy/` | Docker Compose | postgres+pgvector, minio, nexus, victoria |
 | `tests/` | C# | Unit / integration / architecture tests |
@@ -49,7 +49,7 @@ Comuki **не пишет свой код сам** — это инструмен�
 | Фазы / roadmap | [`.agents/ROADMAP.md`](.agents/ROADMAP.md) |
 | Архитектура / почему так | [`.agents/docs/architecture/`](.agents/docs/architecture/) |
 | Структура репо / слои C# | [`.agents/docs/architecture/comuki-project-structure.md`](.agents/docs/architecture/comuki-project-structure.md) |
-| Design system | [`.agents/docs/design-system/`](.agents/docs/design-system/) |
+| Визуальный мир / токены | [`DESIGN.md`](DESIGN.md) + [`dashboard/src/app/styles/tokens.css`](dashboard/src/app/styles/tokens.css) |
 | C# style / DI / testing | [`.agents/rules/coding/`](.agents/rules/coding/) |
 | Build / commits / scripts | [`.agents/rules/process/`](.agents/rules/process/) |
 | Текущая фаза (контекст) | [`.agents/phases/`](.agents/phases/) |
@@ -95,9 +95,14 @@ Milestone **v1**, phase **3 complete** (design system + testing infra).
    physical path. На Windows `.NET 10` `dotnet sln add --solution-folder`
    иногда схлопывает пути — после add проверяй `.slnx` глазами.
 
-8. **Design tokens** — Comuki palette (slate-blue + cool-black), IBM Plex
-   Mono, `--radius: 0.375rem`, 6 status tokens. Источник:
-   `.agents/docs/design-system/Comuki Design System.md`.
+8. **Визуальный мир — [`DESIGN.md`](DESIGN.md) в корне.** Палитра, темы,
+   типографика, формы, статусы — только оттуда; токены в
+   [`dashboard/src/app/styles/tokens.css`](dashboard/src/app/styles/tokens.css).
+   Здесь их **не пересказываем** — два пересказа разъезжаются.
+   UI-библиотеки нет: shadcn вырезан целиком, кит `@/shared/ui` —
+   единственный источник примитивов.
+   [`.agents/docs/design-system/`](.agents/docs/design-system/) — **прежний**
+   визуальный мир, историческая справка, не источник решений.
 
 9. **Port pool 17000–17200 — обязательно.** Случайные порты запрещены.
    Dashboard = **17173** (`strictPort`). Таблица и резервы:
@@ -111,7 +116,7 @@ Milestone **v1**, phase **3 complete** (design system + testing infra).
 # Backend
 dotnet build comuki.slnx -c Debug
 dotnet format comuki.slnx --severity hidden
-dotnet run --project tests/Comuki.Platform.Orchestration.Unit.Lease
+dotnet run --project tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine
 
 # Frontend (http://localhost:17173 — port pool, not 5173)
 cd dashboard && bun install

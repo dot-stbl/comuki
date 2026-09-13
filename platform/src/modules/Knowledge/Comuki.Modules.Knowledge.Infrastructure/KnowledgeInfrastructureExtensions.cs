@@ -1,4 +1,5 @@
 using Comuki.Modules.Knowledge.Application;
+using Comuki.Modules.Knowledge.Application.Documents;
 using Comuki.Modules.Knowledge.Domain;
 using Comuki.Modules.Knowledge.Infrastructure.Configuration;
 using Comuki.Modules.Knowledge.Infrastructure.Embeddings;
@@ -81,8 +82,10 @@ public static class KnowledgeInfrastructureExtensions
 
         services.AddSingleton<PgKnowledgeIngestor>();
         services.AddSingleton<PgKnowledgeSearcher>();
+        services.AddSingleton<PgKnowledgeDocumentReader>();
         services.AddSingleton<IKnowledgeIngestor>(static sp => sp.GetRequiredService<PgKnowledgeIngestor>());
         services.AddSingleton<IKnowledgeSearcher>(static sp => sp.GetRequiredService<PgKnowledgeSearcher>());
+        services.AddSingleton<IKnowledgeDocumentReader>(static sp => sp.GetRequiredService<PgKnowledgeDocumentReader>());
 
         services.AddHostedService<KnowledgeIngestBackgroundService>();
 

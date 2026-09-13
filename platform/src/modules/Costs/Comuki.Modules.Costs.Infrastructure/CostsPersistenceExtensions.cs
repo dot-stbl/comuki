@@ -1,3 +1,4 @@
+using Comuki.Modules.Costs.Application.Ports;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence.Stores;
 using Comuki.Shared.Contracts.Usage;
@@ -29,6 +30,7 @@ public static class CostsPersistenceExtensions
         services.TryAddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IUsageEventStore, EfUsageEventStore>();
+        services.AddSingleton<IPlatformCostAggregator, EfPlatformCostAggregator>();
 
         return services;
     }

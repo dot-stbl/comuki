@@ -141,4 +141,40 @@ public static class ApiRoutes
 
     /// <summary>One scheduled job by id — read, patch or delete.</summary>
     public const string SchedulerJob = "/api/v1/projects/{projectId:guid}/scheduled-jobs/{jobId:guid}";
+
+    /// <summary>Worker registrations as the dashboard sees them (derived from live leases + the journal).</summary>
+    public const string Workers = "/api/v1/workers";
+
+    /// <summary>One worker registration by id — derived detail with the live work item.</summary>
+    public const string WorkerById = "/api/v1/workers/{workerId:guid}";
+
+    /// <summary>Mark one worker to stop claiming new items (drain).</summary>
+    public const string WorkerDrain = "/api/v1/workers/{workerId:guid}/drain";
+
+    /// <summary>Tear one worker's runtime down (force stop).</summary>
+    public const string WorkerStop = "/api/v1/workers/{workerId:guid}/stop";
+
+    /// <summary>Read-only compute snapshot: configured provider, scale defaults and per-project pool counts.</summary>
+    public const string Compute = "/api/v1/compute";
+
+    /// <summary>Knowledge documents library — paged listing of ingested sources.</summary>
+    public const string KnowledgeDocuments = "/api/v1/knowledge/documents";
+
+    /// <summary>Knowledge corpus search — pgvector cosine hits over embedded chunks.</summary>
+    public const string KnowledgeSearch = "/api/v1/knowledge/search";
+
+    /// <summary>Platform settings snapshot — existing options surfaced read-only.</summary>
+    public const string Settings = "/api/v1/settings";
+
+    /// <summary>Platform-wide cost rollup (all projects) over a day window.</summary>
+    public const string Costs = "/api/v1/costs";
+
+    /// <summary>Proxy virtual-key catalogue (admin) — fingerprinted, never the raw tokens.</summary>
+    public const string ProxyKeys = "/api/v1/proxy/keys";
+
+    /// <summary>One proxy virtual key by fingerprint.</summary>
+    public const string ProxyKey = "/api/v1/proxy/keys/{keyId}";
+
+    /// <summary>Revoke one proxy virtual key by fingerprint.</summary>
+    public const string ProxyKeyRevoke = "/api/v1/proxy/keys/{keyId}/revoke";
 }

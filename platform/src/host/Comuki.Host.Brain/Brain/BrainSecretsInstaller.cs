@@ -74,6 +74,7 @@ public static class BrainSecretsInstaller
         // cache (issue #52 §Design — remote default 60s).
         services.AddOptions<VaultSecretOptions>()
             .Bind(configuration.GetSection(VaultSecretOptions.SectionName))
+            .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<VaultSecretOptions>, VaultSecretOptionsValidator>();
         services.AddMemoryCache();

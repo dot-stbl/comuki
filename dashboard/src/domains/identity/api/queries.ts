@@ -301,10 +301,12 @@ export function useInviteUserMutation() {
         createSeedUser(input)
         return
       }
+      // No password for either arrival: the host lands the account
+      // password-less and the credential is set out-of-band (bootstrap link).
       await postApiV1Users({
         email: input.email,
         displayName: input.name,
-        password: input.invite ? null : null,
+        password: null,
       })
     },
     onSuccess: async () => {

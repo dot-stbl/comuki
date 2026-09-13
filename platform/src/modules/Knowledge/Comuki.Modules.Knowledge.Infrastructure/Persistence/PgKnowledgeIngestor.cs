@@ -40,30 +40,11 @@ public sealed class PgKnowledgeIngestor(
         string text,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            throw new InvalidOperationException("title required");
-        }
-
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            throw new InvalidOperationException("source required");
-        }
-
-        if (string.IsNullOrWhiteSpace(sourceRef))
-        {
-            throw new InvalidOperationException("sourceRef required");
-        }
-
-        if (string.IsNullOrWhiteSpace(mimeType))
-        {
-            throw new InvalidOperationException("mimeType required");
-        }
-
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            throw new InvalidOperationException("text required");
-        }
+        KnowledgeIngestGuards.RequireField(title, "title");
+        KnowledgeIngestGuards.RequireField(source, "source");
+        KnowledgeIngestGuards.RequireField(sourceRef, "sourceRef");
+        KnowledgeIngestGuards.RequireField(mimeType, "mimeType");
+        KnowledgeIngestGuards.RequireField(text, "text");
 
         var sourceKind = SourceKindKeys.ParseRequired(source);
         var targetTokens = ingestOptions.Value.ChunkTokenTarget;
@@ -164,5 +145,24 @@ public sealed class PgKnowledgeIngestor(
         probe.CommandText = EmbeddingSql.EmbeddingColumnExistsSql;
         var result = await probe.ExecuteScalarAsync(cancellationToken);
         return result is bool available && available;
+    }
+}
+
+/// <summary>
+/// Input-contract guards for <see cref="PgKnowledgeIngestor.IngestAsync"/> —
+/// one validator replacing the five copy-pasted whitespace blocks, keeping
+/// the no-DB-touched-before-validation guarantee the unit suite asserts.
+/// </summary>
+file static class KnowledgeIngestGuards
+{
+    /// <summary>Throws when a required ingest string is null / empty / whitespace.</summary>
+    /// <param name="value">The ingest field value.</param>
+    /// <param name="fieldName">Wire name of the field — carried into the exception message.</param>
+    public static void RequireField(string value, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"{fieldName} required");
+        }
     }
 }

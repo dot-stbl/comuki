@@ -153,6 +153,7 @@ internal static class HostComposer
         // mirrors the same pattern.
         builder.Services.AddOptions<VaultSecretOptions>()
             .Bind(builder.Configuration.GetSection(VaultSecretOptions.SectionName))
+            .ValidateDataAnnotations()
             .ValidateOnStart();
         builder.Services.AddSingleton<IValidateOptions<VaultSecretOptions>, VaultSecretOptionsValidator>();
         builder.Services.AddMemoryCache();
@@ -201,6 +202,7 @@ internal static class HostComposer
         builder.Services.AddScoped<IRunsReader, OrchestrationRunsReader>();
         builder.Services.AddScoped<RunsListHandler>();
         builder.Services.AddScoped<GetRunDetailHandler>();
+        builder.Services.AddScoped<WorkersReadQuery>();
         builder.Services.AddScoped<WorkersReadHandler>();
         builder.Services.AddScoped<IApproveRunPort, HostApproveRunAdapter>();
         builder.Services.AddScoped<ICancelRunPort, HostCancelRunAdapter>();

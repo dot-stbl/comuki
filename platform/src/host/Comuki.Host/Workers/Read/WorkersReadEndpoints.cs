@@ -14,7 +14,6 @@ namespace Comuki.Host.Workers.Read;
 public static class WorkersReadEndpoints
 {
     /// <summary>Maps the dashboard workers endpoints onto the app.</summary>
-    /// <param name="app"></param>
     public static IEndpointRouteBuilder MapWorkersReadEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet(ApiRoutes.Workers, ListAsync).WithTags("Workers");

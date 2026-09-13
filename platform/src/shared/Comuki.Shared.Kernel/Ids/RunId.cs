@@ -5,7 +5,7 @@ namespace Comuki.Shared.Kernel.Ids;
 /// Entity ids are UUIDv7 (<see cref="Guid.CreateVersion7()"/>): time-ordered,
 /// stored as Postgres <c>uuid</c>, exposed to the API as strings.
 /// </summary>
-/// <param name="Value"></param>
+/// <param name="Value">The underlying UUIDv7 guid — time-ordered, wire-exposed as a string.</param>
 public readonly record struct RunId(Guid Value)
 {
     public static RunId New()

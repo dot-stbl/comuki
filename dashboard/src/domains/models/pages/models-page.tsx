@@ -18,6 +18,7 @@ import { ProxyPanel } from "@/domains/models/ui/proxy-panel"
 import { RoleRoutingPanel } from "@/domains/models/ui/role-routing-panel"
 import { VirtualKeysPanel } from "@/domains/models/ui/virtual-keys-panel"
 import { env } from "@/shared/config/env"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { can, useSession } from "@/shared/session"
 import { Button, ConfirmDialog, Section, Tooltip } from "@/shared/ui"
 
@@ -131,9 +132,15 @@ export function ModelsPage() {
 
   const revokingId = revoke.isPending ? (revoke.variables ?? null) : null
   const failure = revoke.error ?? setProxy.error
+  /* The key catalogue is the screen's own half of the wire, and its failure
+     is the screen's failure: an empty table here would read as "no keys",
+     which is a different (and quieter) lie than the one an error panel
+     tells. So the sections stay away until the keys answer too. */
+  const keysFailed = !env.useMock && proxyKeys.isError
   const ready =
     !isLoading &&
     !isError &&
+    !keysFailed &&
     proxy !== undefined &&
     (env.useMock || !proxyKeys.isLoading)
 
@@ -192,11 +199,18 @@ export function ModelsPage() {
           </div>
         ) : null}
 
-        {isError ? (
+        {isError || keysFailed ? (
           <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>Couldn&apos;t load models</p>
+            <p className={styles.stateTitle}>
+              {isError
+                ? "Couldn't load models"
+                : "Couldn't load the spend keys"}
+            </p>
             <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
+              {requestFailureMessage(
+                error ?? proxyKeys.error,
+                "Unknown error",
+              )}
             </p>
             <span>
               <Tooltip content="Retry">
@@ -206,6 +220,7 @@ export function ModelsPage() {
                   aria-label="Retry"
                   onClick={() => {
                     void refetch()
+                    void proxyKeys.refetch()
                   }}
                 >
                   <RotateCw aria-hidden="true" />

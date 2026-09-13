@@ -3,6 +3,9 @@ using Comuki.Modules.Knowledge.Domain;
 using Comuki.Modules.Knowledge.Infrastructure.Chunking;
 using Comuki.Modules.Knowledge.Infrastructure.Configuration;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence.Stores;
+using Comuki.Shared.Kernel.Exceptions;
+using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
@@ -21,12 +24,26 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Persistence;
 /// responsibility — <see cref="IKnowledgeIngestor.IngestAsync"/> opens
 /// its own scope via the <see cref="IDbContextFactory{T}"/>), so a
 /// partial failure surfaces to the caller as an exception with no
-/// half-written rows.
+/// half-written rows. The write side has no EF query filter to lean on
+/// either (inserts are never filtered by <c>HasQueryFilter</c>, even for
+/// the entities it does model) — <see cref="IsProjectWritable"/> is the
+/// only thing standing between a caller and another project's corpus.
 /// </summary>
+/// <param name="contextFactory"></param>
+/// <param name="embedder"></param>
+/// <param name="ingestOptions"></param>
+/// <param name="scopeAccessor">
+/// The ambient caller scope. Required, not optional: like
+/// <see cref="PgKnowledgeSearcher"/>, this class is only ever resolved
+/// through the host DI container.
+/// </param>
+/// <param name="clock"></param>
+/// <param name="logger"></param>
 public sealed class PgKnowledgeIngestor(
     IDbContextFactory<KnowledgeDbContext> contextFactory,
     IEmbeddingClient embedder,
     IOptions<KnowledgeIngestOptions> ingestOptions,
+    ISubjectScopeAccessor scopeAccessor,
     TimeProvider clock,
     ILogger<PgKnowledgeIngestor> logger) : IKnowledgeIngestor
 {
@@ -47,6 +64,20 @@ public sealed class PgKnowledgeIngestor(
         KnowledgeIngestGuards.RequireField(text, "text");
 
         var sourceKind = SourceKindKeys.ParseRequired(source);
+
+        if (!IsProjectWritable(scopeAccessor.Current, projectId))
+        {
+            // Unlike a read, a write-side refusal is safe to make loud:
+            // there is no "does the project exist" question to avoid
+            // answering, only "is this subject allowed to write here" —
+            // so this maps to 403, not a silent no-op.
+            throw new ProviderForbiddenException(
+                code: "knowledge.project_out_of_scope",
+                message: projectId is { } target
+                    ? $"the current subject may not ingest knowledge into project '{target}'"
+                    : "the current subject may not ingest a global (cross-project) knowledge document");
+        }
+
         var targetTokens = ingestOptions.Value.ChunkTokenTarget;
         var now = clock.GetUtcNow();
 
@@ -145,6 +176,24 @@ public sealed class PgKnowledgeIngestor(
         probe.CommandText = EmbeddingSql.EmbeddingColumnExistsSql;
         var result = await probe.ExecuteScalarAsync(cancellationToken);
         return result is bool available && available;
+    }
+
+    /// <summary>
+    /// Whether the current scope may ingest into <paramref name="projectId"/>.
+    /// An unrestricted caller (platform-scope role, or a system consumer)
+    /// may write anywhere, including the global corpus. A restricted
+    /// caller may only write into a project it is assigned to; it may
+    /// never write the global corpus (<paramref name="projectId"/> null) —
+    /// that corpus is visible to every subject platform-wide, so writing
+    /// it is reserved for an unrestricted caller, the same way reading it
+    /// is unconditional in <c>KnowledgeDbContext</c>'s query filter.
+    /// </summary>
+    /// <param name="scope"></param>
+    /// <param name="projectId"></param>
+    private static bool IsProjectWritable(SubjectScope scope, Guid? projectId)
+    {
+        return scope.Unrestricted
+            || (projectId is { } target && scope.ProjectIds.Contains(new ProjectId(target)));
     }
 }
 

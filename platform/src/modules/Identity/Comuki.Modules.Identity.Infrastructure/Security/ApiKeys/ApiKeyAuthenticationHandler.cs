@@ -5,6 +5,7 @@ using Comuki.Modules.Identity.Application.Options;
 using Comuki.Modules.Identity.Application.Ports;
 using Comuki.Modules.Identity.Domain.ApiKeys;
 using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ namespace Comuki.Modules.Identity.Infrastructure.Security.ApiKeys;
 /// <param name="options"></param>
 /// <param name="loggerFactory"></param>
 /// <param name="encoder"></param>
+/// <param name="scopeAccessor"></param>
 /// <param name="apiKeyStore"></param>
 /// <param name="userStore"></param>
 /// <param name="hasher"></param>
@@ -39,6 +41,7 @@ public sealed class ApiKeyAuthenticationHandler(
     IOptionsMonitor<ApiKeySchemeOptions> options,
     ILoggerFactory loggerFactory,
     UrlEncoder encoder,
+    ISubjectScopeAccessor scopeAccessor,
     IApiKeyStore apiKeyStore,
     IUserAccountStore userStore,
     ApiKeyHasher hasher,
@@ -81,6 +84,14 @@ public sealed class ApiKeyAuthenticationHandler(
         {
             return AuthenticateResult.Fail("malformed api key");
         }
+
+        // Authentication runs before `SubjectScopeMiddleware`, so there is no
+        // subject yet — by definition, since deciding who the caller is what
+        // this handler is for. Both stores it reads are query-filtered, so
+        // without a system scope the key lookup matches nothing and every
+        // valid key is rejected as unknown. Held to the end of the method:
+        // the owner read and the last-used write are the same flow.
+        using var systemScope = scopeAccessor.AsSystem("api-key-auth");
 
         if (await apiKeyStore.FindByPrefixAsync(token.Prefix, Context.RequestAborted) is not { } apiKey)
         {

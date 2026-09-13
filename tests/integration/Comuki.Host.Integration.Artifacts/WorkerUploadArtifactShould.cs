@@ -1,3 +1,4 @@
+using Comuki.Host.Testing;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -52,7 +53,7 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
         .Build();
 
 #pragma warning disable CS0612
-    private readonly MinioContainer minio = new MinioBuilder("minio/minio:latest")
+    private readonly MinioContainer minio = new MinioBuilder(MinioImage.Reference)
         .WithUsername(MinioUser)
         .WithPassword(MinioPassword)
         .Build();

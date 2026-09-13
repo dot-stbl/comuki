@@ -1,12 +1,9 @@
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
-using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Auth;
+using Comuki.Host.Testing;
 using Comuki.Modules.Identity.Application.ApiKeys;
 using Comuki.Modules.Identity.Application.Assignments.Grant;
 using Comuki.Modules.Identity.Application.Authorization;
@@ -18,17 +15,13 @@ using Comuki.Modules.Identity.Domain.Roles;
 using Comuki.Modules.Identity.Domain.Scopes;
 using Comuki.Modules.Identity.Domain.Subjects;
 using Comuki.Modules.Identity.Domain.Users;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Application.Projects.Create;
 using Comuki.Modules.Projects.Application.Views;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -37,18 +30,18 @@ namespace Comuki.Host.Integration.Auth;
 
 /// <summary>
 /// Boots the real host composition (<see cref="HostComposer"/>) on a
-/// random loopback port against a migrated Testcontainers Postgres:
-/// both module contexts migrated, a temp control-plane root, a
-/// configured bootstrap admin. One browser-like client carries the
-/// cookie session; the client from <see cref="CreateApiKeyClient"/> is
+/// random loopback port against a migrated Testcontainers Postgres (every
+/// module context, via <see cref="HostDatabaseMigrator"/>), a temp
+/// control-plane root, a configured bootstrap admin. One browser-like
+/// client carries the cookie session; the client from <see cref="CreateApiKeyClient"/> is
 /// cookie-less for bearer flows.
 /// </summary>
 public sealed class HostAuthServer : IAsyncLifetime
 {
-    public const string BootstrapEmail = "bootstrap@comuki.test";
-    public const string BootstrapPassword = "bootstrap-pass-1";
+    public const string BootstrapEmail = TestBootstrapAdmin.Email;
+    public const string BootstrapPassword = TestBootstrapAdmin.Password;
 
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
+    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("pgvector/pgvector:pg16")
         .Build();
 
     private WebApplication application = null!;
@@ -62,74 +55,33 @@ public sealed class HostAuthServer : IAsyncLifetime
         await container.StartAsync(cancellationToken);
 
         var connectionString = container.GetConnectionString();
+        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
 
-        // The migrator's contract: both module contexts migrate the same
-        // database, each with its own migrations history table.
-        var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
-        await using var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options);
-        await orchestrationDb.Database.MigrateAsync(cancellationToken);
+        controlPlane = new TempControlPlaneRoot("auth");
+        controlPlane.Write("profiles", "implement.md", """
+            ---
+            name: implement
+            description: Implementation worker.
+            allowedTools: [Read, Write]
+            ---
 
-        var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-        await using var identityDb = new IdentityDbContext(identityOptions.Options);
-        await identityDb.Database.MigrateAsync(cancellationToken);
+            Body.
+            """);
+        controlPlane.WriteDefaultChatCommand();
 
-        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-        await using var projectsDb = new ProjectsDbContext(projectsOptions.Options);
-        await projectsDb.Database.MigrateAsync(cancellationToken);
-
-        controlPlane = new TempControlPlaneRoot();
-        controlPlane.WriteProfile();
-        controlPlane.WriteChatCommand();
-
-        var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions
-            {
-                ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
-                // Production env on purpose: Development turns on
-                // ValidateScopes and the intake installers currently
-                // register handlers as singletons over a scoped DbContext
-                // (pre-existing; HostChatServer does the same). The
-                // production-secret validator (issue #10 T11.4) is
-                // satisfied with non-dev-default secrets below.
-                EnvironmentName = Environments.Development, // test fixture — validator short-circuits on non-Production
-            });
-        builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
-        builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
-        builder.Logging.ClearProviders();
+        var builder = TestHostBuilder.Create(connectionString);
         builder.Logging.AddSimpleConsole(static options => options.IncludeScopes = true);
         builder.Configuration["ControlPlane:Root"] = controlPlane.Root;
-        builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
-        builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        TestBootstrapAdmin.Configure(builder.Configuration);
         // Lift the login bucket for the integration run — the test
         // suite logs in (bootstrap + per-test users) more than the
         // 10/min default. The rate-limit partition stays registered;
         // a high value makes it effectively a no-op.
         builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
-        // Artifacts module — non-dev-default secrets so the
-        // ProductionSecretValidator (issue #10 T11.4) passes through.
-        builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
-        builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
-        builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
-        builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
-
-        // Program wires orchestration persistence + queue before Compose (the
-        // worker runtime and the scoped reads below resolve the context);
-        // the scope fixture's run seeds and visibility probes need it too.
-        builder.Services
-            .AddOrchestrationPersistence(connectionString)
-            .AddOrchestrationQueue(builder.Configuration);
+        TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
-        await application.StartAsync(cancellationToken);
-
-        baseAddress = new Uri(
-            application.Services
-                .GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>()
-                .Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!
-                .Addresses.Single());
+        baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
     }
 
     /// <summary>Cookie-carrying client (login sessions); per test, so session state never leaks between tests.</summary>
@@ -165,10 +117,18 @@ public sealed class HostAuthServer : IAsyncLifetime
             .HandleAsync(new CreateUserCommand(email, email, password), TestContext.Current.CancellationToken);
     }
 
-    /// <summary>Grants a role to a subject at platform scope through the handler.</summary>
+    /// <summary>
+    /// Grants a role to a subject at platform scope through the handler —
+    /// as a system consumer, because the handler's duplicate guard reads
+    /// <c>RoleAssignments</c> (query-filtered) before this call ever
+    /// reaches an authenticated request path.
+    /// </summary>
     public async Task GrantPlatformRoleAsync(RoleSubject subject, Role role)
     {
         using var scope = application.Services.CreateScope();
+        using var systemScope = scope.ServiceProvider
+            .GetRequiredService<ISubjectScopeAccessor>()
+            .AsSystem("test-seeder");
 
         await scope.ServiceProvider.GetRequiredService<GrantRoleHandler>()
             .HandleAsync(
@@ -176,10 +136,17 @@ public sealed class HostAuthServer : IAsyncLifetime
                 TestContext.Current.CancellationToken);
     }
 
-    /// <summary>Grants a role to a subject on exactly one project through the handler.</summary>
+    /// <summary>
+    /// Grants a role to a subject on exactly one project through the
+    /// handler — as a system consumer, same rationale as
+    /// <see cref="GrantPlatformRoleAsync"/>.
+    /// </summary>
     public async Task GrantProjectRoleAsync(RoleSubject subject, Role role, ProjectId projectId)
     {
         using var scope = application.Services.CreateScope();
+        using var systemScope = scope.ServiceProvider
+            .GetRequiredService<ISubjectScopeAccessor>()
+            .AsSystem("test-seeder");
 
         await scope.ServiceProvider.GetRequiredService<GrantRoleHandler>()
             .HandleAsync(
@@ -241,8 +208,12 @@ public sealed class HostAuthServer : IAsyncLifetime
     public async Task<IReadOnlyList<Guid>> VisibleRunsAsync(RoleSubject subject)
     {
         var accessor = application.Services.GetRequiredService<ISubjectScopeAccessor>();
-        var authorization = await application.Services.GetRequiredService<IPermissionEvaluator>()
-            .EvaluateAsync(subject, TestContext.Current.CancellationToken);
+        SubjectAuthorization authorization;
+        using (accessor.AsSystem("permission-eval"))
+        {
+            authorization = await application.Services.GetRequiredService<IPermissionEvaluator>()
+                .EvaluateAsync(subject, TestContext.Current.CancellationToken);
+        }
 
         using var scope = application.Services.CreateScope();
         using (accessor.Begin(authorization.ToSubjectScope()))
@@ -261,8 +232,12 @@ public sealed class HostAuthServer : IAsyncLifetime
     public async Task<IReadOnlyList<Guid>> VisibleWorkItemsAsync(RoleSubject subject)
     {
         var accessor = application.Services.GetRequiredService<ISubjectScopeAccessor>();
-        var authorization = await application.Services.GetRequiredService<IPermissionEvaluator>()
-            .EvaluateAsync(subject, TestContext.Current.CancellationToken);
+        SubjectAuthorization authorization;
+        using (accessor.AsSystem("permission-eval"))
+        {
+            authorization = await application.Services.GetRequiredService<IPermissionEvaluator>()
+                .EvaluateAsync(subject, TestContext.Current.CancellationToken);
+        }
 
         using var scope = application.Services.CreateScope();
         using (accessor.Begin(authorization.ToSubjectScope()))
@@ -292,24 +267,22 @@ public sealed class HostAuthServer : IAsyncLifetime
             .SeedAsync(TestContext.Current.CancellationToken);
     }
 
-    /// <summary>Lists the active platform assignments of a subject.</summary>
+    /// <summary>
+    /// Lists the active platform assignments of a subject — as a system
+    /// consumer, because <c>RoleAssignments</c> is query-filtered and this
+    /// read never rides an authenticated request path.
+    /// </summary>
     public async Task<IReadOnlyList<string>> ActiveRoleKeysAsync(RoleSubject subject)
     {
         using var scope = application.Services.CreateScope();
+        using var systemScope = scope.ServiceProvider
+            .GetRequiredService<ISubjectScopeAccessor>()
+            .AsSystem("test-seeder");
+
         var assignments = await scope.ServiceProvider.GetRequiredService<IRoleAssignmentStore>()
             .ListActiveAsync(subject, TestContext.Current.CancellationToken);
 
         return [.. assignments.Select(static assignment => RoleKeys.Key(assignment.Role))];
-    }
-
-    private static int FreeTcpPort()
-    {
-        var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-
-        return port;
     }
 
     /// <inheritdoc />
@@ -318,51 +291,5 @@ public sealed class HostAuthServer : IAsyncLifetime
         await application.DisposeAsync();
         controlPlane.Dispose();
         await container.DisposeAsync();
-    }
-}
-
-/// <summary>Throwaway control-plane root with one profile and one chat command.</summary>
-internal sealed class TempControlPlaneRoot : IDisposable
-{
-    public string Root { get; } = Path.Combine(Path.GetTempPath(), "comuki-host-auth-" + Guid.NewGuid().ToString("N"));
-
-    public void WriteProfile()
-    {
-        Write("profiles", "implement.md", """
-            ---
-            name: implement
-            description: Implementation worker.
-            allowedTools: [Read, Write]
-            ---
-
-            Body.
-            """);
-    }
-
-    public void WriteChatCommand()
-    {
-        Write("chat-commands", "restart.md", """
-            ---
-            name: restart
-            description: Restart the current run.
-            ---
-
-            Body.
-            """);
-    }
-
-    public void Write(string folderName, string fileName, string content)
-    {
-        var directory = Path.Combine(Root, folderName);
-        Directory.CreateDirectory(directory);
-        File.WriteAllText(Path.Combine(directory, fileName), content, new UTF8Encoding(false));
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(Root))
-        {
-            Directory.Delete(Root, recursive: true);
-        }
     }
 }

@@ -34,7 +34,7 @@ public sealed class HostCancelRunAdapter(
     {
         using var systemScope = scopeAccessor.AsSystem("runs-cancel");
 
-        var run = await db.Runs.FirstOrDefaultAsync(r => r.Id == runId, cancellationToken) ?? throw new ProviderNotFoundException(
+        var run = await db.Runs.FirstOrDefaultAsync(run => run.Id == runId, cancellationToken) ?? throw new ProviderNotFoundException(
                 "run.not_found",
                 $"run '{runId.Value}' not found");
         if (!RunTransitions.IsLegal(run.Status, RunStatus.Cancelled))
@@ -50,17 +50,25 @@ public sealed class HostCancelRunAdapter(
         run.TransitionTo(RunStatus.Cancelled, now);
 
         var payload = JsonSerializer.Serialize(
-            new RunStatusChangedPayload(from.ToString(), RunStatus.Cancelled.ToString(), Actor: "operator", Reason: NormalizeReason(reason)),
+            new RunStatusChangedPayload(from.ToString(), RunStatus.Cancelled.ToString(), Actor: "operator", Reason: CancelRunReason.Normalize(reason)),
             JsonSerializerOptions.Web);
 
         db.RunEvents.Add(RunEvent.Create(runId, RunEventTypes.RunStatusChanged, payload, now));
 
         await db.SaveChangesAsync(cancellationToken);
     }
+}
 
+/// <summary>
+/// Reason-field normalisation for the cancel journal payload — isolated
+/// so the adapter holds only the transition + persistence flow
+/// (<c>code-shape.md</c> §1a).
+/// </summary>
+file static class CancelRunReason
+{
     /// <summary>Strips a whitespace-only / null reason to <c>null</c>; the jsonb field is then omitted.</summary>
     /// <param name="reason">User-supplied reason.</param>
-    private static string? NormalizeReason(string? reason)
+    public static string? Normalize(string? reason)
     {
         return string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
     }

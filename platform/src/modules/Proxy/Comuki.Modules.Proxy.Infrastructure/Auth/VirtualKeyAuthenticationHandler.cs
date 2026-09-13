@@ -9,19 +9,6 @@ using Microsoft.Extensions.Options;
 
 namespace Comuki.Modules.Proxy.Infrastructure.Auth;
 
-/// <summary>Stable claim names emitted by <see cref="VirtualKeyAuthenticationHandler"/>.</summary>
-public static class ProxyClaimNames
-{
-    /// <summary>Raw virtual-key token; the transformer reads it to swap in the upstream key.</summary>
-    public const string VirtualKey = "comuki.proxy.vkey";
-
-    /// <summary>Project the spend is attributed to.</summary>
-    public const string ProjectId = "comuki.proxy.project_id";
-
-    /// <summary>Configured upstream provider id (<c>openai</c> / <c>anthropic</c>).</summary>
-    public const string Provider = "comuki.proxy.provider";
-}
-
 /// <summary>
 /// Authentication scheme that turns <c>Authorization: Bearer vkey_xxx</c>
 /// into a <see cref="ClaimsPrincipal"/> the YARP transformer reads. The
@@ -59,14 +46,15 @@ public sealed class VirtualKeyAuthenticationHandler(
             return AuthenticateResult.NoResult();
         }
 
-        var requestedModel = ExtractRequestedModel();
-        var resolution = await resolver.ResolveAsync(token, requestedModel, Context.RequestAborted);
+        // No requested-model extraction yet — the resolver's model
+        // allow-list is skipped (null) until the body-parsing pass lands.
+        var resolution = await resolver.ResolveAsync(token, requestedModel: null, Context.RequestAborted);
         return resolution.Outcome switch
         {
             VirtualKeyResolver.ResolveOutcome.Missing => AuthenticateResult.Fail("invalid virtual key"),
             VirtualKeyResolver.ResolveOutcome.Expired => AuthenticateResult.Fail("virtual key expired"),
             VirtualKeyResolver.ResolveOutcome.ModelNotAllowed => AuthenticateResult.Fail("model not allowed for this virtual key"),
-            VirtualKeyResolver.ResolveOutcome.Resolved => AuthenticateResult.Success(BuildTicket(token, resolution.Key!)),
+            VirtualKeyResolver.ResolveOutcome.Resolved => AuthenticateResult.Success(VirtualKeyTickets.Build(token, resolution.Key!)),
             _ => AuthenticateResult.Fail("unknown virtual key resolution outcome"),
         };
     }
@@ -85,13 +73,19 @@ public sealed class VirtualKeyAuthenticationHandler(
         Response.StatusCode = StatusCodes.Status403Forbidden;
         return Task.CompletedTask;
     }
+}
 
-    private static string? ExtractRequestedModel()
-    {
-        return null;
-    }
-
-    private static AuthenticationTicket BuildTicket(string token, VirtualKey key)
+/// <summary>
+/// Builds the authenticated <see cref="ClaimsPrincipal"/> ticket for a
+/// resolved virtual key — isolated so the handler holds only the
+/// authentication flow (<c>code-shape.md</c> §1a).
+/// </summary>
+file static class VirtualKeyTickets
+{
+    /// <summary>Builds the ticket carrying the claim set the YARP transformer reads.</summary>
+    /// <param name="token">Raw virtual-key bearer token.</param>
+    /// <param name="key">The resolved key (project, upstream provider).</param>
+    public static AuthenticationTicket Build(string token, VirtualKey key)
     {
         var claims = new List<Claim>
         {
@@ -100,7 +94,7 @@ public sealed class VirtualKeyAuthenticationHandler(
             new(ProxyClaimNames.Provider, key.Upstream.Provider),
             new(ClaimTypes.NameIdentifier, key.ProjectId.Value.ToString()),
         };
-        var identity = new ClaimsIdentity(claims, SchemeName);
-        return new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName);
+        var identity = new ClaimsIdentity(claims, VirtualKeyAuthenticationHandler.SchemeName);
+        return new AuthenticationTicket(new ClaimsPrincipal(identity), VirtualKeyAuthenticationHandler.SchemeName);
     }
 }

@@ -33,11 +33,11 @@ namespace Comuki.Host.Brain.Brain;
 /// </summary>
 /// <param name="modelConfig">Per-call model resolution — endpoint / API key / model ids.</param>
 /// <param name="chatFactory">Builds the <c>IChatClient</c> from the resolved config.</param>
-/// <param name="memoryStore"></param>
-/// <param name="profileCatalog"></param>
-/// <param name="activeRuns"></param>
-/// <param name="explorerReports"></param>
-/// <param name="options"></param>
+/// <param name="memoryStore">Memory store behind the <c>memory.search</c> tool.</param>
+/// <param name="profileCatalog">Control-plane profile catalog exposed as a tool.</param>
+/// <param name="activeRuns">Active-run catalog exposed as a tool.</param>
+/// <param name="explorerReports">Explorer report reader exposed as a tool.</param>
+/// <param name="options">Bound brain options — the iteration cap source.</param>
 public sealed class BrainAgent(
     IModelConfigProvider modelConfig,
     IBrainChatClientFactory chatFactory,
@@ -53,8 +53,8 @@ public sealed class BrainAgent(
     /// <see cref="BrainExhaustedException"/>; the gRPC service maps them
     /// to fault statuses.
     /// </summary>
-    /// <param name="request"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="request">The brain request — task, context JSON and kind.</param>
+    /// <param name="cancellationToken">Cancels the run mid-iteration; streamed chunks stop.</param>
     public async IAsyncEnumerable<BrainChunk> RunAsync(
         BrainRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)

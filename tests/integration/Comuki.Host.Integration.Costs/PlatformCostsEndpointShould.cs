@@ -1,17 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Net.Sockets;
-using Comuki.Engine.Orchestration.Infrastructure;
+using Comuki.Host.Testing;
 using Comuki.Modules.Costs.Domain.Events;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Shouldly;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -20,7 +14,8 @@ namespace Comuki.Host.Integration.Costs;
 
 /// <summary>
 /// Boots the real host composition on a random loopback port against one
-/// migrated Testcontainers Postgres and exercises
+/// migrated Testcontainers Postgres (every module context, via
+/// <see cref="HostDatabaseMigrator"/>) and exercises
 /// <c>GET /api/v1/costs</c>: the platform-wide rollup over a seeded
 /// usage-events table (per-project slices, per-day series, window and
 /// all-time totals) and the permission gate (anonymous 401).
@@ -28,9 +23,6 @@ namespace Comuki.Host.Integration.Costs;
 [Collection(nameof(CostsIntegrationCollection))]
 public sealed class PlatformCostsEndpointShould : IAsyncLifetime
 {
-    private const string BootstrapEmail = "bootstrap@comuki.test";
-    private const string BootstrapPassword = "bootstrap-pass-1";
-
     private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
         .Build();
 
@@ -38,6 +30,8 @@ public sealed class PlatformCostsEndpointShould : IAsyncLifetime
     /// boundary: initialised in InitializeAsync before any test runs
     /// </summary>
     private WebApplication application = null!;
+
+    private TempControlPlaneRoot controlPlane = null!;
 
     private Uri baseAddress = null!;
 
@@ -51,25 +45,14 @@ public sealed class PlatformCostsEndpointShould : IAsyncLifetime
         await container.StartAsync(cancellationToken);
 
         var connectionString = container.GetConnectionString();
+        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
+
         var now = DateTimeOffset.UtcNow;
 
-        // Orchestration is migrated even though the rollup never reads it:
-        // the host's lease reaper / sweeper BackgroundServices poll these
-        // tables from the first second of boot, and a missing table fails
-        // the whole host (BackgroundServiceExceptionBehavior=StopHost).
-        var orchestrationOptions = new DbContextOptionsBuilder<Engine.Orchestration.Infrastructure.Persistence.OrchestrationDbContext>();
-        Engine.Orchestration.Infrastructure.Persistence.OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
-        await using (var orchestrationDb = new Engine.Orchestration.Infrastructure.Persistence.OrchestrationDbContext(orchestrationOptions.Options))
+        var costsOptions = new DbContextOptionsBuilder<CostsDbContext>();
+        CostsDbContext.ApplyOptions(costsOptions, connectionString);
+        await using (var costsDb = new CostsDbContext(costsOptions.Options))
         {
-            await orchestrationDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var costsOptions = new DbContextOptionsBuilder<Modules.Costs.Infrastructure.Persistence.CostsDbContext>();
-        Modules.Costs.Infrastructure.Persistence.CostsDbContext.ApplyOptions(costsOptions, connectionString);
-        await using (var costsDb = new Modules.Costs.Infrastructure.Persistence.CostsDbContext(costsOptions.Options))
-        {
-            await costsDb.Database.MigrateAsync(cancellationToken);
-
             var runOfAlpha = RunId.New();
             costsDb.UsageEvents.Add(UsageEvent.Create(
                 alphaProject, runOfAlpha, UsageSource.Proxy, "model-a", 10, 20, 1_000, now.AddMinutes(-10)));
@@ -84,39 +67,12 @@ public sealed class PlatformCostsEndpointShould : IAsyncLifetime
             await costsDb.SaveChangesAsync(cancellationToken);
         }
 
-        var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-        await using (var identityDb = new IdentityDbContext(identityOptions.Options))
-        {
-            await identityDb.Database.MigrateAsync(cancellationToken);
-        }
+        controlPlane = new TempControlPlaneRoot("costs");
 
-        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-        await using (var projectsDb = new ProjectsDbContext(projectsOptions.Options))
-        {
-            await projectsDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions
-            {
-                ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
-                EnvironmentName = Environments.Development,
-            });
-        builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
-        builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
-        builder.Logging.ClearProviders();
-        builder.Configuration["ControlPlane:Root"] = Path.GetTempPath();
-        builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
-        builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
-        builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
-        builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
-        builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
-        builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
-        builder.Services
-            .AddOrchestrationPersistence(connectionString)
-            .AddOrchestrationQueue(builder.Configuration);
+        var builder = TestHostBuilder.Create(connectionString);
+        builder.Configuration["ControlPlane:Root"] = controlPlane.Root;
+        TestBootstrapAdmin.Configure(builder.Configuration);
+        TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
 
@@ -125,36 +81,25 @@ public sealed class PlatformCostsEndpointShould : IAsyncLifetime
         // OperationCanceledException from whichever service was slower —
         // a real startup failure must surface as itself.
         using var bootCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(2));
-        await application.StartAsync(bootCancellationTokenSource.Token);
-
-        baseAddress = new Uri(
-            application.Services
-                .GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>()
-                .Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!
-                .Addresses.Single());
+        baseAddress = await TestHostBuilder.StartAsync(application, bootCancellationTokenSource.Token);
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         await application.DisposeAsync();
+        controlPlane.Dispose();
         await container.DisposeAsync();
     }
 
-    private async Task<HttpClient> CreateAdminClientAsync()
+    private Task<HttpClient> CreateAdminClientAsync()
     {
         var client = new HttpClient(new HttpClientHandler { UseCookies = true, CheckCertificateRevocationList = true })
         {
             BaseAddress = baseAddress,
         };
 
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/auth/login",
-            new { email = BootstrapEmail, password = BootstrapPassword },
-            TestContext.Current.CancellationToken);
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-        return client;
+        return client.LoginAsBootstrapAdminAsync(TestContext.Current.CancellationToken);
     }
 
     private sealed record PlatformCostsView(
@@ -206,16 +151,6 @@ public sealed class PlatformCostsEndpointShould : IAsyncLifetime
         var response = await client.GetAsync("/api/v1/costs", TestContext.Current.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-    }
-
-    private static int FreeTcpPort()
-    {
-        var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-
-        return port;
     }
 }
 

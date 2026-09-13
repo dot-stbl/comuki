@@ -1,4 +1,4 @@
-import { Image, FileText } from "lucide-react"
+import { FileText } from "lucide-react"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -48,7 +48,6 @@ export function EvidenceThumbnail({
   const lower = contentType.toLowerCase()
   const isPng = lower === "image/png"
   const accessibleTitle = title ?? filename
-  const isDocument = !isPng
 
   return (
     <button
@@ -66,14 +65,10 @@ export function EvidenceThumbnail({
           className={styles.image}
           draggable={false}
         />
-      ) : isDocument ? (
+      ) : (
         <span className={styles.docBadge} aria-hidden="true">
           <FileText className={styles.docIcon} />
           <span className={styles.docKind}>{labelForMime(contentType)}</span>
-        </span>
-      ) : (
-        <span className={styles.docBadge} aria-hidden="true">
-          <Image className={styles.docIcon} />
         </span>
       )}
     </button>

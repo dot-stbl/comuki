@@ -117,7 +117,11 @@ export function useRetireStaleWorkers() {
               versions: snapshot.versions.map((entry) =>
                 entry.digest === version.digest &&
                 entry.profilesRef === version.profilesRef
-                  ? { ...entry, workers: entry.workers - entry.idle, idle: 0 }
+                  ? {
+                      ...entry,
+                      workers: (entry.workers ?? 0) - (entry.idle ?? 0),
+                      idle: 0,
+                    }
                   : entry
               ),
             }

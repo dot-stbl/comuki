@@ -39,10 +39,22 @@ export interface VirtualKey {
   endpointId: string
   models: string[]
   scope: KeyScope
-  budgetUsd: number
-  spentUsd: number
-  /** Seconds until it stops working; negative once it already has. */
-  expiresInSec: number
+  /**
+   * Monthly USD cap. `null` is unlimited — a real reading the wire carries,
+   * and not the same thing as a cap of zero.
+   */
+  budgetUsd: number | null
+  /**
+   * Spend against the cap. `null` when the surface reading the key cannot
+   * meter it — the admin catalogue carries no spend column, and a zero would
+   * read as "nothing spent" rather than "not metered here".
+   */
+  spentUsd: number | null
+  /**
+   * Seconds until it stops working; negative once it already has. `null`
+   * when the key never expires.
+   */
+  expiresInSec: number | null
   lastUsedAgoSec: number | null
   revoked: boolean
 }

@@ -39,6 +39,40 @@ export function BudgetMeter({ entry, enforced, className }: BudgetMeterProps) {
   const share = budgetShare(entry)
   const live = isLive(entry)
 
+  /* An unlimited key has no fraction to draw, and a surface that cannot
+     meter spend has no figure to state: both say their own word rather than
+     a zero that would read as "nothing spent against nothing". */
+  if (entry.budgetUsd === null) {
+    return (
+      <span
+        className={cn(styles.meter, className)}
+        data-test="budget-meter"
+        data-heat="idle"
+        title="this key carries no cap — it spends until it is revoked or expires"
+      >
+        <span className={styles.figures}>
+          <span className={styles.spent}>no cap</span>
+        </span>
+      </span>
+    )
+  }
+
+  if (entry.spentUsd === null) {
+    return (
+      <span
+        className={cn(styles.meter, className)}
+        data-test="budget-meter"
+        data-heat="idle"
+        title="the cap is live but this surface does not meter spend"
+      >
+        <span className={styles.figures}>
+          <span className={styles.spent}>cap {formatCost(entry.budgetUsd)}</span>
+          <span className={styles.left}>spend not metered here</span>
+        </span>
+      </span>
+    )
+  }
+
   return (
     <span
       className={cn(styles.meter, className)}

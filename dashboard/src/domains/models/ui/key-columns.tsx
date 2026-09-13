@@ -167,20 +167,28 @@ export function createKeyColumns({
       id: "models",
       accessorFn: (entry) => entry.models.join(" "),
       header: "may reach",
-      cell: ({ row }) => (
-        <span className={styles.models} title={row.original.models.join(", ")}>
-          {row.original.models.map((model, index) => (
-            <span key={model} className={styles.model}>
-              {index > 0 ? (
-                <span className={styles.modelSep} aria-hidden="true">
-                  ·{" "}
-                </span>
-              ) : null}
-              {model}
-            </span>
-          ))}
-        </span>
-      ),
+      cell: ({ row }) =>
+        row.original.models.length === 0 ? (
+          // The wire's empty allow-list means *every* model is permitted —
+          // a blank cell would read as "none", which is the opposite
+          // security reading.
+          <span className={styles.faint} title="empty allow-list — every model permitted">
+            all models
+          </span>
+        ) : (
+          <span className={styles.models} title={row.original.models.join(", ")}>
+            {row.original.models.map((model, index) => (
+              <span key={model} className={styles.model}>
+                {index > 0 ? (
+                  <span className={styles.modelSep} aria-hidden="true">
+                    ·{" "}
+                  </span>
+                ) : null}
+                {model}
+              </span>
+            ))}
+          </span>
+        ),
       meta: { width: 192, label: "may reach" },
     },
     {
@@ -201,7 +209,10 @@ export function createKeyColumns({
       // different thing from one with a day left, and they must not look alike.
       cell: ({ row }) => {
         const entry = row.original
-        const lapsed = !entry.revoked && entry.expiresInSec <= 0
+        const lapsed =
+          !entry.revoked &&
+          entry.expiresInSec !== null &&
+          entry.expiresInSec <= 0
         return (
           <span
             className={lapsed ? styles.lapsed : styles.value}

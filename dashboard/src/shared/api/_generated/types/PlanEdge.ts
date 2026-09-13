@@ -3,17 +3,12 @@
  * Do not edit manually.
  */
 
-/**
- * @description A dependency: To starts after From finishes.
- */
 export type PlanEdge = {
   /**
-   * @description Id of the upstream node.
    * @type string
    */
   from: string
   /**
-   * @description Id of the downstream node.
    * @type string
    */
   to: string

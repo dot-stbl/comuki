@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { fireEvent, render, screen } from "@testing-library/react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
 import type { CreateTaskInput, Task } from "@/domains/tasks/model/types"
@@ -65,6 +66,7 @@ function Backlog({ onDispatch }: { onDispatch: (task: Task) => void }) {
         projects: session.projects,
         dispatching: false,
         onDispatch,
+        onArtifactOpen: () => {},
         session,
       }),
     [onDispatch, session]
@@ -97,7 +99,9 @@ function mountBacklog(
   const onDispatch = vi.fn()
   render(
     <TestSession roles={roles} projectRoles={projectRoles}>
-      <Backlog onDispatch={onDispatch} />
+      <QueryClientProvider client={new QueryClient()}>
+        <Backlog onDispatch={onDispatch} />
+      </QueryClientProvider>
     </TestSession>
   )
   return {
@@ -115,7 +119,9 @@ function mountIntake(roles: Role[], projectRoles: Record<string, Role[]> = {}) {
   const onCreate = vi.fn()
   render(
     <TestSession roles={roles} projectRoles={projectRoles}>
-      <Intake onCreate={onCreate} />
+      <QueryClientProvider client={new QueryClient()}>
+        <Intake onCreate={onCreate} />
+      </QueryClientProvider>
     </TestSession>
   )
   /* `SelectField` is the kit's one select now — a listbox trigger rather than

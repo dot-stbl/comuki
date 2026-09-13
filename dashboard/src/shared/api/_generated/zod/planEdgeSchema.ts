@@ -5,12 +5,7 @@
 
 import { z } from "zod/v4"
 
-/**
- * @description A dependency: To starts after From finishes.
- */
-export const planEdgeSchema = z
-  .object({
-    from: z.string().describe("Id of the upstream node."),
-    to: z.string().describe("Id of the downstream node."),
-  })
-  .describe("A dependency: To starts after From finishes.")
+export const planEdgeSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+})

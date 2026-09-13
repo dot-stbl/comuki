@@ -27,6 +27,12 @@ export interface ChatThreadProps {
   messages: Message[]
   onDecide: (proposalId: string, decision: ProposalDecision) => void
   busy?: boolean
+  /**
+   * Project id of the open conversation, threaded by the chat console
+   * down to part renderers. `null` for sessions before `/init`; the
+   * `artifact-ref` card uses it to scope the visual-artifact fetch.
+   */
+  projectId: string | null
 }
 
 /**
@@ -94,7 +100,12 @@ export interface ChatThreadProps {
  * beneath is `flex: 0 0 auto`. jsdom computes none of this, so it is
  * hand-traced in `chat-page.module.css` from `.shell` down.
  */
-export function ChatThread({ messages, onDecide, busy }: ChatThreadProps) {
+export function ChatThread({
+  messages,
+  onDecide,
+  busy,
+  projectId,
+}: ChatThreadProps) {
   const scroll = useRef<HTMLDivElement | null>(null)
 
   /**
@@ -238,6 +249,7 @@ export function ChatThread({ messages, onDecide, busy }: ChatThreadProps) {
                 message={message}
                 onDecide={onDecide}
                 busy={busy}
+                projectId={projectId}
                 data-index={virtualize ? index : undefined}
                 ref={virtualize ? virtualizer.measureElement : undefined}
               />
@@ -271,7 +283,9 @@ export function ChatThread({ messages, onDecide, busy }: ChatThreadProps) {
                 the prose is not parsed as markdown until it is finished. Half
                 a document is a different document. */}
             {messageParts(pending).map((part, index) => (
-              <Fragment key={index}>{renderPart(part, pending)}</Fragment>
+              <Fragment key={index}>
+                {renderPart(part, pending, projectId)}
+              </Fragment>
             ))}
             <span className={styles.cursor} />
           </div>

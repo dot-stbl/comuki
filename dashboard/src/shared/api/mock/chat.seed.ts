@@ -151,6 +151,7 @@ export type SeedPartKind =
   | "tool"
   | "handoff"
   | "plan"
+  | "artifact-ref"
 
 export interface SeedTextPart {
   kind: "text"
@@ -218,6 +219,17 @@ export type SeedMessagePart =
   | SeedToolPart
   | SeedHandoffPart
   | SeedPlanPart
+  | SeedArtifactRefPart
+
+/**
+ * Issue #51 slice 3 — pointer to one or more visual artifacts a turn
+ * published. Mirrors the domain's `ArtifactRefPart` (sans the project
+ * scope — see `ChatSession.projectId` for the rendering story).
+ */
+export interface SeedArtifactRefPart {
+  kind: "artifact-ref"
+  artifactIds: string[]
+}
 
 export interface SeedChatMessage {
   id: string
@@ -257,6 +269,15 @@ export interface SeedChatSession {
   title: string
   /** How long ago it was last spoken to. */
   age: string
+  /**
+   * Project scope the session talks about; mirrors the wire row.
+   *
+   * `null` until `/init` has run (a brain mockup landed in chat
+   * before any project existed). Issue #51 slice 3 reads this from
+   * the open conversation and threads it to `artifact-ref` cards
+   * so they can resolve the right project's artifacts.
+   */
+  projectId?: string | null
   messages: SeedChatMessage[]
 }
 

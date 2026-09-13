@@ -6,6 +6,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { render, waitFor } from "@testing-library/react"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
@@ -62,7 +63,7 @@ const routeTree = rootRoute.addChildren(
  * router loads its first match asynchronously, so mounting is awaited — the
  * same shape `chat-page.test.tsx` uses.
  */
-async function mount(message: Message) {
+async function mount(message: Message, projectId: string | null = null) {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: ["/chat"] }),
@@ -70,15 +71,21 @@ async function mount(message: Message) {
 
   const view = render(
     <TestSession roles={["operator"]}>
-      <SlotContext
-        value={
-          <ol>
-            <ChatMessage message={message} onDecide={vi.fn()} />
-          </ol>
-        }
-      >
-        <RouterProvider router={router} />
-      </SlotContext>
+      <QueryClientProvider client={new QueryClient()}>
+        <SlotContext
+          value={
+            <ol>
+              <ChatMessage
+                message={message}
+                onDecide={vi.fn()}
+                projectId={projectId}
+              />
+            </ol>
+          }
+        >
+          <RouterProvider router={router} />
+        </SlotContext>
+      </QueryClientProvider>
     </TestSession>
   )
 
@@ -118,6 +125,14 @@ const SAMPLES: { [K in PartKind]: Extract<MessagePart, { kind: K }> } = {
       { id: "w2", label: "write the patch", profile: "implementer" },
     ],
     edges: [{ from: "w1", to: "w2" }],
+  },
+  // Issue #51 slice 3 — a turn that referenced one visual artifact in
+  // its session's project. The card renders a `<img>` (or a labelled
+  // tile for html / svg) and the modal mounts when the operator
+  // opens it.
+  "artifact-ref": {
+    kind: "artifact-ref",
+    artifactIds: ["00000000-0000-0000-0000-000000000001"],
   },
 }
 
@@ -204,7 +219,15 @@ describe("the table has an arm for every kind in the frozen list", () => {
   it.each(PART_KINDS.map((kind) => [kind] as const))(
     "%s renders something",
     async (kind) => {
-      const { unmount } = await mount(turn([SAMPLES[kind]]))
+      // The artifact-ref arm needs a project id (the visual-artifact
+      // proxy is project-scoped); feed the chat a uuid so the card
+      // finds at least an empty lookup and survives the guard.
+      const { unmount } = await mount(
+        turn([SAMPLES[kind]]),
+        kind === "artifact-ref"
+          ? "00000000-0000-0000-0000-0000000000aa"
+          : null,
+      )
 
       // The body is the last child of the row — the byline is the first.
       const body = at("chat-message")?.lastElementChild

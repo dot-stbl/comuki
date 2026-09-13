@@ -109,12 +109,50 @@ public sealed class BrainToolboxShould
         output.ShouldBe("no memory facts for 'anything'");
     }
 
-    [Fact(DisplayName = "Given an unknown scope, when memory.search runs, then ArgumentException names the expectation")]
-    public void RefuseUnknownMemoryScope()
+    [Fact(DisplayName = "Given the memory.search signature, when inspected, then it has no scope or subject parameter the model could ever fill in (leak 2 — the unsafe call is unrepresentable)")]
+    public void ExposeNoScopeOrSubjectParameter()
     {
-        var toolbox = Toolbox();
+        // memory.search used to take a free `scope`/`subject` pair the
+        // model itself supplied and trusted verbatim — a model call (or
+        // prompt-injected content that talks it into one) naming another
+        // subject's user scope, or another project's project scope, got
+        // that subject's/project's private facts back as text. Rather
+        // than gate that argument at runtime, the fix removed it: this
+        // asserts the removal can't quietly regress back in.
+        var parameters = typeof(BrainToolbox)
+            .GetMethod(nameof(BrainToolbox.SearchMemoryAsync))!
+            .GetParameters()
+            .Select(static parameter => parameter.Name)
+            .ToArray();
 
-        Should.Throw<ArgumentException>(() => toolbox.SearchMemoryAsync("q", scope: "galaxy"));
+        parameters.ShouldNotContain("scope");
+        parameters.ShouldNotContain("subject");
+    }
+
+    [Fact(DisplayName = "Given another subject's user-scoped fact and another project's project-scoped fact, when memory.search runs, then neither comes back — only the global corpus is reachable (leak 2)")]
+    public async Task ReachOnlyTheGlobalCorpusAsync()
+    {
+        var store = new FakeMemoryStore(
+        [
+            Victim("salary", "negotiated a higher rate"),
+            new MemoryFactView(
+                MemoryFactId.New(),
+                MemoryScope.Project,
+                "other-project",
+                MemoryFactKind.Standing,
+                "roadmap",
+                "ships the v3 migration in secret",
+                MemorySource.Chat,
+                "tester",
+                DateTimeOffset.UtcNow),
+        ]);
+        var toolbox = Toolbox(store);
+
+        var output = await toolbox.SearchMemoryAsync("anything");
+
+        output.ShouldNotContain("negotiated a higher rate");
+        output.ShouldNotContain("ships the v3 migration in secret");
+        output.ShouldBe("no memory facts for 'anything'");
     }
 
     [Fact(DisplayName = "Given catalog profiles, when list_profiles runs, then each renders key and name")]
@@ -173,6 +211,20 @@ public sealed class BrainToolboxShould
             text,
             MemorySource.Chat,
             "tester",
+            DateTimeOffset.UtcNow);
+    }
+
+    private static MemoryFactView Victim(string topicKey, string text)
+    {
+        return new MemoryFactView(
+            MemoryFactId.New(),
+            MemoryScope.User,
+            "victim-user",
+            MemoryFactKind.Standing,
+            topicKey,
+            text,
+            MemorySource.Chat,
+            "victim-user",
             DateTimeOffset.UtcNow);
     }
 }

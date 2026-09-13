@@ -11,6 +11,8 @@ using Comuki.Shared.Bootstrap.Config;
 using Comuki.Shared.Bootstrap.Logging;
 using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
+using Comuki.Shared.Kernel.Scoping;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using ProtoBuf.Grpc.Server;
 
 // Operator CLI (issue #56): `comuki-brain version` runs before any
@@ -47,6 +49,16 @@ var connectionString = BrainDatabase.Resolve(builder.Configuration);
 
 builder.WebHost.UseUrls($"http://localhost:{options.GrpcPort}");
 
+// The brain owns no subject of its own — it is the platform's own
+// orchestrating intelligence, not a request handled on a human's behalf
+// (BrainRequest carries no caller identity), so BrainAgent declares
+// itself an explicit system consumer via AsSystem before it ever touches
+// memory. Declared explicitly here (AddMemoryPersistence below also
+// TryAdds one as a resolvability fallback for hosts that never think
+// about scope at all) so that declaration is enforced, not assumed: an
+// established accessor throws loudly if a future flow reads memory
+// without declaring one, instead of silently defaulting open.
+builder.Services.TryAddSingleton<ISubjectScopeAccessor, AsyncLocalSubjectScopeAccessor>();
 builder.Services.AddMemoryPersistence(connectionString);
 builder.Services.AddCodeFirstGrpc();
 

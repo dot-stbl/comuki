@@ -3,6 +3,7 @@ using Comuki.Host.Brain.Brain.Options;
 using Comuki.Host.Brain.Ports.ActiveRuns;
 using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Shared.Contracts.Brain;
+using Comuki.Shared.Kernel.Scoping;
 using Grpc.Core;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -77,6 +78,7 @@ public sealed class BrainGrpcServiceShould
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),
             new StubExplorerReportReader(),
+            new AsyncLocalSubjectScopeAccessor(),
             Options.Create(new BrainOptions()));
     }
 

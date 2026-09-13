@@ -7,6 +7,7 @@ using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 
@@ -37,6 +38,16 @@ namespace Comuki.Host.Brain.Brain;
 /// <param name="profileCatalog">Control-plane profile catalog exposed as a tool.</param>
 /// <param name="activeRuns">Active-run catalog exposed as a tool.</param>
 /// <param name="explorerReports">Explorer report reader exposed as a tool.</param>
+/// <param name="scopeAccessor">
+/// The brain owns no subject — <see cref="BrainRequest"/> carries no
+/// caller identity, and there is no per-call project/user context to
+/// narrow to — so every run declares itself an explicit system consumer
+/// (<c>AsSystem("brain-agent")</c>) for the duration of the loop. This is
+/// what lets <c>MemoryDbContext</c>&apos;s scope query filter run at all
+/// without throwing; it does not by itself limit what the model can ask
+/// <c>memory.search</c> for — see <see cref="BrainToolbox.SearchMemoryAsync"/>
+/// for the guard that does that.
+/// </param>
 /// <param name="options">Bound brain options — the iteration cap source.</param>
 public sealed class BrainAgent(
     IModelConfigProvider modelConfig,
@@ -45,6 +56,7 @@ public sealed class BrainAgent(
     IProfileCatalog profileCatalog,
     IActiveRunCatalog activeRuns,
     IExplorerReportReader explorerReports,
+    ISubjectScopeAccessor scopeAccessor,
     IOptions<BrainOptions> options)
 {
     /// <summary>
@@ -59,6 +71,12 @@ public sealed class BrainAgent(
         BrainRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        // No subject reaches this call — BrainRequest carries none — so the
+        // whole run declares itself a named system consumer up front. A
+        // `using` declaration (try/finally, no catch) is the one scope
+        // shape that may still enclose the `yield return`s below.
+        using var systemScope = scopeAccessor.AsSystem("brain-agent");
+
         var config = await modelConfig.ResolveAsync(cancellationToken);
         // Chat-kind requests route through the lighter ChatModelId when the
         // operator set ChatModelIdRef; everything else uses the flagship.

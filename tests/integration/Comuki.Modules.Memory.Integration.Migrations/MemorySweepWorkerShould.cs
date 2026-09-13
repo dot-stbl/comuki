@@ -5,6 +5,7 @@ using Comuki.Modules.Memory.Domain.Facts.Sources;
 using Comuki.Modules.Memory.Infrastructure;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
+using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -155,7 +156,11 @@ file static class MemorySweepWorkerShouldHelpers
     /// <summary>Constructs the worker with the deterministic clock the suite already uses.</summary>
     public static MemorySweepWorker NewWorker(IMemoryStore store)
     {
-        return new MemorySweepWorker(store, SweepFixedTime.Provider, NullLogger<MemorySweepWorker>.Instance);
+        return new MemorySweepWorker(
+            store,
+            new AsyncLocalSubjectScopeAccessor(),
+            SweepFixedTime.Provider,
+            NullLogger<MemorySweepWorker>.Instance);
     }
 
     /// <summary>A single subject, fixed source — matches the existing migrations fixture shape.</summary>

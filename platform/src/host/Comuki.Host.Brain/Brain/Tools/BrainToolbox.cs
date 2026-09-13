@@ -5,6 +5,7 @@ using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Modules.Memory.Application.Views;
 using Comuki.Modules.Memory.Domain.Facts.Kinds;
 using Comuki.Modules.Memory.Domain.Facts.Scopes;
+using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 using Comuki.Shared.Contracts.Plans;
 using Microsoft.Extensions.AI;
@@ -40,8 +41,8 @@ public sealed class BrainToolbox(
         return functions =
         [
             AIFunctionFactory.Create(SearchMemoryAsync, name: "memory.search",
-                description: "Search long-term memory facts. Optional scope: user|project|global (default global); "
-                    + "optional subject (the user/project id; default global). Returns kind, topic, text per fact."),
+                description: "Search long-term shared memory facts (the platform-wide corpus — per-project "
+                    + "and per-user recall is not exposed to this tool). Returns kind, topic, text per fact."),
 
             AIFunctionFactory.Create(ListProfilesAsync, name: "list_profiles",
                 description: "List the worker profile catalog: key, name, description, allowed tools."),
@@ -80,27 +81,39 @@ public sealed class BrainToolbox(
         return false;
     }
 
-    /// <summary>memory.search — scope defaults to global; falls back to the embedding-free ranking.</summary>
+    /// <summary>
+    /// memory.search — the shared global corpus only; falls back to the
+    /// embedding-free ranking.
+    /// </summary>
     /// <param name="query"></param>
-    /// <param name="scope"></param>
-    /// <param name="subject"></param>
     /// <param name="limit"></param>
-    public async Task<string> SearchMemoryAsync(
-        string query,
-        string? scope = null,
-        string? subject = null,
-        int? limit = null)
+    /// <remarks>
+    /// This tool used to take a free <c>scope</c>/<c>subject</c> pair the
+    /// model itself supplied — a tool-call argument, not an authenticated
+    /// request. <see cref="BrainAgent"/> establishes no per-call project
+    /// or subject scope (there is none to establish:
+    /// <see cref="BrainRequest"/> carries no
+    /// caller identity), so honoring an arbitrary
+    /// <see cref="MemoryScope.Project"/>/<see cref="MemoryScope.User"/>
+    /// value there would have let the model — or content that talks it
+    /// into this via prompt injection — read back another project's or
+    /// another person's facts as text. Rather than trust and gate that
+    /// argument at runtime, the signature no longer exposes it: only
+    /// <see cref="MemoryScope.Global"/> (the shared corpus, not owned by
+    /// any one project or person) is reachable through this tool at all —
+    /// the unsafe call is unrepresentable, not merely refused. Reintroduce
+    /// a scope parameter deliberately once a real per-call scope reaches
+    /// the brain; project/user-specific recall in the meantime still
+    /// reaches the brain safely through the pre-built digest context
+    /// (<c>MemoryDigest</c>), assembled by a trusted caller that knows the
+    /// real scope, not by this tool.
+    /// </remarks>
+    public async Task<string> SearchMemoryAsync(string query, int? limit = null)
     {
-        var parsedScope = scope is null
-            ? MemoryScope.Global
-            : MemoryScopeKeys.Parse(scope)
-                ?? throw new ArgumentException($"unknown scope '{scope}' — expected user|project|global");
-        var parsedSubject = string.IsNullOrWhiteSpace(subject) ? MemoryScopeKeys.GlobalSubject : subject;
-
         var facts = await memoryStore.SearchAsync(
             new MemoryFactQuery(
-                Scope: parsedScope,
-                SubjectId: parsedSubject,
+                Scope: MemoryScope.Global,
+                SubjectId: MemoryScopeKeys.GlobalSubject,
                 Limit: Math.Clamp(limit ?? 5, 1, 20)),
             CancellationToken.None);
 

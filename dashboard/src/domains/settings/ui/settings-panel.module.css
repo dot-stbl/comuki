@@ -175,3 +175,64 @@
   font-size: var(--t-xs);
   color: var(--text);
 }
+
+/* The real-mode platform snapshot (read-only) ----------------------------- */
+
+.platform {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s8);
+  min-inline-size: 0;
+}
+
+/* The one sentence that keeps the page from reading as a form somebody
+   forgot to finish: nothing here writes, and this says why. */
+.platformHint {
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-md);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: var(--text-muted);
+}
+
+.platformRows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.platformRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+  padding: var(--s4) var(--s5);
+  border-inline-start: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.platformLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.platformValue {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-data);
+  font-size: var(--t-md);
+  color: var(--text);
+}
+
+.platformNote {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+}

@@ -30,7 +30,7 @@ public sealed class OrchestrationArtifactJournalSource(
         using var systemScope = scopeAccessor.AsSystem("artifact-journal-source");
         var run = await db.Runs
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Id == runId, cancellationToken);
+            .FirstOrDefaultAsync(run => run.Id == runId, cancellationToken);
 
         if (run is null)
         {

@@ -11,8 +11,7 @@ import { LiveBadge } from "./live-badge"
    inspection. No env mock, no hook mock — the topbar test owns the
    composition of these two values; this file owns the truth table. */
 
-const find = (selector: string) =>
-  document.querySelector<HTMLElement>(selector)
+const find = (selector: string) => document.querySelector<HTMLElement>(selector)
 
 function renderBadge(useMock: boolean, status: RunsHubStatus) {
   return render(<LiveBadge useMock={useMock} status={status} />)

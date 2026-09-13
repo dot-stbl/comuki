@@ -53,7 +53,9 @@ export default defineConfig(() => {
             raw === "1"
           const url = config.env.VITE_API_BASE_URL || "(empty)"
           const tag = useMock ? "[mock]" : "[real]"
-          console.log(`\n  ${tag}  mode=${config.mode}  VITE_API_BASE_URL=${url}\n`)
+          console.log(
+            `\n  ${tag}  mode=${config.mode}  VITE_API_BASE_URL=${url}\n`
+          )
         },
       },
     ],

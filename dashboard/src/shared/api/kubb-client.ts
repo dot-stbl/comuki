@@ -172,7 +172,6 @@ const kubbClient: Client = async <TResponseData, TError = unknown, TRequestData 
   const data = parsed as TResponseData;
 
   if (!response.ok) {
-    const errorPayload = (data ?? { status: response.status }) as unknown;
     const failureError = Object.assign(
       new Error(
         response.status === 401 || response.status === 403
@@ -182,7 +181,7 @@ const kubbClient: Client = async <TResponseData, TError = unknown, TRequestData 
       {
         status: response.status,
         response,
-        data: errorPayload,
+        data,
       },
     );
     throw failureError as unknown as TError;

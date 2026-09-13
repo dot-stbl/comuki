@@ -18,16 +18,24 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  for (const key of Object.keys(import.meta.env)) {
+  // Restore both shape AND values: the same-origin cases mutate PROD,
+  // which exists in the pristine env and would otherwise leak.
+  const envRecord = import.meta.env as Record<string, unknown>
+  for (const [key, value] of Object.entries(ORIGINAL_ENV)) {
+    envRecord[key] = value
+  }
+  for (const key of Object.keys(envRecord)) {
     if (!(key in ORIGINAL_ENV)) {
-      delete (import.meta.env as Record<string, string | undefined>)[key]
+      delete envRecord[key]
     }
   }
 })
 
 async function loadClient(
-  baseUrl: string | undefined
+  baseUrl: string | undefined,
+  prod = false
 ): Promise<typeof import("@/shared/api/kubb-client")> {
+  ;(import.meta.env as Record<string, unknown>).PROD = prod
   if (baseUrl === undefined) {
     delete (import.meta.env as Record<string, string | undefined>)
       .VITE_API_BASE_URL
@@ -68,6 +76,28 @@ describe("kubb-client transport (issue #29)", () => {
     await expect(
       client({ method: "GET", url: "/api/v1/runs" })
     ).rejects.toThrow(/mock layer/)
+  })
+
+  // Released images bake VITE_API_BASE_URL empty on purpose: the host
+  // process serves the SPA itself, so the API is at the origin the
+  // browser opened (see host.Dockerfile / RELEASE.md).
+  it("uses same-origin relative URLs in production builds when VITE_API_BASE_URL is empty", async () => {
+    const { default: client } = await loadClient("", true)
+
+    const fetchSpy = vi.fn().mockResolvedValue(fakeResponse(200, "{}", "OK"))
+    vi.stubGlobal("fetch", fetchSpy)
+
+    await client({ method: "GET", url: "/api/v1/runs" })
+
+    expect(fetchSpy.mock.calls[0]?.[0]).toBe("/api/v1/runs")
+  })
+
+  it("keeps the dev-server guard: an empty VITE_API_BASE_URL still throws outside production builds", async () => {
+    const { default: client } = await loadClient("", false)
+
+    await expect(
+      client({ method: "GET", url: "/api/v1/runs" })
+    ).rejects.toThrow(/VITE_API_BASE_URL is not set/)
   })
 
   it("strips the trailing slash from VITE_API_BASE_URL so /api/v1 doesn't double-emit", async () => {

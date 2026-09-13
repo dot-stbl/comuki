@@ -20,12 +20,26 @@
 #
 # Build context = repo root:
 #   docker build -f deploy/compose/docker/worker.Dockerfile \
+#     --build-arg COMUKI_VERSION=0.1.0 \
 #     -t comuki-worker:local .
+#
+# Build args:
+#   COMUKI_VERSION  Stamped into the translator via -p:VersionPrefix
+#                   (surfaced by `comuki-translator version`). Default
+#                   0.0.0 = unstamped local build. The host image of the
+#                   same release MUST carry the same value — the worker
+#                   spawn pinning derives its tag from it (RELEASE.md).
+#   PI_VERSION      @earendil-works/pi-coding-agent version, pinned so a
+#                   release tag is reproducible (matches the vendored
+#                   version of the hybrid contour). Bump deliberately.
 #
 # pi needs bun >= 1.4 (older bun crashes the agent runtime).
 
 # ---------- Stage 1: build the translator ----------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+
+# Release stamping: 0.0.0 = unstamped local build.
+ARG COMUKI_VERSION=0.0.0
 
 WORKDIR /src
 
@@ -38,13 +52,17 @@ RUN dotnet restore platform/src/host/Comuki.Host.Translator/Comuki.Host.Translat
 
 COPY platform/ platform/
 RUN dotnet publish platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj \
-    -c Release -r linux-x64 --no-restore -o /app
+    -c Release -r linux-x64 --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app
 
 # ---------- Stage 2: the worker ----------
 FROM oven/bun:1.4.0-slim
 
+# Pinned so a release tag rebuilds bit-comparably; keep in sync with the
+# hybrid contour's vendored tarball (deploy/hybrid/worker.Dockerfile).
+ARG PI_VERSION=0.85.1
+
 # pi-coding-agent is the headless agent runtime the translator spawns.
-RUN bun add -g @earendil-works/pi-coding-agent
+RUN bun add -g @earendil-works/pi-coding-agent@${PI_VERSION}
 
 # .NET 10 runtime for the translator (no SDK in the worker image).
 RUN apt-get update \

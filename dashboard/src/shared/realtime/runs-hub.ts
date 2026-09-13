@@ -140,16 +140,18 @@ export function useRunsHubStatus(): RunsHubStatus {
 /**
  * Builds the singleton connection, or `null` when connecting is not this
  * build's job: mock mode (`env.useMock`) and real mode without a pointed
- * backend (`VITE_API_BASE_URL` empty — the same contract `kubb-client.ts`
- * enforces for REST) both stay offline, and the polling layer carries the
- * refresh alone.
+ * backend on a dev server (`VITE_API_BASE_URL` empty — the same contract
+ * `kubb-client.ts` enforces for REST) both stay offline, and the polling
+ * layer carries the refresh alone. Production builds with an empty base
+ * DO connect: same-origin relative URL (`/ws/runs`), the released image
+ * serving the SPA from the host process itself.
  *
  * Cookie auth rides for free: the connection is same-origin with the API
  * base URL the kubb transport uses, and the SignalR browser client sends
  * cookies on negotiate and WebSocket requests by default.
  */
 export function createRunsHubConnection(): HubConnection | null {
-  if (env.useMock || env.apiBaseUrl.length === 0) {
+  if (env.useMock || (env.apiBaseUrl.length === 0 && !env.apiSameOrigin)) {
     return null
   }
 

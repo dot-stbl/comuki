@@ -31,6 +31,7 @@ export const PART_KINDS: readonly PartKind[] = [
   "tool",
   "handoff",
   "plan",
+  "artifact-ref",
 ]
 
 /**

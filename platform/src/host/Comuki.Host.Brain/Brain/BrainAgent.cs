@@ -19,15 +19,28 @@ namespace Comuki.Host.Brain.Brain;
 /// because emit_plan must TERMINATE the run and invalid plans get exactly
 /// one model-side retry. Progress is streamed as chunks; the final chunk
 /// carries the answer/plan JSON.
+/// <para>
+/// Model config is resolved per invocation through
+/// <see cref="IModelConfigProvider"/> (issue #53) — a chat client is
+/// built from the live result via <see cref="IBrainChatClientFactory"/>
+/// and reused across the loop's round-trips. The chat-kind (Answer)
+/// requests go through <see cref="ModelConfig.ChatModelId"/> when the
+/// operator set <c>ChatModelIdRef</c>; plan / brief / repair keep the
+/// flagship <see cref="ModelConfig.ModelId"/>. Rotation in Vault /
+/// Consul therefore lands within the resolver's TTL (60s default)
+/// without a host restart.
+/// </para>
 /// </summary>
-/// <param name="chat"></param>
+/// <param name="modelConfig">Per-call model resolution — endpoint / API key / model ids.</param>
+/// <param name="chatFactory">Builds the <c>IChatClient</c> from the resolved config.</param>
 /// <param name="memoryStore"></param>
 /// <param name="profileCatalog"></param>
 /// <param name="activeRuns"></param>
 /// <param name="explorerReports"></param>
 /// <param name="options"></param>
 public sealed class BrainAgent(
-    IChatClient chat,
+    IModelConfigProvider modelConfig,
+    IBrainChatClientFactory chatFactory,
     IMemoryStore memoryStore,
     IProfileCatalog profileCatalog,
     IActiveRunCatalog activeRuns,
@@ -46,6 +59,16 @@ public sealed class BrainAgent(
         BrainRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        var config = await modelConfig.ResolveAsync(cancellationToken);
+        // Chat-kind requests route through the lighter ChatModelId when the
+        // operator set ChatModelIdRef; everything else uses the flagship.
+        var modelId = request.Kind == BrainRequestKindKeys.Answer
+            ? config.ChatModelId
+            : config.ModelId;
+
+        var chat = chatFactory.Create(
+            new ModelConfig(config.Endpoint, config.ApiKey, modelId, config.ChatModelId));
+
         var toolbox = new BrainToolbox(memoryStore, profileCatalog, activeRuns, explorerReports);
         var chatOptions = new ChatOptions { Tools = [.. toolbox.BuildFunctions()] };
 

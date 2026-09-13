@@ -5,14 +5,7 @@
 
 import { z } from "zod/v4"
 
-/**
- * @description A hand-off to a screen. The console resolves the query through the\r\nsame search shapes the command palette uses, so chat and palette\r\ncannot disagree about where an answer lives.
- */
-export const messagePartHandoffPartSchema = z
-  .object({
-    kind: z.optional(z.enum(["handoff"])),
-    query: z.string().describe("Search query that opens the destination."),
-  })
-  .describe(
-    "A hand-off to a screen. The console resolves the query through the\r\nsame search shapes the command palette uses, so chat and palette\r\ncannot disagree about where an answer lives."
-  )
+export const messagePartHandoffPartSchema = z.object({
+  kind: z.optional(z.enum(["handoff"])),
+  query: z.string(),
+})

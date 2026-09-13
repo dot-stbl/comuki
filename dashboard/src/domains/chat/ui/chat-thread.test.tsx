@@ -43,7 +43,7 @@ function message(id: string, extra: Partial<ChatMessage> = {}): ChatMessage {
 function mount(messages: ChatMessage[]) {
   return render(
     <TestSession>
-      <ChatThread messages={messages} onDecide={vi.fn()} />
+      <ChatThread messages={messages} onDecide={vi.fn()} projectId={null} />
     </TestSession>
   )
 }
@@ -101,7 +101,7 @@ describe("a reply in flight", () => {
       <TestSession>
         <ChatThread
           messages={[message("m1"), message("m2")]}
-          onDecide={vi.fn()}
+          onDecide={vi.fn()} projectId={null}
         />
       </TestSession>
     )
@@ -204,7 +204,7 @@ describe("the scroll follows the operator, not the data", () => {
 
     rerender(
       <TestSession>
-        <ChatThread messages={[message("m1"), message("m2")]} onDecide={vi.fn()} />
+        <ChatThread messages={[message("m1"), message("m2")]} onDecide={vi.fn()} projectId={null} />
       </TestSession>
     )
 
@@ -222,7 +222,7 @@ describe("the scroll follows the operator, not the data", () => {
     port.scrollTo(120)
     rerender(
       <TestSession>
-        <ChatThread messages={[message("m1"), message("m2")]} onDecide={vi.fn()} />
+        <ChatThread messages={[message("m1"), message("m2")]} onDecide={vi.fn()} projectId={null} />
       </TestSession>
     )
 

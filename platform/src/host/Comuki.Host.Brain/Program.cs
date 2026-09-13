@@ -9,7 +9,6 @@ using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Config;
 using Comuki.Shared.Bootstrap.Logging;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
-using Comuki.Shared.Kernel.Secrets;
 using ProtoBuf.Grpc.Server;
 
 // The brain host: a console-shaped Kestrel app whose only surface is the
@@ -42,23 +41,20 @@ builder.WebHost.UseUrls($"http://localhost:{options.GrpcPort}");
 builder.Services.AddMemoryPersistence(connectionString);
 builder.Services.AddCodeFirstGrpc();
 
-// Secret resolution (issue #53): the brain host ships the minimal
-// ISecretResolver wiring so the per-call IModelConfigProvider can
-// resolve refs from the host's local secrets. The Brain is a
-// separate process; the Vault / Consul provider wiring lives in
-// Comuki.Host (HostComposer.cs) because it requires the
-// production-secret validation gate and OIDC-style env handling
-// shared with the rest of the platform. For Brain-only deployments
-// (developer setups, single-container installs) the Env provider
-// alone covers `env:GH_TOKEN`-style refs; Vault / Consul support
-// in Brain is tracked as a follow-up. The host still boots without
-// any provider answering the configured refs — the env / null
-// providers always register, the resolver's short-circuit to null
-// for a missing ref preserves the "first think call fails with a
-// setup hint" behaviour that pre-existed.
-builder.Services.AddSingleton<ISecretResolver, CompositeSecretResolver>();
-builder.Services.AddSingleton<ISecretProvider, EnvSecretProvider>();
-builder.Services.AddSingleton<ISecretProvider, NullSecretProvider>();
+// Secret resolution (issue #53, slice 2/3 follow-up): the brain host
+// wires the same per-provider DI graph the main host uses
+// (CompositeSecretResolver + Env / Null / File / Vault) so a
+// `vault:models/brain#endpoint` style *Ref on BrainOptions resolves
+// through the per-call IModelConfigProvider (issue #53). The Vault
+// provider self-gates on VaultSecretOptions.Enabled (default false),
+// so an unconfigured Brain deployment (developer setups,
+// single-container installs) keeps its existing "first think call
+// fails with a setup hint" behaviour — a `vault:` ref now surfaces
+// as SecretRefUnsetException through the composite rather than
+// SecretRefFormatException from a missing-provider path. Consul
+// provider is tracked as a follow-up (ConsulSecretProvider does not
+// exist in Comuki.Shared.Kernel yet).
+builder.Services.AddBrainSecrets(builder.Configuration);
 
 // Model config (issue #53): per-call resolution through the secret
 // resolver above. The agent loop builds a fresh IChatClient from the

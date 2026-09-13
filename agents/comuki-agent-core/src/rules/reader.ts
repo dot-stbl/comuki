@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod"
 
 /**
  * Reader for declarative rule documents — markdown with a YAML-ish frontmatter
@@ -16,13 +16,13 @@ const frontmatterSchema = z.object({
   name: z.string().min(1),
   description: z.string(),
   scope: z.union([z.string(), z.array(z.string())]).optional(),
-});
+})
 
 export interface RuleDoc {
-  readonly name: string;
-  readonly description: string;
-  readonly scope?: string | string[];
-  readonly body: string;
+  readonly name: string
+  readonly description: string
+  readonly scope?: string | string[]
+  readonly body: string
 }
 
 /**
@@ -31,39 +31,41 @@ export interface RuleDoc {
  * — listing many documents must not throw on one malformed entry.
  */
 export function parseRuleDoc(text: string): RuleDoc | null {
-  const extracted = extractFrontmatter(text);
+  const extracted = extractFrontmatter(text)
   if (extracted === null) {
-    return null;
+    return null
   }
 
-  const parsed = frontmatterSchema.safeParse(parseYamlish(extracted.yaml));
+  const parsed = frontmatterSchema.safeParse(parseYamlish(extracted.yaml))
   if (!parsed.success) {
-    return null;
+    return null
   }
 
-  return { ...parsed.data, body: extracted.body };
+  return { ...parsed.data, body: extracted.body }
 }
 
 interface Frontmatter {
-  readonly yaml: string;
-  readonly body: string;
+  readonly yaml: string
+  readonly body: string
 }
 
 function extractFrontmatter(text: string): Frontmatter | null {
-  const lines = text.split(/\r?\n/);
-  if (lines[0]?.trim() !== '---') {
-    return null;
+  const lines = text.split(/\r?\n/)
+  if (lines[0]?.trim() !== "---") {
+    return null
   }
 
-  const endIndex = lines.findIndex((line, index) => index > 0 && line.trim() === '---');
+  const endIndex = lines.findIndex(
+    (line, index) => index > 0 && line.trim() === "---"
+  )
   if (endIndex === -1) {
-    return null;
+    return null
   }
 
   return {
-    yaml: lines.slice(1, endIndex).join('\n'),
-    body: lines.slice(endIndex + 1).join('\n'),
-  };
+    yaml: lines.slice(1, endIndex).join("\n"),
+    body: lines.slice(endIndex + 1).join("\n"),
+  }
 }
 
 /**
@@ -72,75 +74,81 @@ function extractFrontmatter(text: string): Frontmatter | null {
  * Nested structures and tags are ignored.
  */
 function parseYamlish(yaml: string): Record<string, string | string[]> {
-  const result: Record<string, string | string[]> = {};
-  const lines = yaml.split('\n');
-  let index = 0;
+  const result: Record<string, string | string[]> = {}
+  const lines = yaml.split("\n")
+  let index = 0
 
   while (index < lines.length) {
-    const line = lines[index] ?? '';
-    index++;
+    const line = lines[index] ?? ""
+    index++
 
-    const trimmed = line.trim();
-    if (trimmed.length === 0 || trimmed.startsWith('#')) {
-      continue;
+    const trimmed = line.trim()
+    if (trimmed.length === 0 || trimmed.startsWith("#")) {
+      continue
     }
 
-    const match = /^([A-Za-z][\w.-]*)\s*:\s*(.*)$/.exec(trimmed);
+    const match = /^([A-Za-z][\w.-]*)\s*:\s*(.*)$/.exec(trimmed)
     if (match === null) {
-      continue;
+      continue
     }
 
-    const key = match[1] ?? '';
-    const value = (match[2] ?? '').trim();
+    const key = match[1] ?? ""
+    const value = (match[2] ?? "").trim()
 
     if (value.length === 0) {
-      const blockList = takeBlockListItems(lines, index);
+      const blockList = takeBlockListItems(lines, index)
       if (blockList.values.length > 0) {
-        result[key] = blockList.values;
-        index = blockList.nextIndex;
+        result[key] = blockList.values
+        index = blockList.nextIndex
       }
-      continue;
+      continue
     }
 
-    const flow = /^\[(.*)\]$/.exec(value);
+    const flow = /^\[(.*)\]$/.exec(value)
     if (flow !== null) {
-      result[key] = splitFlowList(flow[1] ?? '');
+      result[key] = splitFlowList(flow[1] ?? "")
     } else {
-      result[key] = stripQuotes(value);
+      result[key] = stripQuotes(value)
     }
   }
 
-  return result;
+  return result
 }
 
-function takeBlockListItems(lines: string[], startIndex: number): { values: string[]; nextIndex: number } {
-  const values: string[] = [];
-  let index = startIndex;
+function takeBlockListItems(
+  lines: string[],
+  startIndex: number
+): { values: string[]; nextIndex: number } {
+  const values: string[] = []
+  let index = startIndex
 
   while (index < lines.length) {
-    const itemMatch = /^\s+-\s+(.*)$/.exec(lines[index] ?? '');
+    const itemMatch = /^\s+-\s+(.*)$/.exec(lines[index] ?? "")
     if (itemMatch === null) {
-      break;
+      break
     }
-    values.push(stripQuotes((itemMatch[1] ?? '').trim()));
-    index++;
+    values.push(stripQuotes((itemMatch[1] ?? "").trim()))
+    index++
   }
 
-  return { values, nextIndex: index };
+  return { values, nextIndex: index }
 }
 
 function splitFlowList(content: string): string[] {
   return content
-    .split(',')
+    .split(",")
     .map((part) => stripQuotes(part.trim()))
-    .filter((part) => part.length > 0);
+    .filter((part) => part.length > 0)
 }
 
 function stripQuotes(value: string): string {
-  const first = value.charAt(0);
-  const last = value.charAt(value.length - 1);
-  if (value.length >= 2 && ((first === '"' && last === '"') || (first === "'" && last === "'"))) {
-    return value.slice(1, -1);
+  const first = value.charAt(0)
+  const last = value.charAt(value.length - 1)
+  if (
+    value.length >= 2 &&
+    ((first === '"' && last === '"') || (first === "'" && last === "'"))
+  ) {
+    return value.slice(1, -1)
   }
-  return value;
+  return value
 }

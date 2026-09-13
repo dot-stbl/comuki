@@ -116,8 +116,15 @@ export function CapacityCard({
       <p className={styles.knobs} data-test="capacity-knobs">
         {idleReading(pool)}
         <span className={styles.knobSep}>·</span>
-        <span className={styles.knobFigure}>{pool.workers}</span> up,{" "}
-        <span className={styles.knobFigure}>{pool.idle}</span> idle
+        <span className={styles.knobFigure}>{pool.workers}</span> up
+        {/* The idle count is a container-runtime reading; a snapshot that
+            cannot see idle containers says "up" alone rather than a zero that
+            would read as "nothing waiting". */}
+        {pool.idle === null ? null : (
+          <>
+            , <span className={styles.knobFigure}>{pool.idle}</span> idle
+          </>
+        )}
       </p>
     </article>
   )

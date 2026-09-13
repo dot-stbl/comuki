@@ -26,7 +26,12 @@ export const WORK_ITEM_STATUSES: WorkItemStatus[] = [
 ]
 
 /** Every worker state, in the order the toolbar offers them. */
-export const WORKER_STATES: WorkerState[] = ["busy", "idle", "draining"]
+export const WORKER_STATES: WorkerState[] = [
+  "busy",
+  "idle",
+  "draining",
+  "offline",
+]
 
 /* --------------------------------------------------------------------------
  * Age
@@ -183,6 +188,12 @@ export function leaseHeat(
   if (worker.leaseSec === null) {
     return "none"
   }
+  // A lease with no heartbeat reading cannot be accused of losing one — the
+  // wire only sends heartbeats for held leases, and a null there is a host
+  // that could not read the clock, not a worker that went quiet.
+  if (worker.heartbeatAgeSec === null) {
+    return "none"
+  }
   if (worker.heartbeatAgeSec >= HEARTBEAT_STALE_SEC) {
     return "lost"
   }
@@ -205,7 +216,10 @@ export function leaseHeat(
 export function lostHeartbeatSentence(
   worker: Pick<Worker, "heartbeatAgeSec">
 ): string {
-  return `no heartbeat for ${formatDuration(worker.heartbeatAgeSec)} — the lease lapses and the item is requeued`
+  const quiet = worker.heartbeatAgeSec
+  return quiet === null
+    ? "no heartbeat reading — the lease lapses and the item is requeued"
+    : `no heartbeat for ${formatDuration(quiet)} — the lease lapses and the item is requeued`
 }
 
 export function lostLeases(workers: Worker[]): number {
@@ -217,6 +231,8 @@ export interface WorkerCounts {
   idle: number
   busy: number
   draining: number
+  /** Lease held, heartbeat stale — the host's `offline` derivation. */
+  offline: number
 }
 
 export function workerCounts(workers: Worker[]): WorkerCounts {
@@ -225,6 +241,7 @@ export function workerCounts(workers: Worker[]): WorkerCounts {
     idle: workers.filter((worker) => worker.state === "idle").length,
     busy: workers.filter((worker) => worker.state === "busy").length,
     draining: workers.filter((worker) => worker.state === "draining").length,
+    offline: workers.filter((worker) => worker.state === "offline").length,
   }
 }
 

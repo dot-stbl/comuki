@@ -16,7 +16,13 @@ import styles from "./proxy-panel.module.css"
 export interface ProxyPanelProps {
   proxy: Proxy
   busy?: boolean
-  onToggle: (next: boolean) => void
+  /**
+   * The switch, when the surface has one. Absent in real mode: the host's
+   * key store is config-seeded and immutable at runtime (a PATCH answers
+   * 501), and the panel states that as a fact about the proxy rather than
+   * offering an act the host has already refused.
+   */
+  onToggle?: (next: boolean) => void
 }
 
 /** Days, rounded, from a relative age in seconds. */
@@ -60,6 +66,10 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
 
   const stale = !proxy.enabled
   const peak = burnPeak(proxy.burnHourlyUsd)
+  // Real mode: no switch to carry, and no metered figures to state — the
+  // catalogue says the proxy is composed, and inventing a cost-per-run would
+  // be the lie this panel exists to prevent.
+  const metered = onToggle !== undefined
 
   return (
     <section
@@ -73,86 +83,97 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
             <span className={styles.stateWord}>
               {proxy.enabled ? "on" : "off"}
             </span>
-            <span className={styles.since}>
-              since {days(proxy.changedAgoSec)}
-            </span>
+            {metered ? (
+              <span className={styles.since}>
+                since {days(proxy.changedAgoSec)}
+              </span>
+            ) : null}
           </p>
-          <p className={styles.sentence}>{proxySentence(proxy.enabled)}</p>
+          <p className={styles.sentence}>
+            {metered
+              ? proxySentence(proxy.enabled)
+              : "virtual keys are seeded from configuration and immutable at runtime — spend is metered at the proxy, not reported here"}
+          </p>
         </div>
 
         {/* Four words became a switch. The word `on` or `off` beside it is
             already the panel's largest reading, so the glyph says which way
             the act runs and the tooltip and the name say it in full. */}
-        <Tooltip
-          content={
-            denial ??
-            (proxy.enabled ? "turn the proxy off" : "turn the proxy on")
-          }
-        >
-          <Button
-            size="icon-sm"
-            variant={proxy.enabled ? "outline" : "default"}
-            data-test="proxy-toggle"
-            disabled={busy}
-            denied={denial}
-            aria-busy={busy || undefined}
-            aria-label={
-              proxy.enabled ? "turn the proxy off" : "turn the proxy on"
+
+        {metered && onToggle ? (
+          <Tooltip
+            content={
+              denial ??
+              (proxy.enabled ? "turn the proxy off" : "turn the proxy on")
             }
-            onClick={() => onToggle(!proxy.enabled)}
           >
-            {busy ? (
-              <Loader2 className={styles.spin} aria-hidden="true" />
-            ) : proxy.enabled ? (
-              <PowerOff aria-hidden="true" />
-            ) : (
-              <Power aria-hidden="true" />
-            )}
-          </Button>
-        </Tooltip>
+            <Button
+              size="icon-sm"
+              variant={proxy.enabled ? "outline" : "default"}
+              data-test="proxy-toggle"
+              disabled={busy}
+              denied={denial}
+              aria-busy={busy || undefined}
+              aria-label={
+                proxy.enabled ? "turn the proxy off" : "turn the proxy on"
+              }
+              onClick={() => onToggle(!proxy.enabled)}
+            >
+              {busy ? (
+                <Loader2 className={styles.spin} aria-hidden="true" />
+              ) : proxy.enabled ? (
+                <PowerOff aria-hidden="true" />
+              ) : (
+                <Power aria-hidden="true" />
+              )}
+            </Button>
+          </Tooltip>
+        ) : null}
       </div>
 
-      <dl className={styles.figures} data-test="proxy-figures">
-        <div className={styles.figure}>
-          <dt className={styles.figureName}>cost per run</dt>
-          <dd className={styles.figureValue}>
-            {formatCost(proxy.costPerRunUsd)}
-          </dd>
-        </div>
-        <div className={styles.figure}>
-          <dt className={styles.figureName}>spend</dt>
-          <dd className={styles.figureValue}>{formatCost(proxy.spendUsd)}</dd>
-        </div>
-        <div className={styles.figure}>
-          <dt className={styles.figureName}>runs</dt>
-          <dd className={styles.figureValue}>{proxy.runs}</dd>
-        </div>
-        {/* The shape of the metered day, beside the figures that say it in
-            words: a quiet night, the morning ramp, the heavy afternoon. The
-            line takes the same staleness the values take when the proxy is
-            off, because a six-day-old burn curve shown as live would be the
-            same lie a six-day-old cost-per-run would. */}
-        {peak ? (
-          <div className={cn(styles.figure, styles.burn)}>
-            <dt className={styles.figureName}>burn by hour</dt>
-            <dd className={styles.figureValue} data-test="proxy-burn">
-              <Sparkline
-                className={stale ? styles.burnStale : undefined}
-                values={proxy.burnHourlyUsd}
-                label={burnLabel(proxy)}
-              />
-              <span className={styles.burnPeak}>
-                peak {formatCost(peak.usd)} at {hourLabel(peak.hour)}
-              </span>
+      {metered ? (
+        <dl className={styles.figures} data-test="proxy-figures">
+          <div className={styles.figure}>
+            <dt className={styles.figureName}>cost per run</dt>
+            <dd className={styles.figureValue}>
+              {formatCost(proxy.costPerRunUsd)}
             </dd>
           </div>
-        ) : null}
-        <p className={styles.window} data-test="proxy-window">
-          {stale ? "last metered over " : "over "}
-          {proxy.windowLabel}
-          {stale ? " — not current" : ""}
-        </p>
-      </dl>
+          <div className={styles.figure}>
+            <dt className={styles.figureName}>spend</dt>
+            <dd className={styles.figureValue}>{formatCost(proxy.spendUsd)}</dd>
+          </div>
+          <div className={styles.figure}>
+            <dt className={styles.figureName}>runs</dt>
+            <dd className={styles.figureValue}>{proxy.runs}</dd>
+          </div>
+          {/* The shape of the metered day, beside the figures that say it in
+              words: a quiet night, the morning ramp, the heavy afternoon. The
+              line takes the same staleness the values take when the proxy is
+              off, because a six-day-old burn curve shown as live would be the
+              same lie a six-day-old cost-per-run would. */}
+          {peak ? (
+            <div className={cn(styles.figure, styles.burn)}>
+              <dt className={styles.figureName}>burn by hour</dt>
+              <dd className={styles.figureValue} data-test="proxy-burn">
+                <Sparkline
+                  className={stale ? styles.burnStale : undefined}
+                  values={proxy.burnHourlyUsd}
+                  label={burnLabel(proxy)}
+                />
+                <span className={styles.burnPeak}>
+                  peak {formatCost(peak.usd)} at {hourLabel(peak.hour)}
+                </span>
+              </dd>
+            </div>
+          ) : null}
+          <p className={styles.window} data-test="proxy-window">
+            {stale ? "last metered over " : "over "}
+            {proxy.windowLabel}
+            {stale ? " — not current" : ""}
+          </p>
+        </dl>
+      ) : null}
     </section>
   )
 }

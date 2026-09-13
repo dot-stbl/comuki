@@ -14,7 +14,7 @@ import {
   useDrainWorker,
   useForceStopWorker,
 } from "@/domains/queue/api/mutations"
-import { useQueueQuery } from "@/domains/queue/api/queries"
+import { useQueueQuery, useWorkerQuery } from "@/domains/queue/api/queries"
 import {
   HEARTBEAT_STALE_SEC,
   leaseHeat,
@@ -71,17 +71,20 @@ export interface WorkerDetailPageProps {
  * second way of drawing a duration inside one screen's walk.
  */
 export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
-  const { data, isLoading, isError, error, refetch } = useQueueQuery()
+  /* The items half stays on the board query — current work and the requeued
+     orphan both read it. The worker itself has its own endpoint in real mode
+     (`GET /api/v1/workers/{id}`), which resolves `null` for a 404 so the
+     not-found reading below stays a *reading* rather than an error state. */
+  const board = useQueueQuery()
+  const workerQuery = useWorkerQuery(workerId)
   const session = useSession()
   const [confirming, setConfirming] = useState(false)
 
   const drain = useDrainWorker()
   const forceStop = useForceStopWorker()
 
-  const worker = useMemo(
-    () => data?.workers.find((entry) => entry.id === workerId) ?? null,
-    [data, workerId]
-  )
+  const { data, isLoading, isError, error, refetch } = workerQuery
+  const worker = data ?? null
 
   /* The last snapshot of this container that actually arrived in a payload.
    *
@@ -111,8 +114,8 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
     if (!held) {
       return null
     }
-    return data?.items.find((entry) => entry.id === held) ?? null
-  }, [data, worker])
+    return board.data?.items.find((entry) => entry.id === held) ?? null
+  }, [board.data, worker])
 
   /* What the container was holding when it went. `pool.store.ts` requeues an
      orphaned item rather than failing it, so this is still in the payload —
@@ -123,19 +126,26 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
     if (!held) {
       return null
     }
-    return data?.items.find((entry) => entry.id === held) ?? null
-  }, [data, lastSeen])
+    return board.data?.items.find((entry) => entry.id === held) ?? null
+  }, [board.data, lastSeen])
 
-  const project = worker ? projectOf(session, worker.projectId) : null
+  const project = worker
+    ? projectOf(session, worker.projectId ?? undefined)
+    : null
   const known = worker ?? lastSeen
 
   // Resolved per page for the same reason the pool resolves it per row: the
   // same person administers one project's pool and can only watch the next
   // one's, and this page is opened from a list that mixes them.
-  const allowed = worker ? can(session, "runs.stop", worker.projectId) : false
+  const allowed = worker
+    ? can(session, "runs.stop", worker.projectId ?? undefined)
+    : false
   const denial =
     worker && !allowed
-      ? needsLabel("runs.stop", projectOf(session, worker.projectId)?.key)
+      ? needsLabel(
+          "runs.stop",
+          projectOf(session, worker.projectId ?? undefined)?.key
+        )
       : null
 
   const draining = drain.isPending
@@ -156,9 +166,12 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
   }, [forceStop, worker])
 
   /* The query answered. Everything below turns on this rather than on
-     `worker !== null`, because "not in the payload" and "no payload yet" are
-     two different sentences and only one of them is about the worker. */
-  const resolved = Boolean(data) && !isError
+      `worker !== null`, because "not in the payload" and "no payload yet" are
+      two different sentences and only one of them is about the worker. A
+      404 resolves rather than errors (see `useWorkerQuery`), so a worker the
+      host no longer knows lands on the same `gone` reading a mock-mode
+      disappearance does. */
+  const resolved = workerQuery.isSuccess
   const gone = resolved && !worker
   const failure = drain.error ?? forceStop.error
 
@@ -179,10 +192,21 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
             known ? (
               <>
                 <span className={styles.summaryValue}>
-                  {projectOf(session, known.projectId)?.key ?? known.projectId}
+                  {known.projectId
+                    ? (projectOf(session, known.projectId)?.key ??
+                      known.projectId)
+                    : "—"}
                 </span>{" "}
-                · <span className={styles.summaryValue}>{known.profile}</span> ·{" "}
-                <span className={styles.summaryValue}>{known.provider}</span>
+                ·{" "}
+                <span className={styles.summaryValue}>
+                  {known.profile ?? "—"}
+                </span>
+                {known.provider ? (
+                  <>
+                    {" "}
+                    · <span className={styles.summaryValue}>{known.provider}</span>
+                  </>
+                ) : null}
               </>
             ) : undefined
           }
@@ -313,11 +337,21 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                   label="since heartbeat"
                   note={`stale past ${formatDuration(HEARTBEAT_STALE_SEC)}`}
                 >
-                  {formatDuration(worker.heartbeatAgeSec)}
+                  {worker.heartbeatAgeSec === null
+                    ? "—"
+                    : formatDuration(worker.heartbeatAgeSec)}
                 </Reading>
 
-                <Reading label="up" note="since the container came up">
-                  {formatDuration(worker.upSec)}
+                <Reading
+                  label="up"
+                  note="since the container came up"
+                >
+                  {worker.upSec === null
+                    ? // The derived registry has no container start to read;
+                      // a dash is the honest figure and the note says what is
+                      // being measured.
+                      "—"
+                    : formatDuration(worker.upSec)}
                 </Reading>
               </div>
 
@@ -339,10 +373,12 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
               data-test="worker-container"
             >
               <div className={styles.readings}>
-                <Reading label="compute">{worker.provider}</Reading>
+                <Reading label="compute">
+                  {worker.provider ?? "—"}
+                </Reading>
 
                 <Reading label="handle" wrap>
-                  {worker.handle}
+                  {worker.handle ?? "—"}
                 </Reading>
 
                 {/* The one hand-off in this region, and the question a digest
@@ -351,24 +387,31 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                     one draining" is answered by everything else on the same
                     image. `/queue?w=` is the href `shapes.ts` already mints
                     for a digest — the same address a pasted `sha256:…`
-                    resolves to. */}
+                    resolves to. An idle wire row carries no image, and a dash
+                    without a link says so without inventing a destination. */}
                 <Reading label="image" note="every container on this image">
-                  <Link
-                    to="/queue"
-                    search={{ w: worker.digest }}
-                    className={styles.link}
-                    data-test="worker-image-link"
-                  >
-                    {worker.digest}
-                  </Link>
+                  {worker.digest ? (
+                    <Link
+                      to="/queue"
+                      search={{ w: worker.digest }}
+                      className={styles.link}
+                      data-test="worker-image-link"
+                    >
+                      {worker.digest}
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
                 </Reading>
 
                 <Reading label="profile" note="the axis a claim matches on">
-                  {worker.profile}
+                  {worker.profile ?? "—"}
                 </Reading>
 
                 <Reading label="project">
-                  {project?.key ?? worker.projectId}
+                  {worker.projectId
+                    ? (project?.key ?? worker.projectId)
+                    : "—"}
                 </Reading>
               </div>
             </Section>
@@ -405,21 +448,35 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                   </div>
                 </div>
               ) : worker.itemId ? (
-                /* A lease on an item this payload does not carry. Rare, and
-                   the honest answer is the id and the way to look it up —
-                   not a blank region that reads as a rendering fault. */
+                /* A lease on an item this payload does not carry. In real mode
+                   that is every busy row — the queue's items half has no
+                   endpoint — and the lease still names the run, so the honest
+                   answer is the ids and the ways to look them up, not a blank
+                   region that reads as a rendering fault. */
                 <div className={styles.work}>
                   <p className={styles.stateBody}>
                     Holding an item the queue has not sent with this payload.
                   </p>
-                  <Link
-                    to="/queue"
-                    search={{ q: worker.itemId }}
-                    className={styles.link}
-                    data-test="worker-work-item"
-                  >
-                    {worker.itemId}
-                  </Link>
+                  <div className={styles.workFacts}>
+                    {worker.runId ? (
+                      <Link
+                        to="/runs/$runId"
+                        params={{ runId: worker.runId }}
+                        className={styles.link}
+                        data-test="worker-work-run"
+                      >
+                        {worker.runId}
+                      </Link>
+                    ) : null}
+                    <Link
+                      to="/queue"
+                      search={{ q: worker.itemId }}
+                      className={styles.link}
+                      data-test="worker-work-item"
+                    >
+                      {worker.itemId}
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 /* Idle is the pool doing its job, not a gap — and it is said

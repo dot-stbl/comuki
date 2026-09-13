@@ -8,6 +8,55 @@ export type ModelRole = "lead" | "worker" | "judge"
  */
 export type RuleKind = "hard" | "soft"
 
+/* ------------------------------------------------------------------ *
+ * The platform snapshot — `GET /api/v1/settings`, real mode.
+ *
+ * Every value is `IOptions`-backed: fixed at boot, changed by configuration
+ * and a restart, and served back verbatim. There is deliberately no editor
+ * shape here — the host has no PUT, and a form over a read-only surface is
+ * a phantom save waiting to happen.
+ * ------------------------------------------------------------------ */
+
+/** Claim/lease policy from `Orchestration:Lease`. */
+export interface LeaseSettings {
+  leaseTtlSeconds: number
+  reapIntervalSeconds: number
+  reapGraceSeconds: number
+  maxAttempts: number
+}
+
+/** The escalation ratchet, including its ops kill-switch. */
+export interface EscalationTimeoutSettings {
+  enabled: boolean
+  timeoutSeconds: number
+  sweepIntervalSeconds: number
+}
+
+/** Scale supervisor defaults from `Compute:Scale`. */
+export interface ComputeScaleSettings {
+  workerImage: string
+  profilesGitRef: string
+  minIdle: number
+  maxConcurrent: number
+  idleTtlSeconds: number
+  pollIntervalSeconds: number
+}
+
+/** The whole read-only snapshot the host serves. */
+export interface PlatformSettings {
+  orchestration: {
+    lease: LeaseSettings
+    escalationTimeout: EscalationTimeoutSettings
+  }
+  compute: {
+    provider: string
+    scale: ComputeScaleSettings
+  }
+  proxy: {
+    enabled: boolean
+  }
+}
+
 export interface AppRegistryItem {
   name: string
   repo: string

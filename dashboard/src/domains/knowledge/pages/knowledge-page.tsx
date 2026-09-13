@@ -4,7 +4,11 @@ import { Tab, TabList, TabPanel, Tabs } from "react-aria-components"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
-import { useKnowledgeQuery } from "@/domains/knowledge/api/queries"
+import {
+  useKnowledgeQuery,
+  useKnowledgeSearchQuery,
+} from "@/domains/knowledge/api/queries"
+import { knowledgeHitToEntry } from "@/domains/knowledge/api/mappers"
 import { filterKnowledgeEntries } from "@/domains/knowledge/model/filter-knowledge"
 import { isKnowledgeTab, type KnowledgeTab } from "@/domains/knowledge/model/tabs"
 import { EvalHarnessTable } from "@/domains/knowledge/ui/eval-harness-table"
@@ -13,6 +17,7 @@ import { GateTab } from "@/domains/knowledge/ui/gate-tab"
 import { KnowledgeDetailSheet } from "@/domains/knowledge/ui/knowledge-detail-sheet"
 import { KnowledgeEntryRow } from "@/domains/knowledge/ui/knowledge-entry-row"
 import { KnowledgeSearch } from "@/domains/knowledge/ui/knowledge-search"
+import { env } from "@/shared/config/env"
 import { can, useSession } from "@/shared/session"
 import { Button, Section, Tooltip } from "@/shared/ui"
 
@@ -77,17 +82,33 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
   // strip pointing at a panel that does not exist.
   const shown = tab === "gate" && !gateVisible ? "library" : tab
 
-  // Seeded once, then owned by the field: the filter is the operator's from the
-  // moment they land, and clearing it is the ordinary control it always is.
+  // Seeded once, then owned by the field: the filter is the operator's from
+  // the moment they land, and clearing it is the ordinary control it always is.
   const [query, setQuery] = useState(() => focus ?? "")
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
+  // Real mode narrows with the host's semantic search (pgvector over the
+  // chunks); mock mode narrows lexically over the seed. Same box, two honest
+  // engines — and the semantic one only runs on a query worth sending.
+  const searching =
+    !env.useMock && query.trim().length > 0
+  const search = useKnowledgeSearchQuery(query)
+
   const entries = useMemo(() => data?.entries ?? [], [data?.entries])
-  const shownEntries = useMemo(
-    () => filterKnowledgeEntries(entries, query),
-    [entries, query]
-  )
-  const selected = entries.find((entry) => entry.id === selectedId) ?? null
+  const shownEntries = useMemo(() => {
+    if (searching) {
+      return (search.data ?? []).map(knowledgeHitToEntry)
+    }
+    return filterKnowledgeEntries(entries, query)
+  }, [searching, search.data, entries, query])
+  const selected =
+    entries.find((entry) => entry.id === selectedId) ??
+    (searching
+      ? (search.data ?? [])
+          .map(knowledgeHitToEntry)
+          .find((entry) => entry.id === selectedId)
+      : null) ??
+    null
 
   const ready = !isLoading && !isError && data !== undefined
 
@@ -180,11 +201,13 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
             </TabList>
 
             <TabPanel id="library" className={styles.tabPanel}>
-              {/* Three readings about the revision in force. Not cards:
-                  hairline data surfaces carrying the corner their size
-                  deserves, with the figure as the reading and the label
-                  naming it. */}
               <div className={styles.library}>
+              {/* The mock library's three readings about the pinned rule set.
+                  The documents surface carries none of them, so in real mode
+                  this whole section is absent rather than zero-filled — an
+                  invented revision is the one lie a knowledge screen must
+                  not tell. */}
+              {data.revision ? (
                 <Section
                   variant="region"
                   id="knowledge-revision"
@@ -228,35 +251,55 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                     </div>
                   </div>
                 </Section>
+              ) : null}
 
-                <Section
-                  variant="region"
-                  id="knowledge-entries"
-                  title="rules, docs and skills"
-                  note={`${shownEntries.length} of ${entries.length}`}
-                  data-test="knowledge-entries"
-                >
-                  {shownEntries.length === 0 ? (
-                    <div className={styles.empty} data-test="knowledge-empty">
-                      <p className={styles.emptyTitle}>No matches</p>
-                      <p className={styles.emptyBody}>
-                        Try another query over pinned rules and docs.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className={styles.entries}>
-                      {shownEntries.map((entry) => (
-                        <KnowledgeEntryRow
-                          key={entry.id}
-                          entry={entry}
-                          selected={entry.id === selectedId}
-                          onSelect={setSelectedId}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </Section>
+              <Section
+                variant="region"
+                id="knowledge-entries"
+                title={searching ? "semantic matches" : "rules, docs and skills"}
+                note={
+                  searching
+                    ? `top ${search.data?.length ?? 0} by cosine similarity`
+                    : `${shownEntries.length} of ${entries.length}`
+                }
+                data-test="knowledge-entries"
+              >
+                {search.isError ? (
+                  <div className={styles.empty} data-test="knowledge-empty">
+                    <p className={styles.emptyTitle}>Search did not answer</p>
+                    <p className={styles.emptyBody}>
+                      {search.error instanceof Error
+                        ? search.error.message
+                        : "Unknown error"}
+                    </p>
+                  </div>
+                ) : shownEntries.length === 0 ? (
+                  <div className={styles.empty} data-test="knowledge-empty">
+                    <p className={styles.emptyTitle}>No matches</p>
+                    <p className={styles.emptyBody}>
+                      {searching
+                        ? "Nothing in the library is close enough to the query."
+                        : "Try another query over pinned rules and docs."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className={styles.entries}>
+                    {shownEntries.map((entry) => (
+                      <KnowledgeEntryRow
+                        key={entry.id}
+                        entry={entry}
+                        selected={entry.id === selectedId}
+                        onSelect={setSelectedId}
+                      />
+                    ))}
+                  </div>
+                )}
+              </Section>
 
+              {/* The golden tasks are a control-plane feed; the documents
+                  surface has none, and an empty before/after table is not a
+                  reading this screen owes anybody. */}
+              {data.eval.length > 0 ? (
                 <Section
                   variant="screen"
                   data-test="knowledge-eval"
@@ -265,6 +308,7 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                 >
                   <EvalHarnessTable cases={data.eval} />
                 </Section>
+              ) : null}
               </div>
             </TabPanel>
 

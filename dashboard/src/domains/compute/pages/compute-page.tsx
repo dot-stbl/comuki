@@ -328,7 +328,7 @@ export function ComputePage() {
         title="Retire the idle workers on this label?"
         body={
           retiring
-            ? `${versionLabel(retiring)} — ${retiring.idle} idle containers are torn down. The ${retiring.workers - retiring.idle} still holding a lease keep running until their item lands.`
+            ? `${versionLabel(retiring)} — ${retiring.idle ?? 0} idle containers are torn down. The ${(retiring.workers ?? 0) - (retiring.idle ?? 0)} still holding a lease keep running until their item lands.`
             : ""
         }
         confirmLabel="Retire idle"

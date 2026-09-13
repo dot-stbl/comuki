@@ -63,7 +63,7 @@ export function budgetPercent(budget: CostBudget): number {
 
 /** Tasks that cleared, as whole percent — the figure the day tile shows. */
 export function successPercent(summary: CostSummary): number {
-  return Math.round(summary.successRate * 100)
+  return Math.round((summary.successRate ?? 0) * 100)
 }
 
 /**

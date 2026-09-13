@@ -392,10 +392,12 @@ describe("the pool orders by capacity, not by spelling", () => {
     )
     fireEvent.click(head!.querySelector("button")!)
 
+    // Offline leads: a stale lease is the reading the reaper is already
+    // circling, ahead of even a container that is leaving on purpose.
     expect(
       [...container.querySelectorAll('[data-test="worker-state-badge"]')].map(
         (node) => node.getAttribute("data-state")
       )
-    ).toEqual(["draining", "busy", "idle"])
+    ).toEqual(["offline", "draining", "busy", "idle"])
   })
 })

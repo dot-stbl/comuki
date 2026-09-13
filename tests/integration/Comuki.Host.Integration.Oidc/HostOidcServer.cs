@@ -1,16 +1,8 @@
-using System.Net;
-using System.Net.Sockets;
-using Comuki.Engine.Orchestration.Infrastructure;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Host.Testing;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -18,7 +10,8 @@ namespace Comuki.Host.Integration.Oidc;
 
 /// <summary>
 /// Boots the real host composition (<see cref="HostComposer"/>) against a
-/// migrated Testcontainers Postgres, with a real Keycloak (realm
+/// migrated Testcontainers Postgres (every module context, via
+/// <see cref="HostDatabaseMigrator"/>), with a real Keycloak (realm
 /// <c>comuki</c> imported from the same
 /// <c>deploy/keycloak/comuki-realm.json</c> the compose profile uses) as
 /// the configured OIDC provider.
@@ -43,7 +36,7 @@ public sealed class HostOidcServer : IAsyncLifetime
     public const string TestPassword = "test-pass-123";
     public const string TestEmail = "test-user@comuki.test";
 
-    private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("postgres:16-alpine")
+    private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("pgvector/pgvector:pg16")
         .Build();
     [Obsolete]
     private readonly IContainer keycloak = new ContainerBuilder()
@@ -116,48 +109,18 @@ public sealed class HostOidcServer : IAsyncLifetime
         Authority = $"http://localhost:{keycloak.GetMappedPublicPort(8080)}/realms/comuki";
 
         var connectionString = postgres.GetConnectionString();
-        var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-        await using var identityDb = new IdentityDbContext(identityOptions.Options);
-        await identityDb.Database.MigrateAsync(cancellationToken);
-
-        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-        await using var projectsDb = new ProjectsDbContext(projectsOptions.Options);
-        await projectsDb.Database.MigrateAsync(cancellationToken);
+        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
 
         Environment.SetEnvironmentVariable(ClientSecretEnv, "test-client-secret");
 
-        var builder = WebApplication.CreateBuilder(
-            new WebApplicationOptions
-            {
-                ApplicationName = typeof(HostComposer).Assembly.GetName().Name,
-                // Production env on purpose: Development turns on
-                // ValidateScopes and the intake installers currently
-                // register handlers as singletons over a scoped DbContext.
-                // ProductionSecretValidator is satisfied with the
-                // non-dev-default secrets below.
-                EnvironmentName = Environments.Development, // test fixture — validator short-circuits on non-Production
-            });
-        builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
-        builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
-        builder.Logging.ClearProviders();
-        builder.Configuration["auth:bootstrap:adminEmail"] = "bootstrap@comuki.test";
-        builder.Configuration["auth:bootstrap:adminPassword"] = "bootstrap-pass-1";
-        builder.Configuration[$"auth:oidc:providers:0:Name"] = ProviderName;
+        var builder = TestHostBuilder.Create(connectionString);
+        TestBootstrapAdmin.Configure(builder.Configuration);
+        builder.Configuration["auth:oidc:providers:0:Name"] = ProviderName;
         builder.Configuration["auth:oidc:providers:0:Authority"] = Authority;
         builder.Configuration["auth:oidc:providers:0:ClientId"] = ClientId;
         builder.Configuration["auth:oidc:providers:0:ClientSecretEnv"] = ClientSecretEnv;
         builder.Configuration["auth:oidc:providers:0:RequireHttps"] = "false";
-        // Artifacts module — non-dev-default secrets so the production-secret
-        // validator (issue #10 T11.4) passes through. The OIDC integration
-        // suite does not boot a MinIO Testcontainer; the host still
-        // validates the options, so we satisfy the contract with non-dev
-        // throwaway values.
-        builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
-        builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
-        builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";
-        builder.Configuration["Artifacts:Bucket"] = "comuki-test-bundles";
+        TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
 
         // The .NET 10 handler opportunistically switches to Pushed
         // Authorization Requests when the discovery document advertises the
@@ -170,22 +133,8 @@ public sealed class HostOidcServer : IAsyncLifetime
             Microsoft.Extensions.Options.IPostConfigureOptions<Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectOptions>,
             NoPushedAuthorizationPostConfigure>();
 
-        // The scheduler dispatcher is registered as a hosted service by
-        // HostComposer.Compose and resolves the journal observer on start.
-        // The OIDC suite does not exercise scheduling — wire the queue
-        // stub so the journal observer resolves cleanly.
-        builder.Services
-            .AddOrchestrationPersistence(connectionString)
-            .AddOrchestrationQueue(builder.Configuration);
-
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
-        await application.StartAsync(cancellationToken);
-
-        baseAddress = new Uri(
-            application.Services
-                .GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>()
-                .Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!
-                .Addresses.Single());
+        baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -196,16 +145,6 @@ public sealed class HostOidcServer : IAsyncLifetime
         await application.DisposeAsync();
         await keycloak.DisposeAsync();
         await postgres.DisposeAsync();
-    }
-
-    private static int FreeTcpPort()
-    {
-        var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-
-        return port;
     }
 }
 

@@ -12,7 +12,11 @@ import {
 
 import { SessionProvider } from "@/shared/session"
 
-import { queueQueryKey, type QueueBoard } from "@/domains/queue/api/queries"
+import {
+  queueQueryKey,
+  workerQueryKey,
+  type QueueBoard,
+} from "@/domains/queue/api/queries"
 import type { QueueItem, Worker } from "@/domains/queue/model/types"
 
 import { WorkerDetailPage } from "./worker-detail-page"
@@ -24,11 +28,12 @@ import { WorkerDetailPage } from "./worker-detail-page"
    crumbs without dragging in the route tree, exactly as `form-page.stories`
    does.
 
-   The board is *written into the cache* rather than fetched. Each story is
-   then a stated shift — a container with six seconds of lease left, a pool
-   that has just torn one down — instead of whatever the seed happens to hold
-   today, and the two readings that only exist as a *transition* become
-   reachable at all. */
+   The shift is *written into the cache* rather than fetched. The queue half
+   (items the held work names) and the worker's own key are seeded separately,
+   exactly as the page reads them. Each story is then a stated shift — a
+   container with six seconds of lease left, a pool that has just torn one
+   down — instead of whatever the seed happens to hold today, and the two
+   readings that only exist as a *transition* become reachable at all. */
 
 const SlotContext = createContext<ReactNode>(null)
 
@@ -128,7 +133,6 @@ function item(over: Partial<QueueItem> = {}): QueueItem {
 function board(over: Partial<QueueBoard> = {}): QueueBoard {
   return {
     items: [item()],
-    workers: [worker()],
     pools: POOLS,
     depth: DEPTH,
     ...over,
@@ -139,6 +143,8 @@ interface ScreenProps {
   workerId: string
   /** The shift the page opens on. */
   data: QueueBoard
+  /** The container the worker's own key answers with. */
+  worker: Worker | null
   /**
    * The refetch that no longer carries the container.
    *
@@ -148,10 +154,10 @@ interface ScreenProps {
    * that simply opened on a board without the worker is the *not-found* one,
    * which is the story below it.
    */
-  after?: QueueBoard
+  after?: { board: QueueBoard; worker: Worker | null }
 }
 
-function Screen({ workerId, data, after }: ScreenProps) {
+function Screen({ workerId, data, worker: theWorker, after }: ScreenProps) {
   const [client] = useState(() => {
     const created = new QueryClient({
       defaultOptions: {
@@ -165,14 +171,16 @@ function Screen({ workerId, data, after }: ScreenProps) {
       },
     })
     created.setQueryData(queueQueryKey, data)
+    created.setQueryData(workerQueryKey(workerId), theWorker)
     return created
   })
 
   useEffect(() => {
     if (after) {
-      client.setQueryData(queueQueryKey, after)
+      client.setQueryData(queueQueryKey, after.board)
+      client.setQueryData(workerQueryKey(workerId), after.worker)
     }
-  }, [client, after])
+  }, [client, workerId, after])
 
   return (
     <SessionProvider
@@ -217,7 +225,9 @@ type Story = StoryObj<typeof WorkerDetailPage>
 
 /** A container holding an item, heartbeating, most of its lease still ahead. */
 export const Live: Story = {
-  render: () => <Screen workerId="wk_2f8a" data={board()} />,
+  render: () => (
+    <Screen workerId="wk_2f8a" data={board()} worker={worker()} />
+  ),
 }
 
 /**
@@ -232,18 +242,6 @@ export const LostHeartbeat: Story = {
     <Screen
       workerId="wk_e34d"
       data={board({
-        workers: [
-          worker({
-            id: "wk_e34d",
-            projectId: "p_plexor",
-            provider: "kubernetes",
-            handle: "k8s/plexor-prod/worker-implementer-e34d",
-            heartbeatAgeSec: 74,
-            leaseSec: 6,
-            upSec: 1512,
-            itemId: "wi_0104",
-          }),
-        ],
         items: [
           item({
             id: "wi_0104",
@@ -254,6 +252,16 @@ export const LostHeartbeat: Story = {
             ageSec: 1186,
           }),
         ],
+      })}
+      worker={worker({
+        id: "wk_e34d",
+        projectId: "p_plexor",
+        provider: "kubernetes",
+        handle: "k8s/plexor-prod/worker-implementer-e34d",
+        heartbeatAgeSec: 74,
+        leaseSec: 6,
+        upSec: 1512,
+        itemId: "wi_0104",
       })}
     />
   ),
@@ -268,19 +276,39 @@ export const Idle: Story = {
   render: () => (
     <Screen
       workerId="wk_a07e"
-      data={board({
-        workers: [
-          worker({
-            id: "wk_a07e",
-            profile: "explorer",
-            state: "idle",
-            itemId: null,
-            handle: "docker/comuki-dev/a07e4411",
-            leaseSec: null,
-            heartbeatAgeSec: 1,
-            upSec: 5400,
-          }),
-        ],
+      data={board()}
+      worker={worker({
+        id: "wk_a07e",
+        profile: "explorer",
+        state: "idle",
+        itemId: null,
+        handle: "docker/comuki-dev/a07e4411",
+        leaseSec: null,
+        heartbeatAgeSec: 1,
+        upSec: 5400,
+      })}
+    />
+  ),
+}
+
+/** The derived registry's third state: a lease whose heartbeat went stale.
+ * The host answers `offline`; the readings say how long the silence has been. */
+export const Offline: Story = {
+  render: () => (
+    <Screen
+      workerId="wk_c512"
+      data={board()}
+      worker={worker({
+        id: "wk_c512",
+        state: "offline",
+        provider: null,
+        handle: null,
+        upSec: null,
+        heartbeatAgeSec: 96,
+        leaseSec: 41,
+        itemId: "wi_0107",
+        runId: "d1f0c744",
+        digest: null,
       })}
     />
   ),
@@ -302,13 +330,16 @@ export const TornDown: Story = {
     <Screen
       workerId="wk_2f8a"
       data={board()}
+      worker={worker()}
       after={{
-        workers: [],
-        pools: POOLS,
-        items: [item({ status: "queued", claimedBy: null, ageSec: 0 })],
-        depth: DEPTH.map((day, index) =>
-          index === DEPTH.length - 1 ? { ...day, depth: day.depth + 1 } : day
-        ),
+        worker: null,
+        board: {
+          items: [item({ status: "queued", claimedBy: null, ageSec: 0 })],
+          pools: POOLS,
+          depth: DEPTH.map((day, index) =>
+            index === DEPTH.length - 1 ? { ...day, depth: day.depth + 1 } : day
+          ),
+        },
       }}
     />
   ),
@@ -322,5 +353,7 @@ export const TornDown: Story = {
  * the operator can see for themselves that nothing matches.
  */
 export const NotFound: Story = {
-  render: () => <Screen workerId="wk_neverwas" data={board({ workers: [] })} />,
+  render: () => (
+    <Screen workerId="wk_neverwas" data={board({ items: [] })} worker={null} />
+  ),
 }

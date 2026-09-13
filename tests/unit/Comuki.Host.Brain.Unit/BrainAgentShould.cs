@@ -12,9 +12,12 @@ using Xunit;
 namespace Comuki.Host.Brain.Unit;
 
 /// <summary>
-/// The agent loop against a scripted IChatClient: answer termination,
-/// emit_plan termination (happy, retry-after-invalid, prose-nudge) and
-/// the iteration-cap guard.
+/// The agent loop against a scripted <see cref="IBrainChatClientFactory"/>:
+/// answer termination, emit_plan termination (happy, retry-after-invalid,
+/// prose-nudge) and the iteration-cap guard. The factory is the seam
+/// the tests use to inject a scripted <see cref="IChatClient"/> —
+/// the agent itself talks to <see cref="IModelConfigProvider"/> +
+/// <see cref="IBrainChatClientFactory"/>, never to a real chat client.
 /// </summary>
 public sealed class BrainAgentShould
 {
@@ -93,7 +96,8 @@ public sealed class BrainAgentShould
     {
         var options = Options.Create(new BrainOptions { MaxToolIterations = 2 });
         var agent = new BrainAgent(
-            Scripted.Loop("here is a plan in prose, not calling emit_plan"),
+            new StaticModelConfigProvider(),
+            new ScriptedChatClientFactory(Scripted.Loop("here is a plan in prose, not calling emit_plan")),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([]),
             new StubActiveRunCatalog(),
@@ -104,11 +108,100 @@ public sealed class BrainAgentShould
             async () => await StreamAsync(agent, Request(BrainRequestKindKeys.Plan, "decompose")));
     }
 
+    [Fact(DisplayName = "Given a fake resolver returning different configs on successive calls, when two brain runs happen, then each run uses its own config")]
+    public async Task ResolvePerCallAsync()
+    {
+        var scripted = new ScriptedChatClient(
+            [
+                Scripted.Text("first model reply"),
+                Scripted.Text("second model reply"),
+            ]);
+        // Two ModelConfig values, one per call. The chat client must be
+        // built from the resolved config each time; the factory below
+        // records which config it was asked for.
+        var factory = new RecordingChatClientFactory(scripted);
+        var provider = new SequenceModelConfigProvider(
+            new ModelConfig("https://api1/v4", "key-1", "model-a", "model-a"),
+            new ModelConfig("https://api2/v4", "key-2", "model-b", "model-b"));
+
+        var options = Options.Create(new BrainOptions());
+        var agent = new BrainAgent(
+            provider,
+            factory,
+            new FakeMemoryStore([]),
+            new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
+            new StubActiveRunCatalog(),
+            new StubExplorerReportReader(),
+            options);
+
+        var firstChunks = await StreamAsync(agent, Request(BrainRequestKindKeys.Answer, "first question"));
+        var secondChunks = await StreamAsync(agent, Request(BrainRequestKindKeys.Answer, "second question"));
+
+        firstChunks.ShouldHaveSingleItem().FinalJson.ShouldBe("first model reply");
+        secondChunks.ShouldHaveSingleItem().FinalJson.ShouldBe("second model reply");
+        factory.ConfigsSeen.ShouldBe(
+        [
+            new ModelConfig("https://api1/v4", "key-1", "model-a", "model-a"),
+            new ModelConfig("https://api2/v4", "key-2", "model-b", "model-b"),
+        ], ignoreOrder: false);
+    }
+
+    [Fact(DisplayName = "Given an answer request and a chat model id override, when the loop runs, then the chat client is built with ChatModelId")]
+    public async Task ChatKindUsesChatModelIdOverrideAsync()
+    {
+        var factory = new RecordingChatClientFactory(new ScriptedChatClient([Scripted.Text("ok")]));
+        var provider = new StaticModelConfigProvider(new ModelConfig(
+            "https://api/v4",
+            "key",
+            "flagship-model",
+            "chat-model"));
+
+        var agent = new BrainAgent(
+            provider,
+            factory,
+            new FakeMemoryStore([]),
+            new FakeProfileCatalog([]),
+            new StubActiveRunCatalog(),
+            new StubExplorerReportReader(),
+            Options.Create(new BrainOptions()));
+
+        await StreamAsync(agent, Request(BrainRequestKindKeys.Answer, "hi"));
+
+        factory.ConfigsSeen.ShouldHaveSingleItem().ShouldBe(new ModelConfig(
+            "https://api/v4", "key", "chat-model", "chat-model"));
+    }
+
+    [Fact(DisplayName = "Given a plan request and a chat model id override, when the loop runs, then the chat client is built with the flagship ModelId")]
+    public async Task PlanKindUsesFlagshipModelIdAsync()
+    {
+        var factory = new RecordingChatClientFactory(new ScriptedChatClient([Scripted.EmitPlan("call-1", ValidPlan)]));
+        var provider = new StaticModelConfigProvider(new ModelConfig(
+            "https://api/v4",
+            "key",
+            "flagship-model",
+            "chat-model"));
+
+        var agent = new BrainAgent(
+            provider,
+            factory,
+            new FakeMemoryStore([]),
+            new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
+            new StubActiveRunCatalog(),
+            new StubExplorerReportReader(),
+            Options.Create(new BrainOptions()));
+
+        await StreamAsync(agent, Request(BrainRequestKindKeys.Plan, "decompose"));
+
+        factory.ConfigsSeen.ShouldHaveSingleItem().ShouldBe(new ModelConfig(
+            "https://api/v4", "key", "flagship-model", "chat-model"));
+    }
+
     private static BrainAgent Agent(params ChatResponse[] responses)
     {
         var options = Options.Create(new BrainOptions());
         return new BrainAgent(
-            new ScriptedChatClient(responses),
+            new StaticModelConfigProvider(),
+            new ScriptedChatClientFactory(responses),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),
@@ -185,5 +278,84 @@ internal sealed class ScriptedChatClient(params ChatResponse[] responses) : ICha
 
     void IDisposable.Dispose()
     {
+    }
+}
+
+/// <summary>
+/// <see cref="IBrainChatClientFactory"/> backed by a single
+/// <see cref="ScriptedChatClient"/>. The factory is invoked once per
+/// <c>BrainAgent.RunAsync</c> call (the agent builds a fresh chat
+/// client at the top of each invocation).
+/// </summary>
+internal sealed class ScriptedChatClientFactory : IBrainChatClientFactory
+{
+    private readonly ScriptedChatClient scripted;
+
+    public ScriptedChatClientFactory(params ChatResponse[] responses)
+    {
+        scripted = new ScriptedChatClient(responses);
+    }
+
+    public ScriptedChatClientFactory(ScriptedChatClient scripted)
+    {
+        this.scripted = scripted;
+    }
+
+    public IChatClient Create(ModelConfig config)
+    {
+        return scripted;
+    }
+}
+
+/// <summary>
+/// <see cref="IModelConfigProvider"/> that hands out the same
+/// <see cref="ModelConfig"/> on every call — the default test fixture.
+/// </summary>
+internal sealed class StaticModelConfigProvider(ModelConfig config) : IModelConfigProvider
+{
+    public StaticModelConfigProvider()
+        : this(new ModelConfig("https://api/v4", "key", "model-id", "model-id"))
+    {
+    }
+
+    public ModelConfig Next { get; set; } = config;
+
+    public Task<ModelConfig> ResolveAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Next);
+    }
+}
+
+/// <summary>
+/// <see cref="IModelConfigProvider"/> that pops the next
+/// <see cref="ModelConfig"/> on each <see cref="ResolveAsync"/> — drives
+/// the hot-reload test.
+/// </summary>
+internal sealed class SequenceModelConfigProvider(params ModelConfig[] configs) : IModelConfigProvider
+{
+    private readonly Queue<ModelConfig> queue = new(configs);
+
+    public Task<ModelConfig> ResolveAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(queue.Dequeue());
+    }
+}
+
+/// <summary>
+/// <see cref="IBrainChatClientFactory"/> that records the
+/// <see cref="ModelConfig"/> passed to <see cref="Create"/> and returns
+/// the supplied <see cref="ScriptedChatClient"/>. The list of seen
+/// configs is the assertion surface for the per-call test.
+/// </summary>
+internal sealed class RecordingChatClientFactory(ScriptedChatClient scripted) : IBrainChatClientFactory
+{
+    private readonly List<ModelConfig> seen = [];
+
+    public IReadOnlyList<ModelConfig> ConfigsSeen => seen;
+
+    public IChatClient Create(ModelConfig config)
+    {
+        seen.Add(config);
+        return scripted;
     }
 }

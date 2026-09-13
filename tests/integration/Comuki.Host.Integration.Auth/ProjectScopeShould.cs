@@ -13,8 +13,11 @@ namespace Comuki.Host.Integration.Auth;
 /// global subject-scope query filters confine project-scoped subjects to
 /// their own projects — out-of-scope ids answer 404, lists narrow, runs
 /// and work items follow their project — while platform-scope subjects
-/// keep seeing everything, and anonymous callers get the fail-closed
-/// empty answer instead of a leak.
+/// keep seeing everything, and an authenticated subject with no projects
+/// gets the fail-closed empty answer instead of a leak. Anonymous callers
+/// never reach the query: the <c>project:read</c> demand answers 401
+/// first (the minimal-API permission middleware, same contract as the
+/// MVC runs surface).
 /// </summary>
 [Collection(nameof(AuthIntegrationCollection))]
 public sealed class ProjectScopeShould(HostAuthServer server) : IClassFixture<HostAuthServer>
@@ -83,15 +86,17 @@ public sealed class ProjectScopeShould(HostAuthServer server) : IClassFixture<Ho
         foreign.Content.Headers.ContentType!.MediaType.ShouldBe("application/problem+json");
     }
 
-    [Fact(DisplayName = "Given an anonymous caller, when listing projects, then the answer is the fail-closed empty list")]
-    public async Task AnonymousListIsEmptyAsync()
+    [Fact(DisplayName = "Given an anonymous caller, when listing projects, then the project:read demand answers 401")]
+    public async Task AnonymousListIsRefusedAsync()
     {
         await server.CreateProjectAsync("Epsilon", "epsilon");
 
         using var client = server.CreateApiKeyClient();
-        var ids = await ListProjectIdsAsync(client);
+        var response = await client.GetAsync("/api/v1/projects?includeArchived=false", TestContext.Current.CancellationToken);
 
-        ids.ShouldBeEmpty();
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        body.ShouldContain("authentication.required");
     }
 
     [Fact(DisplayName = "Given runs in projects A and B, when the member's scope reads runs and work items, then only project A's rows are visible")]

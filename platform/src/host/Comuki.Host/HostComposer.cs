@@ -6,6 +6,7 @@ using Comuki.Host.Chat.Brain;
 using Comuki.Host.Chat.RunStarter;
 using Comuki.Host.Chat.Sessions;
 using Comuki.Host.Chat.Tools;
+using Comuki.Host.Compute;
 using Comuki.Host.ControlPlane;
 using Comuki.Host.Costs;
 using Comuki.Host.Errors;
@@ -22,7 +23,9 @@ using Comuki.Host.Security.Cors;
 using Comuki.Host.Security.ProductionSecrets;
 using Comuki.Host.Security.RateLimit;
 using Comuki.Host.Security.Tls;
+using Comuki.Host.Settings;
 using Comuki.Host.Workers;
+using Comuki.Host.Workers.Read;
 using Comuki.Modules.Artifacts.Application;
 using Comuki.Modules.Artifacts.Application.Packaging;
 using Comuki.Modules.Artifacts.Application.VisualArtifacts.Ports;
@@ -35,6 +38,7 @@ using Comuki.Modules.Costs.Infrastructure;
 using Comuki.Modules.Identity.Application;
 using Comuki.Modules.Identity.Application.Oidc;
 using Comuki.Modules.Identity.Infrastructure;
+using Comuki.Modules.Identity.Infrastructure.Security.Authorization;
 using Comuki.Modules.Intake.Application;
 using Comuki.Modules.Intake.Application.Options;
 using Comuki.Modules.Intake.Application.Ports.Admission;
@@ -197,6 +201,7 @@ internal static class HostComposer
         builder.Services.AddScoped<IRunsReader, OrchestrationRunsReader>();
         builder.Services.AddScoped<RunsListHandler>();
         builder.Services.AddScoped<GetRunDetailHandler>();
+        builder.Services.AddScoped<WorkersReadHandler>();
         builder.Services.AddScoped<IApproveRunPort, HostApproveRunAdapter>();
         builder.Services.AddScoped<ICancelRunPort, HostCancelRunAdapter>();
         builder.Services.AddScoped<ChatRunStarter>();
@@ -281,6 +286,19 @@ internal static class HostComposer
 
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).
+        // The two compute options are bound here (validated) so the
+        // ProjectScaleSettingsAdapter, the settings snapshot and the
+        // compute snapshot read real configuration instead of code
+        // defaults — this host does not call AddComukiCompute, which would
+        // otherwise be the binding site.
+        builder.Services.AddOptions<Engine.Compute.Options.ComputeOptions>()
+            .Bind(builder.Configuration.GetSection(Engine.Compute.Options.ComputeOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder.Services.AddOptions<Engine.Compute.Options.ScaleSupervisorOptions>()
+            .Bind(builder.Configuration.GetSection(Engine.Compute.Options.ScaleSupervisorOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
         builder.Services.AddSingleton<Engine.Compute.Ports.IProjectScaleSettings>(
             static serviceProvider => new ProjectScaleSettingsAdapter(
                 serviceProvider.GetRequiredService<Modules.Projects.Application.Ports.IProjectSettingsStore>(),
@@ -426,6 +444,17 @@ internal static class HostComposer
         app.UseRateLimiter();
         app.UseMiddleware<SubjectScopeMiddleware>();
 
+        // Minimal-API endpoints carry [RequiresPermission] on their handler
+        // methods; the MVC resource filter never runs for them, so this
+        // middleware enforces the same demand off the endpoint metadata
+        // (costs / knowledge / proxy-admin / workers / compute / settings
+        // surfaces). Runs after SubjectScopeMiddleware on purpose: the
+        // evaluator resolves roles through scope-filtered contexts, so the
+        // ambient scope must exist before the gate fires. MVC actions hit
+        // the gate first and their resource filter stays as the
+        // in-pipeline backstop.
+        app.UseMiddleware<RequiresPermissionMiddleware>();
+
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));
 
         // Build info for operators and the dashboard footer (issue #56 §6):
@@ -443,6 +472,10 @@ internal static class HostComposer
         app.MapMcpEndpoints();
         app.MapComukiRealtime();
         app.MapProxyEndpoints();
+        app.MapProxyKeyAdminEndpoints();
+        app.MapWorkersReadEndpoints();
+        app.MapComputeSnapshotEndpoints();
+        app.MapSettingsEndpoints();
 
         // Reverse-proxy passthrough (issue #8): chat / messages / embeddings
         // virtual-key auth runs in the VirtualKeyAuthenticationHandler the

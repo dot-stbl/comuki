@@ -75,11 +75,13 @@
     <InternalsVisibleTo Include="Comuki.Host.Unit.Realtime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Auth" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Chat" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Costs" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Errors" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Intake" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Oidc" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Realtime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Runs" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Workers" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Artifacts" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Proxy" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Knowledge" />

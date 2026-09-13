@@ -25,6 +25,7 @@ namespace Comuki.Host.Integration.Costs;
 /// a no-op on a terminal run, and a payload carrying the spent/limit
 /// deltas the gate is supposed to surface.
 /// </summary>
+[Collection(nameof(CostsIntegrationCollection))]
 public sealed class OrchestrationBudgetGateShould : IAsyncLifetime
 {
     private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")

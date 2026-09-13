@@ -27,6 +27,7 @@ public static class CostsApplicationExtensions
         services.AddScoped<IUsageRecorder, UsageRecorder>();
         services.AddScoped<RunCostAggregator>();
         services.AddScoped<GetProjectCostsHandler>();
+        services.AddScoped<GetPlatformCostsHandler>();
         return services;
     }
 }

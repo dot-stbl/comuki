@@ -49,8 +49,9 @@ export function requestFailureMessage(
   error: unknown,
   fallback: string,
 ): string {
-  if (problemDetail(error)) {
-    return problemDetail(error) as string
+  const detail = problemDetail(error)
+  if (detail !== null) {
+    return detail
   }
   if (error instanceof Error && error.message.length > 0) {
     return error.message

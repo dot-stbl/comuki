@@ -13,21 +13,16 @@ export const messagePartPlanPartKindEnum = {
 export type MessagePartPlanPartKindEnumKey =
   (typeof messagePartPlanPartKindEnum)[keyof typeof messagePartPlanPartKindEnum]
 
-/**
- * @description The decomposition DAG — the approve card. Nodes and edges are the\r\ncanonical Plan shapes, so a part and a plan payload\r\nnever drift apart.
- */
 export type MessagePartPlanPart = {
   /**
    * @type string | undefined
    */
   kind?: MessagePartPlanPartKindEnumKey
   /**
-   * @description Plan steps.
    * @type array
    */
   nodes: PlanNode[]
   /**
-   * @description Ordering dependencies between steps.
    * @type array
    */
   edges: PlanEdge[]

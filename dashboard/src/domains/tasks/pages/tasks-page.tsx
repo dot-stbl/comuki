@@ -21,6 +21,7 @@ import type {
   TaskStatusFilter,
 } from "@/domains/tasks/model/types"
 import { createTaskColumns, getTaskId } from "@/domains/tasks/ui/tasks-columns"
+import { TaskArtifactViewerHost } from "@/domains/tasks/ui/task-artifact-cell"
 import tableStyles from "@/domains/tasks/ui/tasks-table.module.css"
 import { TASK_APPS } from "@/shared/api/mock/tasks.seed"
 import { can, useCan, useSession } from "@/shared/session"
@@ -50,7 +51,30 @@ export interface TasksPageProps {
   focus?: string
 }
 
+/**
+ * The page. Wraps `TasksBody` in `TaskArtifactViewerHost` so the visual-
+ * artifact modal lives outside the shell — one modal, owned by the page,
+ * opened by clicking a row thumbnail and closed by escape or the pane's
+ * close control.
+ */
 export function TasksPage({ focus }: TasksPageProps) {
+  return (
+    <TaskArtifactViewerHost>
+      {({ openArtifact }) => (
+        <TasksBody
+          focus={focus}
+          onArtifactOpen={openArtifact}
+        />
+      )}
+    </TaskArtifactViewerHost>
+  )
+}
+
+interface TasksBodyProps extends TasksPageProps {
+  onArtifactOpen: (ticketId: string, projectId: string) => void
+}
+
+function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
   const { data = [], isLoading, isError, error, refetch } = useTasksQuery()
   const dispatchTask = useDispatchTaskMutation()
 
@@ -122,9 +146,20 @@ export function TasksPage({ focus }: TasksPageProps) {
         projects,
         dispatching: dispatchTask.isPending,
         onDispatch,
+        // Issue #51 slice 3 — `onArtifactOpen` is the cell ↔ modal bridge.
+        // The column receives a ticket id + project id; the host owns
+        // mounting the pane.
+        onArtifactOpen,
         session,
       }),
-    [apps, projects, dispatchTask.isPending, onDispatch, session]
+    [
+      apps,
+      projects,
+      dispatchTask.isPending,
+      onDispatch,
+      onArtifactOpen,
+      session,
+    ]
   )
 
   // The toolbar hands back values keyed by column id; the domain still owns

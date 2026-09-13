@@ -17,6 +17,7 @@ import {
   orderedItems,
   planGraph,
 } from "@/domains/runs/model/work-items"
+import { RunEvidenceStrip } from "@/domains/runs/ui/run-evidence-strip"
 import { RunGraph } from "@/domains/runs/ui/run-graph"
 import { WorkItemInspectorPanel } from "@/domains/runs/ui/work-item-inspector"
 import { projectOf, useSession } from "@/shared/session"
@@ -183,6 +184,17 @@ export function RunDetailPage() {
               )}
             </p>
           </div>
+        ) : null}
+
+        {data ? (
+          // Issue #51 slice 3: the evidence strip next to the pr-report.
+          // Renders nothing when the run has no published png / html /
+          // svg — the strip's absence is itself the answer, exactly the
+          // "no strip when there are none" the task asks for.
+          <RunEvidenceStrip
+            projectId={data.projectId}
+            runId={data.id}
+          />
         ) : null}
 
         {data && items.length === 0 ? (

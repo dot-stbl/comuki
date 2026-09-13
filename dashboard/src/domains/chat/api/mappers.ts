@@ -102,6 +102,11 @@ function toMessagePart(seed: SeedMessagePart): MessagePart {
         nodes: seed.nodes.map((node) => ({ ...node })),
         edges: seed.edges.map((edge) => ({ ...edge })),
       }
+    case "artifact-ref":
+      return {
+        kind: "artifact-ref",
+        artifactIds: [...seed.artifactIds],
+      }
   }
 }
 
@@ -124,6 +129,13 @@ export function toChatSession(seed: SeedChatSession): ChatSession {
     id: seed.id,
     title: seed.title,
     age: seed.age,
+    /**
+     * Issue #51 slice 3 — the project scope threads through to the
+     * `artifact-ref` card renderer. Mock seeds that pre-date the
+     * field carry no projectId; the renderer treats `null` as "no
+     * scope, no card" rather than fabricating one.
+     */
+    projectId: seed.projectId ?? null,
     messages: seed.messages.map(toChatMessage),
   }
 }
@@ -296,6 +308,12 @@ export function chatSessionViewToDomainSession(
     id: view.id,
     title: view.title,
     age: formatAge(view.updatedAt),
+    /**
+     * `projectId` is part of the wire view (issue #51 §: sessions know
+     * the project they were created against). `null` for sessions
+     * pre-`/init` — see `ChatSession.projectId` for the rendering story.
+     */
+    projectId: view.projectId ?? null,
     // Real-mode conversations load their messages on demand: the wire's
     // session row carries none, and the open conversation's own query
     // (`useChatMessagesQuery` in `queries.ts`, over

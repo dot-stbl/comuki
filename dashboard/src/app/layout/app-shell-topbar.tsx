@@ -3,10 +3,10 @@ import { Link } from "@tanstack/react-router"
 
 import { ThemeControl } from "@/app/layout/theme-control"
 import { LiveBadge } from "@/app/layout/live-badge"
-import { MockModeBadge } from "@/app/layout/mock-mode-badge"
 import { ThemePicker } from "@/app/theme"
 import { GlobalSearch } from "@/app/search"
 import { env } from "@/shared/config/env"
+import { useRunsHubStatus } from "@/shared/realtime/runs-hub"
 import { can, useSession } from "@/shared/session"
 import { BrandIcon, buttonClass, ComukiMark, Tooltip } from "@/shared/ui"
 
@@ -14,6 +14,7 @@ import styles from "./app-shell-topbar.module.css"
 
 export function AppShellTopbar() {
   const session = useSession()
+  const hubStatus = useRunsHubStatus()
 
   return (
     <header className={styles.bar}>
@@ -34,22 +35,18 @@ export function AppShellTopbar() {
       <div className={styles.controls}>
         <GlobalSearch />
 
-        {/* How this screen's data arrives — hub, poll, or seed. It reads as
-            chrome beside the appearance controls because freshness is a
-            property of the machine, not of any one screen: the same socket
-            (or lack of it) stands behind every list the bar looks down on. */}
-        <LiveBadge />
-
-        {/* A second reading of "where does this screen's data come from" —
-            the *mode* (seeds vs live API), not the *freshness* (live / poll
-            / demo). They answer different questions: a screen can be in
-            "live" freshness and still be serving mocks, so the two sit side
-            by side rather than collapsing into one badge. Hidden entirely
-            when `env.useMock` is false; the live badge alone says what is
-            happening then. The tooltip carries the only actionable
-            sentence in this whole chrome cluster — the exact command to
-            run to swap modes. */}
-        <MockModeBadge />
+        {/* The "this is not the real backend" pill — one reading that
+            covers both reasons a screen is not standing behind the host:
+            the build was launched in mock mode (`env.useMock`), or the hub
+            degraded to `demo` while in real mode. Both render the same
+            "Demo" word: one shape the operator learns once. The tooltip
+            carries the actionable detail — the command to leave mock
+            mode, or that the backend is offline — because the badge's
+            surface is too small for it. Hidden entirely in real + live:
+            the absence of the pill is what "you're pointed at the real
+            thing" reads as, and a positive "real" pill would make this
+            chrome louder than the one reading it tells. */}
+        <LiveBadge useMock={env.useMock} status={hubStatus} />
 
         {/* Hidden rather than explained, and the two halves of the access
             rule are what decide it: this looks like an action but it is a

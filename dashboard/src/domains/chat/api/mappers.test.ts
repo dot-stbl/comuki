@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest"
 import {
   chatMessagesPageToDomainMessages,
   chatMessageViewToDomainMessage,
+  chatSessionViewToDomainSession,
   chatSlashCommandsToDomainCommands,
   chatSlashCommandToDomainCommand,
   toChatMessage,
+  toChatSession,
 } from "@/domains/chat/api/mappers"
 import {
   availableCommands,
@@ -405,6 +407,14 @@ describe("toChatMessage carries the part list", () => {
           nodes: [{ id: "w1", label: "read", profile: "explorer" }],
           edges: [{ from: "w1", to: "w2" }],
         },
+        // Issue #51 slice 3 — eight kind now, see ArtifactRefCard.tsx.
+        {
+          kind: "artifact-ref",
+          artifactIds: [
+            "00000000-0000-0000-0000-000000000001",
+            "00000000-0000-0000-0000-000000000002",
+          ],
+        },
       ],
     })
 
@@ -416,6 +426,7 @@ describe("toChatMessage carries the part list", () => {
       "tool",
       "handoff",
       "plan",
+      "artifact-ref",
     ])
     expect(message.parts?.[1]).toEqual({
       kind: "code",
@@ -431,6 +442,13 @@ describe("toChatMessage carries the part list", () => {
       status: "success",
       outputJson: "ok",
       durationMs: 412,
+    })
+    expect(message.parts?.[7]).toEqual({
+      kind: "artifact-ref",
+      artifactIds: [
+        "00000000-0000-0000-0000-000000000001",
+        "00000000-0000-0000-0000-000000000002",
+      ],
     })
   })
 
@@ -683,5 +701,63 @@ describe("a part kind the client does not know degrades the part", () => {
         total: 2,
       })
     ).not.toThrow()
+  })
+})
+
+describe("toChatSession", () => {
+  /**
+   * Issue #51 slice 3 — `projectId` fans out to the chat console → the
+   * thread → the message → the `artifact-ref` card. Mock seeds that
+   * pre-date the wire's `projectId` (i.e. every existing seed) stay
+   * valid as `null`; real-mode sessions carry the uuid the host
+   * knows.
+   */
+  it("threads the wire's projectId through", () => {
+    const session = chatSessionViewToDomainSession({
+      id: "cs",
+      projectId: "00000000-0000-0000-0000-0000000000aa",
+      title: "demo",
+      status: "active",
+      createdAt: "2026-09-01T09:00:00.000Z",
+      updatedAt: "2026-09-01T09:10:00.000Z",
+    })
+    expect(session.projectId).toBe(
+      "00000000-0000-0000-0000-0000000000aa",
+    )
+  })
+
+  it("treats a wire null projectId as null rather than synthesizing one", () => {
+    const session = chatSessionViewToDomainSession({
+      id: "cs",
+      projectId: null,
+      title: "demo",
+      status: "active",
+      createdAt: "2026-09-01T09:00:00.000Z",
+      updatedAt: "2026-09-01T09:10:00.000Z",
+    })
+    expect(session.projectId).toBeNull()
+  })
+
+  it("reads the seed's projectId (mock mode)", () => {
+    const session = toChatSession({
+      id: "cs",
+      title: "demo",
+      age: "4 min",
+      projectId: "00000000-0000-0000-0000-0000000000bb",
+      messages: [],
+    })
+    expect(session.projectId).toBe(
+      "00000000-0000-0000-0000-0000000000bb",
+    )
+  })
+
+  it("nulls a seed session that predates the projectId field", () => {
+    const session = toChatSession({
+      id: "cs",
+      title: "demo",
+      age: "4 min",
+      messages: [],
+    })
+    expect(session.projectId).toBeNull()
   })
 })

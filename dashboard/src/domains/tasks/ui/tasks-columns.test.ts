@@ -28,6 +28,7 @@ const columns = createTaskColumns({
   projects: uniqueTaskProjects(tasks, PROJECTS_SEED),
   dispatching: false,
   onDispatch: () => {},
+  onArtifactOpen: () => {},
   session,
 })
 

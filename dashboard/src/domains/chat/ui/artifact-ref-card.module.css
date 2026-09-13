@@ -1,0 +1,31 @@
+/* The artifact-ref card.
+ *
+ * A row of thumbnails with a placeholder note when the referenced
+ * artifacts have been revoked. Same flat-strip grammar as the run
+ * page's evidence strip, with the cards-on-cyan rule relaxed: a card
+ * on its own line in chat is a single, narrow surface. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: flex-start;
+}
+
+.orphans {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}

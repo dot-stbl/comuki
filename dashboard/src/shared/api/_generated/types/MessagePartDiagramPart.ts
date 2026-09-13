@@ -10,21 +10,16 @@ export const messagePartDiagramPartKindEnum = {
 export type MessagePartDiagramPartKindEnumKey =
   (typeof messagePartDiagramPartKindEnum)[keyof typeof messagePartDiagramPartKindEnum]
 
-/**
- * @description A diagram carried as its source text; the console renders it.
- */
 export type MessagePartDiagramPart = {
   /**
    * @type string | undefined
    */
   kind?: MessagePartDiagramPartKindEnumKey
   /**
-   * @description Diagram dialect (`mermaid`, `dot`, …).
    * @type string
    */
   dialect: string
   /**
-   * @description Diagram source, verbatim.
    * @type string
    */
   source: string

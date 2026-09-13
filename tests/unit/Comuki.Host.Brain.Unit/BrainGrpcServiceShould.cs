@@ -71,7 +71,8 @@ public sealed class BrainGrpcServiceShould
     private static BrainAgent Agent(params ChatResponse[] responses)
     {
         return new BrainAgent(
-            new ScriptedChatClient(responses),
+            new StaticModelConfigProvider(),
+            new ScriptedChatClientFactory(responses),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),

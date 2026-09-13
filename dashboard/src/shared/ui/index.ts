@@ -31,6 +31,11 @@ export {
   type CodeBlockProps,
   type CodeLanguage,
 } from "./code-block"
+export { EvidencePane, type EvidencePaneProps } from "./evidence-pane"
+export {
+  EvidenceThumbnail,
+  type EvidenceThumbnailProps,
+} from "./evidence-thumbnail"
 export { ForbiddenState, type ForbiddenStateProps } from "./forbidden-state"
 export {
   SplitPane,

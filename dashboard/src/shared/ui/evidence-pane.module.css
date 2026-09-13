@@ -1,0 +1,143 @@
+/* The evidence viewer modal.
+ *
+ * Three layers stack on top of each other, in the same order the eye reads
+ * them: the dimming backdrop, the dialog itself, the close affordance
+ * inside it. Each layer only carries the styles it owns — the box never
+ * reaches outside its bounding rect for a property it could set itself.
+ */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s6);
+  background: color-mix(in srgb, var(--background) 70%, transparent);
+  z-index: 60;
+}
+
+.modal {
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  width: min(960px, 100%);
+  max-height: min(820px, calc(100dvh - var(--s6) * 2));
+}
+
+/* The dialog is a column: bar, body, foot. The body is the only one that
+   grows and the only one that scrolls, because the artifact can be big
+   and the bar has to stay reachable while the operator reads. */
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: var(--r-lg);
+  background: var(--background);
+  box-shadow: var(--shadow-lift);
+  overflow: clip;
+  font-family: var(--font-ui);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex: 0 0 auto;
+  padding: var(--s3) var(--s4);
+  border-bottom: var(--hairline) solid var(--rule);
+}
+
+.title {
+  margin: 0;
+  min-inline-size: 0;
+  flex: 1 1 auto;
+  font-size: var(--t-body);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s5);
+  background: var(--muted);
+  overflow: auto;
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  background: var(--background);
+}
+
+/* `allow-scripts` only — `allow-same-origin` would let the embedded
+   document read the dashboard's cookies. The CSP on the host response
+   (`VisualArtifactsResponseHelpers.ApplyContentHeaders`) closes the
+   server-side half of the same guarantee. */
+.iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 60dvh;
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--background);
+}
+
+.empty {
+  margin: 0;
+  max-inline-size: 56ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex: 0 0 auto;
+  padding: var(--s3) var(--s4);
+  border-top: var(--hairline) solid var(--rule);
+}
+
+.download {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  text-decoration: underline;
+  text-underline-offset: var(--s1);
+}
+
+.urlLabel {
+  margin-inline-start: auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

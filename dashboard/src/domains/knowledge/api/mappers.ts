@@ -95,12 +95,6 @@ export interface KnowledgeSearchResponseWire {
   readonly items: readonly KnowledgeSearchHitWire[]
 }
 
-function toKind(_source: string): "doc" {
-  // Every document the ingest surface accepts lands as a doc row; the rule
-  // and skill kinds are the control-plane vocabulary and never arrive here.
-  return "doc"
-}
-
 /** An ISO instant as the row's "updated" word — date, not clock time. */
 function toUpdated(iso: string): string {
   const parsed = Date.parse(iso)
@@ -122,7 +116,9 @@ export function knowledgeDocumentToEntry(
 ): KnowledgeEntry {
   return {
     id: doc.id,
-    kind: toKind(doc.source),
+    // Every document the ingest surface accepts lands as a doc row; the rule
+    // and skill kinds are the control-plane vocabulary and never arrive here.
+    kind: "doc",
     title: doc.title,
     scope: doc.projectId,
     ruleKind: undefined,

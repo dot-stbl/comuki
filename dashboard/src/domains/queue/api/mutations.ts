@@ -53,10 +53,11 @@ async function postWorkerAction(
   } catch (error) {
     // The host's problem detail ("the claim loop has no per-worker drain
     // flag…") is the sentence the failure paragraph under the pool renders;
-    // "request failed 501" would make the operator translate.
-    throw new Error(
-      requestFailureMessage(error, `worker ${action} failed`)
-    )
+    // "request failed 501" would make the operator translate. The original
+    // error rides along as the cause — status and body stay inspectable.
+    throw new Error(requestFailureMessage(error, `worker ${action} failed`), {
+      cause: error,
+    })
   }
   return { workerId, action }
 }

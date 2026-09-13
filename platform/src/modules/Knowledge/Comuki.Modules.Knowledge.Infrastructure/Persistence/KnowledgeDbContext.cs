@@ -1,6 +1,5 @@
 using Comuki.Modules.Knowledge.Domain;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence.Configurations;
-using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,12 +48,16 @@ public sealed class KnowledgeDbContext(
     public bool ScopeUnrestricted => scopeAccessor?.Current.Unrestricted ?? true;
 
     /// <summary>
-    /// Projects the current subject is confined to; empty means "no
-    /// project", not "any project". Re-materialised per read — a copy of
-    /// the already-resolved scope, not a walk.
+    /// Projects the current subject is confined to, projected onto the
+    /// raw <see cref="Guid"/> values EF Core can translate. Empty means
+    /// "no project", not "any project". Re-materialised per read — a copy of
+    /// the already-resolved scope, not a walk. The query filters below
+    /// compare against this Guid array (not the strongly-typed
+    /// <c>ProjectId</c>) because EF Core's query translator cannot lower
+    /// a custom struct's member access into SQL.
     /// </summary>
-    public ProjectId[] ScopeProjectIds => scopeAccessor is { } accessor
-        ? [.. accessor.Current.ProjectIds]
+    public Guid[] ScopeProjectIds => scopeAccessor is { } accessor
+        ? [.. accessor.Current.ProjectIds.Select(static projectId => projectId.Value)]
         : [];
 
     /// <summary>
@@ -81,16 +84,16 @@ public sealed class KnowledgeDbContext(
         // The object axis, as row-level filters: a null project means the
         // corpus is global (cross-project — visible to every subject);
         // otherwise the row follows its project axis. ProjectId is a raw
-        // nullable Guid on both entities; we resolve through ProjectId.Value
-        // to compare with the ambient scope's id list.
+        // nullable Guid on both entities; the scope list is a Guid array so
+        // Contains lowers to `= ANY(...)` in SQL.
         modelBuilder.Entity<SourceDocument>()
             .HasQueryFilter(document => ScopeUnrestricted
                 || document.ProjectId == null
-                || ScopeProjectIds.Any(projectId => projectId.Value == document.ProjectId.Value));
+                || ScopeProjectIds.Contains(document.ProjectId.Value));
         modelBuilder.Entity<MemoryEmbedding>()
             .HasQueryFilter(embedding => ScopeUnrestricted
                 || embedding.ProjectId == null
-                || ScopeProjectIds.Any(projectId => projectId.Value == embedding.ProjectId.Value));
+                || ScopeProjectIds.Contains(embedding.ProjectId.Value));
 
         base.OnModelCreating(modelBuilder);
     }

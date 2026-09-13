@@ -1,4 +1,3 @@
-using Comuki.Host.Testing;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
@@ -9,6 +8,7 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Artifacts;
+using Comuki.Host.Testing;
 using Comuki.Modules.Artifacts.Infrastructure.Persistence;
 using Comuki.Modules.Artifacts.Infrastructure.Store;
 using Comuki.Modules.Identity.Infrastructure.Persistence;

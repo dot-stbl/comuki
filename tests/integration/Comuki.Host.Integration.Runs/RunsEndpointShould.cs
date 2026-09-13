@@ -101,8 +101,15 @@ public sealed class RunsEndpointShould : IAsyncLifetime
                 EnvironmentName = Environments.Development, // test fixture — validator short-circuits on non-Production
             });
         builder.Host.UseDefaultServiceProvider(static options => { options.ValidateOnBuild = false; options.ValidateScopes = false; });
-        builder.WebHost.UseUrls($"http://127.0.0.1:{FreeTcpPort()}");
+        var hostPort = FreeTcpPort();
+        builder.WebHost.UseUrls($"http://127.0.0.1:{hostPort}");
         builder.Logging.ClearProviders();
+        // AuthPublicHostOptions (security audit A03-1/A10-1): ValidateOnStart
+        // requires a non-empty auth:publicHost:publicUrl. This fixture
+        // predates Comuki.Host.Testing.TestHostBuilder and builds its own
+        // WebApplicationBuilder, so it seeds the same key directly — the
+        // test loopback address is this host's "public" address here.
+        builder.Configuration["auth:publicHost:publicUrl"] = $"http://127.0.0.1:{hostPort}";
         builder.Configuration["ControlPlane:Root"] = Path.GetTempPath();
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;

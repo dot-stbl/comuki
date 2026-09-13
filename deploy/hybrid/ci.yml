@@ -49,7 +49,6 @@ variables:
   GIT_DEPTH: "0"
   REGISTRY: registry.hybrid.ai
   IMAGE_NAME: comuki/comuki
-    KANIKO_BUILD_ARGS: "COMUKI_VERSION=$CI_COMMIT_SHORT_SHA"
   WORKER_IMAGE_NAME: comuki/worker
   APP_VERSION: "0.1.$CI_PIPELINE_IID"
   NOVA_RUNNER_TAG: "nova-dev"
@@ -57,6 +56,8 @@ variables:
   # Same pin as console.x (live consumer of these templates).
   CICD_MODULES_REF: "6f245f95c09177020adeaef851fdd2f37b6328f2"
   KANIKO_DOCKERFILE: deploy/hybrid/host.Dockerfile
+  # Version stamped into both images; the host derives the worker tag from it.
+  KANIKO_BUILD_ARGS: "COMUKI_VERSION=$CI_COMMIT_SHORT_SHA"
   KANIKO_TAG: "$CI_COMMIT_SHORT_SHA"
   KANIKO_EXTRA_TAGS: "$APP_VERSION $CI_COMMIT_TAG"
   ARGOCD_DEV_API_URL: "https://argocd.nl.dev.console.adcluster.targetix.net"
@@ -216,7 +217,6 @@ build:image:worker:
   extends: build:image
   variables:
     IMAGE_NAME: comuki/worker
-      KANIKO_BUILD_ARGS: "COMUKI_VERSION=$CI_COMMIT_SHORT_SHA"
     KANIKO_DOCKERFILE: deploy/hybrid/worker.Dockerfile
     # `latest` keeps Compute:Scale:WorkerImage (no tag in dev.yaml) pullable
     # until Slice 0 pins the tag properly; short_sha + APP_VERSION stay the

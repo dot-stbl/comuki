@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router"
 
 import { ThemeControl } from "@/app/layout/theme-control"
 import { LiveBadge } from "@/app/layout/live-badge"
+import { MockModeBadge } from "@/app/layout/mock-mode-badge"
 import { ThemePicker } from "@/app/theme"
 import { GlobalSearch } from "@/app/search"
 import { env } from "@/shared/config/env"
@@ -38,6 +39,17 @@ export function AppShellTopbar() {
             property of the machine, not of any one screen: the same socket
             (or lack of it) stands behind every list the bar looks down on. */}
         <LiveBadge />
+
+        {/* A second reading of "where does this screen's data come from" —
+            the *mode* (seeds vs live API), not the *freshness* (live / poll
+            / demo). They answer different questions: a screen can be in
+            "live" freshness and still be serving mocks, so the two sit side
+            by side rather than collapsing into one badge. Hidden entirely
+            when `env.useMock` is false; the live badge alone says what is
+            happening then. The tooltip carries the only actionable
+            sentence in this whole chrome cluster — the exact command to
+            run to swap modes. */}
+        <MockModeBadge />
 
         {/* Hidden rather than explained, and the two halves of the access
             rule are what decide it: this looks like an action but it is a

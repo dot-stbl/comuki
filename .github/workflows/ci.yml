@@ -108,18 +108,42 @@ jobs:
 
       # Comuki.Host.Testing is the shared harness library, not a suite — it has
       # no entry point and is skipped by the glob below on purpose.
+      # The step reads the run summary to tell a skipped suite from a broken
+      # one, so the summary has to say the same words everywhere. Without
+      # this the parse is silently locale-dependent: a developer with a
+      # localised SDK gets a different answer from the runner.
       - name: Run integration suites
+        env:
+          DOTNET_CLI_UI_LANGUAGE: en
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          status=0
+          log=$(mktemp)
           for project in tests/integration/*/; do
             name=$(basename "$project")
             if [ "$name" = "Comuki.Host.Testing" ]; then
               continue
             fi
             echo "::group::$name"
-            dotnet run --project "$project" -c Debug
+            if dotnet run --project "$project" -c Debug > "$log" 2>&1; then
+              cat "$log"
+            else
+              code=$?
+              cat "$log"
+              # Exit 8 is the testing platform saying "zero tests ran". A suite
+              # whose cases are all deliberately skipped reports that too, and a
+              # recorded decision to skip is not a failure. Tell them apart by
+              # what the run actually found: a broken discovery reports no tests
+              # at all, a fully skipped suite still counts them.
+              if [ "$code" -eq 8 ] && grep -qE "total: [1-9]" "$log" && grep -qE "failed: 0" "$log"; then
+                echo "::warning title=$name::every test in this suite is skipped"
+              else
+                status=1
+              fi
+            fi
             echo "::endgroup::"
           done
+          exit "$status"
 
   build-fe:
     name: build frontend (dashboard)

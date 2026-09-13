@@ -50,13 +50,16 @@ one-off автоматизация — только на **Node.js** через 
 
 - В проекте один зафиксированный рантайм для скриптов — **JavaScript /
   TypeScript** через bun
-- `packageManager: "bun@1.3.10"` зафиксирован в `src/client-side/package.json`
+- Манифест фронтенда — `dashboard/package.json`; lock-файлы у bun текстовые
+  (`bun.lock`, см. `agents/bun.lock`), `bun.lockb` в проекте не встречается.
+  Поле `packageManager` нигде не закреплено — версию bun ставит CI через
+  `oven-sh/setup-bun`
 - Установка Python (`pyenv`, `venv`, `system pip`, `uv`, `poetry`) — лишний
   moving part, который ломается по-разному на Windows / Linux / macOS и
   плодит environment-specific баги
 - Python-скрипты в репе тянут за собой `requirements.txt` / `pyproject.toml`
   / venv, которые **не управляются** ни одним из существующих lock-файлов
-  (`bun.lockb`, `package-lock.json`, `Directory.Packages.props`)
+  (`bun.lock`, `package-lock.json`, `Directory.Packages.props`)
 
 ## Что под запретом
 
@@ -76,11 +79,11 @@ one-off автоматизация — только на **Node.js** через 
 | Задача | Решение в Node.js |
 |--------|-------------------|
 | Одноразовый скрипт (data munging, миграция) | `bun run script.ts` или `bun script.ts` (bun нативно) |
-| Утилита для FE | Добавить в `scripts:` блок `src/client-side/package.json` |
+| Утилита для FE | Добавить в `scripts:` блок `dashboard/package.json` |
 | Утилита для BE / общая | Создать локальный `package.json` рядом со скриптом, заполнить через `bun init -y` |
 | Dev-тулинг для backend | .NET CLI: `dotnet run --project ...` или `dotnet script` (если установлен) |
 | Code-gen / API client | `bun run generate-api` (Kubb) |
-| Линтинг / форматирование | `biome` (FE), `dotnet format` (BE) |
+| Линтинг / форматирование | `eslint` + `prettier` (FE), `dotnet format` (BE) |
 | Парсинг JSON / YAML / CSV | npm: `js-yaml`, `papaparse`, `csv-parse` |
 | HTTP-запросы | npm: `axios`, `undici`, `node-fetch` |
 | Запуск shell-команд | `node:child_process` (через `exec`/`spawn`) |
@@ -88,7 +91,7 @@ one-off автоматизация — только на **Node.js** через 
 | Архивирование | npm: `archiver`, `yauzl` |
 | CSV / Excel | npm: `xlsx`, `papaparse` |
 
-## Запуск скриптов вне `src/client-side/`
+## Запуск скриптов вне `dashboard/`
 
 Если скрипт не относится к FE (например, миграция данных, CI-хелпер),
 создать **локальный** `package.json` рядом с ним:
@@ -115,7 +118,7 @@ scripts/
 `package.json` и `tsconfig.json` без необходимости в `node_modules`
 (для проектов без зависимостей).
 
-Если нужны npm-пакеты — `bun add <pkg>` создаст `bun.lockb` локально.
+Если нужны npm-пакеты — `bun add <pkg>` создаст `bun.lock` локально.
 **Глобальный** `package.json` корня проекта для этого **не использовать** —
 только локальный рядом со скриптом.
 
@@ -213,7 +216,8 @@ print("hello")
 ## Связанные правила и файлы
 
 - `AGENTS.md` § Critical Non-Obvious Patterns
-- `.claude/rules/CODING-RULES.md` — code style для .NET
-- `.claude/rules/PROJECT-STRUCTURE.md` § 9 — layer dependencies
-- `.claude/rules/RULES-FORMAT.md` — формат и иерархия правил
-- `src/client-side/package.json` — `packageManager: "bun@1.3.10"`
+- [`../coding/CODING-RULES.md`](../coding/CODING-RULES.md) — code style для .NET
+- [`../coding/PROJECT-STRUCTURE.md`](../coding/PROJECT-STRUCTURE.md) § 9 — layer dependencies
+- [`../coding/RULES-FORMAT.md`](../coding/RULES-FORMAT.md) — формат и иерархия правил
+- [`build-verification.md`](build-verification.md) — какие команды реально гоняются
+- `dashboard/package.json` — скрипты фронтенда (bun + eslint + prettier + vitest)

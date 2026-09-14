@@ -11,7 +11,7 @@
 
 .probe {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--s4);
   /* Wraps rather than crushes: the provider's refusal is a sentence, and the
      button beside it is `flex: 0 0 auto` — so on a narrow board the sentence

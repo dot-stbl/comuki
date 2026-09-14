@@ -51,6 +51,7 @@
    steps only make sense once the operator knows nothing is configured. */
 .none {
   display: flex;
+  align-items: center;
   gap: var(--s3);
   margin: 0;
   padding: var(--s3) var(--s4);
@@ -67,7 +68,6 @@
   inline-size: var(--icon-sm);
   block-size: var(--icon-sm);
   flex: 0 0 auto;
-  margin-block-start: var(--s1);
   color: var(--st-waiting);
 }
 

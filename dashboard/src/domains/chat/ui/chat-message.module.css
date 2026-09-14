@@ -344,7 +344,7 @@
    marked — hue and a mark, never hue alone. */
 .error {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--s2);
   margin: 0;
   min-inline-size: 0;
@@ -364,7 +364,6 @@
   flex: 0 0 auto;
   inline-size: var(--icon-sm);
   block-size: var(--icon-sm);
-  margin-block-start: 0.2em;
   color: var(--st-failed);
 }
 

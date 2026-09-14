@@ -59,7 +59,7 @@ variables:
   # Version stamped into both images (APP_VERSION is a pushed image tag too — the pin resolves it).
   KANIKO_BUILD_ARGS: "COMUKI_VERSION=$APP_VERSION"
   KANIKO_TAG: "$CI_COMMIT_SHORT_SHA"
-  KANIKO_EXTRA_TAGS: "$APP_VERSION $CI_COMMIT_TAG"
+  KANIKO_EXTRA_TAGS: "$APP_VERSION latest $CI_COMMIT_TAG"
   ARGOCD_DEV_API_URL: "https://argocd.nl.dev.console.adcluster.targetix.net"
   ARGOCD_TLS_VERIFY: "false"
   SECRETS_MAPPING_FILE: "deploy/hybrid/secrets.schema.yml"

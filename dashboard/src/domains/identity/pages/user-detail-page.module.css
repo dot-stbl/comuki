@@ -24,10 +24,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--s8);
-  /* The measure a reading is set to, not the width the window happens to be.
-     Wide enough for a provider subject and a date on one line and no wider —
-     a fact list that runs the width of a desk monitor stops being a list. */
-  max-inline-size: 60rem;
+  /* The one measure every record page takes, caps-centred — see the policy in
+      `form-page.tsx`. Wide enough for a provider subject and a date on one
+      line and no wider: a fact list that runs the width of a desk monitor
+      stops being a list. */
+  max-inline-size: var(--measure-record);
+  margin-inline: auto;
   min-inline-size: 0;
   font-family: var(--font-ui);
 }

@@ -4,6 +4,7 @@ using Comuki.Host.Brain.Brain.Options;
 using Comuki.Host.Brain.ControlPlane;
 using Comuki.Host.Brain.Ports.ActiveRuns;
 using Comuki.Host.Brain.Ports.Exploration;
+using Comuki.Modules.Knowledge.Infrastructure;
 using Comuki.Modules.Memory.Infrastructure;
 using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Cli;
@@ -67,6 +68,15 @@ builder.WebHost.ConfigureKestrel(server =>
 // without declaring one, instead of silently defaulting open.
 builder.Services.TryAddSingleton<ISubjectScopeAccessor, AsyncLocalSubjectScopeAccessor>();
 builder.Services.AddMemoryPersistence(connectionString);
+
+// Semantic memory (the brain's memory.write / memory.search tools): the
+// same embedding provider the knowledge module pins — one model, one
+// dimension (1536) for both stores. Registers ONLY the embedding slice:
+// no knowledge schema, no ingestor, no ingest worker here. Defaults to
+// the noop provider (no model configured) — the memory tools then embed
+// nothing and answer via the fallback ranking.
+builder.Services.AddKnowledgeEmbeddingClient(builder.Configuration);
+
 builder.Services.AddCodeFirstGrpc();
 
 // Secret resolution (issue #53, slice 2/3 follow-up): the brain host

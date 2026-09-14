@@ -79,6 +79,7 @@ public sealed class BrainGrpcServiceShould
             new StubActiveRunCatalog(),
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
+            TimeProvider.System,
             Options.Create(new BrainOptions()));
     }
 

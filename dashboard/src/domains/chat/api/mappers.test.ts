@@ -146,6 +146,47 @@ describe("chatMessageViewToDomainMessage", () => {
         .at
     ).toBe("")
   })
+
+  it("carries the cost reading the host journaled, quoted numbers included", () => {
+    const message = chatMessageViewToDomainMessage(
+      messageViewFixture({
+        meta: {
+          model: "glm-4.7",
+          tokensIn: 1180,
+          tokensOut: "660",
+          costMicros: "2900",
+          latencyMs: 8200,
+          stopReason: "stop",
+        },
+      })
+    )
+
+    expect(message.meta).toEqual({
+      model: "glm-4.7",
+      tokensIn: 1180,
+      tokensOut: 660,
+      costMicros: 2900,
+      latencyMs: 8200,
+      stopReason: "stop",
+    })
+  })
+
+  it("drops a number it cannot read rather than handing the renderer a NaN", () => {
+    const message = chatMessageViewToDomainMessage(
+      messageViewFixture({
+        meta: { latencyMs: "soon", costMicros: null },
+      })
+    )
+
+    expect(message.meta?.latencyMs).toBeUndefined()
+    expect(message.meta?.costMicros).toBeUndefined()
+  })
+
+  it("leaves meta absent when the row reported nothing", () => {
+    expect(
+      chatMessageViewToDomainMessage(messageViewFixture()).meta
+    ).toBeUndefined()
+  })
 })
 
 /**
@@ -450,6 +491,16 @@ describe("toChatMessage carries the part list", () => {
         "00000000-0000-0000-0000-000000000002",
       ],
     })
+  })
+
+  it("carries the seed's cost reading through, or its absence", () => {
+    const meta = { latencyMs: 8200, tokensOut: 660 }
+    expect(
+      toChatMessage({ id: "m1", kind: "reply", at: "09:21", meta }).meta
+    ).toEqual(meta)
+    expect(
+      toChatMessage({ id: "m2", kind: "reply", at: "09:21" }).meta
+    ).toBeUndefined()
   })
 
   it("copies a plan rather than sharing the seed's own arrays", () => {

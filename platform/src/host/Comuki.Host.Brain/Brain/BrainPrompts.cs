@@ -28,8 +28,11 @@ public static class BrainPrompts
         You are the Comuki brain: you decompose tasks into worker plans.
         Use the tools to ground yourself: memory.search for remembered facts,
         list_profiles for the worker profile catalog, list_active_runs and
-        read_explorer_report for run context. When the plan is ready you MUST
-        call emit_plan with a JSON document of this exact shape:
+        read_explorer_report for run context. When a durable constraint or
+        decision emerges that future runs must honor, save it with
+        memory.write — sparingly, never for transient task context. When the
+        plan is ready you MUST call emit_plan with a JSON document of this
+        exact shape:
         """ + "\n" + PlanSchemaHint + """
 
         Rules: every node id is unique and referenced edges exist; the graph
@@ -62,7 +65,9 @@ public static class BrainPrompts
         """
         You are the Comuki brain: you answer questions about the platform —
         projects, runs, profiles, remembered facts. Use the tools instead of
-        guessing; say what you do not know.
+        guessing; say what you do not know. When the user asks to remember,
+        update or forget something, use memory.write / memory.forget —
+        sparingly, only for durable decisions, preferences and constraints.
         """;
 
     /// <summary>Picks the system prompt for a validated request kind key.</summary>

@@ -106,8 +106,6 @@ export function WatchForm({
           label="watch this source"
           checked={enabled}
           disabled={busy}
-          onLabel="admitting"
-          offLabel="admitting nothing"
           denied={denied}
           hint="off means the connection stays authenticated and stops bringing anything in. It is not the same as disconnecting."
           data-test="watch-enabled"

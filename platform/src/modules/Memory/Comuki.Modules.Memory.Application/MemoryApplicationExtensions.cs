@@ -6,8 +6,10 @@ namespace Comuki.Modules.Memory.Application;
 
 /// <summary>
 /// Composition of the Memory application layer: the digest service over
-/// the memory store port. The port is satisfied by the infrastructure
-/// installer (EF/Npgsql) or by a fake in tests; nothing here touches EF.
+/// the memory store port plus its <see cref="Shared.Contracts.Memory.IMemoryDigest"/>
+/// contract adapter (what the chat graph's ThinkNode consumes). The store
+/// port is satisfied by the infrastructure installer (EF/Npgsql) or by a
+/// fake in tests; nothing here touches EF.
 /// </summary>
 public static class MemoryApplicationExtensions
 {
@@ -16,6 +18,7 @@ public static class MemoryApplicationExtensions
     public static IServiceCollection AddMemoryApplication(this IServiceCollection services)
     {
         services.TryAddSingleton<MemoryDigest>();
+        services.AddSingleton<Shared.Contracts.Memory.IMemoryDigest, ComukiMemoryDigest>();
         return services;
     }
 }

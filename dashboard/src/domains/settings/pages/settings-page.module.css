@@ -3,54 +3,53 @@
 
    AppShell `.shell` (100dvh) -> `.body` (flex, min-height 0) -> the shell's
    split -> `.main` (flex column, height 100%) -> `.content` (flex 1 1 0,
-   min-height 0) -> `.screen` below (height 100%, flex column) -> `.tabs`
-   (flex 1 1 0, flex column) -> `.tabList` (flex 0 0 auto) + `.tabPanel`
-   (flex 1 1 0, min-height 0, overflow-y auto) -> the section stack, which
-   claims no share of the viewport and grows with its content.
+   min-height 0, overflow auto) -> `.screen` below -> `.tabs` -> `.tabList` +
+   `.tabPanel` -> the section stack.
 
-   The two links that bite are `.tabs` and `.tabPanel`: React Aria renders both
-   as plain divs, so neither is a flex container until this file says so.
+   The chain stops at `.content`, exactly as it does on the verify screen:
+   nothing below the shell's scroll port claims a share of the viewport, so the
+   panel grows to its content and the page — `.content` — is the one scroll
+   context. The tab strip is part of that document and scrolls with it; the
+   chrome that must not scroll away (breadcrumbs, title) is the header the
+   shell pins above the port. Holding the strip fixed instead would take an
+   opaque band plus a z-index negotiated against the tables' sticky heads, and
+   a strip that rides the document is the simpler honest shape for a screen
+   whose sections are switched on a slow clock.
 
-   The panel is where the chain deliberately stops. A control-plane section is a
-   document read top to bottom on a slow clock, not a board that has to fit at
-   once — so the tab strip stays fixed and each panel scrolls its own document,
-   and the tables inside cap themselves at `--h-table-body` rather than fighting
-   the page for depth. */
+   This screen once locked every link at `height: 100%` / `flex: 1 1 0` and
+   made `.tabPanel` its own scroll port — the panel never filled, and a second
+   scrollbar sat inside the first. The tables inside cap themselves at
+   `--h-table-body` and scroll inside their own ports, so their sticky heads
+   never anchored to the panel and do not anchor to the page either. */
 
 .screen {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  /* clip, not hidden: the tab strip sits above panels holding tables whose head
-     and pinned columns are sticky, and `hidden` makes this box a scroll
-     container they would silently re-anchor to. See The Clip-Not-Hidden Rule
-     in DESIGN.md. */
-  overflow: clip;
 }
 
 .tabs {
   display: flex;
   flex-direction: column;
-  flex: 1 1 0;
-  min-height: 0;
 }
 
 /* The seven sections, on the hairline that separates them from their content —
    the same one-pixel rule the topbar sits on. Not a segmented control, not a
    row of pills: this is chrome, and chrome here is built from a rule. Seven is
-   more than three, so the inter-tab spacing sits at `--s5` rather than the
-   `--s6` the shorter strips use — one step tighter so all seven sit on one
-   line at the standard viewport. The `overflow-x` is the safety net for the
-   operator who shrinks the window further: scroll sideways rather than crush
-   the words — the shape-not-reading rule. */
+   more than three, so this strip is tighter than the shorter ones: gap
+   `--s4` (one step tighter than the `--s5` the shorter strips use) and no
+   inline padding — the `.content` above already gives the strip its
+   left and right breathing room, doubling it would push the strip past the
+   panel on standard viewports. `overflow-x: clip` (not `auto`): an `auto`
+   scrollbar draws itself on the hairline at the slightest overflow and
+   reads as a defect, and the page's own `.content` scroll already carries
+   sideways reach on genuinely narrow windows. */
 .tabList {
   display: flex;
   flex: 0 0 auto;
-  gap: var(--s5);
-  padding-inline: var(--page-x);
+  gap: var(--s4);
+  padding-inline: 0;
   border-block-end: var(--hairline) solid var(--rule);
-  overflow-x: auto;
+  overflow-x: clip;
 }
 
 .tab {
@@ -95,12 +94,13 @@
   flex: 0 0 auto;
 }
 
+/* A panel is the document's own body, not a port: it grows with the section
+   stack inside it and lets `.content` above do the scrolling. Only the
+   `--page-y` breathing room at its ends — the shell already opted this screen
+   out of its own block padding so the tab strip could sit at the top edge. */
 .tabPanel {
   display: flex;
   flex-direction: column;
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
   padding: var(--page-y) var(--page-x);
   outline: none;
 }
@@ -136,8 +136,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--s2);
-  flex: 1 1 0;
-  min-height: 0;
   padding: var(--page-y) var(--page-x);
 }
 

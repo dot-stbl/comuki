@@ -96,7 +96,7 @@ public sealed class WorkersReadEndpointShould : IAsyncLifetime
         TestBootstrapAdmin.Configure(builder.Configuration);
         TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
+        application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(connectionString));
         baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
     }
 

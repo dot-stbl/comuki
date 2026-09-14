@@ -11,11 +11,12 @@ import {
 import {
   Button,
   ConfirmDialog,
+  CronField,
   FormDialog,
   Section,
   StatusBadge,
-  TextareaField,
   TextField,
+  TextareaField,
   Tooltip,
 } from "@/shared/ui"
 
@@ -208,13 +209,12 @@ export function ScheduledJobsSection({
         }}
       >
         <div className={styles.form}>
-          <TextField
+          <CronField
             id="job-cron"
             label="cron"
             value={cron}
             onValueChange={setCron}
-            placeholder="0 3 * * *"
-            hint="Five-field cron, in the project's own timezone policy."
+            hint="Five-field cron, in the project's own timezone policy. Pick a preset or compose the wire directly."
           />
           <TextField
             id="job-profile"

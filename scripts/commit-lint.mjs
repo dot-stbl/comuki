@@ -60,6 +60,22 @@ const LEGACY_SUBJECT_PATTERN =
 const FEATURE_SUBJECT_PATTERN =
   /^\[\.stbl\]\((?<path>[a-z][a-z0-9._\/-]*)\)(?<breaking>!)?: (?<description>.*)$/;
 
+/**
+ * Prefixes this repo has used and moved on from, newest first. Named
+ * explicitly rather than folded into "missing prefix": every commit in this
+ * history carries one of them, so an author reaching for muscle memory is
+ * told which one it was and what replaced it.
+ */
+const RETIRED_PREFIXES = ['[hybrid]', '[stbl]'];
+
+/**
+ * Feature areas the rule's table lets stand alone. Every other root names a
+ * kind of change rather than a place in the tree — `feat` without an area
+ * says only "this is a feature", which the type already said — so it needs
+ * a sub-area. See the Top-level areas table in the commit-format rule.
+ */
+const STANDALONE_AREAS = new Set(['meta', 'docs']);
+
 const SCOPE_PATTERN = /^[a-z0-9][a-z0-9._\/-]*$/;
 
 /** Subjects git writes itself — never the author's to fix.
@@ -276,8 +292,9 @@ export function extractSubject(message) {
 }
 
 function diagnoseShape(line) {
-  if (/^\[hybrid\]/i.test(line)) {
-    return ['prefix `[.stbl]` is retired — this repo uses `[.stbl]`'];
+  const retired = RETIRED_PREFIXES.find((prefix) => line.toLowerCase().startsWith(prefix));
+  if (retired) {
+    return [`prefix \`${retired}\` is retired — this repo uses \`[.stbl]\``];
   }
   if (!line.startsWith('[.stbl]')) {
     if (!/^\([^()]+\): /.test(line) && !/^[A-Za-z]+(?:\([^()]*\))?!?: /.test(line)) {
@@ -364,6 +381,11 @@ export function lintSubject(subject) {
     ({ path, description } = featureMatch.groups);
     if (!SCOPE_PATTERN.test(path)) {
       problems.push(`feature path \`${path}\` must match \`[a-z0-9][a-z0-9._/-]*\``);
+    } else if (!path.includes('/') && !STANDALONE_AREAS.has(path)) {
+      problems.push(
+        `feature path \`${path}\` names a root with no area — write \`${path}/<area>\`` +
+          ` (only ${[...STANDALONE_AREAS].map((area) => `\`${area}\``).join(' and ')} stand alone)`
+      );
     }
   }
 

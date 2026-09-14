@@ -12,6 +12,7 @@ import { useVirtualizer } from "@tanstack/react-virtual"
 import { ArrowDown } from "lucide-react"
 
 import { messageParts } from "@/domains/chat/model/parts"
+import { turnPhase, type TurnPhase } from "@/domains/chat/model/dynamics"
 import type {
   ChatMessage as Message,
   ProposalDecision,
@@ -20,6 +21,8 @@ import { Button } from "@/shared/ui"
 
 import { ChatMessage } from "./chat-message"
 import { renderPart } from "./message-part"
+import { TurnBadge } from "./turn-badge"
+import { TypingIndicator } from "./typing-indicator"
 
 import styles from "./chat-thread.module.css"
 
@@ -33,6 +36,15 @@ export interface ChatThreadProps {
    * `artifact-ref` card uses it to scope the visual-artifact fetch.
    */
   projectId: string | null
+  /**
+   * A message was sent and the turn has not answered yet.
+   *
+   * The console's send mutation in flight — the pause the typing indicator
+   * fills. Deliberately a prop rather than a query the thread reads itself:
+   * the *send* belongs to the console that made it, and a thread that polled
+   * for it would be a second opinion about whether a turn is open.
+   */
+  awaiting?: boolean
 }
 
 /**
@@ -105,6 +117,7 @@ export function ChatThread({
   onDecide,
   busy,
   projectId,
+  awaiting,
 }: ChatThreadProps) {
   const scroll = useRef<HTMLDivElement | null>(null)
 
@@ -127,6 +140,14 @@ export function ChatThread({
       ? { settled: messages.slice(0, -1), pending: last }
       : { settled: messages, pending: null }
   }, [messages])
+
+  // The word on the byline badge while the reply is still arriving. A
+  // streaming reply with working-out says `thinking`; one without any (the
+  // plain token stream) says nothing, because a badge that guesses would be
+  // the thread narrating a phase it was not told about.
+  const pendingPhase: TurnPhase | undefined = pending
+    ? turnPhase(pending)
+    : undefined
 
   const virtualize = settled.length >= VIRTUALIZE_FROM
 
@@ -265,6 +286,14 @@ export function ChatThread({
           ) : null}
         </ol>
 
+        {awaiting && !pending ? (
+          /* The pause before the first word. Outside the log for the same
+             reason the reply in flight is: it is a state of the console
+             rather than an entry in the journal, and the announcement below
+             is what says it, once, to somebody listening. */
+          <TypingIndicator />
+        ) : null}
+
         {pending ? (
           /* Outside the log, and hidden from assistive technology while the
              tokens arrive. It joins the log — and is read once, in full — the
@@ -276,6 +305,9 @@ export function ChatThread({
           >
             <div className={styles.pendingByline}>
               <span className={styles.pendingAuthor}>comuki</span>
+              {/* The same badge a settled turn carries, so the byline does not
+                  change shape when the reply lands — only the word on it. */}
+              {pendingPhase ? <TurnBadge phase={pendingPhase} /> : null}
               <span className={styles.pendingClock}>{pending.at}</span>
             </div>
             {/* The same parts the settled reading draws, so nothing changes
@@ -309,10 +341,12 @@ export function ChatThread({
         </Button>
       )}
 
-      {/* One announcement per reply, at the start of it. Empty the rest of the
-          time, so nothing is repeated when the thread re-renders. */}
+      {/* One announcement per phase, at the start of it. Empty the rest of
+          the time, so nothing is repeated when the thread re-renders. The
+          two utterances are the two phases an operator waits through: the
+          pause before the turn starts, then the turn itself arriving. */}
       <p className={styles.announce} role="status" data-test="chat-announce">
-        {pending ? "the assistant is replying" : ""}
+        {pending ? "the assistant is replying" : awaiting ? "Comuki думает" : ""}
       </p>
     </div>
   )

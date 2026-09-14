@@ -2,13 +2,22 @@ import { Fragment, useMemo, type Ref } from "react"
 import { AlertTriangle } from "lucide-react"
 
 import { messageParts } from "@/domains/chat/model/parts"
+import {
+  isMemoryDigest,
+  thinkingIteration,
+  turnMetrics,
+  turnPhase,
+} from "@/domains/chat/model/dynamics"
 import type {
   ChatMessage as Message,
   ProposalDecision,
 } from "@/domains/chat/model/types"
 
+import { MemoryDigest } from "./memory-digest"
 import { renderPart } from "./message-part"
 import { ProposalCard } from "./proposal-card"
+import { TurnBadge } from "./turn-badge"
+import { TurnMetrics } from "./turn-metrics"
 
 import styles from "./chat-message.module.css"
 
@@ -67,9 +76,11 @@ export interface ChatMessageProps {
  * | **empty** | a turn whose body derived to nothing. It says so, once, in faint text. The composition used to render a bare `<li>` here — the hole a `tool` message with no tool record fell into — and a gap in a log that explains nothing is worse than an admission. |
  *
  * The author line names who spoke and when, in the data voice, because both are
- * values in a log. There are no avatars and no bubbles: a bubble is a card, and
- * a data surface here is bounded by a hairline and takes the corner its size
- * deserves.
+ * values in a log — and, on an assistant turn, *where the turn is*: a phase
+ * badge (`thinking` / `plan` / `done`, from `model/dynamics.ts`) beside the
+ * name, with the iteration the working-out reached. There are no avatars and
+ * no bubbles: a bubble is a card, and a data surface here is bounded by a
+ * hairline and takes the corner its size deserves.
  */
 export function ChatMessage({
   message,
@@ -83,7 +94,28 @@ export function ChatMessage({
   const parts = useMemo(() => messageParts(message), [message])
   const proposal = message.kind === "proposal" ? message.proposal : undefined
   const errored = message.kind === "error"
-  const blank = parts.length === 0 && !proposal && !errored
+
+  /* The processing dynamics, and the one ordering rule they need: a digest
+     row is *consumed context*, so it takes the chip and nothing else —
+     rendering its prose through the parts loop as well would say the same
+     thing twice at two weights. */
+  const digest = isMemoryDigest(message)
+  const phase = digest ? undefined : turnPhase(message)
+  const metrics = digest ? undefined : turnMetrics(message)
+  const iteration = useMemo(
+    () =>
+      parts.reduce<number | undefined>((found, part) => {
+        if (part.kind === "thinking") {
+          const named = thinkingIteration(part.text)
+          // The last thinking part's last said iteration is the truth.
+          return named ?? found
+        }
+        return found
+      }, undefined),
+    [parts]
+  )
+
+  const blank = parts.length === 0 && !proposal && !errored && !digest
 
   return (
     <li
@@ -97,36 +129,50 @@ export function ChatMessage({
     >
       <div className={styles.byline}>
         <span className={styles.author}>{mine ? "you" : "comuki"}</span>
+        {phase ? <TurnBadge phase={phase} /> : null}
+        {phase && iteration !== undefined ? (
+          <span className={styles.iteration} data-test="chat-iteration">
+            iter {iteration}
+          </span>
+        ) : null}
         <span className={styles.clock}>{message.at}</span>
       </div>
 
       <div className={styles.body}>
-        {errored ? (
-          <p className={styles.error} data-test="chat-error" role="alert">
-            <AlertTriangle className={styles.errorIcon} aria-hidden="true" />
-            <span>{message.text}</span>
-          </p>
-        ) : null}
+        {digest ? (
+          <MemoryDigest message={message} />
+        ) : (
+          <>
+            {errored ? (
+              <p className={styles.error} data-test="chat-error" role="alert">
+                <AlertTriangle className={styles.errorIcon} aria-hidden="true" />
+                <span>{message.text}</span>
+              </p>
+            ) : null}
 
-        {proposal ? (
-          <ProposalCard proposal={proposal} onDecide={onDecide} busy={busy} />
-        ) : null}
+            {proposal ? (
+              <ProposalCard proposal={proposal} onDecide={onDecide} busy={busy} />
+            ) : null}
 
-        {parts.map((part, index) => (
-          /* Parts have no ids of their own — the wire contract is a list, and
-             a synthetic id would be a second thing to keep true. The index is
-             the honest key: a turn's parts are fixed the moment it is
-             journaled, so the list is never reordered or spliced. */
-          <Fragment key={index}>
-            {renderPart(part, message, projectId)}
-          </Fragment>
-        ))}
+            {parts.map((part, index) => (
+              /* Parts have no ids of their own — the wire contract is a list, and
+                 a synthetic id would be a second thing to keep true. The index is
+                 the honest key: a turn's parts are fixed the moment it is
+                 journaled, so the list is never reordered or spliced. */
+              <Fragment key={index}>
+                {renderPart(part, message, projectId)}
+              </Fragment>
+            ))}
 
-        {blank ? (
-          <p className={styles.blank} data-test="chat-blank">
-            this turn arrived with nothing in it
-          </p>
-        ) : null}
+            {blank ? (
+              <p className={styles.blank} data-test="chat-blank">
+                this turn arrived with nothing in it
+              </p>
+            ) : null}
+          </>
+        )}
+
+        {metrics ? <TurnMetrics metrics={metrics} /> : null}
       </div>
     </li>
   )

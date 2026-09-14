@@ -6,15 +6,15 @@
 
    AppShell `.shell` (100dvh) → `.body` (flex, min-height 0) → the shell's own
    split → `.main` (flex column, height 100%) → `.content` (flex 1 1 0,
-   min-height 0) → `settings-page.module.css` `.screen` (height 100%, flex
-   column) → `.tabPanel` (flex 1 1 0, min-height 0, **overflow-y auto**) → the
-   stack below.
+   min-height 0, **overflow auto**) → `settings-page.module.css` `.screen` →
+   `.tabPanel` → the stack below.
 
-   The chain stops at `.tabPanel` on purpose, exactly as it does on the two
-   platform registries. A control-plane section is a document read top to bottom
-   on a slow clock, not a board that has to fit at once — so nothing below the
-   panel claims a share of the viewport, and nothing needs a `height: 100%` that
-   a missing flex parent could quietly resolve to zero.
+   The chain stops at `.content`, exactly as it does on the two platform
+   registries. A control-plane section is a document read top to bottom on a
+   slow clock, not a board that has to fit at once — so nothing below the
+   shell's scroll port claims a share of the viewport, the panel grows to its
+   content, and nothing needs a `height: 100%` that a missing flex parent
+   could quietly resolve to zero.
 
    A table inside is therefore sized by its own content and capped by
    `--h-table-body` in the kit's own stylesheet: a three-row section is three

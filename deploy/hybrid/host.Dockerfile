@@ -74,7 +74,8 @@ WORKDIR /src
 COPY Directory.Build.props Directory.Packages.props nuget.config .editorconfig ./
 COPY platform/ platform/
 RUN dotnet restore platform/src/host/Comuki.Host/Comuki.Host.csproj \
-    && dotnet restore platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj
+    && dotnet restore platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj \
+    && dotnet restore platform/src/host/Comuki.Host.Brain/Comuki.Host.Brain.csproj
 
 # Publish each host into its own directory: separate dependency closures,
 # one shared image — versions between entrypoints cannot diverge.

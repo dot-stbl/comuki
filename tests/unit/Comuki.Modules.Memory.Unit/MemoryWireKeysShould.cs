@@ -59,6 +59,7 @@ public sealed class MemoryWireKeysShould
     [InlineData(MemorySource.Human, MemorySourceKeys.Human)]
     [InlineData(MemorySource.Run, MemorySourceKeys.Run)]
     [InlineData(MemorySource.LearningApproved, MemorySourceKeys.LearningApproved)]
+    [InlineData(MemorySource.Seeder, MemorySourceKeys.Seeder)]
     public void RoundTripSource(MemorySource source, string key)
     {
         MemorySourceKeys.Key(source).ShouldBe(key);

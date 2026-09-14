@@ -48,6 +48,7 @@ using Comuki.Modules.Knowledge.Application;
 using Comuki.Modules.Knowledge.Infrastructure;
 using Comuki.Modules.Memory.Application;
 using Comuki.Modules.Memory.Infrastructure;
+using Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
 using Comuki.Modules.Proxy.Application;
@@ -483,6 +484,21 @@ internal static class HostComposer
             {
                 app.Logger.LogInformation("migrations up to date");
             }
+
+            // Platform self-knowledge (brain memory): seed standing
+            // platform.* facts right after the migrations so the brain
+            // knows what Comuki is from the first turn. The build version
+            // stamped into platform.identity makes an upgrade supersede
+            // the previous fact through the store's normal mechanism.
+            var seedResult = await MemorySeeder.SeedAsync(
+                database.ConnectionString,
+                ComukiBuildInfo.Read().Version,
+                CancellationToken.None);
+            app.Logger.LogInformation(
+                "platform memory seeded ({Written} written, {Superseded} superseded, {Unchanged} unchanged)",
+                seedResult.Written,
+                seedResult.Superseded,
+                seedResult.Unchanged);
         }
 
         HostDatabase.WarnLegacyAlias(database, app.Logger);

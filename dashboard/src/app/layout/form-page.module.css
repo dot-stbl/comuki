@@ -72,7 +72,7 @@
 
 /* The one line that says what the group is deciding, measured as prose. */
 .cardNote {
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
   font-family: var(--font-ui);
   font-size: var(--t-micro);
   line-height: var(--lh-body);
@@ -80,11 +80,12 @@
 }
 
 /* A field (or a run of prose) that should not ride the card's full width —
-   a one-line title at 100rem is a field nobody can read back. The measure
-   the plain column used to impose, applied per field where the group leaves
-   room. */
+   a one-line title at 100rem is a field nobody can read back. The form
+   measure the plain column below imposes, applied per field where the group
+   leaves room. The two had drifted apart (40rem against the column's 44rem);
+   the token is what reconciled them. */
 .measure {
-  max-inline-size: 40rem;
+  max-inline-size: var(--measure-form);
   min-inline-size: 0;
 }
 
@@ -92,7 +93,7 @@
    because that is what it is. */
 .summary {
   display: block;
-  max-inline-size: 60ch;
+  max-inline-size: var(--measure-prose);
 }
 
 .form {
@@ -114,7 +115,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--s6);
-  max-inline-size: 44rem;
+  max-inline-size: var(--measure-form);
   min-inline-size: 0;
 }
 

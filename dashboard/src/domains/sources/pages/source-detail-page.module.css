@@ -103,7 +103,7 @@
    voice, and quiet, because it is a rule rather than a value. */
 .factNote {
   display: block;
-  max-inline-size: 60ch;
+  max-inline-size: var(--measure-prose);
   margin-block-start: var(--s1);
   font-family: var(--font-ui);
   font-size: var(--t-micro);
@@ -190,7 +190,7 @@
 
 .stateBody {
   margin: 0;
-  max-inline-size: 60ch;
+  max-inline-size: var(--measure-prose);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--muted-foreground);
@@ -238,7 +238,7 @@
 
 .rotationBody {
   margin: 0;
-  max-inline-size: 60ch;
+  max-inline-size: var(--measure-prose);
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);

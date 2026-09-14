@@ -20,7 +20,7 @@
 }
 
 .step {
-  max-inline-size: 78ch;
+  max-inline-size: var(--measure-wide);
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);

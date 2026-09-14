@@ -125,7 +125,7 @@
 
 .stateBody {
   margin: 0;
-  max-width: 52ch;
+  max-width: var(--measure-note);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--muted-foreground);

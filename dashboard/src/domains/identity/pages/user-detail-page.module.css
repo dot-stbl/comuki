@@ -197,7 +197,7 @@
 
 .quiet {
   margin: 0;
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
@@ -238,7 +238,7 @@
 
 .stateBody {
   margin: 0;
-  max-inline-size: 62ch;
+  max-inline-size: var(--measure-prose);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--text-muted);

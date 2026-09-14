@@ -17,13 +17,16 @@ public static class MemoryFactPolicy
 
     /// <summary>
     /// Embedding vector dimension of the <c>memory_facts.embedding</c>
-    /// column. Tied to the embedding provider: swapping to a provider with
-    /// a different dimension requires dropping the column, re-embedding
-    /// every fact (reindex) and recreating it — embeddings are never
-    /// migrated. Search keeps working without embeddings via the
-    /// scope+kind+freshest fallback ranking.
+    /// column. Pinned to the SAME provider the knowledge schema uses —
+    /// one embedding model (<c>text-embedding-3-small</c>, 1536) serves
+    /// both stores, so their columns must match. Tied to the embedding
+    /// provider: swapping to a provider with a different dimension
+    /// requires dropping the column, re-embedding every fact (reindex)
+    /// and recreating it — embeddings are never migrated. Search keeps
+    /// working without embeddings via the scope+kind+freshest fallback
+    /// ranking.
     /// </summary>
-    public const int EmbeddingDimensions = 768;
+    public const int EmbeddingDimensions = 1536;
 
     /// <summary>True when an ephemeral fact's TTL has elapsed.</summary>
     /// <param name="fact"></param>

@@ -133,7 +133,7 @@ public sealed class HostOidcServer : IAsyncLifetime
             Microsoft.Extensions.Options.IPostConfigureOptions<Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectOptions>,
             NoPushedAuthorizationPostConfigure>();
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
+        application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(connectionString));
         baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
     }
 

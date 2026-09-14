@@ -12,7 +12,7 @@ namespace Comuki.Host.Testing;
 /// <summary>
 /// The <see cref="WebApplicationBuilder"/> flags and worker-runtime wiring
 /// every integration harness needs before layering its own suite-specific
-/// configuration and calling <c>HostComposer.Compose</c>.
+/// configuration and calling <c>HostComposer.ComposeAsync</c>.
 /// </summary>
 public static class TestHostBuilder
 {
@@ -73,7 +73,7 @@ public static class TestHostBuilder
     }
 
     /// <summary>Starts the composed host and resolves the loopback base address Kestrel bound to.</summary>
-    /// <param name="application">The <see cref="WebApplication"/> returned by <c>HostComposer.Compose</c>.</param>
+    /// <param name="application">The <see cref="WebApplication"/> returned by <c>HostComposer.ComposeAsync</c>.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
     public static async Task<Uri> StartAsync(WebApplication application, CancellationToken cancellationToken)
     {

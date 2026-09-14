@@ -127,7 +127,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
             .AddOrchestrationPersistence(hostConnectionString)
             .AddOrchestrationQueue(builder.Configuration);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(hostConnectionString));
+        application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(hostConnectionString));
         await application.StartAsync(cancellationToken);
 
         baseAddress = new Uri(

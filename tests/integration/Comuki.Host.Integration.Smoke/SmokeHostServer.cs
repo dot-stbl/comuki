@@ -26,7 +26,7 @@ namespace Comuki.Host.Integration.Smoke;
 /// <list type="bullet">
 ///   <item><c>AddKnowledgePersistence</c> — the main host composition
 ///     (<see cref="HostComposer"/>) does not register the knowledge
-///     DbContext factory (it's wired in <c>HostComposer.Compose</c>
+///     DbContext factory (it's wired in <c>HostComposer.ComposeAsync</c>
 ///     proper; this server runs the same composition but the smoke path
 ///     re-asserts the migration history directly to be defensive).</item>
 /// </list>
@@ -94,7 +94,7 @@ public sealed class SmokeHostServer : IAsyncLifetime
         builder.Configuration["Proxy:VirtualKeys:0:BaseUrl"] = "http://127.0.0.1:1";
         builder.Configuration["Proxy:VirtualKeys:0:ApiKeyEnvRef"] = "SMOKE_PROXY_KEY";
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
+        application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(connectionString));
         BaseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
     }
 

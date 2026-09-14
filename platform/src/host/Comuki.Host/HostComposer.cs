@@ -14,6 +14,7 @@ using Comuki.Host.HealthChecks;
 using Comuki.Host.Intake;
 using Comuki.Host.Knowledge;
 using Comuki.Host.Mcp;
+using Comuki.Host.OpenApi;
 using Comuki.Host.Projects;
 using Comuki.Host.Proxy;
 using Comuki.Host.Realtime;
@@ -61,6 +62,7 @@ using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Secrets;
+using Comuki.Shared.Migrations;
 using Comuki.Shared.Telemetry.Installers;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
@@ -83,7 +85,7 @@ namespace Comuki.Host;
 /// </summary>
 internal static class HostComposer
 {
-    /// <summary>Wires every host service and returns the built application, not yet started.</summary>
+    /// <summary>Wires every host service, applies boot migrations and returns the built application, not yet started.</summary>
     /// <param name="builder">The host builder whose services and middleware this call composes.</param>
     /// <param name="database">Connection resolved once by <see cref="HostDatabase.Resolve"/>; flows into identity/projects persistence and the legacy-alias warning.</param>
     /// <returns>The composed, not-yet-started <see cref="WebApplication"/>.</returns>
@@ -95,7 +97,7 @@ internal static class HostComposer
     /// live here as an escape hatch for tests; that hatch is gone — see the
     /// DI-lifetime audit (2026-09-09) for the rationale.
     /// </remarks>
-    public static WebApplication Compose(WebApplicationBuilder builder, HostDatabase.Connection database)
+    public static async Task<WebApplication> ComposeAsync(WebApplicationBuilder builder, HostDatabase.Connection database)
     {
         // Telemetry first: options ValidateOnStart always; OTLP SDK only when
         // Telemetry:OtlpEndpoint is set (see deploy/README — VictoriaMetrics :8431).
@@ -455,6 +457,33 @@ internal static class HostComposer
         builder.Services.AddSingleton<Shared.Bootstrap.Correlation.ICorrelationIdAccessor, Shared.Bootstrap.Correlation.AsyncLocalCorrelationIdAccessor>();
 
         var app = builder.Build();
+
+        // Always migrate on startup — no flag. This block sits between
+        // Build() and the caller's RunAsync, so the listener and every
+        // hosted service only start once the schema is current (/health
+        // cannot answer before then). The session-level pg_advisory_lock
+        // inside ComukiDatabaseMigrator serialises concurrent replicas
+        // and the standalone comuki-migrator exe; EF migrations are
+        // transactional and idempotent, so an up-to-date database is a
+        // fast no-op. Skipped under build-time OpenAPI generation, which
+        // boots on a dummy connection string by contract (zero side
+        // effects, no DB).
+        if (!OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration)
+        {
+            var migrationSummary = await ComukiDatabaseMigrator.EnsureAllAsync(database.ConnectionString, CancellationToken.None);
+
+            if (migrationSummary.TotalApplied > 0)
+            {
+                app.Logger.LogInformation(
+                    "migrations applied ({MigrationCount} across {SchemaCount} schema(s))",
+                    migrationSummary.TotalApplied,
+                    migrationSummary.AppliedSchemas.Count);
+            }
+            else
+            {
+                app.Logger.LogInformation("migrations up to date");
+            }
+        }
 
         HostDatabase.WarnLegacyAlias(database, app.Logger);
 

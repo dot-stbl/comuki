@@ -80,6 +80,12 @@ function toExpiresInSec(
  * model, when there is one — and spend stays unread. The store the host
  * seeds is configuration-backed, so `revoked` is always false here: what was
  * revoked is simply absent from the next listing.
+ *
+ * Three more readings the catalogue does not carry — when the key was issued,
+ * who it was granted to, and its spend by day — map to their own nulls rather
+ * than to placeholders, so the drawer says "not on this wire" instead of
+ * inventing a history the host never kept. A `GET /proxy/keys/{id}` detail
+ * endpoint is the backend follow-up that fills them.
  */
 export function proxyKeysWireToMapping(
   response: ProxyKeysResponseWire,
@@ -99,6 +105,9 @@ export function proxyKeysWireToMapping(
     expiresInSec: toExpiresInSec(key.expiresAt, nowMs),
     lastUsedAgoSec: null,
     revoked: false,
+    createdAgoSec: null,
+    grants: null,
+    spendDaily: null,
   }))
 
   return { keys, endpoints: toEndpoints(response.items) }

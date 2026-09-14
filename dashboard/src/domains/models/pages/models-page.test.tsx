@@ -380,3 +380,72 @@ describe("the acts, and who may perform them", () => {
     expect(revokes.length).toBe(3)
   })
 })
+
+describe("the key drawer", () => {
+  /** The near-cap key's opening cell — found by its handle, not its position. */
+  const openNearCap = async () => {
+    await screenReady()
+    const cell = all('[data-test="key-open"]').find((candidate) =>
+      candidate.textContent?.includes("vk_7f2c")
+    ) as HTMLElement
+    fireEvent.click(cell)
+    await waitFor(() =>
+      expect(find('[data-test="key-detail-sheet"]')).not.toBeNull()
+    )
+    return find('[data-test="key-detail-sheet"]')!
+  }
+
+  it("opens from the row's key cell, with the evidence the row argued for", async () => {
+    const sheet = await openNearCap()
+
+    const text = sheet.textContent ?? ""
+    expect(text).toContain("platform lead traffic")
+    expect(text).toContain("74 days ago")
+    expect(text).toContain("lead · platform")
+    // The fortnight behind the $361.40: its total, its peak, and the six
+    // silent days since the proxy was switched off.
+    expect(text).toContain("$181.60 over the last 14 days")
+    expect(text).toContain("no spend recorded in the last 6 days")
+    expect(
+      find('[data-test="key-detail-sheet"] [data-test="bar-series-bar"]')
+    ).not.toBeNull()
+  })
+
+  it("revokes from the footer's act, and the open drawer wears the result", async () => {
+    const sheet = await openNearCap()
+
+    fireEvent.click(find('[data-test="key-detail-revoke"]') as HTMLElement)
+    await waitFor(() =>
+      expect(find('[data-test="confirm-dialog"]')).not.toBeNull()
+    )
+    fireEvent.click(find('[data-test="confirm-dialog-confirm"]') as HTMLElement)
+
+    // The drawer stays on the key it was opened for, and the key it shows is
+    // now the revoked one — the footer's act is gone because there is nothing
+    // left to revoke, which is the resting state after the act.
+    await waitFor(() =>
+      expect(
+        find('[data-test="key-state-badge"][data-state="revoked"]')
+      ).not.toBeNull()
+    )
+    expect(sheet.textContent).toContain("already stopped")
+    await waitFor(() =>
+      expect(find('[data-test="key-detail-revoke"]')).toBeNull()
+    )
+  })
+
+  it("closes on escape and leaves no key selected behind", async () => {
+    await openNearCap()
+
+    fireEvent.keyDown(find('[data-test="key-detail-sheet"]') as HTMLElement, {
+      key: "Escape",
+    })
+
+    await waitFor(() =>
+      expect(find('[data-test="key-detail-sheet"]')).toBeNull()
+    )
+    // The selection is gone, not merely covered: opening the sheet again is a
+    // fresh visit with no drawer state left over from the last one.
+    expect(find('[data-test="key-detail-sheet"]')).toBeNull()
+  })
+})

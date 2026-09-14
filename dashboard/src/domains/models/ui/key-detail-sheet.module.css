@@ -1,0 +1,269 @@
+/* The key drawer. The knowledge entry sheet's construction — same scrim,
+   same docked box, same corner scale — with the sections a spend key needs
+   rather than the prose a rule needs: facts in definition rows, lists with
+   muted marks, and a footer carrying the one act. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  /* Docked to the inline-end edge, full height: the table stays visible
+     behind it, so the row that opened the drawer stays the row the operator
+     was reading. */
+  align-items: stretch;
+  justify-content: flex-end;
+  background: var(--scrim);
+}
+
+/* `dvh` with `vh` under it, for the same reason `FormDialog` carries both: on
+   a tablet browser `100vh` is the viewport with the chrome retracted. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  inline-size: 28rem;
+  max-inline-size: calc(100vw - var(--s8));
+  block-size: 100vh;
+  block-size: 100dvh;
+  border-inline-start: var(--hairline) solid var(--border);
+  border-start-start-radius: var(--r-lg);
+  border-end-start-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-modal);
+}
+
+/* The panel owns the scroll — the footer's act must not be pushed off it. */
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-block-size: 0;
+  padding: var(--s6) var(--page-x);
+  overflow-y: auto;
+  outline: none;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.headText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+/* The prefix is the key's handle, so it takes the data voice — the same
+   value the row it was opened from leads its line with. */
+.title {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-data);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+}
+
+.summary {
+  margin: 0;
+  max-inline-size: 52ch;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.marks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.route {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* The facts, named and answered — the knowledge sheet's definition rows,
+   for the dates a key lives by. */
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  padding-block: var(--s3);
+  border-block: var(--hairline) solid var(--rule);
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+.factName {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.factValue {
+  margin: 0;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.sectionName {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: lowercase;
+  color: var(--text-faint);
+}
+
+/* A reading the wire does not carry. Faint on purpose: it is an honest gap,
+   not a warning — the facts that know are above it. */
+.absent {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}
+
+/* The figure sentence: prose in the interface voice with its figures in the
+   data voice — the cost widgets' grammar, on the line above the bars. */
+.figure {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.chart {
+  min-inline-size: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A gap row: one mark, one value, nothing else. The mark is muted to the
+   faint end because it names the row's kind rather than its state — these
+   are inventory, not alerts. */
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.rowIcon {
+  flex: 0 0 auto;
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  color: var(--text-faint);
+}
+
+.rowValue {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* The act rides at the panel's end, held apart from the sections above it by
+   the same rule that separates the facts — a border, not more whitespace. */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-block-start: var(--s3);
+  border-block-start: var(--hairline) solid var(--rule);
+  margin-block-start: auto;
+}
+
+.stopped {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spin {
+    animation: key-detail-revoke-spin 900ms linear infinite;
+  }
+
+  .scrim {
+    animation: key-detail-scrim-in var(--dur) var(--ease) both;
+  }
+
+  .sheet {
+    animation: key-detail-sheet-in var(--dur) var(--ease) both;
+  }
+}
+
+@keyframes key-detail-revoke-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes key-detail-scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes key-detail-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--s6));
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

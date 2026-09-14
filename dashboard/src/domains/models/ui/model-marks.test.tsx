@@ -127,6 +127,9 @@ const LIVE_KEY: VirtualKey = {
   expiresInSec: 12 * 86_400,
   lastUsedAgoSec: 600,
   revoked: false,
+  createdAgoSec: 74 * 86_400,
+  grants: [{ role: "lead", projectId: null }],
+  spendDaily: null,
 }
 
 function Keys({ onRevoke }: { onRevoke: () => void }) {
@@ -140,6 +143,7 @@ function Keys({ onRevoke }: { onRevoke: () => void }) {
         enforced: false,
         revokingId: null,
         onRevoke,
+        onOpen: () => {},
         session,
       }),
     [session, onRevoke]

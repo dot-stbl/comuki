@@ -62,8 +62,12 @@ const FEATURE_SUBJECT_PATTERN =
 
 const SCOPE_PATTERN = /^[a-z0-9][a-z0-9._\/-]*$/;
 
-/** Subjects git writes itself — never the author's to fix. */
-const EXEMPT_SUBJECT = /^(?:Merge\b|Revert\b|fixup!|squash!|amend!)/;
+/** Subjects git writes itself — never the author's to fix.
+ * Also exempts hand-written merge commits in the legacy `merge(<scope>): …`
+ * form — see `.agents/rules/process/commit-format.md` §"Типы / merge".
+ * The current-form `merge` is fine via the type/scope linting below.
+ */
+const EXEMPT_SUBJECT = /^(?:Merge\b|merge\([^()]*\):|Revert\b|fixup!|squash!|amend!)/;
 
 /** `git commit --verbose` appends the diff below this marker. */
 const SCISSORS = /^#\s*-+\s*>8\s*-+/;

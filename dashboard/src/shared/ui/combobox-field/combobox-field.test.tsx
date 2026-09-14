@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { useState } from "react"
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -54,6 +57,18 @@ function Harness({
 // unambiguous seam.
 const input = () =>
   screen.getByRole("combobox", { name: "model" }) as HTMLInputElement
+
+// The trigger is the chevron button — it carries its own `aria-label="open
+// list"`, distinct from the shared label "model". The accessible name also
+// picks up `aria-labelledby`, so the simpler seam is `getByLabelText` against
+// the trigger's own aria-label.
+const trigger = () =>
+  screen.getByLabelText("open list") as HTMLButtonElement
+
+// The root is the div that holds both the input and the trigger button, and
+// carries `data-empty` so the chevron's CSS can read the state.
+const root = (): HTMLElement =>
+  trigger().parentElement as HTMLElement
 
 describe("the combobox is a string the operator types, with a list to filter", () => {
   it("starts with the value the harness passed", () => {
@@ -180,5 +195,84 @@ describe("disabled is the same voice every other disabled field wears", () => {
     const control = input()
     expect(screen.queryByRole("listbox")).toBeNull()
     expect(control.disabled).toBe(true)
+  })
+})
+
+/* Voice-by-state for the value the operator sees.
+ *
+ * The populated value and the empty placeholder are two different readings of
+ * the same control, and the kit is louder when there is something to read —
+ * the same rule `SelectField` wears with `[data-empty]`. The combobox wires
+ * the same rule through the root's `data-empty` attribute so the chevron's
+ * CSS can read it. */
+describe("the value's voice matches its state — populated or empty", () => {
+  it("marks the root `data-empty` when no value has been chosen", () => {
+    render(<Harness />)
+
+    // The attribute's presence is the signal — the value is decorative.
+    // A populated state would remove the attribute entirely.
+    expect(root().hasAttribute("data-empty")).toBe(true)
+  })
+
+  it("drops `data-empty` from the root when a value has been chosen", () => {
+    render(<Harness initial="lead-xl-2" />)
+
+    expect(root().hasAttribute("data-empty")).toBe(false)
+  })
+})
+
+/* The chrome the user feels. CSS module declarations are not visible through
+ * jsdom — `getComputedStyle` returns the user-agent's defaults, not the
+ * module's rules — so the rule is asserted against the stylesheet text
+ * directly, the same way `app/styles/theme-css.test.ts` does for `themes.css`.
+ * A browser check is what proves the chrome on screen; the test below proves
+ * the rule survived the edit. */
+describe("the chrome — padding, chevron state, chevron focus ring", () => {
+  const HERE = dirname(fileURLToPath(import.meta.url))
+  const SHEET = readFileSync(join(HERE, "combobox-field.module.css"), "utf8")
+
+  /** A declaration block for a single selector in the sheet. */
+  function bodyFor(selector: string): string {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    const match = SHEET.match(new RegExp(`\\.${escaped}\\s*\\{([^{}]*)\\}`))
+    if (!match) {
+      throw new Error(`No rule found for selector "${selector}"`)
+    }
+    return match[1] ?? ""
+  }
+
+  it("gives the input padding on both inline sides (the user-reported bug)", () => {
+    const body = bodyFor("input")
+
+    // The trailing side still reserves the chevron's width.
+    expect(body).toContain(
+      "padding-inline: var(--s3) calc(var(--s3) + var(--icon-sm) + var(--s2))"
+    )
+    // The trailing side is no longer set alone — the old one-sided rule was
+    // what left the value flush against the left border.
+    expect(body).not.toContain("padding-inline-end:")
+  })
+
+  it("lets the populated chevron read at the value's voice (`--text`)", () => {
+    const body = bodyFor("trigger")
+
+    // The trigger's default voice is the value's voice. An empty field
+    // lowers it to `--text-muted` through the `[data-empty]` rule below.
+    expect(body).toContain("color: var(--text)")
+    expect(body).not.toMatch(/color:\s*var\(--text-muted\)/)
+  })
+
+  it("lowers the chevron to `--text-muted` only when the root is empty", () => {
+    const match = SHEET.match(/\.root\[data-empty\]\s+\.trigger\s*\{([^{}]*)\}/)
+    expect(match, "expected a `.root[data-empty] .trigger` rule").not.toBeNull()
+    expect(match?.[1]).toContain("color: var(--text-muted)")
+  })
+
+  it("draws a keyboard focus ring on the chevron trigger", () => {
+    const match = SHEET.match(
+      /\.trigger\[data-focus-visible\]\s*\{([^{}]*)\}/
+    )
+    expect(match, "expected a `.trigger[data-focus-visible]` rule").not.toBeNull()
+    expect(match?.[1]).toContain("box-shadow:")
   })
 })

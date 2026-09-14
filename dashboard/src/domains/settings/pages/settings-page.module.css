@@ -39,12 +39,15 @@
 /* The seven sections, on the hairline that separates them from their content —
    the same one-pixel rule the topbar sits on. Not a segmented control, not a
    row of pills: this is chrome, and chrome here is built from a rule. Seven is
-   more than three, so the strip is allowed to scroll sideways rather than crush
-   its own words — the shape-not-reading rule. */
+   more than three, so the inter-tab spacing sits at `--s5` rather than the
+   `--s6` the shorter strips use — one step tighter so all seven sit on one
+   line at the standard viewport. The `overflow-x` is the safety net for the
+   operator who shrinks the window further: scroll sideways rather than crush
+   the words — the shape-not-reading rule. */
 .tabList {
   display: flex;
   flex: 0 0 auto;
-  gap: var(--s6);
+  gap: var(--s5);
   padding-inline: var(--page-x);
   border-block-end: var(--hairline) solid var(--rule);
   overflow-x: auto;

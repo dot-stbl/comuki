@@ -47,7 +47,7 @@ builder.Logging.AddComukiConsole(builder.Configuration);
 var options = BrainOptions.Resolve(builder.Configuration);
 var connectionString = BrainDatabase.Resolve(builder.Configuration);
 
-builder.WebHost.UseUrls($"http://localhost:{options.GrpcPort}");
+builder.WebHost.UseUrls($"http://0.0.0.0:{options.GrpcPort}");
 
 // The brain owns no subject of its own — it is the platform's own
 // orchestrating intelligence, not a request handled on a human's behalf

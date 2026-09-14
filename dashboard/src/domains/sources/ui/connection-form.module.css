@@ -1,0 +1,21 @@
+/* The edit form's one piece of furniture: the probe's answer, and — only
+ * where this connection has no base url box for the glyph to ride in — the
+ * probe control beside it. The create form's row is the same shape for the
+ * same reason: one control, one answer, under the field that asked. */
+
+.probe {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  flex-wrap: wrap;
+  min-inline-size: 0;
+}
+
+.probeControl {
+  flex: 0 0 auto;
+}
+
+.probeAnswer {
+  flex: 1 1 18rem;
+  min-inline-size: 0;
+}

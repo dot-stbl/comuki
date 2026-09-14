@@ -1,21 +1,39 @@
 import { useEffect, useMemo, useState } from "react"
-import type { FormEvent } from "react"
+import type { FormEvent, ReactNode } from "react"
+import { Loader2, PlugZap } from "lucide-react"
 
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
-import { needsBaseUrl } from "@/domains/sources/model/providers"
+import { effectiveAuth, needsBaseUrl } from "@/domains/sources/model/providers"
 import type {
+  ProbeResult,
   SourceAuth,
   SourceConnection,
 } from "@/domains/sources/model/types"
+import { ConnectionFields } from "@/domains/sources/ui/connection-fields"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
-import { Button, Notice, SelectField, TextField } from "@/shared/ui"
+import { Button, Notice, TextField, Tooltip } from "@/shared/ui"
+
+// The domain's one spinner, shared with the row-level test and the create
+// form's own probe so all three readings of "probing" are the same mark.
+import tableStyles from "./sources-table.module.css"
+
+import styles from "./connection-form.module.css"
 
 export interface ConnectionFormProps {
   connection: SourceConnection
   /** The page's standing probe, or `null` once an edit has dropped it. */
-  probe: import("@/domains/sources/model/types").ProbeResult | null
+  probe: ProbeResult | null
   probing: boolean
   busy?: boolean
+  /**
+   * Fires the page's one probe — the stored connection, credential and all.
+   *
+   * There is still exactly one probe on the page; it lives here now, inside
+   * the base url's box where there is one, because "the url and test it" is
+   * one control. A second test button anywhere else would ask the provider
+   * the same question and give the operator two places to read one answer.
+   */
+  onTest: () => void
   /** "The details moved — forget the last answer." */
   onDraftChange: () => void
   onSave: (patch: {
@@ -28,12 +46,6 @@ export interface ConnectionFormProps {
   /** Tells the page whether there is anything here worth asking about. */
   onDirtyChange?: (dirty: boolean) => void
 }
-
-const AUTH_OPTIONS: { value: SourceAuth; label: string }[] = [
-  { value: "pat", label: "personal access token" },
-  { value: "oauth", label: "oauth grant" },
-  { value: "app-install", label: "app install" },
-]
 
 /**
  * The connection itself: where the instance is, which credential reaches
@@ -51,11 +63,16 @@ const AUTH_OPTIONS: { value: SourceAuth; label: string }[] = [
  * the host resolves at call time, and the per-provider non-secret
  * settings (`auth`, `account`, `baseUrl`) that fold into `settingsJson`.
  *
+ * The three shared questions themselves — the url, the credential kind,
+ * the account — are `ConnectionFields`, the same component the create
+ * form renders, so a rule about them cannot be true on one screen and
+ * quietly false on the other.
+ *
  * ## Test before save, on a connection that already exists
  *
  * The same discipline as `/sources/new`, for the same reason and with
- * one honest difference. The probe is `useTestConnection`: it reaches
- * the instance this connection holds *now*, with the credential it
+ * one honest difference. The probe is the page's `useTestConnection`: it
+ * reaches the instance this connection holds *now*, with the credential it
  * already has, because there is no endpoint that would take a draft
  * and the stored secret at once. So what the answer means here is
  * "the way in still works" — and the rule is that you may not change
@@ -73,6 +90,7 @@ export function ConnectionForm({
   probe,
   probing,
   busy = false,
+  onTest,
   onDraftChange,
   onSave,
   onDirtyChange,
@@ -95,6 +113,13 @@ export function ConnectionForm({
   const storedBaseUrl = connection.baseUrl ?? ""
   const storedSecret = connection.secretEnvRef ?? ""
 
+  /* Derived at render for the same reason the create form derives it: a row
+     saved before this build learned its provider, or saved with a credential
+     the connector has since dropped, must not sit selected-but-unreachable
+     in a closed row. The first allowed kind stands in until the operator
+     picks, and the save writes what the row offered. */
+  const effective = effectiveAuth(connection.kind, auth)
+
   const denied = can(session, "sources.edit", connection.projectId)
     ? null
     : needsLabel("sources.edit", projectOf(session, connection.projectId)?.key)
@@ -107,12 +132,12 @@ export function ConnectionForm({
      dash is the operator's signal it changed. */
   const dirty = useMemo(
     () =>
-      auth !== connection.auth ||
+      effective !== connection.auth ||
       account !== connection.account ||
       (wantsHost && baseUrl !== storedBaseUrl) ||
       secretEnvRef !== storedSecret,
     [
-      auth,
+      effective,
       account,
       baseUrl,
       secretEnvRef,
@@ -141,13 +166,39 @@ export function ConnectionForm({
     (!wantsHost || baseUrl.trim().length > 0)
   const tested = probe?.ok === true
 
+  /* The record's own probe, in from the header where it used to live: the
+     glyph rides inside the base url's box where there is one, and stands at
+     the head of its answer where there is not. `denied` rather than
+     `disabled` for the role, `disabled` for busy — an act refused to a role
+     stays hoverable so its sentence is reachable. */
+  const probeControl: ReactNode = (
+    <Tooltip content={denied ?? "Test connection"}>
+      <Button
+        variant="outline"
+        size="icon-sm"
+        data-test="source-test"
+        denied={denied}
+        disabled={probing || busy}
+        aria-busy={probing || undefined}
+        aria-label={`Test the connection to ${connection.name}`}
+        onClick={onTest}
+      >
+        {probing ? (
+          <Loader2 className={tableStyles.spin} aria-hidden="true" />
+        ) : (
+          <PlugZap aria-hidden="true" />
+        )}
+      </Button>
+    </Tooltip>
+  )
+
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (denied || busy || !complete || !tested) {
       return
     }
     onSave({
-      auth,
+      auth: effective,
       account: account.trim(),
       baseUrl: wantsHost ? baseUrl.trim() : "",
       secretEnvRef: secretEnvRef.trim(),
@@ -157,41 +208,18 @@ export function ConnectionForm({
   return (
     <FormLayout data-test="connection-form" onSubmit={submit}>
       <FormFields>
-        {wantsHost ? (
-          <TextField
-            id="connection-base-url"
-            label="base url"
-            value={baseUrl}
-            disabled={busy}
-            placeholder="https://git.example.internal"
-            spellCheck={false}
-            hint="self-hosted only. https, because the credential crosses this wire."
-            data-test="connection-base-url"
-            onValueChange={edit(setBaseUrl)}
-          />
-        ) : null}
-
-        <SelectField
-          id="connection-auth"
-          label="auth kind"
-          value={auth}
+        <ConnectionFields
+          idPrefix="connection"
+          kind={connection.kind}
+          auth={effective}
+          baseUrl={baseUrl}
+          account={account}
+          wantsHost={wantsHost}
           disabled={busy}
-          options={AUTH_OPTIONS}
-          hint="what the connector accepts. Stored verbatim in the settings json; never holds a credential."
-          data-test="connection-auth"
-          onValueChange={(next: string) => edit(setAuth)(next as SourceAuth)}
-        />
-
-        <TextField
-          id="connection-account"
-          label="account"
-          value={account}
-          disabled={busy}
-          placeholder="the bot or app the credential belongs to"
-          spellCheck={false}
-          hint="shown on the row afterwards, so a stale credential can be traced to a person."
-          data-test="connection-account"
-          onValueChange={edit(setAccount)}
+          urlSuffix={probeControl}
+          onBaseUrlChange={edit(setBaseUrl)}
+          onAuthChange={edit(setAuth)}
+          onAccountChange={edit(setAccount)}
         />
 
         <TextField
@@ -207,20 +235,28 @@ export function ConnectionForm({
           onValueChange={edit(setSecretEnvRef)}
         />
 
-        {/* The answer to the probe the header holds. One control, one answer:
-            a second test button down here would ask the provider the same
-            question and give the operator two places to read it. */}
-        {probe ? (
-          <Notice tone={probe.ok ? "ok" : "bad"} data-test="probe-result">
-            {probe.message}
-          </Notice>
-        ) : (
-          <Notice tone="warn" data-test="probe-pending">
-            {probing
-              ? "reaching the provider…"
-              : "test the connection before saving — changing how a source is reached is not something to do while nobody knows whether it can be."}
-          </Notice>
-        )}
+        {/* The answer to the probe the form holds. One control, one answer:
+            where the url box carried the control, this is the answer alone,
+            landing under the field that produced it. */}
+        <div className={styles.probe} data-test="probe">
+          {wantsHost ? null : (
+            <span className={styles.probeControl}>{probeControl}</span>
+          )}
+
+          <span className={styles.probeAnswer}>
+            {probe ? (
+              <Notice tone={probe.ok ? "ok" : "bad"} data-test="probe-result">
+                {probe.message}
+              </Notice>
+            ) : (
+              <Notice tone="warn" data-test="probe-pending">
+                {probing
+                  ? "reaching the provider…"
+                  : "test the connection before saving — changing how a source is reached is not something to do while nobody knows whether it can be."}
+              </Notice>
+            )}
+          </span>
+        </div>
       </FormFields>
 
       <FormActions>

@@ -281,6 +281,62 @@ describe("the form element a browser can still fill", () => {
   })
 })
 
+describe("a row's muted second line", () => {
+  function Named() {
+    const [value, setValue] = useState("p_comuki")
+    return (
+      <SelectField
+        id="project"
+        label="project"
+        value={value}
+        options={[
+          { value: "p_comuki", label: "Comuki platform", secondary: "comuki" },
+          { value: "p_plexor", label: "Plexor", secondary: "plexor" },
+        ]}
+        onValueChange={setValue}
+      />
+    )
+  }
+
+  it("carries the key on the row and not on the closed trigger", async () => {
+    const user = userEvent.setup()
+    render(<Named />)
+
+    const control = screen.getByLabelText("project")
+
+    // React Aria renders the selected item's own children on the trigger, so
+    // the second line travels there too — hidden from sight by the
+    // stylesheet's `.value` rule and from the name computation by
+    // `aria-hidden`, because the closed control names the choice and the open
+    // list is where choices are told apart. jsdom paints no CSS, so the
+    // structural half is what is testable: the node the rule hides is inside
+    // the trigger, carrying the class the rule names.
+    const hiddenLine = control.querySelector('[class*="optionSecondary"]')
+    expect(hiddenLine?.textContent).toBe("comuki")
+
+    await user.click(control)
+    const list = await screen.findByRole("listbox")
+    const rows = within(list).getAllByRole("option")
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "Comuki platformcomuki",
+      "Plexorplexor",
+    ])
+  })
+
+  it("keeps the primary line as the row's accessible name", async () => {
+    const user = userEvent.setup()
+    render(<Named />)
+
+    // The name is what type-ahead and a screen reader read, and the key never
+    // joins it — the operator speaks the name, the key is what they type.
+    await user.click(screen.getByLabelText("project"))
+    const list = await screen.findByRole("listbox")
+    expect(
+      within(list).getByRole("option", { name: "Plexor" })
+    ).toBeTruthy()
+  })
+})
+
 describe("what a filter needs that a form does not", () => {
   function Filter() {
     const [value, setValue] = useState("")

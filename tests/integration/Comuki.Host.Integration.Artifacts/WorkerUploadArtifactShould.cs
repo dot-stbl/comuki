@@ -119,7 +119,7 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
             .AddOrchestrationApplication()
             .AddWorkerRuntime(builder.Configuration);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
+        application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(connectionString));
         application.MapWorkerRuntime();
         await application.StartAsync(cancellationToken);
 

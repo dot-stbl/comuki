@@ -12,6 +12,7 @@ using Comuki.Host.Translator.Grpc;
 using Comuki.Host.Translator.Profiles;
 using Comuki.Host.Translator.Runtime;
 using Comuki.Host.Workers;
+using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
@@ -64,8 +65,9 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
             .Build();
 
         // Migrations MUST land before the host starts: the lease reaper
-        // BackgroundService sweeps on boot and kills the host when the
-        // tables are missing (BackgroundServiceExceptionBehavior.StopHost).
+        // sweeps on boot and its first cycle would otherwise fail against
+        // missing tables (the registry backs off and retries — the host
+        // stays up either way).
         host = await TestWorkerHost.StartAsync(services =>
         {
             services.AddSingleton(TimeProvider.System);
@@ -74,6 +76,9 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
                 .AddOrchestrationQueue(configuration)
                 .AddOrchestrationApplication()
                 .AddWorkerRuntime(configuration);
+            // The lease reaper registers as an IComukiWorker — this
+            // registry is what runs it in this fixture.
+            services.AddComukiWorkers();
         });
 
         workerToken = host.GetService<WorkerTokenIssuer>().Issue(WorkerId.New());

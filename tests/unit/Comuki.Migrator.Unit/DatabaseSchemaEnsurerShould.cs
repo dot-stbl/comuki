@@ -1,4 +1,5 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Shared.Migrations;
 using Npgsql;
 using Shouldly;
 using Testcontainers.PostgreSql;

@@ -46,7 +46,7 @@ public sealed class HostChatServer : IAsyncLifetime
         TestBootstrapAdmin.Configure(builder.Configuration);
         TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(ConnectionString));
+        application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(ConnectionString));
         baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
     }
 

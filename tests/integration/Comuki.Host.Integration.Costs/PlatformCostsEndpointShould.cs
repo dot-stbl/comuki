@@ -74,7 +74,7 @@ public sealed class PlatformCostsEndpointShould : IAsyncLifetime
         TestBootstrapAdmin.Configure(builder.Configuration);
         TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
+        application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(connectionString));
 
         // Boot the host detached from the test token: StartAsync runs every
         // hosted service, and a cancel mid-boot surfaces as an opaque

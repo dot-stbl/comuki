@@ -1,17 +1,14 @@
-/* The connect form's one piece of furniture: the probe control and the answer
-   it came back with, on one line.
-
-   In the dialog this control was the footer's lead — a glyph at the far left of
-   the row that also held "Save connection" and "Cancel". A page's footer is
-   left-aligned and reads primary-act-first, so a step in the form standing to
-   the left of the answer the form is asking for would have read as the first
-   thing to press. It sits with its own sentence instead, directly above the
-   footer, which is where the operator is already looking when they wonder why
-   the save is shut. */
+/* The connect form's one piece of furniture: the probe's answer, and —
+   only where the chosen provider has no instance to name, so there is no
+   url box for the glyph to ride in — the probe control beside it.
+ *
+ * Where there is a box, the glyph rides inside it as the field's suffix and
+ * this row is the answer alone: "the url and test it" reads as one control,
+ * and the answer lands under the control that produced it. */
 
 .probe {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--s4);
   /* Wraps rather than crushes: the provider's refusal is a sentence, and the
      button beside it is `flex: 0 0 auto` — so on a narrow board the sentence

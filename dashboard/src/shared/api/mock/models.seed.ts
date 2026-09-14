@@ -349,3 +349,15 @@ export const MODELS_SEED: SeedModelsSnapshot = {
   keys: VIRTUAL_KEYS_SEED,
   routes: MODEL_ROUTES_SEED,
 }
+
+/**
+ * Every physical model id the registry knows about — derived from the
+ * union of `MODEL_ENDPOINTS_SEED[*].models`, deduplicated, in registry
+ * order. The settings routing form offers this as the closed list a
+ * lead/worker/judge role may be set to, and the combobox primitives
+ * surface `allowsCustomValue` on top of it for the model id the platform
+ * does not know yet.
+ */
+export const MODEL_LINEUP: readonly string[] = Array.from(
+  new Set(MODEL_ENDPOINTS_SEED.flatMap((endpoint) => endpoint.models))
+)

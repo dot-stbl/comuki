@@ -1,0 +1,108 @@
+/* The kit's tabs. A horizontal strip — sections of one screen the operator
+   moves between, named by the section they take them to.
+
+   The three screens that use a tab strip today (Knowledge, Identity,
+   Settings) all reach for the same voice: a hairline strip of tabs, each
+   tab a short word in the data voice, the selected one wearing a
+   two-pixel rule under it in the brand colour. The same chrome the
+   rail uses for its active item — selected by a rule and a weight, never
+   by a fill — so a screen and its rail agree on what active means.
+
+   The kit ships this voice. React Aria owns the keyboard grammar
+   (arrow keys, Home, End, the activation-on-Enter contract) and the
+   aria semantics (`role="tablist"`, `role="tab"`, `aria-selected`,
+   `aria-controls`); the kit owns the look. */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+/* The strip itself — hairline at the bottom, the tabs sit on it so the
+   selected marker and the separator are the same line. */
+.list {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--s6);
+  padding-inline: 0;
+  border-block-end: var(--hairline) solid var(--rule);
+  /* A long list of sections — the Settings page has seven — would crush
+     its own words on a narrow window, so the strip scrolls sideways
+     rather than wrapping. Shape-not-reading, the same rule the page
+     header follows. */
+  overflow-x: auto;
+}
+
+.list[data-orientation="vertical"] {
+  flex-direction: column;
+  gap: var(--s2);
+  padding-inline: 0 var(--s3);
+  border-block-end: 0;
+  border-inline-end: var(--hairline) solid var(--rule);
+}
+
+/* One tab — a sentence that names a section, not a button that does
+   something. The selected marker rides on the strip's own rule. */
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: 0 0 auto;
+  padding-block: var(--s3);
+  /* Pulls the active rule onto the strip's hairline so the marker and
+     the separator read as one line rather than as a marker above the
+     separator. */
+  margin-block-end: calc(var(--hairline) * -1);
+  border-block-end: 2px solid transparent;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
+}
+
+.list[data-orientation="vertical"] .tab {
+  margin-block-end: 0;
+  margin-inline-end: calc(var(--hairline) * -1);
+  border-block-end: 0;
+  border-inline-end: 2px solid transparent;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab[data-selected] {
+  color: var(--text);
+  border-block-end-color: var(--brand);
+}
+
+.list[data-orientation="vertical"] .tab[data-selected] {
+  border-inline-end-color: var(--brand);
+}
+
+/* Keyboard focus rings the tab itself rather than its text — a focus
+   rule on the word would move with the cursor. */
+.tab[data-focus-visible] {
+  border-radius: var(--r-sm);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.tab[data-disabled] {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+/* The panel — content for the selected tab. By default the panel is
+   unmounted when not selected, so a screen with heavy panels pays only
+   for the one it is showing. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-block-size: 0;
+  outline: none;
+}

@@ -26,27 +26,27 @@ function assertRejected(subject) {
 
 /** Assert the whole line disappears from a realistic footer. */
 function assertLineStripped(line) {
-  const message = `[hybrid] feat(x): do the thing\n\nSome body text.\n\n${line}\n`;
+  const message = `[.stbl] feat(x): do the thing\n\nSome body text.\n\n${line}\n`;
   const { text, removed } = stripAttribution(message);
   assert.equal(removed.length, 1, `expected exactly one removal for: ${line}`);
   assert.equal(removed[0], line.trim());
-  assert.equal(text, '[hybrid] feat(x): do the thing\n\nSome body text.\n');
+  assert.equal(text, '[.stbl] feat(x): do the thing\n\nSome body text.\n');
 }
 
 // ---------------------------------------------------------------------------
 
 describe('lintSubject — good examples from commit-format.md', () => {
   const good = [
-    '[hybrid] feat(orchestration): add claim/lease loop for pull-queue',
-    '[hybrid] fix(database): correct cascade delete on runs table',
-    '[hybrid] docs(roadmap): clarify Slice 0 DoD with idempotency check',
-    '[hybrid] chore(deps): bump dotnet to 10.0.108',
-    '[hybrid] chore(rules): adopt [hybrid] prefix for comuki commits',
-    '[hybrid] refactor(translator): extract stream-json parser into separate file',
-    '[hybrid] test(orchestration): cover two-claimer race for FOR UPDATE SKIP LOCKED',
-    '[hybrid] ci(be): enforce extended analyzer rules in build-verification',
-    '[hybrid] feat(api): change /tasks response shape',
-    '[hybrid] fix(orchestration): make claim transaction atomic with lease insert',
+    '[.stbl] feat(orchestration): add claim/lease loop for pull-queue',
+    '[.stbl] fix(database): correct cascade delete on runs table',
+    '[.stbl] docs(roadmap): clarify Slice 0 DoD with idempotency check',
+    '[.stbl] chore(deps): bump dotnet to 10.0.108',
+    '[.stbl] chore(rules): adopt [.stbl] prefix for comuki commits',
+    '[.stbl] refactor(translator): extract stream-json parser into separate file',
+    '[.stbl] test(orchestration): cover two-claimer race for FOR UPDATE SKIP LOCKED',
+    '[.stbl] ci(be): enforce extended analyzer rules in build-verification',
+    '[.stbl] feat(api): change /tasks response shape',
+    '[.stbl] fix(orchestration): make claim transaction atomic with lease insert',
   ];
 
   for (const subject of good) {
@@ -59,7 +59,10 @@ describe('lintSubject — bad examples from commit-format.md', () => {
     'feat(orchestration): add foo',
     'feat: add foo',
     '[stbl](feat): add foo',
-    '[hybrid](feat): add foo',
+    '[hybrid](feat/dashboard): add foo',
+    '[.stbl](feat/Orchestration): add foo',
+    '[.stbl](feat): add foo',
+    '[.stbl] feat() add foo',
     'feat: Added new endpoint.',
     'WIP',
     'feat add foo',
@@ -70,20 +73,37 @@ describe('lintSubject — bad examples from commit-format.md', () => {
     it(subject, () => assertRejected(subject));
   }
 
-  it('names the retired [stbl] prefix explicitly', () => {
-    assert.match(lintSubject('[stbl](feat): add foo').join('\n'), /\[stbl\]/);
+  // Both retired prefixes get named rather than folded into "missing prefix":
+  // every commit in this history carries one of them, so the author is told
+  // which one they reached for instead of being told they wrote nothing.
+  for (const [retired, pattern] of [
+    ['[stbl](feat/x): add foo', /`\[stbl\]` is retired/],
+    ['[hybrid] feat(x): add foo', /`\[hybrid\]` is retired/],
+  ]) {
+    it(`names ${retired.slice(0, retired.indexOf(']') + 1)} as retired`, () => {
+      const report = lintSubject(retired).join('\n');
+      assert.match(report, pattern);
+      assert.match(report, /this repo uses `\[\.stbl\]`/);
+    });
+  }
+
+  it('tells a root-only feature path what it is missing', () => {
+    assert.match(
+      lintSubject('[.stbl](feat): add foo').join('\n'),
+      /names a root with no area/
+    );
   });
 
   it('suggests the prefixed form when only the prefix is missing', () => {
     assert.deepEqual(lintSubject('feat: add foo'), [
-      'missing `[hybrid] ` prefix — write `[hybrid] feat: add foo`',
+      'missing `[.stbl]` prefix — write `[.stbl] feat: add foo`',
     ]);
   });
 
   it('reports every problem at once on an unprefixed conventional subject', () => {
     const report = lintSubject('feat: Added new endpoint.').join('\n');
 
-    assert.match(report, /missing `\[hybrid\] ` prefix/);
+    assert.match(report, /missing `\[\.stbl\]` prefix/);
     assert.match(report, /must not end with/);
   });
 });
@@ -91,70 +111,70 @@ describe('lintSubject — bad examples from commit-format.md', () => {
 describe('lintSubject — format contract', () => {
   it('accepts every allowed type without a scope', () => {
     for (const type of COMMIT_TYPES) {
-      assertClean(`[hybrid] ${type}: do the thing`);
+      assertClean(`[.stbl] ${type}: do the thing`);
     }
   });
 
   it('accepts the breaking-change marker, with and without a scope', () => {
-    assertClean('[hybrid] feat!: drop the legacy claim endpoint');
-    assertClean('[hybrid] feat(api)!: drop the legacy claim endpoint');
+    assertClean('[.stbl] feat!: drop the legacy claim endpoint');
+    assertClean('[.stbl] feat(api)!: drop the legacy claim endpoint');
   });
 
   it('accepts scopes with dots, slashes, dashes and digits', () => {
-    assertClean('[hybrid] chore(agents/dev-sdk): wire the installer');
-    assertClean('[hybrid] build(net10.0): bump the sdk pin');
+    assertClean('[.stbl] chore(agents/dev-sdk): wire the installer');
+    assertClean('[.stbl] build(net10.0): bump the sdk pin');
   });
 
   it('rejects an unknown type', () => {
-    assert.match(lintSubject('[hybrid] cleanup: drop the scratch files').join('\n'), /unknown type/);
+    assert.match(lintSubject('[.stbl] cleanup: drop the scratch files').join('\n'), /unknown type/);
   });
 
   it('accepts a hand-written merge commit', () => {
-    assertClean('[hybrid] merge(readme): OSS landing page');
-    assertClean('[hybrid] merge(oss-deploy): self-hosting artifacts — compose + helm + k8s');
-    assertClean('[hybrid] merge: sync github pr #55 (mask .net surface) into hybrid contour');
+    assertClean('[.stbl] merge(readme): OSS landing page');
+    assertClean('[.stbl] merge(oss-deploy): self-hosting artifacts — compose + helm + k8s');
+    assertClean('[.stbl] merge: sync github pr #55 (mask .net surface) into hybrid contour');
   });
 
   it('does not police the case of the description', () => {
     // Identifiers and acronyms open a description all the time — the written
     // rule asks for an imperative, not a lowercase, description.
-    assertClean('[hybrid] fix(host): SubjectScopeMiddleware wraps PermissionEvaluator in AsSystem');
-    assertClean('[hybrid] feat(deploy): OSS deployment artifacts — docker-compose + helm');
-    assertClean('[hybrid] fix(cve): CVE-2026-49451 bump plus 9 captive singletons');
-    assertClean('[hybrid] feat(secrets): VaultSecretProvider — Slice 2 of issue #52');
+    assertClean('[.stbl] fix(host): SubjectScopeMiddleware wraps PermissionEvaluator in AsSystem');
+    assertClean('[.stbl] feat(deploy): OSS deployment artifacts — docker-compose + helm');
+    assertClean('[.stbl] fix(cve): CVE-2026-49451 bump plus 9 captive singletons');
+    assertClean('[.stbl] feat(secrets): VaultSecretProvider — Slice 2 of issue #52');
   });
 
   it('rejects an uppercase type and suggests the lowercase one', () => {
-    assert.match(lintSubject('[hybrid] Feat(api): add thing').join('\n'), /must be lowercase/);
+    assert.match(lintSubject('[.stbl] Feat(api): add thing').join('\n'), /must be lowercase/);
   });
 
   it('rejects an empty scope', () => {
-    assert.match(lintSubject('[hybrid] feat(): add thing').join('\n'), /empty scope/);
+    assert.match(lintSubject('[.stbl] feat(): add thing').join('\n'), /empty scope/);
   });
 
   it('rejects an uppercase scope', () => {
-    assert.match(lintSubject('[hybrid] feat(Orchestration): add thing').join('\n'), /scope/);
+    assert.match(lintSubject('[.stbl] feat(Orchestration): add thing').join('\n'), /scope/);
   });
 
   it('rejects a trailing period', () => {
-    assert.match(lintSubject('[hybrid] feat(api): add thing.').join('\n'), /must not end with/);
+    assert.match(lintSubject('[.stbl] feat(api): add thing.').join('\n'), /must not end with/);
   });
 
   it('rejects an empty description', () => {
-    assert.ok(lintSubject('[hybrid] feat(api): ').length > 0);
+    assert.ok(lintSubject('[.stbl] feat(api): ').length > 0);
   });
 
   it('rejects a double space after the colon', () => {
-    assert.match(lintSubject('[hybrid] feat(api):  add thing').join('\n'), /one space/);
+    assert.match(lintSubject('[.stbl] feat(api):  add thing').join('\n'), /one space/);
   });
 
   it(`rejects a subject longer than ${SUBJECT_MAX_LENGTH} chars`, () => {
-    const tooLong = `[hybrid] feat(api): ${'a'.repeat(SUBJECT_MAX_LENGTH)}`;
+    const tooLong = `[.stbl] feat(api): ${'a'.repeat(SUBJECT_MAX_LENGTH)}`;
     assert.match(lintSubject(tooLong).join('\n'), new RegExp(`limit is ${SUBJECT_MAX_LENGTH}`));
   });
 
   it(`accepts a subject of exactly ${SUBJECT_MAX_LENGTH} chars`, () => {
-    const head = '[hybrid] feat(api): ';
+    const head = '[.stbl] feat(api): ';
     assertClean(head + 'a'.repeat(SUBJECT_MAX_LENGTH - head.length));
   });
 
@@ -163,7 +183,7 @@ describe('lintSubject — format contract', () => {
   });
 
   it('tolerates trailing whitespace on the subject line', () => {
-    assertClean('[hybrid] feat(api): add thing   ');
+    assertClean('[.stbl] feat(api): add thing   ');
   });
 });
 
@@ -172,9 +192,9 @@ describe('lintSubject — git-generated subjects are exempt', () => {
     "Merge branch 'master' into feat/commit-gate",
     'Merge pull request #42 from hybrid/feat-x',
     'Merge remote-tracking branch \'origin/master\'',
-    'Revert "[hybrid] feat(api): add thing"',
-    'fixup! [hybrid] feat(api): add thing',
-    'squash! [hybrid] feat(api): add thing',
+    'Revert "[.stbl] feat(api): add thing"',
+    'fixup! [.stbl] feat(api): add thing',
+    'squash! [.stbl] feat(api): add thing',
   ];
 
   for (const subject of exempt) {
@@ -186,7 +206,7 @@ describe('lintSubject — git-generated subjects are exempt', () => {
   });
 
   it('still accepts revert as a normal type', () => {
-    assertClean('[hybrid] revert(api): undo the claim endpoint change');
+    assertClean('[.stbl] revert(api): undo the claim endpoint change');
   });
 });
 
@@ -216,7 +236,7 @@ describe('stripAttribution — whole-line co-author trailers', () => {
   }
 
   it('keeps a genuine human co-author', () => {
-    const message = '[hybrid] feat(x): do the thing\n\nCo-Authored-By: Jane Doe <jane@hybrid.ai>\n';
+    const message = '[.stbl] feat(x): do the thing\n\nCo-Authored-By: Jane Doe <jane@hybrid.ai>\n';
     const { text, removed } = stripAttribution(message);
     assert.deepEqual(removed, []);
     assert.equal(text, message);
@@ -251,33 +271,33 @@ describe('stripAttribution — generated-with and authorship prose', () => {
 describe('stripAttribution — inline excision', () => {
   it('keeps the real text and drops the footer fragment', () => {
     const { text, removed } = stripAttribution(
-      '[hybrid] feat(x): do the thing\n\nRefs: COM-142 🤖 Generated with [Claude Code](https://claude.com/claude-code)\n',
+      '[.stbl] feat(x): do the thing\n\nRefs: COM-142 🤖 Generated with [Claude Code](https://claude.com/claude-code)\n',
     );
-    assert.equal(text, '[hybrid] feat(x): do the thing\n\nRefs: COM-142\n');
+    assert.equal(text, '[.stbl] feat(x): do the thing\n\nRefs: COM-142\n');
     assert.equal(removed.length, 1);
     assert.match(removed[0], /Generated with/);
   });
 
   it('drops a bare noreply@anthropic.com without gluing the words together', () => {
     const { text, removed } = stripAttribution(
-      '[hybrid] feat(x): do the thing\n\nPing noreply@anthropic.com for details\n',
+      '[.stbl] feat(x): do the thing\n\nPing noreply@anthropic.com for details\n',
     );
-    assert.equal(text, '[hybrid] feat(x): do the thing\n\nPing for details\n');
+    assert.equal(text, '[.stbl] feat(x): do the thing\n\nPing for details\n');
     assert.deepEqual(removed, ['noreply@anthropic.com']);
   });
 
   it('drops an angle-bracketed address from a non-co-author trailer', () => {
     const { text } = stripAttribution(
-      '[hybrid] feat(x): do the thing\n\nReported-by: bot <noreply@anthropic.com>\n',
+      '[.stbl] feat(x): do the thing\n\nReported-by: bot <noreply@anthropic.com>\n',
     );
-    assert.equal(text, '[hybrid] feat(x): do the thing\n\nReported-by: bot\n');
+    assert.equal(text, '[.stbl] feat(x): do the thing\n\nReported-by: bot\n');
   });
 
   it('drops the line entirely when nothing real is left on it', () => {
     const { text, removed } = stripAttribution(
-      '[hybrid] feat(x): do the thing\n\nbody\n\n   noreply@anthropic.com   \n',
+      '[.stbl] feat(x): do the thing\n\nbody\n\n   noreply@anthropic.com   \n',
     );
-    assert.equal(text, '[hybrid] feat(x): do the thing\n\nbody\n');
+    assert.equal(text, '[.stbl] feat(x): do the thing\n\nbody\n');
     assert.equal(removed.length, 1);
   });
 });
@@ -296,7 +316,7 @@ describe('stripAttribution — false positives', () => {
 
   for (const line of innocent) {
     it(line, () => {
-      const message = `[hybrid] feat(x): do the thing\n\n${line}\n`;
+      const message = `[.stbl] feat(x): do the thing\n\n${line}\n`;
       const { text, removed } = stripAttribution(message);
       assert.deepEqual(removed, [], `unexpectedly stripped: ${line}`);
       assert.equal(text, message);
@@ -308,7 +328,7 @@ describe('stripAttribution — trailing blank run and idempotence', () => {
   it('collapses the blank run the removed trailer block leaves behind', () => {
     const { text } = stripAttribution(
       [
-        '[hybrid] feat(x): do the thing',
+        '[.stbl] feat(x): do the thing',
         '',
         'Why: the claim loop raced with the lease insert.',
         '',
@@ -320,14 +340,14 @@ describe('stripAttribution — trailing blank run and idempotence', () => {
     );
     assert.equal(
       text,
-      '[hybrid] feat(x): do the thing\n\nWhy: the claim loop raced with the lease insert.\n',
+      '[.stbl] feat(x): do the thing\n\nWhy: the claim loop raced with the lease insert.\n',
     );
   });
 
   it('collapses the blank run above the git comment template too', () => {
     const { text } = stripAttribution(
       [
-        '[hybrid] feat(hooks): add commit-msg gate',
+        '[.stbl] feat(hooks): add commit-msg gate',
         '',
         'Why: the format rule was honour-system only.',
         '',
@@ -344,7 +364,7 @@ describe('stripAttribution — trailing blank run and idempotence', () => {
     assert.equal(
       text,
       [
-        '[hybrid] feat(hooks): add commit-msg gate',
+        '[.stbl] feat(hooks): add commit-msg gate',
         '',
         'Why: the format rule was honour-system only.',
         '',
@@ -358,7 +378,7 @@ describe('stripAttribution — trailing blank run and idempotence', () => {
   it('keeps one blank line above the scissors block', () => {
     const { text } = stripAttribution(
       [
-        '[hybrid] feat(x): do the thing',
+        '[.stbl] feat(x): do the thing',
         '',
         'Co-Authored-By: Claude <noreply@anthropic.com>',
         '',
@@ -371,7 +391,7 @@ describe('stripAttribution — trailing blank run and idempotence', () => {
     assert.equal(
       text,
       [
-        '[hybrid] feat(x): do the thing',
+        '[.stbl] feat(x): do the thing',
         '',
         '# ------------------------ >8 ------------------------',
         'diff --git a/x b/x',
@@ -382,7 +402,7 @@ describe('stripAttribution — trailing blank run and idempotence', () => {
 
   it('is idempotent — running it twice changes nothing', () => {
     const original = [
-      '[hybrid] feat(x): do the thing',
+      '[.stbl] feat(x): do the thing',
       '',
       'Body paragraph.',
       '',
@@ -400,22 +420,22 @@ describe('stripAttribution — trailing blank run and idempotence', () => {
   });
 
   it('leaves a clean message byte-identical', () => {
-    const clean = '[hybrid] fix(database): correct cascade delete on runs table\n\nBody.\n';
+    const clean = '[.stbl] fix(database): correct cascade delete on runs table\n\nBody.\n';
     const { text, removed } = stripAttribution(clean);
     assert.equal(text, clean);
     assert.deepEqual(removed, []);
   });
 
   it('leaves a clean message with trailing blank lines alone', () => {
-    const clean = '[hybrid] fix(database): correct cascade delete\n\n\n';
+    const clean = '[.stbl] fix(database): correct cascade delete\n\n\n';
     assert.equal(stripAttribution(clean).text, clean);
   });
 
   it('survives CRLF line endings', () => {
     const { text, removed } = stripAttribution(
-      '[hybrid] feat(x): do the thing\r\n\r\nBody.\r\n\r\nCo-Authored-By: Claude <noreply@anthropic.com>\r\n',
+      '[.stbl] feat(x): do the thing\r\n\r\nBody.\r\n\r\nCo-Authored-By: Claude <noreply@anthropic.com>\r\n',
     );
-    assert.equal(text, '[hybrid] feat(x): do the thing\r\n\r\nBody.\r\n');
+    assert.equal(text, '[.stbl] feat(x): do the thing\r\n\r\nBody.\r\n');
     assert.equal(removed.length, 1);
   });
 
@@ -428,7 +448,7 @@ describe('stripAttribution — trailing blank run and idempotence', () => {
 
 describe('stripAttribution / extractSubject — # comments', () => {
   const gitTemplate = [
-    '[hybrid] feat(x): do the thing',
+    '[.stbl] feat(x): do the thing',
     '',
     '# Please enter the commit message for your changes. Lines starting',
     "# with '#' will be ignored, and an empty message aborts the commit.",
@@ -437,17 +457,17 @@ describe('stripAttribution / extractSubject — # comments', () => {
   ].join('\n');
 
   it('finds the subject above the comment block', () => {
-    assert.equal(extractSubject(gitTemplate), '[hybrid] feat(x): do the thing');
+    assert.equal(extractSubject(gitTemplate), '[.stbl] feat(x): do the thing');
   });
 
   it('skips leading comments and blank lines when locating the subject', () => {
-    const message = '# a template header\n\n\n[hybrid] docs(rules): add the gate\n';
-    assert.equal(extractSubject(message), '[hybrid] docs(rules): add the gate');
+    const message = '# a template header\n\n\n[.stbl] docs(rules): add the gate\n';
+    assert.equal(extractSubject(message), '[.stbl] docs(rules): add the gate');
   });
 
   it('never strips attribution out of a # comment line', () => {
     const message =
-      '[hybrid] feat(x): do the thing\n\n# Co-Authored-By: Claude <noreply@anthropic.com>\n# 🤖 Generated with [Claude Code](https://claude.com/claude-code)\n';
+      '[.stbl] feat(x): do the thing\n\n# Co-Authored-By: Claude <noreply@anthropic.com>\n# 🤖 Generated with [Claude Code](https://claude.com/claude-code)\n';
     const { text, removed } = stripAttribution(message);
     assert.deepEqual(removed, []);
     assert.equal(text, message);
@@ -455,7 +475,7 @@ describe('stripAttribution / extractSubject — # comments', () => {
 
   it('never touches the --verbose diff below the scissors marker', () => {
     const message = [
-      '[hybrid] feat(x): do the thing',
+      '[.stbl] feat(x): do the thing',
       '',
       'Co-Authored-By: Claude <noreply@anthropic.com>',
       '# ------------------------ >8 ------------------------',
@@ -470,7 +490,7 @@ describe('stripAttribution / extractSubject — # comments', () => {
     assert.equal(removed.length, 1);
     assert.ok(text.includes('+Co-Authored-By: Claude <noreply@anthropic.com>'));
     assert.ok(text.includes('# ------------------------ >8 ------------------------'));
-    assert.equal(extractSubject(text), '[hybrid] feat(x): do the thing');
+    assert.equal(extractSubject(text), '[.stbl] feat(x): do the thing');
   });
 
   it('returns an empty subject for a comment-only message', () => {
@@ -482,10 +502,10 @@ describe('stripAttribution / extractSubject — # comments', () => {
 
 describe('lintMessage', () => {
   it('reports a clean message as clean', () => {
-    const result = lintMessage('[hybrid] fix(database): correct cascade delete on runs table\n\nWhy.\n');
+    const result = lintMessage('[.stbl] fix(database): correct cascade delete on runs table\n\nWhy.\n');
     assert.deepEqual(result.problems, []);
     assert.deepEqual(result.attribution, []);
-    assert.equal(result.subject, '[hybrid] fix(database): correct cascade delete on runs table');
+    assert.equal(result.subject, '[.stbl] fix(database): correct cascade delete on runs table');
   });
 
   it('reports attribution and subject problems independently', () => {
@@ -499,9 +519,9 @@ describe('lintMessage', () => {
 
   it('lints the subject of the stripped message, not the original', () => {
     const result = lintMessage(
-      '🤖 Generated with [Claude Code](https://claude.com/claude-code)\n[hybrid] feat(x): do the thing\n',
+      '🤖 Generated with [Claude Code](https://claude.com/claude-code)\n[.stbl] feat(x): do the thing\n',
     );
-    assert.equal(result.subject, '[hybrid] feat(x): do the thing');
+    assert.equal(result.subject, '[.stbl] feat(x): do the thing');
     assert.deepEqual(result.problems, []);
   });
 });

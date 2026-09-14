@@ -195,8 +195,19 @@ export function ChatThread({
   const shown = virtualize ? virtualizer.getVirtualItems() : []
   const first = shown[0]
   const last = shown[shown.length - 1]
-  const above = first ? first.start : 0
-  const below = last ? virtualizer.getTotalSize() - last.end : 0
+  // The virtualizer measures element heights only; the log's inter-turn
+  // `gap` (TURN_GAP, kept in step with `--s5` in chat-thread.module.css) is
+  // invisible to it. The spacers stand for whole unstretched stacks, so they
+  // add the missing gaps back by arithmetic: the intervals *between*
+  // unmounted turns. The one interval beside the window edge is drawn by the
+  // container's real gap against the spacer, not counted here.
+  const above = first
+    ? first.start + Math.max(first.index - 1, 0) * TURN_GAP
+    : 0
+  const hiddenBelow = last ? settled.length - 1 - last.index : 0
+  const below = last
+    ? virtualizer.getTotalSize() - last.end + Math.max(hiddenBelow - 1, 0) * TURN_GAP
+    : 0
   const drawn = virtualize
     ? shown.map((item) => ({ index: item.index, message: settled[item.index] }))
     : settled.map((message, index) => ({ index, message }))
@@ -336,6 +347,15 @@ const VIRTUALIZE_FROM = 60
  * one line to a sixty-line patch and no single estimate is right twice.
  */
 const ESTIMATED_TURN = 96
+
+/**
+ * The log's inter-turn gap, in px.
+ *
+ * Must stay in step with `.log { gap: var(--s5) }` in chat-thread.module.css
+ * (1rem = 16px): the virtualizer measures element heights only, so the spacer
+ * arithmetic above adds this back for the turns it stands in for.
+ */
+const TURN_GAP = 16
 
 /** Rows drawn beyond the window, so a fast scroll does not show blank space. */
 const OVERSCAN = 8

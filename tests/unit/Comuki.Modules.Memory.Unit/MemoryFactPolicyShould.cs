@@ -19,7 +19,9 @@ public sealed class MemoryFactPolicyShould
     public void PinEphemeralTtlToFourteenDays()
     {
         MemoryFactPolicy.EphemeralTtl.ShouldBe(TimeSpan.FromDays(14));
-        MemoryFactPolicy.EmbeddingDimensions.ShouldBe(768);
+        // same provider/dimension as the knowledge schema (one embedding
+        // model serves both stores)
+        MemoryFactPolicy.EmbeddingDimensions.ShouldBe(1536);
     }
 
     [Theory(DisplayName = "Given a custom ephemeral TTL, when the creation instant is computed, then the fact expires exactly when the TTL elapses")]

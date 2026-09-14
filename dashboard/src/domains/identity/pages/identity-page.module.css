@@ -32,12 +32,18 @@
 
 /* The three sections, on the hairline that separates them from their content —
    the same one-pixel rule the topbar sits on. Not a segmented control, not a
-   row of pills: this is chrome, and chrome here is built from a rule. */
+   row of pills: this is chrome, and chrome here is built from a rule. The
+   inline gutter is the page gutter, the same one the pinned header's title
+   sits on — the one convention every tab strip keeps (see
+   `knowledge-page.module.css`, the reference spelling). The panel below keeps
+   no gutter of its own: it holds a full-bleed table whose toolbar aligns to
+   the table's own cell gutter (see `identity-panels.module.css`), which is a
+   table's rule, not a strip's. */
 .tabList {
   display: flex;
   flex: 0 0 auto;
   gap: var(--s6);
-  padding-inline: var(--s6);
+  padding-inline: var(--page-x);
   border-block-end: var(--hairline) solid var(--rule);
 }
 

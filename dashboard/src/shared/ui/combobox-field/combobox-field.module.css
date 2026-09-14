@@ -34,9 +34,11 @@
   inline-size: 100%;
   min-inline-size: 0;
   block-size: var(--h-button-lg);
-  /* Room for the chevron button at the end edge — its width plus the padding
-     every other control carries. */
-  padding-inline-end: calc(var(--s3) + var(--icon-sm) + var(--s2));
+  /* The leading side takes the inset every other control in the kit carries.
+     The trailing side reserves room for the chevron button at the end edge
+     — its width plus the inset the chevron stands on. Without the leading
+     half of this shorthand the typed value sat flush against the left rule. */
+  padding-inline: var(--s3) calc(var(--s3) + var(--icon-sm) + var(--s2));
   border: var(--hairline) solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface);
@@ -88,7 +90,10 @@
   border: 0;
   border-radius: var(--r-md);
   background: transparent;
-  color: var(--text-muted);
+  /* A populated field's chevron stands at the value's own voice. The empty
+     state lowers the chevron to `text-muted` — the same read `SelectField`
+     gives the placeholder. The state is read off `data-empty` on the root. */
+  color: var(--text);
   cursor: pointer;
 }
 
@@ -99,6 +104,23 @@
 .trigger[data-disabled] {
   color: var(--text-faint);
   cursor: not-allowed;
+}
+
+/* The chevron's own keyboard focus ring. The trigger is a separate focusable
+   element from the input, so the input's focus ring does not cover it. The
+   ring is inset to the right end of the trigger so it never doubles up with
+   the input's own ring when both are focused in sequence. */
+.trigger[data-focus-visible] {
+  outline: none;
+  border-radius: var(--r-md);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* The empty-state rule sits at the same specificity as the trigger's own
+   `color`, so order is what decides it. A populated field wins the louder
+   voice; only an empty field stays muted. */
+.root[data-empty] .trigger {
+  color: var(--text-muted);
 }
 
 .icon {

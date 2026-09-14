@@ -25,6 +25,8 @@ export interface VirtualKeysPanelProps {
   enforced: boolean
   revokingId: string | null
   onRevoke: (entry: VirtualKey) => void
+  /** Opens a key's detail drawer — the prefix cell is its address. */
+  onOpen: (entry: VirtualKey) => void
 }
 
 /**
@@ -46,6 +48,7 @@ export function VirtualKeysPanel({
   enforced,
   revokingId,
   onRevoke,
+  onOpen,
 }: VirtualKeysPanelProps) {
   const session = useSession()
   const [filters, setFilters] = useState<DataTableFilterValues>({})
@@ -61,9 +64,10 @@ export function VirtualKeysPanel({
         enforced,
         revokingId,
         onRevoke,
+        onOpen,
         session,
       }),
-    [endpoints, enforced, revokingId, onRevoke, session]
+    [endpoints, enforced, revokingId, onRevoke, onOpen, session]
   )
 
   const rows = useMemo(

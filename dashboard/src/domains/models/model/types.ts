@@ -31,6 +31,26 @@ export type KeyScope =
 /** What a key is, as opposed to what it was configured to be. Derived. */
 export type KeyState = "live" | "expired" | "revoked"
 
+/**
+ * Who a key was issued to serve: a role, in a place.
+ *
+ * A platform-wide grant carries `null` for the project rather than a sentinel
+ * id — "everywhere" is not a project. The role vocabulary is the routing
+ * table's (`lead` | `worker`), because a grant and a route answer the same
+ * question from two ends: what work may move, and where it may move.
+ */
+export interface KeyGrant {
+  role: "lead" | "worker"
+  projectId: string | null
+}
+
+/** One day of a key's spend window, oldest first, labelled for the axis. */
+export interface KeySpendDay {
+  /** The short axis label ("mon", "today") — display data the wire carries. */
+  label: string
+  usd: number
+}
+
 export interface VirtualKey {
   id: string
   /** All of the key that is ever displayed after it is stored. */
@@ -57,6 +77,23 @@ export interface VirtualKey {
   expiresInSec: number | null
   lastUsedAgoSec: number | null
   revoked: boolean
+  /**
+   * Seconds since the key was issued. `null` when the surface reading the key
+   * does not know — the admin catalogue carries no issued-at column.
+   */
+  createdAgoSec: number | null
+  /**
+   * The grants recorded against this key, or `null` when the surface reading
+   * the key does not carry them. An empty array is a real answer ("issued to
+   * nobody in particular"); `null` is the absence of the question.
+   */
+  grants: KeyGrant[] | null
+  /**
+   * Per-day spend across the trailing window, oldest first. `null` when not
+   * metered here — the same reading `spentUsd` gives, stretched over days
+   * rather than summed into one figure.
+   */
+  spendDaily: KeySpendDay[] | null
 }
 
 /**

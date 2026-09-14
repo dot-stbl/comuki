@@ -21,6 +21,32 @@
   color: var(--text);
 }
 
+/* The prefix as an address: same voice and colour as `.strong`, plus the one
+   promise an address makes — that it goes somewhere. Underlined on hover and
+   focus only, the way the sources table's link cell behaves; a resting
+   underline on every row of a table reads as noise before it reads as
+   affordance. */
+.link {
+  display: inline-block;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-family: var(--font-data);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.link:hover,
+.link:focus-visible {
+  text-decoration: underline;
+}
+
 .faint {
   min-inline-size: 0;
   overflow: hidden;

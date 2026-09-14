@@ -43,6 +43,7 @@ function cloneMessage(message: SeedChatMessage): SeedChatMessage {
           steps: message.proposal.steps?.map((step) => ({ ...step })),
         }
       : undefined,
+    meta: message.meta ? { ...message.meta } : undefined,
   }
 }
 

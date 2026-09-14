@@ -40,10 +40,15 @@ function message(id: string, extra: Partial<ChatMessage> = {}): ChatMessage {
   return { id, kind: "reply", text: `body ${id}`, at: "09:00", ...extra }
 }
 
-function mount(messages: ChatMessage[]) {
+function mount(messages: ChatMessage[], awaiting = false) {
   return render(
     <TestSession>
-      <ChatThread messages={messages} onDecide={vi.fn()} projectId={null} />
+      <ChatThread
+        messages={messages}
+        onDecide={vi.fn()}
+        projectId={null}
+        awaiting={awaiting}
+      />
     </TestSession>
   )
 }
@@ -114,6 +119,44 @@ describe("a reply in flight", () => {
       at("chat-log")?.querySelectorAll("[data-test='chat-message']")
     ).toHaveLength(2)
     expect(at("chat-announce")?.textContent).toBe("")
+  })
+})
+
+describe("the typing pause", () => {
+  it("shows the dots and the words while a sent turn has not answered", () => {
+    mount([message("m1")], true)
+
+    const typing = at("chat-typing")
+    expect(typing).not.toBeNull()
+    // Outside the log: a state of the console, not an entry in the journal.
+    expect(at("chat-log")?.contains(typing as Node)).toBe(false)
+    expect(typing?.getAttribute("aria-hidden")).toBe("true")
+    expect(typing?.textContent).toContain("Comuki думает")
+  })
+
+  it("announces the pause once, in words, to somebody listening", () => {
+    mount([message("m1")], true)
+    expect(at("chat-announce")?.textContent).toBe("Comuki думает")
+  })
+
+  it("gives way to the reply in flight, and to nothing when idle", () => {
+    // A streaming reply says more than the dots do.
+    const inFlight = mount([message("m2", { streaming: true })], true)
+    expect(
+      inFlight.container.querySelector('[data-test="chat-typing"]')
+    ).toBeNull()
+    expect(
+      inFlight.container.querySelector('[data-test="chat-announce"]')
+        ?.textContent
+    ).toBe("the assistant is replying")
+    inFlight.unmount()
+
+    // And with nothing happening, there is nothing to say.
+    const idle = mount([message("m1")])
+    expect(idle.container.querySelector('[data-test="chat-typing"]')).toBeNull()
+    expect(
+      idle.container.querySelector('[data-test="chat-announce"]')?.textContent
+    ).toBe("")
   })
 })
 

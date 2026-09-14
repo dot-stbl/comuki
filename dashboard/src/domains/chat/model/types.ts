@@ -211,6 +211,28 @@ export type MessagePart =
   | ArtifactRefPart
 
 /**
+ * What producing one message cost, when something reported it.
+ *
+ * The wire's `ChatMessageMeta` — model, tokens, cost, latency, stop reason —
+ * journaled by the host beside the row it describes. Everything optional: a
+ * person's row has no model, and a stub brain journals no tokens, so a
+ * partial reading is expressible without inventing zeroes. The thread's
+ * metrics line renders from exactly what is here and nothing it made up.
+ */
+export interface MessageMeta {
+  /** Model id that produced the message (`glm-4.7`). */
+  model?: string
+  tokensIn?: number
+  tokensOut?: number
+  /** Cost in USD micros — the unit the costs capability journals. */
+  costMicros?: number
+  /** Wall-clock time to produce the message, in milliseconds. */
+  latencyMs?: number
+  /** Why generation stopped (`stop`, `length`, `tool_use`). */
+  stopReason?: string
+}
+
+/**
  * The act a proposal performs.
  *
  * Named after the act rather than the tool, exactly like `Permission` is, so
@@ -277,6 +299,13 @@ export interface ChatMessage {
    * live runs for X" lands. See `model/references.ts`.
    */
   handoff?: string
+  /**
+   * What producing this message cost, when the turn reported it.
+   *
+   * Absent on the flat path and on every wire row the host journals without
+   * a meta payload — the metrics line renders nothing rather than zeroes.
+   */
+  meta?: MessageMeta
   at: string
 }
 

@@ -47,6 +47,49 @@
   color: var(--text);
 }
 
+/* Phase ---------------------------------------------------------------------
+ *
+ * Where the turn is, beside the name that is working. The hue is the status
+ * set's own — running while the working-out moves, success once the answer
+ * landed, escalated while a plan waits on a person — with each one's tint
+ * behind it, the same wash the status badge takes, read straight off the
+ * `--st-*` primitives the way the error band reads `--st-failed`:
+ * `[data-status]`'s `--hue` is declared in exactly one place and this is not
+ * it. The capitals are presentation: the DOM carries the lowercase value,
+ * per the verbatim-spelling rule. */
+
+.phase {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-data);
+  text-transform: uppercase;
+  padding: 0 var(--s2);
+  border-radius: var(--r-sm);
+  color: var(--st-running);
+  background: var(--st-running-tint);
+}
+
+.phase[data-phase="done"] {
+  color: var(--st-success);
+  background: var(--st-success-tint);
+}
+
+.phase[data-phase="plan"] {
+  color: var(--st-escalated);
+  background: var(--st-escalated-tint);
+}
+
+/* The iteration the working-out reached. A figure about the turn, faint and
+   tabular, and only ever beside a phase badge — an iteration without a phase
+   would be a number with nothing it counts. */
+.iteration {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
 .clock {
   font-family: var(--font-data);
   font-size: var(--t-micro);
@@ -578,13 +621,26 @@
 
 /* Thinking ------------------------------------------------------------------
  *
- * Folded, muted, and motionless. It is evidence, not a performance. */
+ * In flight, the working-out is the show: open, each line a step, the newest
+ * one spinning. Settled, it is evidence — folded, muted, and motionless.
+ * Both readings live in this one section because they are one block with two
+ * tempers, not two blocks. */
 
 .thinking {
   min-inline-size: 0;
   max-inline-size: 68ch;
   border-inline-start: var(--hairline) solid var(--rule);
   padding-inline-start: var(--s4);
+}
+
+/* The in-flight reading: no disclosure to open, because the operator is
+   watching it happen rather than auditing what happened. */
+.thinkingActive {
+  border-inline-start-color: color-mix(
+    in oklab,
+    var(--st-running) 45%,
+    transparent
+  );
 }
 
 .thinkingSummary {
@@ -614,6 +670,11 @@
   letter-spacing: var(--tracking-label);
 }
 
+.thinkingWordsActive {
+  color: var(--st-running);
+  margin: 0;
+}
+
 .thinkingCount {
   font-family: var(--font-data);
   font-size: var(--t-micro);
@@ -621,7 +682,183 @@
   color: var(--text-faint);
 }
 
-.thinkingText {
+/* Steps ---------------------------------------------------------------------
+ *
+ * One line of the working-out, one step: a mark that says where the brain is
+ * on that line, then the line itself in the data voice it arrived in. The
+ * list carries the left rule and the indent, so the steps read as one
+ * block — the mockup's tool-trace — rather than N loose rows. */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  margin-block-start: var(--s2);
+  padding: 0;
+  padding-inline-start: var(--s4);
+  border-inline-start: var(--hairline) solid var(--rule);
+  list-style: none;
+  min-inline-size: 0;
+  max-inline-size: 68ch;
+}
+
+.stepRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* The mark: a check on a line the brain moved past, the spinner on the line
+   it is on. Icon-beside-micro-label sizing, per the icon scale. */
+.stepDoneIcon,
+.stepRunningIcon {
+  flex: 0 0 auto;
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  transform: translateY(0.125em);
+}
+
+.stepDoneIcon {
+  color: var(--st-success);
+}
+
+.stepRunningIcon {
+  color: var(--st-running);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stepRunningIcon {
+    animation: step-spin 1s linear infinite;
+  }
+}
+
+@keyframes step-spin {
+  to {
+    transform: translateY(0.125em) rotate(360deg);
+  }
+}
+
+/* A call-shaped line: the call emphasized, its tail (a result, a state)
+   beside it in the muted voice. */
+.stepCall {
+  color: var(--text);
+}
+
+.stepTail {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+}
+
+/* The tail of the line the brain is on right now, in the running hue with a
+   pulse — the one word on the thread that is allowed to move while the turn
+   moves. */
+.stepTailRunning {
+  color: var(--st-running);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stepTailRunning {
+    animation: step-pulse 1.4s var(--ease) infinite;
+  }
+}
+
+@keyframes step-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* A sentence the brain sent: kept, at the same step's geometry, but without
+   the call emphasis it never claimed. */
+.stepNote {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Metrics -------------------------------------------------------------------
+ *
+ * What the turn cost, as one line of pipe-separated figures under the
+   answer. The data voice and tabular figures — these are values in a log —
+   and faint, because the answer above them is what the operator came for. */
+
+.metrics {
+  margin: 0;
+  min-inline-size: 0;
+  max-inline-size: 68ch;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.metricSegment {
+  overflow-wrap: anywhere;
+}
+
+.metricBar {
+  color: var(--rule-strong);
+}
+
+/* Memory --------------------------------------------------------------------
+ *
+ * The digest the turn was fed, as a chip: one line that says how much the
+   brain was told, with the facts folded behind it. The waiting hue, because
+   context-in-waiting is what a digest is — read yesterday, used now. */
+
+.memory {
+  min-inline-size: 0;
+  max-inline-size: 68ch;
+}
+
+.memorySummary {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s2);
+  cursor: pointer;
+  list-style: none;
+  min-inline-size: 0;
+  padding: var(--s1) var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+}
+
+.memorySummary::-webkit-details-marker {
+  display: none;
+}
+
+.memorySummary:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.memoryLabel {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  text-transform: uppercase;
+  color: var(--st-waiting);
+}
+
+.memoryCount {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.memoryBody {
   margin: 0;
   margin-block-start: var(--s2);
   min-inline-size: 0;

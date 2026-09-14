@@ -220,6 +220,7 @@ export function ChatConsole({
               onDecide={onDecide}
               busy={decide.isPending}
               projectId={current?.projectId ?? null}
+              awaiting={send.isPending}
             />
             <ChatComposer
               commands={commands}

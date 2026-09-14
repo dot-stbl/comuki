@@ -224,6 +224,20 @@ export interface SeedArtifactRefPart {
   artifactIds: string[]
 }
 
+/**
+ * What producing one message cost — mirrors the domain's `MessageMeta` and
+ * the wire's `ChatMessageMeta`. Optional throughout, because a scripted
+ * reply costs nothing until somebody writes down what it would have cost.
+ */
+export interface SeedMessageMeta {
+  model?: string
+  tokensIn?: number
+  tokensOut?: number
+  costMicros?: number
+  latencyMs?: number
+  stopReason?: string
+}
+
 export interface SeedChatMessage {
   id: string
   kind: SeedChatMessageKind
@@ -252,6 +266,8 @@ export interface SeedChatMessage {
    * renames its search parameter one of the two copies would be wrong.
    */
   handoff?: string
+  /** What the turn cost, when the script says — the metrics line's source. */
+  meta?: SeedMessageMeta
   /** Run-relative clock, `HH:MM`, the way every other seed spells one. */
   at: string
 }
@@ -429,8 +445,22 @@ export const CHAT_SESSIONS_SEED: SeedChatSession[] = [
         at: "08:05",
         // Mid-flight. The composition renders it outside the log region and
         // announces only that a reply is arriving — see `chat-thread.tsx`.
+        // The working-out is what makes this the *thinking* state reachable
+        // by clicking: steps visible, the last one spinning, the prose under
+        // it still being written. It settles on the next real event (the
+        // store settles streaming rows when the next thing is said).
         streaming: true,
-        text: "Шаг w3 умер сразу после установки зависимостей: воркер импортирует theme/v1, а в новом пакете этого пути больше нет. Судя по трассе, план писался ещё",
+        parts: [
+          {
+            kind: "thinking",
+            text: 'iteration 1: memory.search("theme api падение")\nпамять помнит только миграцию на theme/v2, ретраев там нет\nread_code("Modules.Theme/Handler.cs") — импорт жив, путь в рантайме другой',
+          },
+          {
+            kind: "text",
+            markdown:
+              "Шаг w3 умер сразу после установки зависимостей: воркер импортирует theme/v1, а в новом пакете этого пути больше нет. Судя по трассе, план писался ещё",
+          },
+        ],
       },
     ],
   },
@@ -499,14 +529,37 @@ export const CHAT_SESSIONS_SEED: SeedChatSession[] = [
         ],
       },
       {
+        // The digest row the platform journals when the turn was fed memory
+        // (a system message on the wire). Seeded so the chip state — and the
+        // folded facts behind it — is reachable by clicking.
+        id: "m_pa_2d",
+        kind: "reply",
+        at: "09:20",
+        parts: [
+          {
+            kind: "text",
+            markdown:
+              "memory digest fed to the brain:\nвебхуки Stripe уже разбирали в смену 2026-09-12, тогда победила схема с заголовком\nключ идемпотентности обсуждали, но до миграции не дошло",
+          },
+        ],
+      },
+      {
         id: "m_pa_3",
         kind: "reply",
         at: "09:21",
+        meta: {
+          model: "glm-4.7",
+          tokensIn: 1180,
+          tokensOut: 660,
+          costMicros: 2900,
+          latencyMs: 8200,
+          stopReason: "stop",
+        },
         parts: [
           {
             kind: "thinking",
             tokens: 1840,
-            text: "Шаг w4 трогает только обработчик Stripe. Проверил, что ключ идемпотентности берётся из заголовка, а не из тела — тело Stripe пересобирает при ретрае, заголовок нет. Остался вопрос про TTL: в таблице стоит 24 часа, а Stripe ретраит до трёх суток.",
+            text: 'memory.search("идемпотентность вебхуков") — 2 факта, оба про этот шаг\nШаг w4 трогает только обработчик Stripe, остальное не задето.\nПроверил, что ключ идемпотентности берётся из заголовка, а не из тела — тело Stripe пересобирает при ретрае, заголовок нет.\nОстался вопрос про TTL: в таблице стоит 24 часа, а Stripe ретраит до трёх суток.',
           },
           {
             kind: "text",

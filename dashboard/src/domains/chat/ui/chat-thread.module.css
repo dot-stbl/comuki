@@ -131,6 +131,71 @@
   }
 }
 
+/* The typing pause -----------------------------------------------------------
+ *
+ * The dots are the cursor's own grammar: the accent colour, and motion as a
+ * state rather than decoration. Still for anyone who asked for less motion —
+ * the words beside them carry the whole meaning on their own. */
+
+.typing {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding-block: var(--s3);
+  min-inline-size: 0;
+}
+
+.typingDots {
+  display: inline-flex;
+  gap: var(--s1);
+}
+
+.typingDot {
+  inline-size: calc(var(--h-meter) * 0.75);
+  block-size: calc(var(--h-meter) * 0.75);
+  /* The legacy pill on an equal-sided box is a circle — the one shape in the
+     corner vocabulary a data dot is allowed to be. */
+  border-radius: var(--r-pill);
+  background: var(--primary);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .typingDot {
+    animation: typing-bounce 1.2s var(--ease) infinite;
+  }
+
+  .typingDot:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .typingDot:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(calc(var(--h-meter) * -0.5));
+    opacity: 1;
+  }
+}
+
+/* The sentence beside the dots is the shift's own words for "wait" — content
+   the operator reads, not a label the interface owns — so the interface
+   voice with an italic, rather than the data voice. */
+.typingWords {
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  font-style: italic;
+  color: var(--text-muted);
+}
+
 /* The announcement. Off screen but not `display: none` — a hidden live region
    is a live region that never speaks. */
 .announce {

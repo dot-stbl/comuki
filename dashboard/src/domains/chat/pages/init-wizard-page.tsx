@@ -24,6 +24,7 @@ import { useCan, useSession } from "@/shared/session"
 import {
   Button,
   Notice,
+  NumberField,
   SelectField,
   StatusBadge,
   SwitchField,
@@ -290,12 +291,13 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                     { value: "fly", label: "fly" },
                   ]}
                 />
-                <TextField
+                <NumberField
                   id="init-workers"
                   label="Workers at once"
+                  unit="workers"
+                  min={1}
                   value={draft.maxWorkers}
                   onValueChange={(next) => set("maxWorkers", next)}
-                  inputMode="numeric"
                   hint="The ceiling on containers this project may hold."
                   error={shown.maxWorkers}
                 />

@@ -4,6 +4,7 @@ export {
   type SeedApprovalType,
   type SeedRisk,
 } from "./approvals.seed"
+export { MODEL_LINEUP } from "./models.seed"
 export {
   COST_MODEL_LINEUP,
   COST_PROJECT_KEYS,

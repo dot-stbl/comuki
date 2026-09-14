@@ -87,8 +87,6 @@ export function VerifyProjectPanel({
           label="run the gate on every run"
           checked={project.enabled}
           onCheckedChange={onEnabledChange}
-          onLabel="gate on"
-          offLabel="gate off"
           disabled={saving}
           denied={denied}
           data-test="verify-enabled"

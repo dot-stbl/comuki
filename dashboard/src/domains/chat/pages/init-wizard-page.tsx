@@ -270,8 +270,6 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                     label="May push branches"
                     checked={draft.writeAccess}
                     onCheckedChange={(next) => set("writeAccess", next)}
-                    onLabel="on"
-                    offLabel="off"
                     hint="Off means the swarm reads the repository and opens nothing."
                   />
                 </FormRow>
@@ -341,8 +339,6 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                   label="Keep an indexed rule set"
                   checked={draft.knowledge}
                   onCheckedChange={(next) => set("knowledge", next)}
-                  onLabel="on"
-                  offLabel="off"
                   hint="A docs worker writes it. There is no document editor here."
                 />
                 <TextareaField

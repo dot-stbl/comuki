@@ -1,5 +1,6 @@
 using Comuki.Host.Workers;
 using Comuki.Modules.Identity.Application.Ports;
+using Comuki.Shared.Bootstrap.Workers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -12,16 +13,13 @@ namespace Comuki.Host.Unit.OidcSweeper;
 
 /// <summary>
 /// Sweep contract (issue #4 tail): one cycle deletes rows past
-/// <c>now - StateTtl</c>, the loop honours the configured interval, and
-/// the disabled flag short-circuits. We never sleep real time — the
-/// loop test passes a <see cref="TimeSpan.Zero"/> interval and a
-/// cancellation token to break after one cycle.
-/// <para>
-/// Issue Q30 / v1.1: at startup the sweeper probes
-/// <see cref="IOidcStateStore.TableExistsAsync"/>. A missing table is
-/// logged as <c>Critical</c> and the loop continues — the host does
-/// not refuse to start.
-/// </para>
+/// <c>now - StateTtl</c> through <see cref="OidcStateSweeper.SweepOnceAsync"/>,
+/// and the worker surface (<see cref="IComukiWorker.ExecuteAsync"/>) probes
+/// the schema every cycle — a missing table fails the cycle with a
+/// Critical log (Q30 / v1.1) instead of taking the host down, and the
+/// registry backs off and retries. We never sleep real time; the loop
+/// itself is covered by the registry suite in
+/// <c>Comuki.Shared.Bootstrap.Unit</c>.
 /// </summary>
 public sealed class OidcStateSweeperShould
 {
@@ -53,76 +51,68 @@ public sealed class OidcStateSweeperShould
             TestContext.Current.CancellationToken);
     }
 
-    [Fact(DisplayName = "Given a zero interval, when ExecuteAsync runs, then the loop calls the store at least once before cancellation")]
-    public async Task ExecuteAsyncLoopsUntilCancellationAsync()
+    [Fact(DisplayName = "Given the table is present, when ExecuteAsync runs, then the cycle succeeds and no Critical log is emitted")]
+    public async Task ExecuteSucceedsWhenTablePresentAsync()
     {
-        var store = Substitute.For<IOidcStateStore>();
-        store.TableExistsAsync(Arg.Any<CancellationToken>()).Returns(true);
-        var sut = NewSweeper(store, NewOptions(interval: TimeSpan.Zero));
-
-        await RunWorkerUntilCancelledAsync(sut);
-
-        await store.Received().DeleteExpiredAsync(
-            Arg.Any<DateTimeOffset>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact(DisplayName = "Given the disabled flag, when ExecuteAsync runs, then the loop never enters and the store is never called")]
-    public async Task ExecuteAsyncDoesNothingWhenDisabledAsync()
-    {
-        var store = Substitute.For<IOidcStateStore>();
-        var sut = NewSweeper(store, NewOptions(interval: TimeSpan.Zero, enabled: false));
-
-        await RunWorkerUntilCancelledAsync(sut);
-
-        await store.DidNotReceiveWithAnyArgs().DeleteExpiredAsync(default, TestContext.Current.CancellationToken);
-    }
-
-    [Fact(DisplayName = "Given the table is present, when ExecuteAsync starts, then no Critical log is emitted and the loop continues")]
-    public async Task StartupProbeReportsWhenTablePresentAsync()
-    {
-        // Issue Q30 / v1.1: the probe fires once at startup. When the
-        // table is present, no Critical log is emitted and the loop
-        // proceeds normally.
         var store = Substitute.For<IOidcStateStore>();
         store.TableExistsAsync(Arg.Any<CancellationToken>()).Returns(true);
         var logger = new RecordingLogger<OidcStateSweeper>();
-        var sut = NewSweeper(store, NewOptions(interval: TimeSpan.Zero), logger);
+        var sut = NewSweeper(store, NewOptions(), logger);
 
-        await RunWorkerUntilCancelledAsync(sut);
+        var result = await ExecuteOnceAsync(sut);
 
+        result.Success.ShouldBeTrue();
         await store.Received(1).TableExistsAsync(Arg.Any<CancellationToken>());
         logger.Records.Any(static entry => entry.Level == LogLevel.Critical).ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "Given the table is missing, when ExecuteAsync starts, then a Critical log is emitted and the host continues running")]
-    public async Task StartupProbeLogsCriticalWhenTableMissingAsync()
+    [Fact(DisplayName = "Given the table is missing, when ExecuteAsync runs, then the cycle fails and a Critical log with the remediation hint is emitted")]
+    public async Task ExecuteFailsWithCriticalWhenTableMissingAsync()
     {
-        // Issue Q30 / v1.1: a fresh deploy whose migrator has not yet
-        // run lands here, the probe returns false, and the sweeper
-        // logs Critical with the exact remediation hint. The host
-        // does NOT refuse to start — the loop continues and re-probes
-        // on every cycle.
+        // Q30 / v1.1: a fresh deploy whose migrator has not yet run lands
+        // here — the cycle fails, the Critical log carries the exact
+        // remediation hint, and the registry retries with backoff (the
+        // host does NOT refuse to start).
         var store = Substitute.For<IOidcStateStore>();
         store.TableExistsAsync(Arg.Any<CancellationToken>()).Returns(false);
         var logger = new RecordingLogger<OidcStateSweeper>();
-        var sut = NewSweeper(store, NewOptions(interval: TimeSpan.Zero), logger);
+        var sut = NewSweeper(store, NewOptions(), logger);
 
-        await RunWorkerUntilCancelledAsync(sut);
+        var result = await ExecuteOnceAsync(sut);
 
-        await store.Received(1).TableExistsAsync(Arg.Any<CancellationToken>());
+        result.Success.ShouldBeFalse();
+        result.Detail.ShouldNotBeNull();
+        result.Detail.ShouldContain("oidc_states");
+        await store.DidNotReceiveWithAnyArgs().DeleteExpiredAsync(default, TestContext.Current.CancellationToken);
         logger.Records.Any(static entry =>
             entry.Level == LogLevel.Critical
             && entry.Message.Contains("oidc_states", StringComparison.OrdinalIgnoreCase)).ShouldBeTrue();
     }
 
-    private static async Task RunWorkerUntilCancelledAsync(OidcStateSweeper sut)
+    [Fact(DisplayName = "Given a probe that throws a database error, when ExecuteAsync runs, then the cycle fails instead of crashing the caller")]
+    public async Task ExecuteFailsWhenProbeThrowsAsync()
     {
-        using var cts = new CancellationTokenSource();
-        await sut.StartAsync(cts.Token);
-        await Task.Delay(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken);
-        await cts.CancelAsync();
-        await sut.StopAsync(CancellationToken.None);
+        var store = Substitute.For<IOidcStateStore>();
+        store.TableExistsAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<bool>(new TimeoutException("probe timeout")));
+        var sut = NewSweeper(store, NewOptions());
+
+        var result = await ExecuteOnceAsync(sut);
+
+        result.Success.ShouldBeFalse();
+    }
+
+    private static async Task<WorkerResult> ExecuteOnceAsync(OidcStateSweeper sut)
+    {
+        return await sut.ExecuteAsync(NewContext(), TestContext.Current.CancellationToken);
+    }
+
+    private static WorkerContext NewContext()
+    {
+        var services = new ServiceCollection();
+        var provider = services.BuildServiceProvider();
+
+        return new WorkerContext(provider, new FrozenTime(frozenNow), NullLogger.Instance);
     }
 
     private static OidcStateSweeper NewSweeper(IOidcStateStore store, OidcSweepOptions options, ILogger<OidcStateSweeper>? logger = null)
@@ -156,7 +146,7 @@ public sealed class OidcStateSweeperShould
         }
     }
 
-    /// <summary>In-process logger that captures every entry — used to assert Critical at startup (Q30 / v1.1).</summary>
+    /// <summary>In-process logger that captures every entry — used to assert Critical on the missing-table probe (Q30).</summary>
     private sealed class RecordingLogger<T> : ILogger<T>
     {
         private readonly List<(LogLevel Level, string Message)> records = [];

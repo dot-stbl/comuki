@@ -19,13 +19,16 @@
   <ItemGroup>
     <!-- Comuki.Host: HostComposer/HostDatabase (internal — see the
          InternalsVisibleTo grant added to Comuki.Host.csproj) plus every
-         module Infrastructure project it references transitively, except
-         Knowledge and Memory (Comuki.Host does not reference either —
-         see SmokeHostServer's "composition gap" note). -->
+         module Infrastructure project it references transitively.
+         Comuki.Shared.Migrations owns the migrated-context list behind
+         HostDatabaseMigrator; Knowledge and Memory are still referenced
+         directly (Comuki.Host does not reference either — see
+         SmokeHostServer's "composition gap" note). -->
     <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
     <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host\Comuki.Host.csproj" />
     <ProjectReference Include="..\..\..\platform\src\modules\Knowledge\Comuki.Modules.Knowledge.Infrastructure\Comuki.Modules.Knowledge.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\platform\src\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Migrations\Comuki.Shared.Migrations.csproj" />
   </ItemGroup>
 
 </Project>

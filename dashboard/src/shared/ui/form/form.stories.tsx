@@ -188,8 +188,6 @@ function Switches() {
         id="story-watch"
         label="Admit tickets from this connection"
         checked={watching}
-        onLabel="watching"
-        offLabel="paused"
         hint="Nothing already admitted is withdrawn when this goes off."
         onCheckedChange={setWatching}
       />
@@ -206,8 +204,8 @@ function Switches() {
 }
 
 /**
- * Rectilinear, and the reading is the thumb's position *and* the word beside
- * it — never the fill's hue on its own.
+ * Rectilinear, one row tall — label at the start, track at the end. The
+ * reading is the thumb's side and the track's fill, never the fill alone.
  */
 export const Switches_: Story = {
   name: "Switch",

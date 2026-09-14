@@ -76,5 +76,36 @@ describe("queries.ts mock-first path", () => {
       "p_comuki",
       "costs",
     ])
+    expect(queries.sessionProjectsQueryKey).toEqual(["session-projects"])
+  })
+
+  it("maps a wire row onto the session's narrow project ref", async () => {
+    const { mapProjectViewsToProjectRefs } = await import(
+      "@/domains/projects/api/mappers"
+    )
+
+    /* The endpoint answers untyped JSON, so the hand-written mapper is the
+       contract: id, the key the operator calls the project by (the wire's
+       slug), and the name — nothing heavier belongs in a context that lives
+       above every screen. A wire row missing its slug says so honestly
+       rather than being padded. */
+    const refs = mapProjectViewsToProjectRefs([
+      {
+        id: "p_comuki",
+        name: "Comuki platform",
+        slug: "comuki",
+        description: null,
+        profilesGitUrl: null,
+        profilesGitRef: null,
+        archived: false,
+        archivedAt: null,
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+      },
+    ])
+
+    expect(refs).toEqual([
+      { id: "p_comuki", key: "comuki", name: "Comuki platform" },
+    ])
   })
 })

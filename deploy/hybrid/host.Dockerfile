@@ -81,7 +81,9 @@ RUN dotnet restore platform/src/host/Comuki.Host/Comuki.Host.csproj \
 RUN dotnet publish platform/src/host/Comuki.Host/Comuki.Host.csproj \
     -c Release --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app/host \
     && dotnet publish platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj \
-    -c Release --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app/migrator
+    -c Release --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app/migrator \
+    && dotnet publish platform/src/host/Comuki.Host.Brain/Comuki.Host.Brain.csproj \
+    -c Release --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app/brain
 
 # ---------- Stage 2: runtime ----------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
@@ -89,6 +91,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app/host /app/host
 COPY --from=build /app/migrator /app/migrator
+# Brain entrypoint (gRPC :17004) — deployed as a sibling Deployment.
+COPY --from=build /app/brain /app/brain
 # SPA into the host content root (chart workingDir /app/host): Kestrel's
 # UseDefaultFiles/UseStaticFiles + MapFallbackToFile serve it.
 COPY --from=spa /src/dist /app/host/wwwroot

@@ -13,6 +13,7 @@ using Comuki.Shared.Bootstrap.Logging;
 using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.ControlPlane.ChatCommands;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 // Operator CLI surface (issue #56): version / doctor / config show / init
 // run before any host bootstrap — no config, no database and no logging
@@ -54,7 +55,13 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 // empty comuki layer, no error: the build-time OpenAPI pass below
 // depends on booting without one.
 builder.Configuration.UseComukiConfiguration();
-builder.WebHost.ConfigureKestrel(static server => server.AddServerHeader = false);
+builder.WebHost.ConfigureKestrel(static server =>
+{
+    server.AddServerHeader = false;
+    // h2c prior-knowledge for the worker gRPC runtime; HTTP/1.1 keeps
+    // serving the public REST/SPA through the same listener.
+    server.ConfigureEndpointDefaults(static listen => listen.Protocols = HttpProtocols.Http1AndHttp2);
+});
 if (builder.Configuration.TryResolveServerUrl() is { } serverUrl)
 {
     builder.WebHost.UseUrls(serverUrl);

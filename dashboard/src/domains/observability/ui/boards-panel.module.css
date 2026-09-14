@@ -46,7 +46,7 @@
 
 .summary {
   margin: 0;
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);

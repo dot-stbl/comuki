@@ -169,7 +169,7 @@
 /* The step's own name — the brain's prose, and the most human thing here. */
 .workLabel {
   margin: 0;
-  max-inline-size: 62ch;
+  max-inline-size: var(--measure-prose);
   font-size: var(--t-body);
   line-height: var(--lh-body);
   color: var(--text);
@@ -205,7 +205,7 @@
 .lost,
 .failure {
   margin: 0;
-  max-inline-size: 62ch;
+  max-inline-size: var(--measure-prose);
   padding: var(--s3) var(--s4);
   border-inline-start: var(--hairline) solid var(--st-failed);
   background: var(--st-failed-tint);
@@ -237,7 +237,7 @@
 
 .stateBody {
   margin: 0;
-  max-inline-size: 62ch;
+  max-inline-size: var(--measure-prose);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--muted-foreground);

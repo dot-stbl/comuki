@@ -48,7 +48,7 @@
 
 .none {
   margin: 0;
-  max-inline-size: 60ch;
+  max-inline-size: var(--measure-prose);
   font-family: var(--font-ui);
   font-size: var(--t-xs);
   line-height: var(--lh-body);

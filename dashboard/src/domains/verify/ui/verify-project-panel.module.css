@@ -73,7 +73,7 @@
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--text);
-  max-inline-size: 78ch;
+  max-inline-size: var(--measure-wide);
 }
 
 /* A repo, a ref and a path are all values, so the whole coordinate is mono. */
@@ -141,7 +141,7 @@
 
 .emptyBody {
   margin: 0;
-  max-inline-size: 62ch;
+  max-inline-size: var(--measure-prose);
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);

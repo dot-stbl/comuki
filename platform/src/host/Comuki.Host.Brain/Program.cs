@@ -12,9 +12,9 @@ using Comuki.Shared.Bootstrap.Logging;
 using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 using Comuki.Shared.Kernel.Scoping;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ProtoBuf.Grpc.Server;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 // Operator CLI (issue #56): `comuki-brain version` runs before any
 // bootstrap and exits without touching config or the database.

@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Comuki.Modules.Memory.Domain\Comuki.Modules.Memory.Domain.csproj" />
+    <ProjectReference Include="..\..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

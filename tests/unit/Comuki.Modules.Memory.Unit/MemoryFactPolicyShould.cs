@@ -22,6 +22,32 @@ public sealed class MemoryFactPolicyShould
         MemoryFactPolicy.EmbeddingDimensions.ShouldBe(768);
     }
 
+    [Theory(DisplayName = "Given a custom ephemeral TTL, when the creation instant is computed, then the fact expires exactly when the TTL elapses")]
+    [InlineData(2, 0, 0)]    // 2h ttl
+    [InlineData(24, 0, 0)]   // 1d ttl
+    [InlineData(336, 0, 0)]  // 14d ttl — exactly the full horizon
+    [InlineData(720, 0, 0)]  // above the horizon — clamped to the full horizon
+    public void BackdateEphemeralCreationSoTheFixedHorizonExpiresOnSchedule(int ttlHours, int ttlMinutes, int ttlSeconds)
+    {
+        var ttl = new TimeSpan(ttlHours, ttlMinutes, ttlSeconds);
+
+        var createdAt = MemoryFactPolicy.EphemeralCreatedAt(now, ttl);
+
+        createdAt.ShouldBeLessThanOrEqualTo(now);
+        var effectiveTtl = ttl <= MemoryFactPolicy.EphemeralTtl ? ttl : MemoryFactPolicy.EphemeralTtl;
+        (createdAt + MemoryFactPolicy.EphemeralTtl - now).ShouldBe(effectiveTtl);
+        // and the visibility rule agrees with the sweep horizon
+        MemoryFactPolicy.IsExpired(Fact(MemoryFactKind.Ephemeral, createdAt), now + effectiveTtl).ShouldBeTrue();
+        MemoryFactPolicy.IsExpired(Fact(MemoryFactKind.Ephemeral, createdAt), now + effectiveTtl - TimeSpan.FromMinutes(1)).ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Given a non-positive TTL, when the creation instant is computed, then ArgumentOutOfRangeException refuses it")]
+    public void RefuseNonPositiveCustomTtl()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(static () => MemoryFactPolicy.EphemeralCreatedAt(now, TimeSpan.Zero));
+        Should.Throw<ArgumentOutOfRangeException>(static () => MemoryFactPolicy.EphemeralCreatedAt(now, TimeSpan.FromMinutes(-5)));
+    }
+
     [Theory(DisplayName = "Given an ephemeral fact, when the TTL boundary is crossed, then IsExpired flips exactly at 14 days")]
     [InlineData(13, 23, 59, false)]
     [InlineData(14, 0, 0, true)]

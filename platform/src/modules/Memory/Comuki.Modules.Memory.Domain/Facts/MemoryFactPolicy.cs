@@ -35,6 +35,24 @@ public static class MemoryFactPolicy
     }
 
     /// <summary>
+    /// The creation instant for an ephemeral fact with a custom TTL. The
+    /// sweep deletes on a FIXED <see cref="EphemeralTtl"/> horizon, so a
+    /// shorter lifetime is expressed by backdating <c>created_at</c> by the
+    /// remaining difference — the visibility checks (search, digest) share
+    /// the same horizon and stop returning the fact at the same moment the
+    /// sweep reaps it. TTLs at or above <see cref="EphemeralTtl"/> need no
+    /// backdating (they simply live the full default horizon).
+    /// </summary>
+    /// <param name="now">The write instant (the store clock).</param>
+    /// <param name="ttl">The requested lifetime; must be positive.</param>
+    public static DateTimeOffset EphemeralCreatedAt(DateTimeOffset now, TimeSpan ttl)
+    {
+        return ttl <= TimeSpan.Zero
+            ? throw new ArgumentOutOfRangeException(nameof(ttl), ttl, "ephemeral ttl must be positive")
+            : ttl >= EphemeralTtl ? now : now - (EphemeralTtl - ttl);
+    }
+
+    /// <summary>
     /// True when a fact participates in search and digest: not superseded
     /// and — for ephemeral — not past its TTL.
     /// </summary>

@@ -126,8 +126,6 @@ export function NativeTicketForm({
           label="straight to work"
           checked={straightToWork}
           disabled={busy}
-          onLabel="a run starts on save"
-          offLabel="waits in the catalog"
           denied={denied}
           hint="off leaves it for somebody to claim, which is the same act a minute later."
           data-test="ticket-straight-to-work"

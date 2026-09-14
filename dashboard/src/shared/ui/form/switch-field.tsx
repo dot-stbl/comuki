@@ -10,9 +10,6 @@ export interface SwitchFieldProps {
   label: string
   checked: boolean
   onCheckedChange: (next: boolean) => void
-  /** The state, in a word — `on` / `off`, or something the screen means more. */
-  onLabel?: string
-  offLabel?: string
   hint?: ReactNode
   /** Busy or structurally impossible. Never a permission denial. */
   disabled?: boolean
@@ -28,20 +25,21 @@ export interface SwitchFieldProps {
 }
 
 /**
- * A switch, and the word that says which way it is pointing.
+ * A switch on one row: the label at the start, the track at the end.
  *
  * Rectilinear rather than a pill, because `--r-pill` is a retired step in this
- * form language and a switch is not an exception to it. The reading is carried
- * by the thumb's position *and* by the word beside it, so it never depends on
- * the fill's hue alone — the same two-channel rule the status bands follow.
+ * form language and a switch is not an exception to it. The reading is the
+ * thumb's side and the track's fill — brand-washed when on, bare lane when
+ * off — and, for a screen reader, the input's own checked state under
+ * `role="switch"`. It once also said the state in a word beside the track;
+ * the word made the control two lines tall and stretched every row it sat in,
+ * and it said what the thumb was already saying.
  */
 export function SwitchField({
   id,
   label,
   checked,
   onCheckedChange,
-  onLabel = "on",
-  offLabel = "off",
   hint,
   disabled = false,
   denied,
@@ -52,6 +50,9 @@ export function SwitchField({
   return (
     <div className={styles.field}>
       <div className={styles.switchRow}>
+        <label className={styles.switchLabel} htmlFor={id}>
+          {label}
+        </label>
         <span
           className={cn(
             styles.switch,
@@ -78,14 +79,6 @@ export function SwitchField({
             }}
           />
           <span className={styles.switchThumb} aria-hidden="true" />
-        </span>
-        <span className={styles.switchText}>
-          <label className={styles.switchLabel} htmlFor={id}>
-            {label}
-          </label>
-          <span className={styles.switchState} aria-hidden="true">
-            {checked ? onLabel : offLabel}
-          </span>
         </span>
       </div>
       {hint ? (

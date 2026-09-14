@@ -259,13 +259,22 @@ describe("the gate as a feature flag", () => {
     ).toContain("The file is still in git")
   })
 
-  it("carries the switch state in a word as well as a position", async () => {
+  it("carries the switch state on the control, not in a word beside it", async () => {
+    // The state word beside the track is gone: the thumb and the track's fill
+    // say it to the eye, and the input's own checked state says it to a
+    // screen reader — `role="switch"` with native checkbox semantics.
     await mount()
-    expect(screen.getByText("gate on")).toBeTruthy()
+    const on = document.querySelector(
+      '[data-test="verify-enabled"]'
+    ) as HTMLInputElement
+    expect(on.checked).toBe(true)
     cleanup()
 
     await mount({ project: { ...PROJECT, enabled: false } })
-    expect(screen.getByText("gate off")).toBeTruthy()
+    const off = document.querySelector(
+      '[data-test="verify-enabled"]'
+    ) as HTMLInputElement
+    expect(off.checked).toBe(false)
   })
 
   it("flips for a role that may turn it", async () => {

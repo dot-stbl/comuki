@@ -7,6 +7,7 @@ using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Stores;
 using Comuki.Engine.Orchestration.Infrastructure.Queue;
 using Comuki.Engine.Orchestration.Options;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Contracts.Queue;
 using Microsoft.Extensions.Configuration;
@@ -35,11 +36,14 @@ public static class OrchestrationInfrastructureExtensions
     }
 
     /// <summary>
-    /// Wires the work item queue, run journal, lease reaper and the hosted
-    /// reaper worker on top of <see cref="AddOrchestrationPersistence"/>.
-    /// Bind the <c>Orchestration:Lease</c> section to tune the lease policy
-    /// and the <c>Orchestration:EscalationTimeout</c> section to tune the
-    /// passive autonomy ratchet on the Escalated run state.
+    /// Wires the work item queue, run journal, lease reaper and the
+    /// escalation-timeout sweeper on top of
+    /// <see cref="AddOrchestrationPersistence"/>. Bind the
+    /// <c>Orchestration:Lease</c> section to tune the lease policy and
+    /// the <c>Orchestration:EscalationTimeout</c> section to tune the
+    /// passive autonomy ratchet on the Escalated run state. The reaper
+    /// registers as an <see cref="IComukiWorker"/> — a host that runs it
+    /// must also call <c>AddComukiWorkers()</c>.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="configuration"></param>
@@ -63,7 +67,7 @@ public static class OrchestrationInfrastructureExtensions
         services.AddScoped<IRunJournal, RunJournalEf>();
         services.AddScoped<IMergeQueueStore, MergeQueueStoreEf>();
         services.AddScoped<LeaseReaper>();
-        services.AddHostedService<LeaseReaperWorker>();
+        services.AddSingleton<IComukiWorker, LeaseReaperComukiWorker>();
         services.AddScoped<EscalationTimeoutSweeper>();
         services.AddHostedService<EscalationTimeoutWorker>();
 

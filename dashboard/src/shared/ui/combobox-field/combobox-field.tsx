@@ -143,6 +143,12 @@ export function ComboboxField({
         allowsCustomValue={allowsCustomValue}
         selectedKey={value === "" ? null : value}
         inputValue={value}
+        /* The empty mark lives on the root so the chevron's CSS can read
+           it: a populated field's chevron stands at the value's own voice,
+           and only an empty field stays muted — the same read `SelectField`
+           gives the placeholder. The presence of the attribute is the
+           signal, the value is decorative. */
+        data-empty={value === "" ? "" : undefined}
         onSelectionChange={(key) => {
           // A `null` here means one of two very different things, and the
           // difference is `allowsCustomValue`:

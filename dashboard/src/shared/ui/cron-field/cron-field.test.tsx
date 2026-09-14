@@ -179,6 +179,63 @@ describe("switching modes keeps the value intact", () => {
   })
 })
 
+/* The five selects and the preview line must agree on first render.
+ *
+ * A new schedule lands with `value === ""` — the wire is empty. The five
+ * selects key off `parseCron("")` and resolve to `DEFAULT_PARTS` ("0 3 * * *"),
+ * but the preview used to render `value || "—"` and showed "—". The operator
+ * saw five selects saying `0 3 * * *` and a preview saying "—" until they
+ * clicked one, at which point `onValueChange` synced the wire and the
+ * placeholder vanished. The fix: the preview reads the parsed wire, so all
+ * three views (five selects, preview, and the value the field holds) say
+ * the same thing from the very first render. */
+describe("the five selects and the preview agree on first render", () => {
+  /** The preview's text — the assembled cron string the field holds. */
+  const preview = (): string => {
+    // The cron preview carries `data-test="cron-preview"`, not the `data-testid`
+    // React Testing Library looks for by default. `querySelector` reads the
+    // exact attribute the kit ships.
+    const node = document.querySelector(
+      '[data-test="cron-preview"] code'
+    ) as HTMLElement | null
+    return node?.textContent ?? ""
+  }
+
+  it("shows the default wire in the preview when the field is empty", async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+
+    // Open the custom editor to expose the five selects and the preview.
+    await user.click(preset("Custom…"))
+
+    // The five selects already key off the parsed defaults. The preview now
+    // does too — no more "—" placeholder on first render.
+    expect(preview()).toBe("0 3 * * *")
+    expect(cronValue("cron-minute")).toBe("0")
+    expect(cronValue("cron-hour")).toBe("3")
+    expect(cronValue("cron-day")).toBe("*")
+    expect(cronValue("cron-month")).toBe("*")
+    expect(cronValue("cron-weekday")).toBe("*")
+  })
+
+  it("keeps the preview and the selects in sync as the operator edits", async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+
+    await user.click(preset("Custom…"))
+    expect(preview()).toBe("0 3 * * *")
+
+    act(() => {
+      setSelectValue(cronTrigger("cron-minute"), "30")
+    })
+
+    // One change moves the preview with it — no longer desynced from the
+    // selects on first render, and the preview tracks every move after.
+    expect(preview()).toBe("30 3 * * *")
+    expect(cronValue("cron-minute")).toBe("30")
+  })
+})
+
 describe("disabled is the same voice every other disabled field wears", () => {
   it("refuses the preset rows and the custom selects", () => {
     render(<Harness initial="0 3 * * 1" disabled />)

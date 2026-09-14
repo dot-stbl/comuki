@@ -108,6 +108,10 @@ env:
   # Compute: workers as batch/v1 Jobs. Empty Compute:Scale:Projects →
   # supervisor no-op until Slice 0 wires projects.
   COMUKI_COMPUTE_PROVIDER: kubernetes
+
+  # Brain host (gRPC sibling Deployment, infra-dev.yaml). Without this key
+  # the chat graph falls back to the in-process BrainStub (echo).
+  COMUKI_BRAIN_ENDPOINT: http://comuki-brain:17004
   COMUKI_COMPUTE_SCALE_WORKERIMAGE: registry.hybrid.ai/comuki/worker
   COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki:8080
   COMUKI_COMPUTE_KUBERNETES_NAMESPACE: comuki

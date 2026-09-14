@@ -87,6 +87,8 @@ export function buildProjectRows(
     name: project.name,
     gitProfileRepo: project.gitProfileRepo,
     createdAt: project.createdAt,
+    // The seed store has no archive — every mock project is a live one.
+    archived: false,
     activeRuns: active.get(project.id) ?? 0,
     totalRuns: total.get(project.id) ?? 0,
     // Absent, not zero: a project the cost report has never heard of has not

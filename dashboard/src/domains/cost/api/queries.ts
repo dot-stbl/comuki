@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 
 import { getApiV1ProjectsProjectidCosts } from "@/shared/api/_generated/clients/getApiV1ProjectsProjectidCosts"
-import { getApiV1Projects } from "@/shared/api/_generated/clients/getApiV1Projects"
 import { useProjectsQuery } from "@/domains/projects/api/queries"
 import { periodSnapshot, toCostSummary } from "@/domains/cost/api/mappers"
 import type { CostSummary } from "@/domains/cost/model/cost"
@@ -35,10 +34,11 @@ async function getCostSummaryFromSeed(
  * Real-mode wiring (issue Q3 / v1.1).
  *
  * Picks the first non-archived project as the page's subject — the only
- * subject the host's `/api/v1/projects/{id}/costs` endpoint accepts.
- * The hook fires against the kubb client, so the kubb transport
- * (`credentials: 'include'`) is exercised end-to-end on every render of
- * the page in real mode.
+ * subject the host's `/api/v1/projects/{id}/costs` endpoint accepts —
+ * from the shared `["projects"]` query. This hook makes no registry
+ * round trip of its own: the registry read already happened once for
+ * the whole app, and the only wire it exercises on its own is the
+ * per-project costs endpoint.
  */
 export function useCostQuery(period: SeedCostPeriod = "day") {
   const projects = useProjectsQuery()
@@ -59,10 +59,7 @@ export function useCostQuery(period: SeedCostPeriod = "day") {
       // without a UI change. The result is intentionally dropped on
       // the floor — the page renders the platform-wide seed until a
       // platform-wide endpoint lands.
-      await Promise.all([
-        getApiV1ProjectsProjectidCosts(firstProjectId ?? ""),
-        getApiV1Projects({ includeArchived: false }),
-      ])
+      await getApiV1ProjectsProjectidCosts(firstProjectId ?? "")
 
       return getCostSummaryFromSeed(period)
     },

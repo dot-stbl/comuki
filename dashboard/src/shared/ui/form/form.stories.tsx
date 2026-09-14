@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react"
 
 import { ChoiceField } from "./choice-field"
 import { CopyButton } from "./copy-button"
+import { FieldHint, FieldLabel } from "./field"
 import { FormDialog } from "./form-dialog"
 import { Notice } from "./notice"
 import { NumberField } from "./number-field"
@@ -342,6 +343,21 @@ export const Secret: Story = {
 export const Copy: Story = {
   render: () => (
     <CopyButton value="cmk_4e9c_9f3b1c7a02d5486eb1c0d7f4a83e5619" />
+  ),
+}
+
+/** The label and hint voices alone, for the controls that are not `Field` —
+ *  a card row or a segment row wears the same two lines any stacked field
+ *  does, imported rather than re-spelled. */
+export const FieldVoices: Story = {
+  render: () => (
+    <Column>
+      <FieldLabel>provider</FieldLabel>
+      <FieldHint>
+        native intake is not here: every project already has one, and there is
+        nothing to point a credential at.
+      </FieldHint>
+    </Column>
   ),
 }
 

@@ -551,13 +551,14 @@
 }
 
 /* The measure follows the modal, not the other way round. At the default width
-   the box is the binding constraint anyway and 52ch is the body rule; in a wide
-   dialog there is real room to spare, and a line that stopped at 52ch there
-   would leave a third of the modal blank beside three-line prose. */
+   the box is the binding constraint anyway and the note measure is the body
+   rule; in a wide dialog there is real room to spare, and a line that stopped
+   at the note measure there would leave a third of the modal blank beside
+   three-line prose. */
 .description {
   margin: 0;
   padding: var(--s2) var(--s5) 0;
-  max-inline-size: 52ch;
+  max-inline-size: var(--measure-note);
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
@@ -565,7 +566,7 @@
 }
 
 .wide .description {
-  max-inline-size: 60ch;
+  max-inline-size: var(--measure-prose);
 }
 
 .body {

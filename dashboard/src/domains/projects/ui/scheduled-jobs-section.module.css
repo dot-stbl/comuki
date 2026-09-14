@@ -88,7 +88,7 @@
 /* A quiet answer where a list would read as a broken render. */
 .quiet {
   margin: 0;
-  max-inline-size: 62ch;
+  max-inline-size: var(--measure-prose);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--text-muted);

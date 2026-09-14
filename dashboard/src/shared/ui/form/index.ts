@@ -19,6 +19,8 @@ export {
 } from "./choice-field"
 export { CopyButton, type CopyButtonProps } from "./copy-button"
 export { Field, type FieldProps } from "./field"
+export { FieldHint } from "./field"
+export { FieldLabel } from "./field"
 export { FormDialog, type FormDialogProps } from "./form-dialog"
 export { Notice, type NoticeProps } from "./notice"
 export { NumberField, type NumberFieldProps } from "./number-field"

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
 
-import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
+import { FormActions, FormCard, FormLayout } from "@/app/layout/form-page"
 import { ADMISSION_MODES } from "@/domains/sources/model/providers"
 import type {
   AdmissionMode,
@@ -100,7 +100,13 @@ export function WatchForm({
 
   return (
     <FormLayout data-test="watch-form" onSubmit={submit}>
-      <FormFields>
+      {/* The card the create form's groups taught this page: the region
+          heading above is full width, and the form under it spends that same
+          width rather than sitting in a 44rem stack beside it. */}
+      <FormCard
+        label="admission"
+        note="whether anything is admitted, which tickets, and who moves next when one is."
+      >
         <SwitchField
           id="watch-enabled"
           label="watch this source"
@@ -135,7 +141,7 @@ export function WatchForm({
         />
 
         <StatusMappingPreview kind={connection.kind} mapping={watch.mapping} />
-      </FormFields>
+      </FormCard>
 
       <FormActions>
         <Button

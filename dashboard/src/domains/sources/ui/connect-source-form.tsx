@@ -2,7 +2,13 @@ import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
 import { Loader2, PlugZap } from "lucide-react"
 
-import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
+import {
+  FormActions,
+  FormCard,
+  FormLayout,
+  FormMeasure,
+  FormRow,
+} from "@/app/layout/form-page"
 import {
   CONNECTABLE_PROVIDERS,
   effectiveAuth,
@@ -36,7 +42,9 @@ import {
 // page's own probe so all three readings of "probing" are the same mark.
 import tableStyles from "./sources-table.module.css"
 
-import styles from "./connect-source-form.module.css"
+// The probe's answer row, shared with the edit form so the two screens read
+// one control and one answer, drawn once.
+import probeStyles from "./probe-row.module.css"
 
 export interface ConnectSourceFormProps {
   /** The last probe, or `null` when the details have changed since one. */
@@ -199,9 +207,18 @@ export function ConnectSourceForm({
 
   return (
     <FormLayout data-test="connect-source" onSubmit={submit}>
-      <FormFields>
+      {/* Full width, spent on groups rather than one long stack — the create
+          task page's pattern. The width is what the provider row needs: four
+          cards at their 15rem floor plus the gaps come to 61.5rem, which the
+          old 44rem stack never had, so the cards wrapped two-by-two and the
+          picker read as a grid rather than a row. */}
+      <FormCard
+        label="provider"
+        note="which tracker this connection watches, and whose dialect it speaks."
+      >
         <ProviderCards
           label="provider"
+          labelHidden
           name="connect-kind"
           value={kind}
           disabled={busy}
@@ -211,32 +228,39 @@ export function ConnectSourceForm({
           cardDataTest="connect-provider-card"
           onValueChange={edit(setKind)}
         />
+      </FormCard>
 
-        <SelectField
-          id="connect-project"
-          label="project"
-          value={projectId}
-          disabled={busy}
-          options={session.projects.map((project) => ({
-            value: project.id,
-            label: project.name,
-            secondary: project.key,
-          }))}
-          hint="the project this source feeds. Editing sources is granted per project, so this choice is what the save answers to."
-          data-test="connect-project"
-          onValueChange={edit(setProjectId)}
-        />
+      <FormCard
+        label="the connection"
+        note="which project it feeds, where the instance is, and which credential reaches it."
+      >
+        <FormRow>
+          <SelectField
+            id="connect-project"
+            label="project"
+            value={projectId}
+            disabled={busy}
+            options={session.projects.map((project) => ({
+              value: project.id,
+              label: project.name,
+              secondary: project.key,
+            }))}
+            hint="the project this source feeds. Editing sources is granted per project, so this choice is what the save answers to."
+            data-test="connect-project"
+            onValueChange={edit(setProjectId)}
+          />
 
-        <TextField
-          id="connect-name"
-          label={targetLabel(kind)}
-          value={name}
-          disabled={busy}
-          placeholder={targetPlaceholder(kind)}
-          spellCheck={false}
-          data-test="connect-name"
-          onValueChange={edit(setName)}
-        />
+          <TextField
+            id="connect-name"
+            label={targetLabel(kind)}
+            value={name}
+            disabled={busy}
+            placeholder={targetPlaceholder(kind)}
+            spellCheck={false}
+            data-test="connect-name"
+            onValueChange={edit(setName)}
+          />
+        </FormRow>
 
         <ConnectionFields
           idPrefix="connect"
@@ -256,50 +280,16 @@ export function ConnectSourceForm({
           <code>{settingsJson}</code>
         </Notice>
 
-        <TextField
-          id="connect-secret-env"
-          label="secret env var"
-          value={secretEnvRef}
-          disabled={busy}
-          placeholder="COMUKI_GITHUB_TOKEN"
-          autoComplete="off"
-          spellCheck={false}
-          hint="the name of the env var on the host that holds the credential. The host resolves the value at probe / webhook time — the dashboard never sees it."
-          data-test="connect-secret-env"
-          onValueChange={edit(setSecretEnvRef)}
-        />
-
-        {env.useMock ? (
-          <>
-            <Notice data-test="mock-secret-notice">
-              Mock mode only: the form holds a literal credential long enough to
-              probe the seed store. Real mode reads the env var on the host
-              instead and never sees the value.
-            </Notice>
-            <TextField
-              id="connect-mock-secret"
-              label="credential (mock only)"
-              type="password"
-              value={mockSecret}
-              disabled={busy}
-              autoComplete="off"
-              spellCheck={false}
-              data-test="connect-mock-secret"
-              onValueChange={edit(setMockSecret)}
-            />
-          </>
-        ) : null}
-
-        <div className={styles.probe} data-test="probe">
+        <div className={probeStyles.probe} data-test="probe">
           {/* Where the provider has an instance to name, the probe's glyph
               rides inside the base url's box and does not stand here; where
               it does not, this row is where the operator finds it. Either
               way there is one control and one answer under it. */}
           {wantsHost ? null : (
-            <span className={styles.probeControl}>{probeControl}</span>
+            <span className={probeStyles.probeControl}>{probeControl}</span>
           )}
 
-          <span className={styles.probeAnswer}>
+          <span className={probeStyles.probeAnswer}>
             {probe ? (
               <Notice tone={probe.ok ? "ok" : "bad"} data-test="probe-result">
                 {probe.message}
@@ -313,7 +303,50 @@ export function ConnectSourceForm({
             )}
           </span>
         </div>
-      </FormFields>
+      </FormCard>
+
+      <FormCard
+        label="the credential"
+        note="the env-var name on the host that holds the credential. The host resolves the value — the dashboard never sees it."
+      >
+        <FormMeasure>
+          <TextField
+            id="connect-secret-env"
+            label="secret env var"
+            value={secretEnvRef}
+            disabled={busy}
+            placeholder="COMUKI_GITHUB_TOKEN"
+            autoComplete="off"
+            spellCheck={false}
+            hint="the name of the env var on the host that holds the credential. The host resolves the value at probe / webhook time — the dashboard never sees it."
+            data-test="connect-secret-env"
+            onValueChange={edit(setSecretEnvRef)}
+          />
+        </FormMeasure>
+
+        {env.useMock ? (
+          <>
+            <Notice data-test="mock-secret-notice">
+              Mock mode only: the form holds a literal credential long enough to
+              probe the seed store. Real mode reads the env var on the host
+              instead and never sees the value.
+            </Notice>
+            <FormMeasure>
+              <TextField
+                id="connect-mock-secret"
+                label="credential (mock only)"
+                type="password"
+                value={mockSecret}
+                disabled={busy}
+                autoComplete="off"
+                spellCheck={false}
+                data-test="connect-mock-secret"
+                onValueChange={edit(setMockSecret)}
+              />
+            </FormMeasure>
+          </>
+        ) : null}
+      </FormCard>
 
       <FormActions>
         <Button

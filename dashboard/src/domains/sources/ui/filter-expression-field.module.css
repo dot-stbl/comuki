@@ -57,7 +57,7 @@
   font-size: var(--t-micro);
   line-height: var(--lh-body);
   color: var(--text-faint);
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
 }
 
 .wrap {

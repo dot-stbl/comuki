@@ -24,9 +24,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--s8);
-  /* The page is read as a column of readings, not as a document: past this it
-     stops being one glance and the eye has to travel back for the next label. */
-  max-inline-size: 76ch;
+  /* The one measure every record page takes, caps-centred — see the policy in
+      `form-page.tsx`. This page is read as a column of readings, not as a
+      document: past the record measure it stops being one glance and the eye
+      has to travel back for the next label. */
+  max-inline-size: var(--measure-record);
+  margin-inline: auto;
   min-inline-size: 0;
   font-family: var(--font-ui);
 }
@@ -169,7 +172,7 @@
 /* The step's own name — the brain's prose, and the most human thing here. */
 .workLabel {
   margin: 0;
-  max-inline-size: 62ch;
+  max-inline-size: var(--measure-prose);
   font-size: var(--t-body);
   line-height: var(--lh-body);
   color: var(--text);
@@ -205,7 +208,7 @@
 .lost,
 .failure {
   margin: 0;
-  max-inline-size: 62ch;
+  max-inline-size: var(--measure-prose);
   padding: var(--s3) var(--s4);
   border-inline-start: var(--hairline) solid var(--st-failed);
   background: var(--st-failed-tint);
@@ -237,7 +240,7 @@
 
 .stateBody {
   margin: 0;
-  max-inline-size: 62ch;
+  max-inline-size: var(--measure-prose);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--muted-foreground);

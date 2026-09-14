@@ -66,6 +66,20 @@ export interface FormPageProps {
  * `create-project-form.test.tsx` needs no router at all. The furniture that
  * shape needs is exported beside this, from one stylesheet, because the page
  * and the form on it are one gesture.
+ *
+ * ## The record measure, and whose policy it is
+ *
+ * A page that reads *one record* rather than holds a form — a project, a
+ * person, a worker — keeps its own scaffold (their titles carry values, which
+ * this frame's `title: string` does not ask for) but shares this frame's
+ * shape, so it shares its policy too: `--measure-record` is the one width a
+ * detail screen takes, replacing the three it had drifted to, and it sits
+ * caps-centred in the port (`margin-inline: auto`) — the login screen's
+ * precedent. A cap on a wide board reads as a column with edges; the same cap
+ * hugging the left rail reads as a page that ran out of content on the right.
+ * Forms are not centred: a form page takes the full width and spends it on
+ * groups, because a form is *filled* edge-aware, while a record is *read*, and
+ * a reading is centred under the title that names it.
  */
 export function FormPage({
   title,

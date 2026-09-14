@@ -8,6 +8,7 @@ import {
 } from "@/domains/sources/model/providers"
 import type { ProviderKey, SourceAuth } from "@/domains/sources/model/types"
 import { cn } from "@/shared/lib/utils"
+import { FieldHint, FieldLabel } from "@/shared/ui"
 
 import styles from "./auth-kind-choice.module.css"
 
@@ -88,7 +89,7 @@ export function AuthKindChoice({
       aria-label={label}
       data-test={dataTest}
     >
-      <span className={styles.label}>{label}</span>
+      <FieldLabel>{label}</FieldLabel>
       <div className={styles.segments}>
         {allowed.map((candidate) => {
           const selected = auth === candidate
@@ -125,10 +126,10 @@ export function AuthKindChoice({
           are not every credential there is, they are the ones *this*
           connector implements, and the provider's own word is what makes
           that a fact rather than a coincidence. */}
-      <span className={styles.hint}>
+      <FieldHint>
         what {providerLabel(kind)} accepts, and nothing else. Stored verbatim
         in the settings json; never holds a credential.
-      </span>
+      </FieldHint>
     </fieldset>
   )
 }

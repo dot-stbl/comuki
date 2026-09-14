@@ -178,6 +178,10 @@ const controls = (testId: string) => [
   ...document.querySelectorAll(`[data-test="${testId}"]`),
 ]
 
+/** The radios of one named group — the page asks several radio questions. */
+const allRadios = (name: string) =>
+  [...document.querySelectorAll(`input[type="radio"][name="${name}"]`)] as HTMLInputElement[]
+
 /** Open a source's page, from the list, and wait for it to arrive. */
 async function open(
   sourceId: string,
@@ -238,7 +242,11 @@ describe("the three admission modes are told apart by reading, not by guessing",
   it("marks the chosen one, and only that one", async () => {
     await open(GITHUB)
 
-    const radios = screen.getAllByRole("radio") as HTMLInputElement[]
+    /* Scoped to the group's own name, because the page asks more than one
+       radio question now: the connection region's credential row is a group
+       too, and "the radios on the page" stopped being "the admission modes"
+       the day it arrived. */
+    const radios = allRadios("admission")
     expect(radios.filter((radio) => radio.checked)).toHaveLength(1)
     // `src_gh_comuki` arrives from the seed admitting into both.
     expect(radios.find((radio) => radio.checked)?.getAttribute("value")).toBe(
@@ -258,7 +266,7 @@ describe("the three admission modes are told apart by reading, not by guessing",
   it("saves the mode that was picked", async () => {
     await open(GITHUB)
 
-    const radios = screen.getAllByRole("radio") as HTMLInputElement[]
+    const radios = allRadios("admission")
     fireEvent.click(radios.find((radio) => radio.value === "watch")!)
     saveWatch()
 
@@ -270,12 +278,14 @@ describe("the three admission modes are told apart by reading, not by guessing",
   it("keeps every mode reachable by keyboard, in one radio group", async () => {
     await open(GITHUB)
 
-    const radios = screen.getAllByRole("radio") as HTMLInputElement[]
+    const radios = allRadios("admission")
     // One `name`, so the arrow keys move between them and the group is a
     // single tab stop — the whole reason these are real radios under the boxes.
-    expect(new Set(radios.map((radio) => radio.name))).toEqual(
-      new Set(["admission"])
-    )
+    expect(radios.map((radio) => radio.name)).toEqual([
+      "admission",
+      "admission",
+      "admission",
+    ])
   })
 })
 
@@ -473,11 +483,16 @@ describe("what the page says about the connection itself", () => {
     // the env var is host-side rather than stored here.
     expect(screen.getByText(/resolved on the host/i)).toBeTruthy()
 
-    // The title is the connection and the summary says whose it is.
+    // The title is the connection and the summary says whose it is — the
+    // provider, the project key and where it stands, told apart by weight
+    // and voice rather than by a separator glyph.
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe(
       "plexor/identity-svc"
     )
-    expect(screen.getByText(/gitlab · plexor/)).toBeTruthy()
+    const summary = control("source-summary")
+    expect(summary.textContent).toContain("gitlab")
+    expect(summary.textContent).toContain("plexor")
+    expect(summary.textContent).not.toContain("·")
   })
 
   it("puts a broken connection's reason on the page, in the provider's words", async () => {
@@ -500,7 +515,7 @@ describe("what the page says about the connection itself", () => {
 })
 
 describe("the acts on the record ride in the header", () => {
-  it("keeps the badge, the probe and the disconnect out of the two footers", async () => {
+  it("keeps the badge and the disconnect in the header, the probe with the url", async () => {
     await open(GITHUB)
 
     const header = document.querySelector(
@@ -509,14 +524,36 @@ describe("the acts on the record ride in the header", () => {
     expect(
       header.querySelector("[data-test='connection-state']")
     ).not.toBeNull()
-    expect(header.querySelector("[data-test='source-test']")).not.toBeNull()
     expect(
       header.querySelector("[data-test='source-disconnect']")
     ).not.toBeNull()
 
-    // Disconnecting is not a way of saving a draft, so it is not beside a save.
+    // The probe moved out of the header and into the connection region: it
+    // asks "can this url be reached", so it lives with the url — one
+    // control, one answer, still acting on the record rather than the
+    // draft. A cloud connection has no url box, so the glyph stands beside
+    // its answer inside the same region.
+    expect(header.querySelector("[data-test='source-test']")).toBeNull()
+    const region = control("source-connection")
+    expect(region.contains(control("source-test"))).toBe(true)
+
+    // And it is not in either footer: disconnecting is not a way of saving.
     expect(header.querySelector("[data-test='watch-submit']")).toBeNull()
     expect(header.querySelector("[data-test='connection-submit']")).toBeNull()
+  })
+
+  it("rides inside the base url's box where the instance has one", async () => {
+    await open(GITLAB)
+
+    // "The url and test it" reads as one control: the glyph rides inside the
+    // wrapper the input itself lives in, and the answer below it is the
+    // answer alone.
+    expect(
+      control("connection-base-url").parentElement?.contains(
+        control("source-test")
+      )
+    ).toBe(true)
+    expect(control("probe").contains(control("source-test"))).toBe(false)
   })
 
   it("refuses to disconnect native intake, and says whose refusal it is", async () => {

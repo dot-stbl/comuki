@@ -14,6 +14,7 @@ using Comuki.Shared.Contracts.ControlPlane.Profiles;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ProtoBuf.Grpc.Server;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 // Operator CLI (issue #56): `comuki-brain version` runs before any
 // bootstrap and exits without touching config or the database.
@@ -47,7 +48,13 @@ builder.Logging.AddComukiConsole(builder.Configuration);
 var options = BrainOptions.Resolve(builder.Configuration);
 var connectionString = BrainDatabase.Resolve(builder.Configuration);
 
-builder.WebHost.UseUrls($"http://0.0.0.0:{options.GrpcPort}");
+// gRPC needs h2c (unencrypted HTTP/2 with prior knowledge) — Kestrel
+// endpoint defaults are HTTP/1.1, which rejects the HTTP/2 preface.
+builder.WebHost.ConfigureKestrel(server =>
+{
+    server.AddServerHeader = false;
+    server.ListenAnyIP(options.GrpcPort, static listen => listen.Protocols = HttpProtocols.Http2);
+});
 
 // The brain owns no subject of its own — it is the platform's own
 // orchestrating intelligence, not a request handled on a human's behalf

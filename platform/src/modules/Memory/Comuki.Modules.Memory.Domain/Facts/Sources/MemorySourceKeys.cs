@@ -15,6 +15,9 @@ public static class MemorySourceKeys
     /// <summary>Key of <see cref="MemorySource.LearningApproved"/>.</summary>
     public const string LearningApproved = "learning-approved";
 
+    /// <summary>Key of <see cref="MemorySource.Seeder"/>.</summary>
+    public const string Seeder = "seeder";
+
     /// <summary>Maps a source to its wire key.</summary>
     /// <param name="source"></param>
     public static string Key(MemorySource source)
@@ -25,6 +28,7 @@ public static class MemorySourceKeys
             MemorySource.Human => Human,
             MemorySource.Run => Run,
             MemorySource.LearningApproved => LearningApproved,
+            MemorySource.Seeder => Seeder,
             _ => throw new ArgumentOutOfRangeException(nameof(source), source, null),
         };
     }
@@ -39,6 +43,7 @@ public static class MemorySourceKeys
             Human => MemorySource.Human,
             Run => MemorySource.Run,
             LearningApproved => MemorySource.LearningApproved,
+            Seeder => MemorySource.Seeder,
             _ => null,
         };
     }

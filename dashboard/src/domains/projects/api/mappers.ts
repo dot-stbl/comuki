@@ -7,6 +7,7 @@ import type {
 import type { CreateProjectRequest } from "@/shared/api/_generated/types/CreateProjectRequest"
 import type { UpdateSettingsRequest } from "@/shared/api/_generated/types/UpdateSettingsRequest"
 import type { SeedProject } from "@/shared/api/mock/projects.seed"
+import type { ProjectRef } from "@/shared/session"
 
 // ---------------------------------------------------------------------------
 // Wire → domain mappers (real-backend path).
@@ -119,6 +120,25 @@ export function mapProjectViewToDetail(view: ProjectView): ProjectRow {
  */
 export function mapProjectsPageToSummaries(views: ProjectView[]): ProjectRow[] {
   return views.map(mapProjectViewToDetail)
+}
+
+/**
+ * Wire list → the session's `ProjectRef[]`.
+ *
+ * The narrowest read of the registry there is: id, the key the operator
+ * calls the project by (the wire's `slug`), and the name. The session hands
+ * these to every permission sentence and every project pick on the product;
+ * nothing heavier belongs in a context that lives above the query cache's
+ * project screens.
+ */
+export function mapProjectViewsToProjectRefs(
+  views: ProjectView[]
+): ProjectRef[] {
+  return views.map((view) => ({
+    id: view.id,
+    key: view.slug,
+    name: view.name,
+  }))
 }
 
 /**

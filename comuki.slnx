@@ -11,6 +11,7 @@
     <Project Path="platform/src/shared/Comuki.Shared.Filtering/Comuki.Shared.Filtering.csproj" />
     <Project Path="platform/src/shared/Comuki.Shared.Telemetry/Comuki.Shared.Telemetry.csproj" />
     <Project Path="platform/src/shared/Comuki.Shared.Bootstrap/Comuki.Shared.Bootstrap.csproj" />
+    <Project Path="platform/src/shared/Comuki.Shared.Migrations/Comuki.Shared.Migrations.csproj" />
   </Folder>
   <Folder Name="/platform/src/modules/">
     <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Domain/Comuki.Modules.Identity.Domain.csproj" />

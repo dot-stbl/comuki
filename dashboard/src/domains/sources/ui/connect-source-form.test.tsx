@@ -15,14 +15,14 @@ import {
 } from "@/shared/api/mock/sources.store"
 import type { Role } from "@/shared/session"
 import { TestSession } from "@/shared/session/test-session"
-import { selectValues, setSelectValue } from "@/shared/ui/select/test-select"
+import { setSelectValue } from "@/shared/ui/select/test-select"
 
 /* The form moved out of a dialog and onto `/sources/new`, and every rule it
    carried came with it: the four decisions in the order they constrain each
    other, the closed credential list, the base url that only exists where an
    instance can be, the secret-env NAME the host resolves at probe / webhook
    time, and the probe that has to answer before the save opens. These are
-   the dialog's own assertions, on the component that replaced it.
+   the dialog's own assertions, on the component that replaced them.
 
    The form's password box is mock-only — real mode reads the env var on the
    host instead. The page around it — the crumbs, the cancel, the unsaved
@@ -76,16 +76,50 @@ function control(testId: string) {
   return document.querySelector(`[data-test="${testId}"]`) as HTMLElement
 }
 
-/* `SelectField` is the kit's one select — a listbox trigger rather than a
-   native `<select>` — so a select's values are read and written through the
-   form element React Aria keeps beside the trigger, which is what a `<form>`
-   submit and browser autofill see. `data-test` still lands on the trigger. */
-function chooseIn(testId: string, value: string) {
-  setSelectValue(control(testId), value)
+function controls(testId: string) {
+  return [...document.querySelectorAll(`[data-test="${testId}"]`)]
 }
 
-function offeredIn(testId: string) {
-  return selectValues(control(testId))
+/* The provider question is a row of cards now, and the card row's own
+   control is the off-screen radio underneath each box — the same element
+   an arrow key or a screen reader would reach. Driving it through the
+   radio is driving the real control, and the values the row offers are
+   read off the cards themselves. */
+function pickProvider(value: string) {
+  fireEvent.click(
+    document.querySelector(
+      `[data-test="connect-provider-card"][data-value="${value}"] input`
+    ) as HTMLInputElement
+  )
+}
+
+function offeredProviders(): (string | undefined)[] {
+  return controls("connect-provider-card").map(
+    (card) => (card as HTMLElement).dataset.value
+  )
+}
+
+/* The credential question likewise: a segment row over real radios. */
+function pickAuth(value: string) {
+  fireEvent.click(
+    document.querySelector(
+      `[data-test="connect-auth-option"][data-value="${value}"] input`
+    ) as HTMLInputElement
+  )
+}
+
+function offeredAuth(): (string | undefined)[] {
+  return controls("connect-auth-option").map(
+    (option) => (option as HTMLElement).dataset.value
+  )
+}
+
+/* The project question stayed a select — a list that is the same every
+   visit — and a select's values are written through the form element React
+   Aria keeps beside the trigger, which is what a `<form>` submit and
+   browser autofill see. */
+function chooseIn(testId: string, value: string) {
+  setSelectValue(control(testId), value)
 }
 
 function fill(testId: string, value: string) {
@@ -292,19 +326,102 @@ describe("the form only asks for what the connector can use", () => {
 
     expect(control("connect-base-url")).toBeNull()
 
-    chooseIn("connect-kind", "gitlab")
+    pickProvider("gitlab")
 
     expect(control("connect-base-url")).not.toBeNull()
   })
 
   it("never offers native, which every project already has", () => {
     mount()
-    expect(offeredIn("connect-kind")).toEqual([
+    expect(offeredProviders()).toEqual([
       "github",
       "gitlab",
       "yandex-tracker",
       "jira",
     ])
+  })
+
+  it("asks the provider as one radio group, cards and all", () => {
+    mount()
+
+    const radios = screen.getAllByRole("radio") as HTMLInputElement[]
+    const group = radios.filter((radio) => radio.name === "connect-kind")
+    // One `name`, so the arrow keys move between them and the group is a
+    // single tab stop — the whole reason these are real radios under the
+    // cards rather than four clickable divs.
+    expect(group.map((radio) => radio.value)).toEqual([
+      "github",
+      "gitlab",
+      "yandex-tracker",
+      "jira",
+    ])
+    expect(group.filter((radio) => radio.checked)).toHaveLength(1)
+
+    // And the box the operator sees carries the selection too, driven by the
+    // component rather than a parent selector.
+    const selected = controls("connect-provider-card").filter(
+      (card) => (card as HTMLElement).dataset.selected === "true"
+    )
+    expect(selected).toHaveLength(1)
+    expect((selected[0] as HTMLElement).dataset.value).toBe("github")
+  })
+
+  it("offers exactly the credentials the chosen connector implements", () => {
+    mount()
+
+    // The registry's own lists, not a fixed row: github has no oauth, jira
+    // has no oauth either, yandex tracker has nothing but oauth — and a form
+    // that offered more would be asking for a credential that cannot work.
+    expect(offeredAuth()).toEqual(["pat", "app-install"])
+
+    pickProvider("gitlab")
+    expect(offeredAuth()).toEqual(["pat", "oauth"])
+
+    pickProvider("yandex-tracker")
+    expect(offeredAuth()).toEqual(["oauth"])
+
+    pickProvider("jira")
+    expect(offeredAuth()).toEqual(["pat"])
+  })
+
+  it("drops a held credential the new provider cannot use", () => {
+    mount()
+    fill("connect-name", "here/web-app")
+    fill("connect-account", "svc-bot")
+
+    // github's default: a personal access token, and the row can say
+    // otherwise — an app install is github's other dialect.
+    expect(control("settings-preview")?.textContent).toContain('"auth":"pat"')
+    pickAuth("app-install")
+    expect(control("settings-preview")?.textContent).toContain(
+      '"auth":"app-install"'
+    )
+
+    // Same form, same held choice, a provider whose connector does not
+    // speak it — the derivation, not an effect, so there is no render where
+    // the two disagree.
+    pickProvider("yandex-tracker")
+    expect(control("settings-preview")?.textContent).toContain(
+      '"auth":"oauth"'
+    )
+  })
+
+  it("rides the probe inside the url box where there is one", () => {
+    mount()
+
+    // A cloud provider has no instance to name, so the glyph stands beside
+    // its answer instead.
+    expect(control("connect-base-url")).toBeNull()
+    expect(control("probe").contains(testButton())).toBe(true)
+
+    pickProvider("gitlab")
+
+    // "The url and test it" is one control: the glyph rides inside the
+    // wrapper the input itself lives in, and not in the answer row below.
+    expect(
+      control("connect-base-url").parentElement?.contains(testButton())
+    ).toBe(true)
+    expect(control("probe").contains(testButton())).toBe(false)
   })
 
   it("shows the settings json the host will store", () => {

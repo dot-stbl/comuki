@@ -79,7 +79,7 @@ builder.Logging.AddComukiConsole(builder.Configuration);
 // Sentry side-channel for the scheduler dispatcher (S15 / sentry):
 // initialises the SDK once if Scheduler:Sentry:Dsn is set; otherwise
 // stays a no-op and the SDK never enters the process. Must run before
-// HostComposer.Compose wires the scheduler hosted service — the
+// HostComposer.ComposeAsync wires the scheduler hosted service — the
 // observer's CaptureEvent relies on the SDK being initialised when DSN
 // is configured.
 SchedulerSentryBootstrap.TryInitialize(builder.Configuration);
@@ -101,7 +101,7 @@ builder.Services.RemoveHostedServicesForOpenApiGeneration();
 
 // Under build-time OpenAPI generation seed minimal config defaults
 // (MinIO env vars, the OIDC public-host URL, etc.) so the [Required]
-// data-annotation validation in HostComposer.Compose does not fail on a
+// data-annotation validation in HostComposer.ComposeAsync does not fail on a
 // fresh clone without an env file.
 // No-op at runtime — real config comes from config.toml / env. The HMAC
 // pepper seeds keep the ProductionSecretValidator fail-closed check from
@@ -122,7 +122,7 @@ if (OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration)
     Environment.SetEnvironmentVariable("COMUKI_TOKEN_PEPPER", "build-time-worker-token-pepper-not-a-secret");
 }
 
-var app = HostComposer.Compose(builder, database);
+var app = await HostComposer.ComposeAsync(builder, database);
 
 // Build banner (issue #56): the version line is the first comuki-format
 // log record of the starting host.

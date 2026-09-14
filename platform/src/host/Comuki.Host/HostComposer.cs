@@ -14,6 +14,7 @@ using Comuki.Host.HealthChecks;
 using Comuki.Host.Intake;
 using Comuki.Host.Knowledge;
 using Comuki.Host.Mcp;
+using Comuki.Host.OpenApi;
 using Comuki.Host.Projects;
 using Comuki.Host.Proxy;
 using Comuki.Host.Realtime;
@@ -47,6 +48,7 @@ using Comuki.Modules.Knowledge.Application;
 using Comuki.Modules.Knowledge.Infrastructure;
 using Comuki.Modules.Memory.Application;
 using Comuki.Modules.Memory.Infrastructure;
+using Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
 using Comuki.Modules.Proxy.Application;
@@ -55,12 +57,15 @@ using Comuki.Modules.Scheduler.Application;
 using Comuki.Modules.Scheduler.Application.Options;
 using Comuki.Modules.Scheduler.Application.Ports;
 using Comuki.Modules.Scheduler.Infrastructure;
+using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Versioning;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Secrets;
+using Comuki.Shared.Migrations;
 using Comuki.Shared.Telemetry.Installers;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
@@ -83,7 +88,7 @@ namespace Comuki.Host;
 /// </summary>
 internal static class HostComposer
 {
-    /// <summary>Wires every host service and returns the built application, not yet started.</summary>
+    /// <summary>Wires every host service, applies boot migrations and returns the built application, not yet started.</summary>
     /// <param name="builder">The host builder whose services and middleware this call composes.</param>
     /// <param name="database">Connection resolved once by <see cref="HostDatabase.Resolve"/>; flows into identity/projects persistence and the legacy-alias warning.</param>
     /// <returns>The composed, not-yet-started <see cref="WebApplication"/>.</returns>
@@ -95,7 +100,7 @@ internal static class HostComposer
     /// live here as an escape hatch for tests; that hatch is gone — see the
     /// DI-lifetime audit (2026-09-09) for the rationale.
     /// </remarks>
-    public static WebApplication Compose(WebApplicationBuilder builder, HostDatabase.Connection database)
+    public static async Task<WebApplication> ComposeAsync(WebApplicationBuilder builder, HostDatabase.Connection database)
     {
         // Telemetry first: options ValidateOnStart always; OTLP SDK only when
         // Telemetry:OtlpEndpoint is set (see deploy/README — VictoriaMetrics :8431).
@@ -354,15 +359,34 @@ internal static class HostComposer
         builder.Services.AddScoped<ICookieSigner, CookieSignerAdapter>();
 
         // OIDC state sweep (issue #4 tail): the start handler issues
-        // 5-minute-TTL rows; the worker prunes abandoned ones on a
+        // 5-minute-TTL rows; the sweeper prunes abandoned ones on a
         // fixed interval so the table doesn't grow unbounded. Bound
         // from Host:OidcSweep, defaults match the start handler's TTL.
+        // The sweeper rides the comuki worker registry (observable,
+        // backoff); Host:OidcSweep:Enabled=false skips the registration
+        // entirely — resolved synchronously here (the same pattern as
+        // BootstrapAdminOptions.Resolve) because the registry collects
+        // its workers at Build.
         builder.Services.AddOptions<OidcSweepOptions>()
             .Bind(builder.Configuration.GetSection(OidcSweepOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        builder.Services.AddSingleton<OidcStateSweeper>();
-        builder.Services.AddHostedService(static serviceProvider => serviceProvider.GetRequiredService<OidcStateSweeper>());
+        var oidcSweepEnabled = builder.Configuration
+            .GetSection(OidcSweepOptions.SectionName)
+            .Get<OidcSweepOptions>()?.Enabled ?? true;
+        if (oidcSweepEnabled)
+        {
+            builder.Services.AddSingleton<OidcStateSweeper>();
+            builder.Services.AddSingleton<IComukiWorker>(static serviceProvider =>
+                serviceProvider.GetRequiredService<OidcStateSweeper>());
+        }
+
+        // The comuki worker registry: one BackgroundService hosting every
+        // IComukiWorker registration above (memory-sweep from the memory
+        // module, lease-reaper from the orchestration engine, oidc-sweep
+        // here) with per-cycle scopes, exponential backoff and the
+        // /api/v1/workers/background status snapshot.
+        builder.Services.AddComukiWorkers();
 
         builder.Services.AddSingleton(BootstrapAdminOptions.Resolve(builder.Configuration));
         builder.Services.AddScoped<BootstrapAdminSeeder>();
@@ -456,7 +480,54 @@ internal static class HostComposer
 
         var app = builder.Build();
 
+        // Always migrate on startup — no flag. This block sits between
+        // Build() and the caller's RunAsync, so the listener and every
+        // hosted service only start once the schema is current (/health
+        // cannot answer before then). The session-level pg_advisory_lock
+        // inside ComukiDatabaseMigrator serialises concurrent replicas
+        // and the standalone comuki-migrator exe; EF migrations are
+        // transactional and idempotent, so an up-to-date database is a
+        // fast no-op. Skipped under build-time OpenAPI generation, which
+        // boots on a dummy connection string by contract (zero side
+        // effects, no DB).
+        if (!OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration)
+        {
+            var migrationSummary = await ComukiDatabaseMigrator.EnsureAllAsync(database.ConnectionString, CancellationToken.None);
+
+            if (migrationSummary.TotalApplied > 0)
+            {
+                app.Logger.LogInformation(
+                    "migrations applied ({MigrationCount} across {SchemaCount} schema(s))",
+                    migrationSummary.TotalApplied,
+                    migrationSummary.AppliedSchemas.Count);
+            }
+            else
+            {
+                app.Logger.LogInformation("migrations up to date");
+            }
+
+            // Platform self-knowledge (brain memory): seed standing
+            // platform.* facts right after the migrations so the brain
+            // knows what Comuki is from the first turn. The build version
+            // stamped into platform.identity makes an upgrade supersede
+            // the previous fact through the store's normal mechanism.
+            var seedResult = await MemorySeeder.SeedAsync(
+                database.ConnectionString,
+                ComukiBuildInfo.Read().Version,
+                CancellationToken.None);
+            app.Logger.LogInformation(
+                "platform memory seeded ({Written} written, {Superseded} superseded, {Unchanged} unchanged)",
+                seedResult.Written,
+                seedResult.Superseded,
+                seedResult.Unchanged);
+        }
+
         HostDatabase.WarnLegacyAlias(database, app.Logger);
+
+        if (!oidcSweepEnabled)
+        {
+            app.Logger.LogInformation("OIDC state sweep is disabled ({SectionName}:Enabled=false)", OidcSweepOptions.SectionName);
+        }
 
         // Production-secret gate (issue #10 T11.4): runs after the
         // service provider materialises the bound IOptions; throws in
@@ -514,6 +585,7 @@ internal static class HostComposer
         app.MapProxyEndpoints();
         app.MapProxyKeyAdminEndpoints();
         app.MapWorkersReadEndpoints();
+        app.MapBackgroundWorkersEndpoints();
         app.MapComputeSnapshotEndpoints();
         app.MapSettingsEndpoints();
 

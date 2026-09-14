@@ -14,4 +14,7 @@ public enum MemorySource
 
     /// <summary>Approved out of a learning candidate.</summary>
     LearningApproved = 4,
+
+    /// <summary>Written by the platform's own boot seeder (standing self-knowledge).</summary>
+    Seeder = 5,
 }

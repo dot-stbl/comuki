@@ -69,6 +69,11 @@ builder.WebHost.ConfigureKestrel(server =>
 builder.Services.TryAddSingleton<ISubjectScopeAccessor, AsyncLocalSubjectScopeAccessor>();
 builder.Services.AddMemoryPersistence(connectionString);
 
+// The memory sweep registers as an IComukiWorker; this registry is what
+// actually runs it inside the brain host (AddComukiWorkers from
+// Comuki.Shared.Bootstrap — the same loop the orchestrator host uses).
+builder.Services.AddComukiWorkers();
+
 // Semantic memory (the brain's memory.write / memory.search tools): the
 // same embedding provider the knowledge module pins — one model, one
 // dimension (1536) for both stores. Registers ONLY the embedding slice:

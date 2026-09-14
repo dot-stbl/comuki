@@ -67,7 +67,7 @@ public sealed class HostProxyServer : IAsyncLifetime
             builder.Services.Remove(descriptor);
         }
 
-        Application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
+        Application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(connectionString));
         BaseAddress = await TestHostBuilder.StartAsync(Application, cancellationToken);
     }
 

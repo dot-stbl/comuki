@@ -98,7 +98,7 @@
 .title {
   margin: 0;
   min-width: 0;
-  max-width: 68ch;
+  max-width: var(--measure-prose);
   overflow-wrap: anywhere;
   font-family: var(--font-ui);
   font-size: var(--t-display);

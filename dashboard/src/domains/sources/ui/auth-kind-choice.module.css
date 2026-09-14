@@ -18,25 +18,10 @@
   padding: 0;
 }
 
-/* The kit `.field` label, spelled here rather than imported: same voice,
-   same size, same place in a `gap: s2` column, so the run from this label
-   to its segments measures like the run from any label to its control. */
-.label {
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
-}
-
-/* Same voice as every other field's hint — the rule the operator cannot see
-   by looking at the segments. */
-.hint {
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  line-height: var(--lh-body);
-  color: var(--text-muted);
-}
+/* The label above the segments and the rule under them are not spelled here:
+   they are the kit's field-label and field-hint voices, imported from
+   `@/shared/ui` by the component, so the run from this label to its segments
+   measures like the run from any label to its control. */
 
 /* Wraps rather than crushes: two segments on a narrow column share the row,
    the third goes under, and none of them loses its word. */

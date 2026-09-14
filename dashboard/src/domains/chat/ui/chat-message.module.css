@@ -111,7 +111,7 @@
    finishes a line of. `pre-wrap` so a pasted stack trace keeps its shape. */
 .text {
   margin: 0;
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
   min-inline-size: 0;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
@@ -219,7 +219,7 @@
   flex-direction: column;
   gap: var(--s3);
   min-inline-size: 0;
-  max-inline-size: 44rem;
+  max-inline-size: var(--measure-form);
   padding: var(--s4) var(--s5);
   border: var(--hairline) solid var(--rule-strong);
   border-radius: var(--r-lg);
@@ -348,7 +348,7 @@
   gap: var(--s2);
   margin: 0;
   min-inline-size: 0;
-  max-inline-size: 60ch;
+  max-inline-size: var(--measure-prose);
   padding: var(--s3) var(--s4);
   border-inline-start: 2px solid var(--st-failed);
   border-radius: var(--r-md);
@@ -427,9 +427,9 @@
 /* Markdown -----------------------------------------------------------------
  *
  * Prose the parser produced, rather than a string in a `<p>`. The rhythm is
- * the thread's own: one gap between blocks, the body measure held at 68ch,
- * and nothing that would make a turn read as a document — no rule above a
- * heading, no card around a quote, no second type scale.
+ * the thread's own: one gap between blocks, the body measure held at the
+ * prose measure, and nothing that would make a turn read as a document — no
+ * rule above a heading, no card around a quote, no second type scale.
  *
  * Everything below is scoped under `.markdown` on purpose. These are element
  * selectors, and element selectors inside a CSS Module still reach anything
@@ -441,7 +441,7 @@
   flex-direction: column;
   gap: var(--s3);
   min-inline-size: 0;
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
   overflow-wrap: anywhere;
   font-family: var(--font-ui);
   font-size: var(--t-sm);
@@ -450,7 +450,7 @@
 }
 
 /* A code block is the one thing on this surface allowed past the measure: it
-   is a reading with its own geometry, and 68ch of prose is not the right
+   is a reading with its own geometry, and the prose measure is not the right
    width for a patch. */
 .markdown .mdCodeBlock,
 .markdown .mdTableScroll {
@@ -629,7 +629,7 @@
 
 .thinking {
   min-inline-size: 0;
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
   border-inline-start: var(--hairline) solid var(--rule);
   padding-inline-start: var(--s4);
 }
@@ -701,7 +701,7 @@
   border-inline-start: var(--hairline) solid var(--rule);
   list-style: none;
   min-inline-size: 0;
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
 }
 
 .stepRow {
@@ -796,7 +796,7 @@
 .metrics {
   margin: 0;
   min-inline-size: 0;
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
@@ -819,7 +819,7 @@
 
 .memory {
   min-inline-size: 0;
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
 }
 
 .memorySummary {
@@ -905,7 +905,7 @@
   padding: 0;
   list-style: none;
   min-inline-size: 0;
-  max-inline-size: 68ch;
+  max-inline-size: var(--measure-prose);
 }
 
 .planNode {

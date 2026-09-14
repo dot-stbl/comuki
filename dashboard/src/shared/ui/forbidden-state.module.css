@@ -19,11 +19,12 @@
   color: var(--text);
 }
 
-/* Measured at 52ch like every other state's prose: this is the line that has to
-   be read, not scanned. Muted, because it is an explanation and not an alarm. */
+/* Measured at the note measure like every other state's prose: this is the
+   line that has to be read, not scanned. Muted, because it is an explanation
+   and not an alarm. */
 .body {
   margin: 0;
-  max-width: 52ch;
+  max-width: var(--measure-note);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--text-muted);

@@ -3,6 +3,8 @@ import type { ReactNode } from "react"
 
 import { cn } from "@/shared/lib/utils"
 
+import { FieldHint, FieldLabel } from "../form"
+
 import styles from "./provider-cards.module.css"
 
 export interface ProviderCardOption {
@@ -89,7 +91,7 @@ export function ProviderCards({
       aria-label={label}
       data-test={dataTest}
     >
-      {labelHidden ? null : <span className={styles.label}>{label}</span>}
+      {labelHidden ? null : <FieldLabel>{label}</FieldLabel>}
       <div className={styles.cards}>
         {options.map((option) => {
           const selected = value === option.value
@@ -128,7 +130,7 @@ export function ProviderCards({
           )
         })}
       </div>
-      {hint ? <span className={styles.hint}>{hint}</span> : null}
+      {hint ? <FieldHint>{hint}</FieldHint> : null}
     </fieldset>
   )
 }

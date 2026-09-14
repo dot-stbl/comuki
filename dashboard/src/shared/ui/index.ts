@@ -63,6 +63,8 @@ export {
   ChoiceField,
   CopyButton,
   Field,
+  FieldHint,
+  FieldLabel,
   FormDialog,
   Notice,
   NumberField,

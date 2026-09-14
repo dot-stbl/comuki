@@ -23,6 +23,36 @@ export interface FieldProps {
 }
 
 /**
+ * The field-label voice, exported for the controls that are not `Field`.
+ *
+ * A radio row drawn as cards or segments still has a label above it and a
+ * rule under it, and both must read exactly like every stacked field's — same
+ * family, size, weight, tracking, colour — or the run from one label to its
+ * control measures differently from the run from the next. That voice was
+ * re-spelled in every such component until this export; now the voice lives
+ * here, once, with the field it came from.
+ */
+export function FieldLabel({ id, children }: { id?: string; children: ReactNode }) {
+  return (
+    <span className={styles.label} id={id}>
+      {children}
+    </span>
+  )
+}
+
+/**
+ * The field-hint voice — the rule the operator cannot see by looking at the
+ * control — exported beside `FieldLabel` for the same reason.
+ */
+export function FieldHint({ id, children }: { id?: string; children: ReactNode }) {
+  return (
+    <span className={styles.hint} id={id}>
+      {children}
+    </span>
+  )
+}
+
+/**
  * A label, a control, and one line under it.
  *
  * The error replaces the hint rather than stacking under it: a field that grows

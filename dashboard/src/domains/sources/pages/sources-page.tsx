@@ -207,17 +207,24 @@ export function SourcesPage({ focus }: SourcesPageProps) {
           title="Sources"
           summary={
             ready ? (
-              <>
-                <span className={styles.strong}>{connections.length}</span>{" "}
-                connections · <span className={styles.strong}>{admitting}</span>{" "}
-                admitting work
+              /* Three counts told apart by spacing rather than by a separator
+                 glyph — a summary is scanned, and a scan reads structure faster
+                 than punctuation. */
+              <span className={styles.stats}>
+                <span className={styles.stat}>
+                  <span className={styles.strong}>{connections.length}</span>{" "}
+                  connections
+                </span>
+                <span className={styles.stat}>
+                  <span className={styles.strong}>{admitting}</span> admitting
+                  work
+                </span>
                 {broken > 0 ? (
-                  <>
-                    {" · "}
+                  <span className={styles.stat}>
                     <span className={styles.warn}>{broken}</span> in error
-                  </>
+                  </span>
                 ) : null}
-              </>
+              </span>
             ) : undefined
           }
           actions={

@@ -90,6 +90,19 @@
   white-space: nowrap;
 }
 
+/* The trigger holds the same nodes the open row does — React Aria's
+   `SelectValue` renders the selected item's children — so the primary line
+   carries its own span and the second line is hidden where it does not
+   belong. The closed control names the choice; the list tells choices
+   apart. */
+.value .optionLabel {
+  display: inline;
+}
+
+.value .optionSecondary {
+  display: none;
+}
+
 .icon {
   inline-size: var(--icon-sm);
   block-size: var(--icon-sm);
@@ -145,4 +158,21 @@
 .option[data-disabled] {
   color: var(--text-faint);
   cursor: not-allowed;
+}
+
+/* The primary line of a row, so the muted second line below it can be its
+   own block without taking the first line's colour with it. */
+.optionLabel {
+  display: block;
+}
+
+/* The row's muted second line — the key a long name answers to. Data voice:
+   it is a value the operator types elsewhere, not a sentence this row is
+   reading. */
+.optionSecondary {
+  display: block;
+  margin-block-start: var(--s1);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-faint);
 }

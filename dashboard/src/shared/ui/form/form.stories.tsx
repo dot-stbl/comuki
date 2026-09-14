@@ -144,6 +144,61 @@ export const LabelHidden: Story = {
   ),
 }
 
+function Suffixed() {
+  const [url, setUrl] = useState("https://git.example.internal")
+  const [busy, setBusy] = useState(false)
+
+  return (
+    <Column>
+      <TextField
+        id="story-url"
+        label="base url"
+        value={url}
+        hint="The rider belongs to the value in the box, not to the footer."
+        suffix={
+          <button
+            type="button"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              blockSize: "var(--h-button-sm)",
+              paddingInline: "var(--s3)",
+              border: "var(--hairline) solid var(--border-strong)",
+              borderRadius: "var(--r-sm)",
+              background: "var(--surface)",
+              color: "var(--text)",
+              fontFamily: "var(--font-ui)",
+              fontSize: "var(--t-micro)",
+              cursor: "pointer",
+            }}
+            aria-label="Test connection"
+            aria-busy={busy || undefined}
+            disabled={busy}
+            onClick={() => {
+              setBusy(true)
+              setTimeout(() => setBusy(false), 1200)
+            }}
+          >
+            {busy ? "…" : "test"}
+          </button>
+        }
+        onValueChange={setUrl}
+      />
+    </Column>
+  )
+}
+
+/**
+ * A small control riding inside the box, pinned to its end edge — for the
+ * one act that belongs to the value in the box rather than to the form's
+ * footer.
+ */
+export const Suffixed_: Story = {
+  name: "Suffix",
+  render: () => <Suffixed />,
+}
+
 function Areas() {
   const [body, setBody] = useState(
     "The importer drops the last page of every export. Reproduced on the 40k-row file."

@@ -16,6 +16,43 @@
 
 /* --- the connection's own facts --- */
 
+/* The one-line reading under the title: provider, project key, and where
+   the connection stands — three facts told apart by weight and voice
+   rather than by a separator glyph. Wraps rather than crushes; the gap is
+   the separator, and it survives every locale the words do. */
+.summaryBits {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s4);
+  min-inline-size: 0;
+}
+
+/* The dialect the connection speaks — the loudest of the three, because it
+   is the word the operator picked on the connect form. */
+.summaryProvider {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* Whose project it feeds. Data voice, faint: a key is something the operator
+   types elsewhere, not a sentence this line is reading. */
+.summaryKey {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+
+/* Where the connection stands — a sentence, so the interface voice and the
+   room to run long. */
+.summaryNote {
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text-muted);
+}
+
 /* A definition list on a two-track grid: the name of the fact, then the fact.
    Not a card — no fill, no shadow — because these are the values the page is
    about rather than a panel sitting on it. The bounding is the region heading

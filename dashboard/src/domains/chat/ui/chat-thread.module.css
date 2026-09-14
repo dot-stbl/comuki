@@ -31,6 +31,12 @@
 .log {
   display: flex;
   flex-direction: column;
+  /* The inter-turn rhythm, on the container where a list's gap belongs.
+     `--s5` is the same 1rem the old per-message `padding-block: --s3`
+     pair drew (8px below one turn + 8px above the next). The virtualizer
+     measures element heights only — the gap is invisible to it — so the
+     spacer arithmetic in chat-thread.tsx adds TURN_GAP back by hand. */
+  gap: var(--s5);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -78,7 +84,10 @@
   flex-direction: column;
   gap: var(--s1);
   min-inline-size: 0;
-  padding-block: var(--s3);
+  /* Sits outside the log, so the log's inter-turn gap does not reach it:
+     the top inset carries the full rhythm alone (it was 8px of message
+     padding + 8px of its own before the gap moved onto the log). */
+  padding-block: var(--s5) var(--s3);
 }
 
 .pendingByline {

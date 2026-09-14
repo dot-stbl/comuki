@@ -17,7 +17,9 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--s1);
   min-inline-size: 0;
-  padding-block: var(--s3);
+  /* No block padding: the inter-turn rhythm is the log's `gap` (see
+     chat-thread.module.css .log), so the virtualizer measures a turn's
+     true height and the spacer arithmetic stays honest. */
 }
 
 /* What a person said is inset from what the console said, so the thread reads

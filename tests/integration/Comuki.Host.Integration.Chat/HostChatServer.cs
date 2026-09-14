@@ -10,9 +10,9 @@ namespace Comuki.Host.Integration.Chat;
 /// random loopback port against one migrated Testcontainers Postgres
 /// (every module context, via <see cref="HostDatabaseMigrator"/>), a temp
 /// control-plane root with one chat command, and the bootstrap admin for
-/// cookie login. The brain runs as the in-process stub and the memory
-/// digest as the empty fallback — the exact composition production boots
-/// until the brain-host and memory-store slices land.
+/// cookie login. The brain runs as the in-process stub; the memory digest
+/// is the real memory-module adapter over the migrated memory schema —
+/// the exact composition production boots.
 /// </summary>
 public sealed class HostChatServer : IAsyncLifetime
 {

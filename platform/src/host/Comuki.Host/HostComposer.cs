@@ -45,6 +45,8 @@ using Comuki.Modules.Intake.Application.Ports.Admission;
 using Comuki.Modules.Intake.Infrastructure;
 using Comuki.Modules.Knowledge.Application;
 using Comuki.Modules.Knowledge.Infrastructure;
+using Comuki.Modules.Memory.Application;
+using Comuki.Modules.Memory.Infrastructure;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
 using Comuki.Modules.Proxy.Application;
@@ -57,7 +59,6 @@ using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
-using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Secrets;
 using Comuki.Shared.Telemetry.Installers;
@@ -184,19 +185,26 @@ internal static class HostComposer
         builder.Services.AddCostsApplication();
         builder.Services.AddCostsPersistence(database.ConnectionString);
 
+        // Memory module (the brain-memory wiring): the digest adapter
+        // (IMemoryDigest → the module's digest service) and EF persistence
+        // over the same database connection. Registered BEFORE the chat
+        // block so ThinkNode's digest resolves the real service — an empty
+        // memory table renders an empty digest, which the turn service
+        // treats as "do not journal". The sweep worker rides along
+        // (hourly, cheap) exactly as it does in the brain host.
+        builder.Services.AddMemoryApplication();
+        builder.Services.AddMemoryPersistence(database.ConnectionString);
+
         // Chat module (issue #5 slice B): turn services + Voluta graph over
         // the chat schema. The brain port is the gRPC client when
         // `brain:endpoint` is configured and the in-process stub when it is
-        // not; the memory digest still falls back to the empty stub until
-        // the memory store slice lands — TryAdd keeps the real
-        // implementations winning once registered. The tool executor scopes
-        // into orchestration, which Program wires above this call.
+        // not. The tool executor scopes into orchestration, which Program
+        // wires above this call.
         builder.Services
             .AddChatApplication()
             .AddChatPersistence(database.ConnectionString);
         builder.Services.AddChatBrainClient(builder.Configuration);
         builder.Services.TryAddSingleton<IBrainClient, BrainStub>();
-        builder.Services.TryAddSingleton<IMemoryDigest, EmptyMemoryDigest>();
         builder.Services.AddSingleton<IChatToolExecutor, HostChatToolExecutor>();
         builder.Services.AddSingleton<ChatSessionResolver>();
         builder.Services.AddScoped<IRunsReader, OrchestrationRunsReader>();

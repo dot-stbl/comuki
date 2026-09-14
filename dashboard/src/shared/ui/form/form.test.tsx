@@ -42,3 +42,20 @@ describe("the switch is a control, not a meter", () => {
     expect(declared(".switchInput", "inset")).toBe("-2px")
   })
 })
+
+describe("the switch is one row tall", () => {
+  it("puts the label at the start and the track at the end", () => {
+    // A switch is a settings row — label, then a toggle at the end — and the
+    // row it sits in must not stretch to fit it.
+    expect(declared(".switchRow", "justify-content")).toBe("space-between")
+  })
+
+  it("carries no state word beside the track", () => {
+    // The word repeated what the thumb and the fill already said, added a
+    // second line to the control, and stretched every row it sat in. The
+    // state itself still travels: `role="switch"` plus the input's own
+    // checked state, asserted where the component renders.
+    expect(SHEET.includes(".switchState")).toBe(false)
+    expect(SHEET.includes(".switchText")).toBe(false)
+  })
+})

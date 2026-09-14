@@ -78,7 +78,18 @@ const PART_RENDERERS: PartRenderers = {
     </div>
   ),
 
-  thinking: (part) => <ThinkingBlock text={part.text} tokens={part.tokens} />,
+  /* The working-out, moving while the turn moves (`message.streaming`) and
+     folded when it is evidence — see `ThinkingBlock`. The message arrives
+     with the part here, so the arm reads the flag off it rather than the
+     block guessing: the turn is the only authority on whether it is
+     finished. */
+  thinking: (part, message) => (
+    <ThinkingBlock
+      text={part.text}
+      tokens={part.tokens}
+      active={message.streaming}
+    />
+  ),
 
   tool: (part) => <ToolCallCard tool={part} />,
 

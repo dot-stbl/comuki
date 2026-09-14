@@ -1,10 +1,14 @@
 using Comuki.Host.Brain.Brain.Exceptions;
 using Comuki.Host.Brain.Ports.ActiveRuns;
 using Comuki.Host.Brain.Ports.Exploration;
+using Comuki.Modules.Knowledge.Application;
+using Comuki.Modules.Knowledge.Domain;
 using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Modules.Memory.Application.Views;
+using Comuki.Modules.Memory.Domain.Facts;
 using Comuki.Modules.Memory.Domain.Facts.Kinds;
 using Comuki.Modules.Memory.Domain.Facts.Scopes;
+using Comuki.Modules.Memory.Domain.Facts.Sources;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
 using Comuki.Shared.Contracts.Plans;
@@ -14,18 +18,38 @@ namespace Comuki.Host.Brain.Brain.Tools;
 
 /// <summary>
 /// Per-request tool surface of the brain agent loop: memory.search,
-/// list_profiles, list_active_runs, read_explorer_report and emit_plan.
-/// One toolbox per Think call — the emitted plan and the invalid-plan
-/// counter are per-request state. Tool names match the S5 contract.
+/// memory.write, memory.forget, list_profiles, list_active_runs,
+/// read_explorer_report and emit_plan. One toolbox per Think call — the
+/// emitted plan and the invalid-plan counter are per-request state. Tool
+/// names match the S5 contract (the memory pair extends it).
 /// </summary>
+/// <param name="memoryStore">Memory store behind the memory.* tools.</param>
+/// <param name="clock">The write-time clock (custom ephemeral TTLs backdate created_at against it).</param>
+/// <param name="profileCatalog">Worker profile catalog behind list_profiles.</param>
+/// <param name="activeRuns">Active-run catalog behind list_active_runs.</param>
+/// <param name="explorerReports">Explorer report reader behind read_explorer_report.</param>
+/// <param name="embedder">
+/// Optional embedding client — the same provider the knowledge module
+/// uses. Present ⇒ memory.write embeds the fact text and memory.search
+/// runs the cosine path; absent, unconfigured (noop) or failing ⇒ both
+/// degrade to the embedding-free fallback ranking.
+/// </param>
 public sealed class BrainToolbox(
     IMemoryStore memoryStore,
+    TimeProvider clock,
     IProfileCatalog profileCatalog,
     IActiveRunCatalog activeRuns,
-    IExplorerReportReader explorerReports)
+    IExplorerReportReader explorerReports,
+    IEmbeddingClient? embedder = null)
 {
     /// <summary>How many invalid emit_plan attempts were tolerated before the hard error.</summary>
     public const int MaxInvalidPlanAttempts = 1;
+
+    /// <summary>The created_by label the brain signs its writes with.</summary>
+    public const string WriteActor = "brain";
+
+    /// <summary>How many facts memory.forget scans for a topic match.</summary>
+    public const int ForgetScanLimit = 500;
 
     private string? emittedPlanJson;
     private int invalidPlanAttempts;
@@ -43,6 +67,16 @@ public sealed class BrainToolbox(
             AIFunctionFactory.Create(SearchMemoryAsync, name: "memory.search",
                 description: "Search long-term shared memory facts (the platform-wide corpus — per-project "
                     + "and per-user recall is not exposed to this tool). Returns kind, topic, text per fact."),
+
+            AIFunctionFactory.Create(WriteMemoryAsync, name: "memory.write",
+                description: "Save a durable fact worth remembering across sessions, under a short canonical "
+                    + "topic key (same topic overwrites). Use sparingly — only decisions, preferences and "
+                    + "architectural constraints; NOT for transient task context. kind: 'standing' (permanent) "
+                    + "or 'ephemeral' (expires; optional ttlHours caps its lifetime)."),
+
+            AIFunctionFactory.Create(ForgetMemoryAsync, name: "memory.forget",
+                description: "Forget the remembered fact stored under a topic key — use when a decision or "
+                    + "preference it captured is obsolete or was corrected."),
 
             AIFunctionFactory.Create(ListProfilesAsync, name: "list_profiles",
                 description: "List the worker profile catalog: key, name, description, allowed tools."),
@@ -82,8 +116,9 @@ public sealed class BrainToolbox(
     }
 
     /// <summary>
-    /// memory.search — the shared global corpus only; falls back to the
-    /// embedding-free ranking.
+    /// memory.search — the shared global corpus only; embeds the query when
+    /// a real embedding model is configured and falls back to the
+    /// embedding-free ranking otherwise.
     /// </summary>
     /// <param name="query"></param>
     /// <param name="limit"></param>
@@ -101,12 +136,13 @@ public sealed class BrainToolbox(
     /// argument at runtime, the signature no longer exposes it: only
     /// <see cref="MemoryScope.Global"/> (the shared corpus, not owned by
     /// any one project or person) is reachable through this tool at all —
-    /// the unsafe call is unrepresentable, not merely refused. Reintroduce
+    /// the unsafe call is unrepresentable, not merely refused. The memory
+    /// WRITE and FORGET tools below share exactly this posture. Reintroduce
     /// a scope parameter deliberately once a real per-call scope reaches
     /// the brain; project/user-specific recall in the meantime still
     /// reaches the brain safely through the pre-built digest context
     /// (<c>MemoryDigest</c>), assembled by a trusted caller that knows the
-    /// real scope, not by this tool.
+    /// real scope, not by these tools.
     /// </remarks>
     public async Task<string> SearchMemoryAsync(string query, int? limit = null)
     {
@@ -114,6 +150,7 @@ public sealed class BrainToolbox(
             new MemoryFactQuery(
                 Scope: MemoryScope.Global,
                 SubjectId: MemoryScopeKeys.GlobalSubject,
+                Embedding: await MemoryToolEmbeddings.TryEmbedAsync(embedder, query),
                 Limit: Math.Clamp(limit ?? 5, 1, 20)),
             CancellationToken.None);
 
@@ -121,6 +158,86 @@ public sealed class BrainToolbox(
             ? $"no memory facts for '{query}'"
             : string.Join("\n", facts.Select(static fact =>
                 $"[{MemoryToolsText.KindOf(fact)}] {fact.TopicKey}: {fact.Text}"));
+    }
+
+    /// <summary>
+    /// memory.write — saves one fact into the shared global corpus as the
+    /// brain (system consumer). Same-topic writes supersede; a custom
+    /// ttlHours on an ephemeral fact backdates <c>created_at</c> so the
+    /// fixed-horizon sweep expires it on schedule. The fact text is
+    /// embedded when a real embedding model is configured so the cosine
+    /// search path can find it later.
+    /// </summary>
+    /// <param name="topicKey">Short canonical topic — same topic overwrites.</param>
+    /// <param name="text">The fact text.</param>
+    /// <param name="kind">standing | ephemeral.</param>
+    /// <param name="ttlHours">Optional lifetime for ephemeral facts; 1 hour minimum.</param>
+    public async Task<string> WriteMemoryAsync(string topicKey, string text, string kind, int? ttlHours = null)
+    {
+        if (MemoryFactKindKeys.Parse(kind) is not { } parsedKind)
+        {
+            return $"memory.write rejected: kind must be '{MemoryFactKindKeys.Standing}' or '{MemoryFactKindKeys.Ephemeral}'";
+        }
+
+        if (ttlHours is { } && parsedKind != MemoryFactKind.Ephemeral)
+        {
+            return $"memory.write rejected: ttlHours applies to '{MemoryFactKindKeys.Ephemeral}' facts only";
+        }
+
+        if (ttlHours is <= 0)
+        {
+            return "memory.write rejected: ttlHours must be at least 1";
+        }
+
+        var now = clock.GetUtcNow();
+        var written = await memoryStore.WriteAsync(
+            new MemoryFactWrite(
+                Scope: MemoryScope.Global,
+                SubjectId: MemoryScopeKeys.GlobalSubject,
+                Kind: parsedKind,
+                TopicKey: topicKey,
+                Text: text,
+                Source: MemorySource.Chat,
+                CreatedBy: WriteActor,
+                Embedding: await MemoryToolEmbeddings.TryEmbedAsync(embedder, text),
+                CreatedAt: ttlHours is { } lifetime
+                    ? MemoryFactPolicy.EphemeralCreatedAt(now, TimeSpan.FromHours(lifetime))
+                    : null),
+            CancellationToken.None);
+
+        return ttlHours is { } setHours
+            ? $"remembered '{written.TopicKey}' ({MemoryFactKindKeys.Key(written.Kind)}, expires in ~{setHours}h)"
+            : $"remembered '{written.TopicKey}' ({MemoryFactKindKeys.Key(written.Kind)})";
+    }
+
+    /// <summary>
+    /// memory.forget — deletes the active fact stored under a topic key in
+    /// the shared global corpus (the store's ForgetAsync; supersede
+    /// history of already-superseded rows is not resurrected).
+    /// </summary>
+    /// <param name="topicKey">The topic to forget; canonicalized before matching.</param>
+    public async Task<string> ForgetMemoryAsync(string topicKey)
+    {
+        var topic = MemoryFact.CanonicalKey(topicKey);
+        var candidates = await memoryStore.ListAsync(
+            MemoryScope.Global,
+            MemoryScopeKeys.GlobalSubject,
+            ForgetScanLimit,
+            0,
+            CancellationToken.None);
+
+        var forgotten = 0;
+        foreach (var fact in candidates.Where(fact => fact.TopicKey == topic))
+        {
+            if (await memoryStore.ForgetAsync(fact.Id, CancellationToken.None))
+            {
+                forgotten++;
+            }
+        }
+
+        return forgotten == 0
+            ? $"no memory fact under '{topic}'"
+            : $"forgot '{topic}'";
     }
 
     /// <summary>list_profiles — the catalog the plan's profileKeys must come from.</summary>
@@ -197,5 +314,35 @@ file static class MemoryToolsText
     public static string KindOf(MemoryFactView fact)
     {
         return MemoryFactKindKeys.Key(fact.Kind);
+    }
+}
+
+/// <summary>
+/// The embedding seam of the memory tools: embed when a real model is
+/// configured, degrade silently otherwise. The noop provider means "no
+/// model configured" — its deterministic junk vectors would cosine-rank
+/// arbitrarily, so the fallback ranking is the better answer there.
+/// Embedding is an accelerator, never a gate: a write lands without a
+/// vector and a search falls back to ranking when the provider fails.
+/// </summary>
+file static class MemoryToolEmbeddings
+{
+    public static async Task<float[]?> TryEmbedAsync(IEmbeddingClient? embedder, string text)
+    {
+        if (embedder is null || embedder.ProviderName == EmbeddingProviderKindKeys.Noop)
+        {
+            return null;
+        }
+
+        try
+        {
+            return await embedder.EmbedAsync(text);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException)
+        {
+            // transport / auth / provider-rejected — same degradation as
+            // "not configured": memory must keep working without embeddings
+            return null;
+        }
     }
 }

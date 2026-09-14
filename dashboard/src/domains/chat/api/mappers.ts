@@ -2,6 +2,7 @@ import type {
   SeedChatMessage,
   SeedChatProposal,
   SeedChatSession,
+  SeedMessageMeta,
   SeedMessagePart,
   SeedSlashCommand,
   SeedToolCall,
@@ -11,6 +12,7 @@ import type {
   ChatMessage,
   ChatSession,
   CommandScope,
+  MessageMeta,
   MessagePart,
   MessageKind,
   PlanEdge,
@@ -110,6 +112,11 @@ function toMessagePart(seed: SeedMessagePart): MessagePart {
   }
 }
 
+/** A seeded cost reading → the domain's. Structural, like the parts above. */
+function toMessageMeta(seed: SeedMessageMeta): MessageMeta {
+  return { ...seed }
+}
+
 export function toChatMessage(seed: SeedChatMessage): ChatMessage {
   return {
     id: seed.id,
@@ -120,6 +127,7 @@ export function toChatMessage(seed: SeedChatMessage): ChatMessage {
     tool: seed.tool ? toToolCall(seed.tool) : undefined,
     proposal: seed.proposal ? toProposal(seed.proposal) : undefined,
     handoff: seed.handoff,
+    meta: seed.meta ? toMessageMeta(seed.meta) : undefined,
     at: seed.at,
   }
 }
@@ -430,9 +438,10 @@ function clockOf(createdAt: string): string {
  *    keeps the domain union honest.
  *
  * `meta` (`ChatMessageMeta` — model, tokens, cost, latency, stop reason) is
- * on the wire now too and is deliberately *not* mapped: `ChatMessage` has no
- * field for it, and giving it one is a change to what the thread draws
- * rather than to this seam.
+ * mapped below through the same `wireInteger` rule: the numbers arrive as
+ * `number | string`, the domain says `number | undefined`, and a value that
+ * does not read as finite becomes "the turn did not report this" rather
+ * than a `NaN` on the metrics line.
  * ========================================================================== */
 
 /**
@@ -616,6 +625,21 @@ function wireMessageParts(view: ChatMessageView): MessagePart[] | undefined {
  * the host appends a tool row after the call returned, and a turn that
  * failed is journaled as its own message.
  */
+/** The wire's cost reading, through the same finite-number rule as above. */
+function wireMessageMeta(view: ChatMessageView): MessageMeta | undefined {
+  if (!view.meta) {
+    return undefined
+  }
+  return {
+    model: view.meta.model ?? undefined,
+    tokensIn: wireInteger(view.meta.tokensIn),
+    tokensOut: wireInteger(view.meta.tokensOut),
+    costMicros: wireInteger(view.meta.costMicros),
+    latencyMs: wireInteger(view.meta.latencyMs),
+    stopReason: view.meta.stopReason ?? undefined,
+  }
+}
+
 export function chatMessageViewToDomainMessage(
   view: ChatMessageView
 ): ChatMessage {
@@ -642,6 +666,7 @@ export function chatMessageViewToDomainMessage(
     // day somebody widens the prose branch in `ui/chat-message.tsx`.
     text: tool ? undefined : view.content,
     tool,
+    meta: wireMessageMeta(view),
     at: clockOf(view.createdAt),
   }
 }

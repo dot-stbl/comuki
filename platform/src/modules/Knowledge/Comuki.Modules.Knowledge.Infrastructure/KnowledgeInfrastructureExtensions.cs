@@ -32,11 +32,7 @@ public static class KnowledgeInfrastructureExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services
-            .AddOptions<KnowledgeEmbeddingOptions>()
-            .Bind(configuration.GetSection(KnowledgeEmbeddingOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+        services.AddKnowledgeEmbeddingClient(configuration);
 
         services
             .AddOptions<KnowledgeIngestOptions>()
@@ -45,6 +41,39 @@ public static class KnowledgeInfrastructureExtensions
             .ValidateOnStart();
 
         services.TryAddSingleton(TimeProvider.System);
+
+        services.AddSingleton<PgKnowledgeIngestor>();
+        services.AddSingleton<PgKnowledgeSearcher>();
+        services.AddSingleton<PgKnowledgeDocumentReader>();
+        services.AddSingleton<IKnowledgeIngestor>(static sp => sp.GetRequiredService<PgKnowledgeIngestor>());
+        services.AddSingleton<IKnowledgeSearcher>(static sp => sp.GetRequiredService<PgKnowledgeSearcher>());
+        services.AddSingleton<IKnowledgeDocumentReader>(static sp => sp.GetRequiredService<PgKnowledgeDocumentReader>());
+
+        services.AddHostedService<KnowledgeIngestBackgroundService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers just the embedding client (options + OpenAI/Noop
+    /// selection) — the slice other modules embed with. Extracted from
+    /// <see cref="AddKnowledgeInfrastructure"/> so a host that only needs
+    /// <see cref="IEmbeddingClient"/> (the brain host's memory tools)
+    /// doesn't drag the knowledge schema, ingestor or the ingest worker
+    /// along. The Knowledge:Embedding section is shared configuration:
+    /// one provider, one dimension, every consumer.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="configuration"></param>
+    public static IServiceCollection AddKnowledgeEmbeddingClient(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services
+            .AddOptions<KnowledgeEmbeddingOptions>()
+            .Bind(configuration.GetSection(KnowledgeEmbeddingOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // Embedding client selection — the same singleton instance is
         // resolved by every ingestion and search. Provider changes are
@@ -79,15 +108,6 @@ public static class KnowledgeInfrastructureExtensions
                 _ => throw new ArgumentOutOfRangeException(nameof(options.Kind), options.Kind, null),
             };
         });
-
-        services.AddSingleton<PgKnowledgeIngestor>();
-        services.AddSingleton<PgKnowledgeSearcher>();
-        services.AddSingleton<PgKnowledgeDocumentReader>();
-        services.AddSingleton<IKnowledgeIngestor>(static sp => sp.GetRequiredService<PgKnowledgeIngestor>());
-        services.AddSingleton<IKnowledgeSearcher>(static sp => sp.GetRequiredService<PgKnowledgeSearcher>());
-        services.AddSingleton<IKnowledgeDocumentReader>(static sp => sp.GetRequiredService<PgKnowledgeDocumentReader>());
-
-        services.AddHostedService<KnowledgeIngestBackgroundService>();
 
         return services;
     }

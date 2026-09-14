@@ -104,6 +104,7 @@ public sealed class BrainAgentShould
             new StubActiveRunCatalog(),
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
+            TimeProvider.System,
             options);
 
         await Should.ThrowAsync<BrainExhaustedException>(
@@ -135,6 +136,7 @@ public sealed class BrainAgentShould
             new StubActiveRunCatalog(),
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
+            TimeProvider.System,
             options);
 
         var firstChunks = await StreamAsync(agent, Request(BrainRequestKindKeys.Answer, "first question"));
@@ -167,6 +169,7 @@ public sealed class BrainAgentShould
             new StubActiveRunCatalog(),
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
+            TimeProvider.System,
             Options.Create(new BrainOptions()));
 
         await StreamAsync(agent, Request(BrainRequestKindKeys.Answer, "hi"));
@@ -193,6 +196,7 @@ public sealed class BrainAgentShould
             new StubActiveRunCatalog(),
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
+            TimeProvider.System,
             Options.Create(new BrainOptions()));
 
         await StreamAsync(agent, Request(BrainRequestKindKeys.Plan, "decompose"));
@@ -212,6 +216,7 @@ public sealed class BrainAgentShould
             new StubActiveRunCatalog(),
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
+            TimeProvider.System,
             options);
     }
 

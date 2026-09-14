@@ -107,6 +107,17 @@ with the next message as text.
   `aria-hidden` while it arrives, and is **not parsed as markdown** until it
   settles — half a document is a different document. See `ui/chat-thread.tsx`
   and `ui/message-prose.tsx`.
+- The processing **dynamics are derived, never stored** (`model/dynamics.ts`):
+  the phase badge (`thinking` / `plan` / `done`), the iteration, the thinking
+  steps and the metrics line are computed from the parts and the `meta` a turn
+  already carries. The working-out is **visible while the turn streams**
+  (steps, checks, the newest line spinning) and **folds as evidence once it
+  settles**. The metrics line renders only figures the turn reported — nothing
+  zeroed, nothing faked. The typing pause (`awaiting` on the thread, from the
+  console's send mutation) is the one turn state with no row of its own. The
+  memory digest row the host journals (a system message with the
+  `"memory digest fed to the brain:"` prefix) renders as the compact
+  `memory: N facts` chip, not as prose.
 - The dock is hidden — not explained — without `chat.use`, the way the rail
   hides what a role cannot reach. The console is **not a rail section**: the
   floating trigger is its one door in the chrome, decided by the owner. The

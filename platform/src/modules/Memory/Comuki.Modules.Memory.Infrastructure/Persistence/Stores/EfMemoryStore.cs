@@ -77,8 +77,12 @@ public sealed class EfMemoryStore(
                     setters => setters.SetProperty(fact => fact.SupersededAt, now),
                     cancellationToken);
 
+            // a backdated CreatedAt is the custom-TTL contract; supersede
+            // stamps still use the real clock so audit reflects when the
+            // replacement actually happened
             var fact = MemoryFact.Create(
-                write.Scope, subject, write.Kind, topic, write.Text, write.Source, write.CreatedBy, now);
+                write.Scope, subject, write.Kind, topic, write.Text, write.Source, write.CreatedBy,
+                write.CreatedAt ?? now);
             db.MemoryFacts.Add(fact);
             await db.SaveChangesAsync(cancellationToken);
 

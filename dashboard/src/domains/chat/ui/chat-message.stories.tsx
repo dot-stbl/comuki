@@ -133,6 +133,149 @@ export const Streaming: Story = {
 }
 
 /**
+ * **The typing pause.** A message was sent and the turn has not answered
+ * yet: three dots and the shift's own words for "wait", outside the log —
+ * the one moment of a turn that has no row. The announce region says it
+ * once, in words, to somebody listening.
+ */
+export const TypingPause: Story = {
+  render: () => (
+    <Frame>
+      <div style={{ blockSize: "14rem" }}>
+        <ChatThread
+          projectId={null}
+          awaiting
+          messages={[
+            {
+              id: "m1",
+              kind: "person",
+              text: "сколько мы сожгли за ночь по atlas",
+              at: "06:40",
+            },
+          ]}
+          onDecide={() => {}}
+        />
+      </div>
+    </Frame>
+  ),
+}
+
+/**
+ * **The turn thinking.** The same streaming state as above, with the
+ * working-out arriving ahead of the prose: the steps visible, the finished
+ * ones checked, the newest one spinning, the `thinking` badge on the byline
+ * and the iteration beside it. This is the "watching it work" moment; the
+ * moment the reply settles, the same lines fold away as evidence.
+ */
+export const ThinkingInFlight: Story = {
+  render: () => (
+    <Frame>
+      <div style={{ blockSize: "18rem" }}>
+        <ChatThread
+          projectId={null}
+          messages={[
+            {
+              id: "m1",
+              kind: "person",
+              text: "9d72b5f0 упал на третьем шаге. что произошло",
+              at: "08:04",
+            },
+            {
+              id: "m2",
+              kind: "reply",
+              streaming: true,
+              at: "08:05",
+              parts: [
+                {
+                  kind: "thinking",
+                  text: 'iteration 1: memory.search("theme api падение")\nпамять помнит только миграцию на theme/v2, ретраев там нет\nread_code("Modules.Theme/Handler.cs") читаю',
+                },
+                {
+                  kind: "text",
+                  markdown:
+                    "Шаг w3 умер сразу после установки зависимостей: воркер импортирует theme/v1, а в новом пакете этого пути больше нет. Судя по трассе, план писался ещё",
+                },
+              ],
+            },
+          ]}
+          onDecide={() => {}}
+        />
+      </div>
+    </Frame>
+  ),
+}
+
+/**
+ * **The turn answered, with what it cost.** The settled reading: `done` on
+ * the byline, the working-out folded behind its token count, and the
+ * metrics line under the answer — every figure the turn reported,
+ * pipe-separated, nothing zeroed.
+ */
+export const AnsweredWithMetrics: Story = {
+  render: () => (
+    <One
+      message={{
+        id: "m1",
+        kind: "reply",
+        at: "09:21",
+        meta: {
+          model: "glm-4.7",
+          tokensIn: 1180,
+          tokensOut: 660,
+          costMicros: 2900,
+          latencyMs: 8200,
+        },
+        parts: [
+          {
+            kind: "thinking",
+            tokens: 1840,
+            text: 'memory.search("идемпотентность вебхуков") — 2 факта, оба про этот шаг\nШаг w4 трогает только обработчик Stripe, остальное не задето.',
+          },
+          {
+            kind: "tool",
+            name: "runs.diff",
+            inputJson: '{"run":"8f3c2a91","item":"w4"}',
+            status: "success",
+            outputJson: "1 file changed · +14 −3 · src/webhooks/stripe.ts",
+            durationMs: 412,
+          },
+          {
+            kind: "text",
+            markdown:
+              "Воркер закрыл гонку на повторной доставке. Ключ теперь берётся из заголовка `Stripe-Signature`, а не из тела запроса.",
+          },
+        ],
+      }}
+    />
+  ),
+}
+
+/**
+ * **The memory the turn was fed.** The platform journals the digest as its
+ * own row for audit; the thread draws it as one quiet chip — `memory: N
+ * facts` in the waiting hue — with the facts folded behind it for the
+ * operator who needs to check what yesterday's shift knew.
+ */
+export const MemoryDigest: Story = {
+  render: () => (
+    <One
+      message={{
+        id: "m1",
+        kind: "reply",
+        at: "09:20",
+        parts: [
+          {
+            kind: "text",
+            markdown:
+              "memory digest fed to the brain:\nвебхуки Stripe уже разбирали в смену 2026-09-12, тогда победила схема с заголовком\nключ идемпотентности обсуждали, но до миграции не дошло",
+          },
+        ],
+      }}
+    />
+  ),
+}
+
+/**
  * **State 2 — a tool call.** A record rather than a spinner: the endpoint, the
  * arguments it went out with, and what came back. Two of them here, because
  * the failed one is the state that usually goes missing — an operator who
@@ -391,10 +534,12 @@ export const Code: Story = {
 }
 
 /**
- * **Thinking.** Folded, muted, and with no animation at all — the three are
- * one decision. A console that performs its reasoning on screen is asking to
- * be watched working; this one is a pult, and the working-out is evidence an
- * operator opens when an answer surprises them.
+ * **Thinking, settled.** The same lines the in-flight story shows moving,
+ * folded: collapsed behind its token count, muted, and motionless — the
+ * three are one decision. A console that performs its reasoning on screen
+ * *after* the answer exists is asking to be watched a recording; this one
+ * is a pult, and the working-out is evidence an operator opens when an
+ * answer surprises them.
  */
 export const Thinking: Story = {
   render: () => (

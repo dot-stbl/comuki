@@ -106,8 +106,6 @@ export function BudgetsPanel({
               label="Kill-switch"
               data-test="budgets-kill-switch"
               checked={budgets.killSwitch}
-              onLabel="claims blocked"
-              offLabel="claims open"
               onCheckedChange={(next) => {
                 // The one act here that asks first. Standing the switch back
                 // down restores what was there, so it runs directly.
@@ -126,8 +124,6 @@ export function BudgetsPanel({
               label="Pause swarm"
               data-test="budgets-pause-swarm"
               checked={budgets.pauseSwarm}
-              onLabel="paused"
-              offLabel="running"
               onCheckedChange={(next) => onToggleStop("pauseSwarm", next)}
               denied={save.denial}
               disabled={busy}

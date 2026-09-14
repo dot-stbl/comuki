@@ -1,0 +1,10 @@
+/* The one local fact the provider cards need: the stand-in glyph for a
+   provider whose mark would be a guess is sized from the icon scale's
+   largest step, so it sits exactly where the kit's own brand marks sit and
+   the spelled card keeps the drawn ones' rhythm. */
+
+.glyph {
+  /* A kit control sizes its own icons; nothing here hands one a width. */
+  inline-size: var(--icon-lg);
+  block-size: var(--icon-lg);
+}

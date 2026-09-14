@@ -1,0 +1,337 @@
+/* The kit's date picker. Two related components — one day, one range —
+   composed on React Aria's `DatePicker` and `DateRangePicker`, the same way
+   the form kit's `SelectField` is composed on `Select`. Chrome, so it is
+   built from the neutral ramp and the hairline alone.
+
+   The two share a calendar popover: a real overlay that leaves the page
+   plane, with the same raised surface and shadow the select's popover
+   wears, so a date picker and a select on the same form read as two
+   overlays of one gesture.
+
+   The trigger inside the field carries the same control chrome every other
+   field wears, so a column of [date, select, text, switch] still looks
+   like a column of fields rather than a column of competing opinions.
+
+   React Aria gives the date grammar — arrow keys step segments, page-up
+   and page-down jump month and year, the popover opens on the calendar
+   icon, escape closes it. The kit owns the look; React Aria owns the
+   date picker; the field envelope around it puts a name and a reason
+   on what is in it. */
+
+/* The field envelope wraps every date picker, so the wrapper itself stays
+   the form kit's own. What lives here is the trigger and the popover. */
+
+.group {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+/* The trigger is the form kit's own control, sized the same way so a column
+   of fields keeps its height when a date picker swaps in for a text input.
+   A real button so the calendar icon is a pressable target and the popover
+   opens on press rather than on the field being focused. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  inline-size: 100%;
+  min-inline-size: 0;
+  block-size: var(--h-button-lg);
+  padding-inline: var(--s3);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.trigger[data-hovered]:not([data-disabled]) {
+  border-color: var(--border-strong);
+}
+
+.trigger[data-focus-visible] {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.trigger[data-disabled] {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+/* The error channel. The trigger carries it the way the select trigger
+   does — by `data-invalid`, not by `aria-invalid`, because React Aria's
+   `Group` (the wrapper the trigger sits in) does not accept that
+   attribute. The reading lives on the field's described-by line. */
+.trigger[data-invalid] {
+  border-color: var(--st-failed);
+}
+
+/* Empty — the placeholder is showing, the value is unset. Quieter than a
+   chosen date, the same way an empty select's "all apps" is. */
+.trigger[data-empty] {
+  color: var(--text-muted);
+}
+
+/* Segments ----------------------------------------------------------- */
+
+/* React Aria splits the value into segments (month / day / year). Each
+   one is its own span, padding the digit so it never sits flush against
+   a neighbour. Mono, because a date written in two voices is unreadable
+   across the gap. */
+.segment {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  padding-inline: var(--s1);
+}
+
+/* A segment that has no value yet — the operator has not typed into it.
+   Quieter than a value, so the empty parts of the field never shout.
+   React Aria sets `data-placeholder` on every segment that is empty,
+   not just the whole input. */
+.segmentPlaceholder {
+  color: var(--text-faint);
+}
+
+.segment[data-focus-visible] {
+  outline: none;
+  color: var(--brand);
+}
+
+/* A literal between segments ("/", "-") sits at the muted voice rather
+   than the data voice, because it is decoration around the value rather
+   than part of it. */
+.literal {
+  color: var(--text-faint);
+  font-family: var(--font-data);
+}
+
+/* The calendar opener — a real button so the popover opens on press
+   rather than on the field being focused. The icon inside is decoration
+   around an affordance the button itself owns. */
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: calc(var(--icon-sm) + var(--s2));
+  block-size: calc(var(--icon-sm) + var(--s2));
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  color: var(--text);
+  background: var(--muted);
+}
+
+.iconButton[data-focus-visible] {
+  outline: none;
+  color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.iconButton[data-disabled] {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.icon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}
+
+/* The popover --------------------------------------------------------- */
+
+/* A real overlay — same raised surface and modal shadow as the select's
+   popover, so a date picker and a select on the same form wear the same
+   overlay chrome. Width is the trigger's own: React Aria measures the
+   trigger and sets `--trigger-width`, the same way the select does. */
+.popover {
+  padding: var(--s3);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+}
+
+.dialog {
+  /* The dialog inside the popover — let the calendar drive its own
+     measure and the popover wrap it. */
+  outline: none;
+}
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+/* The month and year header — prev / heading / next, on a single row. */
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding-inline: var(--s1);
+}
+
+.calendarHeading {
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.navButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--h-button-sm);
+  block-size: var(--h-button-sm);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.navButton:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.navButton[data-focus-visible] {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.navIcon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}
+
+/* The grid — day-of-week header and the 42-cell month. */
+.calendarGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.weekHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--s1);
+}
+
+.weekDay {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  text-align: center;
+  color: var(--text-faint);
+  block-size: var(--h-button-sm);
+  line-height: var(--h-button-sm);
+}
+
+.calendarGridBody {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--s1);
+}
+
+/* A single day. Square, centered digit, the same step every cell wears. */
+.day {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--h-button-sm);
+  block-size: var(--h-button-sm);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--r-sm);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+  cursor: pointer;
+  background: transparent;
+}
+
+.day:hover {
+  background: var(--muted);
+}
+
+.day[data-focus-visible] {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+/* Today is a ring around the digit, not a fill, so the reading is
+   carried by the rule rather than by a colour. */
+.day[data-today] {
+  border-color: var(--border-strong);
+}
+
+/* Selected is a fill and a darker text — two channels, the way the
+   select's selected row wears. */
+.day[data-selected] {
+  background: var(--brand);
+  color: var(--brand-foreground);
+  border-color: var(--brand);
+}
+
+.day[data-selected]:hover {
+  background: color-mix(in oklab, var(--brand) 85%, var(--text));
+}
+
+/* Outside the showing month — quieter, and not focusable, so the arrow
+   keys only walk the rows the calendar is actually showing. */
+.day[data-outside-month] {
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+/* Disabled — kept in the grid for layout but faded and unpressable. */
+.day[data-disabled] {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+/* The range — the start and end are bordered like the single selected day,
+   and the days between them wear a softer wash, the same voice the data
+   table's row hover wears. A range is two readings: the chosen pair and
+   the span between them, both saying so. */
+.day[data-selection-start],
+.day[data-selection-end] {
+  background: var(--brand);
+  color: var(--brand-foreground);
+  border-color: var(--brand);
+}
+
+.day[data-in-range] {
+  background: color-mix(in oklab, var(--brand) 12%, transparent);
+  color: var(--text);
+}
+
+/* The dash between two inputs in a range, sitting in the same gap the
+   other literals sit in. */
+.dash {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-faint);
+  font-family: var(--font-data);
+  padding-inline: var(--s2);
+}

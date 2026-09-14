@@ -29,6 +29,15 @@ export interface KeyColumnsOptions {
   revokingId: string | null
   onRevoke: (entry: VirtualKey) => void
   /**
+   * Opens a key's detail drawer.
+   *
+   * The prefix cell is the control, and the row is not — the same address the
+   * sources table gives its identifier: a row-wide target would swallow the
+   * revoke button six columns over. A button rather than an anchor because a
+   * drawer is not a destination; there is no url to open in a tab.
+   */
+  onOpen: (entry: VirtualKey) => void
+  /**
    * The shift itself, not an answer about it.
    *
    * `models.manage` is a *platform* permission: it reads platform roles alone,
@@ -73,6 +82,7 @@ export function createKeyColumns({
   enforced,
   revokingId,
   onRevoke,
+  onOpen,
   session,
 }: KeyColumnsOptions): DataColumn<VirtualKey>[] {
   const projectKey = (projectId: string) =>
@@ -83,9 +93,16 @@ export function createKeyColumns({
       accessorKey: "prefix",
       header: "key",
       cell: ({ row }) => (
-        <span className={styles.strong} title={row.original.label}>
+        <button
+          type="button"
+          className={styles.link}
+          data-test="key-open"
+          title={row.original.label}
+          aria-label={`Open ${row.original.prefix} details`}
+          onClick={() => onOpen(row.original)}
+        >
           {row.original.prefix}
-        </span>
+        </button>
       ),
       meta: {
         width: 116,

@@ -27,6 +27,8 @@ function clone(snapshot: SeedModelsSnapshot): SeedModelsSnapshot {
       ...key,
       models: [...key.models],
       scope: { ...key.scope },
+      grants: key.grants.map((grant) => ({ ...grant })),
+      spendDaily: key.spendDaily.map((day) => ({ ...day })),
     })),
     routes: snapshot.routes.map((route) => ({ ...route })),
   }

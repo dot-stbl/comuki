@@ -19,6 +19,9 @@ function key(overrides: Partial<VirtualKey> = {}): VirtualKey {
     expiresInSec: 30 * DAY,
     lastUsedAgoSec: DAY,
     revoked: false,
+    createdAgoSec: 44 * DAY,
+    grants: [{ role: "worker", projectId: null }],
+    spendDaily: null,
     ...overrides,
   }
 }

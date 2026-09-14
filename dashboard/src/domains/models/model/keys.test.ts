@@ -13,13 +13,20 @@ import {
   budgetLeftUsd,
   budgetShare,
   burnPeak,
+  createdReading,
   expiredKeys,
   expiryReading,
+  grantReading,
   hourLabel,
   isLive,
   keyOrder,
+  keySpendAverage,
+  keySpendPeakDay,
+  keySpendSilentDays,
+  keySpendTotal,
   keyState,
   keysNearCap,
+  lastUsedReading,
   proxySentence,
   routeLabel,
   scopeReading,
@@ -42,6 +49,9 @@ function key(id: string, overrides: Partial<VirtualKey> = {}): VirtualKey {
     expiresInSec: 30 * DAY,
     lastUsedAgoSec: DAY,
     revoked: false,
+    createdAgoSec: 44 * DAY,
+    grants: [{ role: "worker", projectId: null }],
+    spendDaily: null,
     ...overrides,
   }
 }
@@ -299,5 +309,119 @@ describe("the burn by hour, and its peak", () => {
     expect(peak!.hour).toBeGreaterThanOrEqual(14)
     expect(peak!.hour).toBeLessThanOrEqual(18)
     expect(peak!.usd).toBeGreaterThan(3)
+  })
+})
+
+describe("when a key was issued and last used", () => {
+  it("reads usage in the TTL column's own relative words", () => {
+    expect(lastUsedReading(key("vk_recent", { lastUsedAgoSec: 600 }))).toBe(
+      "earlier today"
+    )
+    expect(lastUsedReading(key("vk_day", { lastUsedAgoSec: DAY }))).toBe(
+      "1 day ago"
+    )
+    expect(lastUsedReading(key("vk_week", { lastUsedAgoSec: 7 * DAY }))).toBe(
+      "7 days ago"
+    )
+  })
+
+  it("says never used only when the wire could know", () => {
+    // The seed's own null usage is a key that was never presented…
+    expect(lastUsedReading(key("vk_fresh", { lastUsedAgoSec: null }))).toBe(
+      "never used"
+    )
+    // …but a catalogue row carries no usage column at all, and answering
+    // "never" about it would invent a fact about a security object.
+    expect(
+      lastUsedReading(
+        key("vk_catalogue", { lastUsedAgoSec: null, createdAgoSec: null })
+      )
+    ).toBe("not on this wire")
+  })
+
+  it("says when the key was issued, or that the wire does not know", () => {
+    expect(createdReading(key("vk_old", { createdAgoSec: 74 * DAY }))).toBe(
+      "74 days ago"
+    )
+    expect(createdReading(key("vk_catalogue", { createdAgoSec: null }))).toBe(
+      "not on this wire"
+    )
+  })
+})
+
+describe("a key's spend window", () => {
+  const WINDOW = [
+    { label: "mon", usd: 4.2 },
+    { label: "tue", usd: 3.8 },
+    { label: "wed", usd: 5.1 },
+    { label: "thu", usd: 0 },
+    { label: "fri", usd: 0 },
+  ]
+
+  it("totals, averages and names the heaviest day", () => {
+    expect(keySpendTotal(WINDOW)).toBe(13.1)
+    expect(keySpendAverage(WINDOW)).toBe(2.62)
+    expect(keySpendPeakDay(WINDOW)).toEqual({ label: "wed", usd: 5.1 })
+  })
+
+  it("has no readings for a window the wire does not carry", () => {
+    expect(keySpendTotal(null)).toBeNull()
+    expect(keySpendAverage(null)).toBeNull()
+    expect(keySpendPeakDay(null)).toBeNull()
+  })
+
+  it("counts the silent tail without claiming to know why", () => {
+    expect(keySpendSilentDays(WINDOW)).toBe(2)
+    expect(keySpendSilentDays(null)).toBe(0)
+    expect(keySpendSilentDays([{ label: "mon", usd: 0 }])).toBe(1)
+  })
+})
+
+describe("the seeded spend windows", () => {
+  it("gives every key a fortnight that ends in the proxy's silence", () => {
+    for (const entry of MODELS_SEED.keys) {
+      expect(entry.spendDaily).toHaveLength(14)
+      // Six days of zeros: the proxy has been off for six days, and the seed
+      // refuses to meter a day nothing was metering.
+      const tail = entry.spendDaily.slice(-6)
+      expect(tail.every((day) => day.usd === 0)).toBe(true)
+      // …and the metered days come before them, oldest first.
+      expect(entry.spendDaily[0]?.usd).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it("sums to the proxy's metered day exactly, six days back", () => {
+    // The per-key windows and the proxy's burn series are one day looked at
+    // from two ends: the day before the switch. If they drift apart, the
+    // drawer and the proxy panel are describing different histories while
+    // claiming to describe the same one.
+    const lastMetered = MODELS_SEED.keys.reduce(
+      (sum, entry) => sum + (entry.spendDaily[7]?.usd ?? 0),
+      0
+    )
+    expect(Math.round(lastMetered * 100) / 100).toBe(
+      MODELS_SEED.proxy.burnDayUsd
+    )
+  })
+
+  it("keeps the window under the month the cap reads", () => {
+    // Fourteen days cannot outspend the month-to-date figure — the window is
+    // a part of the month, not a parallel accounting of it.
+    for (const entry of MODELS_SEED.keys) {
+      const total = keySpendTotal(entry.spendDaily) ?? 0
+      expect(total).toBeLessThanOrEqual(entry.spentUsd + 0.01)
+    }
+  })
+
+  it("reads a grant as a role and a place", () => {
+    const names = (projectId: string) =>
+      projectId === "p_atlas" ? "atlas" : projectId
+
+    expect(grantReading({ role: "worker", projectId: "p_atlas" }, names)).toBe(
+      "worker · atlas"
+    )
+    expect(grantReading({ role: "lead", projectId: null }, names)).toBe(
+      "lead · platform"
+    )
   })
 })

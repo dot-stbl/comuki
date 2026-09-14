@@ -57,7 +57,9 @@ using Comuki.Modules.Scheduler.Application;
 using Comuki.Modules.Scheduler.Application.Options;
 using Comuki.Modules.Scheduler.Application.Ports;
 using Comuki.Modules.Scheduler.Infrastructure;
+using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Versioning;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
@@ -357,15 +359,34 @@ internal static class HostComposer
         builder.Services.AddScoped<ICookieSigner, CookieSignerAdapter>();
 
         // OIDC state sweep (issue #4 tail): the start handler issues
-        // 5-minute-TTL rows; the worker prunes abandoned ones on a
+        // 5-minute-TTL rows; the sweeper prunes abandoned ones on a
         // fixed interval so the table doesn't grow unbounded. Bound
         // from Host:OidcSweep, defaults match the start handler's TTL.
+        // The sweeper rides the comuki worker registry (observable,
+        // backoff); Host:OidcSweep:Enabled=false skips the registration
+        // entirely — resolved synchronously here (the same pattern as
+        // BootstrapAdminOptions.Resolve) because the registry collects
+        // its workers at Build.
         builder.Services.AddOptions<OidcSweepOptions>()
             .Bind(builder.Configuration.GetSection(OidcSweepOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        builder.Services.AddSingleton<OidcStateSweeper>();
-        builder.Services.AddHostedService(static serviceProvider => serviceProvider.GetRequiredService<OidcStateSweeper>());
+        var oidcSweepEnabled = builder.Configuration
+            .GetSection(OidcSweepOptions.SectionName)
+            .Get<OidcSweepOptions>()?.Enabled ?? true;
+        if (oidcSweepEnabled)
+        {
+            builder.Services.AddSingleton<OidcStateSweeper>();
+            builder.Services.AddSingleton<IComukiWorker>(static serviceProvider =>
+                serviceProvider.GetRequiredService<OidcStateSweeper>());
+        }
+
+        // The comuki worker registry: one BackgroundService hosting every
+        // IComukiWorker registration above (memory-sweep from the memory
+        // module, lease-reaper from the orchestration engine, oidc-sweep
+        // here) with per-cycle scopes, exponential backoff and the
+        // /api/v1/workers/background status snapshot.
+        builder.Services.AddComukiWorkers();
 
         builder.Services.AddSingleton(BootstrapAdminOptions.Resolve(builder.Configuration));
         builder.Services.AddScoped<BootstrapAdminSeeder>();
@@ -503,6 +524,11 @@ internal static class HostComposer
 
         HostDatabase.WarnLegacyAlias(database, app.Logger);
 
+        if (!oidcSweepEnabled)
+        {
+            app.Logger.LogInformation("OIDC state sweep is disabled ({SectionName}:Enabled=false)", OidcSweepOptions.SectionName);
+        }
+
         // Production-secret gate (issue #10 T11.4): runs after the
         // service provider materialises the bound IOptions; throws in
         // Production when MinIO / bootstrap-admin still carry dev
@@ -559,6 +585,7 @@ internal static class HostComposer
         app.MapProxyEndpoints();
         app.MapProxyKeyAdminEndpoints();
         app.MapWorkersReadEndpoints();
+        app.MapBackgroundWorkersEndpoints();
         app.MapComputeSnapshotEndpoints();
         app.MapSettingsEndpoints();
 

@@ -145,6 +145,9 @@ public static class ApiRoutes
     /// <summary>Worker registrations as the dashboard sees them (derived from live leases + the journal).</summary>
     public const string Workers = "/api/v1/workers";
 
+    /// <summary>Background worker registry status (name, last/next run, consecutive failures).</summary>
+    public const string WorkersBackground = "/api/v1/workers/background";
+
     /// <summary>One worker registration by id — derived detail with the live work item.</summary>
     public const string WorkerById = "/api/v1/workers/{workerId:guid}";
 

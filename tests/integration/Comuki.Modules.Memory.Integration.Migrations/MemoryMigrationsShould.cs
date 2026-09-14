@@ -15,10 +15,11 @@ namespace Comuki.Modules.Memory.Integration.Migrations;
 
 /// <summary>
 /// Proves the Memory EF migrations on a REAL pgvector image: the four
-/// tables plus the module-private history, the vector(768) embedding
-/// column, the partial unique supersede index — and the store contract
-/// end to end: superseding writes, deterministic cosine ranking, the
-/// embedding-free fallback, ephemeral sweep and forget.
+/// tables plus the module-private history, the vector(1536) embedding
+/// column with its ivfflat ANN index, the partial unique supersede index —
+/// and the store contract end to end: superseding writes, deterministic
+/// cosine ranking, the embedding-free fallback, ephemeral sweep and
+/// forget.
 /// </summary>
 public sealed class MemoryMigrationsShould : IAsyncLifetime
 {
@@ -64,7 +65,7 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
         tables.ShouldContain("__ef_migrations_history");
     }
 
-    [Fact(DisplayName = "Given the pgvector image, when migrations applied, then the embedding column is vector(768)")]
+    [Fact(DisplayName = "Given the pgvector image, when migrations applied, then the embedding column is vector(1536)")]
     public async Task CreateVectorEmbeddingColumnAsync()
     {
         var columns = await QuerySingleColumnAsync(
@@ -72,6 +73,31 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
             + $"WHERE table_schema = '{MemoryDatabase.Schema}' AND table_name = '{MemoryDatabase.MemoryFacts}' AND column_name = 'embedding'");
 
         columns.ShouldHaveSingleItem().ShouldBe("USER-DEFINED");
+    }
+
+    [Fact(DisplayName = "Given the aligned migration, when the column type is inspected, then it is vector(1536) — the knowledge schema's dimension")]
+    public async Task PinEmbeddingColumnToTheKnowledgeDimensionAsync()
+    {
+        var types = await QuerySingleColumnAsync(
+            $"SELECT format_type(a.atttypid, a.atttypmod) FROM pg_attribute a "
+            + $"JOIN pg_class c ON c.oid = a.attrelid "
+            + $"JOIN pg_namespace n ON n.oid = c.relnamespace "
+            + $"WHERE n.nspname = '{MemoryDatabase.Schema}' AND c.relname = '{MemoryDatabase.MemoryFacts}' AND a.attname = 'embedding'");
+
+        types.ShouldHaveSingleItem().ShouldBe($"vector({MemoryFactPolicy.EmbeddingDimensions})");
+    }
+
+    [Fact(DisplayName = "Given the aligned migration, when indexes are inspected, then the ivfflat cosine ANN index exists with small-table lists")]
+    public async Task CreateIvfflatEmbeddingIndexAsync()
+    {
+        var definitions = await QuerySingleColumnAsync(
+            $"SELECT indexdef FROM pg_indexes WHERE schemaname = '{MemoryDatabase.Schema}' AND tablename = '{MemoryDatabase.MemoryFacts}'");
+
+        definitions.ShouldContain(static definition => definition.Contains("ix_memory_facts_embedding_ivfflat")
+            && definition.Contains("ivfflat")
+            && definition.Contains("vector_cosine_ops")
+            // pg_indexes renders the reloption quoted: WITH (lists='50')
+            && definition.Contains("lists='50'"));
     }
 
     [Fact(DisplayName = "Given migrated memory_facts, when indexes are inspected, then the partial unique active-topic index exists")]
@@ -217,7 +243,7 @@ public sealed class MemoryMigrationsShould : IAsyncLifetime
             embedding);
     }
 
-    /// <summary>A deterministic 768-dim vector: the basis axis plus an optional tilt into the next axis.</summary>
+    /// <summary>A deterministic policy-dimension vector: the basis axis plus an optional tilt into the next axis.</summary>
     private static float[] Vector(int tiltAxis, float tiltAmount)
     {
         var vector = new float[MemoryFactPolicy.EmbeddingDimensions];

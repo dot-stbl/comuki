@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using Comuki.Host.Testing;
 using Comuki.Modules.Identity.Application.Users;
-using Comuki.Modules.Memory.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -94,12 +93,6 @@ public sealed class SmokeHostServer : IAsyncLifetime
         builder.Configuration["Proxy:VirtualKeys:0:Provider"] = "openai";
         builder.Configuration["Proxy:VirtualKeys:0:BaseUrl"] = "http://127.0.0.1:1";
         builder.Configuration["Proxy:VirtualKeys:0:ApiKeyEnvRef"] = "SMOKE_PROXY_KEY";
-
-        // Composition gap: HostComposer does not register Memory
-        // persistence; only the Brain host does. The chat/memory path
-        // needs IDbContextFactory<MemoryDbContext> to resolve — wire
-        // it here so the smoke run exercises the full pipeline.
-        builder.Services.AddMemoryPersistence(connectionString);
 
         application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
         BaseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);

@@ -1,3 +1,4 @@
+using Comuki.Modules.Memory.Domain.Facts;
 using Comuki.Modules.Memory.Domain.Facts.Kinds;
 using Comuki.Modules.Memory.Domain.Facts.Scopes;
 using Comuki.Modules.Memory.Domain.Facts.Sources;
@@ -19,6 +20,12 @@ namespace Comuki.Modules.Memory.Application.Ports;
 /// <param name="Source">How the fact entered memory.</param>
 /// <param name="CreatedBy">Who wrote it (user id, run id or a system label).</param>
 /// <param name="Embedding">Optional query-time-ready vector; null leaves the column empty.</param>
+/// <param name="CreatedAt">
+/// Optional creation-time override — the custom-TTL path backdates an
+/// ephemeral fact (see <see cref="MemoryFactPolicy.EphemeralCreatedAt"/>)
+/// so the fixed-horizon sweep expires it on schedule. Null = the store
+/// clock's now.
+/// </param>
 public sealed record MemoryFactWrite(
     MemoryScope Scope,
     string SubjectId,
@@ -27,4 +34,5 @@ public sealed record MemoryFactWrite(
     string Text,
     MemorySource Source,
     string CreatedBy,
-    float[]? Embedding = null);
+    float[]? Embedding = null,
+    DateTimeOffset? CreatedAt = null);

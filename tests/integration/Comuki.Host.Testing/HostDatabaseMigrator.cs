@@ -29,6 +29,6 @@ public static class HostDatabaseMigrator
     /// <param name="cancellationToken">Cooperative cancellation.</param>
     public static async Task MigrateAllAsync(string connectionString, CancellationToken cancellationToken)
     {
-        _ = await ComukiDatabaseMigrator.EnsureAllAsync(connectionString, cancellationToken);
+        await ComukiDatabaseMigrator.EnsureAllAsync(connectionString, cancellationToken);
     }
 }

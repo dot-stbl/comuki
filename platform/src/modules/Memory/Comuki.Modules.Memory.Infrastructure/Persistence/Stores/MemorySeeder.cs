@@ -65,6 +65,11 @@ public static class MemorySeeder
         var superseded = 0;
         var unchanged = 0;
 
+        // One timestamp for the whole pass: a superseding upgrade writes
+        // superseded_at == the replacement's created_at — the two rows
+        // read as one atomic fact change.
+        var now = DateTimeOffset.UtcNow;
+
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
@@ -74,7 +79,7 @@ public static class MemorySeeder
         {
             if (await FindActiveAsync(connection, transaction, fact.TopicKey, cancellationToken) is not { } active)
             {
-                await InsertAsync(connection, transaction, fact.TopicKey, fact.Text, cancellationToken);
+                await InsertAsync(connection, transaction, fact.TopicKey, fact.Text, now, cancellationToken);
                 written++;
             }
             else if (active.Text == fact.Text)
@@ -83,8 +88,8 @@ public static class MemorySeeder
             }
             else
             {
-                await SupersedeAsync(connection, transaction, active.Id, cancellationToken);
-                await InsertAsync(connection, transaction, fact.TopicKey, fact.Text, cancellationToken);
+                await SupersedeAsync(connection, transaction, active.Id, now, cancellationToken);
+                await InsertAsync(connection, transaction, fact.TopicKey, fact.Text, now, cancellationToken);
                 superseded++;
             }
         }
@@ -116,6 +121,7 @@ public static class MemorySeeder
         NpgsqlTransaction transaction,
         string topicKey,
         string text,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
@@ -129,7 +135,7 @@ public static class MemorySeeder
         command.Parameters.AddWithValue("text", text.Trim());
         command.Parameters.AddWithValue("source", MemorySourceKeys.Seeder);
         command.Parameters.AddWithValue("createdBy", "seeder");
-        command.Parameters.AddWithValue("now", DateTimeOffset.UtcNow);
+        command.Parameters.AddWithValue("now", now);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
@@ -138,13 +144,14 @@ public static class MemorySeeder
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         Guid supersededId,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = SupersedeSql;
         command.Parameters.AddWithValue("id", supersededId);
-        command.Parameters.AddWithValue("now", DateTimeOffset.UtcNow);
+        command.Parameters.AddWithValue("now", now);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
     }

@@ -7,7 +7,7 @@ import { queryClient, wireUnauthorizedRedirect } from "@/app/query-client"
 import { RealtimeProvider } from "@/app/realtime-provider"
 import { router } from "@/app/router"
 import { useAuthState } from "@/domains/auth"
-import { PROJECTS_SEED } from "@/shared/api/mock"
+import { useSessionProjects } from "@/domains/projects/api/queries"
 import { SIGNED_OUT_USER } from "@/shared/api/mock/auth.store"
 import { SessionProvider } from "@/shared/session"
 
@@ -59,9 +59,14 @@ export interface AppProvidersProps {
  */
 function AuthBoot({ children }: { children: ReactNode }) {
   const { user } = useAuthState()
+  /* The projects the session offers are mode-gated, not seeded into both:
+      mock keeps the fictional three, real fetches the registry from the
+      host and arrives empty-first — a synchronous session contract with an
+      honest "no projects to pick yet" while the round trip is out. */
+  const projects = useSessionProjects()
 
   return (
-    <SessionProvider user={user ?? SIGNED_OUT_USER} projects={PROJECTS_SEED}>
+    <SessionProvider user={user ?? SIGNED_OUT_USER} projects={projects}>
       {/* The socket half of live: starts with a resolved real-mode session,
           stops with a dead one, and turns hub events into invalidation. It
           sits inside the query client (it invalidates) and inside the

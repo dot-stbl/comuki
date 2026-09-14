@@ -5,6 +5,7 @@ import {
   mapProjectSettingsViewToSettings,
   mapProjectViewToDetail,
   mapProjectsPageToSummaries,
+  mapProjectViewsToProjectRefs,
   toProjectRow,
 } from "@/domains/projects/api/mappers"
 import type {
@@ -18,9 +19,11 @@ import { getApiV1ProjectsProjectid } from "@/shared/api/_generated/clients/getAp
 import { getApiV1ProjectsProjectidCosts } from "@/shared/api/_generated/clients/getApiV1ProjectsProjectidCosts"
 import { getApiV1ProjectsProjectidSettings } from "@/shared/api/_generated/clients/getApiV1ProjectsProjectidSettings"
 import { COST_SEED } from "@/shared/api/mock/cost.seed"
+import { PROJECTS_SEED } from "@/shared/api/mock/session.seed"
 import { listSeedProjects } from "@/shared/api/mock/projects.store"
 import { listSeedRuns } from "@/shared/api/mock/runs.store"
 import { env } from "@/shared/config/env"
+import type { ProjectRef } from "@/shared/session"
 
 export const projectsQueryKey = ["projects"] as const
 export const projectQueryKey = (projectId: string) =>
@@ -158,4 +161,41 @@ export function useProjectCostsQuery(projectId: string) {
     queryFn: () => getProjectCosts(projectId),
     enabled: projectId.length > 0,
   })
+}
+
+/**
+ * The session's own read of the registry, separate from the projects
+ * screen's heavier one on purpose.
+ *
+ * `useSessionProjects` is mounted above every screen in the product (inside
+ * the auth boot), so it answers synchronously and never suspends: mock mode
+ * hands back the seed untouched, real mode returns the query's answer or an
+ * empty list until one arrives — a session whose projects have not landed
+ * yet is a session that offers no project to pick, which is honest rather
+ * than broken. The narrow key means the boot's fetch and the screen's
+ * `projectsQueryKey` fetch are two reads of one endpoint, and the cache
+ * keeps them from being two round trips when they race.
+ */
+export const sessionProjectsQueryKey = ["session-projects"] as const
+
+async function loadSessionProjects(): Promise<ProjectRef[]> {
+  // The endpoint is untyped on the wire (`any` — no response schema in the
+  // host's document yet), and the hand-written mapper below is the
+  // established pattern for that: the shape it expects is declared where it
+  // is mapped, as it is for the identity screen's projects registry.
+  const views = await getApiV1Projects({ includeArchived: false })
+  return mapProjectViewsToProjectRefs(views)
+}
+
+export function useSessionProjects(): ProjectRef[] {
+  const query = useQuery({
+    queryKey: sessionProjectsQueryKey,
+    queryFn: loadSessionProjects,
+    enabled: !env.useMock,
+  })
+
+  if (env.useMock) {
+    return PROJECTS_SEED
+  }
+  return query.data ?? []
 }

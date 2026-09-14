@@ -26,7 +26,7 @@ namespace Comuki.Host.Brain.Brain;
 public static class BrainSecretsInstaller
 {
     /// <summary>
-    /// Extension entry point. Matches the <c>HostComposer.Compose</c>
+    /// Extension entry point. Matches the <c>HostComposer.ComposeAsync</c>
     /// ordering: root <see cref="SecretsOptions"/> + per-provider sub-
     /// sections (<see cref="FileSecretOptions"/>, <see cref="VaultSecretOptions"/>)
     /// bound first with <c>ValidateOnStart</c>; the composite resolver

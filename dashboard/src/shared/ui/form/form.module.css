@@ -97,6 +97,37 @@
   border-color: var(--st-failed);
 }
 
+/* A control with a rider ------------------------------------------------ */
+
+/* The box a control and its suffix share. The suffix is drawn inside the
+   control's own border at its end edge, on the number field's unit pattern:
+   something outside the box would read as a second field, and something
+   absent reads as a question. */
+.controlBox {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+/* Room for the rider so what is typed never runs under it. The rider is an
+   `icon-sm` control plus its inset and a breath, on top of the padding every
+   control already carries. */
+.controlWithSuffix {
+  padding-inline-end: calc(var(--h-button-sm) + var(--s3));
+}
+
+/* The rider itself: centred in the control's height, pinned to the end edge.
+   Vertically centred because this is a one-row element and the row's
+   alignment is the box's own. */
+.controlSuffix {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: var(--s1);
+  display: flex;
+  align-items: center;
+}
+
 /* A label that names the control without painting anything. Same technique as
    the choice input: off-screen rather than `display: none`, so the label keeps
    pointing at the control and clicking it still focuses the control. */
@@ -423,6 +454,7 @@
    the way a failure notice is — a band, not a card. */
 .notice {
   display: flex;
+  align-items: center;
   gap: var(--s3);
   margin: 0;
   padding: var(--s3) var(--s4);
@@ -439,7 +471,6 @@
   inline-size: var(--icon-sm);
   block-size: var(--icon-sm);
   flex: 0 0 auto;
-  margin-block-start: var(--s1);
   color: var(--st-waiting);
 }
 

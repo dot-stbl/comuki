@@ -9,7 +9,7 @@ namespace Comuki.Architecture.Tests;
 /// Infrastructure wires the YARP pipeline + the auth handler. Neither
 /// layer reaches into the engine, the hosts, or any sibling module
 /// — proxy metering is a host-composed Contracts surface (the budget
-/// gate is wired in <see cref="Host.HostComposer.Compose"/>, the
+/// gate is wired in <see cref="Host.HostComposer.ComposeAsync"/>, the
 /// single composition method production and integration tests both boot
 /// from).
 /// </summary>

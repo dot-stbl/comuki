@@ -38,6 +38,24 @@ public sealed class ScopeGuardTests
     /// </summary>
     private static readonly HashSet<Type> exemptFromQueryFilter = [];
 
+    /// <summary>
+    /// Raw-ADO types with a documented reason they need no
+    /// <c>ISubjectScopeAccessor</c> dependency:
+    /// <list type="bullet">
+    ///   <item><c>MemorySeeder</c> — the boot-time platform self-knowledge
+    ///     writer. It reads and writes only global-scope rows
+    ///     (<c>scope='global'</c>, <c>subject_id='global'</c>,
+    ///     <c>platform.*</c> topic keys) — global rows are visible to
+    ///     every subject by the scope filters' own semantics, so there is
+    ///     no per-subject row the seeder could leak or misread; it never
+    ///     touches user/project rows.</item>
+    /// </list>
+    /// </summary>
+    private static readonly HashSet<string> exemptFromScopeGuard =
+    [
+        "Comuki.Modules.Memory.Infrastructure.Persistence.Stores.MemorySeeder",
+    ];
+
     /// <summary>Every DbContext type in the solution, named explicitly (see class remarks on why this can't be a pure assembly scan).</summary>
     private static readonly Type[] allDbContextTypes =
     [
@@ -115,8 +133,8 @@ public sealed class ScopeGuardTests
         var knowledge = CheckAssembly(typeof(Modules.Knowledge.Infrastructure.Persistence.KnowledgeDbContext).Assembly);
         var memory = CheckAssembly(typeof(Modules.Memory.Infrastructure.Persistence.MemoryDbContext).Assembly);
 
-        Assert.True(knowledge.IsSuccessful, Failing(knowledge));
-        Assert.True(memory.IsSuccessful, Failing(memory));
+        AssertNoUnexemptedFailures(knowledge);
+        AssertNoUnexemptedFailures(memory);
 
         static NetArchTest.Rules.TestResult CheckAssembly(System.Reflection.Assembly assembly)
         {
@@ -131,10 +149,15 @@ public sealed class ScopeGuardTests
                 .GetResult();
         }
 
-        static string Failing(NetArchTest.Rules.TestResult result)
+        static void AssertNoUnexemptedFailures(NetArchTest.Rules.TestResult result)
         {
-            return "Raw-ADO type(s) with no ISubjectScopeAccessor dependency: "
-                + string.Join(", ", result.FailingTypeNames ?? []);
+            var unexempted = (result.FailingTypeNames ?? [])
+                .Where(static name => !exemptFromScopeGuard.Contains(name))
+                .ToList();
+
+            Assert.True(
+                unexempted.Count == 0,
+                "Raw-ADO type(s) with no ISubjectScopeAccessor dependency: " + string.Join(", ", unexempted));
         }
     }
 

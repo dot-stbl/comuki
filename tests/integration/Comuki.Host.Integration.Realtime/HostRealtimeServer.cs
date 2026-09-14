@@ -53,7 +53,7 @@ public sealed class HostRealtimeServer : IAsyncLifetime
         // The realtime suite's HubException assertions expect stack frames
         // in the message — the production gate in AddComukiRealtime would
         // turn them off (issue #19). Flip the test-only opt-in here, before
-        // HostComposer.Compose builds the SignalR options.
+        // HostComposer.ComposeAsync builds the SignalR options.
         detailedErrorsPreviouslySet = Environment.GetEnvironmentVariable(RealtimeExtensions.DetailedErrorsEnvVar) is { } already
             && string.Equals(already, "true", StringComparison.Ordinal);
         Environment.SetEnvironmentVariable(RealtimeExtensions.DetailedErrorsEnvVar, "true");
@@ -71,7 +71,7 @@ public sealed class HostRealtimeServer : IAsyncLifetime
         TestBootstrapAdmin.Configure(builder.Configuration);
         TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
 
-        application = HostComposer.Compose(builder, HostDatabase.Explicit(connectionString));
+        application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(connectionString));
         baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
 
         await HostRealtimeBootstrap.CreateMemberAccountAsync(application.Services);

@@ -47,7 +47,7 @@
 
 .title {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--s2);
   margin: 0;
   min-inline-size: 0;

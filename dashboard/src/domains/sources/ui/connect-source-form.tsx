@@ -5,6 +5,7 @@ import { Loader2, PlugZap } from "lucide-react"
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
 import {
   CONNECTABLE_PROVIDERS,
+  effectiveAuth,
   needsBaseUrl,
   targetLabel,
   targetPlaceholder,
@@ -18,9 +19,18 @@ import {
   type SecretReferenceDraft,
   type TestDraftInput,
 } from "@/domains/sources/api/mutations"
+import { ConnectionFields } from "@/domains/sources/ui/connection-fields"
+import { providerCardOptions } from "@/domains/sources/ui/provider-card-options"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
 import { env } from "@/shared/config/env"
-import { Button, Notice, SelectField, TextField, Tooltip } from "@/shared/ui"
+import {
+  Button,
+  Notice,
+  ProviderCards,
+  SelectField,
+  TextField,
+  Tooltip,
+} from "@/shared/ui"
 
 // The domain's one spinner, shared with the row-level test and the source
 // page's own probe so all three readings of "probing" are the same mark.
@@ -57,6 +67,9 @@ export interface ConnectSourceFormProps {
  * worked before the host was changed is not evidence about the host
  * that is there now. `disabled` and not `denied` — an untested form is
  * *invalid*, not forbidden, and the two states must not look alike.
+ * The probe's glyph rides inside the base url's own box where there is
+ * one, so "the url and test it" is one control; where the provider has
+ * no instance to name, it stands at the head of its answer instead.
  *
  * The mock path still asks the operator to type a literal secret because
  * there is no env-var layer in mock mode; the literal value is held by
@@ -98,22 +111,26 @@ export function ConnectSourceForm({
      drop the one that did. */
   const [touched, setTouched] = useState(false)
 
+  /* Derived at render, not corrected by an effect: changing the provider
+     must not be able to leave the form holding a credential the new
+     connector cannot use, and an effect that fixed it afterwards would
+     fire in whatever order React felt like. See `effectiveAuth`. */
+  const effective = effectiveAuth(kind, auth)
   const wantsHost = needsBaseUrl(kind)
-  const settingsJson = JSON.stringify({
-    auth,
-    account: account.trim(),
-    baseUrl: wantsHost ? baseUrl.trim() : "",
-  })
-
   const draft: SecretReferenceDraft = {
     projectId,
     kind,
     name: name.trim(),
-    auth,
+    auth: effective,
     account: account.trim(),
     baseUrl: wantsHost ? baseUrl.trim() : "",
     secretEnvRef: secretEnvRef.trim(),
   }
+  const settingsJson = JSON.stringify({
+    auth: effective,
+    account: account.trim(),
+    baseUrl: draft.baseUrl,
+  })
 
   const projectKey = projectOf(session, projectId)?.key
   const denied = can(session, "sources.edit", projectId)
@@ -142,6 +159,36 @@ export function ConnectSourceForm({
 
   const tested = probe?.ok === true
 
+  /* Two words became a glyph, so this is the same mark the row-level test
+     wears and the tooltip carries the words it lost. `disabled` rather than
+     `denied`: an incomplete draft is nothing to ask the provider about,
+     which is invalid rather than forbidden. */
+  const probeControl = (
+    <Tooltip content="Test connection">
+      <Button
+        variant="outline"
+        size="icon-sm"
+        data-test="connect-test"
+        disabled={!complete || probing || busy}
+        aria-busy={probing || undefined}
+        aria-label="Test connection"
+        onClick={() =>
+          onTest({
+            draft,
+            secretEnvRef: draft.secretEnvRef,
+            mockSecret,
+          })
+        }
+      >
+        {probing ? (
+          <Loader2 className={tableStyles.spin} aria-hidden="true" />
+        ) : (
+          <PlugZap aria-hidden="true" />
+        )}
+      </Button>
+    </Tooltip>
+  )
+
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (denied || busy || !complete || !tested) {
@@ -153,17 +200,15 @@ export function ConnectSourceForm({
   return (
     <FormLayout data-test="connect-source" onSubmit={submit}>
       <FormFields>
-        <SelectField
-          id="connect-kind"
+        <ProviderCards
           label="provider"
+          name="connect-kind"
           value={kind}
           disabled={busy}
-          options={CONNECTABLE_PROVIDERS.map((provider) => ({
-            value: provider.key,
-            label: provider.label,
-          }))}
+          options={providerCardOptions(CONNECTABLE_PROVIDERS)}
           hint="native intake is not here: every project already has one, and there is nothing to point a credential at."
           data-test="connect-kind"
+          cardDataTest="connect-provider-card"
           onValueChange={edit(setKind)}
         />
 
@@ -174,7 +219,8 @@ export function ConnectSourceForm({
           disabled={busy}
           options={session.projects.map((project) => ({
             value: project.id,
-            label: `${project.key} · ${project.name}`,
+            label: project.name,
+            secondary: project.key,
           }))}
           hint="the project this source feeds. Editing sources is granted per project, so this choice is what the save answers to."
           data-test="connect-project"
@@ -192,41 +238,17 @@ export function ConnectSourceForm({
           onValueChange={edit(setName)}
         />
 
-        {wantsHost ? (
-          <TextField
-            id="connect-base-url"
-            label="base url"
-            value={baseUrl}
-            disabled={busy}
-            placeholder="https://git.example.internal"
-            spellCheck={false}
-            hint="self-hosted only. https, because the credential crosses this wire."
-            data-test="connect-base-url"
-            onValueChange={edit(setBaseUrl)}
-          />
-        ) : null}
-
-        <SelectField
-          id="connect-auth"
-          label="auth kind"
-          value={auth}
+        <ConnectionFields
+          idPrefix="connect"
+          kind={kind}
+          auth={effective}
+          baseUrl={baseUrl}
+          account={account}
           disabled={busy}
-          options={AUTH_OPTIONS}
-          hint="what the connector accepts. Stored verbatim in the settings json; never holds a credential."
-          data-test="connect-auth"
-          onValueChange={(next: string) => edit(setAuth)(next as SourceAuth)}
-        />
-
-        <TextField
-          id="connect-account"
-          label="account"
-          value={account}
-          disabled={busy}
-          placeholder="the bot or app the credential belongs to"
-          spellCheck={false}
-          hint="shown on the row afterwards, so a stale credential can be traced to a person."
-          data-test="connect-account"
-          onValueChange={edit(setAccount)}
+          urlSuffix={probeControl}
+          onBaseUrlChange={edit(setBaseUrl)}
+          onAuthChange={edit(setAuth)}
+          onAccountChange={edit(setAccount)}
         />
 
         <Notice data-test="settings-preview">
@@ -268,36 +290,14 @@ export function ConnectSourceForm({
           </>
         ) : null}
 
-        <div className={styles.probe}>
-          {/* Two words became a glyph, so this is the same mark the row-level
-              test wears and the tooltip carries the words it lost. `disabled`
-              rather than `denied`: an incomplete draft is nothing to ask the
-              provider about, which is invalid rather than forbidden. */}
-          <span className={styles.probeControl}>
-            <Tooltip content="Test connection">
-              <Button
-                variant="outline"
-                size="icon"
-                data-test="connect-test"
-                disabled={!complete || probing || busy}
-                aria-busy={probing || undefined}
-                aria-label="Test connection"
-                onClick={() =>
-                  onTest({
-                    draft,
-                    secretEnvRef: draft.secretEnvRef,
-                    mockSecret,
-                  })
-                }
-              >
-                {probing ? (
-                  <Loader2 className={tableStyles.spin} aria-hidden="true" />
-                ) : (
-                  <PlugZap aria-hidden="true" />
-                )}
-              </Button>
-            </Tooltip>
-          </span>
+        <div className={styles.probe} data-test="probe">
+          {/* Where the provider has an instance to name, the probe's glyph
+              rides inside the base url's box and does not stand here; where
+              it does not, this row is where the operator finds it. Either
+              way there is one control and one answer under it. */}
+          {wantsHost ? null : (
+            <span className={styles.probeControl}>{probeControl}</span>
+          )}
 
           <span className={styles.probeAnswer}>
             {probe ? (
@@ -337,9 +337,3 @@ export function ConnectSourceForm({
     </FormLayout>
   )
 }
-
-const AUTH_OPTIONS = [
-  { value: "pat", label: "personal access token" },
-  { value: "oauth", label: "oauth grant" },
-  { value: "app-install", label: "app install" },
-]

@@ -23,6 +23,14 @@ export const CLEAR_KEY = "__clear"
 export interface SelectOption {
   value: string
   label: string
+  /**
+   * A muted second line on the row — the short key a long name answers to.
+   *
+   * The closed trigger shows the primary line only; the open list is where
+   * the two-line reading belongs, because that is where the options are
+   * being told apart.
+   */
+  secondary?: string
 }
 
 export interface SelectProps {
@@ -192,7 +200,17 @@ export function Select({
               className={styles.option}
               textValue={option.label}
             >
-              {option.label}
+              <span className={styles.optionLabel}>{option.label}</span>
+              {option.secondary ? (
+                /* Hidden from the name computation rather than only from
+                   sight: React Aria renders the selected item's children on
+                   the trigger as well as the row, and the trigger's labelled
+                   name is the primary line's alone. The row's own name is its
+                   `textValue`, which the secondary never joins. */
+                <span className={styles.optionSecondary} aria-hidden="true">
+                  {option.secondary}
+                </span>
+              ) : null}
             </ListBoxItem>
           ))}
         </ListBox>

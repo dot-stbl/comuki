@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   KeyRound,
   Loader2,
-  PlugZap,
   RotateCw,
   Unplug,
 } from "lucide-react"
@@ -109,18 +108,22 @@ export interface SourceDetailPageProps {
  * creation of a different entity, gated on a different permission, and it went
  * to `/sources/$sourceId/ticket/new` instead.
  *
- * ## What is up in the header and what is down in a footer
+ * ## What is up in the header and what is down in a form
  *
- * The badge, the probe and the disconnect act on **the record**. The two
- * footers act on **a draft**. Mixing them would put "disconnect" beside "save",
- * and disconnecting is not a way of saving something. So the record's acts ride
+ * The badge and the disconnect act on **the record**. The two footers act on
+ * **a draft**. Mixing them would put "disconnect" beside "save", and
+ * disconnecting is not a way of saving something. So the record's acts ride
  * in `PageHeader`'s actions slot, where they are visible whichever form is
  * being filled in.
  *
- * There is exactly one probe on this screen, in the header, and the connection
- * form reads its answer. A second test button beside the save would ask the
- * provider the same question and give the operator two places to read one
- * answer.
+ * There is exactly one probe on this screen, and it lives inside the
+ * connection form's base url box — "the url and test it" is one control,
+ * and the form reads its own answer. It still acts on the record rather
+ * than the draft (there is no endpoint that would take both at once); a
+ * second test button anywhere else would ask the provider the same
+ * question and give the operator two places to read one answer. Native
+ * has no connection region and so no probe, which is the honest shape:
+ * there is nothing there to reach.
  *
  * ## What this page is not
  *
@@ -141,7 +144,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
   const updateConnection = useUpdateConnection()
   const rotateSecret = useRotateSecretMutation()
 
-  /** The header probe's last answer, dropped the moment a detail changes. */
+  /** The probe's last answer, dropped the moment a detail changes. */
   const [probe, setProbe] = useState<ProbeResult | null>(null)
   const [watchDirty, setWatchDirty] = useState(false)
   const [connectionDirty, setConnectionDirty] = useState(false)
@@ -281,7 +284,6 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     }
     testConnection.mutate(connection.id, { onSuccess: setProbe })
   }
-
   const onSaveWatch = (patch: {
     enabled: boolean
     filter: string
@@ -304,8 +306,15 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         ...patch,
       },
       {
-        onSuccess: () =>
-          toast.success("Watch saved", { description: connection.name }),
+        onSuccess: () => {
+          /* The guard's question is answered the moment the save is
+             accepted — not a refetch later. The form's own dirty flag will
+             agree once the invalidated snapshot re-renders it, but between
+             the two there is a window where a departure would be asked
+             about a save that already landed. */
+          setWatchDirty(false)
+          toast.success("Watch saved", { description: connection.name })
+        },
       }
     )
   }
@@ -322,8 +331,13 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     updateConnection.mutate(
       { connectionId: connection.id, ...patch },
       {
-        onSuccess: () =>
-          toast.success("Connection saved", { description: connection.name }),
+        onSuccess: () => {
+          // The same early answer the watch save gives the guard: the
+          // departure question is settled when the save is accepted, not a
+          // refetch later.
+          setConnectionDirty(false)
+          toast.success("Connection saved", { description: connection.name })
+        },
       }
     )
   }
@@ -375,29 +389,31 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     <FormPage
       title={connection.name}
       crumbs={crumbs}
-      summary={`${providerLabel(connection.kind)} · ${projectKey} · ${connectionNote(connection, tickets)}`}
+      /* Three facts, structured rather than dot-joined: the provider names
+         the connection's dialect, the key names whose project it feeds, and
+         the note says where it stands. Spacing and weight separate them, not
+         a separator glyph — a summary is a label the operator scans, and a
+         scan reads structure faster than punctuation. */
+      summary={
+        <span className={styles.summaryBits} data-test="source-summary">
+          <span className={styles.summaryProvider}>
+            {providerLabel(connection.kind)}
+          </span>
+          <span className={styles.summaryKey}>{projectKey}</span>
+          <span className={styles.summaryNote}>
+            {connectionNote(connection, tickets)}
+          </span>
+        </span>
+      }
       actions={
         <>
           <ConnectionStateBadge state={connection.state} />
 
-          <Tooltip content={editDenial ?? "Test connection"}>
-            <Button
-              size="icon-sm"
-              variant="outline"
-              data-test="source-test"
-              denied={editDenial}
-              disabled={testing}
-              aria-busy={testing || undefined}
-              aria-label={`Test the connection to ${connection.name}`}
-              onClick={onTest}
-            >
-              {testing ? (
-                <Loader2 className={tableStyles.spin} aria-hidden="true" />
-              ) : (
-                <PlugZap aria-hidden="true" />
-              )}
-            </Button>
-          </Tooltip>
+          {/* The record's probe no longer rides in the header: it moved into
+              the connection region, inside the base url's box, so "the url
+              and test it" reads as one control. Still one probe on the page,
+              still acting on the record rather than the draft — see
+              `ConnectionForm`. */}
 
           <Tooltip content={disconnectDenial ?? "Disconnect"}>
             <Button
@@ -570,6 +586,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
             probe={probe}
             probing={testing}
             busy={updateConnection.isPending}
+            onTest={onTest}
             onDraftChange={dropProbe}
             onSave={onSaveConnection}
             onDirtyChange={setConnectionDirty}

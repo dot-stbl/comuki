@@ -1,7 +1,7 @@
-/* Where a task came from, asked as a row of provider cards.
+/* A closed set asked as a row of cards.
  *
  * The construction is ChoiceField's, scaled up for content that earns the
- * room: a brand mark, a name and a line per option. The kit's own selected-box
+ * room: a mark, a name and a line per option. The kit's own selected-box
  * language — a brand border, a 10% wash, and a check reserved on every card —
  * with one addition the bigger box asked for: the selected border carries its
  * *weight* in the same hue, drawn as an inset ring rather than a second
@@ -19,12 +19,32 @@
   padding: 0;
 }
 
+/* The kit's field-label voice, spelled here the way the priority segments
+   spell it: same family, size, weight and tracking as every other field's
+   label, so the run from this label to its cards measures like the run from
+   any label to its control. */
+.label {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* The rule the operator cannot see by looking at the cards. Same voice as
+   every other field's hint. */
+.hint {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
 /* Wraps rather than crushes, the Shape-Not-Reading Rule: a card that lost its
    line to a narrow column would be a mark and a name guessing at a meaning.
    The floor is wide enough for the longest note at two lines, which is the
-   length the model's copy was written against — and on the full-width form
-   page it is what lets all five providers sit on one row before any of them
-   starts stretching. */
+   length the copy is written against — and on a full-width form page it is
+   what lets every card sit on one row before any of them starts stretching. */
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
@@ -76,7 +96,7 @@
    pixel would push every card's content by one, and a selection that moves
    the text under it reads as a jump rather than a state. Hard-edged, no
    blur, no offset outward: this is a thicker border, not a depth cue and not
-   the No-Halo Rule's glow. */
+   a glow. */
 .cardSelected {
   border-color: var(--brand);
   background: color-mix(in oklab, var(--brand) 10%, transparent);
@@ -89,10 +109,10 @@
     0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
 }
 
-/* The provider's own mark at the top of the icon scale: these cards are the
-   one place a mark is the content rather than a passenger, and the scale's
-   largest step is still under the name beside it, as the Icon-Rides-The-
-   Control Rule wants. */
+/* The mark's slot: the height of the icon scale's largest step, so a mark
+   standing alone and a card with no mark keep one rhythm, and the caller's
+   mark sits exactly where the kit's own scale puts it. Muted until chosen,
+   because a mark is a recognition cue and the selection is what speaks. */
 .mark {
   display: flex;
   align-items: center;
@@ -104,15 +124,8 @@
   color: var(--text);
 }
 
-.brand {
-  /* A kit control sizes its own icons; nothing here hands one a width. */
-  inline-size: var(--icon-lg);
-  block-size: var(--icon-lg);
-}
-
-/* The provider's name, in the data voice a control label takes. Only the
-   cards whose mark does not say the name carry it — see the `selfNaming`
-   rule in the component. */
+/* The card's drawn name, in the data voice a control label takes. Only the
+   cards whose mark does not say the name carry it — the caller decides. */
 .name {
   font-family: var(--font-data);
   font-size: var(--t-xs);

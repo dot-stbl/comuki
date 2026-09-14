@@ -43,7 +43,7 @@
 
 .head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--s4);
   min-width: 0;
   margin: 0;

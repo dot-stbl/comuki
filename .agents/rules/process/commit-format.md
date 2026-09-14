@@ -145,6 +145,11 @@ update stuff                                 ← не описательно
 [`scripts/commit-lint.mjs`](../../../scripts/commit-lint.mjs) через хук
 `commit-msg` (см. [`pre-commit.md`](pre-commit.md) — установка и обход).
 
+**Merge commits — exempt.** `Merge branch …` (от git) и ручной
+`merge(<scope>): …` (legacy, без `[.stbl]` prefix) проходят мимо правила.
+Current form `[.stbl] merge(<scope>): …` линтится обычным порядком
+(`merge` есть в `COMMIT_TYPES`).
+
 | Что | Поведение хука |
 |-----|----------------|
 | Кривой subject | **Hard fail** — коммит не проходит, в stderr subject, список проблем и шпаргалка по формату |

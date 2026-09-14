@@ -39,16 +39,18 @@
 /* The seven sections, on the hairline that separates them from their content —
    the same one-pixel rule the topbar sits on. Not a segmented control, not a
    row of pills: this is chrome, and chrome here is built from a rule. Seven is
-   more than three, so the inter-tab spacing sits at `--s5` rather than the
-   `--s6` the shorter strips use — one step tighter so all seven sit on one
-   line at the standard viewport. The `overflow-x` is the safety net for the
+   more than three, so this strip is tighter than the shorter ones: gap
+   `--s4` (one step tighter than the `--s5` the shorter strips use) and no
+   inline padding — the surrounding `.screen` already gives the strip its
+   left and right breathing room, doubling it would push the strip past the
+   panel on standard viewports. The `overflow-x` is the safety net for the
    operator who shrinks the window further: scroll sideways rather than crush
    the words — the shape-not-reading rule. */
 .tabList {
   display: flex;
   flex: 0 0 auto;
-  gap: var(--s5);
-  padding-inline: var(--page-x);
+  gap: var(--s4);
+  padding-inline: 0;
   border-block-end: var(--hairline) solid var(--rule);
   overflow-x: auto;
 }

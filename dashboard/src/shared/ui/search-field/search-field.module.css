@@ -1,0 +1,127 @@
+/* The kit's search field. One control, one job — narrow a list of things
+   by what the operator types.
+
+   Two surfaces use it today: the data table's toolbar (the promoted text
+   filter) and the knowledge screen's search (which the kit did not have
+   until this primitive landed). Both screens put a single field at the
+   top of a list, and both name the field through `aria-label` rather
+   than a visible `<label>` — a search is the operator's command, not a
+   form value, so it does not earn the field envelope.
+
+   `data-active` is the only state the chrome reads: a non-empty value
+   says "this filter is doing something", and the rule wears a brand tint
+   the way the select's active trigger does. The same voice across the
+   two controls, the same reading across the product.
+
+   `size` keeps the toolbar's denser height (`sm` = `--h-button-sm`, the
+   24px floor and no lower) and the form's standard height (`md` =
+   `--h-button-lg`). A control that changes height by reading changes
+   its reading; this one does not. */
+
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+/* The "sm" step is the toolbar's — a control an operator aims at with a
+   thumb. `md` is the form's step, the height every other field in the
+   form kit stands at. */
+.field {
+  block-size: var(--h-button-lg);
+}
+
+.sm {
+  block-size: var(--h-button-sm);
+}
+
+/* The icon at the start edge. Decoration around a value the input
+   already owns, so it is neither focusable nor announced. */
+.icon {
+  position: absolute;
+  inset-inline-start: var(--s3);
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+/* A real `type="search"`, so the browser gives it its clearing
+   affordance and assistive tech announces it as a search rather than as
+   one more text box. Same chrome as every other control: hairline rule,
+   surface fill, the same step the select's trigger wears. */
+.input {
+  inline-size: 100%;
+  block-size: 100%;
+  /* Room for the icon on the start edge and the clear button on the end
+     edge — both are inset by `--s3` from their respective edge, so the
+     padding has to be wide enough that neither one sits over a digit. */
+  padding-inline: calc(var(--s3) * 2 + var(--icon-sm)) var(--s8);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.input:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+/* A filter that is doing something says so with its own rule, the same
+   way the select's active trigger does — never with a coloured fill. */
+.input[data-active] {
+  border-color: color-mix(in oklab, var(--brand) 55%, var(--border));
+}
+
+/* The clear button on the right when the value is non-empty. A real
+   button so it is keyboard-reachable; the icon is decoration, not the
+   label. */
+.clear {
+  position: absolute;
+  inset-inline-end: var(--s2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: calc(var(--icon-sm) + var(--s2));
+  block-size: calc(var(--icon-sm) + var(--s2));
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.clear:hover {
+  color: var(--text);
+}
+
+.clear:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.clear:focus-visible {
+  outline: none;
+  color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.clearIcon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}

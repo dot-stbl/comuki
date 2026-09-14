@@ -105,6 +105,7 @@ export function mapProjectViewToDetail(view: ProjectView): ProjectRow {
     // ref picker, the mapper widens to a `${url}@${ref}` join.
     gitProfileRepo: view.profilesGitUrl,
     createdAt: view.createdAt,
+    archived: view.archived,
     activeRuns: 0,
     totalRuns: 0,
     spendToday: null,
@@ -123,21 +124,23 @@ export function mapProjectsPageToSummaries(views: ProjectView[]): ProjectRow[] {
 }
 
 /**
- * Wire list → the session's `ProjectRef[]`.
+ * Cached registry rows → the session's `ProjectRef[]`.
  *
- * The narrowest read of the registry there is: id, the key the operator
- * calls the project by (the wire's `slug`), and the name. The session hands
- * these to every permission sentence and every project pick on the product;
- * nothing heavier belongs in a context that lives above the query cache's
- * project screens.
+ * The projection the session hook runs over the shared `["projects"]`
+ * cache: id, the key the operator calls the project by (the row's
+ * `slug`), and the name. The session hands these to every permission
+ * sentence and every project pick on the product; nothing heavier
+ * belongs in a context that lives above the query cache's project
+ * screens. Archived rows are the caller's concern — the session hook
+ * filters them out before mapping.
  */
-export function mapProjectViewsToProjectRefs(
-  views: ProjectView[]
+export function mapProjectRowsToProjectRefs(
+  rows: ProjectRow[]
 ): ProjectRef[] {
-  return views.map((view) => ({
-    id: view.id,
-    key: view.slug,
-    name: view.name,
+  return rows.map((row) => ({
+    id: row.id,
+    key: row.slug,
+    name: row.name,
   }))
 }
 
@@ -267,6 +270,7 @@ export function toProjectRow(seed: SeedProject): ProjectRow {
     name: seed.name,
     gitProfileRepo: seed.gitProfileRepo,
     createdAt: seed.createdAt,
+    archived: false,
     activeRuns: 0,
     totalRuns: 0,
     spendToday: null,

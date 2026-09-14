@@ -99,6 +99,9 @@ builder.Services.AddSingleton<IBrainChatClientFactory, DefaultBrainChatClientFac
 // receive — the old bare AddSingleton(options) left them with an
 // unbound default, silently skipping the secret-ref resolution.
 builder.Services.AddBrainOptions(builder.Configuration, options);
+// Bare BrainOptions for direct-inject consumers (ControlPlaneProfileCatalog)
+// — same pinned instance, not a second resolution.
+builder.Services.AddSingleton(options);
 builder.Services.AddSingleton<IProfileCatalog, ControlPlaneProfileCatalog>();
 builder.Services.AddSingleton<IActiveRunCatalog, StubActiveRunCatalog>();
 builder.Services.AddSingleton<IExplorerReportReader, StubExplorerReportReader>();

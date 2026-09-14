@@ -220,7 +220,13 @@ function CustomCronEditor({
   onValueChange: (next: string) => void
   disabled: boolean
 }) {
-  const parsed = useMemo(() => parseCron(value), [value])
+  // `value` may be empty on first render (a brand-new schedule) — key the
+  // five selects and the preview off `DEFAULT_VALUE` in that case so all
+  // three views agree on first paint. The same wire `Daily at 03:00` writes.
+  const parsed = useMemo(
+    () => parseCron(value || DEFAULT_VALUE),
+    [value]
+  )
   const [minute, hour, dayOfMonth, month, dayOfWeek] = parsed
 
   function update(next: CronParts): void {
@@ -276,7 +282,12 @@ function CustomCronEditor({
       <span className={styles.preview} data-test={`${id}-preview`}>
         <span className={styles.previewLabel}>value</span>
         <code className={styles.previewValue}>
-          {value || "—"}
+          {/* The preview reads the parsed wire, not the raw `value` prop.
+             A new schedule's wire is empty, the five selects key off
+             `DEFAULT_PARTS`, and the preview used to show "—" while the
+             selects already said `0 3 * * *` — the desync the operator saw
+             on first render. Now all three say the same thing. */}
+          {parsed.join(" ")}
         </code>
       </span>
     </div>
@@ -319,6 +330,21 @@ function CronSelect({
 }
 
 type CronParts = [string, string, string, string, string]
+
+/**
+ * The cron string a brand-new schedule lands on.
+ *
+ * The five selects key off `parseCron(DEFAULT_VALUE)` when `value` is empty,
+ * and the preview shows the same string. A new operator sees one value, not
+ * five selects that disagree with a placeholder — the desync that happened
+ * when the preview rendered `value || "—"` while the selects rendered the
+ * parsed defaults.
+ *
+ * "0 3 * * *" is the same wire the `Daily at 03:00` preset writes — the one
+ * the field's own description calls "the project's quiet window". The
+ * default IS the preset; the two views agree because they are one value.
+ */
+const DEFAULT_VALUE = "0 3 * * *"
 
 const DEFAULT_PARTS: CronParts = ["0", "3", "*", "*", "*"]
 

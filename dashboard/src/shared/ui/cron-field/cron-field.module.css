@@ -1,0 +1,69 @@
+/* The cron field. The presets row is the kit's `ChoiceField` and wears the
+   same chrome — same border, same corner, same hairline — as every other
+   control in the form. The custom editor below it is five small `Select`s
+   standing on the same rhythm. */
+
+/* Stack — preset row, then optional custom editor. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-inline-size: 0;
+}
+
+/* The five-field editor — five cells in a row, the cron string on the end.
+   Wraps rather than crushes, the same way the form's other rows do. */
+.editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  align-items: flex-end;
+  min-inline-size: 0;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  /* Two digits wide, with room for the label — same minimum the controls
+     in `form` set. The preview grows to take the rest. */
+  flex: 1 1 5.5rem;
+  min-inline-size: 5.5rem;
+}
+
+.cellLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* The cron string the operator has assembled — drawn in mono so a digit is
+   a digit, and pinned to the right so the form's eye runs left-to-right
+   then lands on the value. */
+.preview {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: 2 1 9rem;
+  min-inline-size: 9rem;
+  padding-inline: var(--s3);
+  block-size: var(--h-button-sm);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--lane);
+}
+
+.previewLabel {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+.previewValue {
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text);
+}

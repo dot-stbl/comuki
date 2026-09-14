@@ -1,0 +1,179 @@
+/* The combobox. Same hairline and same surface as the select it sits beside —
+   one border, one corner, the same list height, so the two spellings of one
+   gesture read as one control in a form. */
+
+.root {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+/* Visually hidden but kept in the layout for the screen reader. The trigger
+   is a real button, not a styled `<div>` with `aria-haspopup`, so the label
+   can name it the way a `<label for>` names a field's input. */
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: calc(var(--hairline) * -1);
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The input and the button share one box, the way the select's trigger does:
+   the box is one chrome, the chevron sits at its end edge, and the typing
+   field is the thing it sits beside. */
+.root {
+  position: relative;
+}
+
+.input {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  block-size: var(--h-button-lg);
+  /* Room for the chevron button at the end edge — its width plus the padding
+     every other control carries. */
+  padding-inline-end: calc(var(--s3) + var(--icon-sm) + var(--s2));
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+.input:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.input:focus-visible,
+.input[data-focused] {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+}
+
+.input[aria-invalid="true"],
+.root[data-invalid] .input {
+  border-color: var(--st-failed);
+}
+
+.input:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+/* Toolbar density. 1.5rem is the same floor `--h-button-sm` holds everywhere:
+   WCAG 2.2's 24px target. */
+.sm .input,
+.inputSm {
+  block-size: var(--h-button-sm);
+}
+
+.trigger {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: calc(var(--icon-sm) + var(--s4));
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.trigger:hover {
+  color: var(--text);
+}
+
+.trigger[data-disabled] {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.icon {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  flex: 0 0 auto;
+}
+
+/* The list — same voice as the select's popover: one border, one raised
+   surface, the Modal shadow, and rows at the same height. `--trigger-width`
+   is React Aria's own measurement of the control it opened from, so the list
+   is never narrower than the value it is replacing. */
+.popover {
+  min-inline-size: var(--trigger-width);
+  padding: var(--s1);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-modal);
+}
+
+.listBox {
+  display: flex;
+  flex-direction: column;
+  max-block-size: 16rem;
+  overflow-y: auto;
+  outline: none;
+}
+
+.option {
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Keyboard focus and pointer hover land on the same reading — there is one
+   "this is the row you are on", however you got to it. */
+.option[data-focused],
+.option[data-hovered] {
+  background: var(--muted);
+  color: var(--text);
+}
+
+.option[data-selected] {
+  color: var(--brand);
+}
+
+.option[data-disabled] {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+/* A row that carries a second line. Label is the data voice; hint is the
+   interface voice, one step lighter, and the two do not compete. */
+.optionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.optionLabel {
+  color: inherit;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+}
+
+.optionHint {
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  white-space: normal;
+}

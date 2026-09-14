@@ -7,14 +7,15 @@ import {
   routingFormSchema,
   type RoutingFormValues,
 } from "@/domains/settings/model/routing-form"
+import { MODEL_LINEUP } from "@/shared/api/mock"
 import type { PermissionCheck } from "@/shared/session"
 import {
   Button,
+  ComboboxField,
   DataTable,
   DataTableToolbar,
   Notice,
   Section,
-  TextField,
   applyDataFilters,
   hasActiveFilters,
   type DataTableColumnSizing,
@@ -26,6 +27,15 @@ import {
 import { createRoutingColumns, getRouteId } from "./routing-columns"
 import styles from "./settings-panel.module.css"
 import tableStyles from "./settings-table.module.css"
+
+/**
+ * The closed list of model ids the routing form offers, with a `hint` line
+ * naming the vendor — so the operator can pick `lead-xl-2` without
+ * remembering which provider it lives behind. `allowsCustomValue` keeps
+ * the seam open for the model id the platform has not catalogued yet.
+ */
+const MODEL_OPTIONS: readonly { value: string; label: string; hint?: string }[] =
+  MODEL_LINEUP.map((model) => ({ value: model, label: model }))
 
 export interface RoutingPanelProps {
   routes: ModelRoute[]
@@ -153,12 +163,13 @@ export function RoutingPanel({
               control={form.control}
               name="leadModel"
               render={({ field, fieldState }) => (
-                <TextField
+                <ComboboxField
                   id="leadModel"
                   label="lead"
                   value={field.value}
                   onValueChange={field.onChange}
-                  onBlur={field.onBlur}
+                  options={MODEL_OPTIONS}
+                  allowsCustomValue
                   disabled={busy}
                   error={fieldState.error?.message ?? null}
                 />
@@ -168,12 +179,13 @@ export function RoutingPanel({
               control={form.control}
               name="workerModel"
               render={({ field, fieldState }) => (
-                <TextField
+                <ComboboxField
                   id="workerModel"
                   label="worker"
                   value={field.value}
                   onValueChange={field.onChange}
-                  onBlur={field.onBlur}
+                  options={MODEL_OPTIONS}
+                  allowsCustomValue
                   disabled={busy}
                   error={fieldState.error?.message ?? null}
                 />
@@ -183,12 +195,13 @@ export function RoutingPanel({
               control={form.control}
               name="judgeModel"
               render={({ field, fieldState }) => (
-                <TextField
+                <ComboboxField
                   id="judgeModel"
                   label="judge"
                   value={field.value}
                   onValueChange={field.onChange}
-                  onBlur={field.onBlur}
+                  options={MODEL_OPTIONS}
+                  allowsCustomValue
                   disabled={busy}
                   error={fieldState.error?.message ?? null}
                 />

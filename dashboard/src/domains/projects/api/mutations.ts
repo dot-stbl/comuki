@@ -33,6 +33,14 @@ import {
  * sticks across refetches (the same reason `runs.store.ts` exists for the
  * runs domain). Real mode routes through the kubb-generated clients.
  *
+ * Every registry write settles the shared `["projects"]` cache by
+ * **invalidation**, not by splicing rows: the refetch lands the host's
+ * truth in every consumer at once — the screen's rows, the session's
+ * project picks and identity's registry — and in mock mode the refetch
+ * reads the seed store the mutation just wrote. The invalidation is
+ * `exact`, so per-project detail / settings / costs entries are left to
+ * the mutations that actually concern them.
+ *
  * Only `createProject` has a mock-mode path today — the seed store grows
  * update/delete/settings operations in a later slice. Calling the other
  * three in mock mode throws the kubb-client's `VITE_API_BASE_URL is not
@@ -97,10 +105,11 @@ export function useCreateProjectMutation() {
 
   return useMutation({
     mutationFn: createProject,
-    onSuccess: (created) => {
-      client.setQueryData<ProjectRow[]>(projectsQueryKey, (rows) =>
-        rows ? [...rows, created] : [created]
-      )
+    onSuccess: async () => {
+      await client.invalidateQueries({
+        queryKey: projectsQueryKey,
+        exact: true,
+      })
     },
   })
 }
@@ -116,11 +125,19 @@ export function useUpdateProjectMutation() {
       projectId: string
       patch: ProjectUpdate
     }) => updateProject(projectId, patch),
-    onSuccess: (row, { projectId }) => {
-      client.setQueryData<ProjectRow[]>(projectsQueryKey, (rows) =>
-        rows?.map((existing) => (existing.id === projectId ? row : existing))
-      )
-      client.setQueryData(projectQueryKey(projectId), row)
+    onSuccess: async (_row, { projectId }) => {
+      // The rename shows in the list and in that project's own detail
+      // entry; settings and costs say nothing about the name and stay.
+      await Promise.all([
+        client.invalidateQueries({
+          queryKey: projectsQueryKey,
+          exact: true,
+        }),
+        client.invalidateQueries({
+          queryKey: projectQueryKey(projectId),
+          exact: true,
+        }),
+      ])
     },
   })
 }
@@ -148,10 +165,11 @@ export function useDeleteProjectMutation() {
   return useMutation({
     mutationFn: ({ projectId }: { projectId: string }) =>
       deleteProject(projectId),
-    onSuccess: (_void, { projectId }) => {
-      client.setQueryData<ProjectRow[]>(projectsQueryKey, (rows) =>
-        rows?.filter((row) => row.id !== projectId)
-      )
+    onSuccess: async (_void, { projectId }) => {
+      await client.invalidateQueries({
+        queryKey: projectsQueryKey,
+        exact: true,
+      })
       client.removeQueries({ queryKey: projectQueryKey(projectId) })
       client.removeQueries({ queryKey: projectSettingsQueryKey(projectId) })
       client.removeQueries({ queryKey: projectCostsQueryKey(projectId) })

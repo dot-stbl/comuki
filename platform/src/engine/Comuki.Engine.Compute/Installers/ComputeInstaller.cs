@@ -78,7 +78,21 @@ public static class ComputeInstaller
 
         services.AddSingleton<IWorkerTokenStore, InMemoryWorkerTokenStore>();
         services.AddSingleton<IDockerClient>(static _ => new DockerClientConfiguration().CreateClient());
-        services.AddSingleton<IKubernetes>(static _ => new Kubernetes(KubernetesClientConfiguration.BuildDefaultConfig()));
+
+        // Kubernetes client: reads Compute:Kubernetes:KubeconfigPath when set
+        // (external cluster, e.g. vega), otherwise falls back to the default
+        // config chain (in-cluster SA when running inside a cluster, or
+        // ~/.kube/config locally).
+        services.AddSingleton<IKubernetes>(static serviceProvider =>
+        {
+            var kubeconfigPath = serviceProvider
+                .GetRequiredService<IOptions<KubernetesComputeOptions>>()
+                .Value.KubeconfigPath;
+            var config = string.IsNullOrWhiteSpace(kubeconfigPath)
+                ? KubernetesClientConfiguration.BuildDefaultConfig()
+                : KubernetesClientConfiguration.BuildConfigFromConfigFile(kubeconfigPath);
+            return new Kubernetes(config);
+        });
         services.AddSingleton<DockerComputeProvider>();
         services.AddSingleton<KubernetesComputeProvider>();
 

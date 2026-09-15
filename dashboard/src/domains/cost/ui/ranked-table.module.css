@@ -1,0 +1,139 @@
+/* A ranking: a name, a length on a shared axis, and the figures beside it.
+
+   One construction for the four blocks that ask the same question — by app, by
+   model, by project. The figure columns take exactly the room their widest
+   value needs and the name column takes the rest, which is what keeps every bar
+   in the block starting and ending on the same two lines: bars on different
+   scales cannot be compared, and comparing them is the whole task. */
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  color: var(--text);
+}
+
+/* The head names the figures. It is a label row, not content: the tight
+   gesture in the interface voice, faint, on the rule the first row sits on. */
+.headLabel,
+.headFigure {
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+  padding-block: var(--s2);
+  padding-inline: 0;
+  border-block-end: var(--hairline) solid var(--rule);
+  white-space: nowrap;
+}
+
+/* `100%` against `1%` is how a table is told which column absorbs the slack:
+   the name column claims everything the figures do not need, and the figures
+   shrink to their own content. No track widths in `ch` and no `table-layout:
+   fixed`, both of which have to be re-guessed every time a precision changes. */
+.headLabel,
+.labelCell {
+  inline-size: 100%;
+  text-align: start;
+}
+
+.headFigure,
+.figure {
+  inline-size: 1%;
+  text-align: end;
+}
+
+/* One rule between rows and none around the block: the ranking is a list of
+   readings, not a grid of cells, and a full border would make it a frame. */
+.row + .row td {
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+.labelCell {
+  min-inline-size: 0;
+  padding-block: var(--s3);
+  padding-inline: 0;
+}
+
+/* Name and bar on one baseline. A grid rather than a flex row so the bar starts
+   on the same line in every row whatever the name's length — the name track is
+   fixed and the bar takes the rest. It sits inside the cell rather than being
+   the cell, because a `<td>` that declares `display: grid` is no longer a table
+   cell at all. */
+.labelBox {
+  display: grid;
+  grid-template-columns: minmax(0, 7rem) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s3);
+  min-inline-size: 0;
+}
+
+/* A project key, an app, a model name — a value the operator reads back
+   somewhere else, so the data voice. It truncates rather than wraps, because a
+   row that grows a line pushes every bar under it off the axis it shares. */
+.name {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-data);
+  color: var(--text);
+}
+
+/* The drawn empty channel every fill is measured against — the same material
+   the table and the flow's tracks are made of. */
+.channel {
+  position: relative;
+  display: block;
+  block-size: var(--h-meter);
+  min-inline-size: 0;
+  border-radius: var(--r-xs);
+  background: var(--lane-alt);
+  /* clip, not hidden: `hidden` makes the box a scroll container, and a bar
+     inside a report must never open one. */
+  overflow: clip;
+}
+
+.fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: block;
+  border-radius: var(--r-xs);
+  background: var(--text-faint);
+}
+
+/* The figures, at the end of their columns and tabular, so a scan down a column
+   compares magnitudes rather than glyph widths. Muted by default: most of these
+   are context beside the one the ranking is by. */
+.figure {
+  padding-block: var(--s3);
+  padding-inline: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* The column the rows are ranked by — full strength, so the scan lands on it. */
+.strong {
+  color: var(--text);
+}
+
+/* A cell whose `title` carries the reading the column truncated. */
+.help {
+  cursor: help;
+}
+
+/* Nothing to rank. A word rather than an empty frame, because a table with a
+   head and no rows reads as a table that failed to load. */
+.empty {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  color: var(--text-faint);
+}

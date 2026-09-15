@@ -4,7 +4,6 @@ import {
   knowledgeDocumentsToSnapshot,
   knowledgeHitWireToHit,
   toKnowledgeSnapshot,
-  type KnowledgeSearchResponseWire,
 } from "@/domains/knowledge/api/mappers"
 import type {
   KnowledgeHit,
@@ -85,8 +84,7 @@ export function useKnowledgeSearchQuery(q: string) {
           minSimilarity: SEARCH_MIN_SIMILARITY,
         },
       })
-      const wire = response as KnowledgeSearchResponseWire
-      return wire.items.map(knowledgeHitWireToHit)
+      return response.items.map(knowledgeHitWireToHit)
     },
   })
 }

@@ -1,4 +1,5 @@
 using Comuki.Modules.Costs.Application.Queries;
+using Comuki.Modules.Costs.Application.Views;
 using Comuki.Modules.Identity.Application.Permissions;
 using Comuki.Shared.Kernel.Ids;
 
@@ -16,8 +17,12 @@ public static class CostsModuleEndpoints
     /// <summary>Maps the costs endpoints.</summary>
     public static IEndpointRouteBuilder MapCostsEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet(ApiRoutes.ProjectCosts, GetCostsAsync).WithTags("Costs");
-        app.MapGet(ApiRoutes.Costs, GetPlatformCostsAsync).WithTags("Costs");
+        app.MapGet(ApiRoutes.ProjectCosts, GetCostsAsync)
+            .Produces<ProjectCostsView>(StatusCodes.Status200OK)
+            .WithTags("Costs");
+        app.MapGet(ApiRoutes.Costs, GetPlatformCostsAsync)
+            .Produces<PlatformCostsView>(StatusCodes.Status200OK)
+            .WithTags("Costs");
         return app;
     }
 

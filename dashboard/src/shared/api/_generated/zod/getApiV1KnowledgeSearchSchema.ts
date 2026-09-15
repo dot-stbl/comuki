@@ -3,12 +3,15 @@
  * Do not edit manually.
  */
 
+import { knowledgeSearchResponseSchema } from "./knowledgeSearchResponseSchema"
 import { z } from "zod/v4"
 
 /**
  * @description OK
  */
-export const getApiV1KnowledgeSearch200Schema = z.any()
+export const getApiV1KnowledgeSearch200Schema = z
+  .lazy(() => knowledgeSearchResponseSchema)
+  .describe("Search response envelope.")
 
 export const getApiV1KnowledgeSearchQueryResponseSchema = z.lazy(
   () => getApiV1KnowledgeSearch200Schema

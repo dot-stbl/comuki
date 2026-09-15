@@ -19,6 +19,7 @@ import type {
   SeedSwarmRule,
   SeedTrackerProvider,
 } from "@/shared/api/mock/settings.seed"
+import type { SettingsView } from "@/shared/api/_generated/types/SettingsView"
 
 export function toApp(seed: SeedApp): AppRegistryItem {
   return {
@@ -89,56 +90,50 @@ export function toSettingsSnapshot(
 
 /* ------------------------------------------------------------------ *
  * The wire — `GET /api/v1/settings` (`SettingsView`, camelCased by the
- * serializer). The kubb client answers `any` (no response schema in the
- * spec), so the typed claim lives here beside its mapper. The view is
- * already the domain shape — the mapper exists so the wire never reaches a
- * page unclaimed, the same discipline every other domain keeps.
+ * serializer). The spec declares the response schema now, so the typed
+ * claim is the kubb-generated `SettingsView`; its counters arrive as
+ * `number | string` (the serializer may read numbers from strings) and
+ * this edge normalises them into the plain numbers the snapshot carries.
+ * The view is already the domain shape — the mapper exists so the wire
+ * never reaches a page unclaimed, the same discipline every other domain
+ * keeps.
  * ------------------------------------------------------------------ */
-
-/** The host's `SettingsView`. */
-export interface PlatformSettingsWire {
-  readonly orchestration: {
-    readonly lease: {
-      readonly leaseTtlSeconds: number
-      readonly reapIntervalSeconds: number
-      readonly reapGraceSeconds: number
-      readonly maxAttempts: number
-    }
-    readonly escalationTimeout: {
-      readonly enabled: boolean
-      readonly timeoutSeconds: number
-      readonly sweepIntervalSeconds: number
-    }
-  }
-  readonly compute: {
-    readonly provider: string
-    readonly scale: {
-      readonly workerImage: string
-      readonly profilesGitRef: string
-      readonly minIdle: number
-      readonly maxConcurrent: number
-      readonly idleTtlSeconds: number
-      readonly pollIntervalSeconds: number
-    }
-  }
-  readonly proxy: {
-    readonly enabled: boolean
-  }
-}
 
 /** A settings view onto the snapshot the page renders. */
 export function platformSettingsWireToSettings(
-  wire: PlatformSettingsWire
+  wire: SettingsView
 ): PlatformSettings {
   return {
     orchestration: {
-      lease: { ...wire.orchestration.lease },
-      escalationTimeout: { ...wire.orchestration.escalationTimeout },
+      lease: {
+        leaseTtlSeconds: Number(wire.orchestration.lease.leaseTtlSeconds),
+        reapIntervalSeconds: Number(
+          wire.orchestration.lease.reapIntervalSeconds
+        ),
+        reapGraceSeconds: Number(wire.orchestration.lease.reapGraceSeconds),
+        maxAttempts: Number(wire.orchestration.lease.maxAttempts),
+      },
+      escalationTimeout: {
+        enabled: wire.orchestration.escalationTimeout.enabled,
+        timeoutSeconds: Number(
+          wire.orchestration.escalationTimeout.timeoutSeconds
+        ),
+        sweepIntervalSeconds: Number(
+          wire.orchestration.escalationTimeout.sweepIntervalSeconds
+        ),
+      },
     },
     compute: {
       provider: wire.compute.provider,
-      scale: { ...wire.compute.scale },
+      scale: {
+        workerImage: wire.compute.scale.workerImage,
+        profilesGitRef: wire.compute.scale.profilesGitRef,
+        minIdle: Number(wire.compute.scale.minIdle),
+        maxConcurrent: Number(wire.compute.scale.maxConcurrent),
+        idleTtlSeconds: Number(wire.compute.scale.idleTtlSeconds),
+        pollIntervalSeconds: Number(wire.compute.scale.pollIntervalSeconds),
+      },
     },
-    proxy: { ...wire.proxy },
+    proxy: { enabled: wire.proxy.enabled },
   }
 }

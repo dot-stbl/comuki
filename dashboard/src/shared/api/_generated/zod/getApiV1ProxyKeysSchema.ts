@@ -3,12 +3,15 @@
  * Do not edit manually.
  */
 
+import { proxyKeysResponseSchema } from "./proxyKeysResponseSchema"
 import { z } from "zod/v4"
 
 /**
  * @description OK
  */
-export const getApiV1ProxyKeys200Schema = z.any()
+export const getApiV1ProxyKeys200Schema = z
+  .lazy(() => proxyKeysResponseSchema)
+  .describe("Keys catalogue envelope.")
 
 export const getApiV1ProxyKeysQueryResponseSchema = z.lazy(
   () => getApiV1ProxyKeys200Schema

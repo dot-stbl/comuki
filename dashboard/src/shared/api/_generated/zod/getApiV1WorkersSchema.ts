@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import { workersPageSchema } from "./workersPageSchema"
 import { z } from "zod/v4"
 
 export const getApiV1WorkersQueryParamsSchema = z
@@ -19,7 +20,11 @@ export const getApiV1WorkersQueryParamsSchema = z
 /**
  * @description OK
  */
-export const getApiV1Workers200Schema = z.any()
+export const getApiV1Workers200Schema = z
+  .lazy(() => workersPageSchema)
+  .describe(
+    "One page of derived workers plus the paging envelope (same shape as the runs page)."
+  )
 
 export const getApiV1WorkersQueryResponseSchema = z.lazy(
   () => getApiV1Workers200Schema

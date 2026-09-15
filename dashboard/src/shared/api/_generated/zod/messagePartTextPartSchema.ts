@@ -5,7 +5,12 @@
 
 import { z } from "zod/v4"
 
-export const messagePartTextPartSchema = z.object({
-  kind: z.optional(z.enum(["text"])),
-  markdown: z.string(),
-})
+/**
+ * @description Markdown prose — the default shape of a reply.
+ */
+export const messagePartTextPartSchema = z
+  .object({
+    kind: z.optional(z.enum(["text"])),
+    markdown: z.string().describe("Message text in markdown."),
+  })
+  .describe("Markdown prose — the default shape of a reply.")

@@ -16,8 +16,12 @@ public static class WorkersReadEndpoints
     /// <summary>Maps the dashboard workers endpoints onto the app.</summary>
     public static IEndpointRouteBuilder MapWorkersReadEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet(ApiRoutes.Workers, ListAsync).WithTags("Workers");
-        app.MapGet(ApiRoutes.WorkerById, GetAsync).WithTags("Workers");
+        app.MapGet(ApiRoutes.Workers, ListAsync)
+            .Produces<WorkersPage>(StatusCodes.Status200OK)
+            .WithTags("Workers");
+        app.MapGet(ApiRoutes.WorkerById, GetAsync)
+            .Produces<WorkerView>(StatusCodes.Status200OK)
+            .WithTags("Workers");
         app.MapPost(ApiRoutes.WorkerDrain, DrainAsync).WithTags("Workers");
         app.MapPost(ApiRoutes.WorkerStop, StopAsync).WithTags("Workers");
         return app;

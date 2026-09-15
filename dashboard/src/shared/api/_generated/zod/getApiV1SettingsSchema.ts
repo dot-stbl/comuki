@@ -3,12 +3,17 @@
  * Do not edit manually.
  */
 
+import { settingsViewSchema } from "./settingsViewSchema"
 import { z } from "zod/v4"
 
 /**
  * @description OK
  */
-export const getApiV1Settings200Schema = z.any()
+export const getApiV1Settings200Schema = z
+  .lazy(() => settingsViewSchema)
+  .describe(
+    "Wire shape of `GET /api/v1/settings` — a read-only snapshot of the\r\nplatform-level settings that already exist as bound options. Every value\r\nis `IOptions`-backed (fixed at startup); there is deliberately no\r\nPUT: nothing in this surface is mutable at runtime, and pretending\r\notherwise would be phantom success. Changes go through configuration +\r\na restart."
+  )
 
 export const getApiV1SettingsQueryResponseSchema = z.lazy(
   () => getApiV1Settings200Schema

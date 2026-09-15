@@ -158,7 +158,7 @@ const routeTree = rootRoute.addChildren(
   )
 )
 
-function mount() {
+function mount(runId: string = "seed-run") {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [`/runs/${runId}`] }),

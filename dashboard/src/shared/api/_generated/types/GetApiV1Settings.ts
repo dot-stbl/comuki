@@ -3,10 +3,12 @@
  * Do not edit manually.
  */
 
+import type { SettingsView } from "./SettingsView"
+
 /**
  * @description OK
  */
-export type GetApiV1Settings200 = any
+export type GetApiV1Settings200 = SettingsView
 
 export type GetApiV1SettingsQueryResponse = GetApiV1Settings200
 

@@ -1,0 +1,6 @@
+{
+  "type": "object",
+  "properties": { "value": { "type": "string", "format": "uuid" } },
+  "description": "Strong-typed identifier of a project — the scope unit for runs, work items,\r\nsettings and role assignments.",
+  "x-readme-ref-name": "ProjectId"
+}

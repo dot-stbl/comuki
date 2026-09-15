@@ -3,6 +3,8 @@
  * Do not edit manually.
  */
 
+import type { KnowledgeDocumentsPage } from "./KnowledgeDocumentsPage"
+
 export type GetApiV1KnowledgeDocumentsQueryParams = {
   /**
    * @type string | undefined, uuid
@@ -21,7 +23,7 @@ export type GetApiV1KnowledgeDocumentsQueryParams = {
 /**
  * @description OK
  */
-export type GetApiV1KnowledgeDocuments200 = any
+export type GetApiV1KnowledgeDocuments200 = KnowledgeDocumentsPage
 
 export type GetApiV1KnowledgeDocumentsQueryResponse =
   GetApiV1KnowledgeDocuments200

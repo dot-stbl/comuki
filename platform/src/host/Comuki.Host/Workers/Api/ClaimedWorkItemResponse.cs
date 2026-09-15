@@ -2,10 +2,12 @@ namespace Comuki.Host.Workers.Api;
 
 /// <summary>
 /// A claimed work item handed to the worker. Lease deadline is UTC unix
-/// milliseconds on the wire (house time rule).
+/// milliseconds on the wire (house time rule). The project id is the parent
+/// run's project — the scope every project-bound worker call is confined to.
 /// </summary>
 /// <param name="WorkItemId"></param>
 /// <param name="RunId"></param>
+/// <param name="ProjectId">Project the parent run belongs to.</param>
 /// <param name="ProfileKey"></param>
 /// <param name="Brief"></param>
 /// <param name="LeaseUntilUnixMs"></param>
@@ -13,6 +15,7 @@ namespace Comuki.Host.Workers.Api;
 public sealed record ClaimedWorkItemResponse(
     Guid WorkItemId,
     Guid RunId,
+    Guid ProjectId,
     string ProfileKey,
     string Brief,
     long LeaseUntilUnixMs,

@@ -3,20 +3,27 @@
  * Do not edit manually.
  */
 
+/**
+ * @description Create API key body (POST /api/v1/keys).
+ */
 export type CreateApiKeyRequest = {
   /**
+   * @description Owner user id.
    * @type string, uuid
    */
   userId: string
   /**
+   * @description Human-readable label.
    * @type string
    */
   label: string
   /**
+   * @description Optional expiry timestamp (UTC).
    * @type null,string, date-time
    */
   expiresAt?: string | null
   /**
+   * @description Optional tenant scope. When set, the key only authenticates\r\nrequests that carry the matching `X-Comuki-Tenant` header.\r\nThe host validates that the requesting subject has the right to\r\nscope a key to this project — admin-only today.
    * @type null,string, uuid
    */
   tenantProjectId?: string | null

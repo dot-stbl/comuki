@@ -2,10 +2,23 @@
   "required": ["userId", "label"],
   "type": "object",
   "properties": {
-    "userId": { "type": "string", "format": "uuid" },
-    "label": { "type": "string" },
-    "expiresAt": { "type": ["null", "string"], "format": "date-time" },
-    "tenantProjectId": { "type": ["null", "string"], "format": "uuid" }
+    "userId": {
+      "type": "string",
+      "description": "Owner user id.",
+      "format": "uuid"
+    },
+    "label": { "type": "string", "description": "Human-readable label." },
+    "expiresAt": {
+      "type": ["null", "string"],
+      "description": "Optional expiry timestamp (UTC).",
+      "format": "date-time"
+    },
+    "tenantProjectId": {
+      "type": ["null", "string"],
+      "description": "Optional tenant scope. When set, the key only authenticates\r\nrequests that carry the matching `X-Comuki-Tenant` header.\r\nThe host validates that the requesting subject has the right to\r\nscope a key to this project — admin-only today.",
+      "format": "uuid"
+    }
   },
+  "description": "Create API key body (POST /api/v1/keys).",
   "x-readme-ref-name": "CreateApiKeyRequest"
 }

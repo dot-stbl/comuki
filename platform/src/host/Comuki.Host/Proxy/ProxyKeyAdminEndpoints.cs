@@ -18,7 +18,9 @@ public static class ProxyKeyAdminEndpoints
     /// <summary>Maps the proxy key admin endpoints.</summary>
     public static IEndpointRouteBuilder MapProxyKeyAdminEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet(ApiRoutes.ProxyKeys, ListKeysAsync).WithTags("Proxy");
+        app.MapGet(ApiRoutes.ProxyKeys, ListKeysAsync)
+            .Produces<ProxyKeysResponse>(StatusCodes.Status200OK)
+            .WithTags("Proxy");
         app.MapPost(ApiRoutes.ProxyKeyRevoke, RevokeKeyAsync).WithTags("Proxy");
         app.MapPatch(ApiRoutes.ProxyKey, PatchKeyAsync).WithTags("Proxy");
         return app;

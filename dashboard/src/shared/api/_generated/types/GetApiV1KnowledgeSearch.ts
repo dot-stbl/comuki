@@ -3,10 +3,12 @@
  * Do not edit manually.
  */
 
+import type { KnowledgeSearchResponse } from "./KnowledgeSearchResponse"
+
 /**
  * @description OK
  */
-export type GetApiV1KnowledgeSearch200 = any
+export type GetApiV1KnowledgeSearch200 = KnowledgeSearchResponse
 
 export type GetApiV1KnowledgeSearchQueryResponse = GetApiV1KnowledgeSearch200
 

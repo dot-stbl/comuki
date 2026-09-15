@@ -41,9 +41,9 @@ public static class OrchestrationInfrastructureExtensions
     /// <see cref="AddOrchestrationPersistence"/>. Bind the
     /// <c>Orchestration:Lease</c> section to tune the lease policy and
     /// the <c>Orchestration:EscalationTimeout</c> section to tune the
-    /// passive autonomy ratchet on the Escalated run state. The reaper
-    /// registers as an <see cref="IComukiWorker"/> — a host that runs it
-    /// must also call <c>AddComukiWorkers()</c>.
+    /// passive autonomy ratchet on the Escalated run state. The reaper and
+    /// the sweeper register as <see cref="IComukiWorker"/>s — a host that
+    /// runs them must also call <c>AddComukiWorkers()</c>.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="configuration"></param>
@@ -69,7 +69,17 @@ public static class OrchestrationInfrastructureExtensions
         services.AddScoped<LeaseReaper>();
         services.AddSingleton<IComukiWorker, LeaseReaperComukiWorker>();
         services.AddScoped<EscalationTimeoutSweeper>();
-        services.AddHostedService<EscalationTimeoutWorker>();
+
+        // EscalationTimeout:Enabled=false skips the worker registration
+        // entirely (the same pattern the host uses for oidc-sweep) — the
+        // registry collects its workers at Build, so the kill-switch is
+        // resolved synchronously from the bound section here.
+        var escalationEnabled = configuration.GetSection(EscalationTimeoutOptions.SectionName)
+            .Get<EscalationTimeoutOptions>()?.Enabled ?? true;
+        if (escalationEnabled)
+        {
+            services.AddSingleton<IComukiWorker, EscalationTimeoutComukiWorker>();
+        }
 
         return services;
     }

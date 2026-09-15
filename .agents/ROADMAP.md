@@ -1,11 +1,17 @@
 # Roadmap
 
-> **Status (2026-09-08): v1 milestone is complete on master (`e679663`).**
+> **Status (2026-09-15): v1 milestone is complete on master (`e679663`).
 > 24 slices landed — 15 original v1 core (S0–S14) plus 9 follow-on slices
 > (5 FE wire-up slices, 2 polish waves, 1 admin endpoints, 1 docs sweep)
 > plus the `#11` Post-1.0 backlog slice (13 sub-slices shipped
 > 2026-09-04 → 2026-09-07). **50 of 50 GitHub issues closed** (0 open).
 > 4 deferred issues (#47, #48, #49, #50) closed with "v2 backlog" note.
+>
+> **v2 phase `agent-runtime-capabilities` drafted (2026-09-15)** —
+> OpenSpec change at
+> [`openspec/changes/agent-runtime-capabilities/`](../openspec/changes/agent-runtime-capabilities/)
+> (proposal / 7 spec deltas / design / tasks all complete;
+> `openspec validate` passes). Awaits `/opsx-apply`.
 > Live status lives in [`.agents/STATE.md`](./STATE.md) and on
 > https://github.com/dot-stbl/comuki/issues.
 >
@@ -289,6 +295,12 @@ operations UI.
                                               │
                                               ▼
                                          9 MVP Polish                  (done)
+                                              │
+                                              ▼
+                                         10 v2 Agent Runtime            (drafted)
+                                                (memory per-project + discovery
+                                                 + secrets catalog + worker
+                                                 injection; KMS / SaaS deferred)
 ```
 
 ## Open slice work (post-v1 scope)
@@ -311,6 +323,55 @@ FE admin mutations wire-up (#31–#42) — backend landed, dashboard
 mutations are mock-first (post-v1 follow-up, not blocking).
 
 Artifacts e2e test cleanup (#43) — closed (drop dead `postgresSeed`).
+
+## Phase 10 — v2 Agent Runtime (`10-agent-runtime`) — 📝 DRAFTED (2026-09-15)
+
+**Goal:** turn Comuki from "thinks + runs ephemeral workers" into an
+agent that runs the loop end-to-end. The chat operator should be
+able to say "add the new project" / "deploy to prod" / "rotate the
+Jira token" and have the brain scan, remember, plan, and execute
+through workers that already carry the credentials they need.
+
+**OpenSpec:** [`openspec/changes/agent-runtime-capabilities/`](../openspec/changes/agent-runtime-capabilities/)
+(proposal + 7 spec deltas + design + tasks; `openspec validate` green).
+
+**Scope (4 implementation phases, ordered by dependency)**
+
+- **10.A — Memory per-project** (capability: `memory`)
+  `BrainRequest` gains `ScopeKind` / `SubjectId`; `BrainAgent` calls
+  `IMemoryStore.SearchAsync` with scope before the model loop, and
+  prepends the result to the existing digest. Personal / project
+  isolation lives in the digest, never in raw tool args.
+  `/memory` slash + dashboard route gated by `memory:write`.
+- **10.B — Discovery v0** (capability: `discovery`)
+  MCP tool `discovery.scan` runs `explore-readonly` with a brief,
+  parses the report, writes `MemoryFact` rows under
+  `scope = project, source = run`. `/discover [mode]` slash.
+  Discovery runs share the worker pool + `MaxConcurrent`.
+- **10.C — Secret store v0** (new capability: `secrets`)
+  `Secret` entity with envelope encryption (AES-256-GCM, KEK from
+  `COMUKI_SECRETS_KEK`), `Source = local | external`, scopes
+  `platform / project / personal`, audit log
+  (human actions + `use_error` only — service `use` lives in OTel
+  metrics, never in audit), personal-secret grants, five new
+  permission keys. `ISecretProvider` gains `DbSecretProvider`
+  alongside the existing env / file / vault / null providers.
+- **10.D — Worker secret injection** (capabilities: `compute`,
+  `worker-runtime`)
+  `ComputeStartRequest.SecretRefs: IReadOnlyList<SecretRefSpec>`
+  → Docker `-e` or K8s `valueFrom.secretKeyRef`. Worker runtime
+  adds a logger filter that drops injected values. Per-project
+  flag `Compute:InjectSecrets` (default off for one release after
+  landing) for safe rollback.
+
+**Deferred (follow-up changes)**
+
+- KMS / SaaS envelope encryption (`IKmsProvider` adapter).
+- Auto-rotation, scheduled rotation, bulk import.
+- External providers beyond `vault` / `consul` (AWS / GCP /
+  1Password / Bitwarden).
+
+**Depends on:** Phase 9 (the v1 milestone).
 
 **Deferred to v2 (closed 2026-09-08):**
 

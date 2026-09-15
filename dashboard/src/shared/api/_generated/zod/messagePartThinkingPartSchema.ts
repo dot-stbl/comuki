@@ -5,8 +5,18 @@
 
 import { z } from "zod/v4"
 
-export const messagePartThinkingPartSchema = z.object({
-  kind: z.optional(z.enum(["thinking"])),
-  text: z.string(),
-  tokens: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]).nullish(),
-})
+/**
+ * @description The model\'s visible reasoning — collapsed by default in the console.
+ */
+export const messagePartThinkingPartSchema = z
+  .object({
+    kind: z.optional(z.enum(["thinking"])),
+    text: z.string().describe("Reasoning text."),
+    tokens: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe("Reasoning tokens the model reported; null when unknown.")
+      .nullish(),
+  })
+  .describe(
+    "The model's visible reasoning — collapsed by default in the console."
+  )

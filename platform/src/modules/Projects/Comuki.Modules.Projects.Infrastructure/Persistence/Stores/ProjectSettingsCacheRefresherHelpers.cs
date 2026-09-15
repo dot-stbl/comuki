@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
 
 /// <summary>
-/// Pure-logic helpers for <see cref="ProjectSettingsCacheRefresher"/>.
+/// Pure-logic helpers for <see cref="ProjectSettingsCacheRefresherComukiWorker"/>.
 /// Extracted from the refresher so the class holds only orchestration
 /// (per <c>class-layout-and-tooling.md §1a</c>). Each helper is a
 /// function over its inputs — no instance state is captured.

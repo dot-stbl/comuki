@@ -3,6 +3,8 @@
  * Do not edit manually.
  */
 
+import type { PlatformCostsView } from "./PlatformCostsView"
+
 export type GetApiV1CostsQueryParams = {
   /**
    * @type integer,string | undefined, int32
@@ -13,7 +15,7 @@ export type GetApiV1CostsQueryParams = {
 /**
  * @description OK
  */
-export type GetApiV1Costs200 = any
+export type GetApiV1Costs200 = PlatformCostsView
 
 export type GetApiV1CostsQueryResponse = GetApiV1Costs200
 

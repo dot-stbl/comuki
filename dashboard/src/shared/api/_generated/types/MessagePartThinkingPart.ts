@@ -10,16 +10,21 @@ export const messagePartThinkingPartKindEnum = {
 export type MessagePartThinkingPartKindEnumKey =
   (typeof messagePartThinkingPartKindEnum)[keyof typeof messagePartThinkingPartKindEnum]
 
+/**
+ * @description The model\'s visible reasoning — collapsed by default in the console.
+ */
 export type MessagePartThinkingPart = {
   /**
    * @type string | undefined
    */
   kind?: MessagePartThinkingPartKindEnumKey
   /**
+   * @description Reasoning text.
    * @type string
    */
   text: string
   /**
+   * @description Reasoning tokens the model reported; null when unknown.
    * @type null,integer,string, int32
    */
   tokens?: (number | string) | null

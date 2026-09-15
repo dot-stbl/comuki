@@ -1,6 +1,7 @@
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
+using Comuki.Shared.Bootstrap.Workers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Comuki.Modules.Projects.Infrastructure;
@@ -13,10 +14,12 @@ public static class ProjectsPersistenceExtensions
     /// private migrations history via <see cref="ProjectsDbContext.ApplyOptions"/>),
     /// the project and domain-type admission stores (scoped — one context
     /// per unit of work) and the singleton settings store with its cache
-    /// refresher. The factory registration also provides a scoped
+    /// refresher worker. The factory registration also provides a scoped
     /// <see cref="ProjectsDbContext"/> for request-scoped consumers; the
     /// settings store and refresher use the singleton factory directly
-    /// (they outlive any scope).
+    /// (they outlive any scope). The refresher registers as an
+    /// <see cref="IComukiWorker"/>; a host that runs it must also call
+    /// <c>AddComukiWorkers()</c>.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="connectionString"></param>
@@ -31,7 +34,7 @@ public static class ProjectsPersistenceExtensions
         services.AddScoped<IProjectStore, ProjectStore>();
         services.AddScoped<IDomainTypeAdmissionStore, DbDomainTypeAdmissionStore>();
         services.AddSingleton<IProjectSettingsStore, DbProjectSettingsStore>();
-        services.AddHostedService<ProjectSettingsCacheRefresher>();
+        services.AddSingleton<IComukiWorker, ProjectSettingsCacheRefresherComukiWorker>();
 
         return services;
     }

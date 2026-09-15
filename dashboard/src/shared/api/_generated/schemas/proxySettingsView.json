@@ -1,0 +1,12 @@
+{
+  "required": ["enabled"],
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether the OpenAI/Anthropic passthrough is composed."
+    }
+  },
+  "description": "Proxy state from ProxyOptions.",
+  "x-readme-ref-name": "ProxySettingsView"
+}

@@ -46,7 +46,9 @@ internal static class WorkItemQueueSql
         + "    LIMIT 1 "
         + "    FOR UPDATE SKIP LOCKED "
         + ") "
-        + "RETURNING id, run_id, profile_key, brief, lease_until, attempt";
+        + "RETURNING id, run_id, "
+        + "(SELECT r.project_id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " r WHERE r.id = work_items.run_id), "
+        + "profile_key, brief, lease_until, attempt";
 
     /// <summary>Heartbeat: extend the lease, guarded by owner, running status and an unexpired lease.</summary>
     public const string HeartbeatSql =
@@ -202,10 +204,11 @@ internal static class WorkItemQueueSql
         return new ClaimedWorkItem(
             reader.GetGuid(0),
             new RunId(reader.GetGuid(1)),
-            reader.GetString(2),
+            reader.GetGuid(2),
             reader.GetString(3),
-            reader.GetFieldValue<DateTimeOffset>(4),
-            reader.GetInt32(5));
+            reader.GetString(4),
+            reader.GetFieldValue<DateTimeOffset>(5),
+            reader.GetInt32(6));
     }
 
     /// <summary>Adds one typed parameter (Npgsql infers uuid/timestamptz/text from the CLR value).</summary>

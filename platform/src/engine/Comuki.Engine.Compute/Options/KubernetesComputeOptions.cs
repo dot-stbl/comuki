@@ -47,4 +47,13 @@ public sealed class KubernetesComputeOptions
     /// <summary>Optional nodeSelector pinned on the worker pod template.</summary>
     public IReadOnlyDictionary<string, string> NodeSelector { get; init; } =
         new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>
+    ///     Path to an external kubeconfig file. When set, the Kubernetes client
+    ///     reads this file instead of the in-cluster service account — used
+    ///     when workers go to a separate cluster (e.g. vega) while the host
+    ///     runs elsewhere. Empty/null = in-cluster (the default when the host
+    ///     itself runs inside the target cluster).
+    /// </summary>
+    public string? KubeconfigPath { get; init; }
 }

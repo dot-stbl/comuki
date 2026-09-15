@@ -1,0 +1,84 @@
+/* The slot the four states of §17 share.
+
+   Empty, Loading, Error and Forbidden have to be interchangeable in a list's
+   body: whichever one a screen is in, the answer arrives in the same place, at
+   the same measure, in the same voice. A Forbidden that arrived as a centred
+   card, or an Error that arrived as a red panel, would announce itself as the
+   more serious of the four and teach the operator to read placement as
+   severity. So there is one construction here and the kind changes nothing but
+   the words and whether a screen reader is interrupted.
+
+   Left-aligned and flush with the content's own gutter rather than centred —
+   this is a sentence to read, not a placeholder to look past. */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+}
+
+/* The vertical room is the same in every case; only the inline padding moves,
+   and it moves with where the state sits rather than with what it says. The
+   three spellings below are the three the screens actually needed — flush with
+   a body that already carries the page gutter, the gutter itself, and the full
+   page measure — plus `none`, which is no class at all, for a state nested in
+   a section that has already paid for its own room. */
+.flush {
+  padding-block: var(--s8);
+}
+
+.gutter {
+  padding: var(--s8) var(--s6);
+}
+
+.page {
+  padding: var(--s8) var(--page-x);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+/* Measured at 52ch: this is the line that has to be read, not scanned. Muted,
+   because it is an explanation and not an alarm — an error says what happened
+   in the same ink an empty state says there is nothing here.
+
+   Logical, not `max-width`: everything else in the kit measures on the inline
+   axis and a physical property in the middle of it reads as an unfinished
+   migration. */
+.body {
+  margin: 0;
+  max-inline-size: 52ch;
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+/* The reading under the prose — a status, a count, an id the operator is about
+   to compare with whatever they pasted. It is a value, so it takes the data
+   voice and the tight gesture, and it is faint because it is evidence for the
+   sentence above rather than a second sentence. */
+.hint {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* Whatever the state hands back: a retry, a way out, a link to the list the id
+   was supposed to be in. A row rather than a column, and wrapping, because two
+   exits beside each other is the common shape and a narrow desk is not a
+   reason to stack them off the bottom. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+}

@@ -1,0 +1,64 @@
+/* A bounded block of the screen's own material.
+
+   Not a card, and deliberately not named one. The No-Card Rule in DESIGN.md is
+   about the two things that made a card a card — the fill that lifts it off the
+   floor and the shadow that floats it — and neither is here. What is here is a
+   rule, a corner and the lane material: a data surface.
+
+   Six domain files wrote this out privately, four of them byte-identical, and
+   each one left the same paragraph of comment explaining why it is not a card.
+   The corner they chose was `--r-lg` in every one of the four, and `tokens.css`
+   already says why: the largest step is "the screen's own surfaces — the
+   data-table frame, panels, dialogs". A panel this size reads as a square slab
+   on anything smaller while every control standing on it is rounded. So the
+   step is not a prop — it is the role. The two smaller steps belong to smaller
+   boxes (a chat's inline reference card is furniture at `--r-sm`; a pickable
+   provider tile is a control at `--r-md`), and those are different roles rather
+   than this one drawn wrong.
+
+   What *is* a prop is which edges the rule runs along, because that is a real
+   choice with a real reading, and the domains split evenly on it. */
+
+.surface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-inline-size: 0;
+  padding: var(--s4) var(--s5);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  /* The rule's colour and style, with no edge claiming it yet — `bound` turns
+     the widths on, `tone` recolours whichever edges are lit. */
+  border: 0 solid var(--rule-strong);
+}
+
+/* Bounded on all four sides: a block that is one item among several, where the
+   rule is what tells this one from the next. */
+.all {
+  border-width: var(--hairline);
+}
+
+/* Bounded on the start edge alone: a block that owns its column, where a full
+   rule would draw a box around something nothing is competing with. The start
+   edge is also the one an accent can be read off at a glance down a column of
+   tiles, which is why the two arrived together in every domain copy. */
+.start {
+  border-inline-start-width: var(--hairline);
+}
+
+/* The rule is the accent channel, and it is never the whole reading: every call
+   site that lights one of these also says the same thing in words inside the
+   block. Hue plus a sentence, the way a status band works. */
+.attention {
+  border-color: var(--st-waiting);
+}
+
+.danger {
+  border-color: var(--st-failed);
+}
+
+/* A panel whose contents are sections rather than lines. One step, not a scale:
+   `--s3` and `--s4` are the two the domains used and there was never a third. */
+.roomy {
+  gap: var(--s4);
+}

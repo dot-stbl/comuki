@@ -1,0 +1,53 @@
+/* The shape of the thing that has not arrived yet.
+
+   Eighteen screens drew this privately before it was a component, and they had
+   already agreed on it without meaning to: bars in a column, `--s2` between
+   them, the meter unit tall, the smallest corner, the lane material. The only
+   thing any of them actually varied was how many bars and how wide — which is
+   the prop — and how much room the block pays for itself, which is the same
+   three-step inset the states beside it take.
+
+   Deliberately still. A shimmer is a second thing moving on a screen that is
+   already waiting on a request, and the product's motion rule is that motion
+   has to be opt-out; a placeholder that pulses forever is the one animation
+   nobody can look away from. The bars say "not yet" by being the shape of the
+   answer, not by drawing attention to themselves. */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+/* The meter unit, the mark corner and the lane material — the same three the
+   drawn channels and swatches are made of, because this is the same kind of
+   thing: a block standing in for a reading that is not there. */
+.bar {
+  block-size: var(--h-meter);
+  flex: 0 0 auto;
+  border-radius: var(--r-xs);
+  background: var(--muted);
+}
+
+/* Takes the room the loaded content will take, so the screen does not jump by
+   the height of the answer when it lands. */
+.fill {
+  flex: 1 1 0;
+  min-block-size: 0;
+}
+
+/* The same three insets `ScreenState` takes, one step quieter on the block
+   axis: a skeleton is where the content will be, not an answer standing in the
+   content's place. */
+.flush {
+  padding-block: var(--s6);
+}
+
+.gutter {
+  padding: var(--s6);
+}
+
+.page {
+  padding: var(--page-y) var(--page-x);
+}

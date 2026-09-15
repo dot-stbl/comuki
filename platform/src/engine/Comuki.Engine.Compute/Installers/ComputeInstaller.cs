@@ -13,6 +13,7 @@ using k8s;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Engine.Compute.Installers;
@@ -78,7 +79,39 @@ public static class ComputeInstaller
 
         services.AddSingleton<IWorkerTokenStore, InMemoryWorkerTokenStore>();
         services.AddSingleton<IDockerClient>(static _ => new DockerClientConfiguration().CreateClient());
-        services.AddSingleton<IKubernetes>(static _ => new Kubernetes(KubernetesClientConfiguration.BuildDefaultConfig()));
+
+        // Kubernetes client: reads Compute:Kubernetes:KubeconfigPath when set
+        // (external cluster, e.g. vega), otherwise falls back to the default
+        // config chain (in-cluster SA when running inside a cluster, or
+        // ~/.kube/config locally). Failures are logged loudly — a silent DI
+        // crash leaves the scale supervisor dead with no trace.
+        services.AddSingleton<IKubernetes>(static serviceProvider =>
+        {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("Comuki.Compute.KubernetesClient");
+            var kubeconfigPath = serviceProvider
+                .GetRequiredService<IOptions<KubernetesComputeOptions>>()
+                .Value.KubeconfigPath;
+            try
+            {
+                var config = string.IsNullOrWhiteSpace(kubeconfigPath)
+                    ? KubernetesClientConfiguration.BuildDefaultConfig()
+                    : KubernetesClientConfiguration.BuildConfigFromConfigFile(kubeconfigPath);
+                logger.LogInformation(
+                    "Kubernetes client ready ({Mode}), host: {Host}",
+                    string.IsNullOrWhiteSpace(kubeconfigPath) ? "in-cluster" : kubeconfigPath,
+                    config.Host);
+                return new Kubernetes(config);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(
+                    exception,
+                    "Kubernetes client failed to initialise (kubeconfig: {KubeconfigPath})",
+                    kubeconfigPath ?? "(default)");
+                throw;
+            }
+        });
         services.AddSingleton<DockerComputeProvider>();
         services.AddSingleton<KubernetesComputeProvider>();
 

@@ -1,3 +1,4 @@
+using Comuki.Engine.Compute.Installers;
 using Comuki.Host.Artifacts;
 using Comuki.Host.Auth;
 using Comuki.Host.Auth.Models;
@@ -6,8 +7,6 @@ using Comuki.Host.Chat.Brain;
 using Comuki.Host.Chat.RunStarter;
 using Comuki.Host.Chat.Sessions;
 using Comuki.Host.Chat.Tools;
-using Comuki.Engine.Compute;
-using Comuki.Engine.Compute.Installers;
 using Comuki.Host.Compute;
 using Comuki.Host.ControlPlane;
 using Comuki.Host.Costs;
@@ -315,6 +314,8 @@ internal static class HostComposer
         // (IComukiWorker), the compute providers (Docker + Kubernetes), and
         // the Kubernetes client. The backlog adapter feeds the supervisor's
         // queue signal from the orchestration work-item table.
+        // Lazy: resolves the DbContext factory on first call, not at
+        // construction — build-time OpenAPI introspection has no DB.
         builder.Services.AddSingleton<Engine.Compute.Ports.IBacklogReader, OrchestrationBacklogReader>();
         builder.Services.AddComukiCompute(builder.Configuration);
         builder.Services.AddOptions<Engine.Compute.Options.ComputeOptions>()

@@ -1,11 +1,14 @@
 using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -16,8 +19,8 @@ namespace Comuki.Modules.Projects.Unit;
 /// Cache-refresher fallback (issue Q27 / v1.1). When the underlying
 /// store (DB today, Redis when the planned
 /// <c>DistributedProjectSettingsCache</c> lands) is unreachable, the
-/// refresher no longer retries and silently waits — it falls back to
-/// the last-known snapshot held in the refresher, each row with a hard
+/// refresher no longer retries and silently waits — it falls back to the
+/// last-known snapshot held in the refresher, each row with a hard
 /// 30s TTL. After the TTL elapses the snapshot is dropped so the
 /// cache eventually goes cold rather than serving
 /// indefinitely-stale data.
@@ -42,8 +45,9 @@ public sealed class ProjectSettingsCacheRefresherShould
         var second = ProjectSettings.CreateDefaults(ProjectId.New(), DateTimeOffset.UtcNow);
         refresher.SeedFallback([first, second]);
 
-        await RunOneCycleAsync(refresher);
+        var result = await RunOneCycleAsync(refresher);
 
+        result.Success.ShouldBeFalse("a store outage reports a failed cycle to the registry");
         cache.Get(first.ProjectId).ShouldNotBeNull();
         cache.Get(second.ProjectId).ShouldNotBeNull();
 
@@ -64,29 +68,30 @@ public sealed class ProjectSettingsCacheRefresherShould
         var only = ProjectSettings.CreateDefaults(ProjectId.New(), DateTimeOffset.UtcNow);
         refresher.SeedFallback([only]);
 
-        clock.UtcNow += ProjectSettingsCacheRefresher.FallbackTtl + TimeSpan.FromSeconds(1);
+        clock.UtcNow += ProjectSettingsCacheRefresherComukiWorker.FallbackTtl + TimeSpan.FromSeconds(1);
         await RunOneCycleAsync(refresher);
 
         cache.Get(only.ProjectId).ShouldBeNull();
     }
 
-    private static async Task RunOneCycleAsync(ProjectSettingsCacheRefresher refresher)
+    private static async Task<WorkerResult> RunOneCycleAsync(ProjectSettingsCacheRefresherComukiWorker refresher)
     {
-        // Drive one ExecuteAsync cycle: the loop's outer try catches the
+        // Drive one ExecuteAsync cycle: the worker's catch narrows to the
         // DbException and routes through the fallback path. Exercising
         // the public ExecuteAsync entry keeps the contract honest and
         // exercises the real catch block.
-        using var cts = new CancellationTokenSource();
-        await refresher.StartAsync(cts.Token);
-        await Task.Delay(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken);
-        await cts.CancelAsync();
-        await refresher.StopAsync(CancellationToken.None);
+        return await refresher.ExecuteAsync(
+            new WorkerContext(
+                new ServiceCollection().BuildServiceProvider(),
+                TimeProvider.System,
+                NullLogger.Instance),
+            TestContext.Current.CancellationToken);
     }
 
-    private static ProjectSettingsCacheRefresher NewRefresher(
+    private static ProjectSettingsCacheRefresherComukiWorker NewRefresher(
         out ProjectSettingsCache cache,
         out TestableClock clock,
-        out RecordingLogger<ProjectSettingsCacheRefresher> logger)
+        out RecordingLogger<ProjectSettingsCacheRefresherComukiWorker> logger)
     {
         clock = new TestableClock { UtcNow = new DateTimeOffset(2026, 9, 5, 12, 0, 0, TimeSpan.Zero) };
         // The cache and the refresher share the test clock so the
@@ -97,10 +102,10 @@ public sealed class ProjectSettingsCacheRefresherShould
         {
             Clock = new TestableSystemClock(clock),
         }));
-        logger = new RecordingLogger<ProjectSettingsCacheRefresher>();
+        logger = new RecordingLogger<ProjectSettingsCacheRefresherComukiWorker>();
         var scopeAccessor = Substitute.For<ISubjectScopeAccessor>();
         var dbFactory = new ThrowingDbContextFactory();
-        return new ProjectSettingsCacheRefresher(dbFactory, scopeAccessor, cache, clock, logger);
+        return new ProjectSettingsCacheRefresherComukiWorker(dbFactory, scopeAccessor, cache, clock, logger);
     }
 
     /// <summary>DB factory that throws on every call — drives the

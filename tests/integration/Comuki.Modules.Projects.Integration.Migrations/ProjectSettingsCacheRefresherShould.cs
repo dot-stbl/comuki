@@ -13,7 +13,7 @@ using Xunit;
 namespace Comuki.Modules.Projects.Integration.Migrations;
 
 /// <summary>
-/// <see cref="ProjectSettingsCacheRefresher"/> over a real Testcontainers
+/// <see cref="ProjectSettingsCacheRefresherComukiWorker"/> over a real Testcontainers
 /// Postgres + IDbContextFactory: the warmer pulls every settings row and
 /// re-fills the in-process cache. Each project gets a fresh row seeded so
 /// the cache-warming loop has something to iterate; an empty database is
@@ -50,7 +50,7 @@ public sealed class ProjectSettingsCacheRefresherShould : IAsyncLifetime
             .AddSingleton<ISubjectScopeAccessor, AsyncLocalSubjectScopeAccessor>()
             .AddDbContextFactory<ProjectsDbContext>(builder => ProjectsDbContext.ApplyOptions(builder, connectionString))
             .AddSingleton<ProjectSettingsCache>()
-            .AddSingleton<ProjectSettingsCacheRefresher>()
+            .AddSingleton<ProjectSettingsCacheRefresherComukiWorker>()
             .BuildServiceProvider();
 
         services = provider;
@@ -119,7 +119,7 @@ public sealed class ProjectSettingsCacheRefresherShould : IAsyncLifetime
         var first = await SeedSettingsAsync(ProjectId.New(), DateTimeOffset.UtcNow);
         var second = await SeedSettingsAsync(ProjectId.New(), DateTimeOffset.UtcNow);
 
-        var refresher = services.GetRequiredService<ProjectSettingsCacheRefresher>();
+        var refresher = services.GetRequiredService<ProjectSettingsCacheRefresherComukiWorker>();
         await refresher.RefreshAllAsync(TestContext.Current.CancellationToken);
 
         cache.Get(first.ProjectId).ShouldNotBeNull();
@@ -133,7 +133,7 @@ public sealed class ProjectSettingsCacheRefresherShould : IAsyncLifetime
     {
         await ResetAsync();
 
-        var refresher = services.GetRequiredService<ProjectSettingsCacheRefresher>();
+        var refresher = services.GetRequiredService<ProjectSettingsCacheRefresherComukiWorker>();
         await refresher.RefreshAllAsync(TestContext.Current.CancellationToken);
 
         cache.Get(ProjectId.New()).ShouldBeNull();

@@ -4,6 +4,7 @@ using Comuki.Modules.Identity.Infrastructure.Security;
 using Comuki.Modules.Identity.Infrastructure.Security.ApiKeys;
 using Comuki.Modules.Identity.Infrastructure.Security.Authorization;
 using Comuki.Modules.Identity.Infrastructure.Security.Cookies;
+using Comuki.Shared.Bootstrap.Workers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -71,7 +72,7 @@ public static class IdentityAuthExtensions
         // Enforcement: one global resource filter per request + the startup
         // check over the assemblies the host asked to cover.
         services.Configure<MvcOptions>(static options => options.Filters.Add<RequiresPermissionFilter>());
-        services.AddHostedService(provider => new PermissionDemandStartupValidator(
+        services.AddSingleton<IComukiWorker>(provider => new PermissionDemandComukiWorker(
             provider.GetRequiredService<IPermissionCatalog>(),
             scanAssemblies));
 

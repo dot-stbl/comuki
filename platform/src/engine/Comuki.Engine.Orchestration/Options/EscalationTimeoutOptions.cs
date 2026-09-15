@@ -19,7 +19,7 @@ public sealed class EscalationTimeoutOptions
     [Range(typeof(TimeSpan), "00:05:00", "1.00:00:00")]
     public TimeSpan EscalationTimeout { get; init; } = TimeSpan.FromHours(1);
 
-    /// <summary>How often <c>EscalationTimeoutWorker</c> sweeps for stale Escalated runs.</summary>
+    /// <summary>How often the escalation-timeout worker sweeps for stale Escalated runs.</summary>
     [Range(typeof(TimeSpan), "00:00:05", "00:05:00")]
     public TimeSpan SweepInterval { get; init; } = TimeSpan.FromSeconds(15);
 

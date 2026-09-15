@@ -67,7 +67,9 @@ public static class ComputeSnapshotEndpoints
     /// <summary>Maps the compute snapshot endpoint.</summary>
     public static IEndpointRouteBuilder MapComputeSnapshotEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet(ApiRoutes.Compute, GetSnapshotAsync).WithTags("Compute");
+        app.MapGet(ApiRoutes.Compute, GetSnapshotAsync)
+            .Produces<ComputeSnapshotView>(StatusCodes.Status200OK)
+            .WithTags("Compute");
         return app;
     }
 

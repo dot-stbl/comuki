@@ -20,6 +20,7 @@ namespace Comuki.Host.Artifacts;
 /// <param name="clock">Wall-clock for the journal event stamp.</param>
 /// <param name="scopeAccessor">Ambient scope — declare system for the journal write.</param>
 /// <param name="logger">Structured logger.</param>
+// TODO(worker-registry): channel-based, needs dedicated adapter
 public sealed class RunArtifactPackagerHostService(
     IServiceScopeFactory scopeFactory,
     TimeProvider clock,

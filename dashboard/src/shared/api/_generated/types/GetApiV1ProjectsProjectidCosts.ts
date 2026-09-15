@@ -3,6 +3,8 @@
  * Do not edit manually.
  */
 
+import type { ProjectCostsView } from "./ProjectCostsView"
+
 export type GetApiV1ProjectsProjectidCostsPathParams = {
   /**
    * @type string, uuid
@@ -13,7 +15,7 @@ export type GetApiV1ProjectsProjectidCostsPathParams = {
 /**
  * @description OK
  */
-export type GetApiV1ProjectsProjectidCosts200 = any
+export type GetApiV1ProjectsProjectidCosts200 = ProjectCostsView
 
 export type GetApiV1ProjectsProjectidCostsQueryResponse =
   GetApiV1ProjectsProjectidCosts200

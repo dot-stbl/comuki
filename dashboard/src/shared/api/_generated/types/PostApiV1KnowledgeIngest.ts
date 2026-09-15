@@ -4,11 +4,12 @@
  */
 
 import type { KnowledgeIngestRequest } from "./KnowledgeIngestRequest"
+import type { KnowledgeIngestResponse } from "./KnowledgeIngestResponse"
 
 /**
  * @description OK
  */
-export type PostApiV1KnowledgeIngest200 = any
+export type PostApiV1KnowledgeIngest200 = KnowledgeIngestResponse
 
 export type PostApiV1KnowledgeIngestMutationRequest = KnowledgeIngestRequest
 

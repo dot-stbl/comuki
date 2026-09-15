@@ -3,6 +3,7 @@ using Comuki.Modules.Artifacts.Application.VisualArtifacts.Ports;
 using Comuki.Modules.Artifacts.Infrastructure.Persistence;
 using Comuki.Modules.Artifacts.Infrastructure.Persistence.Stores;
 using Comuki.Modules.Artifacts.Infrastructure.Store;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Contracts.Artifacts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,12 +63,12 @@ public static class ArtifactsPersistenceExtensions
         services.AddScoped<VisualArtifactStoreEf>();
         services.AddScoped<IVisualArtifactStore>(sp => sp.GetRequiredService<VisualArtifactStoreEf>());
 
-        // Startup hook — ensures the configured MinIO bucket exists when
-        // ArtifactsOptions.AutoCreateBucket is on. The compose minio-init
-        // job does the same in production; the in-process flag covers
-        // greenfield setups (integration tests, local dev) where the
-        // operator-side provisioning hasn't run.
-        services.AddHostedService<ArtifactBucketInitializer>();
+        // Startup worker behind the comuki worker registry — ensures the
+        // configured MinIO bucket exists when ArtifactsOptions.AutoCreateBucket
+        // is on. The compose minio-init job does the same in production; the
+        // in-process flag covers greenfield setups (integration tests, local
+        // dev) where the operator-side provisioning hasn't run.
+        services.AddSingleton<IComukiWorker, ArtifactBucketInitializerComukiWorker>();
 
         return services;
     }

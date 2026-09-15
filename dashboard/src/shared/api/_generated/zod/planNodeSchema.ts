@@ -5,9 +5,18 @@
 
 import { z } from "zod/v4"
 
-export const planNodeSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  profileKey: z.string(),
-  brief: z.string(),
-})
+/**
+ * @description One step of a plan, executed by one worker with one profile.
+ */
+export const planNodeSchema = z
+  .object({
+    id: z.string().describe("Node id, unique inside the plan (e.g. `n1`)."),
+    title: z.string().describe("Short human title of the step."),
+    profileKey: z
+      .string()
+      .describe("Worker profile key from the catalog (e.g. `implement`)."),
+    brief: z
+      .string()
+      .describe("The worker brief — what this step must produce."),
+  })
+  .describe("One step of a plan, executed by one worker with one profile.")

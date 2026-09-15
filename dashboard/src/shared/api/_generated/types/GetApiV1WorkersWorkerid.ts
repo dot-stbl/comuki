@@ -3,6 +3,8 @@
  * Do not edit manually.
  */
 
+import type { WorkerView } from "./WorkerView"
+
 export type GetApiV1WorkersWorkeridPathParams = {
   /**
    * @type string, uuid
@@ -13,7 +15,7 @@ export type GetApiV1WorkersWorkeridPathParams = {
 /**
  * @description OK
  */
-export type GetApiV1WorkersWorkerid200 = any
+export type GetApiV1WorkersWorkerid200 = WorkerView
 
 export type GetApiV1WorkersWorkeridQueryResponse = GetApiV1WorkersWorkerid200
 

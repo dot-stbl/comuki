@@ -1,0 +1,53 @@
+{
+  "required": [
+    "workerImage",
+    "profilesGitRef",
+    "minIdle",
+    "maxConcurrent",
+    "idleTtlSeconds",
+    "pollIntervalSeconds",
+    "profileKeys"
+  ],
+  "type": "object",
+  "properties": {
+    "workerImage": {
+      "type": "string",
+      "description": "Default worker image (digest-pinned in production)."
+    },
+    "profilesGitRef": {
+      "type": "string",
+      "description": "Default pinned profiles git ref."
+    },
+    "minIdle": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Warm-idle floor per profile.",
+      "format": "int32"
+    },
+    "maxConcurrent": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Cap on concurrently running workers per project.",
+      "format": "int32"
+    },
+    "idleTtlSeconds": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Idle TTL before a worker is a reaper candidate, in seconds.",
+      "format": "int64"
+    },
+    "pollIntervalSeconds": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Delay between supervisor passes, in seconds.",
+      "format": "int64"
+    },
+    "profileKeys": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Profile keys the supervisor polls per project."
+    }
+  },
+  "description": "Scale defaults from ScaleSupervisorOptions.",
+  "x-readme-ref-name": "ComputeScaleDefaultsView"
+}

@@ -4,18 +4,20 @@ using Comuki.Modules.Scheduler.Infrastructure.Observers;
 using Comuki.Modules.Scheduler.Infrastructure.Persistence;
 using Comuki.Modules.Scheduler.Infrastructure.Persistence.Stores;
 using Comuki.Modules.Scheduler.Infrastructure.Sync;
+using Comuki.Shared.Bootstrap.Workers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Comuki.Modules.Scheduler.Infrastructure;
 
-/// <summary>Registration entry point for Scheduler persistence + the dispatcher hosted service.</summary>
+/// <summary>Registration entry point for Scheduler persistence + the dispatcher worker.</summary>
 public static class SchedulerPersistenceExtensions
 {
     /// <summary>
     /// Registers <see cref="SchedulerDbContext"/> (Npgsql + snake_case +
     /// private migrations history via <see cref="SchedulerDbContext.ApplyOptions"/>),
     /// the scheduled-job store (scoped — one context per unit of work),
-    /// the dispatcher worker as a hosted service, and the two
+    /// the dispatcher worker behind the comuki worker registry (a host
+    /// that runs it must also call <c>AddComukiWorkers()</c>), and the two
     /// <see cref="ISchedulerObserver"/> implementations the dispatcher
     /// notifies after every fire.
     /// </summary>
@@ -39,8 +41,7 @@ public static class SchedulerPersistenceExtensions
         services.AddSingleton<ISchedulerObserver, JournalSchedulerObserver>();
         services.AddSingleton<ISchedulerObserver, SentrySchedulerObserver>();
 
-        services.AddSingleton<ScheduledJobDispatcherWorker>();
-        services.AddHostedService(sp => sp.GetRequiredService<ScheduledJobDispatcherWorker>());
+        services.AddSingleton<IComukiWorker, ScheduledJobDispatcherComukiWorker>();
 
         return services;
     }

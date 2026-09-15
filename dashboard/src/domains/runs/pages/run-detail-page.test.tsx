@@ -158,7 +158,7 @@ const routeTree = rootRoute.addChildren(
   )
 )
 
-function mount(_runId: string) {
+function mount() {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [`/runs/${runId}`] }),
@@ -201,7 +201,7 @@ describe("what the screen answers before the run is on it", () => {
   })
 
   it("tells a stale link apart from a broken backend, and names the id", async () => {
-    mount("no_such_run")
+    mount()
 
     const missing = await waitFor(() => {
       const node = at("run-not-found")

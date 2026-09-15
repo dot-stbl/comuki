@@ -1,0 +1,119 @@
+import {
+  budgetHeat,
+  budgetLeftUsd,
+  budgetShare,
+  isLive,
+} from "@/domains/models/model/keys"
+import type { VirtualKey } from "@/domains/models/model/types"
+import { formatCost } from "@/domains/runs/model/format"
+import { cn } from "@/shared/lib/utils"
+
+import styles from "./key-budget-meter.module.css"
+
+export interface KeyBudgetMeterProps {
+  entry: VirtualKey
+  /**
+   * Whether the cap is actually being applied. With the thin proxy off nothing
+   * is enforced, and a bar that looks like a limit when there is no limit is
+   * the one lie this screen must not tell.
+   */
+  enforced: boolean
+  className?: string
+}
+
+/**
+ * What a key has spent against its cap, and whether anything is stopping it.
+ *
+ * A meter states its own numbers: the figures are the reading and the bar is
+ * drawn on top of them, so nothing here is announced only as a length. Heat is
+ * three readings rather than a gradient — below 85% there is nothing to decide,
+ * and a screen that colours a key at 40% has taught the operator to ignore the
+ * colour by the time one reaches 90%.
+ *
+ * When the cap is not being enforced the bar is hatched rather than filled. It
+ * still shows the same fraction, because the spend is real; what it stops
+ * claiming is that anything will happen when the fraction reaches one.
+ *
+ * Named for whose cap it reads, not for the concept. Three screens meter spend
+ * against a cap — a *key* here, the global proxy budget under Settings, the
+ * day's proxy cap on the cost report — and for a while two of them exported a
+ * `BudgetMeter` with incompatible props, so "go to definition" landed wherever
+ * the importer happened to be. The concept is not what distinguishes them;
+ * whose cap it is, is.
+ */
+export function KeyBudgetMeter({
+  entry,
+  enforced,
+  className,
+}: KeyBudgetMeterProps) {
+  const heat = budgetHeat(entry)
+  const share = budgetShare(entry)
+  const live = isLive(entry)
+
+  /* An unlimited key has no fraction to draw, and a surface that cannot
+     meter spend has no figure to state: both say their own word rather than
+     a zero that would read as "nothing spent against nothing". */
+  if (entry.budgetUsd === null) {
+    return (
+      <span
+        className={cn(styles.meter, className)}
+        data-test="budget-meter"
+        data-heat="idle"
+        title="this key carries no cap — it spends until it is revoked or expires"
+      >
+        <span className={styles.figures}>
+          <span className={styles.spent}>no cap</span>
+        </span>
+      </span>
+    )
+  }
+
+  if (entry.spentUsd === null) {
+    return (
+      <span
+        className={cn(styles.meter, className)}
+        data-test="budget-meter"
+        data-heat="idle"
+        title="the cap is live but this surface does not meter spend"
+      >
+        <span className={styles.figures}>
+          <span className={styles.spent}>
+            cap {formatCost(entry.budgetUsd)}
+          </span>
+          <span className={styles.left}>spend not metered here</span>
+        </span>
+      </span>
+    )
+  }
+
+  return (
+    <span
+      className={cn(styles.meter, className)}
+      data-test="budget-meter"
+      data-heat={live ? heat : "idle"}
+      data-enforced={enforced ? "" : undefined}
+      title={
+        enforced
+          ? undefined
+          : "the proxy is off — this cap is recorded but not applied"
+      }
+    >
+      <span className={styles.figures}>
+        <span className={styles.spent}>{formatCost(entry.spentUsd)}</span>
+        <span className={styles.of}>/</span>
+        <span className={styles.cap}>{formatCost(entry.budgetUsd)}</span>
+        <span className={styles.left}>
+          {heat === "over"
+            ? "over"
+            : `${formatCost(budgetLeftUsd(entry))} left`}
+        </span>
+      </span>
+      <span className={styles.channel} aria-hidden="true">
+        <span
+          className={styles.fill}
+          style={{ inlineSize: `${Math.min(100, Math.round(share * 100))}%` }}
+        />
+      </span>
+    </span>
+  )
+}

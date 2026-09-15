@@ -76,6 +76,18 @@ securityContext:
 # tmpVolume stays enabled (chart default): the host writes nothing outside
 # /tmp under a read-only root.
 
+# Vega cluster kubeconfig: mounted read-only, the compute engine reads it
+# to spawn worker Jobs on the vega cluster instead of in-cluster.
+volumeMounts:
+  - name: vega-kubeconfig
+    mountPath: /vega
+    readOnly: true
+
+volumes:
+  - name: vega-kubeconfig
+    secret:
+      secretName: comuki-vega-kubeconfig
+
 env:
   # Production ON PURPOSE, also on dev: the ProductionSecretValidator gate
   # (MinIO keys, bootstrap admin, both HMAC peppers) must be enforced in the
@@ -116,6 +128,8 @@ env:
   COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki:8080
   COMUKI_COMPUTE_KUBERNETES_NAMESPACE: comuki
   COMUKI_COMPUTE_KUBERNETES_SERVICEACCOUNT: comuki-worker
+  # Workers go to the vega cluster (external kubeconfig, mounted secret)
+  COMUKI_COMPUTE_KUBERNETES_KUBECONFIGPATH: /vega/kubeconfig
 
 # COMUKI_DB (full Npgsql DSN to pgvector.comuki.svc.cluster.local),
 # COMUKI_IDENTITY_APIKEY_PEPPER, COMUKI_TOKEN_PEPPER,

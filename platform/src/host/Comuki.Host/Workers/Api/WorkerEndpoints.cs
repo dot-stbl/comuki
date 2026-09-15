@@ -55,6 +55,7 @@ public static class WorkerEndpoints
                 : Results.Ok(new ClaimedWorkItemResponse(
                     claimed.WorkItemId,
                     claimed.RunId.Value,
+                    claimed.ProjectId,
                     claimed.ProfileKey,
                     claimed.Brief,
                     claimed.LeaseUntil.ToUnixTimeMilliseconds(),

@@ -3,6 +3,7 @@ namespace Comuki.Host.Translator.Api.Models.Responses;
 /// <summary>A claimed work item. Lease deadline is UTC unix milliseconds on the wire.</summary>
 /// <param name="WorkItemId"></param>
 /// <param name="RunId"></param>
+/// <param name="ProjectId">Project the parent run belongs to — the worker's project context.</param>
 /// <param name="ProfileKey"></param>
 /// <param name="Brief"></param>
 /// <param name="LeaseUntilUnixMs"></param>
@@ -10,6 +11,7 @@ namespace Comuki.Host.Translator.Api.Models.Responses;
 public sealed record ClaimedWorkItemResponse(
     Guid WorkItemId,
     Guid RunId,
+    Guid ProjectId,
     string ProfileKey,
     string Brief,
     long LeaseUntilUnixMs,

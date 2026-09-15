@@ -38,7 +38,9 @@ public sealed class StatusLiteralSqlShould
             + "    LIMIT 1 "
             + "    FOR UPDATE SKIP LOCKED "
             + ") "
-            + "RETURNING id, run_id, profile_key, brief, lease_until, attempt");
+            + "RETURNING id, run_id, "
+            + "(SELECT r.project_id FROM orchestration.runs r WHERE r.id = work_items.run_id), "
+            + "profile_key, brief, lease_until, attempt");
     }
 
     [Fact(DisplayName = "Given the heartbeat SQL, when composed, then it matches the historical text byte-for-byte")]

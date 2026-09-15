@@ -24,13 +24,13 @@ public static class PlanValidator
             errors.Add("summary must not be empty");
         }
 
-        if (plan.Nodes.Count == 0)
+        if (plan.Nodes is null || plan.Nodes.Count == 0)
         {
             errors.Add("plan must contain at least one node");
         }
 
         var ids = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var node in plan.Nodes)
+        foreach (var node in plan.Nodes ?? [])
         {
             if (string.IsNullOrWhiteSpace(node.Id))
             {
@@ -57,7 +57,7 @@ public static class PlanValidator
             }
         }
 
-        foreach (var edge in plan.Edges)
+        foreach (var edge in plan.Edges ?? [])
         {
             if (!ids.Contains(edge.From))
             {
@@ -92,7 +92,7 @@ public static class PlanValidator
         // errors — crashing here would mask those errors
         var outgoing = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var state = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var node in plan.Nodes)
+        foreach (var node in plan.Nodes ?? [])
         {
             if (!outgoing.ContainsKey(node.Id))
             {
@@ -101,7 +101,7 @@ public static class PlanValidator
             }
         }
 
-        foreach (var edge in plan.Edges)
+        foreach (var edge in plan.Edges ?? [])
         {
             if (outgoing.TryGetValue(edge.From, out var targets)
                 && outgoing.ContainsKey(edge.To)
@@ -112,7 +112,7 @@ public static class PlanValidator
         }
 
         // 0 = unvisited, 1 = on the current path, 2 = done
-        foreach (var node in plan.Nodes)
+        foreach (var node in plan.Nodes ?? [])
         {
             if (state[node.Id] != 0)
             {

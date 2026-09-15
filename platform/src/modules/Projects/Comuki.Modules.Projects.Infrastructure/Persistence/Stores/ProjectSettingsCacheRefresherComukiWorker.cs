@@ -2,25 +2,25 @@ using System.Collections.Concurrent;
 using System.Data.Common;
 using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Domain.Settings;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
 
 /// <summary>
-/// Keeps the shared settings snapshot cache warm: refreshes every
-/// project's row at startup and then on a fixed interval. This is what
-/// makes settings live-reload survive a restart — the first pass runs
-/// before the supervisor's first poll needs the data, and later passes
-/// pick up writes made outside this process.
+/// Keeps the shared settings snapshot cache warm behind the comuki worker
+/// registry: refreshes every project's row at startup and then on a fixed
+/// interval. This is what makes settings live-reload survive a restart —
+/// the first pass runs before the supervisor's first poll needs the data,
+/// and later passes pick up writes made outside this process.
 /// <para>
 /// Issue Q27 / v1.1: when the underlying store (DB today, Redis when
 /// the planned <c>DistributedProjectSettingsCache</c> lands) is
-/// unreachable, the refresher no longer retries and silently waits —
-/// it falls back to the last-known snapshot held in
+/// unreachable, the cycle reports the failure to the worker registry and
+/// falls back to the last-known snapshot held in
 /// <see cref="fallbackSnapshots"/>, each row with a hard
 /// <see cref="FallbackTtl"/>. After the TTL elapses the snapshot is
 /// dropped so the cache eventually goes cold rather than serving
@@ -39,12 +39,12 @@ namespace Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
 /// <param name="cache"></param>
 /// <param name="clock"></param>
 /// <param name="logger"></param>
-public sealed class ProjectSettingsCacheRefresher(
+public sealed class ProjectSettingsCacheRefresherComukiWorker(
     IDbContextFactory<ProjectsDbContext> dbFactory,
     ISubjectScopeAccessor scopeAccessor,
     ProjectSettingsCache cache,
     TimeProvider clock,
-    ILogger<ProjectSettingsCacheRefresher> logger) : BackgroundService
+    ILogger<ProjectSettingsCacheRefresherComukiWorker> logger) : IComukiWorker
 {
     /// <summary>Poll interval; entries live for <see cref="ProjectSettingsCache.EntryTtl"/> (≈2 passes).</summary>
     public static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(15);
@@ -55,36 +55,31 @@ public sealed class ProjectSettingsCacheRefresher(
     private readonly ConcurrentDictionary<ProjectId, ProjectSettingsCacheRefresherHelpers.FallbackSnapshotEntry> fallbackSnapshots = new();
 
     /// <inheritdoc />
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public string Name => "project-cache";
+
+    /// <inheritdoc />
+    public WorkerSchedule Schedule => WorkerSchedule.Interval(RefreshInterval);
+
+    /// <inheritdoc />
+    public async Task<WorkerResult> ExecuteAsync(WorkerContext context, CancellationToken cancellationToken)
     {
         try
         {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                try
-                {
-                    await RefreshAllAsync(stoppingToken);
-                }
-                catch (DbException exception)
-                {
-                    await ProjectSettingsCacheRefresherHelpers.FallbackAsync(
-                        cache,
-                        fallbackSnapshots,
-                        FallbackTtl,
-                        clock.GetUtcNow(),
-                        exception,
-                        logger,
-                        stoppingToken);
-                }
-
-                await Task.Delay(RefreshInterval, stoppingToken);
-            }
+            await RefreshAllAsync(cancellationToken);
+            return WorkerResult.Ok($"refreshed {fallbackSnapshots.Count} project(s)");
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        catch (DbException exception)
         {
-            // host shutdown (refresh or delay cancelled): the expected stop
-            // path — an unhandled cancel here trips StopHost and kills
-            // in-flight requests
+            await ProjectSettingsCacheRefresherHelpers.FallbackAsync(
+                cache,
+                fallbackSnapshots,
+                FallbackTtl,
+                clock.GetUtcNow(),
+                exception,
+                logger,
+                cancellationToken);
+
+            return WorkerResult.Fail($"store unreachable, served fallback: {exception.Message}");
         }
     }
 

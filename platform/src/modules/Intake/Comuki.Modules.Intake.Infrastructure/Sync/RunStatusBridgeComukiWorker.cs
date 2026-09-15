@@ -6,98 +6,118 @@ using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Application.Sync;
 using Comuki.Modules.Intake.Domain.Sync;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Modules.Intake.Infrastructure.Sync;
 
 /// <summary>
-/// The run status bridge + sync-back outbox drainer (scope-draft §1
-/// "Sync"): scans claimed tickets, and for every run that reached a
-/// terminal status enqueues one sync job (idempotent on run_id),
-/// releases the one-live-run lock, then drains due jobs into the
-/// provider transition APIs with exponential backoff. Runs as a hosted
-/// service resolving everything through scopes — never captures a
-/// scoped dependency. Each cycle runs AsSystem: the bridge reads runs
-/// across every project, ambient subject scope does not apply.
+/// The run status bridge + sync-back outbox drainer behind the comuki worker
+/// registry (scope-draft §1 "Sync"): scans claimed tickets, and for every run
+/// that reached a terminal status enqueues one sync job (idempotent on
+/// run_id), releases the one-live-run lock, then drains due jobs into the
+/// provider transition APIs with exponential backoff. Each cycle runs
+/// AsSystem: the bridge reads runs across every project, ambient subject
+/// scope does not apply. A transient cycle failure is reported to the
+/// registry, which retries with backoff.
 /// </summary>
-/// <param name="scopeFactory"></param>
 /// <param name="scopeAccessor">Establishes the AsSystem subject scope for each cycle.</param>
-/// <param name="options"></param>
-/// <param name="logger"></param>
-public sealed class RunStatusBridgeWorker(
-    IServiceScopeFactory scopeFactory,
+/// <param name="options">Bound intake options; the bridge interval drives the schedule.</param>
+/// <param name="logger">Structured logger — per-ticket and per-job Information.</param>
+public sealed class RunStatusBridgeComukiWorker(
     ISubjectScopeAccessor scopeAccessor,
     IOptions<IntakeOptions> options,
-    ILogger<RunStatusBridgeWorker> logger) : BackgroundService
+    ILogger<RunStatusBridgeComukiWorker> logger) : IComukiWorker
 {
     /// <inheritdoc />
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                using var systemScope = scopeAccessor.AsSystem("intake-bridge");
-                await BridgeOnceAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception exception) when (exception is HttpRequestException or IOException or TimeoutException
-                                       or DbException or JsonException)
-            {
-                // boundary: the worker's own supervision loop — a transient
-                // store/provider failure must not kill the hosted service
-                logger.LogError(exception, "Intake bridge cycle failed; retrying next interval");
-            }
+    public string Name => "intake-bridge";
 
-            try
-            {
-                await Task.Delay(options.Value.BridgeInterval, stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
+    /// <inheritdoc />
+    public WorkerSchedule Schedule => WorkerSchedule.Interval(options.Value.BridgeInterval);
+
+    /// <inheritdoc />
+    public async Task<WorkerResult> ExecuteAsync(WorkerContext context, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var systemScope = scopeAccessor.AsSystem(Name);
+
+            var outcome = await RunStatusBridgePass.RunAsync(
+                context.Services,
+                context.Clock,
+                options.Value,
+                logger,
+                cancellationToken);
+
+            return WorkerResult.Ok($"released {outcome.Released}, drained {outcome.Drained}", outcome);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or IOException or TimeoutException
+                                   or DbException or JsonException)
+        {
+            // boundary: the worker's own supervision loop — a transient
+            // store/provider failure counts as a failed cycle for the
+            // registry (logged, backoff); it must not kill the host
+            return WorkerResult.Fail($"bridge cycle failed: {exception.Message}");
         }
     }
+}
 
-    private async Task BridgeOnceAsync(CancellationToken cancellationToken)
-    {
-        await using var scope = scopeFactory.CreateAsyncScope();
-        var store = scope.ServiceProvider.GetRequiredService<IIntakeStore>();
-        var runStatusReader = scope.ServiceProvider.GetRequiredService<IRunStatusReader>();
-        var registry = scope.ServiceProvider.GetRequiredService<TicketProviderRegistry>();
-        var clock = scope.ServiceProvider.GetRequiredService<TimeProvider>();
-        var now = clock.GetUtcNow();
+/// <summary>One bridge cycle outcome — released locks and drained sync jobs.</summary>
+/// <param name="Released">Tickets whose terminal run released the live-run lock.</param>
+/// <param name="Drained">Sync jobs pushed to their provider this cycle.</param>
+file sealed record BridgePassOutcome(int Released, int Drained);
 
-        await ReleaseFinishedRunsAsync(store, runStatusReader, now, cancellationToken);
-        await DrainSyncJobsAsync(store, registry, options.Value, clock, cancellationToken);
-    }
-
-    private async Task ReleaseFinishedRunsAsync(
-        IIntakeStore store,
-        IRunStatusReader runStatusReader,
-        DateTimeOffset now,
+/// <summary>
+/// File-scoped pass logic for the bridge worker: one cycle is one release
+/// sweep over claimed tickets followed by one drain of due sync jobs, both
+/// resolved from the registry's per-cycle scope. A single static class is
+/// the smallest unit that keeps the worker free of private methods (rule
+/// code-shape §9 / class-layout-and-tooling §1a).
+/// </summary>
+file static class RunStatusBridgePass
+{
+    public static async Task<BridgePassOutcome> RunAsync(
+        IServiceProvider services,
+        TimeProvider clock,
+        IntakeOptions intakeOptions,
+        ILogger logger,
         CancellationToken cancellationToken)
     {
-        var claimed = await store.ListClaimedAsync(options.Value.BridgeBatchSize, cancellationToken);
+        var store = services.GetRequiredService<IIntakeStore>();
+        var runStatusReader = services.GetRequiredService<IRunStatusReader>();
+        var registry = services.GetRequiredService<TicketProviderRegistry>();
+        var now = clock.GetUtcNow();
+
+        var released = await ReleaseFinishedRunsAsync(store, runStatusReader, intakeOptions, now, logger, cancellationToken);
+        var drained = await DrainSyncJobsAsync(store, registry, intakeOptions, clock, logger, cancellationToken);
+
+        return new BridgePassOutcome(released, drained);
+    }
+
+    public static async Task<int> ReleaseFinishedRunsAsync(
+        IIntakeStore store,
+        IRunStatusReader runStatusReader,
+        IntakeOptions intakeOptions,
+        DateTimeOffset now,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        var claimed = await store.ListClaimedAsync(intakeOptions.BridgeBatchSize, cancellationToken);
         if (claimed.Count == 0)
         {
-            return;
+            return 0;
         }
 
         var statuses = await runStatusReader.ReadStatusesAsync(
-            [.. claimed.Select(ticket => ticket.RunId ?? throw new InvalidOperationException($"claimed ticket {ticket.Id} has no run id"))],
+            [.. claimed.Select(static ticket => ticket.RunId ?? throw new InvalidOperationException($"claimed ticket {ticket.Id} has no run id"))],
             cancellationToken);
 
+        var released = 0;
         foreach (var ticket in claimed)
         {
             if (!statuses.TryGetValue(ticket.RunId!.Value, out var status)
@@ -110,7 +130,7 @@ public sealed class RunStatusBridgeWorker(
             // idempotent on run_id (a run is terminal exactly once)
             if (ticket.ConnectionId is { } connectionId)
             {
-                var runUrl = IntakeRunUrls.Of(options.Value.PublicBaseUrl, ticket.RunId.Value);
+                var runUrl = IntakeRunUrls.Of(intakeOptions.PublicBaseUrl, ticket.RunId.Value);
                 await store.EnqueueSyncJobAsync(
                     SyncJob.Create(ticket.Id, connectionId, ticket.RunId.Value, ticket.ExternalId, ticket.Url, status, now),
                     cancellationToken);
@@ -120,18 +140,23 @@ public sealed class RunStatusBridgeWorker(
             logger.LogInformation(
                 "Ticket {TicketId} run {RunId} finished ({Status}) — lock released",
                 ticket.Id, ticket.RunId.Value, status);
+            released++;
         }
+
+        return released;
     }
 
-    private async Task DrainSyncJobsAsync(
+    public static async Task<int> DrainSyncJobsAsync(
         IIntakeStore store,
         TicketProviderRegistry registry,
         IntakeOptions intakeOptions,
         TimeProvider clock,
+        ILogger logger,
         CancellationToken cancellationToken)
     {
         var due = await store.ListDueSyncJobsAsync(clock.GetUtcNow(), intakeOptions.BridgeBatchSize, cancellationToken);
         var connections = new Dictionary<Guid, Domain.Connections.SourceConnection>();
+        var drained = 0;
 
         foreach (var job in due)
         {
@@ -164,6 +189,7 @@ public sealed class RunStatusBridgeWorker(
                     cancellationToken);
                 await store.MarkSyncJobDoneAsync(job.Id, clock.GetUtcNow(), cancellationToken);
                 logger.LogInformation("Sync job {JobId} pushed {RunStatus} for {ExternalId}", job.Id, job.RunStatus, job.ExternalId);
+                drained++;
             }
             catch (Exception exception) when (exception is HttpRequestException or IOException or TimeoutException or JsonException
                                        or DbException)
@@ -175,9 +201,11 @@ public sealed class RunStatusBridgeWorker(
                 await store.MarkSyncJobFailedAsync(job.Id, exception.Message, intakeOptions.SyncMaxAttempts, intakeOptions.SyncBackoff, clock.GetUtcNow(), cancellationToken);
             }
         }
+
+        return drained;
     }
 
-    private static async Task<Domain.Connections.SourceConnection?> ResolveConnectionAsync(
+    public static async Task<Domain.Connections.SourceConnection?> ResolveConnectionAsync(
         IIntakeStore store,
         Dictionary<Guid, Domain.Connections.SourceConnection> connections,
         SyncJob job,

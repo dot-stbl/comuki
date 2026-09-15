@@ -4,6 +4,8 @@ import type {
   SeedWorker,
   SeedWorkerPool,
 } from "@/shared/api/mock/queue.seed"
+import type { WorkerView } from "@/shared/api/_generated/types/WorkerView"
+import type { WorkersPage } from "@/shared/api/_generated/types/WorkersPage"
 
 import type {
   QueueDepthDay,
@@ -72,35 +74,10 @@ export function toQueueDepthDay(seed: SeedQueueDepth): QueueDepthDay {
  *
  * The host's registry is *derived*: a busy worker is a live work-item lease,
  * an idle one is a recent claim, and an offline one holds a lease whose
- * heartbeat went stale. The kubb client answers `any` for these (the
- * OpenAPI spec declares no response schema), so the shape lives here as the
- * single typed claim about the wire — written against the host's
- * `WorkerView` record in `WorkersReadModels.cs`, camelCased by the JSON
- * serializer.
+ * heartbeat went stale. The OpenAPI spec now declares the response schemas,
+ * so the wire claim is the kubb-generated `WorkerView` / `WorkersPage` —
+ * the host's `WorkersReadModels.cs` records, camelCased by the serializer.
  * ------------------------------------------------------------------ */
-
-/** One row of `GET /api/v1/workers` — the host's `WorkerView`. */
-export interface WorkerViewWire {
-  readonly workerId: string
-  readonly state: string
-  readonly projectId: string | null
-  readonly profileKey: string | null
-  readonly image: string | null
-  readonly currentWorkItemId: string | null
-  readonly currentRunId: string | null
-  readonly leaseUntil: string | null
-  readonly heartbeatAt: string | null
-  readonly attempt: number
-  readonly lastSeenAt: string
-}
-
-/** The paging envelope of `GET /api/v1/workers`. */
-export interface WorkersPageWire {
-  readonly items: WorkerViewWire[]
-  readonly page: number
-  readonly pageSize: number
-  readonly total: number
-}
 
 function toWorkerState(state: string): WorkerState {
   return state === "busy" || state === "idle" || state === "offline"
@@ -135,7 +112,7 @@ function secondsSince(iso: string | null, nowMs: number): number | null {
  * rather than a made-up idle container's facts.
  */
 export function workerViewToWorker(
-  view: WorkerViewWire,
+  view: WorkerView,
   nowMs: number = Date.now()
 ): Worker {
   return {
@@ -156,7 +133,7 @@ export function workerViewToWorker(
 
 /** A wire page onto the screen's worker list. */
 export function workersPageToWorkers(
-  page: WorkersPageWire,
+  page: WorkersPage,
   nowMs: number = Date.now()
 ): Worker[] {
   return page.items.map((view) => workerViewToWorker(view, nowMs))

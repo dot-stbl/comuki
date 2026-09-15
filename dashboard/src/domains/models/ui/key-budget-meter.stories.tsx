@@ -20,6 +20,9 @@ function key(overrides: Partial<VirtualKey> = {}): VirtualKey {
     expiresInSec: 30, createdAgoSec: 0 * DAY,
     lastUsedAgoSec: DAY,
     revoked: false,
+    createdAgoSec: 2 * DAY,
+    grants: null,
+    spendDaily: null,
     ...overrides,
   } as VirtualKey
 }

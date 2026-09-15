@@ -8,6 +8,7 @@ import type { VisualArtifactPage } from "./VisualArtifactPage"
 
 export type ArtifactsVisualListPathParams = {
   /**
+   * @description Owning project (path).
    * @type string, uuid
    */
   projectId: string
@@ -15,10 +16,12 @@ export type ArtifactsVisualListPathParams = {
 
 export type ArtifactsVisualListQueryParams = {
   /**
+   * @description Optional run filter (query).
    * @type string | undefined, uuid
    */
   runId?: string
   /**
+   * @description Optional work-item filter (query).
    * @type string | undefined, uuid
    */
   workItemId?: string

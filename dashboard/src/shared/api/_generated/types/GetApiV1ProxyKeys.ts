@@ -3,10 +3,12 @@
  * Do not edit manually.
  */
 
+import type { ProxyKeysResponse } from "./ProxyKeysResponse"
+
 /**
  * @description OK
  */
-export type GetApiV1ProxyKeys200 = any
+export type GetApiV1ProxyKeys200 = ProxyKeysResponse
 
 export type GetApiV1ProxyKeysQueryResponse = GetApiV1ProxyKeys200
 

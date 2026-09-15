@@ -9,6 +9,9 @@ import type {
   SeedKnowledgeEntry,
   SeedKnowledgeSnapshot,
 } from "@/shared/api/mock/knowledge.seed"
+import type { KnowledgeDocumentsPage } from "@/shared/api/_generated/types/KnowledgeDocumentsPage"
+import type { KnowledgeDocumentSummary } from "@/shared/api/_generated/types/KnowledgeDocumentSummary"
+import type { KnowledgeSearchHitView } from "@/shared/api/_generated/types/KnowledgeSearchHitView"
 
 /* Two sources, one domain shape. The mock path maps the control-plane seed
    (rules, revisions, the golden-task harness). The wire path maps the host's
@@ -56,44 +59,13 @@ export function toKnowledgeSnapshot(
 /* ------------------------------------------------------------------ *
  * The wire — `GET /api/v1/knowledge/documents` and `…/search`.
  *
- * The kubb client answers `any` (no response schema in the spec), so the
- * shapes live here as the typed claim about the host's views, camelCased as
- * the serializer writes them.
+ * The spec declares the response schemas now, so the wire shapes are the
+ * kubb-generated `KnowledgeDocumentsPage` / `KnowledgeDocumentSummary` /
+ * `KnowledgeSearchHitView` (the host's views, camelCased by the
+ * serializer). Counters arrive as `number | string` and scores as
+ * `number | string` per the spec's reading-from-string allowance; the
+ * mappers normalise at this edge.
  * ------------------------------------------------------------------ */
-
-/** One row of the documents page — the host's `KnowledgeDocumentView`. */
-export interface KnowledgeDocumentWire {
-  readonly id: string
-  readonly projectId: string
-  readonly title: string
-  readonly source: string
-  readonly sourceRef: string
-  readonly mimeType: string
-  readonly chunkCount: number
-  readonly tokenCount: number
-  readonly createdAt: string
-}
-
-/** The documents page envelope. */
-export interface KnowledgeDocumentsPageWire {
-  readonly items: readonly KnowledgeDocumentWire[]
-  readonly page: number
-  readonly pageSize: number
-  readonly total: number
-}
-
-/** One search hit — the host's `KnowledgeSearchHitView`. */
-export interface KnowledgeSearchHitWire {
-  readonly documentId: string
-  readonly chunkId: string
-  readonly snippet: string
-  readonly score: number
-}
-
-/** The search envelope. */
-export interface KnowledgeSearchResponseWire {
-  readonly items: readonly KnowledgeSearchHitWire[]
-}
 
 /** An ISO instant as the row's "updated" word — date, not clock time. */
 function toUpdated(iso: string): string {
@@ -112,7 +84,7 @@ function toUpdated(iso: string): string {
  * where the text lives rather than inventing prose.
  */
 export function knowledgeDocumentToEntry(
-  doc: KnowledgeDocumentWire
+  doc: KnowledgeDocumentSummary
 ): KnowledgeEntry {
   return {
     id: doc.id,
@@ -120,11 +92,13 @@ export function knowledgeDocumentToEntry(
     // and skill kinds are the control-plane vocabulary and never arrive here.
     kind: "doc",
     title: doc.title,
-    scope: doc.projectId,
+    // The wire marks a global-corpus document with a null project; the
+    // library's scope column needs a word, and "global" is the host's own.
+    scope: doc.projectId ?? "global",
     ruleKind: undefined,
     revision: doc.sourceRef,
     pinned: false,
-    summary: `${doc.source} · ${doc.mimeType} · ${doc.chunkCount} chunks · ${doc.tokenCount} tokens`,
+    summary: `${doc.source} · ${doc.mimeType} · ${Number(doc.chunkCount)} chunks · ${Number(doc.tokenCount)} tokens`,
     body: `Full text is not served by the documents API — open the source at ${doc.sourceRef}.`,
     updated: toUpdated(doc.createdAt),
   }
@@ -132,7 +106,7 @@ export function knowledgeDocumentToEntry(
 
 /** A documents page onto the real-mode snapshot: entries, nothing else. */
 export function knowledgeDocumentsToSnapshot(
-  page: KnowledgeDocumentsPageWire
+  page: KnowledgeDocumentsPage
 ): KnowledgeSnapshot {
   return {
     revision: null,
@@ -146,13 +120,13 @@ export function knowledgeDocumentsToSnapshot(
 
 /** A wire hit onto the page's hit shape. */
 export function knowledgeHitWireToHit(
-  hit: KnowledgeSearchHitWire
+  hit: KnowledgeSearchHitView
 ): KnowledgeHit {
   return {
     documentId: hit.documentId,
     chunkId: hit.chunkId,
     snippet: hit.snippet,
-    score: hit.score,
+    score: Number(hit.score),
   }
 }
 

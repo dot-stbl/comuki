@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import { knowledgeDocumentsPageSchema } from "./knowledgeDocumentsPageSchema"
 import { z } from "zod/v4"
 
 export const getApiV1KnowledgeDocumentsQueryParamsSchema = z
@@ -20,7 +21,11 @@ export const getApiV1KnowledgeDocumentsQueryParamsSchema = z
 /**
  * @description OK
  */
-export const getApiV1KnowledgeDocuments200Schema = z.any()
+export const getApiV1KnowledgeDocuments200Schema = z
+  .lazy(() => knowledgeDocumentsPageSchema)
+  .describe(
+    "One page of documents plus the paging envelope (same shape as the runs page)."
+  )
 
 export const getApiV1KnowledgeDocumentsQueryResponseSchema = z.lazy(
   () => getApiV1KnowledgeDocuments200Schema

@@ -3,12 +3,17 @@
  * Do not edit manually.
  */
 
+import { computeSnapshotViewSchema } from "./computeSnapshotViewSchema"
 import { z } from "zod/v4"
 
 /**
  * @description OK
  */
-export const getApiV1Compute200Schema = z.any()
+export const getApiV1Compute200Schema = z
+  .lazy(() => computeSnapshotViewSchema)
+  .describe(
+    "Wire shape of `GET /api/v1/compute` — a read-only snapshot of what\r\nthe host can honestly observe: the configured provider, the scale\r\ndefaults from `Compute:Scale`, and per-profile pool counts derived\r\nfrom the work-item queue. Capacity (`freeSlots`) and recent spawns\r\nare omitted on purpose — they need a composed compute provider, which\r\nthis host does not wire."
+  )
 
 export const getApiV1ComputeQueryResponseSchema = z.lazy(
   () => getApiV1Compute200Schema

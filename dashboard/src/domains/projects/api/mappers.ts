@@ -5,27 +5,28 @@ import type {
   UsageEvent,
 } from "@/domains/projects/model/types"
 import type { CreateProjectRequest } from "@/shared/api/_generated/types/CreateProjectRequest"
+import type { ProjectCostsView } from "@/shared/api/_generated/types/ProjectCostsView"
 import type { UpdateSettingsRequest } from "@/shared/api/_generated/types/UpdateSettingsRequest"
+import type { UsageEventView } from "@/shared/api/_generated/types/UsageEventView"
 import type { SeedProject } from "@/shared/api/mock/projects.seed"
 import type { ProjectRef } from "@/shared/session"
 
 // ---------------------------------------------------------------------------
 // Wire → domain mappers (real-backend path).
 //
-// The kubb-generated response types for the projects endpoints are `any`
-// because the host's OpenAPI document does not include response schemas
-// for `ProjectView` / `ProjectSettingsView` / `ProjectCostsView` — the C#
-// records have no `[ProducesResponseType]` annotations. The shape each
-// mapper expects is encoded inline below as a TypeScript `interface` that
-// mirrors the C# record property-for-property. When the host grows explicit
-// response schemas, kubb will emit typed DTOs and these interfaces become
-// dead weight — that is the day to drop them in favour of the kubb types.
+// The costs view is typed by the kubb-generated `ProjectCostsView` (the
+// spec now declares the response schema). The projects/settings reads are
+// still `any`-free local claims below — their endpoints carry no response
+// schemas yet; the day they grow them, the same swap happens there.
 //
-// The mappers are intentionally tolerant: a wire row missing one of the
-// optional fields falls back to a domain default (`null`, `0`, `false`,
-// `""`) rather than throwing. The screen renders those defaults honestly
-// (dashes, zero, "—") — fabricating values would be a worse lie than
-// declaring the field absent.
+// The spec types counters as `number | string` (the serializer may read
+// numbers from strings) and the ids the host wraps in typed records
+// (`ProjectId`, `RunId`) as `{ value: string }` objects — both are
+// normalised at this edge. The mappers stay intentionally tolerant: a wire
+// row missing one of the optional fields falls back to a domain default
+// (`null`, `0`, `false`, `""`) rather than throwing. The screen renders
+// those defaults honestly (dashes, zero, "—") — fabricating values would
+// be a worse lie than declaring the field absent.
 // ---------------------------------------------------------------------------
 
 /** Wire shape of GET /api/v1/projects — a `ProjectView[]`. */
@@ -56,29 +57,6 @@ interface ProjectSettingsView {
   hardBudgetUsdMicros: number | null
   updatedAt: string
   version: number
-}
-
-/** Wire shape of GET /api/v1/projects/{id}/costs. */
-interface ProjectCostsView {
-  projectId: string
-  spentUsdMicros: number
-  softLimitUsdMicros: number | null
-  hardLimitUsdMicros: number | null
-  softExceeded: boolean
-  hardExceeded: boolean
-  recent: UsageEventView[]
-}
-
-/** Wire shape of one entry inside `ProjectCostsView.recent`. */
-interface UsageEventView {
-  id: string
-  runId: string | null
-  source: string
-  model: string
-  inputTokens: number
-  outputTokens: number
-  costUsdMicros: number
-  occurredAt: string
 }
 
 const EMPTY_COSTS: UsageEvent[] = []
@@ -218,7 +196,7 @@ export function mapCostsPageToCostSummary(
     : EMPTY_COSTS
 
   return {
-    projectId: view.projectId,
+    projectId: view.projectId.value ?? "",
     spentUsd: microsToUsd(view.spentUsdMicros),
     softBudgetUsd: numberOrNull(view.softLimitUsdMicros, microsToUsd),
     hardBudgetUsd: numberOrNull(view.hardLimitUsdMicros, microsToUsd),
@@ -231,23 +209,23 @@ export function mapCostsPageToCostSummary(
 function mapUsageEvent(view: UsageEventView): UsageEvent {
   return {
     id: view.id,
-    runId: view.runId,
+    runId: view.runId?.value ?? null,
     source: view.source,
     model: view.model,
-    inputTokens: view.inputTokens,
-    outputTokens: view.outputTokens,
+    inputTokens: Number(view.inputTokens),
+    outputTokens: Number(view.outputTokens),
     costUsd: microsToUsd(view.costUsdMicros),
     occurredAt: view.occurredAt,
   }
 }
 
-function microsToUsd(micros: number): number {
-  return micros / 1_000_000
+function microsToUsd(micros: number | string): number {
+  return Number(micros) / 1_000_000
 }
 
 function numberOrNull(
-  value: number | null | undefined,
-  map: (input: number) => number
+  value: number | string | null | undefined,
+  map: (input: number | string) => number
 ): number | null {
   return value == null ? null : map(value)
 }

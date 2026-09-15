@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import { projectCostsViewSchema } from "./projectCostsViewSchema"
 import { z } from "zod/v4"
 
 export const getApiV1ProjectsProjectidCostsPathParamsSchema = z.object({
@@ -12,7 +13,11 @@ export const getApiV1ProjectsProjectidCostsPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const getApiV1ProjectsProjectidCosts200Schema = z.any()
+export const getApiV1ProjectsProjectidCosts200Schema = z
+  .lazy(() => projectCostsViewSchema)
+  .describe(
+    "Project cost summary for GET /api/v1/projects/{id}/costs.\r\nMoney fields are USD micros (1 USD = 1_000_000)."
+  )
 
 export const getApiV1ProjectsProjectidCostsQueryResponseSchema = z.lazy(
   () => getApiV1ProjectsProjectidCosts200Schema

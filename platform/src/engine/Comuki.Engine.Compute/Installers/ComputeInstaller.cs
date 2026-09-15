@@ -7,6 +7,7 @@ using Comuki.Engine.Compute.Security.Stores;
 using Comuki.Engine.Compute.Settings;
 using Comuki.Engine.Compute.Supervisor;
 using Comuki.Shared.Bootstrap.Versioning;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Contracts.Compute;
 using Docker.DotNet;
 using k8s;
@@ -133,7 +134,7 @@ public static class ComputeInstaller
         services.AddSingleton<WorkerPoolState>();
         services.AddSingleton<IWorkerPoolState>(static serviceProvider => serviceProvider.GetRequiredService<WorkerPoolState>());
         services.AddSingleton<ScaleSupervisorCycle>();
-        services.AddHostedService<ScaleSupervisorWorker>();
+        services.AddSingleton<IComukiWorker, ScaleSupervisorComukiWorker>();
 
         return services;
     }

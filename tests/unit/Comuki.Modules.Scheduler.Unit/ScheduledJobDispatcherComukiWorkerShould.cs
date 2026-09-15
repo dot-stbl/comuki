@@ -17,12 +17,12 @@ using Xunit;
 namespace Comuki.Modules.Scheduler.Unit;
 
 /// <summary>
-/// ScheduledJobDispatcherWorker polling cycle: due jobs are dispatched,
+/// ScheduledJobDispatcherComukiWorker polling cycle: due jobs are dispatched,
 /// the fire trail stamps <c>last_fired_at</c> + the next fire instant,
 /// one failing job does not poison the rest of the batch, and every
 /// registered observer is notified of each successful fire.
 /// </summary>
-public sealed class ScheduledJobDispatcherWorkerShould
+public sealed class ScheduledJobDispatcherComukiWorkerShould
 {
     private static readonly DateTimeOffset anchorTime = DateTimeOffset.Parse(
         "2026-09-06T00:00:00Z",
@@ -198,7 +198,7 @@ public sealed class ScheduledJobDispatcherWorkerShould
             Arg.Any<CancellationToken>());
     }
 
-    private static ScheduledJobDispatcherWorker NewWorker(
+    private static ScheduledJobDispatcherComukiWorker NewWorker(
         TimeProvider clock,
         IReadOnlyList<ScheduledJob> dueJobs,
         ISchedulerDispatcher dispatcher,
@@ -217,13 +217,13 @@ public sealed class ScheduledJobDispatcherWorkerShould
         var scopeAccessor = Substitute.For<ISubjectScopeAccessor>();
         scopeAccessor.AsSystem(Arg.Any<string>()).Returns(new SystemScope());
 
-        return new ScheduledJobDispatcherWorker(
+        return new ScheduledJobDispatcherComukiWorker(
             scopeFactory,
             scopeAccessor,
             clock,
             Options.Create(new SchedulerOptions { PollInterval = TimeSpan.FromSeconds(30) }),
             observers,
-            NullLogger<ScheduledJobDispatcherWorker>.Instance);
+            NullLogger<ScheduledJobDispatcherComukiWorker>.Instance);
     }
 
     private sealed class FixedClock(DateTimeOffset now) : TimeProvider

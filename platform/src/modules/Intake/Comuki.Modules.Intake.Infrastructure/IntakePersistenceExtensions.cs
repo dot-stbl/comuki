@@ -2,6 +2,7 @@ using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Comuki.Modules.Intake.Infrastructure.Persistence.Stores;
 using Comuki.Modules.Intake.Infrastructure.Sync;
+using Comuki.Shared.Bootstrap.Workers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Comuki.Modules.Intake.Infrastructure;
@@ -14,7 +15,9 @@ public static class IntakePersistenceExtensions
     /// private migrations history via
     /// <see cref="IntakeDbContext.ApplyOptions"/>), the intake store
     /// (scoped — one context per unit of work) and the run status bridge
-    /// worker. The shared-kernel <c>ISecretResolver</c> is registered by
+    /// worker. The bridge registers as an <see cref="IComukiWorker"/>; a
+    /// host that runs it must also call <c>AddComukiWorkers()</c>. The
+    /// shared-kernel <c>ISecretResolver</c> is registered by
     /// the host composition root — there is no Intake-local copy.
     /// </summary>
     /// <param name="services"></param>
@@ -28,7 +31,7 @@ public static class IntakePersistenceExtensions
             IntakeDbContext.ApplyOptions(options, connectionString));
 
         services.AddScoped<IIntakeStore, IntakeStore>();
-        services.AddHostedService<RunStatusBridgeWorker>();
+        services.AddSingleton<IComukiWorker, RunStatusBridgeComukiWorker>();
 
         return services;
     }

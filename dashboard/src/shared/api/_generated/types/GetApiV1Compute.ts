@@ -3,10 +3,12 @@
  * Do not edit manually.
  */
 
+import type { ComputeSnapshotView } from "./ComputeSnapshotView"
+
 /**
  * @description OK
  */
-export type GetApiV1Compute200 = any
+export type GetApiV1Compute200 = ComputeSnapshotView
 
 export type GetApiV1ComputeQueryResponse = GetApiV1Compute200
 

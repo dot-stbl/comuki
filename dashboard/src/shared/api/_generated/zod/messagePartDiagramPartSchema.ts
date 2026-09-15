@@ -5,8 +5,13 @@
 
 import { z } from "zod/v4"
 
-export const messagePartDiagramPartSchema = z.object({
-  kind: z.optional(z.enum(["diagram"])),
-  dialect: z.string(),
-  source: z.string(),
-})
+/**
+ * @description A diagram carried as its source text; the console renders it.
+ */
+export const messagePartDiagramPartSchema = z
+  .object({
+    kind: z.optional(z.enum(["diagram"])),
+    dialect: z.string().describe("Diagram dialect (`mermaid`, `dot`, …)."),
+    source: z.string().describe("Diagram source, verbatim."),
+  })
+  .describe("A diagram carried as its source text; the console renders it.")

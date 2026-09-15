@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import { workerViewSchema } from "./workerViewSchema"
 import { z } from "zod/v4"
 
 export const getApiV1WorkersWorkeridPathParamsSchema = z.object({
@@ -12,7 +13,11 @@ export const getApiV1WorkersWorkeridPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const getApiV1WorkersWorkerid200Schema = z.any()
+export const getApiV1WorkersWorkerid200Schema = z
+  .lazy(() => workerViewSchema)
+  .describe(
+    "Wire row of one worker as the dashboard queue page sees it. Workers are\r\n<b>derived</b>, not registered: a busy worker is a live work-item lease\r\n(`leased_by` on a `Running` row); an idle worker is one whose\r\nlast claim still shows in the recent journal window. Fields only a\r\ncontainer runtime could answer (provider handle, uptime) are absent on\r\npurpose — this host does not compose the compute engine."
+  )
 
 export const getApiV1WorkersWorkeridQueryResponseSchema = z.lazy(
   () => getApiV1WorkersWorkerid200Schema

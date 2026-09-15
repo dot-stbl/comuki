@@ -157,7 +157,7 @@ const routeTree = rootRoute.addChildren(
   )
 )
 
-function mount(runId: string) {
+function mount(_runId: string) {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: ["/"] }),
@@ -171,7 +171,7 @@ function mount(runId: string) {
             new QueryClient({ defaultOptions: { queries: { retry: false } } })
           }
         >
-          <SlotContext value={<RunDetailPage runId={runId} />}>
+          <SlotContext value={<RunDetailPage />}>
             <RouterProvider router={router} />
           </SlotContext>
         </QueryClientProvider>

@@ -1,0 +1,25 @@
+{
+  "required": ["documentId", "chunkId", "snippet", "score"],
+  "type": "object",
+  "properties": {
+    "documentId": {
+      "type": "string",
+      "description": "Source document the chunk belongs to.",
+      "format": "uuid"
+    },
+    "chunkId": {
+      "type": "string",
+      "description": "The chunk id.",
+      "format": "uuid"
+    },
+    "snippet": { "type": "string", "description": "The chunk text." },
+    "score": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": ["number", "string"],
+      "description": "Cosine similarity in [0.0, 1.0] — higher is closer.",
+      "format": "float"
+    }
+  },
+  "description": "Wire row of one search hit — document id, chunk id, snippet and cosine similarity score.",
+  "x-readme-ref-name": "KnowledgeSearchHitView"
+}

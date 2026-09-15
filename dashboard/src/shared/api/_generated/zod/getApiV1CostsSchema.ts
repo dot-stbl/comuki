@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import { platformCostsViewSchema } from "./platformCostsViewSchema"
 import { z } from "zod/v4"
 
 export const getApiV1CostsQueryParamsSchema = z
@@ -16,7 +17,11 @@ export const getApiV1CostsQueryParamsSchema = z
 /**
  * @description OK
  */
-export const getApiV1Costs200Schema = z.any()
+export const getApiV1Costs200Schema = z
+  .lazy(() => platformCostsViewSchema)
+  .describe(
+    "Platform-wide cost rollup for `GET /api/v1/costs`. Money fields are\r\nUSD micros (1 USD = 1_000_000) — same unit as the per-project view."
+  )
 
 export const getApiV1CostsQueryResponseSchema = z.lazy(
   () => getApiV1Costs200Schema

@@ -1,0 +1,69 @@
+{
+  "required": ["lease", "escalationTimeout"],
+  "type": "object",
+  "properties": {
+    "lease": {
+      "description": "Claim/lease policy.",
+      "required": [
+        "leaseTtlSeconds",
+        "reapIntervalSeconds",
+        "reapGraceSeconds",
+        "maxAttempts"
+      ],
+      "type": "object",
+      "properties": {
+        "leaseTtlSeconds": {
+          "pattern": "^-?(?:0|[1-9]\\d*)$",
+          "type": ["integer", "string"],
+          "description": "Lease duration handed out on claim / extended by heartbeat.",
+          "format": "int64"
+        },
+        "reapIntervalSeconds": {
+          "pattern": "^-?(?:0|[1-9]\\d*)$",
+          "type": ["integer", "string"],
+          "description": "Lease reaper sweep cadence.",
+          "format": "int64"
+        },
+        "reapGraceSeconds": {
+          "pattern": "^-?(?:0|[1-9]\\d*)$",
+          "type": ["integer", "string"],
+          "description": "Buffer past lease expiry before the reaper acts.",
+          "format": "int64"
+        },
+        "maxAttempts": {
+          "pattern": "^-?(?:0|[1-9]\\d*)$",
+          "type": ["integer", "string"],
+          "description": "Claim attempts before the reaper fails a stalled item.",
+          "format": "int32"
+        }
+      },
+      "x-readme-ref-name": "LeaseSettingsView"
+    },
+    "escalationTimeout": {
+      "description": "Escalation ratchet policy (incl. the kill-switch).",
+      "required": ["enabled", "timeoutSeconds", "sweepIntervalSeconds"],
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Ops kill-switch — false disables the passive ratchet globally."
+        },
+        "timeoutSeconds": {
+          "pattern": "^-?(?:0|[1-9]\\d*)$",
+          "type": ["integer", "string"],
+          "description": "How long a run may sit Escalated before auto-archival.",
+          "format": "int64"
+        },
+        "sweepIntervalSeconds": {
+          "pattern": "^-?(?:0|[1-9]\\d*)$",
+          "type": ["integer", "string"],
+          "description": "Ratchet sweep cadence.",
+          "format": "int64"
+        }
+      },
+      "x-readme-ref-name": "EscalationTimeoutSettingsView"
+    }
+  },
+  "description": "Orchestration policy as bound from `Orchestration:*`.",
+  "x-readme-ref-name": "OrchestrationSettingsView"
+}

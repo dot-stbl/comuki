@@ -15,11 +15,13 @@ export const getApiV1ProjectsProjectidScheduledJobsQueryParamsSchema = z.object(
     page: z
       .union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
       .default(1)
-      .describe("1-based page index (default 1)."),
+      .describe(
+        "1-based page index (default 1); the store clamps out-of-range values."
+      ),
     pageSize: z
       .union([z.coerce.number().int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
       .default(100)
-      .describe("Page size (default 100, max 500)."),
+      .describe("Page size (default 100, max 500); clamped by the store."),
   }
 )
 

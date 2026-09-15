@@ -63,6 +63,8 @@ export function artifactsVisualListQueryOptions(
 }
 
 /**
+ * @summary One page of visual-artifact metadata for one project, oldest
+ * first. Empty when the project has no visual artifacts yet.
  * {@link /api/v1/projects/:projectId/artifacts}
  */
 export function useArtifactsVisualList<

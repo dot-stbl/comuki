@@ -3,20 +3,19 @@ import { describe, expect, it } from "vitest"
 import {
   workerViewToWorker,
   workersPageToWorkers,
-  type WorkerViewWire,
 } from "@/domains/queue/api/mappers"
+import type { WorkerView } from "@/shared/api/_generated/types/WorkerView"
 
-/* The wire shapes are typed locally (the OpenAPI spec declares no response
-   schema for the workers reads), so the mapper is the one place the claim
-   "this is what the host sends" is checked. Fixtures copied from the host's
-   `WorkersReadModels.cs` docblocks, camelCased as the serializer writes
-   them. */
+/* The wire shape is the kubb-generated `WorkerView` (the spec declares the
+   response schema now), so the mapper is checked against the host's real
+   contract. Fixtures copied from the host's `WorkersReadModels.cs`
+   docblocks, camelCased as the serializer writes them. */
 
 /** Now, pinned: the mapper derives ages from instants, and a pinned clock
  *  keeps the arithmetic assertable. */
 const NOW = Date.parse("2026-09-13T12:00:00Z")
 
-function view(over: Partial<WorkerViewWire> = {}): WorkerViewWire {
+function view(over: Partial<WorkerView> = {}): WorkerView {
   return {
     workerId: "wk_2f8a",
     state: "busy",

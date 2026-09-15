@@ -3,6 +3,8 @@
  * Do not edit manually.
  */
 
+import type { WorkersPage } from "./WorkersPage"
+
 export type GetApiV1WorkersQueryParams = {
   /**
    * @type integer,string | undefined, int32
@@ -17,7 +19,7 @@ export type GetApiV1WorkersQueryParams = {
 /**
  * @description OK
  */
-export type GetApiV1Workers200 = any
+export type GetApiV1Workers200 = WorkersPage
 
 export type GetApiV1WorkersQueryResponse = GetApiV1Workers200
 

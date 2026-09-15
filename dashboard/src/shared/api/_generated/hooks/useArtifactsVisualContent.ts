@@ -61,6 +61,11 @@ export function artifactsVisualContentQueryOptions(
 }
 
 /**
+ * @summary Streams the bytes of one visual artifact. `image/png`
+ * serves with a short cache + nosniff; `text/html` and
+ * `image/svg+xml` add a strict CSP that blocks
+ * same-origin / inline-eval / remote-frame — the FE embeds them
+ * in a sandboxed iframe, never the dashboard's frame.
  * {@link /api/v1/projects/:projectId/artifacts/:artifactId/content}
  */
 export function useArtifactsVisualContent<

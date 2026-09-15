@@ -5,17 +5,22 @@
 
 import { z } from "zod/v4"
 
-export const visualArtifactListItemSchema = z.object({
-  id: z.uuid(),
-  filename: z.string(),
-  contentType: z.string(),
-  sizeBytes: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-  title: z.nullable(z.string()),
-  createdAt: z.iso.datetime({ offset: true }),
-  createdBy: z.string(),
-  runId: z.nullable(z.uuid()),
-  workItemId: z.nullable(z.uuid()),
-  sessionId: z.nullable(z.uuid()),
-  ticketId: z.nullable(z.uuid()),
-  version: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
-})
+/**
+ * @description One row in the visual-artifacts list — metadata only, no body.
+ */
+export const visualArtifactListItemSchema = z
+  .object({
+    id: z.uuid(),
+    filename: z.string(),
+    contentType: z.string(),
+    sizeBytes: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
+    title: z.nullable(z.string()),
+    createdAt: z.iso.datetime({ offset: true }),
+    createdBy: z.string(),
+    runId: z.nullable(z.uuid()),
+    workItemId: z.nullable(z.uuid()),
+    sessionId: z.nullable(z.uuid()),
+    ticketId: z.nullable(z.uuid()),
+    version: z.union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)]),
+  })
+  .describe("One row in the visual-artifacts list — metadata only, no body.")

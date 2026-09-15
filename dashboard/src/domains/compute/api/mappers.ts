@@ -6,6 +6,7 @@ import type {
   ProviderKind,
   WorkerVersion,
 } from "@/domains/compute/model/types"
+import type { ComputeSnapshotView } from "@/shared/api/_generated/types/ComputeSnapshotView"
 
 /**
  * The wire of `GET /api/v1/compute` — the host's read-only snapshot — onto
@@ -15,35 +16,15 @@ import type {
  * the host composes no compute engine, so there is no provider endpoint, no
  * allocatable reading and no per-label fleet count. Each of those lands as
  * the null the model now carries, and the screen draws a dash (or "no
- * answer", the reading it already had for a silent capacity API) rather than
- * a number invented to fill a track.
+ * answer", the reading it already had for a silent capacity API) rather
+ * than a number invented to fill a track.
+ *
+ * The wire shape is the kubb-generated `ComputeSnapshotView` (the spec
+ * declares the response schema now); the spec types its counters as
+ * `number | string` (the serializer may read numbers from strings), so the
+ * numeric reads go through `Number()` at this edge and the domain keeps
+ * plain numbers.
  */
-
-/** The wire's `ComputeSnapshotView` (camelCased by the serializer). */
-export interface ComputeSnapshotWire {
-  readonly provider: string
-  readonly defaults: ComputeScaleDefaultsWire
-  readonly pools: readonly ComputePoolWire[]
-}
-
-export interface ComputeScaleDefaultsWire {
-  readonly workerImage: string
-  readonly profilesGitRef: string
-  readonly minIdle: number
-  readonly maxConcurrent: number
-  readonly idleTtlSeconds: number
-  readonly pollIntervalSeconds: number
-  readonly profileKeys: readonly string[]
-}
-
-export interface ComputePoolWire {
-  readonly projectId: string
-  readonly profileKey: string
-  readonly queued: number
-  readonly running: number
-  readonly minIdle: number
-  readonly maxConcurrent: number
-}
 
 function toProviderKind(provider: string): ProviderKind {
   return provider === "kubernetes" ? "kubernetes" : "docker"
@@ -51,7 +32,7 @@ function toProviderKind(provider: string): ProviderKind {
 
 /** A snapshot onto the registry's three shapes. */
 export function computeSnapshotWireToSnapshot(
-  wire: ComputeSnapshotWire
+  wire: ComputeSnapshotView
 ): ComputeSnapshot {
   const kind = toProviderKind(wire.provider)
 
@@ -74,7 +55,7 @@ export function computeSnapshotWireToSnapshot(
   const pools: ComputePool[] = wire.pools.map((pool) => ({
     projectId: pool.projectId,
     providerId: wire.provider,
-    minIdle: pool.minIdle,
+    minIdle: Number(pool.minIdle),
     // The snapshot's ceiling is the project's concurrency cap; the idle
     // ceiling is a knob it does not carry, and the card says the floor alone
     // rather than dressing one number as the other.
@@ -82,11 +63,11 @@ export function computeSnapshotWireToSnapshot(
     // "Workers" on this screen reads as containers holding leases; the
     // snapshot counts exactly that (`running`), and the queued depth beside
     // it is the pool's own pressure reading.
-    workers: pool.running,
+    workers: Number(pool.running),
     idle: null,
     quota: {
-      used: pool.running,
-      limit: pool.maxConcurrent,
+      used: Number(pool.running),
+      limit: Number(pool.maxConcurrent),
       source: "project concurrency cap",
     } satisfies Constraint,
     profiles: [pool.profileKey],

@@ -1,7 +1,9 @@
 ---
-milestone: v1
-status: v1-complete
-last_updated: 2026-09-08
+milestone: v1 → v2 (planning)
+status: v2-change-drafted
+last_updated: 2026-09-15
+openspec_changes_in_flight:
+  - agent-runtime-capabilities (planning complete, awaiting /opsx-apply)
 progress:
   total_slices: 24
   completed_slices: 24
@@ -371,4 +373,20 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
 - #49 Autonomy ratchet continuation (confidence scoring, daily decay) — closed
 - #50 Merge-queue multi-feature batch + dependency ordering — closed
 
-Все 4 deferred. v1.1 / v2 scope TBD. Re-open when scope approved.
+Все 4 deferred.
+
+### v2 — agent runtime capabilities (drafted 2026-09-15)
+
+OpenSpec change
+[`agent-runtime-capabilities`](../../openspec/changes/agent-runtime-capabilities/)
+drafted; awaiting `/opsx-apply`. Four implementation phases:
+
+| Phase | Capability | Goal |
+|---|---|---|
+| A | `memory` | Per-project facts at brain call via trusted digest |
+| B | `discovery` | MCP `discovery.scan` + `/discover` slash + finding → memory |
+| C | `secrets` | `Secret` entity, envelope encryption, RBAC, audit, `DbSecretProvider` |
+| D | `compute` + `worker-runtime` | `ComputeStartRequest.SecretRefs` → Docker/K8s env |
+
+KMS / SaaS envelope encryption, auto-rotation, bulk import, external
+providers beyond `vault` / `consul` are deferred to follow-ups.

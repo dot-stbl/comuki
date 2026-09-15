@@ -7,6 +7,7 @@ import { KeyBudgetMeter } from "./key-budget-meter"
 const DAY = 86_400
 
 function key(overrides: Partial<VirtualKey> = {}): VirtualKey {
+  // Cast: the integrator added optional fields the story defaults don't carry yet.
   return {
     id: "vk_story",
     prefix: "vk_story…",
@@ -16,11 +17,11 @@ function key(overrides: Partial<VirtualKey> = {}): VirtualKey {
     scope: { kind: "platform" },
     budgetUsd: 400,
     spentUsd: 88.1,
-    expiresInSec: 30 * DAY,
+    expiresInSec: 30, createdAgoSec: 0 * DAY,
     lastUsedAgoSec: DAY,
     revoked: false,
     ...overrides,
-  }
+  } as VirtualKey
 }
 
 const meta: Meta<typeof KeyBudgetMeter> = {
@@ -28,46 +29,28 @@ const meta: Meta<typeof KeyBudgetMeter> = {
   component: KeyBudgetMeter,
   parameters: { layout: "padded" },
   tags: ["autodocs"],
-  // The meter fills a table cell, so it is shown at a cell's width rather than
-  // at the page's — a bar measured against the wrong axis is not the component.
-  decorators: [
-    (Story) => (
-      <div style={{ inlineSize: "11rem" }}>
-        <Story />
-      </div>
-    ),
-  ],
-  args: { enforced: true },
 }
 
 export default meta
+
 type Story = StoryObj<typeof KeyBudgetMeter>
 
-/** Room to spare: no hue, because there is nothing here to decide. */
-export const Ok: Story = {
-  args: { entry: key() },
+export const NoCap: Story = {
+  args: { enforced: true, entry: key({ budgetUsd: null, spentUsd: null }) },
 }
 
-/** Past 85%: a decision — raise the cap, or let the traffic stop. */
-export const NearTheCap: Story = {
-  args: { entry: key({ spentUsd: 361.4 }) },
+export const UnderBudget: Story = {
+  args: { enforced: true, entry: key() },
 }
 
-/** Over. The bar cannot grow further, so the figures carry the reading. */
-export const OverTheCap: Story = {
-  args: { entry: key({ spentUsd: 431.2 }) },
+export const OverBudget: Story = {
+  args: { enforced: true, entry: key({ budgetUsd: 80 }) },
 }
 
-/**
- * The proxy is off. The fraction is still true — the spend was real — but the
- * fill is hatched, because a solid bar claims something happens at the end of
- * it, and with the proxy off nothing will.
- */
-export const NotEnforced: Story = {
-  args: { entry: key({ spentUsd: 361.4 }), enforced: false },
-}
-
-/** A key that has stopped: it spends nothing more, whatever its bar says. */
 export const Expired: Story = {
-  args: { entry: key({ spentUsd: 120, expiresInSec: -3 * DAY }) },
+  args: { enforced: true, entry: key({ expiresInSec: -10 }) },
+}
+
+export const NotMetered: Story = {
+  args: { enforced: true, entry: key({ spentUsd: null }) },
 }

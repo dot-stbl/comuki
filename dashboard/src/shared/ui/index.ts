@@ -41,7 +41,7 @@ export {
   EvidenceThumbnail,
   type EvidenceThumbnailProps,
 } from "./evidence-thumbnail"
-export { ForbiddenState, type ForbiddenStateProps } from "./forbidden-state"
+export { ForbiddenState, type ForbiddenStateProps } from "./screen-state/forbidden-state"
 export {
   SplitPane,
   SplitPanel,

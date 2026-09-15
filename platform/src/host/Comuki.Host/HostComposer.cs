@@ -390,7 +390,7 @@ internal static class HostComposer
 
         builder.Services.AddSingleton(BootstrapAdminOptions.Resolve(builder.Configuration));
         builder.Services.AddScoped<BootstrapAdminSeeder>();
-        builder.Services.AddHostedService<BootstrapAdminStartupService>();
+        builder.Services.AddSingleton<IComukiWorker, BootstrapAdminComukiWorker>();
 
         builder.Services.AddControllers();
         builder.Services.AddProblemDetails();

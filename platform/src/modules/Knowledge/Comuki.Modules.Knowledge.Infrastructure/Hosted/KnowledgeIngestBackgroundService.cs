@@ -15,6 +15,7 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Hosted;
 /// resolved through an <see cref="Microsoft.Extensions.DependencyInjection.IServiceScopeFactory"/> injected at
 /// that point (per-source scope, scoped DbContext lifetime).
 /// </summary>
+// TODO(worker-registry): channel-based, needs dedicated adapter
 public sealed class KnowledgeIngestBackgroundService(
     IOptions<KnowledgeIngestOptions> options,
     ILogger<KnowledgeIngestBackgroundService> logger) : BackgroundService

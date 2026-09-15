@@ -4,11 +4,11 @@ using Comuki.Modules.Scheduler.Application.Observers;
 using Comuki.Modules.Scheduler.Application.Options;
 using Comuki.Modules.Scheduler.Application.Ports;
 using Comuki.Modules.Scheduler.Domain.Jobs;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Comuki.Shared.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -28,68 +28,49 @@ namespace Comuki.Modules.Scheduler.Infrastructure.Sync;
 /// thrown observer logs and the rest of the batch continues.
 /// </para>
 /// <para>
-/// The worker is a singleton singleton hosted service — no per-request
-/// state, no DI graph held beyond what <see cref="IServiceScopeFactory"/>
-/// resolves per cycle.
+/// The worker is a singleton behind the comuki worker registry — no
+/// per-request state, no DI graph held beyond what
+/// <see cref="IServiceScopeFactory"/> resolves per cycle.
 /// </para>
 /// </summary>
 /// <param name="scopeFactory">Scope factory — resolves the scoped store + dispatcher per cycle.</param>
-/// <param name="scopeAccessor">AmbientScope — the dispatcher runs toAsSystem so journal appends have a clear actor.</param>
+/// <param name="scopeAccessor">AmbientScope — the dispatcher runs AsSystem so journal appends have a clear actor.</param>
 /// <param name="clock">Wall-clock source for the polling cadence.</param>
 /// <param name="options">Tunables (poll interval, batch size).</param>
 /// <param name="observers">Side-channel observers the dispatcher notifies after every fire.</param>
 /// <param name="logger">Structured logger.</param>
-public sealed class ScheduledJobDispatcherWorker(
+public sealed class ScheduledJobDispatcherComukiWorker(
     IServiceScopeFactory scopeFactory,
     ISubjectScopeAccessor scopeAccessor,
     TimeProvider clock,
     IOptions<SchedulerOptions> options,
     IEnumerable<ISchedulerObserver> observers,
-    ILogger<ScheduledJobDispatcherWorker> logger) : BackgroundService
+    ILogger<ScheduledJobDispatcherComukiWorker> logger) : IComukiWorker
 {
     /// <inheritdoc />
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public string Name => "scheduler-dispatch";
+
+    /// <inheritdoc />
+    public WorkerSchedule Schedule => WorkerSchedule.Interval(options.Value.PollInterval);
+
+    /// <inheritdoc />
+    public async Task<WorkerResult> ExecuteAsync(WorkerContext context, CancellationToken cancellationToken)
     {
-        logger.LogInformation(
-            "Scheduled job dispatcher started (poll interval {IntervalSeconds}s, batch {Batch})",
-            options.Value.PollInterval.TotalSeconds,
-            options.Value.BatchSize);
+        using var systemScope = scopeAccessor.AsSystem(Name);
 
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            try
-            {
-                using var systemScope = scopeAccessor.AsSystem("scheduler-dispatcher");
-                var processed = await PollOnceAsync(stoppingToken);
-                if (processed > 0)
-                {
-                    logger.LogInformation("Scheduled job dispatcher fired {Count} job(s)", processed);
-                }
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception exception) when (exception is HttpRequestException or TimeoutException
-                                       or DbException or JsonException)
-            {
-                // boundary: the worker's own supervision loop — transient
-                // store / dispatcher failures must not kill the hosted
-                // service. Next cycle retries the whole batch.
-                logger.LogError(exception, "Scheduled job dispatcher cycle failed; retrying next interval");
-            }
-
-            try
-            {
-                await Task.Delay(options.Value.PollInterval, stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
+            var fired = await PollOnceAsync(cancellationToken);
+            return WorkerResult.Ok($"fired {fired}", fired);
         }
-
-        logger.LogInformation("Scheduled job dispatcher stopped");
+        catch (Exception exception) when (exception is HttpRequestException or TimeoutException
+                                   or DbException or JsonException)
+        {
+            // boundary: the worker's own supervision loop — transient
+            // store / dispatcher failures count as a failed cycle for the
+            // registry (logged, backoff). Next cycle retries the whole batch.
+            return WorkerResult.Fail($"cycle failed: {exception.Message}");
+        }
     }
 
     /// <summary>

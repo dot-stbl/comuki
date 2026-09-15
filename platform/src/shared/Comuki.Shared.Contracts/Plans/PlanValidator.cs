@@ -94,6 +94,11 @@ public static class PlanValidator
         var state = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var node in plan.Nodes ?? [])
         {
+            if (string.IsNullOrEmpty(node.Id))
+            {
+                continue;
+            }
+
             if (!outgoing.ContainsKey(node.Id))
             {
                 outgoing[node.Id] = [];
@@ -103,6 +108,11 @@ public static class PlanValidator
 
         foreach (var edge in plan.Edges ?? [])
         {
+            if (string.IsNullOrEmpty(edge.From) || string.IsNullOrEmpty(edge.To))
+            {
+                continue;
+            }
+
             if (outgoing.TryGetValue(edge.From, out var targets)
                 && outgoing.ContainsKey(edge.To)
                 && edge.From != edge.To)
@@ -114,7 +124,7 @@ public static class PlanValidator
         // 0 = unvisited, 1 = on the current path, 2 = done
         foreach (var node in plan.Nodes ?? [])
         {
-            if (state[node.Id] != 0)
+            if (string.IsNullOrEmpty(node.Id) || state[node.Id] != 0)
             {
                 continue;
             }

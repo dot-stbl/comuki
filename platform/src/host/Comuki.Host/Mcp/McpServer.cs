@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Comuki.Modules.Identity.Application.Authorization;
-using Comuki.Modules.Identity.Domain.Subjects;
 
 namespace Comuki.Host.Mcp;
 
@@ -11,9 +10,10 @@ namespace Comuki.Host.Mcp;
 /// in — the wire format is small and stable). Tool listing lives in
 /// <see cref="McpToolCatalog"/>; per-tool handlers live in
 /// <see cref="McpToolHandlers"/>; argument readers in
-/// <see cref="McpArgumentReaders"/>. Every tool is gated by the per-tool
-/// permission map (<see cref="McpToolPermissionMap"/>); the gate fires
-/// before the handler runs, with a deny default.
+/// <see cref="McpArgumentReaders"/>. Every tool call is gated by the
+/// resolved caller — <see cref="McpToolPermissionMap"/> for cookie /
+/// api-key subjects, <see cref="McpWorkerToolGate"/> for worker-token
+/// callers; the gate fires before the handler runs, with a deny default.
 /// </summary>
 public sealed class McpServer(
     McpToolHandlers toolHandlers,
@@ -26,15 +26,16 @@ public sealed class McpServer(
     /// replies 204 No Content.
     /// </summary>
     /// <param name="request"></param>
-    /// <param name="subject">
-    /// Resolved caller subject from the cookie / api-key principal. Null
-    /// (anonymous) callers are denied every tool — the endpoint accepts
-    /// cookie / api-key auth but never answers unauthenticated traffic.
+    /// <param name="caller">
+    /// Resolved caller of the dispatch: a cookie / api-key subject, a
+    /// worker-token caller (project scope pre-resolved from its lease), or
+    /// <see cref="McpCaller.Anonymous"/> — anonymous callers are denied
+    /// every tool; the endpoint never answers unauthenticated traffic.
     /// </param>
     /// <param name="cancellationToken"></param>
     public async Task<JsonRpcResponse?> DispatchAsync(
         JsonRpcRequest request,
-        RoleSubject? subject,
+        McpCaller caller,
         CancellationToken cancellationToken = default)
     {
         return request is null || request.JsonRpc != JsonRpcEnvelope.Version
@@ -46,7 +47,8 @@ public sealed class McpServer(
             : request.Method switch
             {
                 "tools/list" => McpToolCatalog.List(request.Id),
-                "tools/call" => await CallToolAsync(request.Id, request.Params, subject, cancellationToken),
+                "tools/call" => await McpToolCallDispatch.CallAsync(
+                    toolHandlers, permissionEvaluator, logger, request.Id, request.Params, caller, cancellationToken),
                 _ => JsonRpcResponse.Failure(
                     request.Id,
                     JsonRpcEnvelope.ErrorCodes.MethodNotFound,
@@ -54,11 +56,23 @@ public sealed class McpServer(
                     Data: null),
             };
     }
+}
 
-    private async Task<JsonRpcResponse> CallToolAsync(
+/// <summary>
+/// The <c>tools/call</c> body of the dispatcher: parse the tool-call
+/// params, run the caller gate, then hand the call to its handler —
+/// envelope-level errors (bad params, deny, unknown tool, handler fault)
+/// come back as JSON-RPC error responses.
+/// </summary>
+file static class McpToolCallDispatch
+{
+    public static async Task<JsonRpcResponse> CallAsync(
+        McpToolHandlers toolHandlers,
+        IPermissionEvaluator permissionEvaluator,
+        ILogger logger,
         JsonElement? id,
         JsonElement? parameters,
-        RoleSubject? subject,
+        McpCaller caller,
         CancellationToken cancellationToken)
     {
         if (parameters is null || parameters.Value.ValueKind != JsonValueKind.Object)
@@ -93,19 +107,23 @@ public sealed class McpServer(
                 Data: null);
         }
 
-        // Per-tool permission gate (security audit A01-1): every tool call
-        // is denied unless the resolved subject carries the required
-        // permission. Anonymous callers (subject == null) are denied
-        // outright; tools not in the map are denied by default. JSON-RPC
-        // -32600 (InvalidRequest) is the wire format for the deny — the
-        // error message carries the stable "permission.denied" code so
-        // clients branch on it.
-        if (!await McpToolPermissionMap.IsAllowedAsync(toolCall.Name, subject, permissionEvaluator, cancellationToken))
+        // Caller gate (security audit A01-1): every tool call is denied
+        // unless the resolved caller passes its gate — a cookie / api-key
+        // subject needs the per-tool permission (McpToolPermissionMap), a
+        // worker-token caller is confined to the worker tool set with a
+        // resolvable project (McpWorkerToolGate), and an anonymous caller
+        // is denied outright. Tools outside a gate's set are denied by
+        // default. JSON-RPC -32600 (InvalidRequest) is the wire format for
+        // the deny — the error message carries the stable
+        // "permission.denied" code so clients branch on it.
+        if (!await McpCallerGate.IsAllowedAsync(toolCall.Name, caller, permissionEvaluator, cancellationToken))
         {
             logger.LogWarning(
-                "MCP tool {Tool} denied for subject {Subject}",
+                "MCP tool {Tool} denied for caller {Caller}",
                 toolCall.Name,
-                subject is null ? "<anonymous>" : subject.ToString());
+                caller.Subject is { } subject
+                    ? subject.ToString()
+                    : caller.Worker is { } worker ? $"worker {worker.WorkerId.Value}" : "<anonymous>");
 
             return JsonRpcResponse.Failure(
                 id,
@@ -119,8 +137,10 @@ public sealed class McpServer(
         {
             return toolCall.Name switch
             {
-                "knowledge.search" => await toolHandlers.KnowledgeSearchAsync(id, arguments, cancellationToken),
+                "knowledge.search" => await toolHandlers.KnowledgeSearchAsync(id, arguments, caller, cancellationToken),
                 "knowledge.ingest" => await toolHandlers.KnowledgeIngestAsync(id, arguments, cancellationToken),
+                "memory.recall" => await toolHandlers.MemoryRecallAsync(id, arguments, caller, cancellationToken),
+                "memory.note" => await toolHandlers.MemoryNoteAsync(id, arguments, caller, cancellationToken),
                 "runs.list" => await toolHandlers.RunsListAsync(id, arguments, cancellationToken),
                 "runs.get" => await McpToolHandlers.RunsGetAsync(id, arguments),
                 _ => JsonRpcResponse.Failure(
@@ -139,6 +159,24 @@ public sealed class McpServer(
                 $"tool '{toolCall.Name}' failed: {exception.Message}",
                 Data: null);
         }
+    }
+}
+
+/// <summary>
+/// The caller-type dispatch of the gate: subject → permission map,
+/// worker → worker tool gate, neither → deny.
+/// </summary>
+file static class McpCallerGate
+{
+    public static async Task<bool> IsAllowedAsync(
+        string toolName,
+        McpCaller caller,
+        IPermissionEvaluator permissionEvaluator,
+        CancellationToken cancellationToken)
+    {
+        return caller.Subject is { } subject
+            ? await McpToolPermissionMap.IsAllowedAsync(toolName, subject, permissionEvaluator, cancellationToken)
+            : caller.Worker is { } worker && McpWorkerToolGate.IsAllowed(toolName, worker);
     }
 }
 

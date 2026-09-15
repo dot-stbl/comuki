@@ -4,12 +4,17 @@
  */
 
 import { knowledgeIngestRequestSchema } from "./knowledgeIngestRequestSchema"
+import { knowledgeIngestResponseSchema } from "./knowledgeIngestResponseSchema"
 import { z } from "zod/v4"
 
 /**
  * @description OK
  */
-export const postApiV1KnowledgeIngest200Schema = z.any()
+export const postApiV1KnowledgeIngest200Schema = z
+  .lazy(() => knowledgeIngestResponseSchema)
+  .describe(
+    "Response body for `POST /api/v1/knowledge/ingest` — the source id + chunk count."
+  )
 
 export const postApiV1KnowledgeIngestMutationRequestSchema = z
   .lazy(() => knowledgeIngestRequestSchema)

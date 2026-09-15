@@ -15,13 +15,13 @@ export type GetApiV1ProjectsProjectidScheduledJobsPathParams = {
 
 export type GetApiV1ProjectsProjectidScheduledJobsQueryParams = {
   /**
-   * @description 1-based page index (default 1).
+   * @description 1-based page index (default 1); the store clamps out-of-range values.
    * @default 1
    * @type integer,string | undefined, int32
    */
   page?: number | string
   /**
-   * @description Page size (default 100, max 500).
+   * @description Page size (default 100, max 500); clamped by the store.
    * @default 100
    * @type integer,string | undefined, int32
    */

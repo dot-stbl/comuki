@@ -24,7 +24,7 @@ const WIRE = {
       maxConcurrent: 4,
     },
   ],
-} as const
+}
 
 describe("the compute snapshot wire onto the registry", () => {
   it("answers one provider — configuration's own word, taking new starts", () => {

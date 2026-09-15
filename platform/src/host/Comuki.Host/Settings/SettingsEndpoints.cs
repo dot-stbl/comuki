@@ -85,7 +85,9 @@ public static class SettingsEndpoints
     /// <summary>Maps the settings snapshot endpoint.</summary>
     public static IEndpointRouteBuilder MapSettingsEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet(ApiRoutes.Settings, GetSettingsAsync).WithTags("Settings");
+        app.MapGet(ApiRoutes.Settings, GetSettingsAsync)
+            .Produces<SettingsView>(StatusCodes.Status200OK)
+            .WithTags("Settings");
         return app;
     }
 

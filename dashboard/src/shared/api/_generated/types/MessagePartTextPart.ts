@@ -10,12 +10,16 @@ export const messagePartTextPartKindEnum = {
 export type MessagePartTextPartKindEnumKey =
   (typeof messagePartTextPartKindEnum)[keyof typeof messagePartTextPartKindEnum]
 
+/**
+ * @description Markdown prose — the default shape of a reply.
+ */
 export type MessagePartTextPart = {
   /**
    * @type string | undefined
    */
   kind?: MessagePartTextPartKindEnumKey
   /**
+   * @description Message text in markdown.
    * @type string
    */
   markdown: string

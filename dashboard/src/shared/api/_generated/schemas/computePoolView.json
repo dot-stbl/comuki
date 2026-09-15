@@ -1,0 +1,48 @@
+{
+  "required": [
+    "projectId",
+    "profileKey",
+    "queued",
+    "running",
+    "minIdle",
+    "maxConcurrent"
+  ],
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "type": "string",
+      "description": "Owning project.",
+      "format": "uuid"
+    },
+    "profileKey": {
+      "type": "string",
+      "description": "Profile the pool serves."
+    },
+    "queued": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Items waiting for a claim.",
+      "format": "int32"
+    },
+    "running": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Items currently leased (busy workers).",
+      "format": "int32"
+    },
+    "minIdle": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Project's warm-idle floor (projects settings override the default).",
+      "format": "int32"
+    },
+    "maxConcurrent": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Project's concurrency cap.",
+      "format": "int32"
+    }
+  },
+  "description": "One project × profile pool with the counts the queue can answer.",
+  "x-readme-ref-name": "ComputePoolView"
+}

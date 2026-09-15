@@ -8,22 +8,24 @@ import { visualArtifactPageSchema } from "./visualArtifactPageSchema"
 import { z } from "zod/v4"
 
 export const artifactsVisualListPathParamsSchema = z.object({
-  projectId: z.uuid(),
+  projectId: z.uuid().describe("Owning project (path)."),
 })
 
 export const artifactsVisualListQueryParamsSchema = z
   .object({
-    runId: z.optional(z.uuid()),
-    workItemId: z.optional(z.uuid()),
+    runId: z.optional(z.uuid().describe("Optional run filter (query).")),
+    workItemId: z.optional(
+      z.uuid().describe("Optional work-item filter (query).")
+    ),
   })
   .optional()
 
 /**
  * @description OK
  */
-export const artifactsVisualList200Schema = z.lazy(
-  () => visualArtifactPageSchema
-)
+export const artifactsVisualList200Schema = z
+  .lazy(() => visualArtifactPageSchema)
+  .describe("Page envelope returned by the visual-artifacts list endpoint.")
 
 /**
  * @description Not Found

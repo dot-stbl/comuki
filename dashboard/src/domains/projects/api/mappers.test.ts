@@ -220,7 +220,7 @@ describe("mapProjectSettingsToUpdateRequest", () => {
 describe("mapCostsPageToCostSummary", () => {
   it("divides the wire's USD-micros fields into USD and keeps the exceeded flags", () => {
     const summary = mapCostsPageToCostSummary({
-      projectId: "p_comuki",
+      projectId: { value: "p_comuki" },
       spentUsdMicros: 12_345_678,
       softLimitUsdMicros: 50_000_000,
       hardLimitUsdMicros: 100_000_000,
@@ -240,7 +240,7 @@ describe("mapCostsPageToCostSummary", () => {
 
   it("maps each entry of the recent feed and converts its cost to USD", () => {
     const summary = mapCostsPageToCostSummary({
-      projectId: "p_plexor",
+      projectId: { value: "p_plexor" },
       spentUsdMicros: 4_200_000,
       softLimitUsdMicros: null,
       hardLimitUsdMicros: null,
@@ -249,7 +249,7 @@ describe("mapCostsPageToCostSummary", () => {
       recent: [
         {
           id: "00000000-0000-0000-0000-000000000001",
-          runId: "00000000-0000-0000-0000-0000000000bb",
+          runId: { value: "00000000-0000-0000-0000-0000000000bb" },
           source: "model",
           model: "claude-opus-4-5",
           inputTokens: 1024,
@@ -274,7 +274,7 @@ describe("mapCostsPageToCostSummary", () => {
 
   it("keeps null budget limits as null, not zero", () => {
     const summary = mapCostsPageToCostSummary({
-      projectId: "p_atlas",
+      projectId: { value: "p_atlas" },
       spentUsdMicros: 0,
       softLimitUsdMicros: null,
       hardLimitUsdMicros: null,
@@ -289,15 +289,15 @@ describe("mapCostsPageToCostSummary", () => {
 
   it("tolerates a missing recent array rather than throwing", () => {
     const summary = mapCostsPageToCostSummary({
-      projectId: "p_atlas",
+      projectId: { value: "p_atlas" },
       spentUsdMicros: 0,
       softLimitUsdMicros: null,
       hardLimitUsdMicros: null,
       softExceeded: false,
       hardExceeded: false,
-      // kubb types are `any`, so a malformed wire row is possible until
-      // the host grows explicit response schemas. We do not want the
-      // costs panel to die on it.
+      // A malformed wire row is still possible at runtime even with the
+      // spec-typed client (a proxy or a version skew can hand back less
+      // than the contract). We do not want the costs panel to die on it.
       recent: undefined as unknown as never[],
     })
 

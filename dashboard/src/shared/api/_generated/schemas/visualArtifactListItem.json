@@ -36,5 +36,6 @@
       "format": "int32"
     }
   },
+  "description": "One row in the visual-artifacts list — metadata only, no body.",
   "x-readme-ref-name": "VisualArtifactListItem"
 }

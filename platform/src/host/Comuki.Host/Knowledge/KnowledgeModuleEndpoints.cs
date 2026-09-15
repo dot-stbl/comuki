@@ -23,9 +23,15 @@ public static class KnowledgeModuleEndpoints
     /// <summary>Maps the knowledge endpoints.</summary>
     public static IEndpointRouteBuilder MapKnowledgeEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost(ApiRoutes.KnowledgeIngest, IngestAsync).WithTags("Knowledge");
-        app.MapGet(ApiRoutes.KnowledgeDocuments, ListDocumentsAsync).WithTags("Knowledge");
-        app.MapGet(ApiRoutes.KnowledgeSearch, SearchAsync).WithTags("Knowledge");
+        app.MapPost(ApiRoutes.KnowledgeIngest, IngestAsync)
+            .Produces<KnowledgeIngestResponse>(StatusCodes.Status200OK)
+            .WithTags("Knowledge");
+        app.MapGet(ApiRoutes.KnowledgeDocuments, ListDocumentsAsync)
+            .Produces<KnowledgeDocumentsPage>(StatusCodes.Status200OK)
+            .WithTags("Knowledge");
+        app.MapGet(ApiRoutes.KnowledgeSearch, SearchAsync)
+            .Produces<KnowledgeSearchResponse>(StatusCodes.Status200OK)
+            .WithTags("Knowledge");
         return app;
     }
 

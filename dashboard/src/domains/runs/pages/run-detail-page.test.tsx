@@ -121,11 +121,11 @@ beforeEach(() => {
 
 /* The rail links to every product screen, so a memory router that does not
    know those paths cannot render the shell at all. The screen itself rides the
-   root route through a slot rather than sitting at an address of its own —
-   `runs-page.test.tsx` is the worked harness, and the arrangement says the
-   thing this file is about out loud: the route tree below has never heard of
-   `/runs/$runId`, and the page renders anyway, because the only thing it ever
-   wanted from the router was one string. */
+   root route through a slot; the tree carries `/runs/$runId` as a blank
+   address so the page's `getRouteApi("/runs/$runId")` has a route to read
+   its one string from — the memory history opens straight on it, and the
+   page renders anyway, because the only thing it ever wanted from the
+   router was that id. */
 const SlotContext = createContext<ReactNode>(null)
 
 function Slot() {
@@ -139,6 +139,7 @@ const routeTree = rootRoute.addChildren(
     "/",
     "/tasks",
     "/runs",
+    "/runs/$runId",
     "/queue",
     "/approvals",
     "/cost",
@@ -160,7 +161,7 @@ const routeTree = rootRoute.addChildren(
 function mount(runId: string) {
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({ initialEntries: ["/"] }),
+    history: createMemoryHistory({ initialEntries: [`/runs/${runId}`] }),
   })
 
   return render(
@@ -171,7 +172,7 @@ function mount(runId: string) {
             new QueryClient({ defaultOptions: { queries: { retry: false } } })
           }
         >
-          <SlotContext value={<RunDetailPage runId={runId} />}>
+          <SlotContext value={<RunDetailPage />}>
             <RouterProvider router={router} />
           </SlotContext>
         </QueryClientProvider>

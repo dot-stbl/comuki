@@ -6,6 +6,8 @@ using Comuki.Host.Chat.Brain;
 using Comuki.Host.Chat.RunStarter;
 using Comuki.Host.Chat.Sessions;
 using Comuki.Host.Chat.Tools;
+using Comuki.Engine.Compute;
+using Comuki.Engine.Compute.Installers;
 using Comuki.Host.Compute;
 using Comuki.Host.ControlPlane;
 using Comuki.Host.Costs;
@@ -309,11 +311,12 @@ internal static class HostComposer
 
         // Projects settings back the compute scale port (live-reload store
         // replaces the in-memory default registered by AddComukiCompute).
-        // The two compute options are bound here (validated) so the
-        // ProjectScaleSettingsAdapter, the settings snapshot and the
-        // compute snapshot read real configuration instead of code
-        // defaults — this host does not call AddComukiCompute, which would
-        // otherwise be the binding site.
+        // The compute engine installer registers the scale supervisor
+        // (IComukiWorker), the compute providers (Docker + Kubernetes), and
+        // the Kubernetes client. The backlog adapter feeds the supervisor's
+        // queue signal from the orchestration work-item table.
+        builder.Services.AddSingleton<Engine.Compute.Ports.IBacklogReader, OrchestrationBacklogReader>();
+        builder.Services.AddComukiCompute(builder.Configuration);
         builder.Services.AddOptions<Engine.Compute.Options.ComputeOptions>()
             .Bind(builder.Configuration.GetSection(Engine.Compute.Options.ComputeOptions.SectionName))
             .ValidateDataAnnotations()

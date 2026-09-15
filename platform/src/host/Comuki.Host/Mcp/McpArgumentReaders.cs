@@ -78,6 +78,41 @@ internal static class McpArgumentReaders
         return null;
     }
 
+    /// <summary>Reads an optional bool property; accepts booleans or boolean strings.</summary>
+    /// <param name="arguments"></param>
+    /// <param name="propertyName"></param>
+    public static bool? ReadOptionalBool(JsonElement arguments, string propertyName)
+    {
+        if (arguments.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        foreach (var property in arguments.EnumerateObject())
+        {
+            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (property.Value.ValueKind == JsonValueKind.True)
+                {
+                    return true;
+                }
+
+                if (property.Value.ValueKind == JsonValueKind.False)
+                {
+                    return false;
+                }
+
+                if (property.Value.ValueKind == JsonValueKind.String
+                    && bool.TryParse(property.Value.GetString(), out var parsed))
+                {
+                    return parsed;
+                }
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>Reads an optional float property; accepts numbers or numeric strings (invariant culture).</summary>
     /// <param name="arguments"></param>
     /// <param name="propertyName"></param>

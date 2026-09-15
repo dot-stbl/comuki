@@ -6,11 +6,11 @@ namespace Comuki.Host.Mcp;
 /// Static catalogue of MCP tools exposed by <see cref="McpServer"/>.
 /// Extracted from <c>McpServer.ListToolsAsync</c> so the dispatcher class
 /// holds only orchestration (per <c>class-layout-and-tooling.md §1a</c>).
-/// The shape follows the JSON-RPC 2.0 <c>tools/list</c> convention — four
+/// The shape follows the JSON-RPC 2.0 <c>tools/list</c> convention — six
 /// tools, each with a JSON Schema for its arguments. The catalogue is
-/// currently static; a future async registry lookup (with
-/// <c>cancellationToken</c>) can replace this without changing the
-/// dispatcher signature.
+/// static and caller-agnostic; who may call what is the gates' job
+/// (<see cref="McpToolPermissionMap"/> for subjects,
+/// <see cref="McpWorkerToolGate"/> for workers).
 /// </summary>
 internal static class McpToolCatalog
 {
@@ -54,6 +54,37 @@ internal static class McpToolCatalog
                         ["projectId"] = new { type = "string", description = "Optional project scope." },
                     },
                     required = new[] { "title", "source", "sourceRef", "mimeType", "text" },
+                },
+            },
+            new
+            {
+                name = "memory.recall",
+                description = "Search saved facts and decisions for this project. Use to recall prior decisions, architectural constraints, or gotchas other workers recorded.",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new Dictionary<string, object>
+                    {
+                        ["query"] = new { type = "string", description = "What to look for." },
+                        ["topK"] = new { type = "integer", description = "Maximum facts returned (default 5, max 20)." },
+                    },
+                    required = new[] { "query" },
+                },
+            },
+            new
+            {
+                name = "memory.note",
+                description = "Save a durable observation for future workers on this project. Use sparingly — only architectural findings, gotchas, or decisions worth remembering.",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new Dictionary<string, object>
+                    {
+                        ["topic"] = new { type = "string", description = "Short key like 'auth.pattern' or 'build.gotcha' — same topic overwrites." },
+                        ["text"] = new { type = "string", description = "The fact or observation (4000 characters max)." },
+                        ["ephemeral"] = new { type = "boolean", description = "True expires the note after the platform's ephemeral horizon (default false = standing)." },
+                    },
+                    required = new[] { "topic", "text" },
                 },
             },
             new

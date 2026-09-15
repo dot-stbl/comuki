@@ -1,6 +1,8 @@
-/* The connect form's one piece of furniture: the probe's answer, and —
-   only where the chosen provider has no instance to name, so there is no
-   url box for the glyph to ride in — the probe control beside it.
+/* The probe's answer, and — only where the form has no base url box for the
+ * glyph to ride in — the probe control beside it. Both source forms render
+ * this one row, the create form and the edit form, so it is spelled once:
+ * one control, one answer, under the field that asked, and the two screens
+ * cannot drift apart on what "probing" looks like.
  *
  * Where there is a box, the glyph rides inside it as the field's suffix and
  * this row is the answer alone: "the url and test it" reads as one control,

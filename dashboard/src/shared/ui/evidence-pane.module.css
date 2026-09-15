@@ -106,7 +106,7 @@
 
 .empty {
   margin: 0;
-  max-inline-size: 56ch;
+  max-inline-size: var(--measure-prose);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--muted-foreground);

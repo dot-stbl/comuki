@@ -73,7 +73,7 @@
 
 .summary {
   margin: 0;
-  max-inline-size: 52ch;
+  max-inline-size: var(--measure-note);
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
@@ -136,7 +136,7 @@
 /* The one field on this screen a person wrote for another person. */
 .body {
   margin: 0;
-  max-inline-size: 62ch;
+  max-inline-size: var(--measure-prose);
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);

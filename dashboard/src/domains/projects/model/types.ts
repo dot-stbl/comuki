@@ -6,6 +6,13 @@ export interface ProjectRow {
   name: string
   gitProfileRepo: string | null
   createdAt: string
+  /**
+   * Whether the host has archived the project. The shared `["projects"]`
+   * cache keeps archived rows on purpose — identity names grants against
+   * them — while screen-facing hooks filter them out of what they return,
+   * so a row the registry still knows is not a row the screens still show.
+   */
+  archived: boolean
   /** Runs the swarm is standing on for this project right now. */
   activeRuns: number
   /** Every run this shift has seen for it, finished ones included. */

@@ -27,6 +27,8 @@
  * six months from now, and a test that has to freeze the clock to read it.
  */
 
+import { seedDayAxis } from "./runs.seed"
+
 /** The two wires v1 speaks. Everything upstream is one of these. */
 export const MODEL_WIRES = ["openai", "anthropic"] as const
 
@@ -53,6 +55,19 @@ export interface SeedModelEndpoint {
 export type SeedKeyScope =
   { kind: "platform" } | { kind: "project"; projectId: string }
 
+/** Who a seed key was issued to serve: a role, in a place. */
+export interface SeedKeyGrant {
+  role: "lead" | "worker"
+  /** `null` when the grant is platform-wide rather than one project's. */
+  projectId: string | null
+}
+
+/** One day of a seed key's spend window, oldest first. */
+export interface SeedKeySpendDay {
+  label: string
+  usd: number
+}
+
 export interface SeedVirtualKey {
   id: string
   /**
@@ -77,6 +92,16 @@ export interface SeedVirtualKey {
   /** Seconds since the key was last used upstream. `null` if it never was. */
   lastUsedAgoSec: number | null
   revoked: boolean
+  /** Seconds since the key was issued. */
+  createdAgoSec: number
+  /** Who the key was issued to serve. */
+  grants: SeedKeyGrant[]
+  /**
+   * Per-day spend across the trailing fourteen days, oldest first. The last
+   * six days are zero on every key because the proxy has been off for six
+   * days — nothing is metered, and the seed refuses to pretend otherwise.
+   */
+  spendDaily: SeedKeySpendDay[]
 }
 
 /**
@@ -190,7 +215,40 @@ export const MODEL_ENDPOINTS_SEED: SeedModelEndpoint[] = [
  *   vk_7f2c  at 90% of its cap, and nothing is enforcing it
  *   vk_be04  three days past its TTL — dead without anyone revoking it
  *   vk_11ab  already revoked, so the resting state after the act is visible
+ *
+ * The per-key spend window is the trailing fortnight of that story. The proxy
+ * was turned off six days ago, so the last six days are zero on every key —
+ * and the day before the switch (six days ago) is the same day the proxy's own
+ * `burnDayUsd` meters: the per-key series sum to it exactly, because they are
+ * one day looked at from two ends. Before that, each key keeps the shape its
+ * label promises — the lead key is the expensive one, the trial sputtered, and
+ * the ci key never spent anything at all.
  * ------------------------------------------------------------------------- */
+
+/** How many days a key's spend window covers, trailing today. */
+export const KEY_SPEND_WINDOW_DAYS = 14
+
+/**
+ * Zip the metered days of a key's fortnight onto the shared day axis.
+ *
+ * `metered` is oldest-first and shorter than the window: whatever it does not
+ * cover is zero, which is how an unmetered tail (the proxy off) and a key that
+ * never ran (`[]`) both stay honest — a zero spends, it does not claim to know.
+ */
+function keySpendWindow(metered: number[]): SeedKeySpendDay[] {
+  return seedDayAxis(KEY_SPEND_WINDOW_DAYS).map((day, index) => ({
+    label: day.weekday,
+    usd: metered[index] ?? 0,
+  }))
+}
+
+/* The metered halves, oldest first, eight days each — everything before the
+   switch. The last value of each is that key's share of the proxy's $31.40
+   day, and the four of them sum to it exactly. */
+const SPEND_7F2C = [21.4, 17.8, 24.2, 19.6, 26.9, 30.4, 22.35, 18.95]
+const SPEND_3A91 = [4.2, 3.8, 5.1, 4.4, 6.2, 5.8, 6.9, 7.3]
+const SPEND_BE04 = [1.1, 0.8, 1.4, 0.9, 1.6, 1.2, 0.95, 2.05]
+const SPEND_D55E = [1.9, 1.6, 2.2, 1.8, 2.4, 2.1, 2.6, 3.1]
 
 export const VIRTUAL_KEYS_SEED: SeedVirtualKey[] = [
   {
@@ -205,6 +263,9 @@ export const VIRTUAL_KEYS_SEED: SeedVirtualKey[] = [
     expiresInSec: 12 * DAY,
     lastUsedAgoSec: 6 * DAY,
     revoked: false,
+    createdAgoSec: 74 * DAY,
+    grants: [{ role: "lead", projectId: null }],
+    spendDaily: keySpendWindow(SPEND_7F2C),
   },
   {
     id: "vk_3a91",
@@ -218,10 +279,15 @@ export const VIRTUAL_KEYS_SEED: SeedVirtualKey[] = [
     expiresInSec: 46 * DAY,
     lastUsedAgoSec: 6 * DAY,
     revoked: false,
+    createdAgoSec: 44 * DAY,
+    grants: [{ role: "worker", projectId: "p_comuki" }],
+    spendDaily: keySpendWindow(SPEND_3A91),
   },
   {
     // Past its TTL and nobody had to do anything: the key stopped working on
     // its own, which is the entire argument for putting a TTL inside the key.
+    // Issued 31 days ago under a 28-day TTL — the arithmetic lands on the
+    // "three days ago" the table reads, so the dates and the lapse agree.
     id: "vk_be04",
     prefix: "vk_be04…",
     label: "plexor self-hosted trial",
@@ -233,6 +299,9 @@ export const VIRTUAL_KEYS_SEED: SeedVirtualKey[] = [
     expiresInSec: -3 * DAY,
     lastUsedAgoSec: 4 * DAY,
     revoked: false,
+    createdAgoSec: 31 * DAY,
+    grants: [{ role: "worker", projectId: "p_plexor" }],
+    spendDaily: keySpendWindow(SPEND_BE04),
   },
   {
     id: "vk_d55e",
@@ -246,8 +315,13 @@ export const VIRTUAL_KEYS_SEED: SeedVirtualKey[] = [
     expiresInSec: 27 * DAY,
     lastUsedAgoSec: 7 * DAY,
     revoked: false,
+    createdAgoSec: 63 * DAY,
+    grants: [{ role: "worker", projectId: "p_atlas" }],
+    spendDaily: keySpendWindow(SPEND_D55E),
   },
   {
+    // Never used, so its fortnight is fourteen zeros — the reading the drawer
+    // gives is "no spend recorded", not a chart of nothing drawn as something.
     id: "vk_11ab",
     prefix: "vk_11ab…",
     label: "ci smoke",
@@ -259,6 +333,9 @@ export const VIRTUAL_KEYS_SEED: SeedVirtualKey[] = [
     expiresInSec: 61 * DAY,
     lastUsedAgoSec: null,
     revoked: true,
+    createdAgoSec: 88 * DAY,
+    grants: [{ role: "worker", projectId: null }],
+    spendDaily: keySpendWindow([]),
   },
 ]
 

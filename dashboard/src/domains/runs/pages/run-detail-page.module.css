@@ -91,7 +91,7 @@
 
 .brief {
   margin: 0;
-  max-width: 92ch;
+  max-width: var(--measure-wide);
   font-size: var(--t-body);
   line-height: var(--lh-body);
   color: var(--foreground);
@@ -159,7 +159,7 @@
 
 .stateBody {
   margin: 0;
-  max-width: 62ch;
+  max-width: var(--measure-prose);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--muted-foreground);

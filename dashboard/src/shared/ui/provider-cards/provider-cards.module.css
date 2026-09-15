@@ -19,26 +19,10 @@
   padding: 0;
 }
 
-/* The kit's field-label voice, spelled here the way the priority segments
-   spell it: same family, size, weight and tracking as every other field's
-   label, so the run from this label to its cards measures like the run from
-   any label to its control. */
-.label {
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
-}
-
-/* The rule the operator cannot see by looking at the cards. Same voice as
-   every other field's hint. */
-.hint {
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  line-height: var(--lh-body);
-  color: var(--text-muted);
-}
+/* The label above the cards and the rule under them are not spelled here:
+    they are the kit's field-label and field-hint voices, imported from
+    `../form` by the component, so the run from this label to its cards
+    measures like the run from any label to its control. */
 
 /* Wraps rather than crushes, the Shape-Not-Reading Rule: a card that lost its
    line to a narrow column would be a mark and a name guessing at a meaning.

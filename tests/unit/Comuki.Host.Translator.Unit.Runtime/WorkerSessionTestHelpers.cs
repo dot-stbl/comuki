@@ -51,6 +51,7 @@ internal static class WorkerSessionTestHelpers
         var claimed = new ClaimedWorkItemResponse(
             workItemId,
             RunId: Guid.NewGuid(),
+            ProjectId: Guid.NewGuid(),
             ProfileKey: "test-profile",
             Brief: "test-brief",
             LeaseUntilUnixMs: 0,

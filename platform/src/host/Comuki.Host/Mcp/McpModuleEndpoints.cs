@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Comuki.Host.Auth.Security;
+using Comuki.Host.Workers;
 
 namespace Comuki.Host.Mcp;
 
@@ -17,12 +18,12 @@ public static class McpModuleEndpoints
     /// <param name="app"></param>
     public static IEndpointRouteBuilder MapMcpEndpoints(this IEndpointRouteBuilder app)
     {
-        // Anonymous — the global auth + permission filter (when wired)
-        // handles identity; MCP shares the host's cookie / api-key auth.
-        // The per-tool permission gate lives in the dispatcher
-        // (security audit A01-1): every tool call is denied unless the
-        // resolved subject carries the required permission key. An
-        // anonymous caller (no subject) is denied at the dispatcher.
+        // Anonymous — the resolved caller drives the gates. The host's
+        // cookie / api-key auth resolves dashboard subjects; a swarm
+        // worker presents its worker token as a Bearer credential and is
+        // resolved below into a project-scoped worker caller. The gate
+        // itself lives in the dispatcher (security audit A01-1): an
+        // anonymous caller (neither subject nor worker) is denied there.
         app.MapPost(ApiRoutes.Mcp, DispatchAsync).WithTags("Mcp");
         return app;
     }
@@ -32,7 +33,7 @@ public static class McpModuleEndpoints
         McpServer server,
         CancellationToken cancellationToken)
     {
-        var subject = HostSubjects.Resolve(context.User);
+        var caller = await McpCallerResolution.ResolveAsync(context, cancellationToken);
 
         JsonRpcRequest? envelope;
         try
@@ -63,11 +64,38 @@ public static class McpModuleEndpoints
                 statusCode: StatusCodes.Status400BadRequest);
         }
 
-        var response = await server.DispatchAsync(envelope, subject, cancellationToken);
+        var response = await server.DispatchAsync(envelope, caller, cancellationToken);
 
         // JSON-RPC notifications carry no id and the spec says the
         // endpoint must not respond. 204 No Content is the closest
         // .NET analogue that still carries no body.
         return response is null ? Results.NoContent() : Results.Json(response, JsonSerializerOptions.Web, statusCode: StatusCodes.Status200OK);
+    }
+}
+
+/// <summary>
+/// Caller resolution for one MCP dispatch, in precedence order: the
+/// cookie / api-key principal wins (the dashboard surface), then the
+/// worker Bearer token (the swarm surface — project resolved server-side
+/// from the lease the token maps to), else anonymous.
+/// </summary>
+file static class McpCallerResolution
+{
+    public static async Task<McpCaller> ResolveAsync(HttpContext context, CancellationToken cancellationToken)
+    {
+        if (HostSubjects.Resolve(context.User) is { } subject)
+        {
+            return new McpCaller(Subject: subject);
+        }
+
+        var authenticator = context.RequestServices.GetRequiredService<WorkerTokenAuthenticator>();
+        if (authenticator.Authenticate(WorkerTokenHeaders.TryGetFromHttp(context.Request.Headers)) is not { } workerId)
+        {
+            return McpCaller.Anonymous;
+        }
+
+        var projectResolver = context.RequestServices.GetRequiredService<IWorkerProjectResolver>();
+        var projectId = await projectResolver.ResolveProjectAsync(workerId, cancellationToken);
+        return new McpCaller(Worker: new McpWorkerCaller(workerId, projectId));
     }
 }

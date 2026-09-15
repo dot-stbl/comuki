@@ -277,7 +277,13 @@ internal static class HostComposer
         // MCP server (S10 #9): JSON-RPC 2.0 over /api/v1/mcp. The
         // dispatcher is a singleton — it carries no per-call state and
         // the underlying handlers (IKnowledgeIngestor, IKnowledgeSearcher,
-        // RunsListHandler) are resolved per-call by the DI container.
+        // IMemoryStore, RunsListHandler) are resolved per-call by the DI
+        // container. The worker-caller surface: the project resolver maps
+        // a worker token to its leased work item's project (scoped — reads
+        // the orchestration DbContext), the note limiter caps memory.note
+        // writes per worker (singleton, in-memory window).
+        builder.Services.AddScoped<IWorkerProjectResolver, OrchestrationWorkerProjectResolver>();
+        builder.Services.AddSingleton<WorkerNoteRateLimiter>();
         builder.Services.AddSingleton<McpToolHandlers>();
         builder.Services.AddSingleton<McpServer>();
 

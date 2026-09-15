@@ -6,6 +6,7 @@ using Comuki.Modules.Identity.Application.Authorization;
 using Comuki.Modules.Identity.Domain.Permissions;
 using Comuki.Modules.Identity.Domain.Subjects;
 using Comuki.Modules.Knowledge.Application;
+using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
@@ -64,7 +65,7 @@ public sealed class McpEnvelopeShould
         var server = NewServer();
         var request = new JsonRpcRequest(JsonRpc: "1.0", Id: ParseId("7"), Method: "tools/list", Params: null);
 
-        var response = await server.DispatchAsync(request, subject: NewSubject(), TestContext.Current.CancellationToken);
+        var response = await server.DispatchAsync(request, caller: NewSubjectCaller(), TestContext.Current.CancellationToken);
 
         response.ShouldNotBeNull();
         var error = ErrorOf(response);
@@ -78,7 +79,7 @@ public sealed class McpEnvelopeShould
         var server = NewServer();
         var request = new JsonRpcRequest(JsonRpc: JsonRpcEnvelope.Version, Id: ParseId("3"), Method: "tools/whatever", Params: null);
 
-        var response = await server.DispatchAsync(request, subject: NewSubject(), TestContext.Current.CancellationToken);
+        var response = await server.DispatchAsync(request, caller: NewSubjectCaller(), TestContext.Current.CancellationToken);
 
         response.ShouldNotBeNull();
         var error = ErrorOf(response);
@@ -86,13 +87,13 @@ public sealed class McpEnvelopeShould
         error.Message.ShouldContain("tools/whatever");
     }
 
-    [Fact(DisplayName = "Given a tools/list request, when DispatchAsync runs, then the success envelope carries the four-tool catalog")]
+    [Fact(DisplayName = "Given a tools/list request, when DispatchAsync runs, then the success envelope carries the six-tool catalog")]
     public async Task ToolsListReturnsCatalogAsync()
     {
         var server = NewServer();
         var request = new JsonRpcRequest(JsonRpc: JsonRpcEnvelope.Version, Id: ParseId("1"), Method: "tools/list", Params: null);
 
-        var response = await server.DispatchAsync(request, subject: null, TestContext.Current.CancellationToken);
+        var response = await server.DispatchAsync(request, caller: McpCaller.Anonymous, TestContext.Current.CancellationToken);
 
         response.ShouldNotBeNull();
         var json = SerializeAsEndpointWould(response);
@@ -104,6 +105,8 @@ public sealed class McpEnvelopeShould
             .ToList();
         tools.ShouldContain("knowledge.search");
         tools.ShouldContain("knowledge.ingest");
+        tools.ShouldContain("memory.recall");
+        tools.ShouldContain("memory.note");
         tools.ShouldContain("runs.list");
         tools.ShouldContain("runs.get");
     }
@@ -123,7 +126,7 @@ public sealed class McpEnvelopeShould
 
         var request = new JsonRpcRequest(JsonRpc: JsonRpcEnvelope.Version, Id: ParseId("2"), Method: "tools/call", Params: parameters);
 
-        var response = await server.DispatchAsync(request, subject: NewSubject(), TestContext.Current.CancellationToken);
+        var response = await server.DispatchAsync(request, caller: NewSubjectCaller(), TestContext.Current.CancellationToken);
 
         response.ShouldNotBeNull();
         var error = ErrorOf(response);
@@ -137,7 +140,7 @@ public sealed class McpEnvelopeShould
         var server = NewServer();
         var request = new JsonRpcRequest(JsonRpc: JsonRpcEnvelope.Version, Id: ParseId("4"), Method: "tools/call", Params: null);
 
-        var response = await server.DispatchAsync(request, subject: NewSubject(), TestContext.Current.CancellationToken);
+        var response = await server.DispatchAsync(request, caller: NewSubjectCaller(), TestContext.Current.CancellationToken);
 
         response.ShouldNotBeNull();
         var error = ErrorOf(response);
@@ -153,7 +156,7 @@ public sealed class McpEnvelopeShould
 
         var request = new JsonRpcRequest(JsonRpc: JsonRpcEnvelope.Version, Id: ParseId("9"), Method: "tools/call", Params: parameters);
 
-        var response = await server.DispatchAsync(request, subject: null, TestContext.Current.CancellationToken);
+        var response = await server.DispatchAsync(request, caller: McpCaller.Anonymous, TestContext.Current.CancellationToken);
 
         response.ShouldNotBeNull();
         var error = ErrorOf(response);
@@ -176,7 +179,7 @@ public sealed class McpEnvelopeShould
 
         var request = new JsonRpcRequest(JsonRpc: JsonRpcEnvelope.Version, Id: ParseId("5"), Method: "tools/call", Params: parameters);
 
-        var response = await server.DispatchAsync(request, subject: NewSubject(), TestContext.Current.CancellationToken);
+        var response = await server.DispatchAsync(request, caller: NewSubjectCaller(), TestContext.Current.CancellationToken);
 
         response.ShouldNotBeNull();
         var error = ErrorOf(response);
@@ -244,7 +247,15 @@ public sealed class McpEnvelopeShould
         return new McpToolHandlers(
             knowledgeSearcher: Substitute.For<IKnowledgeSearcher>(),
             knowledgeIngestor: Substitute.For<IKnowledgeIngestor>(),
-            runsList: NewRunsListHandler());
+            memoryStore: Substitute.For<IMemoryStore>(),
+            noteRateLimiter: new WorkerNoteRateLimiter(TimeProvider.System),
+            runsList: NewRunsListHandler(),
+            clock: TimeProvider.System);
+    }
+
+    private static McpCaller NewSubjectCaller()
+    {
+        return new McpCaller(Subject: NewSubject());
     }
 
     private static IPermissionEvaluator BuildEvaluator(PermissionKey key)

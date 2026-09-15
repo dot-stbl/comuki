@@ -188,7 +188,7 @@ const SEEDED_RUN = "8f3c2a91"
 
 describe("what the screen answers before the run is on it", () => {
   it("draws the run once it arrives", async () => {
-    mount(SEEDED_RUN)
+    mount()
 
     await waitFor(() => expect(at("run-graph")).not.toBeNull())
 
@@ -223,7 +223,7 @@ describe("what the screen answers before the run is on it", () => {
 
   it("calls a failed read a failure, and offers the retry", async () => {
     seedFails = true
-    mount(SEEDED_RUN)
+    mount()
 
     const failed = await waitFor(() => {
       const node = at("run-error")
@@ -241,7 +241,7 @@ describe("what the screen answers before the run is on it", () => {
   })
 
   it("says whose run this is, in the voice a value is written in", async () => {
-    mount(SEEDED_RUN)
+    mount()
 
     await waitFor(() => expect(at("run-graph")).not.toBeNull())
 

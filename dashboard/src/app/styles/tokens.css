@@ -315,11 +315,39 @@
      and the scroll-port depth a screen gets before it names its own. */
   --h-row-head: 2rem;
   /* The gutter every screen keeps from the edge of the content region.
-     Content that runs to the edge reads as clipped rather than as full — and a
-     table that does it looks broken. One token so no screen invents its own. */
+      Content that runs to the edge reads as clipped rather than as full — and a
+      table that does it looks broken. One token so no screen invents its own. */
   --page-x: var(--s7);
   --page-y: var(--s6);
   --h-table-body: 26rem;
+
+  /* Reading measures. Five stops on one scale, so no screen invents a sixth:
+      a measure is the widest a run of words is allowed to run, chosen by what
+      the words are doing rather than by the width the window happens to be.
+
+        --measure-note    52ch   a state's sentence or a lead — the line that
+                                 has to be read, not scanned
+        --measure-prose   68ch   a paragraph of body prose
+        --measure-wide    78ch   a region's own prose — a section lead, a
+                                 summary spoken under a full-width heading
+        --measure-form    44rem  a controlled block of inputs, and the
+                                 structured answers the same width (the chat
+                                 proposal)
+        --measure-record  60rem  one record's page — the single width every
+                                 detail screen takes, caps-centred
+
+      `ch` where the cap is about the words, `rem` where it is about the
+      furniture: a note or a paragraph is measured in characters because the
+      reader holds characters, while a form or a record is measured in rems
+      because its inputs and its fact grids are laid out against fixed tracks
+      rather than against the type beside them. Login's 21rem and the modal's
+      26rem/34rem are not on this scale — they are component widths on other
+      axes, and a reading measure is not what they are for. */
+  --measure-note: 52ch;
+  --measure-prose: 68ch;
+  --measure-wide: 78ch;
+  --measure-form: 44rem;
+  --measure-record: 60rem;
 
   /* Icon scale — an icon sits at the cap height of the type beside it, never
      above it: xs beside micro labels (10px), sm beside values (12px), md

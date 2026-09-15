@@ -1,4 +1,6 @@
 import type {
+  KeyGrant,
+  KeySpendDay,
   KeyState,
   ModelEndpoint,
   ModelRoute,
@@ -117,6 +119,123 @@ export function scopeReading(
   return key.scope.kind === "platform"
     ? "platform"
     : projectKey(key.scope.projectId)
+}
+
+/**
+ * A grant as one reading: `lead · platform`, `worker · atlas`.
+ *
+ * The role is the platform's own vocabulary and the place resolves through
+ * the caller's project names — the same resolution `scopeReading` uses,
+ * arrived at from the grant's end rather than the key's.
+ */
+export function grantReading(
+  grant: KeyGrant,
+  projectKey: (projectId: string) => string
+): string {
+  const where =
+    grant.projectId === null ? "platform" : projectKey(grant.projectId)
+  return `${grant.role} · ${where}`
+}
+
+/**
+ * When a key was last used, in the same relative words the TTL column uses.
+ *
+ * `null` splits two ways, and the split is explicit rather than guessed: a row
+ * off the admin catalogue carries no usage column at all (every detail reading
+ * on that wire is null together, so `createdAgoSec` marks it) and says "not on
+ * this wire", while a seeded row with `null` usage really was never presented
+ * and says so. A drawer that answered "never used" about a catalogue key would
+ * be inventing a fact about a security object.
+ */
+export function lastUsedReading(key: VirtualKey): string {
+  if (key.lastUsedAgoSec === null) {
+    return key.createdAgoSec === null ? "not on this wire" : "never used"
+  }
+  return relativeDays(key.lastUsedAgoSec)
+}
+
+/**
+ * When a key was issued. `null` is the catalogue's honest "not on this wire" —
+ * the admin listing carries no issued-at column, and a drawer that guessed a
+ * date would be inventing a fact about a security object.
+ */
+export function createdReading(key: VirtualKey): string {
+  if (key.createdAgoSec === null) {
+    return "not on this wire"
+  }
+  return relativeDays(key.createdAgoSec)
+}
+
+/** Seconds, in the TTL column's own words: `today`, `3 days ago`. */
+function relativeDays(seconds: number): string {
+  const days = Math.round(seconds / DAY)
+  if (days === 0) {
+    return seconds > 0 ? "earlier today" : "today"
+  }
+  if (days > 0) {
+    return `${days} ${days === 1 ? "day" : "days"} ago`
+  }
+  const ahead = Math.abs(days)
+  return `in ${ahead} ${ahead === 1 ? "day" : "days"}`
+}
+
+/** What a key's spend window added up to. A null window answers `null`. */
+export function keySpendTotal(days: KeySpendDay[] | null): number | null {
+  if (days === null) {
+    return null
+  }
+  return round2(days.reduce((sum, day) => sum + day.usd, 0))
+}
+
+/** The window's daily average. `null` for an empty or absent window. */
+export function keySpendAverage(days: KeySpendDay[] | null): number | null {
+  if (days === null || days.length === 0) {
+    return null
+  }
+  const total = keySpendTotal(days) ?? 0
+  return round2(total / days.length)
+}
+
+/** The heaviest day of the window, and its label. */
+export function keySpendPeakDay(
+  days: KeySpendDay[] | null
+): { label: string; usd: number } | null {
+  if (days === null || days.length === 0) {
+    return null
+  }
+  let peak = { label: days[0]?.label ?? "", usd: days[0]?.usd ?? 0 }
+  days.forEach((day) => {
+    if (day.usd > peak.usd) {
+      peak = { label: day.label, usd: day.usd }
+    }
+  })
+  return peak
+}
+
+/**
+ * How many days at the end of the window recorded nothing.
+ *
+ * Zero trailing spend is a fact, not a cause: the reading it feeds says "no
+ * spend recorded in the last N days" and leaves *why* (a quiet fortnight, a
+ * proxy switched off, a key already dead) to the facts that know.
+ */
+export function keySpendSilentDays(days: KeySpendDay[] | null): number {
+  if (days === null) {
+    return 0
+  }
+  let silent = 0
+  for (
+    let index = days.length - 1;
+    index >= 0 && days[index]?.usd === 0;
+    index--
+  ) {
+    silent += 1
+  }
+  return silent
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100
 }
 
 /** The endpoint a key routes to. `undefined` only if a registry is partial. */

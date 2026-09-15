@@ -11,6 +11,7 @@ import { useModelsQuery, useProxyKeysQuery } from "@/domains/models/api/queries"
 import { expiredKeys, keysNearCap } from "@/domains/models/model/keys"
 import type { ModelEndpoint, VirtualKey } from "@/domains/models/model/types"
 import { EndpointsPanel } from "@/domains/models/ui/endpoints-panel"
+import { KeyDetailSheet } from "@/domains/models/ui/key-detail-sheet"
 import { ProxyPanel } from "@/domains/models/ui/proxy-panel"
 import { RoleRoutingPanel } from "@/domains/models/ui/role-routing-panel"
 import { VirtualKeysPanel } from "@/domains/models/ui/virtual-keys-panel"
@@ -70,6 +71,10 @@ export function ModelsPage() {
   const session = useSession()
 
   const [pending, setPending] = useState<Pending>(null)
+  /* The drawer's key, by id: the row hands the entry over and the sheet is
+     fed from whichever list produced it, so a revoke lands here too without
+     a second source of truth. */
+  const [openKeyId, setOpenKeyId] = useState<string | null>(null)
 
   const revoke = useRevokeKey()
   const setProxy = useSetProxyEnabled()
@@ -87,6 +92,10 @@ export function ModelsPage() {
     }
     return proxyKeys.data?.keys ?? []
   }, [data, proxyKeys.data])
+  const openKey = useMemo(
+    () => keys.find((key) => key.id === openKeyId) ?? null,
+    [keys, openKeyId]
+  )
   const routes = useMemo(() => data?.routes ?? [], [data])
   const proxy = data?.proxy
 
@@ -297,6 +306,7 @@ export function ModelsPage() {
                 enforced={enforced}
                 revokingId={revokingId}
                 onRevoke={onRevoke}
+                onOpen={(entry) => setOpenKeyId(entry.id)}
               />
             </Section>
 
@@ -350,6 +360,21 @@ export function ModelsPage() {
           setPending(null)
         }}
         onCancel={() => setPending(null)}
+      />
+
+      <KeyDetailSheet
+        entry={openKey}
+        endpoints={endpoints}
+        enforced={enforced}
+        revokingId={revokingId}
+        onRevoke={onRevoke}
+        session={session}
+        open={openKey !== null}
+        onOpenChange={(next) => {
+          if (!next) {
+            setOpenKeyId(null)
+          }
+        }}
       />
     </AppShell>
   )

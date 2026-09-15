@@ -4,8 +4,8 @@ import {
   mapCostsPageToCostSummary,
   mapProjectSettingsViewToSettings,
   mapProjectViewToDetail,
+  mapProjectRowsToProjectRefs,
   mapProjectsPageToSummaries,
-  mapProjectViewsToProjectRefs,
   toProjectRow,
 } from "@/domains/projects/api/mappers"
 import type {
@@ -34,14 +34,19 @@ export const projectCostsQueryKey = (projectId: string) =>
   ["projects", projectId, "costs"] as const
 
 /**
- * The registry, joined with what each project is doing.
+ * The registry, joined with what each project is doing — the canonical
+ * `["projects"]` read every consumer shares.
  *
  * `VITE_USE_MOCK=true` reads the mutable seed store (the only way a freshly
  * created project sticks across refetches) and joins each row with the run
  * and cost reports so `activeRuns` / `totalRuns` / `spendToday` are real
  * numbers, not zeros.
  *
- * `VITE_USE_MOCK=false` calls the host. The wire `ProjectView[]` carries
+ * `VITE_USE_MOCK=false` calls the host **once, with `includeArchived: true`**
+ * — the widest read any consumer needs. The cache keeps archived rows so
+ * identity can still name grants against them; screen-facing hooks filter
+ * them out through their `select`, so no consumer sees a row it did not
+ * see before this cache was shared. The wire `ProjectView[]` carries
  * `id` / `slug` / `name` / `gitProfileRepo` / `createdAt` only — the derived
  * columns collapse to the honest defaults (`0`, `0`, `null`). The screen
  * already knows how to render those, and the `kubb-client` test pins the
@@ -51,7 +56,7 @@ async function listProjects(): Promise<ProjectRow[]> {
   if (env.useMock) {
     return buildProjectRows(listSeedProjects(), listSeedRuns(), COST_SEED.byApp)
   }
-  const views = await getApiV1Projects({ includeArchived: false })
+  const views = await getApiV1Projects({ includeArchived: true })
   return mapProjectsPageToSummaries(views)
 }
 
@@ -132,10 +137,58 @@ async function getProjectCosts(projectId: string): Promise<ProjectCostSummary> {
  * (`create-project-page.tsx`) imports it from there.
  */
 
-export function useProjectsQuery() {
-  return useQuery({
+/** How long the registry stays fresh: five minutes. */
+const PROJECTS_STALE_TIME_MS = 5 * 60 * 1000
+
+/**
+ * The one options object behind the `["projects"]` cache — the registry
+ * read the whole dashboard shares. The hook below, the session hook and
+ * any queryFn that needs the registry mid-flight (`identity`'s
+ * `loadIdentityReal`) all go through this, so there is exactly one
+ * `/api/v1/projects` round trip per staleness window no matter how many
+ * consumers mount.
+ *
+ * The contract, in one place:
+ * - **One key** — `["projects"]`, holding `ProjectRow[]` *including*
+ *   archived rows (the widest read any consumer needs).
+ * - **One request** — consumers project through `select` /
+ *   `ensureQueryData`; none of them owns a private registry fetch.
+ * - **Five-minute staleness** — the registry changes only through the
+ *   mutations below, which invalidate the key; focus refetch stays off
+ *   (the client-wide default) and remounts read the cache instead of
+ *   the wire.
+ * - **Mutations settle it by invalidation** — create / rename / delete
+ *   in `mutations.ts` invalidate `["projects"]`, so the refetch lands
+ *   the new state in every consumer at once, session selects included.
+ * - **Mock branch** — `VITE_USE_MOCK=true` reads the mutable seed store
+ *   joined with runs and costs; no wire, no kubb transport.
+ *
+ * Mirrors `meQueryOptions()` in the identity domain: one options object,
+ * shared by a hook and a non-React reader, is the established pattern for
+ * "one endpoint, one cache entry".
+ */
+export function projectsQueryOptions() {
+  return {
     queryKey: projectsQueryKey,
     queryFn: listProjects,
+    staleTime: PROJECTS_STALE_TIME_MS,
+  }
+}
+
+/** The registry rows a screen shows: everything the host has not archived. */
+function selectActiveProjectRows(rows: ProjectRow[]): ProjectRow[] {
+  return rows.filter((row) => !row.archived)
+}
+
+/** The session's pick list: the active registry, narrowed to `ProjectRef`. */
+function selectSessionProjects(rows: ProjectRow[]): ProjectRef[] {
+  return mapProjectRowsToProjectRefs(selectActiveProjectRows(rows))
+}
+
+export function useProjectsQuery() {
+  return useQuery({
+    ...projectsQueryOptions(),
+    select: selectActiveProjectRows,
   })
 }
 
@@ -164,33 +217,23 @@ export function useProjectCostsQuery(projectId: string) {
 }
 
 /**
- * The session's own read of the registry, separate from the projects
- * screen's heavier one on purpose.
+ * The session's own read of the registry — the same `["projects"]` cache
+ * the screens read, narrowed through `select` rather than refetched.
  *
  * `useSessionProjects` is mounted above every screen in the product (inside
  * the auth boot), so it answers synchronously and never suspends: mock mode
  * hands back the seed untouched, real mode returns the query's answer or an
  * empty list until one arrives — a session whose projects have not landed
  * yet is a session that offers no project to pick, which is honest rather
- * than broken. The narrow key means the boot's fetch and the screen's
- * `projectsQueryKey` fetch are two reads of one endpoint, and the cache
- * keeps them from being two round trips when they race.
+ * than broken. Sharing the screen's key means the boot's read and every
+ * screen's read are one cache entry and one round trip, and a project
+ * created mid-session lands here through the mutation's invalidation
+ * without a reload.
  */
-export const sessionProjectsQueryKey = ["session-projects"] as const
-
-async function loadSessionProjects(): Promise<ProjectRef[]> {
-  // The endpoint is untyped on the wire (`any` — no response schema in the
-  // host's document yet), and the hand-written mapper below is the
-  // established pattern for that: the shape it expects is declared where it
-  // is mapped, as it is for the identity screen's projects registry.
-  const views = await getApiV1Projects({ includeArchived: false })
-  return mapProjectViewsToProjectRefs(views)
-}
-
 export function useSessionProjects(): ProjectRef[] {
   const query = useQuery({
-    queryKey: sessionProjectsQueryKey,
-    queryFn: loadSessionProjects,
+    ...projectsQueryOptions(),
+    select: selectSessionProjects,
     enabled: !env.useMock,
   })
 

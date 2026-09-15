@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import * as projectsDomain from "@/domains/projects/api/mappers"
+import { projectsQueryOptions } from "@/domains/projects/api/queries"
 import { buildIdentitySnapshot } from "@/domains/identity/model/identity"
 import type {
   CreateApiKeyInput,
@@ -39,7 +39,6 @@ import { getApiV1AuthMe } from "@/shared/api/_generated/clients/getApiV1AuthMe"
 import { getApiV1AuthOidcProviderStart } from "@/shared/api/_generated/clients/getApiV1AuthOidcProviderStart"
 import { getApiV1Grants } from "@/shared/api/_generated/clients/getApiV1Grants"
 import { getApiV1Keys } from "@/shared/api/_generated/clients/getApiV1Keys"
-import { getApiV1Projects } from "@/shared/api/_generated/clients/getApiV1Projects"
 import { getApiV1Users } from "@/shared/api/_generated/clients/getApiV1Users"
 import { postApiV1Grants } from "@/shared/api/_generated/clients/postApiV1Grants"
 import { postApiV1GrantsGrantidRevoke } from "@/shared/api/_generated/clients/postApiV1GrantsGrantidRevoke"
@@ -111,35 +110,30 @@ function snapshot(): IdentitySnapshot {
  * are dispatched in parallel — the screen joins them in `buildIdentitySnapshot`,
  * the same helper the mock path uses, so the screen receives an identical
  * `IdentitySnapshot` and stops branching on `env.useMock` for the result
- * type. Projects come from the existing kubb `/api/v1/projects` client;
- * when that round-trips empty in a misconfigured dev environment the
- * grants column falls back to the raw project id (the same behaviour the
- * mock path applies to a missing registry entry).
+ * type. The registry is the shared `["projects"]` cache: when it is fresh
+ * (five minutes, seeded by the auth boot's session read) `ensureQueryData`
+ * resolves from the cache and this screen adds no `/api/v1/projects` round
+ * trip of its own. Registry rows keep archived projects — a grant against
+ * one should still render a name, not fall back to the raw id.
  *
  * The wire is intentionally narrower than the seed — no OIDC subject,
  * no `lastSeenAt`, no `invited` user state, no key `expiresAt`. The
  * mappers document each gap and fill it with the honest default so the
  * screen renders a real-mode account row rather than a placeholder.
  */
-async function loadIdentityReal(): Promise<IdentitySnapshot> {
-  const [users, grants, keys, projectsPage] = await Promise.all([
+async function loadIdentityReal(
+  queryClient: QueryClient
+): Promise<IdentitySnapshot> {
+  const [users, grants, keys, projectRows] = await Promise.all([
     getApiV1Users({ Page: 1, PageSize: 100 }),
     getApiV1Grants({ Page: 1, PageSize: 200 }),
     getApiV1Keys({ Page: 1, PageSize: 100 }),
-    getApiV1Projects({ includeArchived: true }),
+    queryClient.ensureQueryData(projectsQueryOptions()),
   ])
 
   const seedUsers = mapIdentityUsersPageToUserRows(users)
   const seedGrants = mapGrantsPageToGrantRows(grants)
   const seedKeys = mapApiKeysPageToApiKeyRows(keys)
-  // `getApiV1Projects` returns `any` — the projects endpoint has no
-  // explicit response schema. The hand-written `mapProjectViewToDetail`
-  // path already drives the registry from the same client.
-  const projectRows = projectsDomain.mapProjectsPageToSummaries(
-    projectsPage as unknown as Parameters<
-      typeof projectsDomain.mapProjectsPageToSummaries
-    >[0]
-  )
 
   return buildIdentitySnapshot(
     seedUsers,
@@ -164,12 +158,12 @@ async function loadIdentityReal(): Promise<IdentitySnapshot> {
  * write on the next refetch).
  *
  * Real mode (`VITE_USE_MOCK=false`) calls the three list endpoints that
- * landed under issue #45 + the projects registry. See
- * `loadIdentityReal`'s note for the wire-shape gaps that the mappers
- * paper over.
+ * landed under issue #45 and reads the projects registry from the shared
+ * `["projects"]` cache. See `loadIdentityReal`'s note for the wire-shape
+ * gaps that the mappers paper over.
  */
-async function loadIdentity(): Promise<IdentitySnapshot> {
-  return env.useMock ? snapshot() : loadIdentityReal()
+async function loadIdentity(queryClient: QueryClient): Promise<IdentitySnapshot> {
+  return env.useMock ? snapshot() : loadIdentityReal(queryClient)
 }
 
 /**
@@ -206,9 +200,11 @@ async function startOidc(provider: string): Promise<string> {
 }
 
 export function useIdentityQuery() {
+  const queryClient = useQueryClient()
+
   return useQuery({
     queryKey: identityQueryKey,
-    queryFn: loadIdentity,
+    queryFn: () => loadIdentity(queryClient),
   })
 }
 

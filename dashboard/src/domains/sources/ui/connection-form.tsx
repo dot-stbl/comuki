@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import type { FormEvent, ReactNode } from "react"
 import { Loader2, PlugZap } from "lucide-react"
 
-import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
+import { FormActions, FormCard, FormLayout } from "@/app/layout/form-page"
 import { effectiveAuth, needsBaseUrl } from "@/domains/sources/model/providers"
 import type {
   ProbeResult,
@@ -17,7 +17,9 @@ import { Button, Notice, TextField, Tooltip } from "@/shared/ui"
 // form's own probe so all three readings of "probing" are the same mark.
 import tableStyles from "./sources-table.module.css"
 
-import styles from "./connection-form.module.css"
+// The probe's answer row, shared with the create form so the two screens read
+// one control and one answer, drawn once.
+import probeStyles from "./probe-row.module.css"
 
 export interface ConnectionFormProps {
   connection: SourceConnection
@@ -207,7 +209,13 @@ export function ConnectionForm({
 
   return (
     <FormLayout data-test="connection-form" onSubmit={submit}>
-      <FormFields>
+      {/* The card the create form's groups taught this page: the region
+          heading above is full width, and the form under it now spends that
+          same width rather than sitting in a 44rem stack beside it. */}
+      <FormCard
+        label="the way in"
+        note="where the instance is, which credential reaches it, and the env-var on the host that holds it."
+      >
         <ConnectionFields
           idPrefix="connection"
           kind={connection.kind}
@@ -238,12 +246,12 @@ export function ConnectionForm({
         {/* The answer to the probe the form holds. One control, one answer:
             where the url box carried the control, this is the answer alone,
             landing under the field that produced it. */}
-        <div className={styles.probe} data-test="probe">
+        <div className={probeStyles.probe} data-test="probe">
           {wantsHost ? null : (
-            <span className={styles.probeControl}>{probeControl}</span>
+            <span className={probeStyles.probeControl}>{probeControl}</span>
           )}
 
-          <span className={styles.probeAnswer}>
+          <span className={probeStyles.probeAnswer}>
             {probe ? (
               <Notice tone={probe.ok ? "ok" : "bad"} data-test="probe-result">
                 {probe.message}
@@ -257,7 +265,7 @@ export function ConnectionForm({
             )}
           </span>
         </div>
-      </FormFields>
+      </FormCard>
 
       <FormActions>
         <Button

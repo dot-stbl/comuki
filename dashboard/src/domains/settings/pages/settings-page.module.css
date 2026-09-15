@@ -34,20 +34,24 @@
 
 /* The seven sections, on the hairline that separates them from their content —
    the same one-pixel rule the topbar sits on. Not a segmented control, not a
-   row of pills: this is chrome, and chrome here is built from a rule. Seven is
-   more than three, so this strip is tighter than the shorter ones: gap
-   `--s4` (one step tighter than the `--s5` the shorter strips use) and no
-   inline padding — the `.content` above already gives the strip its
-   left and right breathing room, doubling it would push the strip past the
-   panel on standard viewports. `overflow-x: clip` (not `auto`): an `auto`
-   scrollbar draws itself on the hairline at the slightest overflow and
-   reads as a defect, and the page's own `.content` scroll already carries
-   sideways reach on genuinely narrow windows. */
+   row of pills: this is chrome, and chrome here is built from a rule.
+   Seven is more than three, so this strip is tighter than the shorter ones:
+   gap `--s4`, one step tighter than the `--s6` the shorter strips use. The
+   inline gutter is the page gutter, the same one the pinned header's title
+   and the panel below both sit on — the one convention every tab strip keeps
+   (see `knowledge-page.module.css`, the reference spelling). This strip used
+   to sit at `0` on the theory that `.content` above would pad it, but this
+   screen opts out of the shell's padding so the strip can reach the top
+   edge — so the theory left the strip a gutter short of its own panel.
+   `overflow-x: clip` (not `auto`): an `auto` scrollbar draws itself on the
+   hairline at the slightest overflow and reads as a defect, and the page's
+   own `.content` scroll already carries sideways reach on genuinely narrow
+   windows. */
 .tabList {
   display: flex;
   flex: 0 0 auto;
   gap: var(--s4);
-  padding-inline: 0;
+  padding-inline: var(--page-x);
   border-block-end: var(--hairline) solid var(--rule);
   overflow-x: clip;
 }
@@ -125,7 +129,7 @@
 
 .stateBody {
   margin: 0;
-  max-width: 52ch;
+  max-width: var(--measure-note);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
   color: var(--muted-foreground);

@@ -99,6 +99,8 @@ COPY --from=build /app/brain /app/brain
 # SPA into the host content root (chart workingDir /app/host): Kestrel's
 # UseDefaultFiles/UseStaticFiles + MapFallbackToFile serve it.
 COPY --from=spa /src/dist /app/host/wwwroot
+# Control-plane profiles (brain reads these at runtime)
+COPY --from=build /src/control-plane/ /app/control-plane/
 
 # aspnet:10.0 already runs as non-root `app` (APP_UID 1654) and Kestrel
 # binds 8080 by default. chart values set workingDir /app/host + command

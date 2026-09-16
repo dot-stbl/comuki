@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { HubConnectionState } from "@microsoft/signalr"
 
 import { useAuthState } from "@/domains/auth"
+import { bindChatTurnEvents } from "@/domains/chat/ui/use-chat-turn-stream"
 import { useProjectsQuery } from "@/domains/projects/api/queries"
 import {
   bindRunsHubEvents,
@@ -75,6 +76,15 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       setRunsHubConnection(created)
 
       bindRunsHubEvents(created, (queryKey) => {
+        void queryClient.invalidateQueries({ queryKey })
+      })
+
+      // The chat console's live turn rides the same socket: fragments land
+      // in the chat domain's streaming store, the terminal signal closes the
+      // overlay and refreshes the transcript. Bound here, next to the runs
+      // wiring, so the callbacks exist for the connection's whole lifetime —
+      // a console that mounts later reads what the store already holds.
+      bindChatTurnEvents(created, (queryKey) => {
         void queryClient.invalidateQueries({ queryKey })
       })
 

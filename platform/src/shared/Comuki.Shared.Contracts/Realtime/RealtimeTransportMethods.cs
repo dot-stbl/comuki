@@ -16,4 +16,10 @@ public static class RealtimeTransportMethods
 
     /// <summary>Client callback name of the project attention stream.</summary>
     public const string Attention = "Attention";
+
+    /// <summary>Client callback name of one live chat progress fragment.</summary>
+    public const string ChatChunk = "ChatChunk";
+
+    /// <summary>Client callback name of the terminal signal of one chat turn.</summary>
+    public const string ChatTurnComplete = "ChatTurnComplete";
 }

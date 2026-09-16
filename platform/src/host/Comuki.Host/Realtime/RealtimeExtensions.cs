@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Realtime.Broadcasting;
 using Comuki.Host.Realtime.Reading;
+using Comuki.Modules.Chat.Application.Ports;
 
 namespace Comuki.Host.Realtime;
 
@@ -38,6 +39,10 @@ public static class RealtimeExtensions
         services.AddSingleton<IRunEventsBroadcaster, SignalRRunEventsBroadcaster>();
         services.AddSingleton<RunEventsBroadcastInterceptor>();
         services.AddScoped<IRealtimeRunProjects, RealtimeRunProjectsReader>();
+        // The live chat turn port: same hub, same contract style — registered
+        // here so the chat module stays transport-free and the whole realtime
+        // surface composes in one place.
+        services.AddSingleton<IChatTurnProgress, SignalRChatTurnProgress>();
         services.AddDbContext<OrchestrationDbContext>(static (serviceProvider, options) =>
             options.AddInterceptors(serviceProvider.GetRequiredService<RunEventsBroadcastInterceptor>()));
 

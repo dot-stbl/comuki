@@ -15,6 +15,11 @@ namespace Comuki.Modules.Chat.Unit;
 /// host answers anything, which is what let <c>brain_kind = "chat"</c> live
 /// here unnoticed.
 /// </para>
+/// <para>
+/// <see cref="StreamAsync"/> streams the scripted <see cref="Chunks"/>
+/// fragments before the final payload — the shape ThinkNode now reads; the
+/// aggregate <see cref="InvokeAsync"/> is the same script drained at once.
+/// </para>
 /// </summary>
 public sealed class FakeBrainClient : IBrainClient
 {
@@ -59,6 +64,42 @@ public sealed class FakeBrainClient : IBrainClient
             ? new BrainReply([.. Chunks], PlanFinalJson)
             : new BrainReply([.. Chunks], "brain says: " + request.Task);
         return Task.FromResult(reply);
+    }
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<BrainChunk> StreamAsync(
+        BrainRequest request,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        Requests.Add(request);
+
+        if (Fault is { } fault)
+        {
+            throw fault;
+        }
+
+        if (BrainRequestKindKeys.Parse(request.Kind) is null)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(request),
+                request.Kind,
+                "brain request kind must be plan | brief | repair | answer");
+        }
+
+        await Task.Yield();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        for (var index = 0; index < Chunks.Count; index++)
+        {
+            yield return new BrainChunk { Seq = index, Text = Chunks[index] };
+        }
+
+        yield return new BrainChunk
+        {
+            Seq = Chunks.Count,
+            FinalJson = request.Kind == BrainRequestKindKeys.Plan ? PlanJson : "brain says: " + request.Task,
+            IsFinal = true,
+        };
     }
 }
 
@@ -199,5 +240,34 @@ public sealed class FakeChatToolExecutor : IChatToolExecutor
             _ => new ChatToolResult(false, "{}", "chat.tool_unknown:" + call.Name, NotImplemented: false),
         };
         return Task.FromResult(result);
+    }
+}
+
+/// <summary>
+/// Recording turn-progress port: captures every live fragment and terminal
+/// signal the turn pushed, in order — the unit-test stand-in for the host's
+/// SignalR fan-out.
+/// </summary>
+public sealed class FakeChatTurnProgress : IChatTurnProgress
+{
+    public sealed record Event(ChatSessionId SessionId, ChatTurnDone? Done, int Seq, string Text)
+    {
+        public bool IsDone => Done is not null;
+    }
+
+    public List<Event> Events { get; } = [];
+
+    /// <inheritdoc />
+    public Task ChunkAsync(ChatSessionId sessionId, int seq, string text, CancellationToken cancellationToken = default)
+    {
+        Events.Add(new Event(sessionId, null, seq, text));
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task DoneAsync(ChatSessionId sessionId, ChatTurnDone done, CancellationToken cancellationToken = default)
+    {
+        Events.Add(new Event(sessionId, done, 0, string.Empty));
+        return Task.CompletedTask;
     }
 }

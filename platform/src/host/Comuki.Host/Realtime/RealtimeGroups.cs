@@ -1,3 +1,4 @@
+using Comuki.Modules.Chat.Domain.Ids;
 using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Host.Realtime;
@@ -24,5 +25,18 @@ public static class RealtimeGroups
     public static string ProjectAttentionGroup(ProjectId projectId)
     {
         return "project:" + projectId.Value.ToString("D") + ":attention";
+    }
+
+    /// <summary>
+    /// The live-turn group of one chat session — join requires the session to
+    /// exist and belong to the acting subject (the same ownership rule the
+    /// chat REST surface applies). Carries <c>ChatChunk</c> while a turn
+    /// streams and <c>ChatTurnComplete</c> when it ends.
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <returns></returns>
+    public static string ChatGroup(ChatSessionId sessionId)
+    {
+        return "chat:" + sessionId.Value.ToString("D");
     }
 }

@@ -71,7 +71,9 @@ public sealed class ThinkNode(
             ? NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),
                 new ChannelWrite(ChatChannels.Thinking, thinking),
-                new ChannelWrite(ChatChannels.Reply, ChatPlanGate.InvalidPlanMessage),
+                new ChannelWrite(
+                    ChatChannels.Reply,
+                    outcome.Explanation.Length > 0 ? outcome.Explanation : ChatPlanGate.InvalidPlanMessage),
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Done))
             : NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),

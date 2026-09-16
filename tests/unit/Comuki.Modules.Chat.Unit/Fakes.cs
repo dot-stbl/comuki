@@ -27,6 +27,13 @@ public sealed class FakeBrainClient : IBrainClient
     /// <summary>Progress fragments the next invocation reports before its final payload.</summary>
     public List<string> Chunks { get; } = [];
 
+    /// <summary>
+    /// Final payload plan invocations answer with; defaults to the stub
+    /// plan — set to script the brain's invalid-plan fallback prose or a
+    /// structurally broken plan payload.
+    /// </summary>
+    public string PlanFinalJson { get; set; } = PlanJson;
+
     /// <summary>When set, every invocation throws it — the brain-is-down path.</summary>
     public Exception? Fault { get; set; }
 
@@ -49,7 +56,7 @@ public sealed class FakeBrainClient : IBrainClient
         }
 
         var reply = request.Kind == BrainRequestKindKeys.Plan
-            ? new BrainReply([.. Chunks], PlanJson)
+            ? new BrainReply([.. Chunks], PlanFinalJson)
             : new BrainReply([.. Chunks], "brain says: " + request.Task);
         return Task.FromResult(reply);
     }

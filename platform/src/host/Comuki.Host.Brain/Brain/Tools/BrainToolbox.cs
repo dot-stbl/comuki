@@ -51,6 +51,39 @@ public sealed class BrainToolbox(
     /// <summary>How many facts memory.forget scans for a topic match.</summary>
     public const int ForgetScanLimit = 500;
 
+    /// <summary>
+    /// The emit_plan tool description — the full plan schema and rules, so
+    /// the model can produce a valid plan without guessing the shape (the
+    /// live failure mode was empty id/title/profileKey/brief fields).
+    /// </summary>
+    public const string EmitPlanDescription =
+        """
+        Emit the final plan as JSON. ALL fields are REQUIRED and must be non-empty strings.
+
+        Schema:
+        {
+          "summary": "one-line description of what the plan accomplishes",
+          "nodes": [
+            {
+              "id": "step-1",              // unique node identifier, kebab-case
+              "title": "Check README",     // short human-readable title
+              "profileKey": "implement",   // worker profile key — one of the keys listed by list_profiles
+              "brief": "Read README.md and verify its sections" // complete instruction for the worker
+            }
+          ],
+          "edges": [ { "from": "step-1", "to": "step-2" } ]  // ordering dependencies; [] when steps are independent
+        }
+
+        Rules:
+        - Every node MUST have all four fields: id, title, profileKey, brief — each a non-empty string
+        - id must be unique across all nodes
+        - profileKey must be a real profile key from the catalog (run list_profiles to see them)
+        - edges may only reference existing node ids; the graph must be acyclic
+        - brief must be a complete instruction, not just a filename (the worker sees only its brief)
+
+        A valid plan ends the loop; an invalid one returns the errors for one retry.
+        """;
+
     private string? emittedPlanJson;
     private int invalidPlanAttempts;
     private IReadOnlyList<AIFunction> functions = [];
@@ -87,9 +120,7 @@ public sealed class BrainToolbox(
             AIFunctionFactory.Create(ReadExplorerReportAsync, name: "read_explorer_report",
                 description: "Read the latest explorer (read-only recon) report, when one exists."),
 
-            AIFunctionFactory.Create(EmitPlanAsync, name: "emit_plan",
-                description: "Submit the final plan as JSON (shape from the system prompt). "
-                    + "A valid plan ends the loop; an invalid one returns errors for one retry."),
+            AIFunctionFactory.Create(EmitPlanAsync, name: "emit_plan", description: EmitPlanDescription),
         ];
     }
 
@@ -303,7 +334,10 @@ public sealed class BrainToolbox(
 
         invalidPlanAttempts++;
         return invalidPlanAttempts <= MaxInvalidPlanAttempts
-            ? "plan rejected — fix these errors and call emit_plan again:\n" + string.Join("\n", errors)
+            ? "plan rejected — every node needs non-empty id, title, profileKey (a real key from list_profiles) "
+                + "and brief; ids must be unique; edges must reference existing ids with no cycles. "
+                + "Fix these errors and call emit_plan again:\n"
+                + string.Join("\n", errors)
             : throw new BrainInvalidPlanException(errors);
     }
 }

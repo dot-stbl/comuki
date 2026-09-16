@@ -85,6 +85,43 @@ public sealed class BrainToolboxShould
         await Should.ThrowAsync<BrainInvalidPlanException>(() => toolbox.EmitPlanAsync(cyclicPlan));
     }
 
+    [Fact(DisplayName = "Given a plan with empty node fields, when emit_plan rejects it, then the retry feedback names every empty field")]
+    public async Task FeedEmptyFieldErrorsBackForTheRetryAsync()
+    {
+        var toolbox = Toolbox();
+        const string hollowPlan =
+                             /*lang=json,strict*/
+                             """{"summary":"s","nodes":[{"id":"","title":"","profileKey":"","brief":""}],"edges":[]}""";
+
+        var feedback = await toolbox.EmitPlanAsync(hollowPlan);
+
+        feedback.ShouldStartWith("plan rejected");
+        feedback.ShouldContain("node id must not be empty");
+        feedback.ShouldContain("title must not be empty");
+        feedback.ShouldContain("profile key must not be empty");
+        feedback.ShouldContain("brief must not be empty");
+        feedback.ShouldContain("call emit_plan again");
+    }
+
+    [Fact(DisplayName = "Given the built tool surface, when the emit_plan description is read, then it pins the full plan schema and rules")]
+    public void PinThePlanSchemaInTheEmitPlanDescription()
+    {
+        var toolbox = Toolbox();
+        toolbox.BuildFunctions();
+
+        var description = toolbox.FindFunction("emit_plan")!.Description;
+
+        description.ShouldContain("\"summary\"");
+        description.ShouldContain("\"id\"");
+        description.ShouldContain("\"title\"");
+        description.ShouldContain("\"profileKey\"");
+        description.ShouldContain("\"brief\"");
+        description.ShouldContain("\"edges\"");
+        description.ShouldContain("non-empty");
+        description.ShouldContain("unique");
+        description.ShouldContain("list_profiles");
+    }
+
     [Fact(DisplayName = "Given a plan naming an unknown profile, when emit_plan is called, then it is rejected with the catalog hint")]
     public async Task RejectUnknownProfileKeysAsync()
     {

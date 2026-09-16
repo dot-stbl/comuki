@@ -18,15 +18,20 @@ namespace Comuki.Modules.Chat.Application.Graph.Think;
 /// invokes the brain once, and gates plan output through
 /// <see cref="ChatPlanGate"/>. The digest it fed the brain lands on the
 /// digest channel so the turn service journals it as a system message
-/// (audit per the memory contract).
+/// (audit per the memory contract). The brain call runs in streaming mode:
+/// every progress fragment is pushed to <see cref="IChatTurnProgress"/> the
+/// moment it arrives (the live console overlay) and accumulated into the
+/// thinking channel (the journal's copy of the same fragments).
 /// </summary>
 /// <param name="brain">Brain port (gRPC client or in-process stub).</param>
 /// <param name="memoryDigest">Shared digest service (variant Z).</param>
 /// <param name="sessions">Transcript reads for the history window.</param>
+/// <param name="progress">Live turn progress fan-out.</param>
 public sealed class ThinkNode(
     IBrainClient brain,
     IMemoryDigest memoryDigest,
-    IChatSessionStore sessions) : IGraphNode
+    IChatSessionStore sessions,
+    IChatTurnProgress progress) : IGraphNode
 {
     /// <summary>How many newest transcript rows ride along in the brain context.</summary>
     public const int HistoryWindow = 20;
@@ -49,35 +54,50 @@ public sealed class ThinkNode(
             new MemoryDigestRequest(scope.ScopeKind, scope.SubjectId, task),
             cancellationToken);
         var history = await sessions.ReadRecentAsync(sessionId, HistoryWindow, cancellationToken);
-        var reply = await brain.InvokeAsync(
-            new BrainRequest { Kind = brainKind, ContextJson = ChatBrainContextJson.ToJson(history, digest), Task = task },
-            cancellationToken);
+
+        // Streaming: each progress fragment goes out live and is kept for the
+        // journal — same fragments, two readers with different latencies.
+        var thinking = new List<string>();
+        var finalJson = string.Empty;
+
+        await foreach (var chunk in brain.StreamAsync(
+                           new BrainRequest { Kind = brainKind, ContextJson = ChatBrainContextJson.ToJson(history, digest), Task = task },
+                           cancellationToken))
+        {
+            if (chunk.IsFinal)
+            {
+                finalJson = chunk.FinalJson;
+            }
+            else if (chunk.Text.Length > 0)
+            {
+                thinking.Add(chunk.Text);
+                await progress.ChunkAsync(sessionId, chunk.Seq, chunk.Text, cancellationToken);
+            }
+        }
 
         // The brain's progress fragments are its visible reasoning — the
         // journal keeps them as a thinking part instead of dropping them.
-        var thinking = string.Join("\n", reply.Chunks);
+        var thinkingText = string.Join("\n", thinking);
 
         if (brainKind != BrainRequestKindKeys.Plan)
         {
             return NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),
-                new ChannelWrite(ChatChannels.Thinking, thinking),
-                new ChannelWrite(ChatChannels.Reply, reply.FinalJson),
+                new ChannelWrite(ChatChannels.Thinking, thinkingText),
+                new ChannelWrite(ChatChannels.Reply, finalJson),
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Done));
         }
 
-        var outcome = ChatPlanGate.Validate(reply.FinalJson);
+        var outcome = ChatPlanGate.Validate(finalJson);
         return outcome.Plan is null
             ? NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),
-                new ChannelWrite(ChatChannels.Thinking, thinking),
-                new ChannelWrite(
-                    ChatChannels.Reply,
-                    outcome.Explanation.Length > 0 ? outcome.Explanation : ChatPlanGate.InvalidPlanMessage),
+                new ChannelWrite(ChatChannels.Thinking, thinkingText),
+                new ChannelWrite(ChatChannels.Reply, ChatPlanGate.InvalidPlanMessage),
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Done))
             : NodeResult.Continue(
                 new ChannelWrite(ChatChannels.Digest, digest),
-                new ChannelWrite(ChatChannels.Thinking, thinking),
+                new ChannelWrite(ChatChannels.Thinking, thinkingText),
                 new ChannelWrite(ChatChannels.PlanJson, outcome.CanonicalJson),
                 new ChannelWrite(ChatChannels.Reply, ChatPlanGate.CardPrompt),
                 new ChannelWrite(ChatChannels.Phase, ChatPhases.Confirm));

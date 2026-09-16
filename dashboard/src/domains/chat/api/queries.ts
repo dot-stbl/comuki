@@ -1,12 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import {
+  chatMessageViewToDomainMessage,
   chatMessagesPageToDomainMessages,
   chatSessionViewsToDomainSessions,
   chatSlashCommandsToDomainCommands,
   toChatSession,
   toCustomCommands,
 } from "@/domains/chat/api/mappers"
+import {
+  completeChatTurn,
+  pendingUserMessage,
+} from "@/domains/chat/model/streaming"
 import type {
   ChatMessage,
   ChatSession,
@@ -19,6 +24,7 @@ import { getApiV1ChatSlash } from "@/shared/api/_generated/clients/getApiV1ChatS
 import { postApiV1ChatSessions } from "@/shared/api/_generated/clients/postApiV1ChatSessions"
 import { postApiV1ChatSessionsSessionidApprove } from "@/shared/api/_generated/clients/postApiV1ChatSessionsSessionidApprove"
 import { postApiV1ChatSessionsSessionidMessages } from "@/shared/api/_generated/clients/postApiV1ChatSessionsSessionidMessages"
+import type { ChatTurnResultView } from "@/shared/api/_generated/types/ChatTurnResultView"
 import {
   decideChatProposal,
   findChatSession,
@@ -137,6 +143,28 @@ export interface SendMessageInput {
   projectId?: string
 }
 
+/**
+ * What one settled turn appends to the transcript cache the moment the POST
+ * answers — a bridge, not a source of truth.
+ *
+ * The wire's `ChatTurnResultView` carries the rows the action journaled
+ * (digest, tool, reply) but **not** the user row the turn service wrote
+ * before invoking the graph, and the refetch the invalidation triggers lands
+ * a roundtrip later. Writing the sent text as the user row plus the mapped
+ * journal rows closes that gap so the thread never flashes an answer without
+ * the question above it; the refetch replaces the bridge wholesale.
+ */
+function bridgeTurnRows(
+  sessionId: string,
+  sentText: string,
+  turn: ChatTurnResultView
+): ChatMessage[] {
+  return [
+    pendingUserMessage(sessionId, sentText, Date.now()),
+    ...turn.messages.map(chatMessageViewToDomainMessage),
+  ]
+}
+
 export function useSendMessageMutation() {
   const queryClient = useQueryClient()
 
@@ -147,22 +175,45 @@ export function useSendMessageMutation() {
         if (!result) {
           throw new Error(`chat session ${sessionId} not found`)
         }
-        return listChatSessions().map(toChatSession)
+        return {
+          sessions: listChatSessions().map(toChatSession),
+          turn: null,
+        }
       }
-      await postApiV1ChatSessionsSessionidMessages(sessionId, {
+      const turn = await postApiV1ChatSessionsSessionidMessages(sessionId, {
         message: text,
       })
       void queryClient.invalidateQueries({ queryKey: chatSessionsQueryKey })
-      return listSessions()
+      return { sessions: await listSessions(), turn }
     },
-    onSuccess: (next, { sessionId }) => {
-      queryClient.setQueryData(chatSessionsQueryKey, next)
+    onSuccess: ({ sessions, turn }, { sessionId, text }) => {
+      queryClient.setQueryData(chatSessionsQueryKey, sessions)
       // The thread is its own query now, in both modes: mock writes the turn
       // into the store and real mode leaves it on the host, and neither shows
-      // up in a list of sessions that carries no messages.
+      // up in a list of sessions that carries no messages. In real mode the
+      // settled rows also bridge straight into the cache so the live overlay
+      // dissolves into the journaled turn without a roundtrip of blank.
+      if (turn) {
+        const current =
+          queryClient.getQueryData<ChatMessage[]>(
+            chatMessagesQueryKey(sessionId)
+          ) ?? []
+        queryClient.setQueryData(
+          chatMessagesQueryKey(sessionId),
+          [...current, ...bridgeTurnRows(sessionId, text, turn)]
+        )
+      }
       void queryClient.invalidateQueries({
         queryKey: chatMessagesQueryKey(sessionId),
       })
+      // The sender's own settlement closes the overlay; the hub's terminal
+      // event is the safety net for every other connection in the group.
+      completeChatTurn(sessionId)
+    },
+    onError: (_error, { sessionId }) => {
+      // A failed turn (503 brain down, 409 pending approve) must not leave
+      // the optimistic rows standing as if the turn were still running.
+      completeChatTurn(sessionId)
     },
   })
 }

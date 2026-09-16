@@ -50,6 +50,15 @@ public sealed class MemoryFact
     /// <summary>Set when a newer fact with the same topic key superseded this one; null while active.</summary>
     public DateTimeOffset? SupersededAt { get; private set; }
 
+    /// <summary>
+    /// How many times a search returned this fact — the usefulness signal
+    /// the consolidation worker promotes on (3+ reads ⇒ worth keeping).
+    /// </summary>
+    public int ReadCount { get; private set; }
+
+    /// <summary>When a search last returned this fact; null until the first read.</summary>
+    public DateTimeOffset? LastReadAt { get; private set; }
+
     /// <summary>Canonicalizes a subject id or topic key: trimmed, lower-cased — one shape for entity and query.</summary>
     /// <param name="value"></param>
     public static string CanonicalKey(string value)
@@ -102,5 +111,17 @@ public sealed class MemoryFact
     public void Supersede(DateTimeOffset now)
     {
         SupersededAt = now;
+    }
+
+    /// <summary>
+    /// Records one read — a search just returned this fact. Feeds the
+    /// consolidation worker's promote (read count) and decay (last read)
+    /// decisions; called by the store on every search hit.
+    /// </summary>
+    /// <param name="now"></param>
+    public void RegisterRead(DateTimeOffset now)
+    {
+        ReadCount++;
+        LastReadAt = now;
     }
 }

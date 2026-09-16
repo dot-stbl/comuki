@@ -199,7 +199,7 @@ internal static class HostComposer
         // treats as "do not journal". The sweep worker rides along
         // (hourly, cheap) exactly as it does in the brain host.
         builder.Services.AddMemoryApplication();
-        builder.Services.AddMemoryPersistence(database.ConnectionString);
+        builder.Services.AddMemoryPersistence(database.ConnectionString, builder.Configuration);
 
         // Chat module (issue #5 slice B): turn services + Voluta graph over
         // the chat schema. The brain port is the gRPC client when

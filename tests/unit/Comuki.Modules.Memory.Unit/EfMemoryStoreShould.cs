@@ -152,6 +152,45 @@ public sealed class EfMemoryStoreShould
         secondPage.Any(fact => firstIds.Contains(fact.Id)).ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "Given a searched fact, when SearchAsync returns it, then read_count and last_read_at are stamped")]
+    public async Task SearchRegistersReadsAsync()
+    {
+        using var session = NewSession(StoreFixedTime.Provider);
+        var searched = Fact("deploy", "prefers docker compose");
+        var untouched = Fact("untouched", "never returned", now.AddSeconds(-10));
+        await using (var seedDb = await session.OpenAsync())
+        {
+            await SeedAsync(seedDb, searched, untouched);
+        }
+        var store = session.Store;
+
+        var results = await store.SearchAsync(
+            new MemoryFactQuery(Scope: MemoryScope.User, SubjectId: "user-1", Kind: MemoryFactKind.Standing, Limit: 1),
+            TestContext.Current.CancellationToken);
+
+        // the ranking returns the newest standing fact first — one row,
+        // the other fact stays unread
+        results.ShouldHaveSingleItem().TopicKey.ShouldBe("deploy");
+        await using var assertDb = await session.OpenAsync();
+        var tracked = await assertDb.MemoryFacts.ToListAsync(TestContext.Current.CancellationToken);
+        var read = tracked.Single(static fact => fact.TopicKey == "deploy");
+        var unread = tracked.Single(static fact => fact.TopicKey == "untouched");
+        read.ReadCount.ShouldBe(1);
+        read.LastReadAt.ShouldBe(now);
+        unread.ReadCount.ShouldBe(0);
+        unread.LastReadAt.ShouldBeNull();
+
+        // a second search bumps the same fact again
+        await store.SearchAsync(
+            new MemoryFactQuery(Scope: MemoryScope.User, SubjectId: "user-1", Kind: MemoryFactKind.Standing, Limit: 1),
+            TestContext.Current.CancellationToken);
+
+        await using var secondDb = await session.OpenAsync();
+        var reread = await secondDb.MemoryFacts.SingleAsync(
+            static fact => fact.TopicKey == "deploy", TestContext.Current.CancellationToken);
+        reread.ReadCount.ShouldBe(2);
+    }
+
     private static MemoryFact Fact(string topicKey, string text, DateTimeOffset? createdAt = null)
     {
         return MemoryFact.Create(
@@ -178,7 +217,7 @@ public sealed class EfMemoryStoreShould
     /// creates a fresh context so EF Core's per-call lifecycle is
     /// respected.
     /// </summary>
-    private static Session NewSession()
+    private static Session NewSession(TimeProvider? clock = null)
     {
         var databaseName = $"memory-store-tests-{Guid.NewGuid():N}";
         var options = new DbContextOptionsBuilder<MemoryDbContext>()
@@ -186,7 +225,7 @@ public sealed class EfMemoryStoreShould
             .ConfigureWarnings(static warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
         var factory = new TestDbContextFactory(options);
-        var store = new EfMemoryStore(factory, TimeProvider.System, NullLogger<EfMemoryStore>.Instance);
+        var store = new EfMemoryStore(factory, clock ?? TimeProvider.System, NullLogger<EfMemoryStore>.Instance);
         return new Session(options, store);
     }
 
@@ -212,6 +251,22 @@ public sealed class EfMemoryStoreShould
         public MemoryDbContext CreateDbContext()
         {
             return new MemoryDbContext(options);
+        }
+    }
+}
+
+/// <summary>Deterministic clock local to this file — stamps read tracking the test can assert on.</summary>
+file static class StoreFixedTime
+{
+    public static readonly TimeProvider Provider = new FixedTimeProvider();
+
+    private sealed class FixedTimeProvider : TimeProvider
+    {
+        private static readonly DateTimeOffset now = new(2026, 9, 1, 12, 0, 0, TimeSpan.Zero);
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            return now;
         }
     }
 }

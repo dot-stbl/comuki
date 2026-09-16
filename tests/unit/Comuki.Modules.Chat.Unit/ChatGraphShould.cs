@@ -66,6 +66,42 @@ public sealed class ChatGraphShould
         harness.Brain.Requests.ShouldHaveSingleItem().Kind.ShouldBe(BrainRequestKindKeys.Plan);
     }
 
+    [Fact(DisplayName = "Given a brain that could not emit a valid plan, when a task is posted, then the fallback explanation becomes the reply instead of an approve card")]
+    public async Task ShowPlanFallbackExplanationAsReplyAsync()
+    {
+        await using var harness = ChatHarness.Create();
+        harness.Brain.PlanFinalJson =
+            "Plan invalid — the model's plan stayed malformed after its retry:\n- node id must not be empty\n"
+            + "No run was created. Please rephrase the task and try again.";
+        var sessionId = await harness.NewSessionAsync(projectGuid.ToString());
+        var session = await harness.SessionAsync(sessionId);
+
+        var result = await harness.Turns.PostAsync(session, "fix the login bug", TestContext.Current.CancellationToken);
+
+        result.AwaitingApproval.ShouldBeFalse();
+        var reply = result.NewMessages.Single(static message => message.Role == ChatMessageRole.Assistant);
+        reply.Content.ShouldStartWith("Plan invalid");
+        reply.Content.ShouldContain("node id must not be empty");
+        reply.Content.ShouldContain("rephrase");
+    }
+
+    [Fact(DisplayName = "Given a brain whose plan payload is structurally invalid JSON, when a task is posted, then the generic invalid-plan reply comes back")]
+    public async Task ShowGenericInvalidPlanReplyForBrokenPlanJsonAsync()
+    {
+        await using var harness = ChatHarness.Create();
+        harness.Brain.PlanFinalJson =
+            /*lang=json,strict*/
+            """{"summary":"s","nodes":[],"edges":[]}""";
+        var sessionId = await harness.NewSessionAsync(projectGuid.ToString());
+        var session = await harness.SessionAsync(sessionId);
+
+        var result = await harness.Turns.PostAsync(session, "fix the login bug", TestContext.Current.CancellationToken);
+
+        result.AwaitingApproval.ShouldBeFalse();
+        var reply = result.NewMessages.Single(static message => message.Role == ChatMessageRole.Assistant);
+        reply.Content.ShouldContain("failed structural validation");
+    }
+
     [Fact(DisplayName = "Given a pending approve, when a new message is posted, then the turn is refused with a pending exception")]
     public async Task RefuseTurnWhileApprovePendingAsync()
     {

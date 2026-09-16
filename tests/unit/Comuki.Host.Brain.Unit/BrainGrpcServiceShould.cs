@@ -16,7 +16,8 @@ namespace Comuki.Host.Brain.Unit;
 /// <summary>
 /// Request validation and fault mapping on the gRPC surface: bad kind and
 /// empty task become InvalidArgument; a plan that stays invalid after its
-/// retry becomes Internal (the IBrainService contract).
+/// retry degrades to a final answer chunk carrying the validation errors
+/// (no Internal fault — the caller would surface it as a 503).
 /// </summary>
 public sealed class BrainGrpcServiceShould
 {
@@ -45,18 +46,19 @@ public sealed class BrainGrpcServiceShould
         exception.StatusCode.ShouldBe(StatusCode.InvalidArgument);
     }
 
-    [Fact(DisplayName = "Given a model whose plan stays invalid, when Think runs, then RpcException is Internal carrying the validation errors")]
-    public async Task MapInvalidPlanToInternalFaultAsync()
+    [Fact(DisplayName = "Given a model whose plan stays invalid, when Think runs, then the stream ends with a final chunk carrying the validation errors and a rephrase suggestion")]
+    public async Task AnswerWithPlanErrorsWhenPlanStaysInvalidAsync()
     {
         const string bad = /*lang=json,strict*/ """{"summary":"s","nodes":[],"edges":[]}""";
         var agent = Agent(Scripted.EmitPlan("call-1", bad), Scripted.EmitPlan("call-2", bad));
         var service = Service(agent);
 
-        var exception = await Should.ThrowAsync<RpcException>(
-            async () => await DrainAsync(service, new BrainRequest { Kind = BrainRequestKindKeys.Plan, Task = "decompose" }));
+        var chunks = await DrainAsync(service, new BrainRequest { Kind = BrainRequestKindKeys.Plan, Task = "decompose" });
 
-        exception.StatusCode.ShouldBe(StatusCode.Internal);
-        exception.Status.Detail.ShouldContain("plan must contain at least one node");
+        var final = chunks.Last();
+        final.IsFinal.ShouldBeTrue();
+        final.FinalJson.ShouldContain("plan must contain at least one node");
+        final.FinalJson.ShouldContain("rephrase");
     }
 
     [Fact(DisplayName = "Given an answer request, when Think runs, then the final chunk streams out unchanged")]

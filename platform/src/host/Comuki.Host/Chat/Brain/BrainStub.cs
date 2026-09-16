@@ -21,7 +21,7 @@ public sealed class BrainStub : IBrainClient
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var reply = request.Kind == "plan"
+        var reply = request.Kind == BrainRequestKindKeys.Plan
             ? new BrainReply([], StubPlanJson.Of(request.Task))
             : new BrainReply([], "stub brain: " + request.Task);
         return Task.FromResult(reply);
@@ -38,7 +38,7 @@ public sealed class BrainStub : IBrainClient
         yield return new BrainChunk
         {
             Seq = 0,
-            FinalJson = request.Kind == "plan" ? StubPlanJson.Of(request.Task) : "stub brain: " + request.Task,
+            FinalJson = request.Kind == BrainRequestKindKeys.Plan ? StubPlanJson.Of(request.Task) : "stub brain: " + request.Task,
             IsFinal = true,
         };
     }

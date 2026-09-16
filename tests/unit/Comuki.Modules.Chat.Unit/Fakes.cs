@@ -97,7 +97,7 @@ public sealed class FakeBrainClient : IBrainClient
         yield return new BrainChunk
         {
             Seq = Chunks.Count,
-            FinalJson = request.Kind == BrainRequestKindKeys.Plan ? PlanJson : "brain says: " + request.Task,
+            FinalJson = request.Kind == BrainRequestKindKeys.Plan ? PlanFinalJson : "brain says: " + request.Task,
             IsFinal = true,
         };
     }

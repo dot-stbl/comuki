@@ -26,6 +26,22 @@ public sealed class BrainStub : IBrainClient
             : new BrainReply([], "stub brain: " + request.Task);
         return Task.FromResult(reply);
     }
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<BrainChunk> StreamAsync(
+        BrainRequest request,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await Task.Yield();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        yield return new BrainChunk
+        {
+            Seq = 0,
+            FinalJson = request.Kind == "plan" ? StubPlanJson.Of(request.Task) : "stub brain: " + request.Task,
+            IsFinal = true,
+        };
+    }
 }
 
 file static class StubPlanJson

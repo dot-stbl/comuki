@@ -18,16 +18,21 @@ namespace Comuki.Modules.Chat.Application.Sessions;
 /// Drives chat turns over the compiled graph: seeds the turn channels,
 /// invokes (or resumes) the graph in values mode and hands the terminal
 /// event to the journalist. The transcript is the audit journal — the
-/// graph checkpoint carries only routing state.
+/// graph checkpoint carries only routing state. While the graph runs, the
+/// turn's live progress flows out through <see cref="IChatTurnProgress"/>;
+/// every exit path (reply, approve interrupt, failure) emits its terminal
+/// signal so a streaming client never dangles.
 /// </summary>
 /// <param name="store">Transcript + session persistence.</param>
 /// <param name="graph">Compiled chat graph (one thread per session).</param>
 /// <param name="journalist">Terminal event → transcript journaling.</param>
+/// <param name="progress">Live turn progress fan-out.</param>
 /// <param name="clock">Time source for journal stamps.</param>
 public sealed class ChatTurnService(
     IChatSessionStore store,
     CompiledGraph graph,
     ChatTurnJournalist journalist,
+    IChatTurnProgress progress,
     TimeProvider clock) : IChatTurnService
 {
     /// <inheritdoc />
@@ -54,10 +59,14 @@ public sealed class ChatTurnService(
         // Voluta invokes start from an empty channel store — carry-over
         // channels (wizard state) must be re-seeded from the checkpoint so
         // multi-turn flows survive turn boundaries.
-        var terminal = await ChatGraphRun.InvokeAsync(
-            graph,
-            ChatTurnSeed.For(session, message, ChatTurnCarry.From(state)),
-            new RunOptions { ThreadId = threadId, StreamMode = StreamMode.Values },
+        var terminal = await ChatTurnRun.AwaitAsync(
+            progress,
+            session,
+            ChatGraphRun.InvokeAsync(
+                graph,
+                ChatTurnSeed.For(session, message, ChatTurnCarry.From(state)),
+                new RunOptions { ThreadId = threadId, StreamMode = StreamMode.Values },
+                cancellationToken),
             cancellationToken);
 
         return await journalist.JournalAsync(session, terminal, cancellationToken);
@@ -91,11 +100,15 @@ public sealed class ChatTurnService(
         // which the journalist reads — the checkpoint is never re-read after
         // the run (invoke step numbering restarts per turn, so the newest
         // checkpoint row is not necessarily this turn's terminal state)
-        var terminal = await ChatTerminal.DrainAsync(
-            graph.ResumeAsync(
-                threadId,
-                approved ? Command.Approve(ConfirmNode.ApprovePayload) : Command.Reject(reason ?? string.Empty),
-                StreamMode.Values,
+        var terminal = await ChatTurnRun.AwaitAsync(
+            progress,
+            session,
+            ChatTerminal.DrainAsync(
+                graph.ResumeAsync(
+                    threadId,
+                    approved ? Command.Approve(ConfirmNode.ApprovePayload) : Command.Reject(reason ?? string.Empty),
+                    StreamMode.Values,
+                    cancellationToken),
                 cancellationToken),
             cancellationToken);
 
@@ -128,6 +141,45 @@ file static class ChatGraphRun
             ExceptionDispatchInfo.Capture(inner).Throw();
             throw;
         }
+    }
+}
+
+/// <summary>
+/// Runs one turn's event stream to its terminal event, emitting the terminal
+/// progress signal on every exit path: the event's kind decides replied vs
+/// awaiting-approval, and a failure emits <see cref="ChatTurnDone.Failed"/>
+/// before the typed fault continues to the HTTP surface — a streaming client
+/// must not keep its live overlay after the turn it was watching died.
+/// </summary>
+file static class ChatTurnRun
+{
+    public static async Task<StreamEvent> AwaitAsync(
+        IChatTurnProgress progress,
+        ChatSession session,
+        Task<StreamEvent> run,
+        CancellationToken cancellationToken)
+    {
+        StreamEvent terminal;
+
+        try
+        {
+            terminal = await run;
+        }
+        catch (Exception)
+        {
+            // boundary: observe-and-notify, then rethrow — the typed fault
+            // (pending approve, unreachable brain) still reaches the HTTP
+            // ProblemDetails mapper untouched.
+            await progress.DoneAsync(session.Id, ChatTurnDone.Failed, cancellationToken);
+            throw;
+        }
+
+        await progress.DoneAsync(
+            session.Id,
+            terminal.Kind == StreamEventKind.Interrupt ? ChatTurnDone.AwaitingApproval : ChatTurnDone.Replied,
+            cancellationToken);
+
+        return terminal;
     }
 }
 

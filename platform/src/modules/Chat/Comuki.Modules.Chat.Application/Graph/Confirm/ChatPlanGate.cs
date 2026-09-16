@@ -22,8 +22,29 @@ public static class ChatPlanGate
     /// <param name="finalJson">Brain final payload of a plan invocation.</param>
     public static ChatPlanGateOutcome Validate(string finalJson)
     {
-        return PlanJson.TryParse(finalJson, out var plan, out _)
-            ? new ChatPlanGateOutcome(plan, PlanJson.Serialize(plan))
-            : new ChatPlanGateOutcome(null, string.Empty);
+        if (PlanJson.TryParse(finalJson, out var plan, out _))
+        {
+            return new ChatPlanGateOutcome(plan, PlanJson.Serialize(plan), string.Empty);
+        }
+
+        // A payload that is not JSON at all is the brain's own explanation
+        // (the invalid-plan fallback the brain host streams instead of
+        // faulting) — the turn shows it to the user verbatim rather than
+        // the generic rejection.
+        return BrainPlanExplanation.IsExplanation(finalJson)
+            ? new ChatPlanGateOutcome(null, string.Empty, finalJson)
+            : new ChatPlanGateOutcome(null, string.Empty, string.Empty);
+    }
+}
+
+/// <summary>Distinguishes the brain's prose explanations from JSON payloads.</summary>
+file static class BrainPlanExplanation
+{
+    public static bool IsExplanation(string payload)
+    {
+        // a plan payload is always a JSON object or array; the fallback
+        // prose never starts with one
+        var trimmed = payload.TrimStart();
+        return trimmed.Length > 0 && trimmed[0] is not ('{' or '[');
     }
 }

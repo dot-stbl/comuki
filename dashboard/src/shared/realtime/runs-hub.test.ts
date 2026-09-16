@@ -5,6 +5,7 @@ import { projectsQueryKey } from "@/domains/projects/api/queries"
 
 import {
   RealtimeTransportMethods,
+  bindChatHubEvents,
   bindRunsHubEvents,
   invalidationsForAttention,
   invalidationsForRunEvent,
@@ -86,6 +87,52 @@ describe("event → invalidation mapping", () => {
     expect(RealtimeTransportMethods).toEqual({
       RunEvent: "RunEvent",
       Attention: "Attention",
+      ChatChunk: "ChatChunk",
+      ChatTurnComplete: "ChatTurnComplete",
+    })
+  })
+})
+
+describe("bindChatHubEvents", () => {
+  it("registers both chat callbacks under their wire names and routes the payloads through", () => {
+    const handlers = new Map<string, (...args: unknown[]) => void>()
+    const connection = {
+      on: vi.fn((method: string, handler: (...args: unknown[]) => void) => {
+        handlers.set(method, handler)
+      }),
+    }
+    const onChunk = vi.fn()
+    const onComplete = vi.fn()
+
+    bindChatHubEvents(connection, onChunk, onComplete)
+
+    expect(connection.on).toHaveBeenCalledWith(
+      "ChatChunk",
+      expect.any(Function)
+    )
+    expect(connection.on).toHaveBeenCalledWith(
+      "ChatTurnComplete",
+      expect.any(Function)
+    )
+
+    handlers.get("ChatChunk")!({
+      sessionId: RUN_ID,
+      seq: 2,
+      text: "memory.search(\"x\")",
+    })
+    expect(onChunk).toHaveBeenCalledWith({
+      sessionId: RUN_ID,
+      seq: 2,
+      text: "memory.search(\"x\")",
+    })
+
+    handlers.get("ChatTurnComplete")!({
+      sessionId: RUN_ID,
+      outcome: "replied",
+    })
+    expect(onComplete).toHaveBeenCalledWith({
+      sessionId: RUN_ID,
+      outcome: "replied",
     })
   })
 })

@@ -1,4 +1,5 @@
 using Comuki.Host.Realtime;
+using Comuki.Modules.Chat.Domain.Ids;
 using Comuki.Shared.Kernel.Ids;
 using Shouldly;
 using Xunit;
@@ -8,7 +9,7 @@ namespace Comuki.Host.Unit.Realtime;
 /// <summary>
 /// Group-name contract of the realtime surface: the scope-draft pins
 /// <c>run:{id}</c> and <c>project:{id}:attention</c>, ids in lowercase
-/// GUID format.
+/// GUID format. The chat live-turn group follows the same shape.
 /// </summary>
 public sealed class RealtimeGroupsShould
 {
@@ -26,6 +27,14 @@ public sealed class RealtimeGroupsShould
         var projectId = new ProjectId(new Guid("018f1e2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b"));
 
         RealtimeGroups.ProjectAttentionGroup(projectId).ShouldBe("project:018f1e2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b:attention");
+    }
+
+    [Fact(DisplayName = "Given a chat session id, when ChatGroup is called, then the name is chat:{id} in lowercase D format")]
+    public void RenderChatGroup()
+    {
+        var sessionId = new ChatSessionId(new Guid("018f1e2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b"));
+
+        RealtimeGroups.ChatGroup(sessionId).ShouldBe("chat:018f1e2b-3c4d-5e6f-7a8b-9c0d1e2f3a4b");
     }
 
     [Fact(DisplayName = "Given uppercase guid text, when group names render, then the id is lowercase")]

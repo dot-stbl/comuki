@@ -64,6 +64,8 @@ public static class RealtimeContractEmitter
         builder.AppendLine("export const RealtimeTransportMethods = {");
         builder.AppendLine("  RunEvent: \"RunEvent\",");
         builder.AppendLine("  Attention: \"Attention\",");
+        builder.AppendLine("  ChatChunk: \"ChatChunk\",");
+        builder.AppendLine("  ChatTurnComplete: \"ChatTurnComplete\",");
         builder.AppendLine("} as const;");
         builder.AppendLine();
 

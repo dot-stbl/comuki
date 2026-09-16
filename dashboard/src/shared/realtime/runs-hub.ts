@@ -35,7 +35,32 @@ import { env } from "@/shared/config/env"
 export const RealtimeTransportMethods = {
   RunEvent: "RunEvent",
   Attention: "Attention",
+  ChatChunk: "ChatChunk",
+  ChatTurnComplete: "ChatTurnComplete",
 } as const
+
+/**
+ * One brain progress fragment of a running chat turn, broadcast to the
+ * `chat:{id}` group while the turn streams. Mirrors `ChatChunkView` (the
+ * C# record is the source of truth; the hub's JSON protocol serialises it
+ * camelCase).
+ */
+export interface ChatChunkView {
+  readonly sessionId: string
+  readonly seq: number
+  readonly text: string
+}
+
+/**
+ * Terminal signal of one chat turn, broadcast to the `chat:{id}` group:
+ * the streaming phase is over, the transcript is authoritative. Mirrors
+ * `ChatTurnCompleteView`.
+ */
+export interface ChatTurnCompleteView {
+  readonly sessionId: string
+  /** Lowercase outcome word: replied | awaiting_approval | failed. */
+  readonly outcome: string
+}
 
 /**
  * One journal append broadcast to the `run:{id}` group after every
@@ -293,4 +318,56 @@ export async function leaveRunGroup(
   } catch {
     // Same as leaving a project group.
   }
+}
+
+/**
+ * Joins the `chat:{id}` live-turn group. The hub's join is ownership-gated
+ * (the session must belong to the acting subject) and rejects with a
+ * `HubException` when it does not — swallowed here for the same reason the
+ * run join swallows: a group never joined delivers nothing, and the
+ * transcript's REST query remains the truth.
+ */
+export async function joinChatGroup(
+  connection: HubConnection,
+  sessionId: string
+): Promise<void> {
+  try {
+    await connection.invoke("JoinChatAsync", sessionId)
+  } catch {
+    // Unknown or foreign session — no live turn for this connection.
+  }
+}
+
+export async function leaveChatGroup(
+  connection: HubConnection,
+  sessionId: string
+): Promise<void> {
+  try {
+    await connection.invoke("LeaveChatAsync", sessionId)
+  } catch {
+    // Leaving is always allowed server-side; a rejection means the
+    // connection is already gone.
+  }
+}
+
+/**
+ * Registers the two chat server→client callbacks on a connection. Pure
+ * wiring in the same shape `bindRunsHubEvents` takes: the chat domain owns
+ * what a chunk *means* (its streaming store), this layer only hands the
+ * wire payloads over.
+ */
+export function bindChatHubEvents(
+  connection: Pick<HubConnection, "on">,
+  onChunk: (event: ChatChunkView) => void,
+  onComplete: (event: ChatTurnCompleteView) => void
+): void {
+  connection.on(RealtimeTransportMethods.ChatChunk, (event: ChatChunkView) => {
+    onChunk(event)
+  })
+  connection.on(
+    RealtimeTransportMethods.ChatTurnComplete,
+    (event: ChatTurnCompleteView) => {
+      onComplete(event)
+    }
+  )
 }

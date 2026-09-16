@@ -80,6 +80,37 @@ public sealed class BrainAgentShould
         chunks.Last().FinalJson.ShouldBe(ValidPlan);
     }
 
+    [Fact(DisplayName = "Given a model emitting an invalid plan then a valid one, when the loop runs, then the retry call carries the validation errors and the valid plan is accepted")]
+    public async Task FeedValidationErrorsIntoTheRetryCallAsync()
+    {
+        const string hollow =
+                             /*lang=json,strict*/
+                             """{"summary":"s","nodes":[{"id":"","title":"t","profileKey":"implement","brief":"b"}],"edges":[]}""";
+        var scripted = new ScriptedChatClient(
+            [
+                Scripted.EmitPlan("call-1", hollow),
+                Scripted.EmitPlan("call-2", ValidPlan),
+            ]);
+        var agent = Agent(scripted);
+
+        var chunks = await StreamAsync(agent, Request(BrainRequestKindKeys.Plan, "decompose"));
+
+        // the valid second plan terminates the loop
+        chunks.Last().IsFinal.ShouldBeTrue();
+        chunks.Last().FinalJson.ShouldBe(ValidPlan);
+
+        // the retry round-trip saw the rejection with the concrete errors
+        scripted.Calls.Count.ShouldBe(2);
+        var retryFeedback = string.Join(
+            "\n",
+            scripted.Calls[1]
+                .SelectMany(static message => message.Contents)
+                .OfType<FunctionResultContent>()
+                .Select(static content => content.Result?.ToString() ?? string.Empty));
+        retryFeedback.ShouldContain("plan rejected");
+        retryFeedback.ShouldContain("node id must not be empty");
+    }
+
     [Fact(DisplayName = "Given a model whose plan stays invalid, when the loop runs, then BrainInvalidPlanException fails the call")]
     public async Task FailWhenPlanStaysInvalidAsync()
     {
@@ -207,10 +238,15 @@ public sealed class BrainAgentShould
 
     private static BrainAgent Agent(params ChatResponse[] responses)
     {
+        return Agent(new ScriptedChatClient(responses));
+    }
+
+    private static BrainAgent Agent(ScriptedChatClient scripted)
+    {
         var options = Options.Create(new BrainOptions());
         return new BrainAgent(
             new StaticModelConfigProvider(),
-            new ScriptedChatClientFactory(responses),
+            new ScriptedChatClientFactory(scripted),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),
@@ -259,18 +295,24 @@ internal static class Scripted
 
 /// <summary>
 /// IChatClient fake: each GetResponseAsync pops the next scripted
-/// response; the streaming surface is unsupported (the brain loop never
-/// uses it).
+/// response and records the message list it was called with — the
+/// recording is the assertion surface for what the retry round-trip
+/// actually saw. The streaming surface is unsupported (the brain loop
+/// never uses it).
 /// </summary>
 internal sealed class ScriptedChatClient(params ChatResponse[] responses) : IChatClient
 {
     private readonly Queue<ChatResponse> pending = new(responses);
+
+    /// <summary>The message list of every GetResponseAsync call, in call order.</summary>
+    public List<IReadOnlyList<ChatMessage>> Calls { get; } = [];
 
     public Task<ChatResponse> GetResponseAsync(
         IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
+        Calls.Add([.. messages]);
         return Task.FromResult(pending.Dequeue());
     }
 

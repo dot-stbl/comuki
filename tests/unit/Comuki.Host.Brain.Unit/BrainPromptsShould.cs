@@ -23,12 +23,18 @@ public sealed class BrainPromptsShould
         prompt.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [Fact(DisplayName = "Given the plan prompt, when read, then it pins the plan shape and the emit_plan call")]
+    [Fact(DisplayName = "Given the plan prompt, when read, then it pins the plan shape, a few-shot example and the emit_plan call")]
     public void PinPlanProtocol()
     {
         BrainPrompts.Plan.ShouldContain("emit_plan");
         BrainPrompts.Plan.ShouldContain("\"profileKey\"");
         BrainPrompts.Plan.ShouldContain("acyclic");
+        BrainPrompts.Plan.ShouldContain("non-empty");
+
+        // few-shot example: a complete valid plan with real profile keys
+        BrainPrompts.Plan.ShouldContain("Example of a valid plan");
+        BrainPrompts.Plan.ShouldContain("\"id\": \"step-1\"");
+        BrainPrompts.Plan.ShouldContain("\"from\": \"step-1\", \"to\": \"step-2\"");
     }
 
     [Fact(DisplayName = "Given an unknown kind, when For is called, then ArgumentOutOfRangeException")]

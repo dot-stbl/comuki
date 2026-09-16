@@ -22,6 +22,24 @@ public static class BrainPrompts
         }
         """;
 
+    /// <summary>
+    /// A complete valid plan the plan prompt shows as a few-shot example —
+    /// real catalog profile keys, filled-in fields, one dependency edge.
+    /// Models follow examples far more reliably than schema sketches.
+    /// </summary>
+    public const string PlanExample =
+                             /*lang=json,strict*/
+                             """
+        {
+          "summary": "Audit and fix the project README",
+          "nodes": [
+            { "id": "step-1", "title": "Review README", "profileKey": "explore-readonly", "brief": "Read README.md in the repo root and list every broken link, outdated command and missing section." },
+            { "id": "step-2", "title": "Patch README", "profileKey": "implement", "brief": "Apply the fixes to README.md: repair the broken links, refresh the install commands, add the missing sections. Keep the existing tone and language." }
+          ],
+          "edges": [ { "from": "step-1", "to": "step-2" } ]
+        }
+        """;
+
     /// <summary>System prompt for plan decomposition.</summary>
     public const string Plan =
         """
@@ -35,7 +53,12 @@ public static class BrainPrompts
         exact shape:
         """ + "\n" + PlanSchemaHint + """
 
-        Rules: every node id is unique and referenced edges exist; the graph
+        Example of a valid plan:
+        """ + "\n" + PlanExample + """
+
+        Rules: EVERY field is required and must be a non-empty string — the
+        summary, and the id, title, profileKey and brief of every node.
+        Every node id is unique and referenced edges exist; the graph
         is acyclic; every node names a real profile key from the catalog;
         every brief is self-contained (the worker sees only its brief).
         An invalid plan is rejected with errors — fix them and call

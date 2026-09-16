@@ -67,8 +67,9 @@ public sealed class BrainAgent(
     /// <summary>
     /// Runs one brain call and streams its progress. Throws
     /// <see cref="BrainInvalidPlanException"/> /
-    /// <see cref="BrainExhaustedException"/>; the gRPC service maps them
-    /// to fault statuses.
+    /// <see cref="BrainExhaustedException"/>; the gRPC service maps an
+    /// exhausted loop to a fault status and an invalid-after-retry plan to
+    /// a graceful final answer carrying the validation errors.
     /// </summary>
     /// <param name="request">The brain request — task, context JSON and kind.</param>
     /// <param name="cancellationToken">Cancels the run mid-iteration; streamed chunks stop.</param>

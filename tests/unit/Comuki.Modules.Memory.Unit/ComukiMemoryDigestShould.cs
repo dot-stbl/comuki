@@ -199,5 +199,20 @@ public sealed class ComukiMemoryDigestShould
         {
             throw new NotSupportedException("sweep is out of scope for the digest adapter fake");
         }
+
+        public Task<int> PromoteReadFactsAsync(DateTimeOffset now, int readThreshold, TimeSpan minAge, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException("promotion is out of scope for the digest adapter fake");
+        }
+
+        public Task<int> DecayUnreadFactsAsync(DateTimeOffset now, TimeSpan unreadWindow, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException("decay is out of scope for the digest adapter fake");
+        }
+
+        public Task<int> CountActiveFactsAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException("counting is out of scope for the digest adapter fake");
+        }
     }
 }

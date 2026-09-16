@@ -130,7 +130,8 @@ public sealed class EfMemoryStore(
         }
 
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-        var cutoff = clock.GetUtcNow() - MemoryFactPolicy.EphemeralTtl;
+        var now = clock.GetUtcNow();
+        var cutoff = now - MemoryFactPolicy.EphemeralTtl;
 
         if (query.Embedding is { } embedding
             && await MemoryFactVectors.HasColumnAsync(db, cancellationToken))
@@ -138,6 +139,7 @@ public sealed class EfMemoryStore(
             var byCosine = await MemoryFactVectors.TrySearchCosineAsync(db, embedding, query, cutoff, logger, cancellationToken);
             if (byCosine is { Count: > 0 })
             {
+                await MemoryFactReadTracking.RegisterReadsAsync(db, byCosine.Select(static fact => fact.Id), now, cancellationToken);
                 return byCosine;
             }
         }
@@ -151,7 +153,9 @@ public sealed class EfMemoryStore(
             query.Limit,
             0,
             cancellationToken);
-        return MemoryFallbackRanking.Rank(visible.Select(MemoryFactViewMapper.Of), query.Limit);
+        var results = MemoryFallbackRanking.Rank(visible.Select(MemoryFactViewMapper.Of), query.Limit);
+        await MemoryFactReadTracking.RegisterReadsAsync(db, results.Select(static fact => fact.Id), now, cancellationToken);
+        return results;
     }
 
     /// <inheritdoc />
@@ -205,6 +209,41 @@ public sealed class EfMemoryStore(
         return await db.MemoryFacts
             .Where(fact => fact.Kind == MemoryFactKind.Ephemeral && fact.CreatedAt < cutoff)
             .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> PromoteReadFactsAsync(DateTimeOffset now, int readThreshold, TimeSpan minAge, CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+        return await db.MemoryFacts
+            .Where(MemoryFactConsolidation.PromoteCandidates(now, readThreshold, minAge))
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(fact => fact.Kind, MemoryFactKind.Standing),
+                cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> DecayUnreadFactsAsync(DateTimeOffset now, TimeSpan unreadWindow, CancellationToken cancellationToken = default)
+    {
+        var decayedCreatedAt = MemoryFactPolicy.DecayCreatedAt(now);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+        return await db.MemoryFacts
+            .Where(MemoryFactConsolidation.DecayCandidates(now, unreadWindow))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(fact => fact.Kind, MemoryFactKind.Ephemeral)
+                    .SetProperty(fact => fact.CreatedAt, decayedCreatedAt),
+                cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> CountActiveFactsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+        return await db.MemoryFacts.CountAsync(fact => fact.SupersededAt == null, cancellationToken);
     }
 
     /// <summary>
@@ -282,6 +321,42 @@ file static class MemoryFactQueries
             .Skip(offset)
             .Take(limit)
             .ToListAsync(cancellationToken);
+    }
+}
+
+/// <summary>
+/// Access tracking: bumps <c>read_count</c> / <c>last_read_at</c> of the
+/// facts a search just returned. Runs on the search's own context AFTER
+/// the results are materialized — two cheap statements (load by id,
+/// save), never part of the ranking itself, so the read path is not
+/// re-ranked or delayed by anything heavier. A tracked load + SaveChanges
+/// (not <c>ExecuteUpdateAsync</c>) on purpose: the entity method is the
+/// single definition of a "read" and the InMemory-provider unit suite
+/// exercises this exact path.
+/// </summary>
+file static class MemoryFactReadTracking
+{
+    public static async Task RegisterReadsAsync(
+        MemoryDbContext db,
+        IEnumerable<MemoryFactId> ids,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var idList = ids.ToArray();
+        if (idList.Length == 0)
+        {
+            return;
+        }
+
+        var facts = await db.MemoryFacts
+            .Where(fact => idList.Contains(fact.Id))
+            .ToListAsync(cancellationToken);
+        foreach (var fact in facts)
+        {
+            fact.RegisterRead(now);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
     }
 }
 

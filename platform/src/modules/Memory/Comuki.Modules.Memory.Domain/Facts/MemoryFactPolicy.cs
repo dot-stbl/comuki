@@ -16,6 +16,16 @@ public static class MemoryFactPolicy
     public static readonly TimeSpan EphemeralTtl = TimeSpan.FromDays(14);
 
     /// <summary>
+    /// How much visible life a decayed standing fact keeps: the
+    /// consolidation worker demotes a long-unread standing fact to
+    /// ephemeral with <see cref="DecayCreatedAt"/> backdating its
+    /// <c>created_at</c>, so one day of grace remains before the regular
+    /// sweep reaps it — a chance to be read (and re-promoted) before
+    /// the fact is gone for good.
+    /// </summary>
+    public static readonly TimeSpan DecayRemainingTtl = TimeSpan.FromDays(1);
+
+    /// <summary>
     /// Embedding vector dimension of the <c>memory_facts.embedding</c>
     /// column. Pinned to the SAME provider the knowledge schema uses —
     /// one embedding model (<c>text-embedding-3-small</c>, 1536) serves
@@ -53,6 +63,19 @@ public static class MemoryFactPolicy
         return ttl <= TimeSpan.Zero
             ? throw new ArgumentOutOfRangeException(nameof(ttl), ttl, "ephemeral ttl must be positive")
             : ttl >= EphemeralTtl ? now : now - (EphemeralTtl - ttl);
+    }
+
+    /// <summary>
+    /// The creation instant stamped on a standing fact the consolidation
+    /// worker decays to ephemeral: backdated so exactly
+    /// <see cref="DecayRemainingTtl"/> of visible life remains under the
+    /// fixed <see cref="EphemeralTtl"/> sweep horizon (same backdating
+    /// trick <see cref="EphemeralCreatedAt"/> uses for custom TTLs).
+    /// </summary>
+    /// <param name="now">The decay instant (the worker clock).</param>
+    public static DateTimeOffset DecayCreatedAt(DateTimeOffset now)
+    {
+        return now - (EphemeralTtl - DecayRemainingTtl);
     }
 
     /// <summary>

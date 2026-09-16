@@ -67,7 +67,7 @@ builder.WebHost.ConfigureKestrel(server =>
 // established accessor throws loudly if a future flow reads memory
 // without declaring one, instead of silently defaulting open.
 builder.Services.TryAddSingleton<ISubjectScopeAccessor, AsyncLocalSubjectScopeAccessor>();
-builder.Services.AddMemoryPersistence(connectionString);
+builder.Services.AddMemoryPersistence(connectionString, builder.Configuration);
 
 // The memory sweep registers as an IComukiWorker; this registry is what
 // actually runs it inside the brain host (AddComukiWorkers from

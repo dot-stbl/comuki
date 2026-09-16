@@ -12,4 +12,15 @@ public interface IBrainClient
     /// <param name="request"></param>
     /// <param name="cancellationToken"></param>
     public Task<BrainReply> InvokeAsync(BrainRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Invokes the brain and yields its chunks as they arrive — progress
+    /// fragments first, the final chunk (with <see cref="BrainChunk.IsFinal"/>
+    /// and <see cref="BrainChunk.FinalJson"/>) last. Callers that only need
+    /// the aggregate use <see cref="InvokeAsync"/>; callers that surface the
+    /// fragments live (the chat turn stream) read this.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <param name="cancellationToken"></param>
+    public IAsyncEnumerable<BrainChunk> StreamAsync(BrainRequest request, CancellationToken cancellationToken = default);
 }

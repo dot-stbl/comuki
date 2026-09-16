@@ -11,11 +11,13 @@ import {
   useStartSessionMutation,
 } from "@/domains/chat/api/queries"
 import { availableCommands } from "@/domains/chat/model/commands"
+import { beginChatTurn } from "@/domains/chat/model/streaming"
 import type { ProposalDecision } from "@/domains/chat/model/types"
 import { ChatComposer } from "@/domains/chat/ui/chat-composer"
 import { ChatSessions } from "@/domains/chat/ui/chat-sessions"
 import { ChatSidePanel } from "@/domains/chat/ui/chat-side-panel"
 import { ChatThread } from "@/domains/chat/ui/chat-thread"
+import { useChatTurnStream } from "@/domains/chat/ui/use-chat-turn-stream"
 import { useSession } from "@/shared/session"
 import { Button, Tooltip } from "@/shared/ui"
 
@@ -119,6 +121,22 @@ export function ChatConsole({
     [transcript.data, current]
   )
 
+  /**
+   * The live half of a running turn: the just-sent row plus the streamed
+   * fragments, drawn on top of the transcript until the turn settles. The
+   * overlay rows are the console's optimistic answer to a POST that takes
+   * tens of seconds — without them the console looks deaf between send and
+   * reply; with them the operator watches the brain think.
+   */
+  const overlay = useChatTurnStream(current?.id ?? null)
+  const shown = useMemo(() => {
+    if (!overlay.user && !overlay.reply) {
+      return messages
+    }
+    const withUser = overlay.user ? [...messages, overlay.user] : messages
+    return overlay.reply ? [...withUser, overlay.reply] : withUser
+  }, [messages, overlay])
+
   const commands = useMemo(
     () => availableCommands(session, custom.data ?? []),
     [session, custom.data]
@@ -129,6 +147,10 @@ export function ChatConsole({
       if (!current) {
         return
       }
+      // The optimistic rows exist before the POST leaves — the send must be
+      // visible the instant the operator presses enter, not when the whole
+      // brain turn comes back.
+      beginChatTurn(current.id, text)
       send.mutate({ sessionId: current.id, text, projectId })
     },
     [current, send]
@@ -216,7 +238,7 @@ export function ChatConsole({
         ) : (
           <>
             <ChatThread
-              messages={messages}
+              messages={shown}
               onDecide={onDecide}
               busy={decide.isPending}
               projectId={current?.projectId ?? null}

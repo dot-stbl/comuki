@@ -27,13 +27,15 @@ public sealed class ChatHarness : IAsyncDisposable
         FakeBrainClient brain,
         FakeMemoryDigest digest,
         FakeChatSessionStore store,
-        FakeChatToolExecutor tools)
+        FakeChatToolExecutor tools,
+        FakeChatTurnProgress progress)
     {
         this.provider = provider;
         Brain = brain;
         Digest = digest;
         Store = store;
         Tools = tools;
+        Progress = progress;
         Turns = provider.GetRequiredService<IChatTurnService>();
         Sessions = provider.GetRequiredService<ChatSessionService>();
     }
@@ -50,6 +52,9 @@ public sealed class ChatHarness : IAsyncDisposable
     /// <summary>Recorded tool calls.</summary>
     public FakeChatToolExecutor Tools { get; }
 
+    /// <summary>Recorded live turn progress (fragments + terminal signals).</summary>
+    public FakeChatTurnProgress Progress { get; }
+
     /// <summary>Real turn driver.</summary>
     public IChatTurnService Turns { get; }
 
@@ -65,6 +70,7 @@ public sealed class ChatHarness : IAsyncDisposable
         var digest = new FakeMemoryDigest(FakeMemoryDigest.DefaultDigest);
         var store = new FakeChatSessionStore();
         var tools = new FakeChatToolExecutor();
+        var progress = new FakeChatTurnProgress();
         var checkpointer = new InMemoryCheckpointer();
 
         var services = new ServiceCollection();
@@ -74,10 +80,11 @@ public sealed class ChatHarness : IAsyncDisposable
         services.AddSingleton<IChatCommandCatalog>(new FakeChatCommandCatalog(commands ?? []));
         services.AddSingleton<IChatSessionStore>(store);
         services.AddSingleton<IChatToolExecutor>(tools);
+        services.AddSingleton<IChatTurnProgress>(progress);
         services.AddSingleton(serviceProvider => ChatGraphFactory.Compile(serviceProvider, checkpointer));
 
         var provider = services.BuildServiceProvider();
-        return new ChatHarness(provider, brain, digest, store, tools);
+        return new ChatHarness(provider, brain, digest, store, tools, progress);
     }
 
     /// <summary>Creates an active session owned by an arbitrary subject.</summary>

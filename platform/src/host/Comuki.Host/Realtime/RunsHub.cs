@@ -1,4 +1,7 @@
+using Comuki.Host.Chat;
 using Comuki.Host.Realtime.Reading;
+using Comuki.Modules.Chat.Application.Sessions;
+using Comuki.Modules.Chat.Domain.Ids;
 using Comuki.Modules.Identity.Application.Authorization;
 using Comuki.Modules.Identity.Domain.Permissions;
 using Comuki.Modules.Identity.Domain.Subjects;
@@ -21,10 +24,12 @@ namespace Comuki.Host.Realtime;
 /// </summary>
 /// <param name="evaluator">Permission evaluator (action + object axis input).</param>
 /// <param name="runProjects">Run → project lookup for the object axis.</param>
+/// <param name="chatSessions">Chat session ownership lookup for the live-turn groups.</param>
 [Authorize]
 public sealed class RunsHub(
     IPermissionEvaluator evaluator,
-    IRealtimeRunProjects runProjects) : Hub
+    IRealtimeRunProjects runProjects,
+    ChatSessionService chatSessions) : Hub
 {
     /// <summary>
     /// Joins the <c>run:{id}</c> timeline group. Requires <c>run:read</c> on
@@ -86,12 +91,57 @@ public sealed class RunsHub(
             RealtimeGroups.ProjectAttentionGroup(new ProjectId(projectId)),
             Context.ConnectionAborted);
     }
+
+    /// <summary>
+    /// Joins the <c>chat:{id}</c> live-turn group of one chat session.
+    /// Requires the session to exist and belong to the acting subject — the
+    /// same ownership rule the chat REST surface applies (a foreign or
+    /// unknown session is an error, never a silent join). Members receive
+    /// <c>ChatChunk</c> while a turn streams and <c>ChatTurnComplete</c>
+    /// when it ends.
+    /// </summary>
+    /// <param name="sessionId"></param>
+    public async Task JoinChatAsync(Guid sessionId)
+    {
+        var cancellationToken = Context.ConnectionAborted;
+
+        // boundary: HubCallerContext.User is nullable on the framework side;
+        // [Authorize] rejects anonymous handshakes, so a live method that
+        // sees no principal is a broken auth setup, not a user state.
+        var principal = Context.User ?? throw new HubException(JoinErrors.AuthenticationRequired);
+
+        if (await chatSessions.FindOwnedAsync(
+                new ChatSessionId(sessionId),
+                ChatSubjects.ResolveSubjectId(principal),
+                cancellationToken)
+            is null)
+        {
+            throw new HubException(JoinErrors.ChatSessionNotFound);
+        }
+
+        await Groups.AddToGroupAsync(
+            Context.ConnectionId,
+            RealtimeGroups.ChatGroup(new ChatSessionId(sessionId)),
+            cancellationToken);
+    }
+
+    /// <summary>Leaves the <c>chat:{id}</c> group; leaving is always allowed.</summary>
+    /// <param name="sessionId"></param>
+    public Task LeaveChatAsync(Guid sessionId)
+    {
+        return Groups.RemoveFromGroupAsync(
+            Context.ConnectionId,
+            RealtimeGroups.ChatGroup(new ChatSessionId(sessionId)),
+            Context.ConnectionAborted);
+    }
 }
 
 /// <summary>Stable error codes surfaced to hub callers.</summary>
 internal static class JoinErrors
 {
     public const string RunNotFound = "run.not_found";
+
+    public const string ChatSessionNotFound = "chat.session_not_found";
 
     public const string PermissionDenied = "permission.denied";
 

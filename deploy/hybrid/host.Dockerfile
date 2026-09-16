@@ -74,6 +74,7 @@ WORKDIR /src
 # (their transitive ProjectReferences pull in every module).
 COPY Directory.Build.props Directory.Packages.props nuget.config .editorconfig ./
 COPY platform/ platform/
+COPY control-plane/ control-plane/
 RUN dotnet restore platform/src/host/Comuki.Host/Comuki.Host.csproj \
     && dotnet restore platform/src/host/Comuki.Migrator/Comuki.Migrator.csproj \
     && dotnet restore platform/src/host/Comuki.Host.Brain/Comuki.Host.Brain.csproj

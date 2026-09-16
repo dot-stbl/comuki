@@ -68,6 +68,13 @@ public sealed class MemoryFactConfiguration : IEntityTypeConfiguration<MemoryFac
         builder.Property(static fact => fact.SupersededAt)
             .HasColumnName("superseded_at");
 
+        builder.Property(static fact => fact.ReadCount)
+            .HasColumnName("read_count")
+            .HasDefaultValue(0);
+
+        builder.Property(static fact => fact.LastReadAt)
+            .HasColumnName("last_read_at");
+
         builder.HasIndex(static fact => new { fact.Scope, fact.SubjectId, fact.TopicKey })
             .IsUnique()
             .HasDatabaseName("ix_memory_facts_active_topic")

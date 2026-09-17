@@ -4,10 +4,10 @@
  * ANSI-styled strings, which both the Ink components render and the
  * tests assert byte-for-byte.
  *
- * Style contract (warm minimal, Claude Code lineage): the user's words
+ * Style contract (minimal structure, Dichromat deck): the user's words
  * are bare bold text at column 0 — no prefix, no label; collapsed
  * events (thinking, tools) are dim `⏺` bullets two spaces in with the
- * status right after the args; the assistant leads with the terracotta
+ * status right after the args; the assistant leads with the periwinkle
  * `◆`; the approve card is the one framed element in the transcript
  * (code blocks keep their dim frames too). Hierarchy comes from
  * spacing and weight, never boxes.
@@ -141,9 +141,10 @@ export function renderPlanItems(nodes: readonly PlanItemView[]): string[] {
 }
 
 /**
- * The pending approval card: a dim box-drawing frame with the plan's
- * steps numbered inside and the colored `approve · reject` hint below
- * it. Frame width = min(content + 4, width − 4), right-padded with ─.
+ * The pending approval card: a `rule`-colored box-drawing frame with
+ * the plan's steps numbered inside and the `approve · reject` hint
+ * below it. Frame width = min(content + 4, width − 4), right-padded
+ * with ─.
  */
 export function renderPendingPlan(
   plan: unknown,
@@ -162,14 +163,14 @@ export function renderPendingPlan(
   )
   return [
     ...planFrameLines(header, steps, width),
-    `  ${paint("approve", colors.green)}${paint(" · ", colors.dim)}${paint(
+    `  ${paint("approve", colors.ok)}${paint(" · ", colors.dim)}${paint(
       "reject",
-      colors.red
+      colors.error
     )}${paint(" [reason]", colors.dim)}`,
   ]
 }
 
-/** The dim frame around the card: top rule with the header, rows, bottom. */
+/** The `rule`-colored frame around the card: top rule with the header, rows, bottom. */
 function planFrameLines(
   header: string,
   steps: readonly string[],
@@ -189,14 +190,14 @@ function planFrameLines(
     return `${paint(plain.slice(0, split), colors.dim)}${plain.slice(split)}`
   }
   return [
-    paint(
-      `  ┌─ ${header} ${"─".repeat(Math.max(1, boxWidth - header.length - 5))}┐`,
-      colors.dim
-    ),
+    // Rule draws the frame; the header text rides it in text-muted.
+    paint(`  ┌─ `, colors.rule) +
+      paint(header, colors.dim) +
+      paint(` ${"─".repeat(Math.max(1, boxWidth - header.length - 5))}┐`, colors.rule),
     ...steps.map(
-      (step) => paint(`  │ `, colors.dim) + padVisible(row(step), room) + paint(` │`, colors.dim)
+      (step) => paint(`  │ `, colors.rule) + padVisible(row(step), room) + paint(` │`, colors.rule)
     ),
-    paint(`  └${"─".repeat(boxWidth - 2)}┘`, colors.dim),
+    paint(`  └${"─".repeat(boxWidth - 2)}┘`, colors.rule),
   ]
 }
 
@@ -349,18 +350,18 @@ export function formatTokenCount(tokens: number): string {
 
 function badgeColor(badge: string): string {
   if (badge === "error") {
-    return colors.red
+    return colors.error
   }
   if (badge === "…") {
     return colors.accent
   }
   if (badge === "ok") {
-    return colors.green
+    return colors.ok
   }
   return colors.dim
 }
 
-/** Renders a derived summary as its single warm event line. */
+/** Renders a derived summary as its single quiet event line. */
 export function renderCollapsedLine(summary: CollapsedSummary): string {
   let line = `  ${paint(summary.icon, colors.dim)} ${paint(summary.label, colors.muted)}`
   if (summary.badge !== null) {
@@ -513,7 +514,7 @@ export function renderParts(
  * default); the transcript passes the session's ctrl+o toggle so
  * thinking/tool parts collapse to `⏺` event lines.
  *
- * Identity chrome: the assistant leads with its terracotta `◆` brand
+ * Identity chrome: the assistant leads with its periwinkle `◆` brand
  * mark on the shared one-space gutter with a dim `comuki` label above
  * its content; journal rows keep the quiet `·` bullets. Wrapping is
  * computed at `width - 1` so the gutter never pushes a line past the
@@ -566,7 +567,7 @@ export function renderMessage(
 }
 
 /**
- * The user's own words as the transcript shows them — bare bold text
+ * The user's own words as the transcript shows them — bold deck-text
  * at column 0 with a blank line on each side. Also used for the
  * immediate echo on send, so the live line and the restored history
  * of the same turn are byte-identical.
@@ -576,7 +577,7 @@ export function renderUserEcho(content: string): string[] {
   if (text.length === 0) {
     return []
   }
-  return ["", paint(text, colors.bright), ""]
+  return ["", paint(text, messageMark("user").textColor), ""]
 }
 
 // ---------------------------------------------------------------------------
@@ -612,16 +613,16 @@ export function ageFromMs(ms: number): string {
 export function paintStatus(status: string): string {
   const lowered = status.toLowerCase()
   if (["succeeded", "completed", "replied", "success"].includes(lowered)) {
-    return paint(status.padEnd(10), colors.green)
+    return paint(status.padEnd(10), colors.ok)
   }
   if (["failed", "cancelled", "escalated"].includes(lowered)) {
-    return paint(status.padEnd(10), colors.red)
+    return paint(status.padEnd(10), colors.error)
   }
   if (["running", "busy"].includes(lowered)) {
     return paint(status.padEnd(10), colors.accent)
   }
   if (["queued", "waiting", "awaiting_approval", "idle"].includes(lowered)) {
-    return paint(status.padEnd(10), colors.yellow)
+    return paint(status.padEnd(10), colors.waiting)
   }
   return paint(status.padEnd(10), colors.muted)
 }

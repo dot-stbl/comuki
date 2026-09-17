@@ -33,13 +33,13 @@ describe("hostFromUrl", () => {
 })
 
 describe("latencyTone", () => {
-  test("green under 200ms, yellow under 1s, red at or above", () => {
-    expect(latencyTone(0)).toBe("green")
-    expect(latencyTone(199)).toBe("green")
-    expect(latencyTone(200)).toBe("yellow")
-    expect(latencyTone(999)).toBe("yellow")
-    expect(latencyTone(1000)).toBe("red")
-    expect(latencyTone(9000)).toBe("red")
+  test("ok under 200ms, waiting under 1s, error at or above", () => {
+    expect(latencyTone(0)).toBe("ok")
+    expect(latencyTone(199)).toBe("ok")
+    expect(latencyTone(200)).toBe("waiting")
+    expect(latencyTone(999)).toBe("waiting")
+    expect(latencyTone(1000)).toBe("error")
+    expect(latencyTone(9000)).toBe("error")
   })
 })
 

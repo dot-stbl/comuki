@@ -57,10 +57,11 @@ describe("renderPendingPlan", () => {
     expect(plain[2]).toContain("│ 2 · check it")
     expect(plain[3]).toMatch(/^  └─+┘$/)
     expect(plain[4]).toContain("approve · reject [reason]")
-    // The frame reads dim; approve green, reject warm red.
-    expect(lines[0]).toContain(colors.dim)
-    expect(lines[4]).toContain(colors.green)
-    expect(lines[4]).toContain(colors.red)
+    // The frame draws in rule; approve lavender, reject yellow — the
+    // words carry the status, colour only echoes it.
+    expect(lines[0]).toContain(colors.rule)
+    expect(lines[4]).toContain(colors.ok)
+    expect(lines[4]).toContain(colors.error)
     // The frame is one closed box: every row shares its visible width.
     const widths = plain.slice(0, 4).map((line) => line.length)
     expect(new Set(widths).size).toBe(1)
@@ -136,6 +137,7 @@ describe("renderMessage", () => {
     expect(lines[2]).toBe("")
     expect(stripAnsi(lines[1] ?? "")).toBe("сделай план")
     expect(lines[1]).toContain(colors.bright)
+    expect(lines[1]).toContain(colors.text)
     expect(lines[1]).not.toContain("›")
   })
 
@@ -402,13 +404,13 @@ describe("renderPart — collapsible blocks", () => {
     )
   })
 
-  it("paints the failed badge warm red and the running badge accent", () => {
+  it("paints the failed badge yellow and the running badge accent", () => {
     const failed = renderPart(
       { kind: "tool", name: "boom", inputJson: "{}", status: "failed" },
       80,
       { expanded: false }
     )
-    expect(failed[0]).toContain(colors.red)
+    expect(failed[0]).toContain(colors.error)
     const running = renderPart(
       { kind: "tool", name: "boom", inputJson: "{}", status: "running" },
       80,

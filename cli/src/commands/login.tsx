@@ -66,11 +66,11 @@ export function LoginApp({ url }: LoginCommandProps) {
             try {
               const success = await loginAndStore(url, email.trim(), submitted)
               setResult(
-                `${colors.green}${symbols.checkmark}${colors.reset} signed in as ${success.displayName} (${success.email}) — cookie stored in ~/.config/comuki/config.json`
+                `${colors.ok}${symbols.checkmark}${colors.reset} signed in as ${success.displayName} (${success.email}) — cookie stored in ~/.config/comuki/config.json`
               )
             } catch (error) {
               setResult(
-                `${colors.red}${symbols.cross}${colors.reset} ${describeError(error)}`
+                `${colors.error}${symbols.cross}${colors.reset} ${describeError(error)}`
               )
             }
             setStep("done")

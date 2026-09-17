@@ -28,7 +28,7 @@ export function SessionFooter({ sessions, activeIndex }: SessionFooterProps) {
             session.status === "thinking" ? (
               <Text color={palette.brand}>●</Text>
             ) : session.unread ? (
-              <Text color="yellow">●</Text>
+              <Text color={palette.waiting}>●</Text>
             ) : (
               <Text dimColor>○</Text>
             )

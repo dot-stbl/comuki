@@ -29,6 +29,13 @@ export {
 } from "./bar-series"
 export { Sparkline, type SparklineProps } from "./sparkline"
 export {
+  Meter,
+  type MeterHatch,
+  type MeterProps,
+  type MeterTone,
+  type MeterTrack,
+} from "./meter"
+export {
   CODE_LANGUAGES,
   CodeBlock,
   PLAIN_LANGUAGE_LABEL,
@@ -74,9 +81,30 @@ export {
   type SplitSeparatorProps,
 } from "./split-pane"
 export { Section, type SectionProps, type SectionVariant } from "./section"
+export {
+  Fact,
+  FactList,
+  type FactListLayout,
+  type FactListProps,
+  type FactListSize,
+  type FactProps,
+} from "./fact-list"
+export {
+  StatFigure,
+  StatLabel,
+  StatTile,
+  type StatFigureProps,
+  type StatLabelProps,
+  type StatTileProps,
+} from "./stat-tile"
 export { SearchField, type SearchFieldProps } from "./search-field"
 export { Select, type SelectOption, type SelectProps } from "./select"
 export { StatusBadge, type Status, type StatusBadgeProps } from "./status-badge"
+export {
+  badgeShell,
+  type BadgeShellOptions,
+  type BadgeShellSize,
+} from "./badge-shell"
 export { Tooltip, type TooltipProps } from "./tooltip"
 export { ConfirmDialog, type ConfirmDialogProps } from "./confirm-dialog"
 export { Dialog, type DialogProps } from "./dialog"

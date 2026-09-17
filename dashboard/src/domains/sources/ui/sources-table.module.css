@@ -72,20 +72,3 @@
   justify-content: flex-end;
   gap: var(--s2);
 }
-
-/* The only spinner in the product, borrowed for the same reason the duty list
-   borrows it: a pending probe is the one place where "something is happening"
-   has to be visible in a row that is otherwise still. Gated, like every other
-   motion here. */
-@media (prefers-reduced-motion: no-preference) {
-  .spin {
-    animation: sources-spin 900ms linear infinite;
-  }
-}
-
-@keyframes sources-spin {
-  to {
-    transform: rotate(1turn);
-  }
-}
-

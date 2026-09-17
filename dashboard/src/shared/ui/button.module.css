@@ -203,6 +203,31 @@
   height: var(--icon-lg);
 }
 
+/* The busy reading's visible half, beside the `aria-busy` that is its spoken
+   one. It lives here because it lived in nine domain stylesheets first — nine
+   `.spin` rules with nine `@keyframes` names, identical to the millisecond, and
+   several of them commented as the only spinner in the product. Nothing sizes
+   it: it is an svg inside a button, so the rules directly above have already
+   made it proportionate to whatever control it was dropped into. */
+.spinner {
+  transform-origin: center;
+}
+
+/* Turning is motion, and motion here is opt-out like every other authored
+   moment. A reader who asked for less keeps a still glyph and loses nothing:
+   the announcement was never the rotation, it was `aria-busy`. */
+@media (prefers-reduced-motion: no-preference) {
+  .spinner {
+    animation: button-spin 900ms linear infinite;
+  }
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
 /* Denied is not disabled: the control keeps its focus ring and its hover so the
    tooltip explaining what is missing can actually be reached. It reads as
    unavailable rather than broken — same footprint, no press, no lift. */

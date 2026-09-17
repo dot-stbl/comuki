@@ -23,7 +23,14 @@ import { KnowledgeSearch } from "@/domains/knowledge/ui/knowledge-search"
 import { requestFailureMessage } from "@/shared/api/problem"
 import { env } from "@/shared/config/env"
 import { can, useSession } from "@/shared/session"
-import { Button, ScreenState, Section, Skeleton, Tooltip } from "@/shared/ui"
+import {
+  Button,
+  ScreenState,
+  Section,
+  Skeleton,
+  StatTile,
+  Tooltip,
+} from "@/shared/ui"
 
 import styles from "./knowledge-page.module.css"
 
@@ -216,42 +223,33 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                     data-test="knowledge-revision"
                   >
                     <div className={styles.readings}>
-                      <div className={styles.reading}>
-                        <span className={styles.readingLabel}>
-                          current revision
-                        </span>
-                        <span className={styles.readingFigure}>
-                          {data.revision.rules}
-                        </span>
-                        <span className={styles.readingNote}>
-                          {data.revision.sdk} · updated {data.revision.updated}
-                        </span>
-                      </div>
-
-                      <div className={styles.reading}>
-                        <span className={styles.readingLabel}>
-                          active rules
-                        </span>
-                        <span className={styles.readingFigure}>
-                          {data.rulesActive}
-                        </span>
-                        <span className={styles.readingNote}>
-                          {data.rulesHard} hard · {data.rulesSoft} soft
-                        </span>
-                      </div>
-
-                      <div className={styles.reading}>
-                        <span className={styles.readingLabel}>
-                          reproducibility
-                        </span>
-                        <span className={styles.readingFigure}>
-                          100
-                          <span className={styles.readingUnit}>%</span>
-                        </span>
-                        <span className={styles.readingNote}>
-                          every run pins the rule set + SDK
-                        </span>
-                      </div>
+                      {/* The kit's tile, not a fourth private copy of it. The
+                          three lines and the `Surface` under them were spelled
+                          out here declaration for declaration — including
+                          `Surface`'s own five, which this screen had not
+                          noticed were already a primitive. The figure comes
+                          down one step to the tile's `--t-h2` with it: a row
+                          of readings that compares has to be set at one size,
+                          and this screen was the only one at `--t-h1`. */}
+                      <StatTile
+                        name="revision"
+                        label="current revision"
+                        value={data.revision.rules}
+                        sub={`${data.revision.sdk} · updated ${data.revision.updated}`}
+                      />
+                      <StatTile
+                        name="rules"
+                        label="active rules"
+                        value={String(data.rulesActive)}
+                        sub={`${data.rulesHard} hard · ${data.rulesSoft} soft`}
+                      />
+                      <StatTile
+                        name="reproducibility"
+                        label="reproducibility"
+                        value="100"
+                        suffix="%"
+                        sub="every run pins the rule set + SDK"
+                      />
                     </div>
                   </Section>
                 ) : null}

@@ -2,7 +2,7 @@ import { X } from "lucide-react"
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components"
 
 import type { KnowledgeEntry } from "@/domains/knowledge/model/types"
-import { Button, Tooltip } from "@/shared/ui"
+import { Button, Fact, FactList, Tooltip } from "@/shared/ui"
 
 import { KindMark, PinnedMark, RuleKindMark } from "./knowledge-badges"
 import styles from "./knowledge-detail-sheet.module.css"
@@ -83,16 +83,14 @@ export function KnowledgeDetailSheet({
                 )}
               </div>
 
-              <dl className={styles.facts}>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>scope</dt>
-                  <dd className={styles.factValue}>{entry.scope}</dd>
-                </div>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>updated</dt>
-                  <dd className={styles.factValue}>{entry.updated}</dd>
-                </div>
-              </dl>
+              {/* Two facts, named and answered — the kit's pair at the sheet's
+                  step. `split` is the panel arrangement: the value goes to the
+                  end edge, which is what makes a short column of them scannable
+                  in a box this narrow. */}
+              <FactList layout="split" size="sm">
+                <Fact name="scope">{entry.scope}</Fact>
+                <Fact name="updated">{entry.updated}</Fact>
+              </FactList>
 
               <p className={styles.body}>{entry.body}</p>
             </>

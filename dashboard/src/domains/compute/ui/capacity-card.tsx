@@ -9,7 +9,7 @@ import type {
   ComputeProvider,
   Constraint,
 } from "@/domains/compute/model/types"
-import { Surface } from "@/shared/ui"
+import { Meter, StatFigure, StatLabel, Surface } from "@/shared/ui"
 
 import { ProviderKindMark } from "./compute-badges"
 import styles from "./capacity-card.module.css"
@@ -95,18 +95,29 @@ export function CapacityCard({
             <span className={styles.provider}>unknown</span>
           )}
         </h3>
-        <p className={styles.room} data-test="capacity-room">
-          {reading.room === null ? (
+        {/* The kit's figure, not this card's own spelling of one. `StatFigure`
+            is the tile's middle line pulled out for exactly this: a reading
+            that stands in a header it shares with a title, where a whole tile
+            would be a card inside a card. The unit comes with it into the data
+            voice — the kit already ruled that a unit is a value, on
+            `NumberField.unit`, and this card was the one place saying it in the
+            interface voice instead.
+
+            "no reading" is not a unit and stays prose: it is the card admitting
+            the registry has not answered, which is a sentence rather than a
+            measurement. */}
+        {reading.room === null ? (
+          <p className={styles.room} data-test="capacity-room">
             <span className={styles.roomNone}>no reading</span>
-          ) : (
-            <>
-              <span className={styles.roomFigure}>{reading.room}</span>{" "}
-              <span className={styles.roomUnit}>
-                {reading.room === 1 ? "slot free" : "slots free"}
-              </span>
-            </>
-          )}
-        </p>
+          </p>
+        ) : (
+          <StatFigure
+            className={styles.room}
+            data-test="capacity-room"
+            value={String(reading.room)}
+            suffix={reading.room === 1 ? "slot free" : "slots free"}
+          />
+        )}
       </header>
 
       <div className={styles.tracks}>
@@ -170,8 +181,11 @@ function Track({ name, constraint, binding, room }: TrackProps) {
   if (!constraint) {
     return (
       <div className={styles.track} data-track={name} data-empty="">
-        <span className={styles.trackName}>{name}</span>
-        <span className={styles.channel} aria-hidden="true" />
+        <StatLabel className={styles.trackName}>{name}</StatLabel>
+        {/* `null` is "the provider did not answer", not "zero used" — the kit
+            hatches the channel for exactly that, which is the rule this file
+            used to carry as `.track[data-empty] .channel`. */}
+        <Meter value={null} />
         <span className={styles.figure}>no answer</span>
       </div>
     )
@@ -183,16 +197,11 @@ function Track({ name, constraint, binding, room }: TrackProps) {
       data-track={name}
       data-binding={binding ? "" : undefined}
     >
-      <span className={styles.trackName}>
+      <StatLabel className={styles.trackName}>
         {name}
         {binding ? <span className={styles.bindingTag}>binding</span> : null}
-      </span>
-      <span className={styles.channel} aria-hidden="true">
-        <span
-          className={styles.fill}
-          style={{ inlineSize: `${Math.round(share(constraint) * 100)}%` }}
-        />
-      </span>
+      </StatLabel>
+      <Meter value={share(constraint)} tone="heat" />
       <span className={styles.figure}>
         <span className={styles.used}>{constraint.used}</span>
         <span className={styles.of}>/</span>

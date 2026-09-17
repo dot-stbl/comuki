@@ -98,44 +98,6 @@
   white-space: nowrap;
 }
 
-/* The facts, named and answered — the knowledge sheet's definition rows,
-   for the dates a key lives by. */
-.facts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  margin: 0;
-  padding-block: var(--s3);
-  border-block: var(--hairline) solid var(--rule);
-}
-
-.fact {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--s4);
-  min-inline-size: 0;
-}
-
-.factName {
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
-}
-
-.factValue {
-  margin: 0;
-  min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-data);
-  font-size: var(--t-xs);
-  color: var(--text);
-}
-
 .section {
   display: flex;
   flex-direction: column;
@@ -231,22 +193,12 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .spin {
-    animation: key-detail-revoke-spin 900ms linear infinite;
-  }
-
   .scrim {
     animation: key-detail-scrim-in var(--dur) var(--ease) both;
   }
 
   .sheet {
     animation: key-detail-sheet-in var(--dur) var(--ease) both;
-  }
-}
-
-@keyframes key-detail-revoke-spin {
-  to {
-    transform: rotate(1turn);
   }
 }
 

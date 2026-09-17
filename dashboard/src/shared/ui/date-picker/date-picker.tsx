@@ -74,6 +74,16 @@ export interface DatePickerFieldProps {
   minValue?: string
   /** The latest day the operator may choose. Same contract as `minValue`. */
   maxValue?: string
+  /**
+   * The form will not go without this field — see `FieldProps.required`.
+   *
+   * It reaches `Field` and nothing else, for the reason `ComboboxField`'s own
+   * `required` spells out: the word in the label is the channel, and React
+   * Aria's `isRequired` would bring the browser's native constraint bubble
+   * along with it.
+   */
+  required?: boolean
+
   hint?: React.ReactNode
   error?: string | null
   /** Busy or structurally impossible. Never a permission denial. */
@@ -154,6 +164,7 @@ export function DatePickerField({
   onValueChange,
   minValue,
   maxValue,
+  required,
   hint,
   error,
   disabled = false,
@@ -166,7 +177,13 @@ export function DatePickerField({
   const empty = date === null
 
   return (
-    <Field id={id} label={label} hint={hint} error={error}>
+    <Field
+      id={id}
+      label={label}
+      required={required}
+      hint={hint}
+      error={error}
+    >
       <AriaDatePicker
         className={cn(styles.group, className)}
         value={date}
@@ -266,6 +283,16 @@ export interface DateRangePickerFieldProps {
   ) => void
   minValue?: string
   maxValue?: string
+  /**
+   * The form will not go without this field — see `FieldProps.required`.
+   *
+   * It reaches `Field` and nothing else, for the reason `ComboboxField`'s own
+   * `required` spells out: the word in the label is the channel, and React
+   * Aria's `isRequired` would bring the browser's native constraint bubble
+   * along with it.
+   */
+  required?: boolean
+
   hint?: React.ReactNode
   error?: string | null
   disabled?: boolean
@@ -280,6 +307,7 @@ export function DateRangePickerField({
   onValueChange,
   minValue,
   maxValue,
+  required,
   hint,
   error,
   disabled = false,
@@ -301,7 +329,13 @@ export function DateRangePickerField({
   const empty = start === null && end === null
 
   return (
-    <Field id={id} label={label} hint={hint} error={error}>
+    <Field
+      id={id}
+      label={label}
+      required={required}
+      hint={hint}
+      error={error}
+    >
       <AriaDateRangePicker
         className={cn(styles.group, className)}
         value={range}

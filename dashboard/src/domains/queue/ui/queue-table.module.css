@@ -75,20 +75,6 @@
   gap: var(--s2);
 }
 
-/* Motion only while a decision is actually in flight, and only because the row
-   is otherwise still. Gated, like everything else here. */
-@media (prefers-reduced-motion: no-preference) {
-  .spin {
-    animation: queue-actions-spin 900ms linear infinite;
-  }
-}
-
-@keyframes queue-actions-spin {
-  to {
-    transform: rotate(1turn);
-  }
-}
-
 .count {
   font-family: var(--font-data);
   font-size: var(--t-micro);

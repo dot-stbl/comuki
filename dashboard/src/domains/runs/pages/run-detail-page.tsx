@@ -17,9 +17,9 @@ import { getWorkItemInspector, useRunQuery } from "@/domains/runs/api/queries"
 import {
   briefSegments,
   formatCost,
-  formatDuration,
   formatTokens,
 } from "@/domains/runs/model/format"
+import { formatDuration } from "@/shared/lib/duration"
 import {
   currentItem,
   orderedItems,

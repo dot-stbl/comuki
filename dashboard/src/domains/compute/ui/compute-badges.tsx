@@ -3,7 +3,7 @@ import { LogOut, Pause, Play, PlugZap } from "lucide-react"
 
 import type { ProviderKind, ProviderState } from "@/domains/compute/model/types"
 import { cn } from "@/shared/lib/utils"
-import { BrandTag, type BrandId } from "@/shared/ui"
+import { BrandTag, badgeShell, type BrandId } from "@/shared/ui"
 
 import styles from "./compute-badges.module.css"
 
@@ -48,9 +48,9 @@ export function ProviderStateBadge({
     <span
       data-test="provider-state-badge"
       data-state={state}
-      className={cn(styles.badge, styles[state], className)}
+      className={cn(badgeShell(), styles.badge, styles[state], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {state}
     </span>
   )

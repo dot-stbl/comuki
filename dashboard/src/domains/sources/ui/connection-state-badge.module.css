@@ -7,39 +7,26 @@
 
    Hue is never the only channel. Every state carries a distinct mark as well,
    so the reading survives greyscale and colour blindness exactly as a status
-   band does. */
+   band does.
 
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  /* A badge is a reading, so it never gives up width: the value or the prose
-     beside it truncates instead. Declared rather than inherited from
-     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
-     family to. */
-  flex: 0 0 auto;
-  /* The small step `status-badge.module.css` sets and the seven other domain
-     badge families keep. This one had taken the default step's padding and
-     icon, so in a 32px row it stood about 24px tall against its neighbours'
-     15px — two size languages for one kind of object, on screens that show
-     both at once. */
-  padding: 0 var(--s3);
-  border: var(--hairline) solid transparent;
-  border-radius: var(--r-sm);
-  font-family: var(--font-data);
-  font-size: var(--t-micro);
-  line-height: var(--lh-tight);
-  white-space: nowrap;
-}
+   The box itself is `shared/ui/badge-shell`, composed through `badgeShell()` —
+   this file had its own copy of it, at the wrong size step for a while: it had
+   taken the default step's padding and icon, so in a 32px row it stood about
+   24px tall against its neighbours' 15px, two size languages for one kind of
+   object on screens that show both at once.
 
-.icon {
-  inline-size: var(--icon-xs);
-  block-size: var(--icon-xs);
-  flex: 0 0 auto;
-}
+   So there is no `.badge` rule here at all. This is one of the two families
+   whose border is transparent until a state says otherwise, and the shell's
+   `border-color: var(--badge-edge, transparent)` already says exactly that —
+   a rule that existed only to repeat the fallback would be a declaration with
+   no reader. Each state below declares `--badge-edge` rather than
+   `border-color`, because the shell reads that property and never writes it;
+   see `badge-shell.module.css` for why two single-class rules in two CSS
+   modules cannot be allowed to argue about one declaration. */
 
 .connected {
-  border-color: color-mix(in oklab, var(--st-success) 30%, transparent);
+  --badge-edge: color-mix(in oklab, var(--st-success) 30%, transparent);
+
   background: color-mix(in oklab, var(--st-success) 10%, transparent);
   color: var(--st-success);
 }
@@ -48,7 +35,8 @@
    tint — for the same reason a failed run's does: a broken connection should be
    visible before it is read. */
 .error {
-  border-color: color-mix(in oklab, var(--st-failed) 45%, transparent);
+  --badge-edge: color-mix(in oklab, var(--st-failed) 45%, transparent);
+
   background: color-mix(in oklab, var(--st-failed) 18%, transparent);
   color: var(--st-failed);
 }
@@ -56,7 +44,8 @@
 /* Deliberately the quietest of the three: somebody turned this off on purpose,
    so it is a fact rather than an alarm. */
 .disabled {
-  border-color: color-mix(in oklab, var(--st-queued) 30%, transparent);
+  --badge-edge: color-mix(in oklab, var(--st-queued) 30%, transparent);
+
   background: color-mix(in oklab, var(--st-queued) 10%, transparent);
   color: var(--st-queued);
 }

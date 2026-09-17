@@ -21,7 +21,21 @@
 
 /* The drawn empty channel a pool is measured against — the same material the
    data surfaces are made of, so an empty pool reads as a track with nothing in
-   it rather than as a missing element. */
+   it rather than as a missing element.
+
+   The same geometry as the kit's `Meter` at `edge`, and deliberately not it.
+   A meter has one fill and answers "how much of the axis is used". This strip
+   has three segments laid end to end and answers a different question — what
+   the pool is *made of*: busy against draining against idle, where draining
+   carries its own weave because capacity that is about to disappear has to be
+   distinguishable from capacity that is working. One fill cannot say that, and
+   a `segments` prop would turn the meter into a stacked-bar component that
+   happens to degrade to one segment — a different primitive wearing this one's
+   name. The second reason is right below: `.strip:hover .track` recolours the
+   channel's border, and a hover state that reaches inside a kit component from
+   a domain sheet is exactly the equal-specificity override the kit does not
+   promise to lose to. The strip is a control that draws a picture; a meter is
+   a picture. */
 .track {
   display: flex;
   inline-size: 100%;

@@ -290,6 +290,11 @@ const SELECT_COLUMN_ID = "__select"
  * the widened scale above that. Both moved up when the spacing scale did — a
  * row was the tightest thing in the product and is now a line of values with
  * air around it.
+ *
+ * The head reads this number too — `.headRow` is sized by `--dt-row-h`, not by
+ * `--h-row-head`. Those two agree at `compact` and disagree by 8px at
+ * `comfortable`, which is why the head used to stand shorter than its own rows
+ * at the density nobody was on. A head is a row; it takes the row's height.
  */
 const ROW_HEIGHT: Record<DataTableDensity, number> = {
   compact: 32,

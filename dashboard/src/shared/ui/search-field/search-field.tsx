@@ -8,14 +8,14 @@ import styles from "./search-field.module.css"
  * The kit's search field. One control, one job — narrow a list of things
  * by what the operator types.
  *
- * One surface uses it today: `DataTableToolbar`, for the text filter it
- * promotes out of a column onto the row. That count used to read "two",
- * and both halves were wishes rather than facts — the toolbar carried a
- * private component of the same name, and the knowledge screen still
- * builds its own (`domains/knowledge/ui/knowledge-search.tsx`, whose own
- * comment calls the absence of this primitive "a gap in the kit" it did
- * not know had been filled). The toolbar is now a real call site; the
- * knowledge screen is the one left, and it is a domain's to make.
+ * Two surfaces use it: `DataTableToolbar`, for the text filter it promotes
+ * out of a column onto the row, and `domains/knowledge/ui/knowledge-search`,
+ * which now wraps this rather than building its own. That second one is the
+ * reason the count in this comment is worth keeping honest — it used to read
+ * "one surface uses it today", written while the knowledge screen still had a
+ * private copy whose own comment called the absence of this primitive "a gap
+ * in the kit" that had in fact already been filled. Two components and two
+ * comments, each describing a world the other had left.
  *
  * Whoever the callers are, the shape is the same: a single field at the
  * top of a list, named through `aria-label` rather than a visible

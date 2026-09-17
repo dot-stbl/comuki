@@ -26,6 +26,26 @@
  * other side of the row: the prose or the value beside the badge truncates, or
  * the row wraps and grows downward.
  *
+ * ## Why this file now names three rules where it used to name eleven
+ *
+ * It listed eleven because eleven stylesheets each said the contract for
+ * themselves. They do not any more. The box moved to `shared/ui/badge-shell`,
+ * every badge in the product composes it through `badgeShell()`, and the
+ * contract is declared exactly once. Eleven copies of an invariant is eleven
+ * chances to lose it — which is why two of them had already been lost — so
+ * aiming the guard at the one surviving declaration is not a smaller test, it
+ * is the same test pointed at the place the answer moved to.
+ *
+ * What is guarded is therefore three things rather than one:
+ *
+ * - the shell keeps the contract;
+ * - the two marks that are *not* badges and so do not compose it keep it
+ *   themselves — `knowledge .pinned`, which has no border and no wash to put in
+ *   a shell, and `settings .tag`, whose padding is the filter chip's step
+ *   rather than the badge step;
+ * - and every caller that *does* compose the shell keeps no second copy of it,
+ *   which is the exact regression that would let the drift back in.
+ *
  * jsdom computes no layout, so no rendered test can see an overlap: every box
  * is zero wide and nothing is ever next to anything. What is checkable is the
  * source of the behaviour, so this reads the stylesheets back off disk and
@@ -46,8 +66,12 @@ const DOMAINS = dirname(fileURLToPath(import.meta.url))
 const COMMENTS = /\/\*[\s\S]*?\*\//g
 
 function read(path: string): string {
-  // A path may reach out of the domains folder — the kit's own status badge is
-  // in the family and lives in `shared/ui`.
+  // A path may reach out of the domains folder — the shell every badge is drawn
+  // in, and the kit's own status badge, both live in `shared/ui`. And a path may
+  // be a component rather than a stylesheet: which shell a badge composes is as
+  // much a source fact as what its sheet declares, and stripping the block
+  // comments is what keeps a doc comment that *mentions* `badgeShell()` from
+  // standing in for a call to it.
   return readFileSync(join(DOMAINS, path), "utf8").replace(COMMENTS, "")
 }
 
@@ -93,33 +117,117 @@ function declared(
  * The family, and the one contract all of it keeps.
  * ------------------------------------------------------------------ */
 
+/** The one sheet every badge's box now comes out of. */
+const SHELL = "../shared/ui/badge-shell.module.css"
+
 /**
- * Every mark in the product that is a `nowrap` box carrying a reading and
- * riding a row beside something else. `.tag` and `.pinned` are in it for the
- * same reason the badges are: they are not badges, but they are the same shape
- * of problem — a short unbreakable string in a flex row.
+ * Every rule in the product that is a `nowrap` box carrying a reading and
+ * riding a row beside something else.
  *
- * `shared/ui/status-badge` is deliberately absent. It is the kit's own, it sets
- * neither `white-space` nor `flex`, and it is not this file's to change.
+ * The shell is first because it *is* the box now — nine domain families and the
+ * kit's own `StatusBadge` are all drawn in it, including the one that most
+ * needed saying: a status badge is rendered both inside a table cell and
+ * outside one. Inside, it inherited `nowrap` from `.cell` and behaved; outside
+ * — the tracker panel, the status mapping preview, the attention list, the
+ * inspector's gate chips — it could be squeezed to its longest word and wrap
+ * its own label mid-badge.
+ *
+ * The other two are the marks that deliberately do not compose the shell, and
+ * they are in this list for the same reason the badges were: they are not
+ * badges, but they are the same shape of problem — a short unbreakable string
+ * in a flex row.
  */
 const FAMILY: readonly (readonly [string, string])[] = [
-  ["approvals/ui/approval-badges.module.css", ".badge"],
-  ["compute/ui/compute-badges.module.css", ".badge"],
-  ["knowledge/ui/knowledge-badges.module.css", ".badge"],
+  [SHELL, ".shell"],
   ["knowledge/ui/knowledge-badges.module.css", ".pinned"],
-  ["models/ui/model-badges.module.css", ".badge"],
-  ["queue/ui/queue-badges.module.css", ".badge"],
-  ["settings/ui/settings-badges.module.css", ".badge"],
   ["settings/ui/settings-badges.module.css", ".tag"],
-  ["sources/ui/connection-state-badge.module.css", ".badge"],
-  ["tasks/ui/tasks-badges.module.css", ".badge"],
-  ["verify/ui/verify-result-badge.module.css", ".badge"],
-  // The kit's own, and the one that most needed saying: it is rendered both
-  // inside a table cell and outside one. Inside, it inherited `nowrap` from
-  // `.cell` and behaved; outside — the tracker panel, the status mapping
-  // preview, the attention list, the inspector's gate chips — it could be
-  // squeezed to its longest word and wrap its label mid-badge.
-  ["../shared/ui/status-badge.module.css", ".badge"],
+]
+
+/**
+ * The shell's two size steps.
+ *
+ * A step is `gap`, `padding` and `font-size` — how big, and never how the box
+ * fits. The fit contract lives on `.shell` and is stated once, so these two are
+ * the one door left open in the shell sheet through which a geometry
+ * declaration could come back without anybody touching `.shell` itself.
+ */
+const STEPS: readonly string[] = [".sm", ".md"]
+
+/**
+ * Every caller that composes the shell: the component, its own stylesheet, and
+ * the rule in it that carries the caller's half — colour, weight, the edge.
+ *
+ * The sources and verify pairs have no `.badge` rule left at all, because their
+ * border is transparent until a state says otherwise and the shell's own
+ * fallback already says exactly that; their first state stands for them here.
+ */
+const COMPOSED: readonly (readonly [string, string, string])[] = [
+  [
+    "approvals/ui/approval-badges.tsx",
+    "approvals/ui/approval-badges.module.css",
+    ".badge",
+  ],
+  [
+    "compute/ui/compute-badges.tsx",
+    "compute/ui/compute-badges.module.css",
+    ".badge",
+  ],
+  [
+    "knowledge/ui/knowledge-badges.tsx",
+    "knowledge/ui/knowledge-badges.module.css",
+    ".badge",
+  ],
+  ["models/ui/model-badges.tsx", "models/ui/model-badges.module.css", ".badge"],
+  ["queue/ui/queue-badges.tsx", "queue/ui/queue-badges.module.css", ".badge"],
+  [
+    "settings/ui/settings-badges.tsx",
+    "settings/ui/settings-badges.module.css",
+    ".badge",
+  ],
+  ["tasks/ui/tasks-badges.tsx", "tasks/ui/tasks-badges.module.css", ".badge"],
+  [
+    "sources/ui/connection-state-badge.tsx",
+    "sources/ui/connection-state-badge.module.css",
+    ".connected",
+  ],
+  [
+    "verify/ui/verify-result-badge.tsx",
+    "verify/ui/verify-result-badge.module.css",
+    ".passed",
+  ],
+  [
+    "../shared/ui/status-badge.tsx",
+    "../shared/ui/status-badge.module.css",
+    ".badge",
+  ],
+]
+
+/**
+ * What the shell declares, and therefore what no caller may declare again.
+ *
+ * Not tidiness — correctness. Two single-class rules in two different CSS
+ * modules have equal specificity, so which of them wins is settled by the order
+ * the bundler happened to emit the two files in. That is not a contract, it is
+ * not stable between dev and build, and it does not survive an import being
+ * moved up a line. The shell's one deliberately changeable declaration is the
+ * border colour, and it is reached through `--badge-edge`: a custom property
+ * declared in exactly one place per badge cannot lose a race it is not in.
+ */
+const SHELL_OWNED: readonly string[] = [
+  "display",
+  "align-items",
+  "flex",
+  "white-space",
+  "border",
+  "border-radius",
+  "border-width",
+  "border-style",
+  "border-color",
+  "font-family",
+  "font-size",
+  "line-height",
+  "gap",
+  "padding",
 ]
 
 describe("a badge keeps its own reading and its own box", () => {
@@ -180,6 +288,59 @@ describe("a badge keeps its own reading and its own box", () => {
         overflow: declared(sheet, selector, "overflow"),
         ellipsis: declared(sheet, selector, "text-overflow"),
       }).toEqual({ path, selector, overflow: undefined, ellipsis: undefined })
+    }
+  })
+
+  it("keeps a size step to the size and nothing else", () => {
+    // The fit contract is declared once, on `.shell`. These two rules are the
+    // only thing in that sheet which varies per caller, so they are the only
+    // place a geometry declaration could reappear without anybody editing the
+    // rule that carries the contract. A step says how big; it never says how
+    // the box gives.
+    const shell = read(SHELL)
+    for (const selector of STEPS) {
+      expect({
+        selector,
+        flex: declared(shell, selector, "flex"),
+        wrap: declared(shell, selector, "white-space"),
+        logical: declared(shell, selector, "min-inline-size"),
+        physical: declared(shell, selector, "min-width"),
+        overflow: declared(shell, selector, "overflow"),
+        ellipsis: declared(shell, selector, "text-overflow"),
+      }).toEqual({
+        selector,
+        flex: undefined,
+        wrap: undefined,
+        logical: undefined,
+        physical: undefined,
+        overflow: undefined,
+        ellipsis: undefined,
+      })
+    }
+  })
+
+  it("is composed by every badge and copied by none", () => {
+    // The half of the invariant that used to be enforced by there being eleven
+    // copies of it. Now that the box is declared once, two things have to hold
+    // for the four assertions above to mean anything: every badge actually goes
+    // through that declaration, and nobody re-declares the box beside it. A
+    // caller that did would win or lose against the shell depending on which
+    // stylesheet the bundler emitted first — see `SHELL_OWNED`.
+    for (const [component, sheet, selector] of COMPOSED) {
+      expect({
+        component,
+        composes: read(component).includes("badgeShell("),
+      }).toEqual({ component, composes: true })
+
+      const css = read(sheet)
+      for (const property of SHELL_OWNED) {
+        expect({
+          sheet,
+          selector,
+          property,
+          value: declared(css, selector, property),
+        }).toEqual({ sheet, selector, property, value: undefined })
+      }
     }
   })
 })

@@ -52,7 +52,7 @@
   gap: var(--s2);
   padding: var(--s4);
   min-inline-size: 0;
-  border: var(--hairline) solid var(--border);
+  border: var(--hairline) solid var(--rule);
   border-radius: var(--r-md);
   background: var(--surface);
   cursor: pointer;
@@ -62,7 +62,7 @@
 }
 
 .card:hover {
-  border-color: var(--border-strong);
+  border-color: var(--rule-strong);
 }
 
 /* The input itself is off-screen rather than `display: none`, so it keeps its

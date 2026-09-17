@@ -6,6 +6,7 @@ import type {
   RuleKind,
 } from "@/domains/settings/model/types"
 import { cn } from "@/shared/lib/utils"
+import { badgeShell } from "@/shared/ui"
 
 import styles from "./settings-badges.module.css"
 
@@ -43,9 +44,9 @@ export function RuleKindMark({ kind, className }: RuleKindMarkProps) {
     <span
       data-test="rule-kind-mark"
       data-kind={kind}
-      className={cn(styles.badge, styles[kind], className)}
+      className={cn(badgeShell(), styles.badge, styles[kind], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {kind}
     </span>
   )
@@ -74,9 +75,9 @@ export function KeyStatusMark({
     <span
       data-test="key-status-mark"
       data-status={status}
-      className={cn(styles.badge, styles[status], className)}
+      className={cn(badgeShell(), styles.badge, styles[status], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {label}
     </span>
   )
@@ -99,9 +100,9 @@ export function AutonomyModeMark({ mode, className }: AutonomyModeMarkProps) {
     <span
       data-test="autonomy-mode-mark"
       data-mode={mode}
-      className={cn(styles.badge, styles[mode], className)}
+      className={cn(badgeShell(), styles.badge, styles[mode], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {mode}
     </span>
   )

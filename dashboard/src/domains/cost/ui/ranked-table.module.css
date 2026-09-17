@@ -4,7 +4,11 @@
    model, by project. The figure columns take exactly the room their widest
    value needs and the name column takes the rest, which is what keeps every bar
    in the block starting and ending on the same two lines: bars on different
-   scales cannot be compared, and comparing them is the whole task. */
+   scales cannot be compared, and comparing them is the whole task.
+
+   The bar itself is the kit's `Meter`, in its neutral tone. What this sheet
+   still owns is the axis it is measured on — the grid below — which is the part
+   that was never shared with the other three copies of the channel. */
 
 .table {
   inline-size: 100%;
@@ -81,29 +85,6 @@
   white-space: nowrap;
   font-family: var(--font-data);
   color: var(--text);
-}
-
-/* The drawn empty channel every fill is measured against — the same material
-   the table and the flow's tracks are made of. */
-.channel {
-  position: relative;
-  display: block;
-  block-size: var(--h-meter);
-  min-inline-size: 0;
-  border-radius: var(--r-xs);
-  background: var(--lane-alt);
-  /* clip, not hidden: `hidden` makes the box a scroll container, and a bar
-     inside a report must never open one. */
-  overflow: clip;
-}
-
-.fill {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  display: block;
-  border-radius: var(--r-xs);
-  background: var(--text-faint);
 }
 
 /* The figures, at the end of their columns and tabular, so a scan down a column

@@ -222,7 +222,7 @@ describe("the model registry, end to end over the seeds", () => {
 
     const expiry = all('[data-test="key-expiry"]')
     expect(expiry[0].getAttribute("data-lapsed")).toBe("")
-    expect(expiry[0].textContent).toBe("3 days ago")
+    expect(expiry[0].textContent).toBe("expired 3 d")
   })
 
   it("shows the key at ninety percent of its cap as one to decide about", async () => {
@@ -403,7 +403,7 @@ describe("the key drawer", () => {
 
     const text = sheet.textContent ?? ""
     expect(text).toContain("platform lead traffic")
-    expect(text).toContain("74 days ago")
+    expect(text).toContain("74 d")
     expect(text).toContain("lead · platform")
     // The fortnight behind the $361.40: its total, its peak, and the six
     // silent days since the proxy was switched off.

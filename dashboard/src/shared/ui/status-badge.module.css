@@ -1,30 +1,26 @@
-/* Joins the badge family's fit contract, and it had to be said out loud: this
-   one is rendered both inside a table cell and outside one. In a cell it
-   inherited `nowrap` and behaved; anywhere else — the tracker panel, the status
-   mapping preview, the attention list, the inspector's gate chips — it could be
-   squeezed to its longest word and wrap its own label, turning a one-line row
-   into two. `domains/badge-fit.test.ts` holds the whole family to this. */
+/* What is left of this file once the box moved out.
+ *
+ * The rule that used to open here — `inline-flex`, the hairline, the data voice,
+ * the fit contract, two size steps and two icon steps — is now
+ * `badge-shell.module.css`, because nine domain families were carrying a copy of
+ * it and the kit had no business keeping a tenth. `StatusBadge` composes
+ * `badgeShell({ size })` like every other caller does.
+ *
+ * What stays is the part that is actually this component's: the run status hue,
+ * the one weight that separates a status from a domain mark, and the pulse.
+ * The edge arrives through `--badge-edge` rather than `border-color` — see
+ * `badge-shell.module.css` for why an override between two CSS modules is
+ * decided by bundler order and a custom property is not. */
+
 .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s2);
-  flex: 0 0 auto;
-  white-space: nowrap;
-  border-radius: var(--r-sm);
-  border: var(--hairline) solid var(--border);
-  padding: var(--s1) var(--s4);
-  font-family: var(--font-data);
-  font-size: var(--t-sm);
+  --badge-edge: var(--border);
+
+  /* The one step heavier than the domain families, and the difference is the
+     point: a domain mark names a kind of thing, a status names what the run is
+     doing right now, and on a screen carrying both the run is the reading. */
   font-weight: var(--fw-medium);
-  line-height: var(--lh-tight);
   color: var(--hue);
   background: color-mix(in oklab, var(--hue) 10%, transparent);
-}
-
-.sm {
-  gap: var(--s1);
-  padding: 0 var(--s3);
-  font-size: var(--t-micro);
 }
 
 /* Hue, and deliberately no weave.
@@ -46,21 +42,17 @@
 
 /* `failed` escalates: a failure should be visible before it is read. The one
    arm left in this file, and it names a status only to say that this status
-   is louder — the colour itself still comes from `--hue`. */
+   is louder — the colour itself still comes from `--hue`.
+
+   The one place in the family that writes `border-color` outright rather than
+   handing the shell a `--badge-edge`, and it is allowed to because there is
+   nothing here for it to race. A class-plus-attribute selector is (0,2,0); the
+   shell's `.shell` is (0,1,0), so specificity settles this and document order
+   never gets a vote. The domains' escalating states are plain single classes
+   and are tied with the shell, which is why they go through the property. */
 .badge[data-status="failed"] {
   border-color: color-mix(in oklab, var(--hue) 40%, transparent);
   background: var(--st-failed-tint);
-}
-
-.icon {
-  width: var(--icon-sm);
-  height: var(--icon-sm);
-  flex: 0 0 auto;
-}
-
-.sm .icon {
-  width: var(--icon-xs);
-  height: var(--icon-xs);
 }
 
 .pulse {

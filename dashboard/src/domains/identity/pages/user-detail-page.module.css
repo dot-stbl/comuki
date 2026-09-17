@@ -50,68 +50,20 @@
 
 /* --- its own facts --- */
 
-/* Auto-fitting rather than a fixed column count, so the list reflows on a
-   narrow board without a breakpoint of its own: the product has exactly two
-   widths and neither of them is about this. */
-.facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
-  gap: var(--s5) var(--s7);
-  margin: 0;
-  min-inline-size: 0;
-}
-
-.fact {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s1);
-  min-inline-size: 0;
-}
-
-/* The tight gesture: this names a value, not a region. */
-.factName {
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
-}
-
-/* Addresses, subjects, dates and the status word are all values. */
-.factValue {
-  margin: 0;
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
-  font-family: var(--font-data);
-  font-size: var(--t-sm);
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-}
-
-/* A person's name is the one thing here a human wrote. */
-.factProse {
-  margin: 0;
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
-  font-family: var(--font-ui);
-  font-size: var(--t-sm);
-  color: var(--text);
-}
+/* The list, the pair and both voices are the kit's `FactList` now. What is
+   left here is the two things this screen adds to a value: the row that
+   carries the act it is missing, and the word that says nothing is there. */
 
 /* A fact that carries the act it is missing, on one line with it. */
 .factAct {
   display: flex;
   align-items: center;
   gap: var(--s3);
-  margin: 0;
-  min-inline-size: 0;
 }
 
 /* Nothing there, said quietly and in words: local only, never. A blank reads
    as a broken render. */
 .absent {
-  font-family: var(--font-data);
-  font-size: var(--t-sm);
   color: var(--text-faint);
 }
 

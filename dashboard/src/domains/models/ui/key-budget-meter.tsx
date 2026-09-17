@@ -7,6 +7,7 @@ import {
 import type { VirtualKey } from "@/domains/models/model/types"
 import { formatCost } from "@/domains/runs/model/format"
 import { cn } from "@/shared/lib/utils"
+import { Meter } from "@/shared/ui"
 
 import styles from "./key-budget-meter.module.css"
 
@@ -108,12 +109,16 @@ export function KeyBudgetMeter({
             : `${formatCost(budgetLeftUsd(entry))} left`}
         </span>
       </span>
-      <span className={styles.channel} aria-hidden="true">
-        <span
-          className={styles.fill}
-          style={{ inlineSize: `${Math.min(100, Math.round(share * 100))}%` }}
-        />
-      </span>
+      {/* The kit's channel on the row track, hidden from the a11y tree by its
+          own construction — the figures above it are the reading. `--st` rides
+          down from `[data-heat]` on this element, which is the same property
+          colouring the figures, so the bar and the number cannot disagree. */}
+      <Meter
+        value={share}
+        track="row"
+        tone="heat"
+        hatched={enforced ? undefined : "queued"}
+      />
     </span>
   )
 }

@@ -226,8 +226,8 @@ export function GrantRoleForm({
           type="submit"
           data-test="form-submit"
           denied={manage.denial}
-          disabled={busy || blocked}
-          aria-busy={busy || undefined}
+          loading={busy}
+          disabled={blocked}
         >
           Grant
         </Button>

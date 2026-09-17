@@ -1,9 +1,12 @@
-export function formatDuration(seconds: number): string {
-  const safe = Math.max(0, Math.floor(seconds))
-  const minutes = Math.floor(safe / 60)
-  const rem = safe % 60
-  return `${String(minutes).padStart(2, "0")}:${String(rem).padStart(2, "0")}`
-}
+/* What a run cost and what its brief said — readings that are the runs
+   domain's own, and stay here.
+ *
+ * `formatDuration` used to live in this file and was imported by nine files
+ * across four domains, which is what a utility parked in one domain's model
+ * looks like from the outside: unfindable. It is `shared/lib/duration` now.
+ * `formatCost` and `formatTokens` are read from other domains too and are the
+ * obvious next move; `briefSegments` is a ticket brief and belongs nowhere
+ * else. */
 
 export function formatCost(value: number): string {
   return `$${value.toFixed(2)}`

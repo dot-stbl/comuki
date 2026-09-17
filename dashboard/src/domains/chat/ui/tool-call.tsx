@@ -1,4 +1,5 @@
 import type { ToolPart } from "@/domains/chat/model/types"
+import { formatDurationMs } from "@/shared/lib/duration"
 import { StatusBadge } from "@/shared/ui"
 
 import styles from "./chat-message.module.css"
@@ -50,22 +51,4 @@ export function ToolCallCard({ tool }: ToolCallCardProps) {
       ) : null}
     </div>
   )
-}
-
-/**
- * How long the call took, in the unit the number actually deserves.
- *
- * Milliseconds up to a second, because that is the range where the difference
- * between 40 and 400 matters; seconds above it, because nobody reads
- * `31420ms`. One decimal and no more — a call that took half a minute is not
- * measured to the millisecond by anything the operator can act on.
- *
- * The `Ms` is in the name on purpose. `domains/runs/model/format.ts` exports a
- * `formatDuration` that nine files across four domains import, and it takes
- * *seconds* — two functions with one name and different units is how a future
- * unification silently divides a reading by a thousand. The two should become
- * one helper in `shared/lib`; until then the unit is spelled out.
- */
-function formatDurationMs(ms: number): string {
-  return ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(1)}s`
 }

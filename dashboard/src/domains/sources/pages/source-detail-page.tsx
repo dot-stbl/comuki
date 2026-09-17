@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ArrowLeft, KeyRound, Loader2, RotateCw, Unplug } from "lucide-react"
+import { ArrowLeft, KeyRound, RotateCw, Unplug } from "lucide-react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 
@@ -41,6 +41,8 @@ import {
   BrandTag,
   Button,
   ConfirmDialog,
+  Fact,
+  FactList,
   Notice,
   ScreenState,
   Section,
@@ -48,10 +50,6 @@ import {
   Tooltip,
   buttonClass,
 } from "@/shared/ui"
-
-// The domain's one spinner, shared with the row-level test so the two readings
-// of "probing" are the same mark.
-import tableStyles from "@/domains/sources/ui/sources-table.module.css"
 
 import styles from "./source-detail-page.module.css"
 
@@ -439,7 +437,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         // place on the page that says *why*, in the provider's own words. A
         // bare code would send the operator to the provider to find out what a
         // line here could have told them.
-        <Notice tone="bad" data-test="source-error">
+        <Notice tone="bad" announce={false} data-test="source-error">
           {connection.reason ??
             "the provider refused, and said nothing useful."}
         </Notice>
@@ -451,9 +449,12 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         title="what this connection is"
         data-test="source-facts"
       >
-        <dl className={styles.facts}>
-          <dt className={styles.factName}>provider</dt>
-          <dd className={styles.factValue}>
+        {/* The kit's pair, at the page step. This screen had been reading a
+            type step smaller than the identity and project detail pages, which
+            show the same kind of thing at the same width — drift rather than a
+            decision, and `FactList`'s `sm` is the *sheet* step, not a page's. */}
+        <FactList>
+          <Fact name="provider">
             <span className={styles.factBrand}>
               {/* The mark where the provider has one that survives being
                   drained to the chrome's own colour, and the word where it does
@@ -464,21 +465,17 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                 label={providerLabel(connection.kind)}
               />
             </span>
-          </dd>
+          </Fact>
 
-          <dt className={styles.factName}>auth</dt>
-          <dd className={styles.factValue}>{AUTH_LABEL[connection.auth]}</dd>
+          <Fact name="auth">{AUTH_LABEL[connection.auth]}</Fact>
 
-          <dt className={styles.factName}>instance</dt>
-          <dd className={styles.factValue}>
+          <Fact name="instance">
             {connection.baseUrl ?? connectionHost(connection)}
-          </dd>
+          </Fact>
 
-          <dt className={styles.factName}>account</dt>
-          <dd className={styles.factValue}>{connection.account}</dd>
+          <Fact name="account">{connection.account}</Fact>
 
-          <dt className={styles.factName}>credential</dt>
-          <dd className={styles.factValue}>
+          <Fact name="credential">
             {connection.secretEnvRef ? (
               /* code-shaped name the host resolves — the dashboard never
                * shows the value, only the name, which is the structural
@@ -512,13 +509,13 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                 authenticate against.
               </span>
             ) : null}
-          </dd>
+          </Fact>
 
-          <dt className={styles.factName}>last sync</dt>
-          <dd className={styles.factValue}>
+          <Fact name="last sync">
             {native ? "—" : (connection.lastSyncAt ?? "never")}
-          </dd>
-        </dl>
+          </Fact>
+        </FactList>
+
       </Section>
 
       {connection.watch ? (
@@ -614,8 +611,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                 variant="outline"
                 data-test="source-rotate-secret"
                 denied={editDenial}
-                disabled={rotateSecret.isPending || rotating}
-                aria-busy={rotateSecret.isPending || rotating || undefined}
+                loading={rotateSecret.isPending || rotating}
                 aria-label={`Rotate the webhook secret for ${connection.name}`}
                 onClick={() => {
                   if (editDenial) {
@@ -624,11 +620,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                   setRotating(true)
                 }}
               >
-                {rotateSecret.isPending || rotating ? (
-                  <Loader2 className={tableStyles.spin} aria-hidden="true" />
-                ) : (
-                  <KeyRound aria-hidden="true" />
-                )}
+                <KeyRound aria-hidden="true" />
                 Rotate secret
               </Button>
             </Tooltip>
@@ -636,7 +628,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                 standalone block — copy-able, and gone the moment the
                 operator navigates away. */}
             {rotatedSecret ? (
-              <Notice tone="ok" data-test="source-rotated-secret">
+              <Notice tone="ok" announce data-test="source-rotated-secret">
                 <span className={styles.rotationSecretLabel}>
                   new webhook secret — copy now, this panel does not survive a
                   navigation

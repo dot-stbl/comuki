@@ -1,4 +1,4 @@
-import { Loader2, Play } from "lucide-react"
+import { Play } from "lucide-react"
 
 import { headroom } from "@/domains/compute/model/capacity"
 import type {
@@ -238,20 +238,15 @@ export function createProviderColumns({
                 size="icon-sm"
                 variant="outline"
                 data-test="provider-take-work"
-                disabled={busy}
+                loading={busy}
                 denied={denial}
-                aria-busy={busy || undefined}
                 aria-label={`Hand new starts to ${provider.endpoint}`}
                 onClick={(event) => {
                   event.stopPropagation()
                   onTakeWork(provider)
                 }}
               >
-                {busy ? (
-                  <Loader2 className={styles.spin} aria-hidden="true" />
-                ) : (
-                  <Play aria-hidden="true" />
-                )}
+                <Play aria-hidden="true" />
               </Button>
             </Tooltip>
           </span>

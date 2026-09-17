@@ -171,8 +171,7 @@ export function createApiKeyColumns({
                 variant="destructive"
                 data-test="key-revoke"
                 denied={denial}
-                disabled={busy}
-                aria-busy={busy || undefined}
+                loading={busy}
                 aria-label={`Revoke key ${key.prefix}`}
                 onClick={(event) => {
                   event.stopPropagation()

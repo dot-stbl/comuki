@@ -1,7 +1,8 @@
-import { Check, Loader2, X } from "lucide-react"
+import { Check, X } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
-import { formatCost, formatDuration } from "@/domains/runs/model/format"
+import { formatCost } from "@/domains/runs/model/format"
+import { formatDuration } from "@/shared/lib/duration"
 import { TRIAGE_RANK } from "@/domains/runs/model/profile-flow"
 import type { RunStatus, RunSummary } from "@/domains/runs/model/types"
 import { currentLabel, currentProfile } from "@/domains/runs/model/work-items"
@@ -365,20 +366,16 @@ export function createRunColumns({
               <Button
                 size="icon-sm"
                 data-test="run-approve"
+                loading={approving}
                 disabled={busy}
                 denied={approveDenial}
-                aria-busy={approving || undefined}
                 aria-label={`Approve ${run.title}`}
                 onClick={(event) => {
                   event.stopPropagation()
                   onApprove(run)
                 }}
               >
-                {approving ? (
-                  <Loader2 className={styles.spin} aria-hidden="true" />
-                ) : (
-                  <Check aria-hidden="true" />
-                )}
+                <Check aria-hidden="true" />
               </Button>
             </Tooltip>
             <Tooltip content={stopDenial ?? "Cancel run"}>

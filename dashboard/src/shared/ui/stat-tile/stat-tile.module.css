@@ -1,0 +1,98 @@
+/* One reading, and the three lines around it.
+
+   The box is not here: the box is `Surface`, which already owns the hairline on
+   the start edge, the lane material and the corner. What is here is the tile's
+   contents — the line that says which reading this is, the figure, and the line
+   under it — and those were being written out privately by every screen that
+   wanted a row of numbers. `domains/cost/ui/cost-stat` said so about itself
+   in a comment; `domains/knowledge/pages/knowledge-page.module.css` was
+   a third copy that had not noticed, and re-declared `Surface`'s five
+   declarations on top. */
+
+/* The line that says *which* reading this is. A data label, so the tight
+   gesture in the interface voice: it names a value, it is not a region heading,
+   and it does not take a heading's tracking.
+
+   This exact five-declaration rule is the most-copied thing in the product. It
+   is also `.label` in `form/form.module.css` (behind `FieldLabel`) and `.fact`
+   -`Name` in five domain detail screens. `StatLabel` is its home for everything
+   that is not a form control — reach for that rather than re-spelling it. */
+.label {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-faint);
+}
+
+/* The figure. Mono, tabular, and at one step — `--t-h2` — with no prop to
+   change it.
+
+   That is the decision this file is most likely to be argued with, so: a row of
+   tiles on two screens has to compare, and a `scale` prop is only the drift
+   re-encoded as an option. `--t-display` belongs to the screen's own title, and
+   a tile figure standing at the page title's size flattens the hierarchy rather
+   than sharpening it; `--t-h1` is what one screen had reached for privately and
+   is the same mistake one step down. One step, and the tile is the same
+   instrument wherever it stands. */
+.figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The number itself, at full strength: everything else on the tile is about
+   this, and a scan down a row of tiles is a scan down these. */
+.value {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The currency mark and the unit are not the number. They ride beside it a step
+   down and muted, so a scan down a row of tiles compares magnitudes rather than
+   string lengths. */
+.unit {
+  flex: 0 0 auto;
+  font-size: var(--t-xs);
+  font-weight: var(--fw-regular);
+  color: var(--text-faint);
+}
+
+/* Hue plus the words already on the tile, never hue alone — `Surface`'s own lit
+   edge takes the same reading through `tone`, and the line under the figure
+   says it in a sentence. Two channels, like a status band. */
+.figure[data-tone="attention"] .value {
+  color: var(--st-waiting);
+}
+
+.figure[data-tone="danger"] .value {
+  color: var(--st-failed);
+  font-weight: var(--fw-semibold);
+}
+
+/* The line under the figure: prose *about* it, so the interface voice.
+
+   Not a second data line, and there is no prop to make it one. A value that
+   needs the data voice is a value, and a value belongs in `value`, `prefix` or
+   `suffix` where the tile can set it in mono and line it up with the tile
+   beside it. A sub line in the data voice is how a screen ends up with two
+   figures of different weight claiming to be the reading. */
+.sub {
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}

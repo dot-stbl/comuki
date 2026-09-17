@@ -53,40 +53,10 @@
   color: var(--text-muted);
 }
 
-/* A definition list on a two-track grid: the name of the fact, then the fact.
-   Not a card — no fill, no shadow — because these are the values the page is
-   about rather than a panel sitting on it. The bounding is the region heading
-   above it and the rule under the region that follows. */
-.facts {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: var(--s3) var(--s5);
-  align-items: baseline;
-  margin: 0;
-  min-inline-size: 0;
-}
-
-/* Names a value, so it takes the tight gesture in the interface voice — the
-   same spelling every field label in the product uses. */
-.factName {
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
-}
-
-/* A host, an account, a date, an id — every one of these is a value the
-   operator reads back somewhere else, so all of them are in the data voice.
-   `anywhere` because a base url has nowhere to break and the column is 44rem. */
-.factValue {
-  margin: 0;
-  min-inline-size: 0;
-  font-family: var(--font-data);
-  font-size: var(--t-xs);
-  color: var(--text);
-  overflow-wrap: anywhere;
-}
+/* The list, the name track and the value's voice are the kit's `FactList`
+   now. What is left here is the two things this page adds inside a value: the
+   provider's mark on the same line as its word, and the one sentence the
+   product will ever say about a stored secret. */
 
 /* The provider's mark sits inline with its own name, exactly as it does in the
    list's provider column — the mark is the recognition and the word is the

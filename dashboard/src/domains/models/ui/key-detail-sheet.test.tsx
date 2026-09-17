@@ -119,9 +119,9 @@ describe("the key detail sheet", () => {
     expect(text).toContain("platform lead traffic")
     expect(text).toContain("provider-A · anthropic-compatible")
     // The dates a key lives by.
-    expect(text).toContain("74 days ago")
-    expect(text).toContain("6 days ago")
-    expect(text).toContain("in 12 days")
+    expect(text).toContain("74 d")
+    expect(text).toContain("6 d")
+    expect(text).toContain("in 12 d")
     expect(text).toContain("platform")
     // The grants, as roles in places.
     expect(text).toContain("lead · platform")

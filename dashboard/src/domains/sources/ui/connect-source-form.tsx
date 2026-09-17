@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
-import { Loader2, PlugZap } from "lucide-react"
+import { PlugZap } from "lucide-react"
 
 import {
   FormActions,
@@ -37,10 +37,6 @@ import {
   TextField,
   Tooltip,
 } from "@/shared/ui"
-
-// The domain's one spinner, shared with the row-level test and the source
-// page's own probe so all three readings of "probing" are the same mark.
-import tableStyles from "./sources-table.module.css"
 
 // The probe's answer row, shared with the edit form so the two screens read
 // one control and one answer, drawn once.
@@ -177,8 +173,8 @@ export function ConnectSourceForm({
         variant="outline"
         size="icon-sm"
         data-test="connect-test"
-        disabled={!complete || probing || busy}
-        aria-busy={probing || undefined}
+        loading={probing}
+        disabled={!complete || busy}
         aria-label="Test connection"
         onClick={() =>
           onTest({
@@ -188,11 +184,7 @@ export function ConnectSourceForm({
           })
         }
       >
-        {probing ? (
-          <Loader2 className={tableStyles.spin} aria-hidden="true" />
-        ) : (
-          <PlugZap aria-hidden="true" />
-        )}
+        <PlugZap aria-hidden="true" />
       </Button>
     </Tooltip>
   )
@@ -292,7 +284,15 @@ export function ConnectSourceForm({
 
           <span className={probeStyles.probeAnswer}>
             {probe ? (
-              <Notice tone={probe.ok ? "ok" : "bad"} data-test="probe-result">
+              <Notice
+                tone={probe.ok ? "ok" : "bad"}
+                /* Both halves are the answer to the probe button, so both are
+                   spoken — the tone default would have announced the refusal
+                   and swallowed the success, which is the asymmetry that makes
+                   an operator press twice. */
+                announce
+                data-test="probe-result"
+              >
                 {probe.message}
               </Notice>
             ) : (
@@ -356,8 +356,8 @@ export function ConnectSourceForm({
           type="submit"
           data-test="form-submit"
           denied={denied}
-          disabled={busy || !complete || !tested}
-          aria-busy={busy || undefined}
+          loading={busy}
+          disabled={!complete || !tested}
         >
           Save connection
         </Button>

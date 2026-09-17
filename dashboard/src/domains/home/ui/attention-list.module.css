@@ -213,20 +213,6 @@
   outline-offset: var(--s1);
 }
 
-/* The only motion here, and it is the duty list's own: a pending decision is
-   the one thing that has to look like it is happening inside a still row. */
-@media (prefers-reduced-motion: no-preference) {
-  .spin {
-    animation: attention-spin 900ms linear infinite;
-  }
-}
-
-@keyframes attention-spin {
-  to {
-    transform: rotate(1turn);
-  }
-}
-
 /* Narrow desks. A reading is never crushed to fit — the column that carries the
    least unique information goes first (the step is prose about the task beside
    it), then the project key, which the denial sentence still names. */

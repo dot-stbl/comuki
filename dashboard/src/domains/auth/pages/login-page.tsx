@@ -51,6 +51,14 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
 
   const identityId = useId()
   const passwordId = useId()
+  // The band above the fields, named so the fields can point at it. It has said
+  // its sentence out loud since the day it was written, but a screen reader
+  // that lands in the password box afterwards was told nothing: the reason was
+  // on the page and not on the control, and the operator had to go looking for
+  // an answer the product had already given. The kit's field merges an
+  // `aria-describedby` handed in from outside with its own, so both are true at
+  // once — see `describedBy` in `shared/ui/form/ids.ts`.
+  const failureId = useId()
 
   const [identity, setIdentity] = useState("")
   const [password, setPassword] = useState("")
@@ -140,7 +148,12 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
         ) : null}
 
         {failure ? (
-          <p className={styles.failure} role="alert" data-test="login-failure">
+          <p
+            id={failureId}
+            className={styles.failure}
+            role="alert"
+            data-test="login-failure"
+          >
             <CircleAlert aria-hidden="true" className={styles.failureIcon} />
             <span>{failure}</span>
           </p>
@@ -168,6 +181,8 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
             placeholder="you@comuki.local"
             value={identity}
             onValueChange={setIdentity}
+            aria-invalid={failure ? true : undefined}
+            aria-describedby={failure ? failureId : undefined}
           />
 
           <TextField
@@ -179,18 +194,26 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
             placeholder="your account password"
             value={password}
             onValueChange={setPassword}
+            aria-invalid={failure ? true : undefined}
+            aria-describedby={failure ? failureId : undefined}
           />
 
-          {/* `disabled` is for busy and invalid, which is exactly these two —
-              nobody is being refused a permission here. */}
+          {/* Three states, three props, and only two of them are in play here:
+              `loading` for busy, `disabled` for invalid, and nobody is being
+              refused a permission on this screen. The label used to swap to
+              "Signing in…", which made this the one busy button in the product
+              drawn for a sighted reader and announced to nobody — it carried no
+              `aria-busy` at all. `loading` says it to both, and the word stops
+              resizing the button under the pointer mid-submit. */}
           <Button
             type="submit"
             size="lg"
             className={styles.submit}
-            disabled={pending || incomplete}
+            loading={pending}
+            disabled={incomplete}
             data-test="login-submit"
           >
-            {pending ? "Signing in…" : "Sign in"}
+            Sign in
           </Button>
         </form>
 

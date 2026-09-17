@@ -104,9 +104,13 @@ const text = (selector: string) => find(selector)?.textContent ?? ""
 const tile = (name: string) =>
   find(`[data-stat="${name}"]`)?.closest("article") ?? null
 const tileText = (name: string) => tile(name)?.textContent ?? ""
-/* Heat rides on the figure it is a reading of, not on the tile. */
+/* Heat rides on the figure it is a reading of, not on the tile — and it is
+   published in the kit's own three-word tone vocabulary (`neutral` /
+   `attention` / `danger`) rather than the cost report's `ok` / `near` / `over`,
+   because the tile is `StatTile` now and a tile does not know what a budget is.
+   `CostStat` holds the map between the two. */
 const tileHeat = (name: string) =>
-  tile(name)?.querySelector("[data-heat]")?.getAttribute("data-heat") ?? null
+  tile(name)?.querySelector("[data-tone]")?.getAttribute("data-tone") ?? null
 
 async function screenReady() {
   const router = createRouter({
@@ -185,7 +189,7 @@ describe("the cost report, end to end over the seed", () => {
     expect(forecast).toContain("end of day")
     expect(forecast).toMatch(/\d+%\s+of\s+\$220 cap/)
     // Day view: $148.2 / $220 = 67% — ok, no hue.
-    expect(tileHeat("forecast")).toBe("ok")
+    expect(tileHeat("forecast")).toBe("neutral")
   })
 
   it("shows today's burn and month-to-date as the budget's two readings", async () => {
@@ -197,7 +201,7 @@ describe("the cost report, end to end over the seed", () => {
     expect(budget).toContain("today")
     expect(budget).toContain("month-to-date")
     // 67% today — ok.
-    expect(tileHeat("budget")).toBe("ok")
+    expect(tileHeat("budget")).toBe("neutral")
   })
 
   it("renders three model rows with the project's actual lineup", async () => {

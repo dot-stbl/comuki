@@ -8,6 +8,7 @@ import type {
   VirtualKey,
 } from "@/domains/models/model/types"
 import { cn } from "@/shared/lib/utils"
+import { badgeShell } from "@/shared/ui"
 
 import styles from "./model-badges.module.css"
 
@@ -50,9 +51,9 @@ export function EndpointStateBadge({
     <span
       data-test="endpoint-state-badge"
       data-state={state}
-      className={cn(styles.badge, styles[state], className)}
+      className={cn(badgeShell(), styles.badge, styles[state], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {state}
     </span>
   )
@@ -83,9 +84,9 @@ export function KeyStateBadge({ entry, className }: KeyStateBadgeProps) {
     <span
       data-test="key-state-badge"
       data-state={state}
-      className={cn(styles.badge, styles[state], className)}
+      className={cn(badgeShell(), styles.badge, styles[state], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {state}
     </span>
   )
@@ -116,7 +117,7 @@ export function WireBadge({ wire, className }: WireBadgeProps) {
     <span
       data-test="wire-badge"
       data-wire={wire}
-      className={cn(styles.badge, styles.wire, className)}
+      className={cn(badgeShell(), styles.badge, styles.wire, className)}
     >
       {wire}
     </span>

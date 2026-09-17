@@ -18,8 +18,28 @@
 }
 
 /* The bar sits under the figure rather than beside it, so a row without one
-   does not move the number: the column stays a column at every heat. */
-/* Two pixels tall, spelled from the one-pixel unit rather than from `--r-xs`:
+   does not move the number: the column stays a column at every heat.
+
+   Not the kit's `Meter`, and the difference is the whole reading rather than a
+   detail. A meter is a drawn empty channel with a fill measured against it: the
+   channel is the axis, and seeing how much of it is *unfilled* is what the
+   picture is for. There is no channel here and there must not be one. A queued
+   item that nobody needs to look at draws nothing at all — `heat === "none"`
+   renders no bar — and an empty channel under every fresh row would say "this
+   wait has a length and you are 4% into it" on every row of a healthy queue,
+   which is precisely the noise the null case was written to avoid. What is left
+   is a bare mark painted under a figure, in the figure's own hue, appearing
+   only when there is something to say. That is an underline, not a meter, and
+   bending the primitive to render a channel-less channel would cost it the one
+   sentence it is able to make.
+
+   The five lines below are the same argument the kit's row track makes, and
+   they stay duplicated on purpose: the two rules are different rules that
+   happen to bottom out at the same floor, and a cross-file pointer is how the
+   last one of these went stale (`proxy-budget-meter` spent a rename pointing at
+   a file that no longer existed).
+
+   Two pixels tall, spelled from the one-pixel unit rather than from `--r-xs`:
    the bar's *height* was reading the radius token, so moving the corner would
    have silently changed the reading. Nothing here may add height either — the
    table's rows are uniform by contract. A 2px bar has no room for a 3px corner,
@@ -56,6 +76,11 @@
   color: var(--text);
 }
 
+/* The lease has no bar at all, and so nothing for a channel to hold. A lease is
+   a countdown against a deadline the operator cannot see and would not be able
+   to name — "26 seconds of what?" — so the reading is the figure, the hue, and
+   a mark when the heartbeat has stopped. It is called a meter because it sits
+   in the column beside one, which is a naming accident and not a shape. */
 .lease {
   display: inline-flex;
   align-items: center;

@@ -8,6 +8,7 @@ using Comuki.Modules.Knowledge.Application;
 using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
+using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
@@ -35,6 +36,15 @@ namespace Comuki.Host.Brain.Brain;
 /// </summary>
 /// <param name="modelConfig">Per-call model resolution — endpoint / API key / model ids.</param>
 /// <param name="chatFactory">Builds the <c>IChatClient</c> from the resolved config.</param>
+/// <param name="memoryDigest">
+/// Scope-aware digest assembler used to prepend a project/user digest to
+/// the caller-built <c>ContextJson</c> when <see cref="BrainRequest.ScopeKind"/>
+/// is set. The brain tools (<see cref="BrainToolbox"/>) deliberately stay
+/// global-only — see the security note on
+/// <see cref="BrainToolbox.SearchMemoryAsync"/> — so the scope-aware
+/// fetch lives here, fed by the request, not by anything the model can
+/// supply at runtime.
+/// </param>
 /// <param name="memoryStore">Memory store behind the <c>memory.*</c> tools.</param>
 /// <param name="profileCatalog">Control-plane profile catalog exposed as a tool.</param>
 /// <param name="activeRuns">Active-run catalog exposed as a tool.</param>
@@ -47,7 +57,7 @@ namespace Comuki.Host.Brain.Brain;
 /// what lets <c>MemoryDbContext</c>&apos;s scope query filter run at all
 /// without throwing; it does not by itself limit what the model can ask
 /// <c>memory.search</c> for — see <see cref="BrainToolbox.SearchMemoryAsync"/>
-/// for the guard that does that.
+/// for the guard that does does.
 /// </param>
 /// <param name="clock">The toolbox write clock (custom ephemeral TTLs).</param>
 /// <param name="options">Bound brain options — the iteration cap source.</param>
@@ -55,6 +65,7 @@ namespace Comuki.Host.Brain.Brain;
 public sealed class BrainAgent(
     IModelConfigProvider modelConfig,
     IBrainChatClientFactory chatFactory,
+    IMemoryDigest memoryDigest,
     IMemoryStore memoryStore,
     IProfileCatalog profileCatalog,
     IActiveRunCatalog activeRuns,
@@ -69,7 +80,10 @@ public sealed class BrainAgent(
     /// <see cref="BrainInvalidPlanException"/> /
     /// <see cref="BrainExhaustedException"/>; the gRPC service maps an
     /// exhausted loop to a fault status and an invalid-after-retry plan to
-    /// a graceful final answer carrying the validation errors.
+    /// a graceful final answer carrying the validation errors. Throws
+    /// <see cref="ArgumentException"/> when
+    /// <see cref="BrainRequest.ScopeKind"/> is set without a parseable
+    /// <see cref="BrainRequest.SubjectId"/>.
     /// </summary>
     /// <param name="request">The brain request — task, context JSON and kind.</param>
     /// <param name="cancellationToken">Cancels the run mid-iteration; streamed chunks stop.</param>
@@ -96,12 +110,17 @@ public sealed class BrainAgent(
         var toolbox = new BrainToolbox(memoryStore, clock, profileCatalog, activeRuns, explorerReports, embedder);
         var chatOptions = new ChatOptions { Tools = [.. toolbox.BuildFunctions()] };
 
+        var scopedDigest = await BuildScopedDigestAsync(request, cancellationToken);
+        var contextSection = scopedDigest is { } digest
+            ? $"# Scoped memory\n{digest}\n\n{request.ContextJson}"
+            : request.ContextJson;
+
         var messages = new List<ChatMessage>
         {
             new(ChatRole.System, BrainPrompts.For(request.Kind)),
             new(
                 ChatRole.User,
-                $"# Task\n{request.Task}\n\n# Context\n{request.ContextJson}"),
+                $"# Task\n{request.Task}\n\n# Context\n{contextSection}"),
         };
 
         var seq = 0;
@@ -157,6 +176,37 @@ public sealed class BrainAgent(
         throw new BrainExhaustedException(options.Value.MaxToolIterations);
 
         static BrainChunk Final(int seq, string finalJson) => new() { Seq = seq, FinalJson = finalJson, IsFinal = true };
+    }
+
+    /// <summary>
+    /// Builds the scope-aware digest for a brain call. Null when the
+    /// request carries no <see cref="BrainRequest.ScopeKind"/> — the
+    /// legacy behaviour: the caller-built <c>ContextJson</c> is what the
+    /// model sees, no scope fetch happens. When <c>ScopeKind</c> is set,
+    /// <c>SubjectId</c> must be a parseable Guid; otherwise the request
+    /// is malformed and we throw <see cref="ArgumentException"/> before
+    /// any chat round-trip is issued. The digest text is what gets
+    /// prepended to <c>ContextJson</c> in the user message.
+    /// </summary>
+    /// <param name="request">The incoming brain request.</param>
+    /// <param name="cancellationToken">Cancels the digest build.</param>
+    private async Task<string?> BuildScopedDigestAsync(
+        BrainRequest request,
+        CancellationToken cancellationToken)
+    {
+        return request.ScopeKind is null
+            ? null
+            : string.IsNullOrWhiteSpace(request.SubjectId)
+            ? throw new ArgumentException(
+                "BrainRequest.SubjectId is required when BrainRequest.ScopeKind is set.",
+                nameof(request))
+            : Guid.TryParse(request.SubjectId, out var subjectId)
+            ? await memoryDigest.BuildDigestAsync(
+                new MemoryDigestRequest(request.ScopeKind, subjectId, request.Task),
+                cancellationToken)
+            : throw new ArgumentException(
+                $"BrainRequest.SubjectId must be a valid Guid when ScopeKind is set; got '{request.SubjectId}'.",
+                nameof(request));
     }
 }
 

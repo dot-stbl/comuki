@@ -1,11 +1,17 @@
 {
-  "name": "@comuki/cli",
+  "name": "@dot-stbl/comuki",
   "version": "0.2.0",
-  "private": true,
-  "type": "module",
-  "exports": {
-    ".": "./src/index.tsx"
+  "description": "Comuki CLI — terminal client for the agent orchestration platform",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dot-stbl/comuki.git"
+  },
+  "keywords": ["cli", "agent", "orchestration", "ai", "terminal"],
+  "license": "MIT",
+  "type": "module",
   "bin": {
     "comuki": "./bin/comuki.ts"
   },

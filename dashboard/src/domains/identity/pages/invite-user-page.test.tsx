@@ -13,6 +13,7 @@ import { ThemeProvider } from "@/app/theme-provider"
 import { InviteUserPage } from "@/domains/identity/pages/invite-user-page"
 import { isIdentityTab, type IdentityTab } from "@/domains/identity/model/tabs"
 import { IdentityPage } from "@/domains/identity/pages/identity-page"
+import * as identityStore from "@/shared/api/mock/identity.store"
 import {
   listSeedUsers,
   resetSeedIdentity,
@@ -144,10 +145,10 @@ describe("a new account lands on its own screen", () => {
 
     await screen.findByRole("heading", { name: "New user" })
 
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText("name required"), {
       target: { value: "Ines Duarte" },
     })
-    fireEvent.change(screen.getByLabelText("address"), {
+    fireEvent.change(screen.getByLabelText("address required"), {
       target: { value: "ines@plexor.dev" },
     })
     fireEvent.click(submitButton())
@@ -178,10 +179,10 @@ describe("a new account lands on its own screen", () => {
       throw new Error("seed has no users to assert against")
     }
 
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText("name required"), {
       target: { value: "Somebody new" },
     })
-    fireEvent.change(screen.getByLabelText("address"), {
+    fireEvent.change(screen.getByLabelText("address required"), {
       target: { value: address },
     })
     fireEvent.click(submitButton())
@@ -203,7 +204,7 @@ describe("leaving a half-filled form", () => {
     const router = mount(["/identity", "/identity/users/new"])
 
     await screen.findByRole("heading", { name: "New user" })
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText("name required"), {
       target: { value: "Ines" },
     })
     fireEvent.click(screen.getByRole("link", { name: "identity" }))
@@ -227,7 +228,7 @@ describe("leaving a half-filled form", () => {
     const router = mount(["/identity", "/identity/users/new"])
 
     await screen.findByRole("heading", { name: "New user" })
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText("name required"), {
       target: { value: "Ines" },
     })
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
@@ -242,10 +243,10 @@ describe("a shift that may not administer identity", () => {
     mount(["/identity/users/new"], ["operator"])
 
     await screen.findByRole("heading", { name: "New user" })
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText("name required"), {
       target: { value: "Ines" },
     })
-    fireEvent.change(screen.getByLabelText("address"), {
+    fireEvent.change(screen.getByLabelText("address required"), {
       target: { value: "ines@plexor.dev" },
     })
 
@@ -257,5 +258,53 @@ describe("a shift that may not administer identity", () => {
     const before = listSeedUsers().length
     fireEvent.click(submit)
     expect(listSeedUsers().length).toBe(before)
+  })
+})
+
+describe("a write the platform refuses", () => {
+  /* The failure this whole screen used to have no answer for: the button
+     stopped being busy and nothing else happened, so a refused invitation and
+     a successful one looked the same from the operator's chair. */
+  it("says why, in the host's own words rather than the transport's", async () => {
+    const refusal = Object.assign(new Error("request failed 409"), {
+      status: 409,
+      data: { detail: "that address belongs to a deactivated account" },
+    })
+    const write = vi
+      .spyOn(identityStore, "createSeedUser")
+      .mockImplementation(() => {
+        throw refusal
+      })
+
+    try {
+      mount(["/identity/users/new"])
+
+      await screen.findByRole("heading", { name: "New user" })
+      fireEvent.change(screen.getByLabelText("name required"), {
+        target: { value: "Ines Duarte" },
+      })
+      fireEvent.change(screen.getByLabelText("address required"), {
+        target: { value: "ines@plexor.dev" },
+      })
+      fireEvent.click(submitButton())
+
+      const band = await waitFor(() => {
+        const found = document.querySelector('[data-test="invite-failure"]')
+        expect(found).toBeTruthy()
+        return found as HTMLElement
+      })
+      // The host's `detail`, not `error.message`: "request failed 409" is a
+      // reading about the wire, not about the act.
+      expect(band.textContent).toContain(
+        "that address belongs to a deactivated account"
+      )
+      expect(band.textContent).not.toContain("request failed 409")
+      // And the form is still standing, with what was typed still in it.
+      expect(
+        (screen.getByLabelText("address required") as HTMLInputElement).value
+      ).toBe("ines@plexor.dev")
+    } finally {
+      write.mockRestore()
+    }
   })
 })

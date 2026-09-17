@@ -5,12 +5,14 @@ import { toast } from "sonner"
 
 import { useRevokeRoleMutation } from "@/domains/identity/api/queries"
 import type { GrantRow } from "@/domains/identity/model/types"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { useCan, useSession } from "@/shared/session"
 import {
   Button,
   ConfirmDialog,
   DataTable,
   DataTableToolbar,
+  Notice,
   Tooltip,
   applyDataFilters,
   buttonClass,
@@ -132,6 +134,23 @@ export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
           }
         />
       </div>
+
+      {/* A revoke that did not land, above the table that still shows the
+          grant it failed to take away. The host's own sentence — a refusal
+          here is usually a rule ("the last platform admin keeps their grant"),
+          which the transport's status line cannot say. */}
+      {revokeRole.error ? (
+        <div className={styles.failure}>
+          <Notice tone="bad" data-test="grant-revoke-failure">
+            {requestFailureMessage(
+              revokeRole.error,
+              "The platform refused to revoke the grant."
+            )}{" "}
+            Nothing was revoked — the grant below is still in force.
+          </Notice>
+        </div>
+      ) : null}
+
       <div className={styles.tableArea}>
         <DataTable
           columns={columns}

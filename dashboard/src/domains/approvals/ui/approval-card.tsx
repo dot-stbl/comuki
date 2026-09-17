@@ -9,7 +9,7 @@ import { useRunsQuery } from "@/domains/runs/api/queries"
 import { RunGraph } from "@/domains/runs/ui/run-graph"
 import { cn } from "@/shared/lib/utils"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
-import { Button, Tooltip } from "@/shared/ui"
+import { Button, Surface, Tooltip } from "@/shared/ui"
 
 import { ApprovalRiskBadge, ApprovalTypeBadge } from "./approval-badges"
 import { APPROVAL_TYPE_META } from "./approval-type-meta"
@@ -76,11 +76,11 @@ export function ApprovalCard({
     approval.assumptions.length > 0
 
   return (
-    <article
-      className={styles.card}
-      data-test="approval-card"
-      data-approval={approval.id}
-    >
+    /* The kit's `Surface`, which is byte for byte what this file's own `.card`
+       already was — hairlines on four sides, the lane material, the surface
+       step of the corner scale. `as="article"` keeps the document meaning:
+       chrome is the kit's, semantics are the screen's. */
+    <Surface as="article" bound="all" data-test="approval-card">
       <header className={styles.head}>
         <ApprovalTypeBadge type={approval.type} />
         <span className={styles.app}>{approval.app}</span>
@@ -211,6 +211,6 @@ export function ApprovalCard({
           ) : null}
         </div>
       ) : null}
-    </article>
+    </Surface>
   )
 }

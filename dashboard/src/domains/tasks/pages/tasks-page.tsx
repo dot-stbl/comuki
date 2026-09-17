@@ -29,6 +29,8 @@ import {
   Button,
   DataTable,
   DataTableToolbar,
+  ScreenState,
+  Skeleton,
   Tooltip,
   buttonClass,
   hasActiveFilters,
@@ -127,7 +129,7 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
       }
       dispatchMutate(task.id, {
         onSuccess: () => {
-          toast.message("Dispatched to orchestrator", {
+          toast.success("Dispatched to orchestrator", {
             description: task.title,
           })
         },
@@ -223,48 +225,17 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
               </Tooltip>
             )
           }
-        />
-      }
-    >
-      <div className={styles.screen}>
-        {isLoading ? (
-          <div className={styles.skeleton} data-test="tasks-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
-        ) : null}
-
-        {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>The backlog did not load</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
-              <Tooltip content="Retry">
-                <Button
-                  size="icon-sm"
-                  data-test="tasks-retry"
-                  aria-label="Retry"
-                  onClick={() => {
-                    void refetch()
-                  }}
-                >
-                  <RotateCw aria-hidden="true" />
-                </Button>
-              </Tooltip>
-            </span>
-          </div>
-        ) : null}
-
-        {ready ? (
-          <>
-            <div className={styles.toolbar}>
+          /* The filter bar rides in the header rather than above the table,
+             which is the contract on `PageHeader` and what `runs-page` is the
+             worked example of: the header is the band that never scrolls, and
+             these are the controls that decide which rows the screen shows. A
+             filter that can scroll away from the list it narrows is a filter
+             somebody has to go looking for. The screen still owns `filters`
+             and `columnVisibility`, and the same values still reach the same
+             table — only the bar moved, and the local height chain that used
+             to pin it went with it. */
+          filters={
+            ready ? (
               <DataTableToolbar
                 columns={columns}
                 filters={filters}
@@ -277,27 +248,87 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
                   </span>
                 }
               />
-            </div>
-            <div className={styles.tableArea}>
-              <DataTable
-                columns={columns}
-                data={shown}
-                getRowId={getTaskId}
-                density="compact"
-                columnVisibility={columnVisibility}
-                onColumnVisibilityChange={setColumnVisibility}
-                sorting={sorting}
-                onSortingChange={setSorting}
-                columnSizing={columnSizing}
-                onColumnSizingChange={setColumnSizing}
-                emptyLabel={
-                  hasActiveFilters(filters)
-                    ? "no tasks match the current filters"
-                    : "the backlog is empty"
-                }
-              />
-            </div>
-          </>
+            ) : null
+          }
+        />
+      }
+    >
+      <div className={styles.screen}>
+        {isLoading ? (
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="gutter"
+            fill
+            label="Loading the backlog"
+            data-test="tasks-loading"
+          />
+        ) : null}
+
+        {isError ? (
+          <ScreenState
+            kind="error"
+            title="The backlog did not load"
+            description={
+              error instanceof Error ? error.message : "Unknown error"
+            }
+            inset="gutter"
+            data-test="tasks-error"
+            action={
+              <Tooltip content="Retry">
+                <Button
+                  size="icon-sm"
+                  data-test="tasks-retry"
+                  aria-label="Retry"
+                  onClick={() => {
+                    void refetch()
+                  }}
+                >
+                  <RotateCw aria-hidden="true" />
+                </Button>
+              </Tooltip>
+            }
+          />
+        ) : null}
+
+        {/* A dispatch that the orchestrator refused. Said on the screen rather
+            than in a toast, and it stays said: the success of this act is
+            already a toast, and a toast for the failure would be the one of
+            the two readings that disappears on its own while the row it is
+            about is still sitting in the backlog looking untouched. Inline,
+            `role="alert"`, and it names what did not move. */}
+        {dispatchTask.error ? (
+          <p
+            className={styles.failure}
+            role="alert"
+            data-test="tasks-dispatch-failed"
+          >
+            {dispatchTask.error instanceof Error
+              ? dispatchTask.error.message
+              : "The orchestrator did not take that."}{" "}
+            Nothing was queued — the ticket is still in the backlog.
+          </p>
+        ) : null}
+
+        {ready ? (
+          <div className={styles.tableArea}>
+            <DataTable
+              columns={columns}
+              data={shown}
+              getRowId={getTaskId}
+              density="compact"
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              columnSizing={columnSizing}
+              onColumnSizingChange={setColumnSizing}
+              emptyLabel={
+                hasActiveFilters(filters)
+                  ? "no tasks match the current filters"
+                  : "the backlog is empty"
+              }
+            />
+          </div>
         ) : null}
       </div>
     </AppShell>

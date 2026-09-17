@@ -27,8 +27,13 @@ function mount(roles: Role[], taken: string[] = []) {
   return {
     onCreate,
     onCancel,
-    name: screen.getByLabelText("name"),
-    slug: screen.getByLabelText("slug") as HTMLInputElement,
+    /* `/^name/`, not `"name"`: the field is marked required, and the marker is
+       a real word inside the label — so the accessible name is "name required"
+       and an exact match stops finding it. The marker is deliberately not
+       hidden from assistive tech (see `RequiredMark` in the kit), so the
+       matcher is what gives here, not the label. */
+    name: screen.getByLabelText(/^name/),
+    slug: screen.getByLabelText(/^slug/) as HTMLInputElement,
     repo: screen.getByLabelText("git profile repository"),
     create: screen.getByRole("button", { name: "Create project" }),
     cancel: screen.getByRole("button", { name: "Cancel" }),
@@ -149,7 +154,7 @@ describe("creating a project", () => {
     // would be asking about nothing.
     expect(onDirtyChange).toHaveBeenLastCalledWith(false)
 
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText(/^name/), {
       target: { value: "Vega" },
     })
     expect(onDirtyChange).toHaveBeenLastCalledWith(true)

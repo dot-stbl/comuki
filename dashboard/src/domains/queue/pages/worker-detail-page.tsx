@@ -7,7 +7,15 @@ import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
 import { cn } from "@/shared/lib/utils"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
-import { Button, ConfirmDialog, Section, Tooltip } from "@/shared/ui"
+import {
+  Button,
+  ConfirmDialog,
+  ScreenState,
+  Section,
+  Skeleton,
+  StateText,
+  Tooltip,
+} from "@/shared/ui"
 
 import { formatDuration } from "@/domains/runs/model/format"
 import {
@@ -266,27 +274,29 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
     >
       <div className={styles.screen}>
         {isLoading ? (
-          <div className={styles.skeleton} data-test="worker-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="none"
+            label="Loading the worker"
+            data-test="worker-loading"
+          />
         ) : null}
 
         {/* A load failure is a third thing, and the only one of the three that
             is an error. The container being gone is not a failure of this
             screen; this is. */}
         {isError ? (
-          <div className={styles.state} role="alert" data-test="worker-error">
-            <p className={styles.stateTitle}>Couldn&apos;t load the pool</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="Couldn't load the pool"
+            description={
+              error instanceof Error ? error.message : "Unknown error"
+            }
+            /* `none`: every region on this page already pays for its own room,
+               so the state stands on the same edge they do. */
+            inset="none"
+            data-test="worker-error"
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -299,8 +309,8 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {failure ? (
@@ -450,7 +460,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                    answer is the ids and the ways to look them up, not a blank
                    region that reads as a rendering fault. */
                 <div className={styles.work}>
-                  <p className={styles.stateBody}>
+                  <p className={styles.workNote}>
                     Holding an item the queue has not sent with this payload.
                   </p>
                   <div className={styles.workFacts}>
@@ -599,24 +609,32 @@ function TornDown({
   item: QueueItem | null
 }) {
   return (
-    <div className={styles.state} data-test="worker-torn-down">
-      <p className={styles.stateTitle}>This container is gone</p>
-      <p className={styles.stateBody}>
-        <span className={styles.figure}>{worker.id}</span> was torn down while
-        this page was open. A stopped container is not kept — there is no record
-        of it to go back to, and there is not meant to be. Workers are raised
-        for the work in front of them and removed when it is done or when
-        somebody stops them; this is the pool behaving the way it is configured
-        to, not a failure.
-      </p>
-
+    <ScreenState
+      /* Not `error`, and not drawn as one: a container going is the pool doing
+         what it is configured to do. `notFound` is the kind that reads as an
+         ordinary arrival rather than an alarm. */
+      kind="notFound"
+      title="This container is gone"
+      description={
+        <>
+          <span className={styles.figure}>{worker.id}</span> was torn down while
+          this page was open. A stopped container is not kept — there is no
+          record of it to go back to, and there is not meant to be. Workers are
+          raised for the work in front of them and removed when it is done or
+          when somebody stops them; this is the pool behaving the way it is
+          configured to, not a failure.
+        </>
+      }
+      inset="none"
+      data-test="worker-torn-down"
+    >
       {item ? (
         <>
-          <p className={styles.stateBody}>
+          <StateText>
             It was holding <span className={styles.figure}>{item.label}</span>.
             That work did not go with it: the lease was released and the item
             went back to the queue for another worker to claim.
-          </p>
+          </StateText>
           <div className={styles.exits}>
             <Link
               to="/queue"
@@ -637,10 +655,10 @@ function TornDown({
           </div>
         </>
       ) : (
-        <p className={styles.stateBody}>
+        <StateText>
           It was idle when it went, so it was holding nothing and nothing
           returned to the queue.
-        </p>
+        </StateText>
       )}
 
       <div className={styles.exits}>
@@ -652,7 +670,7 @@ function TornDown({
           queue &amp; workers
         </Link>
       </div>
-    </div>
+    </ScreenState>
   )
 }
 
@@ -674,16 +692,24 @@ function TornDown({
  */
 function NotFound({ workerId }: { workerId: string }) {
   return (
-    <div className={styles.state} data-test="worker-not-found">
-      <p className={styles.stateTitle}>
-        No worker called <span className={styles.figure}>{workerId}</span>
-      </p>
-      <p className={styles.stateBody}>
-        Nothing in the pool answers to that id. Workers are ephemeral — one is
-        raised for a piece of work and removed after it — so an id out of
-        yesterday&apos;s log, an old bookmark or a link that lost its tail all
-        land here, and none of them mean anything is wrong.
-      </p>
+    <ScreenState
+      kind="notFound"
+      title={
+        <>
+          No worker called <span className={styles.figure}>{workerId}</span>
+        </>
+      }
+      description={
+        <>
+          Nothing in the pool answers to that id. Workers are ephemeral — one is
+          raised for a piece of work and removed after it — so an id out of
+          yesterday&apos;s log, an old bookmark or a link that lost its tail all
+          land here, and none of them mean anything is wrong.
+        </>
+      }
+      inset="none"
+      data-test="worker-not-found"
+    >
       <div className={styles.exits}>
         <Link
           to="/queue"
@@ -701,7 +727,7 @@ function NotFound({ workerId }: { workerId: string }) {
           queue &amp; workers
         </Link>
       </div>
-    </div>
+    </ScreenState>
   )
 }
 

@@ -166,8 +166,14 @@ export function createdReading(key: VirtualKey): string {
   return relativeDays(key.createdAgoSec)
 }
 
-/** Seconds, in the TTL column's own words: `today`, `3 days ago`. */
-function relativeDays(seconds: number): string {
+/**
+ * Seconds, in the TTL column's own words: `today`, `3 days ago`.
+ *
+ * Exported because the proxy panel needs the same sentence for "since when is
+ * the switch in this position", and it had been carrying its own copy — the
+ * same arithmetic, one file away, with different words for the same day.
+ */
+export function relativeDays(seconds: number): string {
   const days = Math.round(seconds / DAY)
   if (days === 0) {
     return seconds > 0 ? "earlier today" : "today"

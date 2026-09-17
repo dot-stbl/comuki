@@ -25,8 +25,8 @@ function mount(roles: Role[] = ["platform-admin"], taken: string[] = []) {
   return {
     onInvite,
     onCancel,
-    name: screen.getByLabelText("name"),
-    email: screen.getByLabelText("address") as HTMLInputElement,
+    name: screen.getByLabelText("name required"),
+    email: screen.getByLabelText("address required") as HTMLInputElement,
     // The kit's select is a listbox now, so its value is written through the
     // form element React Aria keeps beside the trigger — the same one a
     // `<form>` submit and browser autofill see.
@@ -146,7 +146,7 @@ describe("leaving the form", () => {
 
     expect(onDirtyChange).toHaveBeenLastCalledWith(false)
 
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText("name required"), {
       target: { value: "Ines" },
     })
     expect(onDirtyChange).toHaveBeenLastCalledWith(true)
@@ -167,5 +167,35 @@ describe("a shift that may not administer identity", () => {
 
     fireEvent.click(submit)
     expect(onInvite).not.toHaveBeenCalled()
+  })
+})
+
+describe("what the form is honest about before it refuses", () => {
+  /* Both fields gate the act and neither used to say so: the button watches
+     the name, the handler watches the address. Marking one and not the other
+     would have promised a rule this form does not have. */
+  it("marks both gating fields required, where a screen reader hears it", () => {
+    const { name, email } = mount()
+
+    expect(name.getAttribute("aria-required")).toBe("true")
+    expect(email.getAttribute("aria-required")).toBe("true")
+    // And never the native attribute: the form tells its own validation story.
+    expect(name.hasAttribute("required")).toBe(false)
+    expect(
+      document.querySelectorAll('[data-test="field-required"]').length
+    ).toBe(2)
+  })
+
+  it("shows the address rule once the field has been edited, not only after a refusal", () => {
+    const { email } = mount(["platform-admin"], ["ines@plexor.dev"])
+
+    // Nothing yet: an untouched field has not been answered.
+    expect(document.querySelector('[data-test="field-error"]')).toBeNull()
+
+    fireEvent.change(email, { target: { value: "ines@plexor.dev" } })
+
+    expect(
+      document.querySelector('[data-test="field-error"]')?.textContent
+    ).toContain("somebody already has that address")
   })
 })

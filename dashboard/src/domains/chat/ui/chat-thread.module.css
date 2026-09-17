@@ -72,7 +72,7 @@
   inset-block-end: var(--s4);
   inset-inline-start: 50%;
   transform: translateX(-50%);
-  z-index: 1;
+  z-index: var(--z-raised);
   background: var(--surface-raised);
   box-shadow: var(--shadow-lift);
 }
@@ -165,9 +165,12 @@
 .typingDot {
   inline-size: calc(var(--h-meter) * 0.75);
   block-size: calc(var(--h-meter) * 0.75);
-  /* The legacy pill on an equal-sided box is a circle — the one shape in the
-     corner vocabulary a data dot is allowed to be. */
-  border-radius: var(--r-pill);
+  /* The mark corner on an equal-sided box: at 6px the two radii already add
+     up to the side, so the browser clamps them and draws the circle a data dot
+     is allowed to be. `--r-pill` is a retired step — the form language is
+     rectilinear and the switch beside it makes the same point — so the circle
+     is taken from the live scale rather than from the legacy one. */
+  border-radius: var(--r-xs);
   background: var(--primary);
 }
 

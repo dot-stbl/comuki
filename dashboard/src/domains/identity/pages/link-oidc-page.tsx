@@ -11,6 +11,7 @@ import {
 } from "@/domains/identity/api/queries"
 import type { LinkOidcInput } from "@/domains/identity/model/types"
 import { LinkOidcForm } from "@/domains/identity/ui/link-oidc-form"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { ConfirmDialog, Notice, Tooltip, buttonClass } from "@/shared/ui"
 
 export interface LinkOidcPageProps {
@@ -160,6 +161,21 @@ export function LinkOidcPage({ userId }: LinkOidcPageProps) {
       crumbs={crumbs}
       summary={`The provider's subject for ${user.email}. Roles stay here — the provider says who they are, not what they hold.`}
     >
+      {/* The page already had two Notices for the states it can arrive in;
+          this is the one for the state it can be left in. The host's own
+          sentence, because "a subject is written once" is exactly the kind of
+          rule the platform answers with and the transport does not. */}
+      {linkOidc.error ? (
+        <Notice tone="bad" data-test="link-failure">
+          {requestFailureMessage(
+            linkOidc.error,
+            "The platform refused to write the subject."
+          )}{" "}
+          Nothing was linked — the account is still local only, and the subject
+          below is still exactly as you typed it.
+        </Notice>
+      ) : null}
+
       <LinkOidcForm
         user={user}
         busy={linkOidc.isPending}

@@ -45,6 +45,7 @@ export function InviteUserForm({
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [arrival, setArrival] = useState("invite")
+  const [emailTouched, setEmailTouched] = useState(false)
   const [attempted, setAttempted] = useState(false)
 
   const address = email.trim().toLowerCase()
@@ -56,6 +57,13 @@ export function InviteUserForm({
         : takenAddresses.includes(address)
           ? "somebody already has that address"
           : null
+
+  /* Edited-or-already-tried, the one model this product shows a field error
+     on — `projects/ui/create-project-form` is the reference. Waiting for the
+     submit alone leaves somebody typing into a box that already knows the
+     address is taken; showing it before either has happened scolds an empty
+     field nobody has reached yet. */
+  const showAddressError = (emailTouched || attempted) && addressError
 
   const dirty = name !== "" || email !== "" || arrival !== "invite"
 
@@ -82,6 +90,11 @@ export function InviteUserForm({
         <TextField
           id="user-name"
           label="name"
+          /* Both fields carry the marker, because both genuinely gate the
+             act — the button refuses without a name, and the handler refuses
+             without a valid address. Marking only the one the button watches
+             would promise a rule this form does not have. */
+          required
           autoFocus
           value={name}
           disabled={busy}
@@ -91,14 +104,18 @@ export function InviteUserForm({
         <TextField
           id="user-email"
           label="address"
+          required
           type="email"
           value={email}
           disabled={busy}
           spellCheck={false}
           autoComplete="off"
           placeholder="name@example.com"
-          error={attempted ? addressError : null}
-          onValueChange={setEmail}
+          error={showAddressError ? addressError : null}
+          onValueChange={(next) => {
+            setEmailTouched(true)
+            setEmail(next)
+          }}
         />
         <SelectField
           id="user-arrival"

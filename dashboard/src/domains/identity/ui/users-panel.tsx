@@ -10,6 +10,7 @@ import {
   ConfirmDialog,
   DataTable,
   DataTableToolbar,
+  Notice,
   Tooltip,
   applyDataFilters,
   buttonClass,
@@ -148,6 +149,19 @@ export function UsersPanel({ users, initialFilter }: UsersPanelProps) {
           }
         />
       </div>
+
+      {/* A write that did not land. The sentence is the act's own — see
+          `use-user-disabled.ts` — so the list and the person's own page say
+          the same thing about the same refusal. */}
+      {disable.failure ? (
+        <div className={styles.failure}>
+          <Notice tone="bad" data-test="user-disable-failure">
+            {disable.failure} Nothing changed — the account below is still as it
+            was.
+          </Notice>
+        </div>
+      ) : null}
+
       <div className={styles.tableArea}>
         <DataTable
           columns={columns}

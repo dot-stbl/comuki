@@ -253,6 +253,7 @@ export function ConnectSourceForm({
           <TextField
             id="connect-name"
             label={targetLabel(kind)}
+            required
             value={name}
             disabled={busy}
             placeholder={targetPlaceholder(kind)}
@@ -313,6 +314,7 @@ export function ConnectSourceForm({
           <TextField
             id="connect-secret-env"
             label="secret env var"
+            required
             value={secretEnvRef}
             disabled={busy}
             placeholder="COMUKI_GITHUB_TOKEN"
@@ -336,6 +338,7 @@ export function ConnectSourceForm({
                 id="connect-mock-secret"
                 label="credential (mock only)"
                 type="password"
+                required
                 value={mockSecret}
                 disabled={busy}
                 autoComplete="off"

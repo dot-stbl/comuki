@@ -70,44 +70,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s8) var(--s6);
-  font-family: var(--font-ui);
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-width: var(--measure-note);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-/* Rows, not bars: what is loading is a list, and a skeleton that lies about
-   the shape of what is coming is worse than none. */
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  flex: 1 1 0;
-  min-height: 0;
-  padding: var(--s6);
-}
-
-.skeletonBar {
-  block-size: var(--h-meter);
-  flex: 0 0 auto;
-  border-radius: var(--r-xs);
-  background: var(--muted);
-}
+/* The error state and the loading bars are the kit's `ScreenState` and
+   `Skeleton` now — this sheet carried a hand-copy of both. What the screen
+   still owns is where they sit, and that is the `inset` prop at the call
+   site rather than a class here. */

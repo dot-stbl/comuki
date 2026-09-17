@@ -11,6 +11,7 @@ import {
 } from "@/domains/sources/api/mutations"
 import type { ProbeResult } from "@/domains/sources/model/types"
 import { ConnectSourceForm } from "@/domains/sources/ui/connect-source-form"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { can, useSession } from "@/shared/session"
 import { ConfirmDialog, Notice } from "@/shared/ui"
 
@@ -98,8 +99,9 @@ export function ConnectSourcePage() {
     >
       {connect.error ? (
         <Notice tone="bad" data-test="connect-failure">
-          {connect.error.message} Nothing was saved — the details below are
-          still exactly as you typed them.
+          {requestFailureMessage(connect.error, "The connection was refused.")}{" "}
+          Nothing was saved — the details below are still exactly as you typed
+          them.
         </Notice>
       ) : null}
 

@@ -175,7 +175,7 @@ async function open(
   entries: string[] = ["/sources/" + NATIVE, `/sources/${NATIVE}/ticket/new`]
 ) {
   const router = mount(entries, roles, projectRoles)
-  await screen.findByLabelText("title")
+  await screen.findByLabelText(/^title/)
   return router
 }
 
@@ -338,7 +338,7 @@ describe("the page hangs off the source it files into", () => {
     // The id is named, because the operator is going to compare it with
     // whatever they pasted.
     expect(control("ticket-source-gone").textContent).toContain("src_vanished")
-    expect(screen.queryByLabelText("title")).toBeNull()
+    expect(screen.queryByLabelText(/^title/)).toBeNull()
     expect(screen.getByRole("link", { name: "Back to sources" })).toBeTruthy()
   })
 })

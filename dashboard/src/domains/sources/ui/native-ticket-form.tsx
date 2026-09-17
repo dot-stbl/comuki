@@ -90,6 +90,7 @@ export function NativeTicketForm({
         <TextField
           id="ticket-title"
           label="title"
+          required
           autoFocus
           value={title}
           disabled={busy}

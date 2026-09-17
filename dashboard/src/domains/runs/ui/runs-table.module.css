@@ -1,7 +1,15 @@
 /* Cell-level styling for the duty list. Rows are one line tall by contract,
    so anything that can run long truncates rather than wraps. */
 
+/* The identifier link. It carries the same truncation quartet the value cells
+   beside it carry: `.cell` is a flex box, so `text-overflow` declared on it is
+   dead by spec — the ellipsis has to live on the item, and the column is
+   user-resizable down to 56px. */
 .id {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-data);
   font-size: var(--t-xs);
   font-variant-numeric: tabular-nums;

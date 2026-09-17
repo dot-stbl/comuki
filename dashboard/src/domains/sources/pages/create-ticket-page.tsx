@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, RotateCw } from "lucide-react"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import { toast } from "sonner"
 
@@ -9,8 +9,21 @@ import { useCreateNativeTicket } from "@/domains/sources/api/mutations"
 import { useSourcesQuery } from "@/domains/sources/api/queries"
 import { NativeTicketForm } from "@/domains/sources/ui/native-ticket-form"
 import type { SeedTicketDraft } from "@/shared/api/mock/sources.store"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { can, projectOf, useSession } from "@/shared/session"
-import { ConfirmDialog, Notice, Tooltip, buttonClass } from "@/shared/ui"
+import {
+  Button,
+  ConfirmDialog,
+  Notice,
+  ScreenState,
+  Skeleton,
+  Tooltip,
+  buttonClass,
+} from "@/shared/ui"
+
+/* The register of facts this page waits on, in the rhythm the section's other
+   two screens wait in. */
+const SKELETON_WIDTHS = ["48%", "76%", "38%", "64%", "52%"]
 
 export interface CreateTicketPageProps {
   /** From the path. The connection the ticket is being filed into. */
@@ -40,7 +53,7 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
   const navigate = useNavigate()
   const router = useRouter()
   const session = useSession()
-  const { data, isLoading } = useSourcesQuery()
+  const { data, isLoading, isError, error, refetch } = useSourcesQuery()
   const createTicket = useCreateNativeTicket()
 
   const [dirty, setDirty] = useState(false)
@@ -93,29 +106,67 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
     { label: "new ticket" },
   ]
 
+  /* Three arrivals, not two. The list not having answered yet, the list
+     having failed, and the list having answered that no such connection
+     exists are different facts about the world, and the page used to fold the
+     first two into the third — a dropped request read as "that source is
+     gone", in the words of a stale link, with nothing to press. */
+  if (isLoading) {
+    return (
+      <FormPage title="New ticket" crumbs={crumbs}>
+        <Skeleton lines={SKELETON_WIDTHS} data-test="ticket-loading" />
+      </FormPage>
+    )
+  }
+
+  if (isError) {
+    return (
+      <FormPage title="New ticket" crumbs={crumbs}>
+        <ScreenState
+          kind="error"
+          title="Couldn't look this source up"
+          description={requestFailureMessage(error, "Unknown error")}
+          data-test="ticket-source-failed"
+          action={
+            <Tooltip content="Retry">
+              <Button
+                size="icon-sm"
+                data-test="ticket-retry"
+                aria-label="Retry"
+                onClick={() => {
+                  void refetch()
+                }}
+              >
+                <RotateCw aria-hidden="true" />
+              </Button>
+            </Tooltip>
+          }
+        />
+      </FormPage>
+    )
+  }
+
   if (!connection) {
     return (
       <FormPage title="New ticket" crumbs={crumbs}>
-        <Notice
-          tone={isLoading ? "warn" : "bad"}
+        <ScreenState
+          kind="notFound"
+          title="No connection with that id"
+          description={`No connection on this platform has the id ${sourceId}. A source that was disconnected while this tab sat open is the ordinary way to arrive here.`}
           data-test="ticket-source-gone"
-        >
-          {isLoading
-            ? "Looking this source up."
-            : `No connection on this platform has the id ${sourceId}. A source that was disconnected while this tab sat open is the ordinary way to arrive here.`}
-        </Notice>
-        <span>
-          <Tooltip content="Back to sources">
-            <Link
-              to="/sources"
-              search={{}}
-              aria-label="Back to sources"
-              className={buttonClass({ size: "icon-sm" })}
-            >
-              <ArrowLeft aria-hidden="true" />
-            </Link>
-          </Tooltip>
-        </span>
+          action={
+            <Tooltip content="Back to sources">
+              <Link
+                to="/sources"
+                search={{}}
+                aria-label="Back to sources"
+                className={buttonClass({ size: "icon-sm" })}
+              >
+                <ArrowLeft aria-hidden="true" />
+              </Link>
+            </Tooltip>
+          }
+        />
       </FormPage>
     )
   }
@@ -131,8 +182,8 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
     >
       {createTicket.error ? (
         <Notice tone="bad" data-test="ticket-failure">
-          {createTicket.error.message} Nothing was filed — what you typed is
-          still here.
+          {requestFailureMessage(createTicket.error, "The ticket was refused.")}{" "}
+          Nothing was filed — what you typed is still here.
         </Notice>
       ) : null}
 

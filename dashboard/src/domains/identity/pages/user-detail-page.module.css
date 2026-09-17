@@ -223,28 +223,14 @@
 
 /* --- states --- */
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  min-inline-size: 0;
-}
+/* The error and the not-found are the kit's `ScreenState` with `inset="none"`,
+   and the loading is its `Skeleton` with the same — this column has already
+   paid for its own room. The sentence under both used to be measured at
+   `--measure-prose` here and at 52ch everywhere else; the kit's 52ch is the
+   one measure now, and the difference was never a decision anybody took.
 
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--text);
-}
-
-.stateBody {
-  margin: 0;
-  max-inline-size: var(--measure-prose);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--text-muted);
-}
+   `.id` stays: it is handed to `ScreenState` inside the not-found's own
+   description, which is the whole reason that prop takes markup. */
 
 /* The id off the URL — the missing thing, named. It is the one string a person
    copies out of this state, so it is selected as a unit. */
@@ -253,18 +239,4 @@
   color: var(--text);
   overflow-wrap: anywhere;
   user-select: all;
-}
-
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  min-inline-size: 0;
-}
-
-.skeletonBar {
-  block-size: var(--h-meter);
-  flex: 0 0 auto;
-  border-radius: var(--r-xs);
-  background: var(--muted);
 }

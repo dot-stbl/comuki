@@ -133,7 +133,10 @@ function mountIntake(roles: Role[], projectRoles: Record<string, Role[]> = {}) {
     onCreate,
     project,
     options: selectValues(project),
-    title: screen.getByLabelText("title"),
+    /* `title` is a required field, so the word `required` rides inside its
+       label and the accessible name is `"title required"`. Anchored rather
+       than exact, which keeps the query on the field and off the marking. */
+    title: screen.getByLabelText(/^title/),
     create: screen.getByRole("button", { name: "Create & queue" }),
   }
 }

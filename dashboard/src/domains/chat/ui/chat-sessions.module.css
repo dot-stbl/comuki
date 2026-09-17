@@ -66,7 +66,7 @@
 }
 
 .row:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline: 2px solid var(--ring-wash);
   outline-offset: -2px;
   border-color: var(--ring);
 }
@@ -80,7 +80,9 @@
   position: absolute;
   inset-block: var(--s1);
   inset-inline-start: 0;
-  inline-size: 2px;
+  /* Two hairlines, the way the product's meters spell a 2px bar — the one
+     thickness in the vocabulary above a rule and below a control. */
+  inline-size: calc(var(--hairline) * 2);
   border-radius: var(--hairline);
   background: var(--primary);
 }

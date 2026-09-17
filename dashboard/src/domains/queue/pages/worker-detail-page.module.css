@@ -178,6 +178,18 @@
   color: var(--text);
 }
 
+/* The half-sentence that stands where the step's name would be when the
+   payload does not carry the item. Prose at the work region's own measure — it
+   used to borrow the state block's body class, which is how a screen ends up
+   unable to delete a state style without breaking a section. */
+.workNote {
+  margin: 0;
+  max-inline-size: var(--measure-prose);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
 /* The identifiers under it, with the item's own age riding at the end. */
 .workFacts {
   display: flex;
@@ -219,32 +231,11 @@
 
 /* --- states --- */
 
-/* Torn down, not found and the load failure all take this shape. They are
-   three different sentences and only one of them is an error, so the shape is
-   shared and the hue is not: nothing here is tinted, and the error state adds
-   its own `role="alert"` at the call site rather than a colour. */
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s4);
-  min-inline-size: 0;
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-inline-size: var(--measure-prose);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
+/* Torn down, not found and the load failure all take one shape, and that shape
+   is the kit's `ScreenState` now — three different sentences, only one of them
+   an error, and the `role="alert"` follows from the kind rather than from the
+   call site. What stays here is what is this screen's own: the figures a
+   sentence quotes and the row of exits under it. */
 
 /* The figures a state's sentence quotes are values, so they change voice: a
    number the operator is being asked to trust should look like a reading. */
@@ -263,20 +254,6 @@
   gap: var(--s3) var(--s5);
   min-inline-size: 0;
   font-size: var(--t-sm);
-}
-
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  min-inline-size: 0;
-}
-
-.skeletonBar {
-  block-size: var(--h-meter);
-  flex: 0 0 auto;
-  border-radius: var(--r-xs);
-  background: var(--muted);
 }
 
 @media (max-width: 1000px) {

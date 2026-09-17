@@ -1,50 +1,6 @@
-/* The headline reading — a large currency figure, the period it covers,
-   a delta vs the previous period, and a one-line burn-rate note. */
-
-.spend {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s3);
-  min-inline-size: 0;
-  padding: var(--s4) var(--s5);
-  border-inline-start: var(--hairline) solid var(--rule-strong);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-}
-
-.label {
-  min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
-}
-
-.figure {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s1);
-  min-inline-size: 0;
-  font-family: var(--font-data);
-  font-size: 1.875rem;
-  font-weight: var(--fw-medium);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.value {
-  color: var(--text);
-}
-
-.unit {
-  font-size: var(--t-sm);
-  font-weight: var(--fw-regular);
-  color: var(--text-faint);
-}
+/* The one line this tile has that the two beside it do not: how the period
+   compares with the one before it. The tile itself — the rule, the corner, the
+   label, the figure and the line under it — is `cost-stat.module.css`. */
 
 .delta {
   display: inline-flex;
@@ -57,6 +13,9 @@
   color: var(--text-muted);
 }
 
+/* Up is more money than last time, which on this screen is the bad direction —
+   the arrow says which way before the hue does, so the reading survives
+   greyscale. */
 .deltaUp {
   font-family: var(--font-data);
   font-size: var(--t-xs);
@@ -77,19 +36,12 @@
   color: var(--text-muted);
 }
 
+/* No previous period to compare with. Said in words rather than as "0%", which
+   would be a comparison the screen cannot actually make. */
 .deltaDash {
   font-family: var(--font-data);
 }
 
 .deltaLabel {
-  color: var(--text-muted);
-}
-
-.sub {
-  margin: 0;
-  min-inline-size: 0;
-  font-family: var(--font-ui);
-  font-size: var(--t-xs);
-  line-height: var(--lh-body);
   color: var(--text-muted);
 }

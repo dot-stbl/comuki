@@ -8,7 +8,8 @@ import { useCreateProjectMutation } from "@/domains/projects/api/mutations"
 import { useProjectsQuery } from "@/domains/projects/api/queries"
 import type { CreateProjectInput } from "@/domains/projects/model/types"
 import { CreateProjectForm } from "@/domains/projects/ui/create-project-form"
-import { ConfirmDialog } from "@/shared/ui"
+import { requestFailureMessage } from "@/shared/api/problem"
+import { ConfirmDialog, Notice } from "@/shared/ui"
 
 /**
  * Adding a project, on its own screen at its own address.
@@ -78,6 +79,20 @@ export function CreateProjectPage() {
       ]}
       summary="A project owns its applications, its runs and its budget. The slug is the handle it is known by everywhere else."
     >
+      {/* The create did not land. Said on the page, above the form, the way
+          `create-task-page` says it — a failed mutation used to do nothing
+          here at all except stop the button spinning, which is the same thing
+          a successful one looks like from across a desk. */}
+      {createProject.error ? (
+        <Notice tone="bad" data-test="create-failure">
+          {requestFailureMessage(
+            createProject.error,
+            "The project was not created."
+          )}{" "}
+          Nothing was created — what you typed is still exactly as you left it.
+        </Notice>
+      ) : null}
+
       <CreateProjectForm
         takenSlugs={takenSlugs}
         busy={createProject.isPending}

@@ -10,6 +10,7 @@ import {
 import {
   DataTable,
   DataTableToolbar,
+  ScreenState,
   SwitchField,
   Tooltip,
   applyDataFilters,
@@ -134,29 +135,38 @@ export function VerifyProjectPanel({
       ) : null}
 
       {commands.length === 0 ? (
-        <div className={styles.empty} data-test="verify-empty">
-          <p className={styles.emptyTitle}>No checks are declared</p>
-          <p className={styles.emptyBody}>
-            The gate is looking for{" "}
-            <span className={styles.code}>{project.source.path}</span> in{" "}
-            <span className={styles.code}>{project.source.repo}</span> at{" "}
-            <span className={styles.code}>{project.source.ref}</span> and found
-            nothing. Commit the file there and it is picked up on the next read
-            — there is nowhere here to create one.
-          </p>
-          <Tooltip content="Open in git">
-            <a
-              className={buttonClass({ variant: "outline", size: "icon-sm" })}
-              href={project.source.url}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Open in git"
-              data-test="verify-empty-link"
-            >
-              <ExternalLink aria-hidden="true" />
-            </a>
-          </Tooltip>
-        </div>
+        /* Nothing declared at all. The state has to name the file the client
+           is expected to create, or it is an empty box — so the coordinate is
+           in the sentence and the way to it is the act. */
+        <ScreenState
+          kind="empty"
+          title="No checks are declared"
+          description={
+            <>
+              The gate is looking for{" "}
+              <span className={styles.code}>{project.source.path}</span> in{" "}
+              <span className={styles.code}>{project.source.repo}</span> at{" "}
+              <span className={styles.code}>{project.source.ref}</span> and
+              found nothing. Commit the file there and it is picked up on the
+              next read — there is nowhere here to create one.
+            </>
+          }
+          data-test="verify-empty"
+          action={
+            <Tooltip content="Open in git">
+              <a
+                className={buttonClass({ variant: "outline", size: "icon-sm" })}
+                href={project.source.url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Open in git"
+                data-test="verify-empty-link"
+              >
+                <ExternalLink aria-hidden="true" />
+              </a>
+            </Tooltip>
+          }
+        />
       ) : (
         <>
           <div className={styles.toolbar}>

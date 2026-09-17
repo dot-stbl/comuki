@@ -6,7 +6,11 @@
 .scrim {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  /* Every scrim in the product sits on the same rung; which one paints on
+     top is DOM order, which is the same thing as "whichever was opened
+     last". The 100 this carried out-numbered the confirm dialog it opens,
+     so a revoke asked from inside the drawer was asked underneath it. */
+  z-index: var(--z-overlay);
   display: flex;
   /* Docked to the inline-end edge, full height: the table stays visible
      behind it, so the row that opened the drawer stays the row the operator

@@ -158,7 +158,7 @@ const routeTree = rootRoute.addChildren(
   )
 )
 
-function mount(runId: string = "seed-run") {
+function mount(runId: string) {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [`/runs/${runId}`] }),
@@ -172,7 +172,7 @@ function mount(runId: string = "seed-run") {
             new QueryClient({ defaultOptions: { queries: { retry: false } } })
           }
         >
-          <SlotContext value={<RunDetailPage />}>
+          <SlotContext value={<RunDetailPage runId={runId} />}>
             <RouterProvider router={router} />
           </SlotContext>
         </QueryClientProvider>
@@ -188,7 +188,7 @@ const SEEDED_RUN = "8f3c2a91"
 
 describe("what the screen answers before the run is on it", () => {
   it("draws the run once it arrives", async () => {
-    mount()
+    mount(SEEDED_RUN)
 
     await waitFor(() => expect(at("run-graph")).not.toBeNull())
 
@@ -201,7 +201,7 @@ describe("what the screen answers before the run is on it", () => {
   })
 
   it("tells a stale link apart from a broken backend, and names the id", async () => {
-    mount()
+    mount("no_such_run")
 
     const missing = await waitFor(() => {
       const node = at("run-not-found")
@@ -223,7 +223,7 @@ describe("what the screen answers before the run is on it", () => {
 
   it("calls a failed read a failure, and offers the retry", async () => {
     seedFails = true
-    mount()
+    mount(SEEDED_RUN)
 
     const failed = await waitFor(() => {
       const node = at("run-error")
@@ -241,7 +241,7 @@ describe("what the screen answers before the run is on it", () => {
   })
 
   it("says whose run this is, in the voice a value is written in", async () => {
-    mount()
+    mount(SEEDED_RUN)
 
     await waitFor(() => expect(at("run-graph")).not.toBeNull())
 

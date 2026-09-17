@@ -36,60 +36,12 @@
 
 /* States ------------------------------------------------------------------ */
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s8) 0;
-  font-family: var(--font-ui);
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-inline-size: var(--measure-note);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-/* An empty queue is the good outcome here, so it is stated quietly rather than
-   dressed as a hole in the screen. */
-.empty {
-  display: flex;
-  align-items: center;
-  gap: var(--s3);
-  padding: var(--s8) 0;
-  font-family: var(--font-ui);
-}
-
-.emptyIcon {
-  inline-size: var(--icon-lg);
-  block-size: var(--icon-lg);
-  flex: 0 0 auto;
-  color: var(--st-success);
-}
-
-.emptyTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.emptyBody {
-  margin: 0;
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
+/* The error and the empty queue are the kit's `ScreenState`. The empty one
+   used to carry a `CheckCheck` glyph, and it was the only one of the
+   product's twenty-five states that carried anything: a mark on one state in
+   four teaches the eye to read decoration as meaning, which is the same
+   objection the kit made when `ForbiddenState` asked for a padlock. The good
+   news is in the words. */
 
 /* Blocks, not rows: what is loading is a stack of decisions, and a skeleton
    that lies about the shape of what is coming is worse than none. */

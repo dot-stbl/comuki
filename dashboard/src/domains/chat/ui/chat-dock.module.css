@@ -13,20 +13,25 @@
  * can cover is the extreme corner cell of a table — one reading on one row,
  * only at the very bottom of a scroll.
  *
- * Above the table's chrome, under everything that covers the board:
- * z-index 40 clears the data table's internal ladder (sticky head band
- * at 3, pinned seam at 4) so the trigger never slides beneath the
- * table's own furniture, while the dialog scrim (50), the evidence
- * pane (60) and the sheets' 100 tier still cover it — the dock's own
- * sheet dims and blocks its trigger like the rest of the board.
- * Escape and the bar's control are the ways out; a live trigger under
- * a modal would be a third. */
+ * Above the table's chrome, under everything that covers the board. The rung
+ * is `--z-dock`, which is what this is: chrome docked to the window's edge
+ * that the page scrolls under. It clears the data table's furniture without
+ * competing with it — the table opens its own stacking context and keeps a
+ * private `--dt-z-*` ladder inside it — and every scrim on the board sits on
+ * `--z-overlay` above it, the dialog's, the evidence pane's and the bottom
+ * sheet's alike, so the dock's own sheet dims and blocks its trigger like the
+ * rest of the board. Escape and the bar's control are the ways out; a live
+ * trigger under a modal would be a third.
+ *
+ * Named, not numbered: the rung says what sits on it and the scale in
+ * `tokens.css` decides the number, so a new overlay is placed by role rather
+ * than by out-bidding whatever number was already on screen. */
 
 .trigger {
   position: fixed;
   right: var(--page-x);
   bottom: var(--s6);
-  z-index: 40;
+  z-index: var(--z-dock);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -65,7 +70,7 @@
 }
 
 .trigger:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline: 2px solid var(--ring-wash);
   outline-offset: 1px;
   border-color: var(--ring);
 }

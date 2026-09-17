@@ -20,9 +20,10 @@ import { GateTab } from "@/domains/knowledge/ui/gate-tab"
 import { KnowledgeDetailSheet } from "@/domains/knowledge/ui/knowledge-detail-sheet"
 import { KnowledgeEntryRow } from "@/domains/knowledge/ui/knowledge-entry-row"
 import { KnowledgeSearch } from "@/domains/knowledge/ui/knowledge-search"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { env } from "@/shared/config/env"
 import { can, useSession } from "@/shared/session"
-import { Button, Section, Tooltip } from "@/shared/ui"
+import { Button, ScreenState, Section, Skeleton, Tooltip } from "@/shared/ui"
 
 import styles from "./knowledge-page.module.css"
 
@@ -119,10 +120,7 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
       padded={false}
       header={
         <PageHeader
-          breadcrumbs={[
-            { label: "configure", to: "/settings" },
-            { label: "knowledge" },
-          ]}
+          breadcrumbs={[{ label: "configure" }, { label: "knowledge" }]}
           title="Knowledge"
           summary={
             shown === "gate" ? (
@@ -139,7 +137,11 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
              would narrow neither visibly. */
           filters={
             ready && shown === "library" ? (
-              <KnowledgeSearch value={query} onValueChange={setQuery} />
+              <KnowledgeSearch
+                value={query}
+                onValueChange={setQuery}
+                className={styles.search}
+              />
             ) : undefined
           }
         />
@@ -147,24 +149,21 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
     >
       <div className={styles.screen}>
         {isLoading ? (
-          <div className={styles.skeleton} data-test="knowledge-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="page"
+            fill
+            data-test="knowledge-loading"
+          />
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>Knowledge did not load</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="Knowledge did not load"
+            description={requestFailureMessage(error, "Unknown error")}
+            inset="page"
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -177,8 +176,8 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {ready ? (
@@ -271,23 +270,44 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                   data-test="knowledge-entries"
                 >
                   {search.isError ? (
-                    <div className={styles.empty} data-test="knowledge-empty">
-                      <p className={styles.emptyTitle}>Search did not answer</p>
-                      <p className={styles.emptyBody}>
-                        {search.error instanceof Error
-                          ? search.error.message
-                          : "Unknown error"}
-                      </p>
-                    </div>
+                    /* `inset="none"` and the section's own box: the state is
+                       bounded like the rows it stands in for, so the list does
+                       not appear to have vanished. The words and the measure
+                       are the kit's. */
+                    <ScreenState
+                      kind="error"
+                      title="Search did not answer"
+                      description={requestFailureMessage(
+                        search.error,
+                        "Unknown error"
+                      )}
+                      inset="none"
+                      className={styles.empty}
+                      data-test="knowledge-empty"
+                    />
+                  ) : searching && search.isPending ? (
+                    /* Typed, not yet answered — the settle window or the first
+                       round trip. The list says it is still looking rather
+                       than that there is nothing. */
+                    <Skeleton
+                      lines={3}
+                      inset="none"
+                      label="Searching"
+                      data-test="knowledge-searching"
+                    />
                   ) : shownEntries.length === 0 ? (
-                    <div className={styles.empty} data-test="knowledge-empty">
-                      <p className={styles.emptyTitle}>No matches</p>
-                      <p className={styles.emptyBody}>
-                        {searching
+                    <ScreenState
+                      kind="empty"
+                      title="No matches"
+                      description={
+                        searching
                           ? "Nothing in the library is close enough to the query."
-                          : "Try another query over pinned rules and docs."}
-                      </p>
-                    </div>
+                          : "Try another query over pinned rules and docs."
+                      }
+                      inset="none"
+                      className={styles.empty}
+                      data-test="knowledge-empty"
+                    />
                   ) : (
                     <div className={styles.entries}>
                       {shownEntries.map((entry) => (

@@ -1,12 +1,14 @@
 import { useCallback, useMemo } from "react"
 import { RotateCw } from "lucide-react"
+import { toast } from "sonner"
 
 import { useSetVerifyEnabled } from "@/domains/verify/api/mutations"
 import { useVerifyQuery } from "@/domains/verify/api/queries"
 import { commandsFor } from "@/domains/verify/model/gate"
 import { VerifyProjectPanel } from "@/domains/verify/ui/verify-project-panel"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
-import { Button, Tooltip } from "@/shared/ui"
+import { Button, ScreenState, Skeleton, Tooltip } from "@/shared/ui"
 
 import styles from "./gate-tab.module.css"
 
@@ -54,7 +56,23 @@ export function GateTab() {
       if (!can(session, "settings.live", projectId)) {
         return
       }
-      setEnabledMutate({ projectId, enabled })
+      setEnabledMutate(
+        { projectId, enabled },
+        {
+          // The failure already had a band; the success had nothing, and this
+          // was the one toggle in the product that landed in silence. A switch
+          // that only speaks when it fails teaches the operator to press it
+          // twice.
+          onSuccess: () => {
+            const name = projectOf(session, projectId)?.name ?? projectId
+            toast.success(enabled ? "Gate on" : "Gate off", {
+              description: enabled
+                ? `${name} — runs must clear the client's checks`
+                : `${name} — runs land without the client's checks`,
+            })
+          },
+        }
+      )
     },
     [session, setEnabledMutate]
   )
@@ -64,24 +82,15 @@ export function GateTab() {
   return (
     <div className={styles.gate}>
       {isLoading ? (
-        <div className={styles.skeleton} data-test="verify-loading">
-          {SKELETON_WIDTHS.map((width, index) => (
-            <span
-              key={index}
-              className={styles.skeletonBar}
-              style={{ width }}
-            />
-          ))}
-        </div>
+        <Skeleton lines={SKELETON_WIDTHS} data-test="verify-loading" />
       ) : null}
 
       {isError ? (
-        <div className={styles.state} role="alert">
-          <p className={styles.stateTitle}>Couldn&apos;t load the gate</p>
-          <p className={styles.stateBody}>
-            {error instanceof Error ? error.message : "Unknown error"}
-          </p>
-          <span>
+        <ScreenState
+          kind="error"
+          title="Couldn't load the gate"
+          description={requestFailureMessage(error, "Unknown error")}
+          action={
             <Tooltip content="Retry">
               <Button
                 size="icon-sm"
@@ -94,15 +103,13 @@ export function GateTab() {
                 <RotateCw aria-hidden="true" />
               </Button>
             </Tooltip>
-          </span>
-        </div>
+          }
+        />
       ) : null}
 
       {setEnabled.error ? (
         <p className={styles.failure} role="alert" data-test="verify-failure">
-          {setEnabled.error instanceof Error
-            ? setEnabled.error.message
-            : "The change failed."}{" "}
+          {requestFailureMessage(setEnabled.error, "The change failed.")}{" "}
           Nothing moved — the gate is back as it was.
         </p>
       ) : null}
@@ -116,6 +123,19 @@ export function GateTab() {
             what each check last said. Editing a command means editing the file;
             every section below says exactly where its file is.
           </p>
+
+          {/* The read answered and it held nothing this session can see — a
+              member with no verify-scoped project lands here. The paragraph
+              above on its own read as a screen that had stopped half-way
+              through drawing. */}
+          {projects.length === 0 ? (
+            <ScreenState
+              kind="empty"
+              title="No project has a gate here"
+              description="Nothing in this session's projects declares the client's own checks. A gate appears as soon as one of them commits the file that holds them."
+              data-test="verify-empty"
+            />
+          ) : null}
 
           {projects.map((project) => {
             const key = projectOf(session, project.projectId)?.key

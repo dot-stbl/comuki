@@ -197,6 +197,11 @@
   color: var(--text-muted);
 }
 
+/* `auto-fill` on purpose, and the one place in the product where it is the
+   right answer: three sections share this class with six, seven and *one* row
+   in them, and `auto-fit` would stretch the lone proxy row across the whole
+   board — drawing one fact at twice the size of the twelve above it. An empty
+   track at the end of a wide row is the cheaper reading. */
 .platformRows {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
@@ -227,7 +232,7 @@
   min-inline-size: 0;
   overflow-wrap: anywhere;
   font-family: var(--font-data);
-  font-size: var(--t-md);
+  font-size: var(--t-h2);
   color: var(--text);
 }
 

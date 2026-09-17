@@ -60,6 +60,7 @@ public static class MemoryFactPolicy
     /// <param name="ttl">The requested lifetime; must be positive.</param>
     public static DateTimeOffset EphemeralCreatedAt(DateTimeOffset now, TimeSpan ttl)
     {
+        // canon judgement #8: a non-positive ttl is a caller programming error, not an expected miss — ArgumentOutOfRangeException (no stable Code) is the correct type.
         return ttl <= TimeSpan.Zero
             ? throw new ArgumentOutOfRangeException(nameof(ttl), ttl, "ephemeral ttl must be positive")
             : ttl >= EphemeralTtl ? now : now - (EphemeralTtl - ttl);

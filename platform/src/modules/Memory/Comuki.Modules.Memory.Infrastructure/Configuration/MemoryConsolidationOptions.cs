@@ -25,5 +25,6 @@ public sealed class MemoryConsolidationOptions
     public int DecayDays { get; init; } = 90;
 
     /// <summary>How often the consolidation pass runs.</summary>
+    [Range(typeof(TimeSpan), "00:00:01", "1.00:00:00")]
     public TimeSpan Interval { get; init; } = TimeSpan.FromHours(6);
 }

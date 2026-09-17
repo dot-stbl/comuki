@@ -44,6 +44,8 @@ export interface Session {
   readonly liveText: string
   /** Transcript fetched from the server (restored tabs start false). */
   readonly hydrated: boolean
+  /** Submitted prompts for ↑/↓ recall, oldest first. */
+  readonly history?: readonly string[]
 }
 
 export const PENDING_PREFIX = "local-"
@@ -77,6 +79,7 @@ export function newPendingSession(
     blocks: [],
     liveText: "",
     hydrated: false,
+    history: [],
   }
 }
 
@@ -183,6 +186,19 @@ export function setBlocks(
   )
 }
 
+/** Appends a submitted prompt to a session's recall history. */
+export function appendHistory(
+  sessions: readonly Session[],
+  id: string,
+  message: string
+): readonly Session[] {
+  return sessions.map((session) =>
+    session.id === id
+      ? { ...session, history: [...(session.history ?? []), message] }
+      : session
+  )
+}
+
 /** Appends streamed chunk text to a session's live tail (capped at 4000). */
 export function appendLiveText(
   sessions: readonly Session[],
@@ -234,6 +250,7 @@ export interface PersistedSession {
   readonly name: string
   readonly status: SessionStatus
   readonly createdAt: number
+  readonly history?: readonly string[]
 }
 
 export interface PersistedSessions {
@@ -250,6 +267,10 @@ export function toPersisted(state: SessionsState): PersistedSessions {
       name: session.name,
       status: session.status,
       createdAt: session.createdAt,
+      // Omitted when empty — keeps sessions.json lean for history-free tabs.
+      ...(session.history && session.history.length > 0
+        ? { history: session.history }
+        : {}),
     }))
   const active = state.sessions[state.activeIndex]
   return {
@@ -277,6 +298,7 @@ export function fromPersisted(persisted: PersistedSessions): SessionsState {
       blocks: [],
       liveText: "",
       hydrated: false,
+      history: session.history ?? [],
     }))
   const activeIndex = Math.max(
     0,

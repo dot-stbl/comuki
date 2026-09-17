@@ -23,10 +23,13 @@ import { whoAmI } from "../lib/auth"
 import { renderPendingPlan } from "../lib/format"
 import type { ResolvedConfig } from "../lib/config"
 import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
+import { useCopyLastAnswer } from "../hooks/useCopyLastAnswer"
+import { lastAssistantText } from "../lib/history"
 import {
   addSession,
   adoptServerId,
   appendBlocks,
+  appendHistory,
   appendLiveText,
   fromPersisted,
   markUnread,
@@ -85,7 +88,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     sessions: [],
     activeIndex: -1,
   })
-  const [history, setHistory] = useState<string[]>([])
   const [identity, setIdentity] = useState("connecting…")
   const [projectLabel, setProjectLabel] = useState<string | undefined>(project)
   const [connectError, setConnectError] = useState<string | null>(null)
@@ -114,6 +116,12 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
   const activeSessionId = activeSession?.id
   const activeHydrated = activeSession?.hydrated
+
+  // ctrl+y copies the last assistant answer; hint is rendered near the
+  // prompt (getter is kept fresh by the hook, no stale transcript).
+  const { hint: copyHint } = useCopyLastAnswer(() =>
+    lastAssistantText(activeSession?.blocks ?? [])
+  )
 
   useEffect(() => {
     activeIdRef.current = activeSessionId
@@ -509,6 +517,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                   id: session.id,
                   name,
                   hydrated: true,
+                  // The welcome-screen turn has no tab yet — seed the
+                  // new session's recall history with its first message.
+                  history: [message],
                 })
             return {
               ...next,
@@ -560,7 +571,14 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       if (value.length === 0 || target?.status === "thinking") {
         return
       }
-      setHistory((current) => [...current, value])
+      // Per-session recall history — rides the session record, so it
+      // persists with the tab and survives the pending → live adoption.
+      if (target) {
+        setTabs((current) => ({
+          ...current,
+          sessions: appendHistory(current.sessions, target.id, value),
+        }))
+      }
 
       const bare = value.replace(/^\//, "").toLowerCase()
       const base = bare.split(" ", 1)[0] ?? ""
@@ -749,7 +767,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               <Text key={index}>{line}</Text>
             ))}
             <Box marginTop={1} flexDirection="column" alignItems="center">
-              <PromptInput onSubmit={handleSubmit} history={history} />
+              {copyHint ? <Text dimColor>{copyHint}</Text> : null}
+              <PromptInput
+                onSubmit={handleSubmit}
+                history={activeSession?.history ?? []}
+              />
             </Box>
           </Box>
         ) : (
@@ -794,9 +816,12 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             {noticeLines.map((line, index) => (
               <Text key={index}>{line}</Text>
             ))}
+            {copyHint ? (
+              <Text dimColor>{`  ${copyHint}`}</Text>
+            ) : null}
             <PromptInput
               onSubmit={handleSubmit}
-              history={history}
+              history={activeSession?.history ?? []}
               active={promptEnabled}
             />
           </>

@@ -57,7 +57,7 @@ namespace Comuki.Host.Brain.Brain;
 /// what lets <c>MemoryDbContext</c>&apos;s scope query filter run at all
 /// without throwing; it does not by itself limit what the model can ask
 /// <c>memory.search</c> for — see <see cref="BrainToolbox.SearchMemoryAsync"/>
-/// for the guard that does does.
+/// for the guard that does that.
 /// </param>
 /// <param name="clock">The toolbox write clock (custom ephemeral TTLs).</param>
 /// <param name="options">Bound brain options — the iteration cap source.</param>
@@ -110,7 +110,7 @@ public sealed class BrainAgent(
         var toolbox = new BrainToolbox(memoryStore, clock, profileCatalog, activeRuns, explorerReports, embedder);
         var chatOptions = new ChatOptions { Tools = [.. toolbox.BuildFunctions()] };
 
-        var scopedDigest = await BuildScopedDigestAsync(request, cancellationToken);
+        var scopedDigest = await BrainAgentDigestBuilder.BuildAsync(memoryDigest, request, cancellationToken);
         var contextSection = scopedDigest is { } digest
             ? $"# Scoped memory\n{digest}\n\n{request.ContextJson}"
             : request.ContextJson;
@@ -177,37 +177,6 @@ public sealed class BrainAgent(
 
         static BrainChunk Final(int seq, string finalJson) => new() { Seq = seq, FinalJson = finalJson, IsFinal = true };
     }
-
-    /// <summary>
-    /// Builds the scope-aware digest for a brain call. Null when the
-    /// request carries no <see cref="BrainRequest.ScopeKind"/> — the
-    /// legacy behaviour: the caller-built <c>ContextJson</c> is what the
-    /// model sees, no scope fetch happens. When <c>ScopeKind</c> is set,
-    /// <c>SubjectId</c> must be a parseable Guid; otherwise the request
-    /// is malformed and we throw <see cref="ArgumentException"/> before
-    /// any chat round-trip is issued. The digest text is what gets
-    /// prepended to <c>ContextJson</c> in the user message.
-    /// </summary>
-    /// <param name="request">The incoming brain request.</param>
-    /// <param name="cancellationToken">Cancels the digest build.</param>
-    private async Task<string?> BuildScopedDigestAsync(
-        BrainRequest request,
-        CancellationToken cancellationToken)
-    {
-        return request.ScopeKind is null
-            ? null
-            : string.IsNullOrWhiteSpace(request.SubjectId)
-            ? throw new ArgumentException(
-                "BrainRequest.SubjectId is required when BrainRequest.ScopeKind is set.",
-                nameof(request))
-            : Guid.TryParse(request.SubjectId, out var subjectId)
-            ? await memoryDigest.BuildDigestAsync(
-                new MemoryDigestRequest(request.ScopeKind, subjectId, request.Task),
-                cancellationToken)
-            : throw new ArgumentException(
-                $"BrainRequest.SubjectId must be a valid Guid when ScopeKind is set; got '{request.SubjectId}'.",
-                nameof(request));
-    }
 }
 
 /// <summary>Dispatches one model tool call to the toolbox function it names.</summary>
@@ -232,5 +201,41 @@ file static class BrainToolExecution
 
         var result = await function.InvokeAsync(new AIFunctionArguments(arguments), cancellationToken);
         return result?.ToString() ?? "tool returned nothing";
+    }
+}
+
+/// <summary>
+/// Builds the scope-aware digest that <see cref="BrainAgent"/> prepends to
+/// the caller-built <c>ContextJson</c> when the incoming
+/// <see cref="BrainRequest"/> carries a <c>ScopeKind</c>. Null when
+/// <c>ScopeKind</c> is null — the legacy global-only behaviour, the
+/// caller-built context is what the model sees and no scope fetch
+/// happens. When <c>ScopeKind</c> is set, <c>SubjectId</c> must be a
+/// parseable Guid; otherwise the request is malformed and a
+/// <see cref="ArgumentException"/> is thrown before any chat
+/// round-trip is issued. A static, file-scope helper (not a
+/// <see cref="BrainAgent"/> member) keeps the loop's instance surface
+/// to contract overrides only.
+/// </summary>
+file static class BrainAgentDigestBuilder
+{
+    public static async Task<string?> BuildAsync(
+        IMemoryDigest memoryDigest,
+        BrainRequest request,
+        CancellationToken cancellationToken)
+    {
+        return request.ScopeKind is null
+            ? null
+            : string.IsNullOrWhiteSpace(request.SubjectId)
+            ? throw new ArgumentException(
+                "BrainRequest.SubjectId is required when BrainRequest.ScopeKind is set.",
+                nameof(request))
+            : Guid.TryParse(request.SubjectId, out var subjectId)
+            ? await memoryDigest.BuildDigestAsync(
+                new MemoryDigestRequest(request.ScopeKind, subjectId, request.Task),
+                cancellationToken)
+            : throw new ArgumentException(
+                $"BrainRequest.SubjectId must be a valid Guid when ScopeKind is set; got '{request.SubjectId}'.",
+                nameof(request));
     }
 }

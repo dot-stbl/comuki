@@ -11,7 +11,7 @@
  * holds `sessionId`, so routing is a patch over tabs). A pending tab
  * (`local-…` id) becomes a server session lazily on its first message.
  */
-import { Box, Text, useApp, useInput } from "ink"
+import { Box, Static, Text, useApp, useInput } from "ink"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import type { HubConnection } from "@microsoft/signalr"
 import {
@@ -22,6 +22,7 @@ import {
 import { whoAmI } from "../lib/auth"
 import { renderPendingPlan } from "../lib/format"
 import type { ResolvedConfig } from "../lib/config"
+import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
 import {
   addSession,
   adoptServerId,
@@ -79,6 +80,7 @@ export interface ChatCommandProps {
 
 export function ChatApp({ config, project }: ChatCommandProps) {
   const { exit } = useApp()
+  const { columns, rows } = useStdoutDimensions()
   const [tabs, setTabs] = useState<SessionsState>({
     sessions: [],
     activeIndex: -1,
@@ -663,22 +665,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     }
   }, [connectError])
 
-  if (connectError) {
-    return (
-      <>
-        <StatusLine identity={identity} project={projectLabel} />
-        <Text>
-          {"  "}
-          <Text color="red">
-            {symbols.cross} {connectError}
-          </Text>
-        </Text>
-        <Text dimColor>
-          {"  "}check COMUKI_URL / COMUKI_API_KEY, or run comuki login
-        </Text>
-      </>
-    )
-  }
+  useEffect(() => {
+    if (connectError) {
+      process.exitCode = 1
+    }
+  }, [connectError])
 
   // The placeholder lives in the StatusLine identity slot. We show it only
   // while we are "truly disconnected" (hub attempt not yet decided);
@@ -686,89 +677,138 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   // real identity takes over and the placeholder disappears.
   const headerIdentity = hubAttempted ? identity : "connecting…"
 
+  if (connectError) {
+    return (
+      <Box
+        flexDirection="column"
+        width={columns}
+        height={rows}
+        alignItems="center"
+        justifyContent="center"
+      >
+        <StatusLine identity={headerIdentity} project={projectLabel} />
+        <Box marginTop={1}>
+          <Text>
+            {"  "}
+            <Text color="red">
+              {symbols.cross} {connectError}
+            </Text>
+          </Text>
+        </Box>
+        <Box marginTop={1}>
+          <Text dimColor>
+            {"  "}check COMUKI_URL / COMUKI_API_KEY, or run comuki login
+          </Text>
+        </Box>
+      </Box>
+    )
+  }
+
   const showWelcome = !welcomeDismissed && tabs.sessions.length === 0
   const promptEnabled =
     !overviewVisible && (!activeSession || activeSession.status !== "thinking")
+  const showFooter = tabs.sessions.length > 0 && !overviewVisible
 
+  // Header: status line + (when tabs exist) the tab strip — both single rows.
+  // Footer: session badges + hotkey legend — single row.
+  // Content area: everything else, fills the remaining vertical space.
   return (
-    <>
+    <Box flexDirection="column" width={columns} height={rows}>
       <StatusLine identity={headerIdentity} project={projectLabel} />
       {tabs.sessions.length > 0 ? (
         <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />
       ) : null}
-      {overviewVisible ? (
-        <SessionOverview
-          sessions={tabs.sessions}
-          activeIndex={tabs.activeIndex}
-          onSelect={selectSession}
-          onNewSession={() => {
-            openPendingTab()
-            setOverviewVisible(false)
-          }}
-          onClose={() => setOverviewVisible(false)}
-        />
-      ) : showWelcome ? (
-        <>
-          <Welcome stats={stats} />
-          {noticeLines.map((line, index) => (
-            <Text key={index}>{line}</Text>
-          ))}
-          <Box flexDirection="column" alignItems="center">
-            <PromptInput onSubmit={handleSubmit} history={history} />
+      <Box flexDirection="column" flexGrow={1} flexShrink={1} minHeight={0}>
+        {overviewVisible ? (
+          <Box
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            flexGrow={1}
+          >
+            <SessionOverview
+              sessions={tabs.sessions}
+              activeIndex={tabs.activeIndex}
+              onSelect={selectSession}
+              onNewSession={() => {
+                openPendingTab()
+                setOverviewVisible(false)
+              }}
+              onClose={() => setOverviewVisible(false)}
+            />
           </Box>
-        </>
-      ) : (
-        <>
-          {activeSession ? (
-            <>
-              {activeSession.blocks.map((block) =>
-                block.kind === "message" ? (
-                  <ChatMessage key={block.key} message={block.message} />
-                ) : (
-                  <React.Fragment key={block.key}>
-                    {block.lines.map((line, index) => (
-                      <Text key={index}>{line}</Text>
-                    ))}
-                  </React.Fragment>
-                )
-              )}
-              {activeSession.awaitingApproval ? (
-                <>
-                  {renderPendingPlan(activeSession.pendingPlan).map(
-                    (line, index) => (
-                      <Text key={index}>{line}</Text>
-                    )
-                  )}
-                  <Text dimColor>
-                    {" "}
-                    type approve or reject [reason] to decide
-                  </Text>
-                </>
-              ) : null}
-              {activeSession.status === "thinking" ? (
-                <TypingIndicator liveText={activeSession.liveText} />
-              ) : null}
-            </>
-          ) : (
-            <Text>{EMPTY_TAB_HINT}</Text>
-          )}
-          {noticeLines.map((line, index) => (
-            <Text key={index}>{line}</Text>
-          ))}
-          <PromptInput
-            onSubmit={handleSubmit}
-            history={history}
-            active={promptEnabled}
-          />
-        </>
-      )}
-      {tabs.sessions.length > 0 && !overviewVisible ? (
+        ) : showWelcome ? (
+          <Box
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            flexGrow={1}
+          >
+            <Welcome stats={stats} />
+            {noticeLines.map((line, index) => (
+              <Text key={index}>{line}</Text>
+            ))}
+            <Box marginTop={1} flexDirection="column" alignItems="center">
+              <PromptInput onSubmit={handleSubmit} history={history} />
+            </Box>
+          </Box>
+        ) : (
+          <>
+            {activeSession ? (
+              <>
+                {activeSession.blocks.length > 0 ? (
+                  <Static items={[...activeSession.blocks]}>
+                    {(block) =>
+                      block.kind === "message" ? (
+                        <ChatMessage key={block.key} message={block.message} />
+                      ) : (
+                        <React.Fragment key={block.key}>
+                          {block.lines.map((line, index) => (
+                            <Text key={index}>{line}</Text>
+                          ))}
+                        </React.Fragment>
+                      )
+                    }
+                  </Static>
+                ) : null}
+                {activeSession.awaitingApproval ? (
+                  <>
+                    {renderPendingPlan(activeSession.pendingPlan).map(
+                      (line, index) => (
+                        <Text key={index}>{line}</Text>
+                      )
+                    )}
+                    <Text dimColor>
+                      {" "}
+                      type approve or reject [reason] to decide
+                    </Text>
+                  </>
+                ) : null}
+                {activeSession.status === "thinking" ? (
+                  <TypingIndicator liveText={activeSession.liveText} />
+                ) : null}
+              </>
+            ) : (
+              <Text>{EMPTY_TAB_HINT}</Text>
+            )}
+            {noticeLines.map((line, index) => (
+              <Text key={index}>{line}</Text>
+            ))}
+            <PromptInput
+              onSubmit={handleSubmit}
+              history={history}
+              active={promptEnabled}
+            />
+          </>
+        )}
+      </Box>
+      {showFooter ? (
         <SessionFooter
           sessions={tabs.sessions}
           activeIndex={tabs.activeIndex}
         />
       ) : null}
-    </>
+    </Box>
   )
 }
 

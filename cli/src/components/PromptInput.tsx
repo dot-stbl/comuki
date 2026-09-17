@@ -25,6 +25,11 @@ export interface PromptInputProps {
   readonly history?: readonly string[]
   /** false → the editor ignores keys (a thinking turn owns the tab). */
   readonly active?: boolean
+  /**
+   * false → ↑/↓ go to the transcript viewport (scrolled-up state)
+   * instead of history recall; typing is untouched.
+   */
+  readonly historyRecallEnabled?: boolean
 }
 
 interface EditorState {
@@ -44,6 +49,7 @@ export function PromptInput({
   placeholder = "ask comuki… (help for commands, ctrl+c to exit)",
   history = [],
   active = true,
+  historyRecallEnabled = true,
 }: PromptInputProps) {
   const [state, setState] = useState<EditorState>({
     value: "",
@@ -88,11 +94,16 @@ export function PromptInput({
   useInput(
     (input, key) => {
       if (key.upArrow) {
-        navigate("older")
+        // Scrolled-up transcript owns the arrows — the viewport scrolls.
+        if (historyRecallEnabled) {
+          navigate("older")
+        }
         return
       }
       if (key.downArrow) {
-        navigate("newer")
+        if (historyRecallEnabled) {
+          navigate("newer")
+        }
         return
       }
       if (key.return) {

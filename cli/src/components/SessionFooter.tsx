@@ -42,7 +42,7 @@ export function SessionFooter({ sessions, activeIndex }: SessionFooterProps) {
           )
         })}
       </Box>
-      <Text dimColor> esc · tab · ctrl+n </Text>
+      <Text dimColor> esc · tab · pgup/pgdn · ctrl+n </Text>
     </Box>
   )
 }

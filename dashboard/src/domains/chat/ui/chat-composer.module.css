@@ -99,7 +99,7 @@
 }
 
 .seed:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline: 2px solid var(--ring-wash);
   outline-offset: 1px;
   border-color: var(--ring);
 }
@@ -168,6 +168,67 @@
   color: var(--text-faint);
 }
 
+/* A refused send ----------------------------------------------------------- */
+
+/* The same band every other failure in this product is marked with — the left
+   rule, the tint, the mark beside the sentence — spelled the way the thread's
+   own `.error` and the form kit's `.notice` spell it, because a refused send
+   is not a new kind of bad news. It belongs to the box under it, so it is not
+   dismissible: it goes when the next send starts.
+
+   `flex-start` rather than the band's usual `center`, because this one can
+   carry a second line — the words that did not go. */
+.failure {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  min-inline-size: 0;
+  padding: var(--s3) var(--s4);
+  border-inline-start: 2px solid var(--st-failed);
+  border-radius: var(--r-md);
+  background: var(--st-failed-tint);
+}
+
+.failureIcon {
+  flex: 0 0 auto;
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+  color: var(--st-failed);
+}
+
+.failureWords {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+.failureLine {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+/* The words that did not go, kept verbatim and in the voice they were typed
+   in. Bounded, because a pasted stack trace must not push the box off the
+   screen it is standing on — it scrolls inside its own line instead. */
+.failureUnsent {
+  margin: 0;
+  min-inline-size: 0;
+  max-block-size: 6rem;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
 /* Menu -------------------------------------------------------------------- */
 
 /* Sits above the box rather than over it: the operator is reading the thread
@@ -226,7 +287,7 @@
 }
 
 .option:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline: 2px solid var(--ring-wash);
   outline-offset: -2px;
   border-color: var(--ring);
 }

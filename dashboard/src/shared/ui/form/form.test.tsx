@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
+
+import { SelectField } from "./select-field"
+import { TextField } from "./text-field"
 
 /* Read off disk, because jsdom computes no layout and the defect this guards
    against was a size: the switch's track had been taking its height from
@@ -57,5 +61,103 @@ describe("the switch is one row tall", () => {
     // checked state, asserted where the component renders.
     expect(SHEET.includes(".switchState")).toBe(false)
     expect(SHEET.includes(".switchText")).toBe(false)
+  })
+})
+
+/** The marker the label wears, queried the way the product queries anything. */
+function requiredMark(): HTMLElement | null {
+  return document.querySelector<HTMLElement>('[data-test="field-required"]')
+}
+
+describe("a required field says so where a screen reader can hear it", () => {
+  it("adds nothing to the accessible name when it is not required", () => {
+    render(
+      <TextField
+        id="remote"
+        label="git remote"
+        value=""
+        onValueChange={() => {}}
+      />
+    )
+    expect(screen.getByLabelText("git remote")).toBe(
+      screen.getByRole("textbox")
+    )
+    expect(requiredMark()).toBeNull()
+  })
+
+  it("separates the word from the name with a real space", () => {
+    // The whole finding, in one assertion. Without the text node between them
+    // the accessible name composes to "git remoterequired": one word to a
+    // screen reader, and no `getByLabelText(/^git remote/)` in the product
+    // matches it any more. A margin cannot do this job — the accessibility
+    // tree never sees the stylesheet.
+    render(
+      <TextField
+        id="remote"
+        label="git remote"
+        required
+        value=""
+        onValueChange={() => {}}
+      />
+    )
+    expect(requiredMark()?.closest("label")?.textContent).toBe(
+      "git remote required"
+    )
+    expect(screen.getByLabelText("git remote required")).toBe(
+      screen.getByRole("textbox")
+    )
+  })
+
+  it("keeps the word visible to assistive tech", () => {
+    // Hiding it is the obvious move and it is wrong: React Aria rebuilds a
+    // select trigger's accessible name from its own value node, dropping
+    // `aria-required` with the association, so on `SelectField` the name is
+    // the only channel the fact has. `aria-hidden` here would take the marker
+    // away from exactly the control that cannot do without it.
+    render(
+      <TextField
+        id="remote"
+        label="git remote"
+        required
+        value=""
+        onValueChange={() => {}}
+      />
+    )
+    const mark = requiredMark()
+    expect(mark?.textContent).toBe("required")
+    expect(mark?.closest("[aria-hidden]")).toBeNull()
+  })
+
+  it("marks the control itself required, without the native attribute", () => {
+    // `aria-required` and not `required`: this is a signal, and the form's own
+    // validation stays the only thing that refuses a submit.
+    render(
+      <TextField
+        id="remote"
+        label="git remote"
+        required
+        value=""
+        onValueChange={() => {}}
+      />
+    )
+    const input = screen.getByRole("textbox")
+    expect(input.getAttribute("aria-required")).toBe("true")
+    expect(input.hasAttribute("required")).toBe(false)
+  })
+
+  it("reaches the select through its label, which is all a select has", () => {
+    render(
+      <SelectField
+        id="provider"
+        label="provider"
+        required
+        value=""
+        options={[{ value: "openai", label: "OpenAI" }]}
+        onValueChange={() => {}}
+      />
+    )
+    expect(requiredMark()?.closest("label")?.textContent).toBe(
+      "provider required"
+    )
   })
 })

@@ -5,7 +5,7 @@
 .scrim {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-overlay);
   display: flex;
   /* Docked to the inline-end edge, full height: the list stays visible behind
      it, so the operator does not lose their place in what they were reading. */

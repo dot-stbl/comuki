@@ -103,6 +103,7 @@ internal static class HostComposer
     /// </remarks>
     public static async Task<WebApplication> ComposeAsync(WebApplicationBuilder builder, HostDatabase.Connection database)
     {
+        // canon judgement #3: this method is deliberately one long chain — the composition root's length IS the explicit registration chain (di-installer §4); splitting it would hide the wiring it exists to make visible.
         // Telemetry first: options ValidateOnStart always; OTLP SDK only when
         // Telemetry:OtlpEndpoint is set (see deploy/README — VictoriaMetrics :8431).
         builder.Services.AddComukiTelemetry(builder.Configuration);

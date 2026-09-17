@@ -170,15 +170,19 @@ describe("the demo pill", () => {
     expect(pill?.textContent).toBe("Demo")
   })
 
-  it("does not render in real mode with a live hub — the absence is the confirmation", async () => {
+  it("does not render in real mode — the absence is the confirmation", async () => {
     envState.useMock = false
     // resetRunsHubStatus() in afterEach would re-pin to the previous env,
-    // so the case has to pin the hub itself before the bar mounts.
+    // so the case has to pin the hub itself before the bar mounts. Real
+    // mode opens on `polling`, which is the *other* pill's territory and
+    // which waits a whole poll cycle before it says anything — so the bar
+    // is bare here either way, and "no demo pill" is what that means.
     resetRunsHubStatus()
 
     renderBar(["member"])
 
     await screen.findByRole("link", { name: "Comuki — home" })
     expect(find('[data-test="demo-badge"]')).toBeNull()
+    expect(find('[data-test="polling-badge"]')).toBeNull()
   })
 })

@@ -1,7 +1,7 @@
 import type { CostBudget, CostHeat } from "@/domains/cost/model/cost"
 import { budgetHeat } from "@/domains/cost/model/cost"
+import { CostStat } from "@/domains/cost/ui/cost-stat"
 import { ProxyBudgetMeter } from "@/domains/cost/ui/proxy-budget-meter"
-import { cn } from "@/shared/lib/utils"
 
 import styles from "./budget-progress.module.css"
 
@@ -20,13 +20,17 @@ export interface BudgetProgressProps {
 /**
  * The screen's two-reading budget widget.
  *
- * Today's burn is the figure the operator has to decide about right now;
- * month-to-date is the line that says how the month is going overall. The
- * two share a colour but never a meter: today gets a bar (it has a single
- * reading), month gets the same percent word-and-figure treatment it gets
- * everywhere else. Heat is `budgetHeat(today)`, the same three words the
- * forecast and proxy-budget tiles use, so a today at 90% reads exactly
- * like a forecast at 90%.
+ * A `CostStat` — the same tile as the two beside it — carrying the meter in
+ * its slot and two named readings in its line. Today's burn is the figure the
+ * operator has to decide about right now; month-to-date is the line that says
+ * how the month is going overall. The two share a colour but never a meter:
+ * today gets a bar (it has a single reading), month gets the same percent
+ * word-and-figure treatment it gets everywhere else.
+ *
+ * This is the one tile of the three that lights its edge, because it is the
+ * one whose figure has a consequence written beside it. Heat is
+ * `budgetHeat(today)`, the same three words the forecast tile uses, so a today
+ * at 90% reads exactly like a forecast at 90%.
  */
 export function BudgetProgress({
   todayBurn,
@@ -41,34 +45,37 @@ export function BudgetProgress({
   const monthShare = monthCap > 0 ? monthToDate / monthCap : 1
 
   return (
-    <article
-      className={cn(styles.budget, className)}
-      data-test="budget-progress"
-      data-heat={heat}
+    <CostStat
+      name="budget"
+      label="Budget progress"
+      prefix="$"
+      value={todayBurn.toFixed(0)}
+      /* The cap is the context the figure is read against, not a second
+         reading — so it rides in the unit slot beside the number rather than
+         standing at the number's own weight. */
+      suffix={`/ $${todayCap.toFixed(0)}`}
+      heat={heat}
+      sub={
+        <>
+          <span className={styles.line}>
+            <span className={styles.key}>today</span>{" "}
+            <span className={styles.value}>
+              ${todayBurn.toFixed(0)} of ${todayCap.toFixed(0)} cap
+              {todayCap > 0 ? ` · ${Math.round(todayShare * 100)}%` : ""}
+            </span>
+          </span>
+          <span className={styles.line}>
+            <span className={styles.key}>month-to-date</span>{" "}
+            <span className={styles.value}>
+              ${monthToDate.toFixed(0)} of ${monthCap.toFixed(0)} cap
+              {monthCap > 0 ? ` · ${Math.round(monthShare * 100)}%` : ""}
+            </span>
+          </span>
+        </>
+      }
+      className={className}
     >
-      <span className={styles.label}>Budget progress</span>
-      <span className={styles.figure}>
-        <span className={styles.unit}>$</span>
-        <span className={styles.value}>{todayBurn.toFixed(0)}</span>
-        <span className={styles.figureSep}>/</span>
-        <span className={styles.unit}>$</span>
-        <span className={styles.value}>{todayCap.toFixed(0)}</span>
-      </span>
       <ProxyBudgetMeter budget={todayBudget} />
-      <p className={styles.sub}>
-        <span className={styles.subKey}>today</span>{" "}
-        <span className={styles.subValue}>
-          ${todayBurn.toFixed(0)} of ${todayCap.toFixed(0)} cap
-          {todayCap > 0 ? ` · ${Math.round(todayShare * 100)}%` : ""}
-        </span>
-      </p>
-      <p className={styles.sub}>
-        <span className={styles.subKey}>month-to-date</span>{" "}
-        <span className={styles.subValue}>
-          ${monthToDate.toFixed(0)} of ${monthCap.toFixed(0)} cap
-          {monthCap > 0 ? ` · ${Math.round(monthShare * 100)}%` : ""}
-        </span>
-      </p>
-    </article>
+    </CostStat>
   )
 }

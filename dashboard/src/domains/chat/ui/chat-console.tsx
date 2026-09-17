@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { RotateCw } from "lucide-react"
 
 import type { SearchTarget } from "@/app/search"
@@ -18,10 +18,36 @@ import { ChatSessions } from "@/domains/chat/ui/chat-sessions"
 import { ChatSidePanel } from "@/domains/chat/ui/chat-side-panel"
 import { ChatThread } from "@/domains/chat/ui/chat-thread"
 import { useChatTurnStream } from "@/domains/chat/ui/use-chat-turn-stream"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { useSession } from "@/shared/session"
-import { Button, Tooltip } from "@/shared/ui"
+import { Button, ScreenState, Skeleton, Tooltip } from "@/shared/ui"
 
 import styles from "./chat-console.module.css"
+
+/* The thread that has not arrived yet, as turns of uneven length. Uneven on
+   purpose: a column of equal bars reads as a loaded thread full of blanks. */
+const SKELETON_WIDTHS = ["64%", "42%", "78%", "51%", "70%", "38%"]
+
+/**
+ * An act the console was asked to do and could not.
+ *
+ * Stamped with the conversation it was aimed at, because the console keeps
+ * running while the operator switches rails: an error raised against
+ * yesterday's thread must not appear over today's, where it would name a
+ * failure that never happened here. `sessionId: null` is an act that was not
+ * about a conversation at all — starting one — and those are shown wherever
+ * the operator is.
+ */
+interface ConsoleFailure {
+  sessionId: string | null
+  /** The wire's own sentence. */
+  message: string
+  /**
+   * The words that did not go, when the box could not take them back. Null
+   * whenever they were returned to the composer, which is the ordinary case.
+   */
+  unsent: string | null
+}
 
 export interface ChatConsoleProps {
   /**
@@ -103,6 +129,13 @@ export function ChatConsole({
   const start = useStartSessionMutation()
 
   const rows = useMemo(() => sessions.data ?? [], [sessions.data])
+  /* The held id first, then the newest conversation, then nothing. The fall
+     through is deliberate and silent: the dock hands back an id from before a
+     navigation and the route from before a reload, and an id that is no longer
+     in the list is almost always one the host retired rather than one the
+     operator is looking for. Saying "that conversation is gone" every time a
+     stale memory is handed back would make the console apologise for working.
+     The reading stays honest because the rail marks which row is current. */
   const current = rows.find((entry) => entry.id === chosenId) ?? rows[0] ?? null
 
   /**
@@ -142,18 +175,57 @@ export function ChatConsole({
     [session, custom.data]
   )
 
+  const [failure, setFailure] = useState<ConsoleFailure | null>(null)
+
+  /* What is in the box *now*, readable from a callback that runs later. The
+     `draft` a send closed over is the message being sent; by the time the
+     wire answers, the operator may have typed something else entirely, and
+     the decision below turns on which of the two is newer. */
+  const draftRef = useRef(draft)
+  useEffect(() => {
+    draftRef.current = draft
+  }, [draft])
+
   const onSend = useCallback(
     (text: string, projectId?: string) => {
       if (!current) {
         return
       }
+      const sessionId = current.id
+      setFailure(null)
       // The optimistic rows exist before the POST leaves — the send must be
       // visible the instant the operator presses enter, not when the whole
       // brain turn comes back.
-      beginChatTurn(current.id, text)
-      send.mutate({ sessionId: current.id, text, projectId })
+      beginChatTurn(sessionId, text)
+      send.mutate(
+        { sessionId, text, projectId },
+        {
+          /* The composer empties on the gesture, because a box that holds the
+             words until a round trip finishes feels broken on every send that
+             works. The price of that is this branch: a refused send has to
+             give the words back, or a message the operator typed is gone with
+             nothing on screen to say it ever existed.
+
+             Given back to the box only when the box is empty. If the operator
+             kept typing while the request was in flight, that thought is
+             newer than this one, and pasting the old message over it would be
+             a second loss to repair the first — so the words ride in the
+             notice instead, where they can still be read and copied. */
+          onError: (error) => {
+            const returned = draftRef.current.trim().length === 0
+            if (returned) {
+              onDraftChange(text)
+            }
+            setFailure({
+              sessionId,
+              message: requestFailureMessage(error, "The message was not sent"),
+              unsent: returned ? null : text,
+            })
+          },
+        }
+      )
     },
-    [current, send]
+    [current, send, onDraftChange]
   )
 
   const onDecide = useCallback(
@@ -161,14 +233,46 @@ export function ChatConsole({
       if (!current) {
         return
       }
-      decide.mutate({ sessionId: current.id, proposalId, decision })
+      const sessionId = current.id
+      setFailure(null)
+      decide.mutate(
+        { sessionId, proposalId, decision },
+        {
+          // A proposal whose confirm does nothing is the worst reading this
+          // console can give: the operator believes the act landed in the
+          // journal, and it did not.
+          onError: (error) => {
+            setFailure({
+              sessionId,
+              message: requestFailureMessage(
+                error,
+                "The decision was not recorded"
+              ),
+              unsent: null,
+            })
+          },
+        }
+      )
     },
     [current, decide]
   )
 
   const onStart = useCallback(() => {
+    setFailure(null)
     start.mutate(undefined, {
       onSuccess: (created) => onChosenIdChange(created.id),
+      // Not about a conversation — there is no conversation — so it carries no
+      // stamp and is shown wherever the operator happens to be.
+      onError: (error) => {
+        setFailure({
+          sessionId: null,
+          message: requestFailureMessage(
+            error,
+            "The conversation was not started"
+          ),
+          unsent: null,
+        })
+      },
     })
   }, [start, onChosenIdChange])
 
@@ -196,6 +300,23 @@ export function ChatConsole({
   const transcriptFailed =
     !sessionsFailed && transcript.isError && messages.length === 0
 
+  // Loading is a state, and it is not the empty one. Without it the thread
+  // draws "Nothing said yet" over a conversation that is on its way — the
+  // console telling the operator the answer is nothing while it is still
+  // asking the question. The skeleton stands where the turns will be; the
+  // transcript's own load only counts while there is nothing to keep showing,
+  // so a poll refetch never blanks a thread that is already readable.
+  const loading =
+    sessions.isLoading || (transcript.isLoading && messages.length === 0)
+
+  /* Shown only where it happened. A failure carrying another conversation's
+     stamp belongs to that conversation, and an unstamped one — a conversation
+     that could not be started — belongs to none and is shown anywhere. */
+  const shownFailure =
+    failure && (failure.sessionId === null || failure.sessionId === current?.id)
+      ? failure
+      : null
+
   return (
     <div className={styles.screen} data-test="chat-console">
       <div className={styles.rail}>
@@ -205,35 +326,69 @@ export function ChatConsole({
           onSelect={onChosenIdChange}
           onStart={onStart}
           busy={start.isPending}
+          loading={sessions.isLoading}
+          /* The centre already says the console did not load, and says it with
+             the one retry. A rail answering the same dead read with "no
+             conversations yet" would be a second and wrong reading of it. */
+          failed={sessionsFailed}
         />
       </div>
 
       <div className={styles.centre}>
         {sessionsFailed ? (
-          <ConsoleErrorState
+          <ScreenState
+            kind="error"
             title="The console did not load"
-            message={
-              sessions.error instanceof Error
-                ? sessions.error.message
-                : "Unknown error"
+            description={requestFailureMessage(sessions.error, "Unknown error")}
+            inset="gutter"
+            data-test="chat-console-error"
+            action={
+              <Tooltip content="Retry">
+                <Button
+                  size="icon-sm"
+                  data-test="chat-console-error-retry"
+                  aria-label="Retry"
+                  onClick={() => {
+                    void sessions.refetch()
+                  }}
+                >
+                  <RotateCw aria-hidden="true" />
+                </Button>
+              </Tooltip>
             }
-            onRetry={() => {
-              void sessions.refetch()
-            }}
-            dataTest="chat-console-error"
           />
         ) : transcriptFailed ? (
-          <ConsoleErrorState
+          <ScreenState
+            kind="error"
             title="The transcript did not load"
-            message={
-              transcript.error instanceof Error
-                ? transcript.error.message
-                : "Unknown error"
+            description={requestFailureMessage(
+              transcript.error,
+              "Unknown error"
+            )}
+            inset="gutter"
+            data-test="chat-transcript-error"
+            action={
+              <Tooltip content="Retry">
+                <Button
+                  size="icon-sm"
+                  data-test="chat-transcript-error-retry"
+                  aria-label="Retry"
+                  onClick={() => {
+                    void transcript.refetch()
+                  }}
+                >
+                  <RotateCw aria-hidden="true" />
+                </Button>
+              </Tooltip>
             }
-            onRetry={() => {
-              void transcript.refetch()
-            }}
-            dataTest="chat-transcript-error"
+          />
+        ) : loading ? (
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="gutter"
+            fill
+            label="Loading the conversation"
+            data-test="chat-console-loading"
           />
         ) : (
           <>
@@ -254,6 +409,14 @@ export function ChatConsole({
               onSeedChange={onSeedChange}
               recall={recall}
               autoFocus={focusComposerOnMount}
+              failure={
+                shownFailure
+                  ? {
+                      message: shownFailure.message,
+                      unsent: shownFailure.unsent,
+                    }
+                  : null
+              }
             />
           </>
         )}
@@ -262,43 +425,6 @@ export function ChatConsole({
       <div className={styles.panel}>
         <ChatSidePanel messages={messages} commands={commands} />
       </div>
-    </div>
-  )
-}
-
-/**
- * The console's reading of a failed read — the same shape the pages give
- * (runs, tasks, cost): a named state, the wire's own sentence, one retry.
- * Local to this file because only the console renders it, and the two
- * call sites above are the whole catalogue of ways a read here can fail.
- */
-function ConsoleErrorState({
-  title,
-  message,
-  onRetry,
-  dataTest,
-}: {
-  title: string
-  message: string
-  onRetry: () => void
-  dataTest: string
-}) {
-  return (
-    <div className={styles.state} role="alert" data-test={dataTest}>
-      <p className={styles.stateTitle}>{title}</p>
-      <p className={styles.stateBody}>{message}</p>
-      <span>
-        <Tooltip content="Retry">
-          <Button
-            size="icon-sm"
-            data-test={`${dataTest}-retry`}
-            aria-label="Retry"
-            onClick={onRetry}
-          >
-            <RotateCw aria-hidden="true" />
-          </Button>
-        </Tooltip>
-      </span>
     </div>
   )
 }

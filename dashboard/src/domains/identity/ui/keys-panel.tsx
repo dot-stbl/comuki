@@ -5,12 +5,14 @@ import { toast } from "sonner"
 
 import { useRevokeApiKeyMutation } from "@/domains/identity/api/queries"
 import type { ApiKeyRow } from "@/domains/identity/model/types"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { useCan, useSession } from "@/shared/session"
 import {
   Button,
   ConfirmDialog,
   DataTable,
   DataTableToolbar,
+  Notice,
   Tooltip,
   applyDataFilters,
   buttonClass,
@@ -119,6 +121,22 @@ export function KeysPanel({ keys, initialFilter }: KeysPanelProps) {
           }
         />
       </div>
+
+      {/* A revoke that did not land, above the table that still shows the key
+          it failed to stop. Saying nothing here is the worst possible answer:
+          the operator walks away believing a key is dead. */}
+      {revokeKey.error ? (
+        <div className={styles.failure}>
+          <Notice tone="bad" data-test="key-revoke-failure">
+            {requestFailureMessage(
+              revokeKey.error,
+              "The platform refused to revoke the key."
+            )}{" "}
+            Nothing was revoked — the key below is still working.
+          </Notice>
+        </div>
+      ) : null}
+
       <div className={styles.tableArea}>
         <DataTable
           columns={columns}

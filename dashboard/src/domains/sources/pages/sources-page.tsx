@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { Plug, RotateCw } from "lucide-react"
+import { toast } from "sonner"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -15,12 +16,15 @@ import type {
 } from "@/domains/sources/model/types"
 import { ConnectionsPanel } from "@/domains/sources/ui/connections-panel"
 import { createSourceColumns } from "@/domains/sources/ui/sources-columns"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { cn } from "@/shared/lib/utils"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
 import {
   Button,
   ConfirmDialog,
+  ScreenState,
   Section,
+  Skeleton,
   Tooltip,
   buttonClass,
 } from "@/shared/ui"
@@ -195,7 +199,12 @@ export function SourcesPage({ focus }: SourcesPageProps) {
     ? null
     : needsLabel("sources.edit")
 
-  const failure = disconnect.error
+  /* Every act the list can take, answering in one place. The probe was
+     missing from this union, which made a failed *test connection* the one
+     act on this screen that failed in silence — the button simply stopped
+     spinning. A probe and a disconnect both answer here because a second
+     banner would be a second place to look for the same kind of news. */
+  const failure = disconnect.error ?? testConnection.error
 
   const ready = !isLoading && !isError
 
@@ -271,24 +280,15 @@ export function SourcesPage({ focus }: SourcesPageProps) {
     >
       <div className={styles.screen}>
         {isLoading ? (
-          <div className={styles.skeleton} data-test="sources-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton lines={SKELETON_WIDTHS} data-test="sources-loading" />
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>Couldn&apos;t load sources</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="Couldn't load sources"
+            description={requestFailureMessage(error, "Unknown error")}
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -301,8 +301,8 @@ export function SourcesPage({ focus }: SourcesPageProps) {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {failure ? (
@@ -311,8 +311,8 @@ export function SourcesPage({ focus }: SourcesPageProps) {
             role="alert"
             data-test="sources-failure"
           >
-            {failure instanceof Error ? failure.message : "The change failed."}{" "}
-            Nothing moved — the list is back as it was.
+            {requestFailureMessage(failure, "The change failed.")} Nothing moved
+            — the list is back as it was.
           </p>
         ) : null}
 
@@ -373,7 +373,16 @@ export function SourcesPage({ focus }: SourcesPageProps) {
             disconnecting.removable &&
             can(session, "sources.edit", disconnecting.projectId)
           ) {
-            disconnect.mutate(disconnecting.id)
+            const cut = disconnecting
+            // The same confirmation the source's own page gives for the same
+            // act. Without it the only sign the cut landed was the row
+            // vanishing under the optimistic update, which is also what a
+            // filter change looks like.
+            disconnect.mutate(cut.id, {
+              onSuccess: () => {
+                toast.success("Source disconnected", { description: cut.name })
+              },
+            })
           }
           setDisconnecting(null)
         }}

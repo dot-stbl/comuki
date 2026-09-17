@@ -88,7 +88,7 @@
 
 .tab[data-focus-visible] {
   border-radius: var(--r-sm);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* An icon rides at the cap height of the word beside it and never above it. */
@@ -111,41 +111,7 @@
 
 /* States ------------------------------------------------------------------ */
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s8) var(--page-x);
-  font-family: var(--font-ui);
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-width: var(--measure-note);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-/* Rows, not blocks: what is loading is a list of settings. */
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  padding: var(--page-y) var(--page-x);
-}
-
-.skeletonBar {
-  block-size: var(--h-meter);
-  flex: 0 0 auto;
-  border-radius: var(--r-xs);
-  background: var(--muted);
-}
+/* Nothing here any more. The error state is `ScreenState inset="page"` and the
+   loading state is `Skeleton inset="page"`, both from the kit — this file used
+   to carry hand-copied `.state` / `.stateTitle` / `.stateBody` and a private
+   skeleton, which is the drift the two primitives exist to end. */

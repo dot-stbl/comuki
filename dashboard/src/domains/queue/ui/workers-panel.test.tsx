@@ -253,6 +253,10 @@ describe("force stop asks first", () => {
 })
 
 describe("an empty pool says which kind of empty it is", () => {
+  /* The state's own box is the kit's `ScreenState`, which stamps
+     `data-state="empty"` and forwards nothing else, so which of the four
+     empties the model resolved rides on the title inside it — `[data-kind]`
+     below. The sentence is still read off the whole block. */
   function emptyPool(items: QueueItem[]) {
     mount({ workers: [], items })
     return document.querySelector('[data-test="worker-empty"]')
@@ -261,7 +265,9 @@ describe("an empty pool says which kind of empty it is", () => {
   it("reads a backlog as scale about to act", () => {
     const state = emptyPool([QUEUED])
 
-    expect(state?.getAttribute("data-kind")).toBe("backlog")
+    expect(state?.querySelector("[data-kind]")?.getAttribute("data-kind")).toBe(
+      "backlog"
+    )
     expect(state?.textContent).toContain("min idle = 0")
     expect(state?.textContent).toContain("queued and unclaimed")
   })
@@ -269,7 +275,9 @@ describe("an empty pool says which kind of empty it is", () => {
   it("reads no backlog as the configured resting state", () => {
     const state = emptyPool([])
 
-    expect(state?.getAttribute("data-kind")).toBe("at-rest")
+    expect(state?.querySelector("[data-kind]")?.getAttribute("data-kind")).toBe(
+      "at-rest"
+    )
     expect(state?.textContent).toContain("min idle = 0")
     expect(state?.textContent).toContain("resting state")
   })
@@ -325,7 +333,9 @@ describe("an empty pool says which kind of empty it is", () => {
       return document.querySelector('[data-test="worker-empty"]')
     })()
 
-    expect(state?.getAttribute("data-kind")).toBe("under-target")
+    expect(state?.querySelector("[data-kind]")?.getAttribute("data-kind")).toBe(
+      "under-target"
+    )
     expect(state?.textContent).toContain("not a resting state")
   })
 })

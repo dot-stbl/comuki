@@ -26,7 +26,7 @@
 .row:focus-visible {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* Marked by its border and a wash of the one accent, the way the rail marks

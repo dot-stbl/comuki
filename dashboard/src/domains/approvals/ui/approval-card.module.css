@@ -1,21 +1,10 @@
 /* One decision waiting on a person.
 
-   Not a card in the design system's sense — no fill that lifts it off the
-   floor, no shadow that floats it. A data surface: hairlines on all four
-   sides, the lane material it is made of, and the surface step of the corner
-   scale, because a block this size reads as a square slab without one and
-   every control standing on it is rounded. See The No-Card Rule in DESIGN.md. */
-
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s3);
-  min-inline-size: 0;
-  padding: var(--s4) var(--s5);
-  border: var(--hairline) solid var(--rule-strong);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-}
+   What bounds it is the kit's `Surface` — this file carried a private copy of
+   that construction, one of six across the domains and one of four that were
+   byte-identical, each with its own paragraph explaining that it is not a
+   card. The paragraph lives in `shared/ui/surface.module.css` now; what is
+   left here is what belongs to *this* decision and nothing else. */
 
 /* The first line: what kind of decision, on what, at what risk, how old. It
    wraps rather than crushes — the app name is the one thing here that can run
@@ -135,7 +124,10 @@
   flex-direction: column;
   margin: 0;
   min-inline-size: 0;
-  block-size: 6rem;
+  /* A floor rather than a fixed height: the box clips, and a caption that
+     ever needed a second line would have been cut in half by a hard 6rem
+     without anything on the screen saying so. */
+  min-block-size: 6rem;
   border: var(--hairline) dashed var(--rule-strong);
   border-radius: var(--r-md);
   overflow: clip;

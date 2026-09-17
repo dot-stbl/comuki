@@ -15,11 +15,51 @@ export interface FieldProps {
    * is painted.
    */
   labelHidden?: boolean
+  /**
+   * The form will not go without this field.
+   *
+   * A signal, not a rule: validation stays where it already is, at the form's
+   * edge. This only makes the fact legible before the operator finds it out by
+   * being refused.
+   */
+  required?: boolean
   /** The rule the operator cannot see by looking at the box. */
   hint?: ReactNode
   /** What is wrong, in a sentence. Replaces the hint while it is present. */
   error?: string | null
   children: ReactNode
+}
+
+/**
+ * "required", said inside the label.
+ *
+ * Three decisions here, and two of them were bought the expensive way.
+ *
+ * It is a **word** rather than an asterisk, because a star is a convention a
+ * form has to explain somewhere and this product has nowhere to explain it.
+ *
+ * It is **not** hidden from assistive tech, and it must not become hidden.
+ * React Aria composes a select trigger's accessible name from its own value
+ * node, which *replaces* the label association and drops `aria-required` on
+ * the way — so on `SelectField` the accessible name is the only channel this
+ * fact has. A marker that reaches a screen reader on a text input and not on
+ * the select beside it is worse than no marker at all.
+ *
+ * And there is a **real space** in front of it — in the markup, deliberately
+ * not as a margin in the stylesheet. Margins do not reach the accessibility
+ * tree: without the text node the composed name is `"git remoterequired"`, a
+ * screen reader says it as one word, and every `getByLabelText` in the product
+ * silently stops matching. This is a separator, not spacing.
+ */
+function RequiredMark() {
+  return (
+    <>
+      {" "}
+      <span className={styles.labelRequired} data-test="field-required">
+        required
+      </span>
+    </>
+  )
 }
 
 /**
@@ -32,10 +72,19 @@ export interface FieldProps {
  * re-spelled in every such component until this export; now the voice lives
  * here, once, with the field it came from.
  */
-export function FieldLabel({ id, children }: { id?: string; children: ReactNode }) {
+export function FieldLabel({
+  id,
+  required = false,
+  children,
+}: {
+  id?: string
+  required?: boolean
+  children: ReactNode
+}) {
   return (
     <span className={styles.label} id={id}>
       {children}
+      {required ? <RequiredMark /> : null}
     </span>
   )
 }
@@ -44,7 +93,13 @@ export function FieldLabel({ id, children }: { id?: string; children: ReactNode 
  * The field-hint voice — the rule the operator cannot see by looking at the
  * control — exported beside `FieldLabel` for the same reason.
  */
-export function FieldHint({ id, children }: { id?: string; children: ReactNode }) {
+export function FieldHint({
+  id,
+  children,
+}: {
+  id?: string
+  children: ReactNode
+}) {
   return (
     <span className={styles.hint} id={id}>
       {children}
@@ -62,11 +117,16 @@ export function FieldHint({ id, children }: { id?: string; children: ReactNode }
  *
  * The message is never carried by colour alone — it takes a mark and a
  * sentence, so it survives greyscale exactly like a status band does.
+ *
+ * `required` rides in the label rather than beside the control, and changes no
+ * validation behaviour — see `RequiredMark` for why it is a word, why it is
+ * readable by assistive tech, and why the space in front of it is load-bearing.
  */
 export function Field({
   id,
   label,
   labelHidden = false,
+  required = false,
   hint,
   error,
   children,
@@ -79,6 +139,7 @@ export function Field({
         htmlFor={id}
       >
         {label}
+        {required ? <RequiredMark /> : null}
       </label>
       {children}
       {error ? (

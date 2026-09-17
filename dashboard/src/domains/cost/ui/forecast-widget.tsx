@@ -2,9 +2,7 @@ import type { ReactNode } from "react"
 
 import type { CostForecast, CostHeat } from "@/domains/cost/model/cost"
 import { costHeat } from "@/domains/cost/model/cost"
-import { cn } from "@/shared/lib/utils"
-
-import styles from "./forecast-widget.module.css"
+import { CostStat } from "@/domains/cost/ui/cost-stat"
 
 export interface ForecastWidgetProps {
   forecast: CostForecast
@@ -24,6 +22,10 @@ export interface ForecastWidgetProps {
  * The projected end-of-period spend, painted with the same three readings
  * as the budget tile.
  *
+ * A `CostStat` and nothing else — this tile is the canonical shape with a bar
+ * in the meter slot, so it holds no stylesheet of its own. The one it used to
+ * carry was the tile recipe copied a third time inside one domain.
+ *
  * A forecast that lives behind a colour is a forecast the operator has been
  * trained to ignore by the time it crosses 90%, so the meter is a fallback —
  * the figure states the reading in words and the line under it says what
@@ -42,22 +44,16 @@ export function ForecastWidget({
   const pct = Math.round(forecast.share * 100)
 
   return (
-    <article
-      className={cn(styles.forecast, className)}
-      data-test="forecast-widget"
-      data-heat={heat}
+    <CostStat
+      name="forecast"
+      label={`Forecast ${projectedLabel}`}
+      prefix="$"
+      value={forecast.projectedEndOfPeriod.toFixed(2)}
+      heat={heat}
+      sub={`${pct}% of $${forecast.cap.toFixed(0)} cap · burn rate ${burnRateLabel}`}
+      className={className}
     >
-      <span className={styles.label}>Forecast {projectedLabel}</span>
-      <span className={styles.figure}>
-        <span className={styles.unit}>$</span>
-        <span className={styles.value}>
-          {forecast.projectedEndOfPeriod.toFixed(2)}
-        </span>
-      </span>
       {meter}
-      <p className={styles.sub}>
-        {pct}% of ${forecast.cap.toFixed(0)} cap · burn rate {burnRateLabel}
-      </p>
-    </article>
+    </CostStat>
   )
 }

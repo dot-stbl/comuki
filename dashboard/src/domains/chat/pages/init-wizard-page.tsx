@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react"
 import { useNavigate, useRouter } from "@tanstack/react-router"
 
 import {
@@ -8,6 +15,7 @@ import {
   FormPage,
   FormRow,
 } from "@/app/layout/form-page"
+import { useUnsavedGuard } from "@/app/layout/use-unsaved-guard"
 import {
   EMPTY_DRAFT,
   INIT_STAGES,
@@ -23,6 +31,7 @@ import { cn } from "@/shared/lib/utils"
 import { useCan, useSession } from "@/shared/session"
 import {
   Button,
+  ConfirmDialog,
   Notice,
   NumberField,
   SelectField,
@@ -74,14 +83,40 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
   const router = useRouter()
 
   const projects = useMemo(() => initProjects(session), [session])
-  const [draft, setDraft] = useState<InitDraft>(() => ({
+  /* What the wizard was handed when it opened — the empty draft, plus the
+     project the console scoped it to. Held so "unsaved" can be measured
+     against it rather than against `EMPTY_DRAFT`: arriving from `/chat` with a
+     project already chosen is not something the operator typed. */
+  const [opened] = useState<InitDraft>(() => ({
     ...EMPTY_DRAFT,
     projectId:
       project && projects.some((entry) => entry.id === project) ? project : "",
   }))
+  const [draft, setDraft] = useState<InitDraft>(opened)
   const [showErrors, setShowErrors] = useState(false)
   const [running, setRunning] = useState(false)
   const [stage, setStage] = useState(0)
+
+  /* Coarse the way `useUnsavedGuard` asks for it: anything off what the wizard
+     opened with counts, across every step rather than the one showing — a
+     remote typed on step one is still unsaved while the operator is looking at
+     step three. Once the stream is running nothing is unsaved any more: the
+     act has started and there is nothing left to drop. */
+  const dirty =
+    !running &&
+    (Object.keys(opened) as (keyof InitDraft)[]).some(
+      (key) => draft[key] !== opened[key]
+    )
+
+  /* The current step's `leave`, handed up by the guard below. Wrapping a
+     departure the operator actually asked for is what keeps the guard from
+     asking "are you sure" about the button they just pressed. */
+  const leaveRef = useRef<(go: () => void) => void>((go) => {
+    go()
+  })
+  const leave = useCallback((go: () => void) => {
+    leaveRef.current(go)
+  }, [])
 
   const errors = stepErrors(step, draft)
   const shown = showErrors ? errors : {}
@@ -104,9 +139,20 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
   const goto = useCallback(
     (next: InitStep) => {
       setShowErrors(false)
-      void navigate({ to: "/chat/init", search: { step: next }, replace: true })
+      // A step lives in the address, so moving between steps *is* a
+      // navigation as far as the router's blocker is concerned — and pressing
+      // Continue is the last thing that should be met with "leave without
+      // saving?". Every step change is therefore a departure the operator
+      // asked for, and `StepGuard` re-arms itself on the other side of it.
+      leave(() => {
+        void navigate({
+          to: "/chat/init",
+          search: { step: next },
+          replace: true,
+        })
+      })
     },
-    [navigate]
+    [navigate, leave]
   )
 
   /* The stream, advanced on an interval and stopped on unmount. Deliberately
@@ -144,11 +190,16 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
       goto(INIT_STEPS[index - 1] as InitStep)
       return
     }
-    if (router.history.canGoBack()) {
-      router.history.back()
-      return
-    }
-    void navigate({ to: "/chat" })
+    // Cancel, on the first step. The operator said to leave, so they are not
+    // asked about it — the guard exists for the rail, the crumb and the URL
+    // bar, not for the button whose whole word is "cancel".
+    leave(() => {
+      if (router.history.canGoBack()) {
+        router.history.back()
+        return
+      }
+      void navigate({ to: "/chat" })
+    })
   }
 
   const meta = STEP_META[step]
@@ -162,6 +213,9 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
       ]}
       summary={running ? "Onboarding is running." : meta.summary}
     >
+      {/* Keyed by the step, and that is the whole trick — see `StepGuard`. */}
+      <StepGuard key={step} dirty={dirty} leaveRef={leaveRef} />
+
       <ol className={styles.steps} data-test="init-steps">
         {INIT_STEPS.map((entry, at) => (
           <li
@@ -215,7 +269,9 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
               <FormActions>
                 <Button
                   onClick={() => {
-                    void navigate({ to: "/chat" })
+                    leave(() => {
+                      void navigate({ to: "/chat" })
+                    })
                   }}
                 >
                   Back to the console
@@ -237,7 +293,8 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
               <>
                 <SelectField
                   id="init-project"
-                  label="Project"
+                  label="project"
+                  required
                   value={draft.projectId}
                   onValueChange={(next) => set("projectId", next)}
                   options={projects.map((entry) => ({
@@ -251,7 +308,8 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                 />
                 <TextField
                   id="init-remote"
-                  label="Git remote"
+                  label="git remote"
+                  required
                   value={draft.remote}
                   onValueChange={(next) => set("remote", next)}
                   placeholder="git@github.com:acme/checkout-web.git"
@@ -260,14 +318,15 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                 <FormRow>
                   <TextField
                     id="init-branch"
-                    label="Default branch"
+                    label="default branch"
+                    required
                     value={draft.branch}
                     onValueChange={(next) => set("branch", next)}
                     error={shown.branch}
                   />
                   <SwitchField
                     id="init-write"
-                    label="May push branches"
+                    label="may push branches"
                     checked={draft.writeAccess}
                     onCheckedChange={(next) => set("writeAccess", next)}
                     hint="Off means the swarm reads the repository and opens nothing."
@@ -280,7 +339,7 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
               <FormRow>
                 <SelectField
                   id="init-provider"
-                  label="Provider"
+                  label="provider"
                   value={draft.provider}
                   onValueChange={(next) => set("provider", next)}
                   options={[
@@ -291,7 +350,8 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                 />
                 <NumberField
                   id="init-workers"
-                  label="Workers at once"
+                  label="workers at once"
+                  required
                   unit="workers"
                   min={1}
                   value={draft.maxWorkers}
@@ -306,7 +366,8 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
               <>
                 <TextField
                   id="init-lead"
-                  label="Lead model endpoint"
+                  label="lead model endpoint"
+                  required
                   value={draft.leadEndpoint}
                   onValueChange={(next) => set("leadEndpoint", next)}
                   placeholder="https://api.example.com/v1"
@@ -315,14 +376,15 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                 />
                 <TextField
                   id="init-worker"
-                  label="Worker model endpoint"
+                  label="worker model endpoint"
                   value={draft.workerEndpoint}
                   onValueChange={(next) => set("workerEndpoint", next)}
                   placeholder="leave empty to use the lead endpoint"
                 />
                 <TextField
                   id="init-secret"
-                  label="Secret reference"
+                  label="secret reference"
+                  required
                   value={draft.secretRef}
                   onValueChange={(next) => set("secretRef", next)}
                   placeholder="env:ACME_MODEL_KEY"
@@ -336,14 +398,14 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
               <>
                 <SwitchField
                   id="init-knowledge"
-                  label="Keep an indexed rule set"
+                  label="keep an indexed rule set"
                   checked={draft.knowledge}
                   onCheckedChange={(next) => set("knowledge", next)}
                   hint="A docs worker writes it. There is no document editor here."
                 />
                 <TextareaField
                   id="init-seed"
-                  label="Seed"
+                  label="seed"
                   value={draft.seed}
                   onValueChange={(next) => set("seed", next)}
                   rows={3}
@@ -404,6 +466,56 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
         </FormLayout>
       )}
     </FormPage>
+  )
+}
+
+/**
+ * The unsaved guard, re-armed at every step.
+ *
+ * The wizard is the one create-page in the product whose *own* controls
+ * navigate: the step is a search parameter, so pressing Continue is a router
+ * navigation and the blocker sees it exactly as it sees somebody clicking the
+ * rail. The way a page tells the guard "this departure was the point" is
+ * `guard.leave`, and `leave` sets a ref that is never cleared — one Continue
+ * and the guard is disarmed for the life of the component, which on this page
+ * is the life of the whole wizard. Half the flow would then be unguarded, and
+ * the half that collects the git remote and the secret reference is the half
+ * that would lose it.
+ *
+ * So the guard is not mounted by the page; it is mounted by this component,
+ * keyed on the step. A step change is a remount, a remount is a fresh ref, and
+ * the guard arrives at step two armed. The alternative — teaching
+ * `useUnsavedGuard` to read `{ current, next }` off the blocker and let a
+ * same-route step change through — is the better fix and belongs in
+ * `app/layout/use-unsaved-guard.ts`, which is not this page's file.
+ *
+ * `leaveRef` rather than a render prop, so the form stays the form: the page
+ * calls `leaveRef.current(go)` and does not have to be rebuilt around a
+ * callback that only exists to reach the blocker.
+ */
+function StepGuard({
+  dirty,
+  leaveRef,
+}: {
+  dirty: boolean
+  leaveRef: RefObject<(go: () => void) => void>
+}) {
+  const guard = useUnsavedGuard(dirty)
+
+  useEffect(() => {
+    leaveRef.current = guard.leave
+  }, [guard.leave, leaveRef])
+
+  return (
+    <ConfirmDialog
+      open={guard.asking}
+      title="Leave the wizard without onboarding?"
+      body="The repository, the model endpoints and the secret reference you typed are not saved anywhere yet. Leaving this page drops them."
+      confirmLabel="Discard"
+      cancelLabel="Keep editing"
+      onConfirm={guard.discard}
+      onCancel={guard.keep}
+    />
   )
 }
 

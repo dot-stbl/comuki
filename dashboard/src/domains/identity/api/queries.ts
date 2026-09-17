@@ -162,7 +162,9 @@ async function loadIdentityReal(
  * `["projects"]` cache. See `loadIdentityReal`'s note for the wire-shape
  * gaps that the mappers paper over.
  */
-async function loadIdentity(queryClient: QueryClient): Promise<IdentitySnapshot> {
+async function loadIdentity(
+  queryClient: QueryClient
+): Promise<IdentitySnapshot> {
   return env.useMock ? snapshot() : loadIdentityReal(queryClient)
 }
 

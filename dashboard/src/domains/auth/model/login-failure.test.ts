@@ -35,6 +35,15 @@ describe("login failure copy", () => {
     )
   })
 
+  it("does not blame the operator for the host's own 5xx", () => {
+    expect(loginFailureMessage(transportFailure(502))).toBe(
+      "The sign-in service is not answering — try again shortly"
+    )
+    expect(loginFailureMessage(transportFailure(500))).toBe(
+      "The sign-in service is not answering — try again shortly"
+    )
+  })
+
   it("maps fetch's network failure (TypeError) to a reachability sentence", () => {
     expect(loginFailureMessage(new TypeError("Failed to fetch"))).toBe(
       "Cannot reach the server — check your connection"

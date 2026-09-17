@@ -14,7 +14,7 @@ import { useLoginMutation } from "@/domains/identity/api/mutations"
 import { env } from "@/shared/config/env"
 import { signInWithOidcMock } from "@/shared/api/mock/auth.store"
 import { cn } from "@/shared/lib/utils"
-import { Button, ComukiMark } from "@/shared/ui"
+import { Button, ComukiMark, TextField } from "@/shared/ui"
 
 import styles from "./login-page.module.css"
 
@@ -51,7 +51,6 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
 
   const identityId = useId()
   const passwordId = useId()
-  const failureId = useId()
 
   const [identity, setIdentity] = useState("")
   const [password, setPassword] = useState("")
@@ -141,12 +140,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
         ) : null}
 
         {failure ? (
-          <p
-            className={styles.failure}
-            id={failureId}
-            role="alert"
-            data-test="login-failure"
-          >
+          <p className={styles.failure} role="alert" data-test="login-failure">
             <CircleAlert aria-hidden="true" className={styles.failureIcon} />
             <span>{failure}</span>
           </p>
@@ -159,43 +153,33 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
           onSubmit={(event) => void submit(event)}
           noValidate
         >
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor={identityId}>
-              Email
-            </label>
-            <input
-              className={styles.input}
-              id={identityId}
-              name="identity"
-              type="text"
-              autoComplete="username"
-              autoCapitalize="none"
-              spellCheck={false}
-              placeholder="you@comuki.local"
-              value={identity}
-              aria-invalid={failure ? true : undefined}
-              aria-describedby={failure ? failureId : undefined}
-              onChange={(event) => setIdentity(event.target.value)}
-            />
-          </div>
+          {/* The kit's field, not a private copy of it: this screen had
+              re-spelled `.field` / `.label` / `.control` almost declaration for
+              declaration, which is how the gate would have missed every future
+              correction the rest of the product's forms receive. */}
+          <TextField
+            id={identityId}
+            label="Email"
+            name="identity"
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="you@comuki.local"
+            value={identity}
+            onValueChange={setIdentity}
+          />
 
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor={passwordId}>
-              Password
-            </label>
-            <input
-              className={styles.input}
-              id={passwordId}
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="your account password"
-              value={password}
-              aria-invalid={failure ? true : undefined}
-              aria-describedby={failure ? failureId : undefined}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </div>
+          <TextField
+            id={passwordId}
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="your account password"
+            value={password}
+            onValueChange={setPassword}
+          />
 
           {/* `disabled` is for busy and invalid, which is exactly these two —
               nobody is being refused a permission here. */}

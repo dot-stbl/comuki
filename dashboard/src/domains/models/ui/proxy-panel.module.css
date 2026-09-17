@@ -1,25 +1,13 @@
-/* The switch that decides what the rest of the screen means. A data surface,
-   so it is bounded by a hairline on its start edge and nothing else — no
-   shadow, no lift, no card. It carries the surface step of the corner scale:
-   rounding a panel does not give it card chrome, and leaving it square while
-   everything on it is rounded is what made the screen read as half-finished. */
+/* The switch that decides what the rest of the screen means.
 
-.panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s4);
-  min-inline-size: 0;
-  padding: var(--s4) var(--s5);
-  border-inline-start: var(--hairline) solid var(--st-waiting);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-}
+   What bounds it — the hairline on the start edge, the lane material, the
+   surface step of the corner scale — is the kit's `Surface`, which is where the
+   eight declarations this file used to spell out for itself now live. The edge
+   is also the accent channel: `tone` is read off the switch, and `on` is the
+   resting state that takes no mark at all, because an operator should not have
+   to learn a colour to know that the normal arrangement is normal.
 
-/* On is the resting state and takes no mark at all: an operator should not have
-   to learn a colour to know that the normal arrangement is normal. */
-.panel[data-enabled] {
-  border-inline-start-color: var(--rule-strong);
-}
+   What is left here is the panel's own contents. */
 
 .head {
   display: flex;
@@ -52,7 +40,7 @@
   color: var(--st-waiting);
 }
 
-.panel[data-enabled] .stateWord {
+.state[data-enabled] .stateWord {
   color: var(--st-success);
 }
 
@@ -109,7 +97,7 @@
 
 /* Numbers that are no longer being produced read as history, not as a
    dashboard: the window says so in words rather than by going grey alone. */
-.panel:not([data-enabled]) .figureValue {
+.figuresStale .figureValue {
   color: var(--text-muted);
 }
 

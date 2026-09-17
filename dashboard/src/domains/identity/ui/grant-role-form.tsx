@@ -30,6 +30,16 @@ export interface GrantRoleFormProps {
   users: readonly UserRow[]
   keys: readonly ApiKeyRow[]
   projects: ReadonlyArray<{ id: string; slug: string; name: string }>
+  /**
+   * The three lists are still on their way.
+   *
+   * It matters because the hints below say "nothing of that kind to grant to
+   * yet", and an empty array on its way and an empty array that is the answer
+   * look identical from here — so a direct arrival on this URL used to be told
+   * the platform held no users at all. The form has no error state to tell
+   * apart from this one: the page above owns that.
+   */
+  loading?: boolean
   busy?: boolean
   onGrant: (input: GrantRoleInput) => void
   onCancel: () => void
@@ -58,6 +68,7 @@ export function GrantRoleForm({
   users,
   keys,
   projects,
+  loading = false,
   busy = false,
   onGrant,
   onCancel,
@@ -111,7 +122,9 @@ export function GrantRoleForm({
     onDirtyChange?.(dirty)
   }, [dirty, onDirtyChange])
 
-  const blocked = !subject || (onProject && !project)
+  // Nothing can be written against a list that has not arrived either, so the
+  // wait gates the submit exactly as an empty list does.
+  const blocked = loading || !subject || (onProject && !project)
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
@@ -146,13 +159,19 @@ export function GrantRoleForm({
           <SelectField
             id="grant-subject"
             label="subject"
+            required
             value={subject}
-            disabled={busy || subjects.length === 0}
+            disabled={busy || loading || subjects.length === 0}
             options={subjects}
+            /* Three readings, not two: still coming, genuinely nothing, and a
+               list. Collapsing the first into the second is what made a slow
+               payload say the platform was empty. */
             hint={
-              subjects.length === 0
-                ? "Nothing of that kind to grant to yet."
-                : undefined
+              loading
+                ? "Looking up what can hold a role."
+                : subjects.length === 0
+                  ? "Nothing of that kind to grant to yet."
+                  : undefined
             }
             onValueChange={setSubjectId}
           />
@@ -182,13 +201,19 @@ export function GrantRoleForm({
             <SelectField
               id="grant-project"
               label="project"
+              /* Only while the scope is a project — which is the only time
+                 this field is rendered and the only time it gates the
+                 submit. */
+              required
               value={project}
-              disabled={busy || projectOptions.length === 0}
+              disabled={busy || loading || projectOptions.length === 0}
               options={projectOptions}
               hint={
-                projectOptions.length === 0
-                  ? "No projects to scope a grant to yet."
-                  : undefined
+                loading
+                  ? "Looking up which projects a grant can be scoped to."
+                  : projectOptions.length === 0
+                    ? "No projects to scope a grant to yet."
+                    : undefined
               }
               onValueChange={setProjectId}
             />

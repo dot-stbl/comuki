@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 
 import {
   knowledgeDocumentsToSnapshot,
@@ -70,12 +71,44 @@ export const knowledgeSearchQueryKey = (q: string) =>
 const SEARCH_TOP_K = 8
 const SEARCH_MIN_SIMILARITY = 0.2
 
+/**
+ * How long the box waits for the operator to stop typing.
+ *
+ * Every keystroke used to be its own cosine search over the chunk table, and
+ * the list under it re-answered on each one. A quarter of a second is below
+ * the threshold at which a person reads the box as lagging and above the
+ * cadence of ordinary typing, so the search runs on words rather than on
+ * letters.
+ */
+const SEARCH_SETTLE_MS = 250
+
+/** The value, once it has stopped changing for `ms`. Local to this file. */
+function useSettled(value: string, ms: number): string {
+  const [settled, setSettled] = useState(value)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSettled(value)
+    }, ms)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [value, ms])
+
+  return settled
+}
+
 export function useKnowledgeSearchQuery(q: string) {
-  const trimmed = q.trim()
+  const trimmed = useSettled(q.trim(), SEARCH_SETTLE_MS)
 
   return useQuery<KnowledgeHit[]>({
     queryKey: knowledgeSearchQueryKey(trimmed),
     enabled: !env.useMock && trimmed.length > 0,
+    /* The hits already on the screen stay on it while the next query runs.
+       Without this, refining a query blanked the list to "No matches" between
+       one answer and the next — the one sentence a search must not say while
+       it is still looking. */
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const response = await getApiV1KnowledgeSearch({
         params: {

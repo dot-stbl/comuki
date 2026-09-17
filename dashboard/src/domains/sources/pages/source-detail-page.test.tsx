@@ -180,7 +180,9 @@ const controls = (testId: string) => [
 
 /** The radios of one named group — the page asks several radio questions. */
 const allRadios = (name: string) =>
-  [...document.querySelectorAll(`input[type="radio"][name="${name}"]`)] as HTMLInputElement[]
+  [
+    ...document.querySelectorAll(`input[type="radio"][name="${name}"]`),
+  ] as HTMLInputElement[]
 
 /** Open a source's page, from the list, and wait for it to arrive. */
 async function open(

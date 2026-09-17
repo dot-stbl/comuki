@@ -21,13 +21,11 @@ export default meta
 type Story = StoryObj<typeof KnowledgeSearch>
 
 /**
- * The screen's one control, drawn to the toolbar's own measurements.
- *
- * **A gap in the kit**: the kit's search field is private to
- * `DataTableToolbar`, promoted out of a column's `meta.filter` — and knowledge
- * filters a list of entries that are not table rows, so it has no column to
- * declare one on. Every value here is the toolbar's, so the two read as one
- * control on two screens rather than as two opinions about a search box.
+ * The screen's one control: the kit's `SearchField` at the toolbar's own
+ * density, carrying this screen's two words — the name it announces itself by
+ * and the words on the empty box. There is no second drawing of a search box
+ * here any more, and nothing left in this file that can drift from the one the
+ * data table's toolbar uses.
  */
 export const Empty: Story = {
   render: function Render() {

@@ -1,6 +1,14 @@
 import { useCallback, useMemo, useState } from "react"
-import { getRouteApi } from "@tanstack/react-router"
-import { Cpu, DollarSign, GitBranch, Hash, RotateCw, Timer } from "lucide-react"
+import { Link } from "@tanstack/react-router"
+import {
+  ArrowLeft,
+  Cpu,
+  DollarSign,
+  GitBranch,
+  Hash,
+  RotateCw,
+  Timer,
+} from "lucide-react"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -20,25 +28,40 @@ import {
 import { RunEvidenceStrip } from "@/domains/runs/ui/run-evidence-strip"
 import { RunGraph } from "@/domains/runs/ui/run-graph"
 import { WorkItemInspectorPanel } from "@/domains/runs/ui/work-item-inspector"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { projectOf, useSession } from "@/shared/session"
 import {
   Button,
+  ScreenState,
   SplitPane,
   SplitPanel,
   SplitSeparator,
   StatusBadge,
   Tooltip,
+  buttonClass,
 } from "@/shared/ui"
 
 import styles from "./run-detail-page.module.css"
 
-const runDetailRoute = getRouteApi("/runs/$runId")
-
 /** The tab stays open as long as the run does, so the divider survives a reload. */
 const DETAIL_LAYOUT_KEY = "comuki.run.detail"
 
-export function RunDetailPage() {
-  const { runId } = runDetailRoute.useParams()
+export interface RunDetailPageProps {
+  /**
+   * From the path. A run is a thing, so looking at one has an address.
+   *
+   * Taken as a value rather than read off `getRouteApi` inside, for the reason
+   * the other four detail screens already state: the id is the only thing this
+   * page wants from the router, and a component that reaches for the router to
+   * get one string cannot be mounted in a story or a test without the
+   * generated route tree standing behind it.
+   *
+   */
+  runId: string
+}
+
+/** One run, in full. */
+export function RunDetailPage({ runId }: RunDetailPageProps) {
   const { data, isLoading, isError, error, refetch } = useRunQuery(runId)
   const session = useSession()
   const [picked, setPicked] = useState<string | null>(null)
@@ -87,6 +110,10 @@ export function RunDetailPage() {
     setPicked(itemId)
   }, [])
 
+  // The query answered and the answer was "no such run" — a different reading
+  // from a failed read, and the only one of the two a Retry cannot help with.
+  const missing = !isLoading && !isError && !data
+
   return (
     <AppShell
       padded={false}
@@ -99,11 +126,20 @@ export function RunDetailPage() {
           title={data?.title ?? `Run ${runId}`}
           // Which project, then which app. Arrived at from a list that mixes
           // projects, so the page says whose run this is before it says
-          // anything else about it.
+          // anything else about it. Both halves are values rather than prose,
+          // so both are written in the data voice rather than interpolated
+          // into a sentence — the four sister detail screens do the same.
           summary={
-            data
-              ? `${projectOf(session, data.projectId)?.key ?? "—"} · ${data.app}`
-              : "…"
+            data ? (
+              <>
+                <span className={styles.summaryValue}>
+                  {projectOf(session, data.projectId)?.key ?? "—"}
+                </span>{" "}
+                · <span className={styles.summaryValue}>{data.app}</span>
+              </>
+            ) : (
+              "…"
+            )
           }
           actions={data ? <StatusBadge status={data.status} /> : null}
         />
@@ -118,24 +154,66 @@ export function RunDetailPage() {
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>Couldn&apos;t load this run</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <Tooltip content="Retry">
-              <Button
-                size="icon-sm"
-                data-test="run-retry"
-                aria-label="Retry"
-                onClick={() => {
-                  void refetch()
-                }}
-              >
-                <RotateCw aria-hidden="true" />
-              </Button>
-            </Tooltip>
-          </div>
+          <ScreenState
+            kind="error"
+            title="Couldn't load this run"
+            description={requestFailureMessage(error, "Unknown error")}
+            inset="none"
+            className={styles.stateFill}
+            data-test="run-error"
+            action={
+              <Tooltip content="Retry">
+                <Button
+                  size="icon-sm"
+                  data-test="run-retry"
+                  aria-label="Retry"
+                  onClick={() => {
+                    void refetch()
+                  }}
+                >
+                  <RotateCw aria-hidden="true" />
+                </Button>
+              </Tooltip>
+            }
+          />
+        ) : null}
+
+        {missing ? (
+          /* The swarm answered and this id was not in it. The state names the
+             missing id, because "not found" without it is a screen that cannot
+             be acted on: the operator arrived from a link somebody else wrote,
+             and the id is the only part of it they can take back to whoever
+             wrote it. A way out rather than a retry — asking again would ask
+             the same question. */
+          <ScreenState
+            kind="notFound"
+            title="No run with that id"
+            description={
+              <>
+                The swarm holds nothing under{" "}
+                <code className={styles.missing}>{runId}</code>. A run id out of
+                an old link is the ordinary way to arrive here — an address
+                outlives the run it named, and the duty list is where the ones
+                still in flight are.
+              </>
+            }
+            hint={runId}
+            inset="none"
+            className={styles.stateFill}
+            data-test="run-not-found"
+            action={
+              <Tooltip content="Back to live runs">
+                <Link
+                  to="/runs"
+                  data-test="run-not-found-back"
+                  aria-label="Back to live runs"
+                  className={buttonClass({ size: "icon-sm" })}
+                >
+                  <ArrowLeft aria-hidden="true" />
+                </Link>
+              </Tooltip>
+            }
+          />
         ) : null}
 
         {data ? (
@@ -199,18 +277,15 @@ export function RunDetailPage() {
           // brain has not decomposed. Here it is one run, and a person came to
           // this URL to look at its plan — so the answer names what is missing,
           // says whose move it is, and says what will appear in its place.
-          <div className={styles.state} data-test="run-unplanned">
-            <p className={styles.stateTitle}>Not planned yet</p>
-            <p className={styles.stateBody}>
-              This run is accepted and the brain has not decomposed it into work
-              items. Nothing is wrong and nothing is waiting on you — the graph
-              and the item inspector appear here as soon as the plan has its
-              first item.
-            </p>
-            <p className={styles.stateHint}>
-              {data.status} · no work items · nothing to inspect
-            </p>
-          </div>
+          <ScreenState
+            kind="empty"
+            title="Not planned yet"
+            description="This run is accepted and the brain has not decomposed it into work items. Nothing is wrong and nothing is waiting on you — the graph and the item inspector appear here as soon as the plan has its first item."
+            hint={`${data.status} · no work items · nothing to inspect`}
+            inset="none"
+            className={styles.stateFill}
+            data-test="run-unplanned"
+          />
         ) : null}
 
         {data && items.length > 0 && selectedItem ? (
@@ -262,13 +337,14 @@ export function RunDetailPage() {
                   onSelect={onSelect}
                 />
               ) : (
-                <div className={styles.state}>
-                  <p className={styles.stateTitle}>No detail for this item</p>
-                  <p className={styles.stateBody}>
-                    The plan above is complete; this item has no inspector
-                    record yet. Pick another item, or come back once it starts.
-                  </p>
-                </div>
+                <ScreenState
+                  kind="empty"
+                  title="No detail for this item"
+                  description="The plan above is complete; this item has no inspector record yet. Pick another item, or come back once it starts."
+                  inset="none"
+                  className={styles.stateFill}
+                  data-test="run-item-no-detail"
+                />
               )}
             </SplitPanel>
           </SplitPane>

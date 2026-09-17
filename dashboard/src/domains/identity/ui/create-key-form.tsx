@@ -62,6 +62,11 @@ export function CreateKeyForm({
   const [lifetime, setLifetime] = useState("0")
   const [tenantProjectId, setTenantProjectId] = useState<string>("")
 
+  // The tenant list is optional, so its wait is a hint rather than a gate —
+  // but it is still a wait, and a picker that silently offers only "no tenant
+  // scope" while the payload is in flight tells the operator this platform has
+  // no projects.
+  const scopesLoading = identity.isLoading
   const projectOptions = (identity.data?.projects ?? []).map((project) => ({
     value: project.id,
     label: `${project.name} (${project.slug})`,
@@ -102,6 +107,9 @@ export function CreateKeyForm({
         <TextField
           id="key-name"
           label="name"
+          /* The submit is already gated on it — the marker only says so
+             before the operator finds it out by being refused. */
+          required
           autoFocus
           value={name}
           disabled={busy}
@@ -126,9 +134,13 @@ export function CreateKeyForm({
           id="key-tenant"
           label="tenant project"
           value={tenantProjectId}
-          disabled={busy}
+          disabled={busy || scopesLoading}
           options={[{ value: "", label: "no tenant scope" }, ...projectOptions]}
-          hint="Optional. When set, the key only authenticates requests carrying the matching X-Comuki-Tenant header."
+          hint={
+            scopesLoading
+              ? "Looking up which projects a key can be scoped to."
+              : "Optional. When set, the key only authenticates requests carrying the matching X-Comuki-Tenant header."
+          }
           onValueChange={setTenantProjectId}
         />
       </FormFields>

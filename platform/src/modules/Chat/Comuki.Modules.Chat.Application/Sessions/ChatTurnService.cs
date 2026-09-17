@@ -116,6 +116,7 @@ public sealed class ChatTurnService(
     }
 }
 
+// canon judgement #5: the five file-static helper types below stay co-located with the turn service — they are tightly coupled turn-driver mechanics (folder-organization §1 "pair" exception), not independent business classes.
 /// <summary>
 /// Runs one turn and lets a node's own exception through. Voluta wraps
 /// whatever a node threw in <see cref="GraphRunFailedException"/>, which
@@ -167,9 +168,7 @@ file static class ChatTurnRun
         }
         catch (Exception)
         {
-            // boundary: observe-and-notify, then rethrow — the typed fault
-            // (pending approve, unreachable brain) still reaches the HTTP
-            // ProblemDetails mapper untouched.
+            // deliberate catch-all boundary (exceptions.md §2): emit the terminal Failed signal so a streaming client never dangles, then rethrow — the typed fault still reaches the top-level ProblemDetails handler untouched.
             await progress.DoneAsync(session.Id, ChatTurnDone.Failed, cancellationToken);
             throw;
         }

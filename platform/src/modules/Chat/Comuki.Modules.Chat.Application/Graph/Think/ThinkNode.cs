@@ -79,29 +79,32 @@ public sealed class ThinkNode(
         // journal keeps them as a thinking part instead of dropping them.
         var thinkingText = string.Join("\n", thinking);
 
+        var commonWrites = new[]
+        {
+            new ChannelWrite(ChatChannels.Digest, digest),
+            new ChannelWrite(ChatChannels.Thinking, thinkingText),
+        };
+
         if (brainKind != BrainRequestKindKeys.Plan)
         {
             return NodeResult.Continue(
-                new ChannelWrite(ChatChannels.Digest, digest),
-                new ChannelWrite(ChatChannels.Thinking, thinkingText),
+                [.. commonWrites,
                 new ChannelWrite(ChatChannels.Reply, finalJson),
-                new ChannelWrite(ChatChannels.Phase, ChatPhases.Done));
+                new ChannelWrite(ChatChannels.Phase, ChatPhases.Done)]);
         }
 
         var outcome = ChatPlanGate.Validate(finalJson);
         return outcome.Plan is null
             ? NodeResult.Continue(
-                new ChannelWrite(ChatChannels.Digest, digest),
-                new ChannelWrite(ChatChannels.Thinking, thinkingText),
+                [.. commonWrites,
                 new ChannelWrite(ChatChannels.Reply,
                     outcome.Explanation.Length > 0 ? outcome.Explanation : ChatPlanGate.InvalidPlanMessage),
-                new ChannelWrite(ChatChannels.Phase, ChatPhases.Done))
+                new ChannelWrite(ChatChannels.Phase, ChatPhases.Done)])
             : NodeResult.Continue(
-                new ChannelWrite(ChatChannels.Digest, digest),
-                new ChannelWrite(ChatChannels.Thinking, thinkingText),
+                [.. commonWrites,
                 new ChannelWrite(ChatChannels.PlanJson, outcome.CanonicalJson),
                 new ChannelWrite(ChatChannels.Reply, ChatPlanGate.CardPrompt),
-                new ChannelWrite(ChatChannels.Phase, ChatPhases.Confirm));
+                new ChannelWrite(ChatChannels.Phase, ChatPhases.Confirm)]);
     }
 }
 

@@ -59,7 +59,7 @@
 .separator:focus-visible {
   outline: none;
   background: var(--primary);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* The grip: three marks that appear only when the separator is live, so the

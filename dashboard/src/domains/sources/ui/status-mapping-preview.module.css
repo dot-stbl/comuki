@@ -41,7 +41,7 @@
   min-inline-size: 0;
   font-family: var(--font-data);
   font-size: var(--t-xs);
-  line-height: 1.4;
+  line-height: var(--lh-body);
   color: var(--text-muted);
   overflow-wrap: anywhere;
 }

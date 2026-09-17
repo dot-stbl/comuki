@@ -4,7 +4,6 @@ import {
   ChevronDown,
   Filter,
   FilterX,
-  Search,
   SlidersHorizontal,
   X,
 } from "lucide-react"
@@ -18,6 +17,7 @@ import {
 import { cn } from "@/shared/lib/utils"
 
 import { Button } from "../button"
+import { SearchField } from "../search-field"
 import { Select } from "../select"
 import { Tooltip } from "../tooltip"
 import {
@@ -106,6 +106,13 @@ export interface DataTableToolbarProps<TData extends RowData> {
  * something — are props on it rather than a second component. A form and a
  * toolbar on the same screen now wear the same control.
  *
+ * The search field went the same way, and later than it should have: this file
+ * carried a private component *also called `SearchField`*, so the name resolved
+ * to two different things in one kit while the public one had no call sites at
+ * all. The whole of the difference was density, and density is `size="sm"`. The
+ * bar keeps only what is genuinely its own — how the field grows and where it
+ * gives way when chips crowd the row — and that is a class, not a component.
+ *
  * ## Where the bar lives
  *
  * Kept a sibling of the table rather than a slot inside it, so the table stays
@@ -163,12 +170,22 @@ export function DataTableToolbar<TData extends RowData>({
       <div className={styles.controls}>
         {leading}
         {search ? (
+          /* The kit's search field, not a private one. The only thing the bar
+             asks of it that a form does not is density, and that is `size`;
+             the growth rule is the bar's own layout and rides on `.search`.
+             No `data-active`: the promoted filter earns no chip for the same
+             reason it earns no mark — the words the operator typed are still
+             in the box, which is the loudest reading there is. */
           <SearchField
-            spec={search}
+            className={styles.search}
+            size="sm"
             value={filters[search.id] ?? ""}
-            onChange={(next) => {
+            onValueChange={(next) => {
               update(search.id, next)
             }}
+            placeholder={search.filter.placeholder ?? `search ${search.label}…`}
+            aria-label={`Filter by ${search.label}`}
+            data-test="data-table-search"
           />
         ) : null}
         {sheet.length > 0 ? (
@@ -222,40 +239,6 @@ function valueLabel<TData extends RowData>(
     return value
   }
   return filter.options.find((option) => option.value === value)?.label ?? value
-}
-
-interface SearchFieldProps<TData extends RowData> {
-  spec: DataFilterSpec<TData>
-  value: string
-  onChange: (next: string) => void
-}
-
-/**
- * The promoted text filter. A real `type="search"` so the browser gives it the
- * clearing affordance and assistive tech announces it as a search rather than
- * as one more text box.
- */
-function SearchField<TData extends RowData>({
-  spec,
-  value,
-  onChange,
-}: SearchFieldProps<TData>) {
-  return (
-    <div className={styles.search}>
-      <Search className={styles.searchIcon} aria-hidden="true" />
-      <input
-        type="search"
-        className={styles.input}
-        data-test="data-table-search"
-        aria-label={`Filter by ${spec.label}`}
-        placeholder={spec.filter.placeholder ?? `search ${spec.label}…`}
-        value={value}
-        onChange={(event) => {
-          onChange(event.target.value)
-        }}
-      />
-    </div>
-  )
 }
 
 interface FilterSheetProps<TData extends RowData> {
@@ -402,7 +385,7 @@ function SheetField<TData extends RowData>({
       <input
         id={inputId}
         type="text"
-        className={cn(styles.input, styles.sheetInput)}
+        className={styles.input}
         data-test={`data-table-filter-${spec.id}`}
         data-active={value === "" ? undefined : ""}
         placeholder={spec.filter.placeholder ?? `filter ${spec.label}…`}

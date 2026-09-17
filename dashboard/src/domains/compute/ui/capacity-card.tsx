@@ -9,7 +9,7 @@ import type {
   ComputeProvider,
   Constraint,
 } from "@/domains/compute/model/types"
-import { cn } from "@/shared/lib/utils"
+import { Surface } from "@/shared/ui"
 
 import { ProviderKindMark } from "./compute-badges"
 import styles from "./capacity-card.module.css"
@@ -56,13 +56,28 @@ export function CapacityCard({
     reading.binding === "capacity" || reading.binding === "both"
 
   return (
-    <article
-      className={cn(styles.card, className)}
+    /* The kit's `Surface`, not a card: a hairline on the start edge, the lane
+       material and the screen-surface corner — the eight declarations this
+       file used to spell out for itself, alongside three other domains that
+       spelled the same eight. The start edge is also the accent channel, which
+       is why `tone` is read off the binding: the pool that is refusing work
+       marks its own edge, and says so in words inside itself.
+
+       `Surface` forwards `data-test` and nothing else, on purpose. The two
+       finer hooks this card carried therefore move to the elements they were
+       always about — the pool's identity to the naming line, the binding to
+       the sentence that states it. */
+    <Surface
+      as="article"
+      bound="start"
+      tone={reading.binding === "unknown" ? "danger" : "attention"}
+      className={className}
       data-test="capacity-card"
-      data-pool={`${pool.projectId}/${pool.providerId}`}
-      data-binding={reading.binding}
     >
-      <header className={styles.head}>
+      <header
+        className={styles.head}
+        data-pool={`${pool.projectId}/${pool.providerId}`}
+      >
         <h3 className={styles.title}>
           <span className={styles.project}>{projectKey}</span>
           <span className={styles.on}>on</span>
@@ -109,7 +124,11 @@ export function CapacityCard({
         />
       </div>
 
-      <p className={styles.sentence} data-test="capacity-binding">
+      <p
+        className={styles.sentence}
+        data-test="capacity-binding"
+        data-binding={reading.binding}
+      >
         {bindingSentence(reading)}
       </p>
 
@@ -126,7 +145,7 @@ export function CapacityCard({
           </>
         )}
       </p>
-    </article>
+    </Surface>
   )
 }
 

@@ -61,13 +61,7 @@ public static class RealtimeContractEmitter
         builder.AppendLine("// eslint-disable-next-line @typescript-eslint/consistent-type-definitions");
         builder.AppendLine();
 
-        builder.AppendLine("export const RealtimeTransportMethods = {");
-        builder.AppendLine("  RunEvent: \"RunEvent\",");
-        builder.AppendLine("  Attention: \"Attention\",");
-        builder.AppendLine("  ChatChunk: \"ChatChunk\",");
-        builder.AppendLine("  ChatTurnComplete: \"ChatTurnComplete\",");
-        builder.AppendLine("} as const;");
-        builder.AppendLine();
+        RealtimeContractEmitterHelpers.EmitTransportMethods(builder);
 
         foreach (var contract in contracts)
         {
@@ -88,8 +82,31 @@ public static class RealtimeContractEmitter
 /// </summary>
 file static class RealtimeContractEmitterHelpers
 {
-    /// <summary>Shared, single-threaded nullability reader (NullabilityInfoContext is not thread-safe).</summary>
-    private static readonly NullabilityInfoContext nullability = new();
+    /// <summary>
+    /// Emits the <c>RealtimeTransportMethods</c> const block by reflecting
+    /// over <see cref="RealtimeTransportMethods"/> — the C# constants stay
+    /// the single source of truth; adding a callback there (and only
+    /// there) flows into the generated TypeScript module.
+    /// </summary>
+    /// <param name="builder">The string builder receiving the rendered module.</param>
+    public static void EmitTransportMethods(StringBuilder builder)
+    {
+        builder.AppendLine("export const RealtimeTransportMethods = {");
+
+        foreach (var field in typeof(RealtimeTransportMethods)
+                     .GetFields(BindingFlags.Public | BindingFlags.Static)
+                     .OrderBy(static field => field.MetadataToken))
+        {
+            builder.Append("  ")
+                .Append(field.Name)
+                .Append(": \"")
+                .Append(field.GetRawConstantValue())
+                .AppendLine("\",");
+        }
+
+        builder.AppendLine("} as const;");
+        builder.AppendLine();
+    }
 
     /// <summary>Emits one <c>export interface</c> for a single contract type.</summary>
     /// <param name="builder">The string builder receiving the rendered module.</param>
@@ -158,8 +175,9 @@ file static class RealtimeContractEmitterHelpers
         // positional properties. Reflecting on those attributes by hand is
         // fragile across compiler versions; the public API does the right
         // thing and is the documented way to ask "is this property nullable?".
-        // Note: NullabilityInfoContext is not thread-safe — the helpers file
-        // owns the single instance so callers don't re-allocate per call.
+        // A fresh per-invocation instance — NullabilityInfoContext is not
+        // thread-safe, and a shared static would serialize concurrent emits.
+        var nullability = new NullabilityInfoContext();
         return nullability.Create(property).ReadState == NullabilityState.Nullable;
     }
 

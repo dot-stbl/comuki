@@ -5,17 +5,19 @@ import { cn } from "@/shared/lib/utils"
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
 import { useCostQuery } from "@/domains/cost/api/queries"
-import { costHeat, periodDelta } from "@/domains/cost/model/cost"
+import { periodDelta } from "@/domains/cost/model/cost"
 import { BudgetProgress } from "@/domains/cost/ui/budget-progress"
 import { FailureAnalytics } from "@/domains/cost/ui/failure-analytics"
 import { ForecastWidget } from "@/domains/cost/ui/forecast-widget"
 import { PeriodToggle } from "@/domains/cost/ui/period-toggle"
+import { ProxyBudgetMeter } from "@/domains/cost/ui/proxy-budget-meter"
 import { SpendByApp } from "@/domains/cost/ui/spend-by-app"
 import { SpendByDay } from "@/domains/cost/ui/spend-by-day"
 import { SpendByModel } from "@/domains/cost/ui/spend-by-model"
 import { TopProjects } from "@/domains/cost/ui/top-projects"
 import { TotalSpend } from "@/domains/cost/ui/total-spend"
-import { Button, Section, Tooltip } from "@/shared/ui"
+import { requestFailureMessage } from "@/shared/api/problem"
+import { Button, ScreenState, Section, Skeleton, Tooltip } from "@/shared/ui"
 
 import styles from "./cost-page.module.css"
 
@@ -112,24 +114,15 @@ export function CostPage() {
         </div>
 
         {isLoading ? (
-          <div className={styles.skeleton} data-test="cost-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton lines={SKELETON_WIDTHS} data-test="cost-loading" />
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>The report did not load</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="The report did not load"
+            description={requestFailureMessage(error, "Unknown error")}
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -142,8 +135,8 @@ export function CostPage() {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {data ? (
@@ -165,36 +158,17 @@ export function CostPage() {
                 forecast={data.forecast}
                 burnRateLabel={`$${data.forecast.burnRatePerDay.toFixed(2)} / day`}
                 projectedLabel={`end of ${period.replace("week", "week").replace("month", "month")}`}
+                /* The same bar the budget tile draws, from the same
+                   component — the forecast is literally spend against a cap,
+                   and the two tiles must not be able to disagree about how
+                   loud a colour is at the same share. */
                 meter={
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      display: "block",
-                      blockSize: "var(--h-meter)",
-                      borderRadius: "var(--r-xs)",
-                      background: "var(--lane-alt)",
-                      overflow: "clip",
-                      position: "relative",
+                  <ProxyBudgetMeter
+                    budget={{
+                      used: data.forecast.projectedEndOfPeriod,
+                      cap: data.forecast.cap,
                     }}
-                    data-heat={costHeat(data.forecast.share)}
-                  >
-                    <span
-                      style={{
-                        position: "absolute",
-                        insetBlock: 0,
-                        insetInlineStart: 0,
-                        display: "block",
-                        borderRadius: "var(--r-xs)",
-                        background:
-                          data.forecast.share >= 1
-                            ? "var(--st-failed)"
-                            : data.forecast.share >= 0.85
-                              ? "var(--st-waiting)"
-                              : "var(--text-faint)",
-                        inlineSize: `${Math.min(100, Math.round(data.forecast.share * 100))}%`,
-                      }}
-                    />
-                  </span>
+                  />
                 }
               />
               <BudgetProgress

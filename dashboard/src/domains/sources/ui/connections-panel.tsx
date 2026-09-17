@@ -96,7 +96,11 @@ export function ConnectionsPanel({
           onFiltersChange={setFilters}
           columnVisibility={columnVisibility}
           onColumnVisibilityChange={setColumnVisibility}
-          trailing={<span className={styles.count}>{rows.length} shown</span>}
+          trailing={
+            <span className={styles.count} data-test="connections-count">
+              {rows.length} shown
+            </span>
+          }
         />
       </div>
 

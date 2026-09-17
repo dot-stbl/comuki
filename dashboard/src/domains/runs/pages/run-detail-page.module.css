@@ -82,6 +82,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The header's own two values — the project this run belongs to and the app it
+   ran against. Both are handles rather than prose, so both take the data voice
+   the four sister detail screens write their summaries in; the separator
+   between them stays interface text. */
+.summaryValue {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
 /* The run id is the one fact a person copies out of this screen, so it is the
    one that gets selected as a unit rather than as part of a sentence. */
 .runId {
@@ -91,7 +101,7 @@
 
 .brief {
   margin: 0;
-  max-width: var(--measure-wide);
+  max-inline-size: var(--measure-wide);
   font-size: var(--t-body);
   line-height: var(--lh-body);
   color: var(--foreground);
@@ -139,40 +149,29 @@
 
 /* --- states --- */
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
+/* The kit's `ScreenState` owns everything a state *says* — the measure, the
+   ink, the voice of the hint, whether a screen reader is interrupted. What it
+   cannot own is where the state sits, and on this screen a state is the whole
+   working surface: it takes the room the graph and the inspector would have
+   had, and it scrolls itself rather than the screen, because `.screen` above
+   is `overflow: clip`. So the state arrives with `inset="none"` and this class
+   pays for the room instead — the same `--s8 / --s6` the hand-written block
+   carried before it. */
+.stateFill {
   flex: 1 1 0;
-  min-height: 0;
+  min-block-size: 0;
   padding: var(--s8) var(--s6);
   overflow-y: auto;
 }
 
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-width: var(--measure-prose);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-/* What the plan will look like when there is one, said in the graph's own
-   terms rather than as an apology. */
-.stateHint {
-  margin: 0;
+/* The id that did not resolve, quoted inside the sentence. Same material as a
+   value the brief quotes — it is a value somebody pasted. */
+.missing {
+  padding: 0 var(--s1);
+  border-radius: var(--r-xs);
+  background: var(--muted);
   font-family: var(--font-data);
-  font-size: var(--t-micro);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
+  font-size: var(--t-sm);
 }
 
 .skeleton {

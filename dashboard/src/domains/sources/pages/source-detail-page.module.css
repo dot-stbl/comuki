@@ -172,55 +172,12 @@
 
 /* --- states --- */
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s8) 0;
-  font-family: var(--font-ui);
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-inline-size: var(--measure-prose);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-/* The id the address named and the platform does not have. In the data voice,
-   because it is a value — the operator is going to compare it with whatever
-   they pasted. */
-.stateId {
-  margin: 0;
-  font-family: var(--font-data);
-  font-size: var(--t-xs);
-  color: var(--text);
-  overflow-wrap: anywhere;
-}
-
-/* Rows, not bars: what is loading is a register of facts, and a skeleton that
-   lies about the shape of what is coming is worse than none. */
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  padding: var(--s6) 0;
-}
-
-.skeletonBar {
-  block-size: var(--h-meter);
-  border-radius: var(--r-xs);
-  background: var(--muted);
-}
+/* The two states and the loading bars are the kit's `ScreenState` and
+   `Skeleton`. The id the address named and the platform does not have rides
+   the state's own `hint` — it is a value the operator compares with whatever
+   they pasted, and the kit sets it in the data voice for exactly that reason.
+   The prose came down from `--measure-prose` to the state's own 52ch: one
+   measure for all twenty-odd of these, which is the point of having it. */
 
 /* --- webhook secret rotation --- */
 

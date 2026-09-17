@@ -57,7 +57,7 @@
   font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--tracking-display);
-  line-height: 1.05;
+  line-height: var(--lh-display);
   color: var(--hue);
 }
 
@@ -65,7 +65,7 @@
   font-family: var(--font-ui);
   font-size: var(--t-h2);
   font-weight: var(--fw-semibold);
-  color: var(--foreground);
+  color: var(--text);
 }
 
 /* The clear reading takes the display step for the *sentence* instead of for a
@@ -76,8 +76,8 @@
   font-size: var(--t-display);
   font-weight: var(--fw-bold);
   letter-spacing: var(--tracking-display);
-  line-height: 1.05;
-  color: var(--foreground);
+  line-height: var(--lh-display);
+  color: var(--text);
 }
 
 .mark {
@@ -94,7 +94,7 @@
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
-  color: var(--muted-foreground);
+  color: var(--text-muted);
 }
 
 /* Values inside a sentence stay in the data voice, like the duty screen's own
@@ -102,7 +102,7 @@
 .figure {
   font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
-  color: var(--foreground);
+  color: var(--text);
 }
 
 @media (max-width: 1000px) {

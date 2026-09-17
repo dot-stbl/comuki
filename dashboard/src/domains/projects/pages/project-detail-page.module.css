@@ -321,28 +321,16 @@
 
 /* --- states --- */
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding-block: var(--s6);
-}
+/* The error and the not-found are the kit's `ScreenState` at `inset="none"`,
+   and the loading state is `Skeleton inset="none"` — this screen already pays
+   for its own room. What went with the hand-copied `.state` / `.stateTitle` /
+   `.stateBody` is the one measure they disagreed on: the sentence was set at
+   `--measure-prose` (68ch) here and at 52ch on the twenty screens beside it,
+   and 52ch is the measure a state's sentence takes. It is a line to be read,
+   not a paragraph to be worked through.
 
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--text);
-}
-
-.stateBody {
-  margin: 0;
-  max-width: var(--measure-prose);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--text-muted);
-}
+   The id below is still this screen's own: no other state in the product sets
+   a value the operator is going to paste somewhere else. */
 
 /* The id out of the URL, set as the value it is and selectable as a unit: it
    is the only part of a dead link the operator can take back to whoever wrote

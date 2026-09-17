@@ -32,7 +32,7 @@
 
 /* The figures in the header's summary line, this domain's own reading. */
 .strong {
-  color: var(--foreground);
+  color: var(--text);
   font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
 }
@@ -45,53 +45,18 @@
 
 /* States ------------------------------------------------------------------ */
 
+/* The four §17 states are the kit's `ScreenState` and `Skeleton` now; what is
+   left here is the one banner they do not cover — a mutation that failed while
+   the registry stayed on screen. */
+
 .failure {
   margin: 0;
   padding: var(--s3) var(--s4);
   border-inline-start: var(--hairline) solid var(--st-failed);
   border-radius: var(--r-md);
   background: var(--st-failed-tint);
-  color: var(--foreground);
+  color: var(--text);
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
-}
-
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s8) 0;
-  font-family: var(--font-ui);
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-inline-size: var(--measure-note);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-/* Rows, not bars: what is loading is a registry, and a skeleton that lies about
-   the shape of what is coming is worse than none. */
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  padding: var(--s6) 0;
-}
-
-.skeletonBar {
-  block-size: var(--h-meter);
-  border-radius: var(--r-xs);
-  background: var(--muted);
 }

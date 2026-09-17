@@ -95,7 +95,7 @@
   border-collapse: collapse;
   font-family: var(--font-ui);
   font-size: var(--t-sm);
-  line-height: 1.2;
+  line-height: var(--lh-tight);
 }
 
 .head {

@@ -24,11 +24,15 @@
   gap: var(--s3);
 }
 
+/* `overflow-x: auto` with a visible `overflow-y` computes to `auto` on both
+   axes by spec, so this box clips vertically too — and a thumbnail's focus
+   ring is a `box-shadow` drawn outside its border box. Room on both edges,
+   not just the one the scrollbar sits on. */
 .inline {
   flex-wrap: nowrap;
   gap: var(--s2);
   overflow-x: auto;
-  padding-bottom: var(--s1);
+  padding-block: var(--s1);
 }
 
 .empty {

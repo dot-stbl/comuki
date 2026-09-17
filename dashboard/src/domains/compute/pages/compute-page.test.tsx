@@ -162,7 +162,11 @@ describe("the compute registry, end to end over the seeds", () => {
     // Tightest first: the pool somebody came here about should not be third in
     // a list sorted by project name.
     const first = all('[data-test="capacity-card"]')[0]
-    expect(first.getAttribute("data-binding")).toBe("quota")
+    expect(
+      first
+        .querySelector('[data-test="capacity-binding"]')
+        ?.getAttribute("data-binding")
+    ).toBe("quota")
     expect(
       first.querySelector('[data-test="capacity-room"]')?.textContent
     ).toBe("0 slots free")
@@ -239,7 +243,10 @@ describe("the compute registry, end to end over the seeds", () => {
     // last, because a provider that went quiet is not a pool about to run out.
     const cards = all('[data-test="capacity-card"]')
     const unknown = cards.filter(
-      (card) => card.getAttribute("data-binding") === "unknown"
+      (card) =>
+        card
+          .querySelector('[data-test="capacity-binding"]')
+          ?.getAttribute("data-binding") === "unknown"
     )
     expect(unknown).toHaveLength(1)
     expect(unknown[0]).toBe(cards[cards.length - 1])

@@ -77,7 +77,7 @@
 
 .tab[data-focus-visible] {
   border-radius: var(--r-sm);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .tabPanel {
@@ -88,6 +88,18 @@
   overflow-y: auto;
   padding: var(--page-y) var(--page-x);
   outline: none;
+}
+
+/* The search in the header band. The kit's field takes the room it is given —
+   `inline-size: 100%` — so the measure is the band's decision and is made
+   here: it grows into whatever the band is not using, up to a width where a
+   long query is still readable in one look. A search box that stays narrow
+   makes the operator scroll a field to re-read what they just typed; one that
+   takes the whole header is a text editor. */
+.search {
+  flex: 1 1 22rem;
+  max-inline-size: 34rem;
+  min-inline-size: 8rem;
 }
 
 /* Library ----------------------------------------------------------------- */
@@ -103,10 +115,14 @@
 
 .readings {
   display: grid;
-  /* `min()` rather than a bare `18rem`, so a track can never be wider than the
-     column it sits in: an auto-fill track at a fixed minimum overflows the page
-     the moment the rail is dragged wide. */
-  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  /* `auto-fit` rather than `auto-fill`: the count is fixed at three, and
+     `auto-fill` would open a fourth empty track on a wide board — the same
+     rule `cost-page.module.css` states over its own row of three tiles.
+
+     `min()` rather than a bare `18rem`, so a track can never be wider than the
+     column it sits in: a track at a fixed minimum overflows the page the
+     moment the rail is dragged wide. */
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
   gap: var(--s4);
   min-inline-size: 0;
 }
@@ -177,76 +193,20 @@
   min-inline-size: 0;
 }
 
-/* The search came back with nothing. Bounded like the rows it stands in for,
-   so the list does not appear to have vanished. */
+/* States ------------------------------------------------------------------ */
+
+/* The box the list's own states stand in, and nothing else — the words, the
+   measure and the ink are `ScreenState`'s. Bounded like the rows it stands in
+   for, so the list does not appear to have vanished; `inset="none"`, because
+   this box already pays for the room.
+
+   The screen's own error and loading states carry no class at all any more:
+   they are `ScreenState inset="page"` and `Skeleton inset="page" fill`, which
+   is what the hand-copied `.state` / `.stateTitle` / `.stateBody` and the
+   private skeleton that used to live here were spelling by hand. */
 .empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s2);
   padding: var(--s6) var(--s5);
   border: var(--hairline) solid var(--rule);
   border-radius: var(--r-lg);
   background: var(--surface);
-}
-
-.emptyTitle {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--text);
-}
-
-.emptyBody {
-  margin: 0;
-  max-inline-size: var(--measure-note);
-  font-family: var(--font-ui);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--text-muted);
-}
-
-/* States ------------------------------------------------------------------ */
-
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s8) var(--page-x);
-  font-family: var(--font-ui);
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-inline-size: var(--measure-note);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-/* Rows, not blocks: what is loading is a list of rules, and a skeleton that
-   lies about the shape of what is coming is worse than none. */
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  flex: 1 1 0;
-  min-height: 0;
-  padding: var(--page-y) var(--page-x);
-}
-
-.skeletonBar {
-  block-size: var(--h-meter);
-  flex: 0 0 auto;
-  border-radius: var(--r-xs);
-  background: var(--muted);
 }

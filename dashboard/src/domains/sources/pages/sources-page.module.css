@@ -101,41 +101,6 @@
   background: var(--st-failed-tint);
 }
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s8) 0;
-  font-family: var(--font-ui);
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-inline-size: var(--measure-note);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-/* Rows, not bars: what is loading is a register, and a skeleton that lies about
-   the shape of what is coming is worse than none. */
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  padding: var(--s6) 0;
-}
-
-.skeletonBar {
-  block-size: var(--h-meter);
-  border-radius: var(--r-xs);
-  background: var(--muted);
-}
+/* The screen's error state and its loading bars are the kit's `ScreenState`
+   and `Skeleton` — they were a hand-copied `.state` / `.stateTitle` /
+   `.stateBody` here, one of twenty-two such copies across the domains. */

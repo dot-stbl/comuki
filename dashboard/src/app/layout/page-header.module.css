@@ -98,13 +98,13 @@
 .title {
   margin: 0;
   min-width: 0;
-  max-width: var(--measure-prose);
+  max-inline-size: var(--measure-prose);
   overflow-wrap: anywhere;
   font-family: var(--font-ui);
   font-size: var(--t-display);
   font-weight: var(--fw-bold);
   letter-spacing: var(--tracking-display);
-  line-height: 1.05;
+  line-height: var(--lh-display);
   color: var(--foreground);
 }
 

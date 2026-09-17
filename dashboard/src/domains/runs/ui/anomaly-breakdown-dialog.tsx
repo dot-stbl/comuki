@@ -20,6 +20,24 @@ export interface AnomalyBreakdownDialogProps {
    * the project the rule fired against, not just the id.
    */
   session: Session
+  /**
+   * Hand the run back to whoever owns cancelling on this screen.
+   *
+   * The dialog does not cancel. Tearing a container down is the duty list's
+   * act: the list already holds the confirm, the pending row and the banner a
+   * failed decision lands in, and a second cancel path here would be a second
+   * place to keep the permission check, the optimistic update and the wording
+   * of the confirmation in step. So this closes and hands the run over, and
+   * the one path runs.
+   *
+   * **Absent means no button.** Not a disabled one and not one that quietly
+   * does nothing: a screen that cannot cancel does not show a control saying
+   * it can. The owner leaves it out when this session may not stop this run,
+   * or when the run is already past stopping — the host answers 409 to a
+   * terminal run, and a button whose only possible reply is a conflict is a
+   * button that lies more quietly than the one it replaces.
+   */
+  onCancelRun?: (run: RunSummary) => void
 }
 
 /**
@@ -37,6 +55,7 @@ export function AnomalyBreakdownDialog({
   run,
   onOpenChange,
   session,
+  onCancelRun,
 }: AnomalyBreakdownDialogProps) {
   if (!run) {
     return null
@@ -66,9 +85,20 @@ export function AnomalyBreakdownDialog({
       width="32rem"
       footer={
         <>
-          <Button variant="destructive" onClick={() => onOpenChange(false)}>
-            Cancel run
-          </Button>
+          {onCancelRun ? (
+            /* Closes first, then hands the run over: the owner's confirm
+               opens in this dialog's place rather than behind it. */
+            <Button
+              variant="destructive"
+              data-test="anomaly-cancel-run"
+              onClick={() => {
+                onOpenChange(false)
+                onCancelRun(run)
+              }}
+            >
+              Cancel run
+            </Button>
+          ) : null}
           <Button onClick={() => onOpenChange(false)}>Acknowledge</Button>
         </>
       }

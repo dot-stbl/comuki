@@ -24,6 +24,15 @@ export interface SelectFieldProps {
   options: readonly SelectFieldOption[]
   /** The words on the trigger before anything has been chosen. */
   placeholder?: string
+  /**
+   * The form will not go without this field — see `FieldProps.required`.
+   *
+   * On a select the label is the *only* channel this fact has: React Aria
+   * rebuilds the trigger's accessible name from its own value node and drops
+   * `aria-required` with the rest of the association. So the word in the label
+   * is not belt-and-braces here, it is the belt.
+   */
+  required?: boolean
   hint?: ReactNode
   error?: string | null
   disabled?: boolean
@@ -61,13 +70,14 @@ export function SelectField({
   onValueChange,
   options,
   placeholder,
+  required,
   hint,
   error,
   disabled,
   "data-test": dataTest,
 }: SelectFieldProps) {
   return (
-    <Field id={id} label={label} hint={hint} error={error}>
+    <Field id={id} label={label} required={required} hint={hint} error={error}>
       <Select
         id={id}
         value={value}

@@ -144,6 +144,11 @@ export function CreateTaskForm({
           <TextField
             id="task-title"
             label="title"
+            /* Marked because the submit below is already gated on it —
+               `!title.trim()`. The word in the label and `aria-required` say
+               out loud what the disabled button was only implying; neither
+               changes when the form will go. */
+            required
             autoFocus
             value={title}
             disabled={busy}
@@ -167,9 +172,14 @@ export function CreateTaskForm({
             onValueChange={setProjectId}
           />
 
+          {/* `app` is marked and `project` above it is not, and that is the
+              rule rather than an oversight: the submit reads `!app` and never
+              reads `projectId`, so marking project would promise a gate that
+              is not there. */}
           <SelectField
             id="task-app"
             label="app"
+            required
             value={app}
             disabled={busy || apps.length === 0}
             options={apps.map((item) => ({ value: item, label: item }))}

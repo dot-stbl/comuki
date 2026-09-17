@@ -88,7 +88,7 @@
    rule on the word would move with the cursor. */
 .tab[data-focus-visible] {
   border-radius: var(--r-sm);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .tab[data-disabled] {

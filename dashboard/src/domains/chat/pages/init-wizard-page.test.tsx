@@ -217,12 +217,84 @@ describe("a step stops the operator where it can still be fixed", () => {
     await screen.findByRole("heading", { name: "Onboard a repository" })
 
     setSelectValue(at("init-project") as HTMLElement, "p_atlas")
-    fireEvent.change(screen.getByLabelText("Git remote"), {
+    fireEvent.change(screen.getByLabelText(/^git remote/), {
       target: { value: "git@github.com:acme/checkout-web.git" },
     })
     fireEvent.click(screen.getByRole("button", { name: "Continue" }))
 
     await waitFor(() => expect(here(router)).toBe("/chat/init?step=compute"))
+  })
+})
+
+describe("half a filled-in wizard is not abandoned quietly", () => {
+  it("never questions the step change it was asked for, and still asks about the way out", async () => {
+    const router = mount(["/chat/init"])
+    await screen.findByRole("heading", { name: "Onboard a repository" })
+
+    setSelectValue(at("init-project") as HTMLElement, "p_atlas")
+    fireEvent.change(screen.getByLabelText(/^git remote/), {
+      target: { value: "git@github.com:acme/checkout-web.git" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }))
+    await waitFor(() => expect(here(router)).toBe("/chat/init?step=compute"))
+
+    // Continue is a navigation — the step lives in the address — but it is
+    // the navigation the operator asked for, so it is never questioned.
+    expect(at("confirm-dialog")).toBeNull()
+
+    // And the guard is armed again on the other side of it. This is the half
+    // that used to be lost: `leave` is a one-shot, so a guard mounted once for
+    // the whole wizard was disarmed by the first Continue and every step after
+    // it was unguarded.
+    fireEvent.click(screen.getByRole("link", { name: "console" }))
+
+    await waitFor(() => expect(at("confirm-dialog")).not.toBeNull())
+    expect(at("confirm-dialog")?.textContent).toContain(
+      "Leave the wizard without onboarding?"
+    )
+    expect(here(router)).toBe("/chat/init?step=compute")
+
+    // Keep editing puts the operator back where they were, with everything
+    // still in the draft.
+    fireEvent.click(at("confirm-dialog-cancel") as HTMLElement)
+    await waitFor(() => expect(at("confirm-dialog")).toBeNull())
+    expect(here(router)).toBe("/chat/init?step=compute")
+  })
+
+  it("lets an untouched wizard go without a word", async () => {
+    const router = mount(["/chat/init"])
+    await screen.findByRole("heading", { name: "Onboard a repository" })
+
+    fireEvent.click(screen.getByRole("link", { name: "console" }))
+
+    await waitFor(() => expect(here(router)).toBe("/chat"))
+    expect(at("confirm-dialog")).toBeNull()
+  })
+})
+
+describe("the fields say which of them the step will not go without", () => {
+  it("marks the gated ones and leaves the optional ones alone", async () => {
+    mount(["/chat/init?step=models"])
+    await screen.findByRole("heading", { name: "Onboard a repository" })
+
+    // The word rides in the label, so the accessible name carries it — which
+    // is the only channel a React Aria select trigger leaves open.
+    expect(
+      screen
+        .getByLabelText(/^lead model endpoint/)
+        .getAttribute("aria-required")
+    ).toBe("true")
+    expect(
+      screen.getByLabelText(/^secret reference/).getAttribute("aria-required")
+    ).toBe("true")
+    // `stepErrors` does not gate on the worker endpoint — it falls back to the
+    // lead — so it is not marked. A marker on a field the form will go
+    // without is the one that teaches people to ignore the rest.
+    expect(
+      screen
+        .getByLabelText(/^worker model endpoint/)
+        .getAttribute("aria-required")
+    ).toBeNull()
   })
 })
 

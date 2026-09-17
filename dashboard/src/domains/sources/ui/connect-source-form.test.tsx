@@ -401,9 +401,7 @@ describe("the form only asks for what the connector can use", () => {
     // speak it — the derivation, not an effect, so there is no render where
     // the two disagree.
     pickProvider("yandex-tracker")
-    expect(control("settings-preview")?.textContent).toContain(
-      '"auth":"oauth"'
-    )
+    expect(control("settings-preview")?.textContent).toContain('"auth":"oauth"')
   })
 
   it("rides the probe inside the url box where there is one", () => {

@@ -10,24 +10,24 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--s2);
+  gap: var(--s1);
   /* A badge is a reading, so it never gives up width: the value or the prose
      beside it truncates instead. Declared rather than inherited from
      `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
      family to. */
   flex: 0 0 auto;
-  padding: var(--s1) var(--s4);
+  padding: 0 var(--s3);
   border: var(--hairline) solid transparent;
   border-radius: var(--r-sm);
   font-family: var(--font-data);
-  font-size: var(--t-xs);
-  line-height: 1.2;
+  font-size: var(--t-micro);
+  line-height: var(--lh-tight);
   white-space: nowrap;
 }
 
 .icon {
-  inline-size: var(--icon-sm);
-  block-size: var(--icon-sm);
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
   flex: 0 0 auto;
 }
 

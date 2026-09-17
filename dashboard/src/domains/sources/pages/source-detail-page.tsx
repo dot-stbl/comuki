@@ -1,11 +1,5 @@
 import { useState } from "react"
-import {
-  ArrowLeft,
-  KeyRound,
-  Loader2,
-  RotateCw,
-  Unplug,
-} from "lucide-react"
+import { ArrowLeft, KeyRound, Loader2, RotateCw, Unplug } from "lucide-react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 
@@ -41,13 +35,16 @@ import { ConnectionForm } from "@/domains/sources/ui/connection-form"
 import { ConnectionStateBadge } from "@/domains/sources/ui/connection-state-badge"
 import { StatusMappingPreview } from "@/domains/sources/ui/status-mapping-preview"
 import { WatchForm } from "@/domains/sources/ui/watch-form"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
 import {
   BrandTag,
   Button,
   ConfirmDialog,
   Notice,
+  ScreenState,
   Section,
+  Skeleton,
   Tooltip,
   buttonClass,
 } from "@/shared/ui"
@@ -175,15 +172,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
   if (isLoading) {
     return (
       <FormPage title="Source" crumbs={crumbs}>
-        <div className={styles.skeleton} data-test="source-loading">
-          {SKELETON_WIDTHS.map((width, index) => (
-            <span
-              key={index}
-              className={styles.skeletonBar}
-              style={{ width }}
-            />
-          ))}
-        </div>
+        <Skeleton lines={SKELETON_WIDTHS} data-test="source-loading" />
       </FormPage>
     )
   }
@@ -191,12 +180,11 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
   if (isError) {
     return (
       <FormPage title="Source" crumbs={crumbs}>
-        <div className={styles.state} role="alert">
-          <p className={styles.stateTitle}>Couldn&apos;t load this source</p>
-          <p className={styles.stateBody}>
-            {error instanceof Error ? error.message : "Unknown error"}
-          </p>
-          <span>
+        <ScreenState
+          kind="error"
+          title="Couldn't load this source"
+          description={requestFailureMessage(error, "Unknown error")}
+          action={
             <Tooltip content="Retry">
               <Button
                 size="icon-sm"
@@ -209,8 +197,8 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                 <RotateCw aria-hidden="true" />
               </Button>
             </Tooltip>
-          </span>
-        </div>
+          }
+        />
       </FormPage>
     )
   }
@@ -224,16 +212,13 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
        usually happened, and hands back the list. */
     return (
       <FormPage title="Source" crumbs={crumbs}>
-        <div className={styles.state} data-test="source-not-found">
-          <p className={styles.stateTitle}>No connection with that id</p>
-          <p className={styles.stateBody}>
-            Nothing on this platform is connected under this id. A source that
-            was disconnected — here or in another tab — is the ordinary way to
-            arrive at this address, and the connections list is where the ones
-            that still exist are.
-          </p>
-          <p className={styles.stateId}>{sourceId}</p>
-          <span>
+        <ScreenState
+          kind="notFound"
+          title="No connection with that id"
+          description="Nothing on this platform is connected under this id. A source that was disconnected — here or in another tab — is the ordinary way to arrive at this address, and the connections list is where the ones that still exist are."
+          hint={sourceId}
+          data-test="source-not-found"
+          action={
             <Tooltip content="Back to sources">
               <Link
                 to="/sources"
@@ -245,8 +230,8 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                 <ArrowLeft aria-hidden="true" />
               </Link>
             </Tooltip>
-          </span>
-        </div>
+          }
+        />
       </FormPage>
     )
   }
@@ -382,8 +367,19 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     })
   }
 
+  /* Every write and every probe this page can start, answering in one band.
+     Two of them used to fail in silence: a failed *test connection* only
+     stopped the spinner, and a failed *secret rotation* — an irreversible act
+     with a tracker on the other end of it — said nothing at all. They answer
+     here rather than in a toast of their own, because the page already has one
+     place where news of a failed act arrives. */
   const failure =
-    disconnect.error ?? saveWatch.error ?? updateConnection.error ?? null
+    disconnect.error ??
+    saveWatch.error ??
+    updateConnection.error ??
+    testConnection.error ??
+    rotateSecret.error ??
+    null
 
   return (
     <FormPage
@@ -433,7 +429,8 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     >
       {failure ? (
         <Notice tone="bad" data-test="source-failure">
-          {failure.message} Nothing moved — this page is back as it was.
+          {requestFailureMessage(failure, "The change failed.")} Nothing moved —
+          this page is back as it was.
         </Notice>
       ) : null}
 

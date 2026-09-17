@@ -18,7 +18,14 @@ import { VirtualKeysPanel } from "@/domains/models/ui/virtual-keys-panel"
 import { env } from "@/shared/config/env"
 import { requestFailureMessage } from "@/shared/api/problem"
 import { can, useSession } from "@/shared/session"
-import { Button, ConfirmDialog, Section, Tooltip } from "@/shared/ui"
+import {
+  Button,
+  ConfirmDialog,
+  ScreenState,
+  Section,
+  Skeleton,
+  Tooltip,
+} from "@/shared/ui"
 
 import styles from "./models-page.module.css"
 
@@ -192,28 +199,20 @@ export function ModelsPage() {
     >
       <div className={styles.screen}>
         {isLoading ? (
-          <div className={styles.skeleton} data-test="models-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton lines={SKELETON_WIDTHS} data-test="models-loading" />
         ) : null}
 
         {isError || keysFailed ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>
-              {isError
-                ? "Couldn't load models"
-                : "Couldn't load the spend keys"}
-            </p>
-            <p className={styles.stateBody}>
-              {requestFailureMessage(error ?? proxyKeys.error, "Unknown error")}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title={
+              isError ? "Couldn't load models" : "Couldn't load the spend keys"
+            }
+            description={requestFailureMessage(
+              error ?? proxyKeys.error,
+              "Unknown error"
+            )}
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -227,14 +226,17 @@ export function ModelsPage() {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {failure ? (
           <p className={styles.failure} role="alert">
-            {failure instanceof Error ? failure.message : "The change failed."}{" "}
-            Nothing moved — the registry is back as it was.
+            {/* The host's own sentence, not "request failed 501" for an
+                operator to translate — the proxy switch is exactly the act
+                whose whole value on this side of the wire is the sentence. */}
+            {requestFailureMessage(failure, "The change failed.")} Nothing moved
+            — the registry is back as it was.
           </p>
         ) : null}
 

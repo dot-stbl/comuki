@@ -5,6 +5,7 @@ import type {
   Approval,
   ApprovalDecision,
 } from "@/domains/approvals/model/types"
+import { decisionPermissionOf } from "@/domains/approvals/model/decide"
 import { useRunsQuery } from "@/domains/runs/api/queries"
 import { RunGraph } from "@/domains/runs/ui/run-graph"
 import { cn } from "@/shared/lib/utils"
@@ -53,13 +54,14 @@ export function ApprovalCard({
   // list would refuse decisions they are entitled to make, or offer ones they
   // are not. All three decisions ride this check: approve, reject and review
   // are one act seen from three sides, and every one of them writes.
-  const allowed = can(session, "plans.approve", approval.projectId)
+  const permission = decisionPermissionOf(approval)
+  const allowed = can(session, permission, approval.projectId)
   const decide = allowed
     ? { allowed: true, denial: null }
     : {
         allowed: false,
         denial: needsLabel(
-          "plans.approve",
+          permission,
           projectOf(session, approval.projectId)?.key
         ),
       }
@@ -196,7 +198,9 @@ export function ApprovalCard({
 
           {approval.assumptions.length > 0 ? (
             <section className={styles.region}>
-              <h3 className={styles.regionHead}>Planner assumptions</h3>
+              <h3 className={styles.regionHead}>
+                {approval.assumptionsHeading ?? "Planner assumptions"}
+              </h3>
               <ul className={styles.assumptions}>
                 {approval.assumptions.map((item) => (
                   <li key={item} className={styles.assumption}>

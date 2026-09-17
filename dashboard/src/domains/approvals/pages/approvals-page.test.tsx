@@ -12,7 +12,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { ApprovalsPage } from "@/domains/approvals/pages/approvals-page"
-import { APPROVALS_SEED } from "@/shared/api/mock"
+import { APPROVALS_SEED, LEARNING_SEED } from "@/shared/api/mock"
 import { TestSession } from "@/shared/session/test-session"
 import type { Role } from "@/shared/session"
 
@@ -123,23 +123,38 @@ describe("the approvals queue, end to end over the seeds", () => {
     await queueReady()
 
     // The mock queue is module state that earlier decisions can drain, so the
-    // assertion is "no more than the seed and at least one", not an exact count.
+    // assertion is "no more than the seeds and at least one", not an exact
+    // count. The queue carries escalated plans and learning rules both.
     const cards = all('[data-test="approval-card"]')
     expect(cards.length).toBeGreaterThan(0)
-    expect(cards.length).toBeLessThanOrEqual(APPROVALS_SEED.length)
+    expect(cards.length).toBeLessThanOrEqual(
+      APPROVALS_SEED.length + LEARNING_SEED.length
+    )
     expect(find('[data-test="approvals-empty"]')).toBeNull()
   })
 
-  it("puts a risk and a kind on every card", async () => {
+  it("puts a kind on every card and a risk on every card that carries one", async () => {
     await queueReady()
 
     for (const card of all('[data-test="approval-card"]')) {
       expect(
         card.querySelector('[data-test="approval-type-badge"]')
       ).not.toBeNull()
-      expect(
-        card.querySelector('[data-test="approval-risk-badge"]')
-      ).not.toBeNull()
+
+      // A learning suggestion and a wire gate carry no risk reading; a chip
+      // that invented one would be a judgement somebody acted on.
+      const type = card
+        .querySelector('[data-test="approval-type-badge"]')
+        ?.getAttribute("data-type")
+      if (type === "learning" || type === "gate") {
+        expect(
+          card.querySelector('[data-test="approval-risk-badge"]')
+        ).toBeNull()
+      } else {
+        expect(
+          card.querySelector('[data-test="approval-risk-badge"]')
+        ).not.toBeNull()
+      }
     }
   })
 

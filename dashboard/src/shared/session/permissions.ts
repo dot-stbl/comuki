@@ -27,6 +27,7 @@ export type Permission =
   | "inbox.take"
   | "chat.use"
   | "plans.approve"
+  | "learning.review"
   | "knowledge.view"
   | "verify.view"
   | "sources.view"
@@ -60,6 +61,7 @@ const SCOPE: Record<Permission, "project" | "platform"> = {
   "inbox.take": "project",
   "chat.use": "project",
   "plans.approve": "project",
+  "learning.review": "project",
   "knowledge.view": "project",
   "verify.view": "project",
   "sources.view": "project",
@@ -89,7 +91,7 @@ const MEMBER: Permission[] = [
   "knowledge.view",
 ]
 
-const APPROVER: Permission[] = [...MEMBER, "plans.approve"]
+const APPROVER: Permission[] = [...MEMBER, "plans.approve", "learning.review"]
 
 const PROJECT_ADMIN: Permission[] = [
   ...APPROVER,

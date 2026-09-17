@@ -172,6 +172,14 @@ export interface KnowledgeDocumentsPageView {
   readonly total: number
 }
 
+/** Wire row of `GET /api/v1/knowledge/search` — chunk hit, best first. */
+export interface KnowledgeSearchHitView {
+  readonly documentId: string
+  readonly chunkId: string
+  readonly snippet: string
+  readonly score: number
+}
+
 export interface ComputePoolView {
   readonly projectId: string
   readonly profileKey: string
@@ -459,6 +467,23 @@ export class ComukiClient {
       "GET",
       `/api/v1/knowledge/documents?page=${page}&pageSize=${pageSize}`
     )
+  }
+
+  /**
+   * pgvector cosine search — the same path the MCP `search_knowledge`
+   * tool takes. Empty when pgvector is absent; 401/403 when the key
+   * lacks `knowledge:read` (the mention layer flags itself off then).
+   */
+  async knowledgeSearch(
+    query: string,
+    topK = 8
+  ): Promise<readonly KnowledgeSearchHitView[]> {
+    const params = new URLSearchParams({ q: query, topK: String(topK) })
+    const response = await this.request<{ items: readonly KnowledgeSearchHitView[] }>(
+      "GET",
+      `/api/v1/knowledge/search?${params.toString()}`
+    )
+    return response.items
   }
 
   compute(): Promise<ComputeSnapshotView> {

@@ -39,6 +39,7 @@ import {
   type SlashCommand,
 } from "../lib/slash"
 import { gutter, palette, symbols } from "../theme"
+import type { InterceptKey } from "./MentionMenu"
 
 export interface PromptInputProps {
   readonly onSubmit: (value: string) => void
@@ -59,6 +60,17 @@ export interface PromptInputProps {
    * input lines) — the shell subtracts it from the viewport height.
    */
   readonly onRowsChange?: (rows: number) => void
+  /**
+   * Mention-menu seam — fires on every draft change so the host can
+   * track the active `@token` (debounced search drives the popup).
+   */
+  readonly onDraftChange?: (value: string) => void
+  /**
+   * First look at a keystroke: true = consumed. The mention menu eats
+   * arrows/tab/enter/escape while its popup is open and rewrites the
+   * draft on accept.
+   */
+  readonly interceptKey?: InterceptKey
 }
 
 interface EditorState {
@@ -94,6 +106,8 @@ export function PromptInput({
   historyRecallEnabled = true,
   onMenuOpenChange,
   onRowsChange,
+  onDraftChange,
+  interceptKey,
 }: PromptInputProps) {
   const [state, setState] = useState<EditorState>(FRESH_EDITOR)
 
@@ -121,6 +135,10 @@ export function PromptInput({
     },
     []
   )
+
+  useEffect(() => {
+    onDraftChange?.(state.value)
+  }, [state.value, onDraftChange])
 
   const navigate = useCallback(
     (direction: HistoryDirection) => {
@@ -178,6 +196,18 @@ export function PromptInput({
 
   useInput(
     (input, key) => {
+      // The mention menu gets the first look while its popup is open —
+      // accept rewrites the draft through the editor handle.
+      if (
+        interceptKey?.(input, key, {
+          get: () => state,
+          set: (next) => {
+            setState({ ...state, value: next.value, cursor: next.cursor })
+          },
+        })
+      ) {
+        return
+      }
       if (menuOpen) {
         if (key.upArrow) {
           const nextIndex =

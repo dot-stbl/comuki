@@ -34,7 +34,7 @@ export function TabBar({ sessions, activeIndex }: TabBarProps) {
               bold={active}
             >
               {label}
-              {session.unread ? <Text color="yellow"> ●</Text> : null}
+              {session.unread ? <Text color={palette.waiting}> ●</Text> : null}
             </Text>
           </React.Fragment>
         )

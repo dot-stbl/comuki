@@ -11,7 +11,7 @@ import React from "react"
 import { render } from "ink-testing-library"
 import { ChatMessage } from "./ChatMessage"
 import type { ChatMessageView, MessagePart } from "../lib/client"
-import { stripAnsi } from "../theme"
+import { colors, stripAnsi } from "../theme"
 
 function assistantMarkdown(markdown: string): ChatMessageView {
   return {
@@ -63,12 +63,12 @@ describe("ChatMessage — markdown rendering", () => {
     unmount()
   })
 
-  test("highlights inline code in the terracotta accent", () => {
+  test("highlights inline code in the periwinkle accent", () => {
     const { lastFrame, unmount } = render(
       <ChatMessage message={assistantMarkdown("run `bun test`")} width={60} />
     )
     // Ink re-emits resets as fine-grained off-codes — assert the opener only
-    expect(lastFrame()).toContain("\x1b[38;5;173mbun test")
+    expect(lastFrame()).toContain("\x1b[38;2;135;135;243mbun test")
     unmount()
   })
 
@@ -92,10 +92,12 @@ describe("ChatMessage — markdown rendering", () => {
     expect(frame).not.toContain("│")
     expect(frame).not.toContain("▌")
     // one blank line before AND after (ink trims trailing blanks in the
-    // captured frame), the echo itself bold at column 0 — no › prefix
+    // captured frame), the echo itself bold deck-text at column 0 —
+    // no › prefix
     expect(frame.split("\n")[0]).toBe("")
     expect(frame).toContain("сделай план")
-    expect(frame).toContain("\x1b[1mсделай план")
+    expect(frame).toContain(colors.bright)
+    expect(frame).toContain("\x1b[38;2;232;232;238mсделай план")
     expect(stripAnsi(frame)).not.toContain("›")
     unmount()
   })

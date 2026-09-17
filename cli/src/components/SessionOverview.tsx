@@ -26,9 +26,9 @@ function statusGlyph(status: Session["status"]): {
     case "thinking":
       return { glyph: "● thinking", color: palette.brand }
     case "running":
-      return { glyph: "● running", color: "yellow" }
+      return { glyph: "● running", color: palette.waiting }
     case "done":
-      return { glyph: "✓ done", color: "green" }
+      return { glyph: "✓ done", color: palette.ok }
     default:
       return { glyph: "○ idle", color: undefined }
   }

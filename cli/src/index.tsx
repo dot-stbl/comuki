@@ -146,7 +146,7 @@ async function main(): Promise<void> {
   }
 
   console.error(
-    `${colors.red}unknown command: ${String(argv._[0])}${colors.reset}`
+    `${colors.error}unknown command: ${String(argv._[0])}${colors.reset}`
   )
   process.exitCode = 1
 }

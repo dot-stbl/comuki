@@ -11,7 +11,7 @@ import { whoAmI } from "../lib/auth"
 import { describeError } from "./chat"
 import type { ResolvedConfig } from "../lib/config"
 import { ageFromIso, paintStatus, tableRow } from "../lib/format"
-import { colors, symbols } from "../theme"
+import { colors, palette, symbols } from "../theme"
 import { StatusLine } from "../components/StatusLine"
 
 export interface RunsCommandProps {
@@ -84,7 +84,7 @@ export function RunsApp({ config, page, pageSize, filter }: RunsCommandProps) {
     return (
       <>
         <StatusLine identity={identity} />
-        <Text color="red">
+        <Text color={palette.error}>
           {"  "}
           {symbols.cross} {error}
         </Text>

@@ -73,7 +73,7 @@ import {
   startChatHubConnection,
   type HubConnectionState,
 } from "../lib/signalr"
-import { colors, symbols } from "../theme"
+import { colors, palette, symbols } from "../theme"
 import { PromptInput } from "../components/PromptInput"
 import { SessionFooter } from "../components/SessionFooter"
 import { SessionOverview } from "../components/SessionOverview"
@@ -82,9 +82,9 @@ import { TabBar } from "../components/TabBar"
 import { TranscriptViewport } from "../components/TranscriptViewport"
 import { Welcome, type PlatformStats } from "../components/Welcome"
 
-const EMPTY_TAB_HINT = `${colors.dim}  no open sessions — ctrl+n to start one${colors.reset}`
+const EMPTY_TAB_HINT = `${colors.faint}  no open sessions — ctrl+n to start one${colors.reset}`
 
-const NOTHING_TO_RETRY = `${colors.dim}  nothing to retry — no message sent yet${colors.reset}`
+const NOTHING_TO_RETRY = `${colors.faint}  nothing to retry — no message sent yet${colors.reset}`
 
 export interface ChatCommandProps {
   readonly config: ResolvedConfig
@@ -512,7 +512,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                 kind: "lines",
                 lines: [
                   "",
-                  `${colors.red}${symbols.cross} ${describeError(error)}${colors.reset}`,
+                  `${colors.error}${symbols.cross} ${describeError(error)}${colors.reset}`,
                 ],
               },
             ]),
@@ -634,7 +634,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         } catch (error) {
           setNoticeLines([
             "",
-            `${colors.red}${symbols.cross} ${describeError(error)}${colors.reset}`,
+            `${colors.error}${symbols.cross} ${describeError(error)}${colors.reset}`,
           ])
         }
         return
@@ -735,13 +735,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         case "rename": {
           if (!target) {
             setNoticeLines([
-              `${colors.dim}  no active session to rename${colors.reset}`,
+              `${colors.faint}  no active session to rename${colors.reset}`,
             ])
             return
           }
           if (action.title.length === 0) {
             pushLines(target.id, [
-              `${colors.dim}  usage: /rename <title>${colors.reset}`,
+              `${colors.faint}  usage: /rename <title>${colors.reset}`,
             ])
             return
           }
@@ -750,7 +750,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             sessions: renameSession(current.sessions, target.id, action.title),
           }))
           pushLines(target.id, [
-            `${colors.green}${symbols.checkmark} renamed to ${action.title}${colors.reset}`,
+            `${colors.ok}${symbols.checkmark} renamed to ${action.title}${colors.reset}`,
           ])
           return
         }
@@ -761,7 +761,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           }
           if (!target.awaitingApproval) {
             pushLines(target.id, [
-              `${colors.dim}  nothing to approve — the brain did not interrupt${colors.reset}`,
+              `${colors.faint}  nothing to approve — the brain did not interrupt${colors.reset}`,
             ])
             return
           }
@@ -769,8 +769,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           const reason = action.kind === "reject" ? action.reason : undefined
           pushLines(target.id, [
             approved
-              ? `${colors.green}${symbols.checkmark} approving…${colors.reset}`
-              : `${colors.yellow}${symbols.bullet} rejecting…${colors.reset}`,
+              ? `${colors.ok}${symbols.checkmark} approving…${colors.reset}`
+              : `${colors.waiting}${symbols.bullet} rejecting…${colors.reset}`,
           ])
           void runTurn(target.id, "approve", { approved, reason })
           return
@@ -853,8 +853,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }))
         pushLines(target.id, [
           target.blocksExpanded
-            ? `${colors.dim}  ${symbols.bullet} verbose off — thinking and tool blocks render collapsed${colors.reset}`
-            : `${colors.dim}  ${symbols.bullet} verbose on — thinking and tool blocks render expanded${colors.reset}`,
+            ? `${colors.faint}  ${symbols.bullet} verbose off — thinking and tool blocks render collapsed${colors.reset}`
+            : `${colors.faint}  ${symbols.bullet} verbose on — thinking and tool blocks render expanded${colors.reset}`,
         ])
       }
       return
@@ -901,7 +901,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         <Box marginTop={1}>
           <Text>
             {"  "}
-            <Text color="red">
+            <Text color={palette.error}>
               {symbols.cross} {connectError}
             </Text>
           </Text>

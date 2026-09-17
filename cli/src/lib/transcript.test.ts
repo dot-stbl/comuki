@@ -65,25 +65,25 @@ describe("wrapVisible", () => {
   })
 
   test("SGR sequences are zero-width and colors survive the wrap", () => {
-    const painted = paint("abcdefgh", colors.red)
+    const painted = paint("abcdefgh", colors.error)
     const chunks = wrapVisible(painted, 4)
     expect(chunks.length).toBe(2)
     expect(stripAnsi(chunks[0] ?? "")).toBe("abcd")
     expect(stripAnsi(chunks[1] ?? "")).toBe("efgh")
     // The continuation re-applies the color active at the break.
-    expect(chunks[1]).toContain(colors.red)
+    expect(chunks[1]).toContain(colors.error)
     // Each chunk closes its own SGR run.
     expect(chunks[0]).toContain(colors.reset)
     expect(chunks[1]).toContain(colors.reset)
   })
 
   test("reset drops the carried state for later chunks", () => {
-    const line = paint("ab", colors.red) + "cdef"
+    const line = paint("ab", colors.error) + "cdef"
     const chunks = wrapVisible(line, 2)
     expect(stripAnsi(chunks[0] ?? "")).toBe("ab")
     // After the reset, the continuation is plain — no leaked color.
     expect(chunks[1]).toBe("cd")
-    expect(chunks[1]).not.toContain(colors.red)
+    expect(chunks[1]).not.toContain(colors.error)
   })
 
   test("non-positive width leaves the line alone", () => {
@@ -312,7 +312,7 @@ describe("flattenTranscript", () => {
       {
         kind: "lines",
         key: "a",
-        lines: [paint("x".repeat(30), colors.red)],
+        lines: [paint("x".repeat(30), colors.error)],
       },
     ]
     const lines = flattenTranscript(snapshot({ blocks }), 10, 0)
@@ -321,6 +321,6 @@ describe("flattenTranscript", () => {
       expect(stripAnsi(line).length).toBeLessThanOrEqual(10)
     }
     // The color state carries into every continuation chunk.
-    expect(lines.every((line) => line.includes(colors.red))).toBe(true)
+    expect(lines.every((line) => line.includes(colors.error))).toBe(true)
   })
 })

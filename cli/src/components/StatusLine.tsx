@@ -37,17 +37,22 @@ export function hostFromUrl(url: string): string | null {
   }
 }
 
-export type LatencyTone = "green" | "yellow" | "red"
+export type LatencyTone = "ok" | "waiting" | "error"
 
-/** Green under 200ms, yellow under 1s, red at or above. */
+/** Lavender under 200ms, waiting under 1s, yellow at or above. */
 export function latencyTone(latencyMs: number): LatencyTone {
   if (latencyMs < 200) {
-    return "green"
+    return "ok"
   }
   if (latencyMs < 1000) {
-    return "yellow"
+    return "waiting"
   }
-  return "red"
+  return "error"
+}
+
+/** Deck hex for a latency tone — colour pairs with the ms value. */
+export function latencyColor(tone: LatencyTone): string {
+  return tone === "ok" ? palette.ok : tone === "waiting" ? palette.waiting : palette.error
 }
 
 /** `42.4` → `42ms`. */
@@ -62,11 +67,11 @@ const CONNECTION_LABELS: Record<HubConnectionState, string> = {
   offline: "offline",
 }
 
-/** live pops green, reconnecting warns yellow, the rest stay dim. */
+/** live pops lavender, reconnecting waits yellow, the rest stay dim. */
 const CONNECTION_TONES: Record<HubConnectionState, string | undefined> = {
-  live: "green",
+  live: palette.ok,
   connecting: undefined,
-  reconnecting: "yellow",
+  reconnecting: palette.waiting,
   offline: undefined,
 }
 
@@ -103,7 +108,9 @@ export function StatusLine({
   }
   if (typeof latencyMs === "number") {
     parts.push(
-      <Text color={latencyTone(latencyMs)}>{latencyLabel(latencyMs)}</Text>
+      <Text color={latencyColor(latencyTone(latencyMs))}>
+        {latencyLabel(latencyMs)}
+      </Text>
     )
   }
   return (

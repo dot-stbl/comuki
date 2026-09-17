@@ -247,13 +247,16 @@ function codeBlockLines(
   )
   const fill = Math.max(2, bodyWidth - label.length + 1)
   const lines = [
-    paint(`  ┌─${label}${"─".repeat(fill)}`, colors.dim),
+    // Deck `rule` draws the frame; the language label rides it dimmed.
+    paint(`  ┌─`, colors.rule) +
+      paint(label, colors.dim) +
+      paint(`${"─".repeat(fill)}┐`, colors.rule),
     ...bodyLines.map((line) =>
       line.length === 0
-        ? `  ${paint("│", colors.dim)}`
-        : `  ${paint("│", colors.dim)} ${paint(line, colors.muted)}`
+        ? `  ${paint("│", colors.rule)}`
+        : `  ${paint("│", colors.rule)} ${paint(line, colors.muted)}`
     ),
-    paint(`  └${"─".repeat(bodyWidth + 2)}`, colors.dim),
+    paint(`  └${"─".repeat(bodyWidth + 2)}┘`, colors.rule),
   ]
   return lines
 }
@@ -377,7 +380,7 @@ function tableLines(token: Tokens.Table, width: number): string[] {
     paint(
       "  " +
         widths.map((columnWidth) => "─".repeat(columnWidth)).join(separator),
-      colors.dim
+      colors.rule
     )
   )
   for (const row of rows.slice(1)) {
@@ -408,7 +411,7 @@ function blockLines(token: Token, width: number, depth: number): string[] {
       return tableLines(token as Tokens.Table, width)
     case "hr":
       return [
-        paint("  " + "─".repeat(Math.max(4, width - 4)), colors.dim),
+        paint("  " + "─".repeat(Math.max(4, width - 4)), colors.rule),
       ]
     case "html":
       return (token as Tokens.HTML).text

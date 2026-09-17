@@ -76,7 +76,36 @@ describe("resolveConfig", () => {
       tenant: "acme",
       cookie: "session=abc",
       defaultProject: "nova",
+      bell: true,
     })
+  })
+
+  it("resolves the theme from override over the config file", () => {
+    expect(
+      resolveConfig(
+        { COMUKI_URL: "http://x" },
+        { theme: "graphite-light" },
+        { theme: "dockside-dark" }
+      ).theme
+    ).toBe("dockside-dark")
+    expect(
+      resolveConfig({ COMUKI_URL: "http://x" }, { theme: "graphite-light" })
+        .theme
+    ).toBe("graphite-light")
+    expect(resolveConfig({ COMUKI_URL: "http://x" }).theme).toBeUndefined()
+    expect(
+      resolveConfig({ COMUKI_URL: "http://x" }, {}, { theme: "  " }).theme
+    ).toBeUndefined()
+  })
+
+  it("bell defaults on and only an explicit false turns it off", () => {
+    expect(resolveConfig({ COMUKI_URL: "http://x" }).bell).toBe(true)
+    expect(
+      resolveConfig({ COMUKI_URL: "http://x" }, { bell: false }).bell
+    ).toBe(false)
+    expect(resolveConfig({ COMUKI_URL: "http://x" }, { bell: true }).bell).toBe(
+      true
+    )
   })
 
   it("ignores file url — only arg and env are honoured", () => {

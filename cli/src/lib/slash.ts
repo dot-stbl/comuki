@@ -38,6 +38,18 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: "rename the active session",
   },
   {
+    name: "export",
+    aliases: [],
+    usage: "/export [path]",
+    description: "save the transcript as markdown",
+  },
+  {
+    name: "bell",
+    aliases: [],
+    usage: "/bell on|off",
+    description: "bell + toast when a turn completes",
+  },
+  {
     name: "clear",
     aliases: [],
     usage: "/clear",
@@ -110,6 +122,8 @@ export type SlashAction =
   | { readonly kind: "exit" }
   | { readonly kind: "retry" }
   | { readonly kind: "rename"; readonly title: string }
+  | { readonly kind: "export"; readonly path?: string }
+  | { readonly kind: "bell"; readonly enabled?: boolean }
   | { readonly kind: "clear" }
   | { readonly kind: "help" }
   | { readonly kind: "sessions" }
@@ -141,6 +155,19 @@ export function resolveSlashAction(raw: string): SlashAction {
   }
   if (matches("rename", name)) {
     return { kind: "rename", title: args.replace(/\s+/g, " ") }
+  }
+  if (matches("export", name)) {
+    return args.length === 0 ? { kind: "export" } : { kind: "export", path: args }
+  }
+  if (matches("bell", name)) {
+    if (args === "on") {
+      return { kind: "bell", enabled: true }
+    }
+    if (args === "off") {
+      return { kind: "bell", enabled: false }
+    }
+    // Bare `/bell` (or anything unparsable) reads as a status query.
+    return { kind: "bell" }
   }
   if (matches("clear", name)) {
     return { kind: "clear" }

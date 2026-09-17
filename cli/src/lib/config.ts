@@ -24,6 +24,10 @@ export interface ConfigFileContents {
   /** Session cookie captured by `comuki login` (`name=value`). */
   cookie?: string
   defaultProject?: string
+  /** Terminal theme choice (`<theme>-<dark|light>`), e.g. `graphite-light`. */
+  theme?: string
+  /** BEL on turn completion (OSC 9 toasts are always on). */
+  bell?: boolean
 }
 
 export interface ResolvedConfig {
@@ -32,12 +36,15 @@ export interface ResolvedConfig {
   tenant?: string
   cookie?: string
   defaultProject?: string
+  theme?: string
+  bell: boolean
 }
 
 export interface ConfigOverrides {
   url?: string
   apiKey?: string
   project?: string
+  theme?: string
 }
 
 /**
@@ -73,6 +80,7 @@ export function resolveConfig(
     overrides.project?.trim() ||
     env.COMUKI_PROJECT?.trim() ||
     file.defaultProject?.trim()
+  const theme = overrides.theme?.trim() || file.theme?.trim()
 
   return {
     url: url.replace(/\/+$/, ""),
@@ -80,6 +88,9 @@ export function resolveConfig(
     tenant: tenant || undefined,
     cookie: file.cookie || undefined,
     defaultProject: defaultProject || undefined,
+    theme: theme || undefined,
+    // Absent = on: the bell is the point of the feature, opt-out only.
+    bell: file.bell !== false,
   }
 }
 

@@ -58,6 +58,31 @@ describe("resolveSlashAction", () => {
     })
   })
 
+  it("parses /bell on|off; bare or unparsable reads as a status query", () => {
+    expect(resolveSlashAction("/bell on")).toEqual({
+      kind: "bell",
+      enabled: true,
+    })
+    expect(resolveSlashAction("/bell off")).toEqual({
+      kind: "bell",
+      enabled: false,
+    })
+    expect(resolveSlashAction("/bell")).toEqual({ kind: "bell" })
+    expect(resolveSlashAction("/bell maybe")).toEqual({ kind: "bell" })
+  })
+
+  it("carries the export path, slash-prefixed or bare", () => {
+    expect(resolveSlashAction("/export")).toEqual({ kind: "export" })
+    expect(resolveSlashAction("/export notes.md")).toEqual({
+      kind: "export",
+      path: "notes.md",
+    })
+    expect(resolveSlashAction("export ./out/notes.md")).toEqual({
+      kind: "export",
+      path: "./out/notes.md",
+    })
+  })
+
   it("treats unknown or empty input as a chat message", () => {
     expect(resolveSlashAction("hello world")).toEqual({ kind: "message" })
     expect(resolveSlashAction("/bogus")).toEqual({ kind: "message" })

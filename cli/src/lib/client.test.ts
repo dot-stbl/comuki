@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, setSystemTime } from "bun:test"
 import {
   ComukiApiError,
   ComukiClient,
+  isAbortError,
   nextLatencyEma,
   type ChatMessagesPageView,
   type ChatTurnResultView,
@@ -222,6 +223,44 @@ describe("ComukiClient", () => {
       Authorization: "Bearer ck_k",
       "X-Comuki-Tenant": "t",
     })
+  })
+
+  it("passes a per-turn abort signal to the fetch and rejects as AbortError", async () => {
+    const controller = new AbortController()
+    // A hanging turn: resolves only through the abort signal — exactly
+    // what /stop does to a slow brain.
+    const impl = (async (_input: string, init?: RequestInit) => {
+      const signal = init?.signal
+      if (!signal) {
+        throw new Error("expected a signal on the turn request")
+      }
+      return await new Promise<Response>((_, reject) => {
+        signal.addEventListener("abort", () => {
+          reject(new DOMException("aborted", "AbortError"))
+        })
+      })
+    }) as typeof fetch
+    const client = new ComukiClient(
+      resolveConfig({ COMUKI_URL: "http://t" }),
+      { fetchImpl: impl }
+    )
+
+    const pending = client.postMessage("abc", "slow question", controller.signal)
+    controller.abort()
+    const error = await pending.then(
+      () => undefined,
+      (failure: unknown) => failure
+    )
+
+    expect(isAbortError(error)).toBe(true)
+    expect(client.chatLatencyMs()).toBeNull()
+  })
+
+  it("isAbortError recognises only the abort rejection", () => {
+    expect(isAbortError(new DOMException("x", "AbortError"))).toBe(true)
+    expect(isAbortError(new Error("AbortError"))).toBe(false)
+    expect(isAbortError(new ComukiApiError(500, undefined, "boom"))).toBe(false)
+    expect(isAbortError("nope")).toBe(false)
   })
 })
 

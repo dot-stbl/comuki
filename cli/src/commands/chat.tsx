@@ -24,6 +24,7 @@ import type { HubConnection } from "@microsoft/signalr"
 import {
   ComukiApiError,
   ComukiClient,
+  isAbortError,
   type ChatMessageView,
 } from "../lib/client"
 import { whoAmI } from "../lib/auth"
@@ -40,6 +41,13 @@ import { useHomeEndKeys } from "../hooks/useHomeEndKeys"
 import { useSpinnerFrame } from "../hooks/useSpinnerFrame"
 import { useTranscriptScroll } from "../hooks/useTranscriptScroll"
 import { lastAssistantText } from "../lib/history"
+import {
+  dequeueMessage,
+  enqueueMessage,
+  queuedNoticeLine,
+  queueHintLine,
+  stoppedNoticeLine,
+} from "../lib/queue"
 import {
   addSession,
   adoptServerId,
@@ -86,6 +94,8 @@ const EMPTY_TAB_HINT = `${colors.faint}  no open sessions — ctrl+n to start on
 
 const NOTHING_TO_RETRY = `${colors.faint}  nothing to retry — no message sent yet${colors.reset}`
 
+const NOTHING_TO_STOP = `${colors.faint}  nothing to stop — no turn is running${colors.reset}`
+
 export interface ChatCommandProps {
   readonly config: ResolvedConfig
   /** Project id, slug or name; falls back to config.defaultProject. */
@@ -120,12 +130,26 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const [hubState, setHubState] = useState<HubConnectionState>("connecting")
   /** Chat-send EMA from the client — the status line latency badge. */
   const [latencyMs, setLatencyMs] = useState<number | null>(null)
+  /** Rendered height of the prompt block (menu rows + wrapped lines). */
+  const [promptRows, setPromptRows] = useState(1)
 
   const clientRef = useRef<ComukiClient | null>(null)
   const hubRef = useRef<HubConnection | null>(null)
   const projectIdRef = useRef<string | undefined>(undefined)
   const activeIdRef = useRef<string | undefined>(undefined)
   const overviewRef = useRef(false)
+  /**
+   * The slash menu owns tab/esc/↑/↓ while it is open — the shell's own
+   * useInput reads this ref to yield those keys for those keystrokes.
+   */
+  const slashMenuOpenRef = useRef(false)
+  /** One AbortController per in-flight turn — /stop aborts through it. */
+  const turnControllersRef = useRef(new Map<string, AbortController>())
+  /**
+   * Sessions whose aborted turn may still stream SignalR chunks (the
+   * server keeps processing); chunks are ignored until the next turn.
+   */
+  const mutedSessionsRef = useRef(new Set<string>())
   /** Reconnect re-join needs the session ids without a closure snapshot. */
   const sessionsRef = useRef<readonly Session[]>([])
 
@@ -139,6 +163,15 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const { hint: copyHint } = useCopyLastAnswer(() =>
     lastAssistantText(activeSession?.blocks ?? [])
   )
+
+  // Prompt-block reporting — stable callbacks so the effects inside
+  // PromptInput (menu flip, row count) don't re-fire every render.
+  const handleMenuOpenChange = useCallback((open: boolean) => {
+    slashMenuOpenRef.current = open
+  }, [])
+  const handlePromptRows = useCallback((rows: number) => {
+    setPromptRows(rows)
+  }, [])
 
   // -- transcript viewport ------------------------------------------------------
 
@@ -174,16 +207,20 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       : null
 
   // Pinned chrome rows: status line + tab strip + footer + the prompt
-  // block (the transient ctrl+y hint takes its own row). Everything
-  // left belongs to the scrolling viewport.
+  // block. The prompt block = the (possibly multiline, possibly
+  // menu-carrying) prompt + the transient ctrl+y hint row + the queue
+  // hint row. Everything left belongs to the scrolling viewport.
   const showFooter = tabs.sessions.length > 0 && !overviewVisible
+  const queuedCount = activeSession?.queued?.length ?? 0
+  const promptBlockRows =
+    promptRows + (copyHint ? 1 : 0) + (queuedCount > 0 ? 1 : 0)
   const viewportHeight = Math.max(
     1,
     rows -
       1 - // StatusLine
       (tabs.sessions.length > 0 ? 1 : 0) - // TabBar
       (showFooter ? 1 : 0) - // SessionFooter
-      (1 + (copyHint ? 1 : 0)) // prompt (+ transient copy hint row)
+      promptBlockRows
   )
 
   const scroll = useTranscriptScroll(
@@ -283,6 +320,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             connection,
             (chunk) => {
               // One connection, many sessions — route by payload id.
+              // A stopped turn's leftovers never reach the tab.
+              if (mutedSessionsRef.current.has(chunk.sessionId)) {
+                return
+              }
               setTabs((current) => ({
                 ...current,
                 sessions: appendLiveText(
@@ -486,6 +527,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       if (!client) {
         return
       }
+      const controller = new AbortController()
+      turnControllersRef.current.set(sessionId, controller)
+      // A new turn unmutes the chunk stream (a previous /stop muted it).
+      mutedSessionsRef.current.delete(sessionId)
       setTabs((current) => ({
         ...current,
         sessions: patchSession(current.sessions, sessionId, {
@@ -496,14 +541,34 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       try {
         const result =
           kind === "message"
-            ? await client.postMessage(sessionId, payload.message ?? "")
+            ? await client.postMessage(
+                sessionId,
+                payload.message ?? "",
+                controller.signal
+              )
             : await client.approve(
                 sessionId,
                 payload.approved ?? true,
-                payload.reason
+                payload.reason,
+                controller.signal
               )
         describeTurn(sessionId, result)
       } catch (error) {
+        if (isAbortError(error)) {
+          // /stop already flipped the tab out of thinking — stamp the
+          // mark; the queue (if any) survives and drains next.
+          setTabs((current) => ({
+            ...current,
+            sessions: patchSession(
+              appendBlocks(current.sessions, sessionId, [
+                { kind: "lines", lines: ["", stoppedNoticeLine()] },
+              ]),
+              sessionId,
+              { status: "done", liveText: "" }
+            ),
+          }))
+          return
+        }
         setTabs((current) => ({
           ...current,
           sessions: patchSession(
@@ -521,6 +586,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           ),
         }))
       } finally {
+        turnControllersRef.current.delete(sessionId)
         setTabs((current) => ({
           ...current,
           sessions: patchSession(current.sessions, sessionId, {
@@ -531,6 +597,19 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     },
     [describeTurn]
   )
+
+  /** `/stop` — abort the in-flight turn from the client side. */
+  const stopTurn = useCallback((sessionId: string) => {
+    turnControllersRef.current.get(sessionId)?.abort()
+    mutedSessionsRef.current.add(sessionId)
+    setTabs((current) => ({
+      ...current,
+      sessions: patchSession(current.sessions, sessionId, {
+        status: "done",
+        liveText: "",
+      }),
+    }))
+  }, [])
 
   // -- session lifecycle --------------------------------------------------------
 
@@ -674,11 +753,12 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       const value = raw.trim()
       const target =
         tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
-      if (value.length === 0 || target?.status === "thinking") {
+      if (value.length === 0) {
         return
       }
       // Per-session recall history — rides the session record, so it
       // persists with the tab and survives the pending → live adoption.
+      // Queued messages land here too: they were submitted by the user.
       if (target) {
         setTabs((current) => ({
           ...current,
@@ -688,9 +768,44 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
       const action = resolveSlashAction(value)
 
+      // A thinking turn owns the wire: chat messages (and /retry's
+      // resend) queue instead of firing a second concurrent POST.
+      if (
+        target?.status === "thinking" &&
+        (action.kind === "message" || action.kind === "retry")
+      ) {
+        const queued =
+          action.kind === "retry" ? retryMessage(target) : value
+        if (queued === null) {
+          pushLines(target.id, [NOTHING_TO_RETRY])
+          return
+        }
+        setTabs((current) => ({
+          ...current,
+          sessions: patchSession(current.sessions, target.id, {
+            queued: enqueueMessage(target.queued ?? [], queued),
+          }),
+        }))
+        pushLines(target.id, [queuedNoticeLine()])
+        return
+      }
+
       switch (action.kind) {
         case "exit": {
           exit()
+          return
+        }
+        case "stop": {
+          if (!target || target.status !== "thinking") {
+            const line = NOTHING_TO_STOP
+            if (target) {
+              pushLines(target.id, [line])
+            } else {
+              setNoticeLines([line])
+            }
+            return
+          }
+          stopTurn(target.id)
           return
         }
         case "clear": {
@@ -781,13 +896,45 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
       }
     },
-    [exit, openPendingTab, pushLines, runTurn, sendMessage, tabs]
+    [exit, openPendingTab, pushLines, runTurn, sendMessage, stopTurn, tabs]
   )
+
+  // -- queued-message drain -----------------------------------------------------
+  // The moment a session stops thinking (turn done, stopped or failed),
+  // its queue sends in order: one dequeue per commit, head first — the
+  // dequeue happens before the send so a re-render cannot resend it.
+
+  useEffect(() => {
+    for (const session of tabs.sessions) {
+      if (session.status !== "thinking" && (session.queued?.length ?? 0) > 0) {
+        const { message, rest } = dequeueMessage(session.queued ?? [])
+        if (message === undefined) {
+          continue
+        }
+        setTabs((current) => ({
+          ...current,
+          sessions: patchSession(current.sessions, session.id, {
+            queued: rest,
+          }),
+        }))
+        void sendMessage(session, message)
+        return
+      }
+    }
+  }, [tabs.sessions, sendMessage])
 
   // Global hotkeys — active in every state; the editor ignores these keys.
   useInput((input, key) => {
     if (overviewRef.current) {
       return // the overview's own handler owns the keys
+    }
+    // The slash menu owns tab (complete), esc (dismiss) and ↑/↓
+    // (selection) while it is open — hold the shell's meanings back.
+    if (
+      slashMenuOpenRef.current &&
+      (key.tab || key.escape || key.upArrow || key.downArrow)
+    ) {
+      return
     }
     // PgUp/PgDn: ink parses the standard sequences (`\x1b[5~` / `\x1b[6~`,
     // what ConPTY sends) into `key.pageUp` / `key.pageDown`; a sequence
@@ -870,12 +1017,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     }
   }, [connectError])
 
-  useEffect(() => {
-    if (connectError) {
-      process.exitCode = 1
-    }
-  }, [connectError])
-
   // The placeholder lives in the StatusLine identity slot. We show it only
   // while we are "truly disconnected" (hub attempt not yet decided);
   // once the attempt resolves — connect or fallback to REST-only — the
@@ -916,8 +1057,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   }
 
   const showWelcome = !welcomeDismissed && tabs.sessions.length === 0
-  const promptEnabled =
-    !overviewVisible && (!activeSession || activeSession.status !== "thinking")
+  // The prompt stays live while a turn thinks: typing a message queues
+  // it, `/stop` needs to be submittable mid-turn.
+  const promptEnabled = !overviewVisible
 
   // Header: status line + (when tabs exist) the tab strip — both single rows.
   // Content: the scrolling transcript viewport, filling everything the
@@ -996,11 +1138,14 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           {copyHint ? (
             <Text dimColor>{`  ${copyHint}`}</Text>
           ) : null}
+          {queuedCount > 0 ? <Text>{queueHintLine(queuedCount)}</Text> : null}
           <PromptInput
             onSubmit={handleSubmit}
             history={activeSession?.history ?? []}
             active={promptEnabled}
             historyRecallEnabled={!scroll.scrolledUp}
+            onMenuOpenChange={handleMenuOpenChange}
+            onRowsChange={handlePromptRows}
           />
         </>
       ) : null}

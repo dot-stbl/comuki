@@ -1,5 +1,6 @@
 /**
- * The `›` prompt with input history and its own line editor.
+ * The `›` prompt with input history, slash autocomplete and a
+ * multiline line editor.
  *
  * Why not ink-text-input: the multi-session shell needs `tab` (switch
  * session), `esc` (overview), `ctrl+n` / `ctrl+w` (new / close tab) as
@@ -9,14 +10,34 @@
  * backspace, cursor arrows, history); the shell owns the hotkeys in
  * its own `useInput`, and this editor simply ignores those keys.
  *
+ * Cooperative key ownership while the slash menu is open: the menu
+ * takes ↑/↓ (selection), tab/enter (complete) and esc (dismiss); the
+ * shell learns the menu is open through `onMenuOpenChange` and holds
+ * back its own tab/esc/arrow handling for those keystrokes.
+ *
+ * Multiline: modifier+enter (shift/alt — as flags or the raw sequences
+ * terminals actually send) and a trailing `\` + plain enter insert a
+ * newline; plain enter submits. The routing itself is
+ * `lib/multiline.ts` (pure), the value can span lines, and the prompt
+ * block reports its rendered height via `onRowsChange` so the shell's
+ * viewport math stays honest.
+ *
  * History recall (↑/↓) follows `historyNavigator`: ↑ from the live
  * line saves the half-typed draft and shows the newest entry, ↓ past
  * the newest entry restores that draft, and editing a recalled entry
  * keeps its position so ↑/↓ continue from where the user is.
  */
-import { Text, useInput } from "ink"
-import React, { useCallback, useState } from "react"
+import { Box, Text, useInput } from "ink"
+import React, { useCallback, useEffect, useState } from "react"
 import { historyNavigator, type HistoryDirection } from "../lib/history"
+import { isEnterInput, routeEnterKey } from "../lib/multiline"
+import {
+  SLASH_COMMANDS,
+  completeSlashCommand,
+  filterSlashCommands,
+  slashMenuQuery,
+  type SlashCommand,
+} from "../lib/slash"
 import { gutter, palette, symbols } from "../theme"
 
 export interface PromptInputProps {
@@ -31,6 +52,13 @@ export interface PromptInputProps {
    * instead of history recall; typing is untouched.
    */
   readonly historyRecallEnabled?: boolean
+  /** Fired on every open/close flip — the shell gates its hotkeys on it. */
+  readonly onMenuOpenChange?: (open: boolean) => void
+  /**
+   * Fired when the rendered row count changes (menu rows + wrapped
+   * input lines) — the shell subtracts it from the viewport height.
+   */
+  readonly onRowsChange?: (rows: number) => void
 }
 
 interface EditorState {
@@ -42,6 +70,19 @@ interface EditorState {
    */
   readonly draft: string
   readonly historyIndex: number | null
+  /** Selected row in the slash menu; wrapped by ↑/↓ while it is open. */
+  readonly menuIndex: number
+  /** Esc closed the menu; any further typing reopens it (new query). */
+  readonly menuDismissed: boolean
+}
+
+const FRESH_EDITOR: EditorState = {
+  value: "",
+  cursor: 0,
+  draft: "",
+  historyIndex: null,
+  menuIndex: 0,
+  menuDismissed: false,
 }
 
 export function PromptInput({
@@ -51,17 +92,39 @@ export function PromptInput({
   history = [],
   active = true,
   historyRecallEnabled = true,
+  onMenuOpenChange,
+  onRowsChange,
 }: PromptInputProps) {
-  const [state, setState] = useState<EditorState>({
-    value: "",
-    cursor: 0,
-    draft: "",
-    historyIndex: null,
-  })
+  const [state, setState] = useState<EditorState>(FRESH_EDITOR)
+
+  const query = slashMenuQuery(state.value)
+  const matches =
+    query === null
+      ? []
+      : filterSlashCommands(SLASH_COMMANDS, query)
+  const menuOpen = query !== null && !state.menuDismissed && matches.length > 0
+
+  /**
+   * Any value mutation goes through here: the menu selection resets
+   * (the filter just changed underneath it) and a dismissal is lifted
+   * so typing after Esc reopens the menu for the new query.
+   */
+  const edit = useCallback(
+    (updater: (current: EditorState) => EditorState) => {
+      setState((current) => {
+        const next = updater(current)
+        if (next.value === current.value) {
+          return next
+        }
+        return { ...next, menuIndex: 0, menuDismissed: false }
+      })
+    },
+    []
+  )
 
   const navigate = useCallback(
     (direction: HistoryDirection) => {
-      setState((current) => {
+      edit((current) => {
         const next = historyNavigator(
           current.historyIndex,
           direction,
@@ -77,6 +140,8 @@ export function PromptInput({
             cursor: current.draft.length,
             draft: current.draft,
             historyIndex: null,
+            menuIndex: current.menuIndex,
+            menuDismissed: current.menuDismissed,
           }
         }
         const value = history[next] ?? ""
@@ -86,29 +151,110 @@ export function PromptInput({
           // Capture the live line as the draft on the first ↑ only.
           draft: current.historyIndex === null ? current.value : current.draft,
           historyIndex: next,
+          menuIndex: current.menuIndex,
+          menuDismissed: current.menuDismissed,
         }
       })
     },
-    [history]
+    [edit, history]
+  )
+
+  const completeFromMenu = useCallback(
+    (command: SlashCommand) => {
+      const completed = completeSlashCommand(command)
+      setState({
+        value: completed,
+        cursor: completed.length,
+        draft: "",
+        historyIndex: null,
+        menuIndex: 0,
+        // The trailing space closes the menu by itself (whitespace in
+        // the query) — no dismissal needed.
+        menuDismissed: false,
+      })
+    },
+    []
   )
 
   useInput(
     (input, key) => {
-      if (key.upArrow) {
-        // Scrolled-up transcript owns the arrows — the viewport scrolls.
-        if (historyRecallEnabled) {
-          navigate("older")
+      if (menuOpen) {
+        if (key.upArrow) {
+          const nextIndex =
+            (state.menuIndex - 1 + matches.length) % matches.length
+          setState({ ...state, menuIndex: nextIndex })
+          return
         }
+        if (key.downArrow) {
+          const nextIndex = (state.menuIndex + 1) % matches.length
+          setState({ ...state, menuIndex: nextIndex })
+          return
+        }
+        // Plain tab/enter complete; a modified enter still newlines.
+        if (
+          (key.tab || key.return) &&
+          !key.shift &&
+          !key.meta
+        ) {
+          const chosen = matches[state.menuIndex] ?? matches[0]
+          if (chosen) {
+            completeFromMenu(chosen)
+          }
+          return
+        }
+        if (key.escape) {
+          setState({ ...state, menuDismissed: true })
+          return
+        }
+      }
+      if (
+        key.upArrow &&
+        !menuOpen &&
+        historyRecallEnabled
+      ) {
+        navigate("older")
         return
       }
-      if (key.downArrow) {
-        if (historyRecallEnabled) {
-          navigate("newer")
-        }
+      if (
+        key.downArrow &&
+        !menuOpen &&
+        historyRecallEnabled
+      ) {
+        navigate("newer")
         return
       }
-      if (key.return) {
-        setState({ value: "", cursor: 0, draft: "", historyIndex: null })
+      if (isEnterInput(input, key)) {
+        const decision = routeEnterKey(state.value, input, key)
+        if (decision === "newline") {
+          edit((current) => ({
+            value:
+              current.value.slice(0, current.cursor) +
+              "\n" +
+              current.value.slice(current.cursor),
+            cursor: current.cursor + 1,
+            draft: current.draft,
+            historyIndex: current.historyIndex,
+            menuIndex: current.menuIndex,
+            menuDismissed: current.menuDismissed,
+          }))
+          return
+        }
+        if (decision === "continue") {
+          // Backslash continuation: the trailing `\` becomes the newline.
+          edit((current) => {
+            const trimmed = current.value.slice(0, -1) + "\n"
+            return {
+              value: trimmed,
+              cursor: trimmed.length,
+              draft: current.draft,
+              historyIndex: current.historyIndex,
+              menuIndex: current.menuIndex,
+              menuDismissed: current.menuDismissed,
+            }
+          })
+          return
+        }
+        setState(FRESH_EDITOR)
         onSubmit(state.value)
         return
       }
@@ -137,55 +283,160 @@ export function PromptInput({
       }
       if (key.backspace || key.delete) {
         if (state.cursor > 0) {
-          setState({
+          edit((current) => ({
             value:
-              state.value.slice(0, state.cursor - 1) +
-              state.value.slice(state.cursor),
-            cursor: state.cursor - 1,
-            draft: state.draft,
-            historyIndex: state.historyIndex,
-          })
+              current.value.slice(0, current.cursor - 1) +
+              current.value.slice(current.cursor),
+            cursor: current.cursor - 1,
+            draft: current.draft,
+            historyIndex: current.historyIndex,
+            menuIndex: current.menuIndex,
+            menuDismissed: current.menuDismissed,
+          }))
         }
         return
       }
       if (input.length > 0) {
-        setState({
+        edit((current) => ({
           value:
-            state.value.slice(0, state.cursor) +
+            current.value.slice(0, current.cursor) +
             input +
-            state.value.slice(state.cursor),
-          cursor: state.cursor + input.length,
-          draft: state.draft,
-          historyIndex: state.historyIndex,
-        })
+            current.value.slice(current.cursor),
+          cursor: current.cursor + input.length,
+          draft: current.draft,
+          historyIndex: current.historyIndex,
+          menuIndex: current.menuIndex,
+          menuDismissed: current.menuDismissed,
+        }))
       }
     },
     { isActive: active }
   )
 
-  const before = state.value.slice(0, state.cursor)
-  const at = state.value[state.cursor]
-  const after = state.value.slice(state.cursor + 1)
+  // -- reporting hooks (shell side: hotkey gates + viewport math) --------
+
+  const inputRows = Math.max(1, state.value.split("\n").length)
+  const renderedRows = (menuOpen ? matches.length : 0) + inputRows
+
+  useEffect(() => {
+    onMenuOpenChange?.(menuOpen)
+  }, [menuOpen, onMenuOpenChange])
+
+  useEffect(() => {
+    onRowsChange?.(renderedRows)
+  }, [renderedRows, onRowsChange])
+
+  // -- render -------------------------------------------------------------
+
+  const menuRows = matches.map((command, index) => {
+    const selected = menuOpen && index === state.menuIndex
+    return (
+      <Text key={command.name}>
+        {gutter}
+        <Text
+          color={selected ? palette.brand : undefined}
+          dimColor={!selected}
+        >
+          {`/${command.name}`}
+        </Text>
+        <Text dimColor>{` — ${command.description}`}</Text>
+      </Text>
+    )
+  })
+
+  const lines = promptLines(state.value, state.cursor, placeholder)
 
   return (
-    <Text>
-      {gutter}
-      <Text color={palette.brand}>
-        {label}
-        {symbols.prompt}{" "}
-      </Text>
-      {state.value.length > 0 ? (
-        <>
-          <Text>{before}</Text>
-          <Text inverse>{at ?? " "}</Text>
-          {after.length > 0 ? <Text>{after}</Text> : null}
-        </>
-      ) : (
-        <>
-          <Text inverse>{placeholder.slice(0, 1)}</Text>
-          <Text dimColor>{placeholder.slice(1)}</Text>
-        </>
-      )}
-    </Text>
+    <Box flexDirection="column">
+      {menuOpen ? menuRows : null}
+      {lines.map((line, index) => (
+        <Text key={index}>
+          {index === 0 ? (
+            <Text color={palette.brand}>
+              {label}
+              {symbols.prompt}{" "}
+            </Text>
+          ) : (
+            // Continuation rows align under the prompt glyph.
+            <Text>{"  "}</Text>
+          )}
+          {line}
+        </Text>
+      ))}
+    </Box>
   )
+}
+
+/**
+ * The value split into rendered lines with the cursor block injected
+ * at the caret position: an inverse char over the character under the
+ * caret, an inverse space at end-of-line positions (end of the buffer
+ * or sitting on a newline). Pure — same inputs, same nodes.
+ */
+function promptLines(
+  value: string,
+  cursor: number,
+  placeholder: string
+): readonly React.ReactNode[][] {
+  if (value.length === 0) {
+    return [
+      [
+        <Text inverse key="cursor">
+          {placeholder.slice(0, 1)}
+        </Text>,
+        <Text dimColor key="rest">
+          {placeholder.slice(1)}
+        </Text>,
+      ],
+    ]
+  }
+  const before = value.slice(0, cursor)
+  const at = value[cursor]
+  const after = at === undefined ? "" : value.slice(cursor + 1)
+
+  const beforeLines = before.split("\n")
+  const afterLines = after.split("\n")
+  const head = beforeLines.slice(0, -1).map((line) => [
+    <Text key="line">{line}</Text>,
+  ])
+  const lastBefore = beforeLines[beforeLines.length - 1] ?? ""
+
+  if (at === undefined) {
+    return [
+      ...head,
+      [
+        <Text key="before">{lastBefore}</Text>,
+        <Text inverse key="cursor">
+          {" "}
+        </Text>,
+      ],
+    ]
+  }
+  if (at === "\n") {
+    // Caret on a newline: an inverse space ends the current line; the
+    // newline itself carries the rest onto the next rendered row.
+    return [
+      ...head,
+      [
+        <Text key="before">{lastBefore}</Text>,
+        <Text inverse key="cursor">
+          {" "}
+        </Text>,
+      ],
+      ...afterLines.map((line) => [<Text key="line">{line}</Text>]),
+    ]
+  }
+  return [
+    ...head,
+    [
+      <Text key="before">{lastBefore}</Text>,
+      <Text inverse key="cursor">
+        {at}
+      </Text>,
+      ...(afterLines[0] !== undefined
+        ? [<Text key="after">{afterLines[0]}</Text>]
+        : []),
+    ],
+    ...afterLines.slice(1).map((line) => [<Text key="line">{line}</Text>]),
+  ]
 }

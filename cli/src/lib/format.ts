@@ -10,6 +10,7 @@
  */
 import { colors, paint, stripAnsi, symbols } from "../theme"
 import type { ChatMessageView, MessagePart, PlanItemView } from "./client"
+import { DEFAULT_MARKDOWN_WIDTH, renderMarkdownLines } from "./markdown"
 
 /** ANSI-aware tail truncation for live buffers and tool summaries. */
 export function truncateTail(text: string, maxWidth: number): string {
@@ -172,7 +173,10 @@ export function indentBlock(text: string, indent = "  "): string {
     .join("\n")
 }
 
-export function renderPart(part: MessagePart): string[] {
+export function renderPart(
+  part: MessagePart,
+  width: number = DEFAULT_MARKDOWN_WIDTH
+): string[] {
   switch (part.kind) {
     case "thinking":
       return part.text
@@ -209,12 +213,15 @@ export function renderPart(part: MessagePart): string[] {
     case "plan":
       return renderPlanItems(part.nodes)
     case "text":
-      return part.markdown.split("\n")
+      return renderMarkdownLines(part.markdown, width)
   }
 }
 
-export function renderParts(parts: readonly MessagePart[]): string[] {
-  return parts.flatMap(renderPart)
+export function renderParts(
+  parts: readonly MessagePart[],
+  width: number = DEFAULT_MARKDOWN_WIDTH
+): string[] {
+  return parts.flatMap((part) => renderPart(part, width))
 }
 
 // ---------------------------------------------------------------------------
@@ -223,10 +230,14 @@ export function renderParts(parts: readonly MessagePart[]): string[] {
 
 /**
  * One transcript row → lines. Assistant rows prefer parts (the rich
- * shape); `content` is the flat fallback. User rows echo as typed. Tool
+ * shape); `content` is the flat fallback. Both render markdown through
+ * `lib/markdown.ts`. User rows echo as typed — plain, one line. Tool
  * and system journal rows render muted.
  */
-export function renderMessage(message: ChatMessageView): string[] {
+export function renderMessage(
+  message: ChatMessageView,
+  width: number = DEFAULT_MARKDOWN_WIDTH
+): string[] {
   if (message.role === "user") {
     return [
       `${paint("you  ", colors.accent)}${symbols.prompt} ${message.content}`,
@@ -235,8 +246,8 @@ export function renderMessage(message: ChatMessageView): string[] {
   if (message.role === "assistant") {
     const lines =
       message.parts !== null && message.parts.length > 0
-        ? renderParts(message.parts)
-        : message.content.split("\n")
+        ? renderParts(message.parts, width)
+        : renderMarkdownLines(message.content, width)
     const meta = message.meta
     const cost = meta?.model
       ? paint(

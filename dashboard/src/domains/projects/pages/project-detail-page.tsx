@@ -11,11 +11,14 @@ import { useQueueQuery, useWorkersQuery } from "@/domains/queue/api/queries"
 import { formatCost } from "@/domains/runs/model/format"
 import { useSourcesQuery } from "@/domains/sources/api/queries"
 import { ScheduledJobsSection } from "@/domains/projects/ui/scheduled-jobs-section"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { can, needsLabel, useCan, useSession } from "@/shared/session"
 import {
   Button,
   ForbiddenState,
+  ScreenState,
   Section,
+  Skeleton,
   Tooltip,
   buttonClass,
 } from "@/shared/ui"
@@ -282,24 +285,22 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
     >
       <div className={styles.screen} data-test="project-detail">
         {isLoading ? (
-          <div className={styles.skeleton} data-test="project-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="none"
+            data-test="project-loading"
+          />
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>The registry did not load</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="The registry did not load"
+            description={requestFailureMessage(error, "Unknown error")}
+            /* `none`: the screen's own body already pays for its room, the
+               way the record and the hand-offs below do. */
+            inset="none"
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -312,8 +313,8 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {!isLoading && !isError && !project ? (
@@ -322,16 +323,21 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
              that cannot be acted on: the operator arrived here from a link
              somebody else wrote, and the id is the only part of it they can
              take back to whoever wrote it. */
-          <div className={styles.state} data-test="project-not-found">
-            <p className={styles.stateTitle}>No project with that id</p>
-            <p className={styles.stateBody}>
-              The registry holds nothing under{" "}
-              <code className={styles.missing}>{projectId}</code>. A project id
-              out of an old link is the ordinary way to arrive here — an address
-              outlives the project it named, and the registry is where the ones
-              that still exist are.
-            </p>
-            <span>
+          <ScreenState
+            kind="notFound"
+            title="No project with that id"
+            description={
+              <>
+                The registry holds nothing under{" "}
+                <code className={styles.missing}>{projectId}</code>. A project
+                id out of an old link is the ordinary way to arrive here — an
+                address outlives the project it named, and the registry is where
+                the ones that still exist are.
+              </>
+            }
+            inset="none"
+            data-test="project-not-found"
+            action={
               <Tooltip content="Back to projects">
                 <Link
                   to="/projects"
@@ -343,8 +349,8 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
                   <ArrowLeft aria-hidden="true" />
                 </Link>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {project ? (

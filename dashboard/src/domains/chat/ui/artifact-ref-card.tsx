@@ -19,9 +19,10 @@ import styles from "./artifact-ref-card.module.css"
  *    page knows the scope; the parts do not — see `ArtifactRefPart`'s
  *    header) and the artifact ids the turn referenced. It runs the
  *    project's artifact list and intersects the parts' ids with the
- *    resolved ones. Empty intersection means the operator should see
- *    "referenced but gone" rather than nothing — a comment of the
- *    conversation may outlive its bytes.
+ *    resolved ones. An id that does not intersect is said out loud
+ *    rather than dropped — a comment of the conversation may outlive
+ *    its bytes — but *what* is said depends on whether the list has
+ *    answered yet. See {@link unresolvedWords}.
  * 2. **Render one row per id.** Each id's resolved artifact becomes a
  *    thumbnail button. A document (svg / html) renders as a labelled
  *    tile rather than as document bytes — the operator's mental model
@@ -40,6 +41,40 @@ export interface ArtifactRefCardProps {
   artifactIds: string[]
 }
 
+/**
+ * Why an id did not become a thumbnail.
+ *
+ * - `gone` — the list answered and this id is not in it. The publication was
+ *   revoked, and the journal kept the pointer.
+ * - `unread` — the list could not be read at all. Nothing is known about this
+ *   id, including whether it still exists.
+ * - `reading` — the request is still in flight.
+ */
+type UnresolvedState = "gone" | "unread" | "reading"
+
+/**
+ * The line under the thumbnails, in the tense the card has actually earned.
+ *
+ * The card used to say "no longer available" for every id it could not look
+ * up — which meant that for as long as the artifact list was in flight, a turn
+ * that published three files told the operator all three had been revoked. The
+ * count is the same fact in all three cases; the verb is not, and the verb is
+ * the part somebody acts on.
+ */
+function unresolvedWords(count: number, state: UnresolvedState): string {
+  const subject =
+    count === 1 ? "1 referenced artifact" : `${count} referenced artifacts`
+  if (state === "reading") {
+    return `${subject}, still loading`
+  }
+  if (state === "unread") {
+    return `${subject} could not be read`
+  }
+  return count === 1
+    ? `${subject} is no longer available`
+    : `${subject} are no longer available`
+}
+
 export function ArtifactRefCard({
   projectId,
   artifactIds,
@@ -54,11 +89,10 @@ export function ArtifactRefCard({
   )
 
   // Resolve the part's ids against the fetched list. The set is what
-  // the card draws; an id that didn't survive (the referenced
-  // artifact was deleted, the journal still has the pointer) is the
-  // `orphans` list — surfaced separately so the operator can read
-  // that a turn's publication has since been revoked.
-  const { resolved, orphans } = useMemo(() => {
+  // the card draws; an id that didn't survive is `unresolved`, and what the
+  // card is allowed to *say* about it depends on why it did not resolve —
+  // which is the whole of `state` below.
+  const { resolved, unresolved } = useMemo(() => {
     const lookup = new Map(all.map((entry) => [entry.id, entry]))
     const hit: VisualArtifact[] = []
     const miss: string[] = []
@@ -70,12 +104,18 @@ export function ArtifactRefCard({
         miss.push(id)
       }
     }
-    return { resolved: hit, orphans: miss }
+    return { resolved: hit, unresolved: miss }
   }, [all, artifactIds])
+
+  const state: UnresolvedState = query.isSuccess
+    ? "gone"
+    : query.isError
+      ? "unread"
+      : "reading"
 
   const [openArtifact, setOpenArtifact] = useState<VisualArtifact | null>(null)
 
-  if (resolved.length === 0 && orphans.length === 0) {
+  if (resolved.length === 0 && unresolved.length === 0) {
     return null
   }
 
@@ -101,11 +141,13 @@ export function ArtifactRefCard({
           ))}
         </div>
       ) : null}
-      {orphans.length > 0 ? (
-        <p className={styles.orphans}>
-          {orphans.length === 1
-            ? "1 referenced artifact is no longer available"
-            : `${orphans.length} referenced artifacts are no longer available`}
+      {unresolved.length > 0 ? (
+        <p
+          className={styles.orphans}
+          data-test="artifact-ref-unresolved"
+          data-state={state}
+        >
+          {unresolvedWords(unresolved.length, state)}
         </p>
       ) : null}
       {openArtifact ? (

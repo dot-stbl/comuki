@@ -158,6 +158,7 @@ public sealed class ComukiMemoryDigestShould
     /// with fixed facts filtered by the query shape (the digest performs
     /// two searches per build — relevant, then freshest standing).
     /// </summary>
+    // TODO(canon #12): extract this fake to a shared *.Testing project — separate task with its own csproj/slnx changes.
     private sealed class RecordingMemoryStore(IReadOnlyList<MemoryFactView> facts) : IMemoryStore
     {
         public List<MemoryFactQuery> Queries { get; } = [];

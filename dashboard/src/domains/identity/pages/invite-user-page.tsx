@@ -10,7 +10,8 @@ import {
 } from "@/domains/identity/api/queries"
 import type { InviteUserInput } from "@/domains/identity/model/types"
 import { InviteUserForm } from "@/domains/identity/ui/invite-user-form"
-import { ConfirmDialog } from "@/shared/ui"
+import { requestFailureMessage } from "@/shared/api/problem"
+import { ConfirmDialog, Notice } from "@/shared/ui"
 
 /**
  * Adding a person, on its own screen at `/identity/users/new`.
@@ -74,6 +75,21 @@ export function InviteUserPage() {
       ]}
       summary="An account can exist and hold nothing. Roles are granted separately, on the role assignments list."
     >
+      {/* The host's own sentence, not `error.message`: an invitation that the
+          platform refused says why it refused in its problem body, and a
+          screen that printed the transport's "request failed 400" would be
+          hiding the one reading the operator can act on. */}
+      {invite.error ? (
+        <Notice tone="bad" data-test="invite-failure">
+          {requestFailureMessage(
+            invite.error,
+            "The platform refused to create the account."
+          )}{" "}
+          No account was made — the name and address below are still exactly as
+          you typed them.
+        </Notice>
+      ) : null}
+
       <InviteUserForm
         takenAddresses={takenAddresses}
         busy={invite.isPending}

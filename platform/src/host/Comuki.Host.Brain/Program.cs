@@ -41,7 +41,6 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 // brain section and COMUKI_BRAIN_GRPCPORT land on BrainOptions through
 // the env provider), no Server header, comuki console formatter.
 builder.Configuration.UseComukiConfiguration();
-builder.WebHost.ConfigureKestrel(static server => server.AddServerHeader = false);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddComukiConsole(builder.Configuration);

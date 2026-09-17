@@ -36,9 +36,10 @@ import { PlatformSettingsPanel } from "@/domains/settings/ui/platform-settings-p
 import { RoutingPanel } from "@/domains/settings/ui/routing-panel"
 import { RulesPanel } from "@/domains/settings/ui/rules-panel"
 import { TrackerPanel } from "@/domains/settings/ui/tracker-panel"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { env } from "@/shared/config/env"
 import { useCan } from "@/shared/session"
-import { Button, Tooltip } from "@/shared/ui"
+import { Button, ScreenState, Skeleton, Tooltip } from "@/shared/ui"
 
 import styles from "./settings-page.module.css"
 
@@ -144,6 +145,15 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
     stop.mutate({ kind, on })
   }
 
+  // The stops answer for themselves. They were reading `save.isPending` and
+  // showing nothing at all on failure — so the kill-switch went grey while
+  // somebody saved a cap, and a stop that did not land said so nowhere. An
+  // emergency brake that lies about its own state is the one control on this
+  // screen that must not.
+  const stopFailure = stop.error
+    ? requestFailureMessage(stop.error, "The stop did not apply.")
+    : null
+
   const onSaveRouting = (values: RoutingFormValues) => {
     if (!data || !mayEdit.allowed) {
       return
@@ -157,6 +167,16 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
         onSuccess: () => {
           toast.success("Routing saved", {
             description: "role → model map updated (mock)",
+          })
+        },
+        // A save that failed used to do nothing but stop the button spinning,
+        // which from across a desk is what a save that worked looks like.
+        onError: (failure) => {
+          toast.error("Routing not saved", {
+            description: requestFailureMessage(
+              failure,
+              "The save did not land."
+            ),
           })
         },
       }
@@ -176,6 +196,14 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
         onSuccess: () => {
           toast.success("Budgets saved", {
             description: "caps updated (mock)",
+          })
+        },
+        onError: (failure) => {
+          toast.error("Budgets not saved", {
+            description: requestFailureMessage(
+              failure,
+              "The save did not land."
+            ),
           })
         },
       }
@@ -199,24 +227,20 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
     >
       <div className={styles.screen}>
         {isLoading ? (
-          <div className={styles.skeleton} data-test="settings-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="page"
+            data-test="settings-loading"
+          />
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>Settings did not load</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="Settings did not load"
+            description={requestFailureMessage(error, "Unknown error")}
+            inset="page"
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -229,8 +253,8 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {/* Real mode: the read-only platform snapshot, and nothing else.
@@ -292,6 +316,8 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
               <BudgetsPanel
                 budgets={data.budgets}
                 busy={save.isPending}
+                stopping={stop.isPending}
+                stopFailure={stopFailure}
                 save={mayEdit}
                 onSave={onSaveBudgets}
                 onToggleStop={onToggleStop}

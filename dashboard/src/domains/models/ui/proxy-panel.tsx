@@ -1,10 +1,15 @@
 import { Loader2, Power, PowerOff } from "lucide-react"
 
-import { burnPeak, hourLabel, proxySentence } from "@/domains/models/model/keys"
+import {
+  burnPeak,
+  hourLabel,
+  proxySentence,
+  relativeDays,
+} from "@/domains/models/model/keys"
 import type { Proxy } from "@/domains/models/model/types"
 import { formatCost } from "@/domains/runs/model/format"
 import { can, needsLabel, useSession } from "@/shared/session"
-import { Button, Sparkline, Tooltip } from "@/shared/ui"
+import { Button, Sparkline, Surface, Tooltip } from "@/shared/ui"
 import { cn } from "@/shared/lib/utils"
 
 import styles from "./proxy-panel.module.css"
@@ -19,15 +24,6 @@ export interface ProxyPanelProps {
    * offering an act the host has already refused.
    */
   onToggle?: (next: boolean) => void
-}
-
-/** Days, rounded, from a relative age in seconds. */
-function days(seconds: number): string {
-  const value = Math.round(seconds / 86_400)
-  if (value <= 0) {
-    return "just now"
-  }
-  return `${value} ${value === 1 ? "day" : "days"} ago`
 }
 
 /** The burn reading in words — the sparkline's whole accessible name. */
@@ -68,20 +64,35 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
   const metered = onToggle !== undefined
 
   return (
-    <section
-      className={styles.panel}
+    /* The kit's `Surface`, not a card and not a hand-spelled panel: a hairline
+       on the start edge, the lane material and the screen-surface corner. The
+       edge is the accent channel, so `tone` is read off the switch — a proxy
+       that is off marks its own edge and says so in words inside itself.
+
+       `Surface` forwards `data-test` and nothing else, on purpose. The
+       `data-enabled` hook therefore moves to the line it was always about —
+       the word `on` or `off` — and the figures' staleness becomes a class on
+       the figures, which is where that reading applies. */
+    <Surface
+      as="section"
+      bound="start"
+      tone={proxy.enabled ? "neutral" : "attention"}
+      spacing="roomy"
       data-test="proxy-panel"
-      data-enabled={proxy.enabled ? "" : undefined}
     >
       <div className={styles.head}>
         <div className={styles.identity}>
-          <p className={styles.state} data-test="proxy-state">
+          <p
+            className={styles.state}
+            data-test="proxy-state"
+            data-enabled={proxy.enabled ? "" : undefined}
+          >
             <span className={styles.stateWord}>
               {proxy.enabled ? "on" : "off"}
             </span>
             {metered ? (
               <span className={styles.since}>
-                since {days(proxy.changedAgoSec)}
+                since {relativeDays(proxy.changedAgoSec)}
               </span>
             ) : null}
           </p>
@@ -128,7 +139,10 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
       </div>
 
       {metered ? (
-        <dl className={styles.figures} data-test="proxy-figures">
+        <dl
+          className={cn(styles.figures, stale && styles.figuresStale)}
+          data-test="proxy-figures"
+        >
           <div className={styles.figure}>
             <dt className={styles.figureName}>cost per run</dt>
             <dd className={styles.figureValue}>
@@ -170,6 +184,6 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
           </p>
         </dl>
       ) : null}
-    </section>
+    </Surface>
   )
 }

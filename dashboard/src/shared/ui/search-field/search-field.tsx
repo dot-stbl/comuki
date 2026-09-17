@@ -8,12 +8,19 @@ import styles from "./search-field.module.css"
  * The kit's search field. One control, one job — narrow a list of things
  * by what the operator types.
  *
- * Two surfaces use it today: the data table's toolbar (the promoted text
- * filter) and the knowledge screen's search (which the kit did not have
- * until this primitive landed). Both screens put a single field at the
- * top of a list, and both name the field through `aria-label` rather
- * than a visible `<label>` — a search is the operator's command, not a
- * form value, so it does not earn the field envelope.
+ * One surface uses it today: `DataTableToolbar`, for the text filter it
+ * promotes out of a column onto the row. That count used to read "two",
+ * and both halves were wishes rather than facts — the toolbar carried a
+ * private component of the same name, and the knowledge screen still
+ * builds its own (`domains/knowledge/ui/knowledge-search.tsx`, whose own
+ * comment calls the absence of this primitive "a gap in the kit" it did
+ * not know had been filled). The toolbar is now a real call site; the
+ * knowledge screen is the one left, and it is a domain's to make.
+ *
+ * Whoever the callers are, the shape is the same: a single field at the
+ * top of a list, named through `aria-label` rather than a visible
+ * `<label>` — a search is the operator's command, not a form value, so it
+ * does not earn the field envelope.
  *
  * `data-active` is the only state the chrome reads: a non-empty value
  * says "this filter is doing something", and the rule wears a brand tint

@@ -25,6 +25,25 @@
   color: var(--text-faint);
 }
 
+/* "required", riding inside the label.
+
+   No colour, and that is this sheet's rule rather than a preference: a form
+   spends colour on "something is wrong" and "this cannot be undone", and an
+   unfilled field is neither yet. So the separation is weight and ink — the
+   name stays semibold and faint, the rule beside it goes regular in the same
+   muted grey `.hint` uses, because it is the same kind of statement: a thing
+   about the field that the box itself cannot show.
+
+   Nothing here spaces the word away from the name. The gap is a real text node
+   in `field.tsx`, and it has to be: a margin is invisible to the accessibility
+   tree, and without the character the composed name is one run-together word.
+   If this rule ever grows a `margin-inline-start`, the space in the markup is
+   still the thing doing the work. */
+.labelRequired {
+  font-weight: var(--fw-regular);
+  color: var(--text-muted);
+}
+
 /* What the field is *for* is optional; when a field carries a rule the operator
    cannot see by looking at the box, the rule goes here. */
 .hint {
@@ -85,7 +104,7 @@
 .control:focus-visible {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .control:disabled {
@@ -236,7 +255,7 @@
 .secret:focus-visible {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* Switch ---------------------------------------------------------------- */
@@ -342,7 +361,7 @@
    to the track the operator can see, and this is supported everywhere. */
 .switch:focus-within {
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .switchOff {
@@ -407,7 +426,7 @@
    to the box the operator can see, and this is supported everywhere. */
 .choice:focus-within {
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* Selected is a border, a wash and a mark — three channels, none of them a hue
@@ -497,7 +516,7 @@
 .scrim {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -546,7 +565,7 @@
   font-family: var(--font-ui);
   font-size: var(--t-h2);
   font-weight: var(--fw-semibold);
-  line-height: 1.3;
+  line-height: var(--lh-tight);
   color: var(--text);
 }
 

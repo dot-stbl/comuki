@@ -40,7 +40,7 @@
 
 .sectionButton:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .sectionButton[data-active] {
@@ -110,7 +110,7 @@
 
 .item:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .itemActive {
@@ -142,7 +142,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: var(--lh-flat);
   color: var(--text-faint);
 }
 

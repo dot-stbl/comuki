@@ -14,6 +14,8 @@ export interface NumberFieldProps extends Omit<
   label: string
   /** The label is real but not drawn — see `FieldProps.labelHidden`. */
   labelHidden?: boolean
+  /** The form will not go without this field — see `FieldProps.required`. */
+  required?: boolean
   value: string
   onValueChange: (next: string) => void
   /**
@@ -49,6 +51,7 @@ export function NumberField({
   id,
   label,
   labelHidden,
+  required,
   value,
   onValueChange,
   unit,
@@ -62,6 +65,7 @@ export function NumberField({
       id={id}
       label={label}
       labelHidden={labelHidden}
+      required={required}
       hint={hint}
       error={error}
     >
@@ -73,6 +77,7 @@ export function NumberField({
           inputMode="decimal"
           className={cn(styles.control, styles.numberInput, className)}
           value={value}
+          aria-required={required ? true : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={hint || error ? fieldDescriptionId(id) : undefined}
           onChange={(event) => onValueChange(event.target.value)}

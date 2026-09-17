@@ -65,10 +65,14 @@
   background: var(--st);
 }
 
+/* Two groups on one line: the fraction, and the sentence about where it ends.
+   The step between them is the row's own gap and nothing else — a margin on
+   the note would be a second spacing authority on the same axis, and the two
+   used to disagree (4px between the figures, 12px before the note). */
 .figures {
   display: flex;
   align-items: baseline;
-  gap: var(--s1);
+  gap: var(--s3);
   margin: 0;
   min-inline-size: 0;
   font-family: var(--font-data);
@@ -77,13 +81,20 @@
   color: var(--text-muted);
 }
 
+/* The fraction itself, tight: `$12 / $400` is one reading, not three. */
+.amounts {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+  flex: 0 0 auto;
+}
+
 .of {
   color: var(--text-faint);
 }
 
 /* The sentence that says what happens at the end of the bar. */
 .note {
-  margin-inline-start: var(--s3);
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;

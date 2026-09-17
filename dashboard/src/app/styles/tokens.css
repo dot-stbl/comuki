@@ -199,6 +199,86 @@
   --shadow-pinned: 4px 0 8px 0
     color-mix(in oklab, var(--foreground) 28%, transparent);
 
+  /* The focus ring, in the one spelling the product has.
+
+     There are two focus idioms here and they are not interchangeable. The
+     hairline one — `outline: var(--hairline) solid var(--ring)` — is the mark a
+     surface wears when the ring can sit *on* an existing edge, and it is
+     already made of tokens. This is the other one: a soft two-pixel wash a
+     control wears when it has to be seen against its own fill, and it was the
+     one that had no name. Fifty declarations across thirty-two files spelled
+     `color-mix(in oklab, var(--ring) 35%, transparent)` by hand — never once
+     disagreeing, which is the tell that it was a token wearing a costume: the
+     day the ring's weight or opacity is retuned, fifty hand edits is not a
+     change, it is a migration.
+
+     Three names rather than one, because the recipe lands in three shapes and
+     a consumer must not have to rebuild the other two from the first:
+
+       --ring-wash               the colour alone, for the ~10 sites that draw
+                                 the ring as `outline: 2px solid` — an outline
+                                 does not participate in `box-shadow`, and a
+                                 box that already casts a shadow cannot spend
+                                 that property on focus
+       --shadow-focus-ring       the ring as a shadow, for a control whose own
+                                 edge is where the ring belongs
+       --shadow-focus-ring-inset the same ring turned inward, for a box that is
+                                 flush against its neighbours (a rail row, a
+                                 pool strip) where an outward ring would be
+                                 clipped by the scroller it sits in
+
+     2px and 35% are not tunable per site. A ring that is thinner somewhere
+     reads as a different state, not as a quieter one. */
+  --ring-wash: color-mix(in oklab, var(--ring) 35%, transparent);
+  --shadow-focus-ring: 0 0 0 2px var(--ring-wash);
+  --shadow-focus-ring-inset: inset 0 0 0 2px var(--ring-wash);
+
+  /* Depth in the third axis — one ladder, nine rungs, ten apart.
+
+     Before this there were eight bare numbers in eight files and no way to read
+     them: three modals at 100, one dialog at 50, the evidence viewer at 60, the
+     chat dock at 40, a thread row at 1, the command palette at 100. Nothing
+     said which of those was *meant* to be above which, so every new overlay was
+     added by looking at the largest number already on screen and adding to it —
+     which is how a scale becomes an auction.
+
+     The rungs are named for what sits on them, never for how high they are, so
+     a consumer states a role and the ladder decides the number:
+
+       base      the page's own plane
+       raised    a cell or a row lifted out of its siblings, no more
+       sticky    chrome pinned inside a scroll port — a table's head band
+       dock      chrome docked to the window's edge that the page scrolls under
+       dropdown  a menu or a listbox belonging to a control on the page
+       overlay   anything that dims the page behind it — every scrim
+       modal     a panel riding on top of a scrim it does not own
+       popover   a surface that must clear a modal, e.g. a select inside a form
+                 dialog
+       tooltip   the last word, and never a target
+
+     Ten apart so a component can sit half a step above its neighbour without
+     climbing a whole rung — and so the gaps stay legible when one does.
+
+     The scrims are the case the ladder was written for: they all take
+     `--z-overlay` and none of them out-numbers the others, because two overlays
+     are never open in the same stacking context by accident. Which one paints
+     on top is decided by DOM order, which is the same thing as "whichever was
+     opened last" — a fact the numbers could never have carried.
+
+     A component with an internal stacking context does *not* borrow this scale:
+     the data table keeps its own `--dt-z-*` ladder, and it is right to, because
+     those numbers compete only with each other inside a context the table
+     opens. Same for a `-1` under a button's own `isolation: isolate`. */
+  --z-base: 0;
+  --z-raised: 1;
+  --z-sticky: 10;
+  --z-dock: 20;
+  --z-dropdown: 30;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-popover: 60;
+  --z-tooltip: 70;
+
   /* Type — two voices: Archivo carries meaning, JetBrains Mono carries values.
      --font-mono stays as the kit/Tailwind alias so ported components follow. */
   --font-ui: "Archivo Variable", "Archivo", system-ui, sans-serif;
@@ -218,6 +298,32 @@
   /* Retuned when the capitals went: 0.16em was opening up uppercase, and at
      lowercase it read as spaced-out mush rather than as a heading. */
   --tracking-label: 0.08em;
+  /* Leading, and it is chosen by what the run of text is *doing*, not by how
+     big it is. Prose was the only mode with a name, so the other three were
+     written out by hand — twenty-nine raw literals across twenty-seven files,
+     `1.2` alone in eleven of them, every badge family in the product plus the
+     kit's own `StatusBadge`. A number repeated eleven times is a decision that
+     was made once; it only looked like eleven decisions.
+
+       --lh-flat     1      the text does not set the height — a button, a chip,
+                            a rail item. The box is a control and its depth
+                            comes from `--h-button-*`; leading here would only
+                            fight it.
+       --lh-tight    1.2    one to three words that may still wrap — a badge, a
+                            table cell. Tight enough that two lines read as one
+                            label rather than as two.
+       --lh-display  1.05   large type. The bigger the cap, the more air a
+                            proportional leading adds, so the ratio has to come
+                            down for the block to stay a block.
+       --lh-body     1.55   prose. Something a person reads rather than scans.
+
+     Raw values map onto them: `1`→flat, `1.05`/`1.15`→display,
+     `1.2`/`1.3`→tight, `1.4`/`1.5`/`1.6`→body. Four modes and no fifth — a
+     leading that is "a bit looser than tight" is a mode nobody can name, and an
+     unnameable mode is how thirty literals happened the first time. */
+  --lh-flat: 1;
+  --lh-tight: 1.2;
+  --lh-display: 1.05;
   --lh-body: 1.55;
   --fw-regular: 400;
   --fw-medium: 500;

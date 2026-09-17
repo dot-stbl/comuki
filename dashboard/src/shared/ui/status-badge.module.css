@@ -16,7 +16,7 @@
   font-family: var(--font-data);
   font-size: var(--t-sm);
   font-weight: var(--fw-medium);
-  line-height: 1.2;
+  line-height: var(--lh-tight);
   color: var(--hue);
   background: color-mix(in oklab, var(--hue) 10%, transparent);
 }

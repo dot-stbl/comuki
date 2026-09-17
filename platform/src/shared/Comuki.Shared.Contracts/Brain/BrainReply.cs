@@ -11,6 +11,7 @@ namespace Comuki.Shared.Contracts.Brain;
 /// <param name="FinalJson">Final payload (plan JSON for <c>plan</c>, reply text for <c>chat</c>).</param>
 public sealed record BrainReply(IReadOnlyList<string> Chunks, string FinalJson)
 {
+    // canon judgement #11: AggregateAsync on a contracts record is deliberate — a static factory that dedupes the chunk-draining half every IBrainClient.InvokeAsync implementation shares.
     /// <summary>
     /// Aggregates a chunk stream into one reply — the draining half every
     /// <see cref="IBrainClient.InvokeAsync"/> implementation shares. Progress

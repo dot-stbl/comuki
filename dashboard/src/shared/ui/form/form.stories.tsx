@@ -125,6 +125,63 @@ export const Numbers_: Story = {
   render: () => <Numbers />,
 }
 
+function Required() {
+  const [remote, setRemote] = useState("")
+  const [provider, setProvider] = useState("")
+  const [note, setNote] = useState("")
+
+  return (
+    <Column>
+      <TextField
+        id="story-required-remote"
+        label="git remote"
+        required
+        value={remote}
+        hint="The word rides in the label, and a screen reader reads it there."
+        onValueChange={setRemote}
+      />
+      <SelectField
+        id="story-required-provider"
+        label="provider"
+        required
+        value={provider}
+        placeholder="choose one"
+        options={[
+          { value: "openai", label: "OpenAI" },
+          { value: "anthropic", label: "Anthropic" },
+        ]}
+        onValueChange={setProvider}
+      />
+      <TextareaField
+        id="story-required-note"
+        label="reason"
+        required
+        value={note}
+        error={note.trim() === "" ? "a reason is what the audit reads" : null}
+        onValueChange={setNote}
+      />
+    </Column>
+  )
+}
+
+/**
+ * The fields a form will not go without.
+ *
+ * A word, not a star: an asterisk is a convention that has to be explained
+ * somewhere, and a form has nowhere to explain it. It rides inside the
+ * `<label>` and stays readable by assistive tech — on the select it is the
+ * *only* channel the fact has, because React Aria rebuilds the trigger's
+ * accessible name and drops `aria-required` on the way. The space in front of
+ * it is a real character: without it the name composes to "git remoterequired".
+ *
+ * It changes no validation. The third field here is unhappy because the form
+ * said so, not because the marker did.
+ */
+export const Required_: Story = {
+  name: "Required",
+  render: () => <Required />,
+}
+
 /** The label is real but not painted: the sentence around the field names it. */
 export const LabelHidden: Story = {
   render: () => (

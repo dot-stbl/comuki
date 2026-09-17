@@ -8,7 +8,8 @@ import { isIdentityTab, type IdentityTab } from "@/domains/identity/model/tabs"
 import { GrantsPanel } from "@/domains/identity/ui/grants-panel"
 import { KeysPanel } from "@/domains/identity/ui/keys-panel"
 import { UsersPanel } from "@/domains/identity/ui/users-panel"
-import { Button, Tooltip } from "@/shared/ui"
+import { requestFailureMessage } from "@/shared/api/problem"
+import { Button, ScreenState, Skeleton, Tooltip } from "@/shared/ui"
 
 import styles from "./identity-page.module.css"
 
@@ -86,25 +87,31 @@ export function IdentityPage({ tab, focus, onTabChange }: IdentityPageProps) {
       }
     >
       <div className={styles.screen}>
+        {/* `fill`, because this screen's body is the tab panel's whole depth:
+            a block as tall as its own four bars would leave the port below it
+            blank and make the arrival of the table look like a jump. */}
         {isLoading ? (
-          <div className={styles.skeleton} data-test="identity-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="gutter"
+            fill
+            label="Loading identity"
+            data-test="identity-loading"
+          />
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>Identity did not load</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            inset="gutter"
+            title="Identity did not load"
+            /* The host's own problem detail rather than the transport's
+               message — `requestFailureMessage` falls back to the latter when
+               there is no problem body, so nothing is lost and a sentence is
+               gained. */
+            description={requestFailureMessage(error, "Unknown error")}
+            data-test="identity-error"
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -117,8 +124,8 @@ export function IdentityPage({ tab, focus, onTabChange }: IdentityPageProps) {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {ready ? (

@@ -42,6 +42,10 @@
 /* The deep link back to the run that produced the result — the whole reason a
    result is worth showing on this screen rather than only on that one. */
 .runLink {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
@@ -58,4 +62,3 @@
   outline: var(--hairline) solid var(--ring);
   outline-offset: var(--hairline);
 }
-

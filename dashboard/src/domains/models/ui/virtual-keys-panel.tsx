@@ -106,7 +106,14 @@ export function VirtualKeysPanel({
           columns={columns}
           data={rows}
           getRowId={getKeyId}
-          density="comfortable"
+          /* The same 32px every other table in the product stands on. It had
+             been the one table on `comfortable`, and 40px rows under a head
+             pinned to `--h-row-head` (2rem) put the band shorter than the rows
+             it names — a head/body desync that existed nowhere else. The budget
+             cell is the reason it was reached for, and that cell is built not
+             to need it: two bands in the row's own height, under the compact
+             row by contract. */
+          density="compact"
           columnVisibility={columnVisibility}
           onColumnVisibilityChange={setColumnVisibility}
           sorting={sorting}

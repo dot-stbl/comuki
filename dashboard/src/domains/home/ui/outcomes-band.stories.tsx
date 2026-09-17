@@ -22,3 +22,21 @@ export const SeededWeek: Story = {}
 export const NoHistory: Story = {
   args: { days: [] },
 }
+
+/**
+ * Still coming. It stands where the band will be rather than leaving a hole —
+ * a missing band and a swarm that has finished nothing look identical, and
+ * only one of them is true.
+ */
+export const Loading: Story = {
+  args: { days: undefined, loading: true },
+}
+
+/**
+ * The week did not load. Said in the band's own quiet voice and never in the
+ * API's: history is this screen's second question, and a red rule here would
+ * outrank the verdict above it.
+ */
+export const DidNotLoad: Story = {
+  args: { days: undefined, failed: true },
+}

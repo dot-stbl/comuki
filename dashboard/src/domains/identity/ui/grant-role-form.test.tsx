@@ -82,7 +82,7 @@ function mount(roles: Role[] = ["platform-admin"]) {
     onGrant,
     onCancel,
     kind: screen.getByLabelText("subject kind"),
-    subject: screen.getByLabelText("subject"),
+    subject: screen.getByLabelText("subject required"),
     role: screen.getByLabelText("role"),
     scope: screen.getByLabelText("scope"),
     grant: screen.getByRole("button", { name: "Grant" }),
@@ -154,10 +154,10 @@ describe("the three things a grant is", () => {
   it("asks which project only once the scope is a project", () => {
     const { scope, grant, onGrant } = mount()
 
-    expect(screen.queryByLabelText("project")).toBeNull()
+    expect(screen.queryByLabelText("project required")).toBeNull()
 
     setSelectValue(scope, "project")
-    const project = screen.getByLabelText("project")
+    const project = screen.getByLabelText("project required")
     expect(optionsOf(project)).toEqual(["p_comuki", "p_atlas"])
 
     setSelectValue(project, "p_atlas")
@@ -175,7 +175,7 @@ describe("the three things a grant is", () => {
     const { kind, grant, onGrant } = mount()
 
     setSelectValue(kind, "api-key")
-    const subject = screen.getByLabelText("subject")
+    const subject = screen.getByLabelText("subject required")
 
     // A key is a first-class subject: it is granted roles exactly like a
     // person. A revoked one is not offered a new grant.
@@ -240,5 +240,53 @@ describe("a shift that may not administer identity", () => {
 
     fireEvent.click(grant)
     expect(onGrant).not.toHaveBeenCalled()
+  })
+})
+
+describe("a directory that has not arrived is not a directory that is empty", () => {
+  /* The bug this locks: the page hands the form `data?.users ?? []`, so a
+     direct arrival on `/identity/grants/new` reached this form with three
+     empty lists and was told the platform holds nobody — the wait wearing the
+     answer's clothes. */
+  it("says it is still looking, rather than that there is nothing to grant to", () => {
+    render(
+      <TestSession roles={["platform-admin"]}>
+        <GrantRoleForm
+          users={[]}
+          keys={[]}
+          projects={[]}
+          loading
+          onGrant={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      </TestSession>
+    )
+
+    expect(screen.getByText("Looking up what can hold a role.")).toBeTruthy()
+    expect(
+      screen.queryByText("Nothing of that kind to grant to yet.")
+    ).toBeNull()
+    // And nothing can be written against a list that is not there yet.
+    expect(
+      screen.getByRole("button", { name: "Grant" }).hasAttribute("disabled")
+    ).toBe(true)
+  })
+
+  it("still says there is nothing once the lists have landed empty", () => {
+    render(
+      <TestSession roles={["platform-admin"]}>
+        <GrantRoleForm
+          users={[]}
+          keys={[]}
+          projects={[]}
+          onGrant={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      </TestSession>
+    )
+
+    expect(
+      screen.getByText("Nothing of that kind to grant to yet.")
+    ).toBeTruthy()
   })
 })

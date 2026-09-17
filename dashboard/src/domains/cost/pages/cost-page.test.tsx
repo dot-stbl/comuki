@@ -97,6 +97,17 @@ const all = (selector: string) =>
   Array.from(document.querySelectorAll(selector))
 const text = (selector: string) => find(selector)?.textContent ?? ""
 
+/* The three tiles are one component — `CostStat` — so `data-test` names the
+   component and `data-stat` names which reading this one is. The mark sits on
+   the line that says which reading it is, because the tile itself is the kit's
+   `Surface` and that forwards `data-test` and nothing else. */
+const tile = (name: string) =>
+  find(`[data-stat="${name}"]`)?.closest("article") ?? null
+const tileText = (name: string) => tile(name)?.textContent ?? ""
+/* Heat rides on the figure it is a reading of, not on the tile. */
+const tileHeat = (name: string) =>
+  tile(name)?.querySelector("[data-heat]")?.getAttribute("data-heat") ?? null
+
 async function screenReady() {
   const router = createRouter({
     routeTree,
@@ -128,9 +139,9 @@ describe("the cost report, end to end over the seed", () => {
     await screenReady()
 
     // Headline tiles.
-    expect(find('[data-test="total-spend"]')).not.toBeNull()
-    expect(find('[data-test="forecast-widget"]')).not.toBeNull()
-    expect(find('[data-test="budget-progress"]')).not.toBeNull()
+    expect(tile("total")).not.toBeNull()
+    expect(tile("forecast")).not.toBeNull()
+    expect(tile("budget")).not.toBeNull()
 
     // Period toggle — three options, day pressed by default.
     expect(
@@ -156,7 +167,7 @@ describe("the cost report, end to end over the seed", () => {
   it("states the period total as the headline figure, with delta vs previous", async () => {
     await screenReady()
 
-    const figure = text('[data-test="total-spend"]')
+    const figure = tileText("total")
     expect(figure).toContain("$148.20")
     // Day's burn rate is derived from total / period-days.
     expect(figure).toContain("$148.20 / day")
@@ -169,35 +180,31 @@ describe("the cost report, end to end over the seed", () => {
   it("says end-of-period for the forecast and renders a heat reading", async () => {
     await screenReady()
 
-    const forecast = text('[data-test="forecast-widget"]')
+    const forecast = tileText("forecast")
     expect(forecast).toContain("Forecast")
     expect(forecast).toContain("end of day")
     expect(forecast).toMatch(/\d+%\s+of\s+\$220 cap/)
     // Day view: $148.2 / $220 = 67% — ok, no hue.
-    expect(
-      find('[data-test="forecast-widget"]')?.getAttribute("data-heat")
-    ).toBe("ok")
+    expect(tileHeat("forecast")).toBe("ok")
   })
 
   it("shows today's burn and month-to-date as the budget's two readings", async () => {
     await screenReady()
 
-    const budget = text('[data-test="budget-progress"]')
+    const budget = tileText("budget")
     expect(budget).toContain("$148")
     expect(budget).toContain("$220")
     expect(budget).toContain("today")
     expect(budget).toContain("month-to-date")
     // 67% today — ok.
-    expect(
-      find('[data-test="budget-progress"]')?.getAttribute("data-heat")
-    ).toBe("ok")
+    expect(tileHeat("budget")).toBe("ok")
   })
 
   it("renders three model rows with the project's actual lineup", async () => {
     await screenReady()
 
     const rows = all('[data-test="spend-by-model-row"]')
-    const models = rows.map((node) => node.getAttribute("data-model") ?? "")
+    const models = rows.map((node) => node.getAttribute("data-id") ?? "")
     expect(models).toContain("glm-5.2")
     expect(models).toContain("glm-4.5")
     expect(models).toContain("MiniMax-M3")
@@ -207,9 +214,7 @@ describe("the cost report, end to end over the seed", () => {
     await screenReady()
 
     const rows = all('[data-test="top-projects-row"]')
-    const projectIds = rows.map(
-      (node) => node.getAttribute("data-project") ?? ""
-    )
+    const projectIds = rows.map((node) => node.getAttribute("data-id") ?? "")
     // The runaway is the seed's biggest spender — its 12× median lands it
     // ahead of comuki, atlas, kafka, even though those projects have higher
     // caps. The ranking is by spend, not by cap.
@@ -219,7 +224,7 @@ describe("the cost report, end to end over the seed", () => {
     // project in the data set rather than dropping it.
     expect(
       find(
-        '[data-test="top-projects-row"][data-project="p_prometheus"]'
+        '[data-test="top-projects-row"][data-id="p_prometheus"]'
       )?.querySelector('[data-test="top-projects-spend"]')?.textContent
     ).toBe("$31")
   })
@@ -287,8 +292,6 @@ describe("the cost report, end to end over the seed", () => {
     await waitFor(() =>
       expect(weekButton!.getAttribute("aria-pressed")).toBe("true")
     )
-    await waitFor(() =>
-      expect(text('[data-test="total-spend"]')).toContain("$917.80")
-    )
+    await waitFor(() => expect(tileText("total")).toContain("$917.80"))
   })
 })

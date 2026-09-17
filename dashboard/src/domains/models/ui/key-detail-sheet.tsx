@@ -20,7 +20,7 @@ import type { ModelEndpoint, VirtualKey } from "@/domains/models/model/types"
 import { can, needsLabel, projectOf, type Session } from "@/shared/session"
 import { BarSeries, Button, Tooltip } from "@/shared/ui"
 
-import { BudgetMeter } from "./budget-meter"
+import { KeyBudgetMeter } from "./key-budget-meter"
 import { KeyStateBadge } from "./model-badges"
 import styles from "./key-detail-sheet.module.css"
 
@@ -271,7 +271,7 @@ function SpendSection({
     return (
       <section className={styles.section}>
         <h3 className={styles.sectionName}>spend</h3>
-        <BudgetMeter entry={entry} enforced={enforced} />
+        <KeyBudgetMeter entry={entry} enforced={enforced} />
         <p className={styles.absent}>not metered on this wire</p>
       </section>
     )
@@ -287,7 +287,7 @@ function SpendSection({
     return (
       <section className={styles.section}>
         <h3 className={styles.sectionName}>spend</h3>
-        <BudgetMeter entry={entry} enforced={enforced} />
+        <KeyBudgetMeter entry={entry} enforced={enforced} />
         <p className={styles.absent}>no spend recorded</p>
       </section>
     )
@@ -302,7 +302,7 @@ function SpendSection({
   return (
     <section className={styles.section}>
       <h3 className={styles.sectionName}>spend</h3>
-      <BudgetMeter entry={entry} enforced={enforced} />
+      <KeyBudgetMeter entry={entry} enforced={enforced} />
       <p className={styles.figure}>{reading + staleness}</p>
       <BarSeries
         className={styles.chart}

@@ -146,7 +146,9 @@ const addressBar = (router: ReturnType<typeof mount>) =>
 
 async function createKey(router: ReturnType<typeof mount>, name: string) {
   await screen.findByRole("heading", { name: "New api key" })
-  fireEvent.change(screen.getByLabelText("name"), { target: { value: name } })
+  fireEvent.change(screen.getByLabelText("name required"), {
+    target: { value: name },
+  })
   fireEvent.click(screen.getByRole("button", { name: "Create key" }))
   await waitFor(() => expect(secretNode()).not.toBeNull())
   expect(here(router)).toBe("/identity/keys/new")
@@ -242,7 +244,9 @@ describe("no address renders the secret, so none can render it twice", () => {
     await screen.findByRole("heading", { name: "New api key" })
     expect(secretNode()).toBeNull()
     expect(document.body.textContent).not.toContain(plaintext)
-    expect((screen.getByLabelText("name") as HTMLInputElement).value).toBe("")
+    expect(
+      (screen.getByLabelText("name required") as HTMLInputElement).value
+    ).toBe("")
   })
 })
 
@@ -286,7 +290,7 @@ describe("leaving before the key exists", () => {
     const router = mount(["/identity", "/identity/keys/new"])
 
     await screen.findByRole("heading", { name: "New api key" })
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText("name required"), {
       target: { value: "release-bot" },
     })
     fireEvent.click(screen.getByRole("link", { name: "identity" }))
@@ -322,7 +326,7 @@ describe("a shift that may not administer identity", () => {
     // Filled in first, so the only thing left standing between this shift and
     // a key is the denial — `disabled` here would mean "incomplete", which is
     // a different refusal with a different remedy.
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText("name required"), {
       target: { value: "release-bot" },
     })
 

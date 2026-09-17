@@ -11,7 +11,7 @@ import {
   buildProfileFlow,
   triageOrder,
 } from "@/domains/runs/model/profile-flow"
-import type { RunSummary } from "@/domains/runs/model/types"
+import type { RunStatus, RunSummary } from "@/domains/runs/model/types"
 import { AnomalyBreakdownDialog } from "@/domains/runs/ui/anomaly-breakdown-dialog"
 import { createRunColumns, getRunId } from "@/domains/runs/ui/runs-columns"
 import {
@@ -20,12 +20,14 @@ import {
   RiverLegend,
 } from "@/domains/runs/ui/profile-river"
 import tableStyles from "@/domains/runs/ui/runs-table.module.css"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { can, projectOf, useSession } from "@/shared/session"
 import {
   Button,
   ConfirmDialog,
   DataTable,
   DataTableToolbar,
+  ScreenState,
   SplitPane,
   SplitPanel,
   SplitSeparator,
@@ -64,6 +66,27 @@ const STRIP_HEIGHT = 34
 
 /** The tab stays open all day, so the divider and the collapse survive reloads. */
 const BOARD_LAYOUT_KEY = "comuki.runs.board"
+
+/**
+ * The statuses a run can still be stopped from.
+ *
+ * `POST /runs/{id}/cancel` is legal on a queued, waiting, running or escalated
+ * run and answers **409** on a terminal one. The row's own cancel never meets
+ * the question — the actions column only draws on a run that needs a human —
+ * but the anomaly breakdown opens on any flagged row, including runs that
+ * finished expensively, and offering the act there would be offering a
+ * conflict.
+ */
+const STOPPABLE: readonly RunStatus[] = [
+  "queued",
+  "waiting",
+  "running",
+  "escalated",
+]
+
+function stoppable(run: RunSummary): boolean {
+  return STOPPABLE.includes(run.status)
+}
 
 export interface RunsPageProps {
   /**
@@ -355,7 +378,7 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
                       onCheckedChange={setAnomaliesOnly}
                       data-test="anomalies-only-toggle"
                     />
-                    <span className={tableStyles.count}>
+                    <span className={tableStyles.count} data-test="runs-count">
                       {rows.length} shown
                     </span>
                   </span>
@@ -380,12 +403,13 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>Couldn&apos;t load runs</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="Couldn't load runs"
+            description={requestFailureMessage(error, "Unknown error")}
+            inset="gutter"
+            data-test="runs-error"
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -398,14 +422,17 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {!isLoading && !isError && data.length === 0 ? (
-          <div className={styles.state}>
-            <p className={styles.stateTitle}>No runs yet.</p>
-          </div>
+          <ScreenState
+            kind="empty"
+            title="No runs yet."
+            inset="gutter"
+            data-test="runs-empty"
+          />
         ) : null}
 
         {ready ? (
@@ -430,13 +457,13 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
                 // Tickets exist but the brain has planned none of them, so
                 // there is no flow to draw yet. Saying that beats an empty
                 // board, which reads as a screen that failed to load.
-                <div className={styles.state}>
-                  <p className={styles.stateTitle}>No plans yet</p>
-                  <p className={styles.stateBody}>
-                    These runs are accepted but the brain has not planned them.
-                    The flow appears once the first plan has work items.
-                  </p>
-                </div>
+                <ScreenState
+                  kind="empty"
+                  title="No plans yet"
+                  description="These runs are accepted but the brain has not planned them. The flow appears once the first plan has work items."
+                  inset="gutter"
+                  data-test="runs-unplanned"
+                />
               ) : (
                 <div className={styles.flow}>
                   <ProfileRiver
@@ -514,6 +541,19 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
           }
         }}
         session={session}
+        /* The breakdown hands the run back here rather than cancelling it
+           itself: the confirm, the pending row and the failure banner are
+           already on this screen, and one cancel path is one place the
+           permission is asked. Handed down only when the act is real — this
+           session may stop this run, and the run is not already past
+           stopping — because without it the dialog draws no such button. */
+        onCancelRun={
+          anomaly &&
+          stoppable(anomaly) &&
+          can(session, "runs.stop", anomaly.projectId)
+            ? onCancel
+            : undefined
+        }
       />
     </AppShell>
   )

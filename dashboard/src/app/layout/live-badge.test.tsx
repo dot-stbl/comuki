@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react"
+import { act, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { RUNS_POLL_INTERVAL_MS } from "@/shared/api/polling"
 import type { RunsHubStatus } from "@/shared/realtime/runs-hub"
 
 import { LiveBadge } from "./live-badge"
@@ -15,6 +16,13 @@ const find = (selector: string) => document.querySelector<HTMLElement>(selector)
 
 function renderBadge(useMock: boolean, status: RunsHubStatus) {
   return render(<LiveBadge useMock={useMock} status={status} />)
+}
+
+/** One whole poll cycle, the grace window the polling pill waits out. */
+async function passOnePollCycle() {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(RUNS_POLL_INTERVAL_MS)
+  })
 }
 
 describe("LiveBadge — the demo pill", () => {
@@ -43,12 +51,121 @@ describe("LiveBadge — the demo pill", () => {
     expect(find('[data-test="demo-badge"]')).toBeNull()
     expect(container.firstChild).toBeNull()
   })
+})
 
-  it("renders nothing in real mode while polling — the polling layer owns refresh", () => {
-    const { container } = renderBadge(false, "polling")
+/* The second reading, and the one the bar was missing: `polling` is real
+   data arriving late rather than synthetic data, so it gets its own word
+   and its own hue — and a grace window, because `polling` is also the
+   status the hub starts on and nobody needs a pill that blinks on every
+   cold load. */
+describe("LiveBadge — the polling pill", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
 
-    expect(find('[data-test="demo-badge"]')).toBeNull()
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("stays quiet for the first poll cycle — `polling` is also the starting status", () => {
+    renderBadge(false, "polling")
+
+    expect(find('[data-test="polling-badge"]')).toBeNull()
+
+    act(() => {
+      vi.advanceTimersByTime(RUNS_POLL_INTERVAL_MS - 1)
+    })
+
+    expect(find('[data-test="polling-badge"]')).toBeNull()
+  })
+
+  it("says so once a whole poll cycle has passed with no socket", async () => {
+    renderBadge(false, "polling")
+
+    await passOnePollCycle()
+
+    const pill = find('[data-test="polling-badge"]')
+    expect(pill).not.toBeNull()
+    expect(pill?.textContent).toBe("Polling")
+  })
+
+  it("takes the queued hue, not the amber the demo pill owns", async () => {
+    renderBadge(false, "polling")
+
+    await passOnePollCycle()
+
+    // Amber (`waiting`) is spoken for by "these are not the real numbers".
+    // This pill says the opposite — real numbers, one cadence behind.
+    const badge = find('[data-test="polling-badge"] [data-status]')
+    expect(badge?.getAttribute("data-status")).toBe("queued")
+  })
+
+  it("never appears when the socket comes up inside the grace window", async () => {
+    const { rerender } = renderBadge(false, "polling")
+
+    act(() => {
+      vi.advanceTimersByTime(Math.floor(RUNS_POLL_INTERVAL_MS / 2))
+    })
+    rerender(<LiveBadge useMock={false} status="live" />)
+    await passOnePollCycle()
+
+    expect(find('[data-test="polling-badge"]')).toBeNull()
+  })
+
+  it("clears the moment the socket comes back", async () => {
+    const { container, rerender } = renderBadge(false, "polling")
+
+    await passOnePollCycle()
+    expect(find('[data-test="polling-badge"]')).not.toBeNull()
+
+    rerender(<LiveBadge useMock={false} status="live" />)
+
+    expect(find('[data-test="polling-badge"]')).toBeNull()
     expect(container.firstChild).toBeNull()
+  })
+
+  it("starts the count over after a reconnect that fails again", async () => {
+    const { rerender } = renderBadge(false, "polling")
+
+    await passOnePollCycle()
+    rerender(<LiveBadge useMock={false} status="live" />)
+    rerender(<LiveBadge useMock={false} status="polling" />)
+
+    // A socket that flapped is a fresh outage, not a continuation of the
+    // old one — the window is waited out again rather than carried over.
+    expect(find('[data-test="polling-badge"]')).toBeNull()
+
+    await passOnePollCycle()
+    expect(find('[data-test="polling-badge"]')).not.toBeNull()
+  })
+
+  it("stays out of the way in mock mode — the demo pill outranks it", async () => {
+    renderBadge(true, "polling")
+
+    await passOnePollCycle()
+
+    expect(find('[data-test="polling-badge"]')).toBeNull()
+    expect(find('[data-test="demo-badge"]')).not.toBeNull()
+  })
+
+  it("names the cadence it fell back to, read off the same constant", async () => {
+    renderBadge(false, "polling")
+
+    await passOnePollCycle()
+
+    // The pill is up; hand the clock back before touching the tooltip.
+    // React Aria runs the overlay on its own timers and a faked clock
+    // driven from the test never lets them finish.
+    vi.useRealTimers()
+    const user = userEvent.setup()
+
+    // Focus rather than hover, for the reason the demo pill's tooltip test
+    // gives: React Aria opens on focus with no dwell.
+    await user.tab()
+
+    const tooltip = await screen.findByRole("tooltip")
+    expect(tooltip.textContent).toContain("Live updates are down")
+    expect(tooltip.textContent).toContain(`${RUNS_POLL_INTERVAL_MS / 1000}s`)
   })
 })
 

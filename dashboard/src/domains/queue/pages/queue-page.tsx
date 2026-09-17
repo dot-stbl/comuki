@@ -7,6 +7,8 @@ import { PageHeader } from "@/app/layout/page-header"
 import { useSession } from "@/shared/session"
 import {
   Button,
+  ScreenState,
+  Skeleton,
   SplitPane,
   SplitPanel,
   SplitSeparator,
@@ -186,24 +188,24 @@ export function QueuePage({
     >
       <div className={styles.screen}>
         {isLoading ? (
-          <div className={styles.skeleton} data-test="queue-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="gutter"
+            fill
+            label="Loading the queue"
+            data-test="queue-loading"
+          />
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>Couldn&apos;t load the queue</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="Couldn't load the queue"
+            description={
+              error instanceof Error ? error.message : "Unknown error"
+            }
+            inset="gutter"
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -216,8 +218,8 @@ export function QueuePage({
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {ready ? (

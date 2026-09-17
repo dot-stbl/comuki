@@ -82,7 +82,7 @@
 
 .segment:focus-within {
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .icon {
@@ -97,7 +97,7 @@
    faint voice while the label picked up this line-height — each wearing the
    other's clothes. */
 .segmentLabel {
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 /* Per-value hues — the badge's table, one line each. */

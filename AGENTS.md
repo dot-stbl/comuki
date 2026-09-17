@@ -101,6 +101,18 @@ Milestone **v1**, phase **3 complete** (design system + testing infra).
    Здесь их **не пересказываем** — два пересказа разъезжаются.
    UI-библиотеки нет: shadcn вырезан целиком, кит `@/shared/ui` —
    единственный источник примитивов.
+   **Tailwind при этом остаётся и удалению не подлежит.** Утилит-классов
+   в компонентном коде нет — и не заводи, — но слой сборки живой:
+   `@tailwindcss/vite` в [`dashboard/vite.config.ts`](dashboard/vite.config.ts),
+   `@import "tailwindcss"` и блок `@theme inline` в
+   [`dashboard/src/index.css`](dashboard/src/index.css), `twMerge` внутри
+   `cn()` (`dashboard/src/shared/lib/utils.ts`). `@theme inline` — мост,
+   которым токены видны Tailwind-слою; вырезали уже — вёрстка плывёт.
+   Следствие, на котором спотыкаются аудиты: токены, упомянутые только
+   внутри `@theme inline` (`--sidebar-*`, `--chart-*`, `--*-foreground`,
+   `--input`, `--card-*`, `--popover-*`), **живые** — их потребитель сам
+   этот блок, а не компонент. Мёртвым токен считается, лишь когда на него
+   нет ссылок и в `index.css`.
    [`.agents/docs/design-system/`](.agents/docs/design-system/) — **прежний**
    визуальный мир, историческая справка, не источник решений.
 

@@ -54,6 +54,22 @@ export function CreateProjectForm({
   const [attempted, setAttempted] = useState(false)
 
   const slugError = validateSlug(slug, takenSlugs)
+  /*
+   * WHEN A FIELD ERROR IS SHOWN — `touched || attempted`, and this is the
+   * product's one model. Three were in use and none of them said why.
+   *
+   * - `touched` — the operator has been in this field and left it. They have
+   *   finished their answer, so telling them it is wrong is an answer to a
+   *   question they just asked; telling them *while they type* is correcting
+   *   somebody mid-sentence.
+   * - `attempted` — they pressed the button. Every rule the form is holding
+   *   back is now owed to them at once, including on fields they never
+   *   entered.
+   *
+   * And once shown, it stays shown until it is fixed: an error that hides
+   * itself again on the next keystroke is a rule the operator has to
+   * re-discover by being refused a second time.
+   */
   const showSlugError = (slugTouched || attempted) && slugError
 
   const dirty = name !== "" || slug !== "" || repo !== ""
@@ -82,6 +98,7 @@ export function CreateProjectForm({
         <TextField
           id="project-name"
           label="name"
+          required
           autoFocus
           value={name}
           disabled={busy}
@@ -97,6 +114,7 @@ export function CreateProjectForm({
         <TextField
           id="project-slug"
           label="slug"
+          required
           value={slug}
           disabled={busy}
           spellCheck={false}

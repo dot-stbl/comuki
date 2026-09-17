@@ -61,9 +61,11 @@ export function BudgetMeter({ budgets, className }: BudgetMeterProps) {
       </span>
 
       <p className={styles.figures} data-test="budget-figures">
-        {dollars(budgets.usedUsd)}
-        <span className={styles.of}>/</span>
-        {dollars(budgets.globalUsd)}
+        <span className={styles.amounts}>
+          {dollars(budgets.usedUsd)}
+          <span className={styles.of}>/</span>
+          {dollars(budgets.globalUsd)}
+        </span>
         <span className={styles.note}>
           {budgets.killSwitch
             ? "kill-switch on · new claims blocked"

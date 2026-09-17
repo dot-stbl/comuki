@@ -30,12 +30,21 @@
   color: var(--text-faint);
 }
 
+/* A link is an identifier, and identifiers here run long — a run id, a worker
+   id, an item id pasted out of a log. It truncates like every other value in
+   this sheet rather than painting past its cell: `DataTable`'s `.cell` is a
+   flex box, and `text-overflow` on a flex container does nothing, so the cut
+   has to be declared on the item that holds the text. `flex: 0 0 auto` is gone
+   with it — a box that refuses to shrink has nothing to cut. */
 .link {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
   text-decoration: none;
-  flex: 0 0 auto;
 }
 
 .link:hover {

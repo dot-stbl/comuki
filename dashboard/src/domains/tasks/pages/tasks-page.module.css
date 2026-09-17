@@ -21,16 +21,14 @@
   overflow: clip;
 }
 
-/* Aligned to the table's own cell gutter, not the page header's, so the first
-   filter sits directly over the first column. */
-.toolbar {
-  flex: 0 0 auto;
-  padding: var(--s4) var(--s3) 0;
-}
-
+/* The filter bar lives in `PageHeader.filters` now, so the block-start gap
+   here is what it used to hold: the table starts under the header band rather
+   than against it. Container units, not a percentage — `100cqh` is this box's
+   *content* box, so the padding is honoured rather than overrun. */
 .tableArea {
   flex: 1 1 0;
   min-height: 0;
+  padding-block-start: var(--s4);
   container-type: size;
 
   --h-table-body: 100cqh;
@@ -43,43 +41,23 @@
   color: var(--foreground);
 }
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s8) var(--s6);
+/* The load failure and the loading bars are the kit's `ScreenState` and
+   `Skeleton` now — this sheet carried a hand-copy of both. Where they sit is
+   the `inset` prop at the call site.
+
+   What is still the screen's own is the band below: a dispatch the
+   orchestrator refused. Not a state — the backlog is right there and readable
+   — so it is a rule on the start edge and a wash above the table, the same
+   shape every other refused act in the product takes. */
+.failure {
+  flex: 0 0 auto;
+  margin: var(--s4) var(--s6) 0;
+  padding: var(--s3) var(--s4);
+  border-inline-start: var(--hairline) solid var(--st-failed);
+  border-radius: var(--r-md);
+  background: var(--st-failed-tint);
   font-family: var(--font-ui);
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-width: var(--measure-note);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-/* Rows, not bars: what is loading is a backlog. */
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  flex: 1 1 0;
-  min-height: 0;
-  padding: var(--s6);
-}
-
-.skeletonBar {
-  block-size: var(--h-meter);
-  flex: 0 0 auto;
-  border-radius: var(--r-xs);
-  background: var(--muted);
+  color: var(--foreground);
 }

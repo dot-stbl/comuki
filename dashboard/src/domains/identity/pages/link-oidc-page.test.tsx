@@ -119,7 +119,7 @@ describe("editing an account that already exists", () => {
     // `u_nadia` is the seeded account with no provider subject.
     const router = mount("u_nadia")
 
-    await screen.findByLabelText("subject")
+    await screen.findByLabelText("subject required")
     // The page says whose account this is — the URL names an id, and an id is
     // not something an administrator recognises. It now says it twice, in the
     // summary and in the crumb that leads back to them.
@@ -131,7 +131,7 @@ describe("editing an account that already exists", () => {
         .getAttribute("href")
     ).toBe("/identity/users/u_nadia")
 
-    fireEvent.change(screen.getByLabelText("subject"), {
+    fireEvent.change(screen.getByLabelText("subject required"), {
       target: { value: "oidc|plexor|9931" },
     })
     fireEvent.click(screen.getByRole("button", { name: "Link subject" }))
@@ -150,7 +150,7 @@ describe("editing an account that already exists", () => {
   it("refuses an empty subject and says which rule it broke", async () => {
     mount("u_nadia")
 
-    await screen.findByLabelText("subject")
+    await screen.findByLabelText("subject required")
     fireEvent.click(screen.getByRole("button", { name: "Link subject" }))
 
     expect(screen.getByRole("alert").textContent).toContain(
@@ -172,7 +172,7 @@ describe("an address that no longer means what it did", () => {
 
     await screen.findByRole("heading", { name: "Link an oidc subject" })
     await screen.findByText(/No account on this platform has that id/)
-    expect(screen.queryByLabelText("subject")).toBeNull()
+    expect(screen.queryByLabelText("subject required")).toBeNull()
     // No person to name and none to go back to, so the crumb path falls back
     // to the section rather than pointing at a page about to say the same
     // thing, and the way out is the section too.
@@ -192,7 +192,7 @@ describe("an address that no longer means what it did", () => {
     await screen.findByText(/already linked to/)
     // Relinking is not an act this product has, so there is no form offering
     // one.
-    expect(screen.queryByLabelText("subject")).toBeNull()
+    expect(screen.queryByLabelText("subject required")).toBeNull()
     // The way out is the person, because there is one — "back to identity"
     // would walk past the page this one belongs to.
     expect(
@@ -207,8 +207,8 @@ describe("leaving a half-filled form", () => {
   it("asks before dropping the subject that was typed", async () => {
     const router = mount("u_nadia")
 
-    await screen.findByLabelText("subject")
-    fireEvent.change(screen.getByLabelText("subject"), {
+    await screen.findByLabelText("subject required")
+    fireEvent.change(screen.getByLabelText("subject required"), {
       target: { value: "oidc|plexor|9931" },
     })
     fireEvent.click(screen.getByRole("link", { name: "identity" }))
@@ -223,8 +223,8 @@ describe("leaving a half-filled form", () => {
   it("returns where the operator came from on cancel, without asking", async () => {
     const router = mount("u_nadia")
 
-    await screen.findByLabelText("subject")
-    fireEvent.change(screen.getByLabelText("subject"), {
+    await screen.findByLabelText("subject required")
+    fireEvent.change(screen.getByLabelText("subject required"), {
       target: { value: "oidc|plexor|9931" },
     })
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
@@ -241,7 +241,7 @@ describe("leaving a half-filled form", () => {
     // this one builds its own history of exactly one.
     const router = mountAt(["/identity/users/u_nadia/link"])
 
-    await screen.findByLabelText("subject")
+    await screen.findByLabelText("subject required")
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
 
     await waitFor(() => expect(here(router)).toBe("/identity/users/u_nadia"))

@@ -60,7 +60,7 @@ export function ThinkingBlock({ text, tokens, active }: ThinkingBlockProps) {
         <p className={cn(styles.thinkingWords, styles.thinkingWordsActive)}>
           thinking
         </p>
-        <ol className={styles.steps}>
+        <ol className={styles.thinkingSteps}>
           {steps.map((step, index) => (
             <ThinkingStepRow
               key={index}
@@ -83,7 +83,7 @@ export function ThinkingBlock({ text, tokens, active }: ThinkingBlockProps) {
           </span>
         )}
       </summary>
-      <ol className={styles.steps}>
+      <ol className={styles.thinkingSteps}>
         {steps.map((step, index) => (
           <ThinkingStepRow key={index} step={step} running={false} />
         ))}
@@ -118,7 +118,9 @@ function ThinkingStepRow({
         <>
           <span className={styles.stepCall}>{step.call}</span>
           {step.tail ? (
-            <span className={cn(styles.stepTail, running && styles.stepTailRunning)}>
+            <span
+              className={cn(styles.stepTail, running && styles.stepTailRunning)}
+            >
               {step.tail}
             </span>
           ) : null}

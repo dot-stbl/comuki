@@ -1,8 +1,7 @@
 import type { ReactNode } from "react"
 
-import type { CostHeat } from "@/domains/cost/model/cost"
-import { costHeat, periodDelta } from "@/domains/cost/model/cost"
-import { cn } from "@/shared/lib/utils"
+import { periodDelta } from "@/domains/cost/model/cost"
+import { CostStat } from "@/domains/cost/ui/cost-stat"
 
 import styles from "./total-spend.module.css"
 
@@ -19,13 +18,22 @@ export interface TotalSpendProps {
 }
 
 /**
- * The headline reading — a large currency figure, the period it covers,
- * a delta vs the previous period, and a one-line burn-rate note.
+ * The headline reading — the period's spend, a delta vs the period before it,
+ * and a one-line burn-rate note.
  *
- * The delta is honest about its absence: a brand-new period returns
- * `null`, the screen renders a dash rather than the misleading "0%" a
- * zero previous would otherwise print. Three colours carry the same
- * threshold as the budget tile, so the operator learns one mapping.
+ * A `CostStat` like the two tiles beside it. The three are equal readings of
+ * one period standing in one row, and a figure that took its own step and its
+ * own hairline recipe was the row disagreeing with itself — this is the label,
+ * the figure and the line; the delta is the one thing the tile has that the
+ * others do not, and it rides in the slot between them.
+ *
+ * No heat. The delta is a fact about a period that has already closed, and a
+ * fact does not get a hue — the tile that *does* light its edge is the budget,
+ * because its figure has a consequence written beside it.
+ *
+ * The delta is honest about its absence: a brand-new period returns `null` and
+ * the tile says so, rather than printing the misleading "0%" a zero previous
+ * would otherwise produce.
  */
 export function TotalSpend({
   total,
@@ -35,21 +43,16 @@ export function TotalSpend({
   className,
 }: TotalSpendProps) {
   const delta = periodDelta(total, previousTotal)
-  const deltaShare = delta ?? 0
-  const heat: CostHeat =
-    delta === null ? "ok" : costHeat(Math.max(0, deltaShare) * 0.5 + 0.5)
 
   return (
-    <article
-      className={cn(styles.spend, className)}
-      data-test="total-spend"
-      data-heat={heat}
+    <CostStat
+      name="total"
+      label={`${periodLabel} spend`}
+      prefix="$"
+      value={total.toFixed(2)}
+      sub={burnNote}
+      className={className}
     >
-      <span className={styles.label}>{periodLabel} spend</span>
-      <span className={styles.figure}>
-        <span className={styles.unit}>$</span>
-        <span className={styles.value}>{total.toFixed(2)}</span>
-      </span>
       <p className={styles.delta}>
         {delta === null ? (
           <span className={styles.deltaDash}>no prior period yet</span>
@@ -76,7 +79,6 @@ export function TotalSpend({
           </>
         )}
       </p>
-      <p className={styles.sub}>{burnNote}</p>
-    </article>
+    </CostStat>
   )
 }

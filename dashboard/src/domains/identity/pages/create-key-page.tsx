@@ -10,7 +10,8 @@ import {
   KeySecretDialog,
   type CreatedKey,
 } from "@/domains/identity/ui/key-secret-dialog"
-import { ConfirmDialog } from "@/shared/ui"
+import { requestFailureMessage } from "@/shared/api/problem"
+import { ConfirmDialog, Notice } from "@/shared/ui"
 
 /**
  * Making an api key, at `/identity/keys/new` — and the one place in this
@@ -86,6 +87,21 @@ export function CreateKeyPage() {
       ]}
       summary="A key is a subject in its own right: it is granted roles on the role assignments list, exactly like a person."
     >
+      {/* A refusal is the one answer this page could previously give in
+          silence, and the silence read exactly like the success it is not:
+          no dialog, no secret, no sentence. The host's own problem detail
+          says why — the transport's status line would not. */}
+      {createKey.error ? (
+        <Notice tone="bad" data-test="key-failure">
+          {requestFailureMessage(
+            createKey.error,
+            "The platform refused to make the key."
+          )}{" "}
+          No key was made and no secret was generated — the name and lifetime
+          below are still exactly as you chose them.
+        </Notice>
+      ) : null}
+
       <CreateKeyForm
         busy={createKey.isPending}
         onCreate={onCreate}

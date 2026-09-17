@@ -52,12 +52,12 @@
    already spells it for a run id. */
 .title {
   margin: 0;
-  max-width: var(--measure-prose);
+  max-inline-size: var(--measure-prose);
   overflow-wrap: anywhere;
   font-size: var(--t-h1);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--tracking-display);
-  line-height: 1.15;
+  line-height: var(--lh-display);
   color: var(--foreground);
 }
 

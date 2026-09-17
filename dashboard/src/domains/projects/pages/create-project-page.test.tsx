@@ -165,12 +165,17 @@ describe("the form has a page, so it has a way back", () => {
   })
 })
 
+/* `/^name/` and `/^slug/` rather than exact strings, throughout: both fields
+   are marked required, and the kit puts the word "required" inside the label
+   on purpose — it is the only channel that reaches a screen reader on a select
+   — so the accessible name is "name required" and an exact match no longer
+   finds it. */
 describe("submitting lands on the thing it just created", () => {
   it("goes to the registry narrowed to the new slug", async () => {
     const router = mount(["/projects", "/projects/new"])
 
     await screen.findByRole("heading", { name: "New project" })
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText(/^name/), {
       target: { value: "Orbital" },
     })
     fireEvent.click(screen.getByRole("button", { name: "Create project" }))
@@ -191,7 +196,7 @@ describe("submitting lands on the thing it just created", () => {
     const router = mount(["/projects", "/projects/new"])
 
     await screen.findByRole("heading", { name: "New project" })
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText(/^name/), {
       target: { value: "Orbital" },
     })
     fireEvent.click(screen.getByRole("button", { name: "Create project" }))
@@ -209,7 +214,7 @@ describe("leaving a half-filled form", () => {
     const router = mount(["/projects", "/projects/new"])
 
     await screen.findByRole("heading", { name: "New project" })
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText(/^name/), {
       target: { value: "Orbital" },
     })
 
@@ -223,7 +228,7 @@ describe("leaving a half-filled form", () => {
     const router = mount(["/projects", "/projects/new"])
 
     await screen.findByRole("heading", { name: "New project" })
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText(/^name/), {
       target: { value: "Orbital" },
     })
     fireEvent.click(screen.getByRole("link", { name: "projects" }))
@@ -239,7 +244,7 @@ describe("leaving a half-filled form", () => {
     expect(here(router)).toBe("/projects/new")
     // The slug proposed from the name is still there too: staying means
     // staying, not starting again.
-    expect((screen.getByLabelText("slug") as HTMLInputElement).value).toBe(
+    expect((screen.getByLabelText(/^slug/) as HTMLInputElement).value).toBe(
       "orbital"
     )
   })
@@ -248,7 +253,7 @@ describe("leaving a half-filled form", () => {
     const router = mount(["/projects", "/projects/new"])
 
     await screen.findByRole("heading", { name: "New project" })
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText(/^name/), {
       target: { value: "Orbital" },
     })
     fireEvent.click(screen.getByRole("link", { name: "projects" }))
@@ -263,7 +268,7 @@ describe("leaving a half-filled form", () => {
     const router = mount(["/projects", "/projects/new"])
 
     await screen.findByRole("heading", { name: "New project" })
-    fireEvent.change(screen.getByLabelText("name"), {
+    fireEvent.change(screen.getByLabelText(/^name/), {
       target: { value: "Orbital" },
     })
 

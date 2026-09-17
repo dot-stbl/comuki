@@ -13,6 +13,7 @@ import type { PermissionCheck } from "@/shared/session"
 import {
   Button,
   ConfirmDialog,
+  Notice,
   NumberField,
   Section,
   SwitchField,
@@ -23,7 +24,23 @@ import styles from "./settings-panel.module.css"
 
 export interface BudgetsPanelProps {
   budgets: Budgets
+  /** The caps form is in flight. Gates the caps, and only the caps. */
   busy?: boolean
+  /**
+   * One of the two stops is in flight.
+   *
+   * Its own flag, from its own mutation. The stops used to read `busy` — the
+   * caps' save — so pressing Save greyed the kill-switch and throwing the
+   * kill-switch left it live, which is the wrong answer in both directions on
+   * the one control here that has to be believed.
+   */
+  stopping?: boolean
+  /**
+   * What went wrong throwing or standing down a stop, in a sentence, or `null`.
+   * Shown beside the switches: a brake that did not engage and said nothing is
+   * indistinguishable from a brake that did.
+   */
+  stopFailure?: string | null
   onSave: (values: BudgetFormValues) => void
   /**
    * Throw or stand down one of the two stops. Applied the moment the control
@@ -63,6 +80,8 @@ export interface BudgetsPanelProps {
 export function BudgetsPanel({
   budgets,
   busy = false,
+  stopping = false,
+  stopFailure = null,
   onSave,
   onToggleStop,
   save,
@@ -116,7 +135,7 @@ export function BudgetsPanel({
                 onToggleStop("killSwitch", false)
               }}
               denied={save.denial}
-              disabled={busy}
+              disabled={stopping}
               hint="Hard-stop all new claims — every app, every task."
             />
             <SwitchField
@@ -126,9 +145,18 @@ export function BudgetsPanel({
               checked={budgets.pauseSwarm}
               onCheckedChange={(next) => onToggleStop("pauseSwarm", next)}
               denied={save.denial}
-              disabled={busy}
+              disabled={stopping}
               hint="Soft pause — running workers finish; no new containers start."
             />
+
+            {/* The stop did not land. Said here, next to the switch that is
+                back where it started, rather than in a toast that has already
+                gone by the time the operator looks up from the meter. */}
+            {stopFailure ? (
+              <Notice tone="bad" data-test="budgets-stop-failure">
+                {stopFailure} Nothing moved — the stops are as they were.
+              </Notice>
+            ) : null}
           </div>
         </div>
 

@@ -17,6 +17,9 @@
  *   only validation a correct form can still hit, e.g. a paste with a
  *   trailing space).
  * - 429 — the login rate limiter.
+ * - 5xx — the host answered and the answer is that it is broken. Its own
+ *   words here are "request failed 502", which tells the operator to check
+ *   their password for something that has nothing to do with them.
  * - `TypeError` — fetch's network failure ("Failed to fetch"): the server
  *   was never reached, which is a different problem from a refused login.
  */
@@ -53,6 +56,9 @@ export function loginFailureMessage(error: unknown): string {
   }
   if (status === 429) {
     return "Too many attempts — try again in a minute"
+  }
+  if (typeof status === "number" && status >= 500) {
+    return "The sign-in service is not answering — try again shortly"
   }
   if (error instanceof TypeError) {
     return "Cannot reach the server — check your connection"

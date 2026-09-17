@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-import { verifyQueryKey } from "@/domains/verify/api/queries"
+import {
+  VERIFY_UNAVAILABLE,
+  verifyQueryKey,
+} from "@/domains/verify/api/queries"
 import type { VerifySnapshot } from "@/domains/verify/model/types"
 import { setSeedVerifyEnabled } from "@/shared/api/mock/verify.store"
 import { env } from "@/shared/config/env"
@@ -25,9 +28,11 @@ export function useSetVerifyEnabled() {
   return useMutation<unknown, Error, SetVerifyEnabledInput>({
     mutationFn: async ({ projectId, enabled }) => {
       if (!env.useMock) {
-        throw new Error(
-          "verify settings not implemented — set VITE_USE_MOCK=true"
-        )
+        /* The same sentence the read path answers with, for the same reason:
+           the switch is off because the gate is not here, not because the
+           change failed. `retry` is 0 on a mutation by default, so there is
+           nothing to take off this one. */
+        throw new Error(VERIFY_UNAVAILABLE)
       }
       await new Promise((resolve) => setTimeout(resolve, 220))
       setSeedVerifyEnabled(projectId, enabled)

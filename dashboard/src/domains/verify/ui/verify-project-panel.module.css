@@ -81,7 +81,7 @@
   margin: 0;
   font-family: var(--font-data);
   font-size: var(--t-xs);
-  line-height: 1.5;
+  line-height: var(--lh-body);
   color: var(--text-muted);
   overflow-wrap: anywhere;
 }
@@ -118,34 +118,6 @@
 
 .tableArea {
   min-inline-size: 0;
-}
-
-/* Nothing declared at all. The empty state has to name the file the client is
-   expected to create, or it is just an empty box. */
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s6) 0;
-  min-inline-size: 0;
-}
-
-.emptyTitle {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--text);
-}
-
-.emptyBody {
-  margin: 0;
-  max-inline-size: var(--measure-prose);
-  font-family: var(--font-ui);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--text-muted);
 }
 
 .code {

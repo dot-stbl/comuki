@@ -74,7 +74,7 @@
 
 .segment:focus-within {
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* The icon rides muted on every segment, selected or not — it is a
@@ -90,7 +90,7 @@
 /* The word beside the icon. Its own rule, distinct from the label above:
    the label names the question, this is one of the answers. */
 .segmentLabel {
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 /* Selected: the provider cards' own language at the compact step — the

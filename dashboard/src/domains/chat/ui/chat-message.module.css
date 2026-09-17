@@ -139,7 +139,7 @@
 }
 
 .reference:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline: 2px solid var(--ring-wash);
   outline-offset: 2px;
   border-radius: var(--r-xs);
 }
@@ -205,7 +205,7 @@
   overflow-wrap: anywhere;
   font-family: var(--font-data);
   font-size: var(--t-micro);
-  line-height: 1.5;
+  line-height: var(--lh-body);
   color: var(--text-muted);
 }
 
@@ -285,7 +285,14 @@
   min-inline-size: 0;
 }
 
+/* The track is 6rem wide and the value comes from a deployment's own profile
+   vocabulary, so the cell has to clip itself: a grid cell does not, and a long
+   key would run straight into the label in the column beside it. */
 .stepProfile {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-data);
   font-size: var(--t-micro);
   color: var(--text-faint);
@@ -398,7 +405,7 @@
 }
 
 .handoff:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline: 2px solid var(--ring-wash);
   outline-offset: 2px;
   border-color: var(--ring);
 }
@@ -539,7 +546,7 @@
 }
 
 .mdLink:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline: 2px solid var(--ring-wash);
   outline-offset: 2px;
   border-radius: var(--r-xs);
 }
@@ -659,7 +666,7 @@
 }
 
 .thinkingSummary:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline: 2px solid var(--ring-wash);
   outline-offset: 2px;
   border-radius: var(--r-xs);
 }
@@ -688,9 +695,16 @@
  * One line of the working-out, one step: a mark that says where the brain is
  * on that line, then the line itself in the data voice it arrived in. The
  * list carries the left rule and the indent, so the steps read as one
- * block — the mockup's tool-trace — rather than N loose rows. */
+ * block — the mockup's tool-trace — rather than N loose rows.
+ *
+ * `.thinkingSteps` and not `.steps`: twelve components share this stylesheet,
+ * and the proposal card's own list of steps is already called `.steps` above.
+ * A module compiles one name to one class, so the two blocks were the same
+ * class — and this one's rule, indent and top margin were landing on the
+ * proposal's plan, pushing it off the card's left edge. Two roles, two
+ * names. */
 
-.steps {
+.thinkingSteps {
   display: flex;
   flex-direction: column;
   gap: var(--s1);
@@ -839,7 +853,7 @@
 }
 
 .memorySummary:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline: 2px solid var(--ring-wash);
   outline-offset: 2px;
   border-radius: var(--r-sm);
 }

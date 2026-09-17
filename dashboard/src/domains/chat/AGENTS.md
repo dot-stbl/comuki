@@ -118,6 +118,23 @@ with the next message as text.
   memory digest row the host journals (a system message with the
   `"memory digest fed to the brain:"` prefix) renders as the compact
   `memory: N facts` chip, not as prose.
+- **Loading is a state, and it is not the empty one.** The thread's *Nothing
+  said yet* is only reachable once both reads have answered; until then the
+  centre column is a `Skeleton` and the rail is one of its own
+  (`ui/chat-console.tsx`, `ui/chat-sessions.tsx`). The rail's empty reading is
+  `ScreenState`, and it stays silent while the sessions read is failing — the
+  centre already says that once, with the one retry, and a second reading of
+  the same dead wire would be the wrong one.
+- **A refused act is said out loud, where it happened.** The composer clears on
+  the gesture — a box that waits for a round trip feels broken on every send
+  that works — so the console holds the refusal: the words go back into the box
+  when the box is empty, and ride in the band beside it when the operator has
+  already started a new thought, which is newer than the message that failed.
+  Every failure is **stamped with the conversation it happened in** and shown
+  only there; a conversation that could not be *started* belongs to none, so it
+  carries no stamp and is shown anywhere. A proposal decision that did not land
+  takes the same path — a confirm that silently does nothing is the console
+  telling the operator an act reached the journal when it did not.
 - The dock is hidden — not explained — without `chat.use`, the way the rail
   hides what a role cannot reach. The console is **not a rail section**: the
   floating trigger is its one door in the chrome, decided by the owner. The

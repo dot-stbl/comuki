@@ -107,10 +107,25 @@
   box-shadow: var(--shadow-header);
 }
 
+/* The head is a row, so it stands at the row's height — the same `--dt-row-h`
+   the body and the virtualizer are measured by, not a token of its own.
+
+   It used to read `--h-row-head` directly, which is 2rem and is exactly what
+   `compact` publishes, so at the default density the two spellings agreed and
+   the bug was invisible. At `comfortable` (40px) they did not: the band that
+   names the columns stood 8px shorter than every row under it, which is a head
+   that has come loose from its table. One number for the head and another for
+   the body is the same class of defect `--dt-row-h` exists to prevent between
+   the painted rule and the virtualizer's offset — so it is closed the same way,
+   by there being only one number.
+
+   `--h-row-head` keeps its meaning and its other callers: it is the depth of a
+   head *band* elsewhere in the product, and it is what `compact` is tuned to.
+   It is simply no longer this element's source. */
 .headRow {
   display: flex;
   inline-size: 100%;
-  block-size: var(--h-row-head);
+  block-size: var(--dt-row-h);
   border-block-end: var(--hairline) solid var(--rule-strong);
 }
 

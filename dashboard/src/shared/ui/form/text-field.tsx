@@ -4,7 +4,7 @@ import { cn } from "@/shared/lib/utils"
 
 import { Field } from "./field"
 import styles from "./form.module.css"
-import { fieldDescriptionId } from "./ids"
+import { describedBy, fieldDescriptionId } from "./ids"
 
 export interface TextFieldProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -45,6 +45,12 @@ export interface TextFieldProps extends Omit<
  * `onValueChange` rather than `onChange` because every call site here wants the
  * string and none of them want the event — and because a form that reads
  * `event.target.value` in nine places is nine places to get it wrong.
+ *
+ * The `aria-*` the caller passes is **merged**, not replaced — see
+ * {@link describedBy}. A field that owns its description must still be able to
+ * carry one the screen around it owns as well; the gate points both its boxes
+ * at the failure band above them, and the field points at its own error line,
+ * and both are true at once.
  */
 export function TextField({
   id,
@@ -74,11 +80,12 @@ export function TextField({
             id={id}
             className={cn(styles.control, styles.controlWithSuffix)}
             value={value}
-            aria-required={required ? true : undefined}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={
+            aria-required={required ? true : rest["aria-required"]}
+            aria-invalid={error ? true : rest["aria-invalid"]}
+            aria-describedby={describedBy(
+              rest["aria-describedby"],
               hint || error ? fieldDescriptionId(id) : undefined
-            }
+            )}
             onChange={(event) => onValueChange(event.target.value)}
           />
           <span className={styles.controlSuffix}>{suffix}</span>
@@ -89,9 +96,12 @@ export function TextField({
           id={id}
           className={styles.control}
           value={value}
-          aria-required={required ? true : undefined}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={hint || error ? fieldDescriptionId(id) : undefined}
+          aria-required={required ? true : rest["aria-required"]}
+          aria-invalid={error ? true : rest["aria-invalid"]}
+          aria-describedby={describedBy(
+            rest["aria-describedby"],
+            hint || error ? fieldDescriptionId(id) : undefined
+          )}
           onChange={(event) => onValueChange(event.target.value)}
         />
       )}

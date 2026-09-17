@@ -1,0 +1,194 @@
+/* Named values — "slug: atlas", "last seen: never".
+
+   Six screens wrote this out privately and the name half came out *identical*
+   in every one of them, down to the declaration order; what drifted was the
+   container and the size of the value. So the container is the prop and the
+   voice is not: `.factName` is `StatLabel` now, and the value has one step for
+   a page and one for a sheet.
+
+   The name is always a `<dt>` and the value always a `<dd>`, inside a `<dl>`.
+   A pair of values is a definition list — it is the one place in this product
+   where the HTML element is not chrome — and a screen that drew it with two
+   spans threw away the only structure a screen reader could have used. */
+
+.list {
+  margin: 0;
+  min-inline-size: 0;
+}
+
+/* --- stack: the name above its value ------------------------------------ */
+
+/* Pairs flow into as many columns as the board has room for. `auto-fit` rather
+   than `auto-fill`: the count is whatever the screen has, and `auto-fill` would
+   open an empty track past the last pair. `min()` so a track can never be wider
+   than the column it sits in. */
+.stack {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: var(--s5) var(--s7);
+}
+
+.stack .fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+/* --- split: name and value on one line, pushed apart -------------------- */
+
+/* The sheet's arrangement: two or three pairs in a narrow panel, banded off
+   from what is above and below them. The value goes to the end edge, which is
+   what makes a short column of them scannable in a box this narrow. */
+.split {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding-block: var(--s3);
+  border-block: var(--hairline) solid var(--rule);
+}
+
+.split .fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s4);
+  min-inline-size: 0;
+}
+
+/* --- rows: a name track, and the value beside it ------------------------ */
+
+/* The grid is on the *list*, not on each pair, and each pair is
+   `display: contents`. That is the load-bearing line in this block: a grid per
+   row sizes its own name column per row, so `max-content` would give every row
+   a different name width and the values would start at six different x. One
+   grid, one track, one edge the values all begin at. */
+.rows {
+  display: grid;
+  grid-template-columns: var(--fact-name, max-content) minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--s3) var(--s5);
+}
+
+.rows .fact {
+  display: contents;
+}
+
+/* Bounded and divided: four facts about one record, read as a block. Not a card
+   — no fill that lifts it off the floor and no shadow that floats it — but it
+   is bounded on all four sides and cut with the corner a box this size
+   deserves. `clip` rather than `hidden` so the corners cut without the box
+   quietly becoming a scroll container.
+
+   The name track goes fixed here. A bounded list is read down the names as much
+   as across the rows, and `max-content` in a frame leaves the values sitting at
+   whatever the longest name happened to be that day. */
+.framed {
+  --fact-name: 12rem;
+
+  gap: 0;
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-lg);
+  overflow: clip;
+}
+
+.framed .name,
+.framed .value {
+  padding-block: var(--s4);
+}
+
+.framed .name {
+  padding-inline-start: var(--s5);
+  padding-inline-end: var(--s5);
+}
+
+.framed .value {
+  padding-inline-end: var(--s5);
+}
+
+.framed .fact + .fact .name,
+.framed .fact + .fact .value {
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+/* The narrow desk. A fixed name track is the first thing with no room left, so
+   the pairs stack instead of crushing a repository url into a sliver — the
+   reading survives, which is the whole rule. */
+@media (max-width: 1000px) {
+  .rows {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s1) 0;
+  }
+
+  .framed {
+    gap: 0;
+  }
+
+  .framed .name {
+    padding-block-end: 0;
+  }
+
+  .framed .value {
+    padding-block-start: var(--s1);
+    padding-inline-start: var(--s5);
+  }
+
+  .framed .fact + .fact .value {
+    border-block-start: 0;
+  }
+}
+
+/* --- the pair ----------------------------------------------------------- */
+
+/* The name carries no rule of its own: `StatLabel` is the voice, and the five
+   declarations that make it are the most hand-copied thing in the product. This
+   class exists only to reset the `<dt>`. */
+.name {
+  margin: 0;
+}
+
+/* A host, a slug, a date, an id — every one of these is a value the operator
+   reads back somewhere else, so all of them are in the data voice. */
+.value {
+  margin: 0;
+  min-inline-size: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* The sheet step, and it is one decision rather than two that happen to move
+   together: a panel this narrow has neither the width for `--t-sm` nor
+   anywhere for a base url to wrap to, so the type comes down a step and the
+   overflow stops wrapping and starts cutting. On a page the opposite is true in
+   both halves — there is room, and a value that wrapped is still readable while
+   a value that was cut is gone. */
+.sm .value {
+  font-size: var(--t-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+/* The one field on a record a human wrote — a person's name, a project's title,
+   a description. Prose takes the interface voice; getting this backwards is the
+   defect the two-voices rule exists to catch. */
+.prose {
+  font-family: var(--font-ui);
+  font-variant-numeric: normal;
+}
+
+/* Nothing there, said quietly and in words: `local only`, `never`, `platform
+   defaults`. A blank reads as a broken render. */
+.absent {
+  color: var(--text-faint);
+}
+
+/* The one fact somebody copies out of the screen — a repository url, a run id —
+   selected as a unit rather than as part of a sentence. */
+.selectable {
+  user-select: all;
+}

@@ -25,7 +25,35 @@ export interface FieldProps {
   required?: boolean
   /** The rule the operator cannot see by looking at the box. */
   hint?: ReactNode
-  /** What is wrong, in a sentence. Replaces the hint while it is present. */
+  /**
+   * What is wrong, in a sentence. Replaces the hint while it is present.
+   *
+   * ## When a call site is allowed to pass one — `touched || attempted`
+   *
+   * This is the product's one model, and it is written down here because three
+   * were in use at once and none of them said why. The reference implementation
+   * is `domains/projects/ui/create-project-form.tsx`; a fourth model is a bug,
+   * not a preference.
+   *
+   * - **`touched`** — the operator has been in this field and left it. They
+   *   have finished their answer, so telling them it is wrong is an answer to a
+   *   question they just asked. Telling them *while they type* is correcting
+   *   somebody mid-sentence, and it means a field is red for the first six
+   *   characters of every correct value.
+   * - **`attempted`** — they pressed the button. Every rule the form has been
+   *   holding back is now owed to them at once, including on the fields they
+   *   never entered, because "nothing happened" is not a refusal anyone can act
+   *   on.
+   *
+   * And once shown it **stays** shown until it is fixed. An error that hides
+   * itself again on the next keystroke is a rule the operator has to rediscover
+   * by being refused a second time.
+   *
+   * The field does not implement this — validity belongs to the form, at the
+   * form's edge, where the schema is. What the field guarantees is the other
+   * half: one slot, one line, the same box whether the line is a hint or an
+   * error, so nothing below moves when the answer arrives.
+   */
   error?: string | null
   children: ReactNode
 }

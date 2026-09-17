@@ -143,7 +143,14 @@ export const Compact: Story = {
   args: { density: "compact" },
 }
 
-/** One step of the spacing scale roomier, for a table that is the whole screen. */
+/**
+ * One step of the spacing scale roomier, for a table that is the whole screen.
+ *
+ * This story is also the head/body check: the head band takes `--dt-row-h` like
+ * every row does, so at 40px it grows with them. It used to be pinned to
+ * `--h-row-head` (2rem) and stood 8px shorter than the rows it names — a defect
+ * that was invisible at `compact`, where the two numbers happen to be equal.
+ */
 export const Comfortable: Story = {
   args: { density: "comfortable" },
 }

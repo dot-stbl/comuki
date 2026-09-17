@@ -5,7 +5,6 @@ import {
   ComboBox as AriaComboBox,
   FieldError,
   Input as AriaInput,
-  Label,
   ListBox,
   ListBoxItem,
   Popover,
@@ -43,6 +42,20 @@ export interface ComboboxFieldProps {
   options: readonly ComboboxFieldOption[]
   /** The words on the trigger before anything has been chosen. */
   placeholder?: string
+  /**
+   * The form will not go without this field — see `FieldProps.required`.
+   *
+   * It reaches `Field` and nothing else: the word is drawn in the label, and no
+   * native attribute is set. React Aria's own `isRequired` is the other route
+   * and it is the wrong one here — it runs `validationBehavior="native"` by
+   * default, which hands the browser its own constraint bubble on top of the
+   * sentence the form already writes, and two refusals in two voices for one
+   * rule is worse than the one refusal this product tells. On a React Aria
+   * control the label is the channel anyway, for the reason `SelectField`
+   * spells out: the trigger's accessible name is rebuilt from its own value
+   * node, and `aria-required` goes with the association that was replaced.
+   */
+  required?: boolean
   hint?: ReactNode
   error?: string | null
   /**
@@ -118,6 +131,7 @@ export function ComboboxField({
   onValueChange,
   options,
   placeholder,
+  required,
   hint,
   error,
   size = "md",
@@ -133,6 +147,7 @@ export function ComboboxField({
       id={id}
       label={label}
       labelHidden={labelHidden}
+      required={required}
       hint={hint}
       error={error}
     >
@@ -176,9 +191,18 @@ export function ComboboxField({
         data-test={dataTest}
         defaultFilter={filter.contains}
       >
-        <Label className={styles.srOnly} id={fieldLabelId(id)}>
-          {label}
-        </Label>
+        {/* No `<Label>` of its own. `Field` already draws one, carrying
+            `fieldLabelId(id)` and `htmlFor` — and React Aria puts the combobox's
+            `id` on the *input*, so that `htmlFor` lands on a real control.
+
+            A second, screen-reader-only `<Label>` used to stand here wearing the
+            same id, which is two elements sharing one id in the document and an
+            `aria-labelledby` that came out as `"pick-label pick-label"`: the
+            name said twice, and `getElementById` resolving both references to
+            whichever element happened to be first. Giving the inner label a
+            distinct id would not have fixed it — it would have made the name two
+            *different* elements both reading "model". The label is not missing
+            here; it is in `Field`, and pointing at it once is the whole job. */}
         <AriaInput
           className={cn(styles.input, size === "sm" && styles.inputSm)}
           placeholder={placeholder}

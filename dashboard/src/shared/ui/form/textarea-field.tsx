@@ -4,7 +4,7 @@ import { cn } from "@/shared/lib/utils"
 
 import { Field } from "./field"
 import styles from "./form.module.css"
-import { fieldDescriptionId } from "./ids"
+import { describedBy, fieldDescriptionId } from "./ids"
 
 export interface TextareaFieldProps extends Omit<
   TextareaHTMLAttributes<HTMLTextAreaElement>,
@@ -50,9 +50,12 @@ export function TextareaField({
           voice === "code" ? styles.code : styles.area
         )}
         value={value}
-        aria-required={required ? true : undefined}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={hint || error ? fieldDescriptionId(id) : undefined}
+        aria-required={required ? true : rest["aria-required"]}
+        aria-invalid={error ? true : rest["aria-invalid"]}
+        aria-describedby={describedBy(
+          rest["aria-describedby"],
+          hint || error ? fieldDescriptionId(id) : undefined
+        )}
         onChange={(event) => onValueChange(event.target.value)}
       />
     </Field>

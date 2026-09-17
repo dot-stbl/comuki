@@ -1,6 +1,10 @@
-/* The palette sits above the board rather than in it, so it takes the modal
-   plane — the same one the confirm dialog and the toolbar popovers take. It is
-   the third box in the product big enough for the largest corner. */
+/* The palette sits above the board rather than in it, so its scrim takes the
+   overlay rung — the same one the confirm dialog, the form dialog, the bottom
+   sheet and the evidence pane take. None of them out-numbers the others on
+   purpose: two scrims are never open in one stacking context by accident, and
+   when they are, DOM order — "whichever was opened last" — is the answer a
+   number could not have carried. It is the third box in the product big enough
+   for the largest corner. */
 
 .scrim {
   /* Where the box hangs from. Named once because the modal's own depth cap is
@@ -10,7 +14,7 @@
 
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-overlay);
   display: flex;
   align-items: flex-start;
   justify-content: center;

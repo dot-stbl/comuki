@@ -27,7 +27,7 @@
 }
 
 .trigger[data-focus-visible] {
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
   border-color: var(--ring);
 }
 
@@ -77,7 +77,7 @@
 }
 
 .card[data-focus-visible] {
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* The bands are the palette itself: floor and rail are the chrome it is built

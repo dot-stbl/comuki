@@ -48,6 +48,8 @@ export interface Session {
   readonly lastUserMessage: string | null
   /** User renamed the tab — auto-naming must not override it. */
   readonly renamed: boolean
+  /** Submitted prompts for ↑/↓ recall, oldest first. */
+  readonly history?: readonly string[]
 }
 
 export const PENDING_PREFIX = "local-"
@@ -117,6 +119,7 @@ export function newPendingSession(
     hydrated: false,
     lastUserMessage: null,
     renamed: false,
+    history: [],
   }
 }
 
@@ -223,6 +226,19 @@ export function setBlocks(
   )
 }
 
+/** Appends a submitted prompt to a session's recall history. */
+export function appendHistory(
+  sessions: readonly Session[],
+  id: string,
+  message: string
+): readonly Session[] {
+  return sessions.map((session) =>
+    session.id === id
+      ? { ...session, history: [...(session.history ?? []), message] }
+      : session
+  )
+}
+
 /** Appends streamed chunk text to a session's live tail (capped at 4000). */
 export function appendLiveText(
   sessions: readonly Session[],
@@ -276,6 +292,7 @@ export interface PersistedSession {
   readonly createdAt: number
   /** Present only for tabs renamed via `/rename` (auto names stay implicit). */
   readonly renamed?: boolean
+  readonly history?: readonly string[]
 }
 
 export interface PersistedSessions {
@@ -293,6 +310,10 @@ export function toPersisted(state: SessionsState): PersistedSessions {
       status: session.status,
       createdAt: session.createdAt,
       ...(session.renamed ? { renamed: true } : {}),
+      // Omitted when empty — keeps sessions.json lean for history-free tabs.
+      ...(session.history && session.history.length > 0
+        ? { history: session.history }
+        : {}),
     }))
   const active = state.sessions[state.activeIndex]
   return {
@@ -324,6 +345,7 @@ export function fromPersisted(persisted: PersistedSessions): SessionsState {
       // server transcript after restore.
       lastUserMessage: null,
       renamed: session.renamed === true,
+      history: session.history ?? [],
     }))
   const activeIndex = Math.max(
     0,

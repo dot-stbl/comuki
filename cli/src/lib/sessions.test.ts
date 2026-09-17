@@ -5,6 +5,7 @@ import {
   addSession,
   adoptServerId,
   appendBlocks,
+  appendHistory,
   appendLiveText,
   fromPersisted,
   markUnread,
@@ -242,6 +243,32 @@ describe("titleForFirstMessage", () => {
   })
 })
 
+describe("appendHistory", () => {
+  it("appends submitted prompts oldest-first to the matching session", () => {
+    const sessions = [liveSession("s1"), liveSession("s2")]
+    const once = appendHistory(sessions, "s1", "first")
+    const twice = appendHistory(once, "s1", "second")
+    expect(twice[0]?.history).toEqual(["first", "second"])
+    expect(twice[1]?.history).toEqual([])
+  })
+
+  it("keeps history when a pending tab adopts its server id", () => {
+    const pending = addSession(
+      { sessions: [], activeIndex: -1 },
+      newPendingSession()
+    )
+    const localId = pending.sessions[0]?.id ?? ""
+    const withHistory = appendHistory(pending.sessions, localId, "hello")
+    const adopted = adoptServerId(
+      { sessions: withHistory, activeIndex: 0 },
+      localId,
+      "uuid-1",
+      "hello"
+    )
+    expect(adopted.sessions[0]?.history).toEqual(["hello"])
+  })
+})
+
 describe("persistence round-trip", () => {
   it("persists only server tabs and restores the active one", () => {
     const state = {
@@ -264,6 +291,32 @@ describe("persistence round-trip", () => {
     expect(restored.activeIndex).toBe(1)
     expect(restored.sessions[1]?.hydrated).toBe(false)
     expect(restored.sessions[1]?.blocks).toEqual([])
+  })
+
+  it("round-trips recall history through sessions.json", () => {
+    const session = appendHistory([liveSession("s1", "identity")], "s1", "q1")
+    const withHistory = appendHistory(session, "s1", "q2")
+    const persisted = toPersisted({
+      sessions: withHistory,
+      activeIndex: 0,
+    })
+    expect(persisted.sessions[0]?.history).toEqual(["q1", "q2"])
+
+    const restored = fromPersisted(persisted)
+    expect(restored.sessions[0]?.history).toEqual(["q1", "q2"])
+  })
+
+  it("omits empty history from the persisted shape and restores []", () => {
+    const persisted = toPersisted({
+      sessions: [liveSession("s1")],
+      activeIndex: 0,
+    })
+    expect(persisted.sessions[0]?.history).toBeUndefined()
+
+    const restored = fromPersisted({
+      sessions: [{ id: "s1", name: "old", status: "idle", createdAt: 0 }],
+    })
+    expect(restored.sessions[0]?.history).toEqual([])
   })
 
   it("restores an empty list to no tabs", () => {

@@ -1,7 +1,9 @@
 /**
- * Entry + command routing: `chat` (default), `status`, `runs list`,
- * `login`, `whoami`. Each command renders its own Ink app; the process
- * exits when the app unmounts (Ink's `exitOnCtrlC` covers ctrl+c).
+ * Entry + command routing: `comuki` (default = the multi-session chat
+ * REPL), `status`, `runs list`, `login`, `whoami`. Each command renders
+ * its own Ink app; the process exits when the app unmounts (Ink's
+ * `exitOnCtrlC` covers ctrl+c). The removed `chat` subcommand is
+ * unknown on purpose — bare `comuki` is the REPL.
  */
 import { render } from "ink"
 import React from "react"
@@ -12,7 +14,12 @@ import { LoginApp } from "./commands/login"
 import { RunsApp } from "./commands/runs"
 import { StatusApp } from "./commands/status"
 import { ComukiClient } from "./lib/client"
-import { readConfigFile, resolveConfig, type ResolvedConfig } from "./lib/config"
+import {
+  readConfigFile,
+  resolveConfig,
+  type ResolvedConfig,
+} from "./lib/config"
+import { resolveCommand } from "./lib/commands"
 import { CLI_VERSION } from "./components/StatusLine"
 import { whoAmI } from "./lib/auth"
 import { colors, symbols } from "./theme"
@@ -34,20 +41,28 @@ async function main(): Promise<void> {
     .option("url", { type: "string", describe: "Comuki host URL" })
     .option("api-key", { type: "string", describe: "API key (ck_…)" })
     .option("project", { type: "string", describe: "project id, slug or name" })
-    .command("chat", "interactive session with the comuki brain (default)", (y) =>
-      y.option("project", { type: "string" })
-    )
     .command("status", "platform snapshot")
     .command("runs [list]", "run ledger", (y) =>
       y
         .positional("list", { type: "string", default: "list" })
-        .option("page", { type: "number", default: 1, describe: "1-based page" })
-        .option("pageSize", { type: "number", default: 20, describe: "rows per page (max 100)" })
-        .option("filter", { type: "string", describe: "filter DSL, e.g. status==queued" })
+        .option("page", {
+          type: "number",
+          default: 1,
+          describe: "1-based page",
+        })
+        .option("pageSize", {
+          type: "number",
+          default: 20,
+          describe: "rows per page (max 100)",
+        })
+        .option("filter", {
+          type: "string",
+          describe: "filter DSL, e.g. status==queued",
+        })
     )
     .command("login", "email+password → session cookie")
     .command("whoami", "current subject, roles and permissions")
-    .demandCommand(0, 0) // no command → chat
+    .demandCommand(0, 0) // no command → the REPL
     .strict()
     .parse()
 
@@ -56,7 +71,7 @@ async function main(): Promise<void> {
     apiKey: argv["api-key"],
     project: argv.project,
   }
-  const command = argv._[0] ?? "chat"
+  const command = resolveCommand(argv._)
 
   if (command === "login") {
     render(<LoginApp url={overrides.url} />, { exitOnCtrlC: true })
@@ -65,7 +80,7 @@ async function main(): Promise<void> {
 
   const config = await loadConfig(overrides)
 
-  if (command === "chat") {
+  if (command === "repl") {
     render(<ChatApp config={config} project={overrides.project} />, {
       exitOnCtrlC: true,
     })
@@ -90,11 +105,15 @@ async function main(): Promise<void> {
   if (command === "whoami") {
     const client = new ComukiClient(config)
     const who = await whoAmI(client)
-    console.log(`${colors.accent}  ${who.kind}${colors.reset} ${symbols.bullet} ${who.label}`)
+    console.log(
+      `${colors.accent}  ${who.kind}${colors.reset} ${symbols.bullet} ${who.label}`
+    )
     try {
       const me = await client.me()
       if (me.roles.length > 0) {
-        console.log(`${colors.dim}  roles: ${me.roles.join(", ")}${colors.reset}`)
+        console.log(
+          `${colors.dim}  roles: ${me.roles.join(", ")}${colors.reset}`
+        )
       }
       if (me.permissions.length > 0) {
         console.log(
@@ -107,7 +126,9 @@ async function main(): Promise<void> {
     return
   }
 
-  console.error(`${colors.red}unknown command: ${String(command)}${colors.reset}`)
+  console.error(
+    `${colors.red}unknown command: ${String(argv._[0])}${colors.reset}`
+  )
   process.exitCode = 1
 }
 

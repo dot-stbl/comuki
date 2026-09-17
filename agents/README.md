@@ -33,9 +33,10 @@ Code для разрабов — плюс общее ядро) и термина
 | `src/subagents/` | Сабагенты, переопределённые под стадии Comuki (изучатель, контракт-агент, doc-агент) |
 
 ### `comuki-cli` — терминальный клиент
-Ink (React for CLIs) поверх REST + SignalR хоста: `chat` (REPL с мозгом),
-`status`, `runs`, `login`, `whoami`. Не агентский SDK — отдельный
-потребитель тех же API. См. `comuki-cli/README.md`.
+Ink (React for CLIs) поверх REST + SignalR хоста: мульти-сессия REPL с
+мозгом (табы, команда по умолчанию — голый `comuki`), `status`, `runs`,
+`login`, `whoami`. Не агентский SDK — отдельный потребитель тех же API.
+См. `comuki-cli/README.md`.
 
 ## Почему три, а не два
 

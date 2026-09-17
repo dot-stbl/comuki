@@ -114,7 +114,7 @@ jobs:
         with:
           context: .
           file: deploy/compose/docker/host.Dockerfile
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           # VITE_API_BASE_URL stays at its empty default (same-origin SPA).
           build-args: |
@@ -129,7 +129,7 @@ jobs:
         with:
           context: .
           file: deploy/compose/docker/worker.Dockerfile
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
             COMUKI_VERSION=${{ steps.vars.outputs.version }}

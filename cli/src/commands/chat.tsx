@@ -50,7 +50,9 @@ import {
   bindChatEvents,
   joinChatGroup,
   leaveChatGroup,
+  rejoinChatGroups,
   startChatHubConnection,
+  type HubConnectionState,
 } from "../lib/signalr"
 import { colors, symbols } from "../theme"
 import { ChatMessage } from "../components/ChatMessage"
@@ -97,12 +99,18 @@ export function ChatApp({ config, project }: ChatCommandProps) {
    * never came up.
    */
   const [hubAttempted, setHubAttempted] = useState(false)
+  /** Hub chip for the status line; driven by the factory's state feed. */
+  const [hubState, setHubState] = useState<HubConnectionState>("connecting")
+  /** Chat-send EMA from the client — the status line latency badge. */
+  const [latencyMs, setLatencyMs] = useState<number | null>(null)
 
   const clientRef = useRef<ComukiClient | null>(null)
   const hubRef = useRef<HubConnection | null>(null)
   const projectIdRef = useRef<string | undefined>(undefined)
   const activeIdRef = useRef<string | undefined>(undefined)
   const overviewRef = useRef(false)
+  /** Reconnect re-join needs the session ids without a closure snapshot. */
+  const sessionsRef = useRef<readonly Session[]>([])
 
   const activeSession =
     tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
@@ -112,6 +120,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   useEffect(() => {
     activeIdRef.current = activeSessionId
   }, [activeSessionId])
+
+  useEffect(() => {
+    sessionsRef.current = tabs.sessions
+  }, [tabs.sessions])
 
   useEffect(() => {
     overviewRef.current = overviewVisible
@@ -130,7 +142,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     let hub: HubConnection | null = null
 
     void (async () => {
-      const client = new ComukiClient(config)
+      const client = new ComukiClient(config, {
+        onLatencySample: setLatencyMs,
+      })
       clientRef.current = client
 
       const who = await whoAmI(client)
@@ -167,9 +181,21 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
       try {
         // Best-effort live progress; the REST turns are authoritative.
+        // A reconnect gets a fresh connection id — every chat group is
+        // gone, so re-join the open sessions (pending tabs excluded).
         const connection = await startChatHubConnection({
           hubUrl: client.hubUrl(),
           headers: client.hubHeaders(),
+          onStateChange: setHubState,
+          onReconnected: () => {
+            const hub = hubRef.current
+            if (hub) {
+              const sessionIds = sessionsRef.current
+                .map((session) => session.id)
+                .filter((id) => !id.startsWith(PENDING_PREFIX))
+              void rejoinChatGroups(hub, sessionIds)
+            }
+          },
         })
         if (connection && !disposed) {
           hub = connection
@@ -737,7 +763,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         alignItems="center"
         justifyContent="center"
       >
-        <StatusLine identity={headerIdentity} project={projectLabel} />
+        <StatusLine
+          identity={headerIdentity}
+          project={projectLabel}
+          connection={hubState}
+          serverUrl={config.url}
+          latencyMs={latencyMs}
+        />
         <Box marginTop={1}>
           <Text>
             {"  "}
@@ -765,7 +797,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   // Content area: everything else, fills the remaining vertical space.
   return (
     <Box flexDirection="column" width={columns} height={rows}>
-      <StatusLine identity={headerIdentity} project={projectLabel} />
+      <StatusLine
+        identity={headerIdentity}
+        project={projectLabel}
+        connection={hubState}
+        serverUrl={config.url}
+        latencyMs={latencyMs}
+      />
       {tabs.sessions.length > 0 ? (
         <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />
       ) : null}

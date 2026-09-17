@@ -1,6 +1,13 @@
 import { describe, expect, it } from "bun:test"
-import { LogLevel, NullLogger } from "@microsoft/signalr"
-import { bindChatEvents, RealtimeTransportMethods } from "./signalr"
+import { LogLevel, NullLogger, type RetryContext } from "@microsoft/signalr"
+import {
+  bindChatEvents,
+  hubStateFor,
+  neverGiveUpRetryPolicy,
+  RealtimeTransportMethods,
+  reconnectRetryDelayMs,
+  rejoinChatGroups,
+} from "./signalr"
 
 function stubConnection() {
   const handlers = new Map<string, (payload: unknown) => void>()
@@ -42,6 +49,73 @@ describe("bindChatEvents", () => {
 
     expect(chunks).toEqual(["План ", "рефакторинга"])
     expect(outcomes).toEqual(["awaiting_approval"])
+  })
+})
+
+describe("reconnectRetryDelayMs", () => {
+  it("maps the retry count onto the 0/2/5/10s ramp then flat 30s", () => {
+    expect(reconnectRetryDelayMs(0)).toBe(0)
+    expect(reconnectRetryDelayMs(1)).toBe(2_000)
+    expect(reconnectRetryDelayMs(2)).toBe(5_000)
+    expect(reconnectRetryDelayMs(3)).toBe(10_000)
+    expect(reconnectRetryDelayMs(4)).toBe(30_000)
+    expect(reconnectRetryDelayMs(11)).toBe(30_000)
+  })
+})
+
+describe("neverGiveUpRetryPolicy", () => {
+  const context = (previousRetryCount: number): RetryContext => ({
+    previousRetryCount,
+    elapsedMilliseconds: 1_000,
+    retryReason: new Error("socket dropped"),
+  })
+
+  it("delegates to the ramp", () => {
+    expect(
+      neverGiveUpRetryPolicy.nextRetryDelayInMilliseconds(context(2))
+    ).toBe(5_000)
+    expect(
+      neverGiveUpRetryPolicy.nextRetryDelayInMilliseconds(context(3))
+    ).toBe(10_000)
+  })
+
+  it("never surrenders — every retry count yields a finite delay", () => {
+    for (let previousRetryCount = 0; previousRetryCount <= 12; previousRetryCount++) {
+      const delay = neverGiveUpRetryPolicy.nextRetryDelayInMilliseconds(
+        context(previousRetryCount)
+      )
+      expect(delay).toBeGreaterThanOrEqual(0)
+      expect(Number.isFinite(delay)).toBe(true)
+    }
+  })
+})
+
+describe("hubStateFor", () => {
+  it("maps lifecycle events onto status-bar states", () => {
+    expect(hubStateFor("connecting")).toBe("connecting")
+    expect(hubStateFor("started")).toBe("live")
+    expect(hubStateFor("reconnected")).toBe("live")
+    expect(hubStateFor("reconnecting")).toBe("reconnecting")
+    expect(hubStateFor("closed")).toBe("offline")
+  })
+})
+
+describe("rejoinChatGroups", () => {
+  it("joins every session after a reconnect, swallowing per-group rejections", async () => {
+    const joined: string[] = []
+    const connection = {
+      invoke: (method: string, sessionId: string): Promise<unknown> => {
+        if (sessionId === "deleted") {
+          return Promise.reject(new Error("not a member"))
+        }
+        joined.push(`${method}:${sessionId}`)
+        return Promise.resolve(undefined)
+      },
+    }
+
+    await rejoinChatGroups(connection, ["s1", "deleted", "s2"])
+
+    expect(joined).toEqual(["JoinChatAsync:s1", "JoinChatAsync:s2"])
   })
 })
 

@@ -27,6 +27,14 @@ export class ComukiApiError extends Error {
   }
 }
 
+/**
+ * True for the DOMException fetch rejects with when an AbortController
+ * fires — how /stop recognises its own abort and skips the error line.
+ */
+export function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError"
+}
+
 // ---------------------------------------------------------------------------
 // Wire view types (camelCase, as the host serialises them)
 // ---------------------------------------------------------------------------
@@ -280,11 +288,12 @@ export class ComukiClient {
   private async request<T>(
     method: string,
     path: string,
-    body?: unknown
+    body?: unknown,
+    signal?: AbortSignal
   ): Promise<T> {
     const response = await this.fetchImpl(this.baseUrl + path, {
       method,
-      signal: this.signal,
+      signal: signal ?? this.signal,
       headers: {
         ...this.headers,
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
@@ -384,13 +393,15 @@ export class ComukiClient {
 
   async postMessage(
     sessionId: string,
-    message: string
+    message: string,
+    signal?: AbortSignal
   ): Promise<ChatTurnResultView> {
     const startedAtMs = Date.now()
     const result = await this.request<ChatTurnResultView>(
       "POST",
       `/api/v1/chat/sessions/${sessionId}/messages`,
-      { message }
+      { message },
+      signal
     )
     // Only successful round-trips count — a refused connection is a
     // "server unreachable" signal, not a fast send.
@@ -416,12 +427,15 @@ export class ComukiClient {
   approve(
     sessionId: string,
     approved: boolean,
-    reason?: string
+    reason?: string,
+    signal?: AbortSignal
   ): Promise<ChatTurnResultView> {
-    return this.request("POST", `/api/v1/chat/sessions/${sessionId}/approve`, {
-      approved,
-      reason,
-    })
+    return this.request(
+      "POST",
+      `/api/v1/chat/sessions/${sessionId}/approve`,
+      { approved, reason },
+      signal
+    )
   }
 
   // -- platform ------------------------------------------------------------

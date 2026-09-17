@@ -13,7 +13,10 @@ export interface TypingIndicatorProps {
   readonly liveText?: string
 }
 
-export function TypingIndicator({ label = "comuki thinking", liveText }: TypingIndicatorProps) {
+export function TypingIndicator({
+  label = "comuki thinking",
+  liveText,
+}: TypingIndicatorProps) {
   const [frame, setFrame] = useState(0)
 
   useEffect(() => {
@@ -24,9 +27,10 @@ export function TypingIndicator({ label = "comuki thinking", liveText }: TypingI
   }, [])
 
   const spinner = symbols.spinnerFrames[frame] ?? "⠋"
-  const tail = liveText !== undefined && liveText.trim().length > 0
-    ? `  ${truncateTail(liveText.replace(/\n/g, " ").trimEnd(), 60)}`
-    : ""
+  const tail =
+    liveText !== undefined && liveText.trim().length > 0
+      ? `  ${truncateTail(liveText.replace(/\n/g, " ").trimEnd(), 60)}`
+      : ""
 
   return (
     <Text>

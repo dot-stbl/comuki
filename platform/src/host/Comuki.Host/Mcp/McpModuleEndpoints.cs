@@ -88,8 +88,20 @@ file static class McpCallerResolution
             return new McpCaller(Subject: subject);
         }
 
+        // The worker surface is opt-in per composition (AddWorkerRuntime);
+        // hosts without it never see a worker Bearer header, so the
+        // authenticator resolves lazily — only once a header says the
+        // caller claims to be a worker. Compositions that do carry worker
+        // traffic register the authenticator and the header path behaves
+        // exactly as before.
+        var token = WorkerTokenHeaders.TryGetFromHttp(context.Request.Headers);
+        if (token is null)
+        {
+            return McpCaller.Anonymous;
+        }
+
         var authenticator = context.RequestServices.GetRequiredService<WorkerTokenAuthenticator>();
-        if (authenticator.Authenticate(WorkerTokenHeaders.TryGetFromHttp(context.Request.Headers)) is not { } workerId)
+        if (authenticator.Authenticate(token) is not { } workerId)
         {
             return McpCaller.Anonymous;
         }

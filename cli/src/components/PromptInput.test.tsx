@@ -25,11 +25,15 @@ interface PromptHandle {
   readonly submitted: string[]
 }
 
-async function renderPrompt(history: readonly string[]): Promise<PromptHandle> {
+async function renderPrompt(
+  history: readonly string[],
+  historyRecallEnabled: boolean = true
+): Promise<PromptHandle> {
   const submitted: string[] = []
   const { stdin, lastFrame, unmount } = render(
     <PromptInput
       history={history}
+      historyRecallEnabled={historyRecallEnabled}
       onSubmit={(value) => submitted.push(value)}
     />
   )
@@ -146,6 +150,36 @@ describe("PromptInput history recall", () => {
     stdin.write(UP)
     await settle()
     expect(lastFrame()).toContain("x")
+    unmount()
+  })
+
+  test("historyRecallEnabled=false: arrows neither recall nor disturb typing", async () => {
+    const { stdin, lastFrame, unmount } = await renderPrompt(
+      ["alpha", "beta"],
+      false
+    )
+    stdin.write("draf")
+    await settle()
+    stdin.write(UP)
+    await settle()
+    stdin.write(UP)
+    await settle()
+    // The draft is untouched — the viewport scrolled instead.
+    expect(lastFrame()).toContain("draf")
+    expect(lastFrame()).not.toContain("beta")
+    stdin.write(DOWN)
+    await settle()
+    expect(lastFrame()).not.toContain("alpha")
+    unmount()
+  })
+
+  test("historyRecallEnabled=false: enter still submits the typed line", async () => {
+    const { stdin, unmount, submitted } = await renderPrompt(["old"], false)
+    stdin.write("hi")
+    await settle()
+    stdin.write(ENTER)
+    await settle()
+    expect(submitted).toEqual(["hi"])
     unmount()
   })
 })

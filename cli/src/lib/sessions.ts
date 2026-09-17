@@ -44,6 +44,10 @@ export interface Session {
   readonly liveText: string
   /** Transcript fetched from the server (restored tabs start false). */
   readonly hydrated: boolean
+  /** Last user-sent text — what `/retry` resends; refilled by hydration. */
+  readonly lastUserMessage: string | null
+  /** User renamed the tab — auto-naming must not override it. */
+  readonly renamed: boolean
 }
 
 export const PENDING_PREFIX = "local-"
@@ -59,6 +63,40 @@ export function sessionNameFromMessage(message: string): string {
     return "session"
   }
   return collapsed.length <= 20 ? collapsed : collapsed.slice(0, 20)
+}
+
+/**
+ * Title for a session's first message — a manual rename (`/rename`)
+ * wins over the auto-derived name.
+ */
+export function titleForFirstMessage(
+  session: Session | undefined,
+  message: string
+): string {
+  return session?.renamed ? session.name : sessionNameFromMessage(message)
+}
+
+/** The text `/retry` resends — the last user message, if the tab has one. */
+export function retryMessage(session: Session | undefined): string | null {
+  return session?.lastUserMessage ?? null
+}
+
+/** Renames a tab and locks out auto-naming; blank title / unknown id → as-is. */
+export function renameSession(
+  sessions: readonly Session[],
+  id: string,
+  title: string
+): readonly Session[] {
+  const collapsed = title.replace(/\s+/g, " ").trim()
+  if (
+    collapsed.length === 0 ||
+    !sessions.some((session) => session.id === id)
+  ) {
+    return sessions
+  }
+  return sessions.map((session) =>
+    session.id === id ? { ...session, name: collapsed, renamed: true } : session
+  )
 }
 
 /** A fresh pending tab — no server session until the first message. */
@@ -77,6 +115,8 @@ export function newPendingSession(
     blocks: [],
     liveText: "",
     hydrated: false,
+    lastUserMessage: null,
+    renamed: false,
   }
 }
 
@@ -234,6 +274,8 @@ export interface PersistedSession {
   readonly name: string
   readonly status: SessionStatus
   readonly createdAt: number
+  /** Present only for tabs renamed via `/rename` (auto names stay implicit). */
+  readonly renamed?: boolean
 }
 
 export interface PersistedSessions {
@@ -250,6 +292,7 @@ export function toPersisted(state: SessionsState): PersistedSessions {
       name: session.name,
       status: session.status,
       createdAt: session.createdAt,
+      ...(session.renamed ? { renamed: true } : {}),
     }))
   const active = state.sessions[state.activeIndex]
   return {
@@ -277,6 +320,10 @@ export function fromPersisted(persisted: PersistedSessions): SessionsState {
       blocks: [],
       liveText: "",
       hydrated: false,
+      // lastUserMessage is transient — lazy hydration refills it from the
+      // server transcript after restore.
+      lastUserMessage: null,
+      renamed: session.renamed === true,
     }))
   const activeIndex = Math.max(
     0,

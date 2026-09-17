@@ -23,8 +23,8 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@types/bun": "^1.4.2",
     "@types/react": "^18.3.12",
-    "@types/yargs": "^17.0.33",
-    "bun-types": "^1.4.2"
+    "@types/yargs": "^17.0.33"
   }
 }

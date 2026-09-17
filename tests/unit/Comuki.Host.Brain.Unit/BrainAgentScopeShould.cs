@@ -19,11 +19,12 @@ namespace Comuki.Host.Brain.Unit;
 /// legacy global-only behaviour is preserved verbatim. The model-side
 /// tool surface (BrainToolbox) deliberately stays global-only — see the
 /// security note on its <c>SearchMemoryAsync</c> method — so the only
-/// scope-aware path through the brain lives in BrainAgent's private
-/// <c>BuildScopedDigestAsync</c>. The tests below pin that path on the
-/// <see cref="IMemoryDigest"/> mock so a future refactor cannot quietly
-/// re-route scope-aware fetches through the model-controlled
-/// <c>memory.search</c> tool.
+/// scope-aware path through the brain lives in
+/// <c>BrainAgentDigestBuilder</c> (a <c>file static class</c> in
+/// <c>BrainAgent.cs</c> co-located with <c>BrainToolExecution</c>).
+/// The tests below pin that path on the <see cref="IMemoryDigest"/>
+/// mock so a future refactor cannot quietly re-route scope-aware fetches
+/// through the model-controlled <c>memory.search</c> tool.
 /// </summary>
 public sealed class BrainAgentScopeShould
 {

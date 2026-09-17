@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test"
 import { join } from "node:path"
 import {
-  DEFAULT_URL,
+  ConfigError,
   configDir,
   configFilePath,
   resolveConfig,
@@ -9,8 +9,32 @@ import {
 } from "./config"
 
 describe("resolveConfig", () => {
-  it("falls back to the default url when nothing is set", () => {
-    expect(resolveConfig()).toEqual({ url: DEFAULT_URL })
+  it("throws with hint when url is neither arg nor env", () => {
+    expect(() => resolveConfig()).toThrow(ConfigError)
+    expect(() => resolveConfig()).toThrow(/--url/)
+    expect(() => resolveConfig()).toThrow(/COMUKI_URL/)
+  })
+
+  it("arg overrides env when both set (arg wins)", () => {
+    const config = resolveConfig(
+      { COMUKI_URL: "http://env", COMUKI_API_KEY: "ck_env" },
+      {},
+      { url: "http://arg", apiKey: "ck_arg", project: "nova" }
+    )
+    expect(config.url).toBe("http://arg")
+    expect(config.apiKey).toBe("ck_arg")
+    expect(config.defaultProject).toBe("nova")
+  })
+
+  it("env fallback works when no arg (env wins)", () => {
+    const config = resolveConfig({
+      COMUKI_URL: "http://env",
+      COMUKI_API_KEY: "ck_env",
+      COMUKI_PROJECT: "nova",
+    })
+    expect(config.url).toBe("http://env")
+    expect(config.apiKey).toBe("ck_env")
+    expect(config.defaultProject).toBe("nova")
   })
 
   it("strips trailing slashes from the url", () => {
@@ -19,7 +43,15 @@ describe("resolveConfig", () => {
     )
   })
 
-  it("prefers env over the config file", () => {
+  it("blank url from env is treated as missing and throws", () => {
+    expect(() => resolveConfig({ COMUKI_URL: "  " })).toThrow(ConfigError)
+  })
+
+  it("blank url from override is treated as missing and throws", () => {
+    expect(() => resolveConfig({}, {}, { url: "   " })).toThrow(ConfigError)
+  })
+
+  it("prefers env over the config file for the api key", () => {
     const config = resolveConfig(
       { COMUKI_URL: "http://env", COMUKI_API_KEY: "ck_env" },
       { url: "http://file", apiKey: "ck_file" }
@@ -28,22 +60,10 @@ describe("resolveConfig", () => {
     expect(config.apiKey).toBe("ck_env")
   })
 
-  it("prefers cli overrides over env", () => {
+  it("falls back to the config file for api key / tenant / cookie / project", () => {
     const config = resolveConfig(
-      { COMUKI_URL: "http://env", COMUKI_API_KEY: "ck_env" },
-      {},
-      { url: "http://override", apiKey: "ck_override", project: "nova" }
-    )
-    expect(config.url).toBe("http://override")
-    expect(config.apiKey).toBe("ck_override")
-    expect(config.defaultProject).toBe("nova")
-  })
-
-  it("reads the config file when env is silent", () => {
-    const config = resolveConfig(
-      {},
+      { COMUKI_URL: "http://env" },
       {
-        url: "http://file",
         apiKey: "ck_file",
         tenant: "acme",
         cookie: "session=abc",
@@ -51,7 +71,7 @@ describe("resolveConfig", () => {
       }
     )
     expect(config).toEqual({
-      url: "http://file",
+      url: "http://env",
       apiKey: "ck_file",
       tenant: "acme",
       cookie: "session=abc",
@@ -59,15 +79,32 @@ describe("resolveConfig", () => {
     })
   })
 
-  it("resolves the project from COMUKI_PROJECT env", () => {
-    expect(resolveConfig({ COMUKI_PROJECT: "nova" }).defaultProject).toBe(
-      "nova"
+  it("ignores file url — only arg and env are honoured", () => {
+    const config = resolveConfig(
+      { COMUKI_URL: "http://env" },
+      { url: "http://file" }
     )
+    expect(config.url).toBe("http://env")
   })
 
-  it("drops blank strings to undefined", () => {
-    const config = resolveConfig({ COMUKI_URL: "  ", COMUKI_API_KEY: "" })
-    expect(config.url).toBe(DEFAULT_URL)
+  it("resolves the project from COMUKI_PROJECT env", () => {
+    expect(
+      resolveConfig({ COMUKI_URL: "http://x", COMUKI_PROJECT: "nova" })
+        .defaultProject
+    ).toBe("nova")
+  })
+
+  it("resolves the tenant from COMUKI_TENANT env", () => {
+    expect(
+      resolveConfig({ COMUKI_URL: "http://x", COMUKI_TENANT: "acme" }).tenant
+    ).toBe("acme")
+  })
+
+  it("drops blank api key from any source to undefined", () => {
+    const config = resolveConfig({
+      COMUKI_URL: "http://x",
+      COMUKI_API_KEY: "",
+    })
     expect(config.apiKey).toBeUndefined()
   })
 })

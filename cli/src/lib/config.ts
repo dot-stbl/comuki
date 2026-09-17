@@ -1,10 +1,14 @@
 /**
  * Config resolution for the CLI: one precedence chain, one directory.
  *
- *   CLI flags (--url/--api-key/--project)
- *     > environment (COMUKI_URL / COMUKI_API_KEY / COMUKI_TENANT)
- *       > ~/.config/comuki/config.json (written by `comuki login`)
- *         > default (http://localhost:8080)
+ *   CLI flags (--url / --api-key / --project)
+ *     > environment (COMUKI_URL / COMUKI_API_KEY / COMUKI_PROJECT)
+ *       > ~/.config/comuki/config.json (cookie / tenant / api-key / project)
+ *
+ * The URL is REQUIRED — without an explicit arg or env, `resolveConfig`
+ * throws a `ConfigError` so the user never silently hits the wrong host.
+ * The config file only restores the session cookie, tenant, api-key and
+ * project after `comuki login`; the host always comes from arg or env.
  *
  * `resolveConfig` is pure (env + file contents in, config out) so tests
  * cover the whole matrix without touching the filesystem.
@@ -12,9 +16,6 @@
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { readJsonFile, writeJsonFile } from "./json"
-
-/** URL of the Comuki host (API + SignalR share the base). */
-export const DEFAULT_URL = "http://localhost:8080"
 
 export interface ConfigFileContents {
   url?: string
@@ -39,17 +40,30 @@ export interface ConfigOverrides {
   project?: string
 }
 
+/**
+ * Thrown when `resolveConfig` cannot satisfy a required field (currently
+ * only `url`). The message doubles as a usage hint — `comuki` surfaces
+ * it directly without a stack trace.
+ */
+export class ConfigError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "ConfigError"
+  }
+}
+
 /** Pure precedence chain — the seam every config test drives. */
 export function resolveConfig(
   env: Record<string, string | undefined> = {},
   file: ConfigFileContents = {},
   overrides: ConfigOverrides = {}
 ): ResolvedConfig {
-  const url =
-    overrides.url?.trim() ||
-    env.COMUKI_URL?.trim() ||
-    file.url?.trim() ||
-    DEFAULT_URL
+  const url = overrides.url?.trim() || env.COMUKI_URL?.trim()
+  if (!url) {
+    throw new ConfigError(
+      "missing Comuki host URL — pass --url <host> or set COMUKI_URL."
+    )
+  }
   const apiKey =
     overrides.apiKey?.trim() ||
     env.COMUKI_API_KEY?.trim() ||

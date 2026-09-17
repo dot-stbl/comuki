@@ -65,7 +65,10 @@ describe("ComukiClient", () => {
       "GET /api/v1/auth/me": { body: { subjectId: "s" } },
     })
     const client = new ComukiClient(
-      resolveConfig({}, { apiKey: "ck_test", tenant: "acme" }),
+      resolveConfig(
+        { COMUKI_URL: "http://t" },
+        { apiKey: "ck_test", tenant: "acme" }
+      ),
       { fetchImpl: impl }
     )
     await client.me()
@@ -78,7 +81,10 @@ describe("ComukiClient", () => {
       "GET /api/v1/auth/me": { body: { subjectId: "s" } },
     })
     const client = new ComukiClient(
-      resolveConfig({}, { cookie: ".Comuki.Session=xyz" }),
+      resolveConfig(
+        { COMUKI_URL: "http://t" },
+        { cookie: ".Comuki.Session=xyz" }
+      ),
       { fetchImpl: impl }
     )
     await client.me()
@@ -89,7 +95,10 @@ describe("ComukiClient", () => {
     const { impl, calls } = fakeFetch({
       "POST /api/v1/chat/sessions": { status: 201, body: session },
     })
-    const client = new ComukiClient(resolveConfig(), { fetchImpl: impl })
+    const client = new ComukiClient(
+      resolveConfig({ COMUKI_URL: "http://t" }),
+      { fetchImpl: impl }
+    )
     await client.createSession({ projectId: "p1", title: "t" })
     expect(calls[0]?.body).toEqual({ projectId: "p1", title: "t" })
   })
@@ -103,7 +112,10 @@ describe("ComukiClient", () => {
     const { impl, calls } = fakeFetch({
       "POST /api/v1/chat/sessions/abc/messages": { body: turn },
     })
-    const client = new ComukiClient(resolveConfig(), { fetchImpl: impl })
+    const client = new ComukiClient(
+      resolveConfig({ COMUKI_URL: "http://t" }),
+      { fetchImpl: impl }
+    )
     await client.postMessage("abc", "hello")
     expect(calls[0]?.body).toEqual({ message: "hello" })
   })
@@ -118,7 +130,10 @@ describe("ComukiClient", () => {
     const { impl } = fakeFetch({
       "GET /api/v1/chat/sessions/abc/messages": { body: page },
     })
-    const client = new ComukiClient(resolveConfig(), { fetchImpl: impl })
+    const client = new ComukiClient(
+      resolveConfig({ COMUKI_URL: "http://t" }),
+      { fetchImpl: impl }
+    )
     expect(await client.listMessages("abc")).toEqual(page)
   })
 
@@ -128,7 +143,10 @@ describe("ComukiClient", () => {
         body: { messages: [], awaitingApproval: false, pendingPlan: null },
       },
     })
-    const client = new ComukiClient(resolveConfig(), { fetchImpl: impl })
+    const client = new ComukiClient(
+      resolveConfig({ COMUKI_URL: "http://t" }),
+      { fetchImpl: impl }
+    )
     await client.approve("abc", false, "too broad")
     expect(calls[0]?.body).toEqual({ approved: false, reason: "too broad" })
   })
@@ -140,7 +158,10 @@ describe("ComukiClient", () => {
         body: { code: "permission.denied", detail: "run:read required" },
       },
     })
-    const client = new ComukiClient(resolveConfig(), { fetchImpl: impl })
+    const client = new ComukiClient(
+      resolveConfig({ COMUKI_URL: "http://t" }),
+      { fetchImpl: impl }
+    )
     try {
       await client.runs()
       throw new Error("expected runs() to throw")
@@ -163,7 +184,10 @@ describe("ComukiClient", () => {
         ],
       },
     })
-    const client = new ComukiClient(resolveConfig(), { fetchImpl: impl })
+    const client = new ComukiClient(
+      resolveConfig({ COMUKI_URL: "http://t" }),
+      { fetchImpl: impl }
+    )
     const success = await client.login("a@b.c", "pw")
     expect(success.cookie).toBe(".Comuki.Session=abc123")
     expect(success.displayName).toBe("A")
@@ -175,7 +199,10 @@ describe("ComukiClient", () => {
         body: { items: [], page: 2, pageSize: 5, total: 0 },
       },
     })
-    const client = new ComukiClient(resolveConfig(), { fetchImpl: impl })
+    const client = new ComukiClient(
+      resolveConfig({ COMUKI_URL: "http://t" }),
+      { fetchImpl: impl }
+    )
     await client.runs(2, 5, "status==queued")
     expect(calls[0]?.url).toContain("page=2")
     expect(calls[0]?.url).toContain("pageSize=5")

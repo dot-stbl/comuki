@@ -130,12 +130,44 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
 
         application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(hostConnectionString));
         await application.StartAsync(cancellationToken);
+        // The bucket auto-create is a background startup worker; the first
+        // packager poll of the suite must not race it. Wait for the bucket
+        // before any test runs.
+        await WaitForBucketAsync(cancellationToken);
 
         baseAddress = new Uri(
             application.Services
                 .GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>()
                 .Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!
                 .Addresses.Single());
+    }
+
+    /// <summary>
+    /// Polls MinIO until the host's background bucket-initializer has
+    /// created the bundle bucket; fails the fixture (not a random test)
+    /// when it never appears.
+    /// </summary>
+    private async Task WaitForBucketAsync(CancellationToken cancellationToken)
+    {
+        var (host, port) = SplitEndpoint(minio.GetConnectionString());
+        var client = new Minio.MinioClient()
+            .WithEndpoint(host, port)
+            .WithCredentials(MinioUser, MinioPassword)
+            .Build();
+        for (var attempt = 0; ; attempt++)
+        {
+            if (await client.BucketExistsAsync(new Minio.BucketExistsArgs().WithBucket(TestBucket), cancellationToken))
+            {
+                return;
+            }
+
+            if (attempt >= 60)
+            {
+                throw new TimeoutException($"bucket {TestBucket} did not appear within the startup window");
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+        }
     }
 
     /// <inheritdoc />

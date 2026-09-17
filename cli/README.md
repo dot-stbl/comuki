@@ -56,7 +56,10 @@ cd agents/comuki-cli && bun run build   # → ./comuki.exe (Windows) / comuki
 | `comuki login` | email+пароль → session cookie в `~/.config/comuki/config.json` |
 | `comuki whoami` | текущий субъект, роли, разрешения |
 
-Глобальные опции: `--url`, `--api-key`, `--project` (id, slug или имя).
+Глобальные опции: `--url`, `--api-key`, `--project` (id, slug или имя),
+`--theme <name>-<dark|light>` (по умолчанию `dichromat-dark` — все семь
+тем дашборда: dichromat, graphite, dockside, blueprint, bureau,
+aperture, dispatcher; выбор сохраняется в `config.json` → `theme`).
 Субкоманды `chat` больше нет — голый `comuki` и есть чат.
 
 ## Сессии — табы
@@ -94,8 +97,16 @@ N параллельных задач, каждая крутится на сер
 В REPL: `/exit` `/quit` `/q` — выход, `/clear` — очистить активный
 транскрипт, `/help` — справка (рендерится из реестра команд), `/retry`
 — повторно отправить последнее сообщение, `/rename <title>` —
-переименовать активную сессию, `/sessions` — обзор, `/new` — новая
-сессия, `approve` / `reject [reason]` — решение по ждущему плану.
+переименовать активную сессию, `/export [path]` — сохранить транскрипт
+в markdown (ходы — `## you` / `## comuki`, thinking/tool свёрнуты в
+цитаты; путь по умолчанию `./comuki-{имя}-{дата}.md`), `/bell on|off` —
+звонок терминала при завершении хода (OSC 9 toast приходит всегда),
+`/sessions` — обзор, `/new` — новая сессия, `approve` /
+`reject [reason]` — решение по ждущему плану.
+
+Заголовок окна терминала следует за активным табом:
+`comuki — {имя} ⏳` пока ход в полёте, `comuki — {имя} ✓` когда
+завершился.
 
 ## Конфигурация
 
@@ -113,7 +124,7 @@ N параллельных задач, каждая крутится на сер
 
 ```
 ~/.config/comuki/
-├── config.json    # url, api_key, cookie, default_project
+├── config.json    # url, api_key, cookie, default_project, theme, bell
 └── sessions.json  # открытые табы для восстановления при старте
 ```
 

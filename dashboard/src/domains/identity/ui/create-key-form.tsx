@@ -150,8 +150,8 @@ export function CreateKeyForm({
           type="submit"
           data-test="form-submit"
           denied={manage.denial}
-          disabled={busy || name.trim().length === 0}
-          aria-busy={busy || undefined}
+          loading={busy}
+          disabled={name.trim().length === 0}
         >
           Create key
         </Button>

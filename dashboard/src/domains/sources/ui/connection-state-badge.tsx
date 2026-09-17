@@ -3,6 +3,7 @@ import { AlertTriangle, Check, PowerOff } from "lucide-react"
 
 import type { SourceState } from "@/domains/sources/model/types"
 import { cn } from "@/shared/lib/utils"
+import { badgeShell } from "@/shared/ui"
 
 import styles from "./connection-state-badge.module.css"
 
@@ -38,11 +39,11 @@ export function ConnectionStateBadge({
 
   return (
     <span
-      className={cn(styles.badge, styles[state], className)}
+      className={cn(badgeShell(), styles[state], className)}
       data-test="connection-state"
       data-state={state}
     >
-      <Mark className={styles.icon} />
+      <Mark />
       {state}
     </span>
   )

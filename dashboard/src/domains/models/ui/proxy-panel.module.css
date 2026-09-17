@@ -141,15 +141,3 @@
 .burnStale {
   color: var(--text-faint);
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  .spin {
-    animation: proxy-spin 900ms linear infinite;
-  }
-}
-
-@keyframes proxy-spin {
-  to {
-    transform: rotate(1turn);
-  }
-}

@@ -1,6 +1,6 @@
 /* The two named readings under the budget figure. The tile itself — the rule
    that lights on heat, the corner, the label, the figure and the prose line
-   they sit in — is `cost-stat.module.css`; these are the two lines inside that
+   they sit in — is the kit's `StatTile`; these are the two lines inside that
    prose line, and nothing more.
 
    Blocks rather than paragraphs: they live inside the tile's own `<p>`, which

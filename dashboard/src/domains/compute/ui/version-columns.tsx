@@ -1,8 +1,8 @@
-import { Loader2, Target, Trash2 } from "lucide-react"
+import { Target, Trash2 } from "lucide-react"
 
 import { staleReason, versionLabel } from "@/domains/compute/model/capacity"
 import type { WorkerVersion } from "@/domains/compute/model/types"
-import { formatDuration } from "@/domains/runs/model/format"
+import { formatDuration } from "@/shared/lib/duration"
 import { can, needsLabel, type Session } from "@/shared/session"
 import { Button, Tooltip, numericSort, type DataColumn } from "@/shared/ui"
 
@@ -195,20 +195,15 @@ export function createVersionColumns({
                 size="icon-sm"
                 variant="destructive"
                 data-test="version-retire"
-                disabled={busy}
+                loading={busy}
                 denied={denial}
-                aria-busy={busy || undefined}
                 aria-label={`Retire ${version.idle ?? 0} idle workers on ${versionLabel(version)}`}
                 onClick={(event) => {
                   event.stopPropagation()
                   onRetire(version)
                 }}
               >
-                {busy ? (
-                  <Loader2 className={styles.spin} aria-hidden="true" />
-                ) : (
-                  <Trash2 aria-hidden="true" />
-                )}
+                <Trash2 aria-hidden="true" />
               </Button>
             </Tooltip>
           </span>

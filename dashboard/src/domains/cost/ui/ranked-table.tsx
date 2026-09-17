@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 
 import { cn } from "@/shared/lib/utils"
+import { Meter } from "@/shared/ui"
 
 import styles from "./ranked-table.module.css"
 
@@ -130,14 +131,11 @@ export function RankedTable({
                   table then has to generate an anonymous one around it. */}
               <span className={styles.labelBox}>
                 <span className={styles.name}>{row.label}</span>
-                <span className={styles.channel} aria-hidden="true">
-                  <span
-                    className={styles.fill}
-                    style={{
-                      inlineSize: `${Math.round(Math.min(1, Math.max(0, row.share)) * 100)}%`,
-                    }}
-                  />
-                </span>
+                {/* Neutral, and left neutral explicitly: the default tone
+                    ignores `--st` whatever an ancestor may be setting it to,
+                    which is how the refusal below stays a decision rather than
+                    an accident of what happens to be above this table. */}
+                <Meter value={row.share} />
               </span>
             </td>
             {row.figures.map((figure, index) => {

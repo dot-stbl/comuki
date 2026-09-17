@@ -1,6 +1,6 @@
 import { TriangleAlert } from "lucide-react"
 
-import { formatDuration } from "@/domains/runs/model/format"
+import { formatDuration } from "@/shared/lib/duration"
 import { cn } from "@/shared/lib/utils"
 
 import {

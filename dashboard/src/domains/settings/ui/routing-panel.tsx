@@ -218,8 +218,7 @@ export function RoutingPanel({
               size="sm"
               data-test="routing-save"
               denied={save.denial}
-              disabled={busy}
-              aria-busy={busy || undefined}
+              loading={busy}
             >
               Save routing
             </Button>

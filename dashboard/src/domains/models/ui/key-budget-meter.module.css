@@ -3,11 +3,25 @@
    here may add height — the table's rows are uniform by contract, and the two
    bands together come in under the compact row the rest of the product uses.
 
-   This is the "row track" geometry, and it is not the cost report's tile
-   channel (`cost/ui/proxy-budget-meter.module.css`) drawn smaller. The two
-   differ in every dimension the container dictates — height, corner, whether
-   the bar carries its own figures, whether it is in the a11y tree at all — so
-   the only thing a shared component could hold is the word "meter". */
+   This sheet used to end with a paragraph refusing to share the channel with
+   the cost report's tile bar: the two "differ in every dimension the container
+   dictates — height, corner, whether the bar carries its own figures, whether
+   it is in the a11y tree at all — so the only thing a shared component could
+   hold is the word meter". Three of those four differences are real and the
+   conclusion still followed from them, for the thing being refused at the time:
+   a shared *component*, figures and a11y included, which is exactly the merge
+   that once left two files both exporting `BudgetMeter` with incompatible props
+   and was rightly backed out.
+
+   The kit's `Meter` is not that component. It holds the channel and the fill
+   and nothing else — no figures, no label, no reading — so two of the three
+   real differences are not its business at all, and the third (height and
+   corner) is one parameter with two values rather than a difference in kind.
+   The figures and the `aria-hidden` decision stay here, where they were always
+   right. What leaves is seven declarations this sheet shared with four others.
+
+   `--st` still lives here, because the hue is not the kit's to guess: the same
+   `[data-heat]` that colours the figures below sets it, and the bar inherits. */
 
 .meter {
   display: flex;
@@ -45,31 +59,6 @@
   color: var(--text-faint);
 }
 
-/* The drawn empty channel the fill is measured against — the same material the
-   table and the flow's tracks are made of. */
-/* Two pixels tall, spelled from the one-pixel unit rather than from `--r-xs`:
-   the bar's *height* was reading the radius token, so moving the corner would
-   have silently changed the reading. Nothing here may add height either — the
-   table's rows are uniform by contract. A 2px bar has no room for a 3px corner,
-   so this is the one place the scale bottoms out at the hairline. */
-.channel {
-  position: relative;
-  display: block;
-  block-size: calc(var(--hairline) * 2);
-  border-radius: var(--hairline);
-  background: var(--lane-alt);
-  overflow: hidden;
-}
-
-.fill {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  display: block;
-  border-radius: var(--hairline);
-  background: var(--st);
-}
-
 /* Three readings, not a gradient. Below `near` there is nothing to decide. */
 .meter[data-heat="ok"] {
   --st: var(--text-faint);
@@ -102,9 +91,6 @@
 
 /* Not enforced: the fraction is still true, so the length stays — but the fill
    is hatched, because a solid bar claims something will happen at the end of
-   it, and with the proxy off nothing will. The weave is the product's queued
-   hatch, read from the token so the encoding lives in one place. */
-.meter:not([data-enforced]) .fill {
-  background-color: color-mix(in oklab, var(--st) 45%, transparent);
-  background-image: var(--weave-queued);
-}
+   it, and with the proxy off nothing will. That is `hatched="queued"` on the
+   meter now; `data-enforced` stays on this element because it is what the
+   screen's tests read the state off, and what the `title` is written from. */

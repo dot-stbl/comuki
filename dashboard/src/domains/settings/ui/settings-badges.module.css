@@ -1,31 +1,22 @@
-/* Built on the same measurements as the kit's `StatusBadge`, at its small step:
-   these sit in compact table rows and must not be a second size language. */
+/* Four vocabularies' colour, and the one chip that is not a badge.
+ *
+ * The box the three marks are drawn in — `inline-flex`, the hairline at
+ * `--r-sm`, the data voice at the small step, the fit contract and the icon
+ * size — is `shared/ui/badge-shell`, which they compose through `badgeShell()`.
+ * Seven domain families and the kit each carried a byte-identical copy of that
+ * rule before it had a home.
+ *
+ * The edge is declared as `--badge-edge` rather than as `border-color` because
+ * the shell reads that property and never writes it — see
+ * `badge-shell.module.css` for why two single-class rules in two CSS modules
+ * cannot be allowed to argue about one declaration. */
 
 .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  /* A badge is a reading, so it never gives up width: the value or the prose
-     beside it truncates instead. Declared rather than inherited from
-     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
-     family to. */
-  flex: 0 0 auto;
-  border-radius: var(--r-sm);
-  border: var(--hairline) solid var(--border);
-  padding: 0 var(--s3);
-  font-family: var(--font-data);
-  font-size: var(--t-micro);
+  --badge-edge: var(--border);
+
   font-weight: var(--fw-regular);
-  line-height: var(--lh-tight);
   color: var(--st);
   background: color-mix(in oklab, var(--st) 10%, transparent);
-  white-space: nowrap;
-}
-
-.icon {
-  inline-size: var(--icon-xs);
-  block-size: var(--icon-xs);
-  flex: 0 0 auto;
 }
 
 /* Rule kind --------------------------------------------------------------- */
@@ -37,8 +28,8 @@
    state, which is exactly what it is not. */
 .hard {
   --st: var(--text);
+  --badge-edge: var(--rule-strong);
 
-  border-color: var(--rule-strong);
   background: var(--muted);
 }
 
@@ -83,7 +74,14 @@
 }
 
 /* Chrome, not data: transparent ground, a hairline, no hue and no fill. The
-   same rectangle the toolbar's filter chips are, at the same step. */
+   same rectangle the toolbar's filter chips are, at the same step — and the one
+   mark on this screen that does *not* compose the badge shell, because its
+   padding is the chip's `--s2` rather than the badge step's `--s3`. Composing
+   the shell and then overriding one of its declarations from another CSS module
+   is the cascade race `badge-shell.module.css` exists to refuse, so this keeps
+   its own box outright. It owes the fit contract all the same — it is a short
+   unbreakable string in a flex row — and `domains/badge-fit.test.ts` holds it
+   to it directly. */
 .tag {
   display: inline-flex;
   align-items: center;

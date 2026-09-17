@@ -290,6 +290,20 @@ describe("the local form", () => {
     const failure = document.querySelector("[data-test='login-failure']")
     expect(failure).not.toBeNull()
     expect(failure?.textContent).toContain("Those credentials were refused.")
+
+    // And both boxes point at it. The band said its sentence out loud from the
+    // day it was written, but nothing on the control referred to it: a screen
+    // reader landing back in the password field after a refusal was told
+    // nothing, and had to go looking for an answer the product had already
+    // given. The field merges the caller's `aria-describedby` with its own, so
+    // this survives the field growing a hint or an error of its own.
+    const bandId = failure?.getAttribute("id")
+    expect(bandId).toBeTruthy()
+    for (const label of ["Email", "Password"]) {
+      const box = screen.getByLabelText(label)
+      expect(box.getAttribute("aria-describedby")?.split(" ")).toContain(bandId)
+      expect(box.getAttribute("aria-invalid")).toBe("true")
+    }
   })
 })
 

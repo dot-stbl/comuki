@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 
 import {
@@ -14,6 +13,7 @@ import { getApiV1KnowledgeDocuments } from "@/shared/api/_generated/clients/getA
 import { getApiV1KnowledgeSearch } from "@/shared/api/_generated/clients/getApiV1KnowledgeSearch"
 import { KNOWLEDGE_SEED } from "@/shared/api/mock/knowledge.seed"
 import { env } from "@/shared/config/env"
+import { useDebounced } from "@/shared/hooks/use-debounced"
 
 /**
  * The knowledge page, against the wire.
@@ -82,24 +82,8 @@ const SEARCH_MIN_SIMILARITY = 0.2
  */
 const SEARCH_SETTLE_MS = 250
 
-/** The value, once it has stopped changing for `ms`. Local to this file. */
-function useSettled(value: string, ms: number): string {
-  const [settled, setSettled] = useState(value)
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSettled(value)
-    }, ms)
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [value, ms])
-
-  return settled
-}
-
 export function useKnowledgeSearchQuery(q: string) {
-  const trimmed = useSettled(q.trim(), SEARCH_SETTLE_MS)
+  const trimmed = useDebounced(q.trim(), SEARCH_SETTLE_MS)
 
   return useQuery<KnowledgeHit[]>({
     queryKey: knowledgeSearchQueryKey(trimmed),

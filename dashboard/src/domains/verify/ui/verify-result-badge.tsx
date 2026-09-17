@@ -2,6 +2,7 @@ import { Check, MinusCircle, X } from "lucide-react"
 
 import type { VerifyResult } from "@/domains/verify/model/types"
 import { cn } from "@/shared/lib/utils"
+import { badgeShell } from "@/shared/ui"
 
 import styles from "./verify-result-badge.module.css"
 
@@ -27,11 +28,11 @@ export function VerifyResultBadge({
   if (!result) {
     return (
       <span
-        className={cn(styles.badge, styles.never, className)}
+        className={cn(badgeShell(), styles.never, className)}
         data-test="verify-result"
         data-outcome="never"
       >
-        <MinusCircle className={styles.icon} />
+        <MinusCircle />
         never ran
       </span>
     )
@@ -43,14 +44,14 @@ export function VerifyResultBadge({
   return (
     <span
       className={cn(
-        styles.badge,
+        badgeShell(),
         failed ? styles.failed : styles.passed,
         className
       )}
       data-test="verify-result"
       data-outcome={failed ? "failed" : "passed"}
     >
-      <Mark className={styles.icon} />
+      <Mark />
       {failed ? "failed" : "passed"}
     </span>
   )

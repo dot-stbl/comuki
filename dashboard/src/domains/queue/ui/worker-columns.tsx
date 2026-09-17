@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { Loader2, LogOut, PowerOff } from "lucide-react"
+import { LogOut, PowerOff } from "lucide-react"
 
 import { PROFILE_CATALOG } from "@/shared/api/mock/runs.seed"
 import {
@@ -17,7 +17,7 @@ import {
   type DataColumn,
 } from "@/shared/ui"
 
-import { formatDuration } from "@/domains/runs/model/format"
+import { formatDuration } from "@/shared/lib/duration"
 import { WORKER_STATES } from "@/domains/queue/model/queue"
 import type {
   QueueItem,
@@ -364,24 +364,21 @@ export function createWorkerColumns({
                 variant="outline"
                 size="icon-sm"
                 data-test="worker-drain"
-                // `disabled` is for busy and invalid — a worker already leaving
-                // has nothing to drain. Denial is a different thing and takes
-                // `denied`, which keeps the control reachable so its sentence
-                // is.
+                // Three separate readings. `loading` is this drain in
+                // flight; `disabled` is invalid — a worker already leaving has
+                // nothing to drain, and some other row is mid-act. Denial is a
+                // third thing and takes `denied`, which keeps the control
+                // reachable so its sentence is.
+                loading={draining}
                 disabled={busy || worker.state === "draining"}
                 denied={denial}
-                aria-busy={draining || undefined}
                 aria-label={`Drain ${worker.id}`}
                 onClick={(event) => {
                   event.stopPropagation()
                   onDrain(worker)
                 }}
               >
-                {draining ? (
-                  <Loader2 className={styles.spin} aria-hidden="true" />
-                ) : (
-                  <LogOut aria-hidden="true" />
-                )}
+                <LogOut aria-hidden="true" />
               </Button>
             </Tooltip>
             <Tooltip content={denial ?? "Force stop"}>
@@ -389,9 +386,9 @@ export function createWorkerColumns({
                 variant="destructive"
                 size="icon-sm"
                 data-test="worker-force-stop"
+                loading={stopping}
                 disabled={busy}
                 denied={denial}
-                aria-busy={stopping || undefined}
                 aria-label={`Force stop ${worker.id}`}
                 onClick={(event) => {
                   event.stopPropagation()

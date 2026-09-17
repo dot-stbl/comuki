@@ -66,15 +66,9 @@
   white-space: nowrap;
 }
 
-.roomFigure {
-  font-family: var(--font-data);
-  font-size: var(--t-h2);
-  font-weight: var(--fw-medium);
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-}
-
-.roomUnit,
+/* Only the sentence the card says when the registry has not answered. The
+   figure and its unit are the kit's `StatFigure` now; what is left here is the
+   one reading that is prose rather than a measurement. */
 .roomNone {
   font-family: var(--font-ui);
   font-size: var(--t-micro);
@@ -115,15 +109,13 @@
   display: contents;
 }
 
+/* The voice is the kit's `StatLabel` — the same five declarations every screen
+   that names a value was re-spelling. What stays here is the one thing this
+   card adds: the name and its "binding" tag sit on one baseline. */
 .trackName {
   display: flex;
   align-items: baseline;
   gap: var(--s2);
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
 }
 
 /* The second channel on the binding mark: a word, not just a colour. It rides
@@ -145,40 +137,18 @@
   color: var(--st-waiting);
 }
 
-/* The drawn empty channel every fill is measured against — the same material
-   the table and the flow's tracks are made of. */
-.channel {
-  position: relative;
-  display: block;
-  block-size: var(--h-meter);
-  min-inline-size: 0;
-  border-radius: var(--r-xs);
-  background: var(--lane-alt);
-  overflow: hidden;
-}
+/* The channel and its fill are the kit's `Meter` now — the same geometry, the
+   same lane material, and the same hatch for a track with no reading behind it.
+   What is left here is the one thing that was never the meter's: which of the
+   two ceilings is actually stopping something.
 
-.fill {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  display: block;
-  border-radius: var(--r-xs);
-  background: var(--text-faint);
-}
-
-/* Only the ceiling that is actually stopping something is drawn in a hue. A
-   track at 72% that is not binding is not a reading, it is a distraction. */
-.track[data-binding] .fill {
-  background: var(--st-waiting);
-}
-
-/* A channel with no reading behind it is hatched rather than empty: an empty
-   channel means "nothing used", and that is the one thing this is not saying.
-   The weave is the product's own failed hatch, read from the token so the
-   encoding stays defined in one place. */
-.track[data-empty] .channel {
-  background-color: var(--st-failed-tint);
-  background-image: var(--weave-failed);
+   Only the binding ceiling is drawn in a hue. A track at 72% that is not
+   binding is not a reading, it is a distraction. The hue arrives as a custom
+   property the meter reads with a fallback rather than as an override of the
+   kit's own rule: two single-class selectors from two stylesheets are decided
+   by bundle order, and bundle order is not a contract. */
+.track[data-binding] {
+  --st: var(--st-waiting);
 }
 
 .figure {

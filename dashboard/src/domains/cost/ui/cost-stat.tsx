@@ -1,9 +1,7 @@
 import type { ReactNode } from "react"
 
 import type { BudgetHeat } from "@/domains/cost/model/cost"
-import { Surface, type SurfaceTone } from "@/shared/ui"
-
-import styles from "./cost-stat.module.css"
+import { StatTile, type SurfaceTone } from "@/shared/ui"
 
 export interface CostStatProps {
   /**
@@ -46,7 +44,14 @@ export interface CostStatProps {
   className?: string
 }
 
-/** The edge the reading lights, when the reading has a consequence. */
+/**
+ * The cost report's word for a tone.
+ *
+ * The map is the whole of what is left of this component that the kit does not
+ * own: `near` and `over` are readings about a budget, and a tile has no idea
+ * what a budget is. This is the one place the domain's vocabulary meets the
+ * kit's, which is exactly where a translation belongs.
+ */
 const TONE: Record<BudgetHeat, SurfaceTone> = {
   ok: "neutral",
   near: "attention",
@@ -56,24 +61,17 @@ const TONE: Record<BudgetHeat, SurfaceTone> = {
 /**
  * One reading off the day's report: what it is, what it is, and what that means.
  *
- * The screen's tile, and all three of them: the period total, the forecast and
- * the budget are one row of equal readings, and each of them used to be its own
- * file spelling out the same eight declarations — hairline on the start edge,
- * lane material, surface corner — under three different class names. Two of
- * those stylesheets are gone and the third keeps only what is genuinely its
- * own.
+ * Now the kit's `StatTile` with this screen's vocabulary in front of it, and
+ * nothing else — no stylesheet of its own at all. It used to carry the tile's
+ * contents itself, and its own comment recorded that two sibling files had
+ * already been folded into it for spelling the same declarations; what that
+ * comment did not know is that the recipe had been arrived at independently
+ * outside this domain as well, on a capacity card and on a knowledge screen.
+ * Three domains is not a domain component.
  *
- * The bounding is the kit's `Surface`, deliberately not a card and deliberately
- * not named one: what a card is made of is the fill that lifts it off the floor
- * and the shadow that floats it, and neither is here. `Surface` forwards
- * `data-test` and nothing else, on purpose, so the two finer hooks sit on the
- * elements they were always about — which reading this is, on the line that
- * names it; how hot the reading is, on the figure it is a reading of.
- *
- * The figure is the reading and anything drawn under it is decoration on top of
- * a reading already stated in words — which is why the meter slot sits between
- * the figure and the line that says what the figure is out of. Nothing on this
- * tile is announced only as a length.
+ * What stays here is the name, the three-word heat vocabulary and the map from
+ * it — a `BudgetHeat` is a fact about a cap, and a primitive that knew what a
+ * cap was would be a cost report with a stylesheet.
  */
 export function CostStat({
   name,
@@ -87,23 +85,18 @@ export function CostStat({
   className,
 }: CostStatProps) {
   return (
-    <Surface
-      as="article"
-      bound="start"
+    <StatTile
+      name={name}
+      label={label}
+      value={value}
+      prefix={prefix}
+      suffix={suffix}
+      sub={sub}
       tone={heat ? TONE[heat] : "neutral"}
       className={className}
       data-test="cost-stat"
     >
-      <span className={styles.label} data-stat={name}>
-        {label}
-      </span>
-      <span className={styles.figure} data-heat={heat}>
-        {prefix ? <span className={styles.unit}>{prefix}</span> : null}
-        <span className={styles.value}>{value}</span>
-        {suffix ? <span className={styles.unit}>{suffix}</span> : null}
-      </span>
       {children}
-      <p className={styles.sub}>{sub}</p>
-    </Surface>
+    </StatTile>
   )
 }

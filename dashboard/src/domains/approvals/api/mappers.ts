@@ -1,6 +1,7 @@
 import type { Approval } from "@/domains/approvals/model/types"
 import type { SeedApproval } from "@/shared/api/mock"
 import { PROJECT_BY_APP } from "@/shared/api/mock/runs.seed"
+import { formatRelativeInstant } from "@/shared/lib/relative-time"
 
 /* The mock queue's shapes, and — since the runs read API could answer it —
    the wire's. The host has no approvals endpoint: a run needing a human *is*
@@ -47,20 +48,6 @@ export interface EscalatedRunsPageWire {
   readonly total: number
 }
 
-/** How long the run has waited, in the seed's own words ("12 min", "3 h"). */
-function waitingAge(updatedAt: string, nowMs: number): string {
-  const at = Date.parse(updatedAt)
-  if (Number.isNaN(at)) {
-    return "—"
-  }
-  const minutes = Math.max(0, Math.round((nowMs - at) / 60_000))
-  if (minutes < 60) {
-    return `${minutes} min`
-  }
-  const hours = Math.floor(minutes / 60)
-  return `${hours} h`
-}
-
 /**
  * An escalated run onto the queue's decision card.
  *
@@ -79,7 +66,10 @@ export function escalatedRunToApproval(
     app: run.id,
     projectId: run.projectId,
     runId: run.id,
-    age: waitingAge(run.updatedAt, nowMs),
+    /* How long it has waited, in the seed's own words ("12 min", "3 h") —
+       which are now the whole console's words. The card spells an unreadable
+       instant as an em dash rather than as an age of zero. */
+    age: formatRelativeInstant(run.updatedAt, nowMs) ?? "—",
     risk: null,
     summary:
       "The orchestrator escalated this run back to a human gate. Approve releases it to the swarm; reject cancels it.",

@@ -1,33 +1,22 @@
-/* Built on the same measurements as the kit's `StatusBadge` at its small step,
-   and on the same construction as the queue's and compute's own marks: these
-   sit in one-line table cells and in a dense entry row, and a second size
-   language here would be visible in the first screenshot. */
+/* Three vocabularies' colour, and one mark that is not a badge at all.
+ *
+ * The box the badges are drawn in — `inline-flex`, the hairline at `--r-sm`, the
+ * data voice at the small step, the fit contract and the icon size — is
+ * `shared/ui/badge-shell`, which they compose through `badgeShell()`. Seven
+ * domain families and the kit each carried a byte-identical copy of that rule
+ * before it had a home.
+ *
+ * The edge is declared as `--badge-edge` rather than as `border-color` because
+ * the shell reads that property and never writes it — see
+ * `badge-shell.module.css` for why two single-class rules in two CSS modules
+ * cannot be allowed to argue about one declaration. */
 
 .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  /* A badge is a reading, so it never gives up width: the value or the prose
-     beside it truncates instead. Declared rather than inherited from
-     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
-     family to. */
-  flex: 0 0 auto;
-  border-radius: var(--r-sm);
-  border: var(--hairline) solid var(--border);
-  padding: 0 var(--s3);
-  font-family: var(--font-data);
-  font-size: var(--t-micro);
+  --badge-edge: var(--border);
+
   font-weight: var(--fw-regular);
-  line-height: var(--lh-tight);
   color: var(--st);
   background: color-mix(in oklab, var(--st) 10%, transparent);
-  white-space: nowrap;
-}
-
-.icon {
-  inline-size: var(--icon-xs);
-  block-size: var(--icon-xs);
-  flex: 0 0 auto;
 }
 
 /* Entry kind ------------------------------------------------------------- */
@@ -58,7 +47,13 @@
 /* Pinned ----------------------------------------------------------------- */
 
 /* Not a badge: no border, no wash. Being pinned is a property of the entry
-   rather than a value beside it, so it is set as one accented word. */
+   rather than a value beside it, so it is set as one accented word — which is
+   also why this one keeps its own box instead of composing the badge shell.
+   There is no shell to compose for a mark with no shell in it, and the two
+   declarations it shares with one are the fit contract, which it owes to the
+   same rule every badge does: it is a short unbreakable string in a flex row,
+   so `domains/badge-fit.test.ts` holds it to `nowrap` and `flex: 0 0 auto`
+   directly. */
 .pinned {
   display: inline-flex;
   align-items: center;
@@ -75,6 +70,14 @@
   white-space: nowrap;
 }
 
+/* The pin rides the same icon step the shell gives a small badge — said here
+   because this mark is outside the shell and nothing else would say it. */
+.pinned svg {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+  flex: 0 0 auto;
+}
+
 /* Eval delta ------------------------------------------------------------- */
 
 .improved {
@@ -86,8 +89,8 @@
    read. */
 .regressed {
   --st: var(--st-failed);
+  --badge-edge: color-mix(in oklab, var(--st-failed) 40%, transparent);
 
-  border-color: color-mix(in oklab, var(--st-failed) 40%, transparent);
   background: var(--st-failed-tint);
 }
 

@@ -3,6 +3,7 @@ import type { ProviderKey } from "@/domains/sources/model/types"
 import type { Task, TaskStatus } from "@/domains/tasks/model/types"
 import type { IntakeTicketView } from "@/shared/api/_generated/types/IntakeTicketView"
 import type { SeedTask } from "@/shared/api/mock/tasks.seed"
+import { formatRelativeInstant } from "@/shared/lib/relative-time"
 
 // ---------------------------------------------------------------------------
 // Mock-first mappers (unchanged from pre-wire behaviour).
@@ -62,8 +63,9 @@ export function toTask(seed: SeedTask): Task {
 //   than blanks. When the wire grows a project→area dimension, this default
 //   is the seam to widen.
 // - `age` — the dashboard renders a pre-formatted "8 min" / "2 h" string. The
-//   wire gives us an ISO instant; the same age-formatting helper that the
-//   sessions mapper uses (relative to now) does the conversion.
+//   wire gives us an ISO instant; `shared/lib/relative-time` converts it. That
+//   helper is now literally the same one the chat, approvals and models
+//   screens read from, rather than a copy of it.
 // ---------------------------------------------------------------------------
 
 /**
@@ -89,33 +91,6 @@ function wireStatusToTaskStatus(wire: string): TaskStatus {
 }
 
 /**
- * `createdAt` (ISO) → "8 min" / "2 h" / "just now" — the dashboard's
- * pre-formatted vocabulary. Mirrors the helper in
- * `domains/chat/api/mappers.ts`; a shared helper is the natural follow-up
- * but out of scope here.
- */
-function formatAge(iso: string, now: number = Date.now()): string {
-  const created = new Date(iso).getTime()
-  if (Number.isNaN(created)) {
-    return ""
-  }
-  const delta = now - created
-  if (delta < 60_000) {
-    return "just now"
-  }
-  const minutes = Math.floor(delta / 60_000)
-  if (minutes < 60) {
-    return `${minutes} min`
-  }
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) {
-    return `${hours} h`
-  }
-  const days = Math.floor(hours / 24)
-  return `${days} d`
-}
-
-/**
  * Wire `IntakeTicketView` → dashboard `Task`.
  *
  * The dashboard has no `internalId` notion — every Task's id comes from
@@ -133,7 +108,11 @@ export function intakeTicketViewToTask(view: IntakeTicketView): Task {
     app: view.source,
     priority: "normal",
     status: wireStatusToTaskStatus(view.status),
-    age: formatAge(view.createdAt),
+    // The backlog's `age` is a pre-formatted reading, and this file used to
+    // format it itself — a copy of the chat mapper's helper, as its own
+    // docstring admitted. `shared/lib/relative-time` is that helper, and the
+    // words it speaks are the ones this file already spoke.
+    age: formatRelativeInstant(view.createdAt) ?? "",
   }
 }
 

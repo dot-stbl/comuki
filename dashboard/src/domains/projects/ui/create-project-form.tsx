@@ -146,8 +146,8 @@ export function CreateProjectForm({
           type="submit"
           data-test="form-submit"
           denied={create.denial}
-          disabled={busy || name.trim().length === 0}
-          aria-busy={busy || undefined}
+          loading={busy}
+          disabled={name.trim().length === 0}
         >
           Create project
         </Button>

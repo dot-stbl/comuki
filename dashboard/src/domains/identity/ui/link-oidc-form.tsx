@@ -81,8 +81,7 @@ export function LinkOidcForm({
           type="submit"
           data-test="form-submit"
           denied={manage.denial}
-          disabled={busy}
-          aria-busy={busy || undefined}
+          loading={busy}
         >
           Link subject
         </Button>

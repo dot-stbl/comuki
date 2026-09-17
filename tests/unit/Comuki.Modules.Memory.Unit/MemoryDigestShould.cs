@@ -101,6 +101,7 @@ public sealed class MemoryDigestShould
     /// visible facts of the query shape; write/forget/sweep are unused by
     /// the digest tests.
     /// </summary>
+    // TODO(canon #12): extract this fake to a shared *.Testing project — separate task with its own csproj/slnx changes.
     private sealed class FakeMemoryStore(IReadOnlyList<MemoryFactView> facts) : IMemoryStore
     {
         public Task<MemoryFactView> WriteAsync(MemoryFactWrite write, CancellationToken cancellationToken = default)

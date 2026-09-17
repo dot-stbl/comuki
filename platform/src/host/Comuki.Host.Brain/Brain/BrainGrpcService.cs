@@ -87,7 +87,7 @@ file static class BrainFaultMapping
             {
                 throw new RpcException(new Status(StatusCode.Internal, exception.Message));
             }
-            catch (InvalidOperationException exception) when (exception.Message.Contains("brain model is not configured"))
+            catch (BrainModelNotConfiguredException exception)
             {
                 throw new RpcException(new Status(StatusCode.Internal, exception.Message));
             }

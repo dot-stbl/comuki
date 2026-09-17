@@ -86,6 +86,7 @@ public sealed class MemoryFact
         string createdBy,
         DateTimeOffset now)
     {
+        // canon judgement #8: blank inputs here are a programmer error, not an expected miss — ArgumentException (no stable Code) is the correct type; error-mapping's DomainException is for business rules.
         return string.IsNullOrWhiteSpace(subjectId)
             ? throw new ArgumentException("subject id must not be empty", nameof(subjectId))
             : string.IsNullOrWhiteSpace(topicKey)

@@ -13,6 +13,8 @@ using Npgsql;
 
 namespace Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
 
+// canon judgement #4: the file-static helper types at the bottom of this file stay co-located with EfMemoryStore — they are this one store's tightly coupled persistence mechanics (the 300-line trigger targets business classes, not a store plus its SQL/query helpers).
+
 /// <summary>
 /// EF/Npgsql implementation of <see cref="IMemoryStore"/>. Every method
 /// opens its own context from the factory (the store is a safe singleton),
@@ -118,7 +120,7 @@ public sealed class EfMemoryStore(
     /// <inheritdoc />
     public async Task<IReadOnlyList<MemoryFactView>> SearchAsync(MemoryFactQuery query, CancellationToken cancellationToken = default)
     {
-        if (!IsQueryReachable(scopeAccessor, query.Scope, query.SubjectId))
+        if (!MemoryFactScopeReachability.IsQueryReachable(scopeAccessor, query.Scope, query.SubjectId))
         {
             // A restricted caller naming a project it is not assigned to,
             // or the user scope at all (no per-user identity axis exists
@@ -245,7 +247,11 @@ public sealed class EfMemoryStore(
 
         return await db.MemoryFacts.CountAsync(fact => fact.SupersededAt == null, cancellationToken);
     }
+}
 
+/// <summary>Scope reachability gate shared by the store's read paths (out-of-scope requests are refused before a context opens).</summary>
+file static class MemoryFactScopeReachability
+{
     /// <summary>
     /// Whether <paramref name="scopeAccessor"/>'s current scope can ever
     /// see a row matching <paramref name="requestedScope"/>/
@@ -262,7 +268,7 @@ public sealed class EfMemoryStore(
     /// and, on the cosine path, <c>MemoryFactSql.CosineSearchSql</c>'s own
     /// clause narrow the rest.
     /// </summary>
-    private static bool IsQueryReachable(ISubjectScopeAccessor? scopeAccessor, MemoryScope? requestedScope, string? requestedSubjectId)
+    public static bool IsQueryReachable(ISubjectScopeAccessor? scopeAccessor, MemoryScope? requestedScope, string? requestedSubjectId)
     {
         if (scopeAccessor is null)
         {
@@ -301,7 +307,7 @@ file static class MemoryFactViewMapper
 /// <summary>The visible-facts EF query shared by search and list (superseded and expired excluded).</summary>
 file static class MemoryFactQueries
 {
-    public static async Task<List<MemoryFact>> LoadVisibleAsync(
+    public static async Task<IReadOnlyList<MemoryFact>> LoadVisibleAsync(
         MemoryDbContext db,
         MemoryScope? scope,
         string? subjectId,

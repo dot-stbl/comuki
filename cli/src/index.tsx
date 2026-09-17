@@ -1,8 +1,9 @@
 /**
  * Entry + command routing: `comuki` (default = the multi-session chat
- * REPL), `status`, `runs list`, `login`, `whoami`. Each command renders
- * its own Ink app; the process exits when the app unmounts (Ink's
- * `exitOnCtrlC` covers ctrl+c). The removed `chat` subcommand is
+ * REPL), `status`, `runs list`, `login`, `whoami`, `config [show]`.
+ * Each command renders its own Ink app (`config show` is the
+ * plain-console exception); the process exits when the app unmounts
+ * (Ink's `exitOnCtrlC` covers ctrl+c). The removed `chat` subcommand is
  * unknown on purpose — bare `comuki` is the REPL.
  */
 import { render } from "ink"
@@ -13,6 +14,7 @@ import { ChatApp } from "./commands/chat"
 import { LoginApp } from "./commands/login"
 import { RunsApp } from "./commands/runs"
 import { StatusApp } from "./commands/status"
+import { printConfigShow } from "./commands/config"
 import { ComukiClient } from "./lib/client"
 import {
   readConfigFile,
@@ -62,6 +64,16 @@ async function main(): Promise<void> {
     )
     .command("login", "email+password → session cookie")
     .command("whoami", "current subject, roles and permissions")
+    .command(
+      "config [show]",
+      "resolved configuration (secrets masked)",
+      (y) =>
+        y.positional("show", {
+          type: "string",
+          default: "show",
+          describe: "print the resolved configuration",
+        })
+    )
     .demandCommand(0, 0) // no command → the REPL
     .strict()
     .parse()
@@ -75,6 +87,13 @@ async function main(): Promise<void> {
 
   if (command === "login") {
     render(<LoginApp url={overrides.url} />, { exitOnCtrlC: true })
+    return
+  }
+
+  // Before loadConfig: config show reports a missing url as
+  // `(source: none)` instead of letting resolveConfig throw.
+  if (command === "config") {
+    await printConfigShow(overrides)
     return
   }
 

@@ -175,16 +175,16 @@ public sealed class BrainAgentScopeShould
     {
         var options = Options.Create(new BrainOptions());
         return new BrainAgent(
-            new StaticModelConfigProvider(),
-            new ScriptedChatClientFactory(scripted),
+            TimeProvider.System,
             digest,
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),
+            new StaticModelConfigProvider(),
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
-            TimeProvider.System,
-            options);
+            options,
+            new ScriptedChatClientFactory(scripted));
     }
 
     private static async Task<List<BrainChunk>> StreamAsync(

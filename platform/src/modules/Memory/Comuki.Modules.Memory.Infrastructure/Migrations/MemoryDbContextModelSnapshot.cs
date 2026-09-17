@@ -174,11 +174,26 @@ namespace Comuki.Modules.Memory.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("decided_at");
 
-                    b.Property<string>("Pattern")
+                    b.Property<string>("DecisionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("decision_reason");
+
+                    b.Property<string>("Observation")
                         .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
-                        .HasColumnName("pattern");
+                        .HasColumnName("observation");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("ProposedRule")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("proposed_rule");
 
                     b.Property<int>("RepeatCount")
                         .HasColumnType("integer")
@@ -195,6 +210,12 @@ namespace Comuki.Modules.Memory.Infrastructure.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)")
                         .HasColumnName("status");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("topic");
 
                     b.HasKey("Id")
                         .HasName("pk_learning_candidates");

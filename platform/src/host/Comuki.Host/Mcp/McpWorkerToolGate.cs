@@ -18,6 +18,7 @@ internal static class McpWorkerToolGate
         "memory.recall",
         "memory.note",
         "knowledge.search",
+        "learning.suggest",
     }.ToFrozenSet(StringComparer.Ordinal);
 
     /// <summary>

@@ -34,8 +34,7 @@ namespace Comuki.Host.Brain.Brain;
 /// without a host restart.
 /// </para>
 /// </summary>
-/// <param name="modelConfig">Per-call model resolution — endpoint / API key / model ids.</param>
-/// <param name="chatFactory">Builds the <c>IChatClient</c> from the resolved config.</param>
+/// <param name="clock">The toolbox write clock (custom ephemeral TTLs).</param>
 /// <param name="memoryDigest">
 /// Scope-aware digest assembler used to prepend a project/user digest to
 /// the caller-built <c>ContextJson</c> when <see cref="BrainRequest.ScopeKind"/>
@@ -48,6 +47,7 @@ namespace Comuki.Host.Brain.Brain;
 /// <param name="memoryStore">Memory store behind the <c>memory.*</c> tools.</param>
 /// <param name="profileCatalog">Control-plane profile catalog exposed as a tool.</param>
 /// <param name="activeRuns">Active-run catalog exposed as a tool.</param>
+/// <param name="modelConfig">Per-call model resolution — endpoint / API key / model ids.</param>
 /// <param name="explorerReports">Explorer report reader exposed as a tool.</param>
 /// <param name="scopeAccessor">
 /// The brain owns no subject — <see cref="BrainRequest"/> carries no
@@ -59,20 +59,20 @@ namespace Comuki.Host.Brain.Brain;
 /// <c>memory.search</c> for — see <see cref="BrainToolbox.SearchMemoryAsync"/>
 /// for the guard that does that.
 /// </param>
-/// <param name="clock">The toolbox write clock (custom ephemeral TTLs).</param>
 /// <param name="options">Bound brain options — the iteration cap source.</param>
+/// <param name="chatFactory">Builds the <c>IChatClient</c> from the resolved config.</param>
 /// <param name="embedder">Optional embedding client — activates the semantic memory path.</param>
 public sealed class BrainAgent(
-    IModelConfigProvider modelConfig,
-    IBrainChatClientFactory chatFactory,
+    TimeProvider clock,
     IMemoryDigest memoryDigest,
     IMemoryStore memoryStore,
     IProfileCatalog profileCatalog,
     IActiveRunCatalog activeRuns,
+    IModelConfigProvider modelConfig,
     IExplorerReportReader explorerReports,
     ISubjectScopeAccessor scopeAccessor,
-    TimeProvider clock,
     IOptions<BrainOptions> options,
+    IBrainChatClientFactory chatFactory,
     IEmbeddingClient? embedder = null)
 {
     /// <summary>

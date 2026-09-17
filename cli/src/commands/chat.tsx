@@ -56,6 +56,7 @@ import {
 } from "../lib/signalr"
 import { colors, symbols } from "../theme"
 import { ChatMessage } from "../components/ChatMessage"
+import { LiveMessage } from "../components/LiveMessage"
 import { PromptInput } from "../components/PromptInput"
 import { SessionFooter } from "../components/SessionFooter"
 import { SessionOverview } from "../components/SessionOverview"
@@ -874,7 +875,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                   </>
                 ) : null}
                 {activeSession.status === "thinking" ? (
-                  <TypingIndicator liveText={activeSession.liveText} />
+                  <>
+                    <TypingIndicator />
+                    <LiveMessage
+                      liveText={activeSession.liveText}
+                      width={columns}
+                    />
+                  </>
                 ) : null}
               </>
             ) : (

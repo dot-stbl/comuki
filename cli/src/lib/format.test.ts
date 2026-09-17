@@ -145,11 +145,9 @@ describe("renderPart", () => {
     expect(stripAnsi(lines[1] ?? "")).toContain("← a")
   })
 
-  it("passes markdown text through unchanged", () => {
-    expect(renderPart({ kind: "text", markdown: "План:\n1. Шаг" })).toEqual([
-      "План:",
-      "1. Шаг",
-    ])
+  it("renders markdown text parts through the markdown path", () => {
+    const lines = renderPart({ kind: "text", markdown: "План:\n1. Шаг" })
+    expect(lines.map(stripAnsi)).toEqual(["План:", "", "  1. Шаг"])
   })
 })
 

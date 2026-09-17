@@ -15,9 +15,10 @@
  * keeps its position so ↑/↓ continue from where the user is.
  */
 import { Text, useInput } from "ink"
-import React, { useCallback, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { historyNavigator, type HistoryDirection } from "../lib/history"
 import { gutter, palette, symbols } from "../theme"
+import type { InterceptKey } from "./MentionMenu"
 
 export interface PromptInputProps {
   readonly onSubmit: (value: string) => void
@@ -31,6 +32,17 @@ export interface PromptInputProps {
    * instead of history recall; typing is untouched.
    */
   readonly historyRecallEnabled?: boolean
+  /**
+   * Mention-menu seam — fires on every draft change so the host can
+   * track the active `@token` (debounced search drives the popup).
+   */
+  readonly onDraftChange?: (value: string) => void
+  /**
+   * First look at a keystroke: true = consumed. The mention menu eats
+   * arrows/tab/enter/escape while its popup is open and rewrites the
+   * draft on accept.
+   */
+  readonly interceptKey?: InterceptKey
 }
 
 interface EditorState {
@@ -51,6 +63,8 @@ export function PromptInput({
   history = [],
   active = true,
   historyRecallEnabled = true,
+  onDraftChange,
+  interceptKey,
 }: PromptInputProps) {
   const [state, setState] = useState<EditorState>({
     value: "",
@@ -58,6 +72,10 @@ export function PromptInput({
     draft: "",
     historyIndex: null,
   })
+
+  useEffect(() => {
+    onDraftChange?.(state.value)
+  }, [state.value, onDraftChange])
 
   const navigate = useCallback(
     (direction: HistoryDirection) => {
@@ -94,6 +112,18 @@ export function PromptInput({
 
   useInput(
     (input, key) => {
+      // The mention menu gets the first look while its popup is open —
+      // accept rewrites the draft through the editor handle.
+      if (
+        interceptKey?.(input, key, {
+          get: () => state,
+          set: (next) => {
+            setState({ ...state, value: next.value, cursor: next.cursor })
+          },
+        })
+      ) {
+        return
+      }
       if (key.upArrow) {
         // Scrolled-up transcript owns the arrows — the viewport scrolls.
         if (historyRecallEnabled) {

@@ -13,7 +13,8 @@ import type { ResolvedConfig } from "../lib/config"
 import { colors, symbols } from "../theme"
 import { StatusLine } from "../components/StatusLine"
 
-type Line = { ok: true; text: string } | { ok: false; label: string; reason: string }
+type Line =
+  { ok: true; text: string } | { ok: false; label: string; reason: string }
 
 const fmt = (value: number): string => value.toLocaleString("en-US")
 
@@ -46,20 +47,37 @@ export function StatusApp({ config }: { config: ResolvedConfig }) {
       const next: Line[] = []
       if (compute.status === "fulfilled") {
         const snapshot = compute.value
-        const queued = snapshot.pools.reduce((sum, pool) => sum + pool.queued, 0)
-        const running = snapshot.pools.reduce((sum, pool) => sum + pool.running, 0)
+        const queued = snapshot.pools.reduce(
+          (sum, pool) => sum + pool.queued,
+          0
+        )
+        const running = snapshot.pools.reduce(
+          (sum, pool) => sum + pool.running,
+          0
+        )
         next.push({
           ok: true,
           text: `${paint("provider:")} ${snapshot.provider}${paint(`  ·  queue: ${queued} queued ${symbols.bullet} ${running} running`)}`,
         })
       } else {
-        next.push({ ok: false, label: "provider", reason: describeError(compute.reason) })
+        next.push({
+          ok: false,
+          label: "provider",
+          reason: describeError(compute.reason),
+        })
       }
 
       if (projects.status === "fulfilled") {
-        next.push({ ok: true, text: `${paint("projects:")} ${projects.value.length} active` })
+        next.push({
+          ok: true,
+          text: `${paint("projects:")} ${projects.value.length} active`,
+        })
       } else {
-        next.push({ ok: false, label: "projects", reason: describeError(projects.reason) })
+        next.push({
+          ok: false,
+          label: "projects",
+          reason: describeError(projects.reason),
+        })
       }
 
       if (knowledge.status === "fulfilled") {
@@ -69,14 +87,20 @@ export function StatusApp({ config }: { config: ResolvedConfig }) {
         )
         const note =
           knowledge.value.total > knowledge.value.items.length
-            ? paint(` (+${fmt(knowledge.value.total - knowledge.value.items.length)} more, first page only)`)
+            ? paint(
+                ` (+${fmt(knowledge.value.total - knowledge.value.items.length)} more, first page only)`
+              )
             : ""
         next.push({
           ok: true,
           text: `${paint("knowledge:")} ${fmt(knowledge.value.total)} documents ${symbols.bullet} ${fmt(chunks)} chunks${note}`,
         })
       } else {
-        next.push({ ok: false, label: "knowledge", reason: describeError(knowledge.reason) })
+        next.push({
+          ok: false,
+          label: "knowledge",
+          reason: describeError(knowledge.reason),
+        })
       }
 
       if (runs.status === "fulfilled") {
@@ -94,7 +118,11 @@ export function StatusApp({ config }: { config: ResolvedConfig }) {
           text: `${paint("runs:")} ${fmt(runs.value.total)} total${hot ? paint(`  ·  `) + hot : ""}`,
         })
       } else {
-        next.push({ ok: false, label: "runs", reason: describeError(runs.reason) })
+        next.push({
+          ok: false,
+          label: "runs",
+          reason: describeError(runs.reason),
+        })
       }
 
       setLines(next)
@@ -122,7 +150,10 @@ export function StatusApp({ config }: { config: ResolvedConfig }) {
       ) : null}
       {lines.map((line, index) =>
         line.ok ? (
-          <Text key={index}>{"  "}{line.text}</Text>
+          <Text key={index}>
+            {"  "}
+            {line.text}
+          </Text>
         ) : (
           <Text key={index} dimColor>
             {"  "}

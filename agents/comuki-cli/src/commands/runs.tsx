@@ -49,7 +49,9 @@ export function RunsApp({ config, page, pageSize, filter }: RunsCommandProps) {
         if (disposed) {
           return
         }
-        const nameByProject = new Map(projects.map((item) => [item.id, item.slug]))
+        const nameByProject = new Map(
+          projects.map((item) => [item.id, item.slug])
+        )
         setRows(runsPage.items.map((run) => runRow(run, nameByProject)))
         setTotal(runsPage.total)
       } catch (reason) {
@@ -92,7 +94,10 @@ export function RunsApp({ config, page, pageSize, filter }: RunsCommandProps) {
 
   return (
     <>
-      <StatusLine identity={identity} extra={filter ? `filter: ${filter}` : undefined} />
+      <StatusLine
+        identity={identity}
+        extra={filter ? `filter: ${filter}` : undefined}
+      />
       <Text dimColor>
         {"  "}
         {tableRow([
@@ -103,7 +108,10 @@ export function RunsApp({ config, page, pageSize, filter }: RunsCommandProps) {
         ])}
       </Text>
       {rows.map((row, index) => (
-        <Text key={index}>{"  "}{row}</Text>
+        <Text key={index}>
+          {"  "}
+          {row}
+        </Text>
       ))}
       {total === null ? (
         <Text dimColor>

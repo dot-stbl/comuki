@@ -12,6 +12,8 @@ describe("resolveCommand", () => {
     expect(resolveCommand(["runs", "list"])).toBe("runs")
     expect(resolveCommand(["login"])).toBe("login")
     expect(resolveCommand(["whoami"])).toBe("whoami")
+    expect(resolveCommand(["config"])).toBe("config")
+    expect(resolveCommand(["config", "show"])).toBe("config")
   })
 
   it("treats the removed chat subcommand as unknown", () => {

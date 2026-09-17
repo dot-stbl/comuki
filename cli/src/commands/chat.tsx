@@ -20,7 +20,11 @@ import {
   type ChatMessageView,
 } from "../lib/client"
 import { whoAmI } from "../lib/auth"
-import { renderPendingPlan } from "../lib/format"
+import {
+  blankRow,
+  renderPendingPlan,
+  renderUserEcho,
+} from "../lib/format"
 import type { ResolvedConfig } from "../lib/config"
 import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
 import { useCopyLastAnswer } from "../hooks/useCopyLastAnswer"
@@ -525,9 +529,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       setWelcomeDismissed(true)
       setNoticeLines([])
       const name = titleForFirstMessage(target, message)
-      const userEcho: readonly string[] = [
-        `${colors.accent}you  ${symbols.prompt}${colors.reset} ${message}`,
-      ]
+      const userEcho: readonly string[] = renderUserEcho(message)
 
       if (!target || target.id.startsWith(PENDING_PREFIX)) {
         try {
@@ -876,7 +878,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                       ) : (
                         <React.Fragment key={block.key}>
                           {block.lines.map((line, index) => (
-                            <Text key={index}>{line}</Text>
+                            <Text key={index}>{blankRow(line)}</Text>
                           ))}
                         </React.Fragment>
                       )

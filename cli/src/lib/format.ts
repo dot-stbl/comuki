@@ -8,9 +8,58 @@
  * muted mono with a compact `name(args) → result` shape, prose in the
  * terminal default, one slate-blue accent for statuses and the prompt.
  */
-import { colors, paint, stripAnsi, symbols } from "../theme"
+import {
+  colors,
+  gutter,
+  messageMark,
+  paint,
+  stripAnsi,
+  symbols,
+} from "../theme"
 import type { ChatMessageView, MessagePart, PlanItemView } from "./client"
 import { DEFAULT_MARKDOWN_WIDTH, renderMarkdownLines } from "./markdown"
+
+// ---------------------------------------------------------------------------
+// Transcript chrome — gutter + spacing
+// ---------------------------------------------------------------------------
+
+/**
+ * Prefixes every non-empty line with the one-space transcript gutter.
+ * Empty lines stay truly empty (a gutter on a blank line is trailing
+ * whitespace).
+ */
+export function gutterLines(lines: readonly string[]): string[] {
+  return lines.map((line) => (line.length > 0 ? gutter + line : line))
+}
+
+/**
+ * Ink drops `<Text>{""}</Text>` rows entirely — a blank separator line
+ * must carry a single space to actually render. Every rendered line
+ * passes through here on its way to a `<Text>`.
+ */
+export function blankRow(line: string): string {
+  return line.length === 0 ? " " : line
+}
+
+/**
+ * Spacing normalization for a rendered message: a run of two or more
+ * blank lines collapses to exactly one, and trailing blank lines are
+ * trimmed. Leading blanks survive — the user turn separator is one.
+ */
+export function normalizeSpacing(lines: readonly string[]): string[] {
+  const result: string[] = []
+  for (const line of lines) {
+    const blank = line.trim().length === 0
+    if (blank && result[result.length - 1] === "") {
+      continue
+    }
+    result.push(blank ? "" : line)
+  }
+  while (result.length > 0 && result[result.length - 1] === "") {
+    result.pop()
+  }
+  return result
+}
 
 /** ANSI-aware tail truncation for live buffers and tool summaries. */
 export function truncateTail(text: string, maxWidth: number): string {
@@ -233,21 +282,32 @@ export function renderParts(
  * shape); `content` is the flat fallback. Both render markdown through
  * `lib/markdown.ts`. User rows echo as typed — plain, one line. Tool
  * and system journal rows render muted.
+ *
+ * Identity chrome: every row leads with its `messageMark` glyph on the
+ * shared one-space gutter — the user's dim `›` with bright text (one
+ * blank line before, the turn separator), the assistant's brand `◆`
+ * with a dim `comuki` label above its content, quiet `·` bullets for
+ * journal rows. Wrapping is computed at `width - 1` so the gutter
+ * never pushes a line past the terminal edge.
  */
 export function renderMessage(
   message: ChatMessageView,
   width: number = DEFAULT_MARKDOWN_WIDTH
 ): string[] {
   if (message.role === "user") {
-    return [
-      `${paint("you  ", colors.accent)}${symbols.prompt} ${message.content}`,
-    ]
+    return renderUserEcho(message.content)
   }
   if (message.role === "assistant") {
+    const mark = messageMark(message.role)
+    const header = `${paint(mark.glyph, mark.glyphColor)}${
+      mark.label.length > 0
+        ? ` ${paint(mark.label, mark.labelColor)}`
+        : ""
+    }`
     const lines =
       message.parts !== null && message.parts.length > 0
-        ? renderParts(message.parts, width)
-        : renderMarkdownLines(message.content, width)
+        ? renderParts(message.parts, Math.max(8, width - gutter.length))
+        : renderMarkdownLines(message.content, Math.max(8, width - gutter.length))
     const meta = message.meta
     const cost = meta?.model
       ? paint(
@@ -260,16 +320,36 @@ export function renderMessage(
           colors.dim
         )
       : null
-    return cost ? [...lines, cost] : lines
+    return normalizeSpacing(
+      gutterLines([header, ...lines, ...(cost ? [cost] : [])])
+    )
   }
   // tool / system journal rows
   const label = message.toolName ?? message.role
   const body = message.content.trim()
   return [
     paint(
-      `  ${symbols.bullet} ${label}${body ? `: ${truncateTail(body, 72)}` : ""}`,
+      `${gutter}${symbols.bullet} ${label}${body ? `: ${truncateTail(body, 72)}` : ""}`,
       colors.muted
     ),
+  ]
+}
+
+/**
+ * The user's own words as the transcript shows them — also used for the
+ * immediate echo on send, so the live line and the restored history of
+ * the same turn are byte-identical. One blank line before (the turn
+ * separator), dim `›`, bright text.
+ */
+export function renderUserEcho(content: string): string[] {
+  const mark = messageMark("user")
+  const text = content.trim()
+  if (text.length === 0) {
+    return []
+  }
+  return [
+    "",
+    `${gutter}${paint(mark.glyph, mark.glyphColor)} ${paint(text, mark.textColor)}`,
   ]
 }
 

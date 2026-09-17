@@ -17,6 +17,7 @@
 import { Text, useInput } from "ink"
 import React, { useCallback, useState } from "react"
 import { historyNavigator, type HistoryDirection } from "../lib/history"
+import { gutter, palette, symbols } from "../theme"
 
 export interface PromptInputProps {
   readonly onSubmit: (value: string) => void
@@ -40,7 +41,7 @@ interface EditorState {
 
 export function PromptInput({
   onSubmit,
-  label = "you  ",
+  label = "",
   placeholder = "ask comuki… (help for commands, ctrl+c to exit)",
   history = [],
   active = true,
@@ -157,7 +158,11 @@ export function PromptInput({
 
   return (
     <Text>
-      <Text color="#8787f3">{label}› </Text>
+      {gutter}
+      <Text color={palette.brand}>
+        {label}
+        {symbols.prompt}{" "}
+      </Text>
       {state.value.length > 0 ? (
         <>
           <Text>{before}</Text>

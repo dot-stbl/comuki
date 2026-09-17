@@ -4,9 +4,11 @@ using Comuki.Host.Brain.Brain.Options;
 using Comuki.Host.Brain.Ports.ActiveRuns;
 using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Shared.Contracts.Brain;
+using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -128,15 +130,16 @@ public sealed class BrainAgentShould
     {
         var options = Options.Create(new BrainOptions { MaxToolIterations = 2 });
         var agent = new BrainAgent(
-            new StaticModelConfigProvider(),
-            new ScriptedChatClientFactory(Scripted.Loop("here is a plan in prose, not calling emit_plan")),
+            TimeProvider.System,
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([]),
             new StubActiveRunCatalog(),
+            new StaticModelConfigProvider(),
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
-            TimeProvider.System,
-            options);
+            options,
+            new ScriptedChatClientFactory(Scripted.Loop("here is a plan in prose, not calling emit_plan")));
 
         await Should.ThrowAsync<BrainExhaustedException>(
             async () => await StreamAsync(agent, Request(BrainRequestKindKeys.Plan, "decompose")));
@@ -160,15 +163,16 @@ public sealed class BrainAgentShould
 
         var options = Options.Create(new BrainOptions());
         var agent = new BrainAgent(
-            provider,
-            factory,
+            TimeProvider.System,
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),
+            provider,
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
-            TimeProvider.System,
-            options);
+            options,
+            factory);
 
         var firstChunks = await StreamAsync(agent, Request(BrainRequestKindKeys.Answer, "first question"));
         var secondChunks = await StreamAsync(agent, Request(BrainRequestKindKeys.Answer, "second question"));
@@ -193,15 +197,16 @@ public sealed class BrainAgentShould
             "chat-model"));
 
         var agent = new BrainAgent(
-            provider,
-            factory,
+            TimeProvider.System,
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([]),
             new StubActiveRunCatalog(),
+            provider,
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
-            TimeProvider.System,
-            Options.Create(new BrainOptions()));
+            Options.Create(new BrainOptions()),
+            factory);
 
         await StreamAsync(agent, Request(BrainRequestKindKeys.Answer, "hi"));
 
@@ -220,15 +225,16 @@ public sealed class BrainAgentShould
             "chat-model"));
 
         var agent = new BrainAgent(
-            provider,
-            factory,
+            TimeProvider.System,
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),
+            provider,
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
-            TimeProvider.System,
-            Options.Create(new BrainOptions()));
+            Options.Create(new BrainOptions()),
+            factory);
 
         await StreamAsync(agent, Request(BrainRequestKindKeys.Plan, "decompose"));
 
@@ -245,15 +251,16 @@ public sealed class BrainAgentShould
     {
         var options = Options.Create(new BrainOptions());
         return new BrainAgent(
-            new StaticModelConfigProvider(),
-            new ScriptedChatClientFactory(scripted),
+            TimeProvider.System,
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),
+            new StaticModelConfigProvider(),
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
-            TimeProvider.System,
-            options);
+            options,
+            new ScriptedChatClientFactory(scripted));
     }
 
     private static BrainRequest Request(string kind, string task)

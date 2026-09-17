@@ -1,5 +1,12 @@
 import { describe, expect, it } from "bun:test"
-import { DEFAULT_URL, resolveConfig } from "./config"
+import { join } from "node:path"
+import {
+  DEFAULT_URL,
+  configDir,
+  configFilePath,
+  resolveConfig,
+  sessionsFilePath,
+} from "./config"
 
 describe("resolveConfig", () => {
   it("falls back to the default url when nothing is set", () => {
@@ -62,5 +69,34 @@ describe("resolveConfig", () => {
     const config = resolveConfig({ COMUKI_URL: "  ", COMUKI_API_KEY: "" })
     expect(config.url).toBe(DEFAULT_URL)
     expect(config.apiKey).toBeUndefined()
+  })
+})
+
+describe("config paths (xdg layout)", () => {
+  it("places config under ~/.config/comuki by default", () => {
+    const path = configFilePath()
+    expect(
+      path.endsWith([".config", "comuki", "config.json"].join("/")) ||
+        path.endsWith([".config", "comuki", "config.json"].join("\\"))
+    ).toBe(true)
+  })
+
+  it("honors XDG_CONFIG_HOME when set", () => {
+    expect(configDir("/custom/xdg")).toBe(join("/custom/xdg", "comuki"))
+  })
+
+  it("falls back to ~/.config when XDG_CONFIG_HOME is blank", () => {
+    const dir = configDir("  ")
+    expect(dir).not.toContain("custom")
+    expect(
+      dir.endsWith([".config", "comuki"].join("/")) ||
+        dir.endsWith([".config", "comuki"].join("\\"))
+    ).toBe(true)
+  })
+
+  it("places sessions.json next to config.json", () => {
+    expect(sessionsFilePath()).toBe(
+      configFilePath().replace("config.json", "sessions.json")
+    )
   })
 })

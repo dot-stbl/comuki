@@ -5,9 +5,12 @@ import {
   collapsedSummary,
   formatDurationMs,
   formatTokenCount,
+  gutterLines,
+  normalizeSpacing,
   renderMessage,
   renderPart,
   renderPendingPlan,
+  renderUserEcho,
   summarizeToolArgs,
   summarizeToolInput,
   summarizeToolOutput,
@@ -172,10 +175,34 @@ describe("renderPendingPlan", () => {
 })
 
 describe("renderMessage", () => {
-  it("echoes user rows with the accent prompt", () => {
-    const [line] = renderMessage(userMessage("сделай план"))
-    expect(line).toContain(colors.accent)
-    expect(stripAnsi(line ?? "")).toBe(`you  ${symbols.prompt} сделай план`)
+  it("echoes user rows with the dim mark, bright text and a leading blank", () => {
+    const lines = renderMessage(userMessage("сделай план"))
+    expect(lines[0]).toBe("")
+    const line = stripAnsi(lines[1] ?? "")
+    expect(line).toBe(` ${symbols.prompt} сделай план`)
+    expect(lines[1]).toContain(colors.dim)
+    expect(lines[1]).toContain(colors.bright)
+  })
+
+  it("leads assistant rows with the brand glyph and dim comuki label", () => {
+    const lines = renderMessage(assistantMessage([
+      { kind: "text", markdown: "done" },
+    ]))
+    const header = stripAnsi(lines[0] ?? "")
+    expect(header).toBe(` ${symbols.brandMark} comuki`)
+    expect(lines[0]).toContain(colors.accent)
+    expect(lines[0]).toContain(colors.dim)
+    expect(stripAnsi(lines[1] ?? "")).toBe(" done")
+  })
+
+  it("gutters every non-empty line of an assistant row", () => {
+    const lines = renderMessage(assistantMessage([
+      { kind: "text", markdown: "first\n\nsecond" },
+    ]))
+    for (const line of lines) {
+      expect(line === "" || line.startsWith(" ")).toBe(true)
+    }
+    expect(lines[lines.length - 1]).not.toBe("")
   })
 
   it("falls back to content when parts are absent", () => {
@@ -184,18 +211,56 @@ describe("renderMessage", () => {
       parts: null,
       content: "plain reply",
     })
-    expect(lines).toEqual(["plain reply"])
+    expect(stripAnsi(lines[0] ?? "")).toBe(` ${symbols.brandMark} comuki`)
+    expect(stripAnsi(lines[1] ?? "")).toBe(" plain reply")
   })
 
-  it("mutes tool journal rows", () => {
+  it("mutes tool journal rows on the shared gutter", () => {
     const lines = renderMessage({
       ...userMessage("done"),
       role: "tool",
       toolName: "create_ticket",
       content: "ticket COM-1",
     })
-    expect(stripAnsi(lines[0] ?? "")).toContain("create_ticket: ticket COM-1")
+    expect(stripAnsi(lines[0] ?? "")).toContain(
+      " · create_ticket: ticket COM-1"
+    )
     expect(lines[0]).toContain(colors.muted)
+  })
+})
+
+describe("renderUserEcho", () => {
+  it("is byte-identical to the history rendering of the same text", () => {
+    const echo = renderUserEcho("привет")
+    const history = renderMessage(userMessage("привет"))
+    expect(echo).toEqual(history)
+  })
+
+  it("renders nothing for blank input", () => {
+    expect(renderUserEcho("   ")).toEqual([])
+  })
+})
+
+describe("normalizeSpacing", () => {
+  it("collapses blank runs to one and trims trailing blanks", () => {
+    expect(
+      normalizeSpacing(["", "", "a", "", "", "", "b", "", ""])
+    ).toEqual(["", "a", "", "b"])
+  })
+
+  it("keeps single blanks and treats whitespace-only lines as blank", () => {
+    expect(normalizeSpacing(["a", "   ", "b"])).toEqual(["a", "", "b"])
+    expect(normalizeSpacing(["a", "", "b"])).toEqual(["a", "", "b"])
+  })
+
+  it("returns an empty list for all-blank input", () => {
+    expect(normalizeSpacing(["", "  ", ""])).toEqual([])
+  })
+})
+
+describe("gutterLines", () => {
+  it("prefixes non-empty lines only", () => {
+    expect(gutterLines(["a", "", "b"])).toEqual([" a", "", " b"])
   })
 })
 

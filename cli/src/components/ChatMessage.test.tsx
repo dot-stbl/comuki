@@ -72,7 +72,7 @@ describe("ChatMessage — markdown rendering", () => {
     unmount()
   })
 
-  test("keeps user messages plain with the single-line prefix", () => {
+  test("keeps user messages plain with the dim mark and gutter", () => {
     const { lastFrame, unmount } = render(
       <ChatMessage
         message={{
@@ -91,7 +91,24 @@ describe("ChatMessage — markdown rendering", () => {
     // no markdown machinery for user rows: no border, no cursor
     expect(frame).not.toContain("│")
     expect(frame).not.toContain("▌")
-    expect(stripAnsi(frame)).toContain("you  › сделай план")
+    // one blank line before (turn separator; ink trims its spaces in
+    // the captured frame), then the dim-marked echo
+    expect(frame.split("\n")[0]).toBe("")
+    expect(frame.split("\n").length).toBe(2)
+    expect(stripAnsi(frame)).toContain(" › сделай план")
+    unmount()
+  })
+
+  test("leads assistant messages with the brand glyph and comuki label", () => {
+    const { lastFrame, unmount } = render(
+      <ChatMessage
+        message={assistantMarkdown("here is the plan")}
+        width={60}
+      />
+    )
+    const frame = stripAnsi(lastFrame() ?? "")
+    expect(frame.split("\n")[0]).toBe(" ◆ comuki")
+    expect(frame).toContain(" here is the plan")
     unmount()
   })
 

@@ -10,7 +10,7 @@
 import { Text } from "ink"
 import React from "react"
 import type { ChatMessageView } from "../lib/client"
-import { renderMessage } from "../lib/format"
+import { blankRow, renderMessage } from "../lib/format"
 import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
 
 export interface ChatMessageProps {
@@ -31,7 +31,7 @@ export function ChatMessage({
   return (
     <>
       {lines.map((line, index) => (
-        <Text key={`${message.id}-${index}`}>{line}</Text>
+        <Text key={`${message.id}-${index}`}>{blankRow(line)}</Text>
       ))}
     </>
   )

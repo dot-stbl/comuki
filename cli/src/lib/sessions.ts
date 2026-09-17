@@ -59,6 +59,11 @@ export interface Session {
   readonly renamed: boolean
   /** Submitted prompts for ↑/↓ recall, oldest first. */
   readonly history?: readonly string[]
+  /**
+   * Messages submitted while a turn was in flight — sent in order when
+   * the session stops thinking. Transient by design (never persisted).
+   */
+  readonly queued?: readonly string[]
 }
 
 export const PENDING_PREFIX = "local-"

@@ -84,3 +84,68 @@ export function escalatedRunsToApprovals(
 ): Approval[] {
   return page.items.map((run) => escalatedRunToApproval(run, nowMs))
 }
+
+/* ------------------------------------------------------------------ *
+ * The learning wire — `GET /api/v1/learning/candidates?status=pending`.
+ *
+ * A learning candidate is a rule a worker proposed (learning.suggest)
+ * waiting for adoption. The kubb client types the row, but the approvals
+ * mapping wants its own claim about it, so the shape is restated here
+ * beside the mapper that reads it.
+ * ------------------------------------------------------------------ */
+
+/** One pending learning candidate, as the learning API answers it. */
+export interface LearningCandidateWire {
+  readonly id: string
+  readonly projectId: string
+  readonly topic: string
+  readonly observation: string
+  readonly proposedRule: string
+  readonly sourceRef: string
+  readonly repeatCount: number | string
+  readonly status: string
+  readonly createdAt: string
+}
+
+/**
+ * A learning candidate onto the queue's decision card.
+ *
+ * What is being decided is the rule, so that is the summary; the observation
+ * is the evidence behind it and waits behind the disclosure under its own
+ * name — never as a "planner assumption", which it is not. The risk is
+ * unread (a worker's suggestion carries no risk judgement) and the app line
+ * is the topic the rule filed itself under. A repeat count above one is how
+ * the platform says other workers hit the same thing, which is exactly the
+ * weight an approver wants before adopting a rule.
+ */
+export function learningCandidateToApproval(
+  candidate: LearningCandidateWire,
+  nowMs: number = Date.now()
+): Approval {
+  const repeats = Number(candidate.repeatCount)
+  return {
+    id: candidate.id,
+    type: "learning",
+    app: candidate.topic,
+    projectId: candidate.projectId,
+    runId: "",
+    age: waitingAge(candidate.createdAt, nowMs),
+    risk: null,
+    summary:
+      repeats > 1
+        ? `${candidate.proposedRule} — ${repeats} workers suggested this`
+        : candidate.proposedRule,
+    assumptions: [candidate.observation],
+    assumptionsHeading: "Observation",
+  }
+}
+
+/** A page of learning candidates onto the queue. */
+export function learningCandidatesToApprovals(
+  candidates: readonly LearningCandidateWire[],
+  nowMs: number = Date.now()
+): Approval[] {
+  return candidates.map((candidate) =>
+    learningCandidateToApproval(candidate, nowMs)
+  )
+}

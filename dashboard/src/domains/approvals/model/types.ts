@@ -1,4 +1,4 @@
-export type ApprovalType = "plan" | "deploy" | "baseline" | "gate"
+export type ApprovalType = "plan" | "deploy" | "baseline" | "gate" | "learning"
 export type ApprovalRisk = "low" | "medium" | "high"
 export type ApprovalDecision = "approve" | "reject" | "review"
 
@@ -22,4 +22,10 @@ export interface Approval {
   risk: ApprovalRisk | null
   summary: string
   assumptions: string[]
+  /**
+   * What the assumptions list actually is, when the source names it. Plan
+   * rows are planner assumptions; a learning candidate's one line is the
+   * observation behind the proposed rule. Absent = the plan reading.
+   */
+  assumptionsHeading?: string
 }

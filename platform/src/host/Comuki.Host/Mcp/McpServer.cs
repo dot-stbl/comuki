@@ -141,6 +141,7 @@ file static class McpToolCallDispatch
                 "knowledge.ingest" => await toolHandlers.KnowledgeIngestAsync(id, arguments, cancellationToken),
                 "memory.recall" => await toolHandlers.MemoryRecallAsync(id, arguments, caller, cancellationToken),
                 "memory.note" => await toolHandlers.MemoryNoteAsync(id, arguments, caller, cancellationToken),
+                "learning.suggest" => await toolHandlers.LearningSuggestAsync(id, arguments, caller, cancellationToken),
                 "runs.list" => await toolHandlers.RunsListAsync(id, arguments, cancellationToken),
                 "runs.get" => await McpToolHandlers.RunsGetAsync(id, arguments),
                 _ => JsonRpcResponse.Failure(

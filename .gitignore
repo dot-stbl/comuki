@@ -175,6 +175,8 @@ x86/
 [Aa][Rr][Mm]64/
 bld/
 [Bb]in/
+# cli source entrypoint (ts, not a build artifact) — package.json bin points here
+!agents/comuki-cli/bin/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/

@@ -11,11 +11,18 @@ public static class TestBootstrapAdmin
     public const string Email = "bootstrap@comuki.test";
     public const string Password = "bootstrap-pass-1";
 
-    /// <summary>Binds the bootstrap admin's email/password onto the builder's configuration.</summary>
+    /// <summary>
+    /// Binds the bootstrap admin's email/password onto the builder's
+    /// configuration and lifts the login rate-limit bucket: integration
+    /// suites log in (bootstrap + per-test users) more than the 10/min
+    /// default, and the login helper's retry loop must not spend its
+    /// budget on 429s.
+    /// </summary>
     public static void Configure(IConfiguration configuration)
     {
         configuration["auth:bootstrap:adminEmail"] = Email;
         configuration["auth:bootstrap:adminPassword"] = Password;
+        configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
     }
 }
 
@@ -32,7 +39,7 @@ public static class HttpClientBootstrapAdminExtensions
     /// </summary>
     public static async Task<HttpClient> LoginAsBootstrapAdminAsync(this HttpClient client, CancellationToken cancellationToken)
     {
-        const int maxAttempts = 120;
+        const int maxAttempts = 45;
         for (var attempt = 1; ; attempt++)
         {
             var response = await client.PostAsJsonAsync(
@@ -42,6 +49,17 @@ public static class HttpClientBootstrapAdminExtensions
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 return client;
+            }
+
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                if (attempt >= maxAttempts)
+                {
+                    response.StatusCode.ShouldBe(HttpStatusCode.OK, "bootstrap admin login kept hitting the rate limit");
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                continue;
             }
 
             response.StatusCode.ShouldBe(

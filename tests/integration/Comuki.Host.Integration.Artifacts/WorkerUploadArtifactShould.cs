@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using Comuki.Engine.Compute.Security;
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Domain;
@@ -104,6 +103,7 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
         builder.Configuration["auth:publicHost:publicUrl"] = $"http://127.0.0.1:{hostPort}";
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
 
         var (host, port) = SplitEndpoint(minioEndpoint);
         builder.Configuration["Artifacts:Endpoint"] = $"{host}:{port}";
@@ -392,12 +392,7 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
         {
             BaseAddress = baseAddress,
         };
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/auth/login",
-            new { email = BootstrapEmail, password = BootstrapPassword },
-            cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return client;
+        return await client.LoginAsBootstrapAdminAsync(cancellationToken);
     }
 
     private static async Task MigrateAsync<TContext>(

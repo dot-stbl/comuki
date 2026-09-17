@@ -114,6 +114,7 @@ public sealed class RunsEndpointShould : IAsyncLifetime
         builder.Configuration["ControlPlane:Root"] = Path.GetTempPath();
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
         // Artifacts module — non-dev-default secrets so the production-secret
         // validator (issue #10 T11.4) passes through. The integration
         // suite does not boot a MinIO Testcontainer; the host still

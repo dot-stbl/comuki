@@ -92,6 +92,7 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
         builder.Configuration["ControlPlane:Root"] = Path.GetTempPath();
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
         builder.Configuration["Artifacts:Endpoint"] = "minio:9000";
         builder.Configuration["Artifacts:AccessKey"] = "test-access-key";
         builder.Configuration["Artifacts:SecretKey"] = "test-secret-key-with-enough-entropy";

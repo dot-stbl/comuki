@@ -1,4 +1,5 @@
 using System.ClientModel;
+using Comuki.Host.Brain.Brain.Exceptions;
 using Microsoft.Extensions.AI;
 using OpenAI;
 
@@ -20,7 +21,7 @@ public sealed class DefaultBrainChatClientFactory : IBrainChatClientFactory
     {
         return BrainChatClientBuildHelpers.TryBuild(config) is { } client
             ? client
-            : throw new InvalidOperationException(
+            : throw new BrainModelNotConfiguredException(
                 "brain model is not configured: every ModelConfig field (Endpoint/ApiKey/ModelId) must be set; "
                 + "check that ModelConfigProvider.ResolveAsync produced a complete configuration");
     }
@@ -43,7 +44,7 @@ file static class BrainChatClientBuildHelpers
     }
 
     /// <summary>True when every required connection field is a non-empty string.</summary>
-    private static bool IsComplete(string? endpoint, string? apiKey, string? modelId)
+    public static bool IsComplete(string? endpoint, string? apiKey, string? modelId)
     {
         return !string.IsNullOrWhiteSpace(endpoint)
             && !string.IsNullOrWhiteSpace(apiKey)
@@ -51,7 +52,7 @@ file static class BrainChatClientBuildHelpers
     }
 
     /// <summary>Builds the <see cref="IChatClient"/> over the OpenAI-compatible endpoint.</summary>
-    private static IChatClient Build(string endpoint, string apiKey, string modelId)
+    public static IChatClient Build(string endpoint, string apiKey, string modelId)
     {
         return new OpenAIClient(
                 new ApiKeyCredential(apiKey),

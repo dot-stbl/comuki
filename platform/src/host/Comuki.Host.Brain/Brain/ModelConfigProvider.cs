@@ -1,3 +1,4 @@
+using Comuki.Host.Brain.Brain.Exceptions;
 using Comuki.Host.Brain.Brain.Options;
 using Comuki.Shared.Kernel.Secrets;
 using Microsoft.Extensions.Options;
@@ -82,9 +83,9 @@ file static class ModelConfigProviderHelpers
     }
 
     /// <summary>The setup hint raised when no source has any model field.</summary>
-    private static InvalidOperationException BrainModelUnconfiguredException()
+    public static BrainModelNotConfiguredException BrainModelUnconfiguredException()
     {
-        return new InvalidOperationException(
+        return new BrainModelNotConfiguredException(
             "brain model is not configured: set brain:model (endpoint/apiKey/modelId) "
             + $"or {BrainOptions.ModelEndpointEnvVariable}/{BrainOptions.ModelApiKeyEnvVariable}/{BrainOptions.ModelIdEnvVariable} env vars, "
             + "or the corresponding ModelEndpointRef / ModelApiKeyRef / ModelIdRef secret refs");

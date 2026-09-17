@@ -4,7 +4,7 @@ import { cn } from "@/shared/lib/utils"
 
 import { Field } from "./field"
 import styles from "./form.module.css"
-import { fieldDescriptionId } from "./ids"
+import { describedBy, fieldDescriptionId } from "./ids"
 
 export interface NumberFieldProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -77,9 +77,12 @@ export function NumberField({
           inputMode="decimal"
           className={cn(styles.control, styles.numberInput, className)}
           value={value}
-          aria-required={required ? true : undefined}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={hint || error ? fieldDescriptionId(id) : undefined}
+          aria-required={required ? true : rest["aria-required"]}
+          aria-invalid={error ? true : rest["aria-invalid"]}
+          aria-describedby={describedBy(
+            rest["aria-describedby"],
+            hint || error ? fieldDescriptionId(id) : undefined
+          )}
           onChange={(event) => onValueChange(event.target.value)}
         />
         {/* The unit is decoration around a value the input already owns, so it

@@ -118,8 +118,8 @@ export function FormDialog({
                     type="submit"
                     data-test="form-submit"
                     denied={denied}
-                    disabled={busy || submitDisabled}
-                    aria-busy={busy || undefined}
+                    loading={busy}
+                    disabled={submitDisabled}
                   >
                     {submitLabel}
                   </Button>

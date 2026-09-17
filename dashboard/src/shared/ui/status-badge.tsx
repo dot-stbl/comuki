@@ -11,6 +11,7 @@ import {
 
 import { cn } from "@/shared/lib/utils"
 
+import { badgeShell } from "./badge-shell"
 import styles from "./status-badge.module.css"
 
 export type Status =
@@ -63,14 +64,17 @@ export function StatusBadge({
       // is what hands this badge its `--hue`, so there is no per-status class
       // to apply here any more.
       data-status={status}
+      /* The shell carries the box and the size step; this file's own rule
+         carries the hue, the weight and the edge. The icon takes its size from
+         the shell's step too, which is why it is handed no class here. */
       className={cn(
+        badgeShell({ size }),
         styles.badge,
-        size === "sm" && styles.sm,
         status === "running" && styles.pulse,
         className
       )}
     >
-      <Icon className={styles.icon} />
+      <Icon />
       {label}
     </span>
   )

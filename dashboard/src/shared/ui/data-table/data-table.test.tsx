@@ -924,3 +924,18 @@ describe("DataTable pin (stylesheet contract)", () => {
     expect(scrolls).toEqual([".scroll"])
   })
 })
+
+describe("DataTable density (stylesheet contract)", () => {
+  it("stands the head at the same height as the rows it names", () => {
+    // The defect this closes was invisible at the default density and only at
+    // the default density: `.headRow` read `--h-row-head` (2rem), which is
+    // exactly what `compact` publishes, so the two spellings agreed and nobody
+    // could see that there were two. At `comfortable` (40px) the band came out
+    // 8px shorter than every row under it.
+    expect(declared(".headRow", "block-size")).toBe("var(--dt-row-h)")
+  })
+
+  it("leaves the row height the one number the component publishes", () => {
+    expect(declared(".row", "block-size")).toBe("var(--dt-row-h)")
+  })
+})

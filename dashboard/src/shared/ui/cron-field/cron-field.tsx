@@ -54,6 +54,16 @@ export interface CronFieldProps {
   /** The cron expression, in five fields: `minute hour day-of-month month day-of-week`. */
   value: string
   onValueChange: (next: string) => void
+  /**
+   * The form will not go without this field — see `FieldProps.required`.
+   *
+   * It reaches `Field` and nothing else, for the reason `ComboboxField`'s own
+   * `required` spells out: the word in the label is the channel, and React
+   * Aria's `isRequired` would bring the browser's native constraint bubble
+   * along with it.
+   */
+  required?: boolean
+
   hint?: ReactNode
   error?: string | null
   disabled?: boolean
@@ -86,6 +96,7 @@ export function CronField({
   labelHidden,
   value,
   onValueChange,
+  required,
   hint,
   error,
   disabled = false,
@@ -96,6 +107,7 @@ export function CronField({
       id={id}
       label={label}
       labelHidden={labelHidden}
+      required={required}
       hint={hint}
       error={error}
     >

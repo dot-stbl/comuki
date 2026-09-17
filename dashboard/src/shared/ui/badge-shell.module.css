@@ -1,0 +1,111 @@
+/* The box a mark is drawn in, and only the part of it that was never in
+ * dispute.
+ *
+ * Ten sheets in this product used to carry this rule. Nine domain families —
+ * approvals, compute, knowledge, models, queue, settings, sources, tasks,
+ * verify — and the kit's own `status-badge`, each opening with the same
+ * `inline-flex` box, the same hairline, the same `--font-data` at the same
+ * step, each with a comment above it saying it was built on the measurements of
+ * the one next to it. Seven of them were byte-identical declaration for
+ * declaration. That is not reuse, it is ten chances to drift, and two of them
+ * already had: `approval-badges` and `tasks-badges` both cancelled the badge's
+ * content-based minimum and let a label paint outside its own border, and
+ * `connection-state-badge` spent a while at the default size step, standing 24px
+ * tall in a row of 15px marks.
+ *
+ * What is here is the intersection and nothing more. `color`, `background` and
+ * `font-weight` are absent on purpose: those are the three that genuinely
+ * differ between callers — the domain families carry a hue in `--st` and a 10%
+ * wash of it, `status-badge` carries `--hue` and sets `--fw-medium`, and the
+ * sources/verify pair writes all three literally per state. A shell that
+ * guessed at them would be a shell every caller has to override, and an
+ * override across two CSS modules is the race described below.
+ *
+ * ## Why the border colour is a custom property and not a colour
+ *
+ * A caller's own rule and this one are both a single class, so they have equal
+ * specificity, and what settles a tie between equal declarations is document
+ * order — which for CSS modules is the order the bundler happened to emit two
+ * files in. That is not a contract. It is not stable across dev and build, and
+ * it is not stable across an import being moved up a line.
+ *
+ * So the one property a caller must be able to change — the edge — is never
+ * written twice. This rule *reads* `--badge-edge`; the caller *declares* it.
+ * A custom property declared in exactly one place cannot lose a cascade race,
+ * and a state that wants a louder edge (`failed`, `revoked`, `unreachable`,
+ * `regressed`, `high`) declares it again in its own sheet, where it is
+ * competing only with its own file and ordinary document order applies.
+ *
+ * The fallback is `transparent` rather than `--border` because the two
+ * borderless families — a connection's state and a check's result — are
+ * borderless *by default* and tinted per state, and a shell whose default was a
+ * visible hairline would make those two write `--badge-edge: transparent` to
+ * say nothing. Nothing is what the fallback already says.
+ *
+ * `--badge-edge` inherits, like every custom property. Nothing nests a badge
+ * inside a badge, and nothing outside this family declares the name, so there
+ * is no value to leak in from above; if a surface ever wants to tint a strip of
+ * marks at once, declaring it on their container is the supported way and not
+ * an accident.
+ */
+
+.shell {
+  display: inline-flex;
+  align-items: center;
+  /* A badge is a reading, so it never gives up width — see The
+     Shape-Not-Reading Rule in DESIGN.md. Paired with `nowrap` below this is the
+     whole fit contract: `nowrap` makes the label the box's min-content size,
+     and `flex: 0 0 auto` says out loud that the box keeps it. The give happens
+     on the other side of the row — the prose beside the badge truncates, or the
+     row wraps and grows downward. `domains/badge-fit.test.ts` holds this rule
+     and the two marks that are not badges to it. */
+  flex: 0 0 auto;
+  white-space: nowrap;
+  border-radius: var(--r-sm);
+  /* Split into the three longhands rather than written as `border`, because the
+     shorthand would also set `border-color` — and setting it here is exactly
+     what the custom property above exists to avoid. */
+  border-width: var(--hairline);
+  border-style: solid;
+  border-color: var(--badge-edge, transparent);
+  /* The data voice. A badge says a stored value — a status, a key, an id — and
+     those are read in the same face as the columns around them. */
+  font-family: var(--font-data);
+  line-height: var(--lh-tight);
+}
+
+/* The step nine domain families and every table row use: a mark that has to sit
+   inside a 32px row beside a value without becoming the tallest thing in it. */
+.sm {
+  gap: var(--s1);
+  padding: 0 var(--s3);
+  font-size: var(--t-micro);
+}
+
+/* The step `StatusBadge` takes when it stands on its own — a run's status in a
+   panel head or a detail sheet, where it is the reading rather than a column. */
+.md {
+  gap: var(--s2);
+  padding: var(--s1) var(--s4);
+  font-size: var(--t-sm);
+}
+
+/* Icons ride the shell's own scale, so a mark dropped into any badge is
+   proportionate to the type beside it by construction — the same contract
+   `button.module.css` applies to every SVG it contains, and the reason no call
+   site here passes a class to its icon any more. Nine sheets each kept a
+   private `.icon` rule saying `--icon-xs` twice; a size step that owns its type
+   size should own its icon size with it. */
+.shell svg {
+  flex: 0 0 auto;
+}
+
+.sm svg {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+}
+
+.md svg {
+  inline-size: var(--icon-sm);
+  block-size: var(--icon-sm);
+}

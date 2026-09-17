@@ -276,3 +276,58 @@ describe("the chrome — padding, chevron state, chevron focus ring", () => {
     expect(match?.[1]).toContain("box-shadow:")
   })
 })
+describe("ComboboxField names its input exactly once", () => {
+  it("puts one element in the document wearing the label's id", () => {
+    render(
+      <ComboboxField
+        id="pick"
+        label="model"
+        value=""
+        options={MODELS}
+        onValueChange={() => {}}
+      />
+    )
+    // Two used to: `Field`'s visible `<label>`, and a screen-reader-only
+    // React Aria `<Label>` inside the combobox wearing the same id. Two
+    // elements sharing one id is not a style question — `getElementById`
+    // resolves every reference to whichever one is first, and the input came
+    // out with `aria-labelledby="pick-label pick-label"`, the name said twice.
+    expect(document.querySelectorAll("#pick-label")).toHaveLength(1)
+  })
+
+  it("points the input at that one element and nothing else", () => {
+    render(
+      <ComboboxField
+        id="pick"
+        label="model"
+        value=""
+        options={MODELS}
+        onValueChange={() => {}}
+      />
+    )
+    const input = document.querySelector("input")
+    expect(input?.getAttribute("aria-labelledby")).toBe("pick-label")
+  })
+
+  it("draws the required word through `Field`, like every other control", () => {
+    render(
+      <ComboboxField
+        id="pick"
+        label="model"
+        required
+        value=""
+        options={MODELS}
+        onValueChange={() => {}}
+      />
+    )
+    // The label is the channel on a React Aria control — `isRequired` would
+    // bring the browser's native constraint bubble with it, which is a second
+    // refusal in a second voice for one rule.
+    expect(document.querySelector("#pick-label")?.textContent).toBe(
+      "model required"
+    )
+    expect(document.querySelector("input")?.hasAttribute("required")).toBe(
+      false
+    )
+  })
+})

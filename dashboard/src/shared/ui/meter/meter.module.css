@@ -1,0 +1,116 @@
+/* A drawn empty channel, and a fill measured against it.
+
+   Four sheets carried this: `cost/ui/proxy-budget-meter`, `cost/ui/ranked-table`,
+   `compute/ui/capacity-card` and `settings/ui/budget-meter`, all four with the
+   same seven declarations and three of them with the same comment above them
+   ("the same material the table and the flow's tracks are made of"). What they
+   disagreed on was `overflow: clip` versus `hidden` — the same rule, written
+   twice by people who had read the Clip-Not-Hidden note and twice by people who
+   had not — and whether the fill takes a hue. Neither is a difference in kind.
+
+   What is *not* here is everything the four disagree on for real: the figures,
+   the labels, the a11y decision about which of the two is the reading. Those
+   stay at the call sites, because that is the axis where a key's cap, a spend
+   ranking and a pool's quota genuinely are three different things. This file
+   holds only the shape. `models/ui/key-budget-meter.module.css` used to argue
+   that a shared component could hold nothing but the word "meter"; it was
+   arguing against a merge of two whole components, which is the merge that was
+   rightly backed out. The channel is not that merge.
+
+   `overflow: clip`, never `hidden`: `hidden` makes the box a scroll container,
+   `position: sticky` resolves against the nearest scrolling ancestor, and a
+   meter can be dropped into a table cell or a tile at any time. Two of the four
+   said so in their own comments; the other two happened not to. */
+
+.channel {
+  position: relative;
+  display: block;
+  block-size: var(--h-meter);
+  min-inline-size: 0;
+  border-radius: var(--r-xs);
+  background: var(--lane-alt);
+  overflow: clip;
+
+  /* The fill's ink, resolved once here so the hatches below mix against the
+     same value the solid fill uses. Neutral is the default and it is a
+     decision, not a placeholder: saturation in this product is reserved for
+     status inside the flow, and a ranking carries no status. */
+  --meter-ink: var(--text-faint);
+}
+
+/* Two pixels tall, spelled from the one-pixel unit rather than from `--r-xs`:
+   the bar's *height* was reading the radius token, so moving the corner would
+   have silently changed the reading. Nothing on this track may add height
+   either — it lives in a table cell whose rows are uniform by contract. A 2px
+   bar has no room for a 3px corner, so this is the one place the corner scale
+   bottoms out at the hairline. */
+.row {
+  block-size: calc(var(--hairline) * 2);
+  border-radius: var(--hairline);
+}
+
+/* The channel drawn as a bordered box rather than as bare material. For a
+   meter standing on the page's own surface, where `--lane-alt` against
+   `--surface` is not enough of a step to read as an empty container — a panel's
+   headline reading, a collapsed strip. Inside a tile or a table cell the
+   surrounding material already does that work and the border is noise. */
+.edge {
+  border: var(--hairline) solid var(--rule);
+}
+
+/* The hue comes from the call site's own state attribute through `--st`, which
+   is the private property every meter in the product already sets beside the
+   figures it colours — so the bar and the number it is drawn under can never
+   disagree. The fallback is what makes this safe as a seam: a call site that
+   never sets `--st` gets the neutral, and no CSS-module override has to win a
+   race against a rule in this file to make that happen. */
+.heat {
+  --meter-ink: var(--st, var(--text-faint));
+}
+
+.fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: block;
+  border-radius: var(--r-xs);
+  background: var(--meter-ink);
+}
+
+.row .fill {
+  border-radius: var(--hairline);
+}
+
+/* Hatched: the fraction is still true — the spend, the wait, the count are all
+   real — but a solid fill claims something is still moving or that something
+   will happen at the end of the bar, and at these two call sites neither is so.
+   Two weaves because they are two different sentences, and the product already
+   spells them with two different tokens:
+
+     queued  nothing will act on this number (a cap that is recorded but not
+             enforced; a kill-switch already thrown, so the figure has stopped
+             moving);
+     failed  the thing at the end of the bar has happened.
+
+   `background-color` and `background-image` as longhands rather than the
+   shorthand, so the weave lands on top of the ink resolved above instead of
+   replacing it. */
+.queued .fill {
+  background-color: color-mix(in oklab, var(--meter-ink) 45%, transparent);
+  background-image: var(--weave-queued);
+}
+
+.failed .fill {
+  background-color: color-mix(in oklab, var(--meter-ink) 55%, transparent);
+  background-image: var(--weave-failed);
+}
+
+/* No reading at all — not a reading of zero. An empty channel says "nothing
+   used", and that is the one thing a provider which did not answer is not
+   saying, so the channel itself is hatched and carries no fill. Same
+   distinction the rest of the product draws with `null`: `pool.idle === null`
+   is "the runtime cannot see idle containers", never "none are idle". */
+.noReading {
+  background-color: var(--st-failed-tint);
+  background-image: var(--weave-failed);
+}

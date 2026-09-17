@@ -92,6 +92,7 @@ public sealed class RunDecisionsEndpointShould : IAsyncLifetime
         builder.Configuration["ControlPlane:Root"] = Path.GetTempPath();
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
         // Non-dev-default secrets so the production-secret validator
         // (issue #10 T11.4) passes through.
         builder.Configuration["Artifacts:Endpoint"] = "minio:9000";

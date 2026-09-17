@@ -110,6 +110,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         builder.Configuration["auth:publicHost:publicUrl"] = $"http://127.0.0.1:{hostPort}";
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
 
         // The MinIO endpoint Testcontainers returns is host:port without
         // a scheme; the artifacts options expect host:port. The SDK

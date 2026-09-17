@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test"
+import { rm } from "node:fs/promises"
 import {
   PENDING_PREFIX,
   addSession,
@@ -9,11 +10,16 @@ import {
   markUnread,
   newPendingSession,
   patchSession,
+  readSessionsFile,
   removeSession,
+  renameSession,
+  retryMessage,
   sessionNameFromMessage,
   setBlocks,
   stepActive,
+  titleForFirstMessage,
   toPersisted,
+  writeSessionsFile,
   type Session,
 } from "./sessions"
 import type { ChatMessageView } from "./client"
@@ -182,6 +188,60 @@ describe("adoptServerId", () => {
   })
 })
 
+describe("renameSession", () => {
+  it("renames the tab and locks out auto-naming", () => {
+    const next = renameSession(
+      [liveSession("s1", "auto name")],
+      "s1",
+      "Manual Name"
+    )
+    expect(next[0]?.name).toBe("Manual Name")
+    expect(next[0]?.renamed).toBe(true)
+  })
+
+  it("collapses whitespace in the title", () => {
+    const next = renameSession([liveSession("s1", "auto")], "s1", "  a   b ")
+    expect(next[0]?.name).toBe("a b")
+  })
+
+  it("ignores blank titles and unknown ids", () => {
+    const sessions = [liveSession("s1", "auto")]
+    expect(renameSession(sessions, "s1", "   ")).toBe(sessions)
+    expect(renameSession(sessions, "nope", "x")).toBe(sessions)
+  })
+})
+
+describe("retryMessage", () => {
+  it("returns the last user message when there is history", () => {
+    const session = { ...liveSession("s1"), lastUserMessage: "fix it" }
+    expect(retryMessage(session)).toBe("fix it")
+  })
+
+  it("returns null without history", () => {
+    expect(retryMessage(liveSession("s1"))).toBeNull()
+  })
+
+  it("returns null without a session", () => {
+    expect(retryMessage(undefined)).toBeNull()
+  })
+})
+
+describe("titleForFirstMessage", () => {
+  it("keeps a manual rename over the auto-derived name", () => {
+    const session = { ...liveSession("s1", "Manual"), renamed: true }
+    expect(titleForFirstMessage(session, "a different message")).toBe("Manual")
+  })
+
+  it("auto-names from the message otherwise", () => {
+    expect(titleForFirstMessage(liveSession("s1"), "fix the readme")).toBe(
+      "fix the readme"
+    )
+    expect(titleForFirstMessage(undefined, "fix the readme")).toBe(
+      "fix the readme"
+    )
+  })
+})
+
 describe("persistence round-trip", () => {
   it("persists only server tabs and restores the active one", () => {
     const state = {
@@ -221,5 +281,30 @@ describe("persistence round-trip", () => {
       ],
     })
     expect(restored.sessions.map((session) => session.id)).toEqual(["s1"])
+  })
+
+  it("round-trips a manual rename through the sessions file", async () => {
+    const path = `${import.meta.dir}/sessions-rename-roundtrip.tmp.json`
+    const state = {
+      sessions: [{ ...liveSession("s1", "Manual Name"), renamed: true }],
+      activeIndex: 0,
+    }
+    await writeSessionsFile(state, path)
+    const restored = fromPersisted(await readSessionsFile(path))
+    expect(restored.sessions[0]?.name).toBe("Manual Name")
+    expect(restored.sessions[0]?.renamed).toBe(true)
+    expect(restored.sessions[0]?.lastUserMessage).toBeNull()
+    await rm(path, { force: true })
+  })
+
+  it("restores renamed false for auto-named and legacy entries", () => {
+    const restored = fromPersisted({
+      sessions: [
+        { id: "s1", name: "auto", status: "idle", createdAt: 0 },
+        { id: "s2", name: "manual", status: "idle", createdAt: 1, renamed: true },
+      ],
+    })
+    expect(restored.sessions[0]?.renamed).toBe(false)
+    expect(restored.sessions[1]?.renamed).toBe(true)
   })
 })

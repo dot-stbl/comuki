@@ -34,8 +34,10 @@ import {
   patchSession,
   readSessionsFile,
   removeSession,
-  sessionNameFromMessage,
+  renameSession,
+  retryMessage,
   setBlocks,
+  titleForFirstMessage,
   stepActive,
   writeSessionsFile,
   PENDING_PREFIX,
@@ -43,6 +45,7 @@ import {
   type Session,
   type SessionsState,
 } from "../lib/sessions"
+import { resolveSlashAction, slashHelpLines } from "../lib/slash"
 import {
   bindChatEvents,
   joinChatGroup,
@@ -59,18 +62,9 @@ import { TabBar } from "../components/TabBar"
 import { TypingIndicator } from "../components/TypingIndicator"
 import { Welcome, type PlatformStats } from "../components/Welcome"
 
-const HELP_LINES = [
-  `${colors.accent}commands${colors.reset}`,
-  `  /exit, /quit, /q   leave the cli`,
-  `  /clear             wipe the active transcript`,
-  `  /help              this list`,
-  `  /sessions          session overview (esc)`,
-  `  /new               new session (ctrl+n)`,
-  `  approve            release a pending plan`,
-  `  reject [reason]    decline a pending plan`,
-]
-
 const EMPTY_TAB_HINT = `${colors.dim}  no open sessions — ctrl+n to start one${colors.reset}`
+
+const NOTHING_TO_RETRY = `${colors.dim}  nothing to retry — no message sent yet${colors.reset}`
 
 export interface ChatCommandProps {
   readonly config: ResolvedConfig
@@ -287,12 +281,21 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           key: `${sessionId}-h${index}`,
           message,
         }))
+        // `/retry` survives a restart — the server transcript still knows
+        // the last user text even though the local tab state was rebuilt.
+        const lastUser = [...page.items]
+          .reverse()
+          .find((item) => item.role === "user")
         setTabs((current) => ({
           ...current,
           sessions: patchSession(
             setBlocks(current.sessions, sessionId, blocks),
             sessionId,
-            { hydrated: true, status: "done" }
+            {
+              hydrated: true,
+              status: "done",
+              ...(lastUser ? { lastUserMessage: lastUser.content } : {}),
+            }
           ),
         }))
       } catch (error) {
@@ -486,7 +489,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       }
       setWelcomeDismissed(true)
       setNoticeLines([])
-      const name = sessionNameFromMessage(message)
+      const name = titleForFirstMessage(target, message)
       const userEcho: readonly string[] = [
         `${colors.accent}you  ${symbols.prompt}${colors.reset} ${message}`,
       ]
@@ -512,9 +515,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                 })
             return {
               ...next,
-              sessions: appendBlocks(next.sessions, session.id, [
-                { kind: "lines", lines: userEcho },
-              ]),
+              sessions: patchSession(
+                appendBlocks(next.sessions, session.id, [
+                  { kind: "lines", lines: userEcho },
+                ]),
+                session.id,
+                { lastUserMessage: message }
+              ),
             }
           })
           await runTurn(session.id, "message", { message })
@@ -529,9 +536,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
       setTabs((current) => ({
         ...current,
-        sessions: appendBlocks(current.sessions, target.id, [
-          { kind: "lines", lines: userEcho },
-        ]),
+        sessions: patchSession(
+          appendBlocks(current.sessions, target.id, [
+            { kind: "lines", lines: userEcho },
+          ]),
+          target.id,
+          { lastUserMessage: message }
+        ),
       }))
       await runTurn(target.id, "message", { message })
     },
@@ -562,60 +573,100 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       }
       setHistory((current) => [...current, value])
 
-      const bare = value.replace(/^\//, "").toLowerCase()
-      const base = bare.split(" ", 1)[0] ?? ""
+      const action = resolveSlashAction(value)
 
-      if (["exit", "quit", "q"].includes(base)) {
-        exit()
-        return
-      }
-      if (base === "clear") {
-        if (target) {
-          setTabs((current) => ({
-            ...current,
-            sessions: setBlocks(current.sessions, target.id, []),
-          }))
-        }
-        return
-      }
-      if (base === "help") {
-        if (target) {
-          pushLines(target.id, HELP_LINES)
-        } else {
-          setNoticeLines(HELP_LINES)
-        }
-        return
-      }
-      if (base === "sessions") {
-        setOverviewVisible(true)
-        return
-      }
-      if (base === "new") {
-        openPendingTab()
-        return
-      }
-      if (base === "approve" || base === "reject") {
-        if (!target) {
+      switch (action.kind) {
+        case "exit": {
+          exit()
           return
         }
-        if (!target.awaitingApproval) {
+        case "clear": {
+          if (target) {
+            setTabs((current) => ({
+              ...current,
+              sessions: setBlocks(current.sessions, target.id, []),
+            }))
+          }
+          return
+        }
+        case "help": {
+          const lines = slashHelpLines()
+          if (target) {
+            pushLines(target.id, lines)
+          } else {
+            setNoticeLines(lines)
+          }
+          return
+        }
+        case "sessions": {
+          setOverviewVisible(true)
+          return
+        }
+        case "new": {
+          openPendingTab()
+          return
+        }
+        case "retry": {
+          const last = retryMessage(target)
+          if (!last) {
+            if (target) {
+              pushLines(target.id, [NOTHING_TO_RETRY])
+            } else {
+              setNoticeLines([NOTHING_TO_RETRY])
+            }
+            return
+          }
+          void sendMessage(target, last)
+          return
+        }
+        case "rename": {
+          if (!target) {
+            setNoticeLines([
+              `${colors.dim}  no active session to rename${colors.reset}`,
+            ])
+            return
+          }
+          if (action.title.length === 0) {
+            pushLines(target.id, [
+              `${colors.dim}  usage: /rename <title>${colors.reset}`,
+            ])
+            return
+          }
+          setTabs((current) => ({
+            ...current,
+            sessions: renameSession(current.sessions, target.id, action.title),
+          }))
           pushLines(target.id, [
-            `${colors.dim}  nothing to approve — the brain did not interrupt${colors.reset}`,
+            `${colors.green}${symbols.checkmark} renamed to ${action.title}${colors.reset}`,
           ])
           return
         }
-        const approved = base === "approve"
-        const reason = value.slice(base.length).trim() || undefined
-        pushLines(target.id, [
-          approved
-            ? `${colors.green}${symbols.checkmark} approving…${colors.reset}`
-            : `${colors.yellow}${symbols.bullet} rejecting…${colors.reset}`,
-        ])
-        void runTurn(target.id, "approve", { approved, reason })
-        return
+        case "approve":
+        case "reject": {
+          if (!target) {
+            return
+          }
+          if (!target.awaitingApproval) {
+            pushLines(target.id, [
+              `${colors.dim}  nothing to approve — the brain did not interrupt${colors.reset}`,
+            ])
+            return
+          }
+          const approved = action.kind === "approve"
+          const reason = action.kind === "reject" ? action.reason : undefined
+          pushLines(target.id, [
+            approved
+              ? `${colors.green}${symbols.checkmark} approving…${colors.reset}`
+              : `${colors.yellow}${symbols.bullet} rejecting…${colors.reset}`,
+          ])
+          void runTurn(target.id, "approve", { approved, reason })
+          return
+        }
+        case "message": {
+          void sendMessage(target, value)
+          return
+        }
       }
-
-      void sendMessage(target, value)
     },
     [exit, openPendingTab, pushLines, runTurn, sendMessage, tabs]
   )

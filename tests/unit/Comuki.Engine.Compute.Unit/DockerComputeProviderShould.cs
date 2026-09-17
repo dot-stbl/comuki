@@ -12,8 +12,8 @@ namespace Comuki.Engine.Compute.Unit;
 
 /// <summary>
 /// Unit tests for <see cref="DockerComputeProvider"/> against a substituted
-/// <see cref="IDockerClient"/>: locks the env/label mapping, the stop path
-/// and the list/capacity mapping. No real docker.
+/// <see cref="IContainerOperations"/>: locks the env/label mapping, the stop
+/// path and the list/capacity mapping. No real docker.
 /// </summary>
 public sealed class DockerComputeProviderShould
 {
@@ -36,15 +36,13 @@ public sealed class DockerComputeProviderShould
 
     private DockerComputeProvider CreateProvider(int maxWorkers = 4)
     {
-        var docker = Substitute.For<IDockerClient>();
-        docker.Containers.Returns(containers);
         var computeOptions = new DockerComputeOptions
         {
             NetworkMode = "comuki-net",
             MaxWorkers = maxWorkers,
             WaitBeforeKillSeconds = 7,
         };
-        return new DockerComputeProvider(docker, Microsoft.Extensions.Options.Options.Create(computeOptions));
+        return new DockerComputeProvider(containers, Microsoft.Extensions.Options.Options.Create(computeOptions));
     }
 
     private static bool MatchesCreateParameters(
@@ -55,6 +53,7 @@ public sealed class DockerComputeProviderShould
     {
         var grpcUrl = request.OrchestratorGrpcUrl.ToString();
         return string.Equals(parameters.Image, request.Image, StringComparison.Ordinal)
+            && parameters.Name is not null
             && parameters.Name.StartsWith($"comuki-{projectId.Value:N}-", StringComparison.Ordinal)
             && parameters.Env.Contains("COMUKI_WORKER_TOKEN=secret-token")
             && parameters.Env.Contains($"COMUKI_PROJECT_ID={projectId.Value}")
@@ -127,6 +126,7 @@ public sealed class DockerComputeProviderShould
                     parameters.Labels[DockerComputeProvider.WorkerIdLabel],
                     expectedWorkerIdLabel,
                     StringComparison.Ordinal)
+                && parameters.Name != null
                 && parameters.Name.EndsWith(expectedNameSuffix, StringComparison.Ordinal)),
             cancellationToken);
     }
@@ -183,9 +183,9 @@ public sealed class DockerComputeProviderShould
         await provider.StopAsync(WorkerId.New(), ComputeStopReason.IdleTtl, cancellationToken);
 
         await containers.DidNotReceiveWithAnyArgs().StopContainerAsync(
-            default, default, cancellationToken);
+            string.Empty, new ContainerStopParameters(), cancellationToken);
         await containers.DidNotReceiveWithAnyArgs().RemoveContainerAsync(
-            default, default, cancellationToken);
+            string.Empty, new ContainerRemoveParameters(), cancellationToken);
     }
 
     [Fact(DisplayName = "When map Listed Containers To Worker Info Async, then test passes")]

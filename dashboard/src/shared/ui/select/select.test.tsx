@@ -331,9 +331,7 @@ describe("a row's muted second line", () => {
     // joins it — the operator speaks the name, the key is what they type.
     await user.click(screen.getByLabelText("project"))
     const list = await screen.findByRole("listbox")
-    expect(
-      within(list).getByRole("option", { name: "Plexor" })
-    ).toBeTruthy()
+    expect(within(list).getByRole("option", { name: "Plexor" })).toBeTruthy()
   })
 })
 

@@ -9,13 +9,13 @@ namespace Comuki.Engine.Compute.Providers;
 
 /// <summary>
 /// Docker implementation of <see cref="IComputeProvider"/> (dev / compose).
-/// All engine I/O goes through the injected <see cref="IDockerClient"/> so
-/// unit tests substitute it. The Kubernetes provider (prod) lives elsewhere.
+/// All engine I/O goes through the injected container operations so unit
+/// tests substitute it. The Kubernetes provider (prod) lives elsewhere.
 /// </summary>
-/// <param name="docker"></param>
+/// <param name="containers"></param>
 /// <param name="computeOptions"></param>
 public sealed class DockerComputeProvider(
-    IDockerClient docker,
+    IContainerOperations containers,
     IOptions<DockerComputeOptions> computeOptions) : IComputeProvider
 {
     /// <summary>
@@ -34,8 +34,8 @@ public sealed class DockerComputeProvider(
         var workerId = request.PreIssuedWorkerId ?? WorkerId.New();
         var createParameters = DockerComputeMapping.ToCreateParameters(request, workerId, computeOptions.Value);
 
-        var created = await docker.Containers.CreateContainerAsync(createParameters, cancellationToken);
-        await docker.Containers.StartContainerAsync(created.ID, new ContainerStartParameters(), cancellationToken);
+        var created = await containers.CreateContainerAsync(createParameters, cancellationToken);
+        await containers.StartContainerAsync(created.ID, new ContainerStartParameters(), cancellationToken);
 
         return new WorkerHandle(workerId, created.ID);
     }
@@ -43,16 +43,16 @@ public sealed class DockerComputeProvider(
     /// <inheritdoc />
     public async Task StopAsync(WorkerId workerId, ComputeStopReason reason, CancellationToken cancellationToken = default)
     {
-        var containers = await docker.Containers.ListContainersAsync(
+        var matches = await containers.ListContainersAsync(
             DockerComputeMapping.ToWorkerListParameters(workerId), cancellationToken);
 
-        foreach (var container in containers)
+        foreach (var container in matches)
         {
-            await docker.Containers.StopContainerAsync(
+            await containers.StopContainerAsync(
                 container.ID,
                 new ContainerStopParameters { WaitBeforeKillSeconds = (uint)computeOptions.Value.WaitBeforeKillSeconds },
                 cancellationToken);
-            await docker.Containers.RemoveContainerAsync(
+            await containers.RemoveContainerAsync(
                 container.ID,
                 new ContainerRemoveParameters { Force = true },
                 cancellationToken);
@@ -62,19 +62,19 @@ public sealed class DockerComputeProvider(
     /// <inheritdoc />
     public async Task<IReadOnlyList<WorkerInfo>> ListAsync(ProjectId projectId, CancellationToken cancellationToken = default)
     {
-        var containers = await docker.Containers.ListContainersAsync(
+        var matches = await containers.ListContainersAsync(
             DockerComputeMapping.ToProjectListParameters(projectId), cancellationToken);
 
-        return [.. containers.Select(DockerComputeMapping.ToWorkerInfo).OfType<WorkerInfo>()];
+        return [.. matches.Select(DockerComputeMapping.ToWorkerInfo).OfType<WorkerInfo>()];
     }
 
     /// <inheritdoc />
     public async Task<ComputeCapacity> GetCapacityAsync(CancellationToken cancellationToken = default)
     {
-        var containers = await docker.Containers.ListContainersAsync(
+        var matches = await containers.ListContainersAsync(
             DockerComputeMapping.ToWorkerListParameters(), cancellationToken);
 
-        var runningWorkers = containers.Count;
+        var runningWorkers = matches.Count;
         var freeSlots = Math.Max(0, computeOptions.Value.MaxWorkers - runningWorkers);
         return new ComputeCapacity(freeSlots, runningWorkers);
     }

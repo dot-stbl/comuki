@@ -112,9 +112,7 @@ export function mapProjectsPageToSummaries(views: ProjectView[]): ProjectRow[] {
  * screens. Archived rows are the caller's concern — the session hook
  * filters them out before mapping.
  */
-export function mapProjectRowsToProjectRefs(
-  rows: ProjectRow[]
-): ProjectRef[] {
+export function mapProjectRowsToProjectRefs(rows: ProjectRow[]): ProjectRef[] {
   return rows.map((row) => ({
     id: row.id,
     key: row.slug,

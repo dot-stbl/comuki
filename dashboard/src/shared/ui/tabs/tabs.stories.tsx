@@ -47,15 +47,15 @@ function Three() {
         <TabPanel id="library">
           <h3 style={{ margin: 0 }}>library</h3>
           <p style={{ margin: 0 }}>
-            The rule set, revisions, and the eval harness. The default
-            reading a knowledge screen opens to.
+            The rule set, revisions, and the eval harness. The default reading a
+            knowledge screen opens to.
           </p>
         </TabPanel>
         <TabPanel id="gate">
           <h3 style={{ margin: 0 }}>gate</h3>
           <p style={{ margin: 0 }}>
-            The per-project verification gate. Folded in from the
-            retired /verify route, kept under domains/verify.
+            The per-project verification gate. Folded in from the retired
+            /verify route, kept under domains/verify.
           </p>
         </TabPanel>
       </Tabs>
@@ -95,20 +95,20 @@ function UrlBound() {
         </TabList>
         <TabPanel id="users">
           <p style={{ margin: 0 }}>
-            Users are the subjects of every grant and every key. The
-            screen reads them first.
+            Users are the subjects of every grant and every key. The screen
+            reads them first.
           </p>
         </TabPanel>
         <TabPanel id="grants">
           <p style={{ margin: 0 }}>
-            A grant is a subject, a role and a scope. Read alongside
-            the user it belongs to, never alone.
+            A grant is a subject, a role and a scope. Read alongside the user it
+            belongs to, never alone.
           </p>
         </TabPanel>
         <TabPanel id="keys">
           <p style={{ margin: 0 }}>
-            API keys open the doors their role defines. A key is not
-            safe to leave alone until you know what it opens.
+            API keys open the doors their role defines. A key is not safe to
+            leave alone until you know what it opens.
           </p>
         </TabPanel>
       </Tabs>

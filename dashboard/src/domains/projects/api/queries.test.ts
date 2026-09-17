@@ -104,9 +104,8 @@ describe("queries.ts mock-first path", () => {
   })
 
   it("maps registry rows onto the session's narrow project ref", async () => {
-    const { mapProjectRowsToProjectRefs } = await import(
-      "@/domains/projects/api/mappers"
-    )
+    const { mapProjectRowsToProjectRefs } =
+      await import("@/domains/projects/api/mappers")
 
     /* The projection the session hook runs over the shared `["projects"]`
        cache: id, the key the operator calls the project by (the row's
@@ -141,8 +140,9 @@ describe("queries.ts one-request contract (real mode)", () => {
 
     const projectsMod =
       await import("@/shared/api/_generated/clients/getApiV1Projects")
-    const wire =
-      projectsMod.getApiV1Projects as unknown as ReturnType<typeof vi.fn>
+    const wire = projectsMod.getApiV1Projects as unknown as ReturnType<
+      typeof vi.fn
+    >
     wire.mockResolvedValue([
       {
         id: "p_comuki",
@@ -170,9 +170,8 @@ describe("queries.ts one-request contract (real mode)", () => {
       },
     ])
 
-    const { useProjectsQuery, useSessionProjects } = await import(
-      "@/domains/projects/api/queries"
-    )
+    const { useProjectsQuery, useSessionProjects } =
+      await import("@/domains/projects/api/queries")
     const { QueryClient, QueryClientProvider } =
       await import("@tanstack/react-query")
     const { renderHook, waitFor } = await import("@testing-library/react")
@@ -200,9 +199,7 @@ describe("queries.ts one-request contract (real mode)", () => {
        wire call, and each keeps its projection (the screen drops the
        archived row, the session narrows to refs). */
     expect(wire).toHaveBeenCalledTimes(1)
-    expect(result.current.rows.data?.map((row) => row.id)).toEqual([
-      "p_comuki",
-    ])
+    expect(result.current.rows.data?.map((row) => row.id)).toEqual(["p_comuki"])
     expect(result.current.refs).toEqual([
       { id: "p_comuki", key: "comuki", name: "Comuki platform" },
     ])

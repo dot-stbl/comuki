@@ -393,7 +393,6 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
                 )}
                 <Fact name="created">{project.createdAt}</Fact>
               </FactList>
-
             </Section>
 
             {/* --- who holds which role on it --- */}

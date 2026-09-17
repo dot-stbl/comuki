@@ -161,9 +161,7 @@ describe("the day picker, on the field envelope", () => {
     // The kit uses `data-test="…"` (matching `select.test.tsx`'s seam),
     // not the `data-testid` that `@testing-library/jest-dom`'s
     // `getByTestId` looks for.
-    const button = document.querySelector(
-      '[data-test="story-date-calendar"]'
-    )
+    const button = document.querySelector('[data-test="story-date-calendar"]')
     expect(button).toBeTruthy()
   })
 })
@@ -198,9 +196,7 @@ describe("the day range picker", () => {
 
     expect(screen.getByText("window")).toBeTruthy()
     // One calendar button opens the popover for the whole range.
-    expect(
-      screen.getByRole("button", { name: /Open calendar/i })
-    ).toBeTruthy()
+    expect(screen.getByRole("button", { name: /Open calendar/i })).toBeTruthy()
   })
 
   it("writes a `{start, end}` object back through onValueChange", async () => {

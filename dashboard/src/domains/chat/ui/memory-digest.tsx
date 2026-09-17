@@ -1,7 +1,4 @@
-import {
-  digestBody,
-  digestFactCount,
-} from "@/domains/chat/model/dynamics"
+import { digestBody, digestFactCount } from "@/domains/chat/model/dynamics"
 import type { ChatMessage as Message } from "@/domains/chat/model/types"
 
 import styles from "./chat-message.module.css"

@@ -14,6 +14,15 @@ export interface TextFieldProps extends Omit<
   label: string
   /** The label is real but not drawn — see `FieldProps.labelHidden`. */
   labelHidden?: boolean
+  /**
+   * The form will not go without this field — see `FieldProps.required`.
+   *
+   * It is taken off the input's own attribute set on purpose: this draws the
+   * word in the label and sets `aria-required`, and never the native
+   * `required` attribute, which would hand the browser a second, louder
+   * validation story than the one the form already tells.
+   */
+  required?: boolean
   value: string
   onValueChange: (next: string) => void
   hint?: ReactNode
@@ -41,6 +50,7 @@ export function TextField({
   id,
   label,
   labelHidden,
+  required,
   value,
   onValueChange,
   hint,
@@ -53,6 +63,7 @@ export function TextField({
       id={id}
       label={label}
       labelHidden={labelHidden}
+      required={required}
       hint={hint}
       error={error}
     >
@@ -63,6 +74,7 @@ export function TextField({
             id={id}
             className={cn(styles.control, styles.controlWithSuffix)}
             value={value}
+            aria-required={required ? true : undefined}
             aria-invalid={error ? true : undefined}
             aria-describedby={
               hint || error ? fieldDescriptionId(id) : undefined
@@ -77,6 +89,7 @@ export function TextField({
           id={id}
           className={styles.control}
           value={value}
+          aria-required={required ? true : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={hint || error ? fieldDescriptionId(id) : undefined}
           onChange={(event) => onValueChange(event.target.value)}

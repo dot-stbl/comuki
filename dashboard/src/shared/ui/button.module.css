@@ -16,7 +16,7 @@
   font-family: var(--font-ui);
   font-size: var(--t-xs);
   font-weight: var(--fw-medium);
-  line-height: 1;
+  line-height: var(--lh-flat);
   white-space: nowrap;
   user-select: none;
   cursor: pointer;
@@ -28,7 +28,7 @@
 
 .button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
   border-color: var(--ring);
 }
 
@@ -73,6 +73,11 @@
   content: "";
   position: absolute;
   inset: 0;
+  /* Not a rung on `--z-*`: `.default` sets `isolation: isolate`, so this is a
+     number inside the button's own stacking context, competing with nothing but
+     the button's own label. The product scale starts at 0 and has no negative
+     step by design — a component that needs to paint *under* its own content
+     opens a context and says so, the way the data table does. */
   z-index: -1;
   border-radius: inherit;
   background-image: var(--gradient-primary-hover);

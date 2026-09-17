@@ -3,11 +3,13 @@ using Comuki.Host.Brain.Brain.Options;
 using Comuki.Host.Brain.Ports.ActiveRuns;
 using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Shared.Contracts.Brain;
+using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Kernel.Scoping;
 using Grpc.Core;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -74,15 +76,16 @@ public sealed class BrainGrpcServiceShould
     private static BrainAgent Agent(params ChatResponse[] responses)
     {
         return new BrainAgent(
-            new StaticModelConfigProvider(),
-            new ScriptedChatClientFactory(responses),
+            TimeProvider.System,
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),
+            new StaticModelConfigProvider(),
             new StubExplorerReportReader(),
             new AsyncLocalSubjectScopeAccessor(),
-            TimeProvider.System,
-            Options.Create(new BrainOptions()));
+            Options.Create(new BrainOptions()),
+            new ScriptedChatClientFactory(responses));
     }
 
     private static BrainGrpcService Service(BrainAgent agent)

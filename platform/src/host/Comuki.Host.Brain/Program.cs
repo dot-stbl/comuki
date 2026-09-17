@@ -5,6 +5,7 @@ using Comuki.Host.Brain.ControlPlane;
 using Comuki.Host.Brain.Ports.ActiveRuns;
 using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Modules.Knowledge.Infrastructure;
+using Comuki.Modules.Memory.Application;
 using Comuki.Modules.Memory.Infrastructure;
 using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Cli;
@@ -67,6 +68,11 @@ builder.WebHost.ConfigureKestrel(server =>
 // without declaring one, instead of silently defaulting open.
 builder.Services.TryAddSingleton<ISubjectScopeAccessor, AsyncLocalSubjectScopeAccessor>();
 builder.Services.AddMemoryPersistence(connectionString, builder.Configuration);
+// IMemoryDigest — the scope-aware brain-context assembler that BrainAgent
+// calls when BrainRequest carries a ScopeKind / SubjectId. Memory application
+// layer registers ComukiMemoryDigest; persistence already wired above supplies
+// the underlying EfMemoryStore the digest runs against.
+builder.Services.AddMemoryApplication();
 
 // The memory sweep registers as an IComukiWorker; this registry is what
 // actually runs it inside the brain host (AddComukiWorkers from

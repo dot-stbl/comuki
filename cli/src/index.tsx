@@ -24,12 +24,20 @@ import {
 import { resolveCommand } from "./lib/commands"
 import { CLI_VERSION } from "./components/StatusLine"
 import { whoAmI } from "./lib/auth"
-import { colors, symbols } from "./theme"
+import {
+  DEFAULT_THEME_CHOICE,
+  THEME_CHOICE_IDS,
+  colors,
+  isThemeChoice,
+  resolveTheme,
+  symbols,
+} from "./theme"
 
 interface GlobalOptions {
   url?: string
   apiKey?: string
   project?: string
+  theme?: string
 }
 
 async function loadConfig(overrides: GlobalOptions): Promise<ResolvedConfig> {
@@ -43,6 +51,10 @@ async function main(): Promise<void> {
     .option("url", { type: "string", describe: "Comuki host URL" })
     .option("api-key", { type: "string", describe: "API key (ck_…)" })
     .option("project", { type: "string", describe: "project id, slug or name" })
+    .option("theme", {
+      type: "string",
+      describe: "terminal theme: <theme>-<dark|light>",
+    })
     .command("status", "platform snapshot")
     .command("runs [list]", "run ledger", (y) =>
       y
@@ -82,6 +94,7 @@ async function main(): Promise<void> {
     url: argv.url,
     apiKey: argv["api-key"],
     project: argv.project,
+    theme: argv.theme,
   }
   const command = resolveCommand(argv._)
 
@@ -98,6 +111,25 @@ async function main(): Promise<void> {
   }
 
   const config = await loadConfig(overrides)
+
+  // Theme: a bad --theme flag is a hard error (the user just typed it);
+  // a stale config.json value falls back to the default with a note.
+  if (overrides.theme !== undefined && !isThemeChoice(overrides.theme)) {
+    console.error(
+      `${colors.error}unknown theme: ${overrides.theme}${colors.reset}`
+    )
+    console.error(
+      `${colors.faint}available: ${THEME_CHOICE_IDS.join(", ")}${colors.reset}`
+    )
+    process.exitCode = 1
+    return
+  }
+  if (config.theme !== undefined && !isThemeChoice(config.theme)) {
+    console.error(
+      `${colors.faint}unknown theme in config.json: ${config.theme} — using ${DEFAULT_THEME_CHOICE}${colors.reset}`
+    )
+  }
+  resolveTheme(config.theme)
 
   if (command === "repl") {
     render(<ChatApp config={config} project={overrides.project} />, {

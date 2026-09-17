@@ -27,7 +27,11 @@ import {
   type ChatMessageView,
 } from "../lib/client"
 import { whoAmI } from "../lib/auth"
-import { flattenTranscript } from "../lib/transcript"
+import {
+  expandHintLine,
+  flattenTranscript,
+  hasCollapsedThinking,
+} from "../lib/transcript"
 import { renderUserEcho } from "../lib/format"
 import type { ResolvedConfig } from "../lib/config"
 import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
@@ -151,6 +155,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               pendingPlan: activeSession.pendingPlan,
               thinking,
               liveText: activeSession.liveText,
+              expanded: activeSession.blocksExpanded,
             }
           : undefined,
         columns,
@@ -159,6 +164,14 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       ),
     [activeSession, columns, typingFrame, noticeLines, thinking]
   )
+
+  // The ctrl+o hint rides the top row of the viewport — only while the
+  // active tab actually hides thinking behind ⏺ event lines.
+  const expandHint =
+    activeSession &&
+    hasCollapsedThinking(activeSession.blocks, activeSession.blocksExpanded)
+      ? expandHintLine(columns)
+      : null
 
   // Pinned chrome rows: status line + tab strip + footer + the prompt
   // block (the transient ctrl+y hint takes its own row). Everything
@@ -965,6 +978,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             height={viewportHeight}
             offset={scroll.offset}
             newBelow={scroll.newBelow}
+            hint={expandHint}
           />
         ) : (
           <Text>{EMPTY_TAB_HINT}</Text>

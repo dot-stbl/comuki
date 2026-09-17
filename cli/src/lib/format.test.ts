@@ -12,9 +12,6 @@ import {
   renderPendingPlan,
   renderUserEcho,
   summarizeToolArgs,
-  summarizeToolInput,
-  summarizeToolOutput,
-  renderToolPart,
 } from "./format"
 import { colors, stripAnsi, symbols } from "../theme"
 import type { ChatMessageView, MessagePart } from "./client"
@@ -45,127 +42,84 @@ function assistantMessage(parts: MessagePart[]): ChatMessageView {
   }
 }
 
-describe("summarizeToolInput", () => {
-  it("renders string arguments quoted", () => {
-    expect(summarizeToolInput("memory.search", `{"query":"identity"}`)).toBe(
-      `memory.search("identity")`
-    )
-  })
-
-  it("keeps at most two arguments and truncates long strings", () => {
-    expect(
-      summarizeToolInput("t", `{"a":"${"x".repeat(50)}","b":1,"c":2}`)
-    ).toBe(`t("${"x".repeat(29)}…", 1)`)
-  })
-
-  it("counts array arguments", () => {
-    expect(summarizeToolInput("x", `{"keys":[1,2,3,4]}`)).toBe("x(4 keys)")
-  })
-
-  it("falls back to the bare name on broken json", () => {
-    expect(summarizeToolInput("x", "not json")).toBe("x")
-  })
-})
-
-describe("summarizeToolOutput", () => {
-  it("counts array outputs", () => {
-    expect(summarizeToolOutput(`[{"f":1},{"f":2}]`, "success")).toBe("2 items")
-  })
-
-  it("prefers count/total fields", () => {
-    expect(summarizeToolOutput(`{"total":12}`, "success")).toBe("12")
-  })
-
-  it("counts named array fields as facts", () => {
-    expect(summarizeToolOutput(`{"facts":[{},{},{}]}`, "success")).toBe(
-      "3 facts"
-    )
-  })
-
-  it("stays quiet while running or empty", () => {
-    expect(summarizeToolOutput(null, "running")).toBe("")
-    expect(summarizeToolOutput(null, "success")).toBe("")
-  })
-})
-
-describe("renderToolPart", () => {
-  it("marks success with a checkmark and muted call", () => {
-    const line = renderToolPart({
-      kind: "tool",
-      name: "memory.search",
-      inputJson: `{"query":"identity"}`,
-      status: "success",
-      outputJson: `{"facts":[{},{}]}`,
-      durationMs: 1200,
-    })
-    expect(stripAnsi(line)).toContain(
-      '✓ memory.search("identity")  2 facts · 1200ms'
-    )
-  })
-
-  it("marks failure red", () => {
-    const line = renderToolPart({
-      kind: "tool",
-      name: "boom",
-      inputJson: "{}",
-      status: "failed",
-    })
-    expect(line).toContain(colors.red)
-    expect(stripAnsi(line)).toContain("✗ boom")
-  })
-})
-
-describe("renderPart", () => {
-  it("dims thinking lines and indents them", () => {
-    const lines = renderPart({
-      kind: "thinking",
-      text: "considering\nthe identity module",
-      tokens: 40,
-    })
-    expect(lines).toHaveLength(2)
-    expect(lines[0]).toContain(colors.dim)
-    expect(stripAnsi(lines[0] ?? "")).toBe("  considering")
-  })
-
-  it("renders plan items as profile → brief bullets", () => {
-    const lines = renderPart({
-      kind: "plan",
-      nodes: [
-        {
-          key: "a",
-          profileKey: "implement",
-          brief: "split Identity into Users/Grants/Keys\ndetails",
-          dependsOn: [],
-        },
-        {
-          key: "b",
-          profileKey: "review",
-          brief: "review the split",
-          dependsOn: ["a"],
-        },
-      ],
-      edges: [{ from: "a", to: "b" }],
-    })
-    expect(stripAnsi(lines[0] ?? "")).toContain(
-      "implement → split Identity into Users/Grants/Keys"
-    )
-    expect(stripAnsi(lines[1] ?? "")).toContain("← a")
-  })
-
-  it("renders markdown text parts through the markdown path", () => {
-    const lines = renderPart({ kind: "text", markdown: "План:\n1. Шаг" })
-    expect(lines.map(stripAnsi)).toEqual(["План:", "", "  1. Шаг"])
-  })
-})
-
 describe("renderPendingPlan", () => {
-  it("renders nodes from raw plan json", () => {
+  it("frames the plan card with numbered steps and the colored hint", () => {
     const lines = renderPendingPlan({
       nodes: [
         { key: "n1", profileKey: "implement", brief: "do it", dependsOn: [] },
+        { key: "n2", profileKey: "review", brief: "check it", dependsOn: [] },
       ],
     })
-    expect(stripAnsi(lines[0] ?? "")).toContain("implement → do it")
+    const plain = lines.map(stripAnsi)
+    expect(plain[0]).toContain("┌─ plan · 2 шага ")
+    expect(plain[0]?.endsWith("┐")).toBe(true)
+    expect(plain[1]).toContain("│ 1 · do it")
+    expect(plain[2]).toContain("│ 2 · check it")
+    expect(plain[3]).toMatch(/^  └─+┘$/)
+    expect(plain[4]).toContain("approve · reject [reason]")
+    // The frame reads dim; approve green, reject warm red.
+    expect(lines[0]).toContain(colors.dim)
+    expect(lines[4]).toContain(colors.green)
+    expect(lines[4]).toContain(colors.red)
+    // The frame is one closed box: every row shares its visible width.
+    const widths = plain.slice(0, 4).map((line) => line.length)
+    expect(new Set(widths).size).toBe(1)
+  })
+
+  it("reads the canonical wire nodes (id + title) too", () => {
+    const lines = renderPendingPlan({
+      nodes: [
+        { id: "n1", title: "wire step", profileKey: "implement", brief: "" },
+      ],
+    })
+    expect(stripAnsi(lines[1] ?? "")).toContain("│ 1 · wire step")
+  })
+
+  it("russianizes the step count in the header", () => {
+    const one = renderPendingPlan({
+      nodes: [{ key: "a", profileKey: "x", brief: "b", dependsOn: [] }],
+    })
+    expect(stripAnsi(one[0] ?? "")).toContain("plan · 1 шаг ")
+    const five = renderPendingPlan({
+      nodes: [1, 2, 3, 4, 5].map((n) => ({
+        key: `k${n}`,
+        profileKey: "x",
+        brief: "b",
+        dependsOn: [],
+      })),
+    })
+    expect(stripAnsi(five[0] ?? "")).toContain("plan · 5 шагов ")
+  })
+
+  it("cites the estimate only when the payload carries one", () => {
+    const withEstimate = renderPendingPlan({
+      estimateMinutes: 40,
+      nodes: [{ key: "a", profileKey: "x", brief: "b", dependsOn: [] }],
+    })
+    expect(stripAnsi(withEstimate[0] ?? "")).toContain("est 40m")
+    const without = renderPendingPlan({
+      nodes: [{ key: "a", profileKey: "x", brief: "b", dependsOn: [] }],
+    })
+    expect(stripAnsi(without[0] ?? "")).not.toContain("est")
+  })
+
+  it("keeps the frame inside the terminal width", () => {
+    const lines = renderPendingPlan(
+      {
+        nodes: [
+          {
+            key: "n1",
+            profileKey: "implement",
+            brief: "x".repeat(200),
+            dependsOn: [],
+          },
+        ],
+      },
+      60
+    )
+    for (const line of lines.slice(0, 4)) {
+      expect(stripAnsi(line).length).toBeLessThanOrEqual(60)
+    }
   })
 
   it("degrades to a dim note on unreadable plans", () => {
@@ -175,13 +129,14 @@ describe("renderPendingPlan", () => {
 })
 
 describe("renderMessage", () => {
-  it("echoes user rows with the dim mark, bright text and a leading blank", () => {
+  it("echoes user rows as bare bold text with a blank line on each side", () => {
     const lines = renderMessage(userMessage("сделай план"))
+    expect(lines).toHaveLength(3)
     expect(lines[0]).toBe("")
-    const line = stripAnsi(lines[1] ?? "")
-    expect(line).toBe(` ${symbols.prompt} сделай план`)
-    expect(lines[1]).toContain(colors.dim)
+    expect(lines[2]).toBe("")
+    expect(stripAnsi(lines[1] ?? "")).toBe("сделай план")
     expect(lines[1]).toContain(colors.bright)
+    expect(lines[1]).not.toContain("›")
   })
 
   it("leads assistant rows with the brand glyph and dim comuki label", () => {
@@ -193,6 +148,25 @@ describe("renderMessage", () => {
     expect(lines[0]).toContain(colors.accent)
     expect(lines[0]).toContain(colors.dim)
     expect(stripAnsi(lines[1] ?? "")).toBe(" done")
+  })
+
+  it("breathes one blank line between the events block and the answer", () => {
+    const lines = renderMessage(
+      assistantMessage([
+        { kind: "thinking", text: "hidden", tokens: 40 },
+        { kind: "tool", name: "x", inputJson: "{}", status: "succeeded" },
+        { kind: "text", markdown: "the answer" },
+      ]),
+      80,
+      { expanded: false }
+    )
+    const plain = lines.map(stripAnsi)
+    const eventIndex = plain.findIndex((line) => line.includes("thinking"))
+    const answerIndex = plain.findIndex((line) =>
+      line.includes("the answer")
+    )
+    expect(plain[eventIndex + 1]).toContain("x()")
+    expect(plain[answerIndex - 1]).toBe("")
   })
 
   it("gutters every non-empty line of an assistant row", () => {
@@ -318,27 +292,42 @@ describe("summarizeToolArgs", () => {
 })
 
 describe("collapsedSummary", () => {
-  it("derives a thinking summary with duration when known", () => {
+  it("derives a thinking summary with tokens and duration when known", () => {
     expect(
       collapsedSummary({
         kind: "thinking",
         text: "reasoning here",
-        tokens: 40,
-        durationMs: 3_400,
+        tokens: 4_100,
+        durationMs: 6_200,
       })
-    ).toEqual({ icon: symbols.thinking, label: "thinking", badge: "3.4s" })
+    ).toEqual({
+      icon: symbols.event,
+      label: "thinking",
+      badge: null,
+      details: ["4.1k tok", "6.2s"],
+    })
   })
 
-  it("falls back to tokens, then to a bare badge for thinking", () => {
+  it("omits what the wire did not carry — never invents numbers", () => {
     expect(
-      collapsedSummary({ kind: "thinking", text: "a", tokens: 1_240 })?.badge
-    ).toBe("1.2k tok")
+      collapsedSummary({ kind: "thinking", text: "a", tokens: null })
+    ).toEqual({ icon: symbols.event, label: "thinking", badge: null, details: [] })
     expect(
-      collapsedSummary({ kind: "thinking", text: "a", tokens: null })?.badge
-    ).toBeNull()
+      collapsedSummary({
+        kind: "tool",
+        name: "x",
+        inputJson: "{}",
+        status: "succeeded",
+      })
+    ).toEqual({
+      icon: symbols.event,
+      label: "x()",
+      badge: "ok",
+      details: [],
+    })
   })
 
-  it("derives a tool summary with name, args and status badge", () => {
+  it("derives a tool summary with name, args, status badge and duration", () => {
     expect(
       collapsedSummary({
         kind: "tool",
@@ -346,11 +335,13 @@ describe("collapsedSummary", () => {
         inputJson: `{"q":"ids"}`,
         status: "succeeded",
         outputJson: "[]",
+        durationMs: 41,
       })
     ).toEqual({
-      icon: symbols.tool,
+      icon: symbols.event,
       label: `memory.recall("ids")`,
       badge: "ok",
+      details: ["41ms"],
     })
     expect(
       collapsedSummary({
@@ -382,7 +373,7 @@ describe("collapsedSummary", () => {
 })
 
 describe("renderPart — collapsible blocks", () => {
-  it("collapses thinking to one dim summary line", () => {
+  it("collapses thinking to one dim ⏺ event line", () => {
     const lines = renderPart(
       { kind: "thinking", text: "long\nreasoning", tokens: 40 },
       80,
@@ -390,25 +381,28 @@ describe("renderPart — collapsible blocks", () => {
     )
     expect(lines).toHaveLength(1)
     expect(lines[0]).toContain(colors.dim)
-    expect(stripAnsi(lines[0] ?? "")).toBe("  ◌ thinking · 40 tok")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  ⏺ thinking · 40 tok")
   })
 
-  it("collapses a tool call to name(args) with a result badge", () => {
+  it("collapses a tool call to name(args) with the status two spaces after", () => {
     const lines = renderPart(
       {
         kind: "tool",
         name: "memory.recall",
         inputJson: `{"q":"ids"}`,
         status: "succeeded",
+        durationMs: 41,
       },
       80,
       { expanded: false }
     )
     expect(lines).toHaveLength(1)
-    expect(stripAnsi(lines[0] ?? "")).toBe(`  ⚙ memory.recall("ids") → ok`)
+    expect(stripAnsi(lines[0] ?? "")).toBe(
+      `  ⏺ memory.recall("ids")  ok 41ms`
+    )
   })
 
-  it("paints the failed badge red and the running badge accent", () => {
+  it("paints the failed badge warm red and the running badge accent", () => {
     const failed = renderPart(
       { kind: "tool", name: "boom", inputJson: "{}", status: "failed" },
       80,
@@ -429,21 +423,23 @@ describe("renderPart — collapsible blocks", () => {
       text: "considering",
       tokens: 1,
     })
-    expect(lines).toHaveLength(1)
-    expect(stripAnsi(lines[0] ?? "")).toBe("  considering")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  ⏺ thinking · 1 tok")
+    expect(stripAnsi(lines[1] ?? "")).toBe("    considering")
   })
 
-  it("expands thinking through the markdown renderer, dimmed", () => {
+  it("expands thinking under the event line, dimmed and indented", () => {
     const lines = renderPart(
       { kind: "thinking", text: "hmm **why** not", tokens: 1 },
       80,
       { expanded: true }
     )
     expect(stripAnsi(lines.join("\n"))).toContain("hmm why not")
-    expect(lines[0]).toContain(colors.dim)
+    expect(stripAnsi(lines[0] ?? "")).toBe("  ⏺ thinking · 1 tok")
+    expect(stripAnsi(lines[1] ?? "")).toBe("    hmm why not")
+    expect(lines[1]).toContain(colors.dim)
   })
 
-  it("expands a tool with pretty-printed input and output blocks", () => {
+  it("expands a tool with pretty-printed input and output under the event line", () => {
     const lines = renderPart(
       {
         kind: "tool",
@@ -457,7 +453,9 @@ describe("renderPart — collapsible blocks", () => {
       { expanded: true }
     )
     const frame = stripAnsi(lines.join("\n"))
-    expect(frame).toContain(`memory.recall("ids")`)
+    expect(stripAnsi(lines[0] ?? "")).toBe(
+      `  ⏺ memory.recall("ids")  ok 1.2s`
+    )
     expect(frame).toContain("input:")
     expect(frame).toContain(`"q": "ids"`)
     expect(frame).toContain("output:")
@@ -465,8 +463,51 @@ describe("renderPart — collapsible blocks", () => {
   })
 })
 
+describe("renderPart — full blocks", () => {
+  it("dims expanded thinking lines and indents them under the event", () => {
+    const lines = renderPart({
+      kind: "thinking",
+      text: "considering\nthe identity module",
+      tokens: 40,
+    })
+    expect(lines).toHaveLength(3)
+    expect(lines[1]).toContain(colors.dim)
+    expect(stripAnsi(lines[1] ?? "")).toBe("    considering")
+  })
+
+  it("renders plan items as profile → brief bullets", () => {
+    const lines = renderPart({
+      kind: "plan",
+      nodes: [
+        {
+          key: "a",
+          profileKey: "implement",
+          brief: "split Identity into Users/Grants/Keys\ndetails",
+          dependsOn: [],
+        },
+        {
+          key: "b",
+          profileKey: "review",
+          brief: "review the split",
+          dependsOn: ["a"],
+        },
+      ],
+      edges: [{ from: "a", to: "b" }],
+    })
+    expect(stripAnsi(lines[0] ?? "")).toContain(
+      "implement → split Identity into Users/Grants/Keys"
+    )
+    expect(stripAnsi(lines[1] ?? "")).toContain("← a")
+  })
+
+  it("renders markdown text parts through the markdown path", () => {
+    const lines = renderPart({ kind: "text", markdown: "План:\n1. Шаг" })
+    expect(lines.map(stripAnsi)).toEqual(["План:", "", "  1. Шаг"])
+  })
+})
+
 describe("renderMessage — collapsed transcript", () => {
-  it("hides thinking behind the summary line, keeps the answer", () => {
+  it("hides thinking behind the ⏺ event line, keeps the answer", () => {
     const lines = renderMessage(
       assistantMessage([
         { kind: "thinking", text: "secret reasoning", tokens: 10 },
@@ -476,7 +517,7 @@ describe("renderMessage — collapsed transcript", () => {
       { expanded: false }
     )
     const frame = stripAnsi(lines.join("\n"))
-    expect(frame).toContain("◌ thinking · 10 tok")
+    expect(frame).toContain("⏺ thinking · 10 tok")
     expect(frame).not.toContain("secret reasoning")
     expect(frame).toContain("the answer")
   })

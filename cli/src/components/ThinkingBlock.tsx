@@ -1,10 +1,10 @@
 /**
  * One collapsible transcript block — a completed `thinking` or `tool`
  * part of an assistant message. Collapsed (the transcript default) it
- * is a single dim summary line: `◌ thinking · 3.4s`,
- * `⚙ memory.recall(args) → ok`. Expanded it renders the full body —
- * thinking markdown dimmed, tool status line plus pretty-printed args
- * and result.
+ * is a single dim event line: `⏺ thinking · 4.1k tok · 6.2s`,
+ * `⏺ memory.recall(args)  ok 41ms`. Expanded it renders the body
+ * indented under the event line — thinking markdown dimmed, tool args
+ * and result pretty-printed.
  *
  * Line generation stays pure in `lib/format.ts` (`collapsedSummary` +
  * `renderPart`); this component only mounts the finished lines. A

@@ -11,6 +11,7 @@
 import { Box, Text } from "ink"
 import React from "react"
 import type { Session } from "../lib/sessions"
+import { palette } from "../theme"
 
 export interface TabBarProps {
   readonly sessions: readonly Session[]
@@ -28,7 +29,7 @@ export function TabBar({ sessions, activeIndex }: TabBarProps) {
           <React.Fragment key={session.id}>
             {index > 0 ? <Text> </Text> : null}
             <Text
-              color={active ? "#8787f3" : undefined}
+              color={active ? palette.brand : undefined}
               dimColor={!active}
               bold={active}
             >

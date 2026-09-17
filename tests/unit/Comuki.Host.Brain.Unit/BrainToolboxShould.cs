@@ -500,6 +500,7 @@ internal sealed class FakeProfileCatalog(IReadOnlyList<ProfileDefinition> profil
 /// In-memory memory store for tool tests: search answers fixed facts and
 /// records the last query; write/forget record what the tools did.
 /// </summary>
+// TODO(canon #12): extract this fake to a shared *.Testing project — separate task with its own csproj/slnx changes.
 internal sealed class FakeMemoryStore(IReadOnlyList<MemoryFactView> facts) : IMemoryStore
 {
     private readonly List<MemoryFactView> written = [];

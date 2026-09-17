@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from "react"
-import { SendHorizontal, X } from "lucide-react"
+import { AlertTriangle, SendHorizontal, X } from "lucide-react"
 
 import type { SearchTarget } from "@/app/search"
 import {
@@ -18,6 +18,26 @@ import styles from "./chat-composer.module.css"
 const MIN_ROWS = 3
 /** And stops here, so the thread does not disappear behind a pasted file. */
 const MAX_ROWS = 12
+
+/**
+ * A send the console could not complete.
+ *
+ * The composer clears on the gesture — a box that waits for a round trip
+ * before emptying feels broken on every send that works — so the refusal has
+ * to arrive somewhere, and it arrives here, beside the box the words were
+ * typed into rather than in a corner of the screen that scrolls away.
+ */
+export interface ComposerFailure {
+  /** The wire's own sentence. */
+  message: string
+  /**
+   * The words that did not go, when the console could not give them back: the
+   * operator had already started a new thought, and overwriting it to repair
+   * the first loss would have been a second one. Shown here so the message is
+   * still readable and still copyable.
+   */
+  unsent?: string | null
+}
 
 export interface ChatComposerProps {
   /** Every command this session may be offered — built-in plus the client's. */
@@ -52,6 +72,12 @@ export interface ChatComposerProps {
    * presumptuous.
    */
   autoFocus?: boolean
+  /**
+   * The last send this conversation refused, or null. Stamped and chosen by
+   * the console — the composer draws what it is handed and never decides
+   * which conversation an error belongs to.
+   */
+  failure?: ComposerFailure | null
 }
 
 /**
@@ -100,6 +126,7 @@ export function ChatComposer({
   onSeedChange,
   recall,
   autoFocus,
+  failure,
 }: ChatComposerProps) {
   const session = useSession()
   const box = useRef<HTMLTextAreaElement | null>(null)
@@ -249,6 +276,31 @@ export function ChatComposer({
               </li>
             ))}
           </ul>
+        </div>
+      ) : null}
+
+      {/* Above the box, not under the send button: this is the answer to the
+          gesture the operator just made, and it has to be in the path their
+          eye takes back from the thread to what they typed. `alert`, because
+          a message that did not go is not something to discover later. */}
+      {failure ? (
+        <div
+          className={styles.failure}
+          role="alert"
+          data-test="chat-send-error"
+        >
+          <AlertTriangle className={styles.failureIcon} aria-hidden="true" />
+          <div className={styles.failureWords}>
+            <p className={styles.failureLine}>{failure.message}</p>
+            {failure.unsent ? (
+              <p
+                className={styles.failureUnsent}
+                data-test="chat-send-error-unsent"
+              >
+                {failure.unsent}
+              </p>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

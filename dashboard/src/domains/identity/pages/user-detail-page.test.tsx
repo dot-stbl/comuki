@@ -493,7 +493,7 @@ describe("the crumbs and the return path agree with the parent", () => {
   it("puts the person one crumb behind the link form, as a real link", async () => {
     mount(["/identity/users/u_nadia/link"])
 
-    await screen.findByLabelText("subject")
+    await screen.findByLabelText("subject required")
     const crumb = screen.getByRole("link", { name: "nadia@plexor.dev" })
     expect(crumb.getAttribute("href")).toBe("/identity/users/u_nadia")
     // The section is still one step further back.
@@ -515,7 +515,7 @@ describe("the crumbs and the return path agree with the parent", () => {
     // A pasted link, a bookmark, a fresh tab: no history to go back through.
     const router = mount(["/identity/users/u_nadia/link"])
 
-    await screen.findByLabelText("subject")
+    await screen.findByLabelText("subject required")
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
 
     await waitFor(() => expect(here(router)).toBe("/identity/users/u_nadia"))
@@ -545,8 +545,8 @@ describe("the crumbs and the return path agree with the parent", () => {
       "/identity/users/u_nadia/link",
     ])
 
-    await screen.findByLabelText("subject")
-    fireEvent.change(screen.getByLabelText("subject"), {
+    await screen.findByLabelText("subject required")
+    fireEvent.change(screen.getByLabelText("subject required"), {
       target: { value: "oidc|plexor|9931" },
     })
     fireEvent.click(screen.getByRole("button", { name: "Link subject" }))

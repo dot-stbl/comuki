@@ -127,8 +127,8 @@ export function AuthKindChoice({
           connector implements, and the provider's own word is what makes
           that a fact rather than a coincidence. */}
       <FieldHint>
-        what {providerLabel(kind)} accepts, and nothing else. Stored verbatim
-        in the settings json; never holds a credential.
+        what {providerLabel(kind)} accepts, and nothing else. Stored verbatim in
+        the settings json; never holds a credential.
       </FieldHint>
     </fieldset>
   )

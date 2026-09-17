@@ -55,17 +55,34 @@ async function listRuns(): Promise<RunSummary[]> {
  * path — it returns the full envelope (work-items + dependencies, the
  * recent journal, the pinned revisions, the brief). The mock path uses
  * the seed store so the screen still renders locally without a backend.
+ *
+ * **`null` is an answer, not a failure.** An id that resolves to nothing is
+ * the ordinary way to arrive here — a link somebody wrote a week ago, a tab
+ * left open past the run's retention — and it is a different reading from "the
+ * request failed", which is the only one a thrown error can produce. Throwing
+ * here collapsed the two into one screen that said "couldn't load this run"
+ * and offered a Retry that would ask the same question again. `useWorkerQuery`
+ * (`queue/api/queries.ts`) already resolves 404 to `null`; this is the same
+ * arrangement, and the screen tells the two apart because the query does.
  */
-async function getRun(runId: string): Promise<RunDetail> {
+async function getRun(runId: string): Promise<RunDetail | null> {
   if (env.useMock) {
     const seed = findSeedRun(runId)
-    if (!seed) {
-      throw new Error(`run ${runId} not found`)
-    }
-    return toRunDetail(seed)
+    return seed ? toRunDetail(seed) : null
   }
-  const detail = await runsGetById(runId)
-  return mapRunDetailToDetail(detail)
+  try {
+    const detail = await runsGetById(runId)
+    return mapRunDetailToDetail(detail)
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      (error as { status?: unknown }).status === 404
+    ) {
+      return null
+    }
+    throw error
+  }
 }
 
 /**

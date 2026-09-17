@@ -24,7 +24,14 @@ import { useObservabilityQuery } from "@/domains/observability/api/queries"
 import { BoardsPanel } from "@/domains/observability/ui/boards-panel"
 import { ConnectGuide } from "@/domains/observability/ui/connect-guide"
 import { can, projectOf, useSession } from "@/shared/session"
-import { Button, ConfirmDialog, Section, Tooltip } from "@/shared/ui"
+import {
+  Button,
+  ConfirmDialog,
+  ScreenState,
+  Section,
+  Skeleton,
+  Tooltip,
+} from "@/shared/ui"
 
 import styles from "./compute-page.module.css"
 
@@ -170,24 +177,24 @@ export function ComputePage() {
     >
       <div className={styles.screen}>
         {isLoading ? (
-          <div className={styles.skeleton} data-test="compute-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="flush"
+            label="Loading the registry"
+            data-test="compute-loading"
+          />
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>Couldn&apos;t load compute</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="Couldn't load compute"
+            description={
+              error instanceof Error ? error.message : "Unknown error"
+            }
+            inset="flush"
+            data-test="compute-error"
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -200,8 +207,8 @@ export function ComputePage() {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {failure ? (
@@ -289,7 +296,14 @@ export function ComputePage() {
               />
             </Section>
 
-            {boardsVisible && observability.data ? (
+            {/* Rendered on the permission, not on the payload. Keyed off
+                `observability.data` this section simply was not there while
+                the request was in flight and stayed missing forever if it
+                failed — a whole region of the screen disappearing with no
+                loading bar, no sentence and no way to ask again. The
+                permission decides whether the section exists; the query
+                decides which of its three states is showing. */}
+            {boardsVisible ? (
               <Section
                 variant="screen"
                 data-test="compute-boards"
@@ -310,12 +324,55 @@ export function ComputePage() {
                   </>
                 }
               >
-                <BoardsPanel boards={boards} />
-                <ConnectGuide
-                  grafana={observability.data.grafana}
-                  boardsRepo={observability.data.boardsRepo}
-                  noBoards={noBoards}
-                />
+                {observability.isLoading ? (
+                  <Skeleton
+                    lines={3}
+                    inset="none"
+                    label="Loading the boards"
+                    data-test="boards-loading"
+                  />
+                ) : null}
+
+                {observability.isError ? (
+                  <ScreenState
+                    kind="error"
+                    title="Couldn't load the boards"
+                    description={
+                      observability.error instanceof Error
+                        ? observability.error.message
+                        : "Unknown error"
+                    }
+                    /* The section has already paid for its own room, so the
+                       state stands on its edge rather than buying more. */
+                    inset="none"
+                    data-test="boards-error"
+                    action={
+                      <Tooltip content="Retry">
+                        <Button
+                          size="icon-sm"
+                          data-test="boards-retry"
+                          aria-label="Retry"
+                          onClick={() => {
+                            void observability.refetch()
+                          }}
+                        >
+                          <RotateCw aria-hidden="true" />
+                        </Button>
+                      </Tooltip>
+                    }
+                  />
+                ) : null}
+
+                {observability.data ? (
+                  <>
+                    <BoardsPanel boards={boards} />
+                    <ConnectGuide
+                      grafana={observability.data.grafana}
+                      boardsRepo={observability.data.boardsRepo}
+                      noBoards={noBoards}
+                    />
+                  </>
+                ) : null}
               </Section>
             ) : null}
           </>

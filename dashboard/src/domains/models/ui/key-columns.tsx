@@ -18,7 +18,7 @@ import {
   type DataColumn,
 } from "@/shared/ui"
 
-import { BudgetMeter } from "./budget-meter"
+import { KeyBudgetMeter } from "./key-budget-meter"
 import { KeyStateBadge } from "./model-badges"
 import styles from "./models-table.module.css"
 
@@ -220,7 +220,7 @@ export function createKeyColumns({
       header: "spent of cap",
       sortFn: budgetSort,
       cell: ({ row }) => (
-        <BudgetMeter entry={row.original} enforced={enforced} />
+        <KeyBudgetMeter entry={row.original} enforced={enforced} />
       ),
       meta: { width: 172, label: "spent of cap" },
     },

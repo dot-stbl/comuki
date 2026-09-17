@@ -311,7 +311,12 @@ export function createWorkerColumns({
       header: "lease",
       cell: ({ row }) => <LeaseMeter worker={row.original} />,
       sortFn: leaseSort,
-      meta: { width: 96, align: "end", label: "lease" },
+      /* `numeric` as well as `align`, the way `up` below declares it: the
+         alignment was already here, the tabular figures were not, and a lease
+         counting down in proportional digits shifts under the eye on every
+         refresh. The column's own `sortFn` survives it — `meta.numeric` only
+         supplies `numericSort` to a column that has not declared one. */
+      meta: { width: 96, align: "end", numeric: true, label: "lease" },
     },
     {
       accessorKey: "upSec",

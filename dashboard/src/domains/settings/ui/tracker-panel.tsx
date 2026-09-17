@@ -3,7 +3,14 @@ import { toast } from "sonner"
 
 import type { TrackerProvider } from "@/domains/settings/model/types"
 import type { PermissionCheck } from "@/shared/session"
-import { Button, Notice, Section, StatusBadge, Tooltip } from "@/shared/ui"
+import {
+  Button,
+  Notice,
+  ScreenState,
+  Section,
+  StatusBadge,
+  Tooltip,
+} from "@/shared/ui"
 
 import styles from "./tracker-panel.module.css"
 
@@ -45,75 +52,96 @@ export function TrackerPanel({ trackers, edit }: TrackerPanelProps) {
         stays open either way.
       </Notice>
 
-      <div className={styles.grid}>
-        {trackers.map((provider) => (
-          <article
-            key={provider.id}
-            className={styles.tracker}
-            data-test="tracker"
-            data-connected={provider.connected ? "" : undefined}
-          >
-            <header className={styles.head}>
-              <h3 className={styles.name}>{provider.name}</h3>
-              {provider.connected ? (
-                <StatusBadge status="success" size="sm">
-                  connected
-                </StatusBadge>
-              ) : null}
-            </header>
+      {/* No providers at all. The grid used to draw nothing here and the
+          section read as a half-rendered screen — an intake list with no
+          trackers in it is an ordinary answer, and it is worth one sentence
+          saying so. */}
+      {trackers.length === 0 ? (
+        <ScreenState
+          kind="empty"
+          inset="none"
+          title="No tracker is wired up"
+          description="Nothing is syncing tickets into the backlog. Manual intake is open either way — a tracker only adds a second door."
+          data-test="tracker-empty"
+        />
+      ) : (
+        <div className={styles.grid}>
+          {trackers.map((provider) => (
+            <article
+              key={provider.id}
+              className={styles.tracker}
+              data-test="tracker"
+              data-connected={provider.connected ? "" : undefined}
+            >
+              <header className={styles.head}>
+                <h3 className={styles.name}>{provider.name}</h3>
+                {provider.connected ? (
+                  <StatusBadge status="success" size="sm">
+                    connected
+                  </StatusBadge>
+                ) : null}
+              </header>
 
-            <p className={styles.meta}>{provider.meta}</p>
+              <p className={styles.meta}>{provider.meta}</p>
 
-            <div className={styles.foot}>
-              {provider.connected ? (
-                <>
-                  <span className={styles.synced}>synced {provider.last}</span>
-                  <Tooltip content={edit.denial ?? "Sync"}>
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="ghost"
-                      data-test="tracker-sync"
-                      denied={edit.denial}
-                      aria-label={`Sync ${provider.name}`}
-                      onClick={() =>
-                        toast.message(`Synced ${provider.name}`, {
-                          description: "imported new issues",
-                        })
-                      }
-                    >
-                      <RotateCcw aria-hidden="true" />
-                    </Button>
-                  </Tooltip>
-                </>
-              ) : (
-                /* A plug, not a plus. `Plus` is *new* everywhere else in this
+              <div className={styles.foot}>
+                {provider.connected ? (
+                  <>
+                    <span className={styles.synced}>
+                      synced {provider.last}
+                    </span>
+                    <Tooltip content={edit.denial ?? "Sync"}>
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        data-test="tracker-sync"
+                        denied={edit.denial}
+                        aria-label={`Sync ${provider.name}`}
+                        /* No mutation behind it yet — the tracker surface
+                           has no wire. The word in the description is the
+                           same one every other mock act on this screen
+                           carries, so nobody reads a green answer as a round
+                           trip that happened. */
+                        onClick={() =>
+                          toast.message(`Synced ${provider.name}`, {
+                            description: "imported new issues (mock)",
+                          })
+                        }
+                      >
+                        <RotateCcw aria-hidden="true" />
+                      </Button>
+                    </Tooltip>
+                  </>
+                ) : (
+                  /* A plug, not a plus. `Plus` is *new* everywhere else in this
                    product — a new ticket, a new key, a new project — and a
                    tracker that is already there is not being created by this
                    control, it is being wired up. Same mark, same act, as the
                    one that connects a source. */
-                <Tooltip content={edit.denial ?? "Connect"}>
-                  <Button
-                    type="button"
-                    size="icon-sm"
-                    variant="secondary"
-                    data-test="tracker-connect"
-                    denied={edit.denial}
-                    aria-label={`Connect ${provider.name}`}
-                    onClick={() =>
-                      toast.message(`Connect ${provider.name}`, {
-                        description: "OAuth flow…",
-                      })
-                    }
-                  >
-                    <Plug aria-hidden="true" />
-                  </Button>
-                </Tooltip>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
+                  <Tooltip content={edit.denial ?? "Connect"}>
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="secondary"
+                      data-test="tracker-connect"
+                      denied={edit.denial}
+                      aria-label={`Connect ${provider.name}`}
+                      onClick={() =>
+                        toast.message(`Connect ${provider.name}`, {
+                          description: "OAuth flow… (mock)",
+                        })
+                      }
+                    >
+                      <Plug aria-hidden="true" />
+                    </Button>
+                  </Tooltip>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </Section>
   )
 }

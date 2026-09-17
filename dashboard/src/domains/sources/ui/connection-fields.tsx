@@ -106,6 +106,7 @@ export function ConnectionFields({
         <TextField
           id={`${idPrefix}-base-url`}
           label="base url"
+          required
           value={baseUrl}
           disabled={disabled}
           placeholder="https://git.example.internal"
@@ -129,6 +130,7 @@ export function ConnectionFields({
       <TextField
         id={`${idPrefix}-account`}
         label="account"
+        required
         value={account}
         disabled={disabled}
         placeholder="the bot or app the credential belongs to"

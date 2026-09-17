@@ -14,6 +14,12 @@
   border-bottom: var(--hairline) solid var(--rule-strong);
 }
 
+/* `--rule-strong` here where `attention-list` uses `--rule`, and that is the
+   one place the two lists are deliberately not the same: a data surface is
+   bounded by two strong hairlines, and over there the upper one sits on the
+   column names. This list has no column names, so the upper bound lands on the
+   rows themselves. Evening this out would leave this list bounded on one
+   side. */
 .rows {
   display: flex;
   flex-direction: column;
@@ -107,7 +113,7 @@
   padding: var(--s4) var(--s3);
   font-family: var(--font-ui);
   font-size: var(--t-sm);
-  color: var(--muted-foreground);
+  color: var(--text-muted);
 }
 
 .more {
@@ -118,13 +124,13 @@
 }
 
 .moreLink {
-  color: var(--muted-foreground);
+  color: var(--text-muted);
   text-decoration: none;
   border-radius: var(--r-xs);
 }
 
 .moreLink:hover {
-  color: var(--foreground);
+  color: var(--text);
   text-decoration: underline;
   text-underline-offset: 0.25em;
 }

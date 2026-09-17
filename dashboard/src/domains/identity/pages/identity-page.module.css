@@ -77,7 +77,7 @@
 
 .tab[data-focus-visible] {
   border-radius: var(--r-sm);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* A count rides at the end in mono micro figures, the way the rail's do. */
@@ -100,45 +100,9 @@
 .strong {
   font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
-  color: var(--foreground);
+  color: var(--text);
 }
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s8) var(--s6);
-  font-family: var(--font-ui);
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-width: var(--measure-note);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  flex: 1 1 0;
-  min-height: 0;
-  padding: var(--s6);
-}
-
-.skeletonBar {
-  block-size: var(--h-meter);
-  flex: 0 0 auto;
-  border-radius: var(--r-xs);
-  background: var(--muted);
-}
+/* The screen's empty / error / loading blocks are the kit's now — `ScreenState`
+   with `inset="gutter"` and `Skeleton` with the same, which is exactly the
+   `--s8 --s6` and `--s6` this file used to spell for itself. */

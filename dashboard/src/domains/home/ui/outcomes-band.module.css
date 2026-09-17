@@ -77,3 +77,16 @@
 .status {
   background-color: var(--hue);
 }
+
+/* The week, when it did not load. A line in the band's own prose voice rather
+   than an alarm band: history is this screen's second question, and a red rule
+   here would outrank the verdict above it — which is the one thing on this
+   screen that is allowed to shout. */
+.absent {
+  margin: 0;
+  max-inline-size: var(--measure-note);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-faint);
+}

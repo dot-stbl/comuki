@@ -18,7 +18,7 @@
    count that the screen is about turns warm the moment it is not zero — the
    pinned line then answers the question before the body has been read. */
 .strong {
-  color: var(--foreground);
+  color: var(--text);
   font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
 }
@@ -42,41 +42,11 @@
 
 /* --- the states this screen can be in besides the shift --- */
 
-.state {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-  padding: var(--s8) 0;
-  font-family: var(--font-ui);
-}
-
-.stateTitle {
-  margin: 0;
-  font-size: var(--t-h2);
-  font-weight: var(--fw-semibold);
-  color: var(--foreground);
-}
-
-.stateBody {
-  margin: 0;
-  max-width: var(--measure-note);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--muted-foreground);
-}
-
-.failure {
-  margin: 0;
-  padding: var(--s3) var(--s4);
-  border-left: var(--hairline) solid var(--st-failed);
-  border-radius: var(--r-md);
-  background: var(--st-failed-tint);
-  color: var(--foreground);
-  font-family: var(--font-ui);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-}
+/* The error state is the kit's `ScreenState` (default `flush` inset — which is
+   the `--s8 0` this file used to spell), and a failed decision is the kit's
+   `Notice tone="bad"`, which is the same left-rule band this file had copied.
+   What is left below is the one loading shape the kit deliberately does not
+   carry: a band and three rows, not a column of equal bars. */
 
 /* The loading shape is the screen's own shape — a band, then rows — so the
    moment the data lands nothing jumps. It is not a spinner: a spinner would

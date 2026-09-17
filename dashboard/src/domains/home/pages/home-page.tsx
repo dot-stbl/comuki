@@ -13,7 +13,15 @@ import { RunningNow } from "@/domains/home/ui/running-now"
 import { useApproveRun, useCancelRun } from "@/domains/runs/api/mutations"
 import { useRunsQuery } from "@/domains/runs/api/queries"
 import type { RunSummary } from "@/domains/runs/model/types"
-import { Button, ConfirmDialog, Section, Tooltip } from "@/shared/ui"
+import { requestFailureMessage } from "@/shared/api/problem"
+import {
+  Button,
+  ConfirmDialog,
+  Notice,
+  ScreenState,
+  Section,
+  Tooltip,
+} from "@/shared/ui"
 
 import styles from "./home-page.module.css"
 
@@ -119,14 +127,21 @@ export function HomePage() {
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert" data-test="home-error">
-            <p className={styles.stateTitle}>Couldn&apos;t load the shift</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"} — until
-              this loads, nothing on this screen can be trusted to say whether a
-              decision is owed.
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="Couldn't load the shift"
+            /* The host's own sentence rather than the transport's, and then
+               the consequence — this screen's whole job is to answer "am I
+               needed", and a screen that cannot answer has to say so. */
+            description={
+              <>
+                {requestFailureMessage(error, "Unknown error")} — until this
+                loads, nothing on this screen can be trusted to say whether a
+                decision is owed.
+              </>
+            }
+            data-test="home-error"
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -139,19 +154,21 @@ export function HomePage() {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {ready ? (
           <>
+            {/* The kit's own band rather than a hand-rolled one: this is the
+                answer to something the operator just pressed, which is half of
+                what `Notice` is for, and the copy here had grown its own
+                left-rule recipe beside it. */}
             {failure ? (
-              <p className={styles.failure} role="alert">
-                {failure instanceof Error
-                  ? failure.message
-                  : "The decision failed."}{" "}
-                Nothing changed — the run is back as it was.
-              </p>
+              <Notice tone="bad" data-test="home-failure">
+                {requestFailureMessage(failure, "The decision failed.")} Nothing
+                changed — the run is back as it was.
+              </Notice>
             ) : null}
 
             <Section id="needs-you" title="Needs you">
@@ -190,12 +207,12 @@ export function HomePage() {
                   It stays *below* "needs you" on purpose — the verdict owns
                   the top of this screen, and history never outranks a
                   decision that is owed now. */}
-              {outcomes.data ? (
-                <OutcomesBand
-                  days={outcomes.data}
-                  className={styles.outcomes}
-                />
-              ) : null}
+              <OutcomesBand
+                days={outcomes.data}
+                loading={outcomes.isLoading}
+                failed={outcomes.isError}
+                className={styles.outcomes}
+              />
 
               <RunningNow runs={running} total={reading.running.length} />
             </Section>

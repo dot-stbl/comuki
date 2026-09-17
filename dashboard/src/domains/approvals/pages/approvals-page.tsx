@@ -1,4 +1,4 @@
-import { CheckCheck, RotateCw } from "lucide-react"
+import { RotateCw } from "lucide-react"
 import { toast } from "sonner"
 
 import { AppShell } from "@/app/layout/app-shell"
@@ -9,8 +9,9 @@ import {
 } from "@/domains/approvals/api/queries"
 import type { ApprovalDecision } from "@/domains/approvals/model/types"
 import { ApprovalCard } from "@/domains/approvals/ui/approval-card"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { can, useSession } from "@/shared/session"
-import { Button, Tooltip } from "@/shared/ui"
+import { Button, Notice, ScreenState, Tooltip } from "@/shared/ui"
 
 import styles from "./approvals-page.module.css"
 
@@ -46,6 +47,12 @@ export function ApprovalsPage() {
     )
   }
 
+  /* Which card is being decided, not merely that one is. `busy` on every card
+     at once refused approve, reject and review across the whole queue while a
+     single decision was in flight — the duty list and the key list both answer
+     this by id, and so does this now. */
+  const deciding = decision.isPending ? (decision.variables?.id ?? null) : null
+
   const ready = !isLoading && !isError
 
   return (
@@ -78,12 +85,11 @@ export function ApprovalsPage() {
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>Failed to load approvals</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            title="Failed to load approvals"
+            description={requestFailureMessage(error, "Unknown error")}
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -96,31 +102,31 @@ export function ApprovalsPage() {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {decision.error ? (
-          <p
-            className={styles.stateBody}
-            role="alert"
-            data-test="approvals-decision-failed"
-          >
-            {decision.error instanceof Error
-              ? decision.error.message
-              : "The decision did not land."}{" "}
+          /* The kit's band, which is what the rest of the product answers a
+             failed write with. It used to wear `.stateBody` — the empty
+             state's prose class — which is how a banner and a state ended up
+             sharing one rule and neither owning it. */
+          <Notice tone="bad" data-test="approvals-decision-failed">
+            {requestFailureMessage(
+              decision.error,
+              "The decision did not land."
+            )}{" "}
             The queue is as it was — the run is still waiting.
-          </p>
+          </Notice>
         ) : null}
 
         {ready && data.length === 0 ? (
-          <div className={styles.empty} data-test="approvals-empty">
-            <CheckCheck className={styles.emptyIcon} aria-hidden="true" />
-            <span>
-              <p className={styles.emptyTitle}>Queue empty</p>
-              <p className={styles.emptyBody}>Nothing awaiting a human.</p>
-            </span>
-          </div>
+          <ScreenState
+            kind="empty"
+            title="Queue empty"
+            description="Nothing awaiting a human."
+            data-test="approvals-empty"
+          />
         ) : null}
 
         {ready && data.length > 0 ? (
@@ -129,7 +135,7 @@ export function ApprovalsPage() {
               <ApprovalCard
                 key={approval.id}
                 approval={approval}
-                busy={decision.isPending}
+                busy={deciding === approval.id}
                 onAction={onAction}
               />
             ))}

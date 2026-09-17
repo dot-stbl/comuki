@@ -80,7 +80,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--muted-foreground);
+  color: var(--text-muted);
 }
 
 .groupCount {
@@ -197,13 +197,13 @@
 }
 
 .moreLink {
-  color: var(--muted-foreground);
+  color: var(--text-muted);
   text-decoration: none;
   border-radius: var(--r-xs);
 }
 
 .moreLink:hover {
-  color: var(--foreground);
+  color: var(--text);
   text-decoration: underline;
   text-underline-offset: 0.25em;
 }

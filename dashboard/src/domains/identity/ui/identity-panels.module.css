@@ -29,3 +29,12 @@
 
   --h-table-body: 100cqh;
 }
+
+/* A write that did not land, said above the table it did not change.
+   On the toolbar's own gutter so the sentence starts over the first column,
+   and `flex: 0 0 auto` like the toolbar — the scroll port below keeps the
+   rest of the depth, which is the whole point of the traced chain. */
+.failure {
+  flex: 0 0 auto;
+  padding: var(--s4) var(--s3) 0;
+}

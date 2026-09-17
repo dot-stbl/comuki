@@ -233,6 +233,7 @@ export function ConnectionForm({
         <TextField
           id="connection-secret-env"
           label="secret env var"
+          required
           value={secretEnvRef}
           disabled={busy}
           placeholder="COMUKI_GITHUB_TOKEN"

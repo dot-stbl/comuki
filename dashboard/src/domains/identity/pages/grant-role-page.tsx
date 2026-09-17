@@ -10,7 +10,8 @@ import {
 } from "@/domains/identity/api/queries"
 import type { GrantRoleInput } from "@/domains/identity/model/types"
 import { GrantRoleForm } from "@/domains/identity/ui/grant-role-form"
-import { ConfirmDialog } from "@/shared/ui"
+import { requestFailureMessage } from "@/shared/api/problem"
+import { ConfirmDialog, Notice } from "@/shared/ui"
 
 /**
  * Writing a grant, on its own screen at `/identity/grants/new`.
@@ -23,7 +24,7 @@ import { ConfirmDialog } from "@/shared/ui"
 export function GrantRolePage() {
   const navigate = useNavigate()
   const router = useRouter()
-  const { data } = useIdentityQuery()
+  const { data, isLoading } = useIdentityQuery()
   const grantRole = useGrantRoleMutation()
 
   const [dirty, setDirty] = useState(false)
@@ -81,10 +82,26 @@ export function GrantRolePage() {
       ]}
       summary="A grant is a subject, a role and a scope. Nothing else is stored, and nothing else is offered."
     >
+      {/* The host's own sentence, not `error.message`: a grant the platform
+          refused says why in its problem body, and a screen that printed the
+          transport's status line would be hiding the only reading the
+          operator can act on. */}
+      {grantRole.error ? (
+        <Notice tone="bad" data-test="grant-failure">
+          {requestFailureMessage(
+            grantRole.error,
+            "The platform refused to write the grant."
+          )}{" "}
+          Nothing was granted — the subject, role and scope below are still
+          exactly as you chose them.
+        </Notice>
+      ) : null}
+
       <GrantRoleForm
         users={users}
         keys={keys}
         projects={projects}
+        loading={isLoading}
         busy={grantRole.isPending}
         onGrant={onGrant}
         onCancel={cancel}

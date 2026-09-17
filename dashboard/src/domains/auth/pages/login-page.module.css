@@ -51,7 +51,7 @@
   font-family: var(--font-ui);
   font-size: var(--t-display);
   font-weight: var(--fw-bold);
-  line-height: 1.05;
+  line-height: var(--lh-display);
   letter-spacing: var(--tracking-display);
   color: var(--text);
 }
@@ -158,61 +158,12 @@
   gap: var(--s5);
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-}
-
-/* Names a value, so it takes the tight gesture — the same one the table's
-   column names take. Inline-flex so the lucide mark sits with the text. */
-.label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
-}
-
-.labelIcon {
-  width: 12px;
-  height: 12px;
-  flex: none;
-}
-
-/* An address and a secret are both values: data voice, tabular by default. */
-.input {
-  height: var(--h-button-lg);
-  padding: 0 var(--s3);
-  border: var(--hairline) solid var(--rule-strong);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  color: var(--text);
-  font-family: var(--font-data);
-  font-size: var(--t-xs);
-  letter-spacing: var(--tracking-data);
-  transition:
-    border-color var(--dur) var(--ease),
-    box-shadow var(--dur) var(--ease);
-}
-
-.input:hover {
-  border-color: color-mix(in oklab, var(--rule-strong) 60%, var(--text));
-}
-
-/* The ring, spelled the way every other control in the kit spells it. */
-.input:focus-visible {
-  outline: none;
-  border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
-}
-
-.input[aria-invalid="true"] {
-  border-color: var(--st-failed);
-}
+/* The field, its label and its box are the kit's `TextField` — they were
+   re-spelled here almost declaration for declaration (the same
+   `--h-button-lg`, the same `--r-md`, the same ring), which meant this screen
+   was the one form in the product that could not receive a correction made to
+   the others. `.labelIcon` went with them: it hand-sized a 12px glyph against
+   the `--icon-*` scale, and nothing on this screen ever rendered it. */
 
 .submit {
   width: 100%;

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Pause, Play, Plus, Trash2 } from "lucide-react"
+import { Pause, Play, Plus, RotateCw, Trash2 } from "lucide-react"
 
 import {
   useCreateScheduledJobMutation,
@@ -8,12 +8,15 @@ import {
   useSetScheduledJobEnabledMutation,
   type ScheduledJob,
 } from "@/domains/projects/api/scheduled-jobs"
+import { requestFailureMessage } from "@/shared/api/problem"
 import {
   Button,
   ConfirmDialog,
   CronField,
   FormDialog,
+  ScreenState,
   Section,
+  Skeleton,
   StatusBadge,
   TextField,
   TextareaField,
@@ -40,6 +43,9 @@ import styles from "./scheduled-jobs-section.module.css"
 function formatWhen(iso: string): string {
   return `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`
 }
+
+/** One bar per schedule the section is about to draw. */
+const SKELETON_WIDTHS = ["62%", "48%", "71%"]
 
 /** Reads `title` out of the brief JSON; the raw document stays a value. */
 function briefTitle(briefJson: string): string {
@@ -101,11 +107,52 @@ export function ScheduledJobsSection({
       note={
         jobs.data
           ? `${jobs.data.length} configured`
-          : /* Absent while loading, not zero — see the cost hand-off. */
-            "counting"
+          : jobs.isError
+            ? /* Not "counting": nothing is counting any more. */
+              "unknown"
+            : /* Absent while loading, not zero — see the cost hand-off. */
+              "counting"
       }
       data-test="project-jobs"
     >
+      {/* Three answers, three states, and they are disjoint. The section used
+          to ask `jobs.data && jobs.data.length > 0` and nothing else, so an
+          unanswered read — loading, or failed — fell straight through into the
+          sentence that says no schedule exists. That is the one thing this
+          section must not say while it does not yet know. */}
+      {jobs.isLoading ? (
+        <Skeleton
+          lines={SKELETON_WIDTHS}
+          inset="none"
+          label="Loading scheduled jobs"
+          data-test="project-jobs-loading"
+        />
+      ) : null}
+
+      {jobs.isError ? (
+        <ScreenState
+          kind="error"
+          title="The schedules did not load"
+          description={requestFailureMessage(jobs.error, "Unknown error")}
+          inset="none"
+          data-test="project-jobs-error"
+          action={
+            <Tooltip content="Retry">
+              <Button
+                size="icon-sm"
+                data-test="project-jobs-retry"
+                aria-label="Retry"
+                onClick={() => {
+                  void jobs.refetch()
+                }}
+              >
+                <RotateCw aria-hidden="true" />
+              </Button>
+            </Tooltip>
+          }
+        />
+      ) : null}
+
       {jobs.data && jobs.data.length > 0 ? (
         <ul className={styles.jobs} data-test="project-jobs-list">
           {jobs.data.map((job) => (
@@ -174,12 +221,15 @@ export function ScheduledJobsSection({
             </li>
           ))}
         </ul>
-      ) : (
-        <p className={styles.quiet} data-test="project-jobs-empty">
-          No schedule starts work on this project on its own. Everything that
-          runs here was filed or dispatched by a person.
-        </p>
-      )}
+      ) : jobs.data ? (
+        <ScreenState
+          kind="empty"
+          title="Nothing runs here on a clock"
+          description="No schedule starts work on this project on its own. Everything that runs here was filed or dispatched by a person."
+          inset="none"
+          data-test="project-jobs-empty"
+        />
+      ) : null}
 
       {canEdit ? (
         <div className={styles.head}>

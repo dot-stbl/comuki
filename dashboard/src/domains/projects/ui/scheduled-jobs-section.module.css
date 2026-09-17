@@ -85,15 +85,6 @@
   gap: var(--s2);
 }
 
-/* A quiet answer where a list would read as a broken render. */
-.quiet {
-  margin: 0;
-  max-inline-size: var(--measure-prose);
-  font-size: var(--t-sm);
-  line-height: var(--lh-body);
-  color: var(--text-muted);
-}
-
 .head {
   display: flex;
   justify-content: flex-end;

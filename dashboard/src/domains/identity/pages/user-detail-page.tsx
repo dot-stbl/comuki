@@ -12,12 +12,16 @@ import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
 import { useIdentityQuery } from "@/domains/identity/api/queries"
 import { useUserDisabledAct } from "@/domains/identity/ui/use-user-disabled"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { cn } from "@/shared/lib/utils"
 import { useCan } from "@/shared/session"
 import {
   Button,
   ConfirmDialog,
+  Notice,
+  ScreenState,
   Section,
+  Skeleton,
   Tooltip,
   buttonClass,
 } from "@/shared/ui"
@@ -147,25 +151,40 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
           `form-page.module.css` — this screen is that shape, not the duty
           board's. */}
       <div className={styles.screen} data-test="user-detail">
+        {/* The header carries the act, so the answer to it is the first thing
+            in the reading below. The sentence is the act's own — see
+            `use-user-disabled.ts` — so this page and the people list say the
+            same thing about the same refusal. */}
+        {disable.failure ? (
+          <Notice tone="bad" data-test="user-disable-failure">
+            {disable.failure} Nothing changed — the account below is still as it
+            was.
+          </Notice>
+        ) : null}
+
+        {/* `inset="none"`: this column has already paid for its own room, and
+            a state that added a gutter here would sit off the measure every
+            region beside it keeps. */}
         {isLoading ? (
-          <div className={styles.skeleton} data-test="user-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="none"
+            label="Loading this account"
+            data-test="user-loading"
+          />
         ) : null}
 
         {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>This account did not load</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
+          <ScreenState
+            kind="error"
+            inset="none"
+            title="This account did not load"
+            /* The host's own problem detail, not the transport's message:
+               "request failed 503" is not a reading an administrator can
+               act on. */
+            description={requestFailureMessage(error, "Unknown error")}
+            data-test="user-error"
+            action={
               <Tooltip content="Retry">
                 <Button
                   size="icon-sm"
@@ -178,24 +197,31 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                   <RotateCw aria-hidden="true" />
                 </Button>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {missing ? (
           /* The id resolved to nothing, and the answer names the thing that is
              missing rather than saying "not found". A stale tab and an old
              link are the ordinary ways to arrive here — the same two cases the
-             link page already answers for, in the same register. */
-          <div className={styles.state} data-test="user-not-found">
-            <p className={styles.stateTitle}>No account with that id</p>
-            <p className={styles.stateBody}>
-              No account on this platform has the id{" "}
-              <span className={styles.id}>{userId}</span>. It may have been
-              removed since this link was written, or the link may have been
-              copied from somewhere that never had it.
-            </p>
-            <span>
+             link page already answers for, in the same register. `notFound`
+             and not `error`: neither way of arriving here is an alarm, so
+             nothing interrupts a screen reader. */
+          <ScreenState
+            kind="notFound"
+            inset="none"
+            title="No account with that id"
+            description={
+              <>
+                No account on this platform has the id{" "}
+                <span className={styles.id}>{userId}</span>. It may have been
+                removed since this link was written, or the link may have been
+                copied from somewhere that never had it.
+              </>
+            }
+            data-test="user-not-found"
+            action={
               <Tooltip content="Back to identity">
                 <Link
                   to="/identity"
@@ -205,8 +231,8 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                   <ArrowLeft aria-hidden="true" />
                 </Link>
               </Tooltip>
-            </span>
-          </div>
+            }
+          />
         ) : null}
 
         {user ? (

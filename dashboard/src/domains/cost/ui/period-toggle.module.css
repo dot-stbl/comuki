@@ -23,7 +23,8 @@
   color: var(--text-muted);
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color var(--dur) var(--ease),
+  transition:
+    background-color var(--dur) var(--ease),
     color var(--dur) var(--ease);
 }
 
@@ -36,11 +37,16 @@
   outline-offset: var(--hairline);
 }
 
+/* Selected: the surface lifts out of the trough and the ink comes up to full
+   strength. No shadow — the kit's language for a selected thing is a rule and a
+   weight, and the four named `--shadow-*` are all wrong for this shape anyway:
+   `--shadow-header` is a band casting down the full width of a sticky table
+   head, and under a 24px pill it draws as a separate smudge below the pill
+   rather than as the pill's own edge. */
 .optionActive,
 .optionActive:hover {
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 1px 2px -1px color-mix(in oklab, var(--foreground) 30%, transparent);
 }
 
 .optionLabel {

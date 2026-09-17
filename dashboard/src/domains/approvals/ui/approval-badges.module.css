@@ -22,7 +22,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-weight: var(--fw-regular);
-  line-height: 1.2;
+  line-height: var(--lh-tight);
   color: var(--st);
   background: color-mix(in oklab, var(--st) 10%, transparent);
   white-space: nowrap;

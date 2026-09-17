@@ -3,6 +3,7 @@ import { toast } from "sonner"
 
 import { useSetUserDisabledMutation } from "@/domains/identity/api/queries"
 import type { UserRow } from "@/domains/identity/model/types"
+import { requestFailureMessage } from "@/shared/api/problem"
 import type { ConfirmDialogProps } from "@/shared/ui"
 
 /**
@@ -28,6 +29,15 @@ export interface UserDisabledAct {
   /** The account a write is currently running against, if any. */
   busyId: string | null
   /**
+   * Why the last write did not land, in the host's own words, or `null`.
+   *
+   * The sentence lives here for the same reason the confirmation's does: the
+   * act is one act on two screens, and a refusal explained differently in the
+   * list and on the person's page is two promises about one write. Both call
+   * sites render it as a `Notice tone="bad"`; neither writes the words.
+   */
+  failure: string | null
+  /**
    * The act. Enabling runs immediately — turning an account back on is not
    * destructive and asks nothing. Disabling opens the question below.
    */
@@ -42,6 +52,17 @@ export function useUserDisabledAct(): UserDisabledAct {
 
   const busyId = setDisabled.isPending
     ? (setDisabled.variables?.userId ?? null)
+    : null
+
+  /* The host's problem detail rather than `error.message`: a refusal to switch
+     an account off is exactly the case the platform answers with a sentence
+     ("the last platform admin cannot be disabled") and the transport answers
+     with a status line. */
+  const failure = setDisabled.error
+    ? requestFailureMessage(
+        setDisabled.error,
+        "The platform refused to change this account."
+      )
     : null
 
   const toggle = (user: UserRow) => {
@@ -71,6 +92,7 @@ export function useUserDisabledAct(): UserDisabledAct {
 
   return {
     busyId,
+    failure,
     toggle,
     dialog: {
       open: asking !== null,

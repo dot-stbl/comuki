@@ -158,8 +158,11 @@ describe("the model registry, end to end over the seeds", () => {
     await screenReady()
 
     const panel = find('[data-test="proxy-panel"]')!
-    expect(panel.getAttribute("data-enabled")).toBeNull()
-    expect(find('[data-test="proxy-state"]')?.textContent).toContain("off")
+    /* The panel is the kit's `Surface`, which forwards `data-test` and nothing
+       else, so the switch's own mark rides on the line that states it. */
+    const state = find('[data-test="proxy-state"]')!
+    expect(state.getAttribute("data-enabled")).toBeNull()
+    expect(state.textContent).toContain("off")
     expect(panel.textContent).toContain("Spend keys are not checked")
     expect(panel.textContent).toContain("budgets are not enforced")
     expect(panel.textContent).toContain("nothing is metered")
@@ -326,7 +329,7 @@ describe("the acts, and who may perform them", () => {
 
     await waitFor(() => {
       expect(
-        find('[data-test="proxy-panel"]')?.getAttribute("data-enabled")
+        find('[data-test="proxy-state"]')?.getAttribute("data-enabled")
       ).toBe("")
     })
     expect(find('[data-test="confirm-dialog"]')).toBeNull()

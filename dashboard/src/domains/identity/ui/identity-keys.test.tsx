@@ -8,10 +8,11 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { ApiKeyRow } from "@/domains/identity/model/types"
 import { KeysPanel } from "@/domains/identity/ui/keys-panel"
+import * as identityStore from "@/shared/api/mock/identity.store"
 import {
   listSeedApiKeys,
   resetSeedIdentity,
@@ -234,5 +235,45 @@ describe("a shift that may not administer identity", () => {
 
     fireEvent.click(revoke)
     expect(screen.queryByText("Revoke this key?")).toBeNull()
+  })
+})
+
+describe("a revoke the platform refuses", () => {
+  /* The worst silence in the section: the dialog closes, the row keeps saying
+     "active", and nothing anywhere says the key is still working. An operator
+     revoking a leaked credential walks away believing it is dead. */
+  it("says so above the table, rather than closing the dialog on nothing", async () => {
+    const refusal = Object.assign(new Error("request failed 502"), {
+      status: 502,
+      data: { detail: "the key store did not answer" },
+    })
+    const write = vi
+      .spyOn(identityStore, "revokeSeedApiKey")
+      .mockImplementation(() => {
+        throw refusal
+      })
+
+    try {
+      await mount()
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Revoke key cmk_4e9c" })
+      )
+      fireEvent.click(screen.getByRole("button", { name: "Revoke key" }))
+
+      const band = await waitFor(() => {
+        const found = document.querySelector('[data-test="key-revoke-failure"]')
+        expect(found).toBeTruthy()
+        return found as HTMLElement
+      })
+
+      // The host's own sentence, not the transport's status line.
+      expect(band.textContent).toContain("the key store did not answer")
+      expect(band.textContent).not.toContain("request failed 502")
+      // And the consequence said plainly, because the row still reads active.
+      expect(band.textContent).toContain("still working")
+    } finally {
+      write.mockRestore()
+    }
   })
 })

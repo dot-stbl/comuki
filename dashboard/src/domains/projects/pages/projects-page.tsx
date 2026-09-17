@@ -11,11 +11,14 @@ import {
 } from "@/domains/projects/ui/projects-columns"
 import tableStyles from "@/domains/projects/ui/projects-table.module.css"
 import { formatCost } from "@/domains/runs/model/format"
+import { requestFailureMessage } from "@/shared/api/problem"
 import { useCan } from "@/shared/session"
 import {
   Button,
   DataTable,
   DataTableToolbar,
+  ScreenState,
+  Skeleton,
   Tooltip,
   applyDataFilters,
   buttonClass,
@@ -150,48 +153,14 @@ export function ProjectsPage({ focus }: ProjectsPageProps) {
               )
             ) : null
           }
-        />
-      }
-    >
-      <div className={styles.screen}>
-        {isLoading ? (
-          <div className={styles.skeleton} data-test="projects-loading">
-            {SKELETON_WIDTHS.map((width, index) => (
-              <span
-                key={index}
-                className={styles.skeletonBar}
-                style={{ width }}
-              />
-            ))}
-          </div>
-        ) : null}
-
-        {isError ? (
-          <div className={styles.state} role="alert">
-            <p className={styles.stateTitle}>The registry did not load</p>
-            <p className={styles.stateBody}>
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <span>
-              <Tooltip content="Retry">
-                <Button
-                  size="icon-sm"
-                  data-test="projects-retry"
-                  aria-label="Retry"
-                  onClick={() => {
-                    void refetch()
-                  }}
-                >
-                  <RotateCw aria-hidden="true" />
-                </Button>
-              </Tooltip>
-            </span>
-          </div>
-        ) : null}
-
-        {ready ? (
-          <>
-            <div className={styles.toolbar}>
+          /* The bar that narrows the list, in the band that never scrolls —
+             the contract `PageHeader` states and `runs-page` is named the
+             reference for. It used to ride inside `.screen`, held still by a
+             hand-traced height chain of this screen's own; the slot does that
+             for free and puts the search field on the same start edge as the
+             first column below it. */
+          filters={
+            ready ? (
               <DataTableToolbar
                 columns={columns}
                 filters={filters}
@@ -207,27 +176,64 @@ export function ProjectsPage({ focus }: ProjectsPageProps) {
                   </span>
                 }
               />
-            </div>
-            <div className={styles.tableArea}>
-              <DataTable
-                columns={columns}
-                data={rows}
-                getRowId={getProjectId}
-                density="compact"
-                columnVisibility={columnVisibility}
-                onColumnVisibilityChange={setColumnVisibility}
-                sorting={sorting}
-                onSortingChange={setSorting}
-                columnSizing={columnSizing}
-                onColumnSizingChange={setColumnSizing}
-                emptyLabel={
-                  hasActiveFilters(filters)
-                    ? "no projects match the current filters"
-                    : "no projects yet"
-                }
-              />
-            </div>
-          </>
+            ) : null
+          }
+        />
+      }
+    >
+      <div className={styles.screen}>
+        {isLoading ? (
+          <Skeleton
+            lines={SKELETON_WIDTHS}
+            inset="gutter"
+            fill
+            data-test="projects-loading"
+          />
+        ) : null}
+
+        {isError ? (
+          <ScreenState
+            kind="error"
+            title="The registry did not load"
+            description={requestFailureMessage(error, "Unknown error")}
+            inset="gutter"
+            action={
+              <Tooltip content="Retry">
+                <Button
+                  size="icon-sm"
+                  data-test="projects-retry"
+                  aria-label="Retry"
+                  onClick={() => {
+                    void refetch()
+                  }}
+                >
+                  <RotateCw aria-hidden="true" />
+                </Button>
+              </Tooltip>
+            }
+          />
+        ) : null}
+
+        {ready ? (
+          <div className={styles.tableArea}>
+            <DataTable
+              columns={columns}
+              data={rows}
+              getRowId={getProjectId}
+              density="compact"
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              columnSizing={columnSizing}
+              onColumnSizingChange={setColumnSizing}
+              emptyLabel={
+                hasActiveFilters(filters)
+                  ? "no projects match the current filters"
+                  : "no projects yet"
+              }
+            />
+          </div>
         ) : null}
       </div>
     </AppShell>

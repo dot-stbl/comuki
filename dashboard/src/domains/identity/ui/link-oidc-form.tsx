@@ -31,10 +31,14 @@ export function LinkOidcForm({
 }: LinkOidcFormProps) {
   const manage = useCan("identity.manage")
   const [subject, setSubject] = useState("")
+  const [touched, setTouched] = useState(false)
   const [attempted, setAttempted] = useState(false)
 
   const trimmed = subject.trim()
   const error = trimmed.length === 0 ? "a subject is required" : null
+  /* Edited-or-already-tried — the same model as every other form here; see
+     `projects/ui/create-project-form`, which is the reference spelling. */
+  const showError = (touched || attempted) && error
 
   useEffect(() => {
     onDirtyChange?.(subject !== "")
@@ -55,6 +59,8 @@ export function LinkOidcForm({
         <TextField
           id="oidc-subject"
           label="subject"
+          /* The one field on this form, and the handler refuses without it. */
+          required
           autoFocus
           value={subject}
           disabled={busy}
@@ -62,8 +68,11 @@ export function LinkOidcForm({
           autoComplete="off"
           placeholder="oidc|provider|00000000"
           hint="The `sub` claim the provider issues for this person."
-          error={attempted ? error : null}
-          onValueChange={setSubject}
+          error={showError ? error : null}
+          onValueChange={(next) => {
+            setTouched(true)
+            setSubject(next)
+          }}
         />
       </FormFields>
 

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Comuki.Host.Runs;
 using Comuki.Modules.Knowledge.Application;
 using Comuki.Modules.Knowledge.Domain;
+using Comuki.Modules.Memory.Application.Learning;
 using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Modules.Memory.Domain.Facts.Kinds;
 using Comuki.Modules.Memory.Domain.Facts.Scopes;
@@ -21,6 +22,8 @@ namespace Comuki.Host.Mcp;
 /// <param name="knowledgeIngestor">Knowledge ingestion port.</param>
 /// <param name="memoryStore">Memory facts store behind memory.recall / memory.note.</param>
 /// <param name="noteRateLimiter">Per-worker write limiter for memory.note.</param>
+/// <param name="learningCandidates">Learning-candidate store behind learning.suggest.</param>
+/// <param name="suggestRateLimiter">Per-worker suggest limiter for learning.suggest.</param>
 /// <param name="runsList">Runs list handler (read model projection).</param>
 /// <param name="clock">Clock for memory.note timestamps.</param>
 /// <param name="embedder">
@@ -34,6 +37,8 @@ public sealed class McpToolHandlers(
     IKnowledgeIngestor knowledgeIngestor,
     IMemoryStore memoryStore,
     WorkerNoteRateLimiter noteRateLimiter,
+    ILearningCandidateStore learningCandidates,
+    WorkerSuggestRateLimiter suggestRateLimiter,
     RunsListHandler runsList,
     TimeProvider clock,
     IEmbeddingClient? embedder = null)
@@ -49,6 +54,15 @@ public sealed class McpToolHandlers(
 
     /// <summary>Upper bound for memory.note's text — the memory_facts.text column limit.</summary>
     public const int TextMaxLength = 4000;
+
+    /// <summary>Upper bound for learning.suggest's topic — the learning_candidates.topic column limit.</summary>
+    public const int SuggestTopicMaxLength = 200;
+
+    /// <summary>Upper bound for learning.suggest's observation — the learning_candidates.observation column limit.</summary>
+    public const int SuggestObservationMaxLength = 2000;
+
+    /// <summary>Upper bound for learning.suggest's proposedRule — the learning_candidates.proposed_rule column limit.</summary>
+    public const int SuggestRuleMaxLength = 2000;
     /// <summary>knowledge.search — pgvector cosine similarity search. Worker callers are confined to their project.</summary>
     /// <param name="id">JSON-RPC request id.</param>
     /// <param name="arguments">Parsed JSON arguments object.</param>
@@ -241,6 +255,75 @@ public sealed class McpToolHandlers(
 
         return JsonRpcResponse.Success(id, new ToolResult(
             Content: [new ToolContentBlock("text", $"remembered '{written.TopicKey}' ({MemoryFactKindKeys.Key(written.Kind)})")],
+            IsError: false));
+    }
+
+    /// <summary>
+    /// learning.suggest — queue one rule candidate for human review, scoped
+    /// to the worker's project (same enforcement as memory.note: the project
+    /// comes from the lease, never from a client-supplied argument). A
+    /// pending duplicate bumps its repeat counter; rate-limited per worker.
+    /// </summary>
+    /// <param name="id">JSON-RPC request id.</param>
+    /// <param name="arguments">Parsed JSON arguments object.</param>
+    /// <param name="caller">Resolved caller of the dispatch.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task<JsonRpcResponse> LearningSuggestAsync(
+        JsonElement? id,
+        JsonElement arguments,
+        McpCaller caller,
+        CancellationToken cancellationToken)
+    {
+        if (caller.Worker is not { ProjectId: { } projectId } worker)
+        {
+            return JsonRpcResponse.Success(id, new ToolResult(
+                Content: [new ToolContentBlock("text", "learning.suggest is available only to a worker with an active work item.")],
+                IsError: true));
+        }
+
+        var topic = McpArgumentReaders.ReadString(arguments, "topic");
+        var observation = McpArgumentReaders.ReadString(arguments, "observation");
+        var proposedRule = McpArgumentReaders.ReadString(arguments, "proposedRule");
+        if (string.IsNullOrWhiteSpace(topic) || string.IsNullOrWhiteSpace(observation) || string.IsNullOrWhiteSpace(proposedRule))
+        {
+            return JsonRpcResponse.Failure(
+                id,
+                JsonRpcEnvelope.ErrorCodes.InvalidParams,
+                "learning.suggest requires non-empty arguments.topic, arguments.observation and arguments.proposedRule",
+                Data: null);
+        }
+
+        if (topic.Length > SuggestTopicMaxLength
+            || observation.Length > SuggestObservationMaxLength
+            || proposedRule.Length > SuggestRuleMaxLength)
+        {
+            return JsonRpcResponse.Failure(
+                id,
+                JsonRpcEnvelope.ErrorCodes.InvalidParams,
+                $"learning.suggest rejects arguments longer than topic {SuggestTopicMaxLength} / observation {SuggestObservationMaxLength} / proposedRule {SuggestRuleMaxLength} characters",
+                Data: null);
+        }
+
+        if (!suggestRateLimiter.TryAcquire(worker.WorkerId))
+        {
+            return JsonRpcResponse.Success(id, new ToolResult(
+                Content: [new ToolContentBlock("text", $"learning.suggest rate limit reached ({WorkerSuggestRateLimiter.Limit} per {WorkerSuggestRateLimiter.Window.TotalMinutes} minutes) — only non-obvious insights worth a human's review belong here.")],
+                IsError: true));
+        }
+
+        var queued = await learningCandidates.SuggestAsync(
+            new LearningSuggestion(
+                ProjectId: projectId,
+                Topic: topic,
+                Observation: observation,
+                ProposedRule: proposedRule,
+                SourceRef: $"worker:{worker.WorkerId.Value}"),
+            clock.GetUtcNow(),
+            cancellationToken);
+
+        var repeatNote = queued.RepeatCount > 1 ? $" — {queued.RepeatCount} workers have now suggested this" : string.Empty;
+        return JsonRpcResponse.Success(id, new ToolResult(
+            Content: [new ToolContentBlock("text", $"queued '{queued.Topic}' for human review ({queued.Status}){repeatNote}")],
             IsError: false));
     }
 

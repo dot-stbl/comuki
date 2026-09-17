@@ -166,6 +166,15 @@ public static class ApiRoutes
     /// <summary>Knowledge corpus search — pgvector cosine hits over embedded chunks.</summary>
     public const string KnowledgeSearch = "/api/v1/knowledge/search";
 
+    /// <summary>Learning-candidate queue — pending rule suggestions from workers (permission learning:read).</summary>
+    public const string LearningCandidates = "/api/v1/learning/candidates";
+
+    /// <summary>One learning candidate by id — approve (publish the rule).</summary>
+    public const string LearningCandidateApprove = "/api/v1/learning/candidates/{candidateId:guid}/approve";
+
+    /// <summary>One learning candidate by id — reject with an optional reason.</summary>
+    public const string LearningCandidateReject = "/api/v1/learning/candidates/{candidateId:guid}/reject";
+
     /// <summary>Platform settings snapshot — existing options surfaced read-only.</summary>
     public const string Settings = "/api/v1/settings";
 

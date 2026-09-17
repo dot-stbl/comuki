@@ -89,6 +89,22 @@ internal static class McpToolCatalog
             },
             new
             {
+                name = "learning.suggest",
+                description = "Propose a rule or pattern worth remembering across ALL future runs. Use when you discover a non-obvious insight: a build gotcha, an architectural constraint, a recurring pattern. The suggestion goes to human review before becoming a rule.",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new Dictionary<string, object>
+                    {
+                        ["topic"] = new { type = "string", description = "Short key like 'build.dotnet' or 'testing.xunit'." },
+                        ["observation"] = new { type = "string", description = "What you observed (the evidence)." },
+                        ["proposedRule"] = new { type = "string", description = "The rule to add, stated as an imperative." },
+                    },
+                    required = new[] { "topic", "observation", "proposedRule" },
+                },
+            },
+            new
+            {
                 name = "runs.list",
                 description = "List runs — optional projectId + status filter, paged.",
                 inputSchema = new

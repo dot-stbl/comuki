@@ -285,6 +285,7 @@ internal static class HostComposer
         // writes per worker (singleton, in-memory window).
         builder.Services.AddScoped<IWorkerProjectResolver, OrchestrationWorkerProjectResolver>();
         builder.Services.AddSingleton<WorkerNoteRateLimiter>();
+        builder.Services.AddSingleton<WorkerSuggestRateLimiter>();
         builder.Services.AddSingleton<McpToolHandlers>();
         builder.Services.AddSingleton<McpServer>();
 

@@ -6,6 +6,7 @@ using Comuki.Modules.Identity.Application.Authorization;
 using Comuki.Modules.Identity.Domain.Permissions;
 using Comuki.Modules.Identity.Domain.Subjects;
 using Comuki.Modules.Knowledge.Application;
+using Comuki.Modules.Memory.Application.Learning;
 using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Modules.Memory.Application.Views;
 using Comuki.Modules.Memory.Domain.Facts.Kinds;
@@ -193,6 +194,109 @@ public sealed class McpWorkerToolsShould
         error.Message.ShouldBe(McpToolPermissionMap.PermissionDeniedCode);
     }
 
+    [Fact(DisplayName = "Given a worker with an active work item, when tools/call learning.suggest, then a pending candidate is queued in the worker's project with the worker as source")]
+    public async Task LearningSuggestQueuesProjectScopedCandidateAsync()
+    {
+        var projectId = Guid.NewGuid();
+        var workerId = WorkerId.New();
+        var learningCandidates = Substitute.For<ILearningCandidateStore>();
+        learningCandidates
+            .SuggestAsync(Arg.Any<LearningSuggestion>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => NewCandidate((LearningSuggestion)callInfo[0], repeatCount: 1));
+        var server = NewServer(learningCandidates: learningCandidates);
+
+        var response = await DispatchToolAsync(
+            server,
+            new McpCaller(Worker: new McpWorkerCaller(workerId, projectId)),
+            "learning.suggest",
+            /*lang=json,strict*/ """{"topic":"build.dotnet","observation":"bun install hangs on cold cache","proposedRule":"run bun install with --frozen-lockfile"}""");
+
+        var result = ResultOf(response);
+        result.IsError.ShouldBeFalse();
+        TextOf(result).ShouldContain("queued 'build.dotnet' for human review");
+        await learningCandidates.Received(1).SuggestAsync(
+            Arg.Is<LearningSuggestion>(suggestion =>
+                suggestion.ProjectId == projectId
+                && suggestion.Topic == "build.dotnet"
+                && suggestion.Observation == "bun install hangs on cold cache"
+                && suggestion.ProposedRule == "run bun install with --frozen-lockfile"
+                && suggestion.SourceRef == $"worker:{workerId.Value}"),
+            Arg.Any<DateTimeOffset>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given a repeat suggestion, when queued, then the acknowledgement names the repeat count")]
+    public async Task LearningSuggestNamesRepeatCountAsync()
+    {
+        var learningCandidates = Substitute.For<ILearningCandidateStore>();
+        learningCandidates
+            .SuggestAsync(Arg.Any<LearningSuggestion>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(static callInfo => NewCandidate((LearningSuggestion)callInfo[0], repeatCount: 3));
+        var server = NewServer(learningCandidates: learningCandidates);
+
+        var response = await DispatchToolAsync(
+            server,
+            NewWorkerCaller(Guid.NewGuid()),
+            "learning.suggest",
+            /*lang=json,strict*/ """{"topic":"build.dotnet","observation":"o","proposedRule":"r"}""");
+
+        TextOf(ResultOf(response)).ShouldContain("3 workers have now suggested this");
+    }
+
+    [Fact(DisplayName = "Given a learning.suggest missing a field, when dispatched, then InvalidParams comes back and nothing is queued")]
+    public async Task LearningSuggestRejectsMissingFieldsAsync()
+    {
+        var learningCandidates = Substitute.For<ILearningCandidateStore>();
+        var server = NewServer(learningCandidates: learningCandidates);
+
+        var response = await DispatchToolAsync(
+            server,
+            NewWorkerCaller(Guid.NewGuid()),
+            "learning.suggest",
+            /*lang=json,strict*/ """{"topic":"build.dotnet","observation":"","proposedRule":"r"}""");
+
+        ErrorOf(response).Code.ShouldBe(JsonRpcEnvelope.ErrorCodes.InvalidParams);
+        await learningCandidates.DidNotReceive().SuggestAsync(
+            Arg.Any<LearningSuggestion>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given a worker at the suggest rate limit, when learning.suggest is called once more, then the tool answers an error and skips the queue")]
+    public async Task LearningSuggestRateLimitedWorkerIsRejectedAsync()
+    {
+        var learningCandidates = Substitute.For<ILearningCandidateStore>();
+        learningCandidates
+            .SuggestAsync(Arg.Any<LearningSuggestion>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(static callInfo => NewCandidate((LearningSuggestion)callInfo[0], repeatCount: 1));
+        var server = NewServer(learningCandidates: learningCandidates);
+        var caller = NewWorkerCaller(Guid.NewGuid());
+
+        for (var admitted = 0; admitted < WorkerSuggestRateLimiter.Limit; admitted++)
+        {
+            await DispatchToolAsync(server, caller, "learning.suggest", /*lang=json,strict*/ """{"topic":"t","observation":"o","proposedRule":"r"}""");
+        }
+
+        var response = await DispatchToolAsync(server, caller, "learning.suggest", /*lang=json,strict*/ """{"topic":"t","observation":"o","proposedRule":"r"}""");
+
+        var result = ResultOf(response);
+        result.IsError.ShouldBeTrue();
+        TextOf(result).ShouldContain("rate limit");
+        await learningCandidates.Received(WorkerSuggestRateLimiter.Limit).SuggestAsync(
+            Arg.Any<LearningSuggestion>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given a cookie/api-key subject calling learning.suggest, when dispatched, then the worker gate denies — worker tools are worker-only")]
+    public async Task SubjectIsDeniedLearningSuggestAsync()
+    {
+        var learningCandidates = Substitute.For<ILearningCandidateStore>();
+        var server = NewServer(learningCandidates: learningCandidates);
+
+        var response = await DispatchToolAsync(server, new McpCaller(Subject: NewSubject()), "learning.suggest", /*lang=json,strict*/ """{"topic":"t","observation":"o","proposedRule":"r"}""");
+
+        ErrorOf(response).Message.ShouldBe(McpToolPermissionMap.PermissionDeniedCode);
+        await learningCandidates.DidNotReceive().SuggestAsync(
+            Arg.Any<LearningSuggestion>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>());
+    }
+
     [Fact(DisplayName = "Given a worker with no active work item, when memory.recall is called, then the gate denies — no project scope exists")]
     public async Task WorkerWithoutActiveItemIsDeniedAsync()
     {
@@ -231,7 +335,8 @@ public sealed class McpWorkerToolsShould
 
     private static McpServer NewServer(
         IKnowledgeSearcher? knowledgeSearcher = null,
-        IMemoryStore? memoryStore = null)
+        IMemoryStore? memoryStore = null,
+        ILearningCandidateStore? learningCandidates = null)
     {
         return new McpServer(
             toolHandlers: new McpToolHandlers(
@@ -239,6 +344,8 @@ public sealed class McpWorkerToolsShould
                 knowledgeIngestor: Substitute.For<IKnowledgeIngestor>(),
                 memoryStore: memoryStore ?? Substitute.For<IMemoryStore>(),
                 noteRateLimiter: new WorkerNoteRateLimiter(TimeProvider.System),
+                learningCandidates: learningCandidates ?? Substitute.For<ILearningCandidateStore>(),
+                suggestRateLimiter: new WorkerSuggestRateLimiter(TimeProvider.System),
                 runsList: NewRunsListHandler(),
                 clock: TimeProvider.System),
             permissionEvaluator: NewEvaluator(),
@@ -289,6 +396,22 @@ public sealed class McpWorkerToolsShould
             MemorySource.Run,
             "worker:test",
             DateTimeOffset.UtcNow);
+    }
+
+    private static LearningCandidateView NewCandidate(LearningSuggestion suggestion, int repeatCount)
+    {
+        return new LearningCandidateView(
+            Guid.NewGuid(),
+            suggestion.ProjectId,
+            suggestion.Topic,
+            suggestion.Observation,
+            suggestion.ProposedRule,
+            suggestion.SourceRef,
+            repeatCount,
+            "pending",
+            DecisionReason: null,
+            DateTimeOffset.UtcNow,
+            DecidedAt: null);
     }
 
     private static RoleSubject NewSubject()

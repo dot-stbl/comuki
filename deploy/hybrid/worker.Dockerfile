@@ -12,10 +12,13 @@
 #     + vendored zod) — what pi loads as Comuki worker extensions in later
 #     slices; installed now so the image is self-contained.
 #
-# Offline-build policy (pipeline #13 lesson): the nova kaniko runner reaches
-# mcr.microsoft.com, docker.io and nuget.org, but NOT registry.npmjs.org —
-# `bun add -g` hung 40+ minutes and had to be cancelled. Therefore this
-# image build NEVER touches npm and never runs apt-get:
+# Offline-build policy (pipeline #13 lesson, root-caused 2026-09-11):
+# registry.npmjs.org IS reachable from the runner — the hang was the CPU:
+# runner-01 is qemu64 (no SSE4.2), bun cannot execute JS there (SIGILL)
+# and bun 1.4.0's installer livelocks (see dashboard.Dockerfile header).
+# The worker image still avoids npm at BUILD time (its build stage runs no
+# JS tooling), and bun in the RUNTIME image only ever executes on cluster
+# nodes (real CPUs):
 #   - pi + zod are vendored tarballs from deploy/hybrid/vendor/ (bump by
 #     re-running `npm pack <pkg>@<ver> --pack-destination deploy/hybrid/vendor`
 #     and updating the COPY lines);
@@ -55,10 +58,14 @@ COPY platform/src/shared/Comuki.Shared.Contracts/Comuki.Shared.Contracts.csproj 
 COPY platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj platform/src/host/Comuki.Host.Translator/
 RUN dotnet restore platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj -r linux-x64
 
+# CI passes the commit short sha — must match the host image tag so the
+# compute engine's pinning resolves this exact worker (see host.Dockerfile).
+ARG COMUKI_VERSION=0.0.0
+
 # Build and publish.
 COPY platform/ platform/
 RUN dotnet publish platform/src/host/Comuki.Host.Translator/Comuki.Host.Translator.csproj \
-    -c Release -r linux-x64 --no-restore -o /app
+    -c Release -r linux-x64 --no-restore -p:VersionPrefix=${COMUKI_VERSION} -o /app
 
 # ---------- Stage 2: donor images for bun + the .NET runtime ----------
 # oven/bun via docker.io and aspnet via mcr — both pulled successfully by

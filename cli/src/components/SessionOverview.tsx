@@ -8,6 +8,7 @@ import { Box, Text, useInput } from "ink"
 import React from "react"
 import { ageFromMs, padVisible } from "../lib/format"
 import type { Session } from "../lib/sessions"
+import { palette } from "../theme"
 
 export interface SessionOverviewProps {
   readonly sessions: readonly Session[]
@@ -23,7 +24,7 @@ function statusGlyph(status: Session["status"]): {
 } {
   switch (status) {
     case "thinking":
-      return { glyph: "● thinking", color: "#8787f3" }
+      return { glyph: "● thinking", color: palette.brand }
     case "running":
       return { glyph: "● running", color: "yellow" }
     case "done":
@@ -59,7 +60,7 @@ export function SessionOverview({
 
   return (
     <Box flexDirection="column" alignItems="center" paddingY={1}>
-      <Text bold color="#8787f3">
+      <Text bold color={palette.brand}>
         SESSIONS
       </Text>
       <Box flexDirection="column" paddingTop={1}>

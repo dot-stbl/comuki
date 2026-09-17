@@ -74,4 +74,57 @@ describe("TranscriptViewport", () => {
     expect((lastFrame() ?? "").trim().length).toBe(0)
     unmount()
   })
+
+  test("the expand hint pins as the first row and reserves it", () => {
+    const hint = "  ⏺ press ctrl+o to expand thinking"
+    const { lastFrame, unmount } = render(
+      <TranscriptViewport
+        lines={LINES}
+        height={5}
+        offset={0}
+        newBelow={false}
+        hint={hint}
+      />
+    )
+    const frame = lastFrame() ?? ""
+    expect(frame.split("\n")[0]).toBe(hint)
+    // The hint reserves a row: only 4 transcript lines show.
+    expect(frame).toContain("line-29")
+    expect(frame).toContain("line-26")
+    expect(frame).not.toContain("line-25")
+    unmount()
+  })
+
+  test("hint and indicator can reserve rows together", () => {
+    const hint = "  ⏺ press ctrl+o to expand thinking"
+    const { lastFrame, unmount } = render(
+      <TranscriptViewport
+        lines={LINES}
+        height={6}
+        offset={3}
+        newBelow={true}
+        hint={hint}
+      />
+    )
+    const frame = lastFrame() ?? ""
+    const rows = frame.split("\n")
+    expect(rows[0]).toBe(hint)
+    expect(rows[rows.length - 1]).toContain(NEW_MESSAGES_INDICATOR)
+    // 6 rows total − hint − indicator = 4 transcript lines (23–26:
+    // the window ends at 30 − offset 3, minus the 4-line budget).
+    expect(frame).toContain("line-26")
+    expect(frame).toContain("line-23")
+    expect(frame).not.toContain("line-27")
+    expect(frame).not.toContain("line-22")
+    expect(frame).not.toContain("line-29")
+    unmount()
+  })
+
+  test("no hint row when the hint prop is absent", () => {
+    const { lastFrame, unmount } = render(
+      <TranscriptViewport lines={LINES} height={5} offset={0} newBelow={false} />
+    )
+    expect(lastFrame() ?? "").not.toContain("ctrl+o")
+    unmount()
+  })
 })

@@ -4,9 +4,13 @@
  * ANSI-styled strings, which both the Ink components render and the
  * tests assert byte-for-byte.
  *
- * Style contract (option A, terminal-native): thinking dimmed, tools in
- * muted mono with a compact `name(args) → result` shape, prose in the
- * terminal default, one slate-blue accent for statuses and the prompt.
+ * Style contract (warm minimal, Claude Code lineage): the user's words
+ * are bare bold text at column 0 — no prefix, no label; collapsed
+ * events (thinking, tools) are dim `⏺` bullets two spaces in with the
+ * status right after the args; the assistant leads with the terracotta
+ * `◆`; the approve card is the one framed element in the transcript
+ * (code blocks keep their dim frames too). Hierarchy comes from
+ * spacing and weight, never boxes.
  */
 import {
   colors,
@@ -76,206 +80,8 @@ function firstLine(text: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Tool parts — `memory.search("identity")  2 facts`
+// Tool arguments — `memory.recall("identity module", 5)`
 // ---------------------------------------------------------------------------
-
-/** Short positional summary of a tool call: first string-ish arguments. */
-export function summarizeToolInput(name: string, inputJson: string): string {
-  let input: Record<string, unknown>
-  try {
-    input = JSON.parse(inputJson) as Record<string, unknown>
-  } catch {
-    return name
-  }
-  const args: string[] = []
-  for (const [key, value] of Object.entries(input)) {
-    if (value === null || value === undefined) {
-      continue
-    }
-    if (typeof value === "string") {
-      args.push(
-        JSON.stringify(value.length > 32 ? value.slice(0, 29) + "…" : value)
-      )
-    } else if (typeof value === "number" || typeof value === "boolean") {
-      args.push(String(value))
-    } else if (Array.isArray(value)) {
-      args.push(`${value.length} ${key}`)
-    }
-    if (args.length === 2) {
-      break
-    }
-  }
-  return args.length > 0 ? `${name}(${args.join(", ")})` : name
-}
-
-/**
- * Compact observation summary: array fields count (`2 facts`), explicit
- * count/total fields pass through, anything else stays silent.
- */
-export function summarizeToolOutput(
-  outputJson: string | null | undefined,
-  status: string
-): string {
-  if (status === "running") {
-    return ""
-  }
-  if (!outputJson) {
-    return ""
-  }
-  let output: unknown
-  try {
-    output = JSON.parse(outputJson)
-  } catch {
-    return ""
-  }
-  if (Array.isArray(output)) {
-    return output.length > 0 ? `${output.length} items` : "0 items"
-  }
-  if (output !== null && typeof output === "object") {
-    for (const [key, value] of Object.entries(
-      output as Record<string, unknown>
-    )) {
-      if (typeof value === "number" && /count|total|hits|results?/.test(key)) {
-        return String(value)
-      }
-    }
-    for (const [key, value] of Object.entries(
-      output as Record<string, unknown>
-    )) {
-      if (Array.isArray(value)) {
-        return value.length > 0 ? `${value.length} ${key}` : ""
-      }
-    }
-  }
-  return ""
-}
-
-/** One tool line: muted name(args), dim result / duration, status glyph. */
-export function renderToolPart(
-  part: Extract<MessagePart, { kind: "tool" }>
-): string {
-  const call = summarizeToolInput(part.name, part.inputJson)
-  const result = summarizeToolOutput(part.outputJson, part.status)
-  const duration =
-    typeof part.durationMs === "number"
-      ? `${Math.round(part.durationMs)}ms`
-      : ""
-  const tail = [result, duration]
-    .filter((piece) => piece.length > 0)
-    .join(paint(" " + symbols.bullet + " ", colors.dim))
-
-  if (part.status === "failed") {
-    return `  ${paint(symbols.cross, colors.red)} ${paint(call, colors.muted)} ${paint(tail, colors.red)}`.trimEnd()
-  }
-  if (part.status === "running") {
-    return `  ${paint("…", colors.accent)} ${paint(call, colors.muted)}`
-  }
-  return `  ${paint(symbols.checkmark, colors.green)} ${paint(call, colors.muted)}${tail ? `  ${paint(tail, colors.dim)}` : ""}`.trimEnd()
-}
-
-// ---------------------------------------------------------------------------
-// Plans — the approve card
-// ---------------------------------------------------------------------------
-
-export function renderPlanItems(nodes: readonly PlanItemView[]): string[] {
-  return nodes.map((node) => {
-    const brief = firstLine(node.brief) || "(no brief)"
-    const deps =
-      node.dependsOn.length > 0
-        ? paint(`  ← ${node.dependsOn.join(", ")}`, colors.dim)
-        : ""
-    return `  ${paint(symbols.bullet, colors.accent)} ${paint(node.profileKey, colors.bright)} ${paint(symbols.arrow, colors.dim)} ${brief}${deps}`
-  })
-}
-
-/** Renders the pending plan JSON from a turn result (unknown-shaped by design). */
-export function renderPendingPlan(plan: unknown): string[] {
-  const nodes = extractPlanNodes(plan)
-  if (nodes.length === 0) {
-    return [paint("  (plan payload unreadable)", colors.dim)]
-  }
-  return renderPlanItems(nodes)
-}
-
-function extractPlanNodes(plan: unknown): PlanItemView[] {
-  if (plan !== null && typeof plan === "object") {
-    const nodes = (plan as { nodes?: unknown }).nodes
-    if (Array.isArray(nodes)) {
-      return nodes.filter(
-        (node): node is PlanItemView =>
-          node !== null && typeof node === "object" && "key" in node
-      )
-    }
-  }
-  return []
-}
-
-// ---------------------------------------------------------------------------
-// Collapsible blocks — thinking + tool parts render as one summary line
-// unless the transcript runs verbose (ctrl+o). Pure derivation lives here;
-// the toggle state is per-session in lib/sessions.ts.
-// ---------------------------------------------------------------------------
-
-/** What one collapsed block shows: `◌ thinking · 3.4s`, `⚙ tool(args) → ok`. */
-export interface CollapsedSummary {
-  readonly icon: string
-  readonly label: string
-  readonly badge: string | null
-}
-
-/**
- * Derives the collapsed summary for a part, or `null` when the part is
- * not collapsible (text, code, diagram, handoff, plan always render in
- * full). The single source for both the pure line renderer and tests.
- */
-export function collapsedSummary(part: MessagePart): CollapsedSummary | null {
-  if (part.kind === "thinking") {
-    const badge =
-      typeof part.durationMs === "number"
-        ? formatDurationMs(part.durationMs)
-        : typeof part.tokens === "number" && part.tokens > 0
-          ? formatTokenCount(part.tokens)
-          : null
-    return { icon: symbols.thinking, label: "thinking", badge }
-  }
-  if (part.kind === "tool") {
-    return {
-      icon: symbols.tool,
-      label: `${part.name}(${summarizeToolArgs(part.inputJson)})`,
-      badge: toolStatusBadge(part.status),
-    }
-  }
-  return null
-}
-
-function toolStatusBadge(status: string): string {
-  const lowered = status.toLowerCase()
-  if (lowered === "failed" || lowered === "error") {
-    return "error"
-  }
-  if (lowered === "running") {
-    return "…"
-  }
-  return "ok"
-}
-
-/** `120ms`, `3.4s`, `2m 5s` — compact durations for collapsed lines. */
-export function formatDurationMs(durationMs: number): string {
-  if (durationMs < 1000) {
-    return `${Math.round(durationMs)}ms`
-  }
-  if (durationMs < 60_000) {
-    return `${(durationMs / 1000).toFixed(1)}s`
-  }
-  const minutes = Math.floor(durationMs / 60_000)
-  const seconds = Math.round((durationMs % 60_000) / 1000)
-  return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`
-}
-
-/** `40 tok`, `1.2k tok` — thinking size when duration is unknown. */
-export function formatTokenCount(tokens: number): string {
-  return tokens < 1000 ? `${tokens} tok` : `${(tokens / 1000).toFixed(1)}k tok`
-}
 
 /**
  * Positional argument summary with a total char budget (default 40):
@@ -319,6 +125,228 @@ export function summarizeToolArgs(inputJson: string, maxChars = 40): string {
   return pieces.join(", ")
 }
 
+// ---------------------------------------------------------------------------
+// Plans — the approve card (the one allowed frame in the transcript)
+// ---------------------------------------------------------------------------
+
+export function renderPlanItems(nodes: readonly PlanItemView[]): string[] {
+  return nodes.map((node) => {
+    const brief = firstLine(node.brief) || "(no brief)"
+    const deps =
+      node.dependsOn.length > 0
+        ? paint(`  ← ${node.dependsOn.join(", ")}`, colors.dim)
+        : ""
+    return `  ${paint(symbols.bullet, colors.accent)} ${paint(node.profileKey, colors.bright)} ${paint(symbols.arrow, colors.dim)} ${brief}${deps}`
+  })
+}
+
+/**
+ * The pending approval card: a dim box-drawing frame with the plan's
+ * steps numbered inside and the colored `approve · reject` hint below
+ * it. Frame width = min(content + 4, width − 4), right-padded with ─.
+ */
+export function renderPendingPlan(
+  plan: unknown,
+  width: number = DEFAULT_MARKDOWN_WIDTH
+): string[] {
+  const nodes = extractPlanNodes(plan)
+  if (nodes.length === 0) {
+    return [paint("  (plan payload unreadable)", colors.dim)]
+  }
+  const estimate = estimateMinutes(plan)
+  const header = `plan · ${nodes.length} ${stepWord(nodes.length)}${
+    estimate !== null ? ` · est ${estimate}m` : ""
+  }`
+  const steps = nodes.map(
+    (node, index) => `${index + 1} · ${firstLine(node.brief) || "(no brief)"}`
+  )
+  return [
+    ...planFrameLines(header, steps, width),
+    `  ${paint("approve", colors.green)}${paint(" · ", colors.dim)}${paint(
+      "reject",
+      colors.red
+    )}${paint(" [reason]", colors.dim)}`,
+  ]
+}
+
+/** The dim frame around the card: top rule with the header, rows, bottom. */
+function planFrameLines(
+  header: string,
+  steps: readonly string[],
+  width: number
+): string[] {
+  const contentWidth = Math.max(header.length, ...steps.map((s) => s.length))
+  const boxWidth = Math.max(
+    header.length + 6,
+    Math.min(contentWidth + 4, Math.max(12, width - 4))
+  )
+  const room = boxWidth - 4
+  const fit = (text: string) =>
+    text.length > room ? text.slice(0, Math.max(1, room - 1)) + "…" : text
+  const row = (step: string) => {
+    const plain = fit(step)
+    const split = plain.indexOf(" · ") + 3
+    return `${paint(plain.slice(0, split), colors.dim)}${plain.slice(split)}`
+  }
+  return [
+    paint(
+      `  ┌─ ${header} ${"─".repeat(Math.max(1, boxWidth - header.length - 5))}┐`,
+      colors.dim
+    ),
+    ...steps.map(
+      (step) => paint(`  │ `, colors.dim) + padVisible(row(step), room) + paint(` │`, colors.dim)
+    ),
+    paint(`  └${"─".repeat(boxWidth - 2)}┘`, colors.dim),
+  ]
+}
+
+/** `1 шаг`, `2 шага`, `5 шагов` — russian pluralization for the header. */
+function stepWord(count: number): string {
+  const mod10 = count % 10
+  const mod100 = count % 100
+  if (mod10 === 1 && mod100 !== 11) {
+    return "шаг"
+  }
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return "шага"
+  }
+  return "шагов"
+}
+
+/** Optional top-level estimate in minutes; null when the plan carries none. */
+function estimateMinutes(plan: unknown): number | null {
+  if (plan === null || typeof plan !== "object") {
+    return null
+  }
+  const value = (plan as { estimateMinutes?: unknown }).estimateMinutes
+  return typeof value === "number" && value > 0 ? Math.round(value) : null
+}
+
+/**
+ * Normalizes raw plan nodes. The canonical wire shape is
+ * `{ id, title, profileKey, brief }` (camelCase `PlanNode`); older or
+ * test payloads may carry `key` — both identify a node, `brief` falls
+ * back to `title`.
+ */
+function extractPlanNodes(plan: unknown): PlanItemView[] {
+  if (plan === null || typeof plan !== "object") {
+    return []
+  }
+  const nodes = (plan as { nodes?: unknown }).nodes
+  if (!Array.isArray(nodes)) {
+    return []
+  }
+  return nodes.flatMap((node): PlanItemView[] => {
+    if (node === null || typeof node !== "object") {
+      return []
+    }
+    const record = node as Record<string, unknown>
+    const key =
+      typeof record.key === "string"
+        ? record.key
+        : typeof record.id === "string"
+          ? record.id
+          : null
+    if (key === null) {
+      return []
+    }
+    const brief =
+      typeof record.brief === "string" && record.brief.trim().length > 0
+        ? record.brief
+        : typeof record.title === "string"
+          ? record.title
+          : ""
+    return [
+      {
+        key,
+        profileKey:
+          typeof record.profileKey === "string" ? record.profileKey : "",
+        brief,
+        dependsOn: [],
+      },
+    ]
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Collapsible blocks — thinking + tool parts render as one dim `⏺` event
+// line unless the transcript runs verbose (ctrl+o). Pure derivation lives
+// here; the toggle state is per-session in lib/sessions.ts.
+// ---------------------------------------------------------------------------
+
+/**
+ * What one collapsed event line shows: `⏺ thinking · 4.1k tok · 6.2s`,
+ * `⏺ memory.recall("identity module", 5)  ok 41ms`. Durations and token
+ * counts only appear when the wire actually carried them.
+ */
+export interface CollapsedSummary {
+  readonly icon: string
+  readonly label: string
+  /** Status badge (`ok` / `error` / `…`), tools only; null when absent. */
+  readonly badge: string | null
+  /** Dim metadata segments (`4.1k tok`, `6.2s`); empty when unknown. */
+  readonly details: readonly string[]
+}
+
+/**
+ * Derives the collapsed summary for a part, or `null` when the part is
+ * not collapsible (text, code, diagram, handoff, plan always render in
+ * full). The single source for both the pure line renderer and tests.
+ */
+export function collapsedSummary(part: MessagePart): CollapsedSummary | null {
+  if (part.kind === "thinking") {
+    const details: string[] = []
+    if (typeof part.tokens === "number" && part.tokens > 0) {
+      details.push(formatTokenCount(part.tokens))
+    }
+    if (typeof part.durationMs === "number") {
+      details.push(formatDurationMs(part.durationMs))
+    }
+    return { icon: symbols.event, label: "thinking", badge: null, details }
+  }
+  if (part.kind === "tool") {
+    return {
+      icon: symbols.event,
+      label: `${part.name}(${summarizeToolArgs(part.inputJson)})`,
+      badge: toolStatusBadge(part.status),
+      details:
+        typeof part.durationMs === "number"
+          ? [formatDurationMs(part.durationMs)]
+          : [],
+    }
+  }
+  return null
+}
+
+function toolStatusBadge(status: string): string {
+  const lowered = status.toLowerCase()
+  if (lowered === "failed" || lowered === "error") {
+    return "error"
+  }
+  if (lowered === "running") {
+    return "…"
+  }
+  return "ok"
+}
+
+/** `120ms`, `3.4s`, `2m 5s` — compact durations for collapsed lines. */
+export function formatDurationMs(durationMs: number): string {
+  if (durationMs < 1000) {
+    return `${Math.round(durationMs)}ms`
+  }
+  if (durationMs < 60_000) {
+    return `${(durationMs / 1000).toFixed(1)}s`
+  }
+  const minutes = Math.floor(durationMs / 60_000)
+  const seconds = Math.round((durationMs % 60_000) / 1000)
+  return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`
+}
+
+/** `40 tok`, `1.2k tok` — thinking size when duration is unknown. */
+export function formatTokenCount(tokens: number): string {
+  return tokens < 1000 ? `${tokens} tok` : `${(tokens / 1000).toFixed(1)}k tok`
+}
+
 function badgeColor(badge: string): string {
   if (badge === "error") {
     return colors.red
@@ -332,37 +360,36 @@ function badgeColor(badge: string): string {
   return colors.dim
 }
 
-/** Renders a derived summary as its single dim transcript line. */
+/** Renders a derived summary as its single warm event line. */
 export function renderCollapsedLine(summary: CollapsedSummary): string {
-  const badge =
-    summary.badge === null
-      ? ""
-      : // Result badges (ok / error / …) read as `→ result`; metadata
-        // badges (durations, token counts) read as `· detail`.
-        ` ${paint(
-          isResultBadge(summary.badge) ? symbols.arrow : symbols.bullet,
-          colors.dim
-        )} ${paint(summary.badge, badgeColor(summary.badge))}`
-  return `  ${paint(summary.icon, colors.dim)} ${paint(summary.label, colors.muted)}${badge}`
+  let line = `  ${paint(summary.icon, colors.dim)} ${paint(summary.label, colors.muted)}`
+  if (summary.badge !== null) {
+    line += `  ${paint(summary.badge, badgeColor(summary.badge))}`
+  }
+  if (summary.details.length > 0) {
+    line +=
+      summary.badge === null
+        ? ` ${paint(
+            summary.details.map((detail) => `${symbols.bullet} ${detail}`).join(" "),
+            colors.dim
+          )}`
+        : ` ${paint(summary.details.join(" "), colors.dim)}`
+  }
+  return line
 }
 
-function isResultBadge(badge: string): boolean {
-  return badge === "ok" || badge === "error" || badge === "…"
-}
-
-/** Expanded thinking: markdown-rendered, dimmed, indented two spaces. */
+/** Expanded thinking body: markdown-rendered, dimmed, under the event line. */
 function renderExpandedThinking(text: string, width: number): string[] {
   return renderMarkdownLines(text, width).map((line) =>
-    line.trim().length === 0 ? line : paint(indentBlock(line), colors.dim)
+    line.trim().length === 0 ? line : paint(indentBlock(line, "    "), colors.dim)
   )
 }
 
-/** Expanded tool: the legacy status line plus full args and result. */
+/** Expanded tool body: pretty-printed input and output under the event line. */
 function renderExpandedTool(
   part: Extract<MessagePart, { kind: "tool" }>
 ): string[] {
   return [
-    renderToolPart(part),
     ...prettyJsonBlock("input", part.inputJson),
     ...(part.outputJson ? prettyJsonBlock("output", part.outputJson) : []),
   ]
@@ -403,17 +430,24 @@ export function renderPart(
   width: number = DEFAULT_MARKDOWN_WIDTH,
   { expanded = true }: PartRenderOptions = {}
 ): string[] {
-  if (!expanded) {
+  if (part.kind === "thinking" || part.kind === "tool") {
     const summary = collapsedSummary(part)
-    if (summary !== null) {
+    if (summary === null) {
+      // Defensive only — thinking/tool are always collapsible.
+      return []
+    }
+    if (!expanded) {
       return [renderCollapsedLine(summary)]
     }
+    // Expanded keeps the event line as the header of the revealed block.
+    return [
+      renderCollapsedLine(summary),
+      ...(part.kind === "thinking"
+        ? renderExpandedThinking(part.text, width)
+        : renderExpandedTool(part)),
+    ]
   }
   switch (part.kind) {
-    case "thinking":
-      return renderExpandedThinking(part.text, width)
-    case "tool":
-      return renderExpandedTool(part)
     case "code": {
       const anchor =
         part.path !== null && part.path !== undefined
@@ -451,7 +485,19 @@ export function renderParts(
   width: number = DEFAULT_MARKDOWN_WIDTH,
   options?: PartRenderOptions
 ): string[] {
-  return parts.flatMap((part) => renderPart(part, width, options))
+  const lines: string[] = []
+  let previousWasEvent = false
+  for (const part of parts) {
+    const isEvent = part.kind === "thinking" || part.kind === "tool"
+    // The events block and the prose answer breathe apart — one blank
+    // line on each side of the boundary, never inside a run of events.
+    if (lines.length > 0 && isEvent !== previousWasEvent) {
+      lines.push("")
+    }
+    lines.push(...renderPart(part, width, options))
+    previousWasEvent = isEvent
+  }
+  return lines
 }
 
 // ---------------------------------------------------------------------------
@@ -461,17 +507,17 @@ export function renderParts(
 /**
  * One transcript row → lines. Assistant rows prefer parts (the rich
  * shape); `content` is the flat fallback. Both render markdown through
- * `lib/markdown.ts`. User rows echo as typed — plain, one line. Tool
- * and system journal rows render muted. Options omitted → full render
- * (the pure layer's default); the transcript passes the session's
- * ctrl+o toggle so thinking/tool parts collapse to summary lines.
+ * `lib/markdown.ts`. User rows echo as typed — bare bold text at
+ * column 0, one blank line before AND after. Tool and system journal
+ * rows render muted. Options omitted → full render (the pure layer's
+ * default); the transcript passes the session's ctrl+o toggle so
+ * thinking/tool parts collapse to `⏺` event lines.
  *
- * Identity chrome: every row leads with its `messageMark` glyph on the
- * shared one-space gutter — the user's dim `›` with bright text (one
- * blank line before, the turn separator), the assistant's brand `◆`
- * with a dim `comuki` label above its content, quiet `·` bullets for
- * journal rows. Wrapping is computed at `width - 1` so the gutter
- * never pushes a line past the terminal edge.
+ * Identity chrome: the assistant leads with its terracotta `◆` brand
+ * mark on the shared one-space gutter with a dim `comuki` label above
+ * its content; journal rows keep the quiet `·` bullets. Wrapping is
+ * computed at `width - 1` so the gutter never pushes a line past the
+ * terminal edge.
  */
 export function renderMessage(
   message: ChatMessageView,
@@ -520,21 +566,17 @@ export function renderMessage(
 }
 
 /**
- * The user's own words as the transcript shows them — also used for the
- * immediate echo on send, so the live line and the restored history of
- * the same turn are byte-identical. One blank line before (the turn
- * separator), dim `›`, bright text.
+ * The user's own words as the transcript shows them — bare bold text
+ * at column 0 with a blank line on each side. Also used for the
+ * immediate echo on send, so the live line and the restored history
+ * of the same turn are byte-identical.
  */
 export function renderUserEcho(content: string): string[] {
-  const mark = messageMark("user")
   const text = content.trim()
   if (text.length === 0) {
     return []
   }
-  return [
-    "",
-    `${gutter}${paint(mark.glyph, mark.glyphColor)} ${paint(text, mark.textColor)}`,
-  ]
+  return ["", paint(text, colors.bright), ""]
 }
 
 // ---------------------------------------------------------------------------

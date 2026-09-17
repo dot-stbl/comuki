@@ -5,6 +5,11 @@
  * `lib/format.ts`, the live stream from `lib/markdown.ts`, so the
  * viewport shows byte-identical text to what the components rendered.
  *
+ * Spacing is enforced here at the seams: exactly one blank line
+ * between turns and blocks (never two), one before an event block and
+ * one after an assistant answer — the per-message renderers already
+ * normalize their own interiors.
+ *
  * `wrapVisible` is the safety net of the fixed-height viewport: any
  * line wider than the terminal (long user echo, unwrappable word) is
  * ANSI-aware hard-wrapped so exactly `height` rendered rows fit the
@@ -12,12 +17,12 @@
  */
 import { renderMessage, renderPendingPlan } from "./format"
 import { renderMarkdownLines } from "./markdown"
-import { colors, paint, symbols } from "../theme"
+import { colors, paint, stripAnsi, symbols } from "../theme"
 import type { ChatBlock } from "./sessions"
 
 export const LIVE_CURSOR = "▌"
 export const TYPING_LABEL = "comuki thinking"
-export const APPROVAL_HINT = "  type approve or reject [reason] to decide"
+export const EXPAND_HINT = "⏺ press ctrl+o to expand thinking"
 
 // ---------------------------------------------------------------------------
 // ANSI-aware hard wrap
@@ -104,6 +109,36 @@ export function typingLine(frame: number, label: string = TYPING_LABEL): string 
 }
 
 // ---------------------------------------------------------------------------
+// ctrl+o expand hint
+// ---------------------------------------------------------------------------
+
+/**
+ * True when the active transcript holds thinking parts that currently
+ * render collapsed — the one condition under which the viewport shows
+ * its top hint line.
+ */
+export function hasCollapsedThinking(
+  blocks: readonly ChatBlock[],
+  expanded: boolean
+): boolean {
+  if (expanded) {
+    return false
+  }
+  return blocks.some(
+    (block) =>
+      block.kind === "message" &&
+      block.message.parts !== null &&
+      block.message.parts.some((part) => part.kind === "thinking")
+  )
+}
+
+/** The hint as a right-aligned dim line for the top of a `width` viewport. */
+export function expandHintLine(width: number): string {
+  const pad = Math.max(1, width - stripAnsi(EXPAND_HINT).length - 1)
+  return paint(" ".repeat(pad) + EXPAND_HINT, colors.dim)
+}
+
+// ---------------------------------------------------------------------------
 // Flatten
 // ---------------------------------------------------------------------------
 
@@ -114,12 +149,15 @@ export interface TranscriptSnapshot {
   readonly pendingPlan: unknown
   readonly thinking: boolean
   readonly liveText: string
+  /** ctrl+o per-tab toggle — thinking/tool parts collapse when false (default). */
+  readonly expanded?: boolean
 }
 
 /**
  * Blocks → flat lines, in transcript order: history messages, raw line
  * blocks, the pending approval card, the typing spinner + live stream,
- * then any global notices. Every line is wrapped to `width`.
+ * then any global notices. Block seams carry exactly one blank line;
+ * every line is wrapped to `width`.
  */
 export function flattenTranscript(
   snapshot: TranscriptSnapshot | undefined,
@@ -128,23 +166,48 @@ export function flattenTranscript(
   notices: readonly string[] = []
 ): string[] {
   const lines: string[] = []
+  const push = (line: string) => {
+    const blank = line.trim().length === 0
+    if (blank) {
+      // Never two blanks in a row, never a leading blank.
+      if (lines.length === 0 || lines[lines.length - 1] === "") {
+        return
+      }
+      lines.push("")
+      return
+    }
+    lines.push(line)
+  }
+  const pushAll = (rendered: readonly string[]) => {
+    // One blank between blocks unless a side already provides it.
+    if (
+      lines.length > 0 &&
+      lines[lines.length - 1] !== "" &&
+      rendered.length > 0 &&
+      rendered[0].trim().length > 0
+    ) {
+      lines.push("")
+    }
+    for (const line of rendered) {
+      push(line)
+    }
+  }
   if (snapshot) {
+    const options = { expanded: snapshot.expanded === true }
     for (const block of snapshot.blocks) {
       if (block.kind === "message") {
-        lines.push(...renderMessage(block.message, width))
+        pushAll(renderMessage(block.message, width, options))
       } else {
-        lines.push(...block.lines)
+        pushAll(block.lines)
       }
     }
     if (snapshot.awaitingApproval) {
-      lines.push(...renderPendingPlan(snapshot.pendingPlan))
-      lines.push(paint(APPROVAL_HINT, colors.dim))
+      pushAll(renderPendingPlan(snapshot.pendingPlan, width))
     }
     if (snapshot.thinking) {
-      lines.push(typingLine(typingFrame))
-      lines.push(...liveLines(snapshot.liveText, width))
+      pushAll([typingLine(typingFrame), ...liveLines(snapshot.liveText, width)])
     }
   }
-  lines.push(...notices)
+  pushAll(notices)
   return lines.flatMap((line) => wrapVisible(line, width))
 }

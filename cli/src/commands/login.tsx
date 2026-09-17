@@ -8,7 +8,7 @@ import TextInput from "ink-text-input"
 import React, { useEffect, useState } from "react"
 import { loginAndStore } from "../lib/auth"
 import { describeError } from "./chat"
-import { colors, symbols } from "../theme"
+import { colors, palette, symbols } from "../theme"
 
 export interface LoginCommandProps {
   readonly url: string | undefined
@@ -42,7 +42,7 @@ export function LoginApp({ url }: LoginCommandProps) {
 
   return step === "email" ? (
     <Text>
-      <Text color="#8787f3">{"  email  › "}</Text>
+      <Text color={palette.brand}>{"  email  › "}</Text>
       <TextInput
         value={email}
         onChange={setEmail}
@@ -55,7 +55,7 @@ export function LoginApp({ url }: LoginCommandProps) {
     </Text>
   ) : (
     <Text>
-      <Text color="#8787f3">{"  pass   › "}</Text>
+      <Text color={palette.brand}>{"  pass   › "}</Text>
       <TextInput
         value={password}
         onChange={setPassword}

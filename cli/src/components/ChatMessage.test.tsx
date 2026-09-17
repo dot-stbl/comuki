@@ -63,16 +63,16 @@ describe("ChatMessage — markdown rendering", () => {
     unmount()
   })
 
-  test("renders inline code highlighted in the accent color", () => {
+  test("highlights inline code in the terracotta accent", () => {
     const { lastFrame, unmount } = render(
       <ChatMessage message={assistantMarkdown("run `bun test`")} width={60} />
     )
     // Ink re-emits resets as fine-grained off-codes — assert the opener only
-    expect(lastFrame()).toContain("\x1b[38;5;104mbun test")
+    expect(lastFrame()).toContain("\x1b[38;5;173mbun test")
     unmount()
   })
 
-  test("keeps user messages plain with the dim mark and gutter", () => {
+  test("keeps user messages as bare bold text with no prefix glyph", () => {
     const { lastFrame, unmount } = render(
       <ChatMessage
         message={{
@@ -91,11 +91,12 @@ describe("ChatMessage — markdown rendering", () => {
     // no markdown machinery for user rows: no border, no cursor
     expect(frame).not.toContain("│")
     expect(frame).not.toContain("▌")
-    // one blank line before (turn separator; ink trims its spaces in
-    // the captured frame), then the dim-marked echo
+    // one blank line before AND after (ink trims trailing blanks in the
+    // captured frame), the echo itself bold at column 0 — no › prefix
     expect(frame.split("\n")[0]).toBe("")
-    expect(frame.split("\n").length).toBe(2)
-    expect(stripAnsi(frame)).toContain(" › сделай план")
+    expect(frame).toContain("сделай план")
+    expect(frame).toContain("\x1b[1mсделай план")
+    expect(stripAnsi(frame)).not.toContain("›")
     unmount()
   })
 
@@ -157,8 +158,8 @@ describe("ChatMessage — collapsible parts", () => {
       />
     )
     const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("◌ thinking · 40 tok")
-    expect(frame).toContain(`⚙ memory.recall("identity") → ok`)
+    expect(frame).toContain("⏺ thinking · 40 tok")
+    expect(frame).toContain(`⏺ memory.recall("identity")  ok`)
     expect(frame).toContain("the visible answer")
     expect(frame).not.toContain("hidden reasoning")
     unmount()

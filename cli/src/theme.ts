@@ -1,32 +1,34 @@
 /**
- * The one accent palette of the terminal-native UI (option A, owner
- * approved): no boxes, no borders — the terminal IS the chrome. Raw ANSI
- * escapes instead of Ink `<Text color>` so the pure formatters in
- * `lib/format.ts` can build finished strings without React.
+ * The one accent palette of the terminal-native UI (warm minimal, the
+ * Claude Code lineage): no boxes, no borders — the terminal IS the
+ * chrome, hierarchy comes from spacing, weight and a single warm
+ * terracotta accent. Raw ANSI escapes instead of Ink `<Text color>`
+ * so the pure formatters in `lib/format.ts` can build finished
+ * strings without React.
  *
- * One accent (slate-blue, the brand periwinkle of DESIGN.md's
- * status-running) for statuses and the prompt; thinking is dimmed gray,
- * tools muted mono, results in the terminal's default color.
+ * Accent is oklch(0.74 0.11 55) ≈ rgb(208,135,112); the codebase
+ * emits 256-color codes, so it snaps to xterm 173 (`#d7875f`, the
+ * nearest cube color). Success green is a soft warm green (114),
+ * errors a warm red (167) — nothing cool anywhere in the transcript.
  */
 
 /** Ink-facing hex tokens — `<Text color>` props cannot take ANSI codes. */
 export const palette = {
-  brand: "#8787f3",
+  brand: "#d08770",
 } as const
 
 export const colors = {
-  accent: "\x1b[38;5;104m", // slate-blue
+  accent: "\x1b[38;5;173m", // terracotta (xterm 173 ≈ #d7875f)
   dim: "\x1b[2m", // dimmed gray
   bright: "\x1b[1m", // bold white
   italic: "\x1b[3m",
   strike: "\x1b[9m",
   underline: "\x1b[4m",
-  green: "\x1b[32m",
-  red: "\x1b[31m",
+  green: "\x1b[38;5;114m", // soft warm green
+  red: "\x1b[38;5;167m", // warm red
   yellow: "\x1b[33m",
-  blue: "\x1b[34m",
   reset: "\x1b[0m",
-  muted: "\x1b[38;5;245m", // muted gray for tools
+  muted: "\x1b[38;5;245m", // warm gray for tools
 } as const
 
 export const symbols = {
@@ -35,8 +37,8 @@ export const symbols = {
   cross: "✗",
   bullet: "·",
   arrow: "→",
-  thinking: "◌",
-  tool: "⚙",
+  /** The one bullet every collapsed event line (thinking, tools) leads with. */
+  event: "⏺",
   /** The assistant's brand glyph — the freight mark of the swarm lead. */
   brandMark: "◆",
   spinnerFrames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
@@ -75,9 +77,11 @@ export function nextSpinnerFrame(
  * The identity chrome of one transcript row: which glyph leads it, what
  * color the glyph wears, and the dim speaker label beside it (assistant
  * only). Derived from the role — never hand-picked at a call site.
+ * User rows carry no glyph at all: the bare bold text at column 0 is
+ * the identity (warm minimal — no prefix, no label).
  */
 export interface MessageMark {
-  /** Leading glyph (`›` user, `◆` assistant, `·` system). */
+  /** Leading glyph; empty when the row leads with bare text (user). */
   readonly glyph: string
   /** ANSI color of the glyph. */
   readonly glyphColor: string
@@ -93,8 +97,8 @@ export interface MessageMark {
 export function messageMark(role: string): MessageMark {
   if (role === "user") {
     return {
-      glyph: symbols.prompt,
-      glyphColor: colors.dim,
+      glyph: "",
+      glyphColor: "",
       label: "",
       labelColor: "",
       textColor: colors.bright,

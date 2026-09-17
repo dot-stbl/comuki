@@ -12,6 +12,7 @@
 import { Text } from "ink"
 import React from "react"
 import type { HubConnectionState } from "../lib/signalr"
+import { palette } from "../theme"
 
 export interface StatusLineProps {
   readonly identity: string
@@ -110,7 +111,7 @@ export function StatusLine({
       {"  "}
       {parts.map((part, index) => (
         <React.Fragment key={index}>
-          {index > 0 ? <Text color="#8787f3"> · </Text> : null}
+          {index > 0 ? <Text color={palette.brand}> · </Text> : null}
           {part}
         </React.Fragment>
       ))}

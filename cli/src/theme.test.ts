@@ -13,15 +13,14 @@ import {
 } from "./theme"
 
 describe("messageMark", () => {
-  it("marks user rows with the dim prompt glyph and bright text", () => {
+  it("marks user rows with bare bright text — no glyph, no label", () => {
     const mark = messageMark("user")
-    expect(mark.glyph).toBe(symbols.prompt)
-    expect(mark.glyphColor).toBe(colors.dim)
-    expect(mark.textColor).toBe(colors.bright)
+    expect(mark.glyph).toBe("")
     expect(mark.label).toBe("")
+    expect(mark.textColor).toBe(colors.bright)
   })
 
-  it("marks assistant rows with the brand glyph, accent color and dim label", () => {
+  it("marks assistant rows with the brand glyph, warm accent and dim label", () => {
     const mark = messageMark("assistant")
     expect(mark.glyph).toBe(symbols.brandMark)
     expect(mark.glyphColor).toBe(colors.accent)
@@ -39,8 +38,19 @@ describe("messageMark", () => {
     }
   })
 
-  it("keeps the brand hex in the palette for ink color props", () => {
-    expect(palette.brand).toBe("#8787f3")
+  it("keeps the warm terracotta brand hex for ink color props", () => {
+    expect(palette.brand).toBe("#d08770")
+  })
+
+  it("uses the warm 256-color codes — terracotta accent, warm green/red", () => {
+    expect(colors.accent).toBe("\x1b[38;5;173m")
+    expect(colors.green).toBe("\x1b[38;5;114m")
+    expect(colors.red).toBe("\x1b[38;5;167m")
+    expect(colors.muted).toBe("\x1b[38;5;245m")
+  })
+
+  it("collapses every event line onto the single ⏺ bullet", () => {
+    expect(symbols.event).toBe("⏺")
   })
 })
 

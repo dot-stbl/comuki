@@ -10,6 +10,7 @@
 import { Box, Text } from "ink"
 import React from "react"
 import type { Session } from "../lib/sessions"
+import { palette } from "../theme"
 
 export interface SessionFooterProps {
   readonly sessions: readonly Session[]
@@ -25,7 +26,7 @@ export function SessionFooter({ sessions, activeIndex }: SessionFooterProps) {
           const active = index === activeIndex
           const dot =
             session.status === "thinking" ? (
-              <Text color="#8787f3">●</Text>
+              <Text color={palette.brand}>●</Text>
             ) : session.unread ? (
               <Text color="yellow">●</Text>
             ) : (

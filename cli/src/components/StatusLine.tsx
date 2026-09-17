@@ -67,12 +67,15 @@ const CONNECTION_LABELS: Record<HubConnectionState, string> = {
   offline: "offline",
 }
 
-/** live pops lavender, reconnecting waits yellow, the rest stay dim. */
-const CONNECTION_TONES: Record<HubConnectionState, string | undefined> = {
-  live: palette.ok,
-  connecting: undefined,
-  reconnecting: palette.waiting,
-  offline: undefined,
+/** live pops ok-lavender, reconnecting waits yellow, the rest stay dim. */
+function connectionTone(state: HubConnectionState): string | undefined {
+  if (state === "live") {
+    return palette.ok
+  }
+  if (state === "reconnecting") {
+    return palette.waiting
+  }
+  return undefined
 }
 
 /** Status-bar label for a hub state (with the ellipsis forms). */
@@ -101,7 +104,7 @@ export function StatusLine({
   }
   if (connection) {
     parts.push(
-      <Text color={CONNECTION_TONES[connection]}>
+      <Text color={connectionTone(connection)}>
         {CONNECTION_LABELS[connection]}
       </Text>
     )

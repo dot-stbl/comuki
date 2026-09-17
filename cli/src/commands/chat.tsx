@@ -32,12 +32,15 @@ import {
   flattenTranscript,
   hasCollapsedThinking,
 } from "../lib/transcript"
-import { renderUserEcho } from "../lib/format"
 import type { ResolvedConfig } from "../lib/config"
+import { readConfigFile, writeConfigFile } from "../lib/config"
+import { exportFileName, exportMarkdown } from "../lib/export"
+import { terminalTitle, turnDoneSequences, writeTerminal } from "../lib/term"
 import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
 import { useCopyLastAnswer } from "../hooks/useCopyLastAnswer"
 import { useHomeEndKeys } from "../hooks/useHomeEndKeys"
 import { useSpinnerFrame } from "../hooks/useSpinnerFrame"
+import { useTerminalTitle } from "../hooks/useTerminalTitle"
 import { useTranscriptScroll } from "../hooks/useTranscriptScroll"
 import { lastAssistantText } from "../lib/history"
 import {
@@ -120,6 +123,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const [hubState, setHubState] = useState<HubConnectionState>("connecting")
   /** Chat-send EMA from the client — the status line latency badge. */
   const [latencyMs, setLatencyMs] = useState<number | null>(null)
+  /**
+   * BEL on turn completion (config `bell`, default on). OSC 9 toasts
+   * are always emitted — `/bell off` only silences the audible byte.
+   */
+  const [bellEnabled, setBellEnabled] = useState(config.bell)
+  /** Mirror for callbacks — `describeTurn` reads the live value. */
+  const bellRef = useRef(config.bell)
 
   const clientRef = useRef<ComukiClient | null>(null)
   const hubRef = useRef<HubConnection | null>(null)
@@ -133,6 +143,12 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
   const activeSessionId = activeSession?.id
   const activeHydrated = activeSession?.hydrated
+
+  // The window title follows the active tab: ⏳ while its turn is in
+  // flight, ✓ once it settles; a bare "comuki" when no tab is open.
+  useTerminalTitle(
+    terminalTitle(activeSession?.name, activeSession?.status === "thinking")
+  )
 
   // ctrl+y copies the last assistant answer; hint is rendered near the
   // prompt (getter is kept fresh by the hook, no stale transcript).
@@ -207,6 +223,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   useEffect(() => {
     overviewRef.current = overviewVisible
   }, [overviewVisible])
+
+  useEffect(() => {
+    bellRef.current = bellEnabled
+  }, [bellEnabled])
 
   const persist = useCallback((state: SessionsState) => {
     void writeSessionsFile(state).catch(() => {
@@ -472,6 +492,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
         return { ...current, sessions }
       })
+      // The terminal may be unfocused — BEL (gated by /bell) plus the
+      // OSC 9 toast (always); terminals without OSC 9 ignore it.
+      writeTerminal(turnDoneSequences(bellRef.current))
     },
     []
   )
@@ -595,7 +618,21 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       setWelcomeDismissed(true)
       setNoticeLines([])
       const name = titleForFirstMessage(target, message)
-      const userEcho: readonly string[] = renderUserEcho(message)
+      // The user's words as a message block: renders byte-identically
+      // to the old ANSI echo lines (renderMessage → renderUserEcho)
+      // and gives /export a real `## you` turn in live sessions.
+      const userEchoBlock = {
+        kind: "message" as const,
+        message: {
+          id: `local-${Date.now()}`,
+          role: "user",
+          content: message,
+          toolName: null,
+          parts: null,
+          meta: null,
+          createdAt: new Date().toISOString(),
+        },
+      }
 
       if (!target || target.id.startsWith(PENDING_PREFIX)) {
         try {
@@ -622,9 +659,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             return {
               ...next,
               sessions: patchSession(
-                appendBlocks(next.sessions, session.id, [
-                  { kind: "lines", lines: userEcho },
-                ]),
+                appendBlocks(next.sessions, session.id, [userEchoBlock]),
                 session.id,
                 { lastUserMessage: message }
               ),
@@ -643,9 +678,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       setTabs((current) => ({
         ...current,
         sessions: patchSession(
-          appendBlocks(current.sessions, target.id, [
-            { kind: "lines", lines: userEcho },
-          ]),
+          appendBlocks(current.sessions, target.id, [userEchoBlock]),
           target.id,
           { lastUserMessage: message }
         ),
@@ -754,6 +787,69 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           ])
           return
         }
+        case "export": {
+          if (!target) {
+            setNoticeLines([
+              `${colors.faint}  no active session to export${colors.reset}`,
+            ])
+            return
+          }
+          const markdown = exportMarkdown(target.blocks)
+          if (markdown.length === 0) {
+            pushLines(target.id, [
+              `${colors.faint}  nothing to export — the transcript is empty${colors.reset}`,
+            ])
+            return
+          }
+          const path = action.path ?? exportFileName(target.name)
+          const lineCount = markdown.split("\n").length
+          void (async () => {
+            try {
+              await Bun.write(path, markdown)
+              pushLines(target.id, [
+                `${colors.faint}  ${symbols.checkmark} exported ${path} · ${lineCount} lines${colors.reset}`,
+              ])
+            } catch (error) {
+              pushLines(target.id, [
+                `${colors.error}${symbols.cross} export failed: ${describeError(error)}${colors.reset}`,
+              ])
+            }
+          })()
+          return
+        }
+        case "bell": {
+          if (action.enabled === undefined) {
+            const state = bellEnabled ? "on" : "off"
+            const statusLine = `${colors.faint}  bell is ${state} — /bell on|off${colors.reset}`
+            if (target) {
+              pushLines(target.id, [statusLine])
+            } else {
+              setNoticeLines([statusLine])
+            }
+            return
+          }
+          const next = action.enabled
+          setBellEnabled(next)
+          bellRef.current = next
+          void (async () => {
+            try {
+              // Read-modify-write: the cookie and login state must survive.
+              const contents = await readConfigFile()
+              await writeConfigFile({ ...contents, bell: next })
+            } catch {
+              // Best-effort persistence; this session's toggle already applies.
+            }
+          })()
+          const confirmLine = next
+            ? `${colors.ok}${symbols.checkmark} bell on${colors.reset}`
+            : `${colors.ok}${symbols.checkmark} bell off — osc 9 toasts stay on${colors.reset}`
+          if (target) {
+            pushLines(target.id, [confirmLine])
+          } else {
+            setNoticeLines([confirmLine])
+          }
+          return
+        }
         case "approve":
         case "reject": {
           if (!target) {
@@ -781,7 +877,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
       }
     },
-    [exit, openPendingTab, pushLines, runTurn, sendMessage, tabs]
+    [bellEnabled, exit, openPendingTab, pushLines, runTurn, sendMessage, tabs]
   )
 
   // Global hotkeys — active in every state; the editor ignores these keys.

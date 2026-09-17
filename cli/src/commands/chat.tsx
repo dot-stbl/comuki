@@ -93,6 +93,14 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const [welcomeDismissed, setWelcomeDismissed] = useState(false)
   const [stats, setStats] = useState<PlatformStats | null>(null)
   const [bootstrapped, setBootstrapped] = useState(false)
+  /**
+   * True once the SSE attempt has resolved (success OR failure). The
+   * StatusLine placeholder text only shows while we are "truly
+   * disconnected" — once the hub attempt finishes, fallback to REST-only
+   * is a stable state and the placeholder goes away even when the hub
+   * never came up.
+   */
+  const [hubAttempted, setHubAttempted] = useState(false)
 
   const clientRef = useRef<ComukiClient | null>(null)
   const hubRef = useRef<HubConnection | null>(null)
@@ -187,6 +195,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               // ChatTurnComplete — the POST result renders the turn.
             }
           )
+        }
+        // Hub attempt resolved (connect or fallback). Whichever path the
+        // transport took, the placeholder text in the StatusLine is no
+        // longer accurate — we are not "truly disconnected" anymore, we
+        // are either live or we are on the REST-only path that works.
+        if (!disposed) {
+          setHubAttempted(true)
         }
 
         const restored = fromPersisted(await readSessionsFile())
@@ -665,13 +680,19 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     )
   }
 
+  // The placeholder lives in the StatusLine identity slot. We show it only
+  // while we are "truly disconnected" (hub attempt not yet decided);
+  // once the attempt resolves — connect or fallback to REST-only — the
+  // real identity takes over and the placeholder disappears.
+  const headerIdentity = hubAttempted ? identity : "connecting…"
+
   const showWelcome = !welcomeDismissed && tabs.sessions.length === 0
   const promptEnabled =
     !overviewVisible && (!activeSession || activeSession.status !== "thinking")
 
   return (
     <>
-      <StatusLine identity={identity} project={projectLabel} />
+      <StatusLine identity={headerIdentity} project={projectLabel} />
       {tabs.sessions.length > 0 ? (
         <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />
       ) : null}

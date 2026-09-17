@@ -11,10 +11,25 @@
 import {
   HubConnectionBuilder,
   HttpTransportType,
+  LogLevel,
+  NullLogger,
   type HubConnection,
   type IHttpConnectionOptions,
 } from "@microsoft/signalr"
 
+/**
+ * SignalR's default logger prints each transport's start attempt to the
+ * host console. Under a proxy/ingress that eats WebSocket upgrades, that
+ * means a `Failed to start the transport 'WebSockets': …` line lands
+ * above the Ink REPL with no way to dismiss it — and the connection
+ * happily falls back to SSE so the line is pure noise. We pin
+ * `NullLogger.instance` so the fallback stays invisible; if the entire
+ * connect fails the caller still gets a thrown / null result and
+ * surfaces it through the normal connect-error path.
+ *
+ * Belt-and-braces: a second `.configureLogging(LogLevel.None)` defends
+ * against any internal call site that bypasses the injected logger.
+ */
 export const RealtimeTransportMethods = {
   ChatChunk: "ChatChunk",
   ChatTurnComplete: "ChatTurnComplete",
@@ -60,6 +75,11 @@ export async function startChatHubConnection(
         HttpTransportType.ServerSentEvents |
         HttpTransportType.LongPolling,
     } as IHttpConnectionOptions)
+    // Belt-and-braces: NullLogger swallows the default console output;
+    // `LogLevel.None` defends against any internal calls that bypass the
+    // injected logger. Together they keep the WebSocket fallback silent.
+    .configureLogging(NullLogger.instance)
+    .configureLogging(LogLevel.None)
     .withAutomaticReconnect()
     .build()
 

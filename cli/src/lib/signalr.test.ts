@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test"
+import { LogLevel, NullLogger } from "@microsoft/signalr"
 import { bindChatEvents, RealtimeTransportMethods } from "./signalr"
 
 function stubConnection() {
@@ -41,5 +42,30 @@ describe("bindChatEvents", () => {
 
     expect(chunks).toEqual(["План ", "рефакторинга"])
     expect(outcomes).toEqual(["awaiting_approval"])
+  })
+})
+
+describe("signalr logger wiring", () => {
+  // Compile-time check: the canonical NullLogger from @microsoft/signalr
+  // exposes a no-op .log(); assert it never throws, never echoes. If a
+  // future SignalR upgrade swaps the singleton out, this test catches it.
+  it("NullLogger.instance.log is a silent no-op for every LogLevel", () => {
+    const levels: LogLevel[] = [
+      LogLevel.Trace,
+      LogLevel.Debug,
+      LogLevel.Information,
+      LogLevel.Warning,
+      LogLevel.Error,
+      LogLevel.Critical,
+      LogLevel.None,
+    ]
+    for (const level of levels) {
+      expect(() =>
+        NullLogger.instance.log(
+          level,
+          "Failed to start the transport 'WebSockets': should be invisible"
+        )
+      ).not.toThrow()
+    }
   })
 })

@@ -372,3 +372,51 @@ describe("PromptInput multiline", () => {
     unmount()
   })
 })
+
+describe("PromptInput mention seams", () => {
+  test("onDraftChange fires for every draft and for the submit reset", async () => {
+    const drafts: string[] = []
+    const { stdin, unmount } = render(
+      <PromptInput
+        onSubmit={() => {}}
+        onDraftChange={(value) => drafts.push(value)}
+      />
+    )
+    await settle()
+    for (const character of ["@", "i", "d", "x"]) {
+      stdin.write(character)
+      await settle()
+    }
+    stdin.write(ENTER)
+    await settle()
+    // "" is the mount sync — the menu learns the (empty) initial draft.
+    expect(drafts).toEqual(["", "@", "@i", "@id", "@idx", ""])
+    unmount()
+  })
+
+  test("interceptKey consumes a keystroke and may rewrite the draft", async () => {
+    const { stdin, lastFrame, unmount } = render(
+      <PromptInput
+        onSubmit={() => {}}
+        interceptKey={(input, _key, editor) => {
+          if (input !== "z") {
+            return false
+          }
+          const { value } = editor.get()
+          const next = `${value}!`
+          editor.set({ value: next, cursor: next.length })
+          return true
+        }}
+      />
+    )
+    await settle()
+    stdin.write("a")
+    await settle()
+    stdin.write("z")
+    await settle()
+    const frame = lastFrame() ?? ""
+    expect(frame).toContain("a!")
+    expect(frame).not.toContain("az")
+    unmount()
+  })
+})

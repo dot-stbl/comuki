@@ -21,6 +21,7 @@ import {
   symbols,
 } from "../theme"
 import type { ChatMessageView, MessagePart, PlanItemView } from "./client"
+import { MENTION_TOKEN, stripMentionPreamble } from "./mentions"
 import { DEFAULT_MARKDOWN_WIDTH, renderMarkdownLines } from "./markdown"
 
 // ---------------------------------------------------------------------------
@@ -571,13 +572,49 @@ export function renderMessage(
  * at column 0 with a blank line on each side. Also used for the
  * immediate echo on send, so the live line and the restored history
  * of the same turn are byte-identical.
+ *
+ * Mentions: any `[@knowledge: …]` preamble blocks a stored message
+ * carries are invisible here (the expansion rides the wire, not the
+ * echo), and each `@token` takes the accent colour so the reference
+ * reads as intentional.
  */
 export function renderUserEcho(content: string): string[] {
-  const text = content.trim()
+  const text = stripMentionPreamble(content).trim()
   if (text.length === 0) {
     return []
   }
-  return ["", paint(text, messageMark("user").textColor), ""]
+  return [
+    "",
+    paintMentionText(text, messageMark("user").textColor),
+    "",
+  ]
+}
+
+/**
+ * Paints `text` in `baseColor` with every word-start `@token` in the
+ * accent colour — segment-wise so the tokens keep the surrounding
+ * base colour's weight (the user echo is bold, the tokens are too).
+ */
+function paintMentionText(text: string, baseColor: string): string {
+  const pieces: string[] = []
+  let last = 0
+  for (const match of text.matchAll(MENTION_TOKEN)) {
+    const query = match[1] ?? ""
+    if (query.length === 0) {
+      continue
+    }
+    // match[0] may carry the leading space — the token starts at its `@`.
+    const tokenStart = (match.index ?? 0) + match[0].length - query.length - 1
+    if (tokenStart > last) {
+      pieces.push(paint(text.slice(last, tokenStart), baseColor))
+    }
+    pieces.push(paint(text.slice(tokenStart, tokenStart + query.length + 1), colors.accent))
+    last = tokenStart + query.length + 1
+  }
+  if (last < text.length) {
+    pieces.push(paint(text.slice(last), baseColor))
+  }
+  return pieces.join("")
 }
 
 // ---------------------------------------------------------------------------

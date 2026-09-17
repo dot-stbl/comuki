@@ -13,7 +13,7 @@ import {
   renderUserEcho,
   summarizeToolArgs,
 } from "./format"
-import { colors, stripAnsi, symbols } from "../theme"
+import { colors, messageMark, stripAnsi, symbols } from "../theme"
 import type { ChatMessageView, MessagePart } from "./client"
 
 function userMessage(content: string): ChatMessageView {
@@ -214,6 +214,23 @@ describe("renderUserEcho", () => {
 
   it("renders nothing for blank input", () => {
     expect(renderUserEcho("   ")).toEqual([])
+  })
+
+  it("accents @mention tokens inside the bold text", () => {
+    const echo = renderUserEcho("use @identity here")
+    const line = echo[1] ?? ""
+    expect(line).toContain(colors.accent + "@identity")
+    expect(line).toContain(messageMark("user").textColor + "use ")
+    // Byte-identity holds for mention lines too (echo vs history).
+    expect(echo).toEqual(renderMessage(userMessage("use @identity here")))
+  })
+
+  it("hides the [@knowledge: …] preamble of a stored message", () => {
+    const stored =
+      "use @identity please\n\n[@knowledge: Identity — the chunk text]"
+    const echo = renderUserEcho(stored)
+    expect(echo[1] ?? "").not.toContain("[@knowledge:")
+    expect(stripAnsi(echo[1] ?? "")).toBe("use @identity please")
   })
 })
 

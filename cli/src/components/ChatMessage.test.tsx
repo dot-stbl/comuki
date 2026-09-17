@@ -10,7 +10,7 @@ import { describe, expect, test } from "bun:test"
 import React from "react"
 import { render } from "ink-testing-library"
 import { ChatMessage } from "./ChatMessage"
-import type { ChatMessageView } from "../lib/client"
+import type { ChatMessageView, MessagePart } from "../lib/client"
 import { stripAnsi } from "../theme"
 
 function assistantMarkdown(markdown: string): ChatMessageView {
@@ -105,6 +105,69 @@ describe("ChatMessage — markdown rendering", () => {
     for (const line of lines) {
       expect(stripAnsi(line).length).toBeLessThanOrEqual(40)
     }
+    unmount()
+  })
+})
+
+describe("ChatMessage — collapsible parts", () => {
+  function assistantWithParts(parts: MessagePart[]): ChatMessageView {
+    return {
+      id: "a2",
+      role: "assistant",
+      content: "",
+      toolName: null,
+      parts,
+      meta: null,
+      createdAt: "2026-09-18T00:00:00Z",
+    }
+  }
+
+  test("collapses thinking and tool parts by default", () => {
+    const { lastFrame, unmount } = render(
+      <ChatMessage
+        message={assistantWithParts([
+          { kind: "thinking", text: "hidden reasoning", tokens: 40 },
+          {
+            kind: "tool",
+            name: "memory.recall",
+            inputJson: `{"query":"identity"}`,
+            status: "succeeded",
+            outputJson: `{"facts":[1]}`,
+          },
+          { kind: "text", markdown: "the visible answer" },
+        ])}
+        width={60}
+      />
+    )
+    const frame = stripAnsi(lastFrame() ?? "")
+    expect(frame).toContain("◌ thinking · 40 tok")
+    expect(frame).toContain(`⚙ memory.recall("identity") → ok`)
+    expect(frame).toContain("the visible answer")
+    expect(frame).not.toContain("hidden reasoning")
+    unmount()
+  })
+
+  test("expanded prop reveals full blocks", () => {
+    const { lastFrame, unmount } = render(
+      <ChatMessage
+        message={assistantWithParts([
+          { kind: "thinking", text: "revealed reasoning" },
+          {
+            kind: "tool",
+            name: "memory.recall",
+            inputJson: `{"query":"identity"}`,
+            status: "succeeded",
+            outputJson: `{"facts":[1]}`,
+          },
+        ])}
+        width={60}
+        expanded={true}
+      />
+    )
+    const frame = stripAnsi(lastFrame() ?? "")
+    expect(frame).toContain("revealed reasoning")
+    expect(frame).toContain(`"query": "identity"`)
+    expect(frame).toContain(`"facts": [`)
     unmount()
   })
 })

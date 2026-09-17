@@ -28,6 +28,8 @@ export const symbols = {
   cross: "✗",
   bullet: "·",
   arrow: "→",
+  thinking: "◌",
+  tool: "⚙",
   spinnerFrames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
 } as const
 

@@ -44,6 +44,8 @@ export interface Session {
   readonly liveText: string
   /** Transcript fetched from the server (restored tabs start false). */
   readonly hydrated: boolean
+  /** ctrl+o per-tab toggle — render thinking/tool blocks expanded. */
+  readonly blocksExpanded: boolean
   /** Last user-sent text — what `/retry` resends; refilled by hydration. */
   readonly lastUserMessage: string | null
   /** User renamed the tab — auto-naming must not override it. */
@@ -117,6 +119,7 @@ export function newPendingSession(
     blocks: [],
     liveText: "",
     hydrated: false,
+    blocksExpanded: false,
     lastUserMessage: null,
     renamed: false,
     history: [],
@@ -266,6 +269,21 @@ export function markUnread(
   )
 }
 
+/**
+ * ctrl+o — flips one tab's expand-blocks flag; every other tab (and an
+ * unknown id) stays as-is, so each session keeps its own verbose state.
+ */
+export function toggleBlocksExpanded(
+  sessions: readonly Session[],
+  id: string
+): readonly Session[] {
+  return sessions.map((session) =>
+    session.id === id
+      ? { ...session, blocksExpanded: !session.blocksExpanded }
+      : session
+  )
+}
+
 /** Swaps a pending tab's local id for the server session UUID. */
 export function adoptServerId(
   state: SessionsState,
@@ -341,6 +359,7 @@ export function fromPersisted(persisted: PersistedSessions): SessionsState {
       blocks: [],
       liveText: "",
       hydrated: false,
+      blocksExpanded: false,
       // lastUserMessage is transient — lazy hydration refills it from the
       // server transcript after restore.
       lastUserMessage: null,

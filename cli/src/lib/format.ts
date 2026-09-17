@@ -162,6 +162,177 @@ function extractPlanNodes(plan: unknown): PlanItemView[] {
 }
 
 // ---------------------------------------------------------------------------
+// Collapsible blocks — thinking + tool parts render as one summary line
+// unless the transcript runs verbose (ctrl+o). Pure derivation lives here;
+// the toggle state is per-session in lib/sessions.ts.
+// ---------------------------------------------------------------------------
+
+/** What one collapsed block shows: `◌ thinking · 3.4s`, `⚙ tool(args) → ok`. */
+export interface CollapsedSummary {
+  readonly icon: string
+  readonly label: string
+  readonly badge: string | null
+}
+
+/**
+ * Derives the collapsed summary for a part, or `null` when the part is
+ * not collapsible (text, code, diagram, handoff, plan always render in
+ * full). The single source for both the pure line renderer and tests.
+ */
+export function collapsedSummary(part: MessagePart): CollapsedSummary | null {
+  if (part.kind === "thinking") {
+    const badge =
+      typeof part.durationMs === "number"
+        ? formatDurationMs(part.durationMs)
+        : typeof part.tokens === "number" && part.tokens > 0
+          ? formatTokenCount(part.tokens)
+          : null
+    return { icon: symbols.thinking, label: "thinking", badge }
+  }
+  if (part.kind === "tool") {
+    return {
+      icon: symbols.tool,
+      label: `${part.name}(${summarizeToolArgs(part.inputJson)})`,
+      badge: toolStatusBadge(part.status),
+    }
+  }
+  return null
+}
+
+function toolStatusBadge(status: string): string {
+  const lowered = status.toLowerCase()
+  if (lowered === "failed" || lowered === "error") {
+    return "error"
+  }
+  if (lowered === "running") {
+    return "…"
+  }
+  return "ok"
+}
+
+/** `120ms`, `3.4s`, `2m 5s` — compact durations for collapsed lines. */
+export function formatDurationMs(durationMs: number): string {
+  if (durationMs < 1000) {
+    return `${Math.round(durationMs)}ms`
+  }
+  if (durationMs < 60_000) {
+    return `${(durationMs / 1000).toFixed(1)}s`
+  }
+  const minutes = Math.floor(durationMs / 60_000)
+  const seconds = Math.round((durationMs % 60_000) / 1000)
+  return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`
+}
+
+/** `40 tok`, `1.2k tok` — thinking size when duration is unknown. */
+export function formatTokenCount(tokens: number): string {
+  return tokens < 1000 ? `${tokens} tok` : `${(tokens / 1000).toFixed(1)}k tok`
+}
+
+/**
+ * Positional argument summary with a total char budget (default 40):
+ * strings arrive quoted, numbers/booleans bare, arrays count as
+ * `n key`, nested objects stay silent. Broken json → empty string.
+ */
+export function summarizeToolArgs(inputJson: string, maxChars = 40): string {
+  let input: Record<string, unknown>
+  try {
+    input = JSON.parse(inputJson) as Record<string, unknown>
+  } catch {
+    return ""
+  }
+  const pieces: string[] = []
+  let used = 0
+  for (const [key, value] of Object.entries(input)) {
+    if (value === null || value === undefined) {
+      continue
+    }
+    let piece: string
+    if (typeof value === "string") {
+      piece = JSON.stringify(value)
+    } else if (typeof value === "number" || typeof value === "boolean") {
+      piece = String(value)
+    } else if (Array.isArray(value)) {
+      piece = `${value.length} ${key}`
+    } else {
+      continue
+    }
+    const separator = pieces.length > 0 ? 2 : 0
+    if (used + separator + piece.length > maxChars) {
+      const room = maxChars - used - separator
+      if (room > 1) {
+        pieces.push(piece.slice(0, room - 1) + "…")
+      }
+      break
+    }
+    pieces.push(piece)
+    used += separator + piece.length
+  }
+  return pieces.join(", ")
+}
+
+function badgeColor(badge: string): string {
+  if (badge === "error") {
+    return colors.red
+  }
+  if (badge === "…") {
+    return colors.accent
+  }
+  if (badge === "ok") {
+    return colors.green
+  }
+  return colors.dim
+}
+
+/** Renders a derived summary as its single dim transcript line. */
+export function renderCollapsedLine(summary: CollapsedSummary): string {
+  const badge =
+    summary.badge === null
+      ? ""
+      : // Result badges (ok / error / …) read as `→ result`; metadata
+        // badges (durations, token counts) read as `· detail`.
+        ` ${paint(
+          isResultBadge(summary.badge) ? symbols.arrow : symbols.bullet,
+          colors.dim
+        )} ${paint(summary.badge, badgeColor(summary.badge))}`
+  return `  ${paint(summary.icon, colors.dim)} ${paint(summary.label, colors.muted)}${badge}`
+}
+
+function isResultBadge(badge: string): boolean {
+  return badge === "ok" || badge === "error" || badge === "…"
+}
+
+/** Expanded thinking: markdown-rendered, dimmed, indented two spaces. */
+function renderExpandedThinking(text: string, width: number): string[] {
+  return renderMarkdownLines(text, width).map((line) =>
+    line.trim().length === 0 ? line : paint(indentBlock(line), colors.dim)
+  )
+}
+
+/** Expanded tool: the legacy status line plus full args and result. */
+function renderExpandedTool(
+  part: Extract<MessagePart, { kind: "tool" }>
+): string[] {
+  return [
+    renderToolPart(part),
+    ...prettyJsonBlock("input", part.inputJson),
+    ...(part.outputJson ? prettyJsonBlock("output", part.outputJson) : []),
+  ]
+}
+
+function prettyJsonBlock(label: string, json: string): string[] {
+  let body = json
+  try {
+    body = JSON.stringify(JSON.parse(json), null, 2)
+  } catch {
+    // Not parseable json — the raw payload is the honest view.
+  }
+  return [
+    paint(`    ${label}:`, colors.dim),
+    ...body.split("\n").map((line) => paint(`    ${line}`, colors.muted)),
+  ]
+}
+
+// ---------------------------------------------------------------------------
 // Parts → lines
 // ---------------------------------------------------------------------------
 
@@ -173,18 +344,27 @@ export function indentBlock(text: string, indent = "  "): string {
     .join("\n")
 }
 
+/** Collapse control for thinking/tool parts; omitted options → full render. */
+export interface PartRenderOptions {
+  readonly expanded?: boolean
+}
+
 export function renderPart(
   part: MessagePart,
-  width: number = DEFAULT_MARKDOWN_WIDTH
+  width: number = DEFAULT_MARKDOWN_WIDTH,
+  { expanded = true }: PartRenderOptions = {}
 ): string[] {
+  if (!expanded) {
+    const summary = collapsedSummary(part)
+    if (summary !== null) {
+      return [renderCollapsedLine(summary)]
+    }
+  }
   switch (part.kind) {
     case "thinking":
-      return part.text
-        .split("\n")
-        .filter((line) => line.trim().length > 0)
-        .map((line) => paint(indentBlock(line), colors.dim))
+      return renderExpandedThinking(part.text, width)
     case "tool":
-      return [renderToolPart(part)]
+      return renderExpandedTool(part)
     case "code": {
       const anchor =
         part.path !== null && part.path !== undefined
@@ -219,9 +399,10 @@ export function renderPart(
 
 export function renderParts(
   parts: readonly MessagePart[],
-  width: number = DEFAULT_MARKDOWN_WIDTH
+  width: number = DEFAULT_MARKDOWN_WIDTH,
+  options?: PartRenderOptions
 ): string[] {
-  return parts.flatMap((part) => renderPart(part, width))
+  return parts.flatMap((part) => renderPart(part, width, options))
 }
 
 // ---------------------------------------------------------------------------
@@ -232,11 +413,14 @@ export function renderParts(
  * One transcript row → lines. Assistant rows prefer parts (the rich
  * shape); `content` is the flat fallback. Both render markdown through
  * `lib/markdown.ts`. User rows echo as typed — plain, one line. Tool
- * and system journal rows render muted.
+ * and system journal rows render muted. Options omitted → full render
+ * (the pure layer's default); the transcript passes the session's
+ * ctrl+o toggle so thinking/tool parts collapse to summary lines.
  */
 export function renderMessage(
   message: ChatMessageView,
-  width: number = DEFAULT_MARKDOWN_WIDTH
+  width: number = DEFAULT_MARKDOWN_WIDTH,
+  options?: PartRenderOptions
 ): string[] {
   if (message.role === "user") {
     return [
@@ -246,7 +430,7 @@ export function renderMessage(
   if (message.role === "assistant") {
     const lines =
       message.parts !== null && message.parts.length > 0
-        ? renderParts(message.parts, width)
+        ? renderParts(message.parts, width, options)
         : renderMarkdownLines(message.content, width)
     const meta = message.meta
     const cost = meta?.model

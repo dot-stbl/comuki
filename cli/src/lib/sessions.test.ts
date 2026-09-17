@@ -20,6 +20,7 @@ import {
   stepActive,
   titleForFirstMessage,
   toPersisted,
+  toggleBlocksExpanded,
   writeSessionsFile,
   type Session,
 } from "./sessions"
@@ -359,5 +360,35 @@ describe("persistence round-trip", () => {
     })
     expect(restored.sessions[0]?.renamed).toBe(false)
     expect(restored.sessions[1]?.renamed).toBe(true)
+  })
+})
+
+describe("toggleBlocksExpanded", () => {
+  it("defaults to collapsed for new and restored tabs", () => {
+    expect(newPendingSession().blocksExpanded).toBe(false)
+    const restored = fromPersisted({
+      sessions: [{ id: "s1", name: "tab", status: "idle", createdAt: 0 }],
+    })
+    expect(restored.sessions[0]?.blocksExpanded).toBe(false)
+  })
+
+  it("flips the target tab and leaves other tabs untouched", () => {
+    const sessions = [liveSession("s1"), liveSession("s2")]
+    const once = toggleBlocksExpanded(sessions, "s1")
+    expect(once[0]?.blocksExpanded).toBe(true)
+    expect(once[1]?.blocksExpanded).toBe(false)
+
+    const twice = toggleBlocksExpanded(once, "s1")
+    expect(twice[0]?.blocksExpanded).toBe(false)
+    expect(twice[1]?.blocksExpanded).toBe(false)
+  })
+
+  it("is not persisted — restore always starts collapsed", () => {
+    const expanded = toggleBlocksExpanded([liveSession("s1")], "s1")
+    const persisted = toPersisted({ sessions: expanded, activeIndex: 0 })
+    expect(persisted.sessions[0]).not.toHaveProperty("blocksExpanded")
+    expect(
+      fromPersisted(persisted).sessions[0]?.blocksExpanded
+    ).toBe(false)
   })
 })

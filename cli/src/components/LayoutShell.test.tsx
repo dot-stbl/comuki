@@ -36,6 +36,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
     blocks: [],
     liveText: "",
     hydrated: true,
+    blocksExpanded: false,
     lastUserMessage: null,
     renamed: false,
     ...overrides,

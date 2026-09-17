@@ -68,6 +68,8 @@ export type MessagePart =
       readonly kind: "thinking"
       readonly text: string
       readonly tokens?: number | null
+      /** Optional on the wire today — the collapsed line shows it when present. */
+      readonly durationMs?: number | null
     }
   | {
       readonly kind: "tool"

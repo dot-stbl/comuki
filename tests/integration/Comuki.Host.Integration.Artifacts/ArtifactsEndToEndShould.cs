@@ -305,12 +305,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         {
             BaseAddress = baseAddress,
         };
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/auth/login",
-            new { email = BootstrapEmail, password = BootstrapPassword },
-            TestContext.Current.CancellationToken);
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        return client;
+        return await client.LoginAsBootstrapAdminAsync(TestContext.Current.CancellationToken);
     }
 
     private static async Task MigrateAsync<TContext>(

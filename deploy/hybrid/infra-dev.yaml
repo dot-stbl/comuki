@@ -122,3 +122,81 @@ spec:
     - name: postgres
       port: 5432
       targetPort: postgres
+
+---
+# Brain host — gRPC sibling (issue: chat→brain). Same image as the
+# orchestrator (three entrypoints), pinned to :latest which the CI pushes
+# on every master build; versions cannot diverge from the host image
+# family. Model creds arrive via envFrom (COMUKI_BRAIN_MODEL_*).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: comuki-brain
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki-brain
+    app.kubernetes.io/part-of: comuki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: comuki-brain
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: comuki-brain
+        app.kubernetes.io/part-of: comuki
+    spec:
+      containers:
+        - name: brain
+          image: registry.hybrid.ai/comuki/comuki:latest
+          command: [/app/brain/comuki-brain]
+          env:
+            - name: COMUKI_ENV
+              value: dev
+          envFrom:
+            - secretRef:
+                name: comuki-dev-host-secrets
+          ports:
+            - containerPort: 17004
+              name: grpc
+          readinessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: grpc
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      imagePullSecrets:
+        - name: registry.hybrid.ai
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: comuki-brain
+  namespace: comuki
+  labels:
+    app.kubernetes.io/name: comuki-brain
+    app.kubernetes.io/part-of: comuki
+spec:
+  selector:
+    app.kubernetes.io/name: comuki-brain
+  ports:
+    - name: grpc
+      port: 17004
+      targetPort: grpc

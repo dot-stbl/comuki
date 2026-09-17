@@ -76,6 +76,18 @@ securityContext:
 # tmpVolume stays enabled (chart default): the host writes nothing outside
 # /tmp under a read-only root.
 
+# Vega cluster kubeconfig: mounted read-only, the compute engine reads it
+# to spawn worker Jobs on the vega cluster instead of in-cluster.
+volumeMounts:
+  - name: vega-kubeconfig
+    mountPath: /vega
+    readOnly: true
+
+volumes:
+  - name: vega-kubeconfig
+    secret:
+      secretName: comuki-vega-kubeconfig
+
 env:
   # Production ON PURPOSE, also on dev: the ProductionSecretValidator gate
   # (MinIO keys, bootstrap admin, both HMAC peppers) must be enforced in the
@@ -89,40 +101,53 @@ env:
   # (owner step; nsupdate pattern per virtual.deploy.dev/docs/dns.md).
   COMUKI_PUBLIC_HOST_URL: http://comuki.nova.adcluster.targetix.net
 
-  # CORS allow-list for the dashboard SPA origin (Host__Cors__AllowedOrigins
-  # array binding). The dashboard itself is not deployed in-cluster yet —
-  # same-origin first, adjust when the SPA lands on its own host.
-  Host__Cors__AllowedOrigins__0: http://comuki.nova.adcluster.targetix.net
+  # CORS allow-list (COMUKI_HOST_CORS_ALLOWEDORIGINS_0 → Host:Cors:AllowedOrigins:0).
+  # SPA is same-origin; kept for cross-origin tooling against the API.
+  COMUKI_HOST_CORS_ALLOWEDORIGINS_0: http://comuki.nova.adcluster.targetix.net
 
-  # Artifacts store: SHARED MinIO object-store-01 (owner decision
-  # 2026-09-10) — s3.nova.adcluster.targetix.net:9000, plain HTTP.
-  # Keys (Artifacts__{Access,Secret}Key) are NOT here — they arrive via
-  # envFrom from the Consul blob (owner-provisioned shared-MinIO creds).
-  # Bucket comuki-run-bundles is created by the host on first use
-  # (Artifacts__AutoCreateBucket).
-  Artifacts__Endpoint: s3.nova.adcluster.targetix.net:9000
-  Artifacts__UseSSL: "false"
-  Artifacts__Bucket: comuki-run-bundles
-  Artifacts__AutoCreateBucket: "true"
+  # OIDC login (Keycloak in ns comuki): auth:oidc:providers[0] via the
+  # COMUKI_ env face (COMUKI_AUTH_OIDC_PROVIDERS_0_* → auth:oidc:providers:0:*).
+  # The client secret is NOT here — ClientSecretEnv names the env var that
+  # holds it (COMUKI_OIDC_KEYCLOAK_SECRET, Consul blob via envFrom below).
+  # Callback the IdP must be registered with is the UNIFIED
+  # /api/v1/auth/oidc/callback (RedirectUriBuilder; no provider segment).
+  # RequireHTTPS=false — dev contour is plain HTTP, never copy to prod.
+  COMUKI_AUTH_OIDC_PROVIDERS_0_NAME: keycloak
+  COMUKI_AUTH_OIDC_PROVIDERS_0_AUTHORITY: http://keycloak.comuki.nova.adcluster.targetix.net/realms/comuki
+  COMUKI_AUTH_OIDC_PROVIDERS_0_CLIENTID: comuki
+  COMUKI_AUTH_OIDC_PROVIDERS_0_CLIENTSECRETENV: COMUKI_OIDC_KEYCLOAK_SECRET
+  COMUKI_AUTH_OIDC_PROVIDERS_0_REQUIREHTTPS: "false"
 
-  # Telemetry: SHARED OTLP collector telemetry-01 (owner decision
-  # 2026-09-10) — otlp.nova.adcluster.targetix.net:4317 (gRPC).
-  # ComukiTelemetryInstaller adds the OTLP exporter only when this is
-  # set; unset = traces/metrics stay local no-ops.
-  Telemetry__OtlpEndpoint: http://otlp.nova.adcluster.targetix.net:4317
+  # Artifacts store: SHARED MinIO object-store-01 —
+  # s3.nova.adcluster.targetix.net:9000, plain HTTP.
+  # Keys COMUKI_ARTIFACTS_{ACCESS,SECRET}KEY arrive via envFrom (Consul blob).
+  COMUKI_ARTIFACTS_ENDPOINT: s3.nova.adcluster.targetix.net:9000
+  COMUKI_ARTIFACTS_USESSL: "false"
+  COMUKI_ARTIFACTS_BUCKET: comuki-run-bundles
+  COMUKI_ARTIFACTS_AUTOCREATEBUCKET: "true"
 
-  # Compute engine: workers as batch/v1 Jobs in this cluster. With an empty
-  # Compute:Scale:Projects list the supervisor pass is a no-op, so this is
-  # safe to carry before Slice 0 wires projects. Worker-image tag pinning
-  # and the worker Job RBAC (create jobs in ns comuki) are Slice 0 follow-ups
-  # — see deploy/hybrid/README.md.
-  Compute__Provider: kubernetes
-  Compute__Scale__WorkerImage: registry.hybrid.ai/comuki/worker
-  Compute__Scale__OrchestratorGrpcUrl: http://comuki:8080
+  # Telemetry: SHARED OTLP collector telemetry-01 —
+  # otlp.nova.adcluster.targetix.net:4317 (gRPC).
+  COMUKI_TELEMETRY_OTLPENDPOINT: http://otlp.nova.adcluster.targetix.net:4317
+
+  # Compute: workers as batch/v1 Jobs. Empty Compute:Scale:Projects →
+  # supervisor no-op until Slice 0 wires projects.
+  COMUKI_COMPUTE_PROVIDER: kubernetes
+
+  # Brain host (gRPC sibling Deployment, infra-dev.yaml). Without this key
+  # the chat graph falls back to the in-process BrainStub (echo).
+  COMUKI_BRAIN_ENDPOINT: http://comuki-brain:17004
+  COMUKI_COMPUTE_SCALE_WORKERIMAGE: registry.hybrid.ai/comuki/worker
+  COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki:8080
+  COMUKI_COMPUTE_KUBERNETES_NAMESPACE: comuki
+  COMUKI_COMPUTE_KUBERNETES_SERVICEACCOUNT: comuki-worker
+  # Workers go to the vega cluster (external kubeconfig, mounted secret)
+  COMUKI_COMPUTE_KUBERNETES_KUBECONFIGPATH: /vega/kubeconfig
 
 # COMUKI_DB (full Npgsql DSN to pgvector.comuki.svc.cluster.local),
 # COMUKI_IDENTITY_APIKEY_PEPPER, COMUKI_TOKEN_PEPPER,
-# COMUKI_BOOTSTRAP_ADMIN_{EMAIL,PASSWORD}, Artifacts__{Access,Secret}Key —
+# COMUKI_BOOTSTRAP_ADMIN_{EMAIL,PASSWORD}, COMUKI_ARTIFACTS_{ACCESS,SECRET}KEY,
+# COMUKI_OIDC_KEYCLOAK_SECRET (Keycloak client secret for the OIDC flow) —
 # names in deploy/hybrid/secrets.schema.yml, values in the Consul blob
 # cicd/nova/secrets/dev/comuki (materialized by the secrets:dev CI job).
 envFrom:

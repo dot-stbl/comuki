@@ -5,6 +5,7 @@
 #   master (GitLab mirror of local `hybrid`) → dev
 #     test:unit + migrate:validate (gates) → build:image + build:image:worker
 #     + secrets:dev → ▶ migrate:dev → ▶ promote:dev
+#     (manual: infra:dev)
 #   MR → test:unit + migrate:validate only
 #
 # Dev deploy is AppSet-driven: `hybrid-services-dev` (corp Argo) discovers
@@ -55,8 +56,10 @@ variables:
   # Same pin as console.x (live consumer of these templates).
   CICD_MODULES_REF: "6f245f95c09177020adeaef851fdd2f37b6328f2"
   KANIKO_DOCKERFILE: deploy/hybrid/host.Dockerfile
+  # Version stamped into both images (APP_VERSION is a pushed image tag too — the pin resolves it).
+  KANIKO_BUILD_ARGS: "COMUKI_VERSION=$APP_VERSION"
   KANIKO_TAG: "$CI_COMMIT_SHORT_SHA"
-  KANIKO_EXTRA_TAGS: "$APP_VERSION $CI_COMMIT_TAG"
+  KANIKO_EXTRA_TAGS: "$APP_VERSION latest $CI_COMMIT_TAG"
   ARGOCD_DEV_API_URL: "https://argocd.nl.dev.console.adcluster.targetix.net"
   ARGOCD_TLS_VERIFY: "false"
   SECRETS_MAPPING_FILE: "deploy/hybrid/secrets.schema.yml"
@@ -160,8 +163,10 @@ migrate:validate:
     - 'echo "migrate:validate OK"'
 
 # -----------------------------------------------------------------------------
-# Images. One host image (orchestrator + migrator entrypoints, console.x
-# "one image, N commands" pattern) + one worker image (Translator + pi).
+# Images. One host image (orchestrator + migrator entrypoints + the dashboard
+# SPA baked into wwwroot by the Dockerfile's node stage — console.x "one
+# image, N commands" pattern; SPA Vite args are ARG defaults in
+# deploy/hybrid/host.Dockerfile) + one worker image (Translator + pi).
 # Tag = short_sha (what the dev AppSet pins) + 0.1.<iid> + git tag if any.
 # -----------------------------------------------------------------------------
 build:image:

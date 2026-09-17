@@ -8,9 +8,15 @@
  * another `useInput` listener sees it. So editing lives here (insert,
  * backspace, cursor arrows, history); the shell owns the hotkeys in
  * its own `useInput`, and this editor simply ignores those keys.
+ *
+ * History recall (↑/↓) follows `historyNavigator`: ↑ from the live
+ * line saves the half-typed draft and shows the newest entry, ↓ past
+ * the newest entry restores that draft, and editing a recalled entry
+ * keeps its position so ↑/↓ continue from where the user is.
  */
 import { Text, useInput } from "ink"
 import React, { useCallback, useState } from "react"
+import { historyNavigator, type HistoryDirection } from "../lib/history"
 
 export interface PromptInputProps {
   readonly onSubmit: (value: string) => void
@@ -24,6 +30,11 @@ export interface PromptInputProps {
 interface EditorState {
   readonly value: string
   readonly cursor: number
+  /**
+   * The draft being typed before ↑ first left the live line — restored
+   * when ↓ walks back past the newest history entry.
+   */
+  readonly draft: string
   readonly historyIndex: number | null
 }
 
@@ -37,18 +48,39 @@ export function PromptInput({
   const [state, setState] = useState<EditorState>({
     value: "",
     cursor: 0,
+    draft: "",
     historyIndex: null,
   })
 
-  const applyHistory = useCallback(
-    (nextIndex: number | null) => {
-      if (nextIndex === null || history.length === 0) {
-        setState({ value: "", cursor: 0, historyIndex: null })
-        return
-      }
-      const clamped = Math.min(Math.max(0, nextIndex), history.length - 1)
-      const value = history[clamped] ?? ""
-      setState({ value, cursor: value.length, historyIndex: clamped })
+  const navigate = useCallback(
+    (direction: HistoryDirection) => {
+      setState((current) => {
+        const next = historyNavigator(
+          current.historyIndex,
+          direction,
+          history
+        )
+        if (next === current.historyIndex) {
+          return current
+        }
+        if (next === null) {
+          // Back on the live line — bring the saved draft back.
+          return {
+            value: current.draft,
+            cursor: current.draft.length,
+            draft: current.draft,
+            historyIndex: null,
+          }
+        }
+        const value = history[next] ?? ""
+        return {
+          value,
+          cursor: value.length,
+          // Capture the live line as the draft on the first ↑ only.
+          draft: current.historyIndex === null ? current.value : current.draft,
+          historyIndex: next,
+        }
+      })
     },
     [history]
   )
@@ -56,25 +88,15 @@ export function PromptInput({
   useInput(
     (input, key) => {
       if (key.upArrow) {
-        applyHistory(
-          state.historyIndex === null
-            ? history.length - 1
-            : Math.max(0, state.historyIndex - 1)
-        )
+        navigate("older")
         return
       }
       if (key.downArrow) {
-        if (state.historyIndex !== null) {
-          applyHistory(
-            state.historyIndex + 1 >= history.length
-              ? null
-              : state.historyIndex + 1
-          )
-        }
+        navigate("newer")
         return
       }
       if (key.return) {
-        setState({ value: "", cursor: 0, historyIndex: null })
+        setState({ value: "", cursor: 0, draft: "", historyIndex: null })
         onSubmit(state.value)
         return
       }
@@ -108,6 +130,7 @@ export function PromptInput({
               state.value.slice(0, state.cursor - 1) +
               state.value.slice(state.cursor),
             cursor: state.cursor - 1,
+            draft: state.draft,
             historyIndex: state.historyIndex,
           })
         }
@@ -120,6 +143,7 @@ export function PromptInput({
             input +
             state.value.slice(state.cursor),
           cursor: state.cursor + input.length,
+          draft: state.draft,
           historyIndex: state.historyIndex,
         })
       }

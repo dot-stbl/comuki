@@ -12,7 +12,7 @@ export interface StatusLineProps {
   readonly extra?: string
 }
 
-export const CLI_VERSION = "0.1.0"
+export const CLI_VERSION = "0.2.0"
 
 export function StatusLine({ identity, project, extra }: StatusLineProps) {
   const parts = [`comuki v${CLI_VERSION}`, identity]
@@ -27,9 +27,7 @@ export function StatusLine({ identity, project, extra }: StatusLineProps) {
       {"  "}
       {parts.map((part, index) => (
         <React.Fragment key={part}>
-          {index > 0 ? (
-            <Text color="#8787f3"> · </Text>
-          ) : null}
+          {index > 0 ? <Text color="#8787f3"> · </Text> : null}
           <Text>{part}</Text>
         </React.Fragment>
       ))}

@@ -1,19 +1,47 @@
 /**
- * `comuki chat` — the interactive REPL.
+ * `comuki` (default) — the multi-session REPL.
  *
- * Flow: resolve config → identity (best effort) → project scope (optional)
- * → create session → best-effort SignalR join → prompt loop. Message
- * turns are synchronous REST calls (`POST …/messages` returns the whole
- * turn result); SignalR chunks only animate the wait, so a dead socket
- * degrades to a quiet spinner, never a broken chat.
+ * N parallel brain sessions switched like browser tabs: the tab strip
+ * on top, the active transcript in the middle, session badges + hotkey
+ * legend at the bottom. Turns are synchronous REST calls per session,
+ * fired unawaited — a thinking tab keeps working in the background and
+ * only marks itself unread. The laptop stays cold.
+ *
+ * One SignalR connection carries every session's chunks (`ChatChunk`
+ * holds `sessionId`, so routing is a patch over tabs). A pending tab
+ * (`local-…` id) becomes a server session lazily on its first message.
  */
-import { Text, useApp } from "ink"
+import { Box, Text, useApp, useInput } from "ink"
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import type { HubConnection } from "@microsoft/signalr"
-import { ComukiApiError, ComukiClient, type ChatMessageView } from "../lib/client"
+import {
+  ComukiApiError,
+  ComukiClient,
+  type ChatMessageView,
+} from "../lib/client"
 import { whoAmI } from "../lib/auth"
 import { renderPendingPlan } from "../lib/format"
 import type { ResolvedConfig } from "../lib/config"
+import {
+  addSession,
+  adoptServerId,
+  appendBlocks,
+  appendLiveText,
+  fromPersisted,
+  markUnread,
+  newPendingSession,
+  patchSession,
+  readSessionsFile,
+  removeSession,
+  sessionNameFromMessage,
+  setBlocks,
+  stepActive,
+  writeSessionsFile,
+  PENDING_PREFIX,
+  type ChatBlock,
+  type Session,
+  type SessionsState,
+} from "../lib/sessions"
 import {
   bindChatEvents,
   joinChatGroup,
@@ -23,33 +51,25 @@ import {
 import { colors, symbols } from "../theme"
 import { ChatMessage } from "../components/ChatMessage"
 import { PromptInput } from "../components/PromptInput"
+import { SessionFooter } from "../components/SessionFooter"
+import { SessionOverview } from "../components/SessionOverview"
 import { StatusLine } from "../components/StatusLine"
+import { TabBar } from "../components/TabBar"
 import { TypingIndicator } from "../components/TypingIndicator"
-
-type Phase = "connecting" | "ready" | "thinking"
-
-interface MessageBlock {
-  readonly kind: "message"
-  readonly key: string
-  readonly message: ChatMessageView
-}
-
-interface LinesBlock {
-  readonly kind: "lines"
-  readonly key: string
-  readonly lines: readonly string[]
-}
-
-type ChatBlock = MessageBlock | LinesBlock
+import { Welcome, type PlatformStats } from "../components/Welcome"
 
 const HELP_LINES = [
   `${colors.accent}commands${colors.reset}`,
-  `  exit, quit, q     leave the session`,
-  `  clear             wipe the screen`,
-  `  help              this list`,
-  `  approve           release a pending plan`,
-  `  reject [reason]   decline a pending plan`,
+  `  /exit, /quit, /q   leave the cli`,
+  `  /clear             wipe the active transcript`,
+  `  /help              this list`,
+  `  /sessions          session overview (esc)`,
+  `  /new               new session (ctrl+n)`,
+  `  approve            release a pending plan`,
+  `  reject [reason]    decline a pending plan`,
 ]
+
+const EMPTY_TAB_HINT = `${colors.dim}  no open sessions — ctrl+n to start one${colors.reset}`
 
 export interface ChatCommandProps {
   readonly config: ResolvedConfig
@@ -59,38 +79,47 @@ export interface ChatCommandProps {
 
 export function ChatApp({ config, project }: ChatCommandProps) {
   const { exit } = useApp()
-  const [phase, setPhase] = useState<Phase>("connecting")
-  const [blocks, setBlocks] = useState<ChatBlock[]>([])
+  const [tabs, setTabs] = useState<SessionsState>({
+    sessions: [],
+    activeIndex: -1,
+  })
   const [history, setHistory] = useState<string[]>([])
-  const [liveText, setLiveText] = useState("")
   const [identity, setIdentity] = useState("connecting…")
   const [projectLabel, setProjectLabel] = useState<string | undefined>(project)
   const [connectError, setConnectError] = useState<string | null>(null)
+  const [noticeLines, setNoticeLines] = useState<readonly string[]>([])
+  const [overviewVisible, setOverviewVisible] = useState(false)
+  /** The welcome screen never returns once the first message is sent. */
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false)
+  const [stats, setStats] = useState<PlatformStats | null>(null)
+  const [bootstrapped, setBootstrapped] = useState(false)
 
   const clientRef = useRef<ComukiClient | null>(null)
-  const sessionRef = useRef<string | null>(null)
   const hubRef = useRef<HubConnection | null>(null)
-  const awaitingApprovalRef = useRef(false)
+  const projectIdRef = useRef<string | undefined>(undefined)
+  const activeIdRef = useRef<string | undefined>(undefined)
+  const overviewRef = useRef(false)
 
-  const pushLines = useCallback((lines: readonly string[]) => {
-    setBlocks((current) => [
-      ...current,
-      { kind: "lines", key: `lines-${current.length}`, lines },
-    ])
+  const activeSession =
+    tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
+  const activeSessionId = activeSession?.id
+  const activeHydrated = activeSession?.hydrated
+
+  useEffect(() => {
+    activeIdRef.current = activeSessionId
+  }, [activeSessionId])
+
+  useEffect(() => {
+    overviewRef.current = overviewVisible
+  }, [overviewVisible])
+
+  const persist = useCallback((state: SessionsState) => {
+    void writeSessionsFile(state).catch(() => {
+      // Restore is best-effort; a failed write never breaks the chat.
+    })
   }, [])
 
-  const pushMessages = useCallback((messages: readonly ChatMessageView[]) => {
-    setBlocks((current) => [
-      ...current,
-      ...messages.map((message, index) => ({
-        kind: "message" as const,
-        key: `msg-${message.id}-${current.length}-${index}`,
-        message,
-      })),
-    ])
-  }, [])
-
-  // -- connect ---------------------------------------------------------------
+  // -- connect + restore -------------------------------------------------------
 
   useEffect(() => {
     let disposed = false
@@ -121,10 +150,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           if (match) {
             projectId = match.id
             label = match.slug
-          } else {
-            pushLines([
-              `${colors.red}${symbols.cross} project not found: ${wanted}${colors.reset}`,
-            ])
           }
         } catch {
           label = wanted
@@ -133,19 +158,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       if (disposed) {
         return
       }
+      projectIdRef.current = projectId
       setProjectLabel(label)
 
       try {
-        const session = await client.createSession({
-          projectId,
-          title: `comuki-cli ${new Date().toISOString().slice(0, 16)}`,
-        })
-        if (disposed) {
-          return
-        }
-        sessionRef.current = session.id
-
-        // Best-effort live progress; the REST turn is authoritative.
+        // Best-effort live progress; the REST turns are authoritative.
         const connection = await startChatHubConnection({
           hubUrl: client.hubUrl(),
           headers: client.hubHeaders(),
@@ -156,24 +173,55 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           bindChatEvents(
             connection,
             (chunk) => {
-              setLiveText((current) => (current + chunk.text).slice(-4000))
+              // One connection, many sessions — route by payload id.
+              setTabs((current) => ({
+                ...current,
+                sessions: appendLiveText(
+                  current.sessions,
+                  chunk.sessionId,
+                  chunk.text
+                ),
+              }))
             },
             () => {
               // ChatTurnComplete — the POST result renders the turn.
             }
           )
-          await joinChatGroup(connection, session.id)
         }
-        if (disposed) {
-          return
+
+        const restored = fromPersisted(await readSessionsFile())
+        if (!disposed) {
+          setTabs(restored)
+          if (hub) {
+            for (const session of restored.sessions) {
+              await joinChatGroup(hub, session.id)
+            }
+          }
+          if (restored.sessions.length > 0) {
+            setWelcomeDismissed(true)
+          }
+          setBootstrapped(true)
         }
-        setPhase("ready")
       } catch (error) {
-        if (disposed) {
-          return
+        if (!disposed) {
+          setConnectError(describeError(error))
         }
-        setConnectError(describeError(error))
-        setPhase("ready")
+      }
+
+      // Welcome stats — workers running + knowledge docs, best effort.
+      try {
+        const [compute, knowledge] = await Promise.all([
+          client.compute(),
+          client.knowledgeDocuments(1, 1),
+        ])
+        if (!disposed) {
+          setStats({
+            workers: compute.pools.reduce((sum, pool) => sum + pool.running, 0),
+            memory: knowledge.total,
+          })
+        }
+      } catch {
+        // The welcome line just omits itself offline.
       }
     })()
 
@@ -181,119 +229,418 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       disposed = true
       const connection = hub ?? hubRef.current
       if (connection) {
-        const sessionId = sessionRef.current
-        if (sessionId) {
-          void leaveChatGroup(connection, sessionId)
-        }
         void connection.stop()
       }
     }
-  }, [config, project, pushLines])
+  }, [config, project])
 
-  // -- turns -----------------------------------------------------------------
+  // -- lazy hydration for restored tabs ----------------------------------------
+  // Deps are the stable identity fields — transcript updates must not
+  // restart an in-flight fetch.
+
+  useEffect(() => {
+    if (
+      !bootstrapped ||
+      !activeSessionId ||
+      activeHydrated ||
+      activeSessionId.startsWith(PENDING_PREFIX)
+    ) {
+      return
+    }
+    const client = clientRef.current
+    const sessionId = activeSessionId
+    let cancelled = false
+
+    void (async () => {
+      if (!client) {
+        return
+      }
+      try {
+        const first = await client.listMessages(sessionId, 1, 50)
+        const lastPage = Math.max(1, Math.ceil(first.total / 50))
+        const page =
+          lastPage === 1
+            ? first
+            : await client.listMessages(sessionId, lastPage, 50)
+        if (cancelled) {
+          return
+        }
+        const blocks: ChatBlock[] = page.items.map((message, index) => ({
+          kind: "message",
+          key: `${sessionId}-h${index}`,
+          message,
+        }))
+        setTabs((current) => ({
+          ...current,
+          sessions: patchSession(
+            setBlocks(current.sessions, sessionId, blocks),
+            sessionId,
+            { hydrated: true, status: "done" }
+          ),
+        }))
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+        if (error instanceof ComukiApiError && error.status === 404) {
+          // Server session is gone — drop the tab.
+          setTabs((current) =>
+            removeSession(
+              current,
+              current.sessions.findIndex(
+                (candidate) => candidate.id === sessionId
+              )
+            )
+          )
+          return
+        }
+        setTabs((current) => ({
+          ...current,
+          sessions: patchSession(current.sessions, sessionId, {
+            hydrated: true,
+          }),
+        }))
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [bootstrapped, activeSessionId, activeHydrated])
+
+  // -- persist the tab list on every change ------------------------------------
+
+  useEffect(() => {
+    if (bootstrapped) {
+      persist(tabs)
+    }
+  }, [bootstrapped, tabs, persist])
+
+  // -- turns --------------------------------------------------------------------
 
   const describeTurn = useCallback(
-    (result: {
-      messages: readonly ChatMessageView[]
-      awaitingApproval: boolean
-      pendingPlan: unknown
-    }) => {
-      pushMessages(result.messages)
-      awaitingApprovalRef.current = result.awaitingApproval
-      if (result.awaitingApproval) {
-        pushLines([
-          "",
-          `${colors.yellow}${symbols.bullet} awaiting approval${colors.reset}`,
-          ...renderPendingPlan(result.pendingPlan),
-          `${colors.dim}  type approve or reject [reason] to decide${colors.reset}`,
-        ])
+    (
+      sessionId: string,
+      result: {
+        messages: readonly ChatMessageView[]
+        awaitingApproval: boolean
+        pendingPlan: unknown
       }
+    ) => {
+      setTabs((current) => {
+        let sessions = appendBlocks(
+          current.sessions,
+          sessionId,
+          result.messages.map((message) => ({
+            kind: "message" as const,
+            message,
+          }))
+        )
+        sessions = patchSession(sessions, sessionId, {
+          awaitingApproval: result.awaitingApproval,
+          pendingPlan: result.pendingPlan,
+          status: "done",
+          liveText: "",
+        })
+        if (sessionId !== activeIdRef.current) {
+          sessions = markUnread(sessions, sessionId, activeIdRef.current)
+        }
+        return { ...current, sessions }
+      })
     },
-    [pushLines, pushMessages]
+    []
   )
 
   const runTurn = useCallback(
     async (
+      sessionId: string,
       kind: "message" | "approve",
       payload: { message?: string; approved?: boolean; reason?: string }
     ) => {
       const client = clientRef.current
-      const sessionId = sessionRef.current
-      if (!client || !sessionId) {
+      if (!client) {
         return
       }
-      setPhase("thinking")
-      setLiveText("")
+      setTabs((current) => ({
+        ...current,
+        sessions: patchSession(current.sessions, sessionId, {
+          status: "thinking",
+          liveText: "",
+        }),
+      }))
       try {
         const result =
           kind === "message"
             ? await client.postMessage(sessionId, payload.message ?? "")
-            : await client.approve(sessionId, payload.approved ?? true, payload.reason)
-        describeTurn(result)
+            : await client.approve(
+                sessionId,
+                payload.approved ?? true,
+                payload.reason
+              )
+        describeTurn(sessionId, result)
       } catch (error) {
-        pushLines(["", `${colors.red}${symbols.cross} ${describeError(error)}${colors.reset}`])
+        setTabs((current) => ({
+          ...current,
+          sessions: patchSession(
+            appendBlocks(current.sessions, sessionId, [
+              {
+                kind: "lines",
+                lines: [
+                  "",
+                  `${colors.red}${symbols.cross} ${describeError(error)}${colors.reset}`,
+                ],
+              },
+            ]),
+            sessionId,
+            { status: "idle" }
+          ),
+        }))
       } finally {
-        setLiveText("")
-        setPhase("ready")
+        setTabs((current) => ({
+          ...current,
+          sessions: patchSession(current.sessions, sessionId, {
+            liveText: "",
+          }),
+        }))
       }
     },
-    [describeTurn, pushLines]
+    [describeTurn]
   )
+
+  // -- session lifecycle --------------------------------------------------------
+
+  const openPendingTab = useCallback(() => {
+    setTabs((current) =>
+      addSession(
+        current,
+        newPendingSession(Date.now(), current.sessions.length)
+      )
+    )
+  }, [])
+
+  const closeSession = useCallback(
+    (index: number) => {
+      const closing = tabs.sessions[index]
+      if (closing && !closing.id.startsWith(PENDING_PREFIX)) {
+        const hub = hubRef.current
+        if (hub) {
+          void leaveChatGroup(hub, closing.id)
+        }
+      }
+      // The task keeps running on the server — only the tab goes away.
+      setTabs((current) => removeSession(current, index))
+    },
+    [tabs.sessions]
+  )
+
+  const focusSession = useCallback((index: number) => {
+    setTabs((current) => {
+      if (index < 0 || index >= current.sessions.length) {
+        return current
+      }
+      const chosen = current.sessions[index]
+      if (!chosen) {
+        return current
+      }
+      return {
+        ...current,
+        activeIndex: index,
+        sessions: patchSession(current.sessions, chosen.id, {
+          unread: false,
+        }),
+      }
+    })
+  }, [])
+
+  const selectSession = useCallback(
+    (index: number) => {
+      focusSession(index)
+      setOverviewVisible(false)
+    },
+    [focusSession]
+  )
+
+  /** Sends `message`, creating the server session first when pending. */
+  const sendMessage = useCallback(
+    async (target: Session | undefined, message: string) => {
+      const client = clientRef.current
+      if (!client) {
+        return
+      }
+      setWelcomeDismissed(true)
+      setNoticeLines([])
+      const name = sessionNameFromMessage(message)
+      const userEcho: readonly string[] = [
+        `${colors.accent}you  ${symbols.prompt}${colors.reset} ${message}`,
+      ]
+
+      if (!target || target.id.startsWith(PENDING_PREFIX)) {
+        try {
+          const session = await client.createSession({
+            projectId: projectIdRef.current,
+            title: name,
+          })
+          const hub = hubRef.current
+          if (hub) {
+            await joinChatGroup(hub, session.id)
+          }
+          setTabs((current) => {
+            const next = target
+              ? adoptServerId(current, target.id, session.id, name)
+              : addSession(current, {
+                  ...newPendingSession(),
+                  id: session.id,
+                  name,
+                  hydrated: true,
+                })
+            return {
+              ...next,
+              sessions: appendBlocks(next.sessions, session.id, [
+                { kind: "lines", lines: userEcho },
+              ]),
+            }
+          })
+          await runTurn(session.id, "message", { message })
+        } catch (error) {
+          setNoticeLines([
+            "",
+            `${colors.red}${symbols.cross} ${describeError(error)}${colors.reset}`,
+          ])
+        }
+        return
+      }
+
+      setTabs((current) => ({
+        ...current,
+        sessions: appendBlocks(current.sessions, target.id, [
+          { kind: "lines", lines: userEcho },
+        ]),
+      }))
+      await runTurn(target.id, "message", { message })
+    },
+    [runTurn]
+  )
+
+  const pushLines = useCallback(
+    (sessionId: string, lines: readonly string[]) => {
+      setTabs((current) => ({
+        ...current,
+        sessions: appendBlocks(current.sessions, sessionId, [
+          { kind: "lines", lines },
+        ]),
+      }))
+    },
+    []
+  )
+
+  // -- input ----------------------------------------------------------------------
 
   const handleSubmit = useCallback(
     (raw: string) => {
       const value = raw.trim()
-      if (value.length === 0 || phase === "thinking" || phase === "connecting") {
+      const target =
+        tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
+      if (value.length === 0 || target?.status === "thinking") {
         return
       }
       setHistory((current) => [...current, value])
 
-      const lowered = value.toLowerCase()
-      if (["exit", "quit", "q"].includes(lowered)) {
+      const bare = value.replace(/^\//, "").toLowerCase()
+      const base = bare.split(" ", 1)[0] ?? ""
+
+      if (["exit", "quit", "q"].includes(base)) {
         exit()
         return
       }
-      if (lowered === "clear") {
-        setBlocks([])
+      if (base === "clear") {
+        if (target) {
+          setTabs((current) => ({
+            ...current,
+            sessions: setBlocks(current.sessions, target.id, []),
+          }))
+        }
         return
       }
-      if (lowered === "help") {
-        pushLines(HELP_LINES)
+      if (base === "help") {
+        if (target) {
+          pushLines(target.id, HELP_LINES)
+        } else {
+          setNoticeLines(HELP_LINES)
+        }
         return
       }
-      if (lowered === "approve" || lowered.startsWith("reject")) {
-        if (!awaitingApprovalRef.current) {
-          pushLines([
+      if (base === "sessions") {
+        setOverviewVisible(true)
+        return
+      }
+      if (base === "new") {
+        openPendingTab()
+        return
+      }
+      if (base === "approve" || base === "reject") {
+        if (!target) {
+          return
+        }
+        if (!target.awaitingApproval) {
+          pushLines(target.id, [
             `${colors.dim}  nothing to approve — the brain did not interrupt${colors.reset}`,
           ])
           return
         }
-        const approved = lowered === "approve"
-        const reason = value.slice(6).trim() || undefined
-        pushLines([
+        const approved = base === "approve"
+        const reason = value.slice(base.length).trim() || undefined
+        pushLines(target.id, [
           approved
             ? `${colors.green}${symbols.checkmark} approving…${colors.reset}`
             : `${colors.yellow}${symbols.bullet} rejecting…${colors.reset}`,
         ])
-        void runTurn("approve", { approved, reason })
+        void runTurn(target.id, "approve", { approved, reason })
         return
       }
 
-      pushMessages([
-        {
-          id: `user-${Date.now()}`,
-          role: "user",
-          content: value,
-          toolName: null,
-          parts: null,
-          meta: null,
-          createdAt: new Date().toISOString(),
-        },
-      ])
-      void runTurn("message", { message: value })
+      void sendMessage(target, value)
     },
-    [exit, phase, pushLines, pushMessages, runTurn]
+    [exit, openPendingTab, pushLines, runTurn, sendMessage, tabs]
   )
+
+  // Global hotkeys — active in every state; the editor ignores these keys.
+  useInput((_input, key) => {
+    if (overviewRef.current) {
+      return // the overview's own handler owns the keys
+    }
+    if (key.tab) {
+      setTabs((current) => {
+        if (current.sessions.length === 0) {
+          return current
+        }
+        const nextIndex = stepActive(
+          current.sessions.length,
+          current.activeIndex,
+          key.shift ? -1 : 1
+        )
+        const chosen = current.sessions[nextIndex]
+        return {
+          ...current,
+          activeIndex: nextIndex,
+          sessions: chosen
+            ? patchSession(current.sessions, chosen.id, { unread: false })
+            : current.sessions,
+        }
+      })
+      return
+    }
+    if (key.escape) {
+      setOverviewVisible((current) => !current)
+      return
+    }
+    if (key.ctrl && _input === "n") {
+      openPendingTab()
+      return
+    }
+    if (key.ctrl && _input === "w") {
+      closeSession(tabs.activeIndex)
+    }
+  })
 
   useEffect(() => {
     if (connectError) {
@@ -311,34 +658,94 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             {symbols.cross} {connectError}
           </Text>
         </Text>
-        <Text dimColor>{"  "}check COMUKI_URL / COMUKI_API_KEY, or run comuki login</Text>
+        <Text dimColor>
+          {"  "}check COMUKI_URL / COMUKI_API_KEY, or run comuki login
+        </Text>
       </>
     )
   }
 
+  const showWelcome = !welcomeDismissed && tabs.sessions.length === 0
+  const promptEnabled =
+    !overviewVisible && (!activeSession || activeSession.status !== "thinking")
+
   return (
     <>
       <StatusLine identity={identity} project={projectLabel} />
-      {blocks.map((block) =>
-        block.kind === "message" ? (
-          <ChatMessage key={block.key} message={block.message} />
-        ) : (
-          <React.Fragment key={block.key}>
-            {block.lines.map((line, index) => (
-              <Text key={index}>{line}</Text>
-            ))}
-          </React.Fragment>
-        )
-      )}
-      {phase === "thinking" ? <TypingIndicator liveText={liveText} /> : null}
-      {phase === "ready" ? (
-        <PromptInput onSubmit={handleSubmit} history={history} />
+      {tabs.sessions.length > 0 ? (
+        <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />
       ) : null}
-      {phase === "connecting" ? (
-        <Text dimColor>
-          {"     "}
-          {symbols.bullet} connecting to {config.url}…
-        </Text>
+      {overviewVisible ? (
+        <SessionOverview
+          sessions={tabs.sessions}
+          activeIndex={tabs.activeIndex}
+          onSelect={selectSession}
+          onNewSession={() => {
+            openPendingTab()
+            setOverviewVisible(false)
+          }}
+          onClose={() => setOverviewVisible(false)}
+        />
+      ) : showWelcome ? (
+        <>
+          <Welcome stats={stats} />
+          {noticeLines.map((line, index) => (
+            <Text key={index}>{line}</Text>
+          ))}
+          <Box flexDirection="column" alignItems="center">
+            <PromptInput onSubmit={handleSubmit} history={history} />
+          </Box>
+        </>
+      ) : (
+        <>
+          {activeSession ? (
+            <>
+              {activeSession.blocks.map((block) =>
+                block.kind === "message" ? (
+                  <ChatMessage key={block.key} message={block.message} />
+                ) : (
+                  <React.Fragment key={block.key}>
+                    {block.lines.map((line, index) => (
+                      <Text key={index}>{line}</Text>
+                    ))}
+                  </React.Fragment>
+                )
+              )}
+              {activeSession.awaitingApproval ? (
+                <>
+                  {renderPendingPlan(activeSession.pendingPlan).map(
+                    (line, index) => (
+                      <Text key={index}>{line}</Text>
+                    )
+                  )}
+                  <Text dimColor>
+                    {" "}
+                    type approve or reject [reason] to decide
+                  </Text>
+                </>
+              ) : null}
+              {activeSession.status === "thinking" ? (
+                <TypingIndicator liveText={activeSession.liveText} />
+              ) : null}
+            </>
+          ) : (
+            <Text>{EMPTY_TAB_HINT}</Text>
+          )}
+          {noticeLines.map((line, index) => (
+            <Text key={index}>{line}</Text>
+          ))}
+          <PromptInput
+            onSubmit={handleSubmit}
+            history={history}
+            active={promptEnabled}
+          />
+        </>
+      )}
+      {tabs.sessions.length > 0 && !overviewVisible ? (
+        <SessionFooter
+          sessions={tabs.sessions}
+          activeIndex={tabs.activeIndex}
+        />
       ) : null}
     </>
   )
@@ -350,7 +757,11 @@ export function describeError(error: unknown): string {
     return `HTTP ${error.status}${error.code ? ` (${error.code})` : ""}: ${error.detail ?? "request failed"}`
   }
   const message = error instanceof Error ? error.message : String(error)
-  if (/unable to connect|fetch failed|econnrefused|connection refused/i.test(message)) {
+  if (
+    /unable to connect|fetch failed|econnrefused|connection refused/i.test(
+      message
+    )
+  ) {
     return "server unreachable"
   }
   return message

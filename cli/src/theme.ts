@@ -11,6 +11,9 @@ export const colors = {
   accent: "\x1b[38;5;104m", // slate-blue
   dim: "\x1b[2m", // dimmed gray
   bright: "\x1b[1m", // bold white
+  italic: "\x1b[3m",
+  strike: "\x1b[9m",
+  underline: "\x1b[4m",
   green: "\x1b[32m",
   red: "\x1b[31m",
   yellow: "\x1b[33m",

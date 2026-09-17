@@ -66,6 +66,15 @@ import {
 } from "../lib/sessions"
 import { resolveSlashAction, slashHelpLines } from "../lib/slash"
 import {
+  mergeRunsFeedRefresh,
+  planPanelLines,
+  projectListingLines,
+  projectSwitchedLine,
+  renderRunsFeedPanel,
+  resolveProject,
+  RUNS_FEED_REFRESH_MS,
+} from "../lib/runsfeed"
+import {
   bindChatEvents,
   joinChatGroup,
   leaveChatGroup,
@@ -81,6 +90,7 @@ import { StatusLine } from "../components/StatusLine"
 import { TabBar } from "../components/TabBar"
 import { TranscriptViewport } from "../components/TranscriptViewport"
 import { Welcome, type PlatformStats } from "../components/Welcome"
+import { fetchRunsFeedPanel } from "./runsfeed"
 
 const EMPTY_TAB_HINT = `${colors.faint}  no open sessions — ctrl+n to start one${colors.reset}`
 
@@ -153,6 +163,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               blocks: activeSession.blocks,
               awaitingApproval: activeSession.awaitingApproval,
               pendingPlan: activeSession.pendingPlan,
+              runsFeed: activeSession.runsFeed ?? null,
               thinking,
               liveText: activeSession.liveText,
               expanded: activeSession.blocksExpanded,
@@ -667,6 +678,92 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     []
   )
 
+  // -- ops pack: /project ------------------------------------------------------
+
+  /**
+   * Switches the project context (`projectIdRef` seeds every NEW
+   * server session; live sessions keep the project they were created
+   * with). Without a query it lists the current context + every
+   * visible project; an unresolvable query lists what is available.
+   */
+  const switchProject = useCallback(
+    async (query: string) => {
+      const client = clientRef.current
+      if (!client) {
+        return
+      }
+      const emit = (lines: readonly string[]) => {
+        const target = tabs.sessions[tabs.activeIndex]
+        if (target) {
+          pushLines(target.id, lines)
+        } else {
+          setNoticeLines(lines)
+        }
+      }
+      try {
+        const projects = await client.projects()
+        if (query.length === 0) {
+          emit(projectListingLines(projectLabel ?? null, projects))
+          return
+        }
+        const match = resolveProject(query, projects)
+        if (!match) {
+          emit([
+            `${colors.faint}  unknown project '${query}'${colors.reset}`,
+            ...projectListingLines(projectLabel ?? null, projects),
+          ])
+          return
+        }
+        projectIdRef.current = match.id
+        setProjectLabel(match.slug)
+        emit([projectSwitchedLine(match.slug)])
+      } catch (error) {
+        emit([
+          `${colors.faint}  projects not available — ${describeError(error)}${colors.reset}`,
+        ])
+      }
+    },
+    [projectLabel, pushLines, tabs]
+  )
+
+  // -- ops pack: /runs auto-refresh ---------------------------------------------
+
+  /**
+   * The pinned `/runs` panel is the one live transcript block: while
+   * its session is the ACTIVE one, re-fetch on the
+   * `RUNS_FEED_REFRESH_MS` cadence and patch the panel in place
+   * (`mergeRunsFeedRefresh` keeps the last rows across a failed poll).
+   * Cleanup drops the interval when the panel clears, the tab switches
+   * away, or the app unmounts; a background tab's panel keeps its last
+   * snapshot until it is focused again or `/runs` re-pins it fresh.
+   */
+  const runsFeedSessionId =
+    activeSession?.runsFeed != null ? activeSession.id : null
+
+  useEffect(() => {
+    const client = clientRef.current
+    if (!runsFeedSessionId || !client) {
+      return
+    }
+    const sessionId = runsFeedSessionId
+    const timer = setInterval(() => {
+      void fetchRunsFeedPanel(client).then((panel) => {
+        setTabs((current) => ({
+          ...current,
+          sessions: current.sessions.map((session) =>
+            session.id === sessionId
+              ? {
+                  ...session,
+                  runsFeed: mergeRunsFeedRefresh(session.runsFeed, panel),
+                }
+              : session
+          ),
+        }))
+      })
+    }, RUNS_FEED_REFRESH_MS)
+    return () => clearInterval(timer)
+  }, [runsFeedSessionId])
+
   // -- input ----------------------------------------------------------------------
 
   const handleSubmit = useCallback(
@@ -697,7 +794,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           if (target) {
             setTabs((current) => ({
               ...current,
-              sessions: setBlocks(current.sessions, target.id, []),
+              sessions: patchSession(
+                setBlocks(current.sessions, target.id, []),
+                target.id,
+                { runsFeed: null }
+              ),
             }))
           }
           return
@@ -775,13 +876,58 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           void runTurn(target.id, "approve", { approved, reason })
           return
         }
+        case "runs": {
+          const client = clientRef.current
+          if (!client) {
+            return
+          }
+          const sessionId = target?.id
+          void fetchRunsFeedPanel(client).then((panel) => {
+            if (sessionId) {
+              // Re-invoking /runs re-renders the panel fresh: the merge
+              // only rescues rows when the new fetch itself failed.
+              setTabs((current) => ({
+                ...current,
+                sessions: current.sessions.map((session) =>
+                  session.id === sessionId
+                    ? {
+                        ...session,
+                        runsFeed: mergeRunsFeedRefresh(session.runsFeed, panel),
+                      }
+                    : session
+                ),
+              }))
+            } else {
+              // No transcript to pin into — one static snapshot on the
+              // welcome screen (no auto-refresh loop without a session).
+              setNoticeLines(renderRunsFeedPanel(panel))
+            }
+          })
+          return
+        }
+        case "plan": {
+          const lines = planPanelLines(
+            target?.blocks ?? [],
+            target?.pendingPlan ?? null
+          )
+          if (target) {
+            pushLines(target.id, lines)
+          } else {
+            setNoticeLines(lines)
+          }
+          return
+        }
+        case "project": {
+          void switchProject(action.query)
+          return
+        }
         case "message": {
           void sendMessage(target, value)
           return
         }
       }
     },
-    [exit, openPendingTab, pushLines, runTurn, sendMessage, tabs]
+    [exit, openPendingTab, pushLines, runTurn, sendMessage, switchProject, tabs]
   )
 
   // Global hotkeys — active in every state; the editor ignores these keys.

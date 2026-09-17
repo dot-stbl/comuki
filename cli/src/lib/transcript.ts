@@ -16,6 +16,7 @@
  * budget and the footer/prompt can never be pushed off-screen.
  */
 import { renderMessage, renderPendingPlan } from "./format"
+import { renderRunsFeedPanel, type RunsFeedPanel } from "./runsfeed"
 import { renderMarkdownLines } from "./markdown"
 import { colors, paint, stripAnsi, symbols } from "../theme"
 import type { ChatBlock } from "./sessions"
@@ -147,6 +148,8 @@ export interface TranscriptSnapshot {
   readonly blocks: readonly ChatBlock[]
   readonly awaitingApproval: boolean
   readonly pendingPlan: unknown
+  /** The pinned `/runs` panel; null/undefined renders nothing. */
+  readonly runsFeed?: RunsFeedPanel | null
   readonly thinking: boolean
   readonly liveText: string
   /** ctrl+o per-tab toggle — thinking/tool parts collapse when false (default). */
@@ -155,15 +158,16 @@ export interface TranscriptSnapshot {
 
 /**
  * Blocks → flat lines, in transcript order: history messages, raw line
- * blocks, the pending approval card, the typing spinner + live stream,
- * then any global notices. Block seams carry exactly one blank line;
- * every line is wrapped to `width`.
+ * blocks, the pending approval card, the pinned `/runs` panel, the
+ * typing spinner + live stream, then any global notices. Block seams
+ * carry exactly one blank line; every line is wrapped to `width`.
  */
 export function flattenTranscript(
   snapshot: TranscriptSnapshot | undefined,
   width: number,
   typingFrame: number,
-  notices: readonly string[] = []
+  notices: readonly string[] = [],
+  now: Date = new Date()
 ): string[] {
   const lines: string[] = []
   const push = (line: string) => {
@@ -203,6 +207,9 @@ export function flattenTranscript(
     }
     if (snapshot.awaitingApproval) {
       pushAll(renderPendingPlan(snapshot.pendingPlan, width))
+    }
+    if (snapshot.runsFeed != null) {
+      pushAll(renderRunsFeedPanel(snapshot.runsFeed, now))
     }
     if (snapshot.thinking) {
       pushAll([typingLine(typingFrame), ...liveLines(snapshot.liveText, width)])

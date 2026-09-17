@@ -202,7 +202,7 @@ function planFrameLines(
 }
 
 /** `1 шаг`, `2 шага`, `5 шагов` — russian pluralization for the header. */
-function stepWord(count: number): string {
+export function stepWord(count: number): string {
   const mod10 = count % 10
   const mod100 = count % 100
   if (mod10 === 1 && mod100 !== 11) {
@@ -229,7 +229,7 @@ function estimateMinutes(plan: unknown): number | null {
  * test payloads may carry `key` — both identify a node, `brief` falls
  * back to `title`.
  */
-function extractPlanNodes(plan: unknown): PlanItemView[] {
+export function extractPlanNodes(plan: unknown): PlanItemView[] {
   if (plan === null || typeof plan !== "object") {
     return []
   }

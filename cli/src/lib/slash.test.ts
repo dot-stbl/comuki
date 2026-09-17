@@ -63,6 +63,24 @@ describe("resolveSlashAction", () => {
     expect(resolveSlashAction("/bogus")).toEqual({ kind: "message" })
     expect(resolveSlashAction("/")).toEqual({ kind: "message" })
   })
+
+  it("routes the ops pack: /runs, /plan, /project", () => {
+    expect(resolveSlashAction("/runs")).toEqual({ kind: "runs" })
+    expect(resolveSlashAction("runs")).toEqual({ kind: "runs" })
+    expect(resolveSlashAction("/plan")).toEqual({ kind: "plan" })
+    expect(resolveSlashAction("/project nova")).toEqual({
+      kind: "project",
+      query: "nova",
+    })
+  })
+
+  it("resolves /project without arguments to an empty query", () => {
+    expect(resolveSlashAction("/project")).toEqual({ kind: "project", query: "" })
+    expect(resolveSlashAction("/project   ")).toEqual({
+      kind: "project",
+      query: "",
+    })
+  })
 })
 
 describe("slashHelpLines", () => {
@@ -82,6 +100,9 @@ describe("slashHelpLines", () => {
     const help = slashHelpLines().map(stripAnsi).join("\n")
     expect(help).toContain("/retry")
     expect(help).toContain("/rename <title>")
+    expect(help).toContain("/runs")
+    expect(help).toContain("/plan")
+    expect(help).toContain("/project <id|slug|name>")
   })
 
   it("aligns descriptions in one column", () => {

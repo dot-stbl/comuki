@@ -6,6 +6,7 @@ using Comuki.Modules.Identity.Application.Authorization;
 using Comuki.Modules.Identity.Domain.Permissions;
 using Comuki.Modules.Identity.Domain.Subjects;
 using Comuki.Modules.Knowledge.Application;
+using Comuki.Modules.Memory.Application.Learning;
 using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
@@ -249,6 +250,8 @@ public sealed class McpEnvelopeShould
             knowledgeIngestor: Substitute.For<IKnowledgeIngestor>(),
             memoryStore: Substitute.For<IMemoryStore>(),
             noteRateLimiter: new WorkerNoteRateLimiter(TimeProvider.System),
+            learningCandidates: Substitute.For<ILearningCandidateStore>(),
+            suggestRateLimiter: new WorkerSuggestRateLimiter(TimeProvider.System),
             runsList: NewRunsListHandler(),
             clock: TimeProvider.System);
     }

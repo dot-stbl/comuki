@@ -1,0 +1,12 @@
+{
+  "required": ["reason"],
+  "type": "object",
+  "properties": {
+    "reason": {
+      "type": ["null", "string"],
+      "description": "Why the suggestion was rejected; null means \"no reason given\"."
+    }
+  },
+  "description": "Reject body of the learning-candidates surface — carries the optional human reason.",
+  "x-readme-ref-name": "RejectLearningCandidateRequest"
+}

@@ -7,6 +7,7 @@ import {
   useApprovalDecisionMutation,
   useApprovalsQuery,
 } from "@/domains/approvals/api/queries"
+import { decisionPermissionOf } from "@/domains/approvals/model/decide"
 import type { ApprovalDecision } from "@/domains/approvals/model/types"
 import { ApprovalCard } from "@/domains/approvals/ui/approval-card"
 import { requestFailureMessage } from "@/shared/api/problem"
@@ -26,9 +27,10 @@ export function ApprovalsPage() {
     // The cards already refuse the click; this is the same rule stated where
     // the write happens, so a future caller cannot reach the queue by
     // rendering its own button. Asked against the item's own project, because
-    // the queue mixes them and the right is held per project.
+    // the queue mixes them and the right is held per project — and by kind:
+    // adopting a rule is a different grant than approving a plan.
     const item = data.find((entry) => entry.id === id)
-    if (!item || !can(session, "plans.approve", item.projectId)) {
+    if (!item || !can(session, decisionPermissionOf(item), item.projectId)) {
       return
     }
     decision.mutate(

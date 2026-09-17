@@ -12,6 +12,8 @@ export interface TextareaFieldProps extends Omit<
 > {
   id: string
   label: string
+  /** The form will not go without this field — see `FieldProps.required`. */
+  required?: boolean
   value: string
   onValueChange: (next: string) => void
   hint?: ReactNode
@@ -30,6 +32,7 @@ export interface TextareaFieldProps extends Omit<
 export function TextareaField({
   id,
   label,
+  required,
   value,
   onValueChange,
   hint,
@@ -38,7 +41,7 @@ export function TextareaField({
   ...rest
 }: TextareaFieldProps) {
   return (
-    <Field id={id} label={label} hint={hint} error={error}>
+    <Field id={id} label={label} required={required} hint={hint} error={error}>
       <textarea
         {...rest}
         id={id}
@@ -47,6 +50,7 @@ export function TextareaField({
           voice === "code" ? styles.code : styles.area
         )}
         value={value}
+        aria-required={required ? true : undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={hint || error ? fieldDescriptionId(id) : undefined}
         onChange={(event) => onValueChange(event.target.value)}

@@ -58,7 +58,7 @@
 .trigger[data-focus-visible] {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .trigger[data-disabled] {
@@ -140,7 +140,7 @@
 .iconButton[data-focus-visible] {
   outline: none;
   color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .iconButton[data-disabled] {
@@ -216,7 +216,7 @@
 .navButton[data-focus-visible] {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .navIcon {
@@ -276,7 +276,7 @@
 .day[data-focus-visible] {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* Today is a ring around the digit, not a fill, so the reading is

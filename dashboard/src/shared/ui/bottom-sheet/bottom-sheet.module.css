@@ -19,7 +19,7 @@
 .scrim {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-overlay);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;

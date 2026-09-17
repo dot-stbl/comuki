@@ -114,7 +114,7 @@
 }
 
 .pre:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--ring) 35%, transparent);
+  outline: 2px solid var(--ring-wash);
   outline-offset: -2px;
 }
 

@@ -41,7 +41,29 @@ export {
   EvidenceThumbnail,
   type EvidenceThumbnailProps,
 } from "./evidence-thumbnail"
-export { ForbiddenState, type ForbiddenStateProps } from "./screen-state/forbidden-state"
+/* The four states §17 names. Three of them are one shape — `ScreenState` — and
+   `ForbiddenState` is that shape with the sentence already written; `Skeleton`
+   is the fourth, and the only one that is genuinely a different drawing.
+   Re-exported through the folder's own `index.ts`, never past it. */
+export {
+  ForbiddenState,
+  ScreenState,
+  StateText,
+  type ForbiddenStateProps,
+  type ScreenStateInset,
+  type ScreenStateKind,
+  type ScreenStateProps,
+  type StateTextProps,
+} from "./screen-state"
+export { Skeleton, type SkeletonInset, type SkeletonProps } from "./skeleton"
+export {
+  Surface,
+  type SurfaceAs,
+  type SurfaceBound,
+  type SurfaceProps,
+  type SurfaceSpacing,
+  type SurfaceTone,
+} from "./surface"
 export {
   SplitPane,
   SplitPanel,
@@ -96,8 +118,8 @@ export {
   ComboboxField,
   type ComboboxFieldOption,
   type ComboboxFieldProps,
-} from "./combobox-field/combobox-field"
-export { CronField, type CronFieldProps } from "./cron-field/cron-field"
+} from "./combobox-field"
+export { CronField, type CronFieldProps } from "./cron-field"
 export {
   DataTable,
   DataTableToolbar,

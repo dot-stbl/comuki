@@ -53,10 +53,15 @@
 
 /* Search ---------------------------------------------------------------- */
 
-.search {
-  position: relative;
-  display: flex;
-  align-items: center;
+/* The field itself is the kit's `SearchField` — the chrome, the icon, the
+   clear button and the focus ring all live in `search-field.module.css`. What
+   is left here is the only part that is the *bar's* business rather than the
+   control's: how much of the row the field is allowed to take, and in what
+   order it gives way. Written as a descendant of `.controls` on purpose — it
+   lands on the same element as the kit's own `.field` class, and a bare
+   `.search` would be settling a tie on stylesheet order, which is a build
+   detail nobody should have to know. */
+.controls .search {
   /* Grows into whatever the row is not using, up to a measure where a long
      query is still readable — a search box that stays narrow makes the
      operator scroll a field to re-read what they just typed. It still gives
@@ -67,19 +72,14 @@
   min-inline-size: 8rem;
 }
 
-.searchIcon {
-  position: absolute;
-  inset-inline-start: var(--s3);
-  inline-size: var(--icon-sm);
-  block-size: var(--icon-sm);
-  color: var(--text-faint);
-  pointer-events: none;
-}
-
+/* The sheet's own text filter — the one control on this bar the kit has no
+   primitive for, because a filter named by a label above it is not a search.
+   It stands at the search field's height and on the same corner, so a sheet
+   opened under the bar reads as the same material. */
 .input {
   inline-size: 100%;
   block-size: var(--h-button-sm);
-  padding-inline: calc(var(--s3) * 2 + var(--icon-sm)) var(--s3);
+  padding-inline: var(--s3);
   border: var(--hairline) solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface);
@@ -95,16 +95,12 @@
 .input:focus-visible {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
-/* Inside the sheet the field is named above it, so there is no icon to clear
-   room for and the text starts at the same gutter as everything else. */
-.sheetInput {
-  padding-inline: var(--s3);
-}
-
-.sheetInput[data-active] {
+/* A filter that is doing something says so with its own rule, the same way the
+   select's active trigger and the kit's search field do. */
+.input[data-active] {
   border-color: color-mix(in oklab, var(--brand) 55%, var(--border));
 }
 
@@ -141,7 +137,7 @@
 .columnsTrigger[data-focus-visible] {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* A control that is doing something says so with its own border and its own
@@ -207,7 +203,7 @@
 .chip:focus-visible {
   outline: none;
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .chipText {

@@ -28,10 +28,20 @@
    line to a narrow column would be a mark and a name guessing at a meaning.
    The floor is wide enough for the longest note at two lines, which is the
    length the copy is written against — and on a full-width form page it is
-   what lets every card sit on one row before any of them starts stretching. */
+   what lets every card sit on one row before any of them starts stretching.
+
+   `min(15rem, 100%)` rather than a bare `15rem`, and it is a fix rather than a
+   flourish: a track minimum is a *floor*, so on a port narrower than the floor
+   the single remaining column is still 240px wide and the grid pushes its own
+   parent sideways. At 320px — the narrowest width the product is drawn for —
+   the card sits in about 232px of content box, which is under the floor, so
+   this grid was the one horizontal overflow left in the product. `min(…, 100%)`
+   lets the floor give way at exactly the width where holding it would cost a
+   scrollbar; above that width nothing about the layout changes. Every other
+   `auto-fit`/`auto-fill` grid in `src` already carries the idiom. */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
   gap: var(--s3);
 }
 
@@ -72,7 +82,7 @@
    to the box the operator can see, and this is supported everywhere. */
 .card:focus-within {
   border-color: var(--ring);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  box-shadow: var(--shadow-focus-ring);
 }
 
 /* Selected: the kit's border, wash and check, plus the border's own weight.
@@ -90,7 +100,7 @@
 .cardSelected:focus-within {
   box-shadow:
     inset 0 0 0 1px var(--brand),
-    0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+    var(--shadow-focus-ring);
 }
 
 /* The mark's slot: the height of the icon scale's largest step, so a mark

@@ -36,7 +36,9 @@ describe("parseThinkingSteps", () => {
   })
 
   it("emphasizes a call-shaped prefix and keeps its tail", () => {
-    const steps = parseThinkingSteps('memory.search("identity refactor") 2 facts')
+    const steps = parseThinkingSteps(
+      'memory.search("identity refactor") 2 facts'
+    )
 
     expect(steps[0]?.call).toBe('memory.search("identity refactor")')
     expect(steps[0]?.tail).toBe("2 facts")
@@ -51,7 +53,9 @@ describe("parseThinkingSteps", () => {
   })
 
   it("matches a call only at the start of the line", () => {
-    const steps = parseThinkingSteps("упомянул memory.search(«x») по ходу мысли")
+    const steps = parseThinkingSteps(
+      "упомянул memory.search(«x») по ходу мысли"
+    )
 
     expect(steps[0]?.call).toBeUndefined()
   })
@@ -70,7 +74,8 @@ describe("parseThinkingSteps", () => {
 
 describe("thinkingIteration", () => {
   it("takes the last iteration the working-out named", () => {
-    const text = "iteration 1: memory.search\nчто-то ещё\niteration 2: read_code"
+    const text =
+      "iteration 1: memory.search\nчто-то ещё\niteration 2: read_code"
     expect(thinkingIteration(text)).toBe(2)
   })
 
@@ -90,9 +95,7 @@ describe("turnPhase", () => {
 
   it("says nothing for a streaming reply with no working-out", () => {
     // A plain token stream is not a phase the thread was told about.
-    expect(turnPhase(reply({ streaming: true, text: "половина" }))).toBe(
-      "done"
-    )
+    expect(turnPhase(reply({ streaming: true, text: "половина" }))).toBe("done")
   })
 
   it("says plan when the turn produced one", () => {

@@ -126,7 +126,11 @@ export function pendingUserMessage(
 
 /** The pending user row of a running turn, as the thread renders it. */
 export function pendingUserMessageOf(stream: ChatTurnStream): ChatMessage {
-  return pendingUserMessage(stream.sessionId, stream.userText, stream.startedAtUnixMs)
+  return pendingUserMessage(
+    stream.sessionId,
+    stream.userText,
+    stream.startedAtUnixMs
+  )
 }
 
 /**
@@ -136,7 +140,9 @@ export function pendingUserMessageOf(stream: ChatTurnStream): ChatMessage {
  * first word belongs to the typing indicator, and two placeholders for one
  * pause would be the thread narrating itself twice.
  */
-export function streamingReplyMessageOf(stream: ChatTurnStream): ChatMessage | null {
+export function streamingReplyMessageOf(
+  stream: ChatTurnStream
+): ChatMessage | null {
   if (stream.fragments.length === 0) {
     return null
   }

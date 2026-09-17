@@ -198,10 +198,10 @@ export function useSendMessageMutation() {
           queryClient.getQueryData<ChatMessage[]>(
             chatMessagesQueryKey(sessionId)
           ) ?? []
-        queryClient.setQueryData(
-          chatMessagesQueryKey(sessionId),
-          [...current, ...bridgeTurnRows(sessionId, text, turn)]
-        )
+        queryClient.setQueryData(chatMessagesQueryKey(sessionId), [
+          ...current,
+          ...bridgeTurnRows(sessionId, text, turn),
+        ])
       }
       void queryClient.invalidateQueries({
         queryKey: chatMessagesQueryKey(sessionId),

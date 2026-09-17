@@ -177,7 +177,11 @@ function CronControl({
   // The preset row's checked-state is one of the four presets or `Custom…`
   // — whichever is in force. An empty wire and an off-preset value both
   // surface as `Custom…`, so the operator sees the row they are on.
-  const presetSelection = isPreset ? value : mode === "preset" ? "" : CUSTOM_VALUE
+  const presetSelection = isPreset
+    ? value
+    : mode === "preset"
+      ? ""
+      : CUSTOM_VALUE
 
   function pickPreset(next: string): void {
     if (next === CUSTOM_VALUE) {
@@ -235,10 +239,7 @@ function CustomCronEditor({
   // `value` may be empty on first render (a brand-new schedule) — key the
   // five selects and the preview off `DEFAULT_VALUE` in that case so all
   // three views agree on first paint. The same wire `Daily at 03:00` writes.
-  const parsed = useMemo(
-    () => parseCron(value || DEFAULT_VALUE),
-    [value]
-  )
+  const parsed = useMemo(() => parseCron(value || DEFAULT_VALUE), [value])
   const [minute, hour, dayOfMonth, month, dayOfWeek] = parsed
 
   function update(next: CronParts): void {
@@ -257,7 +258,9 @@ function CustomCronEditor({
         value={minute}
         options={MINUTE_OPTIONS}
         disabled={disabled}
-        onValueChange={(next) => update([next, hour, dayOfMonth, month, dayOfWeek])}
+        onValueChange={(next) =>
+          update([next, hour, dayOfMonth, month, dayOfWeek])
+        }
       />
       <CronSelect
         id={`${id}-hour`}
@@ -265,7 +268,9 @@ function CustomCronEditor({
         value={hour}
         options={HOUR_OPTIONS}
         disabled={disabled}
-        onValueChange={(next) => update([minute, next, dayOfMonth, month, dayOfWeek])}
+        onValueChange={(next) =>
+          update([minute, next, dayOfMonth, month, dayOfWeek])
+        }
       />
       <CronSelect
         id={`${id}-day`}
@@ -281,7 +286,9 @@ function CustomCronEditor({
         value={month}
         options={MONTH_OPTIONS}
         disabled={disabled}
-        onValueChange={(next) => update([minute, hour, dayOfMonth, next, dayOfWeek])}
+        onValueChange={(next) =>
+          update([minute, hour, dayOfMonth, next, dayOfWeek])
+        }
       />
       <CronSelect
         id={`${id}-weekday`}
@@ -289,7 +296,9 @@ function CustomCronEditor({
         value={dayOfWeek}
         options={DAY_OF_WEEK_OPTIONS}
         disabled={disabled}
-        onValueChange={(next) => update([minute, hour, dayOfMonth, month, next])}
+        onValueChange={(next) =>
+          update([minute, hour, dayOfMonth, month, next])
+        }
       />
       <span className={styles.preview} data-test={`${id}-preview`}>
         <span className={styles.previewLabel}>value</span>

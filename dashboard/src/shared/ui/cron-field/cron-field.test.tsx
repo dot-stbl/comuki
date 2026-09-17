@@ -15,10 +15,7 @@ import { CronField } from "./cron-field"
 /* The kit's `Select` is the seam these tests write through. It exposes a
  * hidden native `<select>` so a test can change the value without driving
  * the popover — the same seam `select.test.tsx` already uses. */
-import {
-  nativeSelect,
-  setSelectValue,
-} from "@/shared/ui/select/test-select"
+import { nativeSelect, setSelectValue } from "@/shared/ui/select/test-select"
 
 function Harness({
   initial = "",
@@ -48,7 +45,9 @@ function Harness({
 // so a regex anchored to the row's name matches without pulling in the
 // description sentence that follows.
 const preset = (label: string) =>
-  screen.getByRole("radio", { name: new RegExp(`^${label}`) }) as HTMLInputElement
+  screen.getByRole("radio", {
+    name: new RegExp(`^${label}`),
+  }) as HTMLInputElement
 
 // React Aria renders the `id` directly on the trigger button — the seam
 // `test-select.ts` already understands: its `parentElement` carries the

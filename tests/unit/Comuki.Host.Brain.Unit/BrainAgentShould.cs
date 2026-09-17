@@ -4,9 +4,11 @@ using Comuki.Host.Brain.Brain.Options;
 using Comuki.Host.Brain.Ports.ActiveRuns;
 using Comuki.Host.Brain.Ports.Exploration;
 using Comuki.Shared.Contracts.Brain;
+using Comuki.Shared.Contracts.Memory;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -130,6 +132,7 @@ public sealed class BrainAgentShould
         var agent = new BrainAgent(
             new StaticModelConfigProvider(),
             new ScriptedChatClientFactory(Scripted.Loop("here is a plan in prose, not calling emit_plan")),
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([]),
             new StubActiveRunCatalog(),
@@ -162,6 +165,7 @@ public sealed class BrainAgentShould
         var agent = new BrainAgent(
             provider,
             factory,
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),
@@ -195,6 +199,7 @@ public sealed class BrainAgentShould
         var agent = new BrainAgent(
             provider,
             factory,
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([]),
             new StubActiveRunCatalog(),
@@ -222,6 +227,7 @@ public sealed class BrainAgentShould
         var agent = new BrainAgent(
             provider,
             factory,
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),
@@ -247,6 +253,7 @@ public sealed class BrainAgentShould
         return new BrainAgent(
             new StaticModelConfigProvider(),
             new ScriptedChatClientFactory(scripted),
+            Substitute.For<IMemoryDigest>(),
             new FakeMemoryStore([]),
             new FakeProfileCatalog([new("implement", "Implementer", "writes the code", [], null)]),
             new StubActiveRunCatalog(),

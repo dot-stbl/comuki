@@ -1,7 +1,8 @@
-import { describe, expect, it } from "bun:test"
+import { afterEach, describe, expect, it, setSystemTime } from "bun:test"
 import {
   ComukiApiError,
   ComukiClient,
+  nextLatencyEma,
   type ChatMessagesPageView,
   type ChatTurnResultView,
 } from "./client"
@@ -221,5 +222,83 @@ describe("ComukiClient", () => {
       Authorization: "Bearer ck_k",
       "X-Comuki-Tenant": "t",
     })
+  })
+})
+
+describe("nextLatencyEma", () => {
+  it("seeds with the first sample and clamps negatives to zero", () => {
+    expect(nextLatencyEma(null, 120)).toBe(120)
+    expect(nextLatencyEma(null, -5)).toBe(0)
+  })
+
+  it("smooths with alpha 0.3", () => {
+    expect(nextLatencyEma(100, 200)).toBe(130)
+    expect(nextLatencyEma(130, 100)).toBe(121)
+  })
+})
+
+describe("postMessage latency sampling", () => {
+  afterEach(() => {
+    setSystemTime(new Date())
+  })
+
+  /**
+   * Deterministic clock: `setSystemTime` freezes `Date.now`, and the
+   * fetch mock advances it mid-flight — exactly between postMessage's
+   * two `Date.now()` reads — so the measured round-trip is exact.
+   */
+  function clockFetch(impl: typeof fetch, advanceMs: () => number) {
+    return (async (input: string, init?: RequestInit) => {
+      setSystemTime(new Date(Date.now() + advanceMs()))
+      return impl(input, init)
+    }) as typeof fetch
+  }
+
+  it("feeds the EMA of successful chat POST round-trips", async () => {
+    setSystemTime(new Date("2026-09-18T10:00:00Z"))
+    const turn: ChatTurnResultView = {
+      messages: [],
+      awaitingApproval: false,
+      pendingPlan: null,
+    }
+    const { impl } = fakeFetch({
+      "POST /api/v1/chat/sessions/abc/messages": { body: turn },
+    })
+    let advance = 42
+    const samples: number[] = []
+    const client = new ComukiClient(resolveConfig({ COMUKI_URL: "http://t" }), {
+      fetchImpl: clockFetch(impl, () => advance),
+      onLatencySample: (latencyMs) => samples.push(latencyMs),
+    })
+
+    await client.postMessage("abc", "one")
+    advance = 140
+    await client.postMessage("abc", "two")
+
+    // 42 seeds; 140 blends: 42 + 0.3 × (140 − 42) = 71.4 → 71.
+    expect(client.chatLatencyMs()).toBe(71)
+    expect(samples).toEqual([42, 71])
+  })
+
+  it("does not sample a failed send", async () => {
+    setSystemTime(new Date("2026-09-18T10:00:00Z"))
+    const { impl } = fakeFetch({
+      "POST /api/v1/chat/sessions/abc/messages": {
+        status: 503,
+        body: { detail: "down" },
+      },
+    })
+    const samples: number[] = []
+    const client = new ComukiClient(resolveConfig({ COMUKI_URL: "http://t" }), {
+      fetchImpl: impl,
+      onLatencySample: (latencyMs) => samples.push(latencyMs),
+    })
+
+    await client.postMessage("abc", "hello").catch(() => {
+      // The rejection is the point; latency must stay untouched.
+    })
+
+    expect(samples).toEqual([])
+    expect(client.chatLatencyMs()).toBeNull()
   })
 })

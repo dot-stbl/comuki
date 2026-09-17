@@ -205,6 +205,30 @@ export interface ClientOptions {
   /** Test seam — defaults to the global fetch. */
   fetchImpl?: FetchLike
   signal?: AbortSignal
+  /**
+   * Receives the chat-latency EMA after every successful `postMessage`
+   * round-trip — the status bar's latency badge.
+   */
+  readonly onLatencySample?: (latencyMs: number) => void
+}
+
+/** Smoothing factor for the chat-latency EMA (≈ the last 3 sends dominate). */
+const LATENCY_EMA_ALPHA = 0.3
+
+/**
+ * One EMA step over chat-send round-trips. The first sample seeds the
+ * EMA; negative samples clamp to zero (clock jitter must not travel
+ * backwards). Pure — unit-tested directly.
+ */
+export function nextLatencyEma(
+  previousMs: number | null,
+  sampleMs: number
+): number {
+  const sample = Math.max(0, Math.round(sampleMs))
+  if (previousMs === null) {
+    return sample
+  }
+  return Math.round(previousMs + LATENCY_EMA_ALPHA * (sample - previousMs))
 }
 
 export class ComukiClient {
@@ -212,10 +236,13 @@ export class ComukiClient {
   private readonly signal?: AbortSignal
   private readonly baseUrl: string
   private readonly headers: Record<string, string>
+  private readonly onLatencySample?: (latencyMs: number) => void
+  private chatLatencyEmaMs: number | null = null
 
   constructor(config: ResolvedConfig, options: ClientOptions = {}) {
     this.fetchImpl = options.fetchImpl ?? (fetch as FetchLike)
     this.signal = options.signal
+    this.onLatencySample = options.onLatencySample
     this.baseUrl = config.url.replace(/\/+$/, "")
     this.headers = {
       Accept: "application/json",
@@ -223,6 +250,11 @@ export class ComukiClient {
       ...(config.tenant ? { "X-Comuki-Tenant": config.tenant } : {}),
       ...(config.cookie ? { Cookie: config.cookie } : {}),
     }
+  }
+
+  /** EMA of successful chat POST round-trips; null before the first send. */
+  chatLatencyMs(): number | null {
+    return this.chatLatencyEmaMs
   }
 
   /** Same-origin SignalR hub URL (`<url>/ws/runs`). */
@@ -348,10 +380,24 @@ export class ComukiClient {
     return this.request("POST", "/api/v1/chat/sessions", request)
   }
 
-  postMessage(sessionId: string, message: string): Promise<ChatTurnResultView> {
-    return this.request("POST", `/api/v1/chat/sessions/${sessionId}/messages`, {
-      message,
-    })
+  async postMessage(
+    sessionId: string,
+    message: string
+  ): Promise<ChatTurnResultView> {
+    const startedAtMs = Date.now()
+    const result = await this.request<ChatTurnResultView>(
+      "POST",
+      `/api/v1/chat/sessions/${sessionId}/messages`,
+      { message }
+    )
+    // Only successful round-trips count — a refused connection is a
+    // "server unreachable" signal, not a fast send.
+    this.chatLatencyEmaMs = nextLatencyEma(
+      this.chatLatencyEmaMs,
+      Date.now() - startedAtMs
+    )
+    this.onLatencySample?.(this.chatLatencyEmaMs)
+    return result
   }
 
   listMessages(

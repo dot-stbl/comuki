@@ -141,14 +141,17 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
     /// </summary>
     private async Task WaitForBucketAsync(CancellationToken cancellationToken)
     {
-        var (host, port) = SplitEndpoint(minioEndpoint);
-        var client = new Minio.MinioClient()
-            .WithEndpoint(host, port)
-            .WithCredentials(MinioUser, MinioPassword)
-            .Build();
+        var client = Modules.Artifacts.Infrastructure.Store.MinioClientFactory.Create(
+            new Modules.Artifacts.Infrastructure.Store.ArtifactsOptions
+            {
+                Endpoint = minioEndpoint,
+                AccessKey = MinioUser,
+                SecretKey = MinioPassword,
+                Bucket = TestBucket,
+            });
         for (var attempt = 0; ; attempt++)
         {
-            if (await client.BucketExistsAsync(new Minio.BucketExistsArgs().WithBucket(TestBucket), cancellationToken))
+            if (await client.BucketExistsAsync(new Minio.DataModel.Args.BucketExistsArgs().WithBucket(TestBucket), cancellationToken))
             {
                 return;
             }

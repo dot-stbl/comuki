@@ -1,8 +1,11 @@
 import { describe, expect, it } from "bun:test"
 import {
   SLASH_COMMANDS,
+  completeSlashCommand,
+  filterSlashCommands,
   resolveSlashAction,
   slashHelpLines,
+  slashMenuQuery,
 } from "./slash"
 import { stripAnsi } from "../theme"
 
@@ -18,6 +21,7 @@ describe("resolveSlashAction", () => {
     expect(resolveSlashAction("/retry")).toEqual({ kind: "retry" })
     expect(resolveSlashAction("/RETRY")).toEqual({ kind: "retry" })
     expect(resolveSlashAction("/clear")).toEqual({ kind: "clear" })
+    expect(resolveSlashAction("/stop")).toEqual({ kind: "stop" })
     expect(resolveSlashAction("/help")).toEqual({ kind: "help" })
     expect(resolveSlashAction("/sessions")).toEqual({ kind: "sessions" })
     expect(resolveSlashAction("/new")).toEqual({ kind: "new" })
@@ -90,5 +94,58 @@ describe("slashHelpLines", () => {
       (line, index) => line.indexOf(SLASH_COMMANDS[index].description)
     )
     expect(new Set(starts).size).toBe(1)
+  })
+})
+
+describe("slashMenuQuery", () => {
+  it("a lone slash opens the menu with the full-list query", () => {
+    expect(slashMenuQuery("/")).toBe("")
+  })
+
+  it("the text after the slash is the query, lowercased", () => {
+    expect(slashMenuQuery("/re")).toBe("re")
+    expect(slashMenuQuery("/REna")).toBe("rena")
+  })
+
+  it("whitespace (arguments) or no leading slash closes the menu", () => {
+    expect(slashMenuQuery("/rename ")).toBeNull()
+    expect(slashMenuQuery("/re trie")).toBeNull()
+    expect(slashMenuQuery("hello")).toBeNull()
+    expect(slashMenuQuery("")).toBeNull()
+  })
+})
+
+describe("filterSlashCommands", () => {
+  it("empty query matches the whole registry in order", () => {
+    expect(filterSlashCommands(SLASH_COMMANDS, "")).toEqual(SLASH_COMMANDS)
+  })
+
+  it("prefix-matches names case-insensitively", () => {
+    const names = filterSlashCommands(SLASH_COMMANDS, "RE").map(
+      (command) => command.name
+    )
+    expect(names).toEqual(["retry", "rename", "reject"])
+  })
+
+  it("aliases match too — /q finds exit", () => {
+    const names = filterSlashCommands(SLASH_COMMANDS, "q").map(
+      (command) => command.name
+    )
+    expect(names).toEqual(["exit"])
+  })
+
+  it("no match yields an empty list", () => {
+    expect(filterSlashCommands(SLASH_COMMANDS, "zzz")).toEqual([])
+  })
+})
+
+describe("completeSlashCommand", () => {
+  it("completes to the canonical slash-name plus a ready-for-args space", () => {
+    const rename = SLASH_COMMANDS.find(
+      (command) => command.name === "rename"
+    )
+    expect(completeSlashCommand(rename!)).toBe("/rename ")
+    const exit = SLASH_COMMANDS.find((command) => command.name === "exit")
+    expect(completeSlashCommand(exit!)).toBe("/exit ")
   })
 })

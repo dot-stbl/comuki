@@ -44,6 +44,12 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: "wipe the active transcript",
   },
   {
+    name: "stop",
+    aliases: [],
+    usage: "/stop",
+    description: "abort the running turn",
+  },
+  {
     name: "help",
     aliases: [],
     usage: "/help",
@@ -93,6 +99,7 @@ export type SlashAction =
   | { readonly kind: "retry" }
   | { readonly kind: "rename"; readonly title: string }
   | { readonly kind: "clear" }
+  | { readonly kind: "stop" }
   | { readonly kind: "help" }
   | { readonly kind: "sessions" }
   | { readonly kind: "new" }
@@ -124,6 +131,9 @@ export function resolveSlashAction(raw: string): SlashAction {
   if (matches("clear", name)) {
     return { kind: "clear" }
   }
+  if (matches("stop", name)) {
+    return { kind: "stop" }
+  }
   if (matches("help", name)) {
     return { kind: "help" }
   }
@@ -151,4 +161,54 @@ function matches(command: string, name: string): boolean {
   return (
     entry !== undefined && (name === entry.name || entry.aliases.includes(name))
   )
+}
+
+// ---------------------------------------------------------------------------
+// Inline autocomplete menu — pure derivations over the registry
+// ---------------------------------------------------------------------------
+
+/**
+ * The autocomplete filter query for the current prompt value, or null
+ * when the menu must not show.
+ *
+ * The menu lives only while the whole line is one partial command: a
+ * leading `/`, no whitespace yet (a space starts arguments → close).
+ * `/` alone shows the full list; the query is lowercased for matching.
+ */
+export function slashMenuQuery(value: string): string | null {
+  if (!value.startsWith("/")) {
+    return null
+  }
+  const rest = value.slice(1)
+  if (/\s/.test(rest)) {
+    return null
+  }
+  return rest.toLowerCase()
+}
+
+/**
+ * Commands whose name or an alias starts with `query` (case-insensitive),
+ * in registry order. An empty query matches everything.
+ */
+export function filterSlashCommands(
+  commands: readonly SlashCommand[],
+  query: string
+): readonly SlashCommand[] {
+  const lowered = query.toLowerCase()
+  return commands.filter(
+    (command) =>
+      command.name.startsWith(lowered) ||
+      command.aliases.some((alias) => alias.startsWith(lowered))
+  )
+}
+
+/**
+ * The completed prompt value for a menu selection: the canonical
+ * `/name` plus one trailing space (ready for arguments, and the space
+ * itself closes the menu — `slashMenuQuery` sees whitespace).
+ */
+export function completeSlashCommand(
+  command: SlashCommand
+): string {
+  return `/${command.name} `
 }

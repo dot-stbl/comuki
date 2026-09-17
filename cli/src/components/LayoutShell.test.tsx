@@ -126,7 +126,7 @@ describe("LayoutShell (full-screen TUI)", () => {
       <LayoutShell sessions={[]} showWelcome />
     )
     // The footer shows the hotkey legend; absent when there are no sessions.
-    expect(lastFrame()).not.toContain("esc · tab · ctrl+n")
+    expect(lastFrame()).not.toContain("esc · tab · pgup/pgdn · ctrl+n")
     unmount()
   })
 
@@ -138,7 +138,7 @@ describe("LayoutShell (full-screen TUI)", () => {
     const frame = lastFrame()
     expect(frame).toContain("status")
     expect(frame).toContain("[1] alpha")
-    expect(frame).toContain("esc · tab · ctrl+n")
+    expect(frame).toContain("esc · tab · pgup/pgdn · ctrl+n")
     unmount()
   })
 
@@ -158,7 +158,7 @@ describe("LayoutShell (full-screen TUI)", () => {
     expect(frame).toContain("1 alpha")
     expect(frame).toContain("2 beta")
     expect(frame).toContain("3 gamma")
-    expect(frame).toContain("esc · tab · ctrl+n")
+    expect(frame).toContain("esc · tab · pgup/pgdn · ctrl+n")
     unmount()
   })
 
@@ -169,7 +169,7 @@ describe("LayoutShell (full-screen TUI)", () => {
     )
     const frame = lastFrame()
     expect(frame).not.toContain("[1]")
-    expect(frame).not.toContain("esc · tab · ctrl+n")
+    expect(frame).not.toContain("esc · tab · pgup/pgdn · ctrl+n")
     unmount()
   })
 })

@@ -7,12 +7,19 @@
  * fired unawaited — a thinking tab keeps working in the background and
  * only marks itself unread. The laptop stays cold.
  *
- * One SignalR connection carries every session's chunks (`ChatChunk`
+ * One Signalr connection carries every session's chunks (`ChatChunk`
  * holds `sessionId`, so routing is a patch over tabs). A pending tab
  * (`local-…` id) becomes a server session lazily on its first message.
+ *
+ * The transcript scrolls inside the app (irssi/htop model), not in the
+ * terminal scrollback: the flattened lines render into a fixed-height
+ * viewport (`lib/viewport.ts` + `TranscriptViewport`) whose offset 0
+ * follows the bottom; PgUp suspends follow, `↓ new messages` marks
+ * fresh output below, End resumes. The prompt and footer are pinned
+ * outside the viewport and never scroll away.
  */
-import { Box, Static, Text, useApp, useInput } from "ink"
-import React, { useCallback, useEffect, useRef, useState } from "react"
+import { Box, Text, useApp, useInput } from "ink"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { HubConnection } from "@microsoft/signalr"
 import {
   ComukiApiError,
@@ -20,10 +27,13 @@ import {
   type ChatMessageView,
 } from "../lib/client"
 import { whoAmI } from "../lib/auth"
-import { renderPendingPlan } from "../lib/format"
+import { flattenTranscript } from "../lib/transcript"
 import type { ResolvedConfig } from "../lib/config"
 import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
 import { useCopyLastAnswer } from "../hooks/useCopyLastAnswer"
+import { useHomeEndKeys } from "../hooks/useHomeEndKeys"
+import { useSpinnerFrame } from "../hooks/useSpinnerFrame"
+import { useTranscriptScroll } from "../hooks/useTranscriptScroll"
 import { lastAssistantText } from "../lib/history"
 import {
   addSession,
@@ -58,14 +68,12 @@ import {
   type HubConnectionState,
 } from "../lib/signalr"
 import { colors, symbols } from "../theme"
-import { ChatMessage } from "../components/ChatMessage"
-import { LiveMessage } from "../components/LiveMessage"
 import { PromptInput } from "../components/PromptInput"
 import { SessionFooter } from "../components/SessionFooter"
 import { SessionOverview } from "../components/SessionOverview"
 import { StatusLine } from "../components/StatusLine"
 import { TabBar } from "../components/TabBar"
-import { TypingIndicator } from "../components/TypingIndicator"
+import { TranscriptViewport } from "../components/TranscriptViewport"
 import { Welcome, type PlatformStats } from "../components/Welcome"
 
 const EMPTY_TAB_HINT = `${colors.dim}  no open sessions — ctrl+n to start one${colors.reset}`
@@ -125,6 +133,53 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const { hint: copyHint } = useCopyLastAnswer(() =>
     lastAssistantText(activeSession?.blocks ?? [])
   )
+
+  // -- transcript viewport ------------------------------------------------------
+
+  const thinking = activeSession?.status === "thinking"
+  const typingFrame = useSpinnerFrame(thinking)
+
+  const transcriptLines = useMemo(
+    () =>
+      flattenTranscript(
+        activeSession
+          ? {
+              blocks: activeSession.blocks,
+              awaitingApproval: activeSession.awaitingApproval,
+              pendingPlan: activeSession.pendingPlan,
+              thinking,
+              liveText: activeSession.liveText,
+            }
+          : undefined,
+        columns,
+        typingFrame,
+        noticeLines
+      ),
+    [activeSession, columns, typingFrame, noticeLines, thinking]
+  )
+
+  // Pinned chrome rows: status line + tab strip + footer + the prompt
+  // block (the transient ctrl+y hint takes its own row). Everything
+  // left belongs to the scrolling viewport.
+  const showFooter = tabs.sessions.length > 0 && !overviewVisible
+  const viewportHeight = Math.max(
+    1,
+    rows -
+      1 - // StatusLine
+      (tabs.sessions.length > 0 ? 1 : 0) - // TabBar
+      (showFooter ? 1 : 0) - // SessionFooter
+      (1 + (copyHint ? 1 : 0)) // prompt (+ transient copy hint row)
+  )
+
+  const scroll = useTranscriptScroll(
+    transcriptLines.length,
+    viewportHeight,
+    activeSessionId
+  )
+
+  // Home/End are invisible to ink 5's key flags — matched as raw
+  // escape sequences on the same input channel useInput listens on.
+  useHomeEndKeys(scroll.toTop, scroll.toBottom, !overviewVisible)
 
   useEffect(() => {
     activeIdRef.current = activeSessionId
@@ -717,9 +772,32 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   )
 
   // Global hotkeys — active in every state; the editor ignores these keys.
-  useInput((_input, key) => {
+  useInput((input, key) => {
     if (overviewRef.current) {
       return // the overview's own handler owns the keys
+    }
+    // PgUp/PgDn: ink parses the standard sequences (`\x1b[5~` / `\x1b[6~`,
+    // what ConPTY sends) into `key.pageUp` / `key.pageDown`; a sequence
+    // the parser does not know still reaches us raw in `input` (leading
+    // ESC already stripped) — both shapes scroll.
+    if (key.pageUp || input === "\x1b[5~" || input === "[5~") {
+      scroll.pageUp()
+      return
+    }
+    if (key.pageDown || input === "\x1b[6~" || input === "[6~") {
+      scroll.pageDown()
+      return
+    }
+    // ↑/↓ scroll the transcript by one line while it is scrolled up;
+    // at the bottom they keep their prompt-history-recall meaning
+    // (PromptInput checks `historyRecallEnabled` for the same flag).
+    if (key.upArrow && scroll.scrolledUp) {
+      scroll.lineUp()
+      return
+    }
+    if (key.downArrow && scroll.scrolledUp) {
+      scroll.lineDown()
+      return
     }
     if (key.tab) {
       setTabs((current) => {
@@ -746,11 +824,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       setOverviewVisible((current) => !current)
       return
     }
-    if (key.ctrl && _input === "n") {
+    if (key.ctrl && input === "n") {
       openPendingTab()
       return
     }
-    if (key.ctrl && _input === "w") {
+    if (key.ctrl && input === "w") {
       closeSession(tabs.activeIndex)
     }
   })
@@ -809,11 +887,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const showWelcome = !welcomeDismissed && tabs.sessions.length === 0
   const promptEnabled =
     !overviewVisible && (!activeSession || activeSession.status !== "thinking")
-  const showFooter = tabs.sessions.length > 0 && !overviewVisible
 
   // Header: status line + (when tabs exist) the tab strip — both single rows.
-  // Footer: session badges + hotkey legend — single row.
-  // Content area: everything else, fills the remaining vertical space.
+  // Content: the scrolling transcript viewport, filling everything the
+  // chrome does not claim. Footer: session badges + legend — single row.
+  // Prompt block: pinned last, never scrolled away.
   return (
     <Box flexDirection="column" width={columns} height={rows}>
       <StatusLine
@@ -826,7 +904,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       {tabs.sessions.length > 0 ? (
         <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />
       ) : null}
-      <Box flexDirection="column" flexGrow={1} flexShrink={1} minHeight={0}>
+      <Box
+        flexDirection="column"
+        flexGrow={1}
+        flexShrink={1}
+        minHeight={0}
+        overflow="hidden"
+      >
         {overviewVisible ? (
           <Box
             flexDirection="column"
@@ -856,71 +940,16 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             {noticeLines.map((line, index) => (
               <Text key={index}>{line}</Text>
             ))}
-            <Box marginTop={1} flexDirection="column" alignItems="center">
-              {copyHint ? <Text dimColor>{copyHint}</Text> : null}
-              <PromptInput
-                onSubmit={handleSubmit}
-                history={activeSession?.history ?? []}
-              />
-            </Box>
           </Box>
+        ) : activeSession ? (
+          <TranscriptViewport
+            lines={transcriptLines}
+            height={viewportHeight}
+            offset={scroll.offset}
+            newBelow={scroll.newBelow}
+          />
         ) : (
-          <>
-            {activeSession ? (
-              <>
-                {activeSession.blocks.length > 0 ? (
-                  <Static items={[...activeSession.blocks]}>
-                    {(block) =>
-                      block.kind === "message" ? (
-                        <ChatMessage key={block.key} message={block.message} />
-                      ) : (
-                        <React.Fragment key={block.key}>
-                          {block.lines.map((line, index) => (
-                            <Text key={index}>{line}</Text>
-                          ))}
-                        </React.Fragment>
-                      )
-                    }
-                  </Static>
-                ) : null}
-                {activeSession.awaitingApproval ? (
-                  <>
-                    {renderPendingPlan(activeSession.pendingPlan).map(
-                      (line, index) => (
-                        <Text key={index}>{line}</Text>
-                      )
-                    )}
-                    <Text dimColor>
-                      {" "}
-                      type approve or reject [reason] to decide
-                    </Text>
-                  </>
-                ) : null}
-                {activeSession.status === "thinking" ? (
-                  <>
-                    <TypingIndicator />
-                    <LiveMessage
-                      liveText={activeSession.liveText}
-                      width={columns}
-                    />
-                  </>
-                ) : null}
-              </>
-            ) : (
-              <Text>{EMPTY_TAB_HINT}</Text>
-            )}
-            {noticeLines.map((line, index) => (
-              <Text key={index}>{line}</Text>
-            ))}
-            {copyHint ? (
-              <Text dimColor>{`  ${copyHint}`}</Text>
-            ) : null}
-            <PromptInput
-              onSubmit={handleSubmit}
-              history={activeSession?.history ?? []}
-              active={promptEnabled}
-            />
-          </>
+          <Text>{EMPTY_TAB_HINT}</Text>
         )}
       </Box>
       {showFooter ? (
@@ -928,6 +957,19 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           sessions={tabs.sessions}
           activeIndex={tabs.activeIndex}
         />
+      ) : null}
+      {!overviewVisible ? (
+        <>
+          {copyHint ? (
+            <Text dimColor>{`  ${copyHint}`}</Text>
+          ) : null}
+          <PromptInput
+            onSubmit={handleSubmit}
+            history={activeSession?.history ?? []}
+            active={promptEnabled}
+            historyRecallEnabled={!scroll.scrolledUp}
+          />
+        </>
       ) : null}
     </Box>
   )

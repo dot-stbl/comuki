@@ -1,9 +1,9 @@
 /**
- * Config resolution for the CLI: one precedence chain, one file.
+ * Config resolution for the CLI: one precedence chain, one directory.
  *
  *   CLI flags (--url/--api-key/--project)
  *     > environment (COMUKI_URL / COMUKI_API_KEY / COMUKI_TENANT)
- *       > ~/.comuki/config.json (written by `comuki login` / `comuki config`)
+ *       > ~/.config/comuki/config.json (written by `comuki login`)
  *         > default (http://localhost:8080)
  *
  * `resolveConfig` is pure (env + file contents in, config out) so tests
@@ -11,6 +11,7 @@
  */
 import { homedir } from "node:os"
 import { join } from "node:path"
+import { readJsonFile, writeJsonFile } from "./json"
 
 /** URL of the Comuki host (API + SignalR share the base). */
 export const DEFAULT_URL = "http://localhost:8080"
@@ -68,24 +69,32 @@ export function resolveConfig(
   }
 }
 
-/** `~/.comuki/config.json` — the only state the CLI keeps on disk. */
+/**
+ * `~/.config/comuki/` — the only directory the CLI keeps on disk
+ * (XDG layout; `XDG_CONFIG_HOME` wins when set).
+ */
+export function configDir(
+  xdgConfigHome: string | undefined = process.env.XDG_CONFIG_HOME
+): string {
+  const base = xdgConfigHome?.trim() || join(homedir(), ".config")
+  return join(base, "comuki")
+}
+
+/** `~/.config/comuki/config.json` — connection + identity state. */
 export function configFilePath(): string {
-  return join(homedir(), ".comuki", "config.json")
+  return join(configDir(), "config.json")
+}
+
+/** `~/.config/comuki/sessions.json` — open tabs restored on next start. */
+export function sessionsFilePath(): string {
+  return join(configDir(), "sessions.json")
 }
 
 /** Reads the config file; missing or malformed → empty contents (first run). */
 export async function readConfigFile(
   path: string = configFilePath()
 ): Promise<ConfigFileContents> {
-  const file = Bun.file(path)
-  if (!(await file.exists())) {
-    return {}
-  }
-  try {
-    return JSON.parse(await file.text()) as ConfigFileContents
-  } catch {
-    return {}
-  }
+  return (await readJsonFile<ConfigFileContents>(path)) ?? {}
 }
 
 /** Writes the config file with owner-only permissions (0o600). */
@@ -93,8 +102,5 @@ export async function writeConfigFile(
   contents: ConfigFileContents,
   path: string = configFilePath()
 ): Promise<void> {
-  await Bun.write(path, JSON.stringify(contents, null, 2) + "\n", {
-    createPath: true,
-    mode: 0o600,
-  })
+  await writeJsonFile(path, contents)
 }

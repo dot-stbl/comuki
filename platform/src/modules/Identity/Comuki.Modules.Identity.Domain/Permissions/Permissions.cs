@@ -63,6 +63,12 @@ public static class Permissions
     /// <summary>Read verification results.</summary>
     public static readonly PermissionKey VerifyRead = new("verify:read");
 
+    /// <summary>Read learning candidates (the rule-approval queue).</summary>
+    public static readonly PermissionKey LearningRead = new("learning:read");
+
+    /// <summary>Decide learning candidates (approve / reject suggested rules).</summary>
+    public static readonly PermissionKey LearningWrite = new("learning:write");
+
     /// <summary>Read cost reports.</summary>
     public static readonly PermissionKey CostRead = new("cost:read");
 

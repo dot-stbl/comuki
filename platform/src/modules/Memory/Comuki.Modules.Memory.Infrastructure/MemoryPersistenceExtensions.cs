@@ -60,6 +60,7 @@ public static class MemoryPersistenceExtensions
         services.TryAddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IMemoryStore, EfMemoryStore>();
+        services.AddSingleton<Application.Learning.ILearningCandidateStore, EfLearningCandidateStore>();
         services.AddSingleton<IComukiWorker, MemorySweepComukiWorker>();
         services.AddSingleton<IComukiWorker, MemoryConsolidationComukiWorker>();
 

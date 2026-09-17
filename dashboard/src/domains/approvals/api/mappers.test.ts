@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { escalatedRunToApproval } from "@/domains/approvals/api/mappers"
+import {
+  escalatedRunToApproval,
+  learningCandidateToApproval,
+} from "@/domains/approvals/api/mappers"
 
 /** Now, pinned — the waiting age is derived from instants. */
 const NOW = Date.parse("2026-09-13T12:00:00Z")
@@ -41,5 +44,47 @@ describe("an escalated run onto the decision card", () => {
       NOW
     )
     expect(longWait.age).toBe("3 h")
+  })
+})
+
+const CANDIDATE = {
+  id: "5d0c2f88-1111-2222-3333-444444444444",
+  projectId: "b3d8a402-1111-2222-3333-444444444444",
+  topic: "build.dotnet",
+  observation: "bun install hangs on a cold cache in fresh containers",
+  proposedRule: "Run bun install with --frozen-lockfile in fresh containers",
+  sourceRef: "worker:9f21",
+  repeatCount: 1,
+  status: "pending",
+  createdAt: "2026-09-13T11:44:00Z",
+} as const
+
+describe("a learning candidate onto the decision card", () => {
+  it("decides the rule, files it under its topic and refuses a risk", () => {
+    const approval = learningCandidateToApproval(CANDIDATE, NOW)
+
+    expect(approval.type).toBe("learning")
+    expect(approval.app).toBe("build.dotnet")
+    expect(approval.projectId).toBe(CANDIDATE.projectId)
+    expect(approval.summary).toBe(CANDIDATE.proposedRule)
+    expect(approval.risk).toBeNull()
+    expect(approval.age).toBe("16 min")
+  })
+
+  it("puts the observation behind the disclosure under its own name", () => {
+    const approval = learningCandidateToApproval(CANDIDATE, NOW)
+
+    expect(approval.assumptions).toEqual([CANDIDATE.observation])
+    expect(approval.assumptionsHeading).toBe("Observation")
+  })
+
+  it("names the repeat count when other workers hit the same thing", () => {
+    const repeated = learningCandidateToApproval(
+      { ...CANDIDATE, repeatCount: 3 },
+      NOW
+    )
+
+    expect(repeated.summary).toContain(CANDIDATE.proposedRule)
+    expect(repeated.summary).toContain("3 workers")
   })
 })

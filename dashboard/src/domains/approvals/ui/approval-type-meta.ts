@@ -1,5 +1,5 @@
 import type { ComponentType } from "react"
-import { Flag, GitBranch, Image, Zap } from "lucide-react"
+import { Flag, GitBranch, Image, Lightbulb, Zap } from "lucide-react"
 
 import type { ApprovalType } from "@/domains/approvals/model/types"
 
@@ -20,6 +20,9 @@ import type { ApprovalType } from "@/domains/approvals/model/types"
  * It is not a plan or a deploy — the host does not say *why* it escalated, and
  * the chip that named a reason it does not have would be the first lie on a
  * screen whose whole job is a decision.
+ *
+ * `learning` is a rule a worker proposed through learning.suggest. What is
+ * being decided is the rule, so that is the noun.
  */
 export const APPROVAL_TYPE_META: Record<
   ApprovalType,
@@ -29,4 +32,5 @@ export const APPROVAL_TYPE_META: Record<
   deploy: { icon: Zap, noun: "deploy" },
   baseline: { icon: Image, noun: "baseline" },
   gate: { icon: Flag, noun: "gate" },
+  learning: { icon: Lightbulb, noun: "rule" },
 }

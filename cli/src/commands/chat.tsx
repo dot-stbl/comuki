@@ -42,6 +42,7 @@ import {
   setBlocks,
   titleForFirstMessage,
   stepActive,
+  toggleBlocksExpanded,
   writeSessionsFile,
   PENDING_PREFIX,
   type ChatBlock,
@@ -750,6 +751,26 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       openPendingTab()
       return
     }
+    if (key.ctrl && _input === "o") {
+      // Verbose toggle — flips the active tab's expand flag. The Static
+      // transcript above the live area cannot be redrawn retroactively,
+      // so the notice confirms the press and blocks rendered afterwards
+      // follow the new mode.
+      const target =
+        tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
+      if (target) {
+        setTabs((current) => ({
+          ...current,
+          sessions: toggleBlocksExpanded(current.sessions, target.id),
+        }))
+        pushLines(target.id, [
+          target.blocksExpanded
+            ? `${colors.dim}  ${symbols.bullet} verbose off — thinking and tool blocks render collapsed${colors.reset}`
+            : `${colors.dim}  ${symbols.bullet} verbose on — thinking and tool blocks render expanded${colors.reset}`,
+        ])
+      }
+      return
+    }
     if (key.ctrl && _input === "w") {
       closeSession(tabs.activeIndex)
     }
@@ -872,7 +893,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                   <Static items={[...activeSession.blocks]}>
                     {(block) =>
                       block.kind === "message" ? (
-                        <ChatMessage key={block.key} message={block.message} />
+                        <ChatMessage
+                          key={block.key}
+                          message={block.message}
+                          expanded={activeSession.blocksExpanded}
+                        />
                       ) : (
                         <React.Fragment key={block.key}>
                           {block.lines.map((line, index) => (

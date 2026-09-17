@@ -1,4 +1,4 @@
-import { Ban, Cpu, Loader2, Users, X } from "lucide-react"
+import { Ban, Cpu, Users, X } from "lucide-react"
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components"
 
 import { formatCost } from "@/domains/runs/model/format"
@@ -18,7 +18,7 @@ import {
 } from "@/domains/models/model/keys"
 import type { ModelEndpoint, VirtualKey } from "@/domains/models/model/types"
 import { can, needsLabel, projectOf, type Session } from "@/shared/session"
-import { BarSeries, Button, Tooltip } from "@/shared/ui"
+import { BarSeries, Button, Fact, FactList, Tooltip } from "@/shared/ui"
 
 import { KeyBudgetMeter } from "./key-budget-meter"
 import { KeyStateBadge } from "./model-badges"
@@ -117,26 +117,16 @@ export function KeyDetailSheet({
                 )}
               </div>
 
-              <dl className={styles.facts}>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>issued</dt>
-                  <dd className={styles.factValue}>{createdReading(entry)}</dd>
-                </div>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>last used</dt>
-                  <dd className={styles.factValue}>{lastUsedReading(entry)}</dd>
-                </div>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>expires</dt>
-                  <dd className={styles.factValue}>{expiryReading(entry)}</dd>
-                </div>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>scope</dt>
-                  <dd className={styles.factValue}>
-                    {scopeReading(entry, projectKey)}
-                  </dd>
-                </div>
-              </dl>
+              {/* The dates a key lives by, on the kit's pair at the sheet's
+                  step. This block used to be the knowledge sheet's copied
+                  byte for byte — its own comment said so out loud — which is
+                  two files that would have taken a correction one at a time. */}
+              <FactList layout="split" size="sm">
+                <Fact name="issued">{createdReading(entry)}</Fact>
+                <Fact name="last used">{lastUsedReading(entry)}</Fact>
+                <Fact name="expires">{expiryReading(entry)}</Fact>
+                <Fact name="scope">{scopeReading(entry, projectKey)}</Fact>
+              </FactList>
 
               <SpendSection entry={entry} enforced={enforced} />
 
@@ -234,16 +224,11 @@ function FooterRevoke({
       <Button
         variant="destructive"
         data-test="key-detail-revoke"
-        disabled={busy}
+        loading={busy}
         denied={denial}
-        aria-busy={busy || undefined}
         onClick={() => onRevoke(entry)}
       >
-        {busy ? (
-          <Loader2 className={styles.spin} aria-hidden="true" />
-        ) : (
-          <Ban aria-hidden="true" />
-        )}
+        <Ban aria-hidden="true" />
         Revoke this key
       </Button>
     </Tooltip>

@@ -2,6 +2,7 @@ import type { ComponentType } from "react"
 import { ShieldAlert, ShieldCheck, TriangleAlert } from "lucide-react"
 
 import { cn } from "@/shared/lib/utils"
+import { badgeShell } from "@/shared/ui"
 import type {
   ApprovalRisk,
   ApprovalType,
@@ -38,9 +39,9 @@ export function ApprovalTypeBadge({ type, className }: ApprovalTypeBadgeProps) {
     <span
       data-test="approval-type-badge"
       data-type={type}
-      className={cn(styles.badge, styles.type, className)}
+      className={cn(badgeShell(), styles.badge, styles.type, className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {noun}
     </span>
   )
@@ -75,9 +76,9 @@ export function ApprovalRiskBadge({ risk, className }: ApprovalRiskBadgeProps) {
     <span
       data-test="approval-risk-badge"
       data-risk={risk}
-      className={cn(styles.badge, styles[risk], className)}
+      className={cn(badgeShell(), styles.badge, styles[risk], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {risk}
     </span>
   )

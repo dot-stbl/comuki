@@ -217,8 +217,9 @@ export function CreateTaskForm({
       </FormCard>
 
       <FormActions>
-        {/* `disabled` stays for *busy* and *invalid*. Having no project to
-            choose is neither — it is the denial itself, and `denied` is what
+        {/* `busy` moved to `loading`, which draws it as well as says it;
+            `disabled` keeps the *invalid* half it always had. Having no project
+            to choose is neither — it is the denial itself, and `denied` is what
             keeps the sentence reachable: a disabled control fires no pointer
             events, so its explanation never arrives at a pointer and leaves
             the tab order too. */}
@@ -226,8 +227,8 @@ export function CreateTaskForm({
           type="submit"
           data-test="form-submit"
           denied={create.denial}
-          disabled={busy || !title.trim() || !app}
-          aria-busy={busy || undefined}
+          loading={busy}
+          disabled={!title.trim() || !app}
         >
           Create &amp; queue
         </Button>

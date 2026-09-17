@@ -30,6 +30,7 @@ import type { ChatSlashCommand } from "@/shared/api/_generated/types/ChatSlashCo
 import type { MessagePart as WireMessagePart } from "@/shared/api/_generated/types/MessagePart"
 import type { PlanEdge as WirePlanEdge } from "@/shared/api/_generated/types/PlanEdge"
 import type { PlanNode as WirePlanNode } from "@/shared/api/_generated/types/PlanNode"
+import { formatRelativeInstant } from "@/shared/lib/relative-time"
 
 /**
  * The seam between the mock's shapes and the domain's.
@@ -315,7 +316,9 @@ export function chatSessionViewToDomainSession(
   return {
     id: view.id,
     title: view.title,
-    age: formatAge(view.updatedAt),
+    // The rail renders nothing when the wire's instant is unreadable: an
+    // empty chip is honest, an invented age is not.
+    age: formatRelativeInstant(view.updatedAt) ?? "",
     /**
      * `projectId` is part of the wire view (issue #51 §: sessions know
      * the project they were created against). `null` for sessions
@@ -330,27 +333,6 @@ export function chatSessionViewToDomainSession(
     // conversation, so `[]` is the honest shape here.
     messages: [],
   }
-}
-
-function formatAge(updatedAt: string): string {
-  const updated = new Date(updatedAt).getTime()
-  if (Number.isNaN(updated)) {
-    return ""
-  }
-  const delta = Date.now() - updated
-  if (delta < 60_000) {
-    return "just now"
-  }
-  const minutes = Math.floor(delta / 60_000)
-  if (minutes < 60) {
-    return `${minutes}m ago`
-  }
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) {
-    return `${hours}h ago`
-  }
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
 }
 
 export function chatSessionViewsToDomainSessions(

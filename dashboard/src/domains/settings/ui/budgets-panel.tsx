@@ -278,8 +278,7 @@ export function BudgetsPanel({
               size="sm"
               data-test="budgets-save"
               denied={save.denial}
-              disabled={busy}
-              aria-busy={busy || undefined}
+              loading={busy}
             >
               Save budgets
             </Button>

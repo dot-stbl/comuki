@@ -262,7 +262,7 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
           </ol>
           {stage >= INIT_STAGES.length ? (
             <>
-              <Notice tone="ok" data-test="init-done">
+              <Notice tone="ok" announce data-test="init-done">
                 The project is registered. Its rule set, its worker image and
                 its endpoints are what the swarm will use from the next run on.
               </Notice>

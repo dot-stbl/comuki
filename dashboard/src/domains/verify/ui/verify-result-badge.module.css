@@ -5,34 +5,25 @@
    `never ran`, has no run status at all, because no run has reached it.
 
    Hue is never the only channel. Each of the three carries a distinct mark, so
-   the reading survives greyscale exactly as a status band does. */
+   the reading survives greyscale exactly as a status band does.
 
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  /* A badge is a reading, so it never gives up width: the value or the prose
-     beside it truncates instead. Declared rather than inherited from
-     `white-space`, which is what `domains/badge-fit.test.ts` holds the whole
-     family to. */
-  flex: 0 0 auto;
-  padding: 0 var(--s3);
-  border: var(--hairline) solid transparent;
-  border-radius: var(--r-sm);
-  font-family: var(--font-data);
-  font-size: var(--t-micro);
-  line-height: var(--lh-tight);
-  white-space: nowrap;
-}
+   The box itself is `shared/ui/badge-shell`, composed through `badgeShell()`.
+   This file and `sources/ui/connection-state-badge.module.css` were identical
+   to each other and near-identical to seven more; what is left is the part that
+   is genuinely a verify result's.
 
-.icon {
-  inline-size: var(--icon-xs);
-  block-size: var(--icon-xs);
-  flex: 0 0 auto;
-}
+   So there is no `.badge` rule here at all. This is one of the two families
+   whose border is transparent until a state says otherwise, and the shell's
+   `border-color: var(--badge-edge, transparent)` already says exactly that — a
+   rule that existed only to repeat the fallback would be a declaration with no
+   reader. Each state below declares `--badge-edge` rather than `border-color`,
+   because the shell reads that property and never writes it; see
+   `badge-shell.module.css` for why two single-class rules in two CSS modules
+   cannot be allowed to argue about one declaration. */
 
 .passed {
-  border-color: color-mix(in oklab, var(--st-success) 30%, transparent);
+  --badge-edge: color-mix(in oklab, var(--st-success) 30%, transparent);
+
   background: color-mix(in oklab, var(--st-success) 10%, transparent);
   color: var(--st-success);
 }
@@ -40,7 +31,8 @@
 /* The one that escalates its own badge — a stronger border and a fuller tint —
    because a failing gate should be visible before it is read. */
 .failed {
-  border-color: color-mix(in oklab, var(--st-failed) 45%, transparent);
+  --badge-edge: color-mix(in oklab, var(--st-failed) 45%, transparent);
+
   background: color-mix(in oklab, var(--st-failed) 18%, transparent);
   color: var(--st-failed);
 }
@@ -48,7 +40,8 @@
 /* Not a failure — nothing is broken. It is a hole in the gate's coverage, and
    it takes the least saturated of the three for exactly that reason. */
 .never {
-  border-color: color-mix(in oklab, var(--st-queued) 30%, transparent);
+  --badge-edge: color-mix(in oklab, var(--st-queued) 30%, transparent);
+
   background: color-mix(in oklab, var(--st-queued) 10%, transparent);
   color: var(--st-queued);
 }

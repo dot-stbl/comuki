@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/shared/lib/utils"
+import { badgeShell } from "@/shared/ui"
 
 import type { WorkItemStatus, WorkerState } from "@/domains/queue/model/types"
 
@@ -58,9 +59,9 @@ export function WorkStatusBadge({ status, className }: WorkStatusBadgeProps) {
     <span
       data-test="work-status-badge"
       data-status={status}
-      className={cn(styles.badge, styles[status], className)}
+      className={cn(badgeShell(), styles.badge, styles[status], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {status}
     </span>
   )
@@ -85,9 +86,9 @@ export function WorkerStateBadge({ state, className }: WorkerStateBadgeProps) {
     <span
       data-test="worker-state-badge"
       data-state={state}
-      className={cn(styles.badge, styles[state], className)}
+      className={cn(badgeShell(), styles.badge, styles[state], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {state}
     </span>
   )

@@ -220,8 +220,7 @@ export function createUserColumns({
                 variant={disabled ? "ghost" : "destructive"}
                 data-test="user-toggle-disabled"
                 denied={denial}
-                disabled={busy}
-                aria-busy={busy || undefined}
+                loading={busy}
                 aria-label={
                   disabled ? `Enable ${user.email}` : `Disable ${user.email}`
                 }

@@ -1,46 +1,32 @@
-/* Built on the same measurements as the kit's `StatusBadge`, at its small step:
-   these ride a header line beside an app name and must not be a second size
-   language. */
+/* The two marks' colour, and nothing else.
+ *
+ * The box — `inline-flex`, the hairline at `--r-sm`, the data voice at the small
+ * step, the fit contract and the icon size — is `shared/ui/badge-shell`, which
+ * these compose through `badgeShell()`. This file had a byte-identical copy of
+ * that rule, as did six other domains and the kit itself; the copy here is the
+ * one that had already drifted, cancelling the badge's content-based minimum so
+ * a label could paint outside its own border with nothing behind it.
+ *
+ * The edge is declared as `--badge-edge` rather than as `border-color` because
+ * the shell reads that property and never writes it — see
+ * `badge-shell.module.css` for why two single-class rules in two CSS modules
+ * cannot be allowed to argue about one declaration. */
 
 .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  /* A badge is a reading, so it never gives up width: the app name beside it is
-     what truncates, and `.head` wraps when even that is not enough.
+  --badge-edge: var(--border);
 
-     This rule said `min-inline-size: 0` — the opposite instruction, with
-     nothing behind it to make good on it. It cancelled the content-based
-     minimum that `white-space: nowrap` otherwise gives every badge in this
-     product, so the box could be squeezed under its own label while the label
-     itself, being `nowrap` and unclipped, went on painting at full width —
-     outside the border, over whatever stood next to it. */
-  flex: 0 0 auto;
-  border-radius: var(--r-sm);
-  border: var(--hairline) solid var(--border);
-  padding: 0 var(--s3);
-  font-family: var(--font-data);
-  font-size: var(--t-micro);
   font-weight: var(--fw-regular);
-  line-height: var(--lh-tight);
   color: var(--st);
   background: color-mix(in oklab, var(--st) 10%, transparent);
-  white-space: nowrap;
-}
-
-.icon {
-  inline-size: var(--icon-xs);
-  block-size: var(--icon-xs);
-  flex: 0 0 auto;
 }
 
 /* What is being decided. No hue: the kind of decision is not urgent, it is
    only the subject — the risk badge beside it is what is worth a colour. */
 .type {
   --st: var(--text);
+  --badge-edge: var(--rule-strong);
 
   background: transparent;
-  border-color: var(--rule-strong);
 }
 
 /* Risk ------------------------------------------------------------------- */
@@ -50,8 +36,8 @@
    kit's `failed` follows. */
 .high {
   --st: var(--st-failed);
+  --badge-edge: color-mix(in oklab, var(--st-failed) 40%, transparent);
 
-  border-color: color-mix(in oklab, var(--st-failed) 40%, transparent);
   background: var(--st-failed-tint);
 }
 

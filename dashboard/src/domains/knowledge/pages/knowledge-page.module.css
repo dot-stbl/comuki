@@ -127,62 +127,6 @@
   min-inline-size: 0;
 }
 
-/* A data surface, not a card. A hairline on its start edge, the material data
-   is made of, and the surface step of the corner scale — no fill that lifts it
-   off the floor and no shadow that floats it. */
-.reading {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  min-inline-size: 0;
-  padding: var(--s4) var(--s5);
-  border-inline-start: var(--hairline) solid var(--rule-strong);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-}
-
-/* Names a value, so it takes the tight gesture — not the wide one, which names
-   a region and is already spoken by the section heading above. */
-.readingLabel {
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
-}
-
-/* The reading itself. Mono and tabular, because two of the three are figures
-   that will be compared against the same three boxes tomorrow, and the third is
-   a revision handle somebody will read back into a terminal. */
-.readingFigure {
-  min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-data);
-  font-size: var(--t-h1);
-  font-weight: var(--fw-medium);
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-}
-
-/* A unit is not part of the number: it stays a step down so the figure keeps
-   the eye. */
-.readingUnit {
-  margin-inline-start: var(--s1);
-  font-size: var(--t-sm);
-  color: var(--text-faint);
-}
-
-.readingNote {
-  min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-data);
-  font-size: var(--t-micro);
-  color: var(--text-muted);
-}
 
 /* Entries ----------------------------------------------------------------- */
 

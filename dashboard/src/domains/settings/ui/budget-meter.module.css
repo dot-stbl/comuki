@@ -1,6 +1,11 @@
 /* Spend against the global cap. Three bands stacked: the reading, the drawn
    channel, the two figures under it. Not a card — no fill that lifts it off the
-   floor and no shadow that floats it; it is a reading standing on the page. */
+   floor and no shadow that floats it; it is a reading standing on the page.
+
+   The middle band is the kit's `Meter` — the channel and the fill were seven
+   declarations this sheet shared with three others. What stays is everything
+   the bar is drawn *under*, plus `--st`: which hue a heat takes is this sheet's
+   decision, and the kit never guesses one. */
 
 .meter {
   display: flex;
@@ -41,28 +46,6 @@
   font-variant-numeric: tabular-nums;
   color: var(--text-faint);
   white-space: nowrap;
-}
-
-/* The drawn empty channel the fill is measured against — the same material the
-   table and the flow's tracks are made of. */
-.channel {
-  position: relative;
-  display: block;
-  block-size: var(--h-meter);
-  min-inline-size: 0;
-  border-radius: var(--r-xs);
-  background: var(--lane-alt);
-  border: var(--hairline) solid var(--rule);
-  overflow: hidden;
-}
-
-.fill {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  display: block;
-  border-radius: var(--r-xs);
-  background: var(--st);
 }
 
 /* Two groups on one line: the fraction, and the sentence about where it ends.
@@ -129,10 +112,7 @@
 }
 
 /* Already stopped. The length stays because the spend is real; what the bar
-   stops claiming is that the number is still moving. The weave is the
-   product's queued hatch, read from the token so the encoding lives in one
-   place. */
-.meter[data-stopped] .fill {
-  background-color: color-mix(in oklab, var(--st) 45%, transparent);
-  background-image: var(--weave-queued);
-}
+   stops claiming is that the number is still moving. That is `hatched="queued"`
+   on the meter now; `data-stopped` stays on this element because the state is
+   the panel's, not the bar's, and the sentence under the bar is written from
+   the same flag. */

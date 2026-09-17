@@ -17,6 +17,7 @@ import type {
   RuleKind,
 } from "@/domains/knowledge/model/types"
 import { cn } from "@/shared/lib/utils"
+import { badgeShell } from "@/shared/ui"
 
 import styles from "./knowledge-badges.module.css"
 
@@ -65,9 +66,9 @@ export function KindMark({ kind, className }: KindMarkProps) {
     <span
       data-test="knowledge-kind"
       data-kind={kind}
-      className={cn(styles.badge, styles.kind, className)}
+      className={cn(badgeShell(), styles.badge, styles.kind, className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {kind}
     </span>
   )
@@ -98,9 +99,9 @@ export function RuleKindMark({ ruleKind, className }: RuleKindMarkProps) {
     <span
       data-test="knowledge-rule-kind"
       data-rule-kind={ruleKind}
-      className={cn(styles.badge, styles[ruleKind], className)}
+      className={cn(badgeShell(), styles.badge, styles[ruleKind], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {ruleKind}
     </span>
   )
@@ -119,7 +120,7 @@ export interface PinnedMarkProps {
 export function PinnedMark({ revision, className }: PinnedMarkProps) {
   return (
     <span data-test="knowledge-pinned" className={cn(styles.pinned, className)}>
-      <Pin className={styles.icon} aria-hidden="true" />
+      <Pin aria-hidden="true" />
       {revision ? `pinned @ ${revision}` : "pinned"}
     </span>
   )
@@ -160,9 +161,14 @@ export function EvalDeltaMark({ delta, className }: EvalDeltaMarkProps) {
     <span
       data-test="eval-delta"
       data-delta={deltaLabels[delta]}
-      className={cn(styles.badge, styles[deltaClass[delta]], className)}
+      className={cn(
+        badgeShell(),
+        styles.badge,
+        styles[deltaClass[delta]],
+        className
+      )}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {deltaLabels[delta]}
     </span>
   )

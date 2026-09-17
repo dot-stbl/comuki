@@ -1,15 +1,11 @@
-import { Loader2, Power, PowerOff } from "lucide-react"
+import { Power, PowerOff } from "lucide-react"
 
-import {
-  burnPeak,
-  hourLabel,
-  proxySentence,
-  relativeDays,
-} from "@/domains/models/model/keys"
+import { burnPeak, hourLabel, proxySentence } from "@/domains/models/model/keys"
 import type { Proxy } from "@/domains/models/model/types"
 import { formatCost } from "@/domains/runs/model/format"
 import { can, needsLabel, useSession } from "@/shared/session"
 import { Button, Sparkline, Surface, Tooltip } from "@/shared/ui"
+import { formatRelativeTime } from "@/shared/lib/relative-time"
 import { cn } from "@/shared/lib/utils"
 
 import styles from "./proxy-panel.module.css"
@@ -92,7 +88,7 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
             </span>
             {metered ? (
               <span className={styles.since}>
-                since {relativeDays(proxy.changedAgoSec)}
+                since {formatRelativeTime(proxy.changedAgoSec * 1000)}
               </span>
             ) : null}
           </p>
@@ -118,17 +114,14 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
               size="icon-sm"
               variant={proxy.enabled ? "outline" : "default"}
               data-test="proxy-toggle"
-              disabled={busy}
+              loading={busy}
               denied={denial}
-              aria-busy={busy || undefined}
               aria-label={
                 proxy.enabled ? "turn the proxy off" : "turn the proxy on"
               }
               onClick={() => onToggle(!proxy.enabled)}
             >
-              {busy ? (
-                <Loader2 className={styles.spin} aria-hidden="true" />
-              ) : proxy.enabled ? (
+              {proxy.enabled ? (
                 <PowerOff aria-hidden="true" />
               ) : (
                 <Power aria-hidden="true" />

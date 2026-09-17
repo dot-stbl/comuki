@@ -162,8 +162,7 @@ export function createGrantColumns({
                 variant="destructive"
                 data-test="grant-revoke"
                 denied={denial}
-                disabled={busy}
-                aria-busy={busy || undefined}
+                loading={busy}
                 aria-label={`Revoke ${grant.role} on ${grant.scopeLabel} from ${grant.subjectLabel}`}
                 onClick={(event) => {
                   event.stopPropagation()

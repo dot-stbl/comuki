@@ -18,6 +18,8 @@ import { useCan } from "@/shared/session"
 import {
   Button,
   ConfirmDialog,
+  Fact,
+  FactList,
   Notice,
   ScreenState,
   Section,
@@ -126,8 +128,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                   variant={off ? "ghost" : "destructive"}
                   data-test="user-toggle-disabled"
                   denied={manage.denial}
-                  disabled={busy}
-                  aria-busy={busy || undefined}
+                  loading={busy}
                   aria-label={
                     off ? `Enable ${user.email}` : `Disable ${user.email}`
                   }
@@ -243,91 +244,77 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
               data-test="user-account"
               className={styles.region}
             >
-              <dl className={styles.facts}>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>address</dt>
-                  <dd className={styles.factValue}>{user.email}</dd>
-                </div>
+              <FactList layout="stack">
+                <Fact name="address">{user.email}</Fact>
 
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>name</dt>
-                  {/* A person's name is the one thing on this screen a human
-                      wrote, so it is the one thing in the interface voice. */}
-                  <dd className={styles.factProse}>{user.name}</dd>
-                </div>
+                {/* A person's name is the one thing on this screen a human
+                    wrote, so it is the one thing in the interface voice. */}
+                <Fact name="name" voice="prose">
+                  {user.name}
+                </Fact>
 
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>account</dt>
-                  {/* The word carries the reading; the hue only sharpens it. A
-                      cell that said this in colour alone would say nothing in
-                      greyscale. */}
-                  <dd
-                    className={cn(styles.factValue, off && styles.off)}
-                    data-test="user-status"
+                {/* The word carries the reading; the hue only sharpens it. A
+                    cell that said this in colour alone would say nothing in
+                    greyscale. */}
+                <Fact
+                  name="account"
+                  className={cn(off && styles.off)}
+                  data-test="user-status"
+                >
+                  {user.status}
+                </Fact>
+
+                {user.oidcSubject ? (
+                  /* Already written, and there is nothing on offer beside it.
+                     Relinking is not an act this product has — a subject is
+                     written once, and a screen that offered to overwrite one
+                     silently would be inventing the act. */
+                  <Fact name="oidc subject" data-test="user-subject">
+                    {user.oidcSubject}
+                  </Fact>
+                ) : (
+                  <Fact
+                    name="oidc subject"
+                    className={styles.factAct}
+                    data-test="user-subject"
                   >
-                    {user.status}
-                  </dd>
-                </div>
-
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>oidc subject</dt>
-                  {user.oidcSubject ? (
-                    /* Already written, and there is nothing on offer beside
-                       it. Relinking is not an act this product has — a subject
-                       is written once, and a screen that offered to overwrite
-                       one silently would be inventing the act. */
-                    <dd className={styles.factValue} data-test="user-subject">
-                      {user.oidcSubject}
-                    </dd>
-                  ) : (
-                    <dd className={styles.factAct} data-test="user-subject">
-                      {/* Local only is not broken. OIDC says who you are, and
-                          linking is a separate act from existing here — so the
-                          fact carries the act rather than an apology. */}
-                      <span className={styles.absent}>local only</span>
-                      <Tooltip
-                        content={manage.denial ?? "Link an oidc subject"}
+                    {/* Local only is not broken. OIDC says who you are, and
+                        linking is a separate act from existing here — so the
+                        fact carries the act rather than an apology. */}
+                    <span className={styles.absent}>local only</span>
+                    <Tooltip content={manage.denial ?? "Link an oidc subject"}>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        data-test="user-link-oidc"
+                        denied={manage.denial}
+                        aria-label={`Link an oidc subject to ${user.email}`}
+                        onClick={() => {
+                          void navigate({
+                            to: "/identity/users/$userId/link",
+                            params: { userId: user.id },
+                          })
+                        }}
                       >
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          data-test="user-link-oidc"
-                          denied={manage.denial}
-                          aria-label={`Link an oidc subject to ${user.email}`}
-                          onClick={() => {
-                            void navigate({
-                              to: "/identity/users/$userId/link",
-                              params: { userId: user.id },
-                            })
-                          }}
-                        >
-                          <KeyRound aria-hidden="true" />
-                        </Button>
-                      </Tooltip>
-                    </dd>
-                  )}
-                </div>
+                        <KeyRound aria-hidden="true" />
+                      </Button>
+                    </Tooltip>
+                  </Fact>
+                )}
 
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>last seen</dt>
-                  <dd
-                    className={
-                      user.lastSeenAt ? styles.factValue : styles.absent
-                    }
-                    data-test="user-last-seen"
-                  >
-                    {/* `never` is a real answer for an account that was
-                        invited and has not arrived. A blank reads as a broken
-                        render. */}
-                    {user.lastSeenAt ?? "never"}
-                  </dd>
-                </div>
+                {/* `never` is a real answer for an account that was invited and
+                    has not arrived. A blank reads as a broken render. */}
+                <Fact
+                  name="last seen"
+                  absent={!user.lastSeenAt}
+                  data-test="user-last-seen"
+                >
+                  {user.lastSeenAt ?? "never"}
+                </Fact>
 
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>created</dt>
-                  <dd className={styles.factValue}>{user.createdAt}</dd>
-                </div>
-              </dl>
+                <Fact name="created">{user.createdAt}</Fact>
+              </FactList>
+
             </Section>
 
             <Section

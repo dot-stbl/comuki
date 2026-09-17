@@ -105,6 +105,19 @@ env:
   # SPA is same-origin; kept for cross-origin tooling against the API.
   COMUKI_HOST_CORS_ALLOWEDORIGINS_0: http://comuki.nova.adcluster.targetix.net
 
+  # OIDC login (Keycloak in ns comuki): auth:oidc:providers[0] via the
+  # COMUKI_ env face (COMUKI_AUTH_OIDC_PROVIDERS_0_* → auth:oidc:providers:0:*).
+  # The client secret is NOT here — ClientSecretEnv names the env var that
+  # holds it (COMUKI_OIDC_KEYCLOAK_SECRET, Consul blob via envFrom below).
+  # Callback the IdP must be registered with is the UNIFIED
+  # /api/v1/auth/oidc/callback (RedirectUriBuilder; no provider segment).
+  # RequireHTTPS=false — dev contour is plain HTTP, never copy to prod.
+  COMUKI_AUTH_OIDC_PROVIDERS_0_NAME: keycloak
+  COMUKI_AUTH_OIDC_PROVIDERS_0_AUTHORITY: http://keycloak.comuki.nova.adcluster.targetix.net/realms/comuki
+  COMUKI_AUTH_OIDC_PROVIDERS_0_CLIENTID: comuki
+  COMUKI_AUTH_OIDC_PROVIDERS_0_CLIENTSECRETENV: COMUKI_OIDC_KEYCLOAK_SECRET
+  COMUKI_AUTH_OIDC_PROVIDERS_0_REQUIREHTTPS: "false"
+
   # Artifacts store: SHARED MinIO object-store-01 —
   # s3.nova.adcluster.targetix.net:9000, plain HTTP.
   # Keys COMUKI_ARTIFACTS_{ACCESS,SECRET}KEY arrive via envFrom (Consul blob).
@@ -133,7 +146,8 @@ env:
 
 # COMUKI_DB (full Npgsql DSN to pgvector.comuki.svc.cluster.local),
 # COMUKI_IDENTITY_APIKEY_PEPPER, COMUKI_TOKEN_PEPPER,
-# COMUKI_BOOTSTRAP_ADMIN_{EMAIL,PASSWORD}, COMUKI_ARTIFACTS_{ACCESS,SECRET}KEY —
+# COMUKI_BOOTSTRAP_ADMIN_{EMAIL,PASSWORD}, COMUKI_ARTIFACTS_{ACCESS,SECRET}KEY,
+# COMUKI_OIDC_KEYCLOAK_SECRET (Keycloak client secret for the OIDC flow) —
 # names in deploy/hybrid/secrets.schema.yml, values in the Consul blob
 # cicd/nova/secrets/dev/comuki (materialized by the secrets:dev CI job).
 envFrom:

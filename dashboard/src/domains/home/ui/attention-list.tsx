@@ -1,11 +1,11 @@
-import { ArrowRight, Check, Loader2, X } from "lucide-react"
+import { ArrowRight, Check, X } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
 import type {
   AttentionGroup,
   AttentionItem,
 } from "@/domains/home/model/attention"
-import { formatDuration } from "@/domains/runs/model/format"
+import { formatDuration } from "@/shared/lib/duration"
 import type { RunSummary } from "@/domains/runs/model/types"
 import { currentLabel } from "@/domains/runs/model/work-items"
 import { projectOf, useCan, useSession } from "@/shared/session"
@@ -106,17 +106,13 @@ function AttentionRow({
               <Button
                 size="icon"
                 data-test="attention-approve"
+                loading={approving}
                 disabled={busy}
                 denied={approve.denial}
-                aria-busy={approving || undefined}
                 aria-label={`Approve ${run.title}`}
                 onClick={() => onApprove(run)}
               >
-                {approving ? (
-                  <Loader2 className={styles.spin} aria-hidden="true" />
-                ) : (
-                  <Check aria-hidden="true" />
-                )}
+                <Check aria-hidden="true" />
               </Button>
             </Tooltip>
             <Tooltip content={stop.denial ?? "Stop"}>

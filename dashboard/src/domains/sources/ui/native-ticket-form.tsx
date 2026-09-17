@@ -143,8 +143,8 @@ export function NativeTicketForm({
           type="submit"
           data-test="form-submit"
           denied={denied}
-          disabled={busy || trimmedTitle.length === 0}
-          aria-busy={busy || undefined}
+          loading={busy}
+          disabled={trimmedTitle.length === 0}
         >
           {straightToWork ? "Create and start" : "Create ticket"}
         </Button>

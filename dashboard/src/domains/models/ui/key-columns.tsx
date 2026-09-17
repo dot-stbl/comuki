@@ -1,4 +1,4 @@
-import { Loader2, Ban } from "lucide-react"
+import { Ban } from "lucide-react"
 
 import {
   budgetShare,
@@ -297,20 +297,15 @@ export function createKeyColumns({
                 size="icon-sm"
                 variant="destructive"
                 data-test="key-revoke"
-                disabled={busy}
+                loading={busy}
                 denied={denial}
-                aria-busy={busy || undefined}
                 aria-label={`Revoke ${entry.prefix}`}
                 onClick={(event) => {
                   event.stopPropagation()
                   onRevoke(entry)
                 }}
               >
-                {busy ? (
-                  <Loader2 className={styles.spin} aria-hidden="true" />
-                ) : (
-                  <Ban aria-hidden="true" />
-                )}
+                <Ban aria-hidden="true" />
               </Button>
             </Tooltip>
           </span>

@@ -58,20 +58,6 @@
   gap: var(--s3);
 }
 
-/* Motion only while a decision is actually in flight, and only because the
-   header band is otherwise still. Gated, like every authored moment here. */
-@media (prefers-reduced-motion: no-preference) {
-  .spin {
-    animation: worker-detail-spin 900ms linear infinite;
-  }
-}
-
-@keyframes worker-detail-spin {
-  to {
-    transform: rotate(1turn);
-  }
-}
-
 /* --- a region of readings --- */
 
 /* Every region on this page is the same shape: a row of labelled values that

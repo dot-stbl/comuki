@@ -42,83 +42,9 @@
 
 /* --- the record --- */
 
-/* Four facts about one row, bounded by a hairline and cut with the corner a
-   box this size deserves. No fill and no shadow: this is data, and data in
-   this product is a boundary rather than a card. `clip` rather than `hidden`
-   so the corners cut without the box quietly becoming a scroll container. */
-.facts {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  border: var(--hairline) solid var(--rule-strong);
-  border-radius: var(--r-lg);
-  overflow: clip;
-}
-
-.fact {
-  display: grid;
-  grid-template-columns: 12rem minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--s5);
-  padding: var(--s4) var(--s5);
-}
-
-.fact + .fact {
-  border-block-start: var(--hairline) solid var(--rule);
-}
-
-/* Names a value, so it takes the tight gesture. Faint and small buys the
-   separation capitals used to buy, and survives being read in Russian. */
-.factName {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
-}
-
-/* A slug and a date are values. */
-.factValue {
-  margin: 0;
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
-  font-family: var(--font-data);
-  font-size: var(--t-sm);
-  color: var(--text);
-}
-
-/* The only field on a project written for a reader. */
-.factProse {
-  margin: 0;
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
-  font-family: var(--font-ui);
-  font-size: var(--t-sm);
-  color: var(--text);
-}
-
-/* The one fact somebody copies out of this screen, so it is selected as a unit
-   rather than as part of a sentence — the run id gets the same treatment on
-   the run detail page, for the same reason. */
-.factRepo {
-  margin: 0;
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
-  font-family: var(--font-data);
-  font-size: var(--t-sm);
-  color: var(--text);
-  user-select: all;
-}
-
-/* Not missing — running on the platform's own profiles. Said quietly, in the
-   registry column's own words. */
-.factAbsent {
-  margin: 0;
-  font-family: var(--font-data);
-  font-size: var(--t-sm);
-  color: var(--text-faint);
-}
+/* The four facts are the kit's `FactList framed` now — the hairline box, the
+   dividers, the fixed name track, both voices, the copy-as-a-unit repo line and
+   the faint "platform defaults" all live there. This sheet kept none of it. */
 
 /* --- roles --- */
 
@@ -359,15 +285,9 @@
   background: var(--muted);
 }
 
-/* The narrow desk. The fact list's fixed name column is the first thing with
-   no room left, so the pairs stack instead of crushing a repository url into a
-   sliver — the reading survives, which is the whole rule. */
+/* The narrow desk. The fact list takes its own collapse with it into the kit;
+   what is left here is the grants row. */
 @media (max-width: 1000px) {
-  .fact {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--s1);
-  }
-
   .grant {
     grid-template-columns: minmax(0, 1fr) auto;
   }

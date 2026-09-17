@@ -1,15 +1,15 @@
 # Build context hygiene for repo-root-context image builds
 # (deploy/compose/docker/*.Dockerfile).
 #
-# The host image copies platform/; the worker image also copies agents/
-# (agent SDK workspace); the dashboard image copies dashboard/. Those
-# trees stay IN the context — only their junk is excluded.
+# The host image copies platform/ and control-plane/ (brain profiles); the
+# worker image also copies agents/ (agent SDK workspace); the dashboard
+# image copies dashboard/. Those trees stay IN the context — only their
+# junk is excluded.
 .git
 .agents
 .claude
 .opencode
 audit-data
-control-plane
 tests
 openspec
 **/bin

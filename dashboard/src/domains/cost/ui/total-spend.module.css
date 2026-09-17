@@ -1,6 +1,6 @@
 /* The one line this tile has that the two beside it do not: how the period
    compares with the one before it. The tile itself — the rule, the corner, the
-   label, the figure and the line under it — is `cost-stat.module.css`. */
+   label, the figure and the line under it — is the kit's `StatTile`. */
 
 .delta {
   display: inline-flex;

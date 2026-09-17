@@ -65,23 +65,26 @@ describe("a key's state is a reading, not a field", () => {
 
     expect(keyState(lapsed)).toBe("expired")
     expect(isLive(lapsed)).toBe(false)
-    expect(expiryReading(lapsed)).toBe("3 days ago")
+    expect(expiryReading(lapsed)).toBe("expired 3 d")
   })
 
   it("keeps a key with time left live, and says how much", () => {
     const live = key("vk_new", { expiresInSec: 12 * DAY })
 
     expect(keyState(live)).toBe("live")
-    expect(expiryReading(live)).toBe("in 12 days")
+    expect(expiryReading(live)).toBe("in 12 d")
   })
 
-  it("counts the last day and the first lapsed one apart", () => {
-    expect(expiryReading(key("a", { expiresInSec: DAY }))).toBe("in 1 day")
-    expect(expiryReading(key("b", { expiresInSec: 3_600 }))).toBe("today")
+  it("counts time left and time lapsed apart, in words that cannot be swapped", () => {
+    // The whole reason this column is relative: `in 1 h` and `expired 1 h`
+    // are the same magnitude and opposite facts, so the direction is a word
+    // rather than a sign the reader has to notice.
+    expect(expiryReading(key("a", { expiresInSec: DAY }))).toBe("in 1 d")
+    expect(expiryReading(key("b", { expiresInSec: 3_600 }))).toBe("in 1 h")
     expect(expiryReading(key("c", { expiresInSec: -3_600 }))).toBe(
-      "expired today"
+      "expired 1 h"
     )
-    expect(expiryReading(key("d", { expiresInSec: -DAY }))).toBe("1 day ago")
+    expect(expiryReading(key("d", { expiresInSec: -DAY }))).toBe("expired 1 d")
   })
 
   it("lets a revocation win over an expiry", () => {
@@ -313,15 +316,15 @@ describe("the burn by hour, and its peak", () => {
 })
 
 describe("when a key was issued and last used", () => {
-  it("reads usage in the TTL column's own relative words", () => {
+  it("reads usage in the console's one set of relative words", () => {
+    // Day-rounded once, so ten minutes ago read as "earlier today". The
+    // shared ladder answers in the unit the figure actually deserves.
     expect(lastUsedReading(key("vk_recent", { lastUsedAgoSec: 600 }))).toBe(
-      "earlier today"
+      "10 min"
     )
-    expect(lastUsedReading(key("vk_day", { lastUsedAgoSec: DAY }))).toBe(
-      "1 day ago"
-    )
+    expect(lastUsedReading(key("vk_day", { lastUsedAgoSec: DAY }))).toBe("1 d")
     expect(lastUsedReading(key("vk_week", { lastUsedAgoSec: 7 * DAY }))).toBe(
-      "7 days ago"
+      "7 d"
     )
   })
 
@@ -341,7 +344,7 @@ describe("when a key was issued and last used", () => {
 
   it("says when the key was issued, or that the wire does not know", () => {
     expect(createdReading(key("vk_old", { createdAgoSec: 74 * DAY }))).toBe(
-      "74 days ago"
+      "74 d"
     )
     expect(createdReading(key("vk_catalogue", { createdAgoSec: null }))).toBe(
       "not on this wire"

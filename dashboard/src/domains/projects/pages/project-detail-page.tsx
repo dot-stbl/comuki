@@ -15,6 +15,8 @@ import { requestFailureMessage } from "@/shared/api/problem"
 import { can, needsLabel, useCan, useSession } from "@/shared/session"
 import {
   Button,
+  Fact,
+  FactList,
   ForbiddenState,
   ScreenState,
   Section,
@@ -366,39 +368,32 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
                   four facts about a record are a data surface, and a data
                   surface in this product is a boundary and a corner rather
                   than a card. */}
-              <dl className={styles.facts}>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>slug</dt>
-                  <dd className={styles.factValue}>{project.slug}</dd>
-                </div>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>name</dt>
-                  {/* The one field on a project written for a reader. */}
-                  <dd className={styles.factProse}>{project.name}</dd>
-                </div>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>git profile repository</dt>
-                  {project.gitProfileRepo ? (
-                    /* The one fact on this page somebody copies out of it, so
-                       it is selected as a unit rather than as part of a
-                       sentence — the same treatment the run id gets. */
-                    <dd className={styles.factRepo}>
-                      {project.gitProfileRepo}
-                    </dd>
-                  ) : (
-                    /* Not missing — running on the platform's own profiles,
-                       which is a legitimate way for a project to be
-                       configured. The registry column says it in exactly these
-                       words; two spellings of one fact is how the two screens
-                       start disagreeing. */
-                    <dd className={styles.factAbsent}>platform defaults</dd>
-                  )}
-                </div>
-                <div className={styles.fact}>
-                  <dt className={styles.factName}>created</dt>
-                  <dd className={styles.factValue}>{project.createdAt}</dd>
-                </div>
-              </dl>
+              <FactList framed>
+                <Fact name="slug">{project.slug}</Fact>
+                {/* The one field on a project written for a reader. */}
+                <Fact name="name" voice="prose">
+                  {project.name}
+                </Fact>
+                {project.gitProfileRepo ? (
+                  /* The one fact on this page somebody copies out of it, so it
+                     is selected as a unit rather than as part of a sentence —
+                     the same treatment the run id gets. */
+                  <Fact name="git profile repository" selectable>
+                    {project.gitProfileRepo}
+                  </Fact>
+                ) : (
+                  /* Not missing — running on the platform's own profiles, which
+                     is a legitimate way for a project to be configured. The
+                     registry column says it in exactly these words; two
+                     spellings of one fact is how the two screens start
+                     disagreeing. */
+                  <Fact name="git profile repository" absent>
+                    platform defaults
+                  </Fact>
+                )}
+                <Fact name="created">{project.createdAt}</Fact>
+              </FactList>
+
             </Section>
 
             {/* --- who holds which role on it --- */}

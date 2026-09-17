@@ -17,7 +17,7 @@ import {
 } from "@/domains/sources/model/providers"
 import type { ProviderKey } from "@/domains/sources/model/types"
 import type { TaskPriority, TaskStatus } from "@/domains/tasks/model/types"
-import { BrandIcon } from "@/shared/ui"
+import { BrandIcon, badgeShell } from "@/shared/ui"
 
 import styles from "./tasks-badges.module.css"
 
@@ -51,11 +51,12 @@ import styles from "./tasks-badges.module.css"
 function SourceMark({ source }: { source: ProviderKey }) {
   const brand = providerBrand(source)
   if (!brand) {
-    return <SquareKanban className={styles.icon} aria-hidden="true" />
+    return <SquareKanban aria-hidden="true" />
   }
-  return (
-    <BrandIcon brand={brand} size="xs" label={null} className={styles.icon} />
-  )
+  /* No class of its own: the badge shell sizes every SVG inside it from its own
+     step, the way `Button` does, so the fallback glyph and the vendor mark land
+     at the same `--icon-xs` without this call site naming a length. */
+  return <BrandIcon brand={brand} size="xs" label={null} />
 }
 
 export interface TaskSourceBadgeProps {
@@ -84,6 +85,7 @@ export function TaskSourceBadge({
          provider it is, and a hue per vendor would be confetti on the
          Colourless Chrome Rule's one surface it never allowed. */
       className={cn(
+        badgeShell(),
         styles.badge,
         native ? styles.native : styles.tracker,
         className
@@ -119,9 +121,9 @@ export function TaskPriorityBadge({
     <span
       data-test="task-priority-badge"
       data-priority={priority}
-      className={cn(styles.badge, styles[priority], className)}
+      className={cn(badgeShell(), styles.badge, styles[priority], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {priority}
     </span>
   )
@@ -145,9 +147,9 @@ export function TaskStatusBadge({ status, className }: TaskStatusBadgeProps) {
     <span
       data-test="task-status-badge"
       data-status={status}
-      className={cn(styles.badge, styles[status], className)}
+      className={cn(badgeShell(), styles.badge, styles[status], className)}
     >
-      <Icon className={styles.icon} aria-hidden="true" />
+      <Icon aria-hidden="true" />
       {status}
     </span>
   )

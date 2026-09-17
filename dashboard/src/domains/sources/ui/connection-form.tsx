@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import type { FormEvent, ReactNode } from "react"
-import { Loader2, PlugZap } from "lucide-react"
+import { PlugZap } from "lucide-react"
 
 import { FormActions, FormCard, FormLayout } from "@/app/layout/form-page"
 import { effectiveAuth, needsBaseUrl } from "@/domains/sources/model/providers"
@@ -12,10 +12,6 @@ import type {
 import { ConnectionFields } from "@/domains/sources/ui/connection-fields"
 import { can, needsLabel, projectOf, useSession } from "@/shared/session"
 import { Button, Notice, TextField, Tooltip } from "@/shared/ui"
-
-// The domain's one spinner, shared with the row-level test and the create
-// form's own probe so all three readings of "probing" are the same mark.
-import tableStyles from "./sources-table.module.css"
 
 // The probe's answer row, shared with the create form so the two screens read
 // one control and one answer, drawn once.
@@ -171,8 +167,9 @@ export function ConnectionForm({
   /* The record's own probe, in from the header where it used to live: the
      glyph rides inside the base url's box where there is one, and stands at
      the head of its answer where there is not. `denied` rather than
-     `disabled` for the role, `disabled` for busy — an act refused to a role
-     stays hoverable so its sentence is reachable. */
+     `disabled` for the role — an act refused to a role stays hoverable so its
+     sentence is reachable — and `loading` for the probe itself, which is what
+     puts the kit's spinner where the plug was. */
   const probeControl: ReactNode = (
     <Tooltip content={denied ?? "Test connection"}>
       <Button
@@ -180,16 +177,12 @@ export function ConnectionForm({
         size="icon-sm"
         data-test="source-test"
         denied={denied}
-        disabled={probing || busy}
-        aria-busy={probing || undefined}
+        loading={probing}
+        disabled={busy}
         aria-label={`Test the connection to ${connection.name}`}
         onClick={onTest}
       >
-        {probing ? (
-          <Loader2 className={tableStyles.spin} aria-hidden="true" />
-        ) : (
-          <PlugZap aria-hidden="true" />
-        )}
+        <PlugZap aria-hidden="true" />
       </Button>
     </Tooltip>
   )
@@ -254,7 +247,15 @@ export function ConnectionForm({
 
           <span className={probeStyles.probeAnswer}>
             {probe ? (
-              <Notice tone={probe.ok ? "ok" : "bad"} data-test="probe-result">
+              <Notice
+                tone={probe.ok ? "ok" : "bad"}
+                /* Both halves are the answer to the probe button, so both are
+                   spoken — the tone default would have announced the refusal
+                   and swallowed the success, which is the asymmetry that makes
+                   an operator press twice. */
+                announce
+                data-test="probe-result"
+              >
                 {probe.message}
               </Notice>
             ) : (
@@ -273,8 +274,8 @@ export function ConnectionForm({
           type="submit"
           data-test="connection-submit"
           denied={denied}
-          disabled={busy || !complete || !tested}
-          aria-busy={busy || undefined}
+          loading={busy}
+          disabled={!complete || !tested}
         >
           Save connection
         </Button>

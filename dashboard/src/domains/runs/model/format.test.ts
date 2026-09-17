@@ -3,17 +3,11 @@ import { describe, expect, it } from "vitest"
 import {
   briefSegments,
   formatCost,
-  formatDuration,
   formatTokens,
 } from "@/domains/runs/model/format"
 
-describe("formatDuration", () => {
-  it("reads as a run clock, zero-padded", () => {
-    expect(formatDuration(0)).toBe("00:00")
-    expect(formatDuration(75)).toBe("01:15")
-    expect(formatDuration(-4)).toBe("00:00")
-  })
-})
+/* `formatDuration` moved to `shared/lib/duration`; its clock is pinned there,
+   beside the millisecond reading it must never be confused with. */
 
 describe("formatCost / formatTokens", () => {
   it("keeps money at two places and tokens in thousands", () => {

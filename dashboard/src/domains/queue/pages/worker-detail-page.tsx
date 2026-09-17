@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
-import { Loader2, LogOut, PowerOff, RotateCw } from "lucide-react"
+import { LogOut, PowerOff, RotateCw } from "lucide-react"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@/shared/ui"
 
-import { formatDuration } from "@/domains/runs/model/format"
+import { formatDuration } from "@/shared/lib/duration"
 import {
   useDrainWorker,
   useForceStopWorker,
@@ -235,21 +235,19 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                     variant="outline"
                     size="icon-sm"
                     data-test="worker-drain"
-                    /* `disabled` is for busy and invalid — a container already
-                       leaving has nothing left to drain. A refusal is a
-                       different thing and takes `denied`, which keeps the
-                       control reachable so its sentence is. */
+                    /* Three separate readings, and they are not
+                       interchangeable. `loading` is this act in flight;
+                       `disabled` is invalid — a container already leaving has
+                       nothing left to drain, and a page-wide act is running;
+                       a refusal takes `denied`, which keeps the control
+                       reachable so its sentence is. */
+                    loading={draining}
                     disabled={busy || worker.state === "draining"}
                     denied={denial}
-                    aria-busy={draining || undefined}
                     aria-label={`Drain ${worker.id}`}
                     onClick={onDrain}
                   >
-                    {draining ? (
-                      <Loader2 className={styles.spin} aria-hidden="true" />
-                    ) : (
-                      <LogOut aria-hidden="true" />
-                    )}
+                    <LogOut aria-hidden="true" />
                   </Button>
                 </Tooltip>
                 <Tooltip content={denial ?? "Force stop"}>
@@ -257,9 +255,9 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                     variant="destructive"
                     size="icon-sm"
                     data-test="worker-force-stop"
+                    loading={stopping}
                     disabled={busy}
                     denied={denial}
-                    aria-busy={stopping || undefined}
                     aria-label={`Force stop ${worker.id}`}
                     onClick={() => setConfirming(true)}
                   >

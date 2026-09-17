@@ -1,4 +1,4 @@
-import { Loader2, Pencil, PlugZap, Plus, Unplug } from "lucide-react"
+import { Pencil, PlugZap, Plus, Unplug } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
 import {
@@ -418,20 +418,15 @@ export function createSourceColumns({
                     size="icon-sm"
                     variant="outline"
                     data-test="source-test"
-                    disabled={testing}
+                    loading={testing}
                     denied={editDenial}
-                    aria-busy={testing || undefined}
                     aria-label={`Test the connection to ${connection.name}`}
                     onClick={(event) => {
                       event.stopPropagation()
                       onTest(connection)
                     }}
                   >
-                    {testing ? (
-                      <Loader2 className={styles.spin} aria-hidden="true" />
-                    ) : (
-                      <PlugZap aria-hidden="true" />
-                    )}
+                    <PlugZap aria-hidden="true" />
                   </Button>
                 </Tooltip>
               </>

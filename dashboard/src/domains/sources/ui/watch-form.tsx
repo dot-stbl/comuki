@@ -148,8 +148,7 @@ export function WatchForm({
           type="submit"
           data-test="watch-submit"
           denied={denied}
-          disabled={busy}
-          aria-busy={busy || undefined}
+          loading={busy}
         >
           Save watch
         </Button>

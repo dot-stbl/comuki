@@ -8,6 +8,8 @@ import type {
   VirtualKey,
 } from "./types"
 
+import { formatRelativeTime } from "@/shared/lib/relative-time"
+
 /**
  * What a spend key is worth to whoever is holding it.
  *
@@ -17,8 +19,6 @@ import type {
  * named models, whatever is left of a budget, until a date the holder does not
  * control. These functions are that sentence, made checkable.
  */
-
-const DAY = 86_400
 
 /**
  * A key's real state, which is not a field.
@@ -94,21 +94,21 @@ export function budgetLeftUsd(key: VirtualKey): number {
  * Relative on purpose: a key's TTL is only ever read as "is this about to
  * stop", and a stamped date makes the reader do the subtraction. Past tense
  * once it has lapsed, because a lapsed key is a different thing from a key with
- * a day left and the two must not look alike.
+ * a day left and the two must not look alike — `in 12 d` and `expired 3 d`
+ * cannot be mistaken for each other at a glance, which `12 d` and `3 d` could.
+ *
+ * The magnitude is `shared/lib/relative-time`'s, not this file's. It used to be
+ * its own day-rounded copy of the arithmetic sitting beside `relativeDays`'s
+ * other copy of it; only "never" and the past-tense word are really this
+ * column's, so only those are still spelled here.
  */
 export function expiryReading(key: VirtualKey): string {
   if (key.expiresInSec === null) {
     return "never"
   }
-  const days = Math.round(key.expiresInSec / DAY)
-  if (days === 0) {
-    return key.expiresInSec > 0 ? "today" : "expired today"
-  }
-  if (days > 0) {
-    return `in ${days} ${days === 1 ? "day" : "days"}`
-  }
-  const past = Math.abs(days)
-  return `${past} ${past === 1 ? "day" : "days"} ago`
+  // A positive TTL is time ahead, so the delta this reads from is negative.
+  const reading = formatRelativeTime(-key.expiresInSec * 1000)
+  return key.expiresInSec > 0 ? reading : `expired ${reading}`
 }
 
 /** Where a key may be used, in the words the operator uses for it. */
@@ -151,7 +151,7 @@ export function lastUsedReading(key: VirtualKey): string {
   if (key.lastUsedAgoSec === null) {
     return key.createdAgoSec === null ? "not on this wire" : "never used"
   }
-  return relativeDays(key.lastUsedAgoSec)
+  return formatRelativeTime(key.lastUsedAgoSec * 1000)
 }
 
 /**
@@ -163,26 +163,7 @@ export function createdReading(key: VirtualKey): string {
   if (key.createdAgoSec === null) {
     return "not on this wire"
   }
-  return relativeDays(key.createdAgoSec)
-}
-
-/**
- * Seconds, in the TTL column's own words: `today`, `3 days ago`.
- *
- * Exported because the proxy panel needs the same sentence for "since when is
- * the switch in this position", and it had been carrying its own copy — the
- * same arithmetic, one file away, with different words for the same day.
- */
-export function relativeDays(seconds: number): string {
-  const days = Math.round(seconds / DAY)
-  if (days === 0) {
-    return seconds > 0 ? "earlier today" : "today"
-  }
-  if (days > 0) {
-    return `${days} ${days === 1 ? "day" : "days"} ago`
-  }
-  const ahead = Math.abs(days)
-  return `in ${ahead} ${ahead === 1 ? "day" : "days"}`
+  return formatRelativeTime(key.createdAgoSec * 1000)
 }
 
 /** What a key's spend window added up to. A null window answers `null`. */

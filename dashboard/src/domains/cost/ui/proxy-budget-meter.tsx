@@ -1,6 +1,7 @@
 import { budgetHeat, budgetShare } from "@/domains/cost/model/cost"
 import type { CostBudget } from "@/domains/cost/model/types"
 import { cn } from "@/shared/lib/utils"
+import { Meter } from "@/shared/ui"
 
 import styles from "./proxy-budget-meter.module.css"
 
@@ -23,23 +24,30 @@ export interface ProxyBudgetMeterProps {
  * thirds it draws in the neutral faint, exactly as the bar it replaced did;
  * the hue only arrives at 85%, which is where the tile's own line — "kill
  * switch at cap" — stops being a note and starts being a forecast.
+ *
+ * What is left in this file is the heat and the hiding. The channel itself is
+ * the kit's `Meter`, which four sheets in this product had each written out for
+ * themselves.
  */
 export function ProxyBudgetMeter({ budget, className }: ProxyBudgetMeterProps) {
-  const share = budgetShare(budget)
+  const heat = budgetHeat(budget)
 
   return (
     <span
       className={cn(styles.meter, className)}
       data-test="proxy-budget-meter"
-      data-heat={budgetHeat(budget)}
+      data-heat={heat}
       aria-hidden="true"
     >
-      <span className={styles.channel}>
-        <span
-          className={styles.fill}
-          style={{ inlineSize: `${Math.min(100, Math.round(share * 100))}%` }}
-        />
-      </span>
+      {/* At the cap the kill-switch fires, which the tile's own line says in
+          words. The bar cannot grow past full, so the second channel is a
+          weave rather than more length — the reading survives greyscale, like
+          every status in the product. */}
+      <Meter
+        value={budgetShare(budget)}
+        tone="heat"
+        hatched={heat === "over" ? "failed" : undefined}
+      />
     </span>
   )
 }

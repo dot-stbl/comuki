@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
 
-import { formatDuration } from "@/domains/runs/model/format"
+import { formatDuration } from "@/shared/lib/duration"
 import type { RunSummary } from "@/domains/runs/model/types"
 import { currentLabel, currentProfile } from "@/domains/runs/model/work-items"
 import { projectOf, useSession } from "@/shared/session"

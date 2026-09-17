@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url"
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
+import { Notice } from "./notice"
 import { SelectField } from "./select-field"
 import { TextField } from "./text-field"
 
@@ -159,5 +160,105 @@ describe("a required field says so where a screen reader can hear it", () => {
     expect(requiredMark()?.closest("label")?.textContent).toBe(
       "provider required"
     )
+  })
+})
+
+/* Both of these guard regressions that were invisible: nothing on the screen
+   changed, and no test failed, because both defects are about what a screen
+   reader is told and neither has a drawn consequence. */
+
+describe("a field carries the caller's aria as well as its own", () => {
+  it("joins an `aria-describedby` from outside with the field's own line", () => {
+    render(
+      <TextField
+        id="handle"
+        label="handle"
+        hint="lower case, no spaces"
+        value=""
+        onValueChange={() => {}}
+        aria-describedby="login-failure"
+      />
+    )
+    const described = screen
+      .getByLabelText("handle")
+      .getAttribute("aria-describedby")
+    // Both, in a list. Spreading `{...rest}` first made the field's own id win
+    // and the caller's vanish; spreading it last would only reverse who loses.
+    expect(described?.split(" ")).toEqual([
+      "login-failure",
+      "handle-description",
+    ])
+  })
+
+  it("keeps the caller's describedby when the field has no line of its own", () => {
+    render(
+      <TextField
+        id="secret"
+        label="secret"
+        value=""
+        onValueChange={() => {}}
+        aria-describedby="login-failure"
+      />
+    )
+    // The case that actually broke the gate: with no hint and no error the
+    // field wrote `undefined` over the caller's value.
+    expect(
+      screen.getByLabelText("secret").getAttribute("aria-describedby")
+    ).toBe("login-failure")
+  })
+
+  it("lets the caller mark the control invalid without an error sentence", () => {
+    render(
+      <TextField
+        id="pass"
+        label="pass"
+        value=""
+        onValueChange={() => {}}
+        aria-invalid
+      />
+    )
+    expect(screen.getByLabelText("pass").getAttribute("aria-invalid")).toBe(
+      "true"
+    )
+  })
+})
+
+/** The band itself. This product marks with `data-test`, not `data-testid`. */
+function noticeBand(): HTMLElement {
+  const band = document.querySelector<HTMLElement>("[data-test='notice']")
+  if (!band) throw new Error("no notice rendered")
+  return band
+}
+
+describe("a notice that answers a press is heard", () => {
+  it("announces a refusal without the call site asking", () => {
+    render(<Notice tone="bad">The decision did not land.</Notice>)
+    // The regression this closes: every failure band in the product carried its
+    // own `<p role="alert">` until the band became a primitive, and every one
+    // of them lost it on the way in.
+    expect(noticeBand().getAttribute("role")).toBe("alert")
+  })
+
+  it("stays quiet for a rule the operator has not acted on yet", () => {
+    render(<Notice>Disconnecting cannot be undone.</Notice>)
+    expect(noticeBand().hasAttribute("role")).toBe(false)
+  })
+
+  it("answers politely rather than interrupting when the answer is good", () => {
+    render(
+      <Notice tone="ok" announce>
+        The project is registered.
+      </Notice>
+    )
+    expect(noticeBand().getAttribute("role")).toBe("status")
+  })
+
+  it("can be told to keep quiet about a standing fact", () => {
+    render(
+      <Notice tone="bad" announce={false}>
+        This connection is in error.
+      </Notice>
+    )
+    expect(noticeBand().hasAttribute("role")).toBe(false)
   })
 })

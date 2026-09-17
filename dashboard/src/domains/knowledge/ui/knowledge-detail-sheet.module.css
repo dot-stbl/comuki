@@ -95,44 +95,6 @@
   white-space: nowrap;
 }
 
-/* Two facts, named and answered. A definition list rather than a two-column
-   table: there are two of them, and a table would be chrome around a pair. */
-.facts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  margin: 0;
-  padding-block: var(--s3);
-  border-block: var(--hairline) solid var(--rule);
-}
-
-.fact {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--s4);
-  min-inline-size: 0;
-}
-
-.factName {
-  font-family: var(--font-ui);
-  font-size: var(--t-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
-}
-
-.factValue {
-  margin: 0;
-  min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-data);
-  font-size: var(--t-xs);
-  color: var(--text);
-}
-
 /* The one field on this screen a person wrote for another person. */
 .body {
   margin: 0;

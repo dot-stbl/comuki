@@ -1,4 +1,4 @@
-import { formatDuration } from "@/domains/runs/model/format"
+import { formatDuration } from "@/shared/lib/duration"
 
 import type {
   QueueDepthDay,

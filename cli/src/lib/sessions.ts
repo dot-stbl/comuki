@@ -10,6 +10,7 @@
  * the server — the task keeps running there.
  */
 import type { ChatMessageView } from "./client"
+import type { RunsFeedPanel } from "./runsfeed"
 import { readJsonFile, writeJsonFile } from "./json"
 import { sessionsFilePath } from "./config"
 
@@ -39,6 +40,12 @@ export interface Session {
   readonly unread: boolean
   readonly awaitingApproval: boolean
   readonly pendingPlan: unknown
+  /**
+   * The pinned `/runs` panel, patched like `pendingPlan` and rendered
+   * at the transcript tail. Transient: never persisted, so restored
+   * tabs start without one until `/runs` pins it again.
+   */
+  readonly runsFeed?: RunsFeedPanel | null
   readonly blocks: readonly ChatBlock[]
   /** Tail of the live chunk stream while a turn is in flight. */
   readonly liveText: string

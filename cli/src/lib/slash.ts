@@ -73,6 +73,24 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     usage: "reject [reason]",
     description: "decline a pending plan",
   },
+  {
+    name: "runs",
+    aliases: [],
+    usage: "/runs",
+    description: "live runs feed panel",
+  },
+  {
+    name: "plan",
+    aliases: [],
+    usage: "/plan",
+    description: "this session's plan",
+  },
+  {
+    name: "project",
+    aliases: [],
+    usage: "/project <id|slug|name>",
+    description: "switch project context",
+  },
 ]
 
 /** The `/help` transcript block, rendered from the registry. */
@@ -98,6 +116,9 @@ export type SlashAction =
   | { readonly kind: "new" }
   | { readonly kind: "approve" }
   | { readonly kind: "reject"; readonly reason?: string }
+  | { readonly kind: "runs" }
+  | { readonly kind: "plan" }
+  | { readonly kind: "project"; readonly query: string }
   /** Not a command — the input goes to the brain as a chat message. */
   | { readonly kind: "message" }
 
@@ -140,6 +161,15 @@ export function resolveSlashAction(raw: string): SlashAction {
     return args.length === 0
       ? { kind: "reject" }
       : { kind: "reject", reason: args }
+  }
+  if (matches("runs", name)) {
+    return { kind: "runs" }
+  }
+  if (matches("plan", name)) {
+    return { kind: "plan" }
+  }
+  if (matches("project", name)) {
+    return { kind: "project", query: args }
   }
   return { kind: "message" }
 }

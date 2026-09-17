@@ -129,7 +129,7 @@ export function learningCandidateToApproval(
     app: candidate.topic,
     projectId: candidate.projectId,
     runId: "",
-    age: waitingAge(candidate.createdAt, nowMs),
+    age: formatRelativeInstant(candidate.createdAt, nowMs) ?? "just now",
     risk: null,
     summary:
       repeats > 1

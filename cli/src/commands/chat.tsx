@@ -34,6 +34,14 @@ import {
 } from "../lib/transcript"
 import { renderUserEcho } from "../lib/format"
 import type { ResolvedConfig } from "../lib/config"
+import {
+  expandMentions,
+  extractMentions,
+  mentionNoticeLines,
+  stripMentionPreamble,
+  type MentionExpansion,
+} from "../lib/mentions"
+import { useMentionMenu } from "../components/MentionMenu"
 import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
 import { useCopyLastAnswer } from "../hooks/useCopyLastAnswer"
 import { useHomeEndKeys } from "../hooks/useHomeEndKeys"
@@ -140,6 +148,75 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     lastAssistantText(activeSession?.blocks ?? [])
   )
 
+  // -- @mentions ------------------------------------------------------------
+
+  /**
+   * Client-side mention resolution (pragmatic v1 — no server changes):
+   * `@query ` in a submitted prompt searches knowledge and the top
+   * hits ride the wire as an invisible `[@knowledge: …]` preamble the
+   * brain sees; the local echo shows only what the user typed. Memory
+   * facts are MCP-only (worker-gated), so mentions resolve against
+   * knowledge alone. One refusal (401/403/404) flags the feature off
+   * for the session — mentions then send as plain text, with a notice.
+   */
+  const knowledgeDisabledRef = useRef(false)
+  const docTitlesRef = useRef<Map<string, string> | null>(null)
+
+  /** Document titles for labels/notices — one best-effort page, cached. */
+  const ensureDocTitles = useCallback(async () => {
+    if (docTitlesRef.current === null) {
+      docTitlesRef.current = new Map()
+      try {
+        const page = await clientRef.current?.knowledgeDocuments(1, 100)
+        for (const document of page?.items ?? []) {
+          docTitlesRef.current.set(document.id, document.title)
+        }
+      } catch {
+        // Labels fall back to the snippets' first lines.
+      }
+    }
+    const titles = docTitlesRef.current
+    return (documentId: string) => titles.get(documentId)
+  }, [])
+
+  /** Raw search seam — throws so `expandMentions` can report refusal. */
+  const mentionSearchRaw = useCallback((query: string) => {
+    const client = clientRef.current
+    return client
+      ? client.knowledgeSearch(query, 5)
+      : Promise.resolve([])
+  }, [])
+
+  /** Menu path — a failure flags the feature off silently. */
+  const mentionMenuSearch = useCallback(
+    async (query: string) => {
+      if (knowledgeDisabledRef.current) {
+        return []
+      }
+      try {
+        return await mentionSearchRaw(query)
+      } catch {
+        knowledgeDisabledRef.current = true
+        return []
+      }
+    },
+    [mentionSearchRaw]
+  )
+
+  const promptBusy = activeSession?.status === "thinking"
+  const mentionMenu = useMentionMenu({
+    search: mentionMenuSearch,
+    titleFor: (documentId) => docTitlesRef.current?.get(documentId),
+    enabled: () =>
+      !knowledgeDisabledRef.current && !overviewVisible && !promptBusy,
+    width: Math.max(24, columns - 4),
+  })
+
+  // Warm the title index alongside the hub connect — best effort.
+  useEffect(() => {
+    void ensureDocTitles()
+  }, [ensureDocTitles])
+
   // -- transcript viewport ------------------------------------------------------
 
   const thinking = activeSession?.status === "thinking"
@@ -183,6 +260,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       1 - // StatusLine
       (tabs.sessions.length > 0 ? 1 : 0) - // TabBar
       (showFooter ? 1 : 0) - // SessionFooter
+      (mentionMenu.menuOpen ? mentionMenu.rowCount : 0) - // mention popup
       (1 + (copyHint ? 1 : 0)) // prompt (+ transient copy hint row)
   )
 
@@ -399,7 +477,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             {
               hydrated: true,
               status: "done",
-              ...(lastUser ? { lastUserMessage: lastUser.content } : {}),
+              // Server content carries the mention preamble — `/retry`
+              // re-expands from the typed words, not the stored blocks.
+              ...(lastUser
+                ? { lastUserMessage: stripMentionPreamble(lastUser.content) }
+                : {}),
             }
           ),
         }))
@@ -585,7 +667,43 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     [focusSession]
   )
 
-  /** Sends `message`, creating the server session first when pending. */
+  const pushLines = useCallback(
+    (sessionId: string, lines: readonly string[]) => {
+      setTabs((current) => ({
+        ...current,
+        sessions: appendBlocks(current.sessions, sessionId, [
+          { kind: "lines", lines },
+        ]),
+      }))
+    },
+    []
+  )
+
+  /**
+   * Expands the typed text when it carries mentions; a refused search
+   * flags the feature off and returns the text unchanged (the send
+   * must never block on the knowledge surface).
+   */
+  const expandTyped = useCallback(
+    async (typed: string): Promise<MentionExpansion> => {
+      if (knowledgeDisabledRef.current || extractMentions(typed).length === 0) {
+        return {
+          typed,
+          outgoing: typed,
+          resolutions: [],
+          knowledgeUnavailable: false,
+        }
+      }
+      const expansion = await expandMentions(typed, mentionSearchRaw)
+      if (expansion.knowledgeUnavailable) {
+        knowledgeDisabledRef.current = true
+      }
+      return expansion
+    },
+    [mentionSearchRaw]
+  )
+
+  /** Sends `message` (the typed text), creating the server session first when pending. */
   const sendMessage = useCallback(
     async (target: Session | undefined, message: string) => {
       const client = clientRef.current
@@ -594,8 +712,17 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       }
       setWelcomeDismissed(true)
       setNoticeLines([])
-      const name = titleForFirstMessage(target, message)
-      const userEcho: readonly string[] = renderUserEcho(message)
+
+      // Mentions expand before the send — the preamble rides the wire
+      // while the echo keeps showing only what the user typed.
+      const typed = stripMentionPreamble(message)
+      const expansion = await expandTyped(typed)
+      const notices =
+        expansion.knowledgeUnavailable || expansion.resolutions.length > 0
+          ? mentionNoticeLines(expansion, await ensureDocTitles())
+          : []
+      const name = titleForFirstMessage(target, typed)
+      const userEcho: readonly string[] = renderUserEcho(typed)
 
       if (!target || target.id.startsWith(PENDING_PREFIX)) {
         try {
@@ -617,7 +744,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                   hydrated: true,
                   // The welcome-screen turn has no tab yet — seed the
                   // new session's recall history with its first message.
-                  history: [message],
+                  history: [typed],
                 })
             return {
               ...next,
@@ -626,11 +753,16 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                   { kind: "lines", lines: userEcho },
                 ]),
                 session.id,
-                { lastUserMessage: message }
+                { lastUserMessage: typed }
               ),
             }
           })
-          await runTurn(session.id, "message", { message })
+          if (notices.length > 0) {
+            pushLines(session.id, notices)
+          }
+          await runTurn(session.id, "message", {
+            message: expansion.outgoing,
+          })
         } catch (error) {
           setNoticeLines([
             "",
@@ -647,24 +779,15 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             { kind: "lines", lines: userEcho },
           ]),
           target.id,
-          { lastUserMessage: message }
+          { lastUserMessage: typed }
         ),
       }))
-      await runTurn(target.id, "message", { message })
+      if (notices.length > 0) {
+        pushLines(target.id, notices)
+      }
+      await runTurn(target.id, "message", { message: expansion.outgoing })
     },
-    [runTurn]
-  )
-
-  const pushLines = useCallback(
-    (sessionId: string, lines: readonly string[]) => {
-      setTabs((current) => ({
-        ...current,
-        sessions: appendBlocks(current.sessions, sessionId, [
-          { kind: "lines", lines },
-        ]),
-      }))
-    },
-    []
+    [ensureDocTitles, expandTyped, pushLines, runTurn]
   )
 
   // -- input ----------------------------------------------------------------------
@@ -788,6 +911,14 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   useInput((input, key) => {
     if (overviewRef.current) {
       return // the overview's own handler owns the keys
+    }
+    // The mention popup owns these keys while it is on screen — the
+    // shell's tab-switch / overview / scroll handlers stay quiet.
+    if (
+      mentionMenu.menuOpen &&
+      (key.tab || key.upArrow || key.downArrow || key.escape)
+    ) {
+      return
     }
     // PgUp/PgDn: ink parses the standard sequences (`\x1b[5~` / `\x1b[6~`,
     // what ConPTY sends) into `key.pageUp` / `key.pageDown`; a sequence
@@ -996,11 +1127,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           {copyHint ? (
             <Text dimColor>{`  ${copyHint}`}</Text>
           ) : null}
+          {mentionMenu.element}
           <PromptInput
             onSubmit={handleSubmit}
             history={activeSession?.history ?? []}
             active={promptEnabled}
             historyRecallEnabled={!scroll.scrolledUp}
+            {...mentionMenu.promptBindings}
           />
         </>
       ) : null}

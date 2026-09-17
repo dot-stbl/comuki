@@ -301,4 +301,59 @@ describe("postMessage latency sampling", () => {
     expect(samples).toEqual([])
     expect(client.chatLatencyMs()).toBeNull()
   })
+
+  it("knowledgeSearch unwraps the items envelope and sends q/topK", async () => {
+    const { impl, calls } = fakeFetch({
+      "GET /api/v1/knowledge/search": {
+        body: {
+          items: [
+            {
+              documentId: "d1",
+              chunkId: "c1",
+              snippet: "identity module handles auth",
+              score: 0.91,
+            },
+          ],
+        },
+      },
+    })
+    const client = new ComukiClient(resolveConfig({ COMUKI_URL: "http://t" }), {
+      fetchImpl: impl,
+    })
+
+    const hits = await client.knowledgeSearch("identity", 5)
+
+    expect(hits).toEqual([
+      {
+        documentId: "d1",
+        chunkId: "c1",
+        snippet: "identity module handles auth",
+        score: 0.91,
+      },
+    ])
+    expect(calls[0]?.url).toContain("/api/v1/knowledge/search?")
+    expect(calls[0]?.url).toContain("q=identity")
+    expect(calls[0]?.url).toContain("topK=5")
+  })
+
+  it("knowledgeSearch surfaces a refusal as ComukiApiError", async () => {
+    const { impl } = fakeFetch({
+      "GET /api/v1/knowledge/search": {
+        status: 403,
+        body: { code: "knowledge.forbidden", detail: "no knowledge:read" },
+      },
+    })
+    const client = new ComukiClient(resolveConfig({ COMUKI_URL: "http://t" }), {
+      fetchImpl: impl,
+    })
+
+    let caught: unknown
+    try {
+      await client.knowledgeSearch("identity")
+    } catch (error) {
+      caught = error
+    }
+    expect(caught).toBeInstanceOf(ComukiApiError)
+    expect((caught as ComukiApiError).status).toBe(403)
+  })
 })

@@ -6,7 +6,9 @@
  * synchronous on the host and returns the authoritative turn result, so a
  * dead socket degrades to "no live progress", never a failed turn. The
  * factory therefore resolves `null` on any start failure and the chat
- * command proceeds REST-only.
+ * command proceeds REST-only. A failed `start()` no longer parks the
+ * hub forever: the same 0/2/5/10/30s ramp keeps retrying until start
+ * succeeds (or 401, which fires `onAuthLost` once and stops).
  *
  * Reconnects never give up: the retry policy ramps 0/2/5/10s and then
  * retries every 30s forever. SignalR group membership is per-connection,
@@ -124,18 +126,124 @@ export interface ChatHubOptions {
    * re-join the groups here (`rejoinChatGroups`).
    */
   readonly onReconnected?: () => void
+  /**
+   * Fires once when start() fails with 401/403 — the loop stops so a
+   * dead key does not hammer the hub forever. REST turns still work.
+   */
+  readonly onAuthLost?: () => void
+  /**
+   * Fires for every successfully started `HubConnection` instance
+   * (the first start and every full re-start after the hub went
+   * dead). Bind events here; SignalR's own reconnect keeps them.
+   */
+  readonly onReady?: (connection: HubConnection) => void
+  /**
+   * Receives the stop handle synchronously, before the first `start()`
+   * await — the caller cancels the retry loop + the live connection
+   * from its unmount cleanup.
+   */
+  readonly onStopHandle?: (stop: () => Promise<void>) => void
+}
+
+/** Injected clock so the retry gate is unit-testable without waiting. */
+export interface RetryClock {
+  setTimeout(callback: () => void, ms: number): unknown
+  clearTimeout(id: unknown): void
 }
 
 /**
- * Starts a connection joined to nothing. Resolves `null` when the hub is
- * unreachable within the timeout (server down, auth rejected, proxy eating
- * upgrades) — callers treat streaming as optional.
+ * One-at-a-time retry scheduler. `schedule` is a no-op while a timer
+ * is already pending (callers must not stack reconnects) and after
+ * `cancel`. The delay for the Nth schedule is `reconnectRetryDelayMs(N)`.
  */
-export async function startChatHubConnection(
-  options: ChatHubOptions
-): Promise<HubConnection | null> {
-  options.onStateChange?.(hubStateFor("connecting"))
-  const connection = new HubConnectionBuilder()
+export interface RetryGate {
+  readonly pending: boolean
+  readonly attempt: number
+  schedule(run: () => void): void
+  reset(): void
+  cancel(): void
+}
+
+export function createRetryGate(
+  delayFor: (previousRetryCount: number) => number = reconnectRetryDelayMs,
+  clock: RetryClock = {
+    setTimeout: (callback, ms) => setTimeout(callback, ms),
+    clearTimeout: (id) => clearTimeout(id as ReturnType<typeof setTimeout>),
+  }
+): RetryGate {
+  let timer: unknown = null
+  let attempt = 0
+  let cancelled = false
+  return {
+    get pending() {
+      return timer !== null
+    },
+    get attempt() {
+      return attempt
+    },
+    schedule(run) {
+      if (cancelled || timer !== null) {
+        return
+      }
+      const delay = delayFor(attempt)
+      const id = clock.setTimeout(() => {
+        timer = null
+        if (cancelled) {
+          return
+        }
+        attempt += 1
+        run()
+      }, delay)
+      if (
+        id !== null &&
+        typeof id === "object" &&
+        "unref" in id &&
+        typeof id.unref === "function"
+      ) {
+        id.unref()
+      }
+      timer = id
+    },
+    reset() {
+      if (cancelled) {
+        return
+      }
+      attempt = 0
+    },
+    cancel() {
+      cancelled = true
+      if (timer !== null) {
+        clock.clearTimeout(timer)
+        timer = null
+      }
+    },
+  }
+}
+
+/**
+ * True when a hub `start()` failure is an auth rejection — retrying
+ * would spin on a dead key. Duck-typed: SignalR's `HttpError` carries
+ * `statusCode`, fetch-shaped errors carry `status`, and the message
+ * still names 401/Unauthorized when the type is a plain Error.
+ */
+export function isHubAuthFailure(error: unknown): boolean {
+  if (error !== null && typeof error === "object") {
+    const record = error as { statusCode?: unknown; status?: unknown }
+    if (record.statusCode === 401 || record.statusCode === 403) {
+      return true
+    }
+    if (record.status === 401 || record.status === 403) {
+      return true
+    }
+  }
+  if (error instanceof Error) {
+    return /\b(401|403)\b|unauthorized/i.test(error.message)
+  }
+  return false
+}
+
+function buildChatHubConnection(options: ChatHubOptions): HubConnection {
+  return new HubConnectionBuilder()
     .withUrl(options.hubUrl, {
       headers: options.headers,
       withCredentials: false,
@@ -156,44 +264,130 @@ export async function startChatHubConnection(
     .configureLogging(LogLevel.None)
     .withAutomaticReconnect(neverGiveUpRetryPolicy)
     .build()
+}
 
-  // The never-give-up policy means `onclose` only fires on an explicit
-  // stop() (or a start that never completed) — the status bar drops to
-  // offline. Handler slots are plain assignments, so the factory owns
-  // them; callers hook in through the options callbacks.
-  connection.onreconnecting = () =>
-    options.onStateChange?.(hubStateFor("reconnecting"))
-  connection.onreconnected = () => {
-    options.onStateChange?.(hubStateFor("reconnected"))
-    options.onReconnected?.()
-  }
-  connection.onclose = () => options.onStateChange?.(hubStateFor("closed"))
+/**
+ * Starts a connection joined to nothing. Resolves `null` when the hub is
+ * unreachable within the timeout (server down, auth rejected, proxy eating
+ * upgrades) — callers treat streaming as optional.
+ *
+ * A null start no longer gives up: the same 0/2/5/10/30s ramp keeps
+ * calling `start()` until it succeeds (then `onReady` + `onReconnected`
+ * so the caller can bind events and re-join groups). A 401/403 stops
+ * the loop and fires `onAuthLost` once. `onclose` after a live
+ * connection also re-enters the loop, unless the caller asked to stop.
+ */
+export async function startChatHubConnection(
+  options: ChatHubOptions
+): Promise<HubConnection | null> {
+  const gate = createRetryGate()
+  let current: HubConnection | null = null
+  let explicitStop = false
+  let everStarted = false
+  let authLost = false
 
-  const timeout = new Promise<null>((resolve) =>
-    setTimeout(() => resolve(null), options.timeoutMs ?? 4000).unref?.()
-  )
-  try {
-    const started = await Promise.race([
-      connection.start().then((): HubConnection | null => connection),
-      timeout,
-    ])
-    if (started) {
-      options.onStateChange?.(hubStateFor("started"))
-      return started
+  const stopAll = async () => {
+    explicitStop = true
+    gate.cancel()
+    if (current) {
+      try {
+        await current.stop()
+      } catch {
+        // Already gone.
+      }
+      current = null
     }
-    // Start lost the race — tear the half-open connection down.
-    await connection.stop()
-    options.onStateChange?.(hubStateFor("closed"))
-    return null
-  } catch {
+  }
+  options.onStopHandle?.(stopAll)
+
+  const attemptStart = async (
+    isRetry: boolean
+  ): Promise<HubConnection | null> => {
+    if (explicitStop || authLost) {
+      return null
+    }
+    options.onStateChange?.(hubStateFor("connecting"))
+    const connection = buildChatHubConnection(options)
+    connection.onreconnecting = () =>
+      options.onStateChange?.(hubStateFor("reconnecting"))
+    connection.onreconnected = () => {
+      options.onStateChange?.(hubStateFor("reconnected"))
+      options.onReconnected?.()
+    }
+    connection.onclose = () => {
+      options.onStateChange?.(hubStateFor("closed"))
+      if (explicitStop || authLost || !everStarted) {
+        return
+      }
+      current = null
+      gate.schedule(() => {
+        void attemptStart(true)
+      })
+    }
+
+    const timeout = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), options.timeoutMs ?? 4000).unref?.()
+    )
     try {
-      await connection.stop()
-    } catch {
-      // Already gone.
+      const started = await Promise.race([
+        connection.start().then((): HubConnection | null => connection),
+        timeout,
+      ])
+      if (explicitStop) {
+        try {
+          await connection.stop()
+        } catch {
+          // Already gone.
+        }
+        return null
+      }
+      if (started) {
+        current = started
+        everStarted = true
+        gate.reset()
+        options.onStateChange?.(hubStateFor("started"))
+        options.onReady?.(started)
+        if (isRetry) {
+          options.onReconnected?.()
+        }
+        return started
+      }
+      // Start lost the race — tear the half-open connection down.
+      try {
+        await connection.stop()
+      } catch {
+        // Already gone.
+      }
+      options.onStateChange?.(hubStateFor("closed"))
+      if (!explicitStop && !authLost) {
+        gate.schedule(() => {
+          void attemptStart(true)
+        })
+      }
+      return null
+    } catch (error) {
+      try {
+        await connection.stop()
+      } catch {
+        // Already gone.
+      }
+      options.onStateChange?.(hubStateFor("closed"))
+      if (isHubAuthFailure(error)) {
+        authLost = true
+        gate.cancel()
+        options.onAuthLost?.()
+        return null
+      }
+      if (!explicitStop) {
+        gate.schedule(() => {
+          void attemptStart(true)
+        })
+      }
+      return null
     }
-    options.onStateChange?.(hubStateFor("closed"))
-    return null
   }
+
+  return attemptStart(false)
 }
 
 /**

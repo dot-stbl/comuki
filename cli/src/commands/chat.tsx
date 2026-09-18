@@ -50,10 +50,16 @@ import { useMentionMenu } from "../components/MentionMenu"
 import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
 import { useCopyLastAnswer } from "../hooks/useCopyLastAnswer"
 import { useHomeEndKeys } from "../hooks/useHomeEndKeys"
+import { useMouse } from "../hooks/useMouse"
 import { useSpinnerFrame } from "../hooks/useSpinnerFrame"
 import { useTerminalTitle } from "../hooks/useTerminalTitle"
 import { useTranscriptScroll } from "../hooks/useTranscriptScroll"
 import { lastAssistantText } from "../lib/history"
+import {
+  isSgrMouseChunk,
+  resolveMouseClick,
+  type MouseLayout,
+} from "../lib/mouse"
 import {
   dequeueMessage,
   enqueueMessage,
@@ -89,6 +95,7 @@ import {
   type SessionsState,
 } from "../lib/sessions"
 import { resolveSlashAction, slashHelpLines } from "../lib/slash"
+import { viewportSlice } from "../lib/viewport"
 import {
   getSnippet,
   isValidSnippetName,
@@ -236,6 +243,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const mutedSessionsRef = useRef(new Set<string>())
   /** Reconnect re-join needs the session ids without a closure snapshot. */
   const sessionsRef = useRef<readonly Session[]>([])
+  /** Explicit hub stop (unmount) — the retry loop must not resurrect it. */
+  const hubStopRef = useRef<(() => Promise<void>) | null>(null)
 
   const activeSession =
     tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
@@ -515,21 +524,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         // Best-effort live progress; the REST turns are authoritative.
         // A reconnect gets a fresh connection id — every chat group is
         // gone, so re-join the open sessions (pending tabs excluded).
-        const connection = await startChatHubConnection({
-          hubUrl: client.hubUrl(),
-          headers: client.hubHeaders(),
-          onStateChange: setHubState,
-          onReconnected: () => {
-            const hub = hubRef.current
-            if (hub) {
-              const sessionIds = sessionsRef.current
-                .map((session) => session.id)
-                .filter((id) => !id.startsWith(PENDING_PREFIX))
-              void rejoinChatGroups(hub, sessionIds)
-            }
-          },
-        })
-        if (connection && !disposed) {
+        // A failed start no longer gives up: the factory keeps retrying
+        // on the same 0/2/5/10/30s ramp until start() succeeds (or 401).
+        const bindHub = (connection: HubConnection) => {
           hub = connection
           hubRef.current = connection
           bindChatEvents(
@@ -554,10 +551,37 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             }
           )
         }
+        const rejoinOpenGroups = () => {
+          const live = hubRef.current
+          if (live) {
+            const sessionIds = sessionsRef.current
+              .map((session) => session.id)
+              .filter((id) => !id.startsWith(PENDING_PREFIX))
+            void rejoinChatGroups(live, sessionIds)
+          }
+        }
+        const connection = await startChatHubConnection({
+          hubUrl: client.hubUrl(),
+          headers: client.hubHeaders(),
+          onStateChange: setHubState,
+          onReady: bindHub,
+          onReconnected: rejoinOpenGroups,
+          onAuthLost: () => {
+            hubRef.current = null
+            setHubState("offline")
+          },
+          onStopHandle: (stop) => {
+            hubStopRef.current = stop
+          },
+        })
+        if (connection && !disposed && hubRef.current !== connection) {
+          bindHub(connection)
+        }
         // Hub attempt resolved (connect or fallback). Whichever path the
         // transport took, the placeholder text in the StatusLine is no
         // longer accurate — we are not "truly disconnected" anymore, we
-        // are either live or we are on the REST-only path that works.
+        // are either live or we are on the REST-only path that works
+        // (the retry loop may still bring the hub back in the background).
         if (!disposed) {
           setHubAttempted(true)
         }
@@ -600,6 +624,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
     return () => {
       disposed = true
+      const stop = hubStopRef.current
+      if (stop) {
+        void stop()
+        return
+      }
       const connection = hub ?? hubRef.current
       if (connection) {
         void connection.stop()
@@ -1703,8 +1732,60 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     }
   }, [tabs.sessions, sendMessage])
 
+  // SGR mouse: tab strip switches sessions; a click on the plan card's
+  // `approve` / `reject` line submits the matching slash. Status-bar
+  // clicks are a no-op in v1. Terminals without mouse tracking ignore
+  // the DECSET bytes and never fire — the keyboard path is untouched.
+  const mouseLayoutRef = useRef<MouseLayout>({
+    tabRow: null,
+    sessions: [],
+    transcriptTop: 2,
+    hasHint: false,
+    visibleLines: [],
+    awaitingApproval: false,
+  })
+  const indicatorRow = scroll.offset > 0 && scroll.newBelow
+  mouseLayoutRef.current = {
+    tabRow: tabs.sessions.length > 0 ? 2 : null,
+    sessions: tabs.sessions,
+    transcriptTop: tabs.sessions.length > 0 ? 3 : 2,
+    hasHint: expandHint !== null,
+    visibleLines: viewportSlice(
+      transcriptLines,
+      viewportHeight -
+        (expandHint !== null ? 1 : 0) -
+        (indicatorRow ? 1 : 0),
+      scroll.offset
+    ),
+    awaitingApproval: activeSession?.awaitingApproval === true,
+  }
+  const handleMouseClick = useCallback(
+    (click: { readonly x: number; readonly y: number }) => {
+      if (overviewRef.current || searchOpen) {
+        return
+      }
+      const target = resolveMouseClick(click, mouseLayoutRef.current)
+      if (target.kind === "tab") {
+        focusSession(target.index)
+        return
+      }
+      if (target.kind === "approve") {
+        handleSubmit("/approve")
+        return
+      }
+      if (target.kind === "reject") {
+        handleSubmit("/reject")
+      }
+    },
+    [searchOpen, focusSession, handleSubmit]
+  )
+  useMouse(handleMouseClick)
+
   // Global hotkeys — active in every state; the editor ignores these keys.
   useInput((input, key) => {
+    if (isSgrMouseChunk(input)) {
+      return
+    }
     if (overviewRef.current) {
       return // the overview's own handler owns the keys
     }

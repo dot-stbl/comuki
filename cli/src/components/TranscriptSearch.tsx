@@ -14,6 +14,7 @@
  */
 import { Box, Text, useInput } from "ink"
 import React, { useState } from "react"
+import { isSgrMouseChunk } from "../lib/mouse"
 import { isEnterInput, routeEnterKey } from "../lib/multiline"
 import { gutter, palette, symbols } from "../theme"
 
@@ -47,6 +48,9 @@ export function TranscriptSearch({
   const [cursor, setCursor] = useState(value.length)
 
   useInput((input, key) => {
+    if (isSgrMouseChunk(input)) {
+      return
+    }
     if (key.escape) {
       onClose()
       return

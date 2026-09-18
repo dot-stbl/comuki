@@ -19,7 +19,7 @@ import {
 import { isSgrMouseChunk } from "../lib/mouse"
 import { filterSessions, type ChatBlock, type Session } from "../lib/sessions"
 import { palette } from "../theme"
-import { Fill } from "./Fill"
+import { OverlaySheet } from "./OverlaySheet"
 
 export interface SessionOverviewProps {
   readonly sessions: readonly Session[]
@@ -27,6 +27,7 @@ export interface SessionOverviewProps {
   readonly onSelect: (index: number) => void
   readonly onNewSession: () => void
   readonly onClose: () => void
+  readonly width?: number
 }
 
 function statusGlyph(status: Session["status"]): {
@@ -35,13 +36,13 @@ function statusGlyph(status: Session["status"]): {
 } {
   switch (status) {
     case "thinking":
-      return { glyph: "o thinking", color: palette.brand }
+      return { glyph: "thinking", color: palette.brand }
     case "running":
-      return { glyph: "o running", color: palette.waiting }
+      return { glyph: "running", color: palette.waiting }
     case "done":
-      return { glyph: "✓ done", color: palette.ok }
+      return { glyph: "done", color: palette.ok }
     default:
-      return { glyph: ". idle", color: undefined }
+      return { glyph: "idle", color: undefined }
   }
 }
 
@@ -95,7 +96,7 @@ function tokensCompact(total: number): string {
 
 /** `4.1k→1.2k` — the dim right-aligned usage column of an overview row. */
 export function formatTokenTotals(totals: TokenTotals): string {
-  return `${tokensCompact(totals.tokensIn)}→${tokensCompact(totals.tokensOut)}`
+  return `${tokensCompact(totals.tokensIn)}->${tokensCompact(totals.tokensOut)}`
 }
 
 /** One `waiting approval` row — the tab to jump to plus its first plan step. */
@@ -139,6 +140,7 @@ export function SessionOverview({
   onSelect,
   onNewSession,
   onClose,
+  width = OVERVIEW_WIDTH + 4,
 }: SessionOverviewProps) {
   const [query, setQuery] = useState("")
   const visible = filterSessions(sessions, query)
@@ -189,34 +191,28 @@ export function SessionOverview({
     numbered.length +
     (query.length > 0 ? 1 : 0) +
     (waiting.length > 0 ? waiting.length + 2 : 0)
-  const sheetWidth = OVERVIEW_WIDTH + 4
+  const sheetWidth = Math.max(24, width)
+  const rowWidth = Math.max(20, sheetWidth - 4)
   const sheetHeight = contentHeight + 2
 
   return (
-    <Fill width={sheetWidth} height={sheetHeight} color={palette.rail}>
-      <Box width={sheetWidth} height={sheetHeight} padding={1}>
-        <Fill
-          width={OVERVIEW_WIDTH + 2}
-          height={contentHeight}
-          color={palette.lane}
-        >
+    <OverlaySheet
+      title="sessions"
+      hint="1-9 select / ctrl+n new / esc close"
+      width={sheetWidth}
+      height={sheetHeight}
+    >
           <Box
-            width={OVERVIEW_WIDTH + 2}
-            height={contentHeight}
+            width={rowWidth}
             flexDirection="column"
-            alignItems="center"
-            paddingX={1}
           >
-            <Text bold color={palette.brand}>
-              SESSIONS
-            </Text>
             {query.length > 0 ? (
-              <Text dimColor>{`filter: ${query}`}</Text>
+              <Text dimColor>{`filter ${query}`}</Text>
             ) : null}
             {waiting.length > 0 ? (
-              <Box flexDirection="column" width={OVERVIEW_WIDTH} paddingTop={1}>
+                  <Box flexDirection="column" width={rowWidth} paddingTop={1}>
                 <Text bold color={palette.brand}>
-                  ! waiting approval
+                  waiting approval
                 </Text>
                 {waiting.map((row) => (
                   <Text
@@ -240,7 +236,7 @@ export function SessionOverview({
                 return (
                   <Box
                     key={session.id}
-                    width={OVERVIEW_WIDTH}
+                    width={rowWidth}
                     justifyContent="space-between"
                   >
                     <Text dimColor={!active} bold={active}>
@@ -261,12 +257,7 @@ export function SessionOverview({
               })}
               <Text dimColor>{"   + new session"}</Text>
             </Box>
-            <Box paddingTop={1}>
-              <Text dimColor>1-9 select · ctrl+n new · esc back</Text>
-            </Box>
           </Box>
-        </Fill>
-      </Box>
-    </Fill>
+    </OverlaySheet>
   )
 }

@@ -34,7 +34,7 @@ export function LoginApp({ url }: LoginCommandProps) {
       <Text>
         {"  "}
         {step === "working"
-          ? `${colors.dim}… signing in${colors.reset}`
+          ? `${colors.dim}... signing in${colors.reset}`
           : result}
       </Text>
     )
@@ -42,7 +42,7 @@ export function LoginApp({ url }: LoginCommandProps) {
 
   return step === "email" ? (
     <Text>
-      <Text color={palette.brand}>{"  email  › "}</Text>
+      <Text color={palette.brand}>{"  email  > "}</Text>
       <TextInput
         value={email}
         onChange={setEmail}
@@ -55,7 +55,7 @@ export function LoginApp({ url }: LoginCommandProps) {
     </Text>
   ) : (
     <Text>
-      <Text color={palette.brand}>{"  pass   › "}</Text>
+      <Text color={palette.brand}>{"  pass   > "}</Text>
       <TextInput
         value={password}
         onChange={setPassword}

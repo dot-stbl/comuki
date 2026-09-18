@@ -8,7 +8,7 @@
  * whole model is three pure functions over (lines, height, offset) so
  * every boundary is unit-testable without Ink.
  */
-export const NEW_MESSAGES_INDICATOR = "↓ new messages"
+export const NEW_MESSAGES_INDICATOR = "v new messages"
 
 /** Largest scroll-back offset: everything before the last `height` lines. */
 export function maxOffset(lineCount: number, height: number): number {

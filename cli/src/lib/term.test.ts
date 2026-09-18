@@ -98,7 +98,7 @@ describe("terminalTitle", () => {
   })
 
   it("carries the hourglass while thinking and the check when idle", () => {
-    expect(terminalTitle("fix auth", true)).toBe("comuki — fix auth ⏳")
-    expect(terminalTitle("fix auth", false)).toBe("comuki — fix auth ✓")
+    expect(terminalTitle("fix auth", true)).toBe("comuki - fix auth [working]")
+    expect(terminalTitle("fix auth", false)).toBe("comuki - fix auth [ready]")
   })
 })

@@ -38,7 +38,7 @@ export function LiveMessage({
   }
   return (
     <Box flexDirection="column">
-      {clipped ? <Text dimColor>  …</Text> : null}
+      {clipped ? <Text dimColor>  ...</Text> : null}
       {lines.map((line, index) => (
         <Text key={index}>{line}</Text>
       ))}

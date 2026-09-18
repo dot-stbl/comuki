@@ -164,19 +164,25 @@ export function useMentionMenu(options: MentionMenuOptions) {
   const element =
     query === null || rows.length === 0 ? null : (
       <Box flexDirection="column">
+        <Text bold backgroundColor={palette.rail}>
+          {"  knowledge"}
+          <Text dimColor backgroundColor={palette.rail}>
+            {"  arrows select / enter attach / esc close"}
+          </Text>
+        </Text>
         {rows.map((row, index) => {
           const isSelected = index === selected
           return (
-            <Text key={`${row.mention}-${index}`}>
+            <Text key={`${row.mention}-${index}`} backgroundColor={palette.rail}>
               {"  "}
               <Text
                 color={isSelected ? palette.brand : undefined}
                 dimColor={!isSelected}
               >
-                {isSelected ? "› " : "  "}
+                {isSelected ? "> " : "  "}
                 {row.label}
               </Text>
-              <Text dimColor> — {row.snippet}</Text>
+              <Text dimColor>  {row.snippet}</Text>
             </Text>
           )
         })}
@@ -192,7 +198,7 @@ export function useMentionMenu(options: MentionMenuOptions) {
     /** Popup visible — the shell's hotkey guard keys on this. */
     menuOpen,
     /** Rows the popup currently claims (for the viewport height calc). */
-    rowCount: rows.length,
+    rowCount: rows.length + (menuOpen ? 1 : 0),
     element,
     promptBindings,
   }

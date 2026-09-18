@@ -92,7 +92,7 @@ export function useCopyLastAnswer(
       flash("no code block")
       return
     }
-    flash("copied code ✓")
+    flash("copied code [ok]")
     void write(text).catch(() => setHint("copy failed"))
   }, [flash, write])
 
@@ -102,7 +102,7 @@ export function useCopyLastAnswer(
       flash("nothing to copy")
       return
     }
-    flash("copied ✓")
+    flash("copied [ok]")
     // Best effort: a failed write downgrades the hint instead of throwing
     // inside the key handler.
     void write(text).catch(() => setHint("copy failed"))

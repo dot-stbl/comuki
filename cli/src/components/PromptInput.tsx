@@ -115,7 +115,7 @@ const FRESH_EDITOR: EditorState = {
 export function PromptInput({
   onSubmit,
   label = "",
-  placeholder = "ask comuki… (help for commands, ctrl+c to exit)",
+  placeholder = "Ask Comuki. Use / for actions or @ for knowledge.",
   history = [],
   active = true,
   historyRecallEnabled = true,
@@ -394,8 +394,8 @@ export function PromptInput({
   // -- reporting hooks (shell side: hotkey gates + viewport math) --------
 
   const inputRows = Math.max(1, state.value.split("\n").length)
-  // The single-line border consumes a row above and below the well.
-  const renderedRows = (menuOpen ? matches.length : 0) + inputRows + 2
+  // Label + editor rows; tonal slabs provide grouping without box glyphs.
+  const renderedRows = (menuOpen ? matches.length + 1 : 0) + inputRows + 2
 
   useEffect(() => {
     onMenuOpenChange?.(menuOpen)
@@ -410,17 +410,17 @@ export function PromptInput({
   const menuRows = matches.map((command, index) => {
     const selected = menuOpen && index === state.menuIndex
     return (
-      <Text key={command.name} backgroundColor={palette.raised}>
+      <Text key={command.name} backgroundColor={palette.rail}>
         {gutter}
         <Text
           color={selected ? palette.brand : undefined}
           dimColor={!selected}
-          backgroundColor={palette.raised}
+          backgroundColor={palette.rail}
         >
-          {`/${command.name}`}
+          {selected ? `> /${command.name}` : `  /${command.name}`}
         </Text>
-        <Text dimColor backgroundColor={palette.raised}>
-          {` — ${command.description}`}
+        <Text dimColor backgroundColor={palette.rail}>
+          {`  ${command.description}`}
         </Text>
       </Text>
     )
@@ -433,23 +433,39 @@ export function PromptInput({
   const lines = promptLines(displayValue, state.cursor, placeholder)
 
   return (
-    <Box
-      flexDirection="column"
-      width="100%"
-      borderStyle="single"
-      borderColor={active ? palette.brand : palette.ruleHex}
-    >
-      {menuOpen ? menuRows : null}
+    <Box flexDirection="column" width="100%">
+      {menuOpen ? (
+        <>
+          <Text bold backgroundColor={palette.rail}>
+            {"  commands"}
+            <Text dimColor backgroundColor={palette.rail}>
+              {"  arrows select / enter insert / esc close"}
+            </Text>
+          </Text>
+          {menuRows}
+        </>
+      ) : null}
+      <Text
+        bold
+        color={active ? palette.brand : undefined}
+        dimColor={!active}
+        backgroundColor={palette.raised}
+      >
+        {`  ${label || "prompt"}`}
+        <Text dimColor backgroundColor={palette.raised}>
+          {"  shift+enter newline / enter send"}
+        </Text>
+      </Text>
       {lines.map((line, index) => (
         <Text key={index} backgroundColor={palette.raised}>
           {index === 0 ? (
             <Text color={palette.brand} backgroundColor={palette.raised}>
-              {label}
+              {"  "}
               {symbols.prompt}{" "}
             </Text>
           ) : (
             // Continuation rows align under the prompt glyph.
-            <Text backgroundColor={palette.raised}>{"  "}</Text>
+            <Text backgroundColor={palette.raised}>{"    "}</Text>
           )}
           {line}
         </Text>

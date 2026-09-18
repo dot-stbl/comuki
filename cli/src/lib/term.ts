@@ -49,8 +49,8 @@ export function linkSequence(url: string, label: string): string {
 /** The app name the title resets to when no session is open / on exit. */
 export const TITLE_APP = "comuki"
 
-const GLYPH_THINKING = "⏳"
-const GLYPH_IDLE = "✓"
+const GLYPH_THINKING = "[working]"
+const GLYPH_IDLE = "[ready]"
 
 /**
  * `comuki — {session} {glyph}` — ⏳ while the turn is in flight, ✓
@@ -63,7 +63,7 @@ export function terminalTitle(
   if (!sessionName) {
     return TITLE_APP
   }
-  return `${TITLE_APP} — ${sessionName} ${
+  return `${TITLE_APP} - ${sessionName} ${
     thinking ? GLYPH_THINKING : GLYPH_IDLE
   }`
 }

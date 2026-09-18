@@ -1,24 +1,35 @@
 /**
- * The Comuki glyph as hand-authored ASCII — the SVG mark is a left
- * slab plus two right pillars with a gapped crossbar, sitting in a
- * rounded rect. Windows consoles drop the Unicode freight (◆ ⏺ ▌ ⠋),
- * so the identity lives here as printable ASCII only.
- *
- * SMALL is the welcome lockup. `paintMark` is the one color pass.
+ * Printable-ASCII reductions of dashboard/public/favicon.svg. The mark
+ * is a perspective freight container: a broad loading-side slab on the
+ * left and two front doors on the right, split around their latch gap.
+ * Density, not pseudo-antialiasing, carries the silhouette.
  */
 import { paint } from "../theme"
 
-/**
- * Welcome lockup, 11 cols × 5 rows: left slab and two pillars joined
- * by a mid crossbar — the H-like comuki glyph, simplified.
- */
-export const MARK_SMALL: readonly string[] = [
-  "+---+  |  |",
-  "|   |  |  |",
-  "|   |  +--+",
-  "|   |  |  |",
-  "+---+  |  |",
-]
+/** One-row silhouette for stable chrome. */
+export const MARK_COMPACT = "[/###/|## ##|]"
+
+/** Compatibility name for existing chrome consumers; the value is the compact grid. */
+export const MARK_SMALL: readonly string[] = [MARK_COMPACT, "", MARK_COMPACT]
+
+const welcomeSource = [
+  "             /########\\",
+  "       /#####/##########\\",
+  "   /########/####  ##  ####\\",
+  " /#########/#####  ##  #####|",
+  "|##########|#####--##--#####|",
+  " \\#########\\#####  ##  #####|",
+  "   \\########\\####  ##  ####/",
+  "       \\#####\\##########/",
+  "             \\########/",
+] as const
+
+const welcomeWidth = Math.max(...welcomeSource.map((line) => line.length))
+
+/** Large welcome-only silhouette, normalized to one glyph grid. */
+export const MARK_WELCOME: readonly string[] = welcomeSource.map((line) =>
+  line.padEnd(welcomeWidth)
+)
 
 /** Paints every line of a mark with `color`, resetting after each. */
 export function paintMark(

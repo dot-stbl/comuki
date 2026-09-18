@@ -51,8 +51,8 @@ describe("alertFromError titles", () => {
   })
 })
 
-describe("alertLines frame", () => {
-  it("draws the 401 card as a closed box with hints", () => {
+describe("alertLines slab", () => {
+  it("draws the 401 slab with explicit status and hints", () => {
     const lines = alertLines(
       new ComukiApiError(
         401,
@@ -61,17 +61,12 @@ describe("alertLines frame", () => {
       )
     )
     const plain = lines.map(stripAnsi)
-    expect(plain).toMatchSnapshot()
-    expect(plain[0]).toContain("+- error · authentication.required ")
-    expect(plain[0]?.endsWith("+")).toBe(true)
+    expect(plain[0]).toContain("[error] authentication.required")
     expect(plain.some((line) => line.includes("permission 'chat:use'"))).toBe(
       true
     )
     expect(plain.some((line) => line.includes("/login"))).toBe(true)
     expect(plain.some((line) => line.includes("/retry"))).toBe(true)
-    expect(plain[plain.length - 1]).toMatch(/^\s*\+[-+]+\+$/)
-    const box = plain.filter((line) => /[+|+]/.test(line) && line.includes("+"))
-    expect(new Set(box.map((line) => line.length)).size).toBe(1)
   })
 
   it("paints only the kind word with the error colour", () => {
@@ -82,12 +77,11 @@ describe("alertLines frame", () => {
       hints: [],
     })
     expect(lines[0]).toContain(kindColor("error"))
-    expect(lines[0]).toContain(colors.rule)
     expect(lines[1]).toContain(colors.faint)
     expect(lines[1]).not.toContain(colors.error)
   })
 
-  it("clamps the frame to the terminal width", () => {
+  it("clamps the slab to the terminal width", () => {
     const lines = alertLines(
       new ComukiApiError(401, "authentication.required", "x".repeat(200)),
       40
@@ -97,11 +91,11 @@ describe("alertLines frame", () => {
     }
   })
 
-  it("uses the 403 title on the top rule when no code is present", () => {
+  it("uses the 403 title on the status row when no code is present", () => {
     const plain = alertLines(new ComukiApiError(403, undefined, "nope")).map(
       stripAnsi
     )
-    expect(plain[0]).toContain("error · permission denied")
+    expect(plain[0]).toContain("[error] permission denied")
     expect(plain[0]).not.toContain("signed out")
   })
 })

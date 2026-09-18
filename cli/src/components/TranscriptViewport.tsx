@@ -51,8 +51,14 @@ export interface TranscriptViewportProps {
 
 /** Ink background hex for a classified transcript row. */
 export function roleBackground(role: ReturnType<typeof classifyLine>): string {
-  if (role === "user" || role === "assistant") {
+  if (role === "assistant") {
     return palette.lane
+  }
+  if (role === "user" || role === "approval") {
+    return palette.raised
+  }
+  if (role === "alert") {
+    return palette.rail
   }
   if (role === "pulse") {
     return palette.rail
@@ -109,7 +115,10 @@ export function TranscriptViewport({
             height={1}
             color={roleBackground(role)}
           >
-            <Text dimColor={role === "event"}>
+            <Text
+              dimColor={role === "event"}
+              color={role === "approval" ? palette.waiting : undefined}
+            >
               {padVisible(painted, width)}
             </Text>
           </Fill>

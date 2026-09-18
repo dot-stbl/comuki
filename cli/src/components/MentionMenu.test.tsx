@@ -80,11 +80,11 @@ describe("useMentionMenu", () => {
     await settle()
     stdin.write("@doc")
     await settle(400)
-    expect(lastFrame() ?? "").toContain("› Alpha Doc")
+    expect(lastFrame() ?? "").toContain("> Alpha Doc")
 
     stdin.write(DOWN)
     await settle()
-    expect(lastFrame() ?? "").toContain("› Beta Doc")
+    expect(lastFrame() ?? "").toContain("> Beta Doc")
 
     stdin.write(ENTER)
     await settle()

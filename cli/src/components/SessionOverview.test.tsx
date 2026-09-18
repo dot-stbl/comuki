@@ -77,18 +77,18 @@ describe("sessionTokenTotals", () => {
 })
 
 describe("formatTokenTotals", () => {
-  it("renders the mission shape 4.1k→1.2k", () => {
+  it("renders the mission shape 4.1k->1.2k", () => {
     expect(formatTokenTotals({ tokensIn: 4100, tokensOut: 1200 })).toBe(
-      "4.1k→1.2k"
+      "4.1k->1.2k"
     )
   })
 
   it("keeps sub-thousand counts bare", () => {
     expect(formatTokenTotals({ tokensIn: 999, tokensOut: 42 })).toBe(
-      "999→42"
+      "999->42"
     )
     expect(formatTokenTotals({ tokensIn: 0, tokensOut: 1250 })).toBe(
-      "0→1.3k"
+      "0->1.3k"
     )
   })
 })
@@ -178,7 +178,7 @@ describe("SessionOverview filter overlay", () => {
     stdin.write("u")
     await settle()
     const frame = lastFrame() ?? ""
-    expect(frame).toContain("filter: au")
+    expect(frame).toContain("filter au")
     expect(frame).toContain("Fix Auth")
     expect(frame).toContain("auth-review")
     expect(frame).not.toContain("docs")
@@ -202,7 +202,7 @@ describe("SessionOverview filter overlay", () => {
     await settle()
     stdin.write("a")
     await settle(150)
-    expect(lastFrame() ?? "").toContain("filter: a")
+    expect(lastFrame() ?? "").toContain("filter a")
     expect(lastFrame() ?? "").not.toContain("docs")
     stdin.write("\x7f")
     await settle()

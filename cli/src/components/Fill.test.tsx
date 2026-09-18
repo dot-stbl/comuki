@@ -5,7 +5,7 @@ import { describe, expect, test } from "bun:test"
 import React from "react"
 import { Text } from "ink"
 import { render } from "ink-testing-library"
-import { Fill } from "./Fill"
+import { Fill, fillRows } from "./Fill"
 import { stripAnsi } from "../theme"
 
 describe("Fill", () => {
@@ -18,5 +18,12 @@ describe("Fill", () => {
     const frame = lastFrame() ?? ""
     expect(stripAnsi(frame)).toContain("hello")
     unmount()
+  })
+
+  test("paints every requested visible cell", () => {
+    const lines = fillRows(37, 3)
+
+    expect(lines).toHaveLength(3)
+    expect(lines.every((line) => line.length === 37)).toBe(true)
   })
 })

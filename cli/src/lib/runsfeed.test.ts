@@ -265,7 +265,7 @@ describe("planPanelLines", () => {
     expect(plain[0]).toContain("plan · 1 шаг")
     expect(plain[0]).not.toContain("awaiting approval")
     expect(plain[1]).toContain("review")
-    expect(plain[1]).toContain("← n0")
+    expect(plain[1]).toContain("<- n0")
   })
 
   it("prefers the pending plan over the transcript part", () => {

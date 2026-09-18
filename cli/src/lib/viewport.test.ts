@@ -92,6 +92,6 @@ describe("viewportSlice", () => {
 
 describe("NEW_MESSAGES_INDICATOR", () => {
   test("is the dim tail hint rendered at the viewport bottom", () => {
-    expect(NEW_MESSAGES_INDICATOR).toBe("↓ new messages")
+    expect(NEW_MESSAGES_INDICATOR).toBe("v new messages")
   })
 })

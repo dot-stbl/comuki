@@ -69,7 +69,7 @@ describe("LiveMessage — streaming transitions", () => {
     const lines = frame.split("\n").filter((line) => line.trim().length > 0)
     // leader + maxLines content lines (+ wrapped overflow margin of zero here)
     expect(lines.length).toBeLessThanOrEqual(LIVE_MAX_LINES + 1)
-    expect(frame).toContain("…")
+    expect(frame).toContain("...")
     expect(stripAnsi(frame)).toContain("строка номер 39")
     // the cursor survives clipping — still on the final visible line
     expect(lines[lines.length - 1]).toContain(LIVE_CURSOR)

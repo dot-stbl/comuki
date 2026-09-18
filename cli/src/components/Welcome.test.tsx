@@ -29,7 +29,7 @@ describe("Welcome — first-run hint", () => {
 
   test("stats row renders beside the hint without overlap", () => {
     const frame = frameWith({ firstRun: true, stats: { workers: 3, memory: 5 } })
-    expect(frame).toContain("workers 3 · memory 5")
+    expect(frame).toContain("workers 3 / knowledge 5")
     expect(frame).toContain("first run? try: comuki setup")
   })
 })

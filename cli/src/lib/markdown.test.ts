@@ -136,8 +136,8 @@ describe("renderMarkdownLines — code blocks", () => {
 describe("renderMarkdownLines — lists", () => {
   it("renders unordered items with the accent bullet", () => {
     const lines = renderMarkdownLines("- alpha\n- beta")
-    expect(stripAnsi(lines[0] ?? "")).toBe("  · alpha")
-    expect(stripAnsi(lines[1] ?? "")).toBe("  · beta")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  . alpha")
+    expect(stripAnsi(lines[1] ?? "")).toBe("  . beta")
     expect(lines[0]).toContain(colors.accent)
   })
 
@@ -154,21 +154,21 @@ describe("renderMarkdownLines — lists", () => {
 
   it("renders task items with checkboxes", () => {
     const lines = renderMarkdownLines("- [x] done\n- [ ] todo")
-    expect(stripAnsi(lines[0] ?? "")).toBe("  · [x] done")
-    expect(stripAnsi(lines[1] ?? "")).toBe("  · [ ] todo")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  . [x] done")
+    expect(stripAnsi(lines[1] ?? "")).toBe("  . [ ] todo")
   })
 
   it("indents nested lists", () => {
     const lines = renderMarkdownLines("- top\n  - nested")
-    expect(stripAnsi(lines[0] ?? "")).toBe("  · top")
-    expect(stripAnsi(lines[1] ?? "")).toBe("    · nested")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  . top")
+    expect(stripAnsi(lines[1] ?? "")).toBe("    . nested")
   })
 
   it("wraps long list items with a hanging indent", () => {
     const item = ["one", "two", "three", "four"].join(" ")
     const lines = renderMarkdownLines(`- ${item} ${item}`, 22)
     const stripped = lines.map(stripAnsi)
-    expect(stripped[0]).toBe("  · one two three four")
+    expect(stripped[0]).toBe("  . one two three four")
     expect(stripped[1]).toBe("    one two three four")
   })
 })

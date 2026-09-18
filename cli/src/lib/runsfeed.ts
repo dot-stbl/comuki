@@ -123,7 +123,7 @@ function feedColumnLine(labels: readonly string[], color: string): string {
 }
 
 /**
- * The panel as finished transcript lines: `⏺ runs` header with the
+ * The panel as finished transcript lines: `* runs` header with the
  * shown/total + as-of age, a faint column line, the fixed-column rows
  * with their status bands, and a footer note (refresh cadence, or the
  * last refresh failure in failure yellow).
@@ -385,7 +385,7 @@ export function projectListingLines(
   ]
 }
 
-/** The context-switch notice: `⏺ project → {label}`. */
+/** The context-switch notice: `* project → {label}`. */
 export function projectSwitchedLine(label: string): string {
   return `  ${paint(`${symbols.event} project ${symbols.arrow} ${label}`, colors.faint)}`
 }

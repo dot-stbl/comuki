@@ -82,7 +82,7 @@ export function profileListingLines(
   ]
 }
 
-/** The preference-switch notice: `⏺ profile → {key}`. */
+/** The preference-switch notice: `* profile → {key}`. */
 export function profileStoredLine(key: string): string {
   return `  ${paint(`${symbols.event} profile ${symbols.arrow} ${key} (local preference — sessions ignore it)`, colors.faint)}`
 }

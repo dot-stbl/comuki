@@ -14,6 +14,7 @@ import { SessionFooter } from "./SessionFooter"
 import { TabBar } from "./TabBar"
 import { Welcome } from "./Welcome"
 import { footerActions, type FooterAction } from "../lib/footer-actions"
+import { MARK_SMALL } from "../lib/mark"
 import type { Session } from "../lib/sessions"
 
 const IDLE_ACTIONS: readonly FooterAction[] = footerActions({
@@ -83,6 +84,7 @@ describe("Welcome", () => {
     const frame = lastFrame()
     expect(frame).toContain("comuki")
     expect(frame).toContain("agent orchestration platform")
+    expect(frame).toContain(MARK_SMALL[2])
     unmount()
   })
 
@@ -134,8 +136,7 @@ describe("TabBar", () => {
     const { lastFrame, unmount } = render(
       <TabBar sessions={sessions} activeIndex={0} />
     )
-    // ● is a colored glyph; assert its presence without asserting color.
-    expect(lastFrame()).toContain("●")
+    expect(lastFrame()).toContain("o")
     unmount()
   })
 })
@@ -166,7 +167,7 @@ describe("SessionFooter", () => {
       makeSession({ id: "a", name: "alpha", status: "thinking" }),
     ]
     const { lastFrame, unmount } = render(renderFooter(sessions, 0))
-    expect(lastFrame()).toContain("●")
+    expect(lastFrame()).toContain("o")
     unmount()
   })
 

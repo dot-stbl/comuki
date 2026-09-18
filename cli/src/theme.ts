@@ -33,7 +33,7 @@ import {
 
 /** Ink-facing hex tokens — `<Text color>` props cannot take ANSI codes. */
 export interface PaletteTokens {
-  /** The accent hex — the ◆ brand mark, spinner, streaming cursor. */
+  /** The accent hex — the ASCII brand mark, spinner, streaming cursor. */
   brand: string
   /** Deck text — bold reading text. */
   text: string
@@ -101,13 +101,13 @@ export const symbols = {
   prompt: "›",
   checkmark: "✓",
   cross: "✗",
-  bullet: "·",
+  bullet: ".",
   arrow: "→",
   /** The one bullet every collapsed event line (thinking, tools) leads with. */
-  event: "⏺",
-  /** The assistant's brand glyph — the freight mark of the swarm lead. */
-  brandMark: "◆",
-  spinnerFrames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
+  event: "*",
+  /** One-char brand slot — the full glyph lives in `lib/mark.ts`. */
+  brandMark: "+",
+  spinnerFrames: ["|", "/", "-", "\\"],
 } as const
 
 /**

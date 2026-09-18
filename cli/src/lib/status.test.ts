@@ -157,7 +157,7 @@ describe("statusLines", () => {
 })
 
 describe("renderStatusPanel", () => {
-  it("leads with a ⏺ status header and one row per source", () => {
+  it("leads with a * status header and one row per source", () => {
     const lines = renderStatusPanel(snapshot()).map(stripAnsi)
     expect(lines[0]).toContain("status")
     expect(lines).toHaveLength(6)

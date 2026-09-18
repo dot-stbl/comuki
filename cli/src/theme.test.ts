@@ -62,13 +62,18 @@ describe("messageMark", () => {
     expect("red" in colors).toBe(false)
   })
 
-  it("collapses every event line onto the single ⏺ bullet", () => {
-    expect(symbols.event).toBe("⏺")
+  it("collapses every event line onto the single ASCII * bullet", () => {
+    expect(symbols.event).toBe("*")
+  })
+
+  it("keeps the one-char brand slot printable ASCII", () => {
+    expect(symbols.brandMark).toBe("+")
+    expect(symbols.bullet).toBe(".")
   })
 })
 
 describe("nextSpinnerFrame", () => {
-  it("walks the braille cycle in order and wraps to zero", () => {
+  it("walks the classic ASCII cycle in order and wraps to zero", () => {
     const seen: string[] = []
     let frame = 0
     seen.push(symbols.spinnerFrames[frame]!)
@@ -76,19 +81,7 @@ describe("nextSpinnerFrame", () => {
       frame = nextSpinnerFrame(frame)
       seen.push(symbols.spinnerFrames[frame]!)
     }
-    expect(seen).toEqual([
-      "⠋",
-      "⠙",
-      "⠹",
-      "⠸",
-      "⠼",
-      "⠴",
-      "⠦",
-      "⠧",
-      "⠇",
-      "⠏",
-      "⠋",
-    ])
+    expect(seen).toEqual(["|", "/", "-", "\\", "|"])
   })
 
   it("supports a custom frame count", () => {

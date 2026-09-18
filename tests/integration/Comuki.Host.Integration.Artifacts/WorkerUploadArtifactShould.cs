@@ -141,10 +141,11 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
     /// </summary>
     private async Task WaitForBucketAsync(CancellationToken cancellationToken)
     {
+        var (minioHost, minioPort) = SplitEndpoint(minioEndpoint);
         var client = Modules.Artifacts.Infrastructure.Store.MinioClientFactory.Create(
             new Modules.Artifacts.Infrastructure.Store.ArtifactsOptions
             {
-                Endpoint = minioEndpoint,
+                Endpoint = $"{minioHost}:{minioPort}",
                 AccessKey = MinioUser,
                 SecretKey = MinioPassword,
                 Bucket = TestBucket,

@@ -10,10 +10,9 @@ import React from "react"
 import { render } from "ink-testing-library"
 import {
   TranscriptViewport,
-  roleBackground,
 } from "./TranscriptViewport"
 import { NEW_MESSAGES_INDICATOR } from "../lib/viewport"
-import { palette, stripAnsi } from "../theme"
+import { stripAnsi } from "../theme"
 
 const LINES = Array.from({ length: 30 }, (_, index) => `line-${index}`)
 
@@ -204,8 +203,8 @@ describe("TranscriptViewport — ctrl+f highlight", () => {
   })
 })
 
-describe("TranscriptViewport — slab padding", () => {
-  test("paints a background on the user slab and keeps the prefix", () => {
+describe("TranscriptViewport — semantic conversation rows", () => {
+  test("keeps the user marker without a full-width slab", () => {
     const { lastFrame, unmount } = render(
       <TranscriptViewport
         lines={["> hello"]}
@@ -217,15 +216,8 @@ describe("TranscriptViewport — slab padding", () => {
     )
     const frame = lastFrame() ?? ""
     expect(stripAnsi(frame)).toContain("> hello")
+    expect(stripAnsi(frame)).not.toContain(" ".repeat(13))
     unmount()
-  })
-
-  test("maps turn roles to lane, event rows to floor, and pulse to rail", () => {
-    expect(roleBackground("user")).toBe(palette.raised)
-    expect(roleBackground("assistant")).toBe(palette.lane)
-    expect(roleBackground("event")).toBe(palette.floor)
-    expect(roleBackground("blank")).toBe(palette.floor)
-    expect(roleBackground("pulse")).toBe(palette.rail)
   })
 
   test("renders assistant prose without an ASCII frame", () => {

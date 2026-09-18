@@ -118,14 +118,14 @@ describe("liveLines", () => {
 describe("typingLines", () => {
   test("renders one spinner frame and label", () => {
     const lines = typingLines(0).map(stripAnsi)
-    expect(lines).toEqual(["[|] thinking / ctrl+c interrupts"])
+    expect(lines).toEqual(["[|] thinking"])
   })
 
   test("cycles through the one-line spinner", () => {
-    expect(stripAnsi(typingLines(1)[0] ?? "")).toBe("[/] thinking / ctrl+c interrupts")
-    expect(stripAnsi(typingLines(2)[0] ?? "")).toBe("[-] thinking / ctrl+c interrupts")
-    expect(stripAnsi(typingLines(3)[0] ?? "")).toBe("[\\] thinking / ctrl+c interrupts")
-    expect(stripAnsi(typingLines(4)[0] ?? "")).toBe("[|] thinking / ctrl+c interrupts")
+    expect(stripAnsi(typingLines(1)[0] ?? "")).toBe("[/] thinking")
+    expect(stripAnsi(typingLines(2)[0] ?? "")).toBe("[-] thinking")
+    expect(stripAnsi(typingLines(3)[0] ?? "")).toBe("[\\] thinking")
+    expect(stripAnsi(typingLines(4)[0] ?? "")).toBe("[|] thinking")
   })
 })
 

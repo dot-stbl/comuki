@@ -1,43 +1,54 @@
 import { describe, expect, test } from "bun:test"
-import { resolveHarnessLayout } from "./harness-layout"
+import {
+  hasContextualWorkbench,
+  resolveHarnessLayout,
+} from "./harness-layout"
 
 describe("resolveHarnessLayout", () => {
-  test("uses compact chrome below 60 columns", () => {
+  test("uses one header row and no workbench below 60 columns", () => {
     const layout = resolveHarnessLayout(59, true)
 
     expect(layout.mode).toBe("compact")
-    expect(layout.railWidth).toBe(0)
-    expect(layout.navigationRows).toBe(1)
+    expect(layout.topBarRows).toBe(1)
+    expect(layout.workbenchWidth).toBe(0)
     expect(layout.workspaceWidth).toBe(59)
   })
 
-  test("uses a top session strip from 60 through 109 columns", () => {
+  test("gives the conversation the full width through 109 columns", () => {
     const layout = resolveHarnessLayout(100, true)
 
     expect(layout.mode).toBe("standard")
-    expect(layout.navigationRows).toBe(1)
+    expect(layout.workbenchWidth).toBe(0)
     expect(layout.workspaceWidth).toBe(100)
   })
 
-  test("uses a stable session rail at 110 columns and above", () => {
+  test("shows a contextual workbench at 110 columns and above", () => {
     const layout = resolveHarnessLayout(110, true)
 
     expect(layout.mode).toBe("wide")
-    expect(layout.railWidth).toBe(24)
+    expect(layout.workbenchWidth).toBe(34)
     expect(layout.dividerWidth).toBe(1)
-    expect(layout.navigationRows).toBe(0)
-    expect(layout.workspaceWidth).toBe(85)
+    expect(layout.workspaceWidth).toBe(75)
   })
 
-  test("does not reserve an empty rail on welcome", () => {
+  test("does not reserve an empty workbench merely for wide layout", () => {
     const layout = resolveHarnessLayout(140, false)
 
     expect(layout.mode).toBe("wide")
-    expect(layout.railWidth).toBe(0)
+    expect(layout.workbenchWidth).toBe(0)
     expect(layout.workspaceWidth).toBe(140)
   })
 
   test("never returns a zero-width workspace", () => {
     expect(resolveHarnessLayout(0, true).workspaceWidth).toBe(1)
+  })
+
+  test("operational context, not session count, gates the workbench", () => {
+    expect(hasContextualWorkbench({ status: "idle" })).toBe(false)
+    expect(hasContextualWorkbench({ status: "thinking" })).toBe(false)
+    expect(hasContextualWorkbench({ status: "running" })).toBe(true)
+    expect(hasContextualWorkbench({ awaitingApproval: true })).toBe(true)
+    expect(hasContextualWorkbench({ pendingPlan: { nodes: [] } })).toBe(true)
+    expect(hasContextualWorkbench({ runsFeed: { rows: [] } })).toBe(true)
   })
 })

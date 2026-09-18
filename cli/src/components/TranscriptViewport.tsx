@@ -10,17 +10,13 @@
  * reserved row is taken out of the content budget, so none steal a
  * transcript line.
  *
- * Every visible row is padded to `width` and painted with a per-role
- * background so user/assistant cards read as slabs on the floor.
+ * Normal conversation rows stay on the terminal floor. Only bounded
+ * approval/error attention rows retain a surface.
  */
 import { Box, Text } from "ink"
 import React from "react"
 import { NEW_MESSAGES_INDICATOR, viewportSlice } from "../lib/viewport"
-import {
-  classifyLine,
-  highlightLine,
-  padVisible,
-} from "../lib/transcript"
+import { classifyLine, highlightLine, padVisible } from "../lib/transcript"
 import { palette } from "../theme"
 import { Fill } from "./Fill"
 
@@ -47,23 +43,6 @@ export interface TranscriptViewportProps {
   readonly highlight?: TranscriptHighlight | null
   /** Terminal columns — each slab pads to this width. */
   readonly width?: number
-}
-
-/** Ink background hex for a classified transcript row. */
-export function roleBackground(role: ReturnType<typeof classifyLine>): string {
-  if (role === "assistant") {
-    return palette.lane
-  }
-  if (role === "user" || role === "approval") {
-    return palette.raised
-  }
-  if (role === "alert") {
-    return palette.rail
-  }
-  if (role === "pulse") {
-    return palette.rail
-  }
-  return palette.floor
 }
 
 export function TranscriptViewport({
@@ -98,30 +77,19 @@ export function TranscriptViewport({
             )
           : line
         const role = classifyLine(line)
-        if (role === "assistant") {
+        if (role === "approval" || role === "alert") {
           return (
-            <Fill key={index} width={width} height={1} color={palette.lane}>
-              <Box width={width} height={1} flexDirection="row">
-                <Text backgroundColor={palette.brand}> </Text>
-                <Text>{padVisible(painted, Math.max(0, width - 1))}</Text>
-              </Box>
+            <Fill key={index} width={width} height={1} color={palette.rail}>
+              <Text color={role === "approval" ? palette.waiting : undefined}>
+                {padVisible(painted, width)}
+              </Text>
             </Fill>
           )
         }
         return (
-          <Fill
-            key={index}
-            width={width}
-            height={1}
-            color={roleBackground(role)}
-          >
-            <Text
-              dimColor={role === "event"}
-              color={role === "approval" ? palette.waiting : undefined}
-            >
-              {padVisible(painted, width)}
-            </Text>
-          </Fill>
+          <Text key={index} dimColor={role === "event"}>
+            {painted}
+          </Text>
         )
       })}
       {indicator ? (

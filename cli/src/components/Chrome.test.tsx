@@ -83,24 +83,14 @@ describe("Welcome", () => {
     const { lastFrame, unmount } = render(<Welcome />)
     const frame = lastFrame()
     expect(frame).toContain("comuki")
-    expect(frame).toContain("agent orchestration platform")
+    expect(frame).toContain("Describe the outcome you want")
     expect(frame).toContain(MARK_WELCOME[4]?.trim())
     unmount()
   })
 
-  test("omits the stats line when stats are absent", () => {
+  test("does not render a dashboard stats wall", () => {
     const { lastFrame, unmount } = render(<Welcome />)
     expect(lastFrame()).not.toContain("workers")
-    unmount()
-  })
-
-  test("renders the stats line when stats are provided", () => {
-    const { lastFrame, unmount } = render(
-      <Welcome stats={{ workers: 12, memory: 348 }} />
-    )
-    const frame = lastFrame()
-    expect(frame).toContain("workers 12")
-    expect(frame).toContain("knowledge 348")
     unmount()
   })
 })

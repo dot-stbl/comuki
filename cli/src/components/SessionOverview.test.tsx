@@ -215,4 +215,26 @@ describe("SessionOverview filter overlay", () => {
     expect(closed).toEqual([1])
     unmount()
   })
+
+  test("mouse selects a visible session row", async () => {
+    const selected: number[] = []
+    const { stdin, unmount } = render(
+      <SessionOverview
+        sessions={[
+          session({ id: "s1", name: "alpha" }),
+          session({ id: "s2", name: "docs" }),
+        ]}
+        activeIndex={0}
+        onSelect={(index) => selected.push(index)}
+        onNewSession={() => {}}
+        onClose={() => {}}
+      />
+    )
+    await settle()
+    stdin.write("\x1b[<0;8;5M")
+    await settle()
+
+    expect(selected).toEqual([1])
+    unmount()
+  })
 })

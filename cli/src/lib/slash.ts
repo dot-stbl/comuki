@@ -133,6 +133,30 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     usage: "/kb add <file|glob> | /kb list",
     description: "knowledge library — ingest files, list documents",
   },
+  {
+    name: "status",
+    aliases: [],
+    usage: "/status",
+    description: "platform snapshot (same as comuki status)",
+  },
+  {
+    name: "open",
+    aliases: [],
+    usage: "/open",
+    description: "open this session in the dashboard",
+  },
+  {
+    name: "tools",
+    aliases: [],
+    usage: "/tools",
+    description: "brain / MCP tool catalogue",
+  },
+  {
+    name: "note",
+    aliases: [],
+    usage: "/note <text>",
+    description: "write a memory note",
+  },
 ]
 
 /** The `/help` transcript block, rendered from the registry. */
@@ -172,6 +196,10 @@ export type SlashAction =
   | { readonly kind: "branch"; readonly message?: string }
   /** `/kb add notes.md` → subcommand `add`, rest `notes.md`; bare `/kb` → both empty. */
   | { readonly kind: "kb"; readonly subcommand: string; readonly rest: string }
+  | { readonly kind: "status" }
+  | { readonly kind: "open" }
+  | { readonly kind: "tools" }
+  | { readonly kind: "note"; readonly text: string }
   /** Not a command — the input goes to the brain as a chat message. */
   | { readonly kind: "message" }
 
@@ -271,6 +299,18 @@ export function resolveSlashAction(raw: string): SlashAction {
       subcommand: (sub ?? "").toLowerCase(),
       rest: subRest.join(" ").trim(),
     }
+  }
+  if (matches("status", name)) {
+    return { kind: "status" }
+  }
+  if (matches("open", name)) {
+    return { kind: "open" }
+  }
+  if (matches("tools", name)) {
+    return { kind: "tools" }
+  }
+  if (matches("note", name)) {
+    return { kind: "note", text: args }
   }
   return { kind: "message" }
 }

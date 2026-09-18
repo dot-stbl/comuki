@@ -396,6 +396,20 @@ describe("postMessage latency sampling", () => {
     expect((caught as ComukiApiError).status).toBe(403)
   })
 
+  it("health returns the anonymous liveness payload", async () => {
+    const { impl, calls } = fakeFetch({
+      "GET /api/v1/health": { body: { status: "ok" } },
+    })
+    const client = new ComukiClient(resolveConfig({ COMUKI_URL: "http://t" }), {
+      fetchImpl: impl,
+    })
+
+    const payload = await client.health()
+
+    expect(payload).toEqual({ status: "ok" })
+    expect(calls[0]?.url).toBe("http://t/api/v1/health")
+  })
+
   it("backgroundWorkers returns the registry snapshot rows", async () => {
     const { impl, calls } = fakeFetch({
       "GET /api/v1/workers/background": {

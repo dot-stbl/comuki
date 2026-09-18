@@ -18,6 +18,7 @@ import {
 } from "../lib/format"
 import { isSgrMouseChunk } from "../lib/mouse"
 import { filterSessions, type ChatBlock, type Session } from "../lib/sessions"
+import { useMouse } from "../hooks/useMouse"
 import { palette } from "../theme"
 import { OverlaySheet } from "./OverlaySheet"
 
@@ -28,6 +29,10 @@ export interface SessionOverviewProps {
   readonly onNewSession: () => void
   readonly onClose: () => void
   readonly width?: number
+  /** Height of the viewport that centers this sheet. */
+  readonly viewportHeight?: number
+  /** One-based terminal row where that viewport begins. */
+  readonly terminalTop?: number
 }
 
 function statusGlyph(status: Session["status"]): {
@@ -141,6 +146,8 @@ export function SessionOverview({
   onNewSession,
   onClose,
   width = OVERVIEW_WIDTH + 4,
+  viewportHeight,
+  terminalTop = 1,
 }: SessionOverviewProps) {
   const [query, setQuery] = useState("")
   const visible = filterSessions(sessions, query)
@@ -194,6 +201,25 @@ export function SessionOverview({
   const sheetWidth = Math.max(24, width)
   const rowWidth = Math.max(20, sheetWidth - 4)
   const sheetHeight = contentHeight + 2
+  const sheetTop =
+    terminalTop +
+    Math.max(0, Math.floor(((viewportHeight ?? sheetHeight) - sheetHeight) / 2))
+  const listStartRow =
+    sheetTop +
+    3 +
+    (query.length > 0 ? 1 : 0) +
+    (waiting.length > 0 ? waiting.length + 2 : 0)
+
+  useMouse((click) => {
+    const rank = click.y - listStartRow
+    const chosen = numbered[rank]
+    if (chosen) {
+      const index = sessions.findIndex((session) => session.id === chosen.id)
+      if (index >= 0) {
+        onSelect(index)
+      }
+    }
+  })
 
   return (
     <OverlaySheet

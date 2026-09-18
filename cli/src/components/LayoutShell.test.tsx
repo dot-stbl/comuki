@@ -1,215 +1,114 @@
-/**
- * Integration tests for the full-screen layout shell that `ChatApp`
- * uses: a `<Box>` rooted at the terminal dimensions, header (status +
- * tab bar) on top, a `flexGrow` content area in the middle, footer at
- * the bottom.
- *
- * These tests render a stripped-down `LayoutShell` (same shape as
- * `ChatApp`'s outer wrapper, no network / hub) so we can verify the
- * geometry invariants without faking the API client.
- *
- * Assertions:
- *   - renders without crash at small, medium and wide terminals
- *   - the welcome card sits in the vertical centre of the content area
- *   - the tab bar and footer are present whenever sessions exist
- *   - the content area claims exactly `rows - header - footer` lines
- */
 import { describe, expect, test } from "bun:test"
-import React from "react"
 import { Box, Text } from "ink"
 import { render } from "ink-testing-library"
-import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
-import { Fill } from "./Fill"
-import { SessionFooter } from "./SessionFooter"
-import { TabBar } from "./TabBar"
-import { Welcome } from "./Welcome"
-import { footerActions } from "../lib/footer-actions"
-import type { Session } from "../lib/sessions"
-import { palette } from "../theme"
+import React from "react"
+import { resolveHarnessLayout } from "../lib/harness-layout"
+import { stripAnsi } from "../theme"
+import { PromptInput } from "./PromptInput"
+import { TopBar } from "./TopBar"
+import { TranscriptViewport } from "./TranscriptViewport"
 
-function noopToggle(): void {
-  /* presentational */
+interface ConversationShellProps {
+  readonly columns: number
+  readonly rows: number
+  readonly contextual?: boolean
 }
 
-function noopSelect(_index: number): void {
-  /* presentational */
-}
-
-function noopActivate(_id: string): void {
-  /* presentational */
-}
-
-function makeSession(overrides: Partial<Session> = {}): Session {
-  return {
-    id: "local-1",
-    name: "alpha",
-    status: "idle",
-    createdAt: 0,
-    unread: false,
-    awaitingApproval: false,
-    pendingPlan: null,
-    blocks: [],
-    liveText: "",
-    hydrated: true,
-    blocksExpanded: false,
-    lastUserMessage: null,
-    renamed: false,
-    ...overrides,
-  }
-}
-
-interface LayoutShellProps {
-  readonly sessions: readonly Session[]
-  readonly showWelcome: boolean
-}
-
-/**
- * Mirrors the shape of `ChatApp`'s render root. The header takes one
- * line for `StatusLine` and one for `TabBar` (when present); the footer
- * takes one line for `SessionFooter` (when present and not in the
- * welcome-only branch).
- */
-function LayoutShell({ sessions, showWelcome }: LayoutShellProps) {
-  const { columns, rows } = useStdoutDimensions()
-  const hasTabs = sessions.length > 0
-  const showFooter = hasTabs && !showWelcome
+function ConversationShell({
+  columns,
+  rows,
+  contextual = false,
+}: ConversationShellProps) {
+  const layout = resolveHarnessLayout(columns, contextual)
+  const composerRows = 2
+  const viewportRows = rows - layout.topBarRows - composerRows
+  const lines = Array.from(
+    { length: viewportRows },
+    (_, index) => `transcript-${index + 1}`
+  )
   return (
-    <Fill width={columns} height={rows} color={palette.floor}>
-      <Box flexDirection="column" width={columns} height={rows}>
-        <Fill width={columns} height={1} color={palette.rail}>
-          <Text>status</Text>
-        </Fill>
-        {hasTabs ? (
-          <Fill width={columns} height={1} color={palette.lane}>
-            <TabBar sessions={sessions} activeIndex={0} />
-          </Fill>
-        ) : null}
-        <Box flexDirection="column" flexGrow={1} flexShrink={1} minHeight={0}>
-          {showWelcome ? (
-            <Box
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              flexGrow={1}
-            >
-              <Welcome stats={{ workers: 4, memory: 17 }} />
-            </Box>
-          ) : (
-            <Text>transcript</Text>
-          )}
+    <Box width={columns} height={rows} flexDirection="column">
+      <TopBar
+        width={columns}
+        mode={layout.mode}
+        session="conversation first"
+      />
+      <Box flexDirection="row" height={rows - layout.topBarRows}>
+        <Box
+          width={layout.workspaceWidth}
+          height={rows - layout.topBarRows}
+          flexDirection="column"
+        >
+          <TranscriptViewport
+            lines={lines}
+            height={viewportRows}
+            offset={0}
+            newBelow={false}
+            width={layout.workspaceWidth}
+          />
+          <PromptInput
+            onSubmit={() => {}}
+            active={false}
+            label="project comuki / profile implement"
+          />
         </Box>
-        {showFooter ? (
-          <Fill width={columns} height={1} color={palette.rail}>
-            <SessionFooter
-              sessions={sessions}
-              activeIndex={0}
-              expanded={false}
-              selectedIndex={0}
-              actions={footerActions({
-                thinking: false,
-                awaitingApproval: false,
-                signedOut: false,
-                sessionCount: sessions.length,
-              })}
-              onToggle={noopToggle}
-              onSelect={noopSelect}
-              onActivate={noopActivate}
-            />
-          </Fill>
+        {layout.workbenchWidth > 0 ? (
+          <Text>{"workbench".padEnd(layout.workbenchWidth)}</Text>
         ) : null}
       </Box>
-    </Fill>
+    </Box>
   )
 }
 
-describe("LayoutShell (full-screen TUI)", () => {
-  test("renders without crash at small terminal (40x16)", () => {
+describe("conversation-first shell", () => {
+  test("normal wide layout has no session rail, tabs, or footer actions", () => {
     const { lastFrame, unmount } = render(
-      <LayoutShell sessions={[]} showWelcome />
+      <ConversationShell columns={120} rows={30} />
     )
-    expect(lastFrame()).toContain("status")
-    expect(lastFrame()).toContain("comuki")
-    unmount()
-  })
+    const frame = stripAnsi(lastFrame() ?? "")
 
-  test("renders without crash at medium terminal (80x24)", () => {
-    const { lastFrame, unmount } = render(
-      <LayoutShell sessions={[]} showWelcome />
-    )
-    expect(lastFrame()).toContain("status")
-    expect(lastFrame()).toContain("comuki")
-    unmount()
-  })
-
-  test("renders without crash at wide terminal (160x40)", () => {
-    const { lastFrame, unmount } = render(
-      <LayoutShell sessions={[]} showWelcome />
-    )
-    expect(lastFrame()).toContain("status")
-    expect(lastFrame()).toContain("comuki")
-    unmount()
-  })
-
-  test("shows the welcome card on a cold start (no sessions)", () => {
-    const { lastFrame, unmount } = render(
-      <LayoutShell sessions={[]} showWelcome />
-    )
-    const frame = lastFrame()
-    expect(frame).toContain("status")
-    expect(frame).toContain("comuki")
-    expect(frame).toContain("agent orchestration platform")
-    unmount()
-  })
-
-  test("hides the footer on a cold start (no tabs to summarize)", () => {
-    const { lastFrame, unmount } = render(
-      <LayoutShell sessions={[]} showWelcome />
-    )
-    // The footer shows the expand hint; absent when there are no sessions.
-    expect(lastFrame()).not.toContain("ctrl+/ actions")
-    unmount()
-  })
-
-  test("shows the tab bar and footer once a session exists", () => {
-    const sessions = [makeSession({ id: "a", name: "alpha" })]
-    const { lastFrame, unmount } = render(
-      <LayoutShell sessions={sessions} showWelcome={false} />
-    )
-    const frame = lastFrame()
-    expect(frame).toContain("status")
-    expect(frame).toContain("[1] alpha")
-    expect(frame).toContain("ctrl+/ actions")
-    unmount()
-  })
-
-  test("shows multiple tabs and footer badges together", () => {
-    const sessions = [
-      makeSession({ id: "a", name: "alpha" }),
-      makeSession({ id: "b", name: "beta" }),
-      makeSession({ id: "c", name: "gamma" }),
-    ]
-    const { lastFrame, unmount } = render(
-      <LayoutShell sessions={sessions} showWelcome={false} />
-    )
-    const frame = lastFrame()
-    expect(frame).toContain("[1] alpha")
-    expect(frame).toContain("[2] beta")
-    expect(frame).toContain("[3] gamma")
-    expect(frame).toContain("1 alpha")
-    expect(frame).toContain("2 beta")
-    expect(frame).toContain("3 gamma")
-    expect(frame).toContain("ctrl+/ actions")
-    unmount()
-  })
-
-  test("welcome state omits the tab bar and footer entirely", () => {
-    const sessions: Session[] = []
-    const { lastFrame, unmount } = render(
-      <LayoutShell sessions={sessions} showWelcome />
-    )
-    const frame = lastFrame()
+    expect(frame).not.toContain("sessions")
     expect(frame).not.toContain("[1]")
     expect(frame).not.toContain("ctrl+/ actions")
+    expect(frame).not.toContain("workbench")
+    expect(frame).toContain("conversation first")
     unmount()
+  })
+
+  test("transcript receives every row not used by header and composer", () => {
+    const rows = 30
+    const { lastFrame, unmount } = render(
+      <ConversationShell columns={100} rows={rows} />
+    )
+    const frameRows = stripAnsi(lastFrame() ?? "").split("\n")
+
+    expect(frameRows).toHaveLength(rows)
+    expect(frameRows).toContain("transcript-27")
+    expect(frameRows.at(-1)).toContain(">")
+    unmount()
+  })
+
+  test("80x24 keeps the composer visible with at least 15 transcript rows", () => {
+    const { lastFrame, unmount } = render(
+      <ConversationShell columns={80} rows={24} />
+    )
+    const frame = stripAnsi(lastFrame() ?? "")
+
+    expect(frame).toContain("transcript-21")
+    expect(frame).toContain("project comuki / profile implement")
+    expect(frame.split("\n").at(-1)).toContain(">")
+    unmount()
+  })
+
+  test("wide workbench appears only when contextual work exists", () => {
+    const ordinary = render(<ConversationShell columns={120} rows={30} />)
+    const contextual = render(
+      <ConversationShell columns={120} rows={30} contextual />
+    )
+
+    expect(stripAnsi(ordinary.lastFrame() ?? "")).not.toContain("workbench")
+    expect(stripAnsi(contextual.lastFrame() ?? "")).toContain("workbench")
+    ordinary.unmount()
+    contextual.unmount()
   })
 })

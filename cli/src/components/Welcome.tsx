@@ -1,8 +1,7 @@
 /**
  * The centered first-run lockup: the brand glyph over the `comuki`
- * wordmark in the brand color, a dim tagline beneath, then a quiet
- * key-hints row and best-effort platform stats. The lockup sits inside
- * one lane-colored card while the parent holds it in the screen middle.
+ * wordmark in the brand color and three useful starting actions. The
+ * parent centers it directly on the terminal floor without a card.
  *
  * Rendered only while zero sessions exist and the first message has not
  * been sent — after that the chat owns the screen and the wordmark never
@@ -15,16 +14,9 @@ import { Box, Text } from "ink"
 import React from "react"
 import { configFilePath } from "../lib/config"
 import { MARK_WELCOME } from "../lib/mark"
-import { palette, symbols } from "../theme"
-import { Fill } from "./Fill"
-
-export interface PlatformStats {
-  readonly workers: number
-  readonly memory: number
-}
+import { palette } from "../theme"
 
 export interface WelcomeProps {
-  readonly stats?: PlatformStats | null
   /**
    * Show the `comuki setup` pointer. Defaults to "config.json missing"
    * so chat.tsx needs no wiring; pass explicitly in tests.
@@ -39,52 +31,34 @@ export function firstRunHintVisible(
   return !existsSync(configPath)
 }
 
-const HINTS = ["ctrl+n new tab", "esc sessions", "help commands"].join(
-  ` ${symbols.bullet} `
-)
-const WELCOME_WIDTH = 58
-
-export function Welcome({ stats, firstRun = firstRunHintVisible() }: WelcomeProps) {
-  const height = 16 + (stats ? 1 : 0) + (firstRun ? 1 : 0)
+export function Welcome({ firstRun = firstRunHintVisible() }: WelcomeProps) {
   return (
-    <Fill width={WELCOME_WIDTH} height={height} color={palette.lane}>
-      <Box
-        width={WELCOME_WIDTH}
-        height={height}
-        flexDirection="column"
-        alignItems="center"
-        paddingX={2}
-        paddingY={1}
-      >
-        {MARK_WELCOME.map((line, index) => (
-          <Text key={index} color={palette.brand}>
-            {line}
-          </Text>
-        ))}
-        <Box marginTop={1}>
-          <Text bold color={palette.brand}>
-            comuki agent harness
-          </Text>
-        </Box>
-        <Box marginTop={1}>
-          <Text dimColor>agent orchestration platform / chat / plan / approve</Text>
-        </Box>
-        <Box marginTop={1}>
-          <Text dimColor>{HINTS}</Text>
-        </Box>
-        {stats ? (
-          <Box marginTop={1}>
-            <Text dimColor>
-              workers {stats.workers} / knowledge {stats.memory}
-            </Text>
-          </Box>
-        ) : null}
-        {firstRun ? (
-          <Box marginTop={1}>
-            <Text dimColor>first run? try: comuki setup</Text>
-          </Box>
-        ) : null}
+    <Box flexDirection="column" alignItems="center">
+      {MARK_WELCOME.map((line, index) => (
+        <Text key={index} color={palette.brand}>
+          {line}
+        </Text>
+      ))}
+      <Box marginTop={1}>
+        <Text bold color={palette.brand}>
+          comuki agent harness
+        </Text>
       </Box>
-    </Fill>
+      <Box marginTop={1}>
+        <Text dimColor>
+          Describe the outcome you want. Comuki coordinates the work.
+        </Text>
+      </Box>
+      <Box marginTop={1} flexDirection="column">
+        <Text dimColor>{"  > ask a question or describe a task"}</Text>
+        <Text dimColor>{"  / open an action by name"}</Text>
+        <Text dimColor>{"  ctrl+p browse actions / esc browse sessions"}</Text>
+      </Box>
+      {firstRun ? (
+        <Box marginTop={1}>
+          <Text dimColor>first run? try: comuki setup</Text>
+        </Box>
+      ) : null}
+    </Box>
   )
 }

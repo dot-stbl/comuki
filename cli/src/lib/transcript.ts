@@ -166,7 +166,7 @@ export function liveLines(liveText: string, width: number): string[] {
   )
 }
 
-/** One-line spinner pulse; the viewport paints it on the rail slab. */
+/** One-line spinner pulse before the assistant stream begins. */
 export function typingLines(
   frame: number,
   label: string = TYPING_LABEL
@@ -175,7 +175,7 @@ export function typingLines(
   const index = ((frame % count) + count) % count
   const glyph = symbols.spinnerFrames[index] ?? symbols.spinnerFrames[0]
   return [
-    `${paint("[", colors.dim)}${paint(glyph, colors.accent)}${paint("]", colors.dim)} ${paint(label, colors.dim)}${paint(" / ctrl+c interrupts", colors.faint)}`,
+    `${paint("[", colors.dim)}${paint(glyph, colors.accent)}${paint("]", colors.dim)} ${paint(label, colors.dim)}`,
   ]
 }
 

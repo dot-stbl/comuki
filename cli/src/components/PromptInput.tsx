@@ -394,8 +394,8 @@ export function PromptInput({
   // -- reporting hooks (shell side: hotkey gates + viewport math) --------
 
   const inputRows = Math.max(1, state.value.split("\n").length)
-  // Label + editor rows; tonal slabs provide grouping without box glyphs.
-  const renderedRows = (menuOpen ? matches.length + 1 : 0) + inputRows + 2
+  // One quiet metadata row + editor rows. No permanent key tutorial.
+  const renderedRows = (menuOpen ? matches.length + 1 : 0) + inputRows + 1
 
   useEffect(() => {
     onMenuOpenChange?.(menuOpen)
@@ -445,27 +445,24 @@ export function PromptInput({
           {menuRows}
         </>
       ) : null}
-      <Text
-        bold
-        color={active ? palette.brand : undefined}
-        dimColor={!active}
-        backgroundColor={palette.raised}
-      >
-        {`  ${label || "prompt"}`}
-        <Text dimColor backgroundColor={palette.raised}>
-          {"  shift+enter newline / enter send"}
-        </Text>
+      <Text dimColor>
+        {`  ${
+          label ||
+          (state.value.length === 0
+            ? "ctrl+p actions / esc sessions"
+            : "composing")
+        }`}
       </Text>
       {lines.map((line, index) => (
-        <Text key={index} backgroundColor={palette.raised}>
+        <Text key={index}>
           {index === 0 ? (
-            <Text color={palette.brand} backgroundColor={palette.raised}>
+            <Text color={active ? palette.brand : undefined} dimColor={!active}>
               {"  "}
               {symbols.prompt}{" "}
             </Text>
           ) : (
             // Continuation rows align under the prompt glyph.
-            <Text backgroundColor={palette.raised}>{"    "}</Text>
+            <Text>{"    "}</Text>
           )}
           {line}
         </Text>

@@ -14,20 +14,15 @@ describe("TopBar responsive composition", () => {
         width={58}
         mode="compact"
         session="repair streamed approvals"
-        identity="operator@example.net"
-        project="comuki"
-        profile="implement"
-        connection="live"
-        serverUrl="https://api.example.net"
-        latencyMs={42}
+        activity="thinking"
       />
     )
     const lines = stripAnsi(lastFrame() ?? "").split("\n")
 
-    expect(lines).toHaveLength(2)
+    expect(lines).toHaveLength(1)
     expect(lines.every((line) => line.length <= 58)).toBe(true)
     expect(lines[0]).toContain("comuki")
-    expect(lines[0]).toContain("[live] 42ms")
+    expect(lines[0]).toContain("thinking")
     unmount()
   })
 })
@@ -55,7 +50,7 @@ describe("OverlaySheet family", () => {
 
 describe("active streaming card", () => {
   test("renders the one-line pulse on rail and the live tail on lane", () => {
-    const lines = ["[|] thinking / ctrl+c interrupts", " streamed reply_"]
+    const lines = ["[|] thinking", " streamed reply_"]
     const { lastFrame, unmount } = render(
       <TranscriptViewport
         lines={lines}
@@ -67,7 +62,7 @@ describe("active streaming card", () => {
     )
     const frame = stripAnsi(lastFrame() ?? "")
 
-    expect(frame).toContain("[|] thinking / ctrl+c interrupts")
+    expect(frame).toContain("[|] thinking")
     expect(frame).toContain("streamed reply_")
     unmount()
   })

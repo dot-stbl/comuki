@@ -15,9 +15,8 @@
  * terminal scrollback: the flattened lines render into a fixed-height
  * viewport (`lib/viewport.ts` + `TranscriptViewport`) whose offset 0
  * follows the bottom; PgUp suspends follow, `↓ new messages` marks
- * fresh output below, End resumes. The prompt and footer are pinned
- * outside the viewport and never scroll away. `ctrl+/` expands the
- * action bar; while it is open, PromptInput yields arrows/enter/esc.
+ * fresh output below, End resumes. The composer is pinned outside the
+ * viewport and never scrolls away. `ctrl+p` opens the action palette.
  */
 import { Box, Text, useApp, useInput } from "ink"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -122,8 +121,10 @@ import {
   setAlias,
   writeAliasesFile,
 } from "../lib/aliases"
-import { DEFAULT_CONTEXT_WINDOW } from "../lib/context"
-import { resolveHarnessLayout } from "../lib/harness-layout"
+import {
+  hasContextualWorkbench,
+  resolveHarnessLayout,
+} from "../lib/harness-layout"
 import {
   profileListingLines,
   profileStoredLine,
@@ -201,26 +202,18 @@ import {
 import { AlertCard } from "../components/AlertCard"
 import { Fill } from "../components/Fill"
 import { PromptInput } from "../components/PromptInput"
-import { SessionFooter } from "../components/SessionFooter"
 import {
-  footerActions,
-  footerHintRow,
-  footerRowCount,
-  footerTopRow,
-  hitTestFooterAction,
-  isCollapsedFooterClick,
-  isFooterExpandChord,
-  wrapActionIndex,
-} from "../lib/footer-actions"
-import { SessionOverview } from "../components/SessionOverview"
-import { sessionTokenTotals } from "../components/SessionOverview"
+  SessionOverview,
+  sessionTokenTotals,
+} from "../components/SessionOverview"
 import { LineInspector } from "../components/OverlaySheet"
-import { SessionRail } from "../components/SessionRail"
-import { TabBar } from "../components/TabBar"
+import { hostFromUrl } from "../components/StatusLine"
 import { TopBar } from "../components/TopBar"
 import { TranscriptSearch } from "../components/TranscriptSearch"
 import { TranscriptViewport } from "../components/TranscriptViewport"
-import { Welcome, type PlatformStats } from "../components/Welcome"
+import { Welcome } from "../components/Welcome"
+import { CommandPalette } from "../components/CommandPalette"
+import { ContextWorkbench } from "../components/ContextWorkbench"
 import { fetchRunsFeedPanel } from "./runsfeed"
 
 const EMPTY_TAB_HINT = `${colors.faint}  no open sessions — ctrl+n to start one${colors.reset}`
@@ -281,6 +274,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const [connectError, setConnectError] = useState<unknown>(null)
   const [noticeLines, setNoticeLines] = useState<readonly string[]>([])
   const [overviewVisible, setOverviewVisible] = useState(false)
+  const [paletteVisible, setPaletteVisible] = useState(false)
   const [inspector, setInspector] = useState<{
     readonly title: string
     readonly lines: readonly string[]
@@ -290,16 +284,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   >(undefined)
   /** The welcome screen never returns once the first message is sent. */
   const [welcomeDismissed, setWelcomeDismissed] = useState(false)
-  const [stats, setStats] = useState<PlatformStats | null>(null)
   const [bootstrapped, setBootstrapped] = useState(false)
-  /**
-   * True once the SSE attempt has resolved (success OR failure). The
-   * StatusLine placeholder text only shows while we are "truly
-   * disconnected" — once the hub attempt finishes, fallback to REST-only
-   * is a stable state and the placeholder goes away even when the hub
-   * never came up.
-   */
-  const [hubAttempted, setHubAttempted] = useState(false)
   /** Hub chip for the status line; driven by the factory's state feed. */
   const [hubState, setHubState] = useState<HubConnectionState>("connecting")
   /** Chat-send EMA from the client — the status line latency badge. */
@@ -365,7 +350,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
   const activeSessionId = activeSession?.id
   const activeHydrated = activeSession?.hydrated
-  const harness = resolveHarnessLayout(columns, tabs.sessions.length > 0)
+  const showContextWorkbench = hasContextualWorkbench(activeSession)
+  const harness = resolveHarnessLayout(columns, showContextWorkbench)
   const contentWidth = harness.workspaceWidth
 
   // The window title follows the active tab: ⏳ while its turn is in
@@ -376,7 +362,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
   // ctrl+y (or overlay copy chord) copies the last assistant answer;
   // ctrl+shift+y / `/copycode` copies the last fenced code block.
-  const { hint: copyHint, copyLastCode, copyLast } = useCopyLastAnswer(
+  const { hint: copyHint, copyLastCode } = useCopyLastAnswer(
     () => lastAssistantText(activeSession?.blocks ?? []),
     {
       chord: keybindings.copy,
@@ -476,9 +462,14 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         activeSession
           ? {
               blocks: activeSession.blocks,
-              awaitingApproval: activeSession.awaitingApproval,
-              pendingPlan: activeSession.pendingPlan,
-              runsFeed: activeSession.runsFeed ?? null,
+              awaitingApproval:
+                harness.workbenchWidth === 0 && activeSession.awaitingApproval,
+              pendingPlan:
+                harness.workbenchWidth === 0 ? activeSession.pendingPlan : null,
+              runsFeed:
+                harness.workbenchWidth === 0
+                  ? activeSession.runsFeed ?? null
+                  : null,
               thinking,
               liveText: activeSession.liveText,
               expanded: activeSession.blocksExpanded,
@@ -488,7 +479,14 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         typingFrame,
         noticeLines
       ),
-    [activeSession, contentWidth, typingFrame, noticeLines, thinking]
+    [
+      activeSession,
+      contentWidth,
+      harness.workbenchWidth,
+      typingFrame,
+      noticeLines,
+      thinking,
+    ]
   )
 
   // -- ctrl+f transcript search ---------------------------------------------------
@@ -496,10 +494,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchIndex, setSearchIndex] = useState(0)
-  const [footerExpanded, setFooterExpanded] = useState(false)
-  const [footerSelected, setFooterSelected] = useState(0)
-  const footerExpandedRef = useRef(false)
-  const footerSelectedRef = useRef(0)
 
   const searchMatches = useMemo(
     () => (searchOpen ? findMatches(transcriptLines, searchQuery) : []),
@@ -521,43 +515,15 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       ? expandHintLine(columns)
       : null
 
-  // Pinned chrome rows: status line + tab strip + footer + the prompt
-  // block. The prompt block = the (possibly multiline, possibly
-  // menu-carrying) prompt + the transient ctrl+y hint row + the queue
-  // hint row. Everything left belongs to the scrolling viewport.
-  // Expanded footer subtracts like PromptInput rows so the transcript
-  // viewport shrinks instead of being covered.
-  const showFooter =
-    tabs.sessions.length > 0 && !overviewVisible && inspector === null
-  const signedOut =
-    identity === "anonymous" ||
-    identity === "offline" ||
-    identity === "signed out"
-  const actionItems = footerActions({
-    thinking: activeSession?.status === "thinking",
-    awaitingApproval: activeSession?.awaitingApproval === true,
-    signedOut,
-    sessionCount: tabs.sessions.length,
-  })
+  // One header row and the composer are the only permanent chrome.
+  // Everything left belongs to the scrolling transcript.
   const queuedCount = activeSession?.queued?.length ?? 0
   const promptBlockRows =
     promptRows + (copyHint ? 1 : 0) + (queuedCount > 0 ? 1 : 0)
-  const clampedFooterSelected =
-    actionItems.length === 0
-      ? 0
-      : Math.min(footerSelected, actionItems.length - 1)
-  if (footerSelectedRef.current !== clampedFooterSelected) {
-    footerSelectedRef.current = clampedFooterSelected
-  }
-  const footerRows = showFooter
-    ? footerRowCount(footerExpanded, actionItems.length)
-    : 0
   const viewportHeight = Math.max(
     1,
     rows -
       harness.topBarRows -
-      harness.navigationRows -
-      footerRows -
       (searchOpen ? 1 : 0) - // TranscriptSearch row
       promptBlockRows -
       (mentionMenu.menuOpen ? mentionMenu.rowCount : 0) // mention popup
@@ -833,15 +799,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         if (connection && !disposed && hubRef.current !== connection) {
           bindHub(connection)
         }
-        // Hub attempt resolved (connect or fallback). Whichever path the
-        // transport took, the placeholder text in the StatusLine is no
-        // longer accurate — we are not "truly disconnected" anymore, we
-        // are either live or we are on the REST-only path that works
-        // (the retry loop may still bring the hub back in the background).
-        if (!disposed) {
-          setHubAttempted(true)
-        }
-
         const restored = fromPersisted(await readSessionsFile())
         if (!disposed) {
           setTabs(restored)
@@ -861,21 +818,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
       }
 
-      // Welcome stats — workers running + knowledge docs, best effort.
-      try {
-        const [compute, knowledge] = await Promise.all([
-          client.compute(),
-          client.knowledgeDocuments(1, 1),
-        ])
-        if (!disposed) {
-          setStats({
-            workers: compute.pools.reduce((sum, pool) => sum + pool.running, 0),
-            memory: knowledge.total,
-          })
-        }
-      } catch {
-        // The welcome line just omits itself offline.
-      }
     })()
 
     return () => {
@@ -1174,24 +1116,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       )
     )
   }, [])
-
-  const collapseFooter = useCallback(() => {
-    footerExpandedRef.current = false
-    setFooterExpanded(false)
-    setFooterSelected(0)
-    footerSelectedRef.current = 0
-  }, [])
-
-  const toggleFooter = useCallback(() => {
-    if (footerExpandedRef.current) {
-      collapseFooter()
-      return
-    }
-    footerExpandedRef.current = true
-    footerSelectedRef.current = 0
-    setFooterSelected(0)
-    setFooterExpanded(true)
-  }, [collapseFooter])
 
   const closeSession = useCallback(
     (index: number) => {
@@ -2274,10 +2198,25 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           if (!client) {
             return
           }
+          const totals = sessionTokenTotals(target?.blocks ?? [])
+          const localLines = [
+            `  identity: ${identity}`,
+            `  transport: ${hubState}`,
+            `  host: ${hostFromUrl(config.url) ?? "unavailable"}`,
+            `  latency: ${latencyMs === null ? "unknown" : `${latencyMs}ms`}`,
+            `  project: ${projectLabel ?? "none"}`,
+            `  profile: ${preferredProfile ?? "default"}`,
+            `  context: ${
+              totals === null
+                ? "unknown"
+                : `${totals.tokensIn + totals.tokensOut} tokens`
+            }`,
+          ]
+          setInspector({ title: "platform status", lines: localLines })
           void fetchStatusSnapshot(client).then((snapshot) => {
             setInspector({
               title: "platform status",
-              lines: renderStatusPanel(snapshot),
+              lines: [...localLines, "", ...renderStatusPanel(snapshot)],
             })
           })
           return
@@ -2409,76 +2348,26 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
       }
     },
-    [bellEnabled, closeSession, config.url, copyLastCode, exit, forkSession, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProfile, switchProject, tabs]
-  )
-
-  const activateFooterAction = useCallback(
-    (id: string) => {
-      collapseFooter()
-      switch (id) {
-        case "new":
-          openPendingTab()
-          return
-        case "overview":
-          setOverviewVisible(true)
-          return
-        case "verbose": {
-          const target =
-            tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
-          if (target) {
-            setTabs((current) => ({
-              ...current,
-              sessions: toggleBlocksExpanded(current.sessions, target.id),
-            }))
-            pushLines(target.id, [
-              target.blocksExpanded
-                ? `${colors.faint}  ${symbols.bullet} verbose off — thinking and tool blocks render collapsed${colors.reset}`
-                : `${colors.faint}  ${symbols.bullet} verbose on — thinking and tool blocks render expanded${colors.reset}`,
-            ])
-          }
-          return
-        }
-        case "copy":
-          copyLast()
-          return
-        case "search":
-          setSearchOpen(true)
-          return
-        case "login":
-          handleSubmit("/login")
-          return
-        case "approve":
-          handleSubmit("/approve")
-          return
-        case "reject":
-          handleSubmit("/reject")
-          return
-        case "stop": {
-          const target =
-            tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
-          if (target && target.status === "thinking") {
-            stopTurn(target.id)
-          }
-          return
-        }
-        case "help":
-          handleSubmit("/help")
-          return
-        case "quit":
-          exit()
-          return
-        default:
-          return
-      }
-    },
     [
-      collapseFooter,
-      copyLast,
+      bellEnabled,
+      closeSession,
+      config.url,
+      copyLastCode,
       exit,
-      handleSubmit,
+      forkSession,
+      hubState,
+      identity,
+      latencyMs,
       openPendingTab,
+      preferredProfile,
+      projectLabel,
       pushLines,
+      runKb,
+      runTurn,
+      sendMessage,
       stopTurn,
+      switchProfile,
+      switchProject,
       tabs,
     ]
   )
@@ -2510,11 +2399,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     }
   }, [tabs.sessions, sendMessage])
 
-  // SGR mouse: tab strip switches sessions; a click on the plan card's
-  // `approve` / `reject` line submits the matching slash. The collapsed
-  // footer row expands the action bar; a click on an expanded action
-  // row runs it. Terminals without mouse tracking ignore the DECSET
-  // bytes and never fire — the keyboard path is untouched.
+  // SGR mouse: a click on the plan card's `approve` / `reject` line
+  // submits the matching slash. Terminals without mouse tracking ignore
+  // the DECSET bytes and never fire — the keyboard path is untouched.
   const mouseLayoutRef = useRef<MouseLayout>({
     tabRow: null,
     sessions: [],
@@ -2525,9 +2412,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   })
   const indicatorRow = scroll.offset > 0 && scroll.newBelow
   mouseLayoutRef.current = {
-    tabRow: harness.navigationRows > 0 ? harness.topBarRows + 1 : null,
+    tabRow: null,
     sessions: tabs.sessions,
-    transcriptTop: harness.topBarRows + harness.navigationRows + 1,
+    transcriptTop: harness.topBarRows + 1,
     hasHint: expandHint !== null,
     visibleLines: viewportSlice(
       transcriptLines,
@@ -2540,59 +2427,16 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   }
   const handleMouseClick = useCallback(
     (click: { readonly x: number; readonly y: number }) => {
-      if (overviewRef.current || inspectorRef.current || searchOpen) {
+      if (
+        overviewRef.current ||
+        inspectorRef.current ||
+        paletteVisible ||
+        searchOpen
+      ) {
         return
       }
-      if (showFooter) {
-        const footerTopY =
-          harness.topBarRows +
-          harness.navigationRows +
-          viewportHeight +
-          (searchOpen ? 1 : 0) +
-          1
-        if (
-          isCollapsedFooterClick(click.y, footerTopY, footerExpandedRef.current)
-        ) {
-          toggleFooter()
-          return
-        }
-        if (footerExpandedRef.current) {
-          if (click.y === footerHintRow(footerTopY, actionItems.length)) {
-            toggleFooter()
-            return
-          }
-          const index = hitTestFooterAction(
-            click.y,
-            footerTopY,
-            actionItems.length
-          )
-          if (index !== null) {
-            const action = actionItems[index]
-            if (action) {
-              activateFooterAction(action.id)
-            }
-            return
-          }
-        }
-      }
-      if (
-        harness.mode === "wide" &&
-        click.x <= harness.railWidth &&
-        click.y >= harness.topBarRows + 3
-      ) {
-        const railIndex = Math.floor(
-          (click.y - harness.topBarRows - 3) / 2
-        )
-        if (railIndex >= 0 && railIndex < tabs.sessions.length) {
-          focusSession(railIndex)
-          return
-        }
-      }
       const localClick = {
-        x:
-          harness.mode === "wide"
-            ? click.x - harness.railWidth - harness.dividerWidth
-            : click.x,
+        x: click.x,
         y: click.y,
       }
       const target = resolveMouseClick(localClick, mouseLayoutRef.current)
@@ -2609,14 +2453,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       }
     },
     [
+      paletteVisible,
       searchOpen,
-      showFooter,
-      tabs.sessions.length,
-      viewportHeight,
-      harness,
-      actionItems,
-      activateFooterAction,
-      toggleFooter,
       focusSession,
       handleSubmit,
     ]
@@ -2631,6 +2469,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     if (overviewRef.current) {
       return // the overview's own handler owns the keys
     }
+    if (paletteVisible) {
+      return // the palette owns filtering, selection and dismissal
+    }
     if (inspectorRef.current) {
       if (key.escape) {
         setInspector(null)
@@ -2641,43 +2482,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     // editor eats the query keystrokes and enter/esc drive the search.
     if (searchOpen || loginStep !== null) {
       return
-    }
-    if (showFooter && isFooterExpandChord(input, key)) {
-      toggleFooter()
-      return
-    }
-    if (footerExpandedRef.current) {
-      if (key.escape) {
-        collapseFooter()
-        return
-      }
-      if (key.upArrow || key.leftArrow) {
-        const next = wrapActionIndex(
-          footerSelectedRef.current,
-          actionItems.length,
-          -1
-        )
-        footerSelectedRef.current = next
-        setFooterSelected(next)
-        return
-      }
-      if (key.downArrow || key.rightArrow) {
-        const next = wrapActionIndex(
-          footerSelectedRef.current,
-          actionItems.length,
-          1
-        )
-        footerSelectedRef.current = next
-        setFooterSelected(next)
-        return
-      }
-      if (key.return) {
-        const action = actionItems[footerSelectedRef.current]
-        if (action) {
-          activateFooterAction(action.id)
-        }
-        return
-      }
     }
     // The slash menu owns tab (complete), esc (dismiss) and ↑/↓
     // (selection) while it is open; the mention popup owns the same
@@ -2753,6 +2557,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       return
     }
     const bindings = keybindingsRef.current
+    if (key.ctrl && input.toLowerCase() === "p") {
+      setPaletteVisible(true)
+      return
+    }
     if (matchesBinding(bindings.overview, input, key)) {
       setOverviewVisible((current) => !current)
       return
@@ -2762,7 +2570,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       return
     }
     if (matchesBinding(bindings.search, input, key)) {
-      // Transcript search — the inline row above the footer owns the
+      // Transcript search — the inline row above the composer owns the
       // keyboard from here until esc closes it.
       setSearchOpen(true)
       return
@@ -2796,16 +2604,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     }
   }, [connectError])
 
-  // The placeholder lives in the StatusLine identity slot. We show it only
-  // while we are "truly disconnected" (hub attempt not yet decided);
-  // once the attempt resolves — connect or fallback to REST-only — the
-  // real identity takes over and the placeholder disappears.
-  const headerIdentity = hubAttempted ? identity : "connecting…"
-  const contextUsed = (() => {
-    const totals = sessionTokenTotals(activeSession?.blocks ?? [])
-    return totals === null ? undefined : totals.tokensIn + totals.tokensOut
-  })()
-
   const connectAlert: AlertCardModel | null =
     connectError === null ? null : alertFromError(connectError)
 
@@ -2813,10 +2611,35 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   // The prompt stays live while a turn thinks: typing a message queues
   // it, `/stop` needs to be submittable mid-turn.
   const promptEnabled =
-    !overviewVisible && inspector === null && !footerExpanded
+    !overviewVisible && !paletteVisible && inspector === null
+  const attentionCount = tabs.sessions.filter(
+    (session) => session.unread || session.awaitingApproval
+  ).length
+  const activity = activeSession?.awaitingApproval
+    ? "approval needed"
+    : activeSession?.status === "thinking"
+      ? "thinking"
+      : activeSession?.status === "running"
+        ? "workers active"
+        : undefined
+  const workbenchLines = activeSession?.awaitingApproval
+    ? planPanelLines(activeSession.blocks, activeSession.pendingPlan)
+    : activeSession?.runsFeed != null
+      ? renderRunsFeedPanel(activeSession.runsFeed)
+      : activeSession?.pendingPlan != null
+        ? planPanelLines(activeSession.blocks, activeSession.pendingPlan)
+        : activeSession?.status === "running"
+          ? ["active workers are processing this session"]
+          : []
+  const composerMetadata = [
+    projectLabel ? `project ${projectLabel}` : undefined,
+    preferredProfile ? `profile ${preferredProfile}` : undefined,
+    promptBusy ? "enter queues / /stop interrupts" : undefined,
+  ]
+    .filter((value): value is string => value !== undefined)
+    .join(" / ")
 
-  // Stable chrome spans the terminal. The workspace below adapts its
-  // session navigation: wide = rail, standard/compact = top strip.
+  // Conversation and composer are permanent; all navigation is transient.
   return (
     <Fill width={columns} height={rows} color={palette.floor}>
       <Box flexDirection="column" width={columns} height={rows}>
@@ -2824,46 +2647,19 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           width={columns}
           mode={harness.mode}
           session={activeSession?.name}
-          identity={headerIdentity}
-          project={projectLabel}
-          profile={preferredProfile}
-          connection={hubState}
-          serverUrl={config.url}
-          latencyMs={latencyMs}
-          contextUsed={contextUsed}
-          contextWindow={config.contextWindow ?? DEFAULT_CONTEXT_WINDOW}
-          tick={typingFrame}
+          activity={activity}
+          attentionCount={attentionCount}
         />
         <Box
           flexDirection="row"
           width={columns}
           height={rows - harness.topBarRows}
         >
-          {harness.railWidth > 0 ? (
-            <SessionRail
-              sessions={tabs.sessions}
-              activeIndex={tabs.activeIndex}
-              width={harness.railWidth}
-              height={rows - harness.topBarRows}
-            />
-          ) : null}
-          {harness.dividerWidth > 0 ? (
-            <Fill
-              width={harness.dividerWidth}
-              height={rows - harness.topBarRows}
-              color={palette.ruleStrong}
-            />
-          ) : null}
           <Box
             flexDirection="column"
             width={contentWidth}
             height={rows - harness.topBarRows}
           >
-            {harness.navigationRows > 0 ? (
-              <Fill width={contentWidth} height={1} color={palette.lane}>
-                <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />
-              </Fill>
-            ) : null}
             <Fill width={contentWidth} height={viewportHeight} color={palette.floor}>
               <Box
                 flexDirection="column"
@@ -2871,7 +2667,23 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                 height={viewportHeight}
                 overflow="hidden"
               >
-        {overviewVisible ? (
+        {paletteVisible ? (
+          <Box
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            flexGrow={1}
+          >
+            <CommandPalette
+              width={Math.max(32, contentWidth - 4)}
+              onSelect={(command) => {
+                setPaletteVisible(false)
+                handleSubmit(command)
+              }}
+              onClose={() => setPaletteVisible(false)}
+            />
+          </Box>
+        ) : overviewVisible ? (
           <Box
             flexDirection="column"
             alignItems="center"
@@ -2882,6 +2694,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               sessions={tabs.sessions}
               activeIndex={tabs.activeIndex}
               width={Math.min(68, Math.max(24, contentWidth - 2))}
+              viewportHeight={viewportHeight}
+              terminalTop={harness.topBarRows + 1}
               onSelect={selectSession}
               onNewSession={() => {
                 openPendingTab()
@@ -2911,7 +2725,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             justifyContent="center"
             flexGrow={1}
           >
-            <Welcome stats={stats} />
+            <Welcome />
             {connectAlert ? (
               <Box marginTop={1} flexDirection="column">
                 <AlertCard {...connectAlert} width={contentWidth} />
@@ -2953,24 +2767,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           />
         </Fill>
       ) : null}
-      {showFooter ? (
-        <Fill width={contentWidth} height={footerExpanded ? actionItems.length + 2 : 1} color={palette.rail}>
-          <SessionFooter
-            sessions={tabs.sessions}
-            activeIndex={tabs.activeIndex}
-            expanded={footerExpanded}
-            selectedIndex={clampedFooterSelected}
-            actions={actionItems}
-            onToggle={toggleFooter}
-            onSelect={(index) => {
-              footerSelectedRef.current = index
-              setFooterSelected(index)
-            }}
-            onActivate={activateFooterAction}
-          />
-        </Fill>
-      ) : null}
-      {!overviewVisible && inspector === null ? (
+      {!overviewVisible && !paletteVisible && inspector === null ? (
         <>
           {connectAlert && !showWelcome ? (
             <AlertCard {...connectAlert} width={contentWidth} />
@@ -2980,13 +2777,14 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           ) : null}
           {queuedCount > 0 ? <Text>{queueHintLine(queuedCount)}</Text> : null}
           {mentionMenu.element}
-          <Fill width={contentWidth} height={promptRows} color={palette.raised}>
+          <Fill width={contentWidth} height={promptRows} color={palette.floor}>
             {loginStep === null ? (
               <PromptInput
                 onSubmit={handleSubmit}
                 history={activeSession?.history ?? []}
-                active={promptEnabled && !searchOpen && !footerExpanded}
-                historyRecallEnabled={!scroll.scrolledUp && !footerExpanded}
+                active={promptEnabled && !searchOpen}
+                historyRecallEnabled={!scroll.scrolledUp}
+                label={composerMetadata}
                 onMenuOpenChange={handleMenuOpenChange}
                 onRowsChange={handlePromptRows}
                 seed={promptSeed}
@@ -2997,7 +2795,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                 key={loginStep}
                 onSubmit={submitLogin}
                 history={[]}
-                active={promptEnabled && !searchOpen && !footerExpanded}
+                active={promptEnabled && !searchOpen}
                 historyRecallEnabled={false}
                 slashMenuEnabled={false}
                 mask={loginStep === "password" ? "*" : undefined}
@@ -3012,6 +2810,21 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         </>
       ) : null}
           </Box>
+          {harness.dividerWidth > 0 ? (
+            <Fill
+              width={harness.dividerWidth}
+              height={rows - harness.topBarRows}
+              color={palette.ruleStrong}
+            />
+          ) : null}
+          {harness.workbenchWidth > 0 ? (
+            <ContextWorkbench
+              title={activeSession?.awaitingApproval ? "approval" : "workbench"}
+              lines={workbenchLines}
+              width={harness.workbenchWidth}
+              height={rows - harness.topBarRows}
+            />
+          ) : null}
         </Box>
       </Box>
     </Fill>

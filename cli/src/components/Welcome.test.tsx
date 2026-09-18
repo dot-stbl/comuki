@@ -19,17 +19,11 @@ describe("Welcome — first-run hint", () => {
   test("shows the setup pointer on first run", () => {
     const frame = frameWith({ firstRun: true })
     expect(frame).toContain("first run? try: comuki setup")
-    expect(frame).toContain("agent orchestration platform")
+    expect(frame).toContain("Describe the outcome you want")
   })
 
   test("hides the setup pointer once config exists", () => {
     const frame = frameWith({ firstRun: false })
     expect(frame).not.toContain("first run?")
-  })
-
-  test("stats row renders beside the hint without overlap", () => {
-    const frame = frameWith({ firstRun: true, stats: { workers: 3, memory: 5 } })
-    expect(frame).toContain("workers 3 / knowledge 5")
-    expect(frame).toContain("first run? try: comuki setup")
   })
 })

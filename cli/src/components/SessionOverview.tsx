@@ -19,6 +19,7 @@ import {
 import { isSgrMouseChunk } from "../lib/mouse"
 import { filterSessions, type ChatBlock, type Session } from "../lib/sessions"
 import { palette } from "../theme"
+import { Fill } from "./Fill"
 
 export interface SessionOverviewProps {
   readonly sessions: readonly Session[]
@@ -183,66 +184,89 @@ export function SessionOverview({
 
   const waiting = waitingApprovalRows(sessions)
   const numbered = visible.slice(0, 9)
+  const contentHeight =
+    5 +
+    numbered.length +
+    (query.length > 0 ? 1 : 0) +
+    (waiting.length > 0 ? waiting.length + 2 : 0)
+  const sheetWidth = OVERVIEW_WIDTH + 4
+  const sheetHeight = contentHeight + 2
 
   return (
-    <Box flexDirection="column" alignItems="center" paddingY={1}>
-      <Text bold color={palette.brand}>
-        SESSIONS
-      </Text>
-      {query.length > 0 ? (
-        <Text dimColor>{`filter: ${query}`}</Text>
-      ) : null}
-      {waiting.length > 0 ? (
-        <Box flexDirection="column" width={OVERVIEW_WIDTH} paddingTop={1}>
-          <Text bold color={palette.brand}>
-            ! waiting approval
-          </Text>
-          {waiting.map((row) => (
-            <Text
-              key={sessions[row.index]?.id ?? row.index}
-              dimColor
-            >{`  [${row.index + 1}] ${padVisible(row.name, 20)}${truncateTail(
-              row.firstStep,
-              32
-            )}`}</Text>
-          ))}
-        </Box>
-      ) : null}
-      <Box flexDirection="column" paddingTop={1}>
-        {numbered.map((session, index) => {
-          const glyph = statusGlyph(session.status)
-          const originalIndex = sessions.findIndex(
-            (candidate) => candidate.id === session.id
-          )
-          const active = originalIndex === activeIndex
-          const totals = sessionTokenTotals(session.blocks)
-          return (
-            <Box
-              key={session.id}
-              width={OVERVIEW_WIDTH}
-              justifyContent="space-between"
-            >
-              <Text dimColor={!active} bold={active}>
-                {`  ${padVisible(String(index + 1), 3)}${padVisible(
-                  session.name,
-                  22
-                )}`}
-                <Text color={glyph.color}>{padVisible(glyph.glyph, 12)}</Text>
-                {`${session.unread ? "o " : ""}${ageFromMs(
-                  Date.now() - session.createdAt
-                )} ago`}
-              </Text>
-              {totals !== null ? (
-                <Text dimColor>{formatTokenTotals(totals)}</Text>
-              ) : null}
+    <Fill width={sheetWidth} height={sheetHeight} color={palette.rail}>
+      <Box width={sheetWidth} height={sheetHeight} padding={1}>
+        <Fill
+          width={OVERVIEW_WIDTH + 2}
+          height={contentHeight}
+          color={palette.lane}
+        >
+          <Box
+            width={OVERVIEW_WIDTH + 2}
+            height={contentHeight}
+            flexDirection="column"
+            alignItems="center"
+            paddingX={1}
+          >
+            <Text bold color={palette.brand}>
+              SESSIONS
+            </Text>
+            {query.length > 0 ? (
+              <Text dimColor>{`filter: ${query}`}</Text>
+            ) : null}
+            {waiting.length > 0 ? (
+              <Box flexDirection="column" width={OVERVIEW_WIDTH} paddingTop={1}>
+                <Text bold color={palette.brand}>
+                  ! waiting approval
+                </Text>
+                {waiting.map((row) => (
+                  <Text
+                    key={sessions[row.index]?.id ?? row.index}
+                    dimColor
+                  >{`  [${row.index + 1}] ${padVisible(row.name, 20)}${truncateTail(
+                    row.firstStep,
+                    32
+                  )}`}</Text>
+                ))}
+              </Box>
+            ) : null}
+            <Box flexDirection="column" paddingTop={1}>
+              {numbered.map((session, index) => {
+                const glyph = statusGlyph(session.status)
+                const originalIndex = sessions.findIndex(
+                  (candidate) => candidate.id === session.id
+                )
+                const active = originalIndex === activeIndex
+                const totals = sessionTokenTotals(session.blocks)
+                return (
+                  <Box
+                    key={session.id}
+                    width={OVERVIEW_WIDTH}
+                    justifyContent="space-between"
+                  >
+                    <Text dimColor={!active} bold={active}>
+                      {`  ${padVisible(String(index + 1), 3)}${padVisible(
+                        session.name,
+                        22
+                      )}`}
+                      <Text color={glyph.color}>{padVisible(glyph.glyph, 12)}</Text>
+                      {`${session.unread ? "o " : ""}${ageFromMs(
+                        Date.now() - session.createdAt
+                      )} ago`}
+                    </Text>
+                    {totals !== null ? (
+                      <Text dimColor>{formatTokenTotals(totals)}</Text>
+                    ) : null}
+                  </Box>
+                )
+              })}
+              <Text dimColor>{"   + new session"}</Text>
             </Box>
-          )
-        })}
-        <Text dimColor>{"   + new session"}</Text>
+            <Box paddingTop={1}>
+              <Text dimColor>1-9 select · ctrl+n new · esc back</Text>
+            </Box>
+          </Box>
+        </Fill>
       </Box>
-      <Box paddingTop={1}>
-        <Text dimColor>1-9 select · ctrl+n new · esc back</Text>
-      </Box>
-    </Box>
+    </Fill>
   )
 }

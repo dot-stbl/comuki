@@ -99,7 +99,7 @@ describe("ChatMessage — markdown rendering", () => {
     unmount()
   })
 
-  test("leads assistant messages with the brand glyph and comuki label", () => {
+  test("renders assistant messages as plain guttered markdown", () => {
     const { lastFrame, unmount } = render(
       <ChatMessage
         message={assistantMarkdown("here is the plan")}
@@ -107,8 +107,8 @@ describe("ChatMessage — markdown rendering", () => {
       />
     )
     const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame.split("\n")[0]).toContain("comuki")
-    expect(frame).toContain(" here is the plan")
+    expect(frame).toBe(" here is the plan")
+    expect(frame).not.toContain("comuki")
     unmount()
   })
 

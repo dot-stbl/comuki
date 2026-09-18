@@ -1,9 +1,8 @@
 /**
  * The centered first-run lockup: the brand glyph over the `comuki`
  * wordmark in the brand color, a dim tagline beneath, then a quiet
- * key-hints row and best-effort platform stats. No box — the terminal
- * is the chrome; the lockup floats in the vertical middle of the
- * screen while the parent flexbox holds it there.
+ * key-hints row and best-effort platform stats. The lockup sits inside
+ * one lane-colored card while the parent holds it in the screen middle.
  *
  * Rendered only while zero sessions exist and the first message has not
  * been sent — after that the chat owns the screen and the wordmark never
@@ -17,6 +16,7 @@ import React from "react"
 import { configFilePath } from "../lib/config"
 import { MARK_SMALL } from "../lib/mark"
 import { palette, symbols } from "../theme"
+import { Fill } from "./Fill"
 
 export interface PlatformStats {
   readonly workers: number
@@ -42,44 +42,49 @@ export function firstRunHintVisible(
 const HINTS = ["ctrl+n new tab", "esc sessions", "help commands"].join(
   ` ${symbols.bullet} `
 )
+const WELCOME_WIDTH = 58
 
 export function Welcome({ stats, firstRun = firstRunHintVisible() }: WelcomeProps) {
+  const height = 13 + (stats ? 2 : 0) + (firstRun ? 2 : 0)
   return (
-    <Box flexDirection="column" alignItems="center" paddingX={2} paddingY={1}>
-      {MARK_SMALL.map((line, index) => (
-        <Text key={index} color={palette.brand} backgroundColor={palette.lane}>
-          {line}
-        </Text>
-      ))}
-      <Box marginTop={1}>
-        <Text bold color={palette.brand} backgroundColor={palette.lane}>
-          comuki
-        </Text>
-      </Box>
-      <Box marginTop={1}>
-        <Text dimColor backgroundColor={palette.lane}>
-          agent orchestration platform
-        </Text>
-      </Box>
-      <Box marginTop={1}>
-        <Text dimColor backgroundColor={palette.lane}>
-          {HINTS}
-        </Text>
-      </Box>
-      {stats ? (
+    <Fill width={WELCOME_WIDTH} height={height} color={palette.lane}>
+      <Box
+        width={WELCOME_WIDTH}
+        height={height}
+        flexDirection="column"
+        alignItems="center"
+        paddingX={2}
+        paddingY={1}
+      >
+        {MARK_SMALL.map((line, index) => (
+          <Text key={index} color={palette.brand}>
+            {line}
+          </Text>
+        ))}
         <Box marginTop={1}>
-          <Text dimColor backgroundColor={palette.lane}>
-            workers {stats.workers} · memory {stats.memory}
+          <Text bold color={palette.brand}>
+            comuki
           </Text>
         </Box>
-      ) : null}
-      {firstRun ? (
         <Box marginTop={1}>
-          <Text dimColor backgroundColor={palette.lane}>
-            first run? try: comuki setup
-          </Text>
+          <Text dimColor>agent orchestration platform</Text>
         </Box>
-      ) : null}
-    </Box>
+        <Box marginTop={1}>
+          <Text dimColor>{HINTS}</Text>
+        </Box>
+        {stats ? (
+          <Box marginTop={1}>
+            <Text dimColor>
+              workers {stats.workers} · memory {stats.memory}
+            </Text>
+          </Box>
+        ) : null}
+        {firstRun ? (
+          <Box marginTop={1}>
+            <Text dimColor>first run? try: comuki setup</Text>
+          </Box>
+        ) : null}
+      </Box>
+    </Fill>
   )
 }

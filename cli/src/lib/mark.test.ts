@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "bun:test"
 import { colors, stripAnsi } from "../theme"
-import { MARK_SMALL, MARK_TINY_FRAMES, paintMark } from "./mark"
+import { MARK_SMALL, paintMark } from "./mark"
 
 const PRINTABLE_ASCII = /^[\x20-\x7e]*$/
 
@@ -21,26 +21,6 @@ describe("MARK_SMALL", () => {
     expect(MARK_SMALL[0]).toBe("+---+  |  |")
     expect(MARK_SMALL[2]).toBe("|   |  +--+")
     expect(MARK_SMALL[4]).toBe("+---+  |  |")
-  })
-})
-
-describe("MARK_TINY_FRAMES", () => {
-  it("is 3–5 frames of 3×3 printable ASCII", () => {
-    expect(MARK_TINY_FRAMES.length).toBeGreaterThanOrEqual(3)
-    expect(MARK_TINY_FRAMES.length).toBeLessThanOrEqual(5)
-    for (const frame of MARK_TINY_FRAMES) {
-      expect(frame).toHaveLength(3)
-      for (const line of frame) {
-        expect(line).toHaveLength(3)
-        expect(line).toMatch(PRINTABLE_ASCII)
-      }
-    }
-  })
-
-  it("breathes the crossbar from empty through full", () => {
-    expect(MARK_TINY_FRAMES[0]?.[1]).toBe("   ")
-    expect(MARK_TINY_FRAMES[1]?.[1]).toBe(" - ")
-    expect(MARK_TINY_FRAMES[2]?.[1]).toBe("===")
   })
 })
 

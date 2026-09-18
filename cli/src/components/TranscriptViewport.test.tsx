@@ -10,9 +10,10 @@ import React from "react"
 import { render } from "ink-testing-library"
 import {
   TranscriptViewport,
+  roleBackground,
 } from "./TranscriptViewport"
 import { NEW_MESSAGES_INDICATOR } from "../lib/viewport"
-import { stripAnsi } from "../theme"
+import { palette, stripAnsi } from "../theme"
 
 const LINES = Array.from({ length: 30 }, (_, index) => `line-${index}`)
 
@@ -216,6 +217,31 @@ describe("TranscriptViewport — slab padding", () => {
     )
     const frame = lastFrame() ?? ""
     expect(stripAnsi(frame)).toContain("> hello")
+    unmount()
+  })
+
+  test("maps turn roles to lane, event rows to floor, and pulse to rail", () => {
+    expect(roleBackground("user")).toBe(palette.lane)
+    expect(roleBackground("assistant")).toBe(palette.lane)
+    expect(roleBackground("event")).toBe(palette.floor)
+    expect(roleBackground("blank")).toBe(palette.floor)
+    expect(roleBackground("pulse")).toBe(palette.rail)
+  })
+
+  test("renders assistant prose without an ASCII frame", () => {
+    const { lastFrame, unmount } = render(
+      <TranscriptViewport
+        lines={[" assistant body"]}
+        height={1}
+        offset={0}
+        newBelow={false}
+        width={24}
+      />
+    )
+    const frame = stripAnsi(lastFrame() ?? "")
+    expect(frame).toContain("assistant body")
+    expect(frame).not.toContain("comuki")
+    expect(frame).not.toMatch(/^-+$/)
     unmount()
   })
 })

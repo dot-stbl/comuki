@@ -22,6 +22,7 @@ import {
   padVisible,
 } from "../lib/transcript"
 import { palette } from "../theme"
+import { Fill } from "./Fill"
 
 /** What the viewport highlights while the ctrl+f search is open. */
 export interface TranscriptHighlight {
@@ -52,6 +53,9 @@ export interface TranscriptViewportProps {
 export function roleBackground(role: ReturnType<typeof classifyLine>): string {
   if (role === "user" || role === "assistant") {
     return palette.lane
+  }
+  if (role === "pulse") {
+    return palette.rail
   }
   return palette.floor
 }
@@ -88,10 +92,27 @@ export function TranscriptViewport({
             )
           : line
         const role = classifyLine(line)
+        if (role === "assistant") {
+          return (
+            <Fill key={index} width={width} height={1} color={palette.lane}>
+              <Box width={width} height={1} flexDirection="row">
+                <Text backgroundColor={palette.brand}> </Text>
+                <Text>{padVisible(painted, Math.max(0, width - 1))}</Text>
+              </Box>
+            </Fill>
+          )
+        }
         return (
-          <Text key={index} backgroundColor={roleBackground(role)}>
-            {padVisible(painted, width)}
-          </Text>
+          <Fill
+            key={index}
+            width={width}
+            height={1}
+            color={roleBackground(role)}
+          >
+            <Text dimColor={role === "event"}>
+              {padVisible(painted, width)}
+            </Text>
+          </Fill>
         )
       })}
       {indicator ? (

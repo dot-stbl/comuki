@@ -142,16 +142,12 @@ describe("renderMessage", () => {
     expect(lines[1]).not.toContain("›")
   })
 
-  it("frames assistant rows with an ASCII comuki rule block", () => {
+  it("renders assistant rows as guttered markdown without ASCII chrome", () => {
     const lines = renderMessage(assistantMessage([
       { kind: "text", markdown: "done" },
     ]))
-    const header = stripAnsi(lines[0] ?? "")
-    expect(header).toContain("comuki")
-    expect(header).toMatch(/^[ +].*comuki/)
-    expect(lines[0]).toContain(colors.rule)
-    expect(stripAnsi(lines[1] ?? "")).toBe(" done")
-    expect(stripAnsi(lines[lines.length - 1] ?? "")).toMatch(/^ -+$/)
+    expect(lines.map(stripAnsi)).toEqual([" done"])
+    expect(lines.join("\n")).not.toContain("comuki")
   })
 
   it("breathes one blank line between the events block and the answer", () => {
@@ -170,10 +166,8 @@ describe("renderMessage", () => {
       line.includes("the answer")
     )
     expect(plain[eventIndex + 1]).toContain("x()")
-    const ruleIndex = plain.findIndex((line) => line.includes("comuki"))
-    expect(plain[ruleIndex - 1]).toBe("")
-    expect(ruleIndex).toBeGreaterThan(eventIndex + 1)
-    expect(answerIndex).toBeGreaterThan(ruleIndex)
+    expect(plain[eventIndex + 2]).toBe("")
+    expect(answerIndex).toBeGreaterThan(eventIndex + 2)
   })
 
   it("gutters every non-empty line of an assistant row", () => {
@@ -192,8 +186,7 @@ describe("renderMessage", () => {
       parts: null,
       content: "plain reply",
     })
-    expect(stripAnsi(lines[0] ?? "")).toContain("comuki")
-    expect(stripAnsi(lines[1] ?? "")).toBe(" plain reply")
+    expect(lines.map(stripAnsi)).toEqual([" plain reply"])
   })
 
   it("mutes tool journal rows on the shared gutter", () => {

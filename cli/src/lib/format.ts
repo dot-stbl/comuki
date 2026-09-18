@@ -4,13 +4,11 @@
  * ANSI-styled strings, which both the Ink components render and the
  * tests assert byte-for-byte.
  *
- * Style contract (ASCII blocks, Dichromat deck): the user's words
- * lead with a left-gutter `>` and one blank line before (none after);
- * collapsed events (thinking, tools) are dim `*` bullets two spaces
- * in, grouped with no blank between them; the assistant is a rule
- * block (`------ comuki ------` open, faint `------` close). The
- * approve card and code fences use ASCII `+ - |` frames. Hierarchy
- * comes from spacing, weight and the viewport's filled slabs.
+ * Style contract (Dichromat deck): the user's words lead with a
+ * left-gutter `>` and one blank line before (none after); collapsed
+ * events (thinking, tools) are dim `*` bullets two spaces in, grouped
+ * with no blank between them; assistant prose is guttered markdown.
+ * Hierarchy comes from spacing, weight and the viewport's filled slabs.
  */
 import {
   colors,
@@ -80,34 +78,6 @@ export function truncateTail(text: string, maxWidth: number): string {
 function firstLine(text: string): string {
   const line = text.split("\n", 1)[0] ?? ""
   return line.trim()
-}
-
-/** Width-aware ASCII rule: `repeat('-', min(width-2, 48))`. */
-export function ruleDashes(width: number): string {
-  return "-".repeat(Math.max(4, Math.min(width - 2, 48)))
-}
-
-/**
- * Assistant block opener. `live` paints the rule in accent (in-flight);
- * settled answers use the deck `rule` colour.
- */
-export function assistantOpenRule(
-  width: number,
-  live: boolean = false
-): string {
-  const dashes = ruleDashes(width)
-  const tone = live ? colors.accent : colors.rule
-  if (dashes.length >= 14) {
-    const side = Math.max(1, Math.floor((dashes.length - 8) / 2))
-    const right = dashes.length - 8 - side
-    return paint(`+${"-".repeat(side)} comuki ${"-".repeat(right)}+`, tone)
-  }
-  return paint(`${dashes} comuki ${dashes}`, tone)
-}
-
-/** Faint closer under a settled assistant body. */
-export function assistantCloseRule(width: number): string {
-  return paint(ruleDashes(width), colors.faint)
 }
 
 // ---------------------------------------------------------------------------
@@ -542,10 +512,7 @@ export function renderParts(
 // Whole messages
 // ---------------------------------------------------------------------------
 
-export interface MessageRenderOptions extends PartRenderOptions {
-  /** In-flight assistant: the open rule paints accent instead of `rule`. */
-  readonly live?: boolean
-}
+export type MessageRenderOptions = PartRenderOptions
 
 /**
  * One transcript row → lines. Assistant rows prefer parts (the rich
@@ -557,10 +524,9 @@ export interface MessageRenderOptions extends PartRenderOptions {
  * session's ctrl+o toggle so thinking/tool parts collapse to `*`
  * event lines.
  *
- * Identity chrome: the assistant is a rule block (`------ comuki
- * ------` open, faint `------` close). Journal rows keep the quiet
- * `*` bullets. Wrapping is computed at `width - 1` so the gutter
- * never pushes a line past the terminal edge.
+ * Assistant identity comes from the viewport slab, not inline ASCII
+ * chrome. Journal rows keep the quiet `*` bullets. Wrapping is computed
+ * at `width - 1` so the gutter never pushes a line past the edge.
  */
 export function renderMessage(
   message: ChatMessageView,
@@ -572,7 +538,6 @@ export function renderMessage(
   }
   if (message.role === "assistant") {
     const innerWidth = Math.max(8, width - gutter.length)
-    const live = options?.live === true
     const parts = message.parts
     const eventParts =
       parts === null
@@ -602,20 +567,12 @@ export function renderMessage(
           colors.dim
         )
       : null
-    const hasAnswer = answerLines.length > 0 || cost !== null
-    const framed = hasAnswer
-      ? [
-          assistantOpenRule(innerWidth, live),
-          ...answerLines,
-          ...(cost ? [cost] : []),
-          ...(live ? [] : [assistantCloseRule(innerWidth)]),
-        ]
-      : []
+    const answer = [...answerLines, ...(cost ? [cost] : [])]
     return normalizeSpacing(
       gutterLines([
         ...eventLines,
-        ...(eventLines.length > 0 && framed.length > 0 ? [""] : []),
-        ...framed,
+        ...(eventLines.length > 0 && answer.length > 0 ? [""] : []),
+        ...answer,
       ])
     )
   }

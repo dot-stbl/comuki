@@ -163,6 +163,30 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     usage: "/keys",
     description: "current keybindings",
   },
+  {
+    name: "status",
+    aliases: [],
+    usage: "/status",
+    description: "platform snapshot (same as comuki status)",
+  },
+  {
+    name: "open",
+    aliases: [],
+    usage: "/open",
+    description: "open this session in the dashboard",
+  },
+  {
+    name: "tools",
+    aliases: [],
+    usage: "/tools",
+    description: "brain / MCP tool catalogue",
+  },
+  {
+    name: "note",
+    aliases: [],
+    usage: "/note <text>",
+    description: "write a memory note",
+  },
 ]
 
 /** The `/help` transcript block, rendered from the registry. */
@@ -207,6 +231,10 @@ export type SlashAction =
   | { readonly kind: "theme"; readonly name: string }
   | { readonly kind: "whoami" }
   | { readonly kind: "keys" }
+  | { readonly kind: "status" }
+  | { readonly kind: "open" }
+  | { readonly kind: "tools" }
+  | { readonly kind: "note"; readonly text: string }
   /** Not a command — the input goes to the brain as a chat message. */
   | { readonly kind: "message" }
 
@@ -321,6 +349,18 @@ export function resolveSlashAction(raw: string): SlashAction {
   }
   if (matches("keys", name)) {
     return { kind: "keys" }
+  }
+  if (matches("status", name)) {
+    return { kind: "status" }
+  }
+  if (matches("open", name)) {
+    return { kind: "open" }
+  }
+  if (matches("tools", name)) {
+    return { kind: "tools" }
+  }
+  if (matches("note", name)) {
+    return { kind: "note", text: args }
   }
   return { kind: "message" }
 }

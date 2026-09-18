@@ -122,6 +122,16 @@ import {
   RUNS_FEED_REFRESH_MS,
 } from "../lib/runsfeed"
 import {
+  DASHBOARD_CHAT_PATH,
+  dashboardOpenUrl,
+  noteUnavailableLines,
+  noteUsageLines,
+  openDashboardUrl,
+  openPanelLines,
+  toolsUnavailableLines,
+} from "../lib/ops"
+import { fetchStatusSnapshot, renderStatusPanel } from "../lib/status"
+import {
   bindChatEvents,
   joinChatGroup,
   leaveChatGroup,
@@ -1806,13 +1816,61 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           }
           return
         }
+        case "status": {
+          const client = clientRef.current
+          if (!client) {
+            return
+          }
+          void fetchStatusSnapshot(client).then((snapshot) => {
+            const lines = renderStatusPanel(snapshot)
+            if (target) {
+              pushLines(target.id, lines)
+            } else {
+              setNoticeLines(lines)
+            }
+          })
+          return
+        }
+        case "open": {
+          const url = dashboardOpenUrl(config.url, target?.id)
+          const opened = openDashboardUrl(url)
+          const reason = url.endsWith(DASHBOARD_CHAT_PATH) ? "chat" : "runs"
+          const lines = openPanelLines(url, opened, reason)
+          if (target) {
+            pushLines(target.id, lines)
+          } else {
+            setNoticeLines(lines)
+          }
+          return
+        }
+        case "tools": {
+          const lines = toolsUnavailableLines()
+          if (target) {
+            pushLines(target.id, lines)
+          } else {
+            setNoticeLines(lines)
+          }
+          return
+        }
+        case "note": {
+          const lines =
+            action.text.length === 0
+              ? noteUsageLines()
+              : noteUnavailableLines()
+          if (target) {
+            pushLines(target.id, lines)
+          } else {
+            setNoticeLines(lines)
+          }
+          return
+        }
         case "message": {
           void sendMessage(target, value)
           return
         }
       }
     },
-    [bellEnabled, copyLastCode, exit, forkSession, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProject, tabs]
+    [bellEnabled, config.url, copyLastCode, exit, forkSession, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProject, tabs]
   )
 
   // -- queued-message drain -----------------------------------------------------

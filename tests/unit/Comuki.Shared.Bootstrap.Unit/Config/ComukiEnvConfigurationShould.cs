@@ -17,6 +17,7 @@ public sealed class ComukiEnvConfigurationShould
     [Theory(DisplayName = "Given a COMUKI_ variable, when the provider loads, then it maps onto the expected key")]
     [InlineData("COMUKI_SERVER_PORT", "8080", "server:port")]
     [InlineData("COMUKI_BRAIN_GRPCPORT", "17004", "brain:grpcport")]
+    [InlineData("COMUKI_BRAIN_CONTROLPLANEPROFILESPATH", "/app/control-plane/profiles", "brain:controlplaneprofilespath")]
     [InlineData("COMUKI_TELEMETRY_OTLPENDPOINT", "http://vm:4317", "telemetry:otlpendpoint")]
     [InlineData("COMUKI_HOST_CORS_ALLOWEDORIGINS_0", "http://localhost:17173", "host:cors:allowedorigins:0")]
     public void MapSingleUnderscoreToConfigurationPath(string variable, string value, string expectedKey)

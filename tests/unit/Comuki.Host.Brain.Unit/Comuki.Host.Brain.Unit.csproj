@@ -19,4 +19,10 @@
     <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host.Brain\Comuki.Host.Brain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\..\deploy\helm\templates\brain.yaml" Link="Deployment\brain.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\deploy\hybrid\host.Dockerfile" Link="Deployment\host.Dockerfile" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\deploy\hybrid\infra-dev.yaml" Link="Deployment\infra-dev.yaml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -11,8 +11,6 @@ using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Config;
 using Comuki.Shared.Bootstrap.Logging;
 using Comuki.Shared.Bootstrap.Versioning;
-using Comuki.Shared.Contracts.ControlPlane.ChatCommands;
-using Comuki.Shared.Contracts.ControlPlane.Profiles;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 // Operator CLI surface (issue #56): version / doctor / config show / init
@@ -127,21 +125,6 @@ var app = await HostComposer.ComposeAsync(builder, database);
 // Build banner (issue #56): the version line is the first comuki-format
 // log record of the starting host.
 ComukiStartupBanner.Emit(app.Services.GetRequiredService<ILoggerFactory>(), "comuki", ComukiBuildInfo.Read());
-
-app.MapGet(
-    ApiRoutes.Profiles,
-    static async (IProfileCatalog catalog, CancellationToken cancellationToken) =>
-        Results.Ok(await catalog.ListAsync(cancellationToken)));
-app.MapGet(
-    ApiRoutes.ProfileByKey,
-    static async (string key, IProfileCatalog catalog, CancellationToken cancellationToken) =>
-        await catalog.GetAsync(key, cancellationToken) is { } profile
-            ? Results.Ok(profile)
-            : Results.NotFound());
-app.MapGet(
-    ApiRoutes.ChatCommands,
-    static async (IChatCommandCatalog catalog, CancellationToken cancellationToken) =>
-        Results.Ok(await catalog.ListCommandsAsync(cancellationToken)));
 
 app.MapWorkerRuntime();
 

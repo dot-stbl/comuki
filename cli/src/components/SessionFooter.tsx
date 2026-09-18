@@ -1,23 +1,56 @@
 /**
- * Bottom line: mini badges for every session (dot = needs attention) with
- * the hotkey legend pushed to the right edge. The active badge stays
- * bright; a yellow dot marks unread output, an accent dot a thinking
- * turn.
+ * Bottom chrome: session badges on the left, a compact expand hint on
+ * the right. Expanded, a dim top rule plus one row per action sits
+ * above the prompt — height is subtracted from the transcript viewport
+ * the same way PromptInput rows are.
  *
- * Renders full-width: badges left-aligned, legend right-aligned via the
- * flex `space-between` parent. The row stays one terminal line tall.
+ * Keyboard (arrows / enter / esc) and mouse live in the shell; this
+ * component is presentational. Dichromat: the highlight is brand
+ * (lavender) plus bold, never colour-alone.
  */
 import { Box, Text } from "ink"
 import React from "react"
+import type { FooterAction } from "../lib/footer-actions"
+import { FOOTER_EXPAND_HINT } from "../lib/footer-actions"
 import type { Session } from "../lib/sessions"
 import { palette } from "../theme"
 
 export interface SessionFooterProps {
   readonly sessions: readonly Session[]
   readonly activeIndex: number
+  readonly expanded: boolean
+  readonly selectedIndex: number
+  readonly actions: readonly FooterAction[]
+  readonly onToggle: () => void
+  readonly onSelect: (index: number) => void
+  readonly onActivate: (id: string) => void
+  readonly onMouseClick?: (x: number, y: number) => void
 }
 
-export function SessionFooter({ sessions, activeIndex }: SessionFooterProps) {
+export function SessionFooter({
+  sessions,
+  activeIndex,
+  expanded,
+  selectedIndex,
+  actions,
+}: SessionFooterProps) {
+  return (
+    <Box flexDirection="column" width="100%">
+      {expanded ? (
+        <ExpandedList actions={actions} selectedIndex={selectedIndex} />
+      ) : null}
+      <CollapsedRow sessions={sessions} activeIndex={activeIndex} />
+    </Box>
+  )
+}
+
+function CollapsedRow({
+  sessions,
+  activeIndex,
+}: {
+  readonly sessions: readonly Session[]
+  readonly activeIndex: number
+}) {
   return (
     <Box width="100%" justifyContent="space-between">
       <Box>
@@ -43,7 +76,37 @@ export function SessionFooter({ sessions, activeIndex }: SessionFooterProps) {
           )
         })}
       </Box>
-      <Text dimColor> esc · tab · pgup/pgdn · ctrl+n </Text>
+      <Text dimColor>{` ${FOOTER_EXPAND_HINT} `}</Text>
+    </Box>
+  )
+}
+
+function ExpandedList({
+  actions,
+  selectedIndex,
+}: {
+  readonly actions: readonly FooterAction[]
+  readonly selectedIndex: number
+}) {
+  return (
+    <Box flexDirection="column" width="100%">
+      <Text dimColor>{"  ─".padEnd(24, "─")}</Text>
+      {actions.map((action, index) => {
+        const selected = index === selectedIndex
+        const hint = action.hint === undefined ? "" : `  ${action.hint}`
+        return (
+          <Text key={action.id} dimColor={!selected}>
+            {selected ? (
+              <Text color={palette.brand} bold>
+                {`  › ${action.label}`}
+              </Text>
+            ) : (
+              `    ${action.label}`
+            )}
+            {hint.length > 0 ? <Text dimColor>{hint}</Text> : null}
+          </Text>
+        )
+      })}
     </Box>
   )
 }

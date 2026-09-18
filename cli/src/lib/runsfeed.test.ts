@@ -5,12 +5,16 @@ import {
   projectListingLines,
   projectSwitchedLine,
   renderRunsFeedPanel,
+  renderWorkersPanel,
   resolveProject,
   runStatusColor,
   runsFeedRows,
+  workerStatusColor,
+  workerStatusWord,
   type RunsFeedPanel,
 } from "./runsfeed"
 import type {
+  BackgroundWorkerView,
   ChatMessageView,
   MessagePart,
   ProjectView,
@@ -341,5 +345,224 @@ describe("projectSwitchedLine", () => {
 
     expect(stripAnsi(line)).toBe(`  ${symbols.event} project ${symbols.arrow} orion`)
     expect(line).toContain(colors.faint)
+  })
+})
+
+describe("runsFeedRows hyperlink targets", () => {
+  it("derives {dashboardUrl}/runs/{id} per row, trailing slash tolerated", () => {
+    const rows = runsFeedRows(
+      runPage([
+        {
+          id: "3f9c2a1b-1111-2222-3333-444444444444",
+          projectId: "p1",
+          status: "running",
+          createdAt: "2026-09-18T00:00:00Z",
+          updatedAt: "2026-09-18T00:01:00Z",
+        },
+      ]),
+      new Map(),
+      "http://h:17173/"
+    )
+
+    expect(rows[0]?.url).toBe(
+      "http://h:17173/runs/3f9c2a1b-1111-2222-3333-444444444444"
+    )
+  })
+
+  it("omits the url without a dashboard base — ids render as before", () => {
+    const rows = runsFeedRows(
+      runPage([
+        {
+          id: "r1",
+          projectId: "p1",
+          status: "running",
+          createdAt: "2026-09-18T00:00:00Z",
+          updatedAt: "2026-09-18T00:01:00Z",
+        },
+      ]),
+      new Map()
+    )
+
+    expect(rows[0]?.url).toBeUndefined()
+  })
+})
+
+describe("renderRunsFeedPanel hyperlinks", () => {
+  const now = new Date("2026-09-18T12:01:00Z")
+
+  it("wraps the id cell in OSC 8 when the row carries a url", () => {
+    const lines = renderRunsFeedPanel(
+      panel({
+        rows: [
+          {
+            id: "3f9c2a1b-4d5e",
+            project: "nova",
+            status: "running",
+            updatedAt: "2026-09-18T12:00:00Z",
+            url: "http://h:17173/runs/3f9c2a1b-4d5e",
+          },
+        ],
+        fetchedAt: now.getTime(),
+      }),
+      now
+    )
+
+    const row = lines[2] ?? ""
+    expect(row).toContain(
+      "\x1b]8;;http://h:17173/runs/3f9c2a1b-4d5e\x1b\\"
+    )
+    // The label stays visible and column alignment survives the
+    // wrapper bytes (stripAnsi drops OSC alongside SGR).
+    const plain = stripAnsi(row)
+    expect(plain).toContain("3f9c2a1b-4d5e")
+    expect(plain.indexOf("running")).toBeGreaterThan(
+      plain.indexOf("3f9c2a1b-4d5e")
+    )
+  })
+
+  it("renders the bare painted id when no url is set", () => {
+    const lines = renderRunsFeedPanel(
+      panel({
+        rows: [
+          {
+            id: "3f9c2a1b-4d5e",
+            project: "nova",
+            status: "running",
+            updatedAt: "2026-09-18T12:00:00Z",
+          },
+        ],
+        fetchedAt: now.getTime(),
+      }),
+      now
+    )
+
+    expect(lines[2]).not.toContain("\x1b]8;")
+  })
+})
+
+describe("workerStatusWord / workerStatusColor", () => {
+  function worker(
+    overrides: Partial<BackgroundWorkerView>
+  ): BackgroundWorkerView {
+    return {
+      name: "memory-sweep",
+      lastRunAt: "2026-09-18T11:59:00Z",
+      nextRunAt: "2026-09-18T12:01:00Z",
+      lastResult: null,
+      consecutiveFailures: 0,
+      isHealthy: true,
+      ...overrides,
+    }
+  }
+
+  it("degrades on consecutive failures even while scheduled", () => {
+    const degraded = worker({
+      consecutiveFailures: 3,
+      isHealthy: false,
+      nextRunAt: "2026-09-18T12:05:00Z",
+    })
+    expect(workerStatusWord(degraded)).toBe("degraded")
+    expect(workerStatusColor("degraded")).toBe(colors.waiting)
+  })
+
+  it("reads running while a next cycle is scheduled", () => {
+    expect(workerStatusWord(worker({}))).toBe("running")
+    expect(workerStatusColor("running")).toBe(colors.ok)
+  })
+
+  it("reads stopped for a finished startup worker (no next run, healthy)", () => {
+    const stopped = worker({ nextRunAt: null })
+    expect(workerStatusWord(stopped)).toBe("stopped")
+    expect(workerStatusColor("stopped")).toBe(colors.dim)
+  })
+})
+
+describe("renderWorkersPanel", () => {
+  const now = new Date("2026-09-18T12:01:00Z")
+
+  function worker(
+    name: string,
+    overrides: Partial<BackgroundWorkerView> = {}
+  ): BackgroundWorkerView {
+    return {
+      name,
+      lastRunAt: "2026-09-18T12:00:30Z",
+      nextRunAt: "2026-09-18T12:01:30Z",
+      lastResult: { success: true, detail: null, data: null },
+      consecutiveFailures: 0,
+      isHealthy: true,
+      ...overrides,
+    }
+  }
+
+  it("renders the header, column line, one row per worker and the one-shot footer", () => {
+    const lines = renderWorkersPanel(
+      [worker("lease-reaper"), worker("memory-sweep")],
+      undefined,
+      now
+    )
+    const plain = lines.map(stripAnsi)
+
+    expect(plain[0]).toContain("workers · 2")
+    expect(plain[1]).toContain("name")
+    expect(plain[1]).toContain("status")
+    expect(plain[1]).toContain("last-run")
+    expect(plain[2]).toContain("lease-reaper")
+    expect(plain[2]).toContain("running")
+    expect(plain[2]).toContain("30s")
+    expect(plain[3]).toContain("memory-sweep")
+    expect(plain[plain.length - 1]).toContain("one-shot")
+    expect(plain[plain.length - 1]).toContain("/workers refreshes")
+  })
+
+  it("bands statuses in the dichromat tones: degraded waiting-yellow, stopped dim", () => {
+    const lines = renderWorkersPanel(
+      [
+        worker("memory-sweep"),
+        worker("lease-reaper", {
+          consecutiveFailures: 2,
+          isHealthy: false,
+        }),
+        worker("oidc-sweep", { nextRunAt: null }),
+      ],
+      undefined,
+      now
+    )
+
+    expect(lines[2]).toContain(colors.ok)
+    expect(lines[2]).toContain("running")
+    expect(lines[3]).toContain(colors.waiting)
+    expect(lines[3]).toContain("degraded")
+    expect(lines[4]).toContain("stopped")
+  })
+
+  it("shows never for a worker without a first run", () => {
+    const plain = renderWorkersPanel(
+      [worker("oidc-sweep", { lastRunAt: null, nextRunAt: null })],
+      undefined,
+      now
+    ).map(stripAnsi)
+
+    expect(plain[2]).toContain("never")
+  })
+
+  it("renders the empty state when the registry has no workers", () => {
+    const plain = renderWorkersPanel([], undefined, now).map(stripAnsi)
+
+    expect(plain).toHaveLength(2)
+    expect(plain[0]).toContain("workers · 0")
+    expect(plain[1]).toContain("no background workers")
+  })
+
+  it("links worker names to the dashboard root via OSC 8 when a url is supplied", () => {
+    const lines = renderWorkersPanel(
+      [worker("memory-sweep")],
+      "http://h:17173",
+      now
+    )
+
+    expect(lines[2]).toContain("\x1b]8;;http://h:17173\x1b\\")
+    // Alignment survives: stripAnsi drops the wrapper, name stays put.
+    expect(stripAnsi(lines[2] ?? "")).toContain("memory-sweep")
   })
 })

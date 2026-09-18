@@ -103,6 +103,11 @@ describe("resolveSlashAction", () => {
     })
   })
 
+  it("routes /workers as a one-shot status panel request", () => {
+    expect(resolveSlashAction("/workers")).toEqual({ kind: "workers" })
+    expect(resolveSlashAction("WORKERS")).toEqual({ kind: "workers" })
+  })
+
   it("resolves /project without arguments to an empty query", () => {
     expect(resolveSlashAction("/project")).toEqual({ kind: "project", query: "" })
     expect(resolveSlashAction("/project   ")).toEqual({
@@ -168,6 +173,7 @@ describe("slashHelpLines", () => {
     expect(help).toContain("/retry")
     expect(help).toContain("/rename <title>")
     expect(help).toContain("/runs")
+    expect(help).toContain("/workers")
     expect(help).toContain("/plan")
     expect(help).toContain("/project <id|slug|name>")
     expect(help).toContain("/snip [name|save <name>|rm <name>]")

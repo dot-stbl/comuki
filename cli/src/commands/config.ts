@@ -14,7 +14,7 @@ import { existsSync } from "node:fs"
 import { homedir } from "node:os"
 import {
   configFilePath,
-  readConfigFile,
+  configStore,
   sessionsFilePath,
   type ConfigFileContents,
   type ConfigOverrides,
@@ -136,7 +136,7 @@ export function formatConfigShow(
 export async function printConfigShow(
   overrides: ConfigOverrides
 ): Promise<void> {
-  const file = await readConfigFile()
+  const file = await configStore.read()
   const configPath = configFilePath()
   const sessionsPath = sessionsFilePath()
   console.log(

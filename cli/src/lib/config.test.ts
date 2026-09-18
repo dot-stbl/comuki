@@ -66,6 +66,21 @@ describe("decodeConfigFile", () => {
 
     expect(await readConfigFile(path)).toEqual({})
   })
+
+  it("compatibility writes merge with fields added after a stale read", async () => {
+    const path = `${import.meta.dir}/config-compatibility-merge.tmp.json`
+    temporaryFiles.push(path)
+    await writeConfigFile({ cookie: "session=old" }, path)
+    const stale = await readConfigFile(path)
+    await writeConfigFile({ ...stale, theme: "dockside-dark" }, path)
+    await writeConfigFile({ preferredProfile: "implement" }, path)
+
+    expect(await readConfigFile(path)).toEqual({
+      cookie: "session=old",
+      theme: "dockside-dark",
+      preferredProfile: "implement",
+    })
+  })
 })
 
 describe("resolveConfig", () => {

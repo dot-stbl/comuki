@@ -13,76 +13,26 @@
  * `resolveConfig` is pure (env + file contents in, config out) so tests
  * cover the whole matrix without touching the filesystem.
  */
-import { homedir } from "node:os"
 import { join } from "node:path"
 import { DEFAULT_CONTEXT_WINDOW } from "./context"
 import {
-  decoded,
-  invalid,
-  isJsonObject,
-  readJsonFile,
-  writeJsonFile,
-  type DecodeResult,
-} from "./json"
+  configDir,
+  configFilePath,
+  configStore,
+  decodeConfigFile,
+  JsonConfigStore,
+  type ConfigFileContents,
+  type ConfigStore,
+} from "../persistence/config-store"
 
-export interface ConfigFileContents {
-  readonly [key: string]: unknown
-  readonly url?: string
-  readonly apiKey?: string
-  readonly tenant?: string
-  /** Session cookie captured by `comuki login` (`name=value`). */
-  readonly cookie?: string
-  readonly defaultProject?: string
-  /** Terminal theme choice (`<theme>-<dark|light>`), e.g. `graphite-light`. */
-  readonly theme?: string
-  /** BEL on turn completion (OSC 9 toasts are always on). */
-  readonly bell?: boolean
-  /**
-   * Preferred worker-profile key (`implement`, `explore-readonly`, …).
-   * Stored locally only — `createSession` has no profile field.
-   */
-  readonly preferredProfile?: string
-  /** Context-window size for the status-line meter. Default 128000. */
-  readonly contextWindow?: number
-}
-
-const CONFIG_STRING_FIELDS = [
-  "url",
-  "apiKey",
-  "tenant",
-  "cookie",
-  "defaultProject",
-  "theme",
-  "preferredProfile",
-] as const
-
-/**
- * Decodes config JSON while retaining extension fields owned by newer CLI
- * versions. Known fields with invalid types are ignored rather than leaked.
- */
-export function decodeConfigFile(value: unknown): DecodeResult<ConfigFileContents> {
-  if (!isJsonObject(value)) {
-    return invalid
-  }
-
-  const contents: Record<string, unknown> = { ...value }
-  for (const field of CONFIG_STRING_FIELDS) {
-    if (field in contents && typeof contents[field] !== "string") {
-      delete contents[field]
-    }
-  }
-  if ("bell" in contents && typeof contents.bell !== "boolean") {
-    delete contents.bell
-  }
-  if (
-    "contextWindow" in contents &&
-    (typeof contents.contextWindow !== "number" ||
-      !Number.isFinite(contents.contextWindow))
-  ) {
-    delete contents.contextWindow
-  }
-
-  return decoded(contents)
+export {
+  configDir,
+  configFilePath,
+  configStore,
+  decodeConfigFile,
+  JsonConfigStore,
+  type ConfigFileContents,
+  type ConfigStore,
 }
 
 export interface ResolvedConfig {
@@ -163,18 +113,6 @@ export function resolveConfig(
  * `~/.config/comuki/` — the only directory the CLI keeps on disk
  * (XDG layout; `XDG_CONFIG_HOME` wins when set).
  */
-export function configDir(
-  xdgConfigHome: string | undefined = process.env.XDG_CONFIG_HOME
-): string {
-  const base = xdgConfigHome?.trim() || join(homedir(), ".config")
-  return join(base, "comuki")
-}
-
-/** `~/.config/comuki/config.json` — connection + identity state. */
-export function configFilePath(): string {
-  return join(configDir(), "config.json")
-}
-
 /** `~/.config/comuki/sessions.json` — open tabs restored on next start. */
 export function sessionsFilePath(): string {
   return join(configDir(), "sessions.json")
@@ -191,8 +129,9 @@ export function archiveDir(
 export async function readConfigFile(
   path: string = configFilePath()
 ): Promise<ConfigFileContents> {
-  const result = decodeConfigFile(await readJsonFile(path))
-  return result.ok ? result.value : {}
+  return path === configFilePath()
+    ? configStore.read()
+    : new JsonConfigStore(path).read()
 }
 
 /** Writes the config file with owner-only permissions (0o600). */
@@ -200,5 +139,6 @@ export async function writeConfigFile(
   contents: ConfigFileContents,
   path: string = configFilePath()
 ): Promise<void> {
-  await writeJsonFile(path, contents)
+  const store = path === configFilePath() ? configStore : new JsonConfigStore(path)
+  await store.update((current) => ({ ...current, ...contents }))
 }

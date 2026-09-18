@@ -20,8 +20,7 @@ import React, { useEffect, useState, type ReactNode } from "react"
 import { ComukiClient, type ProjectView } from "../lib/client"
 import {
   configFilePath,
-  readConfigFile,
-  writeConfigFile,
+  configStore,
   type ConfigFileContents,
 } from "../lib/config"
 import { CLI_THEMES, type CliTheme, type ThemeMode } from "../themes"
@@ -269,7 +268,7 @@ export function SetupApp({ fetchImpl }: SetupAppProps) {
   // Prefill the url from an existing config (re-runs of the wizard).
   useEffect(() => {
     void (async () => {
-      const existing = await readConfigFile()
+      const existing = await configStore.read()
       if (existing.url) {
         setUrlInput(existing.url)
       }
@@ -407,14 +406,15 @@ export function SetupApp({ fetchImpl }: SetupAppProps) {
     setStep("saving")
     void (async () => {
       try {
-        const next = buildSetupFileContents(await readConfigFile(), {
-          url: draftUrl,
-          cookie,
-          apiKey,
-          defaultProject,
-          theme: choice,
-        })
-        await writeConfigFile(next)
+        await configStore.update((existing) =>
+          buildSetupFileContents(existing, {
+            url: draftUrl,
+            cookie,
+            apiKey,
+            defaultProject,
+            theme: choice,
+          })
+        )
         setSummary(
           formatSetupSummary(
             { url: draftUrl, cookie, apiKey, defaultProject, theme: choice },

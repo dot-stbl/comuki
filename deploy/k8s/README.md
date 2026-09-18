@@ -79,7 +79,16 @@ the schema at the image's migration level.
 - The host Deployment is pinned to `replicas: 1` — the worker-token
   store and SignalR connection map are in-process state.
 - Workers run as batch/v1 Jobs created by the host (Role
-  `comuki-worker-spawn`); nothing to apply per worker.
+  `comuki-worker-spawn`). The Role permits only `create/list/delete` on Jobs.
+  Capacity discovery uses a separate ClusterRole with `list` on nodes and pods.
+  Both bindings target `comuki-host` only.
+  Worker Jobs run as the separate `comuki-worker` ServiceAccount, which has
+  no Kubernetes API permissions and does not receive an API token; Translator
+  callbacks use the orchestrator gRPC endpoint instead. Nothing is applied per
+  worker.
+- Private worker registry: add the registry Secret under `imagePullSecrets` on
+  `comuki-worker` in `worker-role.yaml`. The Secret must exist in the `comuki`
+  namespace before a worker Job is created.
 - Bring your own Postgres/MinIO: delete `postgres.yaml` / `minio.yaml`
   and edit `configmap.yaml` (`COMUKI_ARTIFACTS_ENDPOINT`) + the `COMUKI_DB`
   connection strings in `migrator-job.yaml` / `deployment.yaml`.

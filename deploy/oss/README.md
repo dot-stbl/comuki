@@ -66,6 +66,20 @@ Prefer an Ingress? Add `--set ingress.enabled=true,ingress.host=comuki.example.c
 and set `publicUrl` to the same host. Bare-minimum values:
 `helm install comuki ./deploy/helm -f deploy/helm/values-minimal.yaml ...`.
 
+For a private registry, pass the pull Secret once and create it in the worker
+namespace as well when that differs from the release namespace:
+
+```bash
+helm upgrade --install comuki ./deploy/helm \
+  --set existingSecret=comuki-secrets \
+  --set imagePullSecrets[0].name=comuki-registry
+```
+
+The chart creates separate host and `comuki-worker` ServiceAccounts. Registry
+pull secrets are attached to both workloads; only the host is bound to the
+namespaced Job Role and cluster-wide read-only capacity Role. Workers call back
+over gRPC and have no Kubernetes API permissions or mounted API token.
+
 ## Quick Start (kubectl)
 
 ```bash

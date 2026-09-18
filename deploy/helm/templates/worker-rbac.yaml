@@ -1,38 +1,45 @@
 {{- if eq .Values.compute.provider "kubernetes" -}}
-# The orchestrator host spawns workers as batch/v1 Jobs (backoffLimit 0,
-# TTL-cleaned). It needs create/read/delete on jobs plus pod reads for
-# status, in the namespace workers land in.
+{{- $hostServiceAccount := include "comuki.serviceAccountName" . -}}
+{{- $workerServiceAccount := required "compute.kubernetes.serviceAccount is required" .Values.compute.kubernetes.serviceAccount -}}
+{{- $workerNamespace := include "comuki.workerNamespace" . -}}
+{{- $capacityRoleName := printf "%s-%s-worker-capacity" .Release.Namespace (include "comuki.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- if and (eq $workerNamespace .Release.Namespace) (eq $workerServiceAccount $hostServiceAccount) -}}
+{{- fail "compute.kubernetes.serviceAccount must differ from the host service account in the same namespace" -}}
+{{- end -}}
+# The orchestrator host creates/lists/deletes batch/v1 Jobs in the worker
+# namespace and lists cluster capacity. Worker pods only call the orchestrator
+# over gRPC and receive no Kubernetes API permissions.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ .Values.compute.kubernetes.serviceAccount }}
-  namespace: {{ include "comuki.workerNamespace" . }}
+  name: {{ $workerServiceAccount }}
+  namespace: {{ $workerNamespace }}
   labels:
     {{- include "comuki.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+automountServiceAccountToken: false
+{{- with .Values.imagePullSecrets }}
+imagePullSecrets:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ include "comuki.fullname" . }}-worker-spawn
-  namespace: {{ include "comuki.workerNamespace" . }}
+  namespace: {{ $workerNamespace }}
   labels:
     {{- include "comuki.labels" . | nindent 4 }}
 rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
-    verbs: ["create", "get", "list", "watch", "delete"]
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["get", "list", "watch"]
+    verbs: ["create", "list", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ include "comuki.fullname" . }}-worker-spawn
-  namespace: {{ include "comuki.workerNamespace" . }}
+  namespace: {{ $workerNamespace }}
   labels:
     {{- include "comuki.labels" . | nindent 4 }}
 roleRef:
@@ -41,6 +48,32 @@ roleRef:
   name: {{ include "comuki.fullname" . }}-worker-spawn
 subjects:
   - kind: ServiceAccount
-    name: {{ include "comuki.serviceAccountName" . }}
+    name: {{ $hostServiceAccount }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $capacityRoleName }}
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $capacityRoleName }}
+  labels:
+    {{- include "comuki.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $capacityRoleName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $hostServiceAccount }}
     namespace: {{ .Release.Namespace }}
 {{- end }}

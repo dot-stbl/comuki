@@ -1,6 +1,8 @@
 # The host spawns workers as batch/v1 Jobs (backoffLimit 0, TTL-cleaned)
-# via the Kubernetes compute provider — it needs create/read/delete on
-# jobs plus pod reads, and a ServiceAccount the worker pods run as.
+# via the Kubernetes compute provider. It creates/lists/deletes Jobs in the
+# worker namespace and lists cluster nodes/pods to calculate capacity.
+# Worker pods only call the orchestrator over gRPC;
+# their ServiceAccount has no RoleBinding and does not mount an API token.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -16,6 +18,12 @@ metadata:
   namespace: comuki
   labels:
     app.kubernetes.io/name: comuki
+    app.kubernetes.io/component: worker
+automountServiceAccountToken: false
+# Add imagePullSecrets here when the worker image is in a private registry.
+# The Secret must exist in the comuki namespace.
+# imagePullSecrets:
+#   - name: comuki-registry
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -27,13 +35,7 @@ metadata:
 rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
-    verbs: ["create", "get", "list", "watch", "delete"]
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["get", "list", "watch"]
+    verbs: ["create", "list", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -46,6 +48,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: comuki-worker-spawn
+subjects:
+  - kind: ServiceAccount
+    name: comuki-host
+    namespace: comuki
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: comuki-worker-capacity
+  labels:
+    app.kubernetes.io/name: comuki
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: comuki-worker-capacity
+  labels:
+    app.kubernetes.io/name: comuki
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: comuki-worker-capacity
 subjects:
   - kind: ServiceAccount
     name: comuki-host

@@ -12,6 +12,9 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
+# Registry pull secrets used by chart workloads and copied onto the worker
+# ServiceAccount. When compute.kubernetes.namespace is set, each named Secret
+# must also exist in that namespace.
 imagePullSecrets: []
 
 nameOverride: ""
@@ -140,6 +143,9 @@ compute:
   kubernetes:
     # Namespace worker Jobs are created in. Default: release namespace.
     namespace: ""
+    # Dedicated ServiceAccount created for worker Jobs. It inherits the chart
+    # imagePullSecrets but has no Kubernetes API token or RBAC permissions.
+    # It must differ from the host ServiceAccount in the same namespace.
     serviceAccount: comuki-worker
     cpuRequestMillis: 500
     memoryRequestMiB: 1024

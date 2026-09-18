@@ -1,9 +1,9 @@
 /**
  * Entry + command routing: `comuki` (default = the multi-session chat
  * REPL), `status`, `runs list`, `login`, `whoami`, `config [show]`,
- * `setup` (first-run wizard), `completion <shell>`.
- * Each command renders its own Ink app (`config show` and `completion`
- * are the plain-console exceptions); the process exits when the app
+ * `setup` (first-run wizard), `completion <shell>`, `doctor`.
+ * Each command renders its own Ink app (`config show`, `completion`
+ * and `doctor` are the plain-console exceptions); the process exits when the app
  * unmounts (Ink's `exitOnCtrlC` covers ctrl+c). The removed `chat`
  * subcommand is unknown on purpose — bare `comuki` is the REPL.
  */
@@ -17,6 +17,7 @@ import { RunsApp } from "./commands/runs"
 import { StatusApp } from "./commands/status"
 import { printConfigShow } from "./commands/config"
 import { printCompletion } from "./commands/completion"
+import { printDoctor } from "./commands/doctor"
 import { SetupApp } from "./commands/setup"
 import { ComukiClient } from "./lib/client"
 import {
@@ -26,14 +27,13 @@ import {
 } from "./lib/config"
 import { resolveCommand } from "./lib/commands"
 import { CLI_VERSION } from "./components/StatusLine"
-import { whoAmI } from "./lib/auth"
+import { formatWhoamiLines, whoFromError, whoFromMe } from "./lib/auth"
 import {
   DEFAULT_THEME_CHOICE,
   THEME_CHOICE_IDS,
   colors,
   isThemeChoice,
   resolveTheme,
-  symbols,
 } from "./theme"
 
 interface GlobalOptions {
@@ -99,6 +99,7 @@ async function main(): Promise<void> {
           describe: "target shell: pwsh or bash",
         })
     )
+    .command("doctor", "check host, auth, config and theme")
     .demandCommand(0, 0) // no command → the REPL
     .strict()
     .parse()
@@ -131,6 +132,11 @@ async function main(): Promise<void> {
   }
   if (command === "completion") {
     printCompletion(String(argv.shell ?? ""))
+    return
+  }
+  // Before loadConfig: a missing url is a failed check, not a throw.
+  if (command === "doctor") {
+    process.exitCode = await printDoctor(overrides)
     return
   }
 
@@ -179,24 +185,15 @@ async function main(): Promise<void> {
   }
   if (command === "whoami") {
     const client = new ComukiClient(config)
-    const who = await whoAmI(client)
-    console.log(
-      `${colors.accent}  ${who.kind}${colors.reset} ${symbols.bullet} ${who.label}`
-    )
     try {
       const me = await client.me()
-      if (me.roles.length > 0) {
-        console.log(
-          `${colors.dim}  roles: ${me.roles.join(", ")}${colors.reset}`
-        )
+      for (const line of formatWhoamiLines(whoFromMe(me), me)) {
+        console.log(line)
       }
-      if (me.permissions.length > 0) {
-        console.log(
-          `${colors.dim}  permissions: ${me.permissions.join(", ")}${colors.reset}`
-        )
+    } catch (error) {
+      for (const line of formatWhoamiLines(whoFromError(error))) {
+        console.log(line)
       }
-    } catch {
-      // whoAmI already reported the failure shape.
     }
     return
   }

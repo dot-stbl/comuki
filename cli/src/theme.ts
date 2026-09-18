@@ -170,6 +170,14 @@ function themeHex(
   }
 }
 
+/** Last `resolveTheme` install — `/theme` listing reads this. */
+let installedThemeId = DEFAULT_THEME_CHOICE
+
+/** The currently installed `<id>-<mode>` choice. */
+export function currentThemeId(): string {
+  return installedThemeId
+}
+
 function install(theme: CliTheme, mode: ThemeMode): ThemeTokens {
   const primitives = mode === "dark" ? theme.dark : theme.light
   const hex = themeHex(primitives)
@@ -197,6 +205,7 @@ function install(theme: CliTheme, mode: ThemeMode): ThemeTokens {
   palette.ok = hex.ok
   palette.error = hex.error
   palette.waiting = hex.waiting
+  installedThemeId = `${theme.id}-${mode}`
   return {
     id: `${theme.id}-${mode}`,
     themeId: theme.id,

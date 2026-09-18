@@ -5,7 +5,15 @@
  */
 
 export type CommandName =
-  "repl" | "status" | "runs" | "login" | "whoami" | "config" | "unknown"
+  | "repl"
+  | "status"
+  | "runs"
+  | "login"
+  | "whoami"
+  | "config"
+  | "setup"
+  | "completion"
+  | "unknown"
 
 const KNOWN_COMMANDS: readonly CommandName[] = [
   "status",
@@ -13,6 +21,8 @@ const KNOWN_COMMANDS: readonly CommandName[] = [
   "login",
   "whoami",
   "config",
+  "setup",
+  "completion",
 ]
 
 /**

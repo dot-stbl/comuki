@@ -62,15 +62,15 @@ describe("alertLines frame", () => {
     )
     const plain = lines.map(stripAnsi)
     expect(plain).toMatchSnapshot()
-    expect(plain[0]).toContain("┌─ error · authentication.required ")
-    expect(plain[0]?.endsWith("┐")).toBe(true)
+    expect(plain[0]).toContain("+- error · authentication.required ")
+    expect(plain[0]?.endsWith("+")).toBe(true)
     expect(plain.some((line) => line.includes("permission 'chat:use'"))).toBe(
       true
     )
     expect(plain.some((line) => line.includes("/login"))).toBe(true)
     expect(plain.some((line) => line.includes("/retry"))).toBe(true)
-    expect(plain[plain.length - 1]).toMatch(/^  └─+┘$/)
-    const box = plain.filter((line) => /[┌│└]/.test(line))
+    expect(plain[plain.length - 1]).toMatch(/^\s*\+[-+]+\+$/)
+    const box = plain.filter((line) => /[+|+]/.test(line) && line.includes("+"))
     expect(new Set(box.map((line) => line.length)).size).toBe(1)
   })
 

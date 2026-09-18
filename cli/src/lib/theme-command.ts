@@ -21,7 +21,7 @@ export function themeListingLines(currentId: string): readonly string[] {
   ]
 }
 
-/** Dim notice after a live switch — `⏺ theme → dockside-dark`. */
+/** Dim notice after a live switch — `* theme → dockside-dark`. */
 export function themeSwitchedLine(id: string): string {
   return `${colors.faint}  ${symbols.event} theme → ${id}${colors.reset}`
 }

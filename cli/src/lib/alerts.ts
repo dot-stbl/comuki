@@ -120,16 +120,16 @@ export function renderAlertCard(
   const dashes = Math.max(1, boxWidth - headerPlain.length - 5)
   const kindPaint = kindColor(card.kind)
   const row = (text: string) =>
-    paint(`  │ `, colors.rule) +
+    paint(`  | `, colors.rule) +
     padVisible(paint(fit(text, room), colors.faint), room) +
-    paint(` │`, colors.rule)
+    paint(` |`, colors.rule)
   return [
-    paint(`  ┌─ `, colors.rule) +
+    paint(`  +- `, colors.rule) +
       paint(card.kind, kindPaint) +
       paint(` · ${label}`, colors.faint) +
-      paint(` ${"─".repeat(dashes)}┐`, colors.rule),
+      paint(` ${"-".repeat(dashes)}+`, colors.rule),
     ...body.map(row),
-    paint(`  └${"─".repeat(boxWidth - 2)}┘`, colors.rule),
+    paint(`  +${"-".repeat(boxWidth - 2)}+`, colors.rule),
   ]
 }
 

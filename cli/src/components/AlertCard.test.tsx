@@ -21,11 +21,11 @@ describe("AlertCard", () => {
       />
     )
     const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("┌─ error · authentication.required")
+    expect(frame).toContain("+- error · authentication.required")
     expect(frame).toContain("permission 'chat:use'")
     expect(frame).toContain("/login")
     expect(frame).toContain("/retry")
-    expect(frame).toContain("└")
+    expect(frame).toContain("+")
     unmount()
   })
 

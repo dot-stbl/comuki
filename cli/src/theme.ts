@@ -104,10 +104,10 @@ export const symbols = {
   bullet: "·",
   arrow: "→",
   /** The one bullet every collapsed event line (thinking, tools) leads with. */
-  event: "⏺",
-  /** The assistant's brand glyph — the freight mark of the swarm lead. */
+  event: "*",
+  /** The assistant's brand glyph — Welcome / mark own this; the transcript uses the rule line. */
   brandMark: "◆",
-  spinnerFrames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
+  spinnerFrames: [".", "o", "O", "o"],
 } as const
 
 /**

@@ -22,11 +22,18 @@ export interface UseCopyLastAnswerOptions {
   readonly write?: ClipboardWriter
   /** How long the hint stays on screen before fading (default 2s). */
   readonly hintMs?: number
+  /**
+   * Last fenced code block — used by ctrl+shift+y / `/copycode`.
+   * `null` / empty → "no code block".
+   */
+  readonly getLastCodeFence?: () => string | null
 }
 
 export interface CopyLastAnswer {
   /** Transient confirmation text, `null` when there is nothing to show. */
   readonly hint: string | null
+  /** `/copycode` — same write + hint path as ctrl+shift+y. */
+  readonly copyLastCode: () => void
 }
 
 export function useCopyLastAnswer(
@@ -38,11 +45,16 @@ export function useCopyLastAnswer(
   const [hint, setHint] = useState<string | null>(null)
   // Fresh-on-every-render getter without re-registering the key handler.
   const getterRef = useRef(getLastAnswer)
+  const codeGetterRef = useRef(options.getLastCodeFence)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     getterRef.current = getLastAnswer
   }, [getLastAnswer])
+
+  useEffect(() => {
+    codeGetterRef.current = options.getLastCodeFence
+  }, [options.getLastCodeFence])
 
   useEffect(
     () => () => {
@@ -64,8 +76,22 @@ export function useCopyLastAnswer(
     [hintMs]
   )
 
+  const copyCode = useCallback(() => {
+    const text = codeGetterRef.current?.() ?? null
+    if (text === null || text.length === 0) {
+      flash("no code block")
+      return
+    }
+    flash("copied code ✓")
+    void write(text).catch(() => setHint("copy failed"))
+  }, [flash, write])
+
   useInput((input, key) => {
-    if (!key.ctrl || input !== "y") {
+    if (!key.ctrl || (input !== "y" && input !== "Y")) {
+      return
+    }
+    if (key.shift || input === "Y") {
+      copyCode()
       return
     }
     const text = getterRef.current()
@@ -79,5 +105,5 @@ export function useCopyLastAnswer(
     void write(text).catch(() => setHint("copy failed"))
   })
 
-  return { hint }
+  return { hint, copyLastCode: copyCode }
 }

@@ -98,6 +98,24 @@ export function retryMessage(session: Session | undefined): string | null {
 }
 
 /**
+ * Case-insensitive substring filter over session names. Empty / blank
+ * query returns the list as-is (tab order preserved). Used by the
+ * overview overlay as the user types.
+ */
+export function filterSessions(
+  sessions: readonly Session[],
+  query: string
+): readonly Session[] {
+  const needle = query.trim().toLowerCase()
+  if (needle.length === 0) {
+    return sessions
+  }
+  return sessions.filter((session) =>
+    session.name.toLowerCase().includes(needle)
+  )
+}
+
+/**
  * The opener a `/branch` fork sends in its new tab: the source's last
  * user message (retry-in-new-tab semantics — the server transcript is
  * not copied, the conversation restarts from that message).

@@ -21,6 +21,7 @@ import {
   symbols,
 } from "../theme"
 import type { ChatMessageView, MessagePart, PlanItemView } from "./client"
+import type { ChatBlock } from "./sessions"
 import { MENTION_TOKEN, stripMentionPreamble } from "./mentions"
 import { DEFAULT_MARKDOWN_WIDTH, renderMarkdownLines } from "./markdown"
 import { isDiffContent, renderDiffLines } from "./diff"
@@ -693,4 +694,59 @@ export function tableRow(
     )
     .join("  ")
     .trimEnd()
+}
+
+/**
+ * Source of the last fenced code block in a transcript — structured
+ * `code` parts first (the last one in the last assistant message that
+ * has any), then a markdown fence (` ```lang ` … ` ``` `) in that
+ * message's text parts / content. Null when nothing is fenced.
+ */
+export function lastCodeFence(blocks: readonly ChatBlock[]): string | null {
+  for (let index = blocks.length - 1; index >= 0; index--) {
+    const block = blocks[index]
+    if (block.kind !== "message" || block.message.role !== "assistant") {
+      continue
+    }
+    const fromParts = lastCodeFromParts(block.message.parts)
+    if (fromParts !== null) {
+      return fromParts
+    }
+    const fromContent = lastMarkdownFence(block.message.content)
+    if (fromContent !== null) {
+      return fromContent
+    }
+  }
+  return null
+}
+
+function lastCodeFromParts(
+  parts: readonly MessagePart[] | null
+): string | null {
+  if (parts === null || parts.length === 0) {
+    return null
+  }
+  for (let index = parts.length - 1; index >= 0; index--) {
+    const part = parts[index]
+    if (part.kind === "code" && part.source.length > 0) {
+      return part.source
+    }
+    if (part.kind === "text") {
+      const fenced = lastMarkdownFence(part.markdown)
+      if (fenced !== null) {
+        return fenced
+      }
+    }
+  }
+  return null
+}
+
+const FENCE = /```[^\n]*\n([\s\S]*?)```/g
+
+function lastMarkdownFence(markdown: string): string | null {
+  let last: string | null = null
+  for (const match of markdown.matchAll(FENCE)) {
+    last = match[1] ?? ""
+  }
+  return last
 }

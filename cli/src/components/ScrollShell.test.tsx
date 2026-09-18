@@ -49,6 +49,24 @@ function ScrollShell({ lines, height }: ShellProps) {
       scroll.lineDown()
       return
     }
+    if (scroll.scrolledUp && !key.ctrl && !key.meta) {
+      if (input === "j") {
+        scroll.lineDown()
+        return
+      }
+      if (input === "k") {
+        scroll.lineUp()
+        return
+      }
+      if (input === "g") {
+        scroll.toTop()
+        return
+      }
+      if (input === "G") {
+        scroll.toBottom()
+        return
+      }
+    }
   })
   return (
     <Box flexDirection="column">
@@ -138,6 +156,45 @@ describe("ScrollShell — transcript keys end to end", () => {
     // The prompt draft survived — arrows belonged to the viewport.
     expect(frame).toContain("draf")
     expect(frame).not.toContain("recall-me")
+    unmount()
+  })
+
+  test("j/k scroll one line while scrolledUp; g/G jump top/bottom", async () => {
+    const { stdin, lastFrame, unmount } = await renderShell()
+    stdin.write(PGUP)
+    await settle()
+    stdin.write("k")
+    await settle()
+    const afterK = lastFrame() ?? ""
+    expect(afterK).toContain("row-19")
+    expect(afterK).not.toContain("row-24")
+    stdin.write("j")
+    await settle()
+    const afterJ = lastFrame() ?? ""
+    expect(afterJ).toContain("row-20")
+    expect(afterJ).toContain("row-24")
+    stdin.write("g")
+    await settle()
+    const atTop = lastFrame() ?? ""
+    expect(atTop).toContain("row-0")
+    expect(atTop).not.toContain("row-29")
+    stdin.write("G")
+    await settle()
+    const atBottom = lastFrame() ?? ""
+    expect(atBottom).toContain("row-29")
+    expect(atBottom).not.toContain("row-0")
+    unmount()
+  })
+
+  test("j/k at the bottom insert into the prompt, not scroll", async () => {
+    const { stdin, lastFrame, unmount } = await renderShell()
+    stdin.write("j")
+    await settle()
+    stdin.write("k")
+    await settle()
+    const frame = lastFrame() ?? ""
+    expect(frame).toContain("jk")
+    expect(frame).toContain("row-29")
     unmount()
   })
 

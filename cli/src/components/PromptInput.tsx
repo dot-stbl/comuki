@@ -28,7 +28,7 @@
  * keeps its position so ↑/↓ continue from where the user is.
  */
 import { Box, Text, useInput } from "ink"
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 import { historyNavigator, type HistoryDirection } from "../lib/history"
 import { isEnterInput, routeEnterKey } from "../lib/multiline"
 import {
@@ -49,8 +49,8 @@ export interface PromptInputProps {
   /** false → the editor ignores keys (a thinking turn owns the tab). */
   readonly active?: boolean
   /**
-   * false → ↑/↓ go to the transcript viewport (scrolled-up state)
-   * instead of history recall; typing is untouched.
+   * false → ↑/↓ (and vim j/k/g/G) go to the transcript viewport
+   * (scrolled-up state) instead of history recall / insert.
    */
   readonly historyRecallEnabled?: boolean
   /** Fired on every open/close flip — the shell gates its hotkeys on it. */
@@ -71,6 +71,12 @@ export interface PromptInputProps {
    * draft on accept.
    */
   readonly interceptKey?: InterceptKey
+  /**
+   * Prefill seam — when `seq` changes the editor value is replaced
+   * (cursor at the end). Same seq is a no-op so typing is not clobbered
+   * by a parent re-render. `/edit` uses this; it never submits.
+   */
+  readonly seed?: { readonly value: string; readonly seq: number }
 }
 
 interface EditorState {
@@ -108,8 +114,10 @@ export function PromptInput({
   onRowsChange,
   onDraftChange,
   interceptKey,
+  seed,
 }: PromptInputProps) {
   const [state, setState] = useState<EditorState>(FRESH_EDITOR)
+  const seedSeqRef = useRef<number | undefined>(undefined)
 
   const query = slashMenuQuery(state.value)
   const matches =
@@ -139,6 +147,21 @@ export function PromptInput({
   useEffect(() => {
     onDraftChange?.(state.value)
   }, [state.value, onDraftChange])
+
+  useEffect(() => {
+    if (seed === undefined || seed.seq === seedSeqRef.current) {
+      return
+    }
+    seedSeqRef.current = seed.seq
+    setState({
+      value: seed.value,
+      cursor: seed.value.length,
+      draft: "",
+      historyIndex: null,
+      menuIndex: 0,
+      menuDismissed: false,
+    })
+  }, [seed])
 
   const navigate = useCallback(
     (direction: HistoryDirection) => {
@@ -324,6 +347,17 @@ export function PromptInput({
             menuDismissed: current.menuDismissed,
           }))
         }
+        return
+      }
+      // While the viewport owns j/k/g/G (scrolled-up vim keys), do not
+      // insert them — the shell's useInput scrolls instead.
+      if (
+        !historyRecallEnabled &&
+        (input === "j" ||
+          input === "k" ||
+          input === "g" ||
+          input === "G")
+      ) {
         return
       }
       if (input.length > 0) {

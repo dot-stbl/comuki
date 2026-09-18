@@ -6,6 +6,7 @@ import {
   formatDurationMs,
   formatTokenCount,
   gutterLines,
+  lastCodeFence,
   normalizeSpacing,
   renderMessage,
   renderPart,
@@ -15,6 +16,7 @@ import {
 } from "./format"
 import { colors, messageMark, stripAnsi, symbols } from "../theme"
 import type { ChatMessageView, MessagePart } from "./client"
+import type { ChatBlock } from "./sessions"
 
 function userMessage(content: string): ChatMessageView {
   return {
@@ -589,5 +591,90 @@ describe("renderMessage — collapsed transcript", () => {
       { expanded: true }
     )
     expect(stripAnsi(lines.join("\n"))).toContain("secret reasoning")
+  })
+})
+
+function assistantBlock(
+  key: string,
+  parts: MessagePart[] | null,
+  content = ""
+): ChatBlock {
+  return {
+    kind: "message",
+    key,
+    message: {
+      id: key,
+      role: "assistant",
+      content,
+      toolName: null,
+      parts,
+      meta: null,
+      createdAt: "2026-09-18T00:00:00Z",
+    },
+  }
+}
+
+describe("lastCodeFence", () => {
+  it("returns the last structured code part of the newest assistant message", () => {
+    expect(
+      lastCodeFence([
+        assistantBlock("a1", [
+          { kind: "code", language: "ts", source: "const a = 1" },
+          { kind: "text", markdown: "then" },
+          { kind: "code", language: "py", source: "print(2)" },
+        ]),
+      ])
+    ).toBe("print(2)")
+  })
+
+  it("walks back to an earlier assistant when the newest has no fence", () => {
+    expect(
+      lastCodeFence([
+        assistantBlock("old", [
+          { kind: "code", language: "ts", source: "const a = 1" },
+        ]),
+        {
+          kind: "message",
+          key: "u",
+          message: userMessage("again?"),
+        },
+        assistantBlock("new", [{ kind: "text", markdown: "no code here" }]),
+      ])
+    ).toBe("const a = 1")
+  })
+
+  it("extracts the last markdown fence from a text part", () => {
+    expect(
+      lastCodeFence([
+        assistantBlock("a1", [
+          {
+            kind: "text",
+            markdown: "see:\n```js\nold()\n```\nand\n```ts\nnew()\n```\n",
+          },
+        ]),
+      ])
+    ).toBe("new()\n")
+  })
+
+  it("falls back to content when parts are empty", () => {
+    expect(
+      lastCodeFence([
+        assistantBlock("a1", null, "intro\n```\nbare\n```\n"),
+      ])
+    ).toBe("bare\n")
+  })
+
+  it("is null with no assistant code", () => {
+    expect(lastCodeFence([])).toBeNull()
+    expect(
+      lastCodeFence([
+        {
+          kind: "message",
+          key: "u",
+          message: userMessage("```ts\nuser fence\n```"),
+        },
+        assistantBlock("a1", [{ kind: "text", markdown: "plain" }]),
+      ])
+    ).toBeNull()
   })
 })

@@ -180,6 +180,22 @@ describe("PromptInput history recall", () => {
     unmount()
   })
 
+  test("historyRecallEnabled=false: j/k/g/G are not inserted (viewport owns them)", async () => {
+    const { stdin, lastFrame, unmount } = await renderPrompt(["alpha"], false)
+    stdin.write("j")
+    await settle()
+    stdin.write("k")
+    await settle()
+    stdin.write("g")
+    await settle()
+    stdin.write("G")
+    await settle()
+    const frame = lastFrame() ?? ""
+    expect(frame).not.toContain("jk")
+    expect(frame).not.toContain("gG")
+    unmount()
+  })
+
   test("historyRecallEnabled=false: enter still submits the typed line", async () => {
     const { stdin, unmount, submitted } = await renderPrompt(["old"], false)
     stdin.write("hi")
@@ -417,6 +433,78 @@ describe("PromptInput mention seams", () => {
     const frame = lastFrame() ?? ""
     expect(frame).toContain("a!")
     expect(frame).not.toContain("az")
+    unmount()
+  })
+})
+
+describe("PromptInput seed prefill", () => {
+  test("a seed with a new seq replaces the editor value without submitting", async () => {
+    const submitted: string[] = []
+    const { lastFrame, rerender, unmount } = render(
+      <PromptInput
+        onSubmit={(value) => submitted.push(value)}
+        seed={{ value: "edit me", seq: 1 }}
+      />
+    )
+    await settle()
+    expect(lastFrame()).toContain("edit me")
+    expect(submitted).toEqual([])
+    rerender(
+      <PromptInput
+        onSubmit={(value) => submitted.push(value)}
+        seed={{ value: "edit me", seq: 1 }}
+      />
+    )
+    await settle()
+    expect(lastFrame()).toContain("edit me")
+    expect(submitted).toEqual([])
+    unmount()
+  })
+
+  test("a later seq overwrites the current draft", async () => {
+    const submitted: string[] = []
+    const { stdin, lastFrame, rerender, unmount } = render(
+      <PromptInput
+        onSubmit={(value) => submitted.push(value)}
+        seed={{ value: "first", seq: 1 }}
+      />
+    )
+    await settle()
+    stdin.write("!")
+    await settle()
+    expect(lastFrame()).toContain("first!")
+    rerender(
+      <PromptInput
+        onSubmit={(value) => submitted.push(value)}
+        seed={{ value: "second", seq: 2 }}
+      />
+    )
+    await settle()
+    expect(lastFrame()).toContain("second")
+    expect(lastFrame()).not.toContain("first")
+    expect(submitted).toEqual([])
+    unmount()
+  })
+
+  test("same seq after typing does not clobber the draft", async () => {
+    const { stdin, lastFrame, rerender, unmount } = render(
+      <PromptInput
+        onSubmit={() => {}}
+        seed={{ value: "seeded", seq: 1 }}
+      />
+    )
+    await settle()
+    stdin.write("x")
+    await settle()
+    expect(lastFrame()).toContain("seededx")
+    rerender(
+      <PromptInput
+        onSubmit={() => {}}
+        seed={{ value: "seeded", seq: 1 }}
+      />
+    )
+    await settle()
+    expect(lastFrame()).toContain("seededx")
     unmount()
   })
 })

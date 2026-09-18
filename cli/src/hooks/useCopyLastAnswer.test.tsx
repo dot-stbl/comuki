@@ -7,7 +7,7 @@
  */
 import { describe, expect, mock, test } from "bun:test"
 import React from "react"
-import { Text } from "ink"
+import { Text, useInput } from "ink"
 import { render } from "ink-testing-library"
 import {
   useCopyLastAnswer,
@@ -21,12 +21,29 @@ function settle(ms = 100): Promise<void> {
 
 interface HarnessProps {
   readonly getLastAnswer: () => string | undefined
+  readonly getLastCodeFence?: () => string | null
   readonly write: ClipboardWriter
   readonly hintMs: number
 }
 
-function CopyHarness({ getLastAnswer, write, hintMs }: HarnessProps) {
-  const { hint } = useCopyLastAnswer(getLastAnswer, { write, hintMs })
+function CopyHarness({
+  getLastAnswer,
+  getLastCodeFence,
+  write,
+  hintMs,
+}: HarnessProps) {
+  const { hint, copyLastCode } = useCopyLastAnswer(getLastAnswer, {
+    write,
+    hintMs,
+    getLastCodeFence,
+  })
+  // Test-only: `c` triggers the same path `/copycode` uses — ink's
+  // mock stdin cannot synthesise ctrl+shift.
+  useInput((input) => {
+    if (input === "c") {
+      copyLastCode()
+    }
+  })
   return <Text>{hint ?? "no hint"}</Text>
 }
 
@@ -39,10 +56,16 @@ interface CopyHandle {
 async function renderCopyHarness(
   getLastAnswer: () => string | undefined,
   write: ClipboardWriter,
-  hintMs: number
+  hintMs: number,
+  getLastCodeFence?: () => string | null
 ): Promise<CopyHandle> {
   const { stdin, lastFrame, unmount } = render(
-    <CopyHarness getLastAnswer={getLastAnswer} write={write} hintMs={hintMs} />
+    <CopyHarness
+      getLastAnswer={getLastAnswer}
+      getLastCodeFence={getLastCodeFence}
+      write={write}
+      hintMs={hintMs}
+    />
   )
   // The first keystroke is lost without this: useInput subscribes in an
   // effect that must flush before the mock stdin can deliver anything.
@@ -133,6 +156,41 @@ describe("useCopyLastAnswer", () => {
 
     expect(write).not.toHaveBeenCalled()
     expect(lastFrame()).not.toContain("copied")
+    unmount()
+  })
+
+  test("copyLastCode writes the last fence and flashes copied code", async () => {
+    const write = mock((_text: string) => Promise.resolve())
+    const { stdin, lastFrame, unmount } = await renderCopyHarness(
+      () => "the answer",
+      write,
+      60_000,
+      () => "const x = 1"
+    )
+
+    stdin.write("c")
+    await settle()
+
+    expect(write).toHaveBeenCalledTimes(1)
+    expect(write.mock.calls[0]?.[0]).toBe("const x = 1")
+    expect(lastFrame()).toContain("copied code")
+    unmount()
+  })
+
+  test("copyLastCode with no fence hints no code block", async () => {
+    const write = mock((_text: string) => Promise.resolve())
+    const { stdin, lastFrame, unmount } = await renderCopyHarness(
+      () => "the answer",
+      write,
+      60_000,
+      () => null
+    )
+
+    stdin.write("c")
+    await settle()
+
+    expect(write).not.toHaveBeenCalled()
+    expect(lastFrame()).toContain("no code block")
     unmount()
   })
 })

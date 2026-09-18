@@ -32,6 +32,18 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: "resend the last message",
   },
   {
+    name: "edit",
+    aliases: [],
+    usage: "/edit",
+    description: "put the last message back in the prompt",
+  },
+  {
+    name: "copycode",
+    aliases: [],
+    usage: "/copycode",
+    description: "copy the last fenced code block",
+  },
+  {
     name: "rename",
     aliases: [],
     usage: "/rename <title>",
@@ -151,6 +163,8 @@ export function slashHelpLines(): readonly string[] {
 export type SlashAction =
   | { readonly kind: "exit" }
   | { readonly kind: "retry" }
+  | { readonly kind: "edit" }
+  | { readonly kind: "copycode" }
   | { readonly kind: "rename"; readonly title: string }
   | { readonly kind: "export"; readonly path?: string }
   | { readonly kind: "bell"; readonly enabled?: boolean }
@@ -191,6 +205,12 @@ export function resolveSlashAction(raw: string): SlashAction {
   }
   if (matches("retry", name)) {
     return { kind: "retry" }
+  }
+  if (matches("edit", name)) {
+    return { kind: "edit" }
+  }
+  if (matches("copycode", name)) {
+    return { kind: "copycode" }
   }
   if (matches("rename", name)) {
     return { kind: "rename", title: args.replace(/\s+/g, " ") }

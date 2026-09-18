@@ -3,10 +3,17 @@
  * over message metas, the `4.1k→1.2k` format, and the
  * waiting-approval section builder. Rendering is covered by the
  * layout smoke tests; these are the logic.
+ *
+ * The filter overlay is driven through ink-testing-library: typing
+ * letters filters the list, backspace edits the query, esc still
+ * closes.
  */
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it, test } from "bun:test"
+import React from "react"
+import { render } from "ink-testing-library"
 import {
   formatTokenTotals,
+  SessionOverview,
   sessionTokenTotals,
   waitingApprovalRows,
 } from "./SessionOverview"
@@ -143,5 +150,69 @@ describe("waitingApprovalRows", () => {
   it("is empty when nothing awaits a decision", () => {
     expect(waitingApprovalRows([session({}), session({})])).toEqual([])
     expect(waitingApprovalRows([])).toEqual([])
+  })
+})
+
+function settle(ms = 80): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+describe("SessionOverview filter overlay", () => {
+  test("typing letters filters by name and shows the query dim on the header", async () => {
+    const { stdin, lastFrame, unmount } = render(
+      <SessionOverview
+        sessions={[
+          session({ id: "s1", name: "Fix Auth" }),
+          session({ id: "s2", name: "docs" }),
+          session({ id: "s3", name: "auth-review" }),
+        ]}
+        activeIndex={0}
+        onSelect={() => {}}
+        onNewSession={() => {}}
+        onClose={() => {}}
+      />
+    )
+    await settle()
+    stdin.write("a")
+    await settle()
+    stdin.write("u")
+    await settle()
+    const frame = lastFrame() ?? ""
+    expect(frame).toContain("filter: au")
+    expect(frame).toContain("Fix Auth")
+    expect(frame).toContain("auth-review")
+    expect(frame).not.toContain("docs")
+    unmount()
+  })
+
+  test("backspace edits the filter; esc still closes", async () => {
+    const closed: number[] = []
+    const { stdin, lastFrame, unmount } = render(
+      <SessionOverview
+        sessions={[
+          session({ id: "s1", name: "alpha" }),
+          session({ id: "s2", name: "docs" }),
+        ]}
+        activeIndex={0}
+        onSelect={() => {}}
+        onNewSession={() => {}}
+        onClose={() => closed.push(1)}
+      />
+    )
+    await settle()
+    stdin.write("a")
+    await settle(150)
+    expect(lastFrame() ?? "").toContain("filter: a")
+    expect(lastFrame() ?? "").not.toContain("docs")
+    stdin.write("\x7f")
+    await settle()
+    const afterBackspace = lastFrame() ?? ""
+    expect(afterBackspace).not.toContain("filter:")
+    expect(afterBackspace).toContain("alpha")
+    expect(afterBackspace).toContain("docs")
+    stdin.write("\x1b")
+    await settle()
+    expect(closed).toEqual([1])
+    unmount()
   })
 })

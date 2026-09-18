@@ -3,11 +3,20 @@
  * age, `+ new session` at the bottom. Keys: `1`–`9` select, `ctrl+n`
  * new, `esc` back. Rendered instead of the transcript while open
  * (terminal-native: no floating panes, the list IS the screen).
+ *
+ * Sessions with a plan awaiting decision lead the screen under
+ * `! waiting approval` (the same badge the tab strip wears); each row
+ * also carries its summed token usage, right-aligned and dim.
  */
 import { Box, Text, useInput } from "ink"
 import React from "react"
-import { ageFromMs, padVisible } from "../lib/format"
-import type { Session } from "../lib/sessions"
+import {
+  ageFromMs,
+  extractPlanNodes,
+  padVisible,
+  truncateTail,
+} from "../lib/format"
+import type { ChatBlock, Session } from "../lib/sessions"
 import { palette } from "../theme"
 
 export interface SessionOverviewProps {
@@ -34,6 +43,94 @@ function statusGlyph(status: Session["status"]): {
   }
 }
 
+/** Fixed row width — the token column right-aligns against it. */
+const OVERVIEW_WIDTH = 64
+
+// ---------------------------------------------------------------------------
+// Pure derivations — token totals + the waiting-approval section
+// ---------------------------------------------------------------------------
+
+/** Summed token usage of one session's message metas. */
+export interface TokenTotals {
+  readonly tokensIn: number
+  readonly tokensOut: number
+}
+
+/**
+ * Sums `meta.tokensIn` / `meta.tokensOut` over a session's message
+ * blocks (the per-message wire metas). Null when no message carried
+ * token numbers — nothing to render in the usage column.
+ */
+export function sessionTokenTotals(
+  blocks: readonly ChatBlock[]
+): TokenTotals | null {
+  let tokensIn = 0
+  let tokensOut = 0
+  let seen = false
+  for (const block of blocks) {
+    if (block.kind !== "message") {
+      continue
+    }
+    const meta = block.message.meta
+    if (meta === null) {
+      continue
+    }
+    if (typeof meta.tokensIn === "number") {
+      tokensIn += meta.tokensIn
+      seen = true
+    }
+    if (typeof meta.tokensOut === "number") {
+      tokensOut += meta.tokensOut
+      seen = true
+    }
+  }
+  return seen ? { tokensIn, tokensOut } : null
+}
+
+function tokensCompact(total: number): string {
+  return total < 1000 ? String(total) : `${(total / 1000).toFixed(1)}k`
+}
+
+/** `4.1k→1.2k` — the dim right-aligned usage column of an overview row. */
+export function formatTokenTotals(totals: TokenTotals): string {
+  return `${tokensCompact(totals.tokensIn)}→${tokensCompact(totals.tokensOut)}`
+}
+
+/** One `waiting approval` row — the tab to jump to plus its first plan step. */
+export interface WaitingApprovalRow {
+  /** Index into the session list — the `1`–`9` key that jumps there. */
+  readonly index: number
+  readonly name: string
+  readonly firstStep: string
+}
+
+/**
+ * Sessions whose plan awaits a decision, in tab order, each with the
+ * first step of its pending plan as the teaser (collapsed to one
+ * line). The number keys the overview already handles do the jump.
+ */
+export function waitingApprovalRows(
+  sessions: readonly Session[]
+): WaitingApprovalRow[] {
+  const rows: WaitingApprovalRow[] = []
+  for (let index = 0; index < sessions.length; index++) {
+    const session = sessions[index]
+    if (!session.awaitingApproval) {
+      continue
+    }
+    const brief = extractPlanNodes(session.pendingPlan)[0]?.brief ?? ""
+    const firstStep = brief.split("\n", 1)[0]?.trim() ?? ""
+    rows.push({
+      index,
+      name: session.name,
+      firstStep: firstStep.length > 0 ? firstStep : "(no plan)",
+    })
+  }
+  return rows
+}
+
+// ---------------------------------------------------------------------------
+
 export function SessionOverview({
   sessions,
   activeIndex,
@@ -58,21 +155,54 @@ export function SessionOverview({
     }
   })
 
+  const waiting = waitingApprovalRows(sessions)
+
   return (
     <Box flexDirection="column" alignItems="center" paddingY={1}>
       <Text bold color={palette.brand}>
         SESSIONS
       </Text>
+      {waiting.length > 0 ? (
+        <Box flexDirection="column" width={OVERVIEW_WIDTH} paddingTop={1}>
+          <Text bold color={palette.brand}>
+            ! waiting approval
+          </Text>
+          {waiting.map((row) => (
+            <Text
+              key={sessions[row.index]?.id ?? row.index}
+              dimColor
+            >{`  [${row.index + 1}] ${padVisible(row.name, 20)}${truncateTail(
+              row.firstStep,
+              32
+            )}`}</Text>
+          ))}
+        </Box>
+      ) : null}
       <Box flexDirection="column" paddingTop={1}>
         {sessions.slice(0, 9).map((session, index) => {
           const glyph = statusGlyph(session.status)
           const active = index === activeIndex
+          const totals = sessionTokenTotals(session.blocks)
           return (
-            <Text key={session.id} dimColor={!active} bold={active}>
-              {`  ${padVisible(String(index + 1), 3)}${padVisible(session.name, 22)}`}
-              <Text color={glyph.color}>{padVisible(glyph.glyph, 12)}</Text>
-              {`${session.unread ? "● " : ""}${ageFromMs(Date.now() - session.createdAt)} ago`}
-            </Text>
+            <Box
+              key={session.id}
+              width={OVERVIEW_WIDTH}
+              justifyContent="space-between"
+            >
+              <Text dimColor={!active} bold={active}>
+                {`  ${padVisible(String(index + 1), 3)}${padVisible(
+                  session.name,
+                  22
+                )}`}
+                <Text color={glyph.color}>{padVisible(glyph.glyph, 12)}</Text>
+                {`${session.unread ? "● " : ""}${ageFromMs(
+                  Date.now() - session.createdAt
+                )} ago`}
+              </Text>
+              {totals !== null ? (
+                <Text dimColor>{formatTokenTotals(totals)}</Text>
+              ) : null}
+            </Box>
           )
         })}
         <Text dimColor>{"   + new session"}</Text>

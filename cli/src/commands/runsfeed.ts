@@ -22,10 +22,12 @@ import { describeError } from "./chat"
 /**
  * Fetches the newest runs page (project names resolved best-effort —
  * an unreachable projects endpoint degrades the column to short ids,
- * not to a failed panel).
+ * not to a failed panel). `dashboardUrl` (the config host) turns each
+ * row's id into an OSC 8 hyperlink target.
  */
 export async function fetchRunsFeedPanel(
-  client: ComukiClient
+  client: ComukiClient,
+  dashboardUrl?: string
 ): Promise<RunsFeedPanel> {
   try {
     const [page, projects] = await Promise.all([
@@ -34,7 +36,7 @@ export async function fetchRunsFeedPanel(
     ])
     const names = new Map(projects.map((project) => [project.id, project.slug]))
     return {
-      rows: runsFeedRows(page, names),
+      rows: runsFeedRows(page, names, dashboardUrl),
       total: page.total,
       fetchedAt: Date.now(),
       refreshError: null,

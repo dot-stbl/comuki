@@ -1,10 +1,11 @@
 /**
  * Entry + command routing: `comuki` (default = the multi-session chat
- * REPL), `status`, `runs list`, `login`, `whoami`, `config [show]`.
- * Each command renders its own Ink app (`config show` is the
- * plain-console exception); the process exits when the app unmounts
- * (Ink's `exitOnCtrlC` covers ctrl+c). The removed `chat` subcommand is
- * unknown on purpose — bare `comuki` is the REPL.
+ * REPL), `status`, `runs list`, `login`, `whoami`, `config [show]`,
+ * `setup` (first-run wizard), `completion <shell>`.
+ * Each command renders its own Ink app (`config show` and `completion`
+ * are the plain-console exceptions); the process exits when the app
+ * unmounts (Ink's `exitOnCtrlC` covers ctrl+c). The removed `chat`
+ * subcommand is unknown on purpose — bare `comuki` is the REPL.
  */
 import { render } from "ink"
 import React from "react"
@@ -15,6 +16,8 @@ import { LoginApp } from "./commands/login"
 import { RunsApp } from "./commands/runs"
 import { StatusApp } from "./commands/status"
 import { printConfigShow } from "./commands/config"
+import { printCompletion } from "./commands/completion"
+import { SetupApp } from "./commands/setup"
 import { ComukiClient } from "./lib/client"
 import {
   readConfigFile,
@@ -86,6 +89,16 @@ async function main(): Promise<void> {
           describe: "print the resolved configuration",
         })
     )
+    .command("setup", "interactive first-run wizard")
+    .command(
+      "completion [shell]",
+      "print a completion script to stdout",
+      (y) =>
+        y.positional("shell", {
+          type: "string",
+          describe: "target shell: pwsh or bash",
+        })
+    )
     .demandCommand(0, 0) // no command → the REPL
     .strict()
     .parse()
@@ -107,6 +120,17 @@ async function main(): Promise<void> {
   // `(source: none)` instead of letting resolveConfig throw.
   if (command === "config") {
     await printConfigShow(overrides)
+    return
+  }
+
+  // Also before loadConfig — both must work on a machine with no
+  // config.json yet (setup is what creates it; completion is static).
+  if (command === "setup") {
+    render(<SetupApp />, { exitOnCtrlC: true })
+    return
+  }
+  if (command === "completion") {
+    printCompletion(String(argv.shell ?? ""))
     return
   }
 

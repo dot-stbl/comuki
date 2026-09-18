@@ -6,14 +6,18 @@
  *
  * A **theme** is a complete palette with a dark and a light reading;
  * the CLI picks one with `<id>-<dark|light>` (e.g. `graphite-light`).
- * Only the eight primitives the terminal needs are ported — the
- * dashboard's chrome planes (floor/rail/lane/…) have no ANSI
- * equivalent.
+ * Ink 5 paints chrome as filled `Box`/`Text` backgrounds, so the
+ * dashboard's planes (floor/lane/rail/raised) ship as hexes alongside
+ * the eight text/status primitives.
  *
  * Token mapping, identical for every theme:
  *
  * | CLI token | dashboard primitive |
  * |-----------|---------------------|
+ * | floor     | floor               |
+ * | lane      | lane                |
+ * | rail      | rail                |
+ * | raised    | raised              |
  * | text      | text                |
  * | dim, muted| muted               |
  * | faint     | faint               |
@@ -32,6 +36,14 @@
 
 /** The dashboard primitives one CLI theme carries, as source hexes. */
 export interface CliThemePrimitives {
+  /** Empty canvas — the shell floor. */
+  readonly floor: string
+  /** User/assistant cards, tab strip. */
+  readonly lane: string
+  /** Status + footer bands. */
+  readonly rail: string
+  /** Prompt well. */
+  readonly raised: string
   /** Body text. */
   readonly text: string
   /** Secondary text — the CLI's `dim` and `muted` (one tier, two names). */
@@ -73,6 +85,10 @@ const DICHROMAT: CliTheme = {
   id: "dichromat",
   name: "Dichromat deck",
   dark: {
+    floor: "#222226",
+    lane: "#26262b",
+    rail: "#2b2b30",
+    raised: "#313136",
     text: "#e8e8ee",
     muted: "#b8b8bd",
     faint: "#8a8a8f",
@@ -83,6 +99,10 @@ const DICHROMAT: CliTheme = {
     waiting: "#b4b442",
   },
   light: {
+    floor: "#e9e9f0",
+    lane: "#f5f5fb",
+    rail: "#e3e3e9",
+    raised: "#ffffff",
     text: "#1f1f24",
     muted: "#414147",
     faint: "#67676c",
@@ -104,6 +124,10 @@ const GRAPHITE: CliTheme = {
   id: "graphite",
   name: "Graphite",
   dark: {
+    floor: "#0d0f13",
+    lane: "#14171a",
+    rail: "#1a1d20",
+    raised: "#1f2326",
     text: "#e4e8ed",
     muted: "#adb1b6",
     faint: "#7a7d81",
@@ -114,6 +138,10 @@ const GRAPHITE: CliTheme = {
     waiting: "#ffdaac",
   },
   light: {
+    floor: "#f3f7fc",
+    lane: "#fcfeff",
+    rail: "#e8edf2",
+    raised: "#feffff",
     text: "#1c2023",
     muted: "#42464a",
     faint: "#6c7073",
@@ -135,6 +163,10 @@ const DOCKSIDE: CliTheme = {
   id: "dockside",
   name: "Dockside",
   dark: {
+    floor: "#1c1209",
+    lane: "#22170e",
+    rail: "#2e1e0f",
+    raised: "#31261c",
     text: "#ebe5df",
     muted: "#b7b0aa",
     faint: "#867e76",
@@ -145,6 +177,10 @@ const DOCKSIDE: CliTheme = {
     waiting: "#ffd9b2",
   },
   light: {
+    floor: "#fdefe1",
+    lane: "#fffaf5",
+    rail: "#f4dfcb",
+    raised: "#fffdfc",
     text: "#25211c",
     muted: "#4a443e",
     faint: "#736b63",
@@ -166,6 +202,10 @@ const BLUEPRINT: CliTheme = {
   id: "blueprint",
   name: "Blueprint",
   dark: {
+    floor: "#061629",
+    lane: "#0c1b2f",
+    rail: "#0b213b",
+    raised: "#17273c",
     text: "#e1e6ec",
     muted: "#abb3bc",
     faint: "#78828e",
@@ -176,6 +216,10 @@ const BLUEPRINT: CliTheme = {
     waiting: "#ffd9ac",
   },
   light: {
+    floor: "#e7f2ff",
+    lane: "#f7fbff",
+    rail: "#d4e7ff",
+    raised: "#ffffff",
     text: "#1a1d22",
     muted: "#3e4349",
     faint: "#676d75",
@@ -197,6 +241,10 @@ const BUREAU: CliTheme = {
   id: "bureau",
   name: "Bureau",
   dark: {
+    floor: "#1b1a18",
+    lane: "#1e1e1b",
+    rail: "#22221f",
+    raised: "#272624",
     text: "#e6e6e2",
     muted: "#b4b4b0",
     faint: "#858481",
@@ -207,6 +255,10 @@ const BUREAU: CliTheme = {
     waiting: "#ffdba3",
   },
   light: {
+    floor: "#f3f3ef",
+    lane: "#fffffe",
+    rail: "#eaeae6",
+    raised: "#fffffe",
     text: "#1e1e1b",
     muted: "#444441",
     faint: "#6e6e6a",
@@ -228,6 +280,10 @@ const APERTURE: CliTheme = {
   id: "aperture",
   name: "Aperture",
   dark: {
+    floor: "#282d31",
+    lane: "#0e1215",
+    rail: "#2f3337",
+    raised: "#35393e",
     text: "#e9eef4",
     muted: "#bcc1c6",
     faint: "#90959a",
@@ -238,6 +294,10 @@ const APERTURE: CliTheme = {
     waiting: "#ffdaa6",
   },
   light: {
+    floor: "#d5dae0",
+    lane: "#feffff",
+    rail: "#e0e6eb",
+    raised: "#feffff",
     text: "#1a1d22",
     muted: "#393c42",
     faint: "#5b5e64",
@@ -260,6 +320,10 @@ const DISPATCHER: CliTheme = {
   id: "dispatcher",
   name: "Dispatcher",
   dark: {
+    floor: "#0c0f13",
+    lane: "#11151a",
+    rail: "#171c24",
+    raised: "#1a1f27",
     text: "#dee4ea",
     muted: "#aaafb4",
     faint: "#787d82",
@@ -270,6 +334,10 @@ const DISPATCHER: CliTheme = {
     waiting: "#9c7a3c",
   },
   light: {
+    floor: "#fbfbfa",
+    lane: "#f1f2ef",
+    rail: "#f0f1ee",
+    raised: "#ffffff",
     text: "#1b232e",
     muted: "#434952",
     faint: "#6e7379",

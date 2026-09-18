@@ -197,6 +197,7 @@ import {
   symbols,
 } from "../theme"
 import { AlertCard } from "../components/AlertCard"
+import { Fill } from "../components/Fill"
 import { PromptInput } from "../components/PromptInput"
 import { SessionFooter } from "../components/SessionFooter"
 import { SessionOverview } from "../components/SessionOverview"
@@ -2592,24 +2593,29 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   // chrome does not claim. Footer: session badges + legend — single row.
   // Prompt block: pinned last, never scrolled away.
   return (
+    <Fill width={columns} height={rows} color={palette.floor}>
     <Box flexDirection="column" width={columns} height={rows}>
-      <StatusLine
-        identity={headerIdentity}
-        project={projectLabel}
-        connection={hubState}
-        serverUrl={config.url}
-        latencyMs={latencyMs}
-        contextUsed={contextUsed}
-        contextWindow={config.contextWindow ?? DEFAULT_CONTEXT_WINDOW}
-      />
+      <Fill width={columns} height={1} color={palette.rail}>
+        <StatusLine
+          identity={headerIdentity}
+          project={projectLabel}
+          connection={hubState}
+          serverUrl={config.url}
+          latencyMs={latencyMs}
+          contextUsed={contextUsed}
+          contextWindow={config.contextWindow ?? DEFAULT_CONTEXT_WINDOW}
+        />
+      </Fill>
       {tabs.sessions.length > 0 ? (
-        <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />
+        <Fill width={columns} height={1} color={palette.lane}>
+          <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />
+        </Fill>
       ) : null}
+      <Fill width={columns} height={viewportHeight} color={palette.floor}>
       <Box
         flexDirection="column"
-        flexGrow={1}
-        flexShrink={1}
-        minHeight={0}
+        width={columns}
+        height={viewportHeight}
         overflow="hidden"
       >
         {overviewVisible ? (
@@ -2654,6 +2660,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             offset={scroll.offset}
             newBelow={scroll.newBelow}
             hint={expandHint}
+            width={columns}
             highlight={
               searchOpen && searchQuery.trim().length > 0
                 ? { query: searchQuery, activeLine: activeMatchLine }
@@ -2664,22 +2671,27 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           <Text>{EMPTY_TAB_HINT}</Text>
         )}
       </Box>
+      </Fill>
       {searchOpen ? (
-        <TranscriptSearch
-          value={searchQuery}
-          matchCount={searchMatches.length}
-          matchIndex={searchCursor}
-          onChange={handleSearchChange}
-          onNext={() => cycleSearch(1)}
-          onPrevious={() => cycleSearch(-1)}
-          onClose={handleSearchClose}
-        />
+        <Fill width={columns} height={1} color={palette.rail}>
+          <TranscriptSearch
+            value={searchQuery}
+            matchCount={searchMatches.length}
+            matchIndex={searchCursor}
+            onChange={handleSearchChange}
+            onNext={() => cycleSearch(1)}
+            onPrevious={() => cycleSearch(-1)}
+            onClose={handleSearchClose}
+          />
+        </Fill>
       ) : null}
       {showFooter ? (
-        <SessionFooter
-          sessions={tabs.sessions}
-          activeIndex={tabs.activeIndex}
-        />
+        <Fill width={columns} height={1} color={palette.rail}>
+          <SessionFooter
+            sessions={tabs.sessions}
+            activeIndex={tabs.activeIndex}
+          />
+        </Fill>
       ) : null}
       {!overviewVisible ? (
         <>
@@ -2691,6 +2703,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           ) : null}
           {queuedCount > 0 ? <Text>{queueHintLine(queuedCount)}</Text> : null}
           {mentionMenu.element}
+          <Fill width={columns} height={promptRows} color={palette.raised}>
           {loginStep === null ? (
             <PromptInput
               onSubmit={handleSubmit}
@@ -2718,9 +2731,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               onRowsChange={handlePromptRows}
             />
           )}
+          </Fill>
         </>
       ) : null}
     </Box>
+    </Fill>
   )
 }
 

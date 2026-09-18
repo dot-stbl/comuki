@@ -4,13 +4,13 @@
  * ANSI-styled strings, which both the Ink components render and the
  * tests assert byte-for-byte.
  *
- * Style contract (minimal structure, Dichromat deck): the user's words
- * are bare bold text at column 0 — no prefix, no label; collapsed
- * events (thinking, tools) are dim `⏺` bullets two spaces in with the
- * status right after the args; the assistant leads with the periwinkle
- * `◆`; the approve card is the one framed element in the transcript
- * (code blocks keep their dim frames too). Hierarchy comes from
- * spacing and weight, never boxes.
+ * Style contract (Dichromat deck): the user's words lead with `> `
+ * plus bold deck-text; collapsed events (thinking, tools) are dim
+ * `⏺` bullets two spaces in with the status right after the args;
+ * the assistant leads with the periwinkle `◆`; the approve card is
+ * the one framed element in the transcript (code blocks keep their
+ * dim frames too). Hierarchy comes from spacing, weight and the
+ * viewport's filled slabs.
  */
 import {
   colors,
@@ -521,8 +521,8 @@ export function renderParts(
 /**
  * One transcript row → lines. Assistant rows prefer parts (the rich
  * shape); `content` is the flat fallback. Both render markdown through
- * `lib/markdown.ts`. User rows echo as typed — bare bold text at
- * column 0, one blank line before AND after. Tool and system journal
+ * `lib/markdown.ts`. User rows echo as `> ` plus the typed words,
+ * one blank line before AND after. Tool and system journal
  * rows render muted. Options omitted → full render (the pure layer's
  * default); the transcript passes the session's ctrl+o toggle so
  * thinking/tool parts collapse to `⏺` event lines.
@@ -580,8 +580,8 @@ export function renderMessage(
 }
 
 /**
- * The user's own words as the transcript shows them — bold deck-text
- * at column 0 with a blank line on each side. Also used for the
+ * The user's own words as the transcript shows them — `> ` plus
+ * bold deck-text with a blank line on each side. Also used for the
  * immediate echo on send, so the live line and the restored history
  * of the same turn are byte-identical.
  *
@@ -597,7 +597,7 @@ export function renderUserEcho(content: string): string[] {
   }
   return [
     "",
-    paintMentionText(text, messageMark("user").textColor),
+    paintMentionText(`> ${text}`, messageMark("user").textColor),
     "",
   ]
 }

@@ -13,7 +13,7 @@ import {
 } from "./theme"
 
 describe("messageMark", () => {
-  it("marks user rows with bare bold deck-text — no glyph, no label", () => {
+  it("marks user rows with bold deck-text — no glyph, no label", () => {
     const mark = messageMark("user")
     expect(mark.glyph).toBe("")
     expect(mark.label).toBe("")
@@ -40,6 +40,14 @@ describe("messageMark", () => {
 
   it("keeps the periwinkle brand hex for ink color props", () => {
     expect(palette.brand).toBe("#8787f3")
+  })
+
+  it("ships dichromat-dark chrome planes as Ink background hexes", () => {
+    expect(palette.floor).toBe("#222226")
+    expect(palette.lane).toBe("#26262b")
+    expect(palette.rail).toBe("#2b2b30")
+    expect(palette.raised).toBe("#313136")
+    expect(palette.ruleHex).toBe("#37373c")
   })
 
   it("speaks the dichromat deck in truecolor escapes", () => {

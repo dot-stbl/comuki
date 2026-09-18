@@ -149,10 +149,11 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     /// </summary>
     private async Task WaitForBucketAsync(CancellationToken cancellationToken)
     {
+        var (minioHost, minioPort) = SplitEndpoint(minioEndpoint);
         var client = MinioClientFactory.Create(
             new ArtifactsOptions
             {
-                Endpoint = minioEndpoint,
+                Endpoint = $"{minioHost}:{minioPort}",
                 AccessKey = MinioUser,
                 SecretKey = MinioPassword,
                 Bucket = TestBucket,

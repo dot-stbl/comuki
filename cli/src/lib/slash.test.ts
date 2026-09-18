@@ -25,6 +25,7 @@ describe("resolveSlashAction", () => {
     expect(resolveSlashAction("/help")).toEqual({ kind: "help" })
     expect(resolveSlashAction("/sessions")).toEqual({ kind: "sessions" })
     expect(resolveSlashAction("/new")).toEqual({ kind: "new" })
+    expect(resolveSlashAction("/archive")).toEqual({ kind: "archive" })
     expect(resolveSlashAction("approve")).toEqual({ kind: "approve" })
     expect(resolveSlashAction("reject")).toEqual({ kind: "reject" })
   })
@@ -205,6 +206,7 @@ describe("slashHelpLines", () => {
     expect(help).toContain("/snip [name|save <name>|rm <name>]")
     expect(help).toContain("/branch [message]")
     expect(help).toContain("/kb add <file|glob> | /kb list")
+    expect(help).toContain("/archive")
   })
 
   it("aligns descriptions in one column", () => {

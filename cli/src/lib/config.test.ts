@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test"
 import { join } from "node:path"
 import {
   ConfigError,
+  archiveDir,
   configDir,
   configFilePath,
   resolveConfig,
@@ -164,5 +165,9 @@ describe("config paths (xdg layout)", () => {
     expect(sessionsFilePath()).toBe(
       configFilePath().replace("config.json", "sessions.json")
     )
+  })
+
+  it("places the archive directory next to config.json", () => {
+    expect(archiveDir("/custom/xdg")).toBe(join("/custom/xdg", "comuki", "archive"))
   })
 })

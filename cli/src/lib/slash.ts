@@ -133,6 +133,12 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     usage: "/kb add <file|glob> | /kb list",
     description: "knowledge library — ingest files, list documents",
   },
+  {
+    name: "archive",
+    aliases: [],
+    usage: "/archive",
+    description: "save transcript and close the tab",
+  },
 ]
 
 /** The `/help` transcript block, rendered from the registry. */
@@ -172,6 +178,7 @@ export type SlashAction =
   | { readonly kind: "branch"; readonly message?: string }
   /** `/kb add notes.md` → subcommand `add`, rest `notes.md`; bare `/kb` → both empty. */
   | { readonly kind: "kb"; readonly subcommand: string; readonly rest: string }
+  | { readonly kind: "archive" }
   /** Not a command — the input goes to the brain as a chat message. */
   | { readonly kind: "message" }
 
@@ -271,6 +278,9 @@ export function resolveSlashAction(raw: string): SlashAction {
       subcommand: (sub ?? "").toLowerCase(),
       rest: subRest.join(" ").trim(),
     }
+  }
+  if (matches("archive", name)) {
+    return { kind: "archive" }
   }
   return { kind: "message" }
 }

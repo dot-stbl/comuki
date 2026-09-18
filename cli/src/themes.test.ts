@@ -17,6 +17,10 @@ import { colors, currentThemeId, palette, resolveTheme } from "./theme"
 const HEX = /^#[0-9a-f]{6}$/i
 
 const PRIMITIVE_KEYS = [
+  "floor",
+  "lane",
+  "rail",
+  "raised",
   "text",
   "muted",
   "faint",
@@ -40,7 +44,7 @@ describe("cli theme registry", () => {
     ])
   })
 
-  it("every theme × mode carries the full eight-hex primitive set", () => {
+  it("every theme × mode carries the full twelve-hex primitive set", () => {
     expect(CLI_THEMES).toHaveLength(7)
     for (const theme of CLI_THEMES) {
       for (const mode of ["dark", "light"] as const) {
@@ -87,6 +91,11 @@ describe("resolveTheme", () => {
     expect(tokens.ansi.error).toBe("\x1b[38;2;210;210;40m") // #d2d228
     expect(tokens.ansi.waiting).toBe("\x1b[38;2;180;180;66m") // #b4b442
     expect(tokens.ansi.rule).toBe("\x1b[38;2;55;55;60m") // #37373c
+    expect(palette.floor).toBe("#222226")
+    expect(palette.lane).toBe("#26262b")
+    expect(palette.rail).toBe("#2b2b30")
+    expect(palette.raised).toBe("#313136")
+    expect(palette.ruleHex).toBe("#37373c")
   })
 
   it("defaults to dichromat-dark for undefined and unknown choices", () => {
@@ -114,6 +123,11 @@ describe("resolveTheme", () => {
     expect(colors.muted).toBe(colors.dim)
     expect(palette.brand).toBe("#00579e")
     expect(palette.error).toBe("#951720")
+    expect(palette.floor).toBe("#f3f7fc")
+    expect(palette.lane).toBe("#fcfeff")
+    expect(palette.rail).toBe("#e8edf2")
+    expect(palette.raised).toBe("#feffff")
+    expect(palette.ruleHex).toBe("#dfe3e8")
     resolveTheme("dichromat-dark") // restore module state for other files
     expect(currentThemeId()).toBe("dichromat-dark")
   })

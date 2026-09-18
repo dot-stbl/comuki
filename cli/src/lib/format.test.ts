@@ -132,12 +132,12 @@ describe("renderPendingPlan", () => {
 })
 
 describe("renderMessage", () => {
-  it("echoes user rows as bare bold text with a blank line on each side", () => {
+  it("echoes user rows as > plus bold text with a blank line on each side", () => {
     const lines = renderMessage(userMessage("сделай план"))
     expect(lines).toHaveLength(3)
     expect(lines[0]).toBe("")
     expect(lines[2]).toBe("")
-    expect(stripAnsi(lines[1] ?? "")).toBe("сделай план")
+    expect(stripAnsi(lines[1] ?? "")).toBe("> сделай план")
     expect(lines[1]).toContain(colors.bright)
     expect(lines[1]).toContain(colors.text)
     expect(lines[1]).not.toContain("›")
@@ -222,7 +222,8 @@ describe("renderUserEcho", () => {
     const echo = renderUserEcho("use @identity here")
     const line = echo[1] ?? ""
     expect(line).toContain(colors.accent + "@identity")
-    expect(line).toContain(messageMark("user").textColor + "use ")
+    expect(stripAnsi(line)).toBe("> use @identity here")
+    expect(line).toContain(messageMark("user").textColor)
     // Byte-identity holds for mention lines too (echo vs history).
     expect(echo).toEqual(renderMessage(userMessage("use @identity here")))
   })
@@ -232,7 +233,7 @@ describe("renderUserEcho", () => {
       "use @identity please\n\n[@knowledge: Identity — the chunk text]"
     const echo = renderUserEcho(stored)
     expect(echo[1] ?? "").not.toContain("[@knowledge:")
-    expect(stripAnsi(echo[1] ?? "")).toBe("use @identity please")
+    expect(stripAnsi(echo[1] ?? "")).toBe("> use @identity please")
   })
 })
 

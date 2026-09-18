@@ -21,6 +21,48 @@ import { renderMarkdownLines } from "./markdown"
 import { colors, paint, stripAnsi, symbols } from "../theme"
 import type { ChatBlock } from "./sessions"
 
+/** Role of one flattened transcript row — drives the viewport slab bg. */
+export type TranscriptRole = "user" | "assistant" | "event" | "rule" | "blank"
+
+/**
+ * Classifies a flattened line from its visible prefix. User rows lead
+ * with `>` after the gutter; event rows with `⏺` (or `*`); rule rows
+ * with a signed diff marker; blank is empty; everything else is the
+ * assistant card.
+ */
+export function classifyLine(plain: string): TranscriptRole {
+  const trimmed = stripAnsi(plain).trimStart()
+  if (trimmed.length === 0) {
+    return "blank"
+  }
+  const lead = trimmed[0]
+  if (lead === ">") {
+    return "user"
+  }
+  if (lead === "*" || trimmed.startsWith(symbols.event)) {
+    return "event"
+  }
+  if (lead === "-" || lead === "+") {
+    return "rule"
+  }
+  return "assistant"
+}
+
+/**
+ * Right-pads `line` to `width` visible columns so an Ink
+ * `backgroundColor` fills the whole slab, not just the glyphs.
+ */
+export function padVisible(line: string, width: number): string {
+  if (width <= 0) {
+    return line
+  }
+  const visible = stripAnsi(line).length
+  if (visible >= width) {
+    return line
+  }
+  return line + " ".repeat(width - visible)
+}
+
 export const LIVE_CURSOR = "▌"
 export const TYPING_LABEL = "comuki thinking"
 export const EXPAND_HINT = "⏺ press ctrl+o to expand thinking"

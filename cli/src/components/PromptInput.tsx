@@ -394,7 +394,8 @@ export function PromptInput({
   // -- reporting hooks (shell side: hotkey gates + viewport math) --------
 
   const inputRows = Math.max(1, state.value.split("\n").length)
-  const renderedRows = (menuOpen ? matches.length : 0) + inputRows
+  // The single-line border consumes a row above and below the well.
+  const renderedRows = (menuOpen ? matches.length : 0) + inputRows + 2
 
   useEffect(() => {
     onMenuOpenChange?.(menuOpen)
@@ -409,15 +410,18 @@ export function PromptInput({
   const menuRows = matches.map((command, index) => {
     const selected = menuOpen && index === state.menuIndex
     return (
-      <Text key={command.name}>
+      <Text key={command.name} backgroundColor={palette.raised}>
         {gutter}
         <Text
           color={selected ? palette.brand : undefined}
           dimColor={!selected}
+          backgroundColor={palette.raised}
         >
           {`/${command.name}`}
         </Text>
-        <Text dimColor>{` — ${command.description}`}</Text>
+        <Text dimColor backgroundColor={palette.raised}>
+          {` — ${command.description}`}
+        </Text>
       </Text>
     )
   })
@@ -429,18 +433,23 @@ export function PromptInput({
   const lines = promptLines(displayValue, state.cursor, placeholder)
 
   return (
-    <Box flexDirection="column">
+    <Box
+      flexDirection="column"
+      width="100%"
+      borderStyle="single"
+      borderColor={active ? palette.brand : palette.ruleHex}
+    >
       {menuOpen ? menuRows : null}
       {lines.map((line, index) => (
-        <Text key={index}>
+        <Text key={index} backgroundColor={palette.raised}>
           {index === 0 ? (
-            <Text color={palette.brand}>
+            <Text color={palette.brand} backgroundColor={palette.raised}>
               {label}
               {symbols.prompt}{" "}
             </Text>
           ) : (
             // Continuation rows align under the prompt glyph.
-            <Text>{"  "}</Text>
+            <Text backgroundColor={palette.raised}>{"  "}</Text>
           )}
           {line}
         </Text>
@@ -473,10 +482,10 @@ function promptLines(
   if (value.length === 0) {
     return [
       [
-        <Text inverse key="cursor">
+        <Text inverse key="cursor" backgroundColor={palette.raised}>
           {placeholder.slice(0, 1)}
         </Text>,
-        <Text dimColor key="rest">
+        <Text dimColor key="rest" backgroundColor={palette.raised}>
           {placeholder.slice(1)}
         </Text>,
       ],
@@ -489,7 +498,9 @@ function promptLines(
   const beforeLines = before.split("\n")
   const afterLines = after.split("\n")
   const head = beforeLines.slice(0, -1).map((line) => [
-    <Text key="line">{line}</Text>,
+    <Text key="line" backgroundColor={palette.raised}>
+      {line}
+    </Text>,
   ])
   const lastBefore = beforeLines[beforeLines.length - 1] ?? ""
 
@@ -497,8 +508,10 @@ function promptLines(
     return [
       ...head,
       [
-        <Text key="before">{lastBefore}</Text>,
-        <Text inverse key="cursor">
+        <Text key="before" backgroundColor={palette.raised}>
+          {lastBefore}
+        </Text>,
+        <Text inverse key="cursor" backgroundColor={palette.raised}>
           {" "}
         </Text>,
       ],
@@ -510,25 +523,41 @@ function promptLines(
     return [
       ...head,
       [
-        <Text key="before">{lastBefore}</Text>,
-        <Text inverse key="cursor">
+        <Text key="before" backgroundColor={palette.raised}>
+          {lastBefore}
+        </Text>,
+        <Text inverse key="cursor" backgroundColor={palette.raised}>
           {" "}
         </Text>,
       ],
-      ...afterLines.map((line) => [<Text key="line">{line}</Text>]),
+      ...afterLines.map((line) => [
+        <Text key="line" backgroundColor={palette.raised}>
+          {line}
+        </Text>,
+      ]),
     ]
   }
   return [
     ...head,
     [
-      <Text key="before">{lastBefore}</Text>,
-      <Text inverse key="cursor">
+      <Text key="before" backgroundColor={palette.raised}>
+        {lastBefore}
+      </Text>,
+      <Text inverse key="cursor" backgroundColor={palette.raised}>
         {at}
       </Text>,
       ...(afterLines[0] !== undefined
-        ? [<Text key="after">{afterLines[0]}</Text>]
+        ? [
+            <Text key="after" backgroundColor={palette.raised}>
+              {afterLines[0]}
+            </Text>,
+          ]
         : []),
     ],
-    ...afterLines.slice(1).map((line) => [<Text key="line">{line}</Text>]),
+    ...afterLines.slice(1).map((line) => [
+      <Text key="line" backgroundColor={palette.raised}>
+        {line}
+      </Text>,
+    ]),
   ]
 }

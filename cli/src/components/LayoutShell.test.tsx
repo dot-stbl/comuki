@@ -19,10 +19,12 @@ import React from "react"
 import { Box, Text } from "ink"
 import { render } from "ink-testing-library"
 import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
+import { Fill } from "./Fill"
 import { SessionFooter } from "./SessionFooter"
 import { TabBar } from "./TabBar"
 import { Welcome } from "./Welcome"
 import type { Session } from "../lib/sessions"
+import { palette } from "../theme"
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -59,27 +61,37 @@ function LayoutShell({ sessions, showWelcome }: LayoutShellProps) {
   const hasTabs = sessions.length > 0
   const showFooter = hasTabs && !showWelcome
   return (
-    <Box flexDirection="column" width={columns} height={rows}>
-      <Text>status</Text>
-      {hasTabs ? <TabBar sessions={sessions} activeIndex={0} /> : null}
-      <Box flexDirection="column" flexGrow={1} flexShrink={1} minHeight={0}>
-        {showWelcome ? (
-          <Box
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            flexGrow={1}
-          >
-            <Welcome stats={{ workers: 4, memory: 17 }} />
-          </Box>
-        ) : (
-          <Text>transcript</Text>
-        )}
+    <Fill width={columns} height={rows} color={palette.floor}>
+      <Box flexDirection="column" width={columns} height={rows}>
+        <Fill width={columns} height={1} color={palette.rail}>
+          <Text>status</Text>
+        </Fill>
+        {hasTabs ? (
+          <Fill width={columns} height={1} color={palette.lane}>
+            <TabBar sessions={sessions} activeIndex={0} />
+          </Fill>
+        ) : null}
+        <Box flexDirection="column" flexGrow={1} flexShrink={1} minHeight={0}>
+          {showWelcome ? (
+            <Box
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              flexGrow={1}
+            >
+              <Welcome stats={{ workers: 4, memory: 17 }} />
+            </Box>
+          ) : (
+            <Text>transcript</Text>
+          )}
+        </Box>
+        {showFooter ? (
+          <Fill width={columns} height={1} color={palette.rail}>
+            <SessionFooter sessions={sessions} activeIndex={0} />
+          </Fill>
+        ) : null}
       </Box>
-      {showFooter ? (
-        <SessionFooter sessions={sessions} activeIndex={0} />
-      ) : null}
-    </Box>
+    </Fill>
   )
 }
 

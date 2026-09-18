@@ -199,6 +199,12 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     usage: "/alias [set <name> <text>|rm <name>]",
     description: "prompt aliases — expand before send",
   },
+  {
+    name: "archive",
+    aliases: [],
+    usage: "/archive",
+    description: "save transcript and close the tab",
+  },
 ]
 
 /** The `/help` transcript block, rendered from the registry. */
@@ -252,6 +258,7 @@ export type SlashAction =
   | { readonly kind: "alias" }
   | { readonly kind: "alias-set"; readonly name: string; readonly text: string }
   | { readonly kind: "alias-rm"; readonly name: string }
+  | { readonly kind: "archive" }
   /** Not a command — the input goes to the brain as a chat message. */
   | { readonly kind: "message" }
 
@@ -399,6 +406,9 @@ export function resolveSlashAction(raw: string): SlashAction {
       return { kind: "alias-rm", name: restTokens.join(" ").trim() }
     }
     return { kind: "alias" }
+  }
+  if (matches("archive", name)) {
+    return { kind: "archive" }
   }
   return { kind: "message" }
 }

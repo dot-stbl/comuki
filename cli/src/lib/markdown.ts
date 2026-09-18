@@ -487,3 +487,85 @@ export function renderMarkdownLines(
   }
   return lines
 }
+
+/**
+ * Markdown → plain text for one-shot stdout. Fences, emphasis, headings
+ * and links drop their markers; the inner text stays. A lexer failure
+ * returns the source unchanged so a garbled reply still prints.
+ */
+export function stripMarkdownToPlain(markdown: string): string {
+  const source = markdown.replace(/\r\n?/g, "\n")
+  if (source.trim().length === 0) {
+    return ""
+  }
+  try {
+    return tokensToPlain(lexer(source)).replace(/\n{3,}/g, "\n\n").trimEnd()
+  } catch {
+    return source
+  }
+}
+
+function tokensToPlain(tokens: readonly Token[]): string {
+  return tokens.map(tokenToPlain).join("")
+}
+
+function tokenToPlain(token: Token): string {
+  switch (token.type) {
+    case "space":
+      return "\n"
+    case "br":
+      return "\n"
+    case "hr":
+      return "\n"
+    case "codespan":
+      return token.text
+    case "code":
+      return `${(token as Tokens.Code).text}\n`
+    case "heading":
+    case "paragraph":
+    case "blockquote":
+    case "em":
+    case "strong":
+    case "del": {
+      const nested = (token as Tokens.Generic).tokens
+      const body = nested ? tokensToPlain(nested) : ((token as Tokens.Generic).text ?? "")
+      return token.type === "heading" || token.type === "paragraph"
+        ? `${body}\n\n`
+        : token.type === "blockquote"
+          ? `${body}\n`
+          : body
+    }
+    case "list": {
+      const list = token as Tokens.List
+      return list.items
+        .map((item, index) => {
+          const body = tokensToPlain(item.tokens).trimEnd()
+          const start = Number(list.start ?? 1)
+          const marker = list.ordered ? `${start + index}. ` : "- "
+          return `${marker}${body}\n`
+        })
+        .join("")
+    }
+    case "list_item":
+      return tokensToPlain((token as Tokens.ListItem).tokens)
+    case "text": {
+      const text = token as Tokens.Text
+      return text.tokens ? tokensToPlain(text.tokens) : text.text
+    }
+    case "link":
+    case "image": {
+      const link = token as Tokens.Link
+      const nested = link.tokens ? tokensToPlain(link.tokens) : ""
+      return nested.length > 0 ? nested : link.text
+    }
+    case "html":
+      return ""
+    default: {
+      const generic = token as Tokens.Generic
+      if (generic.tokens) {
+        return tokensToPlain(generic.tokens)
+      }
+      return typeof generic.text === "string" ? generic.text : ""
+    }
+  }
+}

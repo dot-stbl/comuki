@@ -3,7 +3,7 @@
  * assertions run on stripped lines, style assertions on the raw ones.
  */
 import { describe, expect, it } from "bun:test"
-import { renderMarkdownLines } from "./markdown"
+import { renderMarkdownLines, stripMarkdownToPlain } from "./markdown"
 import { colors, stripAnsi } from "../theme"
 
 const plain = (markdown: string, width = 80): string[] =>
@@ -208,5 +208,21 @@ describe("renderMarkdownLines — degradation", () => {
     const lines = renderMarkdownLines(deep)
     expect(lines.length).toBeGreaterThan(0)
     expect(lines.map(stripAnsi).join("\n")).toContain("text")
+  })
+})
+
+describe("stripMarkdownToPlain", () => {
+  it("drops emphasis, headings and fences, keeps inner text", () => {
+    expect(stripMarkdownToPlain("**bold** and `code`")).toBe("bold and code")
+    expect(stripMarkdownToPlain("# Title\n\nhello")).toBe("Title\n\nhello")
+    expect(stripMarkdownToPlain("```ts\nconst x = 1\n```")).toBe("const x = 1")
+  })
+
+  it("renders lists as plain bullets", () => {
+    expect(stripMarkdownToPlain("- one\n- two")).toBe("- one\n- two")
+  })
+
+  it("returns empty for blank input", () => {
+    expect(stripMarkdownToPlain("  \n")).toBe("")
   })
 })

@@ -19,6 +19,7 @@ export const COMPLETION_COMMANDS: readonly string[] = [
   "setup",
   "completion",
   "doctor",
+  "archive",
 ]
 
 /** Global flags the completions offer (mirrors the yargs options). */
@@ -27,6 +28,9 @@ export const COMPLETION_FLAGS: readonly string[] = [
   "--api-key",
   "--project",
   "--theme",
+  "--json",
+  "--raw",
+  "--message",
   "--help",
   "--version",
 ]

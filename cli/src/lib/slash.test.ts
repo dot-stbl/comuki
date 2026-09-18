@@ -27,6 +27,7 @@ describe("resolveSlashAction", () => {
     expect(resolveSlashAction("/help")).toEqual({ kind: "help" })
     expect(resolveSlashAction("/sessions")).toEqual({ kind: "sessions" })
     expect(resolveSlashAction("/new")).toEqual({ kind: "new" })
+    expect(resolveSlashAction("/archive")).toEqual({ kind: "archive" })
     expect(resolveSlashAction("approve")).toEqual({ kind: "approve" })
     expect(resolveSlashAction("reject")).toEqual({ kind: "reject" })
   })
@@ -288,6 +289,7 @@ describe("slashHelpLines", () => {
     expect(help).toContain("/note <text>")
     expect(help).toContain("/profile [name]")
     expect(help).toContain("/alias [set <name> <text>|rm <name>]")
+    expect(help).toContain("/archive")
   })
 
   it("aligns descriptions in one column", () => {

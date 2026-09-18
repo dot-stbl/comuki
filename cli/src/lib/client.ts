@@ -49,6 +49,11 @@ export interface MeView {
   readonly permissions: readonly string[]
 }
 
+/** Wire of `GET /api/v1/health` — anonymous liveness `{ status: "ok" }`. */
+export interface HealthView {
+  readonly status: string
+}
+
 export interface ChatSessionView {
   readonly id: string
   readonly projectId: string | null
@@ -542,6 +547,14 @@ export class ComukiClient {
 
   compute(): Promise<ComputeSnapshotView> {
     return this.request("GET", "/api/v1/compute")
+  }
+
+  /**
+   * Anonymous liveness probe — `{ status: "ok" }` on a live host.
+   * Same path `comuki setup` pings and `/status` surfaces first.
+   */
+  health(): Promise<HealthView> {
+    return this.request("GET", "/api/v1/health")
   }
 
   projects(): Promise<readonly ProjectView[]> {

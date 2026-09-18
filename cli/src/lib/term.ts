@@ -1,15 +1,18 @@
 /**
  * Terminal control bytes the CLI emits beside its Ink UI: the OSC 2
- * window title, the BEL attention byte and the OSC 9 desktop
- * notification. Pure builders return the exact bytes (`bun:test`
- * asserts them literally); `writeTerminal` is the single writer and a
- * no-op off-TTY so piped/redirected output never carries control
- * sequences. Terminals that don't know OSC 9 ignore it — that is the
- * whole reason BEL and the notification are emitted together.
+ * window title, the BEL attention byte, the OSC 9 desktop
+ * notification and the OSC 8 hyperlinks that make run ids clickable.
+ * Pure builders return the exact bytes (`bun:test` asserts them
+ * literally); `writeTerminal` is the single writer and a no-op
+ * off-TTY so piped/redirected output never carries control
+ * sequences. Terminals that don't know OSC 9 ignore it, and OSC 8
+ * degrades to the bare label — the fallback is free, which is the
+ * whole reason links ride the same channel.
  */
 
 const OSC = "\x1b]"
 const BEL = "\x07"
+const ST = "\x1b\\"
 
 /** Strips C0/C1 controls so a hostile session title cannot inject sequences. */
 function sanitize(text: string): string {
@@ -30,6 +33,17 @@ export function bellSequence(): string {
 /** OSC 9 desktop notification (iTerm2, WezTerm, Windows Terminal…). */
 export function notifySequence(text: string): string {
   return `${OSC}9;${sanitize(text)}${BEL}`
+}
+
+/**
+ * OSC 8 hyperlink: `\x1b]8;;url\x1b\\label\x1b]8;;\x1b\\`. The label
+ * is the only visible part, so terminals without OSC 8 render exactly
+ * what they rendered before. The url is sanitized (no C0/C1 — a
+ * hostile value cannot terminate the sequence early); the label rides
+ * through untouched so it may carry SGR paint.
+ */
+export function linkSequence(url: string, label: string): string {
+  return `${OSC}8;;${sanitize(url)}${ST}${label}${OSC}8;;${ST}`
 }
 
 /** The app name the title resets to when no session is open / on exit. */

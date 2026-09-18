@@ -1,10 +1,13 @@
 /**
- * Pure ops-pack formatting for the chat REPL (`/runs`, `/plan`,
- * `/project`): the pinned live runs panel, the session plan view, and
- * the project-context notices. Wire shapes come from `lib/client.ts`;
- * rendering follows the `lib/format.ts` contract — spacing + the deck's
- * status colours, no frames (the approve card stays the transcript's
- * only framed element).
+ * Pure ops-pack formatting for the chat REPL (`/runs`, `/workers`,
+ * `/plan`, `/project`): the pinned live runs panel, the background
+ * workers panel, the session plan view, and the project-context
+ * notices. Wire shapes come from `lib/client.ts`; rendering follows
+ * the `lib/format.ts` contract — spacing + the deck's status colours,
+ * no frames (the approve card stays the transcript's only framed
+ * element). Run ids and worker names render as OSC 8 hyperlinks when
+ * a dashboard url is supplied — terminals without OSC 8 show the
+ * bare label.
  *
  * Degrade note: the runs list wire (`GET /api/v1/runs`) carries no
  * worker/profile column — only id/projectId/status/timestamps — so the
@@ -12,7 +15,12 @@
  * `comuki runs list`.
  */
 import type { ChatBlock } from "./sessions"
-import type { ProjectView, RunsPageView } from "./client"
+import type {
+  BackgroundWorkerView,
+  ProjectView,
+  RunsPageView,
+} from "./client"
+import { linkSequence } from "./term"
 import {
   ageFromIso,
   ageFromMs,
@@ -41,6 +49,8 @@ export interface RunsFeedRow {
   readonly project: string
   readonly status: string
   readonly updatedAt: string
+  /** Dashboard link target — the id cell renders as an OSC 8 hyperlink when set. */
+  readonly url?: string
 }
 
 /** The pinned panel's state, patched into the session like `pendingPlan`. */
@@ -53,16 +63,23 @@ export interface RunsFeedPanel {
   readonly refreshError: string | null
 }
 
-/** Maps a runs page + project names to the panel's render rows. Pure. */
+/**
+ * Maps a runs page + project names to the panel's render rows; a
+ * dashboard url (the config host) turns each row's id into a
+ * `{url}/runs/{id}` hyperlink target. Pure.
+ */
 export function runsFeedRows(
   page: RunsPageView,
-  names: ReadonlyMap<string, string>
+  names: ReadonlyMap<string, string>,
+  dashboardUrl?: string
 ): RunsFeedRow[] {
+  const base = dashboardUrl?.replace(/\/+$/, "")
   return page.items.map((run) => ({
     id: run.id,
     project: names.get(run.projectId) ?? run.projectId.slice(0, 8),
     status: run.status,
     updatedAt: run.updatedAt,
+    ...(base ? { url: `${base}/runs/${run.id}` } : {}),
   }))
 }
 
@@ -130,27 +147,27 @@ export function renderRunsFeedPanel(
   const rows =
     panel.rows.length === 0
       ? [`  ${paint("no runs yet", colors.faint)}`]
-      : panel.rows.map(
-          (row) =>
-            `  ${tableRow([
-              {
-                text: paint(row.id.slice(0, 13), colors.muted),
-                width: FEED_COLUMNS[0].width,
-              },
-              {
-                text: paint(row.status.padEnd(10), runStatusColor(row.status)),
-                width: FEED_COLUMNS[1].width,
-              },
-              {
-                text: paint(truncateTail(row.project, 16), colors.dim),
-                width: FEED_COLUMNS[2].width,
-              },
-              {
-                text: paint(ageFromIso(row.updatedAt, now), colors.faint),
-                width: FEED_COLUMNS[3].width,
-              },
-            ])}`
-        )
+      : panel.rows.map((row) => {
+          const idCell = paint(row.id.slice(0, 13), colors.muted)
+          return `  ${tableRow([
+            {
+              text: row.url ? linkSequence(row.url, idCell) : idCell,
+              width: FEED_COLUMNS[0].width,
+            },
+            {
+              text: paint(row.status.padEnd(10), runStatusColor(row.status)),
+              width: FEED_COLUMNS[1].width,
+            },
+            {
+              text: paint(truncateTail(row.project, 16), colors.dim),
+              width: FEED_COLUMNS[2].width,
+            },
+            {
+              text: paint(ageFromIso(row.updatedAt, now), colors.faint),
+              width: FEED_COLUMNS[3].width,
+            },
+          ])}`
+        })
   const footer =
     panel.refreshError !== null
       ? `  ${paint(`${symbols.cross} ${panel.refreshError}`, colors.error)}`
@@ -182,6 +199,99 @@ export function mergeRunsFeedRefresh(
     }
   }
   return next
+}
+
+// ---------------------------------------------------------------------------
+// /workers — the host's background worker registry
+// ---------------------------------------------------------------------------
+
+/** The three states the panel distinguishes; the word always rides the color. */
+export type WorkerStatusWord = "running" | "degraded" | "stopped"
+
+/**
+ * Heuristic over the registry snapshot: consecutive failures read as
+ * `degraded` first (the loudest signal), a scheduled next cycle reads
+ * as `running`, and everything finished or in-flight (startup workers
+ * after their single run, a cycle between stamps) reads as `stopped`.
+ */
+export function workerStatusWord(worker: BackgroundWorkerView): WorkerStatusWord {
+  if (!worker.isHealthy || worker.consecutiveFailures > 0) {
+    return "degraded"
+  }
+  if (worker.nextRunAt !== null) {
+    return "running"
+  }
+  return "stopped"
+}
+
+/** Dichromat band: running reads lavender-ok, degraded waiting-yellow, stopped dim. */
+export function workerStatusColor(word: WorkerStatusWord): string {
+  if (word === "running") {
+    return colors.ok
+  }
+  if (word === "degraded") {
+    return colors.waiting
+  }
+  return colors.dim
+}
+
+const WORKERS_COLUMNS = [{ width: 19 }, { width: 11 }, { width: 0 }] as const
+
+/**
+ * The `/workers` panel as finished transcript lines — one shot per
+ * invocation, no polling. Names link to the dashboard root via OSC 8
+ * when `dashboardUrl` is supplied (the wire carries no per-worker run
+ * ids, so there is nothing deeper to link); `last-run` shows the age
+ * of the last cycle start, or `never` before the first one.
+ */
+export function renderWorkersPanel(
+  workers: readonly BackgroundWorkerView[],
+  dashboardUrl?: string,
+  now: Date = new Date()
+): string[] {
+  const base = dashboardUrl?.replace(/\/+$/, "")
+  const header = `  ${paint(symbols.event, colors.dim)} ${paint(
+    "workers",
+    colors.muted
+  )} ${paint(`· ${workers.length}`, colors.dim)}`
+  if (workers.length === 0) {
+    return [header, `  ${paint("no background workers", colors.faint)}`]
+  }
+  const columnLine = `  ${paint(
+    tableRow([
+      { text: "name", width: WORKERS_COLUMNS[0].width },
+      { text: "status", width: WORKERS_COLUMNS[1].width },
+      { text: "last-run", width: WORKERS_COLUMNS[2].width },
+    ]),
+    colors.faint
+  )}`
+  const rows = workers.map((worker) => {
+    const word = workerStatusWord(worker)
+    const nameCell = paint(worker.name.slice(0, 18), colors.muted)
+    const lastRun =
+      worker.lastRunAt !== null
+        ? ageFromIso(worker.lastRunAt, now)
+        : "never"
+    return `  ${tableRow([
+      {
+        text: base ? linkSequence(base, nameCell) : nameCell,
+        width: WORKERS_COLUMNS[0].width,
+      },
+      {
+        text: paint(word.padEnd(10), workerStatusColor(word)),
+        width: WORKERS_COLUMNS[1].width,
+      },
+      {
+        text: paint(lastRun, colors.faint),
+        width: WORKERS_COLUMNS[2].width,
+      },
+    ])}`
+  })
+  const footer = `  ${paint(
+    `${symbols.bullet} one-shot ${symbols.bullet} /workers refreshes`,
+    colors.faint
+  )}`
+  return [header, columnLine, ...rows, footer]
 }
 
 // ---------------------------------------------------------------------------

@@ -98,6 +98,12 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: "live runs feed panel",
   },
   {
+    name: "workers",
+    aliases: [],
+    usage: "/workers",
+    description: "background workers status",
+  },
+  {
     name: "plan",
     aliases: [],
     usage: "/plan",
@@ -150,6 +156,7 @@ export type SlashAction =
   | { readonly kind: "approve" }
   | { readonly kind: "reject"; readonly reason?: string }
   | { readonly kind: "runs" }
+  | { readonly kind: "workers" }
   | { readonly kind: "plan" }
   | { readonly kind: "project"; readonly query: string }
   | { readonly kind: "snip" }
@@ -218,6 +225,9 @@ export function resolveSlashAction(raw: string): SlashAction {
   }
   if (matches("runs", name)) {
     return { kind: "runs" }
+  }
+  if (matches("workers", name)) {
+    return { kind: "workers" }
   }
   if (matches("plan", name)) {
     return { kind: "plan" }

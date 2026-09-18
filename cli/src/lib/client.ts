@@ -153,6 +153,28 @@ export interface RunsPageView {
   readonly total: number
 }
 
+/** Outcome of one background-worker cycle (`WorkerResult` on the wire). */
+export interface WorkerResultView {
+  readonly success: boolean
+  readonly detail: string | null
+  readonly data: unknown
+}
+
+/**
+ * Wire row of `GET /api/v1/workers/background` — one host background
+ * loop (memory-sweep, lease-reaper, …). Null timestamps mean "has not
+ * happened yet"; `nextRunAt` is null while a cycle is in flight or
+ * the worker has finished (startup workers run exactly once).
+ */
+export interface BackgroundWorkerView {
+  readonly name: string
+  readonly lastRunAt: string | null
+  readonly nextRunAt: string | null
+  readonly lastResult: WorkerResultView | null
+  readonly consecutiveFailures: number
+  readonly isHealthy: boolean
+}
+
 export interface KnowledgeDocumentSummaryView {
   readonly id: string
   readonly projectId: string | null
@@ -457,6 +479,14 @@ export class ComukiClient {
       params.set("filter", filter)
     }
     return this.request("GET", `/api/v1/runs?${params.toString()}`)
+  }
+
+  /**
+   * Point-in-time status of the host's background worker registry,
+   * ordered by name — the `/workers` panel's single one-shot fetch.
+   */
+  backgroundWorkers(): Promise<readonly BackgroundWorkerView[]> {
+    return this.request("GET", "/api/v1/workers/background")
   }
 
   knowledgeDocuments(

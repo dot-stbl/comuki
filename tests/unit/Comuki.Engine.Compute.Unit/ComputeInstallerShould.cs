@@ -19,6 +19,49 @@ namespace Comuki.Engine.Compute.Unit;
 /// </summary>
 public sealed class ComputeInstallerShould
 {
+    [Theory(DisplayName = "Given no kubeconfig path, when building Kubernetes configuration, then uses in-cluster configuration")]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void UseInClusterConfigurationWithoutLocalhostFallback(string? kubeconfigPath)
+    {
+        var inClusterConfiguration = new KubernetesClientConfiguration
+        {
+            Host = "https://10.96.0.1",
+        };
+
+        var configuration = KubernetesClientConfigurationFactory.Build(
+            kubeconfigPath,
+            () => inClusterConfiguration,
+            _ => throw new InvalidOperationException("External kubeconfig must not be read"));
+
+        configuration.ShouldBeSameAs(inClusterConfiguration);
+        configuration.Host.ShouldNotBe("http://localhost:8080");
+    }
+
+    [Fact(DisplayName = "Given explicit kubeconfig path, when building Kubernetes configuration, then reads that file")]
+    public void UseExternalKubeconfigWhenPathIsExplicit()
+    {
+        const string KubeconfigPath = "clusters/worker.kubeconfig";
+        string? observedPath = null;
+        var externalConfiguration = new KubernetesClientConfiguration
+        {
+            Host = "https://worker.example.test",
+        };
+
+        var configuration = KubernetesClientConfigurationFactory.Build(
+            KubeconfigPath,
+            () => throw new InvalidOperationException("In-cluster configuration must not be read"),
+            path =>
+            {
+                observedPath = path;
+                return externalConfiguration;
+            });
+
+        configuration.ShouldBeSameAs(externalConfiguration);
+        observedPath.ShouldBe(KubeconfigPath);
+    }
+
     [Fact(DisplayName = "When resolve Docker Provider By Default, then test passes")]
     public void ResolveDockerProviderByDefault()
     {

@@ -25,7 +25,7 @@ import {
 } from "./commands/oneshot"
 import { ComukiClient } from "./lib/client"
 import {
-  readConfigFile,
+  configStore,
   resolveConfig,
   type ResolvedConfig,
 } from "./lib/config"
@@ -51,7 +51,7 @@ interface GlobalOptions {
 }
 
 async function loadConfig(overrides: GlobalOptions): Promise<ResolvedConfig> {
-  return resolveConfig(process.env, await readConfigFile(), overrides)
+  return resolveConfig(process.env, await configStore.read(), overrides)
 }
 
 async function main(): Promise<void> {

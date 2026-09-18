@@ -12,9 +12,8 @@ import {
 import { colors, symbols } from "../theme"
 import {
   configFilePath,
-  readConfigFile,
+  configStore,
   resolveConfig,
-  writeConfigFile,
 } from "./config"
 
 /** POSTs credentials and persists the returned session cookie. */
@@ -29,12 +28,11 @@ export async function loginAndStore(
   )
   const success = await bootstrap.login(email, password)
 
-  const existing = await readConfigFile()
-  await writeConfigFile({
+  await configStore.update((existing) => ({
     ...existing,
     url: url ?? existing.url,
     cookie: success.cookie,
-  })
+  }))
   return success
 }
 

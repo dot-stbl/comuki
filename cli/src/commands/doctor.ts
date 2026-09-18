@@ -14,7 +14,7 @@ import {
 import {
   ConfigError,
   configFilePath,
-  readConfigFile,
+  configStore,
   resolveConfig,
   type ConfigFileContents,
   type ConfigOverrides,
@@ -122,7 +122,7 @@ export async function collectDoctorChecks(
 export async function printDoctor(
   overrides: ConfigOverrides
 ): Promise<number> {
-  const file = await readConfigFile()
+  const file = await configStore.read()
   const configPath = configFilePath()
   const checks = await collectDoctorChecks({
     overrides,

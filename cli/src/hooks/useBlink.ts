@@ -1,7 +1,7 @@
 /**
  * A text-only blink: true/false toggling on an interval while `active`,
  * steady true while not. Built for the streaming write-head cursor
- * (`▌`) — LiveMessage can adopt it without owning a timer.
+ * (`_`) — LiveMessage can adopt it without owning a timer.
  *
  * The clock is injectable because `bun:test` has no fake-timer API:
  * tests pass a synchronous `IntervalClock` and advance it by hand, so

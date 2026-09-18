@@ -26,11 +26,11 @@ export function SessionFooter({ sessions, activeIndex }: SessionFooterProps) {
           const active = index === activeIndex
           const dot =
             session.status === "thinking" ? (
-              <Text color={palette.brand}>●</Text>
+              <Text color={palette.brand}>o</Text>
             ) : session.unread ? (
-              <Text color={palette.waiting}>●</Text>
+              <Text color={palette.waiting}>o</Text>
             ) : (
-              <Text dimColor>○</Text>
+              <Text dimColor>.</Text>
             )
           return (
             <React.Fragment key={session.id}>

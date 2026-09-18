@@ -13,6 +13,7 @@ import { render } from "ink-testing-library"
 import { SessionFooter } from "./SessionFooter"
 import { TabBar } from "./TabBar"
 import { Welcome } from "./Welcome"
+import { MARK_SMALL } from "../lib/mark"
 import type { Session } from "../lib/sessions"
 
 function makeSession(overrides: Partial<Session> = {}): Session {
@@ -40,6 +41,7 @@ describe("Welcome", () => {
     const frame = lastFrame()
     expect(frame).toContain("comuki")
     expect(frame).toContain("agent orchestration platform")
+    expect(frame).toContain(MARK_SMALL[2])
     unmount()
   })
 
@@ -91,8 +93,7 @@ describe("TabBar", () => {
     const { lastFrame, unmount } = render(
       <TabBar sessions={sessions} activeIndex={0} />
     )
-    // ● is a colored glyph; assert its presence without asserting color.
-    expect(lastFrame()).toContain("●")
+    expect(lastFrame()).toContain("o")
     unmount()
   })
 })
@@ -131,7 +132,7 @@ describe("SessionFooter", () => {
     const { lastFrame, unmount } = render(
       <SessionFooter sessions={sessions} activeIndex={0} />
     )
-    expect(lastFrame()).toContain("●")
+    expect(lastFrame()).toContain("o")
     unmount()
   })
 })

@@ -229,7 +229,7 @@ describe("kbListLines", () => {
 })
 
 describe("kbAdd lines", () => {
-  it("the result line is `⏺ name → id · N chunks`", () => {
+  it("the result line is `* name → id · N chunks`", () => {
     const line = stripAnsi(
       kbAddResultLine("notes.md", {
         sourceDocumentId: "018f-abcd",

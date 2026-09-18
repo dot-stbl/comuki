@@ -5,7 +5,7 @@
  * so the viewport renders it as data.
  */
 import { useEffect, useState } from "react"
-import { symbols } from "../theme"
+import { MARK_TINY_FRAMES } from "../lib/mark"
 
 export const SPINNER_INTERVAL_MS = 90
 
@@ -18,7 +18,7 @@ export function useSpinnerFrame(active: boolean): number {
       return
     }
     const timer = setInterval(() => {
-      setFrame((current) => (current + 1) % symbols.spinnerFrames.length)
+      setFrame((current) => (current + 1) % MARK_TINY_FRAMES.length)
     }, SPINNER_INTERVAL_MS)
     return () => clearInterval(timer)
   }, [active])

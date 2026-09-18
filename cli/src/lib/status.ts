@@ -59,7 +59,7 @@ export async function fetchStatusSnapshot(client: {
   return { health, compute, projects, knowledge, runs }
 }
 
-/** Header of the REPL panel: `⏺ status`. */
+/** Header of the REPL panel: `* status`. */
 function statusHeader(): string {
   return `  ${paint(symbols.event, colors.dim)} ${paint("status", colors.muted)}`
 }

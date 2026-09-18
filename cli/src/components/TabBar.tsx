@@ -50,7 +50,7 @@ export function TabBar({ sessions, activeIndex }: TabBarProps) {
               {badge !== null ? (
                 <Text color={palette.brand}> !</Text>
               ) : null}
-              {session.unread ? <Text color={palette.waiting}> ●</Text> : null}
+              {session.unread ? <Text color={palette.waiting}> o</Text> : null}
             </Text>
           </React.Fragment>
         )

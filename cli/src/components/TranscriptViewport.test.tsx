@@ -77,7 +77,7 @@ describe("TranscriptViewport", () => {
   })
 
   test("the expand hint pins as the first row and reserves it", () => {
-    const hint = "  ⏺ press ctrl+o to expand thinking"
+    const hint = "  * press ctrl+o to expand thinking"
     const { lastFrame, unmount } = render(
       <TranscriptViewport
         lines={LINES}
@@ -97,7 +97,7 @@ describe("TranscriptViewport", () => {
   })
 
   test("hint and indicator can reserve rows together", () => {
-    const hint = "  ⏺ press ctrl+o to expand thinking"
+    const hint = "  * press ctrl+o to expand thinking"
     const { lastFrame, unmount } = render(
       <TranscriptViewport
         lines={LINES}

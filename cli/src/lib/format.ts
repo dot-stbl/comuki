@@ -6,9 +6,9 @@
  *
  * Style contract (minimal structure, Dichromat deck): the user's words
  * are bare bold text at column 0 — no prefix, no label; collapsed
- * events (thinking, tools) are dim `⏺` bullets two spaces in with the
+ * events (thinking, tools) are dim `*` bullets two spaces in with the
  * status right after the args; the assistant leads with the periwinkle
- * `◆`; the approve card is the one framed element in the transcript
+ * `+`; the approve card is the one framed element in the transcript
  * (code blocks keep their dim frames too). Hierarchy comes from
  * spacing and weight, never boxes.
  */
@@ -273,14 +273,14 @@ export function extractPlanNodes(plan: unknown): PlanItemView[] {
 }
 
 // ---------------------------------------------------------------------------
-// Collapsible blocks — thinking + tool parts render as one dim `⏺` event
+// Collapsible blocks — thinking + tool parts render as one dim `*` event
 // line unless the transcript runs verbose (ctrl+o). Pure derivation lives
 // here; the toggle state is per-session in lib/sessions.ts.
 // ---------------------------------------------------------------------------
 
 /**
- * What one collapsed event line shows: `⏺ thinking · 4.1k tok · 6.2s`,
- * `⏺ memory.recall("identity module", 5)  ok 41ms`. Durations and token
+ * What one collapsed event line shows: `* thinking . 4.1k tok . 6.2s`,
+ * `* memory.recall("identity module", 5)  ok 41ms`. Durations and token
  * counts only appear when the wire actually carried them.
  */
 export interface CollapsedSummary {
@@ -525,11 +525,11 @@ export function renderParts(
  * column 0, one blank line before AND after. Tool and system journal
  * rows render muted. Options omitted → full render (the pure layer's
  * default); the transcript passes the session's ctrl+o toggle so
- * thinking/tool parts collapse to `⏺` event lines.
+ * thinking/tool parts collapse to `*` event lines.
  *
- * Identity chrome: the assistant leads with its periwinkle `◆` brand
+ * Identity chrome: the assistant leads with its periwinkle `+` brand
  * mark on the shared one-space gutter with a dim `comuki` label above
- * its content; journal rows keep the quiet `·` bullets. Wrapping is
+ * its content; journal rows keep the quiet `.` bullets. Wrapping is
  * computed at `width - 1` so the gutter never pushes a line past the
  * terminal edge.
  */

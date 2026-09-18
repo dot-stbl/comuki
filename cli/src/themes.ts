@@ -66,7 +66,7 @@ export type ThemeMode = "dark" | "light"
  * Dichromat deck — the committed default. Accent ← running #8787f3:
  * the deck's own chrome accent is bone/ink (a filled-button plane),
  * and running's periwinkle is the palette's only living hue — the one
- * the CLI's ◆ brand mark already wore. `dichromat-dark` is
+  * the CLI's ASCII brand mark already wore. `dichromat-dark` is
  * byte-identical to the palette the CLI shipped before themes.
  */
 const DICHROMAT: CliTheme = {

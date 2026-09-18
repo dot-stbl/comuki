@@ -16,6 +16,7 @@ import {
   padVisible,
   truncateTail,
 } from "../lib/format"
+import { isSgrMouseChunk } from "../lib/mouse"
 import type { ChatBlock, Session } from "../lib/sessions"
 import { palette } from "../theme"
 
@@ -139,6 +140,9 @@ export function SessionOverview({
   onClose,
 }: SessionOverviewProps) {
   useInput((input, key) => {
+    if (isSgrMouseChunk(input)) {
+      return
+    }
     if (key.escape) {
       onClose()
       return

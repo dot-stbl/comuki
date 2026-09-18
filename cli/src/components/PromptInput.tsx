@@ -38,6 +38,7 @@ import {
   slashMenuQuery,
   type SlashCommand,
 } from "../lib/slash"
+import { isSgrMouseChunk } from "../lib/mouse"
 import { gutter, palette, symbols } from "../theme"
 import type { InterceptKey } from "./MentionMenu"
 
@@ -196,6 +197,9 @@ export function PromptInput({
 
   useInput(
     (input, key) => {
+      if (isSgrMouseChunk(input)) {
+        return
+      }
       // The mention menu gets the first look while its popup is open —
       // accept rewrites the draft through the editor handle.
       if (

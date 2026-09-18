@@ -368,6 +368,22 @@ describe("persistence round-trip", () => {
     expect(restored.sessions.map((session) => session.id)).toEqual(["s1"])
   })
 
+  it("round-trips activeSessionId through the sessions file", async () => {
+    const path = `${import.meta.dir}/sessions-active-roundtrip.tmp.json`
+    await writeSessionsFile(
+      {
+        sessions: [liveSession("s1", "one"), liveSession("s2", "two")],
+        activeIndex: 1,
+      },
+      path
+    )
+    const persisted = await readSessionsFile(path)
+    expect(persisted.activeSessionId).toBe("s2")
+    expect(fromPersisted(persisted).activeIndex).toBe(1)
+    await rm(path, { force: true })
+  })
+
+
   it("round-trips a manual rename through the sessions file", async () => {
     const path = `${import.meta.dir}/sessions-rename-roundtrip.tmp.json`
     const state = {

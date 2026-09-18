@@ -115,6 +115,13 @@ export function sessionsFilePath(): string {
   return join(configDir(), "sessions.json")
 }
 
+/** `~/.config/comuki/archive/` — `/archive` transcripts. */
+export function archiveDir(
+  xdgConfigHome: string | undefined = process.env.XDG_CONFIG_HOME
+): string {
+  return join(configDir(xdgConfigHome), "archive")
+}
+
 /** Reads the config file; missing or malformed → empty contents (first run). */
 export async function readConfigFile(
   path: string = configFilePath()

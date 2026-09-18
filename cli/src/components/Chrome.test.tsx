@@ -192,7 +192,7 @@ describe("SessionFooter", () => {
     expect(frame).toContain("search")
     expect(frame).toContain("help")
     expect(frame).toContain("quit")
-    expect(frame).toContain("› new session")
+    expect(frame).toContain("> new session")
     unmount()
   })
 })

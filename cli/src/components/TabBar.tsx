@@ -33,29 +33,40 @@ export function approvalBadge(
 export function TabBar({ sessions, activeIndex }: TabBarProps) {
   return (
     <Box width="100%" justifyContent="flex-start">
-      <Text>{"  "}</Text>
+      <Text backgroundColor={palette.lane}>{"  "}</Text>
       {sessions.slice(0, 9).map((session, index) => {
         const active = index === activeIndex
         const label = `[${index + 1}] ${session.name}`
         const badge = approvalBadge(session)
         return (
           <React.Fragment key={session.id}>
-            {index > 0 ? <Text> </Text> : null}
+            {index > 0 ? (
+              <Text backgroundColor={palette.lane}> </Text>
+            ) : null}
             <Text
               color={active ? palette.brand : undefined}
               dimColor={!active}
               bold={active}
+              backgroundColor={palette.lane}
             >
               {label}
               {badge !== null ? (
-                <Text color={palette.brand}> !</Text>
+                <Text color={palette.brand} backgroundColor={palette.lane}>
+                  {" !"}
+                </Text>
               ) : null}
-              {session.unread ? <Text color={palette.waiting}> o</Text> : null}
+              {session.unread ? (
+                <Text color={palette.waiting} backgroundColor={palette.lane}>
+                  {" o"}
+                </Text>
+              ) : null}
             </Text>
           </React.Fragment>
         )
       })}
-      <Text dimColor> [+]</Text>
+      <Text dimColor backgroundColor={palette.lane}>
+        {" [+]"}
+      </Text>
     </Box>
   )
 }

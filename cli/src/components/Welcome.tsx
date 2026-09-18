@@ -45,33 +45,39 @@ const HINTS = ["ctrl+n new tab", "esc sessions", "help commands"].join(
 
 export function Welcome({ stats, firstRun = firstRunHintVisible() }: WelcomeProps) {
   return (
-    <Box flexDirection="column" alignItems="center" paddingX={2}>
+    <Box flexDirection="column" alignItems="center" paddingX={2} paddingY={1}>
       {MARK_SMALL.map((line, index) => (
-        <Text key={index} color={palette.brand}>
+        <Text key={index} color={palette.brand} backgroundColor={palette.lane}>
           {line}
         </Text>
       ))}
       <Box marginTop={1}>
-        <Text bold color={palette.brand}>
+        <Text bold color={palette.brand} backgroundColor={palette.lane}>
           comuki
         </Text>
       </Box>
       <Box marginTop={1}>
-        <Text dimColor>agent orchestration platform</Text>
+        <Text dimColor backgroundColor={palette.lane}>
+          agent orchestration platform
+        </Text>
       </Box>
       <Box marginTop={1}>
-        <Text dimColor>{HINTS}</Text>
+        <Text dimColor backgroundColor={palette.lane}>
+          {HINTS}
+        </Text>
       </Box>
       {stats ? (
         <Box marginTop={1}>
-          <Text dimColor>
+          <Text dimColor backgroundColor={palette.lane}>
             workers {stats.workers} · memory {stats.memory}
           </Text>
         </Box>
       ) : null}
       {firstRun ? (
         <Box marginTop={1}>
-          <Text dimColor>first run? try: comuki setup</Text>
+          <Text dimColor backgroundColor={palette.lane}>
+            first run? try: comuki setup
+          </Text>
         </Box>
       ) : null}
     </Box>

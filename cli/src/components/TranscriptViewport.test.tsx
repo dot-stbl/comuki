@@ -12,6 +12,7 @@ import {
   TranscriptViewport,
 } from "./TranscriptViewport"
 import { NEW_MESSAGES_INDICATOR } from "../lib/viewport"
+import { stripAnsi } from "../theme"
 
 const LINES = Array.from({ length: 30 }, (_, index) => `line-${index}`)
 
@@ -198,6 +199,23 @@ describe("TranscriptViewport — ctrl+f highlight", () => {
       <TranscriptViewport lines={LINES} height={5} offset={0} newBelow={false} />
     )
     expect(lastFrame() ?? "").not.toContain("\x1b[7m")
+    unmount()
+  })
+})
+
+describe("TranscriptViewport — slab padding", () => {
+  test("paints a background on the user slab and keeps the prefix", () => {
+    const { lastFrame, unmount } = render(
+      <TranscriptViewport
+        lines={["> hello"]}
+        height={3}
+        offset={0}
+        newBelow={false}
+        width={20}
+      />
+    )
+    const frame = lastFrame() ?? ""
+    expect(stripAnsi(frame)).toContain("> hello")
     unmount()
   })
 })

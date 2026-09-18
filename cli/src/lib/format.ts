@@ -10,7 +10,7 @@
  * in, grouped with no blank between them; the assistant is a rule
  * block (`------ comuki ------` open, faint `------` close). The
  * approve card and code fences use ASCII `+ - |` frames. Hierarchy
- * comes from spacing and weight.
+ * comes from spacing, weight and the viewport's filled slabs.
  */
 import {
   colors,

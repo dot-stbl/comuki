@@ -9,7 +9,7 @@
  * and latency chips reuse the theme's green/yellow vocabulary through
  * Ink colour names.
  */
-import { Text } from "ink"
+import { Box, Text } from "ink"
 import React from "react"
 import { contextMeterLabel, DEFAULT_CONTEXT_WINDOW } from "../lib/context"
 import type { HubConnectionState } from "../lib/signalr"
@@ -128,14 +128,17 @@ export function StatusLine({
   }
   if (connection) {
     parts.push(
-      <Text color={connectionTone(connection)}>
+      <Text color={connectionTone(connection)} backgroundColor={palette.rail}>
         {connectionLabel(connection, tick)}
       </Text>
     )
   }
   if (typeof latencyMs === "number") {
     parts.push(
-      <Text color={latencyColor(latencyTone(latencyMs))}>
+      <Text
+        color={latencyColor(latencyTone(latencyMs))}
+        backgroundColor={palette.rail}
+      >
         {latencyLabel(latencyMs)}
       </Text>
     )
@@ -146,14 +149,20 @@ export function StatusLine({
     )
   }
   return (
-    <Text dimColor>
-      {"  "}
-      {parts.map((part, index) => (
-        <React.Fragment key={index}>
-          {index > 0 ? <Text color={palette.brand}> · </Text> : null}
-          {part}
-        </React.Fragment>
-      ))}
-    </Text>
+    <Box width="100%" justifyContent="flex-start">
+      <Text dimColor backgroundColor={palette.rail}>
+        {"  "}
+        {parts.map((part, index) => (
+          <React.Fragment key={index}>
+            {index > 0 ? (
+              <Text color={palette.brand} backgroundColor={palette.rail}>
+                {" · "}
+              </Text>
+            ) : null}
+            {part}
+          </React.Fragment>
+        ))}
+      </Text>
+    </Box>
   )
 }

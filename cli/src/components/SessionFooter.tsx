@@ -54,21 +54,35 @@ function CollapsedRow({
   return (
     <Box width="100%" justifyContent="space-between">
       <Box>
-        <Text dimColor>{"  "}</Text>
+        <Text dimColor backgroundColor={palette.rail}>
+          {"  "}
+        </Text>
         {sessions.slice(0, 9).map((session, index) => {
           const active = index === activeIndex
           const dot =
             session.status === "thinking" ? (
-              <Text color={palette.brand}>o</Text>
+              <Text color={palette.brand} backgroundColor={palette.rail}>
+                o
+              </Text>
             ) : session.unread ? (
-              <Text color={palette.waiting}>o</Text>
+              <Text color={palette.waiting} backgroundColor={palette.rail}>
+                o
+              </Text>
             ) : (
-              <Text dimColor>.</Text>
+              <Text dimColor backgroundColor={palette.rail}>
+                .
+              </Text>
             )
           return (
             <React.Fragment key={session.id}>
-              {index > 0 ? <Text> </Text> : null}
-              <Text dimColor={!active} bold={active}>
+              {index > 0 ? (
+                <Text backgroundColor={palette.rail}> </Text>
+              ) : null}
+              <Text
+                dimColor={!active}
+                bold={active}
+                backgroundColor={palette.rail}
+              >
                 {dot}
                 {index + 1} {session.name.slice(0, 12)}
               </Text>
@@ -76,7 +90,9 @@ function CollapsedRow({
           )
         })}
       </Box>
-      <Text dimColor>{` ${FOOTER_EXPAND_HINT} `}</Text>
+      <Text dimColor backgroundColor={palette.rail}>
+        {` ${FOOTER_EXPAND_HINT} `}
+      </Text>
     </Box>
   )
 }
@@ -90,20 +106,30 @@ function ExpandedList({
 }) {
   return (
     <Box flexDirection="column" width="100%">
-      <Text dimColor>{"  ─".padEnd(24, "─")}</Text>
+      <Text dimColor backgroundColor={palette.rail}>
+        {"  -".padEnd(24, "-")}
+      </Text>
       {actions.map((action, index) => {
         const selected = index === selectedIndex
         const hint = action.hint === undefined ? "" : `  ${action.hint}`
         return (
-          <Text key={action.id} dimColor={!selected}>
+          <Text
+            key={action.id}
+            dimColor={!selected}
+            backgroundColor={palette.rail}
+          >
             {selected ? (
-              <Text color={palette.brand} bold>
-                {`  › ${action.label}`}
+              <Text color={palette.brand} bold backgroundColor={palette.rail}>
+                {`  > ${action.label}`}
               </Text>
             ) : (
               `    ${action.label}`
             )}
-            {hint.length > 0 ? <Text dimColor>{hint}</Text> : null}
+            {hint.length > 0 ? (
+              <Text dimColor backgroundColor={palette.rail}>
+                {hint}
+              </Text>
+            ) : null}
           </Text>
         )
       })}

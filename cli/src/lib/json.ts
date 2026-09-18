@@ -1,16 +1,32 @@
-/**
- * Tiny shared JSON-file helpers used by both `config.json` and
- * `sessions.json`: missing/malformed files read as `undefined`, writes
- * create the parent directory with owner-only permissions.
- */
+/** Result returned by runtime decoders at external-data boundaries. */
+export type DecodeResult<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false }
 
-export async function readJsonFile<T>(path: string): Promise<T | undefined> {
+/** Creates a successful decoder result. */
+export function decoded<T>(value: T): DecodeResult<T> {
+  return { ok: true, value }
+}
+
+/** Shared failed decoder result. */
+export const invalid: DecodeResult<never> = { ok: false }
+
+/** Narrows an unknown JSON value to an object with string keys. */
+export function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+/**
+ * Reads JSON without claiming a domain type. Missing and malformed files
+ * return `undefined`; adapters must decode the resulting `unknown` value.
+ */
+export async function readJsonFile(path: string): Promise<unknown | undefined> {
   const file = Bun.file(path)
   if (!(await file.exists())) {
     return undefined
   }
   try {
-    return JSON.parse(await file.text()) as T
+    return JSON.parse(await file.text())
   } catch {
     return undefined
   }

@@ -123,7 +123,7 @@ export function expandAlias(
 export async function readAliasesFile(
   path: string = aliasesFilePath()
 ): Promise<AliasStore> {
-  const contents = await readJsonFile<unknown>(path)
+  const contents = await readJsonFile(path)
   if (!contents || typeof contents !== "object" || Array.isArray(contents)) {
     return EMPTY
   }

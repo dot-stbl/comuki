@@ -11,7 +11,14 @@
  */
 import type { ChatMessageView } from "./client"
 import type { RunsFeedPanel } from "./runsfeed"
-import { readJsonFile, writeJsonFile } from "./json"
+import {
+  decoded,
+  invalid,
+  isJsonObject,
+  readJsonFile,
+  writeJsonFile,
+  type DecodeResult,
+} from "./json"
 import { sessionsFilePath } from "./config"
 
 export type SessionStatus = "idle" | "thinking" | "running" | "done"
@@ -363,6 +370,59 @@ export interface PersistedSessions {
   readonly sessions: readonly PersistedSession[]
 }
 
+const SESSION_STATUSES: readonly SessionStatus[] = [
+  "idle",
+  "thinking",
+  "running",
+  "done",
+]
+
+function isSessionStatus(value: unknown): value is SessionStatus {
+  return (
+    typeof value === "string" &&
+    SESSION_STATUSES.some((status) => status === value)
+  )
+}
+
+/** Narrows persisted JSON to the stable sessions-on-disk contract. */
+export function decodePersistedSessions(
+  value: unknown
+): DecodeResult<PersistedSessions> {
+  if (!isJsonObject(value) || !Array.isArray(value.sessions)) {
+    return invalid
+  }
+
+  const sessions = value.sessions.flatMap((entry): readonly PersistedSession[] => {
+    if (!isJsonObject(entry) || typeof entry.id !== "string") {
+      return []
+    }
+    const status = isSessionStatus(entry.status) ? entry.status : "idle"
+    const history = Array.isArray(entry.history)
+      ? entry.history.filter((item): item is string => typeof item === "string")
+      : []
+    return [
+      {
+        id: entry.id,
+        name: typeof entry.name === "string" ? entry.name : "session",
+        status,
+        createdAt:
+          typeof entry.createdAt === "number" && Number.isFinite(entry.createdAt)
+            ? entry.createdAt
+            : 0,
+        ...(entry.renamed === true ? { renamed: true } : {}),
+        ...(history.length > 0 ? { history } : {}),
+      },
+    ]
+  })
+
+  return decoded({
+    sessions,
+    ...(typeof value.activeSessionId === "string"
+      ? { activeSessionId: value.activeSessionId }
+      : {}),
+  })
+}
+
 /** Strips transcripts down to what restore needs (server tabs only). */
 export function toPersisted(state: SessionsState): PersistedSessions {
   const persisted = state.sessions
@@ -421,16 +481,8 @@ export function fromPersisted(persisted: PersistedSessions): SessionsState {
 export async function readSessionsFile(
   path: string = sessionsFilePath()
 ): Promise<PersistedSessions> {
-  const contents = await readJsonFile<Partial<PersistedSessions>>(path)
-  if (!contents || !Array.isArray(contents.sessions)) {
-    return { sessions: [] }
-  }
-  return {
-    sessions: contents.sessions,
-    ...(typeof contents.activeSessionId === "string"
-      ? { activeSessionId: contents.activeSessionId }
-      : {}),
-  }
+  const result = decodePersistedSessions(await readJsonFile(path))
+  return result.ok ? result.value : { sessions: [] }
 }
 
 export async function writeSessionsFile(

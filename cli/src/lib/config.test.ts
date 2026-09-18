@@ -1,13 +1,72 @@
-import { describe, expect, it } from "bun:test"
+import { afterEach, describe, expect, it } from "bun:test"
+import { rm } from "node:fs/promises"
 import { join } from "node:path"
 import {
   ConfigError,
   archiveDir,
   configDir,
   configFilePath,
+  decodeConfigFile,
+  readConfigFile,
   resolveConfig,
   sessionsFilePath,
+  writeConfigFile,
 } from "./config"
+
+const temporaryFiles: string[] = []
+
+afterEach(async () => {
+  await Promise.all(temporaryFiles.splice(0).map((path) => rm(path, { force: true })))
+})
+
+describe("decodeConfigFile", () => {
+  it("rejects malformed root values", () => {
+    expect(decodeConfigFile(null).ok).toBe(false)
+    expect(decodeConfigFile([]).ok).toBe(false)
+  })
+
+  it("accepts partial config and preserves extra fields", () => {
+    const result = decodeConfigFile({ theme: "dockside-dark", future: { v: 1 } })
+
+    expect(result).toEqual({
+      ok: true,
+      value: { theme: "dockside-dark", future: { v: 1 } },
+    })
+  })
+
+  it("drops known fields with wrong types", () => {
+    const result = decodeConfigFile({
+      apiKey: 42,
+      bell: "yes",
+      contextWindow: Number.NaN,
+      tenant: "acme",
+    })
+
+    expect(result).toEqual({ ok: true, value: { tenant: "acme" } })
+  })
+
+  it("round-trips a valid file", async () => {
+    const path = `${import.meta.dir}/config-roundtrip.tmp.json`
+    temporaryFiles.push(path)
+    const contents = {
+      apiKey: "ck_test",
+      bell: false,
+      future: { enabled: true },
+    }
+
+    await writeConfigFile(contents, path)
+
+    expect(await readConfigFile(path)).toEqual(contents)
+  })
+
+  it("treats malformed JSON as an empty config", async () => {
+    const path = `${import.meta.dir}/config-malformed.tmp.json`
+    temporaryFiles.push(path)
+    await Bun.write(path, "{not json")
+
+    expect(await readConfigFile(path)).toEqual({})
+  })
+})
 
 describe("resolveConfig", () => {
   it("throws with hint when url is neither arg nor env", () => {

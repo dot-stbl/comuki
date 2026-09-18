@@ -13,6 +13,7 @@ export type CommandName =
   | "config"
   | "setup"
   | "completion"
+  | "doctor"
   | "unknown"
 
 const KNOWN_COMMANDS: readonly CommandName[] = [
@@ -23,6 +24,7 @@ const KNOWN_COMMANDS: readonly CommandName[] = [
   "config",
   "setup",
   "completion",
+  "doctor",
 ]
 
 /**

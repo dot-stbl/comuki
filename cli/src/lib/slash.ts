@@ -133,6 +133,24 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     usage: "/kb add <file|glob> | /kb list",
     description: "knowledge library — ingest files, list documents",
   },
+  {
+    name: "theme",
+    aliases: [],
+    usage: "/theme [name]",
+    description: "list palettes or switch live",
+  },
+  {
+    name: "whoami",
+    aliases: [],
+    usage: "/whoami",
+    description: "identity, roles, permissions",
+  },
+  {
+    name: "keys",
+    aliases: [],
+    usage: "/keys",
+    description: "current keybindings",
+  },
 ]
 
 /** The `/help` transcript block, rendered from the registry. */
@@ -172,6 +190,9 @@ export type SlashAction =
   | { readonly kind: "branch"; readonly message?: string }
   /** `/kb add notes.md` → subcommand `add`, rest `notes.md`; bare `/kb` → both empty. */
   | { readonly kind: "kb"; readonly subcommand: string; readonly rest: string }
+  | { readonly kind: "theme"; readonly name: string }
+  | { readonly kind: "whoami" }
+  | { readonly kind: "keys" }
   /** Not a command — the input goes to the brain as a chat message. */
   | { readonly kind: "message" }
 
@@ -271,6 +292,15 @@ export function resolveSlashAction(raw: string): SlashAction {
       subcommand: (sub ?? "").toLowerCase(),
       rest: subRest.join(" ").trim(),
     }
+  }
+  if (matches("theme", name)) {
+    return { kind: "theme", name: args.toLowerCase() }
+  }
+  if (matches("whoami", name)) {
+    return { kind: "whoami" }
+  }
+  if (matches("keys", name)) {
+    return { kind: "keys" }
   }
   return { kind: "message" }
 }

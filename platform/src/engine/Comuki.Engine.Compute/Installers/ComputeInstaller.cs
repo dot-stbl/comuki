@@ -88,11 +88,8 @@ public static class ComputeInstaller
         services.AddSingleton(static serviceProvider =>
             serviceProvider.GetRequiredService<DockerClient>().Containers);
 
-        // Kubernetes client: reads Compute:Kubernetes:KubeconfigPath when set
-        // (external cluster, e.g. vega), otherwise falls back to the default
-        // config chain (in-cluster SA when running inside a cluster, or
-        // ~/.kube/config locally). Failures are logged loudly — a silent DI
-        // crash leaves the scale supervisor dead with no trace.
+        // An absent path means strictly in-cluster. BuildDefaultConfig is not
+        // used because its final fallback targets http://localhost:8080.
         services.AddSingleton<IKubernetes>(static serviceProvider =>
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
@@ -100,25 +97,12 @@ public static class ComputeInstaller
             var kubeconfigPath = serviceProvider
                 .GetRequiredService<IOptions<KubernetesComputeOptions>>()
                 .Value.KubeconfigPath;
-            try
-            {
-                var config = string.IsNullOrWhiteSpace(kubeconfigPath)
-                    ? KubernetesClientConfiguration.BuildDefaultConfig()
-                    : KubernetesClientConfiguration.BuildConfigFromConfigFile(kubeconfigPath);
-                logger.LogInformation(
-                    "Kubernetes client ready ({Mode}), host: {Host}",
-                    string.IsNullOrWhiteSpace(kubeconfigPath) ? "in-cluster" : kubeconfigPath,
-                    config.Host);
-                return new Kubernetes(config);
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(
-                    exception,
-                    "Kubernetes client failed to initialise (kubeconfig: {KubeconfigPath})",
-                    kubeconfigPath ?? "(default)");
-                throw;
-            }
+            var config = KubernetesClientConfigurationFactory.Build(kubeconfigPath);
+            logger.LogInformation(
+                "Kubernetes client ready ({Mode}), host: {Host}",
+                string.IsNullOrWhiteSpace(kubeconfigPath) ? "in-cluster" : kubeconfigPath,
+                config.Host);
+            return new Kubernetes(config);
         });
         services.AddSingleton<DockerComputeProvider>();
         services.AddSingleton<KubernetesComputeProvider>();

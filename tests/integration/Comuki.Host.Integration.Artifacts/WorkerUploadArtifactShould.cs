@@ -149,6 +149,7 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
                 AccessKey = MinioUser,
                 SecretKey = MinioPassword,
                 Bucket = TestBucket,
+                UseSSL = false,
             });
         for (var attempt = 0; ; attempt++)
         {

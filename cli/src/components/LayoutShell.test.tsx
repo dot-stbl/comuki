@@ -7,6 +7,7 @@ import { stripAnsi } from "../theme"
 import { PromptInput } from "./PromptInput"
 import { TopBar } from "./TopBar"
 import { TranscriptViewport } from "./TranscriptViewport"
+import { HarnessFooter } from "./HarnessFooter"
 
 interface ConversationShellProps {
   readonly columns: number
@@ -49,7 +50,14 @@ function ConversationShell({
           <PromptInput
             onSubmit={() => {}}
             active={false}
-            label="project comuki / profile implement"
+          />
+          <HarnessFooter
+            width={layout.workspaceWidth}
+            mode={layout.mode}
+            model="implement"
+            project="comuki"
+            workers={0}
+            queue={0}
           />
         </Box>
         {layout.workbenchWidth > 0 ? (
@@ -84,7 +92,7 @@ describe("conversation-first shell", () => {
 
     expect(frameRows).toHaveLength(rows)
     expect(frameRows).toContain("transcript-27")
-    expect(frameRows.at(-1)).toContain(">")
+    expect(frameRows.at(-2)).toContain(">")
     unmount()
   })
 
@@ -95,8 +103,8 @@ describe("conversation-first shell", () => {
     const frame = stripAnsi(lastFrame() ?? "")
 
     expect(frame).toContain("transcript-21")
-    expect(frame).toContain("project comuki / profile implement")
-    expect(frame.split("\n").at(-1)).toContain(">")
+    expect(frame).toContain("model implement / project comuki")
+    expect(frame.split("\n").at(-2)).toContain(">")
     unmount()
   })
 

@@ -2,7 +2,7 @@
  * The growing assistant block while a turn streams in: the live chunk
  * tail rendered through the markdown path (`liveLines` in
  * `lib/transcript.ts` — the same source the scrolling viewport
- * flattens), with a trailing `_` cursor marking the write head.
+ * flattens), with a trailing ASCII cursor `_` marking the write head.
  * The finalized message never passes through here — on turn complete
  * the REST result replaces the live block with a plain `ChatMessage`.
  *

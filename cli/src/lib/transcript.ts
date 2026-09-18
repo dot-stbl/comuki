@@ -5,21 +5,25 @@
  * `lib/format.ts`, the live stream from `lib/markdown.ts`, so the
  * viewport shows byte-identical text to what the components rendered.
  *
- * Spacing is enforced here at the seams: exactly one blank line
- * between turns and blocks (never two), one before an event block and
- * one after an assistant answer — the per-message renderers already
- * normalize their own interiors.
+ * Spacing is enforced here at the seams: the user echo carries its
+ * own leading blank and sits tight against the following event
+ * cluster (no extra seam); one blank after the event cluster before
+ * the answer lives inside `renderParts`. Never two blanks in a row.
  *
  * `wrapVisible` is the safety net of the fixed-height viewport: any
  * line wider than the terminal (long user echo, unwrappable word) is
  * ANSI-aware hard-wrapped so exactly `height` rendered rows fit the
  * budget and the footer/prompt can never be pushed off-screen.
  */
-import { renderMessage, renderPendingPlan } from "./format"
+import {
+  assistantOpenRule,
+  renderMessage,
+  renderPendingPlan,
+} from "./format"
 import { renderRunsFeedPanel, type RunsFeedPanel } from "./runsfeed"
 import { renderMarkdownLines } from "./markdown"
-import { colors, paint, stripAnsi } from "../theme"
-import { MARK_TINY_FRAMES } from "./mark"
+import { colors, gutter, paint, stripAnsi } from "../theme"
+import { MARK_TINY_FRAMES, paintMark } from "./mark"
 import type { ChatBlock } from "./sessions"
 
 export const LIVE_CURSOR = "_"
@@ -84,45 +88,41 @@ export function wrapVisible(line: string, width: number): string[] {
 
 /**
  * The growing live tail as finished lines: markdown-rendered, with the
- * blinking `_` cursor riding the write head (the last line). Empty
- * stream renders nothing.
+ * ASCII cursor `_` riding the write head (the last line) and the
+ * in-flight assistant rule (accent) above the body. Empty stream
+ * renders nothing.
  */
 export function liveLines(liveText: string, width: number): string[] {
   if (liveText.trim().length === 0) {
     return []
   }
-  let lines = renderMarkdownLines(liveText, width)
+  const innerWidth = Math.max(8, width - gutter.length)
+  let lines = renderMarkdownLines(liveText, innerWidth)
   if (lines.length === 0) {
     lines = [""]
   }
   const last = lines.length - 1
-  return lines.map((line, index) =>
+  const body = lines.map((line, index) =>
     index === last ? line + paint(LIVE_CURSOR, colors.accent) : line
+  )
+  return [assistantOpenRule(innerWidth, true), ...body].map((line) =>
+    line.length > 0 ? gutter + line : line
   )
 }
 
-/**
- * The in-flight thinking row: three stacked tiny-mark lines on the
- * left (the crossbar breathing), dim `thinking` on the right of the
- * middle row. The mark pulses dim/accent every `TYPING_PULSE_EVERY`
- * frames. `frame` is the spinner tick from `useSpinnerFrame`.
- */
-export function typingLine(frame: number, label: string = TYPING_LABEL): string {
+/** Tiny ASCII mark (3 rows) + dim label — the in-flight thinking pulse. */
+export function typingLines(
+  frame: number,
+  label: string = TYPING_LABEL
+): readonly string[] {
   const count = MARK_TINY_FRAMES.length
-  const wrapped = ((frame % count) + count) % count
-  const glyph = MARK_TINY_FRAMES[wrapped] ?? MARK_TINY_FRAMES[0] ?? ["# #", "   ", "# #"]
-  const color =
-    Math.floor(frame / TYPING_PULSE_EVERY) % 2 === 0
-      ? colors.accent
-      : colors.dim
-  const pad = "     "
-  const mid = Math.floor(glyph.length / 2)
-  return glyph
-    .map((row, index) => {
-      const mark = paint(row, color)
-      return index === mid ? `${pad}${mark} ${paint(label, colors.dim)}` : `${pad}${mark}`
-    })
-    .join("\n")
+  const index = ((frame % count) + count) % count
+  const glyph = MARK_TINY_FRAMES[index] ?? MARK_TINY_FRAMES[0]!
+  const accent = Math.floor(frame / TYPING_PULSE_EVERY) % 2 === 0
+  const painted = paintMark(glyph, accent ? colors.accent : colors.dim)
+  return painted.map((row, rowIndex) =>
+    rowIndex === 1 ? `${row}  ${paint(label, colors.dim)}` : row
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -186,6 +186,7 @@ export function flattenTranscript(
   now: Date = new Date()
 ): string[] {
   const lines: string[] = []
+  let tightNext = false
   const push = (line: string) => {
     const blank = line.trim().length === 0
     if (blank) {
@@ -198,9 +199,19 @@ export function flattenTranscript(
     }
     lines.push(line)
   }
+  const firstContent = (rendered: readonly string[]): string | undefined =>
+    rendered.find((line) => line.trim().length > 0)
+  const looksLikeEvent = (rendered: readonly string[]): boolean => {
+    const first = firstContent(rendered)
+    return first !== undefined && /^\s*\*/.test(stripAnsi(first))
+  }
   const pushAll = (rendered: readonly string[]) => {
     // One blank between blocks unless a side already provides it.
+    // User echo sits tight into an event cluster — no extra seam —
+    // but still breathes before an assistant answer / other chrome.
+    const skipSeam = tightNext && looksLikeEvent(rendered)
     if (
+      !skipSeam &&
       lines.length > 0 &&
       lines[lines.length - 1] !== "" &&
       rendered.length > 0 &&
@@ -208,6 +219,7 @@ export function flattenTranscript(
     ) {
       lines.push("")
     }
+    tightNext = false
     for (const line of rendered) {
       push(line)
     }
@@ -217,6 +229,9 @@ export function flattenTranscript(
     for (const block of snapshot.blocks) {
       if (block.kind === "message") {
         pushAll(renderMessage(block.message, width, options))
+        if (block.message.role === "user") {
+          tightNext = true
+        }
       } else {
         pushAll(block.lines)
       }
@@ -228,10 +243,8 @@ export function flattenTranscript(
       pushAll(renderRunsFeedPanel(snapshot.runsFeed, now))
     }
     if (snapshot.thinking) {
-      pushAll([
-        ...typingLine(typingFrame).split("\n"),
-        ...liveLines(snapshot.liveText, width),
-      ])
+      pushAll(typingLines(typingFrame))
+      pushAll(liveLines(snapshot.liveText, width))
     }
   }
   pushAll(notices)

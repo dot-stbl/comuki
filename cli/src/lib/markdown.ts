@@ -6,9 +6,9 @@
  * terminal width.
  *
  * Style contract (option A, terminal-native): prose in the terminal
- * default, dim `│`-bordered code blocks with the language label on the
+ * default, ASCII `+ - |` code fences with the language label on the
  * top rule, bright `#`/`##` and accent `###`+ headings, accent inline
- * code, accent bullets for lists, dim `▎` blockquote bars.
+ * code, accent bullets for lists, dim `|` blockquote bars.
  *
  * Width math counts code points of the *stripped* text, so a line is
  * guaranteed to fit a monospace terminal of the given width for
@@ -232,7 +232,7 @@ function codeBlockLines(
   code: string,
   width: number
 ): string[] {
-  const prefix = "  │ "
+  const prefix = "  | "
   const inner = Math.max(8, width - prefix.length)
   const label =
     lang && lang.trim().length > 0 ? ` ${lang.trim().split(/\s+/)[0]} ` : " "
@@ -248,24 +248,24 @@ function codeBlockLines(
   const fill = Math.max(2, bodyWidth - label.length + 1)
   const lines = [
     // Deck `rule` draws the frame; the language label rides it dimmed.
-    paint(`  ┌─`, colors.rule) +
+    paint(`  +-`, colors.rule) +
       paint(label, colors.dim) +
-      paint(`${"─".repeat(fill)}┐`, colors.rule),
+      paint(`${"-".repeat(fill)}+`, colors.rule),
     ...bodyLines.map((line) =>
       line.length === 0
-        ? `  ${paint("│", colors.rule)}`
-        : `  ${paint("│", colors.rule)} ${paint(line, colors.muted)}`
+        ? `  ${paint("|", colors.rule)}`
+        : `  ${paint("|", colors.rule)} ${paint(line, colors.muted)}`
     ),
-    paint(`  └${"─".repeat(bodyWidth + 2)}┘`, colors.rule),
+    paint(`  +${"-".repeat(bodyWidth + 2)}+`, colors.rule),
   ]
   return lines
 }
 
 function quoteLines(token: Tokens.Blockquote, width: number): string[] {
-  const bar = `  ${paint("▎", colors.dim)} `
+  const bar = `  ${paint("|", colors.dim)} `
   const inner = renderBlocks(token.tokens, Math.max(MIN_WIDTH, width - 3))
   return inner.map((line) =>
-    line.length === 0 ? `  ${paint("▎", colors.dim)}` : bar + line
+    line.length === 0 ? `  ${paint("|", colors.dim)}` : bar + line
   )
 }
 
@@ -379,7 +379,7 @@ function tableLines(token: Tokens.Table, width: number): string[] {
   lines.push(
     paint(
       "  " +
-        widths.map((columnWidth) => "─".repeat(columnWidth)).join(separator),
+        widths.map((columnWidth) => "-".repeat(columnWidth)).join(separator),
       colors.rule
     )
   )
@@ -411,7 +411,7 @@ function blockLines(token: Token, width: number, depth: number): string[] {
       return tableLines(token as Tokens.Table, width)
     case "hr":
       return [
-        paint("  " + "─".repeat(Math.max(4, width - 4)), colors.rule),
+        paint("  " + "-".repeat(Math.max(4, width - 4)), colors.rule),
       ]
     case "html":
       return (token as Tokens.HTML).text

@@ -24,7 +24,7 @@ describe("ThinkingBlock — collapsed / expanded", () => {
       <ThinkingBlock part={part} expanded={false} width={60} />
     )
     const frame = lastFrame() ?? ""
-    expect(stripAnsi(frame)).toBe("  * thinking . 3.4k tok")
+    expect(stripAnsi(frame)).toBe("  * thinking  3.4k tok")
     expect(frame).not.toContain("secret reasoning")
     unmount()
   })

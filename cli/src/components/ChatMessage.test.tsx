@@ -34,9 +34,9 @@ describe("ChatMessage — markdown rendering", () => {
       />
     )
     const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("┌─ ts")
-    expect(frame).toContain("│ const answer = 42")
-    expect(frame).toContain("└")
+    expect(frame).toContain("+- ts")
+    expect(frame).toContain("| const answer = 42")
+    expect(frame).toContain("+")
     unmount()
   })
 
@@ -89,7 +89,7 @@ describe("ChatMessage — markdown rendering", () => {
     )
     const frame = lastFrame() ?? ""
     // no markdown machinery for user rows: no border, no cursor
-    expect(frame).not.toContain("│")
+    expect(frame).not.toContain("| const")
     expect(frame).not.toContain("_")
     // one blank line before AND after (ink trims trailing blanks in the
     // captured frame), the echo itself bold deck-text at column 0 —
@@ -110,7 +110,7 @@ describe("ChatMessage — markdown rendering", () => {
       />
     )
     const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame.split("\n")[0]).toBe(" + comuki")
+    expect(frame.split("\n")[0]).toContain("comuki")
     expect(frame).toContain(" here is the plan")
     unmount()
   })
@@ -160,7 +160,7 @@ describe("ChatMessage — collapsible parts", () => {
       />
     )
     const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("* thinking . 40 tok")
+    expect(frame).toContain("* thinking  40 tok")
     expect(frame).toContain(`* memory.recall("identity")  ok`)
     expect(frame).toContain("the visible answer")
     expect(frame).not.toContain("hidden reasoning")

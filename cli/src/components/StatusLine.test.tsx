@@ -53,8 +53,10 @@ describe("latencyLabel", () => {
 describe("connectionLabel", () => {
   test("uses the ellipsis forms for transitional states", () => {
     expect(connectionLabel("live")).toBe("live")
-    expect(connectionLabel("connecting")).toBe("connecting…")
-    expect(connectionLabel("reconnecting")).toBe("reconnecting…")
+    expect(connectionLabel("connecting")).toBe("connecting...")
+    expect(connectionLabel("reconnecting")).toBe("reconnecting.")
+    expect(connectionLabel("reconnecting", 1)).toBe("reconnecting..")
+    expect(connectionLabel("reconnecting", 2)).toBe("reconnecting...")
     expect(connectionLabel("offline")).toBe("offline")
   })
 })
@@ -96,7 +98,7 @@ describe("StatusLine", () => {
     const { lastFrame, unmount } = render(
       <StatusLine identity="dev" connection="reconnecting" />
     )
-    expect(lastFrame()).toContain("reconnecting…")
+    expect(lastFrame()).toContain("reconnecting.")
     unmount()
   })
 

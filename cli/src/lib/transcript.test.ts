@@ -20,8 +20,9 @@ import {
   type TranscriptSnapshot,
 } from "./transcript"
 import { colors, paint, stripAnsi } from "../theme"
-import type { ChatMessageView } from "./client"
+import { ComukiApiError, type ChatMessageView } from "./client"
 import type { ChatBlock } from "./sessions"
+import { alertLines } from "./alerts"
 
 function message(
   id: string,
@@ -200,6 +201,28 @@ describe("flattenTranscript", () => {
     expect(plain.indexOf("  raw line one")).toBeLessThan(
       plain.findIndex((line) => line.includes("answer body"))
     )
+  })
+
+  test("alertLines as a lines block keep the framed card", () => {
+    const blocks: readonly ChatBlock[] = [
+      {
+        kind: "lines",
+        key: "alert",
+        lines: alertLines(
+          new ComukiApiError(
+            401,
+            "authentication.required",
+            "permission 'chat:use' requires a signed-in subject"
+          )
+        ),
+      },
+    ]
+    const plain = flattenTranscript(snapshot({ blocks }), 80, 0).map(stripAnsi)
+    expect(
+      plain.some((line) => line.includes("┌─ error · authentication.required"))
+    ).toBe(true)
+    expect(plain.some((line) => line.includes("/login"))).toBe(true)
+    expect(plain.some((line) => line.includes("✗ HTTP 401"))).toBe(false)
   })
 
   test("thinking/tool parts collapse to ⏺ event lines by default", () => {

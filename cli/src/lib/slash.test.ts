@@ -19,6 +19,7 @@ describe("resolveSlashAction", () => {
 
   it("routes every registered command by name (case-insensitive)", () => {
     expect(resolveSlashAction("/retry")).toEqual({ kind: "retry" })
+    expect(resolveSlashAction("/login")).toEqual({ kind: "login" })
     expect(resolveSlashAction("/RETRY")).toEqual({ kind: "retry" })
     expect(resolveSlashAction("/edit")).toEqual({ kind: "edit" })
     expect(resolveSlashAction("/copycode")).toEqual({ kind: "copycode" })

@@ -42,6 +42,8 @@ export interface PaletteTokens {
   raised: string
   /** Hairline hex — Ink `borderColor` / hairline `Box` bg. */
   ruleHex: string
+  /** Strong separator for rail/workspace boundaries. */
+  ruleStrong: string
   /** The accent hex — the ASCII brand mark, spinner, streaming cursor. */
   brand: string
   /** Deck text — bold reading text. */
@@ -60,6 +62,7 @@ export const palette: PaletteTokens = {
   rail: "#2b2b30",
   raised: "#313136",
   ruleHex: "#37373c",
+  ruleStrong: "#47474c",
   brand: "#8787f3",
   text: "#e8e8ee",
   ok: "#d7d7ff",
@@ -112,11 +115,11 @@ export const colors: AnsiTokens = {
 }
 
 export const symbols = {
-  prompt: "›",
-  checkmark: "✓",
-  cross: "✗",
+  prompt: ">",
+  checkmark: "+",
+  cross: "x",
   bullet: ".",
-  arrow: "→",
+  arrow: "->",
   /** The one bullet every collapsed event line (thinking, tools) leads with. */
   event: "*",
   /** One-char brand slot — the full glyph lives in `lib/mark.ts`. */
@@ -229,6 +232,7 @@ function install(theme: CliTheme, mode: ThemeMode): ThemeTokens {
   palette.rail = primitives.rail
   palette.raised = primitives.raised
   palette.ruleHex = primitives.rule
+  palette.ruleStrong = primitives.rule
   palette.brand = hex.accent
   palette.text = hex.text
   palette.ok = hex.ok

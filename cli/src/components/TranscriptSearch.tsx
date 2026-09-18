@@ -119,7 +119,7 @@ export function TranscriptSearch({
           <Text>{before}</Text>
           <Text inverse>{at ?? " "}</Text>
           {after.length > 0 ? <Text>{after}</Text> : null}
-          <Text dimColor>{`  ${counter} · enter next · esc close`}</Text>
+          <Text dimColor>{`  ${counter} / enter next / esc close`}</Text>
         </Text>
       </Box>
     </Fill>

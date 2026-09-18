@@ -123,6 +123,7 @@ import {
   writeAliasesFile,
 } from "../lib/aliases"
 import { DEFAULT_CONTEXT_WINDOW } from "../lib/context"
+import { resolveHarnessLayout } from "../lib/harness-layout"
 import {
   profileListingLines,
   profileStoredLine,
@@ -213,8 +214,10 @@ import {
 } from "../lib/footer-actions"
 import { SessionOverview } from "../components/SessionOverview"
 import { sessionTokenTotals } from "../components/SessionOverview"
-import { StatusLine } from "../components/StatusLine"
+import { LineInspector } from "../components/OverlaySheet"
+import { SessionRail } from "../components/SessionRail"
 import { TabBar } from "../components/TabBar"
+import { TopBar } from "../components/TopBar"
 import { TranscriptSearch } from "../components/TranscriptSearch"
 import { TranscriptViewport } from "../components/TranscriptViewport"
 import { Welcome, type PlatformStats } from "../components/Welcome"
@@ -278,6 +281,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const [connectError, setConnectError] = useState<unknown>(null)
   const [noticeLines, setNoticeLines] = useState<readonly string[]>([])
   const [overviewVisible, setOverviewVisible] = useState(false)
+  const [inspector, setInspector] = useState<{
+    readonly title: string
+    readonly lines: readonly string[]
+  } | null>(null)
   const [promptSeed, setPromptSeed] = useState<
     { readonly value: string; readonly seq: number } | undefined
   >(undefined)
@@ -336,6 +343,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const projectIdRef = useRef<string | undefined>(undefined)
   const activeIdRef = useRef<string | undefined>(undefined)
   const overviewRef = useRef(false)
+  const inspectorRef = useRef(false)
   /**
    * The slash menu owns tab/esc/↑/↓ while it is open — the shell's own
    * useInput reads this ref to yield those keys for those keystrokes.
@@ -357,6 +365,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
   const activeSessionId = activeSession?.id
   const activeHydrated = activeSession?.hydrated
+  const harness = resolveHarnessLayout(columns, tabs.sessions.length > 0)
+  const contentWidth = harness.workspaceWidth
 
   // The window title follows the active tab: ⏳ while its turn is in
   // flight, ✓ once it settles; a bare "comuki" when no tab is open.
@@ -443,8 +453,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     search: mentionMenuSearch,
     titleFor: (documentId) => docTitlesRef.current?.get(documentId),
     enabled: () =>
-      !knowledgeDisabledRef.current && !overviewVisible && !promptBusy,
-    width: Math.max(24, columns - 4),
+      !knowledgeDisabledRef.current &&
+      !overviewVisible &&
+      inspector === null &&
+      !promptBusy,
+    width: Math.max(24, contentWidth - 4),
   })
 
   // Warm the title index alongside the hub connect — best effort.
@@ -471,11 +484,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               expanded: activeSession.blocksExpanded,
             }
           : undefined,
-        columns,
+        contentWidth,
         typingFrame,
         noticeLines
       ),
-    [activeSession, columns, typingFrame, noticeLines, thinking]
+    [activeSession, contentWidth, typingFrame, noticeLines, thinking]
   )
 
   // -- ctrl+f transcript search ---------------------------------------------------
@@ -514,7 +527,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   // hint row. Everything left belongs to the scrolling viewport.
   // Expanded footer subtracts like PromptInput rows so the transcript
   // viewport shrinks instead of being covered.
-  const showFooter = tabs.sessions.length > 0 && !overviewVisible
+  const showFooter =
+    tabs.sessions.length > 0 && !overviewVisible && inspector === null
   const signedOut =
     identity === "anonymous" ||
     identity === "offline" ||
@@ -541,8 +555,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const viewportHeight = Math.max(
     1,
     rows -
-      1 - // StatusLine
-      (tabs.sessions.length > 0 ? 1 : 0) - // TabBar
+      harness.topBarRows -
+      harness.navigationRows -
       footerRows -
       (searchOpen ? 1 : 0) - // TranscriptSearch row
       promptBlockRows -
@@ -602,6 +616,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   useEffect(() => {
     overviewRef.current = overviewVisible
   }, [overviewVisible])
+
+  useEffect(() => {
+    inspectorRef.current = inspector !== null
+  }, [inspector])
 
   useEffect(() => {
     bellRef.current = bellEnabled
@@ -1770,11 +1788,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
         case "help": {
           const lines = slashHelpLines()
-          if (target) {
-            pushLines(target.id, lines)
-          } else {
-            setNoticeLines(lines)
-          }
+          setInspector({ title: "help / commands", lines })
           return
         }
         case "login": {
@@ -2004,11 +2018,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                     : session
                 ),
               }))
-            } else {
-              // No transcript to pin into — one static snapshot on the
-              // welcome screen (no auto-refresh loop without a session).
-              setNoticeLines(renderRunsFeedPanel(panel))
             }
+            setInspector({ title: "runs", lines: renderRunsFeedPanel(panel) })
           })
           return
         }
@@ -2022,19 +2033,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             .backgroundWorkers()
             .then((workers) => {
               const lines = renderWorkersPanel(workers, config.url)
-              if (target) {
-                pushLines(target.id, lines)
-              } else {
-                setNoticeLines(lines)
-              }
+              setInspector({ title: "workers", lines })
             })
             .catch((error: unknown) => {
               const line = `${colors.error}${symbols.cross} workers not available — ${describeError(error)}${colors.reset}`
-              if (target) {
-                pushLines(target.id, [line])
-              } else {
-                setNoticeLines([line])
-              }
+              setInspector({ title: "workers", lines: [line] })
             })
           return
         }
@@ -2043,11 +2046,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             target?.blocks ?? [],
             target?.pendingPlan ?? null
           )
-          if (target) {
-            pushLines(target.id, lines)
-          } else {
-            setNoticeLines(lines)
-          }
+          setInspector({ title: "plan", lines })
           return
         }
         case "project": {
@@ -2276,12 +2275,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             return
           }
           void fetchStatusSnapshot(client).then((snapshot) => {
-            const lines = renderStatusPanel(snapshot)
-            if (target) {
-              pushLines(target.id, lines)
-            } else {
-              setNoticeLines(lines)
-            }
+            setInspector({
+              title: "platform status",
+              lines: renderStatusPanel(snapshot),
+            })
           })
           return
         }
@@ -2299,11 +2296,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
         case "tools": {
           const lines = toolsUnavailableLines()
-          if (target) {
-            pushLines(target.id, lines)
-          } else {
-            setNoticeLines(lines)
-          }
+          setInspector({ title: "tools", lines })
           return
         }
         case "note": {
@@ -2532,9 +2525,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   })
   const indicatorRow = scroll.offset > 0 && scroll.newBelow
   mouseLayoutRef.current = {
-    tabRow: tabs.sessions.length > 0 ? 2 : null,
+    tabRow: harness.navigationRows > 0 ? harness.topBarRows + 1 : null,
     sessions: tabs.sessions,
-    transcriptTop: tabs.sessions.length > 0 ? 3 : 2,
+    transcriptTop: harness.topBarRows + harness.navigationRows + 1,
     hasHint: expandHint !== null,
     visibleLines: viewportSlice(
       transcriptLines,
@@ -2547,15 +2540,16 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   }
   const handleMouseClick = useCallback(
     (click: { readonly x: number; readonly y: number }) => {
-      if (overviewRef.current || searchOpen) {
+      if (overviewRef.current || inspectorRef.current || searchOpen) {
         return
       }
       if (showFooter) {
-        const footerTopY = footerTopRow({
-          hasTabBar: tabs.sessions.length > 0,
-          viewportHeight,
-          searchOpen,
-        })
+        const footerTopY =
+          harness.topBarRows +
+          harness.navigationRows +
+          viewportHeight +
+          (searchOpen ? 1 : 0) +
+          1
         if (
           isCollapsedFooterClick(click.y, footerTopY, footerExpandedRef.current)
         ) {
@@ -2581,7 +2575,27 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           }
         }
       }
-      const target = resolveMouseClick(click, mouseLayoutRef.current)
+      if (
+        harness.mode === "wide" &&
+        click.x <= harness.railWidth &&
+        click.y >= harness.topBarRows + 3
+      ) {
+        const railIndex = Math.floor(
+          (click.y - harness.topBarRows - 3) / 2
+        )
+        if (railIndex >= 0 && railIndex < tabs.sessions.length) {
+          focusSession(railIndex)
+          return
+        }
+      }
+      const localClick = {
+        x:
+          harness.mode === "wide"
+            ? click.x - harness.railWidth - harness.dividerWidth
+            : click.x,
+        y: click.y,
+      }
+      const target = resolveMouseClick(localClick, mouseLayoutRef.current)
       if (target.kind === "tab") {
         focusSession(target.index)
         return
@@ -2599,6 +2613,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       showFooter,
       tabs.sessions.length,
       viewportHeight,
+      harness,
       actionItems,
       activateFooterAction,
       toggleFooter,
@@ -2615,6 +2630,12 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     }
     if (overviewRef.current) {
       return // the overview's own handler owns the keys
+    }
+    if (inspectorRef.current) {
+      if (key.escape) {
+        setInspector(null)
+      }
+      return
     }
     // While the ctrl+f search row is open it owns the keyboard: its
     // editor eats the query keystrokes and enter/esc drive the search.
@@ -2791,38 +2812,65 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const showWelcome = !welcomeDismissed && tabs.sessions.length === 0
   // The prompt stays live while a turn thinks: typing a message queues
   // it, `/stop` needs to be submittable mid-turn.
-  const promptEnabled = !overviewVisible && !footerExpanded
+  const promptEnabled =
+    !overviewVisible && inspector === null && !footerExpanded
 
-  // Header: status line + (when tabs exist) the tab strip — both single rows.
-  // Content: the scrolling transcript viewport, filling everything the
-  // chrome does not claim. Footer: session badges + expandable action
-  // bar. Prompt block: pinned last, never scrolled away.
+  // Stable chrome spans the terminal. The workspace below adapts its
+  // session navigation: wide = rail, standard/compact = top strip.
   return (
     <Fill width={columns} height={rows} color={palette.floor}>
-    <Box flexDirection="column" width={columns} height={rows}>
-      <Fill width={columns} height={1} color={palette.rail}>
-        <StatusLine
+      <Box flexDirection="column" width={columns} height={rows}>
+        <TopBar
+          width={columns}
+          mode={harness.mode}
+          session={activeSession?.name}
           identity={headerIdentity}
           project={projectLabel}
+          profile={preferredProfile}
           connection={hubState}
           serverUrl={config.url}
           latencyMs={latencyMs}
           contextUsed={contextUsed}
           contextWindow={config.contextWindow ?? DEFAULT_CONTEXT_WINDOW}
+          tick={typingFrame}
         />
-      </Fill>
-      {tabs.sessions.length > 0 ? (
-        <Fill width={columns} height={1} color={palette.lane}>
-          <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />
-        </Fill>
-      ) : null}
-      <Fill width={columns} height={viewportHeight} color={palette.floor}>
-      <Box
-        flexDirection="column"
-        width={columns}
-        height={viewportHeight}
-        overflow="hidden"
-      >
+        <Box
+          flexDirection="row"
+          width={columns}
+          height={rows - harness.topBarRows}
+        >
+          {harness.railWidth > 0 ? (
+            <SessionRail
+              sessions={tabs.sessions}
+              activeIndex={tabs.activeIndex}
+              width={harness.railWidth}
+              height={rows - harness.topBarRows}
+            />
+          ) : null}
+          {harness.dividerWidth > 0 ? (
+            <Fill
+              width={harness.dividerWidth}
+              height={rows - harness.topBarRows}
+              color={palette.ruleStrong}
+            />
+          ) : null}
+          <Box
+            flexDirection="column"
+            width={contentWidth}
+            height={rows - harness.topBarRows}
+          >
+            {harness.navigationRows > 0 ? (
+              <Fill width={contentWidth} height={1} color={palette.lane}>
+                <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />
+              </Fill>
+            ) : null}
+            <Fill width={contentWidth} height={viewportHeight} color={palette.floor}>
+              <Box
+                flexDirection="column"
+                width={contentWidth}
+                height={viewportHeight}
+                overflow="hidden"
+              >
         {overviewVisible ? (
           <Box
             flexDirection="column"
@@ -2833,12 +2881,27 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             <SessionOverview
               sessions={tabs.sessions}
               activeIndex={tabs.activeIndex}
+              width={Math.min(68, Math.max(24, contentWidth - 2))}
               onSelect={selectSession}
               onNewSession={() => {
                 openPendingTab()
                 setOverviewVisible(false)
               }}
               onClose={() => setOverviewVisible(false)}
+            />
+          </Box>
+        ) : inspector !== null ? (
+          <Box
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            flexGrow={1}
+          >
+            <LineInspector
+              title={inspector.title}
+              lines={inspector.lines}
+              width={Math.min(76, Math.max(24, contentWidth - 2))}
+              height={Math.min(viewportHeight, 22)}
             />
           </Box>
         ) : showWelcome ? (
@@ -2851,7 +2914,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             <Welcome stats={stats} />
             {connectAlert ? (
               <Box marginTop={1} flexDirection="column">
-                <AlertCard {...connectAlert} width={columns} />
+                <AlertCard {...connectAlert} width={contentWidth} />
               </Box>
             ) : null}
             {noticeLines.map((line, index) => (
@@ -2865,7 +2928,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             offset={scroll.offset}
             newBelow={scroll.newBelow}
             hint={expandHint}
-            width={columns}
+            width={contentWidth}
             highlight={
               searchOpen && searchQuery.trim().length > 0
                 ? { query: searchQuery, activeLine: activeMatchLine }
@@ -2875,10 +2938,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         ) : (
           <Text>{EMPTY_TAB_HINT}</Text>
         )}
-      </Box>
-      </Fill>
+              </Box>
+            </Fill>
       {searchOpen ? (
-        <Fill width={columns} height={1} color={palette.rail}>
+        <Fill width={contentWidth} height={1} color={palette.rail}>
           <TranscriptSearch
             value={searchQuery}
             matchCount={searchMatches.length}
@@ -2891,7 +2954,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         </Fill>
       ) : null}
       {showFooter ? (
-        <Fill width={columns} height={footerExpanded ? actionItems.length + 2 : 1} color={palette.rail}>
+        <Fill width={contentWidth} height={footerExpanded ? actionItems.length + 2 : 1} color={palette.rail}>
           <SessionFooter
             sessions={tabs.sessions}
             activeIndex={tabs.activeIndex}
@@ -2907,48 +2970,50 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           />
         </Fill>
       ) : null}
-      {!overviewVisible ? (
+      {!overviewVisible && inspector === null ? (
         <>
           {connectAlert && !showWelcome ? (
-            <AlertCard {...connectAlert} width={columns} />
+            <AlertCard {...connectAlert} width={contentWidth} />
           ) : null}
           {copyHint ? (
             <Text dimColor>{`  ${copyHint}`}</Text>
           ) : null}
           {queuedCount > 0 ? <Text>{queueHintLine(queuedCount)}</Text> : null}
           {mentionMenu.element}
-          <Fill width={columns} height={promptRows} color={palette.raised}>
-          {loginStep === null ? (
-            <PromptInput
-              onSubmit={handleSubmit}
-              history={activeSession?.history ?? []}
-              active={promptEnabled && !searchOpen && !footerExpanded}
-              historyRecallEnabled={!scroll.scrolledUp && !footerExpanded}
-              onMenuOpenChange={handleMenuOpenChange}
-              onRowsChange={handlePromptRows}
-              seed={promptSeed}
-              {...mentionMenu.promptBindings}
-            />
-          ) : (
-            <PromptInput
-              key={loginStep}
-              onSubmit={submitLogin}
-              history={[]}
-              active={promptEnabled && !searchOpen && !footerExpanded}
-              historyRecallEnabled={false}
-              slashMenuEnabled={false}
-              mask={loginStep === "password" ? "*" : undefined}
-              placeholder={
-                loginStep === "email" ? "email…" : "password…"
-              }
-              onMenuOpenChange={handleMenuOpenChange}
-              onRowsChange={handlePromptRows}
-            />
-          )}
+          <Fill width={contentWidth} height={promptRows} color={palette.raised}>
+            {loginStep === null ? (
+              <PromptInput
+                onSubmit={handleSubmit}
+                history={activeSession?.history ?? []}
+                active={promptEnabled && !searchOpen && !footerExpanded}
+                historyRecallEnabled={!scroll.scrolledUp && !footerExpanded}
+                onMenuOpenChange={handleMenuOpenChange}
+                onRowsChange={handlePromptRows}
+                seed={promptSeed}
+                {...mentionMenu.promptBindings}
+              />
+            ) : (
+              <PromptInput
+                key={loginStep}
+                onSubmit={submitLogin}
+                history={[]}
+                active={promptEnabled && !searchOpen && !footerExpanded}
+                historyRecallEnabled={false}
+                slashMenuEnabled={false}
+                mask={loginStep === "password" ? "*" : undefined}
+                placeholder={
+                  loginStep === "email" ? "email..." : "password..."
+                }
+                onMenuOpenChange={handleMenuOpenChange}
+                onRowsChange={handlePromptRows}
+              />
+            )}
           </Fill>
         </>
       ) : null}
-    </Box>
+          </Box>
+        </Box>
+      </Box>
     </Fill>
   )
 }

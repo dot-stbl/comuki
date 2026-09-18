@@ -174,7 +174,7 @@ describe("SetupApp — first frame", () => {
     const frame = stripAnsi(lastFrame() ?? "")
     expect(frame).toContain("comuki setup")
     expect(frame).toContain("esc skips")
-    expect(frame).toMatch(/url\s+›/)
+    expect(frame).toMatch(/url\s+>/)
     expect(frame).not.toContain("setup skipped")
     unmount()
   })

@@ -31,12 +31,14 @@ export type TranscriptRole =
   | "assistant"
   | "event"
   | "pulse"
+  | "approval"
+  | "alert"
   | "rule"
   | "blank"
 
 /**
  * Classifies a flattened line from its visible prefix. User rows lead
- * with `>` after the gutter; event rows with `⏺` (or `*`); rule rows
+ * with `>` after the gutter; event rows with `*`; rule rows
  * with a signed diff marker; blank is empty; everything else is the
  * assistant card.
  */
@@ -49,6 +51,12 @@ export function classifyLine(plain: string): TranscriptRole {
   const lead = trimmed[0]
   if (lead === ">") {
     return "user"
+  }
+  if (trimmed.startsWith("[approval]")) {
+    return "approval"
+  }
+  if (/^\[(error|warn|info)\]/.test(trimmed)) {
+    return "alert"
   }
   if (/^[|/\\-] thinking$/.test(trimmed)) {
     return "pulse"
@@ -166,7 +174,9 @@ export function typingLines(
   const count = symbols.spinnerFrames.length
   const index = ((frame % count) + count) % count
   const glyph = symbols.spinnerFrames[index] ?? symbols.spinnerFrames[0]
-  return [`${paint(glyph, colors.accent)} ${paint(label, colors.dim)}`]
+  return [
+    `${paint("[", colors.dim)}${paint(glyph, colors.accent)}${paint("]", colors.dim)} ${paint(label, colors.dim)}${paint(" / ctrl+c interrupts", colors.faint)}`,
+  ]
 }
 
 // ---------------------------------------------------------------------------

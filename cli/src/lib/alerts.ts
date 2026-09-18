@@ -1,17 +1,14 @@
 /**
- * Alert cards — the one framed error/warn/info block the CLI is
- * allowed to draw. Pure: unknown error → finished ANSI lines, so the
+ * Alert slabs. Pure: unknown error -> finished ANSI lines, so the
  * transcript flattener can drop them in as a `lines` block and the
  * Ink `AlertCard` can mount the same bytes.
  *
- * Frame language matches the plan card (`lib/format.ts`): `rule`
- * draws the box, the kind word carries the status colour, body is
- * faint. Dichromat: colour never rides alone — the word `error` /
+ * The kind word carries the status colour and body is faint.
+ * Dichromat: colour never rides alone - the word `error` /
  * `warn` / `info` is on the top rule.
  */
 import { ComukiApiError } from "./client"
 import { DEFAULT_MARKDOWN_WIDTH } from "./markdown"
-import { padVisible } from "./format"
 import { colors, paint, stripAnsi } from "../theme"
 
 export type AlertKind = "error" | "warn" | "info"
@@ -90,46 +87,27 @@ export function alertLines(
 }
 
 /**
- * Box-drawing frame around the card. Width clamps to `width − 4` the
- * same way the plan card does, so a 40-column terminal never overflows.
+ * Filled-slab content. Width clamps so a narrow terminal never overflows.
  */
 export function renderAlertCard(
   card: AlertCardModel,
   width: number = DEFAULT_MARKDOWN_WIDTH
 ): string[] {
   const label = card.code ?? card.title
-  const headerPlain = `${card.kind} · ${label}`
+  const headerPlain = `[${card.kind}] ${label}`
   const hintLines = card.hints.map((hint) =>
     hint.startsWith(" ") ? hint : ` ${hint}`
   )
   const detailSeed = card.detail.trim()
-  const longest = Math.max(
-    headerPlain.length,
-    ...hintLines.map((line) => line.length),
-    ...detailSeed.split(/\s+/).map((word) => word.length)
-  )
-  const boxWidth = Math.max(
-    headerPlain.length + 6,
-    Math.min(longest + 4, Math.max(12, width - 4))
-  )
-  const room = Math.max(1, boxWidth - 4)
+  const room = Math.max(8, width - 4)
   const body: string[] = [
     ...wrapWords(detailSeed, room),
     ...(hintLines.length > 0 ? ["", ...hintLines] : []),
   ]
-  const dashes = Math.max(1, boxWidth - headerPlain.length - 5)
   const kindPaint = kindColor(card.kind)
-  const row = (text: string) =>
-    paint(`  | `, colors.rule) +
-    padVisible(paint(fit(text, room), colors.faint), room) +
-    paint(` |`, colors.rule)
   return [
-    paint(`  +- `, colors.rule) +
-      paint(card.kind, kindPaint) +
-      paint(` · ${label}`, colors.faint) +
-      paint(` ${"-".repeat(dashes)}+`, colors.rule),
-    ...body.map(row),
-    paint(`  +${"-".repeat(boxWidth - 2)}+`, colors.rule),
+    paint(headerPlain, kindPaint),
+    ...body.map((line) => `  ${paint(fit(line, room), colors.faint)}`),
   ]
 }
 

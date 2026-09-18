@@ -118,14 +118,14 @@ describe("liveLines", () => {
 describe("typingLines", () => {
   test("renders one spinner frame and label", () => {
     const lines = typingLines(0).map(stripAnsi)
-    expect(lines).toEqual(["| thinking"])
+    expect(lines).toEqual(["[|] thinking / ctrl+c interrupts"])
   })
 
   test("cycles through the one-line spinner", () => {
-    expect(stripAnsi(typingLines(1)[0] ?? "")).toBe("/ thinking")
-    expect(stripAnsi(typingLines(2)[0] ?? "")).toBe("- thinking")
-    expect(stripAnsi(typingLines(3)[0] ?? "")).toBe("\\ thinking")
-    expect(stripAnsi(typingLines(4)[0] ?? "")).toBe("| thinking")
+    expect(stripAnsi(typingLines(1)[0] ?? "")).toBe("[/] thinking / ctrl+c interrupts")
+    expect(stripAnsi(typingLines(2)[0] ?? "")).toBe("[-] thinking / ctrl+c interrupts")
+    expect(stripAnsi(typingLines(3)[0] ?? "")).toBe("[\\] thinking / ctrl+c interrupts")
+    expect(stripAnsi(typingLines(4)[0] ?? "")).toBe("[|] thinking / ctrl+c interrupts")
   })
 })
 
@@ -222,7 +222,7 @@ describe("flattenTranscript", () => {
     ]
     const plain = flattenTranscript(snapshot({ blocks }), 80, 0).map(stripAnsi)
     expect(
-      plain.some((line) => line.includes("+- error · authentication.required"))
+      plain.some((line) => line.includes("[error] authentication.required"))
     ).toBe(true)
     expect(plain.some((line) => line.includes("/login"))).toBe(true)
     expect(plain.some((line) => line.includes("✗ HTTP 401"))).toBe(false)
@@ -309,9 +309,9 @@ describe("flattenTranscript", () => {
       0
     )
     const plain = lines.map(stripAnsi)
-    expect(plain.some((line) => line.includes("+- plan · 1 шаг "))).toBe(true)
+    expect(plain.some((line) => line.includes("[approval] plan / 1 шаг"))).toBe(true)
     expect(plain.some((line) => line.includes("do things"))).toBe(true)
-    expect(plain[plain.length - 1]).toContain("approve · reject [reason]")
+    expect(plain[plain.length - 1]).toContain("[approve] [reject reason]")
   })
 
   test("thinking appends the spinner and the live tail with cursor", () => {

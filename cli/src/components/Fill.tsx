@@ -13,15 +13,22 @@ export interface FillProps {
   readonly children?: React.ReactNode
 }
 
-export function Fill({ width, height, color, children }: FillProps) {
+/** Exact visible rows painted behind children; exported for width invariants. */
+export function fillRows(width: number, height: number): readonly string[] {
   const columns = Math.max(0, width)
   const rows = Math.max(0, height)
+  return Array.from({ length: rows }, () => " ".repeat(columns))
+}
+
+export function Fill({ width, height, color, children }: FillProps) {
+  const columns = Math.max(0, width)
+  const backgroundRows = fillRows(columns, height)
   return (
-    <Box width={columns} height={rows} flexDirection="column">
+    <Box width={columns} height={backgroundRows.length} flexDirection="column">
       <Box position="absolute" flexDirection="column">
-        {Array.from({ length: rows }, (_, index) => (
+        {backgroundRows.map((row, index) => (
           <Text key={index} backgroundColor={color}>
-            {" ".repeat(columns)}
+            {row}
           </Text>
         ))}
       </Box>

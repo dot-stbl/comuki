@@ -14,7 +14,7 @@ import { existsSync } from "node:fs"
 import { Box, Text } from "ink"
 import React from "react"
 import { configFilePath } from "../lib/config"
-import { MARK_SMALL } from "../lib/mark"
+import { MARK_WELCOME } from "../lib/mark"
 import { palette, symbols } from "../theme"
 import { Fill } from "./Fill"
 
@@ -45,7 +45,7 @@ const HINTS = ["ctrl+n new tab", "esc sessions", "help commands"].join(
 const WELCOME_WIDTH = 58
 
 export function Welcome({ stats, firstRun = firstRunHintVisible() }: WelcomeProps) {
-  const height = 13 + (stats ? 2 : 0) + (firstRun ? 2 : 0)
+  const height = 16 + (stats ? 1 : 0) + (firstRun ? 1 : 0)
   return (
     <Fill width={WELCOME_WIDTH} height={height} color={palette.lane}>
       <Box
@@ -56,18 +56,18 @@ export function Welcome({ stats, firstRun = firstRunHintVisible() }: WelcomeProp
         paddingX={2}
         paddingY={1}
       >
-        {MARK_SMALL.map((line, index) => (
+        {MARK_WELCOME.map((line, index) => (
           <Text key={index} color={palette.brand}>
             {line}
           </Text>
         ))}
         <Box marginTop={1}>
           <Text bold color={palette.brand}>
-            comuki
+            comuki agent harness
           </Text>
         </Box>
         <Box marginTop={1}>
-          <Text dimColor>agent orchestration platform</Text>
+          <Text dimColor>agent orchestration platform / chat / plan / approve</Text>
         </Box>
         <Box marginTop={1}>
           <Text dimColor>{HINTS}</Text>
@@ -75,7 +75,7 @@ export function Welcome({ stats, firstRun = firstRunHintVisible() }: WelcomeProp
         {stats ? (
           <Box marginTop={1}>
             <Text dimColor>
-              workers {stats.workers} · memory {stats.memory}
+              workers {stats.workers} / knowledge {stats.memory}
             </Text>
           </Box>
         ) : null}

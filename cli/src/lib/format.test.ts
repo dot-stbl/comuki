@@ -45,7 +45,7 @@ function assistantMessage(parts: MessagePart[]): ChatMessageView {
 }
 
 describe("renderPendingPlan", () => {
-  it("frames the plan card with numbered steps and the colored hint", () => {
+  it("renders the approval slab with numbered steps and explicit actions", () => {
     const lines = renderPendingPlan({
       nodes: [
         { key: "n1", profileKey: "implement", brief: "do it", dependsOn: [] },
@@ -53,20 +53,13 @@ describe("renderPendingPlan", () => {
       ],
     })
     const plain = lines.map(stripAnsi)
-    expect(plain[0]).toContain("+- plan · 2 шага ")
-    expect(plain[0]?.endsWith("+")).toBe(true)
-    expect(plain[1]).toContain("| 1 · do it")
-    expect(plain[2]).toContain("| 2 · check it")
-    expect(plain[3]).toMatch(/^\s*\+[-+]+\+$/)
-    expect(plain[4]).toContain("approve · reject [reason]")
-    // The frame draws in rule; approve lavender, reject yellow — the
-    // words carry the status, colour only echoes it.
-    expect(lines[0]).toContain(colors.rule)
-    expect(lines[4]).toContain(colors.ok)
-    expect(lines[4]).toContain(colors.error)
-    // The frame is one closed box: every row shares its visible width.
-    const widths = plain.slice(0, 4).map((line) => line.length)
-    expect(new Set(widths).size).toBe(1)
+    expect(plain[0]).toContain("[approval] plan / 2 шага")
+    expect(plain[1]).toContain("1. do it")
+    expect(plain[2]).toContain("2. check it")
+    expect(plain[3]).toContain("[approve] [reject reason]")
+    expect(lines[0]).toContain(colors.waiting)
+    expect(lines[3]).toContain(colors.ok)
+    expect(lines[3]).toContain(colors.error)
   })
 
   it("reads the canonical wire nodes (id + title) too", () => {
@@ -75,14 +68,14 @@ describe("renderPendingPlan", () => {
         { id: "n1", title: "wire step", profileKey: "implement", brief: "" },
       ],
     })
-    expect(stripAnsi(lines[1] ?? "")).toContain("| 1 · wire step")
+    expect(stripAnsi(lines[1] ?? "")).toContain("1. wire step")
   })
 
   it("russianizes the step count in the header", () => {
     const one = renderPendingPlan({
       nodes: [{ key: "a", profileKey: "x", brief: "b", dependsOn: [] }],
     })
-    expect(stripAnsi(one[0] ?? "")).toContain("plan · 1 шаг ")
+    expect(stripAnsi(one[0] ?? "")).toContain("plan / 1 шаг")
     const five = renderPendingPlan({
       nodes: [1, 2, 3, 4, 5].map((n) => ({
         key: `k${n}`,
@@ -91,7 +84,7 @@ describe("renderPendingPlan", () => {
         dependsOn: [],
       })),
     })
-    expect(stripAnsi(five[0] ?? "")).toContain("plan · 5 шагов ")
+    expect(stripAnsi(five[0] ?? "")).toContain("plan / 5 шагов")
   })
 
   it("cites the estimate only when the payload carries one", () => {
@@ -367,7 +360,7 @@ describe("collapsedSummary", () => {
         inputJson: "{}",
         status: "running",
       })?.badge
-    ).toBe("…")
+    ).toBe("...")
     expect(
       collapsedSummary({
         kind: "tool",
@@ -512,9 +505,9 @@ describe("renderPart — full blocks", () => {
       edges: [{ from: "a", to: "b" }],
     })
     expect(stripAnsi(lines[0] ?? "")).toContain(
-      "implement → split Identity into Users/Grants/Keys"
+      "implement -> split Identity into Users/Grants/Keys"
     )
-    expect(stripAnsi(lines[1] ?? "")).toContain("← a")
+    expect(stripAnsi(lines[1] ?? "")).toContain("<- a")
   })
 
   it("renders markdown text parts through the markdown path", () => {

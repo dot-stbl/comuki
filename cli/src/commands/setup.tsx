@@ -202,7 +202,7 @@ function Menu({
             color={index === selected ? palette.brand : undefined}
             dimColor={index !== selected}
           >
-            {index === selected ? "› " : "  "}
+            {index === selected ? "> " : "  "}
             {row.label}
           </Text>
         </Text>
@@ -227,11 +227,11 @@ function SwatchLine({
       <Text dimColor>{mode.padEnd(5)}</Text>
       {"  "}
       <Text color={primitives.running}>{`${symbols.brandMark} accent`}</Text>
-      <Text dimColor>{" · "}</Text>
+      <Text dimColor>{" / "}</Text>
       <Text color={primitives.muted}>dim</Text>
-      <Text dimColor>{" · "}</Text>
+      <Text dimColor>{" / "}</Text>
       <Text color={primitives.success}>ok</Text>
-      <Text dimColor>{` · ${primitives.running} ${primitives.muted} ${primitives.success}`}</Text>
+      <Text dimColor>{` / ${primitives.running} ${primitives.muted} ${primitives.success}`}</Text>
     </Text>
   )
 }
@@ -443,7 +443,7 @@ export function SetupApp({ fetchImpl }: SetupAppProps) {
     <Text>
       <Text color={palette.brand}>{`${symbols.brandMark} comuki setup`}</Text>
       <Text dimColor>
-        {"  — esc skips, nothing is saved until the last step"}
+        {"  - esc skips, nothing is saved until the last step"}
       </Text>
     </Text>
   )
@@ -476,7 +476,7 @@ export function SetupApp({ fetchImpl }: SetupAppProps) {
       ) : null}
 
       {step === "urlProbe" ? (
-        <Text dimColor>{`  … reaching ${draftUrl}/api/v1/health`}</Text>
+        <Text dimColor>{`  ... reaching ${draftUrl}/api/v1/health`}</Text>
       ) : null}
 
       {step === "urlConfirm" ? (
@@ -538,7 +538,7 @@ export function SetupApp({ fetchImpl }: SetupAppProps) {
       ) : null}
 
       {step === "authWorking" ? (
-        <Text dimColor>{"  … signing in"}</Text>
+        <Text dimColor>{"  ... signing in"}</Text>
       ) : null}
 
       {step === "apiKey" ? (
@@ -554,7 +554,7 @@ export function SetupApp({ fetchImpl }: SetupAppProps) {
       ) : null}
 
       {step === "projectLoad" ? (
-        <Text dimColor>{"  … fetching projects"}</Text>
+        <Text dimColor>{"  ... fetching projects"}</Text>
       ) : null}
 
       {step === "project" && projects ? (
@@ -562,10 +562,10 @@ export function SetupApp({ fetchImpl }: SetupAppProps) {
           rows={[
             ...projects.map((project) => ({
               key: project.slug,
-              label: `${project.slug} — ${project.name}`,
+              label: `${project.slug} - ${project.name}`,
             })),
-            { key: PROJECT_OTHER, label: "type another project…" },
-            { key: PROJECT_SKIP, label: "skip — no default project" },
+            { key: PROJECT_OTHER, label: "type another project..." },
+            { key: PROJECT_SKIP, label: "skip - no default project" },
           ]}
           onPick={(key) => {
             if (key === PROJECT_OTHER) {
@@ -641,7 +641,7 @@ export function SetupApp({ fetchImpl }: SetupAppProps) {
       ) : null}
 
       {step === "saving" ? (
-        <Text dimColor>{"  … writing ~/.config/comuki/config.json"}</Text>
+        <Text dimColor>{"  ... writing ~/.config/comuki/config.json"}</Text>
       ) : null}
     </Box>
   )

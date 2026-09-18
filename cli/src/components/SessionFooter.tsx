@@ -106,8 +106,11 @@ function ExpandedList({
 }) {
   return (
     <Box flexDirection="column" width="100%">
-      <Text dimColor backgroundColor={palette.rail}>
-        {"  -".padEnd(24, "-")}
+      <Text bold backgroundColor={palette.raised}>
+        {"  actions"}
+        <Text dimColor backgroundColor={palette.raised}>
+          {"  arrows select / enter run / esc close"}
+        </Text>
       </Text>
       {actions.map((action, index) => {
         const selected = index === selectedIndex
@@ -116,10 +119,10 @@ function ExpandedList({
           <Text
             key={action.id}
             dimColor={!selected}
-            backgroundColor={palette.rail}
+            backgroundColor={selected ? palette.raised : palette.rail}
           >
             {selected ? (
-              <Text color={palette.brand} bold backgroundColor={palette.rail}>
+              <Text color={palette.brand} bold backgroundColor={palette.raised}>
                 {`  > ${action.label}`}
               </Text>
             ) : (

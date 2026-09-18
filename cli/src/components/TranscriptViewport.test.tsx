@@ -221,7 +221,7 @@ describe("TranscriptViewport — slab padding", () => {
   })
 
   test("maps turn roles to lane, event rows to floor, and pulse to rail", () => {
-    expect(roleBackground("user")).toBe(palette.lane)
+    expect(roleBackground("user")).toBe(palette.raised)
     expect(roleBackground("assistant")).toBe(palette.lane)
     expect(roleBackground("event")).toBe(palette.floor)
     expect(roleBackground("blank")).toBe(palette.floor)

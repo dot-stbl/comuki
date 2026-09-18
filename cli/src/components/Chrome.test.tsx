@@ -14,7 +14,7 @@ import { SessionFooter } from "./SessionFooter"
 import { TabBar } from "./TabBar"
 import { Welcome } from "./Welcome"
 import { footerActions, type FooterAction } from "../lib/footer-actions"
-import { MARK_SMALL } from "../lib/mark"
+import { MARK_WELCOME } from "../lib/mark"
 import type { Session } from "../lib/sessions"
 
 const IDLE_ACTIONS: readonly FooterAction[] = footerActions({
@@ -84,7 +84,7 @@ describe("Welcome", () => {
     const frame = lastFrame()
     expect(frame).toContain("comuki")
     expect(frame).toContain("agent orchestration platform")
-    expect(frame).toContain(MARK_SMALL[2])
+    expect(frame).toContain(MARK_WELCOME[4]?.trim())
     unmount()
   })
 
@@ -100,7 +100,7 @@ describe("Welcome", () => {
     )
     const frame = lastFrame()
     expect(frame).toContain("workers 12")
-    expect(frame).toContain("memory 348")
+    expect(frame).toContain("knowledge 348")
     unmount()
   })
 })

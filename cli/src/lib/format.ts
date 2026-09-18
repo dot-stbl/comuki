@@ -127,7 +127,7 @@ export function summarizeToolArgs(inputJson: string, maxChars = 40): string {
 }
 
 // ---------------------------------------------------------------------------
-// Plans — the approve card (the one allowed frame in the transcript)
+// Plans — a distinct approval slab in the transcript
 // ---------------------------------------------------------------------------
 
 export function renderPlanItems(nodes: readonly PlanItemView[]): string[] {
@@ -135,17 +135,15 @@ export function renderPlanItems(nodes: readonly PlanItemView[]): string[] {
     const brief = firstLine(node.brief) || "(no brief)"
     const deps =
       node.dependsOn.length > 0
-        ? paint(`  ← ${node.dependsOn.join(", ")}`, colors.dim)
+        ? paint(`  <- ${node.dependsOn.join(", ")}`, colors.dim)
         : ""
     return `  ${paint(symbols.bullet, colors.accent)} ${paint(node.profileKey, colors.bright)} ${paint(symbols.arrow, colors.dim)} ${brief}${deps}`
   })
 }
 
 /**
- * The pending approval card: a `rule`-colored ASCII `+ - |` frame with
- * the plan's steps numbered inside and the `approve · reject` hint
- * below it. Frame width = min(content + 4, width − 4), right-padded
- * with `-`.
+ * The pending approval block is a filled transcript slab. Text carries
+ * every state; there is no pseudo-window made from ASCII borders.
  */
 export function renderPendingPlan(
   plan: unknown,
@@ -156,51 +154,24 @@ export function renderPendingPlan(
     return [paint("  (plan payload unreadable)", colors.dim)]
   }
   const estimate = estimateMinutes(plan)
-  const header = `plan · ${nodes.length} ${stepWord(nodes.length)}${
-    estimate !== null ? ` · est ${estimate}m` : ""
+  const header = `[approval] plan / ${nodes.length} ${stepWord(nodes.length)}${
+    estimate !== null ? ` / est ${estimate}m` : ""
   }`
   const steps = nodes.map(
-    (node, index) => `${index + 1} · ${firstLine(node.brief) || "(no brief)"}`
+    (node, index) => `  ${index + 1}. ${firstLine(node.brief) || "(no brief)"}`
   )
   return [
-    ...planFrameLines(header, steps, width),
-    `  ${paint("approve", colors.ok)}${paint(" · ", colors.dim)}${paint(
-      "reject",
-      colors.error
-    )}${paint(" [reason]", colors.dim)}`,
+    paint(header, colors.waiting),
+    ...steps.map((step) => paint(fitPlanLine(step, width), colors.text)),
+    `  ${paint("[approve]", colors.ok)} ${paint("[reject reason]", colors.error)}`,
   ]
 }
 
-/** The `rule`-colored frame around the card: top rule with the header, rows, bottom. */
-function planFrameLines(
-  header: string,
-  steps: readonly string[],
-  width: number
-): string[] {
-  const contentWidth = Math.max(header.length, ...steps.map((s) => s.length))
-  const boxWidth = Math.max(
-    header.length + 6,
-    Math.min(contentWidth + 4, Math.max(12, width - 4))
-  )
-  const room = boxWidth - 4
-  const fit = (text: string) =>
-    text.length > room ? text.slice(0, Math.max(1, room - 1)) + "…" : text
-  const row = (step: string) => {
-    const plain = fit(step)
-    const split = plain.indexOf(" · ") + 3
-    return `${paint(plain.slice(0, split), colors.dim)}${plain.slice(split)}`
-  }
-  return [
-    // Rule draws the frame; the header text rides it in text-muted.
-    paint(`  +- `, colors.rule) +
-      paint(header, colors.dim) +
-      paint(` ${"-".repeat(Math.max(1, boxWidth - header.length - 5))}+`, colors.rule),
-    ...steps.map(
-      (step) =>
-        paint(`  | `, colors.rule) + padVisible(row(step), room) + paint(` |`, colors.rule)
-    ),
-    paint(`  +${"-".repeat(boxWidth - 2)}+`, colors.rule),
-  ]
+function fitPlanLine(value: string, width: number): string {
+  const room = Math.max(8, width - 2)
+  return value.length <= room
+    ? value
+    : `${value.slice(0, Math.max(1, room - 3))}...`
 }
 
 /** `1 шаг`, `2 шага`, `5 шагов` — russian pluralization for the header. */
@@ -327,7 +298,7 @@ function toolStatusBadge(status: string): string {
     return "error"
   }
   if (lowered === "running") {
-    return "…"
+    return "..."
   }
   return "ok"
 }
@@ -354,7 +325,7 @@ function badgeColor(badge: string): string {
   if (badge === "error") {
     return colors.error
   }
-  if (badge === "…") {
+  if (badge === "...") {
     return colors.accent
   }
   if (badge === "ok") {

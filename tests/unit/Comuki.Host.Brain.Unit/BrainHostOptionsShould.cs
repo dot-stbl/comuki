@@ -23,6 +23,7 @@ public sealed class BrainHostOptionsShould
             {
                 ["brain:GrpcPort"] = "17014",
                 ["brain:MaxToolIterations"] = "4",
+                ["brain:ControlPlaneProfilesPath"] = "/app/control-plane/profiles",
                 ["brain:model:Endpoint"] = "https://api.example.com/v4",
                 ["brain:model:ApiKey"] = "key-from-config",
                 ["brain:model:ModelId"] = "glm-5",
@@ -33,6 +34,7 @@ public sealed class BrainHostOptionsShould
 
         options.GrpcPort.ShouldBe(17014);
         options.MaxToolIterations.ShouldBe(4);
+        options.ControlPlaneProfilesPath.ShouldBe("/app/control-plane/profiles");
         options.Model.Endpoint.ShouldBe("https://api.example.com/v4");
         options.Model.ApiKey.ShouldBe("key-from-config");
         options.Model.ModelId.ShouldBe("glm-5");
@@ -223,7 +225,7 @@ public sealed class BrainHostOptionsShould
         // (what ValidateOnStart runs at boot) rejects the out-of-range
         // port through IOptionsMonitor.
         Should.Throw<OptionsValidationException>(() =>
-            _ = services.BuildServiceProvider()
+            services.BuildServiceProvider()
                 .GetRequiredService<IOptionsMonitor<BrainOptions>>().CurrentValue);
     }
 

@@ -41,6 +41,8 @@ spec:
               value: {{ include "comuki.dbConnectionString" . | quote }}
             - name: COMUKI_BRAIN_GRPCPORT
               value: {{ .Values.brain.grpcPort | quote }}
+            - name: COMUKI_BRAIN_CONTROLPLANEPROFILESPATH
+              value: /app/control-plane/profiles
             - name: COMUKI_BRAIN_MODEL_ENDPOINT
               value: {{ .Values.brain.model.endpoint | quote }}
             - name: COMUKI_BRAIN_MODEL_ID

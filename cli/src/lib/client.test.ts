@@ -395,4 +395,47 @@ describe("postMessage latency sampling", () => {
     expect(caught).toBeInstanceOf(ComukiApiError)
     expect((caught as ComukiApiError).status).toBe(403)
   })
+
+  it("backgroundWorkers returns the registry snapshot rows", async () => {
+    const { impl, calls } = fakeFetch({
+      "GET /api/v1/workers/background": {
+        body: [
+          {
+            name: "lease-reaper",
+            lastRunAt: "2026-09-18T11:59:00Z",
+            nextRunAt: "2026-09-18T12:01:00Z",
+            lastResult: { success: true, detail: "2 reaped", data: null },
+            consecutiveFailures: 0,
+            isHealthy: true,
+          },
+          {
+            name: "memory-sweep",
+            lastRunAt: null,
+            nextRunAt: null,
+            lastResult: null,
+            consecutiveFailures: 3,
+            isHealthy: false,
+          },
+        ],
+      },
+    })
+    const client = new ComukiClient(resolveConfig({ COMUKI_URL: "http://t" }), {
+      fetchImpl: impl,
+    })
+
+    const workers = await client.backgroundWorkers()
+
+    expect(workers).toHaveLength(2)
+    expect(workers[0]).toEqual({
+      name: "lease-reaper",
+      lastRunAt: "2026-09-18T11:59:00Z",
+      nextRunAt: "2026-09-18T12:01:00Z",
+      lastResult: { success: true, detail: "2 reaped", data: null },
+      consecutiveFailures: 0,
+      isHealthy: true,
+    })
+    expect(workers[1]?.lastResult).toBeNull()
+    expect(workers[1]?.isHealthy).toBe(false)
+    expect(calls[0]?.url).toBe("http://t/api/v1/workers/background")
+  })
 })

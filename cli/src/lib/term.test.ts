@@ -1,11 +1,12 @@
 /**
  * Byte-exact tests for the terminal control sequences: OSC 2 title,
- * BEL, OSC 9 notification, the title composition and the combined
- * turn-completion bytes.
+ * BEL, OSC 9 notification, OSC 8 hyperlinks, the title composition
+ * and the combined turn-completion bytes.
  */
 import { describe, expect, it } from "bun:test"
 import {
   bellSequence,
+  linkSequence,
   notifySequence,
   terminalTitle,
   titleSequence,
@@ -41,6 +42,40 @@ describe("bellSequence / notifySequence", () => {
 
   it("notify sanitizes its payload too", () => {
     expect(notifySequence("a\x1bb\x07c")).toBe("\x1b]9;abc\x07")
+  })
+})
+
+describe("linkSequence", () => {
+  it("wraps the label in OSC 8 with an empty closing target", () => {
+    expect(linkSequence("http://h:17173/runs/abc", "abc")).toBe(
+      "\x1b]8;;http://h:17173/runs/abc\x1b\\abc\x1b]8;;\x1b\\"
+    )
+  })
+
+  it("keeps SGR paint inside the label untouched", () => {
+    const label = "\x1b[38;2;184;184;189mrun\x1b[0m"
+    expect(linkSequence("http://h/runs/x", label)).toBe(
+      `\x1b]8;;http://h/runs/x\x1b\\${label}\x1b]8;;\x1b\\`
+    )
+  })
+
+  it("strips ESC and BEL from the url so nothing can break out of the sequence", () => {
+    const sequence = linkSequence("http://h/\x1b]8;;evil\x07", "label")
+    // Byte-exact: the hostile ESC/BEL are gone from the target slot —
+    // the leftovers are inert url text.
+    expect(sequence).toBe("\x1b]8;;http://h/]8;;evil\x1b\\label\x1b]8;;\x1b\\")
+  })
+
+  it("degrades to the bare label when OSC 8 is unsupported — the label is the only visible text", () => {
+    const plain = "abc123"
+    // Every other byte of the sequence is an escape — stripping the
+    // two OSC 8 wrappers leaves exactly the label.
+    const stripped = linkSequence("http://h/runs/abc123", plain).replace(
+      // eslint-disable-next-line no-control-regex
+      /\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g,
+      ""
+    )
+    expect(stripped).toBe(plain)
   })
 })
 

@@ -90,6 +90,7 @@ import {
   projectListingLines,
   projectSwitchedLine,
   renderRunsFeedPanel,
+  renderWorkersPanel,
   resolveProject,
   RUNS_FEED_REFRESH_MS,
 } from "../lib/runsfeed"
@@ -981,7 +982,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     }
     const sessionId = runsFeedSessionId
     const timer = setInterval(() => {
-      void fetchRunsFeedPanel(client).then((panel) => {
+      void fetchRunsFeedPanel(client, config.url).then((panel) => {
         setTabs((current) => ({
           ...current,
           sessions: current.sessions.map((session) =>
@@ -1215,7 +1216,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             return
           }
           const sessionId = target?.id
-          void fetchRunsFeedPanel(client).then((panel) => {
+          void fetchRunsFeedPanel(client, config.url).then((panel) => {
             if (sessionId) {
               // Re-invoking /runs re-renders the panel fresh: the merge
               // only rescues rows when the new fetch itself failed.
@@ -1236,6 +1237,32 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               setNoticeLines(renderRunsFeedPanel(panel))
             }
           })
+          return
+        }
+        case "workers": {
+          const client = clientRef.current
+          if (!client) {
+            return
+          }
+          // One shot per invocation — no polling loop, no pinned panel.
+          void client
+            .backgroundWorkers()
+            .then((workers) => {
+              const lines = renderWorkersPanel(workers, config.url)
+              if (target) {
+                pushLines(target.id, lines)
+              } else {
+                setNoticeLines(lines)
+              }
+            })
+            .catch((error: unknown) => {
+              const line = `${colors.error}${symbols.cross} workers not available — ${describeError(error)}${colors.reset}`
+              if (target) {
+                pushLines(target.id, [line])
+              } else {
+                setNoticeLines([line])
+              }
+            })
           return
         }
         case "plan": {

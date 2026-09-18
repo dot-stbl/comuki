@@ -16,6 +16,7 @@ import {
   padVisible,
   truncateTail,
 } from "../lib/format"
+import { isSgrMouseChunk } from "../lib/mouse"
 import { filterSessions, type ChatBlock, type Session } from "../lib/sessions"
 import { palette } from "../theme"
 
@@ -142,6 +143,9 @@ export function SessionOverview({
   const visible = filterSessions(sessions, query)
 
   useInput((input, key) => {
+    if (isSgrMouseChunk(input)) {
+      return
+    }
     if (key.escape) {
       onClose()
       return

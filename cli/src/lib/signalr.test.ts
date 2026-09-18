@@ -2,7 +2,9 @@ import { describe, expect, it } from "bun:test"
 import { LogLevel, NullLogger, type RetryContext } from "@microsoft/signalr"
 import {
   bindChatEvents,
+  createRetryGate,
   hubStateFor,
+  isHubAuthFailure,
   neverGiveUpRetryPolicy,
   RealtimeTransportMethods,
   reconnectRetryDelayMs,
@@ -116,6 +118,101 @@ describe("rejoinChatGroups", () => {
     await rejoinChatGroups(connection, ["s1", "deleted", "s2"])
 
     expect(joined).toEqual(["JoinChatAsync:s1", "JoinChatAsync:s2"])
+  })
+})
+
+describe("isHubAuthFailure", () => {
+  it("recognises statusCode / status 401 and 403", () => {
+    expect(isHubAuthFailure({ statusCode: 401 })).toBe(true)
+    expect(isHubAuthFailure({ status: 403 })).toBe(true)
+    expect(isHubAuthFailure({ statusCode: 500 })).toBe(false)
+  })
+
+  it("recognises Unauthorized in a plain Error message", () => {
+    expect(isHubAuthFailure(new Error("Failed to start: 401 Unauthorized"))).toBe(
+      true
+    )
+    expect(isHubAuthFailure(new Error("socket dropped"))).toBe(false)
+    expect(isHubAuthFailure(null)).toBe(false)
+  })
+})
+
+describe("createRetryGate", () => {
+  it("schedules with the 0/2/5/10/30s ramp and never stacks timers", () => {
+    const scheduled: number[] = []
+    const ids: Array<{ id: number; callback: () => void }> = []
+    let nextId = 1
+    const gate = createRetryGate(reconnectRetryDelayMs, {
+      setTimeout: (callback, ms) => {
+        scheduled.push(ms)
+        const id = nextId++
+        ids.push({ id, callback })
+        return id
+      },
+      clearTimeout: () => {
+        // unused in this test
+      },
+    })
+
+    let runs = 0
+    gate.schedule(() => {
+      runs += 1
+    })
+    expect(gate.pending).toBe(true)
+    expect(scheduled).toEqual([0])
+
+    // A second schedule while a timer is pending is a no-op.
+    gate.schedule(() => {
+      runs += 1
+    })
+    expect(scheduled).toEqual([0])
+
+    ids[0]?.callback()
+    expect(runs).toBe(1)
+    expect(gate.pending).toBe(false)
+    expect(gate.attempt).toBe(1)
+
+    gate.schedule(() => {
+      runs += 1
+    })
+    expect(scheduled).toEqual([0, 2_000])
+    ids[1]?.callback()
+    expect(runs).toBe(2)
+    expect(gate.attempt).toBe(2)
+
+    gate.reset()
+    expect(gate.attempt).toBe(0)
+    gate.schedule(() => {
+      runs += 1
+    })
+    expect(scheduled).toEqual([0, 2_000, 0])
+  })
+
+  it("cancel drops the pending timer and ignores later schedules", () => {
+    const cleared: unknown[] = []
+    const pending: Array<() => void> = []
+    const gate = createRetryGate(() => 5_000, {
+      setTimeout: (run) => {
+        pending.push(run)
+        return 42
+      },
+      clearTimeout: (id) => {
+        cleared.push(id)
+      },
+    })
+    let runs = 0
+    gate.schedule(() => {
+      runs += 1
+    })
+    gate.cancel()
+    expect(cleared).toEqual([42])
+    expect(gate.pending).toBe(false)
+    gate.schedule(() => {
+      runs += 1
+    })
+    expect(runs).toBe(0)
+    pending[0]?.()
+    expect(runs).toBe(0)
   })
 })
 

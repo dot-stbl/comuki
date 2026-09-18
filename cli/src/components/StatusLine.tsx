@@ -11,6 +11,7 @@
  */
 import { Text } from "ink"
 import React from "react"
+import { contextMeterLabel, DEFAULT_CONTEXT_WINDOW } from "../lib/context"
 import type { HubConnectionState } from "../lib/signalr"
 import { palette } from "../theme"
 
@@ -24,6 +25,13 @@ export interface StatusLineProps {
   readonly serverUrl?: string
   /** EMA of the last chat POST round-trips; null/undefined hides the badge. */
   readonly latencyMs?: number | null
+  /**
+   * Summed tokensIn+tokensOut of the active session. Hidden when
+   * undefined (no token data on any message meta).
+   */
+  readonly contextUsed?: number
+  /** Context window for the meter; default 128k. */
+  readonly contextWindow?: number
 }
 
 export const CLI_VERSION = "0.2.0"
@@ -90,6 +98,8 @@ export function StatusLine({
   connection,
   serverUrl,
   latencyMs,
+  contextUsed,
+  contextWindow,
 }: StatusLineProps) {
   const host = serverUrl === undefined ? null : hostFromUrl(serverUrl)
   const parts: React.ReactNode[] = [`comuki v${CLI_VERSION}`, identity]
@@ -114,6 +124,11 @@ export function StatusLine({
       <Text color={latencyColor(latencyTone(latencyMs))}>
         {latencyLabel(latencyMs)}
       </Text>
+    )
+  }
+  if (typeof contextUsed === "number") {
+    parts.push(
+      contextMeterLabel(contextUsed, contextWindow ?? DEFAULT_CONTEXT_WINDOW)
     )
   }
   return (

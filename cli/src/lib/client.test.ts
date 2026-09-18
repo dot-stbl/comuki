@@ -471,6 +471,20 @@ describe("postMessage latency sampling", () => {
     })
   })
 
+  it("lists worker profiles from GET /profiles", async () => {
+    const catalog = [
+      { key: "implement", name: "Implementer", description: "writes the code" },
+    ]
+    const { impl, calls } = fakeFetch({
+      "GET /profiles": { body: catalog },
+    })
+    const client = new ComukiClient(resolveConfig({ COMUKI_URL: "http://t" }), {
+      fetchImpl: impl,
+    })
+    expect(await client.profiles()).toEqual(catalog)
+    expect(calls[0]?.url).toBe("http://t/profiles")
+  })
+
   it("knowledgeIngest surfaces a knowledge:write refusal as ComukiApiError", async () => {
     const { impl } = fakeFetch({
       "POST /api/v1/knowledge/ingest": {

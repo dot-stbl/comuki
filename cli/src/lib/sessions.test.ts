@@ -8,6 +8,7 @@ import {
   appendHistory,
   appendLiveText,
   branchOpener,
+  decodePersistedSessions,
   forkTitle,
   filterSessions,
   fromPersisted,
@@ -329,6 +330,44 @@ describe("appendHistory", () => {
 })
 
 describe("persistence round-trip", () => {
+  it("rejects malformed roots and missing session arrays", () => {
+    expect(decodePersistedSessions(null).ok).toBe(false)
+    expect(decodePersistedSessions({}).ok).toBe(false)
+  })
+
+  it("normalizes partial entries and ignores extra fields", () => {
+    expect(
+      decodePersistedSessions({
+        activeSessionId: 42,
+        extra: true,
+        sessions: [
+          {
+            id: "s1",
+            name: 10,
+            status: "foreign",
+            createdAt: "yesterday",
+            history: ["valid", 10],
+            extra: "ignored",
+          },
+          { name: "missing id" },
+        ],
+      })
+    ).toEqual({
+      ok: true,
+      value: {
+        sessions: [
+          {
+            id: "s1",
+            name: "session",
+            status: "idle",
+            createdAt: 0,
+            history: ["valid"],
+          },
+        ],
+      },
+    })
+  })
+
   it("persists only server tabs and restores the active one", () => {
     const state = {
       sessions: [

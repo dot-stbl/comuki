@@ -16,46 +16,93 @@
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { DEFAULT_CONTEXT_WINDOW } from "./context"
-import { readJsonFile, writeJsonFile } from "./json"
+import {
+  decoded,
+  invalid,
+  isJsonObject,
+  readJsonFile,
+  writeJsonFile,
+  type DecodeResult,
+} from "./json"
 
 export interface ConfigFileContents {
-  url?: string
-  apiKey?: string
-  tenant?: string
+  readonly [key: string]: unknown
+  readonly url?: string
+  readonly apiKey?: string
+  readonly tenant?: string
   /** Session cookie captured by `comuki login` (`name=value`). */
-  cookie?: string
-  defaultProject?: string
+  readonly cookie?: string
+  readonly defaultProject?: string
   /** Terminal theme choice (`<theme>-<dark|light>`), e.g. `graphite-light`. */
-  theme?: string
+  readonly theme?: string
   /** BEL on turn completion (OSC 9 toasts are always on). */
-  bell?: boolean
+  readonly bell?: boolean
   /**
    * Preferred worker-profile key (`implement`, `explore-readonly`, …).
    * Stored locally only — `createSession` has no profile field.
    */
-  preferredProfile?: string
+  readonly preferredProfile?: string
   /** Context-window size for the status-line meter. Default 128000. */
-  contextWindow?: number
+  readonly contextWindow?: number
+}
+
+const CONFIG_STRING_FIELDS = [
+  "url",
+  "apiKey",
+  "tenant",
+  "cookie",
+  "defaultProject",
+  "theme",
+  "preferredProfile",
+] as const
+
+/**
+ * Decodes config JSON while retaining extension fields owned by newer CLI
+ * versions. Known fields with invalid types are ignored rather than leaked.
+ */
+export function decodeConfigFile(value: unknown): DecodeResult<ConfigFileContents> {
+  if (!isJsonObject(value)) {
+    return invalid
+  }
+
+  const contents: Record<string, unknown> = { ...value }
+  for (const field of CONFIG_STRING_FIELDS) {
+    if (field in contents && typeof contents[field] !== "string") {
+      delete contents[field]
+    }
+  }
+  if ("bell" in contents && typeof contents.bell !== "boolean") {
+    delete contents.bell
+  }
+  if (
+    "contextWindow" in contents &&
+    (typeof contents.contextWindow !== "number" ||
+      !Number.isFinite(contents.contextWindow))
+  ) {
+    delete contents.contextWindow
+  }
+
+  return decoded(contents)
 }
 
 export interface ResolvedConfig {
-  url: string
-  apiKey?: string
-  tenant?: string
-  cookie?: string
-  defaultProject?: string
-  theme?: string
-  bell: boolean
-  preferredProfile?: string
+  readonly url: string
+  readonly apiKey?: string
+  readonly tenant?: string
+  readonly cookie?: string
+  readonly defaultProject?: string
+  readonly theme?: string
+  readonly bell: boolean
+  readonly preferredProfile?: string
   /** Absent → StatusLine uses DEFAULT_CONTEXT_WINDOW (128k). */
-  contextWindow?: number
+  readonly contextWindow?: number
 }
 
 export interface ConfigOverrides {
-  url?: string
-  apiKey?: string
-  project?: string
-  theme?: string
+  readonly url?: string
+  readonly apiKey?: string
+  readonly project?: string
+  readonly theme?: string
 }
 
 /**
@@ -144,7 +191,8 @@ export function archiveDir(
 export async function readConfigFile(
   path: string = configFilePath()
 ): Promise<ConfigFileContents> {
-  return (await readJsonFile<ConfigFileContents>(path)) ?? {}
+  const result = decodeConfigFile(await readJsonFile(path))
+  return result.ok ? result.value : {}
 }
 
 /** Writes the config file with owner-only permissions (0o600). */

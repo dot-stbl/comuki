@@ -9,7 +9,7 @@
  * send-as-message is the honest v1 (documented in `/help`).
  */
 import { join } from "node:path"
-import { readJsonFile, writeJsonFile } from "./json"
+import { isJsonObject, readJsonFile, writeJsonFile } from "./json"
 import { configDir } from "./config"
 import { colors } from "../theme"
 
@@ -102,8 +102,8 @@ export function snippetListingLines(
 export async function readSnippetsFile(
   path: string = snippetsFilePath()
 ): Promise<PersistedSnippets> {
-  const contents = await readJsonFile<Partial<PersistedSnippets>>(path)
-  if (!contents || typeof contents.snippets !== "object" || contents.snippets === null) {
+  const contents = await readJsonFile(path)
+  if (!isJsonObject(contents) || !isJsonObject(contents.snippets)) {
     return { snippets: {} }
   }
   const snippets: Record<string, string> = {}

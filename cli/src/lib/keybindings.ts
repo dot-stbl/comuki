@@ -125,7 +125,7 @@ export function keybindingsListingLines(
 export async function readKeybindingsFile(
   path: string = keybindingsFilePath()
 ): Promise<Keybindings> {
-  return resolveKeybindings(await readJsonFile<unknown>(path))
+  return resolveKeybindings(await readJsonFile(path))
 }
 
 function isKeybindingAction(value: string): value is KeybindingAction {

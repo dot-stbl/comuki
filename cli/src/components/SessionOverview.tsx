@@ -34,13 +34,13 @@ function statusGlyph(status: Session["status"]): {
 } {
   switch (status) {
     case "thinking":
-      return { glyph: "● thinking", color: palette.brand }
+      return { glyph: "o thinking", color: palette.brand }
     case "running":
-      return { glyph: "● running", color: palette.waiting }
+      return { glyph: "o running", color: palette.waiting }
     case "done":
       return { glyph: "✓ done", color: palette.ok }
     default:
-      return { glyph: "○ idle", color: undefined }
+      return { glyph: ". idle", color: undefined }
   }
 }
 
@@ -228,7 +228,7 @@ export function SessionOverview({
                   22
                 )}`}
                 <Text color={glyph.color}>{padVisible(glyph.glyph, 12)}</Text>
-                {`${session.unread ? "● " : ""}${ageFromMs(
+                {`${session.unread ? "o " : ""}${ageFromMs(
                   Date.now() - session.createdAt
                 )} ago`}
               </Text>

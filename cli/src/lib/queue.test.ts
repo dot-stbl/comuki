@@ -38,17 +38,17 @@ describe("dequeueMessage", () => {
 })
 
 describe("notice lines", () => {
-  it("queued/stopped are dim event lines with the ⏺ glyph", () => {
-    expect(stripAnsi(queuedNoticeLine())).toBe("  ⏺ queued")
-    expect(stripAnsi(stoppedNoticeLine())).toBe("  ⏺ stopped")
+  it("queued/stopped are dim event lines with the * glyph", () => {
+    expect(stripAnsi(queuedNoticeLine())).toBe("  * queued")
+    expect(stripAnsi(stoppedNoticeLine())).toBe("  * stopped")
   })
 
   it("the queue hint carries the count and the drain rule", () => {
     expect(stripAnsi(queueHintLine(2))).toBe(
-      "  ⏺ 2 queued — sends when the turn ends"
+      "  * 2 queued — sends when the turn ends"
     )
     expect(stripAnsi(queueHintLine(1))).toBe(
-      "  ⏺ 1 queued — sends when the turn ends"
+      "  * 1 queued — sends when the turn ends"
     )
   })
 

@@ -114,15 +114,19 @@ describe("liveLines", () => {
 })
 
 describe("typingLine", () => {
-  test("spinner frame + label", () => {
+  test("tiny mark + dim thinking label", () => {
     const line = typingLine(0)
-    expect(stripAnsi(line)).toContain("comuki thinking")
-    expect(stripAnsi(line)).toContain("⠋")
+    const plain = stripAnsi(line)
+    expect(plain).toContain("thinking")
+    expect(plain).not.toContain("comuki thinking")
+    expect(plain).toContain("# #")
   })
 
-  test("frame advances within the palette", () => {
-    const line = typingLine(2)
-    expect(stripAnsi(line)).toContain("⠹")
+  test("frame advances the tiny mark crossbar", () => {
+    const empty = stripAnsi(typingLine(0))
+    const full = stripAnsi(typingLine(2))
+    expect(empty).toContain("# #")
+    expect(full).toContain("===")
   })
 })
 
@@ -225,7 +229,7 @@ describe("flattenTranscript", () => {
     expect(plain.some((line) => line.includes("✗ HTTP 401"))).toBe(false)
   })
 
-  test("thinking/tool parts collapse to ⏺ event lines by default", () => {
+  test("thinking/tool parts collapse to * event lines by default", () => {
     const blocks: readonly ChatBlock[] = [
       {
         kind: "message",
@@ -246,8 +250,8 @@ describe("flattenTranscript", () => {
     const lines = flattenTranscript(snapshot({ blocks }), 90, 0)
     const plain = lines.map(stripAnsi)
     // Assistant rows carry the one-space gutter over the event indent.
-    expect(plain).toContain("   ⏺ thinking · 4.1k tok · 6.2s")
-    expect(plain).toContain(`   ⏺ memory.recall("identity module", 5)  ok 41ms`)
+    expect(plain).toContain("   * thinking . 4.1k tok . 6.2s")
+    expect(plain).toContain(`   * memory.recall("identity module", 5)  ok 41ms`)
     expect(plain.join("\n")).not.toContain("secret reasoning")
     expect(plain.some((line) => line.includes("the answer"))).toBe(true)
   })
@@ -268,7 +272,7 @@ describe("flattenTranscript", () => {
       0
     )
     const plain = lines.map(stripAnsi)
-    expect(plain).toContain("   ⏺ thinking · 5 tok")
+    expect(plain).toContain("   * thinking . 5 tok")
     expect(plain).toContain("     visible reasoning")
   })
 
@@ -318,7 +322,7 @@ describe("flattenTranscript", () => {
       2
     )
     const plain = lines.map(stripAnsi)
-    expect(plain.some((line) => line.includes("comuki thinking"))).toBe(true)
+    expect(plain.some((line) => line.includes("thinking"))).toBe(true)
     expect(plain.some((line) => line.includes("streaming"))).toBe(true)
     const last = lines[lines.length - 1] ?? ""
     expect(last).toContain(LIVE_CURSOR)

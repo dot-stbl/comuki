@@ -485,7 +485,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const activeMatchLine = searchMatches[searchCursor] ?? null
 
   // The ctrl+o hint rides the top row of the viewport — only while the
-  // active tab actually hides thinking behind ⏺ event lines.
+  // active tab actually hides thinking behind * event lines.
   const expandHint =
     activeSession &&
     hasCollapsedThinking(activeSession.blocks, activeSession.blocksExpanded)
@@ -1450,7 +1450,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
    * index; `/kb add <file|glob>` collects local text files, validates
    * them (extension + size) and POSTs one ingest per file — the server
    * chunks + embeds synchronously, so each file resolves to its own
-   * `⏺ name → id` line. A 401/403 mid-run stops the remaining files
+   * `* name → id` line. A 401/403 mid-run stops the remaining files
    * with the honest notice: this subject lacks `knowledge:write`.
    */
   const runKb = useCallback(

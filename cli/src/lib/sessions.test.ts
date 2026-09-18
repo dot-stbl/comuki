@@ -7,6 +7,8 @@ import {
   appendBlocks,
   appendHistory,
   appendLiveText,
+  branchOpener,
+  forkTitle,
   fromPersisted,
   markUnread,
   newPendingSession,
@@ -225,6 +227,35 @@ describe("retryMessage", () => {
 
   it("returns null without a session", () => {
     expect(retryMessage(undefined)).toBeNull()
+  })
+})
+
+describe("branchOpener", () => {
+  it("reuses the last user message as the fork's opener", () => {
+    const session = { ...liveSession("s1"), lastUserMessage: "fix it" }
+    expect(branchOpener(session)).toBe("fix it")
+  })
+
+  it("returns null for a session without messages", () => {
+    expect(branchOpener(liveSession("s1"))).toBeNull()
+  })
+
+  it("returns null without a session", () => {
+    expect(branchOpener(undefined)).toBeNull()
+  })
+})
+
+describe("forkTitle", () => {
+  it("titles the fork after its source", () => {
+    expect(forkTitle("readme fix")).toBe("fork of readme fix")
+  })
+
+  it("collapses whitespace in the source name", () => {
+    expect(forkTitle("  fix   the  readme ")).toBe("fork of fix the readme")
+  })
+
+  it("falls back to a generic name for blank input", () => {
+    expect(forkTitle("   ")).toBe("fork of session")
   })
 })
 

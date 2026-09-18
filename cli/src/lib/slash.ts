@@ -109,6 +109,18 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     usage: "/project <id|slug|name>",
     description: "switch project context",
   },
+  {
+    name: "snip",
+    aliases: [],
+    usage: "/snip [name|save <name>|rm <name>]",
+    description: "saved prompts — /snip <name> sends one",
+  },
+  {
+    name: "branch",
+    aliases: [],
+    usage: "/branch [message]",
+    description: "fork this session into a new tab",
+  },
 ]
 
 /** The `/help` transcript block, rendered from the registry. */
@@ -140,6 +152,11 @@ export type SlashAction =
   | { readonly kind: "runs" }
   | { readonly kind: "plan" }
   | { readonly kind: "project"; readonly query: string }
+  | { readonly kind: "snip" }
+  | { readonly kind: "snip-send"; readonly name: string }
+  | { readonly kind: "snip-save"; readonly name: string }
+  | { readonly kind: "snip-rm"; readonly name: string }
+  | { readonly kind: "branch"; readonly message?: string }
   /** Not a command — the input goes to the brain as a chat message. */
   | { readonly kind: "message" }
 
@@ -207,6 +224,27 @@ export function resolveSlashAction(raw: string): SlashAction {
   }
   if (matches("project", name)) {
     return { kind: "project", query: args }
+  }
+  if (matches("snip", name)) {
+    // `save` / `rm` / `list` as the first argument token are reserved
+    // subcommand words — snippet names matching them are unreachable.
+    const [sub, ...rest] = args.split(/\s+/)
+    const target = rest.join(" ").trim()
+    if (args.length === 0 || sub === "list") {
+      return { kind: "snip" }
+    }
+    if (sub === "save") {
+      return { kind: "snip-save", name: target }
+    }
+    if (sub === "rm") {
+      return { kind: "snip-rm", name: target }
+    }
+    return { kind: "snip-send", name: args }
+  }
+  if (matches("branch", name)) {
+    return args.length === 0
+      ? { kind: "branch" }
+      : { kind: "branch", message: args }
   }
   return { kind: "message" }
 }

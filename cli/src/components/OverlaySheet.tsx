@@ -1,9 +1,10 @@
 /** One predictable modal/sheet language for overview and inspectors. */
 import { Box, Text } from "ink"
 import React from "react"
-import { stripAnsi } from "../theme"
-import { palette } from "../theme"
+import stringWidth from "string-width"
+import { stripAnsi, palette } from "../theme"
 import { Fill } from "./Fill"
+import { SurfaceLine } from "./SurfaceLine"
 
 export interface OverlaySheetProps {
   readonly title: string
@@ -27,15 +28,19 @@ export function OverlaySheet({
   return (
     <Fill width={sheetWidth} height={sheetHeight} color={palette.rail}>
       <Box width={sheetWidth} height={sheetHeight} flexDirection="column">
-        <Text bold color={palette.text} backgroundColor={palette.raised}>
-          {`  ${titleText}`.padEnd(sheetWidth)}
-        </Text>
+        <SurfaceLine
+          width={sheetWidth}
+          background={palette.raised}
+          segments={[{ text: `  ${titleText}`, color: palette.text, bold: true }]}
+        />
         <Box flexDirection="column" flexGrow={1} paddingX={2} paddingY={1}>
           {children}
         </Box>
-        <Text dimColor backgroundColor={palette.raised}>
-          {`  ${hintText}`.padEnd(sheetWidth)}
-        </Text>
+        <SurfaceLine
+          width={sheetWidth}
+          background={palette.raised}
+          segments={[{ text: `  ${hintText}`, dim: true }]}
+        />
       </Box>
     </Fill>
   )
@@ -69,11 +74,21 @@ export function LineInspector({
 }
 
 function fit(value: string, width: number): string {
-  return value.length <= width ? value : `${value.slice(0, Math.max(1, width - 3))}...`
+  if (stringWidth(value) <= width) {
+    return value
+  }
+  let text = ""
+  for (const char of value) {
+    if (stringWidth(text + char) > Math.max(1, width - 3)) {
+      break
+    }
+    text += char
+  }
+  return `${text}...`
 }
 
 function fitAnsi(value: string, width: number): string {
-  return stripAnsi(value).length <= width
+  return stringWidth(stripAnsi(value)) <= width
     ? value
-    : `${stripAnsi(value).slice(0, Math.max(1, width - 3))}...`
+    : fit(stripAnsi(value), width)
 }

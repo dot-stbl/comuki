@@ -1,11 +1,10 @@
 /**
- * `comuki` (default) — the multi-session REPL.
+ * `comuki` (default) — the conversation-first agent harness.
  *
- * N parallel brain sessions switched like browser tabs: the tab strip
- * on top, the active transcript in the middle, session badges + expandable
- * action bar at the bottom. Turns are synchronous REST calls per session,
- * fired unawaited — a thinking tab keeps working in the background and
- * only marks itself unread. The laptop stays cold.
+ * The active transcript is the primary surface. Navigation, search and
+ * inspectors are transient overlays; activity and notifications have
+ * semantic streams outside the forensic transcript; composer and compact
+ * footer stay pinned. Parallel sessions keep working in the background.
  *
  * One Signalr connection carries every session's chunks (`ChatChunk`
  * holds `sessionId`, so routing is a patch over tabs). A pending tab
@@ -19,7 +18,7 @@
  * viewport and never scrolls away. `ctrl+p` opens the action palette.
  */
 import { Box, Text, useApp, useInput } from "ink"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react"
 import type { HubConnection } from "@microsoft/signalr"
 import {
   ComukiApiError,
@@ -79,7 +78,6 @@ import {
   dequeueMessage,
   enqueueMessage,
   queuedNoticeLine,
-  queueHintLine,
   stoppedNoticeLine,
 } from "../lib/queue"
 import {
@@ -197,9 +195,9 @@ import {
   isThemeChoice,
   palette,
   resolveTheme,
+  stripAnsi,
   symbols,
 } from "../theme"
-import { AlertCard } from "../components/AlertCard"
 import { Fill } from "../components/Fill"
 import { PromptInput } from "../components/PromptInput"
 import {
@@ -214,6 +212,19 @@ import { TranscriptViewport } from "../components/TranscriptViewport"
 import { Welcome } from "../components/Welcome"
 import { CommandPalette } from "../components/CommandPalette"
 import { ContextWorkbench } from "../components/ContextWorkbench"
+import { ActivityStream } from "../components/ActivityStream"
+import { HarnessFooter } from "../components/HarnessFooter"
+import { LayerHost } from "../components/LayerHost"
+import { NotificationCenter } from "../components/NotificationCenter"
+import {
+  activityItemsFromTranscript,
+  groupForActivity,
+} from "../lib/activity"
+import {
+  notificationReducer,
+  visibleNotifications,
+  type HarnessNotification,
+} from "../lib/notifications"
 import { fetchRunsFeedPanel } from "./runsfeed"
 
 const EMPTY_TAB_HINT = `${colors.faint}  no open sessions — ctrl+n to start one${colors.reset}`
@@ -310,6 +321,34 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const keybindingsRef = useRef<Keybindings>(DEFAULT_KEYBINDINGS)
   /** Rendered height of the prompt block (menu rows + wrapped lines). */
   const [promptRows, setPromptRows] = useState(1)
+  const [notificationState, dispatchNotification] = useReducer(
+    notificationReducer,
+    { items: [] }
+  )
+  const [activityStartedAt, setActivityStartedAt] = useState(Date.now())
+  const notify = useCallback(
+    (
+      tone: HarnessNotification["tone"],
+      title: string,
+      detail?: string,
+      action?: HarnessNotification["action"]
+    ) => {
+      const createdAt = Date.now()
+      dispatchNotification({
+        type: "add",
+        notification: {
+          id: `${createdAt}-${Math.random().toString(36).slice(2, 8)}`,
+          tone,
+          title,
+          ...(detail ? { detail } : {}),
+          createdAt,
+          ...(tone === "error" ? {} : { ttlMs: 5_000 }),
+          ...(action ? { action } : {}),
+        },
+      })
+    },
+    []
+  )
 
   const clientRef = useRef<ComukiClient | null>(null)
   const configRef = useRef(config)
@@ -369,6 +408,12 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       getLastCodeFence: () => lastCodeFence(activeSession?.blocks ?? []),
     }
   )
+
+  useEffect(() => {
+    if (copyHint) {
+      notify("success", copyHint)
+    }
+  }, [copyHint, notify])
 
   // Prompt-block reporting — stable callbacks so the effects inside
   // PromptInput (menu flip, row count) don't re-fire every render.
@@ -455,10 +500,19 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
   const thinking = activeSession?.status === "thinking"
   const typingFrame = useSpinnerFrame(thinking)
+  const activityItems = useMemo(() => {
+    const children = activityItemsFromTranscript(
+      activeSession?.blocks ?? [],
+      thinking,
+      activityStartedAt
+    )
+    const group = groupForActivity(children, activityStartedAt)
+    return group ? [group, ...children.filter((item) => item.kind !== "group")] : []
+  }, [activeSession?.blocks, thinking, activityStartedAt])
 
   const transcriptLines = useMemo(
-    () =>
-      flattenTranscript(
+    () => {
+      const lines = flattenTranscript(
         activeSession
           ? {
               blocks: activeSession.blocks,
@@ -470,15 +524,17 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                 harness.workbenchWidth === 0
                   ? activeSession.runsFeed ?? null
                   : null,
-              thinking,
+              thinking: thinking && activityItems.length === 0,
               liveText: activeSession.liveText,
               expanded: activeSession.blocksExpanded,
             }
           : undefined,
         contentWidth,
         typingFrame,
-        noticeLines
-      ),
+        []
+      )
+      return lines
+    },
     [
       activeSession,
       contentWidth,
@@ -486,6 +542,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       typingFrame,
       noticeLines,
       thinking,
+      activityItems.length,
     ]
   )
 
@@ -509,17 +566,26 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
   // The ctrl+o hint rides the top row of the viewport — only while the
   // active tab actually hides thinking behind * event lines.
-  const expandHint =
-    activeSession &&
-    hasCollapsedThinking(activeSession.blocks, activeSession.blocksExpanded)
+  const expandHint = activeSession?.blocksExpanded
+    ? null
+    : activityItems.length > 0
       ? expandHintLine(columns)
-      : null
+      : activeSession && hasCollapsedThinking(activeSession.blocks, false)
+        ? expandHintLine(columns)
+        : null
 
-  // One header row and the composer are the only permanent chrome.
+  // Header, activity, composer and footer are the only permanent chrome.
   // Everything left belongs to the scrolling transcript.
   const queuedCount = activeSession?.queued?.length ?? 0
-  const promptBlockRows =
-    promptRows + (copyHint ? 1 : 0) + (queuedCount > 0 ? 1 : 0)
+  const activityRows = activityItems.length > 0
+    ? 1 + (activeSession?.blocksExpanded || thinking
+      ? activityItems.slice(1).reduce(
+          (rows, item) => rows + (item.kind === "shell" && item.outputPreview ? 2 : 1),
+          0
+        )
+      : 0)
+    : 0
+  const promptBlockRows = promptRows + 1 + activityRows
   const viewportHeight = Math.max(
     1,
     rows -
@@ -537,7 +603,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
   // Home/End are invisible to ink 5's key flags — matched as raw
   // escape sequences on the same input channel useInput listens on.
-  useHomeEndKeys(scroll.toTop, scroll.toBottom, !overviewVisible)
+  useHomeEndKeys(
+    scroll.toTop,
+    scroll.toBottom,
+    !overviewVisible && !paletteVisible && inspector === null && !searchOpen
+  )
 
   // Search jumps drive the same offset the scroll keys use: enter
   // cycles the match cursor (wrapping), and a fresh query snaps to its
@@ -594,6 +664,30 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   useEffect(() => {
     keybindingsRef.current = keybindings
   }, [keybindings])
+
+  useEffect(() => {
+    if (thinking) {
+      setActivityStartedAt(Date.now())
+    }
+  }, [activeSessionId, thinking])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      dispatchNotification({ type: "expire", now: Date.now() })
+    }, 1_000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    const visible = noticeLines.map(stripAnsi).filter((line) => line.trim().length > 0)
+    if (visible.length === 0) {
+      return
+    }
+    const title = visible[0]?.trim() ?? "notice"
+    const detail = visible.slice(1).join(" · ") || undefined
+    notify(/error|failed|unreachable|\[x\]/i.test(title) ? "error" : "info", title, detail)
+    setNoticeLines([])
+  }, [noticeLines, notify])
 
   useEffect(() => {
     void readKeybindingsFile().then((resolved) => {
@@ -2606,12 +2700,29 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
   const connectAlert: AlertCardModel | null =
     connectError === null ? null : alertFromError(connectError)
+  const connectAlertRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    const key = connectAlert ? `${connectAlert.title}:${connectAlert.detail}` : null
+    if (connectAlert && key !== connectAlertRef.current) {
+      connectAlertRef.current = key
+      notify(
+        "error",
+        connectAlert.title,
+        connectAlert.detail,
+        { label: "login", command: "/login" }
+      )
+    } else if (!connectAlert) {
+      connectAlertRef.current = null
+    }
+  }, [connectAlert, notify])
 
   const showWelcome = !welcomeDismissed && tabs.sessions.length === 0
   // The prompt stays live while a turn thinks: typing a message queues
   // it, `/stop` needs to be submittable mid-turn.
   const promptEnabled =
-    !overviewVisible && !paletteVisible && inspector === null
+    !overviewVisible && !paletteVisible && inspector === null && !searchOpen
+  const overlayVisible = overviewVisible || paletteVisible || inspector !== null || searchOpen
   const attentionCount = tabs.sessions.filter(
     (session) => session.unread || session.awaitingApproval
   ).length
@@ -2631,18 +2742,23 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         : activeSession?.status === "running"
           ? ["active workers are processing this session"]
           : []
-  const composerMetadata = [
-    projectLabel ? `project ${projectLabel}` : undefined,
-    preferredProfile ? `profile ${preferredProfile}` : undefined,
-    promptBusy ? "enter queues / /stop interrupts" : undefined,
-  ]
-    .filter((value): value is string => value !== undefined)
-    .join(" / ")
+  const contextTotals = sessionTokenTotals(activeSession?.blocks ?? [])
+  const contextLabel = contextTotals
+    ? `${contextTotals.tokensIn + contextTotals.tokensOut} tok`
+    : undefined
+  const model = activeSession?.blocks
+    .filter((block) => block.kind === "message")
+    .at(-1)?.message.meta?.model ?? undefined
+  const notificationRows = visibleNotifications(notificationState).length
 
   // Conversation and composer are permanent; all navigation is transient.
   return (
     <Fill width={columns} height={rows} color={palette.floor}>
-      <Box flexDirection="column" width={columns} height={rows}>
+      <LayerHost
+        width={columns}
+        height={rows}
+        notificationBottomRows={promptRows + 1}
+        base={<Box flexDirection="column" width={columns} height={rows}>
         <TopBar
           width={columns}
           mode={harness.mode}
@@ -2667,58 +2783,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                 height={viewportHeight}
                 overflow="hidden"
               >
-        {paletteVisible ? (
-          <Box
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            flexGrow={1}
-          >
-            <CommandPalette
-              width={Math.max(32, contentWidth - 4)}
-              onSelect={(command) => {
-                setPaletteVisible(false)
-                handleSubmit(command)
-              }}
-              onClose={() => setPaletteVisible(false)}
-            />
-          </Box>
-        ) : overviewVisible ? (
-          <Box
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            flexGrow={1}
-          >
-            <SessionOverview
-              sessions={tabs.sessions}
-              activeIndex={tabs.activeIndex}
-              width={Math.min(68, Math.max(24, contentWidth - 2))}
-              viewportHeight={viewportHeight}
-              terminalTop={harness.topBarRows + 1}
-              onSelect={selectSession}
-              onNewSession={() => {
-                openPendingTab()
-                setOverviewVisible(false)
-              }}
-              onClose={() => setOverviewVisible(false)}
-            />
-          </Box>
-        ) : inspector !== null ? (
-          <Box
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            flexGrow={1}
-          >
-            <LineInspector
-              title={inspector.title}
-              lines={inspector.lines}
-              width={Math.min(76, Math.max(24, contentWidth - 2))}
-              height={Math.min(viewportHeight, 22)}
-            />
-          </Box>
-        ) : showWelcome ? (
+        {showWelcome ? (
           <Box
             flexDirection="column"
             alignItems="center"
@@ -2726,11 +2791,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             flexGrow={1}
           >
             <Welcome />
-            {connectAlert ? (
-              <Box marginTop={1} flexDirection="column">
-                <AlertCard {...connectAlert} width={contentWidth} />
-              </Box>
-            ) : null}
             {noticeLines.map((line, index) => (
               <Text key={index}>{line}</Text>
             ))}
@@ -2754,29 +2814,17 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         )}
               </Box>
             </Fill>
-      {searchOpen ? (
-        <Fill width={contentWidth} height={1} color={palette.rail}>
-          <TranscriptSearch
-            value={searchQuery}
-            matchCount={searchMatches.length}
-            matchIndex={searchCursor}
-            onChange={handleSearchChange}
-            onNext={() => cycleSearch(1)}
-            onPrevious={() => cycleSearch(-1)}
-            onClose={handleSearchClose}
-          />
-        </Fill>
-      ) : null}
-      {!overviewVisible && !paletteVisible && inspector === null ? (
-        <>
-          {connectAlert && !showWelcome ? (
-            <AlertCard {...connectAlert} width={contentWidth} />
-          ) : null}
-          {copyHint ? (
-            <Text dimColor>{`  ${copyHint}`}</Text>
-          ) : null}
-          {queuedCount > 0 ? <Text>{queueHintLine(queuedCount)}</Text> : null}
+      <>
           {mentionMenu.element}
+          {activityItems.length > 0 ? (
+            <ActivityStream
+              width={contentWidth}
+              items={activityItems}
+              now={Date.now()}
+              frame={typingFrame}
+              expanded={activeSession?.blocksExpanded === true || thinking}
+            />
+          ) : null}
           <Fill width={contentWidth} height={promptRows} color={palette.floor}>
             {loginStep === null ? (
               <PromptInput
@@ -2784,7 +2832,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
                 history={activeSession?.history ?? []}
                 active={promptEnabled && !searchOpen}
                 historyRecallEnabled={!scroll.scrolledUp}
-                label={composerMetadata}
                 onMenuOpenChange={handleMenuOpenChange}
                 onRowsChange={handlePromptRows}
                 seed={promptSeed}
@@ -2807,8 +2854,19 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               />
             )}
           </Fill>
+          <HarnessFooter
+            width={contentWidth}
+            mode={harness.mode}
+            model={model ?? undefined}
+            project={projectLabel}
+            workers={activeSession?.status === "running" ? 1 : 0}
+            context={contextLabel}
+            queue={queuedCount}
+            busy={thinking ? "thinking" : undefined}
+            signedOut={identity === "signed out"}
+            approval={activeSession?.awaitingApproval === true}
+          />
         </>
-      ) : null}
           </Box>
           {harness.dividerWidth > 0 ? (
             <Fill
@@ -2826,7 +2884,63 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             />
           ) : null}
         </Box>
-      </Box>
+      </Box>}
+        overlay={
+          paletteVisible ? (
+            <CommandPalette
+              width={Math.max(32, contentWidth - 4)}
+              onSelect={(command) => {
+                setPaletteVisible(false)
+                handleSubmit(command)
+              }}
+              onClose={() => setPaletteVisible(false)}
+            />
+          ) : overviewVisible ? (
+            <SessionOverview
+              sessions={tabs.sessions}
+              activeIndex={tabs.activeIndex}
+              width={Math.min(68, Math.max(24, contentWidth - 2))}
+              viewportHeight={viewportHeight}
+              terminalTop={1}
+              onSelect={selectSession}
+              onNewSession={() => {
+                openPendingTab()
+                setOverviewVisible(false)
+              }}
+              onClose={() => setOverviewVisible(false)}
+            />
+          ) : inspector !== null ? (
+            <LineInspector
+              title={inspector.title}
+              lines={inspector.lines}
+              width={Math.min(76, Math.max(24, contentWidth - 2))}
+              height={Math.min(viewportHeight, 22)}
+            />
+          ) : searchOpen ? (
+            <TranscriptSearch
+              value={searchQuery}
+              matchCount={searchMatches.length}
+              matchIndex={searchCursor}
+              onChange={handleSearchChange}
+              onNext={() => cycleSearch(1)}
+              onPrevious={() => cycleSearch(-1)}
+              onClose={handleSearchClose}
+            />
+          ) : undefined
+        }
+        notifications={
+          notificationRows > 0 ? (
+            <NotificationCenter
+              width={contentWidth}
+              terminalTop={rows - promptRows - notificationRows}
+              state={notificationState}
+              onDismiss={(id) => dispatchNotification({ type: "dismiss", id })}
+              onAction={handleSubmit}
+              active={!overlayVisible}
+            />
+          ) : undefined
+        }
+      />
     </Fill>
   )
 }

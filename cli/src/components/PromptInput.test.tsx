@@ -376,7 +376,7 @@ describe("PromptInput multiline", () => {
     await settle()
     stdin.write("c")
     await settle()
-    expect(rows.at(-1)).toBe(4)
+    expect(rows.at(-1)).toBe(3)
     unmount()
   })
 

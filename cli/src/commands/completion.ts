@@ -18,6 +18,7 @@ export const COMPLETION_COMMANDS: readonly string[] = [
   "config",
   "setup",
   "completion",
+  "doctor",
 ]
 
 /** Global flags the completions offer (mirrors the yargs options). */

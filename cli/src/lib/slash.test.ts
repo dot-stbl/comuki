@@ -181,6 +181,25 @@ describe("resolveSlashAction", () => {
       rest: "",
     })
   })
+
+  it("parses /theme: bare lists, a name switches", () => {
+    expect(resolveSlashAction("/theme")).toEqual({ kind: "theme", name: "" })
+    expect(resolveSlashAction("/theme   ")).toEqual({ kind: "theme", name: "" })
+    expect(resolveSlashAction("/theme dockside-dark")).toEqual({
+      kind: "theme",
+      name: "dockside-dark",
+    })
+    expect(resolveSlashAction("/theme Graphite-Light")).toEqual({
+      kind: "theme",
+      name: "graphite-light",
+    })
+  })
+
+  it("routes /whoami and /keys", () => {
+    expect(resolveSlashAction("/whoami")).toEqual({ kind: "whoami" })
+    expect(resolveSlashAction("WHOAMI")).toEqual({ kind: "whoami" })
+    expect(resolveSlashAction("/keys")).toEqual({ kind: "keys" })
+  })
 })
 
 describe("slashHelpLines", () => {
@@ -209,6 +228,9 @@ describe("slashHelpLines", () => {
     expect(help).toContain("/snip [name|save <name>|rm <name>]")
     expect(help).toContain("/branch [message]")
     expect(help).toContain("/kb add <file|glob> | /kb list")
+    expect(help).toContain("/theme [name]")
+    expect(help).toContain("/whoami")
+    expect(help).toContain("/keys")
   })
 
   it("aligns descriptions in one column", () => {

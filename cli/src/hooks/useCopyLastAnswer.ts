@@ -13,6 +13,7 @@
 import { useInput } from "ink"
 import { useCallback, useEffect, useRef, useState } from "react"
 import clipboardy from "clipboardy"
+import { matchesBinding } from "../lib/keybindings"
 
 /** Async clipboard write — injectable so tests never touch the OS. */
 export type ClipboardWriter = (text: string) => Promise<void>
@@ -27,6 +28,8 @@ export interface UseCopyLastAnswerOptions {
    * `null` / empty → "no code block".
    */
   readonly getLastCodeFence?: () => string | null
+  /** Chord from the keybindings overlay; defaults to `ctrl+y`. */
+  readonly chord?: string
 }
 
 export interface CopyLastAnswer {
@@ -46,6 +49,7 @@ export function useCopyLastAnswer(
   // Fresh-on-every-render getter without re-registering the key handler.
   const getterRef = useRef(getLastAnswer)
   const codeGetterRef = useRef(options.getLastCodeFence)
+  const chordRef = useRef(options.chord ?? "ctrl+y")
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -55,6 +59,10 @@ export function useCopyLastAnswer(
   useEffect(() => {
     codeGetterRef.current = options.getLastCodeFence
   }, [options.getLastCodeFence])
+
+  useEffect(() => {
+    chordRef.current = options.chord ?? "ctrl+y"
+  }, [options.chord])
 
   useEffect(
     () => () => {
@@ -87,11 +95,11 @@ export function useCopyLastAnswer(
   }, [flash, write])
 
   useInput((input, key) => {
-    if (!key.ctrl || (input !== "y" && input !== "Y")) {
+    if (key.ctrl && (key.shift || input === "Y") && (input === "y" || input === "Y")) {
+      copyCode()
       return
     }
-    if (key.shift || input === "Y") {
-      copyCode()
+    if (!matchesBinding(chordRef.current, input, key)) {
       return
     }
     const text = getterRef.current()

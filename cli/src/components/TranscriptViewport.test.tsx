@@ -2,7 +2,8 @@
  * TranscriptViewport smoke tests through ink-testing-library (fixed
  * 100-col stdout): the bottom window renders, scrolling up surfaces
  * older lines, the `↓ new messages` indicator reserves the last row
- * and only appears for fresh output while suspended.
+ * and only appears for fresh output while suspended, and the ctrl+f
+ * highlight prop wraps matches in inverse video.
  */
 import { describe, expect, test } from "bun:test"
 import React from "react"
@@ -125,6 +126,78 @@ describe("TranscriptViewport", () => {
       <TranscriptViewport lines={LINES} height={5} offset={0} newBelow={false} />
     )
     expect(lastFrame() ?? "").not.toContain("ctrl+o")
+    unmount()
+  })
+})
+
+describe("TranscriptViewport — ctrl+f highlight", () => {
+  test("matching lines render with inverse-video wraps", () => {
+    const { lastFrame, unmount } = render(
+      <TranscriptViewport
+        lines={LINES}
+        height={5}
+        offset={0}
+        newBelow={false}
+        highlight={{ query: "line-2", activeLine: null }}
+      />
+    )
+    const frame = lastFrame() ?? ""
+    // The window shows lines 25–29; the "line-2" prefix of every row
+    // wraps in inverse video, the row tail stays plain.
+    expect(frame).toContain("\x1b[7mline-2\x1b[27m5")
+    expect(frame).toContain("\x1b[7mline-2\x1b[27m9")
+    // Five matching rows, none underlined (no active line).
+    expect(frame.split("\x1b[7m").length - 1).toBe(5)
+    expect(frame).not.toContain("\x1b[4m")
+    unmount()
+  })
+
+  test("the active match line is the one that also underlines", () => {
+    // Window shows lines 20–24 (offset 5): active line 22.
+    const { lastFrame, unmount } = render(
+      <TranscriptViewport
+        lines={LINES}
+        height={5}
+        offset={5}
+        newBelow={false}
+        highlight={{ query: "line-2", activeLine: 22 }}
+      />
+    )
+    const frame = lastFrame() ?? ""
+    const rows = frame.split("\n")
+    const active = rows.find((row) => row.includes("\x1b[4m"))
+    expect(active).toBeDefined()
+    // The underlined row is the active line, not a neighbouring match.
+    expect(active).toContain("\x1b[7m\x1b[4mline-2\x1b[24m\x1b[27m2")
+    // Other matching rows carry inverse but not the underline.
+    const others = rows.filter(
+      (row) => row.includes("\x1b[7m") && !row.includes("\x1b[4m")
+    )
+    expect(others.length).toBe(4)
+    unmount()
+  })
+
+  test("a query with no visible matches changes nothing", () => {
+    const { lastFrame, unmount } = render(
+      <TranscriptViewport
+        lines={LINES}
+        height={5}
+        offset={0}
+        newBelow={false}
+        highlight={{ query: "absent-needle", activeLine: null }}
+      />
+    )
+    const frame = lastFrame() ?? ""
+    expect(frame).not.toContain("\x1b[7m")
+    expect(frame).toContain("line-29")
+    unmount()
+  })
+
+  test("no highlight prop renders raw lines", () => {
+    const { lastFrame, unmount } = render(
+      <TranscriptViewport lines={LINES} height={5} offset={0} newBelow={false} />
+    )
+    expect(lastFrame() ?? "").not.toContain("\x1b[7m")
     unmount()
   })
 })

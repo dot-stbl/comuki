@@ -523,6 +523,47 @@ describe("renderPart — full blocks", () => {
     const lines = renderPart({ kind: "text", markdown: "План:\n1. Шаг" })
     expect(lines.map(stripAnsi)).toEqual(["План:", "", "  1. Шаг"])
   })
+
+  it("renders a diff-tagged code part as signed lines, not a muted fence", () => {
+    const lines = renderPart(
+      {
+        kind: "code",
+        language: "diff",
+        source: "@@ -1,2 +1,2 @@\n-old line\n+new line\n context",
+      },
+      80
+    )
+    expect(stripAnsi(lines[0] ?? "")).toBe("  · diff")
+    expect(stripAnsi(lines[1] ?? "")).toBe("  @@ -1,2 +1,2 @@")
+    expect(lines[1]).toContain(colors.accent)
+    expect(stripAnsi(lines[2] ?? "")).toBe("  -old line")
+    expect(lines[2]).toContain(colors.error)
+    expect(stripAnsi(lines[3] ?? "")).toBe("  +new line")
+    expect(lines[3]).toContain(colors.ok)
+    expect(lines[4]).toContain(colors.faint)
+  })
+
+  it("sniffs an untagged unified diff body and renders it structured", () => {
+    const lines = renderPart(
+      {
+        kind: "code",
+        language: "",
+        source: "--- a/one.ts\n+++ b/one.ts\n@@ -1 +1 @@\n-a\n+b",
+      },
+      80
+    )
+    expect(lines.some((line) => line.includes(colors.ok))).toBe(true)
+    expect(lines.some((line) => line.includes(colors.error))).toBe(true)
+  })
+
+  it("keeps a plain code fence muted when it is not a diff", () => {
+    const lines = renderPart(
+      { kind: "code", language: "ts", source: "+plus\n-minus" },
+      80
+    )
+    expect(lines[1]).toContain(colors.muted)
+    expect(lines.some((line) => line.includes(colors.ok))).toBe(false)
+  })
 })
 
 describe("renderMessage — collapsed transcript", () => {

@@ -44,7 +44,6 @@ import type { InterceptKey } from "./MentionMenu"
 
 export interface PromptInputProps {
   readonly onSubmit: (value: string) => void
-  readonly label?: string
   readonly placeholder?: string
   readonly history?: readonly string[]
   /** false → the editor ignores keys (a thinking turn owns the tab). */
@@ -114,7 +113,6 @@ const FRESH_EDITOR: EditorState = {
 
 export function PromptInput({
   onSubmit,
-  label = "",
   placeholder = "Ask Comuki. Use / for actions or @ for knowledge.",
   history = [],
   active = true,
@@ -394,8 +392,7 @@ export function PromptInput({
   // -- reporting hooks (shell side: hotkey gates + viewport math) --------
 
   const inputRows = Math.max(1, state.value.split("\n").length)
-  // One quiet metadata row + editor rows. No permanent key tutorial.
-  const renderedRows = (menuOpen ? matches.length + 1 : 0) + inputRows + 1
+  const renderedRows = (menuOpen ? matches.length + 1 : 0) + inputRows
 
   useEffect(() => {
     onMenuOpenChange?.(menuOpen)
@@ -445,14 +442,6 @@ export function PromptInput({
           {menuRows}
         </>
       ) : null}
-      <Text dimColor>
-        {`  ${
-          label ||
-          (state.value.length === 0
-            ? "ctrl+p actions / esc sessions"
-            : "composing")
-        }`}
-      </Text>
       {lines.map((line, index) => (
         <Text key={index}>
           {index === 0 ? (

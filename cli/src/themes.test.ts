@@ -12,7 +12,7 @@ import {
   findCliThemeChoice,
   isThemeChoice,
 } from "./themes"
-import { colors, palette, resolveTheme } from "./theme"
+import { colors, currentThemeId, palette, resolveTheme } from "./theme"
 
 const HEX = /^#[0-9a-f]{6}$/i
 
@@ -108,12 +108,14 @@ describe("resolveTheme", () => {
 
   it("installs the resolved tokens into colors and palette", () => {
     resolveTheme("graphite-light")
+    expect(currentThemeId()).toBe("graphite-light")
     expect(colors.accent).toBe("\x1b[38;2;0;87;158m") // #00579e
     expect(colors.dim).toBe("\x1b[38;2;66;70;74m") // #42464a
     expect(colors.muted).toBe(colors.dim)
     expect(palette.brand).toBe("#00579e")
     expect(palette.error).toBe("#951720")
     resolveTheme("dichromat-dark") // restore module state for other files
+    expect(currentThemeId()).toBe("dichromat-dark")
   })
 
   it("round-trips every registry choice", () => {

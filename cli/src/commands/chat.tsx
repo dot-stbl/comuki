@@ -27,7 +27,7 @@ import {
   isAbortError,
   type ChatMessageView,
 } from "../lib/client"
-import { whoAmI } from "../lib/auth"
+import { formatWhoamiLines, whoAmI, whoFromError, whoFromMe } from "../lib/auth"
 import {
   expandHintLine,
   findMatches,
@@ -128,7 +128,26 @@ import {
   startChatHubConnection,
   type HubConnectionState,
 } from "../lib/signalr"
-import { colors, palette, symbols } from "../theme"
+import {
+  DEFAULT_KEYBINDINGS,
+  keybindingsListingLines,
+  matchesBinding,
+  readKeybindingsFile,
+  type Keybindings,
+} from "../lib/keybindings"
+import {
+  themeListingLines,
+  themeSwitchedLine,
+  themeUnknownLines,
+} from "../lib/theme-command"
+import {
+  colors,
+  currentThemeId,
+  isThemeChoice,
+  palette,
+  resolveTheme,
+  symbols,
+} from "../theme"
 import { PromptInput } from "../components/PromptInput"
 import { SessionFooter } from "../components/SessionFooter"
 import { SessionOverview } from "../components/SessionOverview"
@@ -214,6 +233,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const [bellEnabled, setBellEnabled] = useState(config.bell)
   /** Mirror for callbacks — `describeTurn` reads the live value. */
   const bellRef = useRef(config.bell)
+  /** Overlay over the default chords — `/keys` and the shell useInput. */
+  const [keybindings, setKeybindings] = useState<Keybindings>(
+    DEFAULT_KEYBINDINGS
+  )
+  const keybindingsRef = useRef<Keybindings>(DEFAULT_KEYBINDINGS)
   /** Rendered height of the prompt block (menu rows + wrapped lines). */
   const [promptRows, setPromptRows] = useState(1)
 
@@ -248,10 +272,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     terminalTitle(activeSession?.name, activeSession?.status === "thinking")
   )
 
-  // ctrl+y copies the last assistant answer; hint is rendered near the
-  // prompt (getter is kept fresh by the hook, no stale transcript).
-  const { hint: copyHint } = useCopyLastAnswer(() =>
-    lastAssistantText(activeSession?.blocks ?? [])
+  // ctrl+y (or the overlay's copy chord) copies the last assistant
+  // answer; hint is rendered near the prompt.
+  const { hint: copyHint } = useCopyLastAnswer(
+    () => lastAssistantText(activeSession?.blocks ?? []),
+    { chord: keybindings.copy }
   )
 
   // Prompt-block reporting — stable callbacks so the effects inside
@@ -460,6 +485,17 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   useEffect(() => {
     bellRef.current = bellEnabled
   }, [bellEnabled])
+
+  useEffect(() => {
+    keybindingsRef.current = keybindings
+  }, [keybindings])
+
+  useEffect(() => {
+    void readKeybindingsFile().then((resolved) => {
+      setKeybindings(resolved)
+      keybindingsRef.current = resolved
+    })
+  }, [])
 
   const persist = useCallback((state: SessionsState) => {
     void writeSessionsFile(state).catch(() => {
@@ -1670,6 +1706,77 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           runKb(action.subcommand, action.rest)
           return
         }
+        case "theme": {
+          const current = currentThemeId()
+          if (action.name.length === 0) {
+            const lines = themeListingLines(current)
+            if (target) {
+              pushLines(target.id, lines)
+            } else {
+              setNoticeLines(lines)
+            }
+            return
+          }
+          if (!isThemeChoice(action.name)) {
+            const lines = themeUnknownLines(action.name, current)
+            if (target) {
+              pushLines(target.id, lines)
+            } else {
+              setNoticeLines(lines)
+            }
+            return
+          }
+          resolveTheme(action.name)
+          void (async () => {
+            try {
+              const contents = await readConfigFile()
+              await writeConfigFile({ ...contents, theme: action.name })
+            } catch {
+              // Best-effort persistence; the live palette already switched.
+            }
+          })()
+          const line = themeSwitchedLine(action.name)
+          if (target) {
+            pushLines(target.id, [line])
+          } else {
+            setNoticeLines([line])
+          }
+          return
+        }
+        case "whoami": {
+          const client = clientRef.current
+          if (!client) {
+            return
+          }
+          void (async () => {
+            try {
+              const me = await client.me()
+              const lines = formatWhoamiLines(whoFromMe(me), me)
+              if (target) {
+                pushLines(target.id, lines)
+              } else {
+                setNoticeLines(lines)
+              }
+            } catch (error) {
+              const lines = formatWhoamiLines(whoFromError(error))
+              if (target) {
+                pushLines(target.id, lines)
+              } else {
+                setNoticeLines(lines)
+              }
+            }
+          })()
+          return
+        }
+        case "keys": {
+          const lines = keybindingsListingLines(keybindingsRef.current)
+          if (target) {
+            pushLines(target.id, lines)
+          } else {
+            setNoticeLines(lines)
+          }
+          return
+        }
         case "message": {
           void sendMessage(target, value)
           return
@@ -1766,21 +1873,22 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       })
       return
     }
-    if (key.escape) {
+    const bindings = keybindingsRef.current
+    if (matchesBinding(bindings.overview, input, key)) {
       setOverviewVisible((current) => !current)
       return
     }
-    if (key.ctrl && input === "n") {
+    if (matchesBinding(bindings.new, input, key)) {
       openPendingTab()
       return
     }
-    if (key.ctrl && input === "f") {
+    if (matchesBinding(bindings.search, input, key)) {
       // Transcript search — the inline row above the footer owns the
       // keyboard from here until esc closes it.
       setSearchOpen(true)
       return
     }
-    if (key.ctrl && input === "o") {
+    if (matchesBinding(bindings.verbose, input, key)) {
       // Verbose toggle — flips the active tab's expand flag; the dynamic
       // viewport re-renders the whole transcript under the new mode.
       const target =
@@ -1798,7 +1906,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       }
       return
     }
-    if (key.ctrl && input === "w") {
+    if (matchesBinding(bindings.close, input, key)) {
       closeSession(tabs.activeIndex)
     }
   })

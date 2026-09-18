@@ -3,7 +3,13 @@
  * config file) and the credential summary the header line prints. v1 is
  * deliberately simple: API key or cookie, no OIDC.
  */
-import { ComukiClient, ComukiApiError, type LoginSuccess } from "./client"
+import {
+  ComukiClient,
+  ComukiApiError,
+  type LoginSuccess,
+  type MeView,
+} from "./client"
+import { colors, symbols } from "../theme"
 import {
   configFilePath,
   readConfigFile,
@@ -38,22 +44,52 @@ export interface WhoAmI {
   readonly label: string
 }
 
+/** Maps a `/auth/me` payload to the header-line identity. */
+export function whoFromMe(me: MeView): WhoAmI {
+  if (me.subjectType === "api-key") {
+    return { kind: "apiKey", label: `api key ${shortId(me.subjectId)}` }
+  }
+  return {
+    kind: "user",
+    label: me.displayName ?? me.email ?? `user ${shortId(me.subjectId)}`,
+  }
+}
+
+/**
+ * Transcript / `comuki whoami` lines: kind · label, then roles and
+ * permissions when the payload carried them.
+ */
+export function formatWhoamiLines(
+  who: WhoAmI,
+  me?: MeView
+): readonly string[] {
+  const lines = [
+    `${colors.accent}  ${who.kind}${colors.reset} ${symbols.bullet} ${who.label}`,
+  ]
+  if (me !== undefined && me.roles.length > 0) {
+    lines.push(`${colors.dim}  roles: ${me.roles.join(", ")}${colors.reset}`)
+  }
+  if (me !== undefined && me.permissions.length > 0) {
+    lines.push(
+      `${colors.dim}  permissions: ${me.permissions.join(", ")}${colors.reset}`
+    )
+  }
+  return lines
+}
+
+/** 401 → anonymous; any other failure → offline. */
+export function whoFromError(error: unknown): WhoAmI {
+  if (error instanceof ComukiApiError && error.status === 401) {
+    return { kind: "anonymous", label: "anonymous" }
+  }
+  return { kind: "anonymous", label: "offline" }
+}
+
 export async function whoAmI(client: ComukiClient): Promise<WhoAmI> {
   try {
-    const me = await client.me()
-    if (me.subjectType === "api-key") {
-      return { kind: "apiKey", label: `api key ${shortId(me.subjectId)}` }
-    }
-    return {
-      kind: "user",
-      label: me.displayName ?? me.email ?? `user ${shortId(me.subjectId)}`,
-    }
+    return whoFromMe(await client.me())
   } catch (error) {
-    if (error instanceof ComukiApiError && error.status === 401) {
-      return { kind: "anonymous", label: "anonymous" }
-    }
-    // Server unreachable — the command surfaces the real error separately.
-    return { kind: "anonymous", label: "offline" }
+    return whoFromError(error)
   }
 }
 

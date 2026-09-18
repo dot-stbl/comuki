@@ -13,6 +13,7 @@
 import { useInput } from "ink"
 import { useCallback, useEffect, useRef, useState } from "react"
 import clipboardy from "clipboardy"
+import { matchesBinding } from "../lib/keybindings"
 
 /** Async clipboard write — injectable so tests never touch the OS. */
 export type ClipboardWriter = (text: string) => Promise<void>
@@ -22,6 +23,8 @@ export interface UseCopyLastAnswerOptions {
   readonly write?: ClipboardWriter
   /** How long the hint stays on screen before fading (default 2s). */
   readonly hintMs?: number
+  /** Chord from the keybindings overlay; defaults to `ctrl+y`. */
+  readonly chord?: string
 }
 
 export interface CopyLastAnswer {
@@ -38,11 +41,16 @@ export function useCopyLastAnswer(
   const [hint, setHint] = useState<string | null>(null)
   // Fresh-on-every-render getter without re-registering the key handler.
   const getterRef = useRef(getLastAnswer)
+  const chordRef = useRef(options.chord ?? "ctrl+y")
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     getterRef.current = getLastAnswer
   }, [getLastAnswer])
+
+  useEffect(() => {
+    chordRef.current = options.chord ?? "ctrl+y"
+  }, [options.chord])
 
   useEffect(
     () => () => {
@@ -65,7 +73,7 @@ export function useCopyLastAnswer(
   )
 
   useInput((input, key) => {
-    if (!key.ctrl || input !== "y") {
+    if (!matchesBinding(chordRef.current, input, key)) {
       return
     }
     const text = getterRef.current()

@@ -27,7 +27,7 @@ import {
   isAbortError,
   type ChatMessageView,
 } from "../lib/client"
-import { whoAmI } from "../lib/auth"
+import { describeAuthFailure, loginAndStore, whoAmI } from "../lib/auth"
 import {
   expandHintLine,
   findMatches,
@@ -218,6 +218,18 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const [promptRows, setPromptRows] = useState(1)
 
   const clientRef = useRef<ComukiClient | null>(null)
+  const configRef = useRef(config)
+  const usingApiKeyRef = useRef(Boolean(config.apiKey))
+  /**
+   * Inline `/login` wizard: two prompts (email, then password) that
+   * replace the chat input until the cookie is stored. Null = the
+   * regular prompt.
+   */
+  const [loginStep, setLoginStep] = useState<"email" | "password" | null>(
+    null
+  )
+  const loginEmailRef = useRef("")
+  const pendingRetryRef = useRef<string | null>(null)
   const hubRef = useRef<HubConnection | null>(null)
   const projectIdRef = useRef<string | undefined>(undefined)
   const activeIdRef = useRef<string | undefined>(undefined)
@@ -461,11 +473,100 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     bellRef.current = bellEnabled
   }, [bellEnabled])
 
+  useEffect(() => {
+    configRef.current = config
+    usingApiKeyRef.current = Boolean(config.apiKey)
+  }, [config])
+
   const persist = useCallback((state: SessionsState) => {
     void writeSessionsFile(state).catch(() => {
       // Restore is best-effort; a failed write never breaks the chat.
     })
   }, [])
+
+  const persistCookie = useCallback((cookie: string) => {
+    void (async () => {
+      try {
+        const existing = await readConfigFile()
+        await writeConfigFile({ ...existing, cookie })
+      } catch {
+        // Persistence is best-effort; the in-memory client already
+        // carries the refreshed cookie for the rest of this session.
+      }
+    })()
+  }, [])
+
+  const applySession = useCallback(
+    async (cookie: string) => {
+      const nextConfig = { ...configRef.current, cookie, apiKey: undefined }
+      configRef.current = nextConfig
+      usingApiKeyRef.current = false
+      persistCookie(cookie)
+
+      const previous = hubRef.current
+      if (previous) {
+        void previous.stop()
+        hubRef.current = null
+      }
+
+      const client = new ComukiClient(nextConfig, {
+        onLatencySample: setLatencyMs,
+        onSessionCookie: persistCookie,
+      })
+      clientRef.current = client
+      client.setSessionCookie(cookie)
+
+      const who = await whoAmI(client)
+      setIdentity(who.label)
+      setConnectError(null)
+
+      try {
+        const connection = await startChatHubConnection({
+          hubUrl: client.hubUrl(),
+          headers: client.hubHeaders(),
+          onStateChange: setHubState,
+          onReconnected: () => {
+            const hub = hubRef.current
+            if (hub) {
+              const sessionIds = sessionsRef.current
+                .map((session) => session.id)
+                .filter((id) => !id.startsWith(PENDING_PREFIX))
+              void rejoinChatGroups(hub, sessionIds)
+            }
+          },
+        })
+        if (connection) {
+          hubRef.current = connection
+          bindChatEvents(
+            connection,
+            (chunk) => {
+              if (mutedSessionsRef.current.has(chunk.sessionId)) {
+                return
+              }
+              setTabs((current) => ({
+                ...current,
+                sessions: appendLiveText(
+                  current.sessions,
+                  chunk.sessionId,
+                  chunk.text
+                ),
+              }))
+            },
+            () => {
+              // ChatTurnComplete — the POST result renders the turn.
+            }
+          )
+          const sessionIds = sessionsRef.current
+            .map((session) => session.id)
+            .filter((id) => !id.startsWith(PENDING_PREFIX))
+          void rejoinChatGroups(connection, sessionIds)
+        }
+      } catch {
+        // REST stays authoritative; a dead hub is the existing fallback.
+      }
+    },
+    [persistCookie]
+  )
 
   // -- connect + restore -------------------------------------------------------
 
@@ -476,6 +577,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     void (async () => {
       const client = new ComukiClient(config, {
         onLatencySample: setLatencyMs,
+        onSessionCookie: persistCookie,
       })
       clientRef.current = client
 
@@ -605,7 +707,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         void connection.stop()
       }
     }
-  }, [config, project])
+  }, [config, persistCookie, project])
 
   // -- lazy hydration for restored tabs ----------------------------------------
   // Deps are the stable identity fields — transcript updates must not
@@ -680,11 +782,30 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           )
           return
         }
+        const authNotice = describeAuthFailure(
+          error,
+          usingApiKeyRef.current
+        )
+        if (error instanceof ComukiApiError && error.status === 401) {
+          setIdentity("signed out")
+        }
         setTabs((current) => ({
           ...current,
-          sessions: patchSession(current.sessions, sessionId, {
-            hydrated: true,
-          }),
+          sessions: patchSession(
+            authNotice
+              ? appendBlocks(current.sessions, sessionId, [
+                  {
+                    kind: "lines",
+                    lines: [
+                      "",
+                      `${colors.error}${symbols.cross} ${authNotice}${colors.reset}`,
+                    ],
+                  },
+                ])
+              : current.sessions,
+            sessionId,
+            { hydrated: true }
+          ),
         }))
       }
     })()
@@ -788,6 +909,38 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               ]),
               sessionId,
               { status: "done", liveText: "" }
+            ),
+          }))
+          return
+        }
+        const authNotice = describeAuthFailure(
+          error,
+          usingApiKeyRef.current
+        )
+        if (authNotice) {
+          if (
+            error instanceof ComukiApiError &&
+            error.status === 401
+          ) {
+            setIdentity("signed out")
+            if (payload.message) {
+              pendingRetryRef.current = payload.message
+            }
+          }
+          setTabs((current) => ({
+            ...current,
+            sessions: patchSession(
+              appendBlocks(current.sessions, sessionId, [
+                {
+                  kind: "lines",
+                  lines: [
+                    "",
+                    `${colors.error}${symbols.cross} ${authNotice}${colors.reset}`,
+                  ],
+                },
+              ]),
+              sessionId,
+              { status: "idle" }
             ),
           }))
           return
@@ -981,9 +1134,20 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             message: expansion.outgoing,
           })
         } catch (error) {
+          const authNotice = describeAuthFailure(
+            error,
+            usingApiKeyRef.current
+          )
+          if (
+            error instanceof ComukiApiError &&
+            error.status === 401
+          ) {
+            setIdentity("signed out")
+            pendingRetryRef.current = expansion.outgoing
+          }
           setNoticeLines([
             "",
-            `${colors.error}${symbols.cross} ${describeError(error)}${colors.reset}`,
+            `${colors.error}${symbols.cross} ${authNotice ?? describeError(error)}${colors.reset}`,
           ])
         }
         return
@@ -1245,6 +1409,68 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
   // -- input ----------------------------------------------------------------------
 
+  const announce = useCallback(
+    (line: string) => {
+      const target =
+        tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
+      if (target) {
+        pushLines(target.id, [line])
+      } else {
+        setNoticeLines([line])
+      }
+    },
+    [pushLines, tabs]
+  )
+
+  const submitLogin = useCallback(
+    (raw: string) => {
+      const value = raw.trim()
+      if (loginStep === "email") {
+        if (value.length === 0) {
+          return
+        }
+        loginEmailRef.current = value
+        setLoginStep("password")
+        return
+      }
+      if (loginStep !== "password") {
+        return
+      }
+      if (value.length === 0) {
+        return
+      }
+      const email = loginEmailRef.current
+      setLoginStep(null)
+      void (async () => {
+        try {
+          const success = await loginAndStore(
+            configRef.current.url,
+            email,
+            value
+          )
+          await applySession(success.cookie)
+          announce(
+            `${colors.ok}${symbols.checkmark} signed in as ${success.displayName} (${success.email})${colors.reset}`
+          )
+          const retry = pendingRetryRef.current
+          pendingRetryRef.current = null
+          if (retry) {
+            const target =
+              tabs.activeIndex >= 0
+                ? tabs.sessions[tabs.activeIndex]
+                : undefined
+            await sendMessage(target, retry)
+          }
+        } catch (error) {
+          announce(
+            `${colors.error}${symbols.cross} ${describeError(error)}${colors.reset}`
+          )
+        }
+      })()
+    },
+    [announce, applySession, loginStep, sendMessage, tabs]
+  )
+
   const handleSubmit = useCallback(
     (raw: string) => {
       const value = raw.trim()
@@ -1324,6 +1550,18 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             pushLines(target.id, lines)
           } else {
             setNoticeLines(lines)
+          }
+          return
+        }
+        case "login": {
+          loginEmailRef.current = ""
+          pendingRetryRef.current = null
+          setLoginStep("email")
+          const line = `${colors.faint}  sign in — email, then password${colors.reset}`
+          if (target) {
+            pushLines(target.id, [line])
+          } else {
+            setNoticeLines([line])
           }
           return
         }
@@ -1710,7 +1948,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     }
     // While the ctrl+f search row is open it owns the keyboard: its
     // editor eats the query keystrokes and enter/esc drive the search.
-    if (searchOpen) {
+    if (searchOpen || loginStep !== null) {
       return
     }
     // The slash menu owns tab (complete), esc (dismiss) and ↑/↓
@@ -1948,15 +2186,32 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           ) : null}
           {queuedCount > 0 ? <Text>{queueHintLine(queuedCount)}</Text> : null}
           {mentionMenu.element}
-          <PromptInput
-            onSubmit={handleSubmit}
-            history={activeSession?.history ?? []}
-            active={promptEnabled && !searchOpen}
-            historyRecallEnabled={!scroll.scrolledUp}
-            onMenuOpenChange={handleMenuOpenChange}
-            onRowsChange={handlePromptRows}
-            {...mentionMenu.promptBindings}
-          />
+          {loginStep === null ? (
+            <PromptInput
+              onSubmit={handleSubmit}
+              history={activeSession?.history ?? []}
+              active={promptEnabled && !searchOpen}
+              historyRecallEnabled={!scroll.scrolledUp}
+              onMenuOpenChange={handleMenuOpenChange}
+              onRowsChange={handlePromptRows}
+              {...mentionMenu.promptBindings}
+            />
+          ) : (
+            <PromptInput
+              key={loginStep}
+              onSubmit={submitLogin}
+              history={[]}
+              active={promptEnabled && !searchOpen}
+              historyRecallEnabled={false}
+              slashMenuEnabled={false}
+              mask={loginStep === "password" ? "*" : undefined}
+              placeholder={
+                loginStep === "email" ? "email…" : "password…"
+              }
+              onMenuOpenChange={handleMenuOpenChange}
+              onRowsChange={handlePromptRows}
+            />
+          )}
         </>
       ) : null}
     </Box>

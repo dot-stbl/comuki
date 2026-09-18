@@ -256,10 +256,24 @@ export interface ClientOptions {
    * round-trip — the status bar's latency badge.
    */
   readonly onLatencySample?: (latencyMs: number) => void
+  /**
+   * Sliding cookie refresh: every successful response that carries a
+   * session `Set-Cookie` (`comuki.auth` / `.Comuki.Session`) fires this
+   * so the caller can persist it. Login itself still returns the cookie
+   * on the `LoginSuccess` — this is for mid-session refresh.
+   */
+  readonly onSessionCookie?: (cookie: string) => void
 }
 
 /** Smoothing factor for the chat-latency EMA (≈ the last 3 sends dominate). */
 const LATENCY_EMA_ALPHA = 0.3
+
+/** Host session cookie names — ASP.NET cookie auth + the older Session names. */
+const SESSION_COOKIE_NAMES = new Set([
+  "comuki.auth",
+  ".Comuki.Session",
+  "Comuki.Session",
+])
 
 /**
  * One EMA step over chat-send round-trips. The first sample seeds the
@@ -282,13 +296,21 @@ export class ComukiClient {
   private readonly signal?: AbortSignal
   private readonly baseUrl: string
   private readonly headers: Record<string, string>
+  /**
+   * Same object SignalR keeps after connect. Mutated in place by
+   * `setSessionCookie` so a sliding refresh is visible on reconnect
+   * without rebuilding the bag.
+   */
+  private readonly hubHeaderBag: Record<string, string> = {}
   private readonly onLatencySample?: (latencyMs: number) => void
+  private readonly onSessionCookie?: (cookie: string) => void
   private chatLatencyEmaMs: number | null = null
 
   constructor(config: ResolvedConfig, options: ClientOptions = {}) {
     this.fetchImpl = options.fetchImpl ?? (fetch as FetchLike)
     this.signal = options.signal
     this.onLatencySample = options.onLatencySample
+    this.onSessionCookie = options.onSessionCookie
     this.baseUrl = config.url.replace(/\/+$/, "")
     this.headers = {
       Accept: "application/json",
@@ -296,6 +318,7 @@ export class ComukiClient {
       ...(config.tenant ? { "X-Comuki-Tenant": config.tenant } : {}),
       ...(config.cookie ? { Cookie: config.cookie } : {}),
     }
+    this.syncHubHeaders()
   }
 
   /** EMA of successful chat POST round-trips; null before the first send. */
@@ -307,18 +330,27 @@ export class ComukiClient {
   readonly hubUrl = () => this.baseUrl + "/ws/runs"
 
   /** Headers the hub connection must send (API key / cookie auth). */
-  readonly hubHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = {}
+  readonly hubHeaders = (): Record<string, string> => this.hubHeaderBag
+
+  /**
+   * Replace the session cookie on this instance. The next REST call and
+   * the live hub-header bag both see the new value.
+   */
+  setSessionCookie(value: string): void {
+    this.headers.Cookie = value
+    this.hubHeaderBag.Cookie = value
+  }
+
+  private syncHubHeaders(): void {
     if (this.headers.Authorization) {
-      headers.Authorization = this.headers.Authorization
+      this.hubHeaderBag.Authorization = this.headers.Authorization
     }
     if (this.headers.Cookie) {
-      headers.Cookie = this.headers.Cookie
+      this.hubHeaderBag.Cookie = this.headers.Cookie
     }
     if (this.headers["X-Comuki-Tenant"]) {
-      headers["X-Comuki-Tenant"] = this.headers["X-Comuki-Tenant"]
+      this.hubHeaderBag["X-Comuki-Tenant"] = this.headers["X-Comuki-Tenant"]
     }
-    return headers
   }
 
   private async request<T>(
@@ -337,6 +369,10 @@ export class ComukiClient {
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     })
 
+    if (response.ok) {
+      this.captureSessionCookie(response)
+    }
+
     if (!response.ok) {
       throw await ComukiClient.toApiError(response)
     }
@@ -344,6 +380,16 @@ export class ComukiClient {
       return undefined as T
     }
     return (await response.json()) as T
+  }
+
+  private captureSessionCookie(response: Response): void {
+    const setCookie = response.headers.getSetCookie?.() ?? []
+    const cookie = ComukiClient.pickSessionCookie(setCookie)
+    if (!cookie) {
+      return
+    }
+    this.setSessionCookie(cookie)
+    this.onSessionCookie?.(cookie)
   }
 
   private static async toApiError(response: Response): Promise<ComukiApiError> {
@@ -393,25 +439,37 @@ export class ComukiClient {
         "login returned no session cookie"
       )
     }
+    this.setSessionCookie(cookie)
+    this.onSessionCookie?.(cookie)
     return { cookie, ...body }
   }
 
-  private static pickSessionCookie(
-    setCookie: readonly string[]
-  ): string | null {
+  /**
+   * First non-antiforgery session cookie in a `Set-Cookie` list.
+   * Prefers `comuki.auth` / `.Comuki.Session` / `Comuki.Session`; any
+   * other named cookie with a value is the fallback (host cookie names
+   * have drifted once already).
+   */
+  static pickSessionCookie(setCookie: readonly string[]): string | null {
+    let fallback: string | null = null
     for (const raw of setCookie) {
       const pair = raw.split(";", 1)[0] ?? ""
       const eq = pair.indexOf("=")
-      if (eq > 0) {
-        const name = pair.slice(0, eq).trim()
-        // Host session cookie is `.Comuki.Session` / `Comuki.Session`;
-        // any non-antiforgery cookie with a value wins as a fallback.
-        if (!/antiforgery|csrf/i.test(name) && pair.slice(eq + 1).length > 0) {
-          return pair.trim()
-        }
+      if (eq <= 0) {
+        continue
       }
+      const name = pair.slice(0, eq).trim()
+      const value = pair.slice(eq + 1)
+      if (/antiforgery|csrf/i.test(name) || value.length === 0) {
+        continue
+      }
+      const candidate = pair.trim()
+      if (SESSION_COOKIE_NAMES.has(name)) {
+        return candidate
+      }
+      fallback ??= candidate
     }
-    return null
+    return fallback
   }
 
   me(): Promise<MeView> {

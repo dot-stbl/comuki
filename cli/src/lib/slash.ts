@@ -68,6 +68,12 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: "this list",
   },
   {
+    name: "login",
+    aliases: [],
+    usage: "/login",
+    description: "sign in (email + password)",
+  },
+  {
     name: "sessions",
     aliases: [],
     usage: "/sessions",
@@ -157,6 +163,7 @@ export type SlashAction =
   | { readonly kind: "clear" }
   | { readonly kind: "stop" }
   | { readonly kind: "help" }
+  | { readonly kind: "login" }
   | { readonly kind: "sessions" }
   | { readonly kind: "new" }
   | { readonly kind: "approve" }
@@ -216,6 +223,9 @@ export function resolveSlashAction(raw: string): SlashAction {
   }
   if (matches("help", name)) {
     return { kind: "help" }
+  }
+  if (matches("login", name)) {
+    return { kind: "login" }
   }
   if (matches("sessions", name)) {
     return { kind: "sessions" }

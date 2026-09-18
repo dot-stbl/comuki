@@ -419,4 +419,27 @@ describe("PromptInput mention seams", () => {
     expect(frame).not.toContain("az")
     unmount()
   })
+
+  test("mask hides typed characters but submits the real value", async () => {
+    const submitted: string[] = []
+    const { stdin, lastFrame, unmount } = render(
+      <PromptInput
+        mask="*"
+        slashMenuEnabled={false}
+        onSubmit={(value) => submitted.push(value)}
+      />
+    )
+    await settle()
+    for (const character of ["s", "e", "c", "r", "e", "t"]) {
+      stdin.write(character)
+      await settle()
+    }
+    const frame = lastFrame() ?? ""
+    expect(frame).toContain("******")
+    expect(frame).not.toContain("secret")
+    stdin.write(ENTER)
+    await settle()
+    expect(submitted).toEqual(["secret"])
+    unmount()
+  })
 })

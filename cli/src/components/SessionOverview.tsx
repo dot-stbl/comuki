@@ -9,14 +9,14 @@
  * also carries its summed token usage, right-aligned and dim.
  */
 import { Box, Text, useInput } from "ink"
-import React from "react"
+import React, { useState } from "react"
 import {
   ageFromMs,
   extractPlanNodes,
   padVisible,
   truncateTail,
 } from "../lib/format"
-import type { ChatBlock, Session } from "../lib/sessions"
+import { filterSessions, type ChatBlock, type Session } from "../lib/sessions"
 import { palette } from "../theme"
 
 export interface SessionOverviewProps {
@@ -138,6 +138,9 @@ export function SessionOverview({
   onNewSession,
   onClose,
 }: SessionOverviewProps) {
+  const [query, setQuery] = useState("")
+  const visible = filterSessions(sessions, query)
+
   useInput((input, key) => {
     if (key.escape) {
       onClose()
@@ -147,21 +150,44 @@ export function SessionOverview({
       onNewSession()
       return
     }
-    if (!key.ctrl && !key.meta && input >= "1" && input <= "9") {
-      const index = Number(input) - 1
-      if (index < sessions.length) {
-        onSelect(index)
+    if (key.backspace || key.delete) {
+      if (query.length > 0) {
+        setQuery(query.slice(0, -1))
       }
+      return
+    }
+    if (!key.ctrl && !key.meta && input >= "1" && input <= "9") {
+      const rank = Number(input) - 1
+      const chosen = visible[rank]
+      if (chosen) {
+        const index = sessions.findIndex((session) => session.id === chosen.id)
+        if (index >= 0) {
+          onSelect(index)
+        }
+      }
+      return
+    }
+    if (
+      !key.ctrl &&
+      !key.meta &&
+      input.length === 1 &&
+      /[A-Za-z]/.test(input)
+    ) {
+      setQuery(query + input)
     }
   })
 
   const waiting = waitingApprovalRows(sessions)
+  const numbered = visible.slice(0, 9)
 
   return (
     <Box flexDirection="column" alignItems="center" paddingY={1}>
       <Text bold color={palette.brand}>
         SESSIONS
       </Text>
+      {query.length > 0 ? (
+        <Text dimColor>{`filter: ${query}`}</Text>
+      ) : null}
       {waiting.length > 0 ? (
         <Box flexDirection="column" width={OVERVIEW_WIDTH} paddingTop={1}>
           <Text bold color={palette.brand}>
@@ -179,9 +205,12 @@ export function SessionOverview({
         </Box>
       ) : null}
       <Box flexDirection="column" paddingTop={1}>
-        {sessions.slice(0, 9).map((session, index) => {
+        {numbered.map((session, index) => {
           const glyph = statusGlyph(session.status)
-          const active = index === activeIndex
+          const originalIndex = sessions.findIndex(
+            (candidate) => candidate.id === session.id
+          )
+          const active = originalIndex === activeIndex
           const totals = sessionTokenTotals(session.blocks)
           return (
             <Box

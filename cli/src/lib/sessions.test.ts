@@ -9,6 +9,7 @@ import {
   appendLiveText,
   branchOpener,
   forkTitle,
+  filterSessions,
   fromPersisted,
   markUnread,
   newPendingSession,
@@ -212,6 +213,32 @@ describe("renameSession", () => {
     const sessions = [liveSession("s1", "auto")]
     expect(renameSession(sessions, "s1", "   ")).toBe(sessions)
     expect(renameSession(sessions, "nope", "x")).toBe(sessions)
+  })
+})
+
+describe("filterSessions", () => {
+  it("returns the list as-is for a blank query", () => {
+    const sessions = [liveSession("s1", "alpha"), liveSession("s2", "beta")]
+    expect(filterSessions(sessions, "")).toBe(sessions)
+    expect(filterSessions(sessions, "   ")).toBe(sessions)
+  })
+
+  it("matches names case-insensitively as a substring", () => {
+    const sessions = [
+      liveSession("s1", "Fix Auth"),
+      liveSession("s2", "docs"),
+      liveSession("s3", "auth-review"),
+    ]
+    expect(filterSessions(sessions, "AUTH").map((session) => session.id)).toEqual(
+      ["s1", "s3"]
+    )
+    expect(filterSessions(sessions, "doc").map((session) => session.name)).toEqual(
+      ["docs"]
+    )
+  })
+
+  it("yields an empty list when nothing matches", () => {
+    expect(filterSessions([liveSession("s1", "alpha")], "zzz")).toEqual([])
   })
 })
 

@@ -53,6 +53,7 @@ import { useHomeEndKeys } from "../hooks/useHomeEndKeys"
 import { useSpinnerFrame } from "../hooks/useSpinnerFrame"
 import { useTerminalTitle } from "../hooks/useTerminalTitle"
 import { useTranscriptScroll } from "../hooks/useTranscriptScroll"
+import { lastCodeFence } from "../lib/format"
 import { lastAssistantText } from "../lib/history"
 import {
   dequeueMessage,
@@ -143,6 +144,8 @@ const EMPTY_TAB_HINT = `${colors.faint}  no open sessions — ctrl+n to start on
 
 const NOTHING_TO_RETRY = `${colors.faint}  nothing to retry — no message sent yet${colors.reset}`
 
+const NOTHING_TO_EDIT = `${colors.faint}  nothing to edit — no message sent yet${colors.reset}`
+
 const NOTHING_TO_STOP = `${colors.faint}  nothing to stop — no turn is running${colors.reset}`
 
 const NOTHING_TO_BRANCH = `${colors.faint}  nothing to branch from — no message sent yet${colors.reset}`
@@ -191,6 +194,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const [connectError, setConnectError] = useState<string | null>(null)
   const [noticeLines, setNoticeLines] = useState<readonly string[]>([])
   const [overviewVisible, setOverviewVisible] = useState(false)
+  const [promptSeed, setPromptSeed] = useState<
+    { readonly value: string; readonly seq: number } | undefined
+  >(undefined)
   /** The welcome screen never returns once the first message is sent. */
   const [welcomeDismissed, setWelcomeDismissed] = useState(false)
   const [stats, setStats] = useState<PlatformStats | null>(null)
@@ -248,10 +254,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     terminalTitle(activeSession?.name, activeSession?.status === "thinking")
   )
 
-  // ctrl+y copies the last assistant answer; hint is rendered near the
-  // prompt (getter is kept fresh by the hook, no stale transcript).
-  const { hint: copyHint } = useCopyLastAnswer(() =>
-    lastAssistantText(activeSession?.blocks ?? [])
+  // ctrl+y copies the last assistant answer; ctrl+shift+y / `/copycode`
+  // copies the last fenced code block. Hint is rendered near the prompt.
+  const { hint: copyHint, copyLastCode } = useCopyLastAnswer(
+    () => lastAssistantText(activeSession?.blocks ?? []),
+    {
+      getLastCodeFence: () => lastCodeFence(activeSession?.blocks ?? []),
+    }
   )
 
   // Prompt-block reporting — stable callbacks so the effects inside
@@ -1348,6 +1357,26 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           void sendMessage(target, last)
           return
         }
+        case "edit": {
+          const last = retryMessage(target)
+          if (!last) {
+            if (target) {
+              pushLines(target.id, [NOTHING_TO_EDIT])
+            } else {
+              setNoticeLines([NOTHING_TO_EDIT])
+            }
+            return
+          }
+          setPromptSeed((current) => ({
+            value: last,
+            seq: (current?.seq ?? 0) + 1,
+          }))
+          return
+        }
+        case "copycode": {
+          copyLastCode()
+          return
+        }
         case "rename": {
           if (!target) {
             setNoticeLines([
@@ -1676,7 +1705,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
       }
     },
-    [bellEnabled, exit, forkSession, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProject, tabs]
+    [bellEnabled, copyLastCode, exit, forkSession, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProject, tabs]
   )
 
   // -- queued-message drain -----------------------------------------------------
@@ -1737,6 +1766,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     // ↑/↓ scroll the transcript by one line while it is scrolled up;
     // at the bottom they keep their prompt-history-recall meaning
     // (PromptInput checks `historyRecallEnabled` for the same flag).
+    // j/k/g/G are the vim twins — same gate, so they never steal keys
+    // while the prompt is at the bottom (typing).
     if (key.upArrow && scroll.scrolledUp) {
       scroll.lineUp()
       return
@@ -1744,6 +1775,24 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     if (key.downArrow && scroll.scrolledUp) {
       scroll.lineDown()
       return
+    }
+    if (scroll.scrolledUp && !key.ctrl && !key.meta) {
+      if (input === "j") {
+        scroll.lineDown()
+        return
+      }
+      if (input === "k") {
+        scroll.lineUp()
+        return
+      }
+      if (input === "g") {
+        scroll.toTop()
+        return
+      }
+      if (input === "G") {
+        scroll.toBottom()
+        return
+      }
     }
     if (key.tab) {
       setTabs((current) => {
@@ -1955,6 +2004,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             historyRecallEnabled={!scroll.scrolledUp}
             onMenuOpenChange={handleMenuOpenChange}
             onRowsChange={handlePromptRows}
+            seed={promptSeed}
             {...mentionMenu.promptBindings}
           />
         </>

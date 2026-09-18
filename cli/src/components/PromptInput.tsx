@@ -77,6 +77,14 @@ export interface PromptInputProps {
    * by a parent re-render. `/edit` uses this; it never submits.
    */
   readonly seed?: { readonly value: string; readonly seq: number }
+  /**
+   * When set, every non-newline character renders as this glyph. The
+   * submitted value stays the real text — used by the inline `/login`
+   * password prompt.
+   */
+  readonly mask?: string
+  /** false → the `/` autocomplete menu never opens (login prompts). */
+  readonly slashMenuEnabled?: boolean
 }
 
 interface EditorState {
@@ -115,11 +123,13 @@ export function PromptInput({
   onDraftChange,
   interceptKey,
   seed,
+  mask,
+  slashMenuEnabled = true,
 }: PromptInputProps) {
   const [state, setState] = useState<EditorState>(FRESH_EDITOR)
   const seedSeqRef = useRef<number | undefined>(undefined)
 
-  const query = slashMenuQuery(state.value)
+  const query = slashMenuEnabled ? slashMenuQuery(state.value) : null
   const matches =
     query === null
       ? []
@@ -408,7 +418,11 @@ export function PromptInput({
     )
   })
 
-  const lines = promptLines(state.value, state.cursor, placeholder)
+  const displayValue =
+    mask === undefined || mask.length === 0
+      ? state.value
+      : maskValue(state.value, mask)
+  const lines = promptLines(displayValue, state.cursor, placeholder)
 
   return (
     <Box flexDirection="column">
@@ -429,6 +443,16 @@ export function PromptInput({
       ))}
     </Box>
   )
+}
+
+/** One mask glyph per input character — newlines stay newlines. */
+function maskValue(value: string, glyph: string): string {
+  const unit = glyph.slice(0, 1)
+  let masked = ""
+  for (const char of value) {
+    masked += char === "\n" ? "\n" : unit
+  }
+  return masked
 }
 
 /**

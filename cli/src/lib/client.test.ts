@@ -225,6 +225,85 @@ describe("ComukiClient", () => {
     })
   })
 
+  it("captures a sliding Set-Cookie on GET /me and updates stored cookie", async () => {
+    const captured: string[] = []
+    const { impl, calls } = fakeFetch({
+      "GET /api/v1/auth/me": {
+        body: { subjectId: "s" },
+        setCookie: [
+          "comuki.auth=refreshed; Path=/; HttpOnly",
+          "__Host-antiforgery=x; Path=/",
+        ],
+      },
+    })
+    const client = new ComukiClient(
+      resolveConfig(
+        { COMUKI_URL: "http://t" },
+        { cookie: "comuki.auth=stale" }
+      ),
+      { fetchImpl: impl, onSessionCookie: (cookie) => captured.push(cookie) }
+    )
+
+    await client.me()
+
+    expect(captured).toEqual(["comuki.auth=refreshed"])
+    expect(client.hubHeaders().Cookie).toBe("comuki.auth=refreshed")
+
+    await client.me()
+    expect(calls[1]?.headers.Cookie).toBe("comuki.auth=refreshed")
+  })
+
+  it("setSessionCookie mutates the live hub-header bag in place", () => {
+    const client = new ComukiClient(
+      resolveConfig(
+        { COMUKI_URL: "http://t" },
+        { cookie: "comuki.auth=old" }
+      )
+    )
+    const bag = client.hubHeaders()
+    expect(bag.Cookie).toBe("comuki.auth=old")
+
+    client.setSessionCookie("comuki.auth=new")
+
+    expect(bag.Cookie).toBe("comuki.auth=new")
+    expect(client.hubHeaders()).toBe(bag)
+  })
+
+  it("pickSessionCookie prefers comuki.auth over antiforgery", () => {
+    expect(
+      ComukiClient.pickSessionCookie([
+        "__Host-antiforgery=x; Path=/",
+        "comuki.auth=abc; Path=/; HttpOnly",
+      ])
+    ).toBe("comuki.auth=abc")
+    expect(
+      ComukiClient.pickSessionCookie([".Comuki.Session=xyz; Path=/"])
+    ).toBe(".Comuki.Session=xyz")
+    expect(ComukiClient.pickSessionCookie(["__Host-antiforgery=x"])).toBeNull()
+  })
+
+  it("maps a 401 problem+json onto ComukiApiError.status", async () => {
+    const { impl } = fakeFetch({
+      "GET /api/v1/auth/me": {
+        status: 401,
+        body: { code: "auth.expired", detail: "cookie expired" },
+      },
+    })
+    const client = new ComukiClient(
+      resolveConfig({ COMUKI_URL: "http://t" }, { cookie: "comuki.auth=dead" }),
+      { fetchImpl: impl }
+    )
+    try {
+      await client.me()
+      throw new Error("expected me() to throw")
+    } catch (error) {
+      expect(error).toBeInstanceOf(ComukiApiError)
+      const apiError = error as ComukiApiError
+      expect(apiError.status).toBe(401)
+      expect(apiError.code).toBe("auth.expired")
+    }
+  })
+
   it("passes a per-turn abort signal to the fetch and rejects as AbortError", async () => {
     const controller = new AbortController()
     // A hanging turn: resolves only through the abort signal — exactly

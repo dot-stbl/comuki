@@ -97,4 +97,28 @@ export function shortId(id: string): string {
   return id.slice(0, 8)
 }
 
+/**
+ * REPL-facing copy for mid-session auth failures. Null when the error
+ * is not an auth problem — the caller falls back to `describeError`.
+ *
+ * 401 = the cookie died (sliding refresh never saved, or the host
+ * recycled data-protection keys). 403 with an API key = the known
+ * "keys have no roles" gap — do not retry the key.
+ */
+export function describeAuthFailure(
+  error: unknown,
+  usingApiKey: boolean
+): string | null {
+  if (!(error instanceof ComukiApiError)) {
+    return null
+  }
+  if (error.status === 401) {
+    return "session expired — run /login to sign in again"
+  }
+  if (error.status === 403 && usingApiKey) {
+    return "API keys don't carry roles yet — run /login (cookie) or grant the key platform-admin"
+  }
+  return null
+}
+
 export { configFilePath }

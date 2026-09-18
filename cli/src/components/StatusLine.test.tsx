@@ -115,4 +115,20 @@ describe("StatusLine", () => {
     expect(lastFrame()).not.toContain("ms")
     unmount()
   })
+
+  test("shows the context meter when token data is present", () => {
+    const { lastFrame, unmount } = render(
+      <StatusLine identity="dev" contextUsed={12_000} contextWindow={128_000} />
+    )
+    const frame = lastFrame() ?? ""
+    expect(frame).toContain("ctx 12k")
+    expect(frame).toContain("▮")
+    unmount()
+  })
+
+  test("hides the context meter when no token data is passed", () => {
+    const { lastFrame, unmount } = render(<StatusLine identity="dev" />)
+    expect(lastFrame()).not.toContain("ctx ")
+    unmount()
+  })
 })

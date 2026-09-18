@@ -217,6 +217,40 @@ describe("resolveSlashAction", () => {
     expect(resolveSlashAction("/note")).toEqual({ kind: "note", text: "" })
     expect(resolveSlashAction("/note   ")).toEqual({ kind: "note", text: "" })
   })
+
+  it("parses /profile: bare lists, a name stores the preference", () => {
+    expect(resolveSlashAction("/profile")).toEqual({
+      kind: "profile",
+      name: "",
+    })
+    expect(resolveSlashAction("/profile implement")).toEqual({
+      kind: "profile",
+      name: "implement",
+    })
+    expect(resolveSlashAction("/profile   explore-readonly")).toEqual({
+      kind: "profile",
+      name: "explore-readonly",
+    })
+  })
+
+  it("parses /alias: bare lists, set/rm carry the target", () => {
+    expect(resolveSlashAction("/alias")).toEqual({ kind: "alias" })
+    expect(resolveSlashAction("/alias list")).toEqual({ kind: "alias" })
+    expect(resolveSlashAction("/alias set fix please fix the failing tests")).toEqual({
+      kind: "alias-set",
+      name: "fix",
+      text: "please fix the failing tests",
+    })
+    expect(resolveSlashAction("/alias rm rv")).toEqual({
+      kind: "alias-rm",
+      name: "rv",
+    })
+    expect(resolveSlashAction("/alias set")).toEqual({
+      kind: "alias-set",
+      name: "",
+      text: "",
+    })
+  })
 })
 
 describe("slashHelpLines", () => {
@@ -252,6 +286,8 @@ describe("slashHelpLines", () => {
     expect(help).toContain("/open")
     expect(help).toContain("/tools")
     expect(help).toContain("/note <text>")
+    expect(help).toContain("/profile [name]")
+    expect(help).toContain("/alias [set <name> <text>|rm <name>]")
   })
 
   it("aligns descriptions in one column", () => {

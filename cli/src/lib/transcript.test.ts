@@ -8,10 +8,13 @@ import { describe, expect, test } from "bun:test"
 import {
   EXPAND_HINT,
   expandHintLine,
+  findMatches,
   flattenTranscript,
   hasCollapsedThinking,
+  highlightLine,
   liveLines,
   LIVE_CURSOR,
+  nextMatchIndex,
   typingLine,
   wrapVisible,
   type TranscriptSnapshot,
@@ -322,5 +325,108 @@ describe("flattenTranscript", () => {
     }
     // The color state carries into every continuation chunk.
     expect(lines.every((line) => line.includes(colors.error))).toBe(true)
+  })
+})
+
+describe("findMatches", () => {
+  const lines = [
+    paint("hello world", colors.text),
+    "plain HELLO again",
+    "",
+    paint("no match here", colors.error),
+    "say hello",
+  ]
+
+  test("case-insensitive substring over ANSI-stripped lines", () => {
+    expect(findMatches(lines, "hello")).toEqual([0, 1, 4])
+    expect(findMatches(lines, "HELLO")).toEqual([0, 1, 4])
+  })
+
+  test("blank or whitespace query matches nothing", () => {
+    expect(findMatches(lines, "")).toEqual([])
+    expect(findMatches(lines, "   ")).toEqual([])
+  })
+
+  test("a needle that is nowhere returns empty", () => {
+    expect(findMatches(lines, "absent")).toEqual([])
+  })
+
+  test("empty transcript matches nothing", () => {
+    expect(findMatches([], "x")).toEqual([])
+  })
+})
+
+describe("nextMatchIndex", () => {
+  test("cycles forward and wraps to zero", () => {
+    expect(nextMatchIndex(0, 3)).toBe(1)
+    expect(nextMatchIndex(1, 3)).toBe(2)
+    expect(nextMatchIndex(2, 3)).toBe(0)
+  })
+
+  test("cycles backwards and wraps to the last", () => {
+    expect(nextMatchIndex(0, 3, -1)).toBe(2)
+    expect(nextMatchIndex(2, 3, -1)).toBe(1)
+  })
+
+  test("no matches — stays at zero", () => {
+    expect(nextMatchIndex(5, 0)).toBe(0)
+    expect(nextMatchIndex(5, 0, -1)).toBe(0)
+  })
+
+  test("single match cycles in place", () => {
+    expect(nextMatchIndex(0, 1)).toBe(0)
+  })
+})
+
+describe("highlightLine", () => {
+  test("wraps every occurrence in inverse video", () => {
+    const line = highlightLine("say hello, hello!", "hello")
+    expect(line).toContain("\x1b[7m")
+    expect(line).toContain("\x1b[27m")
+    expect(stripAnsi(line)).toBe("say hello, hello!")
+    // Two non-overlapping spans → two on/off pairs.
+    expect(line.split("\x1b[7m").length - 1).toBe(2)
+  })
+
+  test("the active match adds the underline on top", () => {
+    const line = highlightLine("say hello", "hello", true)
+    expect(line).toContain(colors.underline)
+    expect(line).toContain("\x1b[27m")
+    expect(line).toContain("\x1b[24m")
+  })
+
+  test("paint inside the line survives around the wrap", () => {
+    const painted = `${colors.error}before hello after${colors.reset}`
+    const line = highlightLine(painted, "hello")
+    expect(line.startsWith(colors.error)).toBe(true)
+    expect(line).toContain(colors.reset)
+    expect(stripAnsi(line)).toBe("before hello after")
+  })
+
+  test("a match inside an ANSI run highlights only the plain chars", () => {
+    const painted = paint("abc", colors.error) + paint("def", colors.ok)
+    const line = highlightLine(painted, "cdef")
+    expect(stripAnsi(line)).toBe("abcdef")
+    // Both surrounding colors are still present.
+    expect(line).toContain(colors.error)
+    expect(line).toContain(colors.ok)
+    expect(line).toContain("\x1b[7m")
+  })
+
+  test("a match at the very end closes its span", () => {
+    const line = highlightLine("tail match", "match")
+    expect(line.endsWith("\x1b[27m")).toBe(true)
+  })
+
+  test("blank query and absent needle return the line untouched", () => {
+    expect(highlightLine("text", "")).toBe("text")
+    expect(highlightLine("text", "   ")).toBe("text")
+    expect(highlightLine("text", "zzz")).toBe("text")
+  })
+
+  test("case-insensitive match, whitespace query trimmed", () => {
+    const line = highlightLine("Find ME", " me ")
+    expect(line).toContain("\x1b[7m")
+    expect(stripAnsi(line)).toBe("Find ME")
   })
 })

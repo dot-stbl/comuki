@@ -218,3 +218,132 @@ export function flattenTranscript(
   pushAll(notices)
   return lines.flatMap((line) => wrapVisible(line, width))
 }
+
+// ---------------------------------------------------------------------------
+// ctrl+f transcript search — pure match + highlight math
+// ---------------------------------------------------------------------------
+
+/**
+ * Line indexes of every flattened line containing `query` — plain
+ * substring, case-insensitive, ANSI-stripped before matching (the
+ * flattened lines carry SGR paint). A blank query matches nothing.
+ */
+export function findMatches(
+  lines: readonly string[],
+  query: string
+): number[] {
+  const needle = query.trim().toLowerCase()
+  if (needle.length === 0) {
+    return []
+  }
+  const matches: number[] = []
+  for (let index = 0; index < lines.length; index += 1) {
+    if (stripAnsi(lines[index] ?? "").toLowerCase().includes(needle)) {
+      matches.push(index)
+    }
+  }
+  return matches
+}
+
+/**
+ * Cycles a match cursor by `step` (enter → +1, shift+enter → −1) around
+ * a `count`-long match list; 0 when there is nothing to cycle.
+ */
+export function nextMatchIndex(
+  current: number,
+  count: number,
+  step: number = 1
+): number {
+  if (count <= 0) {
+    return 0
+  }
+  return (((current + step) % count) + count) % count
+}
+
+const INVERSE_ON = "\x1b[7m"
+const INVERSE_OFF = "\x1b[27m"
+const UNDERLINE_OFF = "\x1b[24m"
+const SGR_SEQUENCE = /\x1b\[[0-9;]*m/g
+
+/**
+ * Wraps every occurrence of `query` in inverse video — underline joins
+ * for the ACTIVE match, so `3/7`'s current one reads apart from the
+ * rest. The wraps are additive SGR (on/off pairs), so the line's own
+ * colours survive untouched. SGR-scoped (same escape class the
+ * renderers emit); a blank query returns the line unchanged.
+ */
+export function highlightLine(
+  line: string,
+  query: string,
+  active: boolean = false
+): string {
+  const needle = query.trim().toLowerCase()
+  if (needle.length === 0) {
+    return line
+  }
+  const on = active ? INVERSE_ON + colors.underline : INVERSE_ON
+  const off = active ? INVERSE_OFF + UNDERLINE_OFF : INVERSE_OFF
+
+  // Walk the raw line once: SGR runs are zero-width, every other code
+  // point carries a plain index. `rawAt` maps plain → raw position.
+  const rawAt: number[] = []
+  let plain = ""
+  let raw = 0
+  while (raw < line.length) {
+    SGR_SEQUENCE.lastIndex = raw
+    const escape = SGR_SEQUENCE.exec(line)
+    if (escape && escape.index === raw) {
+      raw += escape[0].length
+      continue
+    }
+    const char = String.fromCodePoint(line.codePointAt(raw) ?? 0x20)
+    rawAt[plain.length] = raw
+    plain += char
+    raw += char.length
+  }
+
+  const lowered = plain.toLowerCase()
+  const spans: Array<[start: number, end: number]> = []
+  for (
+    let from = lowered.indexOf(needle);
+    from !== -1;
+    from = lowered.indexOf(needle, from + needle.length)
+  ) {
+    spans.push([from, from + needle.length])
+  }
+  if (spans.length === 0) {
+    return line
+  }
+
+  // Second walk rebuilds the line, flipping the wraps on/off at the
+  // span boundaries — non-overlapping spans make one pass sufficient.
+  let out = ""
+  let spanIndex = 0
+  let inside = false
+  let plainIndex = 0
+  raw = 0
+  while (raw < line.length) {
+    SGR_SEQUENCE.lastIndex = raw
+    const escape = SGR_SEQUENCE.exec(line)
+    if (escape && escape.index === raw) {
+      out += escape[0]
+      raw += escape[0].length
+      continue
+    }
+    const span = spans[spanIndex]
+    if (!inside && span && rawAt[span[0]] === raw) {
+      out += on
+      inside = true
+    }
+    const char = String.fromCodePoint(line.codePointAt(raw) ?? 0x20)
+    out += char
+    raw += char.length
+    plainIndex += 1
+    if (inside && plainIndex === span[1]) {
+      out += off
+      inside = false
+      spanIndex += 1
+    }
+  }
+  return out
+}

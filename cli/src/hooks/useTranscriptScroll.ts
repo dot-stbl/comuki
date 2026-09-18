@@ -31,6 +31,11 @@ export interface TranscriptScroll {
   readonly toTop: () => void
   /** End — jump to the bottom and resume following. */
   readonly toBottom: () => void
+  /**
+   * ctrl+f search jump — bring line `index` (from the transcript top)
+   * into view, centered when the transcript is taller than the window.
+   */
+  readonly scrollToLine: (index: number) => void
 }
 
 interface ScrollState {
@@ -100,6 +105,26 @@ export function useTranscriptScroll(
     }))
   }, [lineCount, height])
   const toBottom = useCallback(() => setState(BOTTOM), [])
+  const scrollToLine = useCallback(
+    (index: number) => {
+      setState((current) => {
+        // A window centered on the line, clamped to the transcript: the
+        // line lands mid-viewport (or keeps its place near either end).
+        const centered = index + 1 + Math.floor((height - 1) / 2)
+        const end = Math.min(lineCount, Math.max(index + 1, centered))
+        const offset = Math.max(
+          0,
+          Math.min(lineCount - end, maxOffset(lineCount, height))
+        )
+        return {
+          offset,
+          // Landing on the bottom resumes follow, like every other move.
+          newBelow: offset === 0 ? false : current.newBelow,
+        }
+      })
+    },
+    [lineCount, height]
+  )
 
   return {
     offset,
@@ -111,5 +136,6 @@ export function useTranscriptScroll(
     lineDown,
     toTop,
     toBottom,
+    scrollToLine,
   }
 }

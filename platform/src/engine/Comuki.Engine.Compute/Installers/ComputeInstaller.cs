@@ -29,14 +29,13 @@ namespace Comuki.Engine.Compute.Installers;
 /// resolution fails fast.
 /// </summary>
 /// <remarks>
-/// <see cref="Security.WorkerTokenIssuer"/> itself is registered by
-/// <c>WorkerRuntimeExtensions.AddWorkerRuntime</c> on the host side
-/// (<c>TryAddSingleton</c>) — historically this method registered it as
-/// well, which made the order of <c>AddComukiCompute</c> vs
-/// <c>AddWorkerRuntime</c> load-bearing: whichever ran second would throw on
-/// the duplicate. The host does not call <c>AddComukiCompute</c> from its
-/// composition root today, so this method's issuer line was dead code; the
-/// race-prone duplicate is gone and the canonical site is the host.
+/// <see cref="Security.WorkerTokenIssuer"/> is registered BOTH here and by
+/// <c>WorkerRuntimeExtensions.AddWorkerRuntime</c> on the host side —
+/// each as <c>TryAddSingleton</c>, so whichever runs first wins and the
+/// duplicate is a no-op rather than a throw. The dual site is deliberate:
+/// hosts that compose through <c>HostComposer</c> without the worker
+/// runtime (integration fixtures) still resolve the supervisor's
+/// dependency graph.
 /// </remarks>
 public static class ComputeInstaller
 {
@@ -79,7 +78,15 @@ public static class ComputeInstaller
         services.AddSingleton(ComukiBuildInfo.Read());
 
         services.AddSingleton<IWorkerTokenStore, InMemoryWorkerTokenStore>();
-        services.AddSingleton<IDockerClient>(static _ => new DockerClientConfiguration().CreateClient());
+        services.TryAddSingleton<Security.WorkerTokenIssuer>();
+        // Docker client (Enhanced 4.x): one Docker.DotNet assembly in the
+        // process — Testcontainers references the same Enhanced line
+        // transitively, and the classic 3.x package alongside it produced
+        // a TypeLoadException at runtime. The provider consumes only
+        // IContainerOperations, so that is the registered surface.
+        services.AddSingleton(static _ => new DockerClientBuilder().Build());
+        services.AddSingleton(static serviceProvider =>
+            serviceProvider.GetRequiredService<DockerClient>().Containers);
 
         // Kubernetes client: reads Compute:Kubernetes:KubeconfigPath when set
         // (external cluster, e.g. vega), otherwise falls back to the default

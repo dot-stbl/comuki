@@ -515,7 +515,6 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
             {native ? "—" : (connection.lastSyncAt ?? "never")}
           </Fact>
         </FactList>
-
       </Section>
 
       {connection.watch ? (

@@ -110,6 +110,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         builder.Configuration["auth:publicHost:publicUrl"] = $"http://127.0.0.1:{hostPort}";
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
 
         // The MinIO endpoint Testcontainers returns is host:port without
         // a scheme; the artifacts options expect host:port. The SDK
@@ -129,12 +130,49 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
 
         application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(hostConnectionString));
         await application.StartAsync(cancellationToken);
+        // The bucket auto-create is a background startup worker; the first
+        // packager poll of the suite must not race it. Wait for the bucket
+        // before any test runs.
+        await WaitForBucketAsync(cancellationToken);
 
         baseAddress = new Uri(
             application.Services
                 .GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>()
                 .Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!
                 .Addresses.Single());
+    }
+
+    /// <summary>
+    /// Polls MinIO until the host's background bucket-initializer has
+    /// created the bundle bucket; fails the fixture (not a random test)
+    /// when it never appears.
+    /// </summary>
+    private async Task WaitForBucketAsync(CancellationToken cancellationToken)
+    {
+        var (minioHost, minioPort) = SplitEndpoint(minioEndpoint);
+        var client = MinioClientFactory.Create(
+            new ArtifactsOptions
+            {
+                Endpoint = $"{minioHost}:{minioPort}",
+                AccessKey = MinioUser,
+                SecretKey = MinioPassword,
+                Bucket = TestBucket,
+                UseSSL = false,
+            });
+        for (var attempt = 0; ; attempt++)
+        {
+            if (await client.BucketExistsAsync(new Minio.DataModel.Args.BucketExistsArgs().WithBucket(TestBucket), cancellationToken))
+            {
+                return;
+            }
+
+            if (attempt >= 60)
+            {
+                throw new TimeoutException($"bucket {TestBucket} did not appear within the startup window");
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+        }
     }
 
     /// <inheritdoc />
@@ -305,12 +343,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
         {
             BaseAddress = baseAddress,
         };
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/auth/login",
-            new { email = BootstrapEmail, password = BootstrapPassword },
-            TestContext.Current.CancellationToken);
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        return client;
+        return await client.LoginAsBootstrapAdminAsync(TestContext.Current.CancellationToken);
     }
 
     private static async Task MigrateAsync<TContext>(

@@ -62,13 +62,11 @@ const input = () =>
 // list"`, distinct from the shared label "model". The accessible name also
 // picks up `aria-labelledby`, so the simpler seam is `getByLabelText` against
 // the trigger's own aria-label.
-const trigger = () =>
-  screen.getByLabelText("open list") as HTMLButtonElement
+const trigger = () => screen.getByLabelText("open list") as HTMLButtonElement
 
 // The root is the div that holds both the input and the trigger button, and
 // carries `data-empty` so the chevron's CSS can read the state.
-const root = (): HTMLElement =>
-  trigger().parentElement as HTMLElement
+const root = (): HTMLElement => trigger().parentElement as HTMLElement
 
 describe("the combobox is a string the operator types, with a list to filter", () => {
   it("starts with the value the harness passed", () => {
@@ -269,10 +267,11 @@ describe("the chrome — padding, chevron state, chevron focus ring", () => {
   })
 
   it("draws a keyboard focus ring on the chevron trigger", () => {
-    const match = SHEET.match(
-      /\.trigger\[data-focus-visible\]\s*\{([^{}]*)\}/
-    )
-    expect(match, "expected a `.trigger[data-focus-visible]` rule").not.toBeNull()
+    const match = SHEET.match(/\.trigger\[data-focus-visible\]\s*\{([^{}]*)\}/)
+    expect(
+      match,
+      "expected a `.trigger[data-focus-visible]` rule"
+    ).not.toBeNull()
     expect(match?.[1]).toContain("box-shadow:")
   })
 })

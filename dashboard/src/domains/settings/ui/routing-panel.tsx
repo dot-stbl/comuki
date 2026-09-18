@@ -34,8 +34,11 @@ import tableStyles from "./settings-table.module.css"
  * remembering which provider it lives behind. `allowsCustomValue` keeps
  * the seam open for the model id the platform has not catalogued yet.
  */
-const MODEL_OPTIONS: readonly { value: string; label: string; hint?: string }[] =
-  MODEL_LINEUP.map((model) => ({ value: model, label: model }))
+const MODEL_OPTIONS: readonly {
+  value: string
+  label: string
+  hint?: string
+}[] = MODEL_LINEUP.map((model) => ({ value: model, label: model }))
 
 export interface RoutingPanelProps {
   routes: ModelRoute[]

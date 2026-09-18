@@ -4,10 +4,7 @@ import type { Meta, StoryObj } from "@storybook/react"
 
 import { BrandIcon } from "../brand-icon"
 
-import {
-  ProviderCards,
-  type ProviderCardOption,
-} from "./provider-cards"
+import { ProviderCards, type ProviderCardOption } from "./provider-cards"
 
 /**
  * The kit's card picker, with the only content a kit story is allowed to

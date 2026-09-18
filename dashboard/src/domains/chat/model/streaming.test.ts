@@ -52,8 +52,16 @@ describe("beginChatTurn", () => {
 describe("applyChatChunk", () => {
   it("accumulates fragments in arrival order and joins them with newlines in the thinking part", () => {
     beginChatTurn(SESSION, "hello")
-    applyChatChunk({ sessionId: SESSION, seq: 0, text: "iteration 1: reading memory" })
-    applyChatChunk({ sessionId: SESSION, seq: 1, text: "memory.search(\"deploy notes\")" })
+    applyChatChunk({
+      sessionId: SESSION,
+      seq: 0,
+      text: "iteration 1: reading memory",
+    })
+    applyChatChunk({
+      sessionId: SESSION,
+      seq: 1,
+      text: 'memory.search("deploy notes")',
+    })
 
     const { stream } = chatTurnStreamStore.getSnapshot()
     const reply = streamingReplyMessageOf(stream!)
@@ -61,7 +69,10 @@ describe("applyChatChunk", () => {
     expect(reply!.streaming).toBe(true)
     expect(reply!.kind).toBe("reply")
     expect(reply!.parts).toEqual([
-      { kind: "thinking", text: "iteration 1: reading memory\nmemory.search(\"deploy notes\")" },
+      {
+        kind: "thinking",
+        text: 'iteration 1: reading memory\nmemory.search("deploy notes")',
+      },
     ])
   })
 
@@ -100,7 +111,9 @@ describe("streaming reply clock", () => {
     beginChatTurn(SESSION, "hello")
     applyChatChunk({ sessionId: SESSION, seq: 0, text: "step" })
 
-    const reply = streamingReplyMessageOf(chatTurnStreamStore.getSnapshot().stream!)
+    const reply = streamingReplyMessageOf(
+      chatTurnStreamStore.getSnapshot().stream!
+    )
 
     expect(reply!.at).toMatch(/^\d{2}:\d{2}$/)
   })

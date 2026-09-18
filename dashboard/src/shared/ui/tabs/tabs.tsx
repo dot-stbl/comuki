@@ -80,7 +80,11 @@ export interface TabListProps {
 /**
  * The strip of section names. Sits inside the {@link Tabs} root.
  */
-export function TabList({ "aria-label": ariaLabel, className, children }: TabListProps) {
+export function TabList({
+  "aria-label": ariaLabel,
+  className,
+  children,
+}: TabListProps) {
   return (
     <AriaTabList className={cn(styles.list, className)} aria-label={ariaLabel}>
       {children}
@@ -99,7 +103,12 @@ export interface TabProps {
  * One section in the strip. A short word in the data voice, the
  * selected one wearing the brand-coloured rule beneath it.
  */
-export function Tab({ id, children, isDisabled, "data-test": dataTest }: TabProps) {
+export function Tab({
+  id,
+  children,
+  isDisabled,
+  "data-test": dataTest,
+}: TabProps) {
   return (
     <AriaTab
       id={id}

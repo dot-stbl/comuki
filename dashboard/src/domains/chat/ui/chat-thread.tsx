@@ -227,7 +227,9 @@ export function ChatThread({
     : 0
   const hiddenBelow = last ? settled.length - 1 - last.index : 0
   const below = last
-    ? virtualizer.getTotalSize() - last.end + Math.max(hiddenBelow - 1, 0) * TURN_GAP
+    ? virtualizer.getTotalSize() -
+      last.end +
+      Math.max(hiddenBelow - 1, 0) * TURN_GAP
     : 0
   const drawn = virtualize
     ? shown.map((item) => ({ index: item.index, message: settled[item.index] }))
@@ -357,7 +359,11 @@ export function ChatThread({
           two utterances are the two phases an operator waits through: the
           pause before the turn starts, then the turn itself arriving. */}
       <p className={styles.announce} role="status" data-test="chat-announce">
-        {pending ? "the assistant is replying" : awaiting ? "Comuki думает" : ""}
+        {pending
+          ? "the assistant is replying"
+          : awaiting
+            ? "Comuki думает"
+            : ""}
       </p>
     </div>
   )

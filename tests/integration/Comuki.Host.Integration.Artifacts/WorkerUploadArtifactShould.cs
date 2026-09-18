@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using Comuki.Engine.Compute.Security;
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Domain;
@@ -104,6 +103,7 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
         builder.Configuration["auth:publicHost:publicUrl"] = $"http://127.0.0.1:{hostPort}";
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
 
         var (host, port) = SplitEndpoint(minioEndpoint);
         builder.Configuration["Artifacts:Endpoint"] = $"{host}:{port}";
@@ -122,12 +122,49 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
         application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(connectionString));
         application.MapWorkerRuntime();
         await application.StartAsync(cancellationToken);
+        // The bucket auto-create is a background startup worker; the first
+        // upload of the suite must not race it (BucketNotFoundException on
+        // the host side). Wait for the bucket before any test runs.
+        await WaitForBucketAsync(cancellationToken);
 
         baseAddress = new Uri(
             application.Services
                 .GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>()
                 .Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!
                 .Addresses.Single());
+    }
+
+    /// <summary>
+    /// Polls MinIO until the host's background bucket-initializer has
+    /// created the bundle bucket; fails the fixture (not a random test)
+    /// when it never appears.
+    /// </summary>
+    private async Task WaitForBucketAsync(CancellationToken cancellationToken)
+    {
+        var (minioHost, minioPort) = SplitEndpoint(minioEndpoint);
+        var client = Modules.Artifacts.Infrastructure.Store.MinioClientFactory.Create(
+            new Modules.Artifacts.Infrastructure.Store.ArtifactsOptions
+            {
+                Endpoint = $"{minioHost}:{minioPort}",
+                AccessKey = MinioUser,
+                SecretKey = MinioPassword,
+                Bucket = TestBucket,
+                UseSSL = false,
+            });
+        for (var attempt = 0; ; attempt++)
+        {
+            if (await client.BucketExistsAsync(new Minio.DataModel.Args.BucketExistsArgs().WithBucket(TestBucket), cancellationToken))
+            {
+                return;
+            }
+
+            if (attempt >= 60)
+            {
+                throw new TimeoutException($"bucket {TestBucket} did not appear within the startup window");
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+        }
     }
 
     /// <inheritdoc />
@@ -392,12 +429,7 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
         {
             BaseAddress = baseAddress,
         };
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/auth/login",
-            new { email = BootstrapEmail, password = BootstrapPassword },
-            cancellationToken);
-        response.EnsureSuccessStatusCode();
-        return client;
+        return await client.LoginAsBootstrapAdminAsync(cancellationToken);
     }
 
     private static async Task MigrateAsync<TContext>(

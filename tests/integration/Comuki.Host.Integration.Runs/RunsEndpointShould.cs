@@ -5,6 +5,7 @@ using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Host.Testing;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Shared.Kernel.Ids;
@@ -113,6 +114,7 @@ public sealed class RunsEndpointShould : IAsyncLifetime
         builder.Configuration["ControlPlane:Root"] = Path.GetTempPath();
         builder.Configuration["auth:bootstrap:adminEmail"] = BootstrapEmail;
         builder.Configuration["auth:bootstrap:adminPassword"] = BootstrapPassword;
+        builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
         // Artifacts module — non-dev-default secrets so the production-secret
         // validator (issue #10 T11.4) passes through. The integration
         // suite does not boot a MinIO Testcontainer; the host still
@@ -150,13 +152,7 @@ public sealed class RunsEndpointShould : IAsyncLifetime
             BaseAddress = baseAddress,
         };
 
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/auth/login",
-            new { email = BootstrapEmail, password = BootstrapPassword },
-            TestContext.Current.CancellationToken);
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-        return client;
+        return await client.LoginAsBootstrapAdminAsync(TestContext.Current.CancellationToken);
     }
 
     private sealed record RunsPageView(

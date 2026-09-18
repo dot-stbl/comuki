@@ -108,7 +108,9 @@ describe("the metrics line", () => {
       ],
     })
 
-    expect(at("chat-metrics")?.textContent).toBe("8.2s | 1 tool | 1,840 tok | $0.003")
+    expect(at("chat-metrics")?.textContent).toBe(
+      "8.2s | 1 tool | 1,840 tok | $0.003"
+    )
   })
 
   it("does not render when the turn reported nothing", () => {

@@ -1,24 +1,28 @@
 /**
  * Entry + command routing: `comuki` (default = the multi-session chat
  * REPL), `status`, `runs list`, `login`, `whoami`, `config [show]`,
- * `setup` (first-run wizard), `completion <shell>`, `doctor`.
- * Each command renders its own Ink app (`config show`, `completion`
- * and `doctor` are the plain-console exceptions); the process exits when the app
- * unmounts (Ink's `exitOnCtrlC` covers ctrl+c). The removed `chat`
- * subcommand is unknown on purpose — bare `comuki` is the REPL.
+ * `setup`, `completion`, `doctor`, `archive`. `-m` / piped stdin skip
+ * the REPL. Plain-console: config show, completion, doctor, archive, oneshot, --json.
  */
 import { render } from "ink"
 import React from "react"
 import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
-import { ChatApp } from "./commands/chat"
+import { ChatApp, describeError } from "./commands/chat"
 import { LoginApp } from "./commands/login"
-import { RunsApp } from "./commands/runs"
-import { StatusApp } from "./commands/status"
+import { printRunsJson, RunsApp } from "./commands/runs"
+import { printStatusJson, StatusApp } from "./commands/status"
 import { printConfigShow } from "./commands/config"
 import { printCompletion } from "./commands/completion"
 import { printDoctor } from "./commands/doctor"
 import { SetupApp } from "./commands/setup"
+import { printArchiveList } from "./commands/archive"
+import {
+  ONESHOT_TIMEOUT_MS,
+  readStdinText,
+  resolveOneshotMode,
+  runOneshot,
+} from "./commands/oneshot"
 import { ComukiClient } from "./lib/client"
 import {
   readConfigFile,
@@ -27,13 +31,16 @@ import {
 } from "./lib/config"
 import { resolveCommand } from "./lib/commands"
 import { CLI_VERSION } from "./components/StatusLine"
-import { formatWhoamiLines, whoFromError, whoFromMe } from "./lib/auth"
+import { formatWhoamiLines, whoAmI, whoFromError, whoFromMe } from "./lib/auth"
+import { mapWhoamiJson, printJson } from "./lib/jsonout"
+import { stripMarkdownToPlain } from "./lib/markdown"
 import {
   DEFAULT_THEME_CHOICE,
   THEME_CHOICE_IDS,
   colors,
   isThemeChoice,
   resolveTheme,
+  symbols,
 } from "./theme"
 
 interface GlobalOptions {
@@ -57,6 +64,21 @@ async function main(): Promise<void> {
     .option("theme", {
       type: "string",
       describe: "terminal theme: <theme>-<dark|light>",
+    })
+    .option("json", {
+      type: "boolean",
+      default: false,
+      describe: "machine-readable JSON (status, runs, whoami)",
+    })
+    .option("raw", {
+      type: "boolean",
+      default: false,
+      describe: "print the one-shot reply as markdown, not plain text",
+    })
+    .option("message", {
+      alias: "m",
+      type: "string",
+      describe: "one-shot prompt (skips the REPL)",
     })
     .command("status", "platform snapshot")
     .command("runs [list]", "run ledger", (y) =>
@@ -100,6 +122,7 @@ async function main(): Promise<void> {
         })
     )
     .command("doctor", "check host, auth, config and theme")
+    .command("archive", "list archived session transcripts")
     .demandCommand(0, 0) // no command → the REPL
     .strict()
     .parse()
@@ -111,6 +134,8 @@ async function main(): Promise<void> {
     theme: argv.theme,
   }
   const command = resolveCommand(argv._)
+  const json = argv.json === true
+  const raw = argv.raw === true
 
   if (command === "login") {
     render(<LoginApp url={overrides.url} />, { exitOnCtrlC: true })
@@ -139,6 +164,10 @@ async function main(): Promise<void> {
     process.exitCode = await printDoctor(overrides)
     return
   }
+  if (command === "archive") {
+    await printArchiveList()
+    return
+  }
 
   const config = await loadConfig(overrides)
 
@@ -162,16 +191,66 @@ async function main(): Promise<void> {
   resolveTheme(config.theme)
 
   if (command === "repl") {
+    const oneshot = resolveOneshotMode(
+      argv.message as string | undefined,
+      process.stdin.isTTY
+    )
+    if (oneshot !== "repl") {
+      const message =
+        oneshot === "flag"
+          ? String(argv.message ?? "")
+          : await readStdinText()
+      if (message.trim().length === 0) {
+        console.error(
+          `${colors.error}empty message — pass -m <text> or pipe stdin${colors.reset}`
+        )
+        process.exitCode = 1
+        return
+      }
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), ONESHOT_TIMEOUT_MS)
+      try {
+        const result = await runOneshot({
+          client: new ComukiClient(config, { signal: controller.signal }),
+          message,
+          projectId: config.defaultProject,
+          signal: controller.signal,
+        })
+        const body = raw ? result.reply : stripMarkdownToPlain(result.reply)
+        process.stdout.write(body.endsWith("\n") ? body : `${body}\n`)
+      } catch (error) {
+        console.error(
+          `${colors.error}${symbols.cross} ${describeError(error)}${colors.reset}`
+        )
+        process.exitCode = 1
+      } finally {
+        clearTimeout(timer)
+      }
+      return
+    }
     render(<ChatApp config={config} project={overrides.project} />, {
       exitOnCtrlC: true,
     })
     return
   }
   if (command === "status") {
+    if (json) {
+      await printStatusJson(config)
+      return
+    }
     render(<StatusApp config={config} />, { exitOnCtrlC: true })
     return
   }
   if (command === "runs") {
+    if (json) {
+      await printRunsJson(
+        config,
+        argv.page as number,
+        argv.pageSize as number,
+        argv.filter as string | undefined
+      )
+      return
+    }
     render(
       <RunsApp
         config={config}
@@ -185,13 +264,23 @@ async function main(): Promise<void> {
   }
   if (command === "whoami") {
     const client = new ComukiClient(config)
+    const who = await whoAmI(client)
+    let me = null
     try {
-      const me = await client.me()
+      me = await client.me()
+    } catch {
+      // whoAmI already reported the failure shape.
+    }
+    if (json) {
+      printJson(mapWhoamiJson(who, me))
+      return
+    }
+    if (me) {
       for (const line of formatWhoamiLines(whoFromMe(me), me)) {
         console.log(line)
       }
-    } catch (error) {
-      for (const line of formatWhoamiLines(whoFromError(error))) {
+    } else {
+      for (const line of formatWhoamiLines(whoFromError(new Error(who.label)))) {
         console.log(line)
       }
     }

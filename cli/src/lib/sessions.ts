@@ -425,7 +425,12 @@ export async function readSessionsFile(
   if (!contents || !Array.isArray(contents.sessions)) {
     return { sessions: [] }
   }
-  return { sessions: contents.sessions } as PersistedSessions
+  return {
+    sessions: contents.sessions,
+    ...(typeof contents.activeSessionId === "string"
+      ? { activeSessionId: contents.activeSessionId }
+      : {}),
+  }
 }
 
 export async function writeSessionsFile(

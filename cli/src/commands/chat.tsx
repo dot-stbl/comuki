@@ -37,6 +37,7 @@ import {
 } from "../lib/transcript"
 import type { ResolvedConfig } from "../lib/config"
 import { readConfigFile, writeConfigFile } from "../lib/config"
+import { archiveFilePath } from "../lib/archive"
 import { exportFileName, exportMarkdown } from "../lib/export"
 import { terminalTitle, turnDoneSequences, writeTerminal } from "../lib/term"
 import {
@@ -1560,6 +1561,42 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           })()
           return
         }
+        case "archive": {
+          if (!target) {
+            setNoticeLines([
+              `${colors.faint}  no active session to archive${colors.reset}`,
+            ])
+            return
+          }
+          const markdown = exportMarkdown(target.blocks)
+          if (markdown.length === 0) {
+            pushLines(target.id, [
+              `${colors.faint}  nothing to archive — the transcript is empty${colors.reset}`,
+            ])
+            return
+          }
+          const path = archiveFilePath(target.id, target.name)
+          const closingId = target.id
+          void (async () => {
+            try {
+              await Bun.write(path, markdown, { createPath: true })
+              const index = sessionsRef.current.findIndex(
+                (session) => session.id === closingId
+              )
+              if (index >= 0) {
+                closeSession(index)
+              }
+              setNoticeLines([
+                `${colors.faint}  archived ${path}${colors.reset}`,
+              ])
+            } catch (error) {
+              pushLines(closingId, [
+                `${colors.error}${symbols.cross} archive failed: ${describeError(error)}${colors.reset}`,
+              ])
+            }
+          })()
+          return
+        }
         case "bell": {
           if (action.enabled === undefined) {
             const state = bellEnabled ? "on" : "off"
@@ -2047,7 +2084,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
       }
     },
-    [bellEnabled, config.url, copyLastCode, exit, forkSession, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProfile, switchProject, tabs]
+    [bellEnabled, closeSession, config.url, copyLastCode, exit, forkSession, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProfile, switchProject, tabs]
   )
 
   // -- queued-message drain -----------------------------------------------------

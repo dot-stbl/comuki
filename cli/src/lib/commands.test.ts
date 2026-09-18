@@ -18,6 +18,7 @@ describe("resolveCommand", () => {
     expect(resolveCommand(["completion"])).toBe("completion")
     expect(resolveCommand(["completion", "pwsh"])).toBe("completion")
     expect(resolveCommand(["doctor"])).toBe("doctor")
+    expect(resolveCommand(["archive"])).toBe("archive")
   })
 
   it("treats the removed chat subcommand as unknown", () => {

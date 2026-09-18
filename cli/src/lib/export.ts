@@ -121,6 +121,19 @@ export function exportMarkdown(blocks: readonly ChatBlock[]): string {
 }
 
 /**
+ * Path-safe session slug: hostile characters collapse to dashes, empty
+ * names fall back to `session`, length capped at 40.
+ */
+export function sessionSlug(sessionName: string): string {
+  return (
+    sessionName
+      .replace(/[^\p{L}\p{N}_-]+/gu, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "session"
+  )
+}
+
+/**
  * Default export path: `comuki-{slug}-{yyyymmdd-hhmm}.md` (local
  * time). Path-hostile characters in the session name collapse to
  * dashes; an empty slug falls back to `session`.
@@ -129,11 +142,7 @@ export function exportFileName(
   sessionName: string,
   now: Date = new Date()
 ): string {
-  const slug =
-    sessionName
-      .replace(/[^\p{L}\p{N}_-]+/gu, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 40) || "session"
+  const slug = sessionSlug(sessionName)
   const pad = (value: number) => String(value).padStart(2, "0")
   const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(
     now.getDate()

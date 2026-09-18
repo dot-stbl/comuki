@@ -32,6 +32,12 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: "resend the last message",
   },
   {
+    name: "login",
+    aliases: [],
+    usage: "/login",
+    description: "sign in again (or run comuki login)",
+  },
+  {
     name: "rename",
     aliases: [],
     usage: "/rename <title>",
@@ -151,6 +157,7 @@ export function slashHelpLines(): readonly string[] {
 export type SlashAction =
   | { readonly kind: "exit" }
   | { readonly kind: "retry" }
+  | { readonly kind: "login" }
   | { readonly kind: "rename"; readonly title: string }
   | { readonly kind: "export"; readonly path?: string }
   | { readonly kind: "bell"; readonly enabled?: boolean }
@@ -191,6 +198,9 @@ export function resolveSlashAction(raw: string): SlashAction {
   }
   if (matches("retry", name)) {
     return { kind: "retry" }
+  }
+  if (matches("login", name)) {
+    return { kind: "login" }
   }
   if (matches("rename", name)) {
     return { kind: "rename", title: args.replace(/\s+/g, " ") }

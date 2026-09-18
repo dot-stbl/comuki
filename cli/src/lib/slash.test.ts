@@ -19,6 +19,7 @@ describe("resolveSlashAction", () => {
 
   it("routes every registered command by name (case-insensitive)", () => {
     expect(resolveSlashAction("/retry")).toEqual({ kind: "retry" })
+    expect(resolveSlashAction("/login")).toEqual({ kind: "login" })
     expect(resolveSlashAction("/RETRY")).toEqual({ kind: "retry" })
     expect(resolveSlashAction("/clear")).toEqual({ kind: "clear" })
     expect(resolveSlashAction("/stop")).toEqual({ kind: "stop" })
@@ -197,6 +198,7 @@ describe("slashHelpLines", () => {
   it("shows the new commands so /help stays registry-driven", () => {
     const help = slashHelpLines().map(stripAnsi).join("\n")
     expect(help).toContain("/retry")
+    expect(help).toContain("/login")
     expect(help).toContain("/rename <title>")
     expect(help).toContain("/runs")
     expect(help).toContain("/workers")

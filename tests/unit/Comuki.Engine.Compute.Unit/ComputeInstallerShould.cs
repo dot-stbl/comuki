@@ -49,7 +49,9 @@ public sealed class ComputeInstallerShould
         // Substitute both SDK clients AFTER the installer so neither the
         // docker socket nor a kubeconfig is touched when the concretes
         // resolve — the selection factory itself is what is under test.
-        services.AddSingleton(Substitute.For<IDockerClient>());
+        // The docker client itself is replaced; the container-operations
+        // facade resolves from it without touching the docker socket.
+        services.AddSingleton(Substitute.For<IContainerOperations>());
         services.AddSingleton(Substitute.For<IKubernetes>());
 
         return services.BuildServiceProvider();

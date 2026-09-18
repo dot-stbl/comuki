@@ -177,13 +177,7 @@ export function DatePickerField({
   const empty = date === null
 
   return (
-    <Field
-      id={id}
-      label={label}
-      required={required}
-      hint={hint}
-      error={error}
-    >
+    <Field id={id} label={label} required={required} hint={hint} error={error}>
       <AriaDatePicker
         className={cn(styles.group, className)}
         value={date}
@@ -329,13 +323,7 @@ export function DateRangePickerField({
   const empty = start === null && end === null
 
   return (
-    <Field
-      id={id}
-      label={label}
-      required={required}
-      hint={hint}
-      error={error}
-    >
+    <Field id={id} label={label} required={required} hint={hint} error={error}>
       <AriaDateRangePicker
         className={cn(styles.group, className)}
         value={range}

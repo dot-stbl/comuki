@@ -314,7 +314,6 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
 
                 <Fact name="created">{user.createdAt}</Fact>
               </FactList>
-
             </Section>
 
             <Section

@@ -131,9 +131,7 @@ describe("the search field", () => {
     // The clear button's test id is the input's with `-clear` tacked on —
     // the rule that a primitive owns its test ids, including the affordances
     // that appear conditionally on it.
-    const clear = document.querySelector(
-      '[data-test="story-search-clear"]'
-    )
+    const clear = document.querySelector('[data-test="story-search-clear"]')
     expect(clear).toBeTruthy()
   })
 

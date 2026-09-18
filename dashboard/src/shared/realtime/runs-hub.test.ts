@@ -118,12 +118,12 @@ describe("bindChatHubEvents", () => {
     handlers.get("ChatChunk")!({
       sessionId: RUN_ID,
       seq: 2,
-      text: "memory.search(\"x\")",
+      text: 'memory.search("x")',
     })
     expect(onChunk).toHaveBeenCalledWith({
       sessionId: RUN_ID,
       seq: 2,
-      text: "memory.search(\"x\")",
+      text: 'memory.search("x")',
     })
 
     handlers.get("ChatTurnComplete")!({

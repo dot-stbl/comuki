@@ -16,7 +16,12 @@
 
   <!-- Platform packages (BE) -->
   <ItemGroup>
-    <PackageVersion Include="Docker.DotNet" Version="3.125.15" />
+    <!-- Docker.DotNet.Enhanced 4.x: the successor line of the classic
+         Docker.DotNet; keeps one Docker.DotNet assembly in processes that
+         also host Testcontainers (which references Enhanced transitively).
+         Classic 3.125.15 alongside Enhanced produced a TypeLoadException
+         at runtime — same assembly identity, different types. -->
+    <PackageVersion Include="Docker.DotNet.Enhanced" Version="4.3.3" />
     <!-- KubernetesClient 17.x: latest stable of the line the k8s compute
          provider targets (18/19 exist but are unvetted here). -->
     <PackageVersion Include="KubernetesClient" Version="17.0.14" />

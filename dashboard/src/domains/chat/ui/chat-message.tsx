@@ -145,13 +145,20 @@ export function ChatMessage({
           <>
             {errored ? (
               <p className={styles.error} data-test="chat-error" role="alert">
-                <AlertTriangle className={styles.errorIcon} aria-hidden="true" />
+                <AlertTriangle
+                  className={styles.errorIcon}
+                  aria-hidden="true"
+                />
                 <span>{message.text}</span>
               </p>
             ) : null}
 
             {proposal ? (
-              <ProposalCard proposal={proposal} onDecide={onDecide} busy={busy} />
+              <ProposalCard
+                proposal={proposal}
+                onDecide={onDecide}
+                busy={busy}
+              />
             ) : null}
 
             {parts.map((part, index) => (

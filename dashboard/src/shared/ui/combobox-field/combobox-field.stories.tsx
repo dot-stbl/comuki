@@ -23,12 +23,32 @@ export default meta
 type Story = StoryObj<typeof ComboboxField>
 
 const MODELS = [
-  { value: "lead-xl-2", label: "lead-xl-2", hint: "provider-A · plan + contract" },
+  {
+    value: "lead-xl-2",
+    label: "lead-xl-2",
+    hint: "provider-A · plan + contract",
+  },
   { value: "lead-mid-2", label: "lead-mid-2", hint: "provider-A · review" },
-  { value: "lead-xl-1", label: "lead-xl-1", hint: "provider-C · rollback path" },
-  { value: "worker-sm-4", label: "worker-sm-4", hint: "provider-B · profile steps" },
-  { value: "judge-mid-1", label: "judge-mid-1", hint: "provider-B · diff gate" },
-  { value: "worker-sm-oss", label: "worker-sm-oss", hint: "self-hosted · degraded" },
+  {
+    value: "lead-xl-1",
+    label: "lead-xl-1",
+    hint: "provider-C · rollback path",
+  },
+  {
+    value: "worker-sm-4",
+    label: "worker-sm-4",
+    hint: "provider-B · profile steps",
+  },
+  {
+    value: "judge-mid-1",
+    label: "judge-mid-1",
+    hint: "provider-B · diff gate",
+  },
+  {
+    value: "worker-sm-oss",
+    label: "worker-sm-oss",
+    hint: "self-hosted · degraded",
+  },
 ]
 
 function Column({ children }: { children: ReactNode }) {
@@ -136,8 +156,12 @@ export const LabelHidden: Story = {
     const [value, setValue] = useState("lead-xl-2")
     return (
       <Column>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--s3)" }}>
-          <span style={{ fontFamily: "var(--font-data)", color: "var(--text)" }}>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: "var(--s3)" }}
+        >
+          <span
+            style={{ fontFamily: "var(--font-data)", color: "var(--text)" }}
+          >
             lead →
           </span>
           <ComboboxField

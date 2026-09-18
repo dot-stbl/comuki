@@ -26,8 +26,12 @@ describe("while the turn is arriving", () => {
 
     const steps = block?.querySelectorAll('[data-test="chat-thinking-step"]')
     expect(steps).toHaveLength(3)
-    expect(block?.textContent).toContain('memory.search("идемпотентность вебхуков")')
-    expect(block?.textContent).toContain("Проверил, что ключ берётся из заголовка.")
+    expect(block?.textContent).toContain(
+      'memory.search("идемпотентность вебхуков")'
+    )
+    expect(block?.textContent).toContain(
+      "Проверил, что ключ берётся из заголовка."
+    )
   })
 
   it("spins only the newest line; the finished ones keep their checks", () => {

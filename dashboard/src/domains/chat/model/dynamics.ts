@@ -142,7 +142,9 @@ export function turnMetrics(message: ChatMessage): TurnMetric[] | undefined {
 
   const toolCount = parts.filter((part) => part.kind === "tool").length
   if (toolCount > 0) {
-    metrics.push({ value: `${toolCount} ${toolCount === 1 ? "tool" : "tools"}` })
+    metrics.push({
+      value: `${toolCount} ${toolCount === 1 ? "tool" : "tools"}`,
+    })
   }
 
   const meta = message.meta
@@ -182,9 +184,7 @@ function formatLatency(ms: number): string {
  */
 function formatCost(micros: number): string {
   const dollars = micros / 1_000_000
-  return dollars < 0.1
-    ? `$${dollars.toFixed(3)}`
-    : `$${dollars.toFixed(2)}`
+  return dollars < 0.1 ? `$${dollars.toFixed(3)}` : `$${dollars.toFixed(2)}`
 }
 
 /**

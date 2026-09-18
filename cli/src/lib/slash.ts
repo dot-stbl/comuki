@@ -187,6 +187,18 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     usage: "/note <text>",
     description: "write a memory note",
   },
+  {
+    name: "profile",
+    aliases: [],
+    usage: "/profile [name]",
+    description: "list or prefer a worker profile",
+  },
+  {
+    name: "alias",
+    aliases: [],
+    usage: "/alias [set <name> <text>|rm <name>]",
+    description: "prompt aliases — expand before send",
+  },
 ]
 
 /** The `/help` transcript block, rendered from the registry. */
@@ -235,6 +247,11 @@ export type SlashAction =
   | { readonly kind: "open" }
   | { readonly kind: "tools" }
   | { readonly kind: "note"; readonly text: string }
+  /** Bare `/profile` lists; `/profile implement` stores a local preference. */
+  | { readonly kind: "profile"; readonly name: string }
+  | { readonly kind: "alias" }
+  | { readonly kind: "alias-set"; readonly name: string; readonly text: string }
+  | { readonly kind: "alias-rm"; readonly name: string }
   /** Not a command — the input goes to the brain as a chat message. */
   | { readonly kind: "message" }
 
@@ -362,7 +379,40 @@ export function resolveSlashAction(raw: string): SlashAction {
   if (matches("note", name)) {
     return { kind: "note", text: args }
   }
+  if (matches("profile", name)) {
+    return { kind: "profile", name: args }
+  }
+  if (matches("alias", name)) {
+    const [sub, ...restTokens] = args.split(/\s+/).filter((token) => token.length > 0)
+    if (args.length === 0 || sub === "list") {
+      return { kind: "alias" }
+    }
+    if (sub === "set") {
+      const [aliasName, ...textTokens] = restTokens
+      return {
+        kind: "alias-set",
+        name: aliasName ?? "",
+        text: textTokens.join(" ").trim(),
+      }
+    }
+    if (sub === "rm") {
+      return { kind: "alias-rm", name: restTokens.join(" ").trim() }
+    }
+    return { kind: "alias" }
+  }
   return { kind: "message" }
+}
+
+/**
+ * True when `name` is a registered slash command (canonical or alias).
+ * Prompt-alias expansion consults this so `/retry` never expands.
+ */
+export function isRegisteredSlashName(name: string): boolean {
+  const lowered = name.toLowerCase()
+  return SLASH_COMMANDS.some(
+    (command) =>
+      command.name === lowered || command.aliases.includes(lowered)
+  )
 }
 
 function matches(command: string, name: string): boolean {

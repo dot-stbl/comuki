@@ -77,6 +77,7 @@ describe("resolveConfig", () => {
       cookie: "session=abc",
       defaultProject: "nova",
       bell: true,
+      contextWindow: 128_000,
     })
   })
 
@@ -96,6 +97,29 @@ describe("resolveConfig", () => {
     expect(
       resolveConfig({ COMUKI_URL: "http://x" }, {}, { theme: "  " }).theme
     ).toBeUndefined()
+  })
+
+  it("reads preferredProfile and a positive contextWindow from the file", () => {
+    const config = resolveConfig(
+      { COMUKI_URL: "http://x" },
+      { preferredProfile: "implement", contextWindow: 64_000 }
+    )
+    expect(config.preferredProfile).toBe("implement")
+    expect(config.contextWindow).toBe(64_000)
+  })
+
+  it("defaults contextWindow to 128k and drops a blank preferredProfile", () => {
+    expect(resolveConfig({ COMUKI_URL: "http://x" }).contextWindow).toBe(
+      128_000
+    )
+    expect(
+      resolveConfig({ COMUKI_URL: "http://x" }, { preferredProfile: "  " })
+        .preferredProfile
+    ).toBeUndefined()
+    expect(
+      resolveConfig({ COMUKI_URL: "http://x" }, { contextWindow: 0 })
+        .contextWindow
+    ).toBe(128_000)
   })
 
   it("bell defaults on and only an explicit false turns it off", () => {

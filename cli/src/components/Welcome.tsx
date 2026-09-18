@@ -15,6 +15,7 @@ import { existsSync } from "node:fs"
 import { Box, Text } from "ink"
 import React from "react"
 import { configFilePath } from "../lib/config"
+import { MARK_SMALL } from "../lib/mark"
 import { palette, symbols } from "../theme"
 
 export interface PlatformStats {
@@ -45,10 +46,16 @@ const HINTS = ["ctrl+n new tab", "esc sessions", "help commands"].join(
 export function Welcome({ stats, firstRun = firstRunHintVisible() }: WelcomeProps) {
   return (
     <Box flexDirection="column" alignItems="center" paddingX={2}>
-      <Text color={palette.brand}>{symbols.brandMark}</Text>
-      <Text bold color={palette.brand}>
-        comuki
-      </Text>
+      {MARK_SMALL.map((line, index) => (
+        <Text key={index} color={palette.brand}>
+          {line}
+        </Text>
+      ))}
+      <Box marginTop={1}>
+        <Text bold color={palette.brand}>
+          comuki
+        </Text>
+      </Box>
       <Box marginTop={1}>
         <Text dimColor>agent orchestration platform</Text>
       </Box>

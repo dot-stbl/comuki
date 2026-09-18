@@ -1,6 +1,6 @@
 /**
  * Streaming state transitions for the live assistant block: chunks
- * grow the rendered tail, the block cursor `▌` rides the write head,
+ * grow the rendered tail, the `_` cursor rides the write head,
  * an over-long tail clips to the last lines, and the empty pre-chunk
  * state renders nothing.
  */
@@ -36,7 +36,7 @@ describe("LiveMessage — streaming transitions", () => {
     rerender(<LiveMessage liveText={"План рефакторинга:\n- шаг один"} width={60} />)
     const second = lastFrame() ?? ""
     expect(stripAnsi(second)).toContain("План рефакторинга:")
-    expect(stripAnsi(second)).toContain("· шаг один")
+    expect(stripAnsi(second)).toContain(". шаг один")
     expect(second).toContain(LIVE_CURSOR)
     // the cursor moved to the new write head — it is on the last line
     const lines = second.split("\n")

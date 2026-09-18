@@ -18,12 +18,14 @@
 import { renderMessage, renderPendingPlan } from "./format"
 import { renderRunsFeedPanel, type RunsFeedPanel } from "./runsfeed"
 import { renderMarkdownLines } from "./markdown"
-import { colors, paint, stripAnsi, symbols } from "../theme"
+import { colors, paint, stripAnsi } from "../theme"
+import { MARK_TINY_FRAMES } from "./mark"
 import type { ChatBlock } from "./sessions"
 
-export const LIVE_CURSOR = "▌"
-export const TYPING_LABEL = "comuki thinking"
-export const EXPAND_HINT = "⏺ press ctrl+o to expand thinking"
+export const LIVE_CURSOR = "_"
+export const TYPING_LABEL = "thinking"
+export const EXPAND_HINT = "* press ctrl+o to expand thinking"
+export const TYPING_PULSE_EVERY = 2
 
 // ---------------------------------------------------------------------------
 // ANSI-aware hard wrap
@@ -82,8 +84,8 @@ export function wrapVisible(line: string, width: number): string[] {
 
 /**
  * The growing live tail as finished lines: markdown-rendered, with the
- * block cursor `▌` riding the write head (the last line). Empty stream
- * renders nothing.
+ * blinking `_` cursor riding the write head (the last line). Empty
+ * stream renders nothing.
  */
 export function liveLines(liveText: string, width: number): string[] {
   if (liveText.trim().length === 0) {
@@ -99,14 +101,28 @@ export function liveLines(liveText: string, width: number): string[] {
   )
 }
 
-/** `     ⠋ comuki thinking` — the spinner row for an in-flight turn. */
+/**
+ * The in-flight thinking row: three stacked tiny-mark lines on the
+ * left (the crossbar breathing), dim `thinking` on the right of the
+ * middle row. The mark pulses dim/accent every `TYPING_PULSE_EVERY`
+ * frames. `frame` is the spinner tick from `useSpinnerFrame`.
+ */
 export function typingLine(frame: number, label: string = TYPING_LABEL): string {
-  const spinner =
-    symbols.spinnerFrames[
-      ((frame % symbols.spinnerFrames.length) + symbols.spinnerFrames.length) %
-        symbols.spinnerFrames.length
-    ] ?? symbols.spinnerFrames[0]
-  return `     ${paint(spinner, colors.accent)} ${label}`
+  const count = MARK_TINY_FRAMES.length
+  const wrapped = ((frame % count) + count) % count
+  const glyph = MARK_TINY_FRAMES[wrapped] ?? MARK_TINY_FRAMES[0] ?? ["# #", "   ", "# #"]
+  const color =
+    Math.floor(frame / TYPING_PULSE_EVERY) % 2 === 0
+      ? colors.accent
+      : colors.dim
+  const pad = "     "
+  const mid = Math.floor(glyph.length / 2)
+  return glyph
+    .map((row, index) => {
+      const mark = paint(row, color)
+      return index === mid ? `${pad}${mark} ${paint(label, colors.dim)}` : `${pad}${mark}`
+    })
+    .join("\n")
 }
 
 // ---------------------------------------------------------------------------
@@ -212,7 +228,10 @@ export function flattenTranscript(
       pushAll(renderRunsFeedPanel(snapshot.runsFeed, now))
     }
     if (snapshot.thinking) {
-      pushAll([typingLine(typingFrame), ...liveLines(snapshot.liveText, width)])
+      pushAll([
+        ...typingLine(typingFrame).split("\n"),
+        ...liveLines(snapshot.liveText, width),
+      ])
     }
   }
   pushAll(notices)

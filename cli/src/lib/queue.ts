@@ -4,7 +4,7 @@
  * session record; these helpers own every transition so ordering,
  * trimming and empty-queue edge cases are testable without Ink.
  *
- * Notices (the dim `⏺ queued` transcript line, the `⏺ stopped` mark
+ * Notices (the dim `* queued` transcript line, the `* stopped` mark
  * after /stop, the prompt-side queue hint) live here too — one place
  * owns their exact wording and ANSI dressing.
  */

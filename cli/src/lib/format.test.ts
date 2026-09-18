@@ -201,7 +201,7 @@ describe("renderMessage", () => {
       content: "ticket COM-1",
     })
     expect(stripAnsi(lines[0] ?? "")).toContain(
-      " · create_ticket: ticket COM-1"
+      " . create_ticket: ticket COM-1"
     )
     expect(lines[0]).toContain(colors.muted)
   })
@@ -394,7 +394,7 @@ describe("collapsedSummary", () => {
 })
 
 describe("renderPart — collapsible blocks", () => {
-  it("collapses thinking to one dim ⏺ event line", () => {
+  it("collapses thinking to one dim * event line", () => {
     const lines = renderPart(
       { kind: "thinking", text: "long\nreasoning", tokens: 40 },
       80,
@@ -402,7 +402,7 @@ describe("renderPart — collapsible blocks", () => {
     )
     expect(lines).toHaveLength(1)
     expect(lines[0]).toContain(colors.dim)
-    expect(stripAnsi(lines[0] ?? "")).toBe("  ⏺ thinking · 40 tok")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  * thinking . 40 tok")
   })
 
   it("collapses a tool call to name(args) with the status two spaces after", () => {
@@ -419,7 +419,7 @@ describe("renderPart — collapsible blocks", () => {
     )
     expect(lines).toHaveLength(1)
     expect(stripAnsi(lines[0] ?? "")).toBe(
-      `  ⏺ memory.recall("ids")  ok 41ms`
+      `  * memory.recall("ids")  ok 41ms`
     )
   })
 
@@ -444,7 +444,7 @@ describe("renderPart — collapsible blocks", () => {
       text: "considering",
       tokens: 1,
     })
-    expect(stripAnsi(lines[0] ?? "")).toBe("  ⏺ thinking · 1 tok")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  * thinking . 1 tok")
     expect(stripAnsi(lines[1] ?? "")).toBe("    considering")
   })
 
@@ -455,7 +455,7 @@ describe("renderPart — collapsible blocks", () => {
       { expanded: true }
     )
     expect(stripAnsi(lines.join("\n"))).toContain("hmm why not")
-    expect(stripAnsi(lines[0] ?? "")).toBe("  ⏺ thinking · 1 tok")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  * thinking . 1 tok")
     expect(stripAnsi(lines[1] ?? "")).toBe("    hmm why not")
     expect(lines[1]).toContain(colors.dim)
   })
@@ -475,7 +475,7 @@ describe("renderPart — collapsible blocks", () => {
     )
     const frame = stripAnsi(lines.join("\n"))
     expect(stripAnsi(lines[0] ?? "")).toBe(
-      `  ⏺ memory.recall("ids")  ok 1.2s`
+      `  * memory.recall("ids")  ok 1.2s`
     )
     expect(frame).toContain("input:")
     expect(frame).toContain(`"q": "ids"`)
@@ -535,7 +535,7 @@ describe("renderPart — full blocks", () => {
       },
       80
     )
-    expect(stripAnsi(lines[0] ?? "")).toBe("  · diff")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  . diff")
     expect(stripAnsi(lines[1] ?? "")).toBe("  @@ -1,2 +1,2 @@")
     expect(lines[1]).toContain(colors.accent)
     expect(stripAnsi(lines[2] ?? "")).toBe("  -old line")
@@ -569,7 +569,7 @@ describe("renderPart — full blocks", () => {
 })
 
 describe("renderMessage — collapsed transcript", () => {
-  it("hides thinking behind the ⏺ event line, keeps the answer", () => {
+  it("hides thinking behind the * event line, keeps the answer", () => {
     const lines = renderMessage(
       assistantMessage([
         { kind: "thinking", text: "secret reasoning", tokens: 10 },
@@ -579,7 +579,7 @@ describe("renderMessage — collapsed transcript", () => {
       { expanded: false }
     )
     const frame = stripAnsi(lines.join("\n"))
-    expect(frame).toContain("⏺ thinking · 10 tok")
+    expect(frame).toContain("* thinking . 10 tok")
     expect(frame).not.toContain("secret reasoning")
     expect(frame).toContain("the answer")
   })

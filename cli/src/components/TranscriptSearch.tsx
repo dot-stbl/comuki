@@ -14,9 +14,11 @@
  */
 import { Box, Text, useInput } from "ink"
 import React, { useState } from "react"
+import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
 import { isSgrMouseChunk } from "../lib/mouse"
 import { isEnterInput, routeEnterKey } from "../lib/multiline"
 import { gutter, palette, symbols } from "../theme"
+import { Fill } from "./Fill"
 
 export interface TranscriptSearchProps {
   /** The live query — owned by the shell, reported back through onChange. */
@@ -43,6 +45,7 @@ export function TranscriptSearch({
   onPrevious,
   onClose,
 }: TranscriptSearchProps) {
+  const { columns } = useStdoutDimensions()
   // The caret starts at the end of the initial query (the shell always
   // opens the search empty, so in practice this is 0).
   const [cursor, setCursor] = useState(value.length)
@@ -108,15 +111,17 @@ export function TranscriptSearch({
     matchCount > 0 ? `${matchIndex + 1}/${matchCount}` : `0/${matchCount}`
 
   return (
-    <Box width="100%">
-      <Text backgroundColor={palette.rail}>
-        {gutter}
-        <Text color={palette.brand}>{`${symbols.prompt} find `}</Text>
-        <Text>{before}</Text>
-        <Text inverse>{at ?? " "}</Text>
-        {after.length > 0 ? <Text>{after}</Text> : null}
-        <Text dimColor>{`  ${counter} · enter next · esc close`}</Text>
-      </Text>
-    </Box>
+    <Fill width={columns} height={1} color={palette.rail}>
+      <Box width="100%">
+        <Text>
+          {gutter}
+          <Text color={palette.brand}>{`${symbols.prompt} find `}</Text>
+          <Text>{before}</Text>
+          <Text inverse>{at ?? " "}</Text>
+          {after.length > 0 ? <Text>{after}</Text> : null}
+          <Text dimColor>{`  ${counter} · enter next · esc close`}</Text>
+        </Text>
+      </Box>
+    </Fill>
   )
 }

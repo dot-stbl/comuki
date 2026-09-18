@@ -116,15 +116,16 @@ describe("liveLines", () => {
 })
 
 describe("typingLines", () => {
-  test("tiny mark + label", () => {
+  test("renders one spinner frame and label", () => {
     const lines = typingLines(0).map(stripAnsi)
-    expect(lines).toHaveLength(3)
-    expect(lines[1]).toContain("thinking")
-    expect(lines[0]).toContain("#")
+    expect(lines).toEqual(["| thinking"])
   })
 
-  test("frame advances the crossbar", () => {
-    expect(stripAnsi(typingLines(2)[1] ?? "")).toContain("===")
+  test("cycles through the one-line spinner", () => {
+    expect(stripAnsi(typingLines(1)[0] ?? "")).toBe("/ thinking")
+    expect(stripAnsi(typingLines(2)[0] ?? "")).toBe("- thinking")
+    expect(stripAnsi(typingLines(3)[0] ?? "")).toBe("\\ thinking")
+    expect(stripAnsi(typingLines(4)[0] ?? "")).toBe("| thinking")
   })
 })
 
@@ -464,6 +465,9 @@ describe("classifyLine", () => {
     expect(classifyLine("  > hello")).toBe("user")
     expect(classifyLine("* thinking")).toBe("event")
     expect(classifyLine("  * memory.recall")).toBe("event")
+    expect(classifyLine("| thinking")).toBe("pulse")
+    expect(classifyLine("\\ thinking")).toBe("pulse")
+    expect(classifyLine("     expanded reasoning")).toBe("event")
     expect(classifyLine("- deleted")).toBe("rule")
     expect(classifyLine("+ added")).toBe("rule")
     expect(classifyLine("comuki")).toBe("assistant")

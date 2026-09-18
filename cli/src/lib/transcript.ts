@@ -15,24 +15,24 @@
  * ANSI-aware hard-wrapped so exactly `height` rendered rows fit the
  * budget and the footer/prompt can never be pushed off-screen.
  */
-import {
-  assistantOpenRule,
-  renderMessage,
-  renderPendingPlan,
-} from "./format"
+import { renderMessage, renderPendingPlan } from "./format"
 import { renderRunsFeedPanel, type RunsFeedPanel } from "./runsfeed"
 import { renderMarkdownLines } from "./markdown"
 import { colors, gutter, paint, stripAnsi, symbols } from "../theme"
-import { MARK_TINY_FRAMES, paintMark } from "./mark"
 import type { ChatBlock } from "./sessions"
 
 export const LIVE_CURSOR = "_"
 export const TYPING_LABEL = "thinking"
 export const EXPAND_HINT = "* press ctrl+o to expand thinking"
-export const TYPING_PULSE_EVERY = 2
 
 /** Role of one flattened transcript row — drives the viewport slab bg. */
-export type TranscriptRole = "user" | "assistant" | "event" | "rule" | "blank"
+export type TranscriptRole =
+  | "user"
+  | "assistant"
+  | "event"
+  | "pulse"
+  | "rule"
+  | "blank"
 
 /**
  * Classifies a flattened line from its visible prefix. User rows lead
@@ -41,7 +41,8 @@ export type TranscriptRole = "user" | "assistant" | "event" | "rule" | "blank"
  * assistant card.
  */
 export function classifyLine(plain: string): TranscriptRole {
-  const trimmed = stripAnsi(plain).trimStart()
+  const visible = stripAnsi(plain)
+  const trimmed = visible.trimStart()
   if (trimmed.length === 0) {
     return "blank"
   }
@@ -49,7 +50,13 @@ export function classifyLine(plain: string): TranscriptRole {
   if (lead === ">") {
     return "user"
   }
+  if (/^[|/\\-] thinking$/.test(trimmed)) {
+    return "pulse"
+  }
   if (lead === "*" || trimmed.startsWith(symbols.event)) {
+    return "event"
+  }
+  if (visible.startsWith("     ")) {
     return "event"
   }
   if (lead === "-" || lead === "+") {
@@ -130,9 +137,8 @@ export function wrapVisible(line: string, width: number): string[] {
 
 /**
  * The growing live tail as finished lines: markdown-rendered, with the
- * ASCII cursor `_` riding the write head (the last line) and the
- * in-flight assistant rule (accent) above the body. Empty stream
- * renders nothing.
+ * ASCII cursor `_` riding the write head (the last line). Empty stream
+ * renders nothing; the viewport slab carries assistant identity.
  */
 export function liveLines(liveText: string, width: number): string[] {
   if (liveText.trim().length === 0) {
@@ -147,24 +153,20 @@ export function liveLines(liveText: string, width: number): string[] {
   const body = lines.map((line, index) =>
     index === last ? line + paint(LIVE_CURSOR, colors.accent) : line
   )
-  return [assistantOpenRule(innerWidth, true), ...body].map((line) =>
+  return body.map((line) =>
     line.length > 0 ? gutter + line : line
   )
 }
 
-/** Tiny ASCII mark (3 rows) + dim label — the in-flight thinking pulse. */
+/** One-line spinner pulse; the viewport paints it on the rail slab. */
 export function typingLines(
   frame: number,
   label: string = TYPING_LABEL
 ): readonly string[] {
-  const count = MARK_TINY_FRAMES.length
+  const count = symbols.spinnerFrames.length
   const index = ((frame % count) + count) % count
-  const glyph = MARK_TINY_FRAMES[index] ?? MARK_TINY_FRAMES[0]!
-  const accent = Math.floor(frame / TYPING_PULSE_EVERY) % 2 === 0
-  const painted = paintMark(glyph, accent ? colors.accent : colors.dim)
-  return painted.map((row, rowIndex) =>
-    rowIndex === 1 ? `${row}  ${paint(label, colors.dim)}` : row
-  )
+  const glyph = symbols.spinnerFrames[index] ?? symbols.spinnerFrames[0]
+  return [`${paint(glyph, colors.accent)} ${paint(label, colors.dim)}`]
 }
 
 // ---------------------------------------------------------------------------

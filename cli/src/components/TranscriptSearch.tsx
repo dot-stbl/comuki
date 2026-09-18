@@ -108,8 +108,8 @@ export function TranscriptSearch({
     matchCount > 0 ? `${matchIndex + 1}/${matchCount}` : `0/${matchCount}`
 
   return (
-    <Box>
-      <Text>
+    <Box width="100%">
+      <Text backgroundColor={palette.rail}>
         {gutter}
         <Text color={palette.brand}>{`${symbols.prompt} find `}</Text>
         <Text>{before}</Text>

@@ -8,11 +8,13 @@ import { describe, expect, test } from "bun:test"
 import {
   EXPAND_HINT,
   expandHintLine,
+  classifyLine,
   findMatches,
   flattenTranscript,
   hasCollapsedThinking,
   highlightLine,
   liveLines,
+  padVisible,
   LIVE_CURSOR,
   nextMatchIndex,
   typingLines,
@@ -193,6 +195,7 @@ describe("flattenTranscript", () => {
     const plain = lines.map(stripAnsi)
     expect(plain.some((line) => line.includes("hi there"))).toBe(true)
     expect(plain.some((line) => line.includes("> hi there"))).toBe(true)
+    expect(plain.some((line) => line.trimStart().startsWith("›"))).toBe(false)
     expect(plain).toContain("  raw line one")
     expect(plain).toContain("  raw line two")
     expect(plain.some((line) => line.includes("answer body"))).toBe(true)
@@ -450,5 +453,30 @@ describe("highlightLine", () => {
     const line = highlightLine("Find ME", " me ")
     expect(line).toContain("\x1b[7m")
     expect(stripAnsi(line)).toBe("Find ME")
+  })
+})
+
+describe("classifyLine", () => {
+  test("reads the visible prefix after ANSI strip", () => {
+    expect(classifyLine("")).toBe("blank")
+    expect(classifyLine("   ")).toBe("blank")
+    expect(classifyLine("> hello")).toBe("user")
+    expect(classifyLine("  > hello")).toBe("user")
+    expect(classifyLine("* thinking")).toBe("event")
+    expect(classifyLine("  * memory.recall")).toBe("event")
+    expect(classifyLine("- deleted")).toBe("rule")
+    expect(classifyLine("+ added")).toBe("rule")
+    expect(classifyLine("comuki")).toBe("assistant")
+    expect(classifyLine("done")).toBe("assistant")
+  })
+})
+
+describe("padVisible", () => {
+  test("right-pads to width on the visible length", () => {
+    expect(padVisible("hi", 5)).toBe("hi   ")
+    expect(stripAnsi(padVisible(paint("hi", colors.accent), 5)).length).toBe(5)
+    expect(padVisible("> hello", 20).length).toBe(20)
+    expect(stripAnsi(padVisible("> hello", 20)).length).toBe(20)
+    expect(padVisible("already-wide", 4)).toBe("already-wide")
   })
 })

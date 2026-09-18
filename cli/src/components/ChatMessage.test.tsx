@@ -72,7 +72,7 @@ describe("ChatMessage — markdown rendering", () => {
     unmount()
   })
 
-  test("keeps user messages as bare bold text with no prefix glyph", () => {
+  test("keeps user messages as > plus bold text with no › glyph", () => {
     const { lastFrame, unmount } = render(
       <ChatMessage
         message={{
@@ -91,13 +91,10 @@ describe("ChatMessage — markdown rendering", () => {
     // no markdown machinery for user rows: no border, no cursor
     expect(frame).not.toContain("| const")
     expect(frame).not.toContain("_")
-    // one blank line before AND after (ink trims trailing blanks in the
-    // captured frame), the echo itself bold deck-text at column 0 —
-    // no › prefix
     expect(frame.split("\n")[0]).toBe("")
     expect(frame).toContain("сделай план")
     expect(frame).toContain(colors.bright)
-    expect(frame).toContain("\x1b[38;2;232;232;238mсделай план")
+    expect(stripAnsi(frame)).toContain("> сделай план")
     expect(stripAnsi(frame)).not.toContain("›")
     unmount()
   })

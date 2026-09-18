@@ -1,10 +1,9 @@
 /**
- * The one accent palette of the terminal-native UI (minimal structure,
- * Comuki brand colour): no boxes, no borders — the terminal IS the
- * chrome, hierarchy comes from spacing, weight and the deck's
- * restrained status colours. Raw ANSI escapes instead of Ink
- * `<Text color>` so the pure formatters in `lib/format.ts` can build
- * finished strings without React.
+ * The one accent palette of the terminal-native UI. Ink 5 paints
+ * chrome as filled rectangles (`backgroundColor` hex on `Box`/`Text`);
+ * hierarchy is floor / lane / rail / raised bands, not a log dump.
+ * Raw ANSI escapes still colour the text so the pure formatters in
+ * `lib/format.ts` can build finished strings without React.
  *
  * Source of truth: DESIGN.md — the **Dichromat deck, dark reading**
  * (the dashboard's committed default theme), which is also this
@@ -31,8 +30,18 @@ import {
   type ThemeMode,
 } from "./themes"
 
-/** Ink-facing hex tokens — `<Text color>` props cannot take ANSI codes. */
+/** Ink-facing hex tokens — `<Text color>` / `backgroundColor` cannot take ANSI. */
 export interface PaletteTokens {
+  /** Empty canvas — the shell floor. */
+  floor: string
+  /** User/assistant cards, tab strip. */
+  lane: string
+  /** Status + footer bands. */
+  rail: string
+  /** Prompt well. */
+  raised: string
+  /** Hairline hex — Ink `borderColor` / hairline `Box` bg. */
+  ruleHex: string
   /** The accent hex — the ASCII brand mark, spinner, streaming cursor. */
   brand: string
   /** Deck text — bold reading text. */
@@ -46,6 +55,11 @@ export interface PaletteTokens {
 }
 
 export const palette: PaletteTokens = {
+  floor: "#222226",
+  lane: "#26262b",
+  rail: "#2b2b30",
+  raised: "#313136",
+  ruleHex: "#37373c",
   brand: "#8787f3",
   text: "#e8e8ee",
   ok: "#d7d7ff",
@@ -155,7 +169,17 @@ function hexToTruecolor(hex: string): string {
 
 function themeHex(
   primitives: Readonly<
-    Record<"text" | "muted" | "faint" | "rule" | "running" | "success" | "failed" | "waiting", string>
+    Record<
+      | "text"
+      | "muted"
+      | "faint"
+      | "rule"
+      | "running"
+      | "success"
+      | "failed"
+      | "waiting",
+      string
+    >
   >
 ): ThemeHex {
   return {
@@ -200,6 +224,11 @@ function install(theme: CliTheme, mode: ThemeMode): ThemeTokens {
   colors.error = ansi.error
   colors.waiting = ansi.waiting
   colors.rule = ansi.rule
+  palette.floor = primitives.floor
+  palette.lane = primitives.lane
+  palette.rail = primitives.rail
+  palette.raised = primitives.raised
+  palette.ruleHex = primitives.rule
   palette.brand = hex.accent
   palette.text = hex.text
   palette.ok = hex.ok
@@ -275,8 +304,8 @@ export function nextSpinnerFrame(
  * The identity chrome of one transcript row: which glyph leads it, what
  * color the glyph wears, and the dim speaker label beside it (assistant
  * only). Derived from the role — never hand-picked at a call site.
- * User rows carry no glyph at all: the bare bold text at column 0 is
- * the identity (minimal — no prefix, no label).
+ * User rows lead with `>` in the transcript; the identity chrome
+ * itself stays glyph-less so the prefix is the only mark.
  */
 export interface MessageMark {
   /** Leading glyph; empty when the row leads with bare text (user). */

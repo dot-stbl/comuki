@@ -90,6 +90,22 @@ import {
 } from "../lib/sessions"
 import { resolveSlashAction, slashHelpLines } from "../lib/slash"
 import {
+  aliasListingLines,
+  expandAlias,
+  getAlias,
+  isValidAliasName,
+  readAliasesFile,
+  removeAlias,
+  setAlias,
+  writeAliasesFile,
+} from "../lib/aliases"
+import { DEFAULT_CONTEXT_WINDOW } from "../lib/context"
+import {
+  profileListingLines,
+  profileStoredLine,
+  resolveProfile,
+} from "../lib/profiles"
+import {
   getSnippet,
   isValidSnippetName,
   readSnippetsFile,
@@ -132,6 +148,7 @@ import { colors, palette, symbols } from "../theme"
 import { PromptInput } from "../components/PromptInput"
 import { SessionFooter } from "../components/SessionFooter"
 import { SessionOverview } from "../components/SessionOverview"
+import { sessionTokenTotals } from "../components/SessionOverview"
 import { StatusLine } from "../components/StatusLine"
 import { TabBar } from "../components/TabBar"
 import { TranscriptSearch } from "../components/TranscriptSearch"
@@ -150,6 +167,10 @@ const NOTHING_TO_BRANCH = `${colors.faint}  nothing to branch from — no messag
 const NOTHING_TO_SAVE = `${colors.faint}  nothing to save — no message sent yet${colors.reset}`
 
 const SNIP_USAGE = `${colors.faint}  usage: /snip [name|save <name>|rm <name>] — names are [a-z0-9-]+${colors.reset}`
+
+const ALIAS_USAGE = `${colors.faint}  usage: /alias [set <name> <text>|rm <name>] — names are [a-z][a-z0-9-]*${colors.reset}`
+
+const PROFILE_USAGE = `${colors.faint}  usage: /profile [name] — stored locally; createSession has no profile field${colors.reset}`
 
 /**
  * The user's words as a transcript message block — the local echo,
@@ -212,6 +233,13 @@ export function ChatApp({ config, project }: ChatCommandProps) {
    * are always emitted — `/bell off` only silences the audible byte.
    */
   const [bellEnabled, setBellEnabled] = useState(config.bell)
+  /**
+   * Preferred worker-profile key from config.json. Local only —
+   * createSession has no profile field, so this never rides a turn.
+   */
+  const [preferredProfile, setPreferredProfile] = useState<string | undefined>(
+    config.preferredProfile
+  )
   /** Mirror for callbacks — `describeTurn` reads the live value. */
   const bellRef = useRef(config.bell)
   /** Rendered height of the prompt block (menu rows + wrapped lines). */
@@ -1053,6 +1081,63 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     [projectLabel, pushLines, tabs]
   )
 
+  // -- /profile ---------------------------------------------------------------
+
+  /**
+   * Lists the host catalog (`GET /profiles`) or well-known stems, and
+   * stores a local preference in config.json. Honest: createSession
+   * has no profile field, so the preference never rides a turn.
+   */
+  const switchProfile = useCallback(
+    async (query: string) => {
+      const client = clientRef.current
+      const emit = (lines: readonly string[]) => {
+        const target = tabs.sessions[tabs.activeIndex]
+        if (target) {
+          pushLines(target.id, lines)
+        } else {
+          setNoticeLines(lines)
+        }
+      }
+      let fromHost = false
+      let catalog: Awaited<ReturnType<ComukiClient["profiles"]>> = []
+      if (client) {
+        try {
+          catalog = await client.profiles()
+          fromHost = true
+        } catch {
+          fromHost = false
+        }
+      }
+      if (query.length === 0) {
+        emit(
+          profileListingLines(preferredProfile ?? null, catalog, { fromHost })
+        )
+        return
+      }
+      const match = resolveProfile(query, catalog)
+      if (!match) {
+        emit([
+          `${colors.faint}  unknown profile '${query}'${colors.reset}`,
+          PROFILE_USAGE,
+          ...profileListingLines(preferredProfile ?? null, catalog, {
+            fromHost,
+          }),
+        ])
+        return
+      }
+      setPreferredProfile(match)
+      try {
+        const contents = await readConfigFile()
+        await writeConfigFile({ ...contents, preferredProfile: match })
+      } catch {
+        // Best-effort persistence; this session's preference already applies.
+      }
+      emit([profileStoredLine(match)])
+    },
+    [preferredProfile, pushLines, tabs]
+  )
+
   // -- session power pack: /branch -------------------------------------------
 
   /**
@@ -1670,13 +1755,105 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           runKb(action.subcommand, action.rest)
           return
         }
+        case "profile": {
+          void switchProfile(action.name)
+          return
+        }
+        case "alias": {
+          void (async () => {
+            const lines = aliasListingLines(await readAliasesFile())
+            if (target) {
+              pushLines(target.id, lines)
+            } else {
+              setNoticeLines(lines)
+            }
+          })()
+          return
+        }
+        case "alias-set": {
+          if (!isValidAliasName(action.name) || action.text.length === 0) {
+            const line = ALIAS_USAGE
+            if (target) {
+              pushLines(target.id, [line])
+            } else {
+              setNoticeLines([line])
+            }
+            return
+          }
+          const name = action.name
+          const text = action.text
+          void (async () => {
+            try {
+              const store = await readAliasesFile()
+              await writeAliasesFile(setAlias(store, name, text))
+              const line = `${colors.ok}${symbols.checkmark} alias ${name}${colors.reset}`
+              if (target) {
+                pushLines(target.id, [line])
+              } else {
+                setNoticeLines([line])
+              }
+            } catch (error) {
+              const line = `${colors.error}${symbols.cross} alias save failed: ${describeError(error)}${colors.reset}`
+              if (target) {
+                pushLines(target.id, [line])
+              } else {
+                setNoticeLines([line])
+              }
+            }
+          })()
+          return
+        }
+        case "alias-rm": {
+          if (!isValidAliasName(action.name)) {
+            const line = ALIAS_USAGE
+            if (target) {
+              pushLines(target.id, [line])
+            } else {
+              setNoticeLines([line])
+            }
+            return
+          }
+          const name = action.name
+          void (async () => {
+            try {
+              const store = await readAliasesFile()
+              if (getAlias(store, name) === undefined) {
+                const line = `${colors.faint}  no alias '${name}'${colors.reset}`
+                if (target) {
+                  pushLines(target.id, [line])
+                } else {
+                  setNoticeLines([line])
+                }
+                return
+              }
+              await writeAliasesFile(removeAlias(store, name))
+              const line = `${colors.ok}${symbols.checkmark} removed alias ${name}${colors.reset}`
+              if (target) {
+                pushLines(target.id, [line])
+              } else {
+                setNoticeLines([line])
+              }
+            } catch (error) {
+              const line = `${colors.error}${symbols.cross} alias remove failed: ${describeError(error)}${colors.reset}`
+              if (target) {
+                pushLines(target.id, [line])
+              } else {
+                setNoticeLines([line])
+              }
+            }
+          })()
+          return
+        }
         case "message": {
-          void sendMessage(target, value)
+          void (async () => {
+            const expanded = expandAlias(await readAliasesFile(), value)
+            await sendMessage(target, expanded ?? value)
+          })()
           return
         }
       }
     },
-    [bellEnabled, exit, forkSession, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProject, tabs]
+    [bellEnabled, exit, forkSession, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProfile, switchProject, tabs]
   )
 
   // -- queued-message drain -----------------------------------------------------
@@ -1697,7 +1874,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             queued: rest,
           }),
         }))
-        void sendMessage(session, message)
+        void (async () => {
+          const expanded = expandAlias(await readAliasesFile(), message)
+          await sendMessage(session, expanded ?? message)
+        })()
         return
       }
     }
@@ -1814,6 +1994,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   // once the attempt resolves — connect or fallback to REST-only — the
   // real identity takes over and the placeholder disappears.
   const headerIdentity = hubAttempted ? identity : "connecting…"
+  const contextUsed = (() => {
+    const totals = sessionTokenTotals(activeSession?.blocks ?? [])
+    return totals === null ? undefined : totals.tokensIn + totals.tokensOut
+  })()
 
   if (connectError) {
     return (
@@ -1865,6 +2049,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         connection={hubState}
         serverUrl={config.url}
         latencyMs={latencyMs}
+        contextUsed={contextUsed}
+        contextWindow={config.contextWindow ?? DEFAULT_CONTEXT_WINDOW}
       />
       {tabs.sessions.length > 0 ? (
         <TabBar sessions={tabs.sessions} activeIndex={tabs.activeIndex} />

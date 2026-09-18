@@ -15,6 +15,7 @@
  */
 import { homedir } from "node:os"
 import { join } from "node:path"
+import { DEFAULT_CONTEXT_WINDOW } from "./context"
 import { readJsonFile, writeJsonFile } from "./json"
 
 export interface ConfigFileContents {
@@ -28,6 +29,13 @@ export interface ConfigFileContents {
   theme?: string
   /** BEL on turn completion (OSC 9 toasts are always on). */
   bell?: boolean
+  /**
+   * Preferred worker-profile key (`implement`, `explore-readonly`, …).
+   * Stored locally only — `createSession` has no profile field.
+   */
+  preferredProfile?: string
+  /** Context-window size for the status-line meter. Default 128000. */
+  contextWindow?: number
 }
 
 export interface ResolvedConfig {
@@ -38,6 +46,9 @@ export interface ResolvedConfig {
   defaultProject?: string
   theme?: string
   bell: boolean
+  preferredProfile?: string
+  /** Absent → StatusLine uses DEFAULT_CONTEXT_WINDOW (128k). */
+  contextWindow?: number
 }
 
 export interface ConfigOverrides {
@@ -81,6 +92,11 @@ export function resolveConfig(
     env.COMUKI_PROJECT?.trim() ||
     file.defaultProject?.trim()
   const theme = overrides.theme?.trim() || file.theme?.trim()
+  const preferredProfile = file.preferredProfile?.trim()
+  const contextWindow =
+    typeof file.contextWindow === "number" && file.contextWindow > 0
+      ? file.contextWindow
+      : DEFAULT_CONTEXT_WINDOW
 
   return {
     url: url.replace(/\/+$/, ""),
@@ -91,6 +107,8 @@ export function resolveConfig(
     theme: theme || undefined,
     // Absent = on: the bell is the point of the feature, opt-out only.
     bell: file.bell !== false,
+    preferredProfile: preferredProfile || undefined,
+    contextWindow,
   }
 }
 

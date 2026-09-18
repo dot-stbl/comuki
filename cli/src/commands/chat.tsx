@@ -36,6 +36,12 @@ import {
   whoFromMe,
 } from "../lib/auth"
 import {
+  alertFromError,
+  alertLines,
+  isUnrecoverableError,
+  type AlertCardModel,
+} from "../lib/alerts"
+import {
   expandHintLine,
   findMatches,
   flattenTranscript,
@@ -183,6 +189,7 @@ import {
   resolveTheme,
   symbols,
 } from "../theme"
+import { AlertCard } from "../components/AlertCard"
 import { PromptInput } from "../components/PromptInput"
 import { SessionFooter } from "../components/SessionFooter"
 import { SessionOverview } from "../components/SessionOverview"
@@ -249,7 +256,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   })
   const [identity, setIdentity] = useState("connecting…")
   const [projectLabel, setProjectLabel] = useState<string | undefined>(project)
-  const [connectError, setConnectError] = useState<string | null>(null)
+  const [connectError, setConnectError] = useState<unknown>(null)
   const [noticeLines, setNoticeLines] = useState<readonly string[]>([])
   const [overviewVisible, setOverviewVisible] = useState(false)
   const [promptSeed, setPromptSeed] = useState<
@@ -770,7 +777,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
       } catch (error) {
         if (!disposed) {
-          setConnectError(describeError(error))
+          setConnectError(error)
         }
       }
 
@@ -1040,13 +1047,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           ...current,
           sessions: patchSession(
             appendBlocks(current.sessions, sessionId, [
-              {
-                kind: "lines",
-                lines: [
-                  "",
-                  `${colors.error}${symbols.cross} ${describeError(error)}${colors.reset}`,
-                ],
-              },
+              { kind: "lines", lines: ["", ...alertLines(error, columns)] },
             ]),
             sessionId,
             { status: "idle" }
@@ -1062,7 +1063,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }))
       }
     },
-    [describeTurn]
+    [columns, describeTurn]
   )
 
   /** `/stop` — abort the in-flight turn from the client side. */
@@ -1225,10 +1226,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             message: expansion.outgoing,
           })
         } catch (error) {
-          const authNotice = describeAuthFailure(
-            error,
-            usingApiKeyRef.current
-          )
           if (
             error instanceof ComukiApiError &&
             error.status === 401
@@ -1236,10 +1233,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             setIdentity("signed out")
             pendingRetryRef.current = expansion.outgoing
           }
-          setNoticeLines([
-            "",
-            `${colors.error}${symbols.cross} ${authNotice ?? describeError(error)}${colors.reset}`,
-          ])
+          setNoticeLines(["", ...alertLines(error, columns)])
         }
         return
       }
@@ -1257,7 +1251,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       }
       await runTurn(target.id, "message", { message: expansion.outgoing })
     },
-    [ensureDocTitles, expandTyped, pushLines, runTurn]
+    [columns, ensureDocTitles, expandTyped, pushLines, runTurn]
   )
 
   // -- ops pack: /project ------------------------------------------------------
@@ -1414,13 +1408,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         })
         await runTurn(session.id, "message", { message: opener })
       } catch (error) {
-        setNoticeLines([
-          "",
-          `${colors.error}${symbols.cross} ${describeError(error)}${colors.reset}`,
-        ])
+        setNoticeLines(["", ...alertLines(error, columns)])
       }
     },
-    [runTurn]
+    [columns, runTurn]
   )
 
   // -- ops pack: /kb -------------------------------------------------------------
@@ -1719,6 +1710,17 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         }
         case "new": {
           openPendingTab()
+          return
+        }
+        case "login": {
+          const lines = [
+            `${colors.faint}  leave the repl and run:  comuki login${colors.reset}`,
+          ]
+          if (target) {
+            pushLines(target.id, lines)
+          } else {
+            setNoticeLines(lines)
+          }
           return
         }
         case "retry": {
@@ -2481,7 +2483,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   })
 
   useEffect(() => {
-    if (connectError) {
+    if (connectError !== null && isUnrecoverableError(connectError)) {
       process.exitCode = 1
     }
   }, [connectError])
@@ -2496,38 +2498,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     return totals === null ? undefined : totals.tokensIn + totals.tokensOut
   })()
 
-  if (connectError) {
-    return (
-      <Box
-        flexDirection="column"
-        width={columns}
-        height={rows}
-        alignItems="center"
-        justifyContent="center"
-      >
-        <StatusLine
-          identity={headerIdentity}
-          project={projectLabel}
-          connection={hubState}
-          serverUrl={config.url}
-          latencyMs={latencyMs}
-        />
-        <Box marginTop={1}>
-          <Text>
-            {"  "}
-            <Text color={palette.error}>
-              {symbols.cross} {connectError}
-            </Text>
-          </Text>
-        </Box>
-        <Box marginTop={1}>
-          <Text dimColor>
-            {"  "}check COMUKI_URL / COMUKI_API_KEY, or run comuki login
-          </Text>
-        </Box>
-      </Box>
-    )
-  }
+  const connectAlert: AlertCardModel | null =
+    connectError === null ? null : alertFromError(connectError)
 
   const showWelcome = !welcomeDismissed && tabs.sessions.length === 0
   // The prompt stays live while a turn thinks: typing a message queues
@@ -2585,6 +2557,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             flexGrow={1}
           >
             <Welcome stats={stats} />
+            {connectAlert ? (
+              <Box marginTop={1} flexDirection="column">
+                <AlertCard {...connectAlert} width={columns} />
+              </Box>
+            ) : null}
             {noticeLines.map((line, index) => (
               <Text key={index}>{line}</Text>
             ))}
@@ -2604,7 +2581,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           />
         ) : (
           <Text>{EMPTY_TAB_HINT}</Text>
-
         )}
       </Box>
       {searchOpen ? (
@@ -2626,6 +2602,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       ) : null}
       {!overviewVisible ? (
         <>
+          {connectAlert && !showWelcome ? (
+            <AlertCard {...connectAlert} width={columns} />
+          ) : null}
           {copyHint ? (
             <Text dimColor>{`  ${copyHint}`}</Text>
           ) : null}

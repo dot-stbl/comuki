@@ -2,8 +2,8 @@
  * `comuki` (default) — the multi-session REPL.
  *
  * N parallel brain sessions switched like browser tabs: the tab strip
- * on top, the active transcript in the middle, session badges + hotkey
- * legend at the bottom. Turns are synchronous REST calls per session,
+ * on top, the active transcript in the middle, session badges + expandable
+ * action bar at the bottom. Turns are synchronous REST calls per session,
  * fired unawaited — a thinking tab keeps working in the background and
  * only marks itself unread. The laptop stays cold.
  *
@@ -16,7 +16,8 @@
  * viewport (`lib/viewport.ts` + `TranscriptViewport`) whose offset 0
  * follows the bottom; PgUp suspends follow, `↓ new messages` marks
  * fresh output below, End resumes. The prompt and footer are pinned
- * outside the viewport and never scroll away.
+ * outside the viewport and never scroll away. `ctrl+/` expands the
+ * action bar; while it is open, PromptInput yields arrows/enter/esc.
  */
 import { Box, Text, useApp, useInput } from "ink"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -199,6 +200,16 @@ import {
 import { AlertCard } from "../components/AlertCard"
 import { PromptInput } from "../components/PromptInput"
 import { SessionFooter } from "../components/SessionFooter"
+import {
+  footerActions,
+  footerHintRow,
+  footerRowCount,
+  footerTopRow,
+  hitTestFooterAction,
+  isCollapsedFooterClick,
+  isFooterExpandChord,
+  wrapActionIndex,
+} from "../lib/footer-actions"
 import { SessionOverview } from "../components/SessionOverview"
 import { sessionTokenTotals } from "../components/SessionOverview"
 import { StatusLine } from "../components/StatusLine"
@@ -354,7 +365,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
   // ctrl+y (or overlay copy chord) copies the last assistant answer;
   // ctrl+shift+y / `/copycode` copies the last fenced code block.
-  const { hint: copyHint, copyLastCode } = useCopyLastAnswer(
+  const { hint: copyHint, copyLastCode, copyLast } = useCopyLastAnswer(
     () => lastAssistantText(activeSession?.blocks ?? []),
     {
       chord: keybindings.copy,
@@ -471,6 +482,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchIndex, setSearchIndex] = useState(0)
+  const [footerExpanded, setFooterExpanded] = useState(false)
+  const [footerSelected, setFooterSelected] = useState(0)
+  const footerExpandedRef = useRef(false)
+  const footerSelectedRef = useRef(0)
 
   const searchMatches = useMemo(
     () => (searchOpen ? findMatches(transcriptLines, searchQuery) : []),
@@ -496,16 +511,38 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   // block. The prompt block = the (possibly multiline, possibly
   // menu-carrying) prompt + the transient ctrl+y hint row + the queue
   // hint row. Everything left belongs to the scrolling viewport.
+  // Expanded footer subtracts like PromptInput rows so the transcript
+  // viewport shrinks instead of being covered.
   const showFooter = tabs.sessions.length > 0 && !overviewVisible
+  const signedOut =
+    identity === "anonymous" ||
+    identity === "offline" ||
+    identity === "signed out"
+  const actionItems = footerActions({
+    thinking: activeSession?.status === "thinking",
+    awaitingApproval: activeSession?.awaitingApproval === true,
+    signedOut,
+    sessionCount: tabs.sessions.length,
+  })
   const queuedCount = activeSession?.queued?.length ?? 0
   const promptBlockRows =
     promptRows + (copyHint ? 1 : 0) + (queuedCount > 0 ? 1 : 0)
+  const clampedFooterSelected =
+    actionItems.length === 0
+      ? 0
+      : Math.min(footerSelected, actionItems.length - 1)
+  if (footerSelectedRef.current !== clampedFooterSelected) {
+    footerSelectedRef.current = clampedFooterSelected
+  }
+  const footerRows = showFooter
+    ? footerRowCount(footerExpanded, actionItems.length)
+    : 0
   const viewportHeight = Math.max(
     1,
     rows -
       1 - // StatusLine
       (tabs.sessions.length > 0 ? 1 : 0) - // TabBar
-      (showFooter ? 1 : 0) - // SessionFooter
+      footerRows -
       (searchOpen ? 1 : 0) - // TranscriptSearch row
       promptBlockRows -
       (mentionMenu.menuOpen ? mentionMenu.rowCount : 0) // mention popup
@@ -1118,6 +1155,24 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       )
     )
   }, [])
+
+  const collapseFooter = useCallback(() => {
+    footerExpandedRef.current = false
+    setFooterExpanded(false)
+    setFooterSelected(0)
+    footerSelectedRef.current = 0
+  }, [])
+
+  const toggleFooter = useCallback(() => {
+    if (footerExpandedRef.current) {
+      collapseFooter()
+      return
+    }
+    footerExpandedRef.current = true
+    footerSelectedRef.current = 0
+    setFooterSelected(0)
+    setFooterExpanded(true)
+  }, [collapseFooter])
 
   const closeSession = useCallback(
     (index: number) => {
@@ -2363,6 +2418,77 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     [bellEnabled, closeSession, config.url, copyLastCode, exit, forkSession, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProfile, switchProject, tabs]
   )
 
+  const activateFooterAction = useCallback(
+    (id: string) => {
+      collapseFooter()
+      switch (id) {
+        case "new":
+          openPendingTab()
+          return
+        case "overview":
+          setOverviewVisible(true)
+          return
+        case "verbose": {
+          const target =
+            tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
+          if (target) {
+            setTabs((current) => ({
+              ...current,
+              sessions: toggleBlocksExpanded(current.sessions, target.id),
+            }))
+            pushLines(target.id, [
+              target.blocksExpanded
+                ? `${colors.faint}  ${symbols.bullet} verbose off — thinking and tool blocks render collapsed${colors.reset}`
+                : `${colors.faint}  ${symbols.bullet} verbose on — thinking and tool blocks render expanded${colors.reset}`,
+            ])
+          }
+          return
+        }
+        case "copy":
+          copyLast()
+          return
+        case "search":
+          setSearchOpen(true)
+          return
+        case "login":
+          handleSubmit("/login")
+          return
+        case "approve":
+          handleSubmit("/approve")
+          return
+        case "reject":
+          handleSubmit("/reject")
+          return
+        case "stop": {
+          const target =
+            tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
+          if (target && target.status === "thinking") {
+            stopTurn(target.id)
+          }
+          return
+        }
+        case "help":
+          handleSubmit("/help")
+          return
+        case "quit":
+          exit()
+          return
+        default:
+          return
+      }
+    },
+    [
+      collapseFooter,
+      copyLast,
+      exit,
+      handleSubmit,
+      openPendingTab,
+      pushLines,
+      stopTurn,
+      tabs,
+    ]
+  )
+
   // -- queued-message drain -----------------------------------------------------
   // The moment a session stops thinking (turn done, stopped or failed),
   // its queue sends in order: one dequeue per commit, head first — the
@@ -2391,9 +2517,10 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   }, [tabs.sessions, sendMessage])
 
   // SGR mouse: tab strip switches sessions; a click on the plan card's
-  // `approve` / `reject` line submits the matching slash. Status-bar
-  // clicks are a no-op in v1. Terminals without mouse tracking ignore
-  // the DECSET bytes and never fire — the keyboard path is untouched.
+  // `approve` / `reject` line submits the matching slash. The collapsed
+  // footer row expands the action bar; a click on an expanded action
+  // row runs it. Terminals without mouse tracking ignore the DECSET
+  // bytes and never fire — the keyboard path is untouched.
   const mouseLayoutRef = useRef<MouseLayout>({
     tabRow: null,
     sessions: [],
@@ -2422,6 +2549,37 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       if (overviewRef.current || searchOpen) {
         return
       }
+      if (showFooter) {
+        const footerTopY = footerTopRow({
+          hasTabBar: tabs.sessions.length > 0,
+          viewportHeight,
+          searchOpen,
+        })
+        if (
+          isCollapsedFooterClick(click.y, footerTopY, footerExpandedRef.current)
+        ) {
+          toggleFooter()
+          return
+        }
+        if (footerExpandedRef.current) {
+          if (click.y === footerHintRow(footerTopY, actionItems.length)) {
+            toggleFooter()
+            return
+          }
+          const index = hitTestFooterAction(
+            click.y,
+            footerTopY,
+            actionItems.length
+          )
+          if (index !== null) {
+            const action = actionItems[index]
+            if (action) {
+              activateFooterAction(action.id)
+            }
+            return
+          }
+        }
+      }
       const target = resolveMouseClick(click, mouseLayoutRef.current)
       if (target.kind === "tab") {
         focusSession(target.index)
@@ -2435,7 +2593,17 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         handleSubmit("/reject")
       }
     },
-    [searchOpen, focusSession, handleSubmit]
+    [
+      searchOpen,
+      showFooter,
+      tabs.sessions.length,
+      viewportHeight,
+      actionItems,
+      activateFooterAction,
+      toggleFooter,
+      focusSession,
+      handleSubmit,
+    ]
   )
   useMouse(handleMouseClick)
 
@@ -2451,6 +2619,43 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     // editor eats the query keystrokes and enter/esc drive the search.
     if (searchOpen || loginStep !== null) {
       return
+    }
+    if (showFooter && isFooterExpandChord(input, key)) {
+      toggleFooter()
+      return
+    }
+    if (footerExpandedRef.current) {
+      if (key.escape) {
+        collapseFooter()
+        return
+      }
+      if (key.upArrow || key.leftArrow) {
+        const next = wrapActionIndex(
+          footerSelectedRef.current,
+          actionItems.length,
+          -1
+        )
+        footerSelectedRef.current = next
+        setFooterSelected(next)
+        return
+      }
+      if (key.downArrow || key.rightArrow) {
+        const next = wrapActionIndex(
+          footerSelectedRef.current,
+          actionItems.length,
+          1
+        )
+        footerSelectedRef.current = next
+        setFooterSelected(next)
+        return
+      }
+      if (key.return) {
+        const action = actionItems[footerSelectedRef.current]
+        if (action) {
+          activateFooterAction(action.id)
+        }
+        return
+      }
     }
     // The slash menu owns tab (complete), esc (dismiss) and ↑/↓
     // (selection) while it is open; the mention popup owns the same
@@ -2585,12 +2790,12 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const showWelcome = !welcomeDismissed && tabs.sessions.length === 0
   // The prompt stays live while a turn thinks: typing a message queues
   // it, `/stop` needs to be submittable mid-turn.
-  const promptEnabled = !overviewVisible
+  const promptEnabled = !overviewVisible && !footerExpanded
 
   // Header: status line + (when tabs exist) the tab strip — both single rows.
   // Content: the scrolling transcript viewport, filling everything the
-  // chrome does not claim. Footer: session badges + legend — single row.
-  // Prompt block: pinned last, never scrolled away.
+  // chrome does not claim. Footer: session badges + expandable action
+  // bar. Prompt block: pinned last, never scrolled away.
   return (
     <Box flexDirection="column" width={columns} height={rows}>
       <StatusLine
@@ -2679,6 +2884,15 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         <SessionFooter
           sessions={tabs.sessions}
           activeIndex={tabs.activeIndex}
+          expanded={footerExpanded}
+          selectedIndex={clampedFooterSelected}
+          actions={actionItems}
+          onToggle={toggleFooter}
+          onSelect={(index) => {
+            footerSelectedRef.current = index
+            setFooterSelected(index)
+          }}
+          onActivate={activateFooterAction}
         />
       ) : null}
       {!overviewVisible ? (
@@ -2695,8 +2909,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             <PromptInput
               onSubmit={handleSubmit}
               history={activeSession?.history ?? []}
-              active={promptEnabled && !searchOpen}
-              historyRecallEnabled={!scroll.scrolledUp}
+              active={promptEnabled && !searchOpen && !footerExpanded}
+              historyRecallEnabled={!scroll.scrolledUp && !footerExpanded}
               onMenuOpenChange={handleMenuOpenChange}
               onRowsChange={handlePromptRows}
               seed={promptSeed}
@@ -2707,7 +2921,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               key={loginStep}
               onSubmit={submitLogin}
               history={[]}
-              active={promptEnabled && !searchOpen}
+              active={promptEnabled && !searchOpen && !footerExpanded}
               historyRecallEnabled={false}
               slashMenuEnabled={false}
               mask={loginStep === "password" ? "*" : undefined}

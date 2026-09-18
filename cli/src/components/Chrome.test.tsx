@@ -13,7 +13,50 @@ import { render } from "ink-testing-library"
 import { SessionFooter } from "./SessionFooter"
 import { TabBar } from "./TabBar"
 import { Welcome } from "./Welcome"
+import { footerActions, type FooterAction } from "../lib/footer-actions"
 import type { Session } from "../lib/sessions"
+
+const IDLE_ACTIONS: readonly FooterAction[] = footerActions({
+  thinking: false,
+  awaitingApproval: false,
+  signedOut: false,
+  sessionCount: 1,
+})
+
+function noopToggle(): void {
+  /* presentational — chrome tests never fire these */
+}
+
+function noopSelect(_index: number): void {
+  /* presentational */
+}
+
+function noopActivate(_id: string): void {
+  /* presentational */
+}
+
+function renderFooter(
+  sessions: readonly Session[],
+  activeIndex: number,
+  extras: {
+    readonly expanded?: boolean
+    readonly selectedIndex?: number
+    readonly actions?: readonly FooterAction[]
+  } = {}
+) {
+  return (
+    <SessionFooter
+      sessions={sessions}
+      activeIndex={activeIndex}
+      expanded={extras.expanded ?? false}
+      selectedIndex={extras.selectedIndex ?? 0}
+      actions={extras.actions ?? IDLE_ACTIONS}
+      onToggle={noopToggle}
+      onSelect={noopSelect}
+      onActivate={noopActivate}
+    />
+  )
+}
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -98,13 +141,9 @@ describe("TabBar", () => {
 })
 
 describe("SessionFooter", () => {
-  test("renders the hotkey legend even when there are no sessions", () => {
-    const { lastFrame, unmount } = render(
-      <SessionFooter sessions={[]} activeIndex={-1} />
-    )
-    expect(lastFrame()).toContain("esc")
-    expect(lastFrame()).toContain("tab")
-    expect(lastFrame()).toContain("ctrl+n")
+  test("renders the expand hint even when there are no sessions", () => {
+    const { lastFrame, unmount } = render(renderFooter([], -1))
+    expect(lastFrame()).toContain("ctrl+/ actions")
     unmount()
   })
 
@@ -114,9 +153,7 @@ describe("SessionFooter", () => {
       makeSession({ id: "b", name: "beta" }),
       makeSession({ id: "c", name: "gamma" }),
     ]
-    const { lastFrame, unmount } = render(
-      <SessionFooter sessions={sessions} activeIndex={1} />
-    )
+    const { lastFrame, unmount } = render(renderFooter(sessions, 1))
     const frame = lastFrame()
     expect(frame).toContain("1 alpha")
     expect(frame).toContain("2 beta")
@@ -128,10 +165,33 @@ describe("SessionFooter", () => {
     const sessions = [
       makeSession({ id: "a", name: "alpha", status: "thinking" }),
     ]
-    const { lastFrame, unmount } = render(
-      <SessionFooter sessions={sessions} activeIndex={0} />
-    )
+    const { lastFrame, unmount } = render(renderFooter(sessions, 0))
     expect(lastFrame()).toContain("●")
+    unmount()
+  })
+
+  test("collapsed footer hides the action list", () => {
+    const { lastFrame, unmount } = render(renderFooter([], -1))
+    const frame = lastFrame() ?? ""
+    expect(frame).toContain("ctrl+/ actions")
+    expect(frame).not.toContain("new session")
+    expect(frame).not.toContain("quit")
+    unmount()
+  })
+
+  test("expanded footer lists actions with the selected row marked", () => {
+    const { lastFrame, unmount } = render(
+      renderFooter([], -1, { expanded: true, selectedIndex: 0 })
+    )
+    const frame = lastFrame() ?? ""
+    expect(frame).toContain("new session")
+    expect(frame).toContain("overview")
+    expect(frame).toContain("verbose")
+    expect(frame).toContain("copy last")
+    expect(frame).toContain("search")
+    expect(frame).toContain("help")
+    expect(frame).toContain("quit")
+    expect(frame).toContain("› new session")
     unmount()
   })
 })

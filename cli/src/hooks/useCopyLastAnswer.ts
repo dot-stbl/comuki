@@ -37,6 +37,8 @@ export interface CopyLastAnswer {
   readonly hint: string | null
   /** `/copycode` — same write + hint path as ctrl+shift+y. */
   readonly copyLastCode: () => void
+  /** Footer / action-bar path — same write + hint as ctrl+y. */
+  readonly copyLast: () => void
 }
 
 export function useCopyLastAnswer(
@@ -94,14 +96,7 @@ export function useCopyLastAnswer(
     void write(text).catch(() => setHint("copy failed"))
   }, [flash, write])
 
-  useInput((input, key) => {
-    if (key.ctrl && (key.shift || input === "Y") && (input === "y" || input === "Y")) {
-      copyCode()
-      return
-    }
-    if (!matchesBinding(chordRef.current, input, key)) {
-      return
-    }
+  const copyLast = useCallback(() => {
     const text = getterRef.current()
     if (text === undefined || text.length === 0) {
       flash("nothing to copy")
@@ -111,7 +106,18 @@ export function useCopyLastAnswer(
     // Best effort: a failed write downgrades the hint instead of throwing
     // inside the key handler.
     void write(text).catch(() => setHint("copy failed"))
+  }, [flash, write])
+
+  useInput((input, key) => {
+    if (key.ctrl && (key.shift || input === "Y") && (input === "y" || input === "Y")) {
+      copyCode()
+      return
+    }
+    if (!matchesBinding(chordRef.current, input, key)) {
+      return
+    }
+    copyLast()
   })
 
-  return { hint, copyLastCode: copyCode }
+  return { hint, copyLastCode: copyCode, copyLast }
 }

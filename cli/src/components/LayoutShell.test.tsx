@@ -22,7 +22,20 @@ import { useStdoutDimensions } from "../hooks/useStdoutDimensions"
 import { SessionFooter } from "./SessionFooter"
 import { TabBar } from "./TabBar"
 import { Welcome } from "./Welcome"
+import { footerActions } from "../lib/footer-actions"
 import type { Session } from "../lib/sessions"
+
+function noopToggle(): void {
+  /* presentational */
+}
+
+function noopSelect(_index: number): void {
+  /* presentational */
+}
+
+function noopActivate(_id: string): void {
+  /* presentational */
+}
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -77,7 +90,21 @@ function LayoutShell({ sessions, showWelcome }: LayoutShellProps) {
         )}
       </Box>
       {showFooter ? (
-        <SessionFooter sessions={sessions} activeIndex={0} />
+        <SessionFooter
+          sessions={sessions}
+          activeIndex={0}
+          expanded={false}
+          selectedIndex={0}
+          actions={footerActions({
+            thinking: false,
+            awaitingApproval: false,
+            signedOut: false,
+            sessionCount: sessions.length,
+          })}
+          onToggle={noopToggle}
+          onSelect={noopSelect}
+          onActivate={noopActivate}
+        />
       ) : null}
     </Box>
   )
@@ -126,8 +153,8 @@ describe("LayoutShell (full-screen TUI)", () => {
     const { lastFrame, unmount } = render(
       <LayoutShell sessions={[]} showWelcome />
     )
-    // The footer shows the hotkey legend; absent when there are no sessions.
-    expect(lastFrame()).not.toContain("esc · tab · pgup/pgdn · ctrl+n")
+    // The footer shows the expand hint; absent when there are no sessions.
+    expect(lastFrame()).not.toContain("ctrl+/ actions")
     unmount()
   })
 
@@ -139,7 +166,7 @@ describe("LayoutShell (full-screen TUI)", () => {
     const frame = lastFrame()
     expect(frame).toContain("status")
     expect(frame).toContain("[1] alpha")
-    expect(frame).toContain("esc · tab · pgup/pgdn · ctrl+n")
+    expect(frame).toContain("ctrl+/ actions")
     unmount()
   })
 
@@ -159,7 +186,7 @@ describe("LayoutShell (full-screen TUI)", () => {
     expect(frame).toContain("1 alpha")
     expect(frame).toContain("2 beta")
     expect(frame).toContain("3 gamma")
-    expect(frame).toContain("esc · tab · pgup/pgdn · ctrl+n")
+    expect(frame).toContain("ctrl+/ actions")
     unmount()
   })
 
@@ -170,7 +197,7 @@ describe("LayoutShell (full-screen TUI)", () => {
     )
     const frame = lastFrame()
     expect(frame).not.toContain("[1]")
-    expect(frame).not.toContain("esc · tab · pgup/pgdn · ctrl+n")
+    expect(frame).not.toContain("ctrl+/ actions")
     unmount()
   })
 })

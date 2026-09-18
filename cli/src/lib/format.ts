@@ -23,6 +23,7 @@ import {
 import type { ChatMessageView, MessagePart, PlanItemView } from "./client"
 import { MENTION_TOKEN, stripMentionPreamble } from "./mentions"
 import { DEFAULT_MARKDOWN_WIDTH, renderMarkdownLines } from "./markdown"
+import { isDiffContent, renderDiffLines } from "./diff"
 
 // ---------------------------------------------------------------------------
 // Transcript chrome — gutter + spacing
@@ -459,6 +460,16 @@ export function renderPart(
             )
           : ""
       const header = `  ${paint(symbols.bullet, colors.accent)} ${part.language}${anchor}`
+      // A diff body renders as signed lines (additions/deletions/hunks),
+      // not a muted fence — same two-space indent as plain code.
+      if (isDiffContent(part.language, part.source)) {
+        return [
+          header,
+          ...renderDiffLines(part.source, Math.max(8, width - 2)).map(
+            (line) => (line.length > 0 ? "  " + line : line)
+          ),
+        ]
+      }
       return [
         header,
         ...indentBlock(part.source)

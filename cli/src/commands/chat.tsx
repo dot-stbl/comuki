@@ -30,8 +30,10 @@ import {
 import { whoAmI } from "../lib/auth"
 import {
   expandHintLine,
+  findMatches,
   flattenTranscript,
   hasCollapsedThinking,
+  nextMatchIndex,
 } from "../lib/transcript"
 import type { ResolvedConfig } from "../lib/config"
 import { readConfigFile, writeConfigFile } from "../lib/config"
@@ -107,6 +109,7 @@ import { SessionFooter } from "../components/SessionFooter"
 import { SessionOverview } from "../components/SessionOverview"
 import { StatusLine } from "../components/StatusLine"
 import { TabBar } from "../components/TabBar"
+import { TranscriptSearch } from "../components/TranscriptSearch"
 import { TranscriptViewport } from "../components/TranscriptViewport"
 import { Welcome, type PlatformStats } from "../components/Welcome"
 import { fetchRunsFeedPanel } from "./runsfeed"
@@ -302,6 +305,24 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     [activeSession, columns, typingFrame, noticeLines, thinking]
   )
 
+  // -- ctrl+f transcript search ---------------------------------------------------
+
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchIndex, setSearchIndex] = useState(0)
+
+  const searchMatches = useMemo(
+    () => (searchOpen ? findMatches(transcriptLines, searchQuery) : []),
+    [searchOpen, transcriptLines, searchQuery]
+  )
+  // The index can outlive the match list it was picked from (the query
+  // shrank); the clamped value is what the counter and the jumps use.
+  const searchCursor =
+    searchMatches.length > 0
+      ? Math.min(searchIndex, searchMatches.length - 1)
+      : 0
+  const activeMatchLine = searchMatches[searchCursor] ?? null
+
   // The ctrl+o hint rides the top row of the viewport — only while the
   // active tab actually hides thinking behind ⏺ event lines.
   const expandHint =
@@ -324,6 +345,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       1 - // StatusLine
       (tabs.sessions.length > 0 ? 1 : 0) - // TabBar
       (showFooter ? 1 : 0) - // SessionFooter
+      (searchOpen ? 1 : 0) - // TranscriptSearch row
       promptBlockRows -
       (mentionMenu.menuOpen ? mentionMenu.rowCount : 0) // mention popup
   )
@@ -337,6 +359,38 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   // Home/End are invisible to ink 5's key flags — matched as raw
   // escape sequences on the same input channel useInput listens on.
   useHomeEndKeys(scroll.toTop, scroll.toBottom, !overviewVisible)
+
+  // Search jumps drive the same offset the scroll keys use: enter
+  // cycles the match cursor (wrapping), and a fresh query snaps to its
+  // first match so find-as-you-type always lands somewhere visible.
+  // Plain closures (re-created each render) keep the transcript lines
+  // fresh — a streamed chunk between keystrokes must not yank the view.
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setSearchIndex(0)
+    const first = findMatches(transcriptLines, value)[0]
+    if (first !== undefined) {
+      scroll.scrollToLine(first)
+    }
+  }
+
+  const cycleSearch = (step: number) => {
+    if (searchMatches.length === 0) {
+      return
+    }
+    const next = nextMatchIndex(searchCursor, searchMatches.length, step)
+    setSearchIndex(next)
+    const line = searchMatches[next]
+    if (line !== undefined) {
+      scroll.scrollToLine(line)
+    }
+  }
+
+  const handleSearchClose = () => {
+    setSearchOpen(false)
+    setSearchQuery("")
+    setSearchIndex(0)
+  }
 
   useEffect(() => {
     activeIdRef.current = activeSessionId
@@ -1292,6 +1346,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     if (overviewRef.current) {
       return // the overview's own handler owns the keys
     }
+    // While the ctrl+f search row is open it owns the keyboard: its
+    // editor eats the query keystrokes and enter/esc drive the search.
+    if (searchOpen) {
+      return
+    }
     // The slash menu owns tab (complete), esc (dismiss) and ↑/↓
     // (selection) while it is open; the mention popup owns the same
     // keys while IT is on screen — either open, the shell stays quiet.
@@ -1351,6 +1410,12 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     }
     if (key.ctrl && input === "n") {
       openPendingTab()
+      return
+    }
+    if (key.ctrl && input === "f") {
+      // Transcript search — the inline row above the footer owns the
+      // keyboard from here until esc closes it.
+      setSearchOpen(true)
       return
     }
     if (key.ctrl && input === "o") {
@@ -1486,12 +1551,28 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             offset={scroll.offset}
             newBelow={scroll.newBelow}
             hint={expandHint}
+            highlight={
+              searchOpen && searchQuery.trim().length > 0
+                ? { query: searchQuery, activeLine: activeMatchLine }
+                : null
+            }
           />
         ) : (
           <Text>{EMPTY_TAB_HINT}</Text>
 
         )}
       </Box>
+      {searchOpen ? (
+        <TranscriptSearch
+          value={searchQuery}
+          matchCount={searchMatches.length}
+          matchIndex={searchCursor}
+          onChange={handleSearchChange}
+          onNext={() => cycleSearch(1)}
+          onPrevious={() => cycleSearch(-1)}
+          onClose={handleSearchClose}
+        />
+      ) : null}
       {showFooter ? (
         <SessionFooter
           sessions={tabs.sessions}
@@ -1508,7 +1589,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           <PromptInput
             onSubmit={handleSubmit}
             history={activeSession?.history ?? []}
-            active={promptEnabled}
+            active={promptEnabled && !searchOpen}
             historyRecallEnabled={!scroll.scrolledUp}
             onMenuOpenChange={handleMenuOpenChange}
             onRowsChange={handlePromptRows}

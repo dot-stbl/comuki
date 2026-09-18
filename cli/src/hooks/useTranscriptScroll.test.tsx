@@ -127,6 +127,46 @@ describe("useTranscriptScroll — scrolling", () => {
     unmount()
   })
 
+  test("scrollToLine centers the searched line in the window", async () => {
+    const { unmount } = await renderProbe(100, 10)
+    handle?.scrollToLine(40)
+    await settle()
+    // height 10 → the window ends at 40 + 1 + 4 = 45, offset 100−45 = 55;
+    // the window [35,45) has line 40 dead center.
+    expect(handle?.offset).toBe(55)
+    expect(handle?.scrolledUp).toBe(true)
+    unmount()
+  })
+
+  test("scrollToLine near the top clamps to the first window", async () => {
+    const { unmount } = await renderProbe(100, 10)
+    handle?.scrollToLine(1)
+    await settle()
+    // Centering would end the window before `height` — clamped to the
+    // first full window: offset = maxOffset = 90.
+    expect(handle?.offset).toBe(90)
+    unmount()
+  })
+
+  test("scrollToLine near the bottom lands on follow (offset 0)", async () => {
+    const { unmount } = await renderProbe(100, 10)
+    handle?.pageUp()
+    await settle()
+    handle?.scrollToLine(99)
+    await settle()
+    expect(handle?.offset).toBe(0)
+    expect(handle?.newBelow).toBe(false)
+    unmount()
+  })
+
+  test("scrollToLine on a short transcript is a no-op", async () => {
+    const { unmount } = await renderProbe(5, 10)
+    handle?.scrollToLine(2)
+    await settle()
+    expect(handle?.offset).toBe(0)
+    unmount()
+  })
+
   test("scrolling is a no-op on a short transcript (nothing to hide)", async () => {
     const { unmount } = await renderProbe(5, 10)
     handle?.pageUp()

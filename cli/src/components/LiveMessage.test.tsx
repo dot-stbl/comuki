@@ -1,6 +1,6 @@
 /**
  * Streaming state transitions for the live assistant block: chunks
- * grow the rendered tail, the `_` cursor rides the write head,
+ * grow the rendered tail, the ASCII cursor `_` rides the write head,
  * an over-long tail clips to the last lines, and the empty pre-chunk
  * state renders nothing.
  */
@@ -52,7 +52,7 @@ describe("LiveMessage — streaming transitions", () => {
       <LiveMessage liveText={"Вот код:\n```ts\nconst partial ="} width={60} />
     )
     const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("│ const partial =")
+    expect(frame).toContain("| const partial =")
     expect(lastFrame()).toContain(LIVE_CURSOR)
     unmount()
   })

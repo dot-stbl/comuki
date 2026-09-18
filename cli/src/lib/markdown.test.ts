@@ -105,9 +105,9 @@ describe("renderMarkdownLines — code blocks", () => {
     expect(lines).toHaveLength(3)
     expect(lines[0]).toContain(colors.dim)
     expect(stripAnsi(lines[0] ?? "")).toContain("ts")
-    expect(stripAnsi(lines[1] ?? "")).toBe("  │ const x = 1")
+    expect(stripAnsi(lines[1] ?? "")).toBe("  | const x = 1")
     expect(lines[1]).toContain(colors.muted)
-    expect(stripAnsi(lines[2] ?? "")).toContain("└")
+    expect(stripAnsi(lines[2] ?? "")).toContain("+")
   })
 
   it("hard-wraps long code lines instead of overflowing", () => {
@@ -129,7 +129,7 @@ describe("renderMarkdownLines — code blocks", () => {
 
   it("keeps blank lines inside a code block", () => {
     const lines = renderMarkdownLines("```\na\n\nb\n```")
-    expect(stripAnsi(lines[2] ?? "")).toBe("  │")
+    expect(stripAnsi(lines[2] ?? "")).toBe("  |")
   })
 })
 
@@ -176,13 +176,13 @@ describe("renderMarkdownLines — lists", () => {
 describe("renderMarkdownLines — quotes, rules, tables", () => {
   it("renders blockquotes behind a dim bar", () => {
     const lines = renderMarkdownLines("> quoted wisdom")
-    expect(stripAnsi(lines[0] ?? "")).toBe("  ▎ quoted wisdom")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  | quoted wisdom")
     expect(lines[0]).toContain(colors.dim)
   })
 
   it("renders a horizontal rule", () => {
     const [line] = renderMarkdownLines("---")
-    expect(stripAnsi(line ?? "").trim()).toBe("─".repeat(76))
+    expect(stripAnsi(line ?? "").trim()).toBe("-".repeat(76))
   })
 
   it("renders a table with a header and separator", () => {
@@ -192,7 +192,7 @@ describe("renderMarkdownLines — quotes, rules, tables", () => {
     const stripped = lines.map(stripAnsi)
     expect(stripped[0]).toContain("key")
     expect(stripped[0]).toContain("value")
-    expect(stripped[1]).toContain("─")
+    expect(stripped[1]).toContain("-")
     expect(stripped[2]).toContain("a")
     expect(lines[0]).toContain(colors.bright)
   })

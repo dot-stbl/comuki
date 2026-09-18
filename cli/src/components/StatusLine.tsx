@@ -32,6 +32,8 @@ export interface StatusLineProps {
   readonly contextUsed?: number
   /** Context window for the meter; default 128k. */
   readonly contextWindow?: number
+  /** Spinner tick for the reconnecting `. .. ...` suffix. */
+  readonly tick?: number
 }
 
 export const CLI_VERSION = "0.2.0"
@@ -70,9 +72,14 @@ export function latencyLabel(latencyMs: number): string {
 
 const CONNECTION_LABELS: Record<HubConnectionState, string> = {
   live: "live",
-  connecting: "connecting…",
-  reconnecting: "reconnecting…",
+  connecting: "connecting...",
+  reconnecting: "reconnecting",
   offline: "offline",
+}
+
+/** `reconnecting.` / `..` / `...` — ASCII tick while the hub retries. */
+export function reconnectingSuffix(frame: number): string {
+  return ".".repeat((Math.abs(frame) % 3) + 1)
 }
 
 /** live pops ok-lavender, reconnecting waits yellow, the rest stay dim. */
@@ -87,7 +94,13 @@ function connectionTone(state: HubConnectionState): string | undefined {
 }
 
 /** Status-bar label for a hub state (with the ellipsis forms). */
-export function connectionLabel(state: HubConnectionState): string {
+export function connectionLabel(
+  state: HubConnectionState,
+  frame: number = 0
+): string {
+  if (state === "reconnecting") {
+    return CONNECTION_LABELS.reconnecting + reconnectingSuffix(frame)
+  }
   return CONNECTION_LABELS[state]
 }
 
@@ -100,6 +113,7 @@ export function StatusLine({
   latencyMs,
   contextUsed,
   contextWindow,
+  tick = 0,
 }: StatusLineProps) {
   const host = serverUrl === undefined ? null : hostFromUrl(serverUrl)
   const parts: React.ReactNode[] = [`comuki v${CLI_VERSION}`, identity]
@@ -115,7 +129,7 @@ export function StatusLine({
   if (connection) {
     parts.push(
       <Text color={connectionTone(connection)}>
-        {CONNECTION_LABELS[connection]}
+        {connectionLabel(connection, tick)}
       </Text>
     )
   }

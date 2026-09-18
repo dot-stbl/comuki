@@ -15,7 +15,7 @@ import {
   liveLines,
   LIVE_CURSOR,
   nextMatchIndex,
-  typingLine,
+  typingLines,
   wrapVisible,
   type TranscriptSnapshot,
 } from "./transcript"
@@ -113,20 +113,16 @@ describe("liveLines", () => {
   })
 })
 
-describe("typingLine", () => {
-  test("tiny mark + dim thinking label", () => {
-    const line = typingLine(0)
-    const plain = stripAnsi(line)
-    expect(plain).toContain("thinking")
-    expect(plain).not.toContain("comuki thinking")
-    expect(plain).toContain("# #")
+describe("typingLines", () => {
+  test("tiny mark + label", () => {
+    const lines = typingLines(0).map(stripAnsi)
+    expect(lines).toHaveLength(3)
+    expect(lines[1]).toContain("thinking")
+    expect(lines[0]).toContain("#")
   })
 
-  test("frame advances the tiny mark crossbar", () => {
-    const empty = stripAnsi(typingLine(0))
-    const full = stripAnsi(typingLine(2))
-    expect(empty).toContain("# #")
-    expect(full).toContain("===")
+  test("frame advances the crossbar", () => {
+    expect(stripAnsi(typingLines(2)[1] ?? "")).toContain("===")
   })
 })
 
@@ -196,8 +192,7 @@ describe("flattenTranscript", () => {
     const lines = flattenTranscript(snapshot({ blocks }), 80, 0)
     const plain = lines.map(stripAnsi)
     expect(plain.some((line) => line.includes("hi there"))).toBe(true)
-    // The user echo is bare bold text — no › prefix anywhere.
-    expect(plain.some((line) => line.trimStart().startsWith("›"))).toBe(false)
+    expect(plain.some((line) => line.includes("> hi there"))).toBe(true)
     expect(plain).toContain("  raw line one")
     expect(plain).toContain("  raw line two")
     expect(plain.some((line) => line.includes("answer body"))).toBe(true)
@@ -223,7 +218,7 @@ describe("flattenTranscript", () => {
     ]
     const plain = flattenTranscript(snapshot({ blocks }), 80, 0).map(stripAnsi)
     expect(
-      plain.some((line) => line.includes("┌─ error · authentication.required"))
+      plain.some((line) => line.includes("+- error · authentication.required"))
     ).toBe(true)
     expect(plain.some((line) => line.includes("/login"))).toBe(true)
     expect(plain.some((line) => line.includes("✗ HTTP 401"))).toBe(false)
@@ -250,7 +245,7 @@ describe("flattenTranscript", () => {
     const lines = flattenTranscript(snapshot({ blocks }), 90, 0)
     const plain = lines.map(stripAnsi)
     // Assistant rows carry the one-space gutter over the event indent.
-    expect(plain).toContain("   * thinking . 4.1k tok . 6.2s")
+    expect(plain).toContain("   * thinking  4.1k tok 6.2s")
     expect(plain).toContain(`   * memory.recall("identity module", 5)  ok 41ms`)
     expect(plain.join("\n")).not.toContain("secret reasoning")
     expect(plain.some((line) => line.includes("the answer"))).toBe(true)
@@ -272,7 +267,7 @@ describe("flattenTranscript", () => {
       0
     )
     const plain = lines.map(stripAnsi)
-    expect(plain).toContain("   * thinking . 5 tok")
+    expect(plain).toContain("   * thinking  5 tok")
     expect(plain).toContain("     visible reasoning")
   })
 
@@ -310,7 +305,7 @@ describe("flattenTranscript", () => {
       0
     )
     const plain = lines.map(stripAnsi)
-    expect(plain.some((line) => line.includes("┌─ plan · 1 шаг "))).toBe(true)
+    expect(plain.some((line) => line.includes("+- plan · 1 шаг "))).toBe(true)
     expect(plain.some((line) => line.includes("do things"))).toBe(true)
     expect(plain[plain.length - 1]).toContain("approve · reject [reason]")
   })

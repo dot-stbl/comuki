@@ -154,8 +154,6 @@ spec:
           env:
             - name: COMUKI_ENV
               value: dev
-            - name: COMUKI_BRAIN_CONTROLPLANEPROFILESPATH
-              value: /app/control-plane/profiles
           envFrom:
             - secretRef:
                 name: comuki-dev-host-secrets

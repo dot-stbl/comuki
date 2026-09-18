@@ -110,6 +110,44 @@ describe("resolveSlashAction", () => {
       query: "",
     })
   })
+
+  it("parses /snip: bare lists, a name sends, save/rm carry the target", () => {
+    expect(resolveSlashAction("/snip")).toEqual({ kind: "snip" })
+    expect(resolveSlashAction("/snip   ")).toEqual({ kind: "snip" })
+    expect(resolveSlashAction("/snip list")).toEqual({ kind: "snip" })
+    expect(resolveSlashAction("/snip deploy")).toEqual({
+      kind: "snip-send",
+      name: "deploy",
+    })
+    expect(resolveSlashAction("/snip save fix-readme")).toEqual({
+      kind: "snip-save",
+      name: "fix-readme",
+    })
+    expect(resolveSlashAction("/snip rm deploy")).toEqual({
+      kind: "snip-rm",
+      name: "deploy",
+    })
+  })
+
+  it("keeps the whole argument as the /snip name (validation is downstream)", () => {
+    expect(resolveSlashAction("/snip two words")).toEqual({
+      kind: "snip-send",
+      name: "two words",
+    })
+    expect(resolveSlashAction("/snip save")).toEqual({
+      kind: "snip-save",
+      name: "",
+    })
+  })
+
+  it("parses /branch: bare forks from the last message, args carry it", () => {
+    expect(resolveSlashAction("/branch")).toEqual({ kind: "branch" })
+    expect(resolveSlashAction("/branch   ")).toEqual({ kind: "branch" })
+    expect(resolveSlashAction("/branch try a different approach")).toEqual({
+      kind: "branch",
+      message: "try a different approach",
+    })
+  })
 })
 
 describe("slashHelpLines", () => {
@@ -132,6 +170,8 @@ describe("slashHelpLines", () => {
     expect(help).toContain("/runs")
     expect(help).toContain("/plan")
     expect(help).toContain("/project <id|slug|name>")
+    expect(help).toContain("/snip [name|save <name>|rm <name>]")
+    expect(help).toContain("/branch [message]")
   })
 
   it("aligns descriptions in one column", () => {

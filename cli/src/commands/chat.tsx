@@ -65,6 +65,8 @@ import {
   appendBlocks,
   appendHistory,
   appendLiveText,
+  branchOpener,
+  forkTitle,
   fromPersisted,
   markUnread,
   newPendingSession,
@@ -73,6 +75,7 @@ import {
   removeSession,
   renameSession,
   retryMessage,
+  sessionNameFromMessage,
   setBlocks,
   titleForFirstMessage,
   stepActive,
@@ -84,6 +87,15 @@ import {
   type SessionsState,
 } from "../lib/sessions"
 import { resolveSlashAction, slashHelpLines } from "../lib/slash"
+import {
+  getSnippet,
+  isValidSnippetName,
+  readSnippetsFile,
+  removeSnippet,
+  saveSnippet,
+  snippetListingLines,
+  writeSnippetsFile,
+} from "../lib/snippets"
 import {
   mergeRunsFeedRefresh,
   planPanelLines,
@@ -116,6 +128,34 @@ const EMPTY_TAB_HINT = `${colors.faint}  no open sessions — ctrl+n to start on
 const NOTHING_TO_RETRY = `${colors.faint}  nothing to retry — no message sent yet${colors.reset}`
 
 const NOTHING_TO_STOP = `${colors.faint}  nothing to stop — no turn is running${colors.reset}`
+
+const NOTHING_TO_BRANCH = `${colors.faint}  nothing to branch from — no message sent yet${colors.reset}`
+
+const NOTHING_TO_SAVE = `${colors.faint}  nothing to save — no message sent yet${colors.reset}`
+
+const SNIP_USAGE = `${colors.faint}  usage: /snip [name|save <name>|rm <name>] — names are [a-z0-9-]+${colors.reset}`
+
+/**
+ * The user's words as a transcript message block — the local echo,
+ * byte-identical to what the server round-trip would render.
+ */
+function userEchoBlock(message: string): {
+  kind: "message"
+  message: ChatMessageView
+} {
+  return {
+    kind: "message",
+    message: {
+      id: `local-${Date.now()}`,
+      role: "user",
+      content: message,
+      toolName: null,
+      parts: null,
+      meta: null,
+      createdAt: new Date().toISOString(),
+    },
+  }
+}
 
 export interface ChatCommandProps {
   readonly config: ResolvedConfig
@@ -834,21 +874,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           ? mentionNoticeLines(expansion, await ensureDocTitles())
           : []
       const name = titleForFirstMessage(target, typed)
-      // The user's words as a message block: renders byte-identically
-      // to the old ANSI echo lines (renderMessage → renderUserEcho)
-      // and gives /export a real `## you` turn in live sessions.
-      const userEchoBlock = {
-        kind: "message" as const,
-        message: {
-          id: `local-${Date.now()}`,
-          role: "user",
-          content: typed,
-          toolName: null,
-          parts: null,
-          meta: null,
-          createdAt: new Date().toISOString(),
-        },
-      }
+      const echoBlock = userEchoBlock(typed)
 
       if (!target || target.id.startsWith(PENDING_PREFIX)) {
         try {
@@ -875,7 +901,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             return {
               ...next,
               sessions: patchSession(
-                appendBlocks(next.sessions, session.id, [userEchoBlock]),
+                appendBlocks(next.sessions, session.id, [echoBlock]),
                 session.id,
                 { lastUserMessage: typed }
               ),
@@ -899,7 +925,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       setTabs((current) => ({
         ...current,
         sessions: patchSession(
-          appendBlocks(current.sessions, target.id, [userEchoBlock]),
+          appendBlocks(current.sessions, target.id, [echoBlock]),
           target.id,
           { lastUserMessage: typed }
         ),
@@ -958,6 +984,64 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       }
     },
     [projectLabel, pushLines, tabs]
+  )
+
+  // -- session power pack: /branch -------------------------------------------
+
+  /**
+   * Forks the active session: creates a NEW server session titled
+   * `fork of <source>` in the same project and immediately sends the
+   * opener (the explicit `/branch <message>` text or the source's last
+   * user message — retry-in-new-tab). The server transcript is NOT
+   * copied: server sessions start empty and full fork semantics need
+   * server support; the opener is the pragmatic v1.
+   */
+  const forkSession = useCallback(
+    async (source: Session | undefined, opener: string) => {
+      const client = clientRef.current
+      if (!client) {
+        return
+      }
+      setWelcomeDismissed(true)
+      const title = source
+        ? forkTitle(source.name)
+        : sessionNameFromMessage(opener)
+      try {
+        const session = await client.createSession({
+          projectId: projectIdRef.current,
+          title,
+        })
+        const hub = hubRef.current
+        if (hub) {
+          await joinChatGroup(hub, session.id)
+        }
+        setTabs((current) => {
+          const next = addSession(current, {
+            ...newPendingSession(),
+            id: session.id,
+            name: title,
+            hydrated: true,
+            // The fork's first message seeds its recall history.
+            history: [opener],
+          })
+          return {
+            ...next,
+            sessions: patchSession(
+              appendBlocks(next.sessions, session.id, [userEchoBlock(opener)]),
+              session.id,
+              { lastUserMessage: opener }
+            ),
+          }
+        })
+        await runTurn(session.id, "message", { message: opener })
+      } catch (error) {
+        setNoticeLines([
+          "",
+          `${colors.error}${symbols.cross} ${describeError(error)}${colors.reset}`,
+        ])
+      }
+    },
+    [runTurn]
   )
 
   // -- ops pack: /runs auto-refresh ---------------------------------------------
@@ -1254,13 +1338,154 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           void switchProject(action.query)
           return
         }
+        case "snip": {
+          void (async () => {
+            const lines = snippetListingLines(await readSnippetsFile())
+            if (target) {
+              pushLines(target.id, lines)
+            } else {
+              setNoticeLines(lines)
+            }
+          })()
+          return
+        }
+        case "snip-send": {
+          void (async () => {
+            const store = await readSnippetsFile()
+            const text = getSnippet(store, action.name)
+            if (text === undefined) {
+              const line = `${colors.faint}  no snippet '${action.name}' — /snip lists what exists${colors.reset}`
+              if (target) {
+                pushLines(target.id, [line])
+              } else {
+                setNoticeLines([line])
+              }
+              return
+            }
+            // A thinking turn owns the wire — the snippet queues like a
+            // typed message (the pre-switch gate only sees raw text).
+            if (target?.status === "thinking") {
+              setTabs((current) => ({
+                ...current,
+                sessions: patchSession(current.sessions, target.id, {
+                  queued: enqueueMessage(target.queued ?? [], text),
+                }),
+              }))
+              pushLines(target.id, [queuedNoticeLine()])
+              return
+            }
+            // The editor has no prefill seam, so a snippet goes out as
+            // the next message — one keystroke, same echo as typing it.
+            await sendMessage(target, text)
+          })()
+          return
+        }
+        case "snip-save": {
+          if (!isValidSnippetName(action.name)) {
+            const line = SNIP_USAGE
+            if (target) {
+              pushLines(target.id, [line])
+            } else {
+              setNoticeLines([line])
+            }
+            return
+          }
+          // The LAST sent message is the save source — same getter
+          // `/retry` uses, mention preamble already stripped.
+          const last = retryMessage(target)
+          if (!last) {
+            const line = NOTHING_TO_SAVE
+            if (target) {
+              pushLines(target.id, [line])
+            } else {
+              setNoticeLines([line])
+            }
+            return
+          }
+          const name = action.name
+          void (async () => {
+            try {
+              const store = await readSnippetsFile()
+              await writeSnippetsFile(saveSnippet(store, name, last))
+              const line = `${colors.ok}${symbols.checkmark} saved snippet ${name}${colors.reset}`
+              if (target) {
+                pushLines(target.id, [line])
+              } else {
+                setNoticeLines([line])
+              }
+            } catch (error) {
+              const line = `${colors.error}${symbols.cross} snippet save failed: ${describeError(error)}${colors.reset}`
+              if (target) {
+                pushLines(target.id, [line])
+              } else {
+                setNoticeLines([line])
+              }
+            }
+          })()
+          return
+        }
+        case "snip-rm": {
+          if (!isValidSnippetName(action.name)) {
+            const line = SNIP_USAGE
+            if (target) {
+              pushLines(target.id, [line])
+            } else {
+              setNoticeLines([line])
+            }
+            return
+          }
+          const name = action.name
+          void (async () => {
+            try {
+              const store = await readSnippetsFile()
+              if (getSnippet(store, name) === undefined) {
+                const line = `${colors.faint}  no snippet '${name}'${colors.reset}`
+                if (target) {
+                  pushLines(target.id, [line])
+                } else {
+                  setNoticeLines([line])
+                }
+                return
+              }
+              await writeSnippetsFile(removeSnippet(store, name))
+              const line = `${colors.ok}${symbols.checkmark} removed snippet ${name}${colors.reset}`
+              if (target) {
+                pushLines(target.id, [line])
+              } else {
+                setNoticeLines([line])
+              }
+            } catch (error) {
+              const line = `${colors.error}${symbols.cross} snippet remove failed: ${describeError(error)}${colors.reset}`
+              if (target) {
+                pushLines(target.id, [line])
+              } else {
+                setNoticeLines([line])
+              }
+            }
+          })()
+          return
+        }
+        case "branch": {
+          const opener = action.message ?? branchOpener(target)
+          if (opener === null || opener.length === 0) {
+            const line = NOTHING_TO_BRANCH
+            if (target) {
+              pushLines(target.id, [line])
+            } else {
+              setNoticeLines([line])
+            }
+            return
+          }
+          void forkSession(target, opener)
+          return
+        }
         case "message": {
           void sendMessage(target, value)
           return
         }
       }
     },
-    [bellEnabled, exit, openPendingTab, pushLines, runTurn, sendMessage, stopTurn, switchProject, tabs]
+    [bellEnabled, exit, forkSession, openPendingTab, pushLines, runTurn, sendMessage, stopTurn, switchProject, tabs]
   )
 
   // -- queued-message drain -----------------------------------------------------

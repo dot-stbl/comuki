@@ -97,6 +97,21 @@ export function retryMessage(session: Session | undefined): string | null {
   return session?.lastUserMessage ?? null
 }
 
+/**
+ * The opener a `/branch` fork sends in its new tab: the source's last
+ * user message (retry-in-new-tab semantics — the server transcript is
+ * not copied, the conversation restarts from that message).
+ */
+export function branchOpener(session: Session | undefined): string | null {
+  return session?.lastUserMessage ?? null
+}
+
+/** The title `/branch` gives the fork: `fork of <source name>`. */
+export function forkTitle(name: string): string {
+  const collapsed = name.replace(/\s+/g, " ").trim()
+  return `fork of ${collapsed.length > 0 ? collapsed : "session"}`
+}
+
 /** Renames a tab and locks out auto-naming; blank title / unknown id → as-is. */
 export function renameSession(
   sessions: readonly Session[],

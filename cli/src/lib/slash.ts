@@ -127,6 +127,12 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     usage: "/branch [message]",
     description: "fork this session into a new tab",
   },
+  {
+    name: "kb",
+    aliases: [],
+    usage: "/kb add <file|glob> | /kb list",
+    description: "knowledge library — ingest files, list documents",
+  },
 ]
 
 /** The `/help` transcript block, rendered from the registry. */
@@ -164,6 +170,8 @@ export type SlashAction =
   | { readonly kind: "snip-save"; readonly name: string }
   | { readonly kind: "snip-rm"; readonly name: string }
   | { readonly kind: "branch"; readonly message?: string }
+  /** `/kb add notes.md` → subcommand `add`, rest `notes.md`; bare `/kb` → both empty. */
+  | { readonly kind: "kb"; readonly subcommand: string; readonly rest: string }
   /** Not a command — the input goes to the brain as a chat message. */
   | { readonly kind: "message" }
 
@@ -255,6 +263,14 @@ export function resolveSlashAction(raw: string): SlashAction {
     return args.length === 0
       ? { kind: "branch" }
       : { kind: "branch", message: args }
+  }
+  if (matches("kb", name)) {
+    const [sub, ...subRest] = args.split(/\s+/).filter((token) => token.length > 0)
+    return {
+      kind: "kb",
+      subcommand: (sub ?? "").toLowerCase(),
+      rest: subRest.join(" ").trim(),
+    }
   }
   return { kind: "message" }
 }

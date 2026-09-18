@@ -438,4 +438,67 @@ describe("postMessage latency sampling", () => {
     expect(workers[1]?.isHealthy).toBe(false)
     expect(calls[0]?.url).toBe("http://t/api/v1/workers/background")
   })
+
+  it("knowledgeIngest posts the document body to the ingest endpoint", async () => {
+    const { impl, calls } = fakeFetch({
+      "POST /api/v1/knowledge/ingest": {
+        body: { sourceDocumentId: "d-42", chunksWritten: 7 },
+      },
+    })
+    const client = new ComukiClient(resolveConfig({ COMUKI_URL: "http://t" }), {
+      fetchImpl: impl,
+    })
+
+    const result = await client.knowledgeIngest({
+      projectId: "p1",
+      title: "notes.md",
+      source: "upload",
+      sourceRef: "upload:notes.md",
+      mimeType: "text/markdown",
+      text: "# notes",
+    })
+
+    expect(result).toEqual({ sourceDocumentId: "d-42", chunksWritten: 7 })
+    expect(calls[0]?.method).toBe("POST")
+    expect(calls[0]?.url).toContain("/api/v1/knowledge/ingest")
+    expect(calls[0]?.body).toEqual({
+      projectId: "p1",
+      title: "notes.md",
+      source: "upload",
+      sourceRef: "upload:notes.md",
+      mimeType: "text/markdown",
+      text: "# notes",
+    })
+  })
+
+  it("knowledgeIngest surfaces a knowledge:write refusal as ComukiApiError", async () => {
+    const { impl } = fakeFetch({
+      "POST /api/v1/knowledge/ingest": {
+        status: 403,
+        body: {
+          code: "knowledge.project_out_of_scope",
+          detail: "may not ingest a global document",
+        },
+      },
+    })
+    const client = new ComukiClient(resolveConfig({ COMUKI_URL: "http://t" }), {
+      fetchImpl: impl,
+    })
+
+    let caught: unknown
+    try {
+      await client.knowledgeIngest({
+        title: "notes.md",
+        source: "upload",
+        sourceRef: "upload:notes.md",
+        mimeType: "text/markdown",
+        text: "# notes",
+      })
+    } catch (error) {
+      caught = error
+    }
+    expect(caught).toBeInstanceOf(ComukiApiError)
+    expect((caught as ComukiApiError).status).toBe(403)
+    expect((caught as ComukiApiError).code).toBe("knowledge.project_out_of_scope")
+  })
 })

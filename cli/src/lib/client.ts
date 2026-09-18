@@ -194,6 +194,12 @@ export interface KnowledgeDocumentsPageView {
   readonly total: number
 }
 
+/** Wire row of `POST /api/v1/knowledge/ingest` — the new source id + chunk count. */
+export interface KnowledgeIngestResultView {
+  readonly sourceDocumentId: string
+  readonly chunksWritten: number
+}
+
 /** Wire row of `GET /api/v1/knowledge/search` — chunk hit, best first. */
 export interface KnowledgeSearchHitView {
   readonly documentId: string
@@ -497,6 +503,24 @@ export class ComukiClient {
       "GET",
       `/api/v1/knowledge/documents?page=${page}&pageSize=${pageSize}`
     )
+  }
+
+  /**
+   * Synchronous ingest — one `POST /api/v1/knowledge/ingest` call per
+   * document: the server chunks + embeds the text inside the request.
+   * Requires the `knowledge:write` permission (403 otherwise); a
+   * project-scoped key must pass its own `projectId` — the global
+   * corpus is reserved for unrestricted subjects.
+   */
+  knowledgeIngest(request: {
+    projectId?: string
+    title: string
+    source: string
+    sourceRef: string
+    mimeType: string
+    text: string
+  }): Promise<KnowledgeIngestResultView> {
+    return this.request("POST", "/api/v1/knowledge/ingest", request)
   }
 
   /**

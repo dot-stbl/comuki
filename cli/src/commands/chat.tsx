@@ -85,6 +85,18 @@ import {
 } from "../lib/sessions"
 import { resolveSlashAction, slashHelpLines } from "../lib/slash"
 import {
+  collectFiles,
+  ingestRequestFor,
+  kbAddErrorLine,
+  kbAddResultLine,
+  kbListLines,
+  kbUsageLines,
+  kbWriteUnavailableLines,
+  KB_MAX_FILES,
+  KB_PAGE_SIZE,
+  validateIngestFile,
+} from "../lib/kb"
+import {
   mergeRunsFeedRefresh,
   planPanelLines,
   projectListingLines,
@@ -960,6 +972,100 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     [projectLabel, pushLines, tabs]
   )
 
+  // -- ops pack: /kb -------------------------------------------------------------
+
+  /**
+   * The knowledge library. `/kb list` renders one page of the document
+   * index; `/kb add <file|glob>` collects local text files, validates
+   * them (extension + size) and POSTs one ingest per file — the server
+   * chunks + embeds synchronously, so each file resolves to its own
+   * `⏺ name → id` line. A 401/403 mid-run stops the remaining files
+   * with the honest notice: this subject lacks `knowledge:write`.
+   */
+  const runKb = useCallback(
+    (subcommand: string, rest: string) => {
+      const client = clientRef.current
+      if (!client) {
+        return
+      }
+      const emit = (lines: readonly string[]) => {
+        const target = tabs.sessions[tabs.activeIndex]
+        if (target) {
+          pushLines(target.id, lines)
+        } else {
+          setNoticeLines(lines)
+        }
+      }
+
+      if (subcommand === "list") {
+        client
+          .knowledgeDocuments(1, KB_PAGE_SIZE)
+          .then((page) => {
+            emit(kbListLines(page))
+          })
+          .catch((error: unknown) => {
+            emit([
+              kbAddErrorLine("kb list", describeError(error)),
+            ])
+          })
+        return
+      }
+
+      if (subcommand !== "add") {
+        emit(kbUsageLines())
+        return
+      }
+
+      if (rest.length === 0) {
+        emit(kbUsageLines())
+        return
+      }
+
+      const files = collectFiles(rest.split(/\s+/))
+      if (files.length === 0) {
+        emit([
+          `${colors.faint}  no files match '${rest}'${colors.reset}`,
+        ])
+        return
+      }
+      const capped = files.slice(0, KB_MAX_FILES)
+      if (files.length > capped.length) {
+        emit([
+          `${colors.faint}  pattern matched ${files.length} files — /kb add takes the first ${KB_MAX_FILES}${colors.reset}`,
+        ])
+      }
+
+      void (async () => {
+        for (const path of capped) {
+          const file = Bun.file(path)
+          const check = validateIngestFile(path, file.size)
+          if (!check.ok) {
+            emit([kbAddErrorLine(path, check.reason)])
+            continue
+          }
+          try {
+            const result = await client.knowledgeIngest(
+              ingestRequestFor(path, await file.text(), projectIdRef.current)
+            )
+            emit([kbAddResultLine(path, result)])
+          } catch (error) {
+            if (
+              error instanceof ComukiApiError &&
+              (error.status === 401 || error.status === 403)
+            ) {
+              // The subject cannot write knowledge at all — the
+              // remaining files would fail identically.
+              emit(kbWriteUnavailableLines(error.status))
+              return
+            }
+            emit([kbAddErrorLine(path, describeError(error))])
+          }
+        }
+      })()
+    },
+    [pushLines, tabs]
+  )
+
   // -- ops pack: /runs auto-refresh ---------------------------------------------
 
   /**
@@ -1254,13 +1360,17 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           void switchProject(action.query)
           return
         }
+        case "kb": {
+          runKb(action.subcommand, action.rest)
+          return
+        }
         case "message": {
           void sendMessage(target, value)
           return
         }
       }
     },
-    [bellEnabled, exit, openPendingTab, pushLines, runTurn, sendMessage, stopTurn, switchProject, tabs]
+    [bellEnabled, exit, openPendingTab, pushLines, runKb, runTurn, sendMessage, stopTurn, switchProject, tabs]
   )
 
   // -- queued-message drain -----------------------------------------------------

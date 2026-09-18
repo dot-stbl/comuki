@@ -110,6 +110,32 @@ describe("resolveSlashAction", () => {
       query: "",
     })
   })
+
+  it("routes /kb with subcommand and rest, slash-prefixed or bare", () => {
+    expect(resolveSlashAction("/kb add notes.md")).toEqual({
+      kind: "kb",
+      subcommand: "add",
+      rest: "notes.md",
+    })
+    expect(resolveSlashAction("/kb list")).toEqual({
+      kind: "kb",
+      subcommand: "list",
+      rest: "",
+    })
+    expect(resolveSlashAction("kb add *.md docs/*.txt")).toEqual({
+      kind: "kb",
+      subcommand: "add",
+      rest: "*.md docs/*.txt",
+    })
+  })
+
+  it("bare /kb resolves with empty subcommand and rest", () => {
+    expect(resolveSlashAction("/kb")).toEqual({
+      kind: "kb",
+      subcommand: "",
+      rest: "",
+    })
+  })
 })
 
 describe("slashHelpLines", () => {
@@ -132,6 +158,7 @@ describe("slashHelpLines", () => {
     expect(help).toContain("/runs")
     expect(help).toContain("/plan")
     expect(help).toContain("/project <id|slug|name>")
+    expect(help).toContain("/kb add <file|glob> | /kb list")
   })
 
   it("aligns descriptions in one column", () => {

@@ -200,6 +200,23 @@ describe("resolveSlashAction", () => {
     expect(resolveSlashAction("WHOAMI")).toEqual({ kind: "whoami" })
     expect(resolveSlashAction("/keys")).toEqual({ kind: "keys" })
   })
+
+  it("routes the ops pack B: /status, /open, /tools, /note", () => {
+    expect(resolveSlashAction("/status")).toEqual({ kind: "status" })
+    expect(resolveSlashAction("STATUS")).toEqual({ kind: "status" })
+    expect(resolveSlashAction("/open")).toEqual({ kind: "open" })
+    expect(resolveSlashAction("open")).toEqual({ kind: "open" })
+    expect(resolveSlashAction("/tools")).toEqual({ kind: "tools" })
+  })
+
+  it("carries /note text; bare /note is an empty text (usage is downstream)", () => {
+    expect(resolveSlashAction("/note remember the auth cookie lives in config")).toEqual({
+      kind: "note",
+      text: "remember the auth cookie lives in config",
+    })
+    expect(resolveSlashAction("/note")).toEqual({ kind: "note", text: "" })
+    expect(resolveSlashAction("/note   ")).toEqual({ kind: "note", text: "" })
+  })
 })
 
 describe("slashHelpLines", () => {
@@ -231,6 +248,10 @@ describe("slashHelpLines", () => {
     expect(help).toContain("/theme [name]")
     expect(help).toContain("/whoami")
     expect(help).toContain("/keys")
+    expect(help).toContain("/status")
+    expect(help).toContain("/open")
+    expect(help).toContain("/tools")
+    expect(help).toContain("/note <text>")
   })
 
   it("aligns descriptions in one column", () => {

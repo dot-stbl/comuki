@@ -14,7 +14,7 @@ import {
   renderUserEcho,
   summarizeToolArgs,
 } from "./format"
-import { colors, messageMark, stripAnsi, symbols } from "../theme"
+import { colors, stripAnsi, symbols } from "../theme"
 import type { ChatMessageView, MessagePart } from "./client"
 import type { ChatBlock } from "./sessions"
 
@@ -53,11 +53,11 @@ describe("renderPendingPlan", () => {
       ],
     })
     const plain = lines.map(stripAnsi)
-    expect(plain[0]).toContain("┌─ plan · 2 шага ")
-    expect(plain[0]?.endsWith("┐")).toBe(true)
-    expect(plain[1]).toContain("│ 1 · do it")
-    expect(plain[2]).toContain("│ 2 · check it")
-    expect(plain[3]).toMatch(/^  └─+┘$/)
+    expect(plain[0]).toContain("+- plan · 2 шага ")
+    expect(plain[0]?.endsWith("+")).toBe(true)
+    expect(plain[1]).toContain("| 1 · do it")
+    expect(plain[2]).toContain("| 2 · check it")
+    expect(plain[3]).toMatch(/^\s*\+[-+]+\+$/)
     expect(plain[4]).toContain("approve · reject [reason]")
     // The frame draws in rule; approve lavender, reject yellow — the
     // words carry the status, colour only echoes it.
@@ -75,7 +75,7 @@ describe("renderPendingPlan", () => {
         { id: "n1", title: "wire step", profileKey: "implement", brief: "" },
       ],
     })
-    expect(stripAnsi(lines[1] ?? "")).toContain("│ 1 · wire step")
+    expect(stripAnsi(lines[1] ?? "")).toContain("| 1 · wire step")
   })
 
   it("russianizes the step count in the header", () => {
@@ -132,26 +132,26 @@ describe("renderPendingPlan", () => {
 })
 
 describe("renderMessage", () => {
-  it("echoes user rows as bare bold text with a blank line on each side", () => {
+  it("echoes user rows as a > gutter with one blank line before, none after", () => {
     const lines = renderMessage(userMessage("сделай план"))
-    expect(lines).toHaveLength(3)
+    expect(lines).toHaveLength(2)
     expect(lines[0]).toBe("")
-    expect(lines[2]).toBe("")
-    expect(stripAnsi(lines[1] ?? "")).toBe("сделай план")
+    expect(stripAnsi(lines[1] ?? "")).toBe(" > сделай план")
     expect(lines[1]).toContain(colors.bright)
     expect(lines[1]).toContain(colors.text)
     expect(lines[1]).not.toContain("›")
   })
 
-  it("leads assistant rows with the brand glyph and dim comuki label", () => {
+  it("frames assistant rows with an ASCII comuki rule block", () => {
     const lines = renderMessage(assistantMessage([
       { kind: "text", markdown: "done" },
     ]))
     const header = stripAnsi(lines[0] ?? "")
-    expect(header).toBe(` ${symbols.brandMark} comuki`)
-    expect(lines[0]).toContain(colors.accent)
-    expect(lines[0]).toContain(colors.dim)
+    expect(header).toContain("comuki")
+    expect(header).toMatch(/^[ +].*comuki/)
+    expect(lines[0]).toContain(colors.rule)
     expect(stripAnsi(lines[1] ?? "")).toBe(" done")
+    expect(stripAnsi(lines[lines.length - 1] ?? "")).toMatch(/^ -+$/)
   })
 
   it("breathes one blank line between the events block and the answer", () => {
@@ -170,7 +170,10 @@ describe("renderMessage", () => {
       line.includes("the answer")
     )
     expect(plain[eventIndex + 1]).toContain("x()")
-    expect(plain[answerIndex - 1]).toBe("")
+    const ruleIndex = plain.findIndex((line) => line.includes("comuki"))
+    expect(plain[ruleIndex - 1]).toBe("")
+    expect(ruleIndex).toBeGreaterThan(eventIndex + 1)
+    expect(answerIndex).toBeGreaterThan(ruleIndex)
   })
 
   it("gutters every non-empty line of an assistant row", () => {
@@ -189,7 +192,7 @@ describe("renderMessage", () => {
       parts: null,
       content: "plain reply",
     })
-    expect(stripAnsi(lines[0] ?? "")).toBe(` ${symbols.brandMark} comuki`)
+    expect(stripAnsi(lines[0] ?? "")).toContain("comuki")
     expect(stripAnsi(lines[1] ?? "")).toBe(" plain reply")
   })
 
@@ -222,7 +225,7 @@ describe("renderUserEcho", () => {
     const echo = renderUserEcho("use @identity here")
     const line = echo[1] ?? ""
     expect(line).toContain(colors.accent + "@identity")
-    expect(line).toContain(messageMark("user").textColor + "use ")
+    expect(stripAnsi(line)).toContain("use @identity here")
     // Byte-identity holds for mention lines too (echo vs history).
     expect(echo).toEqual(renderMessage(userMessage("use @identity here")))
   })
@@ -232,7 +235,7 @@ describe("renderUserEcho", () => {
       "use @identity please\n\n[@knowledge: Identity — the chunk text]"
     const echo = renderUserEcho(stored)
     expect(echo[1] ?? "").not.toContain("[@knowledge:")
-    expect(stripAnsi(echo[1] ?? "")).toBe("use @identity please")
+    expect(stripAnsi(echo[1] ?? "")).toBe(" > use @identity please")
   })
 })
 
@@ -394,7 +397,7 @@ describe("collapsedSummary", () => {
 })
 
 describe("renderPart — collapsible blocks", () => {
-  it("collapses thinking to one dim ⏺ event line", () => {
+  it("collapses thinking to one dim * event line", () => {
     const lines = renderPart(
       { kind: "thinking", text: "long\nreasoning", tokens: 40 },
       80,
@@ -402,7 +405,7 @@ describe("renderPart — collapsible blocks", () => {
     )
     expect(lines).toHaveLength(1)
     expect(lines[0]).toContain(colors.dim)
-    expect(stripAnsi(lines[0] ?? "")).toBe("  ⏺ thinking · 40 tok")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  * thinking  40 tok")
   })
 
   it("collapses a tool call to name(args) with the status two spaces after", () => {
@@ -419,7 +422,7 @@ describe("renderPart — collapsible blocks", () => {
     )
     expect(lines).toHaveLength(1)
     expect(stripAnsi(lines[0] ?? "")).toBe(
-      `  ⏺ memory.recall("ids")  ok 41ms`
+      `  * memory.recall("ids")  ok 41ms`
     )
   })
 
@@ -444,7 +447,7 @@ describe("renderPart — collapsible blocks", () => {
       text: "considering",
       tokens: 1,
     })
-    expect(stripAnsi(lines[0] ?? "")).toBe("  ⏺ thinking · 1 tok")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  * thinking  1 tok")
     expect(stripAnsi(lines[1] ?? "")).toBe("    considering")
   })
 
@@ -455,7 +458,7 @@ describe("renderPart — collapsible blocks", () => {
       { expanded: true }
     )
     expect(stripAnsi(lines.join("\n"))).toContain("hmm why not")
-    expect(stripAnsi(lines[0] ?? "")).toBe("  ⏺ thinking · 1 tok")
+    expect(stripAnsi(lines[0] ?? "")).toBe("  * thinking  1 tok")
     expect(stripAnsi(lines[1] ?? "")).toBe("    hmm why not")
     expect(lines[1]).toContain(colors.dim)
   })
@@ -475,7 +478,7 @@ describe("renderPart — collapsible blocks", () => {
     )
     const frame = stripAnsi(lines.join("\n"))
     expect(stripAnsi(lines[0] ?? "")).toBe(
-      `  ⏺ memory.recall("ids")  ok 1.2s`
+      `  * memory.recall("ids")  ok 1.2s`
     )
     expect(frame).toContain("input:")
     expect(frame).toContain(`"q": "ids"`)
@@ -569,7 +572,7 @@ describe("renderPart — full blocks", () => {
 })
 
 describe("renderMessage — collapsed transcript", () => {
-  it("hides thinking behind the ⏺ event line, keeps the answer", () => {
+  it("hides thinking behind the * event line, keeps the answer", () => {
     const lines = renderMessage(
       assistantMessage([
         { kind: "thinking", text: "secret reasoning", tokens: 10 },
@@ -579,7 +582,7 @@ describe("renderMessage — collapsed transcript", () => {
       { expanded: false }
     )
     const frame = stripAnsi(lines.join("\n"))
-    expect(frame).toContain("⏺ thinking · 10 tok")
+    expect(frame).toContain("* thinking  10 tok")
     expect(frame).not.toContain("secret reasoning")
     expect(frame).toContain("the answer")
   })

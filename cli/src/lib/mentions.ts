@@ -211,7 +211,7 @@ export function trimSnippet(text: string, maxChars = SNIPPET_MAX_CHARS): string 
 // ---------------------------------------------------------------------------
 
 /**
- * The dim `⏺` lines after a send: nothing found (sent as plain text),
+ * The dim `*` lines after a send: nothing found (sent as plain text),
  * ambiguous (top hit's title), or the knowledge surface refusing. A
  * mention with exactly one hit stays silent.
  */

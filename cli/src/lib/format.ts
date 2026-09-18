@@ -4,13 +4,13 @@
  * ANSI-styled strings, which both the Ink components render and the
  * tests assert byte-for-byte.
  *
- * Style contract (minimal structure, Dichromat deck): the user's words
- * are bare bold text at column 0 — no prefix, no label; collapsed
- * events (thinking, tools) are dim `⏺` bullets two spaces in with the
- * status right after the args; the assistant leads with the periwinkle
- * `◆`; the approve card is the one framed element in the transcript
- * (code blocks keep their dim frames too). Hierarchy comes from
- * spacing and weight, never boxes.
+ * Style contract (ASCII blocks, Dichromat deck): the user's words
+ * lead with a left-gutter `>` and one blank line before (none after);
+ * collapsed events (thinking, tools) are dim `*` bullets two spaces
+ * in, grouped with no blank between them; the assistant is a rule
+ * block (`------ comuki ------` open, faint `------` close). The
+ * approve card and code fences use ASCII `+ - |` frames. Hierarchy
+ * comes from spacing and weight.
  */
 import {
   colors,
@@ -82,6 +82,34 @@ function firstLine(text: string): string {
   return line.trim()
 }
 
+/** Width-aware ASCII rule: `repeat('-', min(width-2, 48))`. */
+export function ruleDashes(width: number): string {
+  return "-".repeat(Math.max(4, Math.min(width - 2, 48)))
+}
+
+/**
+ * Assistant block opener. `live` paints the rule in accent (in-flight);
+ * settled answers use the deck `rule` colour.
+ */
+export function assistantOpenRule(
+  width: number,
+  live: boolean = false
+): string {
+  const dashes = ruleDashes(width)
+  const tone = live ? colors.accent : colors.rule
+  if (dashes.length >= 14) {
+    const side = Math.max(1, Math.floor((dashes.length - 8) / 2))
+    const right = dashes.length - 8 - side
+    return paint(`+${"-".repeat(side)} comuki ${"-".repeat(right)}+`, tone)
+  }
+  return paint(`${dashes} comuki ${dashes}`, tone)
+}
+
+/** Faint closer under a settled assistant body. */
+export function assistantCloseRule(width: number): string {
+  return paint(ruleDashes(width), colors.faint)
+}
+
 // ---------------------------------------------------------------------------
 // Tool arguments — `memory.recall("identity module", 5)`
 // ---------------------------------------------------------------------------
@@ -144,10 +172,10 @@ export function renderPlanItems(nodes: readonly PlanItemView[]): string[] {
 }
 
 /**
- * The pending approval card: a `rule`-colored box-drawing frame with
+ * The pending approval card: a `rule`-colored ASCII `+ - |` frame with
  * the plan's steps numbered inside and the `approve · reject` hint
  * below it. Frame width = min(content + 4, width − 4), right-padded
- * with ─.
+ * with `-`.
  */
 export function renderPendingPlan(
   plan: unknown,
@@ -194,13 +222,14 @@ function planFrameLines(
   }
   return [
     // Rule draws the frame; the header text rides it in text-muted.
-    paint(`  ┌─ `, colors.rule) +
+    paint(`  +- `, colors.rule) +
       paint(header, colors.dim) +
-      paint(` ${"─".repeat(Math.max(1, boxWidth - header.length - 5))}┐`, colors.rule),
+      paint(` ${"-".repeat(Math.max(1, boxWidth - header.length - 5))}+`, colors.rule),
     ...steps.map(
-      (step) => paint(`  │ `, colors.rule) + padVisible(row(step), room) + paint(` │`, colors.rule)
+      (step) =>
+        paint(`  | `, colors.rule) + padVisible(row(step), room) + paint(` |`, colors.rule)
     ),
-    paint(`  └${"─".repeat(boxWidth - 2)}┘`, colors.rule),
+    paint(`  +${"-".repeat(boxWidth - 2)}+`, colors.rule),
   ]
 }
 
@@ -273,14 +302,14 @@ export function extractPlanNodes(plan: unknown): PlanItemView[] {
 }
 
 // ---------------------------------------------------------------------------
-// Collapsible blocks — thinking + tool parts render as one dim `⏺` event
+// Collapsible blocks — thinking + tool parts render as one dim `*` event
 // line unless the transcript runs verbose (ctrl+o). Pure derivation lives
 // here; the toggle state is per-session in lib/sessions.ts.
 // ---------------------------------------------------------------------------
 
 /**
- * What one collapsed event line shows: `⏺ thinking · 4.1k tok · 6.2s`,
- * `⏺ memory.recall("identity module", 5)  ok 41ms`. Durations and token
+ * What one collapsed event line shows: `* thinking  4.1k tok`,
+ * `* memory.recall("identity module", 5)  ok`. Durations and token
  * counts only appear when the wire actually carried them.
  */
 export interface CollapsedSummary {
@@ -371,13 +400,8 @@ export function renderCollapsedLine(summary: CollapsedSummary): string {
     line += `  ${paint(summary.badge, badgeColor(summary.badge))}`
   }
   if (summary.details.length > 0) {
-    line +=
-      summary.badge === null
-        ? ` ${paint(
-            summary.details.map((detail) => `${symbols.bullet} ${detail}`).join(" "),
-            colors.dim
-          )}`
-        : ` ${paint(summary.details.join(" "), colors.dim)}`
+    const extra = paint(summary.details.join(" "), colors.dim)
+    line += summary.badge === null ? `  ${extra}` : ` ${extra}`
   }
   return line
 }
@@ -518,54 +542,81 @@ export function renderParts(
 // Whole messages
 // ---------------------------------------------------------------------------
 
+export interface MessageRenderOptions extends PartRenderOptions {
+  /** In-flight assistant: the open rule paints accent instead of `rule`. */
+  readonly live?: boolean
+}
+
 /**
  * One transcript row → lines. Assistant rows prefer parts (the rich
  * shape); `content` is the flat fallback. Both render markdown through
- * `lib/markdown.ts`. User rows echo as typed — bare bold text at
- * column 0, one blank line before AND after. Tool and system journal
- * rows render muted. Options omitted → full render (the pure layer's
- * default); the transcript passes the session's ctrl+o toggle so
- * thinking/tool parts collapse to `⏺` event lines.
+ * `lib/markdown.ts`. User rows echo as typed — a left-gutter `>` plus
+ * the text, one blank line before, none after (tight into events).
+ * Tool and system journal rows render muted. Options omitted → full
+ * render (the pure layer's default); the transcript passes the
+ * session's ctrl+o toggle so thinking/tool parts collapse to `*`
+ * event lines.
  *
- * Identity chrome: the assistant leads with its periwinkle `◆` brand
- * mark on the shared one-space gutter with a dim `comuki` label above
- * its content; journal rows keep the quiet `·` bullets. Wrapping is
- * computed at `width - 1` so the gutter never pushes a line past the
- * terminal edge.
+ * Identity chrome: the assistant is a rule block (`------ comuki
+ * ------` open, faint `------` close). Journal rows keep the quiet
+ * `*` bullets. Wrapping is computed at `width - 1` so the gutter
+ * never pushes a line past the terminal edge.
  */
 export function renderMessage(
   message: ChatMessageView,
   width: number = DEFAULT_MARKDOWN_WIDTH,
-  options?: PartRenderOptions
+  options?: MessageRenderOptions
 ): string[] {
   if (message.role === "user") {
     return renderUserEcho(message.content)
   }
   if (message.role === "assistant") {
-    const mark = messageMark(message.role)
-    const header = `${paint(mark.glyph, mark.glyphColor)}${
-      mark.label.length > 0
-        ? ` ${paint(mark.label, mark.labelColor)}`
-        : ""
-    }`
-    const lines =
-      message.parts !== null && message.parts.length > 0
-        ? renderParts(message.parts, Math.max(8, width - gutter.length), options)
-        : renderMarkdownLines(message.content, Math.max(8, width - gutter.length))
+    const innerWidth = Math.max(8, width - gutter.length)
+    const live = options?.live === true
+    const parts = message.parts
+    const eventParts =
+      parts === null
+        ? []
+        : parts.filter((part) => part.kind === "thinking" || part.kind === "tool")
+    const answerParts =
+      parts === null
+        ? []
+        : parts.filter((part) => part.kind !== "thinking" && part.kind !== "tool")
+    const eventLines =
+      eventParts.length > 0 ? renderParts(eventParts, innerWidth, options) : []
+    const answerLines =
+      parts !== null && parts.length > 0
+        ? answerParts.length > 0
+          ? renderParts(answerParts, innerWidth, options)
+          : []
+        : renderMarkdownLines(message.content, innerWidth)
     const meta = message.meta
     const cost = meta?.model
       ? paint(
           `  ${symbols.bullet} ${meta.model}${
             typeof meta.tokensIn === "number" &&
             typeof meta.tokensOut === "number"
-              ? ` ${meta.tokensIn}→${meta.tokensOut} tok`
+              ? ` ${meta.tokensIn}->${meta.tokensOut} tok`
               : ""
           }`,
           colors.dim
         )
       : null
+    const hasAnswer = answerLines.length > 0 || cost !== null
+    const framed = hasAnswer
+      ? [
+          assistantOpenRule(innerWidth, live),
+          ...answerLines,
+          ...(cost ? [cost] : []),
+          ...(live ? [] : [assistantCloseRule(innerWidth)]),
+        ]
+      : []
     return normalizeSpacing(
-      gutterLines([header, ...lines, ...(cost ? [cost] : [])])
+      gutterLines([
+        ...eventLines,
+        ...(eventLines.length > 0 && framed.length > 0 ? [""] : []),
+        ...framed,
+      ])
     )
   }
   // tool / system journal rows
@@ -580,10 +631,11 @@ export function renderMessage(
 }
 
 /**
- * The user's own words as the transcript shows them — bold deck-text
- * at column 0 with a blank line on each side. Also used for the
- * immediate echo on send, so the live line and the restored history
- * of the same turn are byte-identical.
+ * The user's own words as the transcript shows them — a left-gutter
+ * `>` plus the text, one blank line before, none after (tight into
+ * the event cluster). Also used for the immediate echo on send, so
+ * the live line and the restored history of the same turn are
+ * byte-identical.
  *
  * Mentions: any `[@knowledge: …]` preamble blocks a stored message
  * carries are invisible here (the expansion rides the wire, not the
@@ -595,11 +647,9 @@ export function renderUserEcho(content: string): string[] {
   if (text.length === 0) {
     return []
   }
-  return [
-    "",
-    paintMentionText(text, messageMark("user").textColor),
-    "",
-  ]
+  const body = paintMentionText(text, messageMark("user").textColor)
+  const prefix = paint(">", colors.faint)
+  return ["", `${gutter}${prefix} ${body}`]
 }
 
 /**

@@ -238,7 +238,7 @@ export function kbListRow(
 }
 
 /**
- * The `/kb list` block: `⏺ kb` header with shown/total, a faint column
+ * The `/kb list` block: `* kb` header with shown/total, a faint column
  * line, one row per document, and a `+N more` tail when the page is
  * not the whole library.
  */
@@ -277,7 +277,7 @@ export function kbListLines(
 }
 
 /**
- * The per-file progress line the mission names: `⏺ {name} →
+ * The per-file progress line the mission names: `* {name} →
  * {documentId}`, with the chunk count riding along.
  */
 export function kbAddResultLine(

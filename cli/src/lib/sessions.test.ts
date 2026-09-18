@@ -331,8 +331,8 @@ describe("appendHistory", () => {
 
 describe("persistence round-trip", () => {
   it("rejects malformed roots and missing session arrays", () => {
-    expect(decodePersistedSessions(null).ok).toBe(false)
-    expect(decodePersistedSessions({}).ok).toBe(false)
+    expect(decodePersistedSessions(null)).toEqual({ sessions: [] })
+    expect(decodePersistedSessions({})).toEqual({ sessions: [] })
   })
 
   it("normalizes partial entries and ignores extra fields", () => {
@@ -353,18 +353,15 @@ describe("persistence round-trip", () => {
         ],
       })
     ).toEqual({
-      ok: true,
-      value: {
-        sessions: [
-          {
-            id: "s1",
-            name: "session",
-            status: "idle",
-            createdAt: 0,
-            history: ["valid"],
-          },
-        ],
-      },
+      sessions: [
+        {
+          id: "s1",
+          name: "session",
+          status: "idle",
+          createdAt: 0,
+          history: ["valid"],
+        },
+      ],
     })
   })
 

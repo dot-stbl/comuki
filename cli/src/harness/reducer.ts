@@ -321,11 +321,10 @@ export function reduceHarness(
       }
     case "approval-decision-sent": {
       const session = findSession(state, event.sessionId)
-      if (
-        !session ||
-        session.turn.kind !== "awaiting-approval" ||
-        session.turn.requestId !== event.requestId
-      ) {
+      // Guarded by awaiting-approval, not by request id: the decision
+      // is a new wire operation with its own request id, deciding the
+      // turn that is currently awaiting.
+      if (!session || session.turn.kind !== "awaiting-approval") {
         return unchanged(state)
       }
       return {

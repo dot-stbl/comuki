@@ -142,7 +142,8 @@ export function translateIntent(
       if (!session || session.identity.kind !== "remote") {
         return []
       }
-      // Approvals are decided online or not at all — never queued.
+      // Approvals are decided online or not at all — never queued. The
+      // decision is its own wire operation with its own request id.
       if (session.turn.kind !== "awaiting-approval") {
         return []
       }
@@ -150,7 +151,7 @@ export function translateIntent(
         {
           type: "approval-decision-sent",
           sessionId: session.identity.id,
-          requestId: session.turn.requestId,
+          requestId: turnRequestId(`approval:${intent.commandId}`),
           approved: intent.approved,
           reason: intent.reason,
           commandId: intent.commandId,

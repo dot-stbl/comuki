@@ -1,0 +1,19 @@
+node_modules/
+*.log
+.DS_Store
+
+# Bun artefacts
+bun.lock
+bun.lockb
+
+# Compiled standalone binary (the spike can rebuild it on demand
+# via `bun run build:standalone` — see ADR-0002 §Packaging).
+comuki-opentui-spike
+comuki-opentui-spike.exe
+
+# Generated measurement artefacts — recreated by `bun run scripts/*`.
+# These are NOT checked in. The ADR references the *scripts* (which
+# are deterministic) rather than the captured values.
+evidence/*.txt
+evidence/*.bin
+evidence/*.log

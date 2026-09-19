@@ -41,6 +41,14 @@ export type HarnessEvent =
       readonly sessionId: SessionKey
       readonly requestId: TurnRequestId
       readonly message: string
+      /** Stable client command id — repeated dispatches dedup on it. */
+      readonly commandId?: string
+      /** What the user typed (mention preamble stripped) — echo + /retry. */
+      readonly echoText?: string
+      /** Raw submitted text for the recall history, when it differs. */
+      readonly historyText?: string
+      /** Auto-title for a pending session's first message. */
+      readonly titleHint?: string
     }
   | {
       readonly type: "turn-dequeued"
@@ -64,6 +72,7 @@ export type HarnessEvent =
       readonly requestId: TurnRequestId
       readonly messages: readonly HarnessMessage[]
       readonly awaitingApproval: boolean
+      readonly pendingPlan?: unknown
     }
   | {
       readonly type: "turn-failed"
@@ -91,6 +100,35 @@ export type HarnessEvent =
   | { readonly type: "sessions-persist-failed"; readonly error: CliError }
   | { readonly type: "subscriptions-set"; readonly sessionIds: readonly SessionId[] }
   | { readonly type: "subscriptions-set-failed"; readonly error: CliError }
+  | {
+      /** A thinking turn was cancelled client-side (/stop). */
+      readonly type: "turn-cancel-requested"
+      readonly sessionId: SessionId
+      readonly requestId: TurnRequestId
+      readonly commandId?: string
+    }
+  | {
+      /** An approval decision went out on the wire (online-only). */
+      readonly type: "approval-decision-sent"
+      readonly sessionId: SessionId
+      readonly requestId: TurnRequestId
+      readonly approved: boolean
+      readonly reason?: string
+      readonly commandId?: string
+    }
+  | {
+      readonly type: "draft-saved"
+      readonly sessionId: SessionKey
+      readonly text: string
+      readonly savedAtUnixMs: number
+    }
+  | { readonly type: "draft-cleared"; readonly sessionId: SessionKey }
+  | {
+      /** Durable stream cursor advanced for a remote session. */
+      readonly type: "cursor-advanced"
+      readonly sessionId: SessionId
+      readonly lastSeenAtUnixMs: number
+    }
   | { readonly type: "connection-started" }
   | { readonly type: "connection-established" }
   | { readonly type: "connection-lost"; readonly attempt: number }

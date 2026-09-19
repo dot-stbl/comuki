@@ -13,6 +13,7 @@
 | **comuki-dashboard-designspec.md** | Спека дашбордной дизайн-системы | Вход для Claude Design |
 | **adr-0001-ui-kit-react-aria.md** | ADR: уход с shadcn → свой кит + React Aria | Контекст выбора UI-кита дашборда |
 | **adr-0002-cli-opentui.md** | ADR: OpenTUI Core + keymap как TUI-стек CLI; React отложен | Выбор презентационного стека CLI |
+| **adr-0003-cli-ownership.md** | ADR: ownership двух бинарей `comuki` (TS user CLI vs .NET operator); argv+slash registry matrix; transport authority REST vs SignalR | Решение про executable naming и command-by-command ownership (issue #82) |
 | architecture.html / comuki-stack.html | Те же документы в HTML — со схемами | Для чтения/презентации (схемы есть только тут) |
 
 > md-версии — для проекта и git (чисто парсятся, версионируются). HTML — для чтения глазами (в них 5 архитектурных схем + карта стека, которых нет в md).

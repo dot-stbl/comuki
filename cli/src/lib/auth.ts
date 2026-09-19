@@ -22,9 +22,13 @@ export async function loginAndStore(
   email: string,
   password: string
 ): Promise<LoginSuccess> {
-  // A cookie-less client for the login call itself.
+  // A cookie-less client for the login call itself. The file is read
+  // here so a bare `comuki login` (no --url, no COMUKI_URL) still
+  // talks to the host the wizard persisted — same precedence as the
+  // REPL and one-shot, same fallback to localhost.
+  const file = await configStore.read()
   const bootstrap = new ComukiClient(
-    resolveConfig({ COMUKI_URL: url }, {}, { url })
+    resolveConfig({ COMUKI_URL: url }, file, { url })
   )
   const success = await bootstrap.login(email, password)
 

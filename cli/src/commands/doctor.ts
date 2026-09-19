@@ -97,7 +97,7 @@ export async function collectDoctorChecks(
       ? {
           name: "url",
           ok: false,
-          detail: "missing — pass --url or set COMUKI_URL",
+          detail: "missing — pass --url, set COMUKI_URL, or run comuki setup",
         }
       : healthOk
         ? { name: "url", ok: true, detail: url }
@@ -142,11 +142,13 @@ function resolveDoctorUrl(
   file: ConfigFileContents
 ): string | undefined {
   try {
-    return resolveConfig(env, {}, overrides).url
+    return resolveConfig(env, file, overrides).url
   } catch (error) {
+    // Doctor is a diagnostic command — an invalid persisted url surfaces
+    // here as "missing" so the user can run `comuki config show` to see
+    // the bad value. Re-throw any other error so it isn't swallowed.
     if (error instanceof ConfigError) {
-      const fromFile = file.url?.trim().replace(/\/+$/, "")
-      return fromFile || undefined
+      return undefined
     }
     throw error
   }

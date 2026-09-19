@@ -1,14 +1,13 @@
 /**
  * Command & keymap registry — built on `@opentui/keymap`.
  *
- * The hand-rolled `CommandRegistry` from the spike's first draft is
- * replaced with a real `Keymap` instance. This file is the *thin*
+ * The spike uses a real `Keymap` instance. This file is the *thin*
  * adapter the spike's hosts use; the actual key resolution —
  * modifiers, sequences, focus, multi-key chords — is
  * `@opentui/keymap`'s responsibility.
  *
  * What this module owns:
- *   - the canonical list of named commands (`BUILTIN_COMMANDS`)
+ *   - the canonical list of named commands (`buildBuiltinCommands`)
  *   - the binding strings the spike relies on (e.g. `ctrl+p`)
  *   - the adapter surface the host uses to wire commands to its own
  *     state machine (drafts, palette visibility, approval)
@@ -17,16 +16,9 @@
  *   - keystroke parsing (modifiers, sequences, aliases)
  *   - focus and target routing
  *   - dispatch through named commands
- *
- * The split is the same one the production chat.tsx ends up making:
- * the TUI host doesn't reimplement key parsing; it asks the keymap
- * to do it. The spike is the proof that the third-party keymap
- * satisfies the issue's named-command-registry requirement end to
- * end — palette + keybindings through one surface.
  */
 import type { CliRenderer, KeyEvent, Renderable } from "@opentui/core"
-import type { Keymap } from "@opentui/keymap"
-import { type Command, type CommandContext, type Layer } from "@opentui/keymap"
+import { type Command, type CommandContext, type Keymap, type Layer } from "@opentui/keymap"
 import { registerDefaultKeys } from "@opentui/keymap/addons"
 import { createOpenTuiKeymap } from "@opentui/keymap/opentui"
 import {
@@ -35,7 +27,7 @@ import {
   type TestKeymapEvent,
   type TestKeymapTarget,
 } from "@opentui/keymap/testing"
-import { tr } from "../locales/index.js"
+import { tr, type I18nInstance } from "../locales/index.js"
 
 export type SpikeCommandName =
   | "open-palette"
@@ -60,30 +52,40 @@ export interface CommandSpec {
  * Static command metadata. The `name` field is a stable programming
  * handle (must NOT be translated) — the keymap dispatches by name
  * regardless of locale. The `label` and `description` are pulled
- * from the locale resource at construction time (the chat shell
- * and the keymap both consult the locale resource for the same
- * strings, so palette UI and binding help text never diverge).
+ * from the i18next resource at construction time.
+ *
+ * `buildBuiltinCommands(i18n)` is called once at host creation; the
+ * spike-local tests can pass a fresh `createI18nFor("ru")` to assert
+ * the ru labels flow through to the keymap and the chat shell.
  */
-function cmd(
+function buildCmd(
+  i18n: I18nInstance,
   name: SpikeCommandName,
   key: string,
   labelKey: string,
-  descriptionKey: string
+  descriptionKey: string,
 ): CommandSpec {
-  return { name, key, label: tr(labelKey), description: tr(descriptionKey) }
+  return {
+    name,
+    key,
+    label: tr(i18n, labelKey),
+    description: tr(i18n, descriptionKey),
+  }
 }
 
-export const BUILTIN_COMMANDS: readonly CommandSpec[] = [
-  cmd("open-palette", "ctrl+p", "cmd.open-palette.label", "cmd.open-palette.description"),
-  cmd("close-palette", "escape", "cmd.close-palette.label", "cmd.close-palette.description"),
-  cmd("save-snippet", "ctrl+s", "cmd.save-snippet.label", "cmd.save-snippet.description"),
-  cmd("approve-plan", "ctrl+y", "cmd.approve-plan.label", "cmd.approve-plan.description"),
-  cmd("reject-plan", "ctrl+x", "cmd.reject-plan.label", "cmd.reject-plan.description"),
-  cmd("queue-followup", "alt+enter", "cmd.queue-followup.label", "cmd.queue-followup.description"),
-  cmd("submit-turn", "enter", "cmd.submit-turn.label", "cmd.submit-turn.description"),
-  cmd("copy-last-answer", "ctrl+shift+y", "cmd.copy-last-answer.label", "cmd.copy-last-answer.description"),
-  cmd("open-status", "ctrl+o", "cmd.open-status.label", "cmd.open-status.description"),
-]
+export function buildBuiltinCommands(i18n: I18nInstance): readonly CommandSpec[] {
+  return [
+    buildCmd(i18n, "open-palette", "ctrl+p", "cmd.open-palette.label", "cmd.open-palette.description"),
+    buildCmd(i18n, "close-palette", "escape", "cmd.close-palette.label", "cmd.close-palette.description"),
+    buildCmd(i18n, "save-snippet", "ctrl+s", "cmd.save-snippet.label", "cmd.save-snippet.description"),
+    buildCmd(i18n, "approve-plan", "ctrl+y", "cmd.approve-plan.label", "cmd.approve-plan.description"),
+    buildCmd(i18n, "reject-plan", "ctrl+x", "cmd.reject-plan.label", "cmd.reject-plan.description"),
+    buildCmd(i18n, "queue-followup", "alt+enter", "cmd.queue-followup.label", "cmd.queue-followup.description"),
+    buildCmd(i18n, "submit-turn", "enter", "cmd.submit-turn.label", "cmd.submit-turn.description"),
+    buildCmd(i18n, "copy-last-answer", "ctrl+shift+y", "cmd.copy-last-answer.label", "cmd.copy-last-answer.description"),
+    buildCmd(i18n, "open-status", "ctrl+o", "cmd.open-status.label", "cmd.open-status.description"),
+  ]
+}
 
 /** The shape of the payload handlers receive. */
 export interface CommandPayload {
@@ -93,18 +95,7 @@ export interface CommandPayload {
 }
 
 /**
- * The medium-risk inline approval the issue calls out. Carries the
- * five pieces the spike is supposed to prove:
- *
- *   - `intent`   — what the plan is trying to do
- *   - `scope`    — what it touches
- *   - `risk`     — `low` | `medium` | `high` (the cell colour in the card)
- *   - `planSteps` — ordered steps that will run
- *   - `diff`    — the proposed patch (one or many lines)
- *
- * The spike renders all five in the card and only the last two
- * buttons (`approve` / `reject`) dispatch a command back into the
- * keymap.
+ * The medium-risk inline approval the issue calls out.
  */
 export interface ApprovalPlan {
   readonly intent: string
@@ -118,24 +109,15 @@ export interface ApprovalPlan {
 export type CommandHandler = (payload: CommandPayload) => boolean | void
 
 /**
- * Spike-side surface. `registry.dispatch(name)` is a thin wrapper
- * over `keymap.runCommand(name, { payload })`. Tests use the
- * `createSpikeTestKeymapHarness` exported below to drive keys
- * directly through `@opentui/keymap/testing`'s host.
+ * Spike-side surface. `dispatch(name)` is a thin wrapper over
+ * `keymap.runCommand(name, { payload })`.
  */
 export interface SpikeKeymap {
   /** Run a command by name, with an optional payload. */
   dispatch(name: SpikeCommandName, payload?: CommandPayload): boolean
-  /**
-   * Run a command by its binding alias (e.g. `"ctrl+p"`). The same
-   * `Keymap` instance routes this — palette clicks and key chords
-   * share one surface, so a host can wire both paths without
-   * duplicating action implementations.
-   */
+  /** Run a command by its binding alias. */
   dispatchByKeymap(alias: string, payload?: CommandPayload): boolean
-  /** List all registered commands in registration order. */
   commandNames(): readonly SpikeCommandName[]
-  /** Tear down the keymap. Idempotent. */
   destroy(): void
 }
 
@@ -146,41 +128,41 @@ type CommandWithHandler = Command<Renderable, KeyEvent, CommandPayload> & {
 /**
  * Build the spike's command keymap, backed by `@opentui/keymap`.
  *
- * The host passes its `CliRenderer`; the spike forwards
- * keypress events through the keymap so palette and keybindings
- * dispatch through one surface.
+ * `i18n` is required: the spike reads labels / descriptions from the
+ * i18next resource to populate the command layer once at host
+ * creation. Tests pass a fresh `await createI18nFor("ru")` instance to
+ * assert the ru locale flows through.
  */
 export function createSpikeKeymap(
   renderer: CliRenderer,
-  handlers: Partial<Record<SpikeCommandName, CommandHandler>> = {}
+  i18n: I18nInstance,
+  handlers: Partial<Record<SpikeCommandName, CommandHandler>> = {},
 ): SpikeKeymap {
+  const commands = buildBuiltinCommands(i18n)
+  const commandByKey = new Map<string, CommandSpec>(
+    commands.map((c) => [c.key, c]),
+  )
+
   const keymap = createOpenTuiKeymap(renderer)
-  // Install the default binding parser and event matcher so plain
-  // strings like `"ctrl+p"` and `"alt+enter"` resolve to modifier
-  // + key events. Without this, the layer registration below
-  // throws `"No keymap binding parsers are registered"`.
   registerDefaultKeys(keymap)
 
-  const commands: CommandWithHandler[] = BUILTIN_COMMANDS.map((spec) => ({
-    name: spec.name,
-    __handler: handlers[spec.name],
-    run(ctx: CommandContext<Renderable, KeyEvent, CommandPayload>) {
-      const handler = (ctx.command as CommandWithHandler | undefined)?.__handler
-      if (!handler) return { ok: false as const, reason: "inactive" }
-      return handler(ctx.payload ?? {})
-    },
-  }))
-
-  const layer: Layer<Renderable, KeyEvent> = {
+  const commandLayer: Layer<Renderable, KeyEvent> = {
     priority: 100,
-    bindings: BUILTIN_COMMANDS.map((spec) => ({
-      key: spec.key,
-      cmd: spec.name,
+    bindings: commands.map<{ key: string; cmd: string }>((c) => ({
+      key: c.key,
+      cmd: c.name,
     })),
-    commands,
+    commands: commands.map<CommandWithHandler>((spec) => ({
+      name: spec.name,
+      __handler: handlers[spec.name],
+      run(ctx: CommandContext<Renderable, KeyEvent, CommandPayload>) {
+        const handler = (ctx.command as CommandWithHandler | undefined)?.__handler
+        if (!handler) return { ok: false as const, reason: "inactive" }
+        return handler(ctx.payload ?? {})
+      },
+    })),
   }
-
-  const unregisterLayer = keymap.registerLayer(layer)
+  const unregisterLayer = keymap.registerLayer(commandLayer)
 
   return {
     dispatch(name, payload) {
@@ -188,15 +170,16 @@ export function createSpikeKeymap(
       return result.ok
     },
     dispatchByKeymap(alias, payload) {
-      const spec = BUILTIN_COMMANDS.find((s) => s.key === alias)
+      const spec = commandByKey.get(alias)
       if (!spec) return false
       return keymap.runCommand(spec.name, { payload }).ok
     },
     commandNames() {
-      return BUILTIN_COMMANDS.map((spec) => spec.name)
+      return commands.map((c) => c.name)
     },
     destroy() {
       unregisterLayer()
+      commandByKey.clear()
     },
   }
 }
@@ -204,26 +187,23 @@ export function createSpikeKeymap(
 /**
  * In-memory harness for tests. Returns the harness so tests can
  * drive keys through `press("ctrl+p")` etc.
- *
- * `press` accepts the same binding syntax the production keymap
- * uses: `"ctrl+p"`, `"alt+enter"`, etc. The harness parses the
- * modifier prefix and passes it as the modifier flags — the
- * underlying test host (`TestKeymapHost.press`) takes modifier
- * flags separately.
  */
 export interface SpikeTestKeymapHarness {
   readonly keymap: SpikeKeymap
   readonly harness: TestKeymapHarness
-  /** Press a single key. Accepts binding syntax (`"ctrl+p"`, `"alt+enter"`). */
-  press(name: string, modifiers?: { shift?: boolean; ctrl?: boolean; meta?: boolean; super?: boolean }): boolean
-  /** Press a multi-key chord (sequence). */
+  press(
+    name: string,
+    modifiers?: { shift?: boolean; ctrl?: boolean; meta?: boolean; super?: boolean },
+  ): boolean
   pressSequence(names: readonly string[]): boolean
-  /** Last command name dispatched — for assertions. */
   lastDispatched: { command?: SpikeCommandName; payload?: CommandPayload }
   cleanup(): void
 }
 
-function parseBindingSyntax(input: string): { name: string; modifiers: { shift?: boolean; ctrl?: boolean; meta?: boolean; super?: boolean } } {
+function parseBindingSyntax(input: string): {
+  name: string
+  modifiers: { shift?: boolean; ctrl?: boolean; meta?: boolean; super?: boolean }
+} {
   const parts = input.split("+").map((s) => s.trim().toLowerCase())
   const modifiers: { shift?: boolean; ctrl?: boolean; meta?: boolean; super?: boolean } = {}
   let name = parts[parts.length - 1] ?? ""
@@ -232,22 +212,33 @@ function parseBindingSyntax(input: string): { name: string; modifiers: { shift?:
     else if (part === "shift") modifiers.shift = true
     else if (part === "alt" || part === "meta" || part === "option") modifiers.meta = true
     else if (part === "super" || part === "cmd" || part === "command") modifiers.super = true
-    else name = input // unknown modifier — keep the original
+    else name = input
   }
   return { name, modifiers }
 }
 
+/**
+ * Test-only harness. Uses the test keymap host from
+ * `@opentui/keymap/testing` — no real `CliRenderer` required.
+ * The i18n instance is required: command labels and descriptions
+ * are read from the spike namespace resource at construction.
+ */
 export function createSpikeTestKeymapHarness(
-  handlers: Partial<Record<SpikeCommandName, CommandHandler>>
+  handlers: Partial<Record<SpikeCommandName, CommandHandler>>,
+  i18n: I18nInstance,
 ): SpikeTestKeymapHarness {
+  const commands = buildBuiltinCommands(i18n)
   const harness = createTestKeymap({ defaultKeys: true })
+
   const userHandlers = new Map<SpikeCommandName, CommandHandler>(
-    Object.entries(handlers).filter(([, v]) => v).map(([k, v]) => [k as SpikeCommandName, v!])
+    Object.entries(handlers)
+      .filter(([, v]) => v)
+      .map(([k, v]) => [k as SpikeCommandName, v as CommandHandler]),
   )
   const lastDispatched: SpikeTestKeymapHarness["lastDispatched"] = {}
 
-  const commands = BUILTIN_COMMANDS.map<Command<TestKeymapTarget, TestKeymapEvent, CommandPayload>>(
-    (spec) => ({
+  const localCommands = commands.map(
+    (spec): Command<TestKeymapTarget, TestKeymapEvent, CommandPayload> => ({
       name: spec.name,
       run(ctx: CommandContext<TestKeymapTarget, TestKeymapEvent, CommandPayload>) {
         lastDispatched.command = spec.name
@@ -256,13 +247,16 @@ export function createSpikeTestKeymapHarness(
         if (!handler) return { ok: false as const, reason: "inactive" }
         return handler(ctx.payload ?? {})
       },
-    })
+    }),
   )
 
   const layer: Layer<TestKeymapTarget, TestKeymapEvent> = {
     priority: 100,
-    bindings: BUILTIN_COMMANDS.map((spec) => ({ key: spec.key, cmd: spec.name })),
-    commands,
+    bindings: commands.map((spec) => ({
+      key: spec.key,
+      cmd: spec.name,
+    })),
+    commands: localCommands,
   }
   harness.keymap.registerLayer(layer)
 
@@ -272,12 +266,12 @@ export function createSpikeTestKeymapHarness(
       return result.ok
     },
     dispatchByKeymap(alias, payload) {
-      const spec = BUILTIN_COMMANDS.find((s) => s.key === alias)
+      const spec = commands.find((c) => c.key === alias)
       if (!spec) return false
       return harness.keymap.runCommand(spec.name, { payload }).ok
     },
     commandNames() {
-      return BUILTIN_COMMANDS.map((spec) => spec.name)
+      return commands.map((c) => c.name)
     },
     destroy() {
       harness.cleanup()
@@ -289,7 +283,10 @@ export function createSpikeTestKeymapHarness(
     harness,
     press(name, modifiers) {
       const parsed = parseBindingSyntax(name)
-      const event = harness.host.press(parsed.name, { ...parsed.modifiers, ...modifiers })
+      const event = harness.host.press(parsed.name, {
+        ...parsed.modifiers,
+        ...modifiers,
+      })
       return event.name.length > 0
     },
     pressSequence(names) {

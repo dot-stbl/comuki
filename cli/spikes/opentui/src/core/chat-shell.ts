@@ -16,7 +16,7 @@
  *
  * All keystrokes flow through `@opentui/keymap` (the official
  * `@opentui/keymap/opentui` adapter) so palette and shortcuts share
- * one surface — `BUILTIN_COMMANDS` in `commands/registry.ts`.
+ * one surface — the spike's command layer in `commands/registry.ts`.
  *
  * The spike is a *host*, not the production CLI. The acceptance
  * criterion for the spike is "domain/application packages have no
@@ -33,41 +33,58 @@ import {
   TextRenderable,
   TextareaRenderable,
   type CliRenderer,
-  type Renderable,
 } from "@opentui/core"
 import {
   buildTranscript,
   flattenTranscript,
 } from "../fixtures/transcript-1000.js"
 import {
-  BUILTIN_COMMANDS,
   createSpikeKeymap,
   type ApprovalPlan,
+  type CommandPayload,
   type SpikeKeymap,
 } from "../commands/registry.js"
-import { tr } from "../locales/index.js"
+import { createI18nFor, tr, type I18nInstance } from "../locales/index.js"
 
 export interface ChatShellOptions {
   readonly width: number
   readonly height: number
   readonly focusMode: boolean
+  /**
+   * Optional pre-initialized i18next instance. When omitted,
+   * `createChatShell` awaits a fresh `createI18nFor("en")` instance
+   * inside the factory so the chat shell always reads from a
+   * fully-initialized `I18nInstance`. Tests that exercise the `ru`
+   * locale can pass an instance from `await createI18nFor("ru")`.
+   */
+  readonly i18n?: I18nInstance
 }
 
 /**
- * Terminal lifecycle seam. The spike calls these through OpenTUI's
- * `CliRenderer` (`renderer.suspend()` / `renderer.resume()`), but the
- * hooks let tests inject spies that observe the call order without
- * requiring a real TTY. Production code can pass `undefined` and
- * let the shell fall through to the real renderer.
+ * Terminal lifecycle seam. The chat shell's `suspendForEdit` calls
+ * `suspend()` and `resume()` around an editor body. Production wires
+ * the lifecycle to OpenTUI's `CliRenderer` (`renderer.suspend()` /
+ * `renderer.resume()`); tests inject a spy to observe call order
+ * without requiring a real TTY.
  *
- * The `onSuspend` and `onResume` callbacks are invoked in `try` /
- * `finally` order around the editor body. The shell does not
- * otherwise depend on these hooks; they're an observation-only
- * injection seam.
+ * `createChatShell` resolves the lifecycle to one of:
+ *   1. `internals.terminalLifecycle` if supplied — the injected seam.
+ *   2. A no-op object when `memoryMode === true`.
+ *   3. An adapter that delegates to `renderer.suspend()` /
+ *      `renderer.resume()` for a real terminal.
+ *
+ * `suspendForEdit` calls `suspend()` first; if it throws, the editor,
+ * `onRestore`, and `resume` do not run and an error result is returned.
+ * If `suspend()` succeeds, the editor body runs, `onRestore` fires
+ * exactly once regardless of editor outcome, and the `finally` block
+ * calls `resume()` exactly once when `suspend()` had succeeded.
+ *
+ * The seam is the lifecycle contract tested by `tests/suspend.test.ts`;
+ * a real TTY is **not** exercised by these tests.
  */
-export interface TerminalLifecycleHooks {
-  readonly onSuspend?: () => void
-  readonly onResume?: () => void
+export interface TerminalLifecycle {
+  suspend(): void
+  resume(): void
 }
 
 export interface ChatShell {
@@ -84,13 +101,19 @@ export interface ChatShell {
   setFocusMode(focus: boolean): void
   focusMode(): boolean
   /**
-   * Suspend the terminal, run `editor`, and restore. In `memoryMode`
-   * (no real TTY) the suspend call is a no-op but `editor` and
-   * `onRestore` still run, so tests don't need a PTY.
+   * Suspend the terminal, run `editor`, and restore. The resolved
+   * `TerminalLifecycle` is called: `suspend()` first; if it throws
+   * the editor, `onRestore`, and `resume` do not run and an error
+   * result is returned. On editor success the result flows through
+   * (and, if `editor` returned a string, the composer draft is set).
+   * `onRestore` fires exactly once regardless of editor outcome.
+   * The `finally` block calls `resume()`, `composer.focus()`, and
+   * `renderer.requestRender()` once, but only when `suspend()` had
+   * succeeded.
    */
   suspendForEdit<T>(
     editor: () => Promise<T> | T,
-    options?: { onRestore?: () => void; hooks?: TerminalLifecycleHooks }
+    options?: { onRestore?: () => void }
   ): Promise<
     { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: Error }
   >
@@ -105,6 +128,13 @@ export interface ChatShellInternals {
    * passed **explicitly** (no `constructor.name` sniffing).
    */
   readonly memoryMode: boolean
+  /**
+   * Optional seam for `suspendForEdit`. When supplied, the chat
+   * shell uses this `TerminalLifecycle` in place of the no-op
+   * (memoryMode) or renderer-adapter fallback. Tests inject a spy
+   * here to observe call order without a real TTY.
+   */
+  readonly terminalLifecycle?: TerminalLifecycle
 }
 
 interface InternalHandles {
@@ -119,6 +149,25 @@ export async function createChatShell(
   internals: ChatShellInternals
 ): Promise<ChatShell> {
   const renderer = internals.renderer
+  // Terminal lifecycle resolution: injected seam wins, then no-op
+  // for memoryMode, then adapter over the real renderer. The chosen
+  // lifecycle is what `suspendForEdit` calls — see the contract on
+  // `TerminalLifecycle` and `tests/suspend.test.ts` for the order
+  // it is invoked.
+  const lifecycle: TerminalLifecycle =
+    internals.terminalLifecycle ??
+    (internals.memoryMode
+      ? { suspend: () => {}, resume: () => {} }
+      : {
+          suspend: () => {
+            renderer.suspend()
+          },
+          resume: () => {
+            renderer.resume()
+          },
+        })
+  const i18n: I18nInstance =
+    options.i18n ?? (await createI18nFor("en"))
   const root = renderer.root
 
   const initialMode = pickLayoutMode(options.width, options.height)
@@ -133,7 +182,7 @@ export async function createChatShell(
   root.add(shell)
 
   const topBar = new TextRenderable(renderer, {
-    content: topBarContent(initialMode),
+    content: topBarContent(i18n, initialMode),
     bg: "#1c1c20",
     fg: "#b8b8bd",
     width: options.width,
@@ -146,7 +195,7 @@ export async function createChatShell(
   // truth for the prompt copy the user sees.
   const composer = new TextareaRenderable(renderer, {
     width: options.width,
-    placeholder: composerPlaceholder(initialMode),
+    placeholder: composerPlaceholder(i18n, initialMode),
     backgroundColor: "#26262b",
     textColor: "#e8e8ee",
     focusedBackgroundColor: "#2b2b30",
@@ -248,13 +297,13 @@ export async function createChatShell(
     const composerIndex = shell.getChildren().indexOf(composer)
     shell.add(overlay, composerIndex >= 0 ? composerIndex : shell.getChildren().length)
 
-    const INTENT_PREFIX = tr("approval.intentPrefix")
-    const SCOPE_PREFIX = tr("approval.scopePrefix")
-    const RISK_PREFIX = tr("approval.riskPrefix")
-    const PLAN_PREFIX = tr("approval.planPrefix")
-    const STEP_PREFIX = tr("approval.stepPrefix")
-    const DIFF_PREFIX = tr("approval.diffPrefix")
-    const DECIDE_LABEL = tr("approval.decideLabel")
+    const INTENT_PREFIX = tr(i18n, "approval.intentPrefix")
+    const SCOPE_PREFIX = tr(i18n, "approval.scopePrefix")
+    const RISK_PREFIX = tr(i18n, "approval.riskPrefix")
+    const PLAN_PREFIX = tr(i18n, "approval.planPrefix")
+    const STEP_PREFIX = tr(i18n, "approval.stepPrefix")
+    const DIFF_PREFIX = tr(i18n, "approval.diffPrefix")
+    const DECIDE_LABEL = tr(i18n, "approval.decideLabel")
 
     overlay.add(
       new TextRenderable(renderer, {
@@ -331,11 +380,11 @@ export async function createChatShell(
       new SelectRenderable(renderer, {
         options: [
           {
-            name: tr("approval.action.approve"),
+            name: tr(i18n, "approval.action.approve"),
             description: "APPROVAL-ACTION-APPROVE",
           },
           {
-            name: tr("approval.action.reject"),
+            name: tr(i18n, "approval.action.reject"),
             description: "APPROVAL-ACTION-REJECT",
           },
         ],
@@ -366,13 +415,13 @@ export async function createChatShell(
     handles.shell.width = width
     handles.shell.height = height
     handles.topBar.width = width
-    handles.topBar.content = topBarContent(layoutMode)
+    handles.topBar.content = topBarContent(i18n, layoutMode)
     handles.topBar.height = geometry.topBarHeight
     handles.viewport.width = width
     handles.composer.width = width
     handles.composer.flexBasis = geometry.composerHeight
     handles.composer.height = geometry.composerHeight
-    handles.composer.placeholder = composerPlaceholder(layoutMode)
+    handles.composer.placeholder = composerPlaceholder(i18n, layoutMode)
 
     // An approval that exists at the old width must be re-laid-out
     // to fit the new geometry — its height is bounded by the shell's
@@ -390,7 +439,7 @@ export async function createChatShell(
     await renderer.idle()
   }
 
-  const keymap = createSpikeKeymap(renderer, {
+  const keymap = createSpikeKeymap(renderer, i18n, {
     "open-palette": () => {
       if (approval) return
       const plan: ApprovalPlan = {
@@ -418,19 +467,19 @@ export async function createChatShell(
       composer.setText("")
       renderer.requestRender()
     },
-    "approve-plan": (payload) => {
+    "approve-plan": (payload: CommandPayload) => {
       approval = null
       clearApproval()
       draftBuffer = payload.text ?? draftBuffer
       renderer.requestRender()
     },
-    "reject-plan": (payload) => {
+    "reject-plan": (payload: CommandPayload) => {
       approval = null
       clearApproval()
       draftBuffer = payload.reason ?? draftBuffer
       renderer.requestRender()
     },
-    "queue-followup": (payload) => {
+    "queue-followup": (payload: CommandPayload) => {
       draftBuffer = payload.text ?? draftBuffer
       renderer.requestRender()
     },
@@ -446,9 +495,6 @@ export async function createChatShell(
       // Status overlay is wired through the same `keymap` surface
     },
   })
-
-  void BUILTIN_COMMANDS
-  void (handles as unknown as Record<string, Renderable>)
 
   refreshViewport()
   composer.focus()
@@ -498,26 +544,24 @@ export async function createChatShell(
     },
     async suspendForEdit<T>(
       editor: () => Promise<T> | T,
-      options?: { onRestore?: () => void; hooks?: TerminalLifecycleHooks }
+      options?: { onRestore?: () => void }
     ): Promise<
       { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: Error }
     > {
-      const runEditor = async () => {
-        // The lifecycle order is fixed:
-        //   1. onSuspend() fires BEFORE renderer.suspend() (or no-op
-        //      in memoryMode) — the hooks are observation-only.
-        //   2. The editor body runs.
-        //   3. onRestore() fires regardless of success/failure.
-        //   4. onResume() fires AFTER renderer.resume() (or no-op in
-        //      memoryMode) — in the `finally` block.
-        const hooks = options?.hooks
+      // Lifecycle contract (also asserted by `tests/suspend.test.ts`):
+      //   1. lifecycle.suspend() runs first. If it throws, the editor,
+      //      onRestore, and lifecycle.resume() do not run and an error
+      //      result is returned.
+      //   2. If suspend() succeeded, the editor body runs.
+      //   3. onRestore() fires exactly once regardless of editor outcome.
+      //   4. The finally block calls lifecycle.resume(),
+      //      composer.focus(), and renderer.requestRender() once, but
+      //      only when suspend() had succeeded.
+      let suspendSucceeded = false
+      try {
+        lifecycle.suspend()
+        suspendSucceeded = true
         try {
-          if (!internals.memoryMode) {
-            hooks?.onSuspend?.()
-            renderer.suspend()
-          } else {
-            hooks?.onSuspend?.()
-          }
           const value = await editor()
           if (typeof value === "string") {
             composer.setText(value)
@@ -531,20 +575,20 @@ export async function createChatShell(
             error:
               caught instanceof Error ? caught : new Error(String(caught)),
           }
-        } finally {
-          if (!internals.memoryMode) {
-            try {
-              renderer.resume()
-            } catch {
-              // idempotent
-            }
-          }
-          hooks?.onResume?.()
+        }
+      } catch (caught) {
+        return {
+          ok: false as const,
+          error:
+            caught instanceof Error ? caught : new Error(String(caught)),
+        }
+      } finally {
+        if (suspendSucceeded) {
+          lifecycle.resume()
           composer.focus()
           renderer.requestRender()
         }
       }
-      return runEditor()
     },
   }
 }
@@ -586,12 +630,12 @@ function computeGeometry(
   }
 }
 
-function topBarContent(mode: LayoutMode): string {
-  if (mode === "compact") return tr("chrome.titleCompact")
-  return tr("chrome.title")
+function topBarContent(i18n: I18nInstance, mode: LayoutMode): string {
+  if (mode === "compact") return tr(i18n, "chrome.titleCompact")
+  return tr(i18n, "chrome.title")
 }
 
-function composerPlaceholder(mode: LayoutMode): string {
-  if (mode === "compact") return tr("composer.placeholderCompact")
-  return tr("composer.placeholder")
+function composerPlaceholder(i18n: I18nInstance, mode: LayoutMode): string {
+  if (mode === "compact") return tr(i18n, "composer.placeholderCompact")
+  return tr(i18n, "composer.placeholder")
 }

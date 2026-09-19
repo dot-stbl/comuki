@@ -59,8 +59,39 @@ cd agents/comuki-cli && bun run build   # → ./comuki.exe (Windows) / comuki
 Глобальные опции: `--url`, `--api-key`, `--project` (id, slug или имя),
 `--theme <name>-<dark|light>` (по умолчанию `dichromat-dark` — все семь
 тем дашборда: dichromat, graphite, dockside, blueprint, bureau,
-aperture, dispatcher; выбор сохраняется в `config.json` → `theme`).
+aperture, dispatcher; выбор сохраняется в `config.json` → `theme`),
+`--tui opentui` (REPL на OpenTUI Core — см. ниже).
 Субкоманды `chat` больше нет — голый `comuki` и есть чат.
+
+## OpenTUI-хост (`--tui opentui`)
+
+Опциональный focus-mode REPL на `@opentui/core` + `@opentui/keymap`
+(ADR-0002; Ink остаётся хостом по умолчанию и не тронут):
+
+```bash
+comuki --tui opentui     # тот же config/ auth/ sessions.json, новый рендер-стек
+COMUKI_LANG=ru comuki --tui opentui   # ru-локаль chrome/карточки (по умолчанию en)
+```
+
+Что работает в этом срезе: alternate-screen, compact-раскладка на узких
+терминалах (48x16), транскрипт прямо из снапшотов ClientKernel (эхо,
+живой текст стрима, финальный ответ, строка ошибки), инлайн-карточка
+одобрения (intent/scope/risk/plan-steps/diff, реальные опции
+approve/reject), named-command keymap, чистый выход
+(kernel.stop → whenIdle → renderer.destroy, терминал восстановлен).
+
+| Клавиша | Действие |
+|---|---|
+| `enter` | отправить сообщение |
+| `esc` | прервать текущий ход (клиентский abort, `/stop`) |
+| `y` / `n` | одобрить / отклонить план (только пока карточка на экране) |
+| `ctrl+n` | новая сессия |
+| `ctrl+w` | закрыть таб (задача продолжает работать на сервере) |
+| `ctrl+c` | выход |
+
+Чего пока нет: палитра команд, slash-команды, очередь follow-up,
+переключение табов (одна активная сессия), $EDITOR через lifecycle-seam
+(seam встроен и тестируется, редактор не подключён).
 
 ## Сессии — табы
 

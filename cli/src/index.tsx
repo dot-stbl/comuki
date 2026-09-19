@@ -9,6 +9,7 @@ import React from "react"
 import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
 import { ChatApp, describeError } from "./commands/chat"
+import { runOpentuiRepl } from "./commands/opentui"
 import { LoginApp } from "./commands/login"
 import { printRunsJson, RunsApp } from "./commands/runs"
 import { printStatusJson, StatusApp } from "./commands/status"
@@ -74,6 +75,10 @@ async function main(): Promise<void> {
       type: "boolean",
       default: false,
       describe: "print the one-shot reply as markdown, not plain text",
+    })
+    .option("tui", {
+      type: "string",
+      describe: "REPL host: opentui (OpenTUI Core focus mode) or ink (default)",
     })
     .option("message", {
       alias: "m",
@@ -226,6 +231,23 @@ async function main(): Promise<void> {
       } finally {
         clearTimeout(timer)
       }
+      return
+    }
+    // Opt-in OpenTUI Core host (issue #73). Anything but "opentui"/"ink"
+    // is a hard error — the user just typed it.
+    const tuiHost = argv.tui as string | undefined
+    if (tuiHost !== undefined && tuiHost !== "ink") {
+      if (tuiHost !== "opentui") {
+        console.error(
+          `${colors.error}unknown --tui host: ${tuiHost}${colors.reset}`
+        )
+        console.error(
+          `${colors.faint}available: opentui, ink (default)${colors.reset}`
+        )
+        process.exitCode = 1
+        return
+      }
+      await runOpentuiRepl(config, overrides.project)
       return
     }
     render(<ChatApp config={config} project={overrides.project} />, {

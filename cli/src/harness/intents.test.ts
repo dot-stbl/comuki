@@ -121,7 +121,7 @@ describe("translateIntent", () => {
       {
         type: "approval-decision-sent",
         sessionId: remoteId,
-        requestId: turnRequestId("cmd-1"),
+        requestId: turnRequestId("approval:cmd-approve"),
         approved: false,
         reason: "no",
         commandId: "cmd-approve",

@@ -1,5 +1,5 @@
 /**
- * Suspend / resume — terminal cleanup boundary.
+ * Suspend / resume — terminal lifecycle contract.
  *
  * The Core renderer's `suspend()` and `resume()` methods are the
  * public boundary the chat shell uses for:
@@ -7,19 +7,31 @@
  *   - shelling out to `git add -p` / `kubectl edit`
  *   - any external process that needs the raw TTY
  *
- * The chat shell wires this through a thin wrapper: `suspendForEdit()`
- * exposes an injectable `TerminalLifecycleHooks` so tests can spy
- * on the order of suspend / editor / onRestore / resume without
- * requiring a real TTY. The seam fires hooks BEFORE the real call
- * (or as a no-op in `memoryMode`) and AFTER it in the `finally` block.
+ * `createChatShell` resolves a `TerminalLifecycle` per:
+ *   1. `internals.terminalLifecycle` if supplied — the injected seam.
+ *   2. A no-op object when `memoryMode === true`.
+ *   3. An adapter over `renderer.suspend()` / `renderer.resume()`.
  *
- * Each test uses a single renderer / single shell, observes the
- * order with a spy array, and asserts the canonical sequence.
+ * `suspendForEdit` is the public consumer: it calls
+ * `lifecycle.suspend()` first, then the editor, then `onRestore`,
+ * then `lifecycle.resume()` in the `finally` block. If `suspend()`
+ * throws, the editor / `onRestore` / `resume` do not run.
+ *
+ * Each test injects a spy lifecycle through `internals.terminalLifecycle`,
+ * records the call sequence into a shared array, and asserts the
+ * canonical ordering (suspend → editor-start → editor-end → onRestore
+ * → resume). One test injects a lifecycle whose `suspend()` throws
+ * to verify the editor / onRestore / resume paths do not run in that
+ * case. One test exercises the no-injection + memoryMode no-op path
+ * so we know the fallback works without a real TTY.
+ *
+ * Scope: the lifecycle contract is tested end-to-end with the spike's
+ * test renderer; a real TTY is **not** exercised by these tests.
  */
 
 import { test, expect, describe, beforeEach, afterEach } from "bun:test"
 import { createTestRenderer } from "@opentui/core/testing"
-import { createChatShell } from "../src/core/chat-shell.js"
+import { createChatShell, type TerminalLifecycle } from "../src/core/chat-shell.js"
 
 type Call =
   | { kind: "suspend" }
@@ -28,7 +40,40 @@ type Call =
   | { kind: "onRestore" }
   | { kind: "resume" }
 
-describe("suspend / resume — terminal cleanup boundary", () => {
+/**
+ * Spy lifecycle used by the lifecycle-contract tests. Each call records
+ * `{ kind: "suspend" | "resume" }` into the shared `calls` array. With
+ * `throwOnSuspend`, `suspend()` records the call first and then throws —
+ * the test asserts the editor / onRestore / resume paths do not run
+ * after the throw.
+ *
+ * The returned `lifecycle` is what `tests/suspend.test.ts` injects via
+ * `ChatShellInternals.terminalLifecycle`. Tests assert the canonical
+ * call sequence and the exact suspend/resume counts. **Lifecycle
+ * contract tested; real TTY unverified.**
+ */
+function makeSpyLifecycle(opts?: {
+  throwOnSuspend?: boolean
+  suspendMessage?: string
+}): { readonly lifecycle: TerminalLifecycle; readonly calls: Call[] } {
+  const calls: Call[] = []
+  return {
+    calls,
+    lifecycle: {
+      suspend: () => {
+        calls.push({ kind: "suspend" })
+        if (opts?.throwOnSuspend) {
+          throw new Error(opts.suspendMessage ?? "lifecycle.suspend failed")
+        }
+      },
+      resume: () => {
+        calls.push({ kind: "resume" })
+      },
+    },
+  }
+}
+
+describe("suspend / resume — terminal lifecycle contract", () => {
   let setup: Awaited<ReturnType<typeof createTestRenderer>>
   let shell: Awaited<ReturnType<typeof createChatShell>> | null = null
 
@@ -54,14 +99,19 @@ describe("suspend / resume — terminal cleanup boundary", () => {
     }
   })
 
-  test("memory mode: onSuspend -> editor -> onRestore -> onResume on success", async () => {
+  test("injected spy: suspend → editor → onRestore → resume on success (exactly one each)", async () => {
+    // Lifecycle contract tested; real TTY unverified.
+    const { calls, lifecycle } = makeSpyLifecycle()
     shell = await createChatShell(
       { width: 80, height: 24, focusMode: true },
-      { renderer: setup.renderer, memoryMode: true }
+      {
+        renderer: setup.renderer,
+        memoryMode: true,
+        terminalLifecycle: lifecycle,
+      }
     )
     await setup.waitForVisualIdle()
 
-    const calls: Call[] = []
     let editorCalled = 0
     let restoreCalled = 0
 
@@ -79,25 +129,23 @@ describe("suspend / resume — terminal cleanup boundary", () => {
           restoreCalled += 1
           calls.push({ kind: "onRestore" })
         },
-        hooks: {
-          onSuspend: () => calls.push({ kind: "suspend" }),
-          onResume: () => calls.push({ kind: "resume" }),
-        },
-      },
+      }
     )
 
+    // Lifecycle contract: exactly one suspend and one resume.
+    expect(calls.filter((c) => c.kind === "suspend")).toHaveLength(1)
+    expect(calls.filter((c) => c.kind === "resume")).toHaveLength(1)
     expect(editorCalled).toBe(1)
     expect(restoreCalled).toBe(1)
-    expect(result.ok).toBe(true)
-    if (result.ok) {
-      expect(result.value).toBe("edited draft text")
-      expect(shell.getDraft()).toBe("edited draft text")
-    }
 
-    // Lifecycle order: suspend -> editor-start -> editor-end ->
-    // onRestore -> resume. In memoryMode the OpenTUI renderer
-    // hooks themselves are no-ops, but the observable hooks the
-    // spike injects still fire in this exact order.
+    expect(result.ok).toBe(true)
+    if (!result.ok) {
+      throw new Error(`expected ok, got ${JSON.stringify(result)}`)
+    }
+    expect(result.value).toBe("edited draft text")
+    expect(shell.getDraft()).toBe("edited draft text")
+
+    // Canonical order: suspend → editor-start → editor-end → onRestore → resume.
     expect(calls).toEqual([
       { kind: "suspend" },
       { kind: "editor-start" },
@@ -107,14 +155,19 @@ describe("suspend / resume — terminal cleanup boundary", () => {
     ])
   })
 
-  test("memory mode: onSuspend -> editor -> onRestore -> onResume on failure", async () => {
+  test("injected spy: suspend → editor → onRestore → resume when editor throws (exactly one each)", async () => {
+    // Lifecycle contract tested; real TTY unverified.
+    const { calls, lifecycle } = makeSpyLifecycle()
     shell = await createChatShell(
       { width: 80, height: 24, focusMode: true },
-      { renderer: setup.renderer, memoryMode: true }
+      {
+        renderer: setup.renderer,
+        memoryMode: true,
+        terminalLifecycle: lifecycle,
+      }
     )
     await setup.waitForVisualIdle()
 
-    const calls: Call[] = []
     let restoreCalled = 0
 
     const result = await shell.suspendForEdit(
@@ -129,23 +182,23 @@ describe("suspend / resume — terminal cleanup boundary", () => {
           restoreCalled += 1
           calls.push({ kind: "onRestore" })
         },
-        hooks: {
-          onSuspend: () => calls.push({ kind: "suspend" }),
-          onResume: () => calls.push({ kind: "resume" }),
-        },
-      },
+      }
     )
 
+    // Lifecycle contract: exactly one suspend and one resume, even when
+    // the editor body throws — the `finally` block runs `resume()`
+    // because `suspend()` had succeeded.
+    expect(calls.filter((c) => c.kind === "suspend")).toHaveLength(1)
+    expect(calls.filter((c) => c.kind === "resume")).toHaveLength(1)
     expect(restoreCalled).toBe(1)
-    expect(result.ok).toBe(false)
-    if (!result.ok) {
-      expect(result.error.message).toBe("editor exploded")
-    }
 
-    // Even on failure, the order holds: suspend -> editor (start
-    // and end) -> onRestore -> resume. The spike guarantees the
-    // `finally` runs through these hooks so an editor crash does
-    // not leave the terminal in a half-suspended state.
+    expect(result.ok).toBe(false)
+    if (result.ok) {
+      throw new Error(`expected error, got ${JSON.stringify(result)}`)
+    }
+    expect(result.error.message).toBe("editor exploded")
+
+    // Canonical order holds on failure: suspend → editor → onRestore → resume.
     expect(calls).toEqual([
       { kind: "suspend" },
       { kind: "editor-start" },
@@ -155,7 +208,67 @@ describe("suspend / resume — terminal cleanup boundary", () => {
     ])
   })
 
-  test("memory mode is a documented no-op for the renderer-level suspend/resume (hooks still fire)", async () => {
+  test("injected spy: lifecycle.suspend throws — editor / onRestore / resume do not run", async () => {
+    // Lifecycle contract tested; real TTY unverified.
+    const { calls, lifecycle } = makeSpyLifecycle({
+      throwOnSuspend: true,
+      suspendMessage: "suspend failed",
+    })
+    shell = await createChatShell(
+      { width: 80, height: 24, focusMode: true },
+      {
+        renderer: setup.renderer,
+        memoryMode: true,
+        terminalLifecycle: lifecycle,
+      }
+    )
+    await setup.waitForVisualIdle()
+
+    let editorCalled = 0
+    let restoreCalled = 0
+
+    const result = await shell.suspendForEdit(
+      async () => {
+        editorCalled += 1
+        calls.push({ kind: "editor-start" })
+        await Promise.resolve()
+        calls.push({ kind: "editor-end" })
+        return "should not be returned"
+      },
+      {
+        onRestore: () => {
+          restoreCalled += 1
+          calls.push({ kind: "onRestore" })
+        },
+      }
+    )
+
+    // When suspend throws, the editor body never runs and `onRestore`
+    // never fires. `resume` must also not run — calling it on a never-
+    // suspended terminal would leave the renderer in a half-restored
+    // state.
+    expect(editorCalled).toBe(0)
+    expect(restoreCalled).toBe(0)
+    expect(calls.filter((c) => c.kind === "editor-start")).toHaveLength(0)
+    expect(calls.filter((c) => c.kind === "editor-end")).toHaveLength(0)
+    expect(calls.filter((c) => c.kind === "onRestore")).toHaveLength(0)
+    expect(calls.filter((c) => c.kind === "resume")).toHaveLength(0)
+    // Suspend itself is recorded — the throw happens after the push.
+    expect(calls.filter((c) => c.kind === "suspend")).toHaveLength(1)
+
+    expect(result.ok).toBe(false)
+    if (result.ok) {
+      throw new Error(`expected error, got ${JSON.stringify(result)}`)
+    }
+    expect(result.error.message).toBe("suspend failed")
+  })
+
+  test("memoryMode without injection: no-op lifecycle — editor runs, no spy calls", async () => {
+    // Lifecycle contract tested; real TTY unverified.
+    // No `terminalLifecycle` passed in internals; with `memoryMode=true`
+    // the shell falls through to its built-in no-op lifecycle. The
+    // point of this test is to verify the no-op fallback does not
+    // crash and does not require any real terminal interaction.
     shell = await createChatShell(
       { width: 80, height: 24, focusMode: true },
       { renderer: setup.renderer, memoryMode: true }
@@ -164,20 +277,27 @@ describe("suspend / resume — terminal cleanup boundary", () => {
 
     let editorCalled = 0
     let restoreCalled = 0
+
     const result = await shell.suspendForEdit(
       async () => {
         editorCalled += 1
-        return "ok"
+        return "noop path"
       },
       {
         onRestore: () => {
           restoreCalled += 1
         },
-      },
+      }
     )
+
     expect(result.ok).toBe(true)
+    if (!result.ok) {
+      throw new Error(`expected ok, got ${JSON.stringify(result)}`)
+    }
+    expect(result.value).toBe("noop path")
     expect(editorCalled).toBe(1)
     expect(restoreCalled).toBe(1)
+    expect(shell.getDraft()).toBe("noop path")
   })
 
   test("after cleanup the next frame still renders the chat surface", async () => {

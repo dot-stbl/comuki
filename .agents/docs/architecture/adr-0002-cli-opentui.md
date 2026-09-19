@@ -84,8 +84,36 @@ keymap-движка. Это означает:
   unbound-key побочных эффектов.
 - **Domain/application код не имеет зависимости на OpenTUI или
   React.** Это инвариант, а не пожелание — `bun run test:core`
-  зелёный на 29/29 (29 pass / 0 fail / 511 expect), и `ChatShell`
+  зелёный на 34/34 (34 pass / 0 fail / 416 expect), и `ChatShell`
   сам по себе не импортит React.
+- **i18n: real i18next async initialised for en + ru, command IDs
+  stay stable.** Это инвариант, а не пожелание — `i18next@^23`
+  закреплён в `cli/spikes/opentui/package.json`,
+  `createI18nFor(locale)` возвращает
+  `Promise<I18nInstance>` (await внутри factory), а
+  `buildBuiltinCommands(i18n)` читает `cmd.*.label` /
+  `cmd.*.description` через `tr(i18n, key)` в момент host-construction.
+  Имя команды (`BUILTIN_COMMANDS[].name`) — стабильный programming
+  handle, не переводится; `tr` бросает на пустой или равный ключу
+  результат, что ловит build-time drift между ресурсами. Тестовая
+  матрица: en-default и ru-fresh оба зелёные через
+  `instance.exists(key, { ns: "spike" })` в `tests/i18n.test.ts`.
+  Audit remediation и завершено; spike не stub-модуль.
+- **Lifecycle: injected seam, default no-op, renderer adapter.**
+  Это инвариант, а не пожелание — `TerminalLifecycle`
+  (`suspend()` / `resume()`) резолвится в
+  `createChatShell` по правилу: `internals.terminalLifecycle` →
+  memoryMode no-op → адаптер над `renderer.suspend()` /
+  `renderer.resume()`. `suspendForEdit` вызывает `suspend()` первым;
+  если он throws, editor / `onRestore` / `resume` не выполняются, и
+  возвращается `{ ok: false, error }`. На успехе editor → `onRestore`
+  → `finally` (`resume()` + `composer.focus()` +
+  `renderer.requestRender()`) — ровно один раз. `tests/suspend.test.ts`
+  ассертит каноническую последовательность через spy lifecycle
+  (suspend → editor-start → editor-end → onRestore → resume) и
+  отдельный тест на throw из `suspend()`. **Реальный TTY не
+  проверяется этими тестами** — seam inject'ится, реальный
+  renderer-adapter покрыт только type-shape.
 
 ### 2. Screen mode: alternate-screen (принято)
 
@@ -312,7 +340,7 @@ bun run lint; bun run test:core` (×2 для стабильности).
 | Bun version | 1.3.10 | same |
 | Platform / arch | win32 / x64 | same |
 | Smoke-load (evidence that the public surface resolves) | BoxRenderable / InputRenderable / ScrollBoxRenderable / TextRenderable / SelectRenderable / TextareaRenderable / createCliRenderer — **все import'ятся** | `bun run smoke:load` (smoke, **не** behavioral proof) |
-| `bun run test:core` × 2 | **29 pass / 0 fail / 511 expect** per run, no listener leaks, no native-allocation failures (added `i18n.test.ts` + `fixture-cardinality.test.ts` after audit fix) | manual |
+| `bun run test:core` × 2 | **34 pass / 0 fail / 416 expect** per run, no listener leaks, no native-allocation failures (`tests/commands.test.ts`, `tests/approval.test.ts`, `tests/resize.test.ts`, `tests/suspend.test.ts`, `tests/fixture-cardinality.test.ts`, `tests/i18n.test.ts`) — counts updated from 29/511 to 34/416 after real i18next integration + lifecycle-seam audit remediation. i18next (`createI18nFor`, `tr`, `buildBuiltinCommands`) and `TerminalLifecycle` injection (`suspend` → editor → `onRestore` → `resume`, plus throw-on-suspend path) are the additions. | manual |
 | `bun run typecheck` | exit 0 | `bunx tsc --noEmit -p .` |
 | `bun run lint` | exit 0 (zero warnings) | `bun run lint` |
 
@@ -425,8 +453,8 @@ Bubble Tea (третий язык/toolchain, C# остаётся), плюс ещ
 ## Последствия
 
 **Плюсы (на текущей ОС / стеке):**
-- честные 29/29 тестов с двумя последовательными прогонами без
-  listener-leak и native-allocation ошибок;
+- честные 34/34 тестов (416 expect) с двумя последовательными
+  прогонами без listener-leak и native-allocation ошибок;
 - structural-устранение пяти documented Ink-шимов
   (Home/End, mouse, clipboard, custom editor) — ADR не претендует
   на ms-метрики;

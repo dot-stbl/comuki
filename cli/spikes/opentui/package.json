@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "@opentui/core": "0.5.11",
-    "@opentui/keymap": "0.5.11"
+    "@opentui/keymap": "0.5.11",
+    "i18next": "^23"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",

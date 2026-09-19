@@ -45,11 +45,29 @@ import {
   type ApprovalPlan,
   type SpikeKeymap,
 } from "../commands/registry.js"
+import { tr } from "../locales/index.js"
 
 export interface ChatShellOptions {
   readonly width: number
   readonly height: number
   readonly focusMode: boolean
+}
+
+/**
+ * Terminal lifecycle seam. The spike calls these through OpenTUI's
+ * `CliRenderer` (`renderer.suspend()` / `renderer.resume()`), but the
+ * hooks let tests inject spies that observe the call order without
+ * requiring a real TTY. Production code can pass `undefined` and
+ * let the shell fall through to the real renderer.
+ *
+ * The `onSuspend` and `onResume` callbacks are invoked in `try` /
+ * `finally` order around the editor body. The shell does not
+ * otherwise depend on these hooks; they're an observation-only
+ * injection seam.
+ */
+export interface TerminalLifecycleHooks {
+  readonly onSuspend?: () => void
+  readonly onResume?: () => void
 }
 
 export interface ChatShell {
@@ -72,7 +90,7 @@ export interface ChatShell {
    */
   suspendForEdit<T>(
     editor: () => Promise<T> | T,
-    options?: { onRestore?: () => void }
+    options?: { onRestore?: () => void; hooks?: TerminalLifecycleHooks }
   ): Promise<
     { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: Error }
   >
@@ -123,6 +141,17 @@ export async function createChatShell(
   })
   shell.add(topBar)
 
+  // The composer carries a locale-sourced placeholder. The locale
+  // resource (en default, ru parallel) is the single source of
+  // truth for the prompt copy the user sees.
+  const composer = new TextareaRenderable(renderer, {
+    width: options.width,
+    placeholder: composerPlaceholder(initialMode),
+    backgroundColor: "#26262b",
+    textColor: "#e8e8ee",
+    focusedBackgroundColor: "#2b2b30",
+  })
+
   const viewport = new ScrollBoxRenderable(renderer, {
     flexGrow: 1,
     flexBasis: 0,
@@ -136,13 +165,6 @@ export async function createChatShell(
   })
   shell.add(viewport)
 
-  const composer = new TextareaRenderable(renderer, {
-    width: options.width,
-    placeholder: composerPlaceholder(initialMode),
-    backgroundColor: "#26262b",
-    textColor: "#e8e8ee",
-    focusedBackgroundColor: "#2b2b30",
-  })
   composer.flexBasis = initialGeometry.composerHeight
   composer.height = initialGeometry.composerHeight
   composer.flexShrink = 0
@@ -226,12 +248,13 @@ export async function createChatShell(
     const composerIndex = shell.getChildren().indexOf(composer)
     shell.add(overlay, composerIndex >= 0 ? composerIndex : shell.getChildren().length)
 
-    const INTENT_PREFIX = "APPROVAL-INTENT:"
-    const SCOPE_PREFIX = "APPROVAL-SCOPE:"
-    const RISK_PREFIX = "APPROVAL-RISK:"
-    const PLAN_PREFIX = "APPROVAL-PLAN:"
-    const STEP_PREFIX = "APPROVAL-STEP:"
-    const DIFF_PREFIX = "APPROVAL-DIFF:"
+    const INTENT_PREFIX = tr("approval.intentPrefix")
+    const SCOPE_PREFIX = tr("approval.scopePrefix")
+    const RISK_PREFIX = tr("approval.riskPrefix")
+    const PLAN_PREFIX = tr("approval.planPrefix")
+    const STEP_PREFIX = tr("approval.stepPrefix")
+    const DIFF_PREFIX = tr("approval.diffPrefix")
+    const DECIDE_LABEL = tr("approval.decideLabel")
 
     overlay.add(
       new TextRenderable(renderer, {
@@ -294,11 +317,11 @@ export async function createChatShell(
       )
     }
     // The approve and reject actions are real renderables —
-    // a SelectRenderable with two options. A "decide:" header
-    // makes the choice point explicit in the captured frame.
+    // a SelectRenderable with two options. The action labels are
+    // locale-sourced so the same UI surface serves en + ru.
     overlay.add(
       new TextRenderable(renderer, {
-        content: "  decide:",
+        content: DECIDE_LABEL,
         fg: "#8a8a8f",
         bg: "#1c1c20",
         width: overlayWidth,
@@ -308,11 +331,11 @@ export async function createChatShell(
       new SelectRenderable(renderer, {
         options: [
           {
-            name: "APPROVE",
+            name: tr("approval.action.approve"),
             description: "APPROVAL-ACTION-APPROVE",
           },
           {
-            name: "REJECT",
+            name: tr("approval.action.reject"),
             description: "APPROVAL-ACTION-REJECT",
           },
         ],
@@ -375,9 +398,9 @@ export async function createChatShell(
         scope: "tests/Unit.Identity.Oidc.*",
         risk: "medium",
         planSteps: [
-          "1. snapshot current merge-queue depth",
-          "2. dispatch 4 claimers to Oidc test files",
-          "3. abort + requeue if any claimer stalls > 60s",
+          "1. snapshot queue depth",
+          "2. dispatch 4 claimers",
+          "3. abort on stall > 60s",
         ],
         diff: "+ tests/Unit.Identity.Oidc* --ff\n- tests/Unit.Kafka* --ff",
       }
@@ -475,14 +498,25 @@ export async function createChatShell(
     },
     async suspendForEdit<T>(
       editor: () => Promise<T> | T,
-      options?: { onRestore?: () => void }
+      options?: { onRestore?: () => void; hooks?: TerminalLifecycleHooks }
     ): Promise<
       { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: Error }
     > {
       const runEditor = async () => {
+        // The lifecycle order is fixed:
+        //   1. onSuspend() fires BEFORE renderer.suspend() (or no-op
+        //      in memoryMode) — the hooks are observation-only.
+        //   2. The editor body runs.
+        //   3. onRestore() fires regardless of success/failure.
+        //   4. onResume() fires AFTER renderer.resume() (or no-op in
+        //      memoryMode) — in the `finally` block.
+        const hooks = options?.hooks
         try {
           if (!internals.memoryMode) {
+            hooks?.onSuspend?.()
             renderer.suspend()
+          } else {
+            hooks?.onSuspend?.()
           }
           const value = await editor()
           if (typeof value === "string") {
@@ -505,6 +539,7 @@ export async function createChatShell(
               // idempotent
             }
           }
+          hooks?.onResume?.()
           composer.focus()
           renderer.requestRender()
         }
@@ -552,11 +587,11 @@ function computeGeometry(
 }
 
 function topBarContent(mode: LayoutMode): string {
-  if (mode === "compact") return " comuki·opentui-spike"
-  return "  comuki · opentui-spike (core) · focus-mode"
+  if (mode === "compact") return tr("chrome.titleCompact")
+  return tr("chrome.title")
 }
 
 function composerPlaceholder(mode: LayoutMode): string {
-  if (mode === "compact") return "ask ›"
-  return "Ask Comuki. Use / for actions or @ for knowledge."
+  if (mode === "compact") return tr("composer.placeholderCompact")
+  return tr("composer.placeholder")
 }

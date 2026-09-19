@@ -2,9 +2,9 @@ node_modules/
 *.log
 .DS_Store
 
-# Bun artefacts
-bun.lock
-bun.lockb
+# Bun lockfiles (bun.lock, bun.lockb) are intentionally
+# committed for spike-local reproducibility — see
+# `bun install --frozen-lockfile` in the gate.
 
 # Compiled standalone binary (the spike can rebuild it on demand
 # via `bun run build:standalone` — see ADR-0002 §Packaging).

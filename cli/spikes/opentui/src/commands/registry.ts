@@ -25,13 +25,8 @@
  * end — palette + keybindings through one surface.
  */
 import type { CliRenderer, KeyEvent, Renderable } from "@opentui/core"
-import {
-  Keymap,
-  type Command,
-  type CommandContext,
-  type CommandResult,
-  type Layer,
-} from "@opentui/keymap"
+import type { Keymap } from "@opentui/keymap"
+import { type Command, type CommandContext, type Layer } from "@opentui/keymap"
 import { registerDefaultKeys } from "@opentui/keymap/addons"
 import { createOpenTuiKeymap } from "@opentui/keymap/opentui"
 import {
@@ -40,6 +35,7 @@ import {
   type TestKeymapEvent,
   type TestKeymapTarget,
 } from "@opentui/keymap/testing"
+import { tr } from "../locales/index.js"
 
 export type SpikeCommandName =
   | "open-palette"
@@ -60,61 +56,33 @@ export interface CommandSpec {
   readonly description: string
 }
 
+/**
+ * Static command metadata. The `name` field is a stable programming
+ * handle (must NOT be translated) — the keymap dispatches by name
+ * regardless of locale. The `label` and `description` are pulled
+ * from the locale resource at construction time (the chat shell
+ * and the keymap both consult the locale resource for the same
+ * strings, so palette UI and binding help text never diverge).
+ */
+function cmd(
+  name: SpikeCommandName,
+  key: string,
+  labelKey: string,
+  descriptionKey: string
+): CommandSpec {
+  return { name, key, label: tr(labelKey), description: tr(descriptionKey) }
+}
+
 export const BUILTIN_COMMANDS: readonly CommandSpec[] = [
-  {
-    name: "open-palette",
-    label: "Open command palette",
-    key: "ctrl+p",
-    description: "Open the command palette (same registry as keystrokes).",
-  },
-  {
-    name: "close-palette",
-    label: "Close command palette",
-    key: "escape",
-    description: "Dismiss the palette overlay.",
-  },
-  {
-    name: "save-snippet",
-    label: "Save composer draft as snippet",
-    key: "ctrl+s",
-    description: "Persist the composer text into the snippet store.",
-  },
-  {
-    name: "approve-plan",
-    label: "Approve pending plan",
-    key: "ctrl+y",
-    description: "Send an approve decision for the awaiting-approval turn.",
-  },
-  {
-    name: "reject-plan",
-    label: "Reject pending plan",
-    key: "ctrl+x",
-    description: "Send a reject decision for the awaiting-approval turn.",
-  },
-  {
-    name: "queue-followup",
-    label: "Queue follow-up message",
-    key: "alt+enter",
-    description: "Submit and queue a follow-up while the current turn runs.",
-  },
-  {
-    name: "submit-turn",
-    label: "Submit turn",
-    key: "enter",
-    description: "Plain Enter submits the composer.",
-  },
-  {
-    name: "copy-last-answer",
-    label: "Copy last assistant answer",
-    key: "ctrl+shift+y",
-    description: "OSC 52 write of the most recent assistant text.",
-  },
-  {
-    name: "open-status",
-    label: "Open status panel",
-    key: "ctrl+o",
-    description: "Toggle the status overlay over the transcript viewport.",
-  },
+  cmd("open-palette", "ctrl+p", "cmd.open-palette.label", "cmd.open-palette.description"),
+  cmd("close-palette", "escape", "cmd.close-palette.label", "cmd.close-palette.description"),
+  cmd("save-snippet", "ctrl+s", "cmd.save-snippet.label", "cmd.save-snippet.description"),
+  cmd("approve-plan", "ctrl+y", "cmd.approve-plan.label", "cmd.approve-plan.description"),
+  cmd("reject-plan", "ctrl+x", "cmd.reject-plan.label", "cmd.reject-plan.description"),
+  cmd("queue-followup", "alt+enter", "cmd.queue-followup.label", "cmd.queue-followup.description"),
+  cmd("submit-turn", "enter", "cmd.submit-turn.label", "cmd.submit-turn.description"),
+  cmd("copy-last-answer", "ctrl+shift+y", "cmd.copy-last-answer.label", "cmd.copy-last-answer.description"),
+  cmd("open-status", "ctrl+o", "cmd.open-status.label", "cmd.open-status.description"),
 ]
 
 /** The shape of the payload handlers receive. */

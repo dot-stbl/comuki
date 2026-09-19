@@ -42,12 +42,13 @@ cli/spikes/opentui/
 ```sh
 cd cli/spikes/opentui
 
-# install
-bun install
+# install (use frozen lockfile for reproducibility)
+bun install --frozen-lockfile
 
 # spike-local gates (run from this directory)
 bun run typecheck
-bun run test:core        # 19 pass / 0 fail — the spike-local gate
+bun run lint
+bun run test:core        # unit + integration suite
 bun run test:core        # run twice — must stay green
 
 # evidence scripts

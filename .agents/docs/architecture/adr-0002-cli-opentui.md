@@ -84,7 +84,8 @@ keymap-движка. Это означает:
   unbound-key побочных эффектов.
 - **Domain/application код не имеет зависимости на OpenTUI или
   React.** Это инвариант, а не пожелание — `bun run test:core`
-  зелёный на 19/19, и `ChatShell` сам по себе не импортит React.
+  зелёный на 29/29 (29 pass / 0 fail / 511 expect), и `ChatShell`
+  сам по себе не импортит React.
 
 ### 2. Screen mode: alternate-screen (принято)
 
@@ -209,15 +210,23 @@ Spike содержит **единый renderer** (`createTestRenderer` один 
 
 ### 8. Тестовая стратегия (принято)
 
+Этот репо придерживается **integration-first** testing convention (см.
+`.agents/rules/coding/TESTING-RULES.md`: xUnit v3 + Shouldly +
+NSubstitute + Testcontainers, integration-first pyramid, MTP не
+VSTest, coverage floor 70%). Для spike-local unit/integration suite
+это означает:
+
 | Уровень | Что проверяет | Где |
 |---|---|---|
-| Unit (Core) | command/keymap shared surface, draft round-trip, suspend cleanup, layout invariant | `tests/commands.test.ts`, `tests/suspend.test.ts` |
+| Unit + integration (Core) | command/keymap shared surface, draft round-trip, suspend cleanup, layout invariant, fixture cardinality, i18n parity | `tests/commands.test.ts`, `tests/suspend.test.ts`, `tests/fixture-cardinality.test.ts`, `tests/i18n.test.ts` |
 | Layout (Core) | chrome + transcript + composer + approval card in real `captureCharFrame` | `tests/resize.test.ts`, `tests/approval.test.ts` |
 | Evidence (Core) | cold-start, fixture flatten, idle memory, native stats, standalone build size/hash | `scripts/measure-*.ts`, `scripts/build-standalone.ts` |
 
 `bun run test:core` — это **spike-local gate**, не CI gate (CI
 ещё не интегрирован для этой директории). React тестов нет, и они не
 требуются до тех пор, пока решение `React deferred` остаётся в силе.
+Команда gate: `bun install --frozen-lockfile; bun run typecheck;
+bun run lint; bun run test:core` (×2 для стабильности).
 
 ### 9. Migration from Ink + React 18 (принято как strangler, не trivial)
 
@@ -293,18 +302,19 @@ Spike содержит **единый renderer** (`createTestRenderer` один 
 |---|---|---|
 | Cold start + first paint (80x24) | **94 ms** total (renderer 6 ms + paint 88 ms) | `bun run measure:cold-start` (одна проба, не benchmark) |
 | First-frame byte size | **1 944 bytes** (25 split rows in the buffer, canonical 24-row canvas with trailing line) | same |
-| Fixture build (1 000 entries) | **1.01 ms**, 1 091 entries, 1 460 flattened rows | `bun run measure:fixture` |
-| Fixture flatten at width 80 (focus-mode) | **0.43 ms** | same |
+| Fixture build (1 000 entries) | **0.94 ms** build, **1 000 entries** (audit fix: cardinality now exact, was 1 091 with extra `code` rows), **1 360 flattened rows** | `bun run measure:fixture` |
+| Fixture flatten at width 80 (focus-mode) | **0.71 ms** | same |
 | Idle RSS delta over **5 s** window | **+55 MB** (process delta — spike **не** может изолировать причины; OpenTUI native test renderer, Bun runtime, и тестовый overhead могут всё вносить вклад) | `bun run measure:idle-memory` |
 | Idle heap after 5 s | **14 MB** (тот же caveat — spike не может изолировать компоненты; наблюдаемое process-level значение) | same |
 | Native frame stats (5 frames after 3 setDraft cycles) | `nativeLastFrameTime: 31814`, `nativeAverageFrameTime: 26727.4`, `nativeFrameCount: 5`, `cellsUpdated: 6`, `averageCellsUpdated: 396`, `nativeRenderTime: 8`, `nativeStdoutWriteTime: 0` (raw integer values; units **not** verified by API field names) | `bun run measure:native-stats` |
-| Standalone `comuki-opentui-spike.exe` size | **120.63 MB** (126 489 600 bytes) | `bun run measure:standalone` |
-| Standalone sha256 | `480fedc09b95d6c5171073c697d0617e17e8ff1c8b60b57c31db557f6e9376c4` | same |
+| Standalone `comuki-opentui-spike.exe` size | **120.64 MB** (126 496 768 bytes) | `bun run measure:standalone` |
+| Standalone sha256 | `860e0a8430f1dec9c82e847138f49cf8df3fa9ace0b75a7803a58db2a11e6818` | same |
 | Bun version | 1.3.10 | same |
 | Platform / arch | win32 / x64 | same |
 | Smoke-load (evidence that the public surface resolves) | BoxRenderable / InputRenderable / ScrollBoxRenderable / TextRenderable / SelectRenderable / TextareaRenderable / createCliRenderer — **все import'ятся** | `bun run smoke:load` (smoke, **не** behavioral proof) |
-| `bun run test:core` × 2 | **19 pass / 0 fail / 75 expect** per run, no listener leaks, no native-allocation failures | manual |
-| `bun run typecheck` | exit 0 | manual |
+| `bun run test:core` × 2 | **29 pass / 0 fail / 511 expect** per run, no listener leaks, no native-allocation failures (added `i18n.test.ts` + `fixture-cardinality.test.ts` after audit fix) | manual |
+| `bun run typecheck` | exit 0 | `bunx tsc --noEmit -p .` |
+| `bun run lint` | exit 0 (zero warnings) | `bun run lint` |
 
 > Источник всех measurement scripts: [`cli/spikes/opentui/scripts/`](../../../cli/spikes/opentui/scripts/).
 > Они остаются в репозитории — перезапускаемы в любой момент на этом
@@ -415,7 +425,7 @@ Bubble Tea (третий язык/toolchain, C# остаётся), плюс ещ
 ## Последствия
 
 **Плюсы (на текущей ОС / стеке):**
-- честные 19/19 тестов с двумя последовательными прогонами без
+- честные 29/29 тестов с двумя последовательными прогонами без
   listener-leak и native-allocation ошибок;
 - structural-устранение пяти documented Ink-шимов
   (Home/End, mouse, clipboard, custom editor) — ADR не претендует
@@ -447,8 +457,8 @@ Bubble Tea (третий язык/toolchain, C# остаётся), плюс ещ
 - [`cli/spikes/opentui/README.md`](../../../cli/spikes/opentui/README.md) —
   spike contract: throwaway, не production dependency.
 - [`.agents/rules/coding/TESTING-RULES.md`](../../rules/coding/TESTING-RULES.md) —
-  testing convention в этом репо (unit-first, MTP не VSTest, coverage
-  floor 70%).
+  testing convention в этом репо (integration-first, xUnit v3
+  unit/integration pyramid, MTP не VSTest, coverage floor 70%).
 - [`.agents/rules/coding/frontend-construct-rules.md`](../../rules/coding/frontend-construct-rules.md) —
   React conventions (для справки при будущем re-open React-пути).
 - [`.agents/docs/architecture/comuki-stack.md`](./comuki-stack.md) —

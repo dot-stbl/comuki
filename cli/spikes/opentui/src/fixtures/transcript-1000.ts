@@ -62,8 +62,22 @@ function pick<T>(arr: readonly T[], i: number): T {
 }
 
 export function buildTranscript(count = 1_000): readonly Entry[] {
+  // The fixture produces **exactly** `count` final entries: each of
+  // the `count` outer iterations emits exactly one entry. Every
+  // 11th iteration emits a `code` entry INSTEAD of the regular user
+  // / assistant / tool / status entry — net cardinality stays at
+  // `count` and code blocks are still represented in the fixture.
   const out: Entry[] = []
   for (let i = 0; i < count; i++) {
+    if (i % 11 === 0) {
+      out.push({
+        kind: "code",
+        id: 1000 + i,
+        language: pick(LANGUAGES, i),
+        body: `// code #${i}\nconst x = ${i};\nexport { x };`,
+      })
+      continue
+    }
     const kindRoll = i % 7
     if (kindRoll === 0 || kindRoll === 3) {
       out.push({ kind: "user", id: i, text: pick(PHRASES, i) })
@@ -87,14 +101,6 @@ export function buildTranscript(count = 1_000): readonly Entry[] {
       })
     } else {
       out.push({ kind: "status", id: i, text: pick(STATUSES, i) })
-    }
-    if (i % 11 === 0) {
-      out.push({
-        kind: "code",
-        id: 1000 + i,
-        language: pick(LANGUAGES, i),
-        body: `// code #${i}\nconst x = ${i};\nexport { x };`,
-      })
     }
   }
   return out

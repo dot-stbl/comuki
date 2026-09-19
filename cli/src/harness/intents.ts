@@ -170,6 +170,10 @@ export function translateIntent(
     case "clear-draft":
       return [{ type: "draft-cleared", sessionId: intent.sessionId }]
     default:
-      return []
+      return assertNever(intent)
   }
+}
+
+function assertNever(value: never): never {
+  throw new Error(`unhandled UserIntent: ${JSON.stringify(value)}`)
 }

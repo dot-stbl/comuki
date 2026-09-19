@@ -108,7 +108,11 @@ describe("determinism and duplicate rejection", () => {
     }
 
     await until(() => fake.conversation.submits.length > 0)
-    await new Promise((resolve) => setTimeout(resolve, 20))
+    // Give a would-be duplicate several macrotask turns to land — a
+    // fixed sleep would be timing-dependent, this bounds the wait.
+    for (let turn = 0; turn < 5; turn += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 1))
+    }
     expect(fake.conversation.submits).toHaveLength(1)
     fake.conversation.submits[0]?.resolve({
       messages: [],

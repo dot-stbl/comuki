@@ -496,11 +496,14 @@ export class ComukiClient {
 
   // -- chat ----------------------------------------------------------------
 
-  createSession(request: {
-    projectId?: string
-    title?: string
-  }): Promise<ChatSessionView> {
-    return this.request("POST", "/api/v1/chat/sessions", request)
+  createSession(
+    request: {
+      projectId?: string
+      title?: string
+    },
+    signal?: AbortSignal
+  ): Promise<ChatSessionView> {
+    return this.request("POST", "/api/v1/chat/sessions", request, signal)
   }
 
   async postMessage(
@@ -528,11 +531,14 @@ export class ComukiClient {
   listMessages(
     sessionId: string,
     page = 1,
-    pageSize = 50
+    pageSize = 50,
+    signal?: AbortSignal
   ): Promise<ChatMessagesPageView> {
     return this.request(
       "GET",
-      `/api/v1/chat/sessions/${sessionId}/messages?page=${page}&pageSize=${pageSize}`
+      `/api/v1/chat/sessions/${sessionId}/messages?page=${page}&pageSize=${pageSize}`,
+      undefined,
+      signal
     )
   }
 

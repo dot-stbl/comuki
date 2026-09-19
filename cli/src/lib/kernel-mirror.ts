@@ -70,7 +70,11 @@ export function emptyMirrorMemory(): MirrorMemory {
   return { known: new Map(), bindings: new Map() }
 }
 
-function messageBlock(message: HarnessMessage, key: string): ChatBlock {
+function messageBlock(
+  message: HarnessMessage,
+  key: string,
+  now: () => number
+): ChatBlock {
   return {
     kind: "message",
     key,
@@ -82,7 +86,8 @@ function messageBlock(message: HarnessMessage, key: string): ChatBlock {
         toolName: null,
         parts: null,
         meta: null,
-        createdAt: new Date(message.createdAtUnixMs || Date.now()).toISOString(),
+        // `??` (not `||`): a zero timestamp is a value, not "missing".
+        createdAt: new Date(message.createdAtUnixMs ?? now()).toISOString(),
       },
   }
 }
@@ -110,11 +115,22 @@ function turnStatusOf(
   }
 }
 
+export interface MirrorOptions {
+  /**
+   * Clock for synthesized message timestamps. The mirror is pure:
+   * the clock is injected so tests get deterministic output. Defaults
+   * to `Date.now` at the call site's discretion.
+   */
+  readonly now?: () => number
+}
+
 export function mirrorKernelSnapshot(
   tabs: SessionsState,
   state: HarnessState,
-  memory: MirrorMemory
+  memory: MirrorMemory,
+  options: MirrorOptions = {}
 ): MirrorResult {
+  const now = options.now ?? (() => Date.now())
   let sessions = tabs.sessions
   let changed = false
   const known = new Map(memory.known)
@@ -244,7 +260,11 @@ export function mirrorKernelSnapshot(
         blocks: [
           ...updated.blocks,
           ...newMessages.map((message, index) =>
-            messageBlock(message, `${updated.id}-k${startIndex + index}`)
+            messageBlock(
+              message,
+              `${updated.id}-k${startIndex + index}`,
+              now
+            )
           ),
         ],
       }
@@ -280,9 +300,10 @@ export function mirrorKernelSnapshot(
   // -- active tab ------------------------------------------------------------
   let activeIndex = sessions.length === 0 ? -1 : tabs.activeIndex
   if (state.activeSessionId !== null) {
-    const wantedLegacyId =
-      bindings.get(state.activeSessionId) ?? state.activeSessionId
-    const index = sessions.findIndex((tab) => tab.id === wantedLegacyId)
+    const index = sessions.findIndex(
+      (tab) =>
+        tab.id === (bindings.get(state.activeSessionId ?? "") ?? state.activeSessionId)
+    )
     if (index >= 0 && index !== activeIndex) {
       activeIndex = index
       changed = true

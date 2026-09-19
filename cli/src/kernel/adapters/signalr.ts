@@ -51,7 +51,17 @@ export class SignalRKernelTransport implements EventFeedPort, RealtimePort {
   constructor(private readonly options: SignalRFeedOptions) {}
 
   messages(signal: AbortSignal): AsyncIterable<FeedMessage> {
-    void this.start(signal)
+    void this.start(signal).catch((error: unknown) => {
+      // A failed hub start must not leave the iterator silent — surface
+      // it as a feed message so the kernel can degrade visibly.
+      this.emit({
+        kind: "unknown",
+        receivedAtUnixMs: Date.now(),
+        reason: `feed start failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      })
+    })
     return {
       [Symbol.asyncIterator]: () => ({
         next: (): Promise<IteratorResult<FeedMessage>> =>
@@ -181,9 +191,8 @@ export class SignalRKernelTransport implements EventFeedPort, RealtimePort {
 
   async setSubscriptions(
     sessionIds: readonly SessionId[],
-    signal: AbortSignal
+    _signal: AbortSignal
   ): Promise<void> {
-    void signal
     const wanted = new Set(sessionIds.map((id) => String(id)))
     const connection = this.connection
     if (connection) {

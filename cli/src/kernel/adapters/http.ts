@@ -58,11 +58,13 @@ export class HttpConversationPort implements ConversationPort {
     request: { projectId: ProjectId | null; title: string },
     signal: AbortSignal
   ): Promise<OpenedConversation> {
-    void signal
-    const created = await this.client().createSession({
-      projectId: request.projectId ?? undefined,
-      ...(request.title.length > 0 ? { title: request.title } : {}),
-    })
+    const created = await this.client().createSession(
+      {
+        projectId: request.projectId ?? undefined,
+        ...(request.title.length > 0 ? { title: request.title } : {}),
+      },
+      signal
+    )
     return {
       sessionId: sessionId(created.id),
       projectId: created.projectId ? projectId(created.projectId) : null,
@@ -111,14 +113,23 @@ export class HttpConversationPort implements ConversationPort {
     sessionId: SessionId,
     signal: AbortSignal
   ): Promise<readonly HarnessMessage[]> {
-    void signal
     const client = this.client()
-    const first = await client.listMessages(sessionId, 1, TRANSCRIPT_PAGE_SIZE)
+    const first = await client.listMessages(
+      sessionId,
+      1,
+      TRANSCRIPT_PAGE_SIZE,
+      signal
+    )
     const lastPage = Math.max(1, Math.ceil(first.total / TRANSCRIPT_PAGE_SIZE))
     const page =
       lastPage === 1
         ? first
-        : await client.listMessages(sessionId, lastPage, TRANSCRIPT_PAGE_SIZE)
+        : await client.listMessages(
+            sessionId,
+            lastPage,
+            TRANSCRIPT_PAGE_SIZE,
+            signal
+          )
     return page.items.map(harnessMessageFromView)
   }
 }
@@ -156,8 +167,10 @@ export class JsonWorkspaceStore implements WorkspaceStore {
     return readJsonFile(this.path)
   }
 
-  async write(document: WorkspaceDocument, signal: AbortSignal): Promise<void> {
-    void signal
+  async write(
+    document: WorkspaceDocument,
+    _signal: AbortSignal
+  ): Promise<void> {
     await writeJsonFile(this.path, document)
   }
 }

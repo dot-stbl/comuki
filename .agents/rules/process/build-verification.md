@@ -29,6 +29,15 @@ CI (`ci.yml`) — единственный автоматический гейт
 | `test backend (<project>)` | `dotnet run --project tests/Comuki.Architecture.Tests -c Debug` и `dotnet run --project tests/unit/Comuki.Host.Translator.Unit.StreamJson -c Debug` |
 | `test backend (integration)` | `dotnet run --project <project> -c Debug` по каждой папке `tests/integration/*/`, кроме `Comuki.Host.Testing` (общая харнесс-библиотека без entry point) |
 | `build frontend (dashboard)` | из `dashboard/`: `bun install` → `bun run typecheck` → `bun run lint` → `bun run test` |
+| `build agents (ts sdks)` | из `agents/`: `bun install` → `bun run build` (экспорт типов SDK) |
+
+**CLI (`cli/`)** — отдельный TypeScript-пакет (Bun + Ink), не входящий в
+CI-гейт на момент написания (см. issue #108). Agent contract для работы в
+`cli/`: из `cli/` — `bun install` → `bun run typecheck` → `bun run test` →
+`bun run build`. Известный baseline: `bun run test` падает на
+`cli/spikes/opentui/tests/*` (5 fail + 5 errors) из-за отсутствующих
+spike-депов в корневом workspace — это pre-existing и не связано с
+продуктовым кодом `cli/src/`.
 
 Всё из этой таблицы **блокирует**. Ни один шаг здесь не «рекомендуется»:
 `bun run lint` (eslint) падает — PR не идёт, ровно как и `dotnet build`.

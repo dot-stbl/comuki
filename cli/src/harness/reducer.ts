@@ -1,12 +1,14 @@
-import type { HarnessEffect, PersistedHarnessSessions } from "./effects"
+import type { HarnessEffect } from "./effects"
 import type { HarnessEvent } from "./events"
 import type {
   HarnessSession,
   HarnessState,
   SessionId,
   SessionKey,
+  TrackedCommand,
   TurnRequestId,
 } from "./state"
+import { workspaceDocumentFromState } from "./workspace"
 
 export interface HarnessTransition {
   readonly state: HarnessState
@@ -30,6 +32,9 @@ export function reduceHarness(
         transcriptLoad: { kind: "not-loaded" },
         transcript: [],
         queue: [],
+        history: [],
+        lastUserMessage: null,
+        pendingPlan: null,
       }
       return withPersistence({
         ...state,
@@ -57,6 +62,18 @@ export function reduceHarness(
           state.activeSessionId === event.pendingSessionId
             ? event.sessionId
             : state.activeSessionId,
+        // The pending id dies at adoption — tracked commands and
+        // drafts follow the session to its remote id (one-directional).
+        drafts: state.drafts.map((draft) =>
+          draft.sessionId === event.pendingSessionId
+            ? { ...draft, sessionId: event.sessionId }
+            : draft
+        ),
+        outbound: state.outbound.map((command) =>
+          command.sessionId === event.pendingSessionId
+            ? { ...command, sessionId: event.sessionId }
+            : command
+        ),
       }
       const queued = adopted?.queue[0]
       return {
@@ -101,7 +118,12 @@ export function reduceHarness(
         state.activeSessionId === event.sessionId
           ? sessionKey(sessions[Math.min(closedIndex, sessions.length - 1)]) ?? null
           : state.activeSessionId
-      const nextState = { ...state, sessions, activeSessionId }
+      const nextState = {
+        ...state,
+        sessions,
+        activeSessionId,
+        drafts: state.drafts.filter((draft) => draft.sessionId !== event.sessionId),
+      }
       return {
         state: nextState,
         effects: [persistEffect(nextState), subscriptionsEffect(nextState)],
@@ -125,13 +147,61 @@ export function reduceHarness(
       if (!session) {
         return unchanged(state)
       }
-      const nextState = mapSession(state, event.sessionId, (current) => ({
-        ...current,
-        queue: [
-          ...current.queue,
-          { requestId: event.requestId, message: event.message },
-        ],
-      }))
+      const echoText = event.echoText
+      const historyText = event.historyText ?? event.echoText
+      // Auto-title from the first message — a manual rename wins.
+      const title =
+        session.identity.kind === "pending" &&
+        !session.renamed &&
+        session.title === "" &&
+        event.titleHint
+          ? event.titleHint
+          : session.title
+      const queuedMessage: HarnessSession["queue"][number] = {
+        requestId: event.requestId,
+        message: event.message,
+      }
+      const updatedSessions = state.sessions.map((candidate) =>
+        sessionKey(candidate) === event.sessionId
+          ? {
+              ...candidate,
+              title,
+              history:
+                historyText !== undefined && historyText.length > 0
+                  ? [...(candidate.history ?? []), historyText]
+                  : candidate.history,
+              lastUserMessage:
+                echoText !== undefined && echoText.length > 0
+                  ? echoText
+                  : candidate.lastUserMessage,
+              transcript:
+                echoText !== undefined && echoText.length > 0
+                  ? [
+                      ...candidate.transcript,
+                      {
+                        id: `echo-${event.requestId}`,
+                        role: "user" as const,
+                        content: echoText,
+                        createdAtUnixMs: 0,
+                      },
+                    ]
+                  : candidate.transcript,
+              queue: [...candidate.queue, queuedMessage],
+            }
+          : candidate
+      )
+      const nextState: HarnessState = {
+        ...state,
+        sessions: updatedSessions,
+        outbound: trackCommand(state.outbound, {
+          commandId: event.commandId,
+          requestId: event.requestId,
+          sessionId: event.sessionId,
+          kind: "turn",
+          message: event.message,
+          state: "queued",
+        }),
+      }
       if (session.queue.length > 0 || session.turn.kind !== "idle") {
         return { state: nextState, effects: [] }
       }
@@ -143,7 +213,7 @@ export function reduceHarness(
               type: "create-remote-session",
               pendingSessionId: session.identity.id,
               projectId: session.projectId,
-              title: session.title,
+              title,
               requestId: event.requestId,
             },
           ],
@@ -152,7 +222,7 @@ export function reduceHarness(
       return {
         state: nextState,
         effects: [
-          submitEffect(session.identity.id, event.requestId, event.message),
+          submitEffect(session.identity.id, event.requestId, event.message, event.commandId),
         ],
       }
     }
@@ -187,24 +257,111 @@ export function reduceHarness(
               }
             : session.turn,
       }))
-    case "turn-completed":
+    case "turn-completed": {
+      const session = findSession(state, event.sessionId)
+      // Stale-event rejection: a completion for a request that is not
+      // this session's in-flight turn must not clobber state or
+      // duplicate transcript entries.
+      if (
+        session?.turn.kind === "thinking" &&
+        session.turn.requestId !== event.requestId
+      ) {
+        return unchanged(state)
+      }
       return completeTurn(
-        state,
+        markCommandSettled(state, event.sessionId, event.requestId),
         event.sessionId,
         event.requestId,
         event.messages,
-        event.awaitingApproval
+        event.awaitingApproval,
+        event.pendingPlan
       )
-    case "turn-failed":
-      return updateSession(state, event.sessionId, (session) => ({
-        ...session,
-        turn: {
-          kind: "failed",
-          requestId: event.requestId,
-          error: event.error,
-        },
-        unread: state.activeSessionId !== event.sessionId,
-      }))
+    }
+    case "turn-failed": {
+      const session = findSession(state, event.sessionId)
+      if (
+        session?.turn.kind === "thinking" &&
+        session.turn.requestId !== event.requestId
+      ) {
+        return unchanged(state)
+      }
+      return updateSession(
+        markCommandSettled(state, event.sessionId, event.requestId),
+        event.sessionId,
+        (current) => ({
+          ...current,
+          turn: {
+            kind: "failed",
+            requestId: event.requestId,
+            error: event.error,
+          },
+          unread: state.activeSessionId !== event.sessionId,
+        })
+      )
+    }
+    case "turn-cancel-requested":
+      return {
+        state: mapSession(state, event.sessionId, (session) => ({
+          ...session,
+          // The client stops listening; the server keeps thinking.
+          turn:
+            session.turn.kind === "thinking" &&
+            session.turn.requestId === event.requestId
+              ? { kind: "idle" as const }
+              : session.turn,
+        })),
+        effects: [
+          {
+            type: "cancel-turn",
+            sessionId: event.sessionId,
+            requestId: event.requestId,
+            commandId: event.commandId,
+          },
+        ],
+      }
+    case "approval-decision-sent": {
+      const session = findSession(state, event.sessionId)
+      // Guarded by awaiting-approval, not by request id: the decision
+      // is a new wire operation with its own request id, deciding the
+      // turn that is currently awaiting.
+      if (!session || session.turn.kind !== "awaiting-approval") {
+        return unchanged(state)
+      }
+      return {
+        state: mapSession(
+          {
+            ...state,
+            outbound: trackCommand(state.outbound, {
+              commandId: event.commandId,
+              requestId: event.requestId,
+              sessionId: event.sessionId,
+              kind: "approval",
+              message: event.approved ? "approve" : "reject",
+              state: "in-flight",
+            }),
+          },
+          event.sessionId,
+          (current) => ({
+            ...current,
+            turn: {
+              kind: "thinking",
+              requestId: event.requestId,
+              accumulatedText: "",
+            },
+          })
+        ),
+        effects: [
+          {
+            type: "decide-approval",
+            sessionId: event.sessionId,
+            requestId: event.requestId,
+            approved: event.approved,
+            reason: event.reason,
+            commandId: event.commandId,
+          },
+        ],
+      }
+    }
     case "approval-resolved":
       return continueQueue(
         mapSession(state, event.sessionId, (session) => ({
@@ -233,6 +390,39 @@ export function reduceHarness(
         ...session,
         transcriptLoad: { kind: "failed", error: event.error },
       }))
+    case "draft-saved": {
+      const rest = state.drafts.filter(
+        (draft) => draft.sessionId !== event.sessionId
+      )
+      return stateOnly({
+        ...state,
+        drafts: [
+          ...rest,
+          {
+            sessionId: event.sessionId,
+            text: event.text,
+            updatedAtUnixMs: event.savedAtUnixMs,
+          },
+        ],
+      })
+    }
+    case "draft-cleared":
+      return stateOnly({
+        ...state,
+        drafts: state.drafts.filter(
+          (draft) => draft.sessionId !== event.sessionId
+        ),
+      })
+    case "cursor-advanced": {
+      const current = state.cursors[event.sessionId] ?? 0
+      if (event.lastSeenAtUnixMs <= current) {
+        return unchanged(state)
+      }
+      return stateOnly({
+        ...state,
+        cursors: { ...state.cursors, [event.sessionId]: event.lastSeenAtUnixMs },
+      })
+    }
     case "sessions-persisted":
     case "sessions-persist-failed":
     case "subscriptions-set":
@@ -241,7 +431,12 @@ export function reduceHarness(
     case "connection-started":
       return stateOnly({ ...state, connection: { kind: "connecting" } })
     case "connection-established":
-      return stateOnly({ ...state, connection: { kind: "connected" } })
+      // Reconnect reconciliation: a reconnect gets a fresh connection
+      // id and loses every chat group — re-subscribe to the open set.
+      return {
+        state: { ...state, connection: { kind: "connected" } },
+        effects: [subscriptionsEffect(state)],
+      }
     case "connection-lost":
       return stateOnly({
         ...state,
@@ -294,7 +489,8 @@ function completeTurn(
   sessionId: SessionId,
   requestId: TurnRequestId,
   messages: HarnessSession["transcript"],
-  awaitingApproval: boolean
+  awaitingApproval: boolean,
+  pendingPlan?: unknown
 ): HarnessTransition {
   const nextState = mapSession(state, sessionId, (session) => ({
     ...session,
@@ -303,6 +499,7 @@ function completeTurn(
       : { kind: "idle" },
     transcript: [...session.transcript, ...messages],
     unread: state.activeSessionId !== sessionId,
+    pendingPlan: awaitingApproval ? (pendingPlan ?? null) : null,
   }))
   return awaitingApproval
     ? { state: nextState, effects: [] }
@@ -319,6 +516,58 @@ function continueQueue(
     effects: queued
       ? [submitEffect(sessionId, queued.requestId, queued.message)]
       : [],
+  }
+}
+
+function trackCommand(
+  outbound: readonly TrackedCommand[],
+  command: {
+    commandId?: string
+    requestId: TurnRequestId
+    sessionId: SessionKey
+    kind: "turn" | "approval"
+    message: string
+    state: "queued" | "in-flight" | "settled"
+  }
+): readonly TrackedCommand[] {
+  if (!command.commandId) {
+    return outbound
+  }
+  if (outbound.some((existing) => existing.commandId === command.commandId)) {
+    return outbound
+  }
+  return [
+    ...outbound,
+    {
+      commandId: command.commandId,
+      requestId: command.requestId,
+      sessionId: command.sessionId,
+      kind: command.kind,
+      message: command.message,
+      state: command.state,
+    },
+  ]
+}
+
+function markCommandSettled(
+  state: HarnessState,
+  sessionId: SessionKey,
+  requestId: TurnRequestId
+): HarnessState {
+  const tracked = state.outbound.some(
+    (command) =>
+      command.sessionId === sessionId && command.requestId === requestId
+  )
+  if (!tracked) {
+    return state
+  }
+  return {
+    ...state,
+    outbound: state.outbound.map((command) =>
+      command.sessionId === sessionId && command.requestId === requestId
+        ? { ...command, state: "settled" as const }
+        : command
+    ),
   }
 }
 
@@ -359,11 +608,7 @@ function withPersistence(state: HarnessState): HarnessTransition {
 }
 
 function persistEffect(state: HarnessState): HarnessEffect {
-  const value: PersistedHarnessSessions = {
-    activeSessionId: state.activeSessionId,
-    sessions: state.sessions,
-  }
-  return { type: "persist-sessions", value }
+  return { type: "persist-sessions", value: workspaceDocumentFromState(state) }
 }
 
 function subscriptionsEffect(state: HarnessState): HarnessEffect {
@@ -378,9 +623,10 @@ function subscriptionsEffect(state: HarnessState): HarnessEffect {
 function submitEffect(
   sessionId: SessionId,
   requestId: TurnRequestId,
-  message: string
+  message: string,
+  commandId?: string
 ): HarnessEffect {
-  return { type: "submit-turn", sessionId, requestId, message }
+  return { type: "submit-turn", sessionId, requestId, message, commandId }
 }
 
 function stateOnly(state: HarnessState): HarnessTransition {

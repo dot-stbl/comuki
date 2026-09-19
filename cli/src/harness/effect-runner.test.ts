@@ -12,6 +12,7 @@ import {
   sessionId,
   turnRequestId,
 } from "./state"
+import { WORKSPACE_DOCUMENT_VERSION } from "./workspace"
 
 const remoteId = sessionId("session-1")
 const pendingId = pendingSessionId("local-1")
@@ -21,8 +22,8 @@ function fakePorts(
   overrides: Partial<HarnessEffectPorts> = {}
 ): HarnessEffectPorts {
   return {
-    api: {
-      async createSession() {
+    conversation: {
+      async openConversation() {
         return {
           sessionId: remoteId,
           projectId: projectId("project-1"),
@@ -33,24 +34,23 @@ function fakePorts(
         return { messages: [], awaitingApproval: false }
       },
       async cancelTurn() {},
-      async loadTranscript() {
+      async loadConversation() {
         return []
       },
     },
-    auth: {
-      async status() {
-        return "authenticated"
+    approval: {
+      async decide() {
+        return { messages: [], awaitingApproval: false }
       },
     },
     realtime: {
       async setSubscriptions() {},
-      async reconnect() {},
     },
-    sessions: {
+    workspace: {
+      async read() {
+        return null
+      },
       async write() {},
-    },
-    terminal: {
-      async setTitle() {},
     },
     ...overrides,
   }
@@ -68,7 +68,10 @@ describe("runEffect", () => {
   it("persists sessions and dispatches completion", async () => {
     const writes: string[] = []
     const ports = fakePorts({
-      sessions: {
+      workspace: {
+        async read() {
+          return null
+        },
         async write(value, signal) {
           expect(signal.aborted).toBe(false)
           writes.push(String(value.activeSessionId))
@@ -80,14 +83,21 @@ describe("runEffect", () => {
     await runEffect(
       {
         type: "persist-sessions",
-        value: { activeSessionId: remoteId, sessions: [] },
+        value: {
+          version: WORKSPACE_DOCUMENT_VERSION,
+          activeSessionId: remoteId,
+          sessions: [],
+          drafts: [],
+          cursors: {},
+          outbound: [],
+        },
       },
       ports,
       collected.dispatch,
       new AbortController().signal
     )
 
-    expect(writes).toEqual([remoteId])
+    expect(writes).toEqual(["session-1"])
     expect(collected.events).toEqual([{ type: "sessions-persisted" }])
   })
 
@@ -129,11 +139,12 @@ describe("runEffect", () => {
         message: "Hello",
       },
       fakePorts({
-        api: {
-          ...fakePorts().api,
-          async submitTurn(session, message, signal) {
+        conversation: {
+          ...fakePorts().conversation,
+          async submitTurn(session, message, commandId, signal) {
             expect(session).toBe(remoteId)
             expect(message).toBe("Hello")
+            expect(commandId).toBeUndefined()
             expect(signal.aborted).toBe(false)
             return {
               messages: [
@@ -170,8 +181,8 @@ describe("runEffect", () => {
         message: "Hello",
       },
       fakePorts({
-        api: {
-          ...fakePorts().api,
+        conversation: {
+          ...fakePorts().conversation,
           async submitTurn() {
             throw new ComukiApiError(503, "provider.unavailable", "Unavailable")
           },
@@ -207,7 +218,6 @@ describe("runEffect", () => {
             expect(signal.aborted).toBe(false)
             mutableSubscriptions.push([...sessionIds])
           },
-          async reconnect() {},
         },
       }),
       collected.dispatch,
@@ -217,6 +227,45 @@ describe("runEffect", () => {
     expect(subscriptions).toEqual([[remoteId]])
     expect(collected.events).toEqual([
       { type: "subscriptions-set", sessionIds: [remoteId] },
+    ])
+  })
+
+  it("completes an approval decision through the approval port", async () => {
+    const collected = eventCollector()
+
+    await runEffect(
+      {
+        type: "decide-approval",
+        sessionId: remoteId,
+        requestId,
+        approved: false,
+        reason: "too risky",
+      },
+      fakePorts({
+        approval: {
+          async decide(session, approved, reason, commandId, signal) {
+            expect(session).toBe(remoteId)
+            expect(approved).toBe(false)
+            expect(reason).toBe("too risky")
+            expect(commandId).toBeUndefined()
+            expect(signal.aborted).toBe(false)
+            return { messages: [], awaitingApproval: false }
+          },
+        },
+      }),
+      collected.dispatch,
+      new AbortController().signal
+    )
+
+    expect(collected.events).toEqual([
+      {
+        type: "turn-completed",
+        sessionId: remoteId,
+        requestId,
+        messages: [],
+        awaitingApproval: false,
+        pendingPlan: undefined,
+      },
     ])
   })
 })

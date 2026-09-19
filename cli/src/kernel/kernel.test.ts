@@ -5,9 +5,12 @@ import { sessionId, pendingSessionId, turnRequestId } from "../harness/state"
 
 const remoteId = sessionId("server-1")
 
+/** Max polling attempts × 1ms tick ≈ 200ms upper bound per wait. */
+const MAX_POLL_ATTEMPTS = 200
+
 /** Waits for a condition on the microtask/macrotask boundary. */
 async function until(predicate: () => boolean): Promise<void> {
-  for (let attempt = 0; attempt < 200 && !predicate(); attempt += 1) {
+  for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS && !predicate(); attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 1))
   }
   expect(predicate()).toBeTrue()

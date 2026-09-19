@@ -64,6 +64,12 @@ export interface ClientKernelOptions {
   readonly now?: () => number
   /** Test observability — invoked for every effect as it starts. */
   readonly onEffect?: (effect: HarnessEffect) => void
+  /**
+   * Operational degradation signal. The kernel never crashes on a dead
+   * feed, an unreadable workspace or a defective port — it degrades and
+   * reports here. Optional; production hosts can wire a status line.
+   */
+  readonly onDegrade?: (reason: string) => void
 }
 
 export function createClientKernel(options: ClientKernelOptions): ClientKernel {
@@ -153,9 +159,14 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
         inFlight.add(key)
         trackStart()
         runEffect(effect, ports, acceptEvent, controller.signal)
-          .catch(() => {
+          .catch((error: unknown) => {
             // runEffect normalizes its own failures into events; this
             // guards only against defects in the ports themselves.
+            options.onDegrade?.(
+              `port defect in ${effect.type}: ${
+                error instanceof Error ? error.message : String(error)
+              }`
+            )
           })
           .finally(() => {
             inFlight.delete(key)
@@ -169,7 +180,13 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
         trackStart()
         chain = chain
           .then(() => runEffect(effect, ports, acceptEvent, controller.signal))
-          .catch(() => {})
+          .catch((error: unknown) => {
+            options.onDegrade?.(
+              `${effect.type} failed: ${
+                error instanceof Error ? error.message : String(error)
+              }`
+            )
+          })
           .finally(trackEnd)
         continue
       }
@@ -304,9 +321,14 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
         }
         applyEvents(feedMessageToEvents(message))
       }
-    } catch {
+    } catch (error: unknown) {
       // The feed is best-effort by contract; a dead stream degrades to
       // REST-only and must never take the kernel down.
+      options.onDegrade?.(
+        `feed died: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      )
     }
   }
 
@@ -345,8 +367,13 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
           state = applyWorkspaceToState(state, workspace)
           commit()
         })
-        .catch(() => {
+        .catch((error: unknown) => {
           // An unreadable workspace degrades to an empty one.
+          options.onDegrade?.(
+            `workspace unreadable: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          )
         })
         .finally(trackEnd)
       void consumeFeed()

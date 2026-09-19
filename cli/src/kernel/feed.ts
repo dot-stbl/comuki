@@ -29,6 +29,7 @@ export type FeedMessage =
       readonly kind: "unknown"
       readonly sessionId?: string
       readonly receivedAtUnixMs: number
+      readonly reason?: string
     }
 
 /** Async-iterable seam over the live event feed. */

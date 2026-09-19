@@ -1627,17 +1627,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           openPendingTab()
           return
         }
-        case "login": {
-          const lines = [
-            `${colors.faint}  leave the repl and run:  comuki login${colors.reset}`,
-          ]
-          if (target) {
-            pushLines(target.id, lines)
-          } else {
-            setNoticeLines(lines)
-          }
-          return
-        }
         case "retry": {
           const last = retryMessage(target)
           if (!last) {
@@ -2310,11 +2299,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       ) {
         return
       }
-      const localClick = {
-        x: click.x,
-        y: click.y,
-      }
-      const target = resolveMouseClick(localClick, mouseLayoutRef.current)
+      const target = resolveMouseClick(click, mouseLayoutRef.current)
       if (target.kind === "tab") {
         focusSession(target.index)
         return

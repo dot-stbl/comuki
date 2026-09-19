@@ -7,16 +7,6 @@ import type {
 } from "./state"
 import type { WorkspaceDocument } from "./workspace"
 
-/**
- * Legacy alias for the pre-workspace persistence payload. The
- * `persist-sessions` effect now carries the versioned
- * {@link WorkspaceDocument}; the alias stays for old call sites.
- */
-export interface PersistedHarnessSessions {
-  readonly activeSessionId: HarnessSession["identity"]["id"] | null
-  readonly sessions: readonly HarnessSession[]
-}
-
 export type HarnessEffect =
   | {
       readonly type: "persist-sessions"

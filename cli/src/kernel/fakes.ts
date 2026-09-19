@@ -49,9 +49,8 @@ export class FakeConversationPort implements ConversationPort {
 
   async openConversation(
     request: { projectId: ProjectId | null; title: string },
-    signal: AbortSignal
+    _signal: AbortSignal
   ): Promise<OpenedConversation> {
-    void signal
     this.openLog.push({ projectId: request.projectId, title: request.title })
     if (this.nextOpened && "error" in this.nextOpened) {
       throw this.nextOpened.error

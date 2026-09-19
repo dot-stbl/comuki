@@ -1,0 +1,32 @@
+{
+  "name": "@comuki/cli-opentui-spike",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Throwaway OpenTUI spike — Core chat shell proof. ADR-0002 evidence. Not a production dependency.",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "eslint .",
+    "test": "bun test tests/",
+    "test:core": "bun test tests/commands.test.ts tests/approval.test.ts tests/resize.test.ts tests/suspend.test.ts tests/fixture-cardinality.test.ts tests/i18n.test.ts",
+    "smoke:load": "bun run scripts/smoke-load.ts",
+    "measure:cold-start": "bun run scripts/measure-cold-start.ts",
+    "measure:fixture": "bun run scripts/measure-fixture.ts",
+    "measure:idle-memory": "bun run scripts/measure-idle-memory.ts",
+    "measure:native-stats": "bun run scripts/measure-native-stats.ts",
+    "measure:standalone": "bun run scripts/measure-standalone.ts",
+    "build:standalone": "bun run scripts/build-standalone.ts"
+  },
+  "dependencies": {
+    "@opentui/core": "0.5.11",
+    "@opentui/keymap": "0.5.11",
+    "i18next": "^23"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "eslint": "^9",
+    "eslint-plugin-import": "^2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8"
+  }
+}

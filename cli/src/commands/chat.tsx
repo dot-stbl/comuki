@@ -19,12 +19,9 @@
  */
 import { Box, Text, useApp, useInput } from "ink"
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react"
-import type { HubConnection } from "@microsoft/signalr"
 import {
   ComukiApiError,
   ComukiClient,
-  isAbortError,
-  type ChatMessageView,
 } from "../lib/client"
 import {
   describeAuthFailure,
@@ -48,7 +45,7 @@ import {
   nextMatchIndex,
 } from "../lib/transcript"
 import type { ResolvedConfig } from "../lib/config"
-import { readConfigFile, writeConfigFile } from "../lib/config"
+import { readConfigFile, sessionsFilePath, writeConfigFile } from "../lib/config"
 import { archiveFilePath } from "../lib/archive"
 import { exportFileName, exportMarkdown } from "../lib/export"
 import { terminalTitle, turnDoneSequences, writeTerminal } from "../lib/term"
@@ -75,24 +72,16 @@ import {
   type MouseLayout,
 } from "../lib/mouse"
 import {
-  dequeueMessage,
-  enqueueMessage,
   queuedNoticeLine,
   stoppedNoticeLine,
 } from "../lib/queue"
 import {
   addSession,
-  adoptServerId,
   appendBlocks,
-  appendHistory,
-  appendLiveText,
   branchOpener,
   forkTitle,
-  fromPersisted,
-  markUnread,
   newPendingSession,
   patchSession,
-  readSessionsFile,
   removeSession,
   renameSession,
   retryMessage,
@@ -101,13 +90,34 @@ import {
   titleForFirstMessage,
   stepActive,
   toggleBlocksExpanded,
-  writeSessionsFile,
   PENDING_PREFIX,
   type ChatBlock,
   type Session,
   type SessionsState,
 } from "../lib/sessions"
 import { resolveSlashAction, slashHelpLines } from "../lib/slash"
+import {
+  createClientKernel,
+  type ClientKernel,
+  type ClientSnapshot,
+} from "../kernel"
+import {
+  sessionId as harnessSessionId,
+  pendingSessionId as harnessPendingSessionId,
+  projectId as harnessProjectId,
+  type SessionKey,
+} from "../harness/state"
+import {
+  HttpApprovalPort,
+  HttpConversationPort,
+  JsonWorkspaceStore,
+} from "../kernel/adapters/http"
+import { SignalRKernelTransport } from "../kernel/adapters/signalr"
+import {
+  emptyMirrorMemory,
+  mirrorKernelSnapshot,
+  type MirrorMemory,
+} from "../lib/kernel-mirror"
 import { viewportSlice } from "../lib/viewport"
 import {
   aliasListingLines,
@@ -169,14 +179,7 @@ import {
   toolsUnavailableLines,
 } from "../lib/ops"
 import { fetchStatusSnapshot, renderStatusPanel } from "../lib/status"
-import {
-  bindChatEvents,
-  joinChatGroup,
-  leaveChatGroup,
-  rejoinChatGroups,
-  startChatHubConnection,
-  type HubConnectionState,
-} from "../lib/signalr"
+import { type HubConnectionState } from "../lib/signalr"
 import {
   DEFAULT_KEYBINDINGS,
   keybindingsListingLines,
@@ -244,28 +247,6 @@ const SNIP_USAGE = `${colors.faint}  usage: /snip [name|save <name>|rm <name>] �
 const ALIAS_USAGE = `${colors.faint}  usage: /alias [set <name> <text>|rm <name>] — names are [a-z][a-z0-9-]*${colors.reset}`
 
 const PROFILE_USAGE = `${colors.faint}  usage: /profile [name] — stored locally; createSession has no profile field${colors.reset}`
-
-/**
- * The user's words as a transcript message block — the local echo,
- * byte-identical to what the server round-trip would render.
- */
-function userEchoBlock(message: string): {
-  kind: "message"
-  message: ChatMessageView
-} {
-  return {
-    kind: "message",
-    message: {
-      id: `local-${Date.now()}`,
-      role: "user",
-      content: message,
-      toolName: null,
-      parts: null,
-      meta: null,
-      createdAt: new Date().toISOString(),
-    },
-  }
-}
 
 export interface ChatCommandProps {
   readonly config: ResolvedConfig
@@ -363,7 +344,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   )
   const loginEmailRef = useRef("")
   const pendingRetryRef = useRef<string | null>(null)
-  const hubRef = useRef<HubConnection | null>(null)
   const projectIdRef = useRef<string | undefined>(undefined)
   const activeIdRef = useRef<string | undefined>(undefined)
   const overviewRef = useRef(false)
@@ -373,17 +353,27 @@ export function ChatApp({ config, project }: ChatCommandProps) {
    * useInput reads this ref to yield those keys for those keystrokes.
    */
   const slashMenuOpenRef = useRef(false)
-  /** One AbortController per in-flight turn — /stop aborts through it. */
-  const turnControllersRef = useRef(new Map<string, AbortController>())
-  /**
-   * Sessions whose aborted turn may still stream SignalR chunks (the
-   * server keeps processing); chunks are ignored until the next turn.
-   */
-  const mutedSessionsRef = useRef(new Set<string>())
   /** Reconnect re-join needs the session ids without a closure snapshot. */
   const sessionsRef = useRef<readonly Session[]>([])
   /** Explicit hub stop (unmount) — the retry loop must not resurrect it. */
   const hubStopRef = useRef<(() => Promise<void>) | null>(null)
+  /**
+   * The client kernel (issue #83): owns the crown flow — bootstrap,
+   * open/adopt session, submit/stream/complete turns, approvals,
+   * reconnect, close — behind dispatch/accept/snapshot/subscribe. Ink
+   * reads kernel snapshots through the mirror below and dispatches
+   * intents; the legacy tab state stays the render model.
+   */
+  const kernelRef = useRef<ClientKernel | null>(null)
+  const kernelUnsubscribeRef = useRef<(() => void) | null>(null)
+  const mirrorRef = useRef<MirrorMemory>(emptyMirrorMemory())
+  const tabsRef = useRef<SessionsState>({ sessions: [], activeIndex: -1 })
+  /** Monotonic client command ids — the idempotency keys of turns. */
+  const commandSeqRef = useRef(0)
+  const nextCommandId = useCallback((prefix = "cmd") => {
+    commandSeqRef.current += 1
+    return `${prefix}-${commandSeqRef.current}-${Date.now()}`
+  }, [])
 
   const activeSession =
     tabs.activeIndex >= 0 ? tabs.sessions[tabs.activeIndex] : undefined
@@ -650,6 +640,16 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   }, [tabs.sessions])
 
   useEffect(() => {
+    tabsRef.current = tabs
+  }, [tabs])
+
+  /** Terminal width for callbacks that outlive a render (kernel mirror). */
+  const columnsRef = useRef(columns)
+  useEffect(() => {
+    columnsRef.current = columns
+  }, [columns])
+
+  useEffect(() => {
     overviewRef.current = overviewVisible
   }, [overviewVisible])
 
@@ -701,12 +701,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     usingApiKeyRef.current = Boolean(config.apiKey)
   }, [config])
 
-  const persist = useCallback((state: SessionsState) => {
-    void writeSessionsFile(state).catch(() => {
-      // Restore is best-effort; a failed write never breaks the chat.
-    })
-  }, [])
-
   const persistCookie = useCallback((cookie: string) => {
     void (async () => {
       try {
@@ -719,18 +713,104 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     })()
   }, [])
 
+  // -- client kernel (crown flow) ---------------------------------------------
+
+  /**
+   * Builds (or rebuilds, after a cookie login swaps the client) the
+   * kernel + its SignalR transport. The kernel owns sessions.json,
+   * the hub connection and every migrated network flow; the mirror
+   * below keeps the legacy tab state in step with snapshots.
+   */
+  const startKernel = useCallback(() => {
+    kernelUnsubscribeRef.current?.()
+    kernelRef.current?.stop()
+    const client = clientRef.current
+    if (!client) {
+      return null
+    }
+    const transport = new SignalRKernelTransport({
+      hubUrl: client.hubUrl(),
+      headers: client.hubHeaders(),
+      onStateChange: setHubState,
+      onAuthLost: () => {
+        setHubState("offline")
+      },
+      onStopHandle: (stop) => {
+        hubStopRef.current = stop
+      },
+    })
+    const kernel = createClientKernel({
+      ports: {
+        // The getter picks up a client swapped by a later cookie login.
+        conversation: new HttpConversationPort(
+          () => clientRef.current ?? client
+        ),
+        approval: new HttpApprovalPort(() => clientRef.current ?? client),
+        realtime: transport,
+        workspace: new JsonWorkspaceStore(sessionsFilePath()),
+      },
+      feed: transport,
+    })
+    kernelUnsubscribeRef.current = kernel.subscribe((snapshot: ClientSnapshot) => {
+      const result = mirrorKernelSnapshot(
+        tabsRef.current,
+        snapshot.state,
+        mirrorRef.current
+      )
+      mirrorRef.current = result.memory
+      if (result.tabs !== tabsRef.current) {
+        tabsRef.current = result.tabs
+        setTabs(result.tabs)
+      }
+      if (result.stoppedSessionIds.length > 0) {
+        const stopped = result.stoppedSessionIds
+        setTabs((current) => {
+          let sessions = current.sessions
+          for (const id of stopped) {
+            sessions = appendBlocks(sessions, id, [
+              { kind: "lines", lines: ["", stoppedNoticeLine()] },
+            ])
+          }
+          return { ...current, sessions }
+        })
+      }
+      for (const failure of result.failedTurns) {
+        if (failure.error.kind === "aborted") {
+          continue
+        }
+        if (failure.error.kind === "auth") {
+          setIdentity("signed out")
+          const failed = tabsRef.current.sessions.find(
+            (session) => session.id === failure.tabId
+          )
+          if (failed?.lastUserMessage) {
+            pendingRetryRef.current = failed.lastUserMessage
+          }
+        }
+        setTabs((current) => ({
+          ...current,
+          sessions: appendBlocks(current.sessions, failure.tabId, [
+            { kind: "lines", lines: ["", ...alertLines(new Error(failure.error.message), columnsRef.current)] },
+          ]),
+        }))
+      }
+      if (result.completedTitles.length > 0) {
+        // The terminal may be unfocused — BEL (gated by /bell) plus
+        // the OSC 9 toast (always); terminals without OSC 9 ignore it.
+        writeTerminal(turnDoneSequences(bellRef.current))
+      }
+    })
+    kernelRef.current = kernel
+    kernel.start()
+    return kernel
+  }, [])
+
   const applySession = useCallback(
     async (cookie: string) => {
       const nextConfig = { ...configRef.current, cookie, apiKey: undefined }
       configRef.current = nextConfig
       usingApiKeyRef.current = false
       persistCookie(cookie)
-
-      const previous = hubRef.current
-      if (previous) {
-        void previous.stop()
-        hubRef.current = null
-      }
 
       const client = new ComukiClient(nextConfig, {
         onLatencySample: setLatencyMs,
@@ -743,59 +823,18 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       setIdentity(who.label)
       setConnectError(null)
 
-      try {
-        const connection = await startChatHubConnection({
-          hubUrl: client.hubUrl(),
-          headers: client.hubHeaders(),
-          onStateChange: setHubState,
-          onReconnected: () => {
-            const hub = hubRef.current
-            if (hub) {
-              const sessionIds = sessionsRef.current
-                .map((session) => session.id)
-                .filter((id) => !id.startsWith(PENDING_PREFIX))
-              void rejoinChatGroups(hub, sessionIds)
-            }
-          },
-        })
-        if (connection) {
-          hubRef.current = connection
-          bindChatEvents(
-            connection,
-            (chunk) => {
-              if (mutedSessionsRef.current.has(chunk.sessionId)) {
-                return
-              }
-              setTabs((current) => ({
-                ...current,
-                sessions: appendLiveText(
-                  current.sessions,
-                  chunk.sessionId,
-                  chunk.text
-                ),
-              }))
-            },
-            () => {
-              // ChatTurnComplete — the POST result renders the turn.
-            }
-          )
-          const sessionIds = sessionsRef.current
-            .map((session) => session.id)
-            .filter((id) => !id.startsWith(PENDING_PREFIX))
-          void rejoinChatGroups(connection, sessionIds)
-        }
-      } catch {
-        // REST stays authoritative; a dead hub is the existing fallback.
-      }
+      // Rebuild the kernel against the new credentials; in-flight
+      // turns on the old client are dropped (they were unauthorized
+      // anyway) and the workspace reloads from disk.
+      startKernel()
     },
-    [persistCookie]
+    [persistCookie, startKernel]
   )
 
   // -- connect + restore -------------------------------------------------------
 
   useEffect(() => {
     let disposed = false
-    let hub: HubConnection | null = null
 
     void (async () => {
       const client = new ComukiClient(config, {
@@ -837,71 +876,16 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       setProjectLabel(label)
 
       try {
-        // Best-effort live progress; the REST turns are authoritative.
-        // A reconnect gets a fresh connection id — every chat group is
-        // gone, so re-join the open sessions (pending tabs excluded).
-        // A failed start no longer gives up: the factory keeps retrying
-        // on the same 0/2/5/10/30s ramp until start() succeeds (or 401).
-        const bindHub = (connection: HubConnection) => {
-          hub = connection
-          hubRef.current = connection
-          bindChatEvents(
-            connection,
-            (chunk) => {
-              // One connection, many sessions — route by payload id.
-              // A stopped turn's leftovers never reach the tab.
-              if (mutedSessionsRef.current.has(chunk.sessionId)) {
-                return
-              }
-              setTabs((current) => ({
-                ...current,
-                sessions: appendLiveText(
-                  current.sessions,
-                  chunk.sessionId,
-                  chunk.text
-                ),
-              }))
-            },
-            () => {
-              // ChatTurnComplete — the POST result renders the turn.
-            }
-          )
+        // The kernel owns bootstrap from here: it loads (and migrates,
+        // if needed) sessions.json, restores the open tabs through the
+        // mirror, and keeps the best-effort hub alive on its own ramp.
+        const kernel = startKernel()
+        if (kernel) {
+          await kernel.whenIdle()
         }
-        const rejoinOpenGroups = () => {
-          const live = hubRef.current
-          if (live) {
-            const sessionIds = sessionsRef.current
-              .map((session) => session.id)
-              .filter((id) => !id.startsWith(PENDING_PREFIX))
-            void rejoinChatGroups(live, sessionIds)
-          }
-        }
-        const connection = await startChatHubConnection({
-          hubUrl: client.hubUrl(),
-          headers: client.hubHeaders(),
-          onStateChange: setHubState,
-          onReady: bindHub,
-          onReconnected: rejoinOpenGroups,
-          onAuthLost: () => {
-            hubRef.current = null
-            setHubState("offline")
-          },
-          onStopHandle: (stop) => {
-            hubStopRef.current = stop
-          },
-        })
-        if (connection && !disposed && hubRef.current !== connection) {
-          bindHub(connection)
-        }
-        const restored = fromPersisted(await readSessionsFile())
         if (!disposed) {
-          setTabs(restored)
-          if (hub) {
-            for (const session of restored.sessions) {
-              await joinChatGroup(hub, session.id)
-            }
-          }
-          if (restored.sessions.length > 0) {
+          const restored = kernelRef.current?.snapshot().state.sessions ?? []
+          if (restored.length > 0) {
             setWelcomeDismissed(true)
           }
           setBootstrapped(true)
@@ -911,22 +895,18 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           setConnectError(error)
         }
       }
-
     })()
 
     return () => {
       disposed = true
+      kernelUnsubscribeRef.current?.()
+      kernelRef.current?.stop()
       const stop = hubStopRef.current
       if (stop) {
         void stop()
-        return
-      }
-      const connection = hub ?? hubRef.current
-      if (connection) {
-        void connection.stop()
       }
     }
-  }, [config, persistCookie, project])
+  }, [config, persistCookie, project, startKernel])
 
   // -- lazy hydration for restored tabs ----------------------------------------
   // Deps are the stable identity fields — transcript updates must not
@@ -990,15 +970,12 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           return
         }
         if (error instanceof ComukiApiError && error.status === 404) {
-          // Server session is gone — drop the tab.
-          setTabs((current) =>
-            removeSession(
-              current,
-              current.sessions.findIndex(
-                (candidate) => candidate.id === sessionId
-              )
-            )
-          )
+          // Server session is gone — the kernel closes the ref (and
+          // the mirror drops the tab).
+          kernelRef.current?.dispatch({
+            kind: "close-session",
+            sessionId: harnessSessionId(sessionId),
+          })
           return
         }
         const authNotice = describeAuthFailure(
@@ -1034,175 +1011,33 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     }
   }, [bootstrapped, activeSessionId, activeHydrated])
 
-  // -- persist the tab list on every change ------------------------------------
-
-  useEffect(() => {
-    if (bootstrapped) {
-      persist(tabs)
-    }
-  }, [bootstrapped, tabs, persist])
+  // NOTE: sessions.json is owned by the kernel — its persist effects
+  // write the versioned workspace document; the legacy write-on-every-
+  // tabs-change path is gone.
 
   // -- turns --------------------------------------------------------------------
+  // Submits, approvals, streaming, completion and failure rendering all
+  // flow through the kernel now; the subscription above mirrors them
+  // into the legacy tabs (alert lines, stopped marks, bell on done).
 
-  const describeTurn = useCallback(
-    (
-      sessionId: string,
-      result: {
-        messages: readonly ChatMessageView[]
-        awaitingApproval: boolean
-        pendingPlan: unknown
-      }
-    ) => {
-      setTabs((current) => {
-        let sessions = appendBlocks(
-          current.sessions,
-          sessionId,
-          result.messages.map((message) => ({
-            kind: "message" as const,
-            message,
-          }))
-        )
-        sessions = patchSession(sessions, sessionId, {
-          awaitingApproval: result.awaitingApproval,
-          pendingPlan: result.pendingPlan,
-          status: "done",
-          liveText: "",
-        })
-        if (sessionId !== activeIdRef.current) {
-          sessions = markUnread(sessions, sessionId, activeIdRef.current)
-        }
-        return { ...current, sessions }
-      })
-      // The terminal may be unfocused — BEL (gated by /bell) plus the
-      // OSC 9 toast (always); terminals without OSC 9 ignore it.
-      writeTerminal(turnDoneSequences(bellRef.current))
-    },
-    []
-  )
-
-  const runTurn = useCallback(
-    async (
-      sessionId: string,
-      kind: "message" | "approve",
-      payload: { message?: string; approved?: boolean; reason?: string }
-    ) => {
-      const client = clientRef.current
-      if (!client) {
-        return
-      }
-      const controller = new AbortController()
-      turnControllersRef.current.set(sessionId, controller)
-      // A new turn unmutes the chunk stream (a previous /stop muted it).
-      mutedSessionsRef.current.delete(sessionId)
-      setTabs((current) => ({
-        ...current,
-        sessions: patchSession(current.sessions, sessionId, {
-          status: "thinking",
-          liveText: "",
-        }),
-      }))
-      try {
-        const result =
-          kind === "message"
-            ? await client.postMessage(
-                sessionId,
-                payload.message ?? "",
-                controller.signal
-              )
-            : await client.approve(
-                sessionId,
-                payload.approved ?? true,
-                payload.reason,
-                controller.signal
-              )
-        describeTurn(sessionId, result)
-      } catch (error) {
-        if (isAbortError(error)) {
-          // /stop already flipped the tab out of thinking — stamp the
-          // mark; the queue (if any) survives and drains next.
-          setTabs((current) => ({
-            ...current,
-            sessions: patchSession(
-              appendBlocks(current.sessions, sessionId, [
-                { kind: "lines", lines: ["", stoppedNoticeLine()] },
-              ]),
-              sessionId,
-              { status: "done", liveText: "" }
-            ),
-          }))
-          return
-        }
-        const authNotice = describeAuthFailure(
-          error,
-          usingApiKeyRef.current
-        )
-        if (authNotice) {
-          if (
-            error instanceof ComukiApiError &&
-            error.status === 401
-          ) {
-            setIdentity("signed out")
-            if (payload.message) {
-              pendingRetryRef.current = payload.message
-            }
-          }
-          setTabs((current) => ({
-            ...current,
-            sessions: patchSession(
-              appendBlocks(current.sessions, sessionId, [
-                {
-                  kind: "lines",
-                  lines: [
-                    "",
-                    `${colors.error}${symbols.cross} ${authNotice}${colors.reset}`,
-                  ],
-                },
-              ]),
-              sessionId,
-              { status: "idle" }
-            ),
-          }))
-          return
-        }
-        setTabs((current) => ({
-          ...current,
-          sessions: patchSession(
-            appendBlocks(current.sessions, sessionId, [
-              { kind: "lines", lines: ["", ...alertLines(error, columns)] },
-            ]),
-            sessionId,
-            { status: "idle" }
-          ),
-        }))
-      } finally {
-        turnControllersRef.current.delete(sessionId)
-        setTabs((current) => ({
-          ...current,
-          sessions: patchSession(current.sessions, sessionId, {
-            liveText: "",
-          }),
-        }))
-      }
-    },
-    [columns, describeTurn]
-  )
-
-  /** `/stop` — abort the in-flight turn from the client side. */
+  /** `/stop` — the kernel aborts the in-flight turn from the client side. */
   const stopTurn = useCallback((sessionId: string) => {
-    turnControllersRef.current.get(sessionId)?.abort()
-    mutedSessionsRef.current.add(sessionId)
-    setTabs((current) => ({
-      ...current,
-      sessions: patchSession(current.sessions, sessionId, {
-        status: "done",
-        liveText: "",
-      }),
-    }))
+    kernelRef.current?.dispatch({
+      kind: "cancel-turn",
+      sessionId: sessionId.startsWith(PENDING_PREFIX)
+        ? harnessPendingSessionId(sessionId)
+        : harnessSessionId(sessionId),
+    })
   }, [])
 
   // -- session lifecycle --------------------------------------------------------
 
   const openPendingTab = useCallback(() => {
+    const kernel = kernelRef.current
+    if (kernel) {
+      kernel.dispatch({ kind: "open-session" })
+      return
+    }
     setTabs((current) =>
       addSession(
         current,
@@ -1211,34 +1046,48 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     )
   }, [])
 
-  const closeSession = useCallback(
-    (index: number) => {
-      const closing = tabs.sessions[index]
-      if (closing && !closing.id.startsWith(PENDING_PREFIX)) {
-        const hub = hubRef.current
-        if (hub) {
-          void leaveChatGroup(hub, closing.id)
-        }
-      }
-      // The task keeps running on the server — only the tab goes away.
-      setTabs((current) => removeSession(current, index))
-    },
-    [tabs.sessions]
-  )
+  const closeSession = useCallback((index: number) => {
+    const closing = tabsRef.current.sessions[index]
+    const kernel = kernelRef.current
+    if (kernel && closing) {
+      // The task keeps running on the server — only the tab goes away;
+      // the mirror removes it and the kernel drops the group + ref.
+      kernel.dispatch({
+        kind: "close-session",
+        sessionId: closing.id.startsWith(PENDING_PREFIX)
+          ? harnessPendingSessionId(closing.id)
+          : harnessSessionId(closing.id),
+      })
+      return
+    }
+    setTabs((current) => removeSession(current, index))
+  }, [])
 
   const focusSession = useCallback((index: number) => {
+    const kernel = kernelRef.current
+    const chosen = tabsRef.current.sessions[index]
+    if (chosen && kernel) {
+      kernel.dispatch({
+        kind: "focus-session",
+        sessionId: chosen.id.startsWith(PENDING_PREFIX)
+          ? harnessPendingSessionId(chosen.id)
+          : harnessSessionId(chosen.id),
+      })
+      // The kernel snapshot mirrors back the same focus; patch locally
+      // too so the render flips on this frame.
+    }
     setTabs((current) => {
       if (index < 0 || index >= current.sessions.length) {
         return current
       }
-      const chosen = current.sessions[index]
-      if (!chosen) {
+      const target = current.sessions[index]
+      if (!target) {
         return current
       }
       return {
         ...current,
         activeIndex: index,
-        sessions: patchSession(current.sessions, chosen.id, {
+        sessions: patchSession(current.sessions, target.id, {
           unread: false,
         }),
       }
@@ -1289,11 +1138,15 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     [mentionSearchRaw]
   )
 
-  /** Sends `message` (the typed text), creating the server session first when pending. */
+  /**
+   * Sends `message` (the typed text) through the kernel. A pending tab
+   * adopts its server session lazily on this first message; a busy
+   * session queues inside the kernel (drained when the turn ends).
+   */
   const sendMessage = useCallback(
     async (target: Session | undefined, message: string) => {
-      const client = clientRef.current
-      if (!client) {
+      const kernel = kernelRef.current
+      if (!kernel || !clientRef.current) {
         return
       }
       setWelcomeDismissed(true)
@@ -1307,72 +1160,55 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           ? mentionNoticeLines(expansion, await ensureDocTitles())
           : []
       const name = titleForFirstMessage(target, typed)
-      const echoBlock = userEchoBlock(typed)
 
-      if (!target || target.id.startsWith(PENDING_PREFIX)) {
-        try {
-          const session = await client.createSession({
-            projectId: projectIdRef.current,
-            title: name,
-          })
-          const hub = hubRef.current
-          if (hub) {
-            await joinChatGroup(hub, session.id)
-          }
-          setTabs((current) => {
-            const next = target
-              ? adoptServerId(current, target.id, session.id, name)
-              : addSession(current, {
-                  ...newPendingSession(),
-                  id: session.id,
-                  name,
-                  hydrated: true,
-                  // The welcome-screen turn has no tab yet — seed the
-                  // new session's recall history with its first message.
-                  history: [typed],
-                })
-            return {
-              ...next,
-              sessions: patchSession(
-                appendBlocks(next.sessions, session.id, [echoBlock]),
-                session.id,
-                { lastUserMessage: typed }
-              ),
-            }
-          })
-          if (notices.length > 0) {
-            pushLines(session.id, notices)
-          }
-          await runTurn(session.id, "message", {
-            message: expansion.outgoing,
-          })
-        } catch (error) {
-          if (
-            error instanceof ComukiApiError &&
-            error.status === 401
-          ) {
-            setIdentity("signed out")
-            pendingRetryRef.current = expansion.outgoing
-          }
-          setNoticeLines(["", ...alertLines(error, columns)])
+      // The welcome-screen turn has no tab yet — open one first.
+      let sessionKey: SessionKey
+      let titleHint: string | undefined
+      if (!target) {
+        kernel.dispatch({
+          kind: "open-session",
+          projectId: projectIdRef.current
+            ? harnessProjectId(projectIdRef.current)
+            : null,
+        })
+        const opened = kernel.snapshot().state.sessions.at(-1)
+        if (!opened) {
+          return
         }
-        return
+        sessionKey = opened.identity.id
+        titleHint = name
+      } else {
+        sessionKey = target.id.startsWith(PENDING_PREFIX)
+          ? harnessPendingSessionId(target.id)
+          : harnessSessionId(target.id)
+        titleHint = target.id.startsWith(PENDING_PREFIX) ? name : undefined
       }
 
-      setTabs((current) => ({
-        ...current,
-        sessions: patchSession(
-          appendBlocks(current.sessions, target.id, [echoBlock]),
-          target.id,
-          { lastUserMessage: typed }
-        ),
-      }))
-      if (notices.length > 0) {
-        pushLines(target.id, notices)
+      // A thinking turn owns the wire — the kernel queues the message
+      // and drains it when the turn ends; keep the dim notice.
+      const kernelSession = kernel
+        .snapshot()
+        .state.sessions.find((session) => session.identity.id === sessionKey)
+      if (
+        kernelSession &&
+        (kernelSession.turn.kind !== "idle" || kernelSession.queue.length > 0)
+      ) {
+        pushLines(String(sessionKey), [queuedNoticeLine()])
       }
-      await runTurn(target.id, "message", { message: expansion.outgoing })
+
+      kernel.dispatch({
+        kind: "submit-turn",
+        sessionId: sessionKey,
+        message: expansion.outgoing,
+        commandId: nextCommandId(),
+        echoText: typed,
+        ...(titleHint !== undefined ? { titleHint } : {}),
+      })
+      if (notices.length > 0) {
+        pushLines(String(sessionKey), notices)
+      }
     },
-    [columns, ensureDocTitles, expandTyped, pushLines, runTurn]
+    [ensureDocTitles, expandTyped, nextCommandId, pushLines]
   )
 
   // -- ops pack: /project ------------------------------------------------------
@@ -1492,47 +1328,37 @@ export function ChatApp({ config, project }: ChatCommandProps) {
    */
   const forkSession = useCallback(
     async (source: Session | undefined, opener: string) => {
-      const client = clientRef.current
-      if (!client) {
+      const kernel = kernelRef.current
+      if (!kernel) {
         return
       }
       setWelcomeDismissed(true)
       const title = source
         ? forkTitle(source.name)
         : sessionNameFromMessage(opener)
-      try {
-        const session = await client.createSession({
-          projectId: projectIdRef.current,
-          title,
-        })
-        const hub = hubRef.current
-        if (hub) {
-          await joinChatGroup(hub, session.id)
-        }
-        setTabs((current) => {
-          const next = addSession(current, {
-            ...newPendingSession(),
-            id: session.id,
-            name: title,
-            hydrated: true,
-            // The fork's first message seeds its recall history.
-            history: [opener],
-          })
-          return {
-            ...next,
-            sessions: patchSession(
-              appendBlocks(next.sessions, session.id, [userEchoBlock(opener)]),
-              session.id,
-              { lastUserMessage: opener }
-            ),
-          }
-        })
-        await runTurn(session.id, "message", { message: opener })
-      } catch (error) {
-        setNoticeLines(["", ...alertLines(error, columns)])
+      // A fork is a fresh pending tab + immediate first submit — the
+      // kernel adopts the server session (titled `fork of <source>`)
+      // and streams it like any other turn.
+      kernel.dispatch({
+        kind: "open-session",
+        projectId: projectIdRef.current
+          ? harnessProjectId(projectIdRef.current)
+          : null,
+      })
+      const opened = kernel.snapshot().state.sessions.at(-1)
+      if (!opened) {
+        return
       }
+      kernel.dispatch({
+        kind: "submit-turn",
+        sessionId: opened.identity.id,
+        message: opener,
+        commandId: nextCommandId("fork"),
+        echoText: opener,
+        titleHint: title,
+      })
     },
-    [columns, runTurn]
+    [nextCommandId]
   )
 
   // -- ops pack: /kb -------------------------------------------------------------
@@ -1739,39 +1565,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       if (value.length === 0) {
         return
       }
-      // Per-session recall history — rides the session record, so it
-      // persists with the tab and survives the pending → live adoption.
-      // Queued messages land here too: they were submitted by the user.
-      if (target) {
-        setTabs((current) => ({
-          ...current,
-          sessions: appendHistory(current.sessions, target.id, value),
-        }))
-      }
+      // Per-session recall history rides the kernel session record now
+      // (recorded on submit-turn), so it persists with the tab and
+      // survives the pending → live adoption.
 
       const action = resolveSlashAction(value)
-
-      // A thinking turn owns the wire: chat messages (and /retry's
-      // resend) queue instead of firing a second concurrent POST.
-      if (
-        target?.status === "thinking" &&
-        (action.kind === "message" || action.kind === "retry")
-      ) {
-        const queued =
-          action.kind === "retry" ? retryMessage(target) : value
-        if (queued === null) {
-          pushLines(target.id, [NOTHING_TO_RETRY])
-          return
-        }
-        setTabs((current) => ({
-          ...current,
-          sessions: patchSession(current.sessions, target.id, {
-            queued: enqueueMessage(target.queued ?? [], queued),
-          }),
-        }))
-        pushLines(target.id, [queuedNoticeLine()])
-        return
-      }
 
       switch (action.kind) {
         case "exit": {
@@ -1886,6 +1684,15 @@ export function ChatApp({ config, project }: ChatCommandProps) {
             ])
             return
           }
+          // The workspace owns the title — kernel first (it persists),
+          // local rename keeps the render immediate.
+          kernelRef.current?.dispatch({
+            kind: "rename-session",
+            sessionId: target.id.startsWith(PENDING_PREFIX)
+              ? harnessPendingSessionId(target.id)
+              : harnessSessionId(target.id),
+            title: action.title,
+          })
           setTabs((current) => ({
             ...current,
             sessions: renameSession(current.sessions, target.id, action.title),
@@ -2012,7 +1819,15 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               ? `${colors.ok}${symbols.checkmark} approving…${colors.reset}`
               : `${colors.waiting}${symbols.bullet} rejecting…${colors.reset}`,
           ])
-          void runTurn(target.id, "approve", { approved, reason })
+          // Online-only by construction: the kernel decides through
+          // the approval port or drops the intent — it never queues.
+          kernelRef.current?.dispatch({
+            kind: "decide-approval",
+            sessionId: harnessSessionId(target.id),
+            approved,
+            reason,
+            commandId: nextCommandId(approved ? "approve" : "reject"),
+          })
           return
         }
         case "runs": {
@@ -2095,20 +1910,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               }
               return
             }
-            // A thinking turn owns the wire — the snippet queues like a
-            // typed message (the pre-switch gate only sees raw text).
-            if (target?.status === "thinking") {
-              setTabs((current) => ({
-                ...current,
-                sessions: patchSession(current.sessions, target.id, {
-                  queued: enqueueMessage(target.queued ?? [], text),
-                }),
-              }))
-              pushLines(target.id, [queuedNoticeLine()])
-              return
-            }
-            // The editor has no prefill seam, so a snippet goes out as
-            // the next message — one keystroke, same echo as typing it.
+            // A thinking turn owns the wire — the kernel queues the
+            // snippet like a typed message and drains it in order.
             await sendMessage(target, text)
           })()
           return
@@ -2452,12 +2255,12 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       hubState,
       identity,
       latencyMs,
+      nextCommandId,
       openPendingTab,
       preferredProfile,
       projectLabel,
       pushLines,
       runKb,
-      runTurn,
       sendMessage,
       stopTurn,
       switchProfile,
@@ -2467,31 +2270,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   )
 
   // -- queued-message drain -----------------------------------------------------
-  // The moment a session stops thinking (turn done, stopped or failed),
-  // its queue sends in order: one dequeue per commit, head first — the
-  // dequeue happens before the send so a re-render cannot resend it.
-
-  useEffect(() => {
-    for (const session of tabs.sessions) {
-      if (session.status !== "thinking" && (session.queued?.length ?? 0) > 0) {
-        const { message, rest } = dequeueMessage(session.queued ?? [])
-        if (message === undefined) {
-          continue
-        }
-        setTabs((current) => ({
-          ...current,
-          sessions: patchSession(current.sessions, session.id, {
-            queued: rest,
-          }),
-        }))
-        void (async () => {
-          const expanded = expandAlias(await readAliasesFile(), message)
-          await sendMessage(session, expanded ?? message)
-        })()
-        return
-      }
-    }
-  }, [tabs.sessions, sendMessage])
+  // The kernel owns the queue now: turns queued while a session thinks
+  // drain in order inside the kernel (one submit per completion) and
+  // the mirror surfaces them as the legacy `queued` field.
 
   // SGR mouse: a click on the plan card's `approve` / `reject` line
   // submits the matching slash. Terminals without mouse tracking ignore
@@ -2630,24 +2411,15 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       }
     }
     if (key.tab) {
-      setTabs((current) => {
-        if (current.sessions.length === 0) {
-          return current
-        }
+      const currentTabs = tabsRef.current
+      if (currentTabs.sessions.length > 0) {
         const nextIndex = stepActive(
-          current.sessions.length,
-          current.activeIndex,
+          currentTabs.sessions.length,
+          currentTabs.activeIndex,
           key.shift ? -1 : 1
         )
-        const chosen = current.sessions[nextIndex]
-        return {
-          ...current,
-          activeIndex: nextIndex,
-          sessions: chosen
-            ? patchSession(current.sessions, chosen.id, { unread: false })
-            : current.sessions,
-        }
-      })
+        focusSession(nextIndex)
+      }
       return
     }
     const bindings = keybindingsRef.current

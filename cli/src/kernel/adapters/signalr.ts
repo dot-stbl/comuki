@@ -45,6 +45,7 @@ export class SignalRKernelTransport implements EventFeedPort, RealtimePort {
   private queue: FeedMessage[] = []
   private notify: (() => void) | null = null
   private finished = false
+  private stopHandle: (() => Promise<void>) | null = null
   private readonly lastSeqBySession = new Map<string, number>()
 
   constructor(private readonly options: SignalRFeedOptions) {}
@@ -102,7 +103,10 @@ export class SignalRKernelTransport implements EventFeedPort, RealtimePort {
         this.emit({ kind: "connection", event: "reconnected" })
       },
       onAuthLost: this.options.onAuthLost,
-      onStopHandle: this.options.onStopHandle,
+      onStopHandle: (stop) => {
+        this.stopHandle = stop
+        this.options.onStopHandle?.(stop)
+      },
     })
     signal.addEventListener("abort", () => {
       void this.stop()
@@ -200,5 +204,8 @@ export class SignalRKernelTransport implements EventFeedPort, RealtimePort {
   async stop(): Promise<void> {
     this.finished = true
     this.notify?.()
+    // Stop the underlying retry loop + connection, not just the feed.
+    await this.stopHandle?.()
+    this.connection = null
   }
 }

@@ -83,11 +83,44 @@ export interface HarnessMessage {
   readonly role: "user" | "assistant" | "system" | "tool"
   readonly content: string
   readonly createdAtUnixMs: number
+  /**
+   * The wire view the message was decoded from, when it came from the
+   * server. Pure logic reads `content`; renderers that need parts /
+   * meta read `view`. Absent on synthesized messages (user echoes).
+   */
+  readonly view?: import("../lib/client").ChatMessageView
 }
 
 export interface QueuedTurn {
   readonly requestId: TurnRequestId
   readonly message: string
+}
+
+/**
+ * A recoverable per-session composer draft. Client-owned workspace
+ * state: survives restarts via the versioned workspace document.
+ */
+export interface SessionDraft {
+  readonly sessionId: SessionKey
+  readonly text: string
+  readonly updatedAtUnixMs: number
+}
+
+/** Durable stream cursor per remote session — `lastSeenAt` unix ms. */
+export type WorkspaceCursors = Readonly<Record<string, number>>
+
+/**
+ * One explicitly-safe outbound command the workspace tracks for
+ * idempotency. Only ever covers turns — approval decisions are
+ * online-only and are never recorded for (offline) replay.
+ */
+export interface TrackedCommand {
+  readonly commandId: string
+  readonly requestId: TurnRequestId
+  readonly sessionId: SessionKey
+  readonly kind: "turn" | "approval"
+  readonly message: string
+  readonly state: "queued" | "in-flight" | "settled"
 }
 
 export interface HarnessSession {
@@ -101,6 +134,12 @@ export interface HarnessSession {
   readonly transcriptLoad: TranscriptLoadState
   readonly transcript: readonly HarnessMessage[]
   readonly queue: readonly QueuedTurn[]
+  /** Recall history for ↑/↓ prompt navigation, oldest first. */
+  readonly history?: readonly string[]
+  /** Last user-sent text — what `/retry` resends. */
+  readonly lastUserMessage?: string | null
+  /** Server plan awaiting approval, carried from the last turn result. */
+  readonly pendingPlan?: unknown
 }
 
 export interface HarnessState {
@@ -109,6 +148,12 @@ export interface HarnessState {
   readonly connection: ConnectionState
   readonly auth: AuthState
   readonly overlay: OverlayState
+  /** Recoverable per-session composer drafts (workspace). */
+  readonly drafts: readonly SessionDraft[]
+  /** Durable stream cursors, per remote session id (workspace). */
+  readonly cursors: WorkspaceCursors
+  /** Explicitly-safe outbound commands tracked for idempotency. */
+  readonly outbound: readonly TrackedCommand[]
 }
 
 export function initialHarnessState(): HarnessState {
@@ -118,5 +163,8 @@ export function initialHarnessState(): HarnessState {
     connection: { kind: "disconnected" },
     auth: { kind: "checking" },
     overlay: { kind: "closed" },
+    drafts: [],
+    cursors: {},
+    outbound: [],
   }
 }

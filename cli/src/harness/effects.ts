@@ -3,19 +3,14 @@ import type {
   PendingSessionId,
   ProjectId,
   SessionId,
-  SessionKey,
   TurnRequestId,
 } from "./state"
-
-export interface PersistedHarnessSessions {
-  readonly activeSessionId: SessionKey | null
-  readonly sessions: readonly HarnessSession[]
-}
+import type { WorkspaceDocument } from "./workspace"
 
 export type HarnessEffect =
   | {
       readonly type: "persist-sessions"
-      readonly value: PersistedHarnessSessions
+      readonly value: WorkspaceDocument
     }
   | {
       readonly type: "create-remote-session"
@@ -29,11 +24,21 @@ export type HarnessEffect =
       readonly sessionId: SessionId
       readonly requestId: TurnRequestId
       readonly message: string
+      readonly commandId?: string
     }
   | {
       readonly type: "cancel-turn"
       readonly sessionId: SessionId
       readonly requestId: TurnRequestId
+      readonly commandId?: string
+    }
+  | {
+      readonly type: "decide-approval"
+      readonly sessionId: SessionId
+      readonly requestId: TurnRequestId
+      readonly approved: boolean
+      readonly reason?: string
+      readonly commandId?: string
     }
   | { readonly type: "reconnect" }
   | {

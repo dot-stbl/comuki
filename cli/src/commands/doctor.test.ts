@@ -106,7 +106,10 @@ describe("collectDoctorChecks", () => {
     ])
   })
 
-  it("fails url and skips auth when the host is missing", async () => {
+  it("probes localhost and fails url + auth when nothing is configured", async () => {
+    // Empty configuration falls through to the localhost default — the
+    // probe runs against it (here the routed fetch returns 404) and the
+    // auth check follows. Both checks fail; config is missing too.
     const checks = await collectDoctorChecks({
       overrides: {},
       env: {},
@@ -120,13 +123,9 @@ describe("collectDoctorChecks", () => {
     expect(checks.find((check) => check.name === "url")).toEqual({
       name: "url",
       ok: false,
-      detail: "missing — pass --url or set COMUKI_URL",
+      detail: "http://localhost:8080 unreachable",
     })
-    expect(checks.find((check) => check.name === "auth")).toEqual({
-      name: "auth",
-      ok: false,
-      detail: "skipped (no url)",
-    })
+    expect(checks.find((check) => check.name === "auth")?.ok).toBe(false)
     expect(checks.find((check) => check.name === "config")?.ok).toBe(false)
   })
 

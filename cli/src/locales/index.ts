@@ -1,0 +1,268 @@
+/**
+ * i18next integration for the OpenTUI Core host (production).
+ *
+ * Moved/adapted from the ADR-0002 spike (`cli/spikes/opentui/src/locales`)
+ * — same contract, new `tui` namespace and the production command set:
+ *
+ * - `createI18nFor(locale)` returns a fully-initialized instance
+ *   (`Promise<I18nInstance>`, `init()` awaited) with en + ru parity;
+ * - `tr(instance, key)` throws on a missing/empty resolution, so key
+ *   drift between locale resources fails loudly in tests;
+ * - command **identity** (`TUI_COMMANDS[].name`) is never translated —
+ *   it is the stable handle the keymap dispatches by; only labels,
+ *   descriptions, placeholders and approval-card copy localize.
+ */
+
+import i18next, { type i18n } from "i18next"
+
+export type I18nInstance = i18n
+
+export type LocaleCode = "en" | "ru"
+
+export const LOCALES: readonly LocaleCode[] = ["en", "ru"] as const
+
+export const DEFAULT_LOCALE: LocaleCode = "en"
+
+export const TUI_NAMESPACE = "tui" as const
+
+/**
+ * The closed set of dotted keys the TUI host uses. Every key MUST be
+ * present in every locale — `locales/i18n.test.ts` asserts parity.
+ */
+export const REQUIRED_KEYS = [
+  "chrome.title",
+  "chrome.titleCompact",
+  "connection.connected",
+  "connection.connecting",
+  "connection.reconnecting",
+  "connection.disconnected",
+  "connection.connectedShort",
+  "connection.connectingShort",
+  "connection.reconnectingShort",
+  "connection.disconnectedShort",
+  "composer.placeholder",
+  "composer.placeholderCompact",
+  "transcript.you",
+  "transcript.comuki",
+  "transcript.system",
+  "transcript.tool",
+  "transcript.thinking",
+  "transcript.failed",
+  "transcript.emptySession",
+  "approval.intentPrefix",
+  "approval.scopePrefix",
+  "approval.riskPrefix",
+  "approval.planPrefix",
+  "approval.stepPrefix",
+  "approval.diffPrefix",
+  "approval.decideLabel",
+  "approval.unreadablePlan",
+  "approval.action.approve",
+  "approval.action.reject",
+  "cmd.submit-turn.label",
+  "cmd.submit-turn.description",
+  "cmd.cancel-turn.label",
+  "cmd.cancel-turn.description",
+  "cmd.approve.label",
+  "cmd.approve.description",
+  "cmd.reject.label",
+  "cmd.reject.description",
+  "cmd.new-session.label",
+  "cmd.new-session.description",
+  "cmd.close-session.label",
+  "cmd.close-session.description",
+  "cmd.exit.label",
+  "cmd.exit.description",
+] as const
+
+export type RequiredKey = (typeof REQUIRED_KEYS)[number]
+
+/** English resource — default, source of truth. */
+export const EN = {
+  chrome: {
+    title: "  comuki · opentui (core) · focus-mode",
+    titleCompact: " comuki",
+  },
+  connection: {
+    connected: "connected",
+    connecting: "connecting",
+    reconnecting: "reconnecting",
+    disconnected: "offline",
+    connectedShort: "live",
+    connectingShort: "…",
+    reconnectingShort: "retry",
+    disconnectedShort: "off",
+  },
+  composer: {
+    placeholder: "Ask Comuki. Enter to send, ctrl+n for a new session.",
+    placeholderCompact: "ask ›",
+  },
+  transcript: {
+    you: "you ›",
+    comuki: "comuki ›",
+    system: "system ›",
+    tool: "tool ›",
+    thinking: "comuki …",
+    failed: "× turn failed:",
+    emptySession: "no open session — ctrl+n to start one",
+  },
+  approval: {
+    intentPrefix: "intent:",
+    scopePrefix: "scope:",
+    riskPrefix: "risk:",
+    planPrefix: "plan:",
+    stepPrefix: "›",
+    diffPrefix: "diff:",
+    decideLabel: "decide: y = approve, n = reject",
+    unreadablePlan: "(plan payload unreadable)",
+    action: {
+      approve: "approve",
+      reject: "reject",
+    },
+  },
+  cmd: {
+    "submit-turn": {
+      label: "Submit turn",
+      description: "Send the composer draft as a new turn.",
+    },
+    "cancel-turn": {
+      label: "Cancel running turn",
+      description: "Stop listening to the turn in flight (/stop).",
+    },
+    approve: {
+      label: "Approve pending plan",
+      description: "Approve the plan awaiting approval.",
+    },
+    reject: {
+      label: "Reject pending plan",
+      description: "Reject the plan awaiting approval.",
+    },
+    "new-session": {
+      label: "New session",
+      description: "Open a new pending session tab.",
+    },
+    "close-session": {
+      label: "Close session",
+      description: "Close the active session tab (the server keeps running).",
+    },
+    exit: {
+      label: "Exit",
+      description: "Stop the kernel, restore the terminal, quit.",
+    },
+  },
+} as const
+
+/** Russian resource — parallel to EN, same key set. */
+export const RU = {
+  chrome: {
+    title: "  comuki · opentui (core) · focus-mode",
+    titleCompact: " comuki",
+  },
+  connection: {
+    connected: "связь установлена",
+    connecting: "подключение",
+    reconnecting: "переподключение",
+    disconnected: "нет связи",
+    connectedShort: "live",
+    connectingShort: "…",
+    reconnectingShort: "retry",
+    disconnectedShort: "off",
+  },
+  composer: {
+    placeholder: "Спроси Comuki. Enter — отправить, ctrl+n — новая сессия.",
+    placeholderCompact: "спросить ›",
+  },
+  transcript: {
+    you: "вы ›",
+    comuki: "comuki ›",
+    system: "система ›",
+    tool: "инструмент ›",
+    thinking: "comuki …",
+    failed: "× ход не удался:",
+    emptySession: "нет открытых сессий — ctrl+n чтобы начать",
+  },
+  approval: {
+    intentPrefix: "замысел:",
+    scopePrefix: "обхват:",
+    riskPrefix: "риск:",
+    planPrefix: "план:",
+    stepPrefix: "›",
+    diffPrefix: "diff:",
+    decideLabel: "решение: y — одобрить, n — отклонить",
+    unreadablePlan: "(план нечитаем)",
+    action: {
+      approve: "одобрить",
+      reject: "отклонить",
+    },
+  },
+  cmd: {
+    "submit-turn": {
+      label: "Отправить ход",
+      description: "Отправить черновик композера как новый ход.",
+    },
+    "cancel-turn": {
+      label: "Отменить текущий ход",
+      description: "Перестать слушать идущий ход (/stop).",
+    },
+    approve: {
+      label: "Одобрить ожидающий план",
+      description: "Одобрить план, ожидающий решения.",
+    },
+    reject: {
+      label: "Отклонить ожидающий план",
+      description: "Отклонить план, ожидающий решения.",
+    },
+    "new-session": {
+      label: "Новая сессия",
+      description: "Открыть новую вложенную (pending) сессию.",
+    },
+    "close-session": {
+      label: "Закрыть сессию",
+      description: "Закрыть активную сессию (сервер продолжает работу).",
+    },
+    exit: {
+      label: "Выход",
+      description: "Остановить ядро, восстановить терминал, выйти.",
+    },
+  },
+} as const
+
+export const RESOURCES = { en: EN, ru: RU } as const
+
+/**
+ * Create a fully-initialized i18next instance for the given locale.
+ * `init()` is awaited — by the time the returned promise resolves, the
+ * instance's `language` and resource lookups are ready for `tr`.
+ */
+export async function createI18nFor(locale: LocaleCode): Promise<I18nInstance> {
+  const instance = i18next.createInstance()
+  await instance.init({
+    resources: {
+      en: { [TUI_NAMESPACE]: EN },
+      ru: { [TUI_NAMESPACE]: RU },
+    },
+    lng: locale,
+    fallbackLng: DEFAULT_LOCALE,
+    ns: [TUI_NAMESPACE],
+    defaultNS: TUI_NAMESPACE,
+    interpolation: { escapeValue: false },
+    initImmediate: false,
+  })
+  return instance
+}
+
+/**
+ * Return the localized value for `key` on the tui namespace. Throws if
+ * the resolved value is empty or equal to the key itself — that signals
+ * a missing key in the active locale and the fallback, which is a build
+ * bug the parity tests catch.
+ */
+export function tr(instance: I18nInstance, key: string): string {
+  const value = instance.t(key, { ns: TUI_NAMESPACE })
+  if (typeof value === "string" && value.length > 0 && value !== key) {
+    return value
+  }
+  throw new Error(
+    `i18n: missing or empty key '${key}' in locale '${instance.language}' (namespace '${TUI_NAMESPACE}')`,
+  )
+}

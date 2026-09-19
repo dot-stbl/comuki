@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
+    "lint": "eslint .",
     "test": "bun test tests/",
-    "test:core": "bun test tests/commands.test.ts tests/approval.test.ts tests/resize.test.ts tests/suspend.test.ts",
+    "test:core": "bun test tests/commands.test.ts tests/approval.test.ts tests/resize.test.ts tests/suspend.test.ts tests/fixture-cardinality.test.ts tests/i18n.test.ts",
     "smoke:load": "bun run scripts/smoke-load.ts",
     "measure:cold-start": "bun run scripts/measure-cold-start.ts",
     "measure:fixture": "bun run scripts/measure-fixture.ts",
@@ -22,6 +23,9 @@
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
-    "typescript": "^5.7.2"
+    "eslint": "^9",
+    "eslint-plugin-import": "^2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8"
   }
 }

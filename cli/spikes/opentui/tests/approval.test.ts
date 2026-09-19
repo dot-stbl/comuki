@@ -23,9 +23,9 @@ const PLAN: ApprovalPlan = {
   scope: "tests/Unit.Identity.Oidc.*",
   risk: "medium",
   planSteps: [
-    "CORE-APPROVAL-STEP-1 snapshot current merge-queue depth",
-    "CORE-APPROVAL-STEP-2 dispatch 4 claimers to Oidc test files",
-    "CORE-APPROVAL-STEP-3 abort + requeue if any claimer stalls > 60s",
+    "CORE-APPROVAL-STEP-1 snapshot queue depth",
+    "CORE-APPROVAL-STEP-2 dispatch 4 claimers",
+    "CORE-APPROVAL-STEP-3 abort on stall > 60s",
   ],
   diff: "+ tests/Unit.Identity.Oidc* --ff\n- tests/Unit.Kafka* --ff",
 }
@@ -57,7 +57,7 @@ describe("core chat shell — inline approval is a real renderable in captureCha
     }
   })
 
-  test("approval renders intent / scope / risk / plan / step / diff / approve / reject in the captured frame", async () => {
+  test("approval renders intent / scope / risk / plan / every step / diff / approve / reject", async () => {
     shell.setApproval(PLAN)
     await setup.waitForVisualIdle()
 
@@ -68,19 +68,24 @@ describe("core chat shell — inline approval is a real renderable in captureCha
     // whole shell.
     expect(frame).toContain("comuki · opentui-spike (core)")
 
-    // Each section has a distinctive prefix the host typed into
-    // `ApprovalPlan`. The same prefixes appear in `chat-shell.ts`
-    // (`INTENT_PREFIX`, `SCOPE_PREFIX`, …). The captured frame
-    // MUST contain them all — that is the issue's "intent, scope,
-    // risk, plan, diff" requirement.
+    // Each section has a distinctive prefix the host types from
+    // the locale resource. The captured frame MUST contain them
+    // all — that is the issue's "intent, scope, risk, plan, diff"
+    // requirement.
     expect(frame).toContain("APPROVAL-INTENT: CORE-APPROVAL-INTENT re-run integration suite")
     expect(frame).toContain("APPROVAL-SCOPE: tests/Unit.Identity.Oidc.*")
     expect(frame).toContain("APPROVAL-RISK: medium")
     expect(frame).toContain("APPROVAL-PLAN:")
-    expect(frame).toContain("APPROVAL-STEP-1 snapshot current merge-queue depth")
+
+    // Iterate and assert every plan step from the fixture.
+    for (const step of PLAN.planSteps) {
+      expect(frame).toContain(step)
+    }
+
     expect(frame).toContain("APPROVAL-DIFF:")
-    expect(frame).toContain("+ tests/Unit.Identity.Oidc* --ff")
-    expect(frame).toContain("- tests/Unit.Kafka* --ff")
+    for (const line of PLAN.diff.split("\n")) {
+      expect(frame).toContain(line)
+    }
 
     // Approve and reject are real `SelectRenderable` options.
     // The `description` of each option carries a distinct prefix

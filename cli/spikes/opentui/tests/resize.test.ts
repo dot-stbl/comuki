@@ -2,26 +2,20 @@
  * Resize across the issue's required geometry sweep — real Core shell.
  *
  * One `createTestRenderer` instance, one `createChatShell` instance,
- * one draft set BEFORE the first resize. Resize through:
+ * one draft set BEFORE the first resize. The test then sequentially
+ * calls `shell.setSize(160, 50) → (80, 24) → (48, 16)` and after
+ * each call asserts the same `CORE-DRAFT-PRESERVED` string is
+ * present in the captured frame, alongside the top-bar (chrome) and
+ * a recognizable transcript marker.
  *
- *   - 160x50 — generous
- *   - 80x24  — production terminal baseline
- *   - 48x16  — tiny (compact layout kicks in)
+ * The audit's correction is the explicit "one renderer / one shell /
+ * one setDraft" structure. The same `setup` and `shell` flow through
+ * every assertion. The draft is set once in `beforeEach` and must
+ * survive every subsequent `setSize` call without re-injection.
  *
- * At every size the same captured frame must contain:
- *   - the top bar (chrome)
- *   - a recognizable transcript marker (the sticky-bottom viewport
- *     always shows the fixture's latest entries)
- *   - the exact draft `CORE-DRAFT-PRESERVED` (not "draft for WxH")
- *
- * The draft is set ONCE before the first resize; it must survive
- * every subsequent resize without re-injection. The shell's
- * `setSize()` updates compositor geometry, viewport width and top
- * bar wording together so the layout stays correct at any size.
- *
- * 48x16 is the contract failure point: with a 1-row composer and a
- * 1-row top bar the remaining 14 rows are viewport. We assert the
- * three semantic regions all survive by inspecting the captured frame.
+ * 48x16 falls into the compact layout (chrome shortening, composer
+ * collapsing). The captured frame must still contain all three
+ * semantic regions; the test fails loudly if not.
  */
 
 import { test, expect, describe, beforeEach, afterEach } from "bun:test"
@@ -29,8 +23,13 @@ import { createTestRenderer } from "@opentui/core/testing"
 import { createChatShell } from "../src/core/chat-shell.js"
 
 const DRAFT = "CORE-DRAFT-PRESERVED"
+const GEOMETRIES = [
+  [160, 50],
+  [80, 24],
+  [48, 16],
+] as const
 
-describe("core chat shell — real resize sweep 160x50 → 80x24 → 48x16", () => {
+describe("core chat shell — real resize sweep (single renderer, single shell, single draft)", () => {
   let setup: Awaited<ReturnType<typeof createTestRenderer>>
   let shell: Awaited<ReturnType<typeof createChatShell>>
 
@@ -46,6 +45,7 @@ describe("core chat shell — real resize sweep 160x50 → 80x24 → 48x16", () 
       { renderer: setup.renderer, memoryMode: true }
     )
     await setup.waitForVisualIdle()
+    // One setDraft for the whole sweep — no per-resize re-injection.
     shell.setDraft(DRAFT)
     await setup.waitForVisualIdle()
   })
@@ -59,12 +59,8 @@ describe("core chat shell — real resize sweep 160x50 → 80x24 → 48x16", () 
     }
   })
 
-  for (const [w, h] of [
-    [160, 50],
-    [80, 24],
-    [48, 16],
-  ] as const) {
-    test(`at ${w}x${h}: chrome + transcript marker + draft survive`, async () => {
+  test("draft survives the full 160x50 → 80x24 → 48x16 sweep", async () => {
+    for (const [w, h] of GEOMETRIES) {
       await shell.setSize(w, h)
       await setup.waitForVisualIdle()
 
@@ -77,9 +73,7 @@ describe("core chat shell — real resize sweep 160x50 → 80x24 → 48x16", () 
       expect(topBarPresent).toBe(true)
 
       // transcript marker — the sticky-bottom viewport always shows
-      // the fixture's latest entries; we look for any assistant
-      // line. The exact prefix is `Answer #99` because the
-      // fixture's tail falls at entries 988..999.
+      // the fixture's latest entries; we look for any assistant line.
       expect(frame).toMatch(/Answer #99\d:/)
 
       // composer — the same draft set ONCE before the first resize.
@@ -87,6 +81,6 @@ describe("core chat shell — real resize sweep 160x50 → 80x24 → 48x16", () 
       // 1-row composer; we look for the literal string the host
       // typed.
       expect(frame).toContain(DRAFT)
-    })
-  }
+    }
+  })
 })

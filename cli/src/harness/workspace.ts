@@ -375,4 +375,3 @@ export function migrateWorkspaceDocument(value: unknown): ClientWorkspace {
     outbound: [],
   }
 }
-

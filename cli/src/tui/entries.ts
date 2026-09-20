@@ -39,6 +39,7 @@ import {
 type WireView = NonNullable<HarnessMessage["view"]>
 type WirePart = NonNullable<WireView["parts"]>[number]
 export type WirePlanItem = Extract<WirePart, { kind: "plan" }>["nodes"][number]
+export type PlanEdgeView = Extract<WirePart, { kind: "plan" }>["edges"][number]
 export type WireMeta = NonNullable<WireView["meta"]>
 
 // ---------------------------------------------------------------------------
@@ -76,7 +77,6 @@ export interface ThinkingEntry extends EntryBase {
   readonly kind: "thinking"
   readonly text: string
   readonly tokens: number | null
-  readonly durationMs: number | null
 }
 
 /** One tool call inside a group — the wire `tool` part. */
@@ -109,6 +109,7 @@ export interface DiffEntry extends EntryBase {
 export interface PlanEntry extends EntryBase {
   readonly kind: "plan"
   readonly nodes: readonly WirePlanItem[]
+  readonly edges: readonly PlanEdgeView[]
 }
 
 export interface HandoffEntry extends EntryBase {
@@ -187,6 +188,17 @@ export function summarizeToolArgs(inputJson: string, maxChars = 40): string {
     used += separator + piece.length
   }
   return pieces.join(", ")
+}
+
+/** The kubb-generated wire types allow `number | string` for nullable
+ * integers (OpenAPI quirk: `int32?` serialises as `(number | string) | null`).
+ * Internal entry fields are plain `number | null`; coerce at the boundary
+ * and drop anything that doesn't parse to a non-negative integer. */
+function toNumberOrNull(value: number | string | null | undefined): number | null {
+  if (value === null || value === undefined) return null
+  const n = typeof value === "number" ? value : Number(value)
+  if (!Number.isFinite(n) || n < 0) return null
+  return n
 }
 
 /** `120ms`, `3.4s`, `2m 5s` — compact durations for summary lines. */
@@ -385,7 +397,7 @@ function partEntries(
           inputJson: part.inputJson,
           status: part.status,
           outputJson: part.outputJson ?? null,
-          durationMs: part.durationMs ?? null,
+          durationMs: toNumberOrNull(part.durationMs),
         })
         return
       case "thinking":
@@ -395,8 +407,7 @@ function partEntries(
           id: `${messageId}#p${index}`,
           ...stamp,
           text: part.text,
-          tokens: part.tokens ?? null,
-          durationMs: part.durationMs ?? null,
+          tokens: toNumberOrNull(part.tokens),
         })
         return
       case "text":
@@ -426,7 +437,7 @@ function partEntries(
             language: part.language,
             source: part.source,
             path: part.path ?? null,
-            startLine: part.startLine ?? null,
+            startLine: toNumberOrNull(part.startLine),
           })
         }
         return
@@ -449,6 +460,7 @@ function partEntries(
           id: `${messageId}#p${index}`,
           ...stamp,
           nodes: part.nodes,
+          edges: part.edges,
         })
         return
       case "handoff":
@@ -698,9 +710,6 @@ function thinkingSummary(entry: ThinkingEntry, i18n: I18nInstance): StyledLine {
   if (entry.tokens !== null && entry.tokens > 0) {
     segments.push(seg(`  ${formatTokenCount(entry.tokens)}`, "faint"))
   }
-  if (entry.durationMs !== null) {
-    segments.push(seg(` ${formatDurationMs(entry.durationMs)}`, "faint"))
-  }
   return segments
 }
 
@@ -931,12 +940,25 @@ function planSummary(entry: PlanEntry, i18n: I18nInstance): StyledLine {
 function planDetail(entry: PlanEntry, context: EntryRenderContext): StyledLine[] {
   const i18n = context.i18n
   const lines: StyledLine[] = [detailStamp(entry, i18n)]
+  // Map each node to its incoming edges (upstream node ids) so the detail
+  // line for a node can show `<- from, from` once. The wire stores edges
+  // as `{from, to}` pairs, not as `dependsOn` on the node — that shape
+  // moved in PR #114 (generated plan contract).
+  const incoming = new Map<string, string[]>()
+  for (const edge of entry.edges) {
+    const list = incoming.get(edge.to) ?? []
+    list.push(edge.from)
+    incoming.set(edge.to, list)
+  }
   for (const node of entry.nodes) {
     const brief = node.brief.split("\n")[0]?.trim() || "(no brief)"
+    const from = incoming.get(node.id)
     const deps =
-      node.dependsOn.length > 0 ? [seg(`  <- ${node.dependsOn.join(", ")}`, "faint")] : []
+      from && from.length > 0 ? [seg(`  <- ${from.join(", ")}`, "faint")] : []
     lines.push([
       seg("    . ", "accent"),
+      seg(node.id, "faint"),
+      seg(" ", "faint"),
       seg(node.profileKey, "text", { bold: true }),
       seg(" -> ", "faint"),
       seg(brief, "muted"),

@@ -7,8 +7,9 @@
  */
 
 import { describe, expect, test } from "bun:test"
+import type { MessagePart } from "../contracts/_generated/http/types/MessagePart"
 import type { HarnessMessage, HarnessSession } from "../harness/state"
-import { sessionId } from "../harness/state"
+import { sessionId, turnRequestId } from "../harness/state"
 import { createI18nFor } from "../locales"
 import {
   buildTranscriptEntries,
@@ -67,17 +68,17 @@ async function context(
   return { i18n: await createI18nFor("en"), width: 80, expanded }
 }
 
-const RICH_PARTS = [
-  { kind: "thinking", text: "I should check memory.", tokens: 120, durationMs: 1500 },
+const RICH_PARTS: MessagePart[] = [
+  { kind: "thinking", text: "I should check memory.", tokens: 120 },
   { kind: "tool", name: "memory.recall", inputJson: '{"query":"identity","top":5}', status: "ok", outputJson: '{"hits":[]}', durationMs: 220 },
   { kind: "tool", name: "fs.read", inputJson: '{"path":"a.ts"}', status: "ok" },
   { kind: "tool", name: "shell.run", inputJson: '{"cmd":"ls"}', status: "failed" },
   { kind: "text", markdown: "Here is the answer." },
   { kind: "code", language: "ts", source: "const a = 1", path: "src/a.ts", startLine: 3 },
   { kind: "code", language: "diff", source: "--- a/x\n+++ b/x\n@@ -1 +1 @@\n-old\n+new" },
-  { kind: "plan", nodes: [{ key: "n1", profileKey: "coder", brief: "write it", dependsOn: [] }] },
+  { kind: "plan", nodes: [{ id: "n1", title: "write it", profileKey: "coder", brief: "write it" }], edges: [] },
   { kind: "handoff", query: "follow-up task" },
-] as const
+]
 
 // ---------------------------------------------------------------------------
 // Mapping
@@ -108,7 +109,7 @@ describe("buildTranscriptEntries — part union → kinds", () => {
       { kind: "tool", name: "a", inputJson: "{}", status: "ok" },
       { kind: "text", markdown: "between" },
       { kind: "tool", name: "b", inputJson: "{}", status: "ok" },
-    ] as const
+    ] as MessagePart[]
     const entries = buildTranscriptEntries(
       sessionWith([message({ view: { id: "m-1", role: "assistant", content: "", toolName: null, parts, meta: null, createdAt: "" } })])
     )
@@ -146,7 +147,7 @@ describe("buildTranscriptEntries — part union → kinds", () => {
             role: "assistant",
             content: "",
             toolName: null,
-            parts: [{ kind: "diagram", dialect: "mermaid", source: "A-->B" }],
+            parts: [{ kind: "diagram", dialect: "mermaid", source: "A-->B" }] as MessagePart[],
             meta: null,
             createdAt: "",
           },
@@ -161,7 +162,11 @@ describe("buildTranscriptEntries — part union → kinds", () => {
   test("the thinking turn appends one streaming entry", () => {
     const session = {
       ...sessionWith([]),
-      turn: { kind: "thinking", requestId: undefined, accumulatedText: "live text" },
+      turn: {
+        kind: "thinking" as const,
+        requestId: turnRequestId("turn-live"),
+        accumulatedText: "live text",
+      },
     }
     const entries = buildTranscriptEntries(session)
     expect(entries).toHaveLength(1)
@@ -324,11 +329,11 @@ describe("entryLines — collapse, expand, omit", () => {
   })
 
   test("grouped summary carries the count", async () => {
-    const parts = [
+    const parts: MessagePart[] = [
       { kind: "tool", name: "a", inputJson: "{}", status: "ok" },
       { kind: "tool", name: "b", inputJson: "{}", status: "ok" },
       { kind: "tool", name: "c", inputJson: "{}", status: "failed" },
-    ] as const
+    ]
     const entries = buildTranscriptEntries(
       sessionWith([message({ view: { id: "m-1", role: "assistant", content: "", toolName: null, parts, meta: null, createdAt: "" } })])
     )
@@ -351,7 +356,7 @@ describe("entryLines — collapse, expand, omit", () => {
             role: "assistant",
             content: "",
             toolName: null,
-            parts: [{ kind: "thinking", text: "deep thought", tokens: 1200, durationMs: 62000 }],
+            parts: [{ kind: "thinking", text: "deep thought", tokens: 1200 }] as MessagePart[],
             meta: null,
             createdAt: "",
           },
@@ -365,7 +370,6 @@ describe("entryLines — collapse, expand, omit", () => {
       .join("\n")
     expect(collapsedText).toContain("thinking")
     expect(collapsedText).toContain("1.2k tok")
-    expect(collapsedText).toContain("1m 2s")
     expect(collapsedText).not.toContain("deep thought")
 
     const ctxAll = await context(new Set(collapsibleIds(entries)))
@@ -466,7 +470,11 @@ describe("entryLines — collapse, expand, omit", () => {
           },
         }),
       ]),
-      turn: { kind: "thinking", requestId: undefined, accumulatedText: "…" },
+      turn: {
+        kind: "thinking" as const,
+        requestId: turnRequestId("turn-live"),
+        accumulatedText: "…",
+      },
     })
     expect(lastCollapsibleId(entries)).toBe("m-1#tools0")
     expect(collapsibleIds(entries)).toEqual(["m-1#tools0"])

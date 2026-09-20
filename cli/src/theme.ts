@@ -286,7 +286,7 @@ export function paint(text: string, color: string): string {
 
 /** Strips ANSI escapes — SGR colors and OSC sequences (hyperlinks) — used by width-aware truncation and tests. */
 export function stripAnsi(text: string): string {
-   
+
   return text
     .replace(/\x1b\[[0-9;]*m/g, "")
     .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, "")

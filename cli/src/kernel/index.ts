@@ -16,3 +16,14 @@ export type {
 } from "../harness/effect-runner"
 export type { UserIntent } from "../harness/intents"
 export { translateIntent } from "../harness/intents"
+export type {
+  DecisionReceipt,
+  DecisionReceiptStore,
+  DecisionVerdict,
+} from "./receipts"
+export {
+  createDecisionReceiptStore,
+  defaultStateDirectory,
+  fingerprintFor,
+  receiptsFilePath,
+} from "./receipts"

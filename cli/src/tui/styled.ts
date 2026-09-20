@@ -12,9 +12,16 @@
  * bullets / h3+, ok lavender for diff additions, error yellow for
  * deletions, `rule` for code-frame borders. Colour never carries
  * status alone — every status pairs with its word.
+ *
+ * Approval rendering (issue #76) sits beside the entry renderers:
+ * `approvalSummary` / `approvalDetail` are the typed seam the
+ * transcript pipeline calls per density (compact / domain / stacked).
  */
 
 import { lexer, type Token, type Tokens } from "marked"
+
+import { TUI_NAMESPACE, tr, type I18nInstance } from "../locales"
+import type { ApprovalEntry } from "./approvals"
 
 // ---------------------------------------------------------------------------
 // Tones + segments
@@ -686,4 +693,311 @@ export function diffLines(
 ): StyledLine[] {
   const body = code.replace(/\n$/, "")
   return body.split("\n").map((line) => diffLine(line, width))
+}
+
+// ---------------------------------------------------------------------------
+// Approval rendering (issue #76) — pure seam for the entry pipeline
+// ---------------------------------------------------------------------------
+
+/**
+ * The `* ` event marker every collapsed/expanded entry header leads with —
+ * same convention as `entries.ts`. Imported indirectly via the entry pipeline;
+ * redeclared here so this module is the single seam for styled approval
+ * lines.
+ */
+const APPROVAL_EVENT_MARK = "* "
+
+/**
+ * One approval entry → a single styled summary line. The density
+ * (`risk`) decides the shape:
+ *
+ * - `compact` — `* approval · approve / reject · <scope>`
+ * - `domain`  — `* approval · <scope> · <requester>`
+ * - `stacked` — `* approval · <N> nodes · <scope>`
+ */
+export function approvalSummary(entry: ApprovalEntry, i18n: I18nInstance): StyledLine {
+  const segments: Segment[] = [seg(APPROVAL_EVENT_MARK, "faint")]
+  segments.push(
+    seg(`${tr(i18n, "transcript.entry.approval.label")} · `, "muted"),
+  )
+  switch (entry.risk) {
+    case "compact":
+      segments.push(
+        seg(tr(i18n, "approval.action.approve"), "ok"),
+        seg(" / ", "muted"),
+        seg(tr(i18n, "approval.action.reject"), "error"),
+        seg(" · ", "muted"),
+        seg(entry.applicability.scope, "faint"),
+      )
+      break
+    case "domain":
+      // Domain renders the same verbs as compact — the legacy card
+      // snapshot keys on these literals, and the in-line action verbs
+      // are useful at every density.
+      segments.push(
+        seg(entry.applicability.scope, "muted"),
+        seg(" · ", "muted"),
+        seg(tr(i18n, "approval.action.approve"), "ok"),
+        seg(" / ", "muted"),
+        seg(tr(i18n, "approval.action.reject"), "error"),
+        seg(" · ", "muted"),
+        seg(entry.applicability.requester, "faint"),
+      )
+      break
+    case "stacked": {
+      const nodes = entry.pendingAction.kind === "stacked"
+        ? entry.pendingAction.nodes
+        : []
+      segments.push(
+        seg(
+          interpolate(i18n, "transcript.entry.approval.stackedHeader", { nodes: nodes.length }),
+          "muted",
+        ),
+        seg(" · ", "muted"),
+        seg(tr(i18n, "approval.action.approve"), "ok"),
+        seg(" / ", "muted"),
+        seg(tr(i18n, "approval.action.reject"), "error"),
+        seg(" · ", "muted"),
+        seg(entry.applicability.scope, "faint"),
+      )
+      break
+    }
+  }
+  return segments
+}
+
+/** `tr` with interpolation params — same loud-miss contract as `entries.ts`. */
+function interpolate(
+  i18n: I18nInstance,
+  key: string,
+  params: Record<string, string | number>
+): string {
+  const value = i18n.t(key, { ns: TUI_NAMESPACE, ...params })
+  if (typeof value === "string" && value.length > 0 && value !== key) {
+    return value
+  }
+  throw new Error(
+    `i18n: missing or empty key '${key}' in locale '${i18n.language}' (namespace '${TUI_NAMESPACE}')`,
+  )
+}
+
+/**
+ * One approval entry → a styled detail block. The intent/scope/risk
+ * lines mirror the legacy `InlineApprovalCard` shape so existing
+ * snapshots and tests keep reading the same fields:
+ *
+ * - `intent: <text>` (when present)
+ * - `scope: <text>` (when present)
+ * - `risk: <text>` (when present)
+ * - `plan:`
+ *   `› <step>` per step (one node per row when stacked)
+ * - `diff:` (when the plan payload carries diff lines)
+ *   `+ <line>` / `- <line>` per line
+ * - `decide: y = approve, n = reject`
+ *
+ * The block always renders in full — approvals are interactive, the
+ * user needs every field visible without toggling ctrl+o.
+ */
+export function approvalDetail(
+  entry: ApprovalEntry,
+  context: ApprovalRenderContext
+): StyledLine[] {
+  const i18n = context.i18n
+  const indent = "    "
+  const lines: StyledLine[] = []
+
+  // Intent, scope, risk — only when the plan carries the field.
+  const intent = readIntent(entry)
+  if (intent !== null) {
+    lines.push([
+      seg(indent, "faint"),
+      seg(`${tr(i18n, "approval.intentPrefix")} `, "muted"),
+      seg(intent, "text", { bold: true }),
+    ])
+  }
+  const scope = readScope(entry)
+  if (scope !== null) {
+    lines.push([
+      seg(indent, "faint"),
+      seg(`${tr(i18n, "approval.scopePrefix")} `, "muted"),
+      seg(scope, "muted"),
+    ])
+  }
+  const risk = readRisk(entry)
+  if (risk !== null) {
+    lines.push([
+      seg(indent, "faint"),
+      seg(`${tr(i18n, "approval.riskPrefix")} `, "muted"),
+      seg(risk, risk === "high" ? "error" : "muted"),
+    ])
+  }
+
+  // Plan header + steps (domain) or per-node list (stacked).
+  const steps = readSteps(entry)
+  if (steps.length > 0 || entry.pendingAction.kind === "stacked") {
+    const estimate = readEstimateMinutes(entry)
+    const estimateSuffix = estimate !== null ? ` (~${estimate}m)` : ""
+    lines.push([
+      seg(indent, "faint"),
+      seg(`${tr(i18n, "approval.planPrefix")}${estimateSuffix}`, "muted"),
+    ])
+    if (entry.pendingAction.kind === "stacked") {
+      for (const node of entry.pendingAction.nodes) {
+        lines.push([
+          seg(`${indent}${indent} `, "faint"),
+          seg(node.id, "faint"),
+          seg(" ", "faint"),
+          seg(node.profileKey, "text", { bold: true }),
+          seg(" → ", "faint"),
+          seg(node.brief.length > 0 ? node.brief : node.title, "muted"),
+        ])
+      }
+    } else {
+      const renderSteps = steps.length > 0
+        ? steps
+        : [tr(i18n, "approval.unreadablePlan")]
+      for (const step of renderSteps) {
+        lines.push([
+          seg(`${indent}${indent} `, "faint"),
+          seg(`${tr(i18n, "approval.stepPrefix")} ${step}`, "muted"),
+        ])
+      }
+    }
+  }
+
+  // Diff (when present).
+  const diff = readDiff(entry)
+  if (diff.length > 0) {
+    lines.push([
+      seg(indent, "faint"),
+      seg(tr(i18n, "approval.diffPrefix"), "muted"),
+    ])
+    for (const line of diff) {
+      lines.push([
+        seg(`${indent}${indent} `, "faint"),
+        seg(line, "ok"),
+      ])
+    }
+  }
+
+  // The decide label is the literal legacy copy — y/n keep working
+  // through the registered approval layer; the palette reaches the
+  // same dispatch path. The literal stays so the existing card-shape
+  // snapshots keep matching.
+  lines.push([seg(indent, "faint"), seg(tr(i18n, "approval.decideLabel"), "muted")])
+
+  return lines
+}
+
+/** Minimal context the approval renderer needs — mirrors `EntryRenderContext`. */
+export interface ApprovalRenderContext {
+  readonly i18n: I18nInstance
+  readonly width: number
+  readonly expanded: ReadonlySet<string>
+}
+
+// -- field readers ----------------------------------------------------------
+
+function readIntent(entry: ApprovalEntry): string | null {
+  const action = entry.pendingAction
+  if (action.kind === "domain") {
+    const payload = action.planPayload as { intent?: unknown } | undefined
+    const intent = payload?.intent
+    if (typeof intent === "string" && intent.trim().length > 0) {
+      return intent.trim()
+    }
+    return action.effects.length > 0 ? action.effects : null
+  }
+  return action.effects.length > 0 ? action.effects : null
+}
+
+function readScope(entry: ApprovalEntry): string | null {
+  if (entry.applicability.scope.length === 0) {
+    return null
+  }
+  return entry.applicability.scope
+}
+
+function readRisk(entry: ApprovalEntry): string | null {
+  const action = entry.pendingAction
+  if (action.kind === "domain") {
+    const payload = action.planPayload as { risk?: unknown } | undefined
+    const risk = payload?.risk
+    if (typeof risk === "string" && risk.trim().length > 0) {
+      return risk.trim()
+    }
+  }
+  return null
+}
+
+function readSteps(entry: ApprovalEntry): readonly string[] {
+  const action = entry.pendingAction
+  if (action.kind === "domain") {
+    const payload = action.planPayload as
+      | { planSteps?: unknown; steps?: unknown; nodes?: unknown }
+      | undefined
+    // Prefer legacy `planSteps` (or `steps`) when the array has content.
+    // `payload.steps` is always an array (possibly empty); only fall back
+    // to the nodes' briefs when the legacy arrays carry nothing.
+    if (Array.isArray(payload?.planSteps) && payload.planSteps.length > 0) {
+      return payload.planSteps.filter(
+        (step): step is string => typeof step === "string"
+      )
+    }
+    if (Array.isArray(payload?.steps) && payload.steps.length > 0) {
+      return payload.steps.filter(
+        (step): step is string => typeof step === "string"
+      )
+    }
+    // The platform wire shape carries steps inside `nodes` when there is
+    // no legacy `planSteps` array. Fall back to the node briefs.
+    if (Array.isArray(payload?.nodes)) {
+      return payload.nodes
+        .filter(
+          (node): node is { brief?: unknown } =>
+            typeof node === "object" && node !== null
+        )
+        .map((node) =>
+          typeof node.brief === "string" && node.brief.length > 0
+            ? node.brief
+            : ""
+        )
+        .filter((line) => line.length > 0)
+    }
+    return []
+  }
+  if (action.kind === "stacked") {
+    return action.nodes.map((node) => node.brief)
+  }
+  return []
+}
+
+function readDiff(entry: ApprovalEntry): readonly string[] {
+  const action = entry.pendingAction
+  if (action.kind === "domain") {
+    const payload = action.planPayload as
+      | { diff?: unknown }
+      | undefined
+    if (typeof payload?.diff === "string" && payload.diff.length > 0) {
+      return payload.diff.split("\n")
+    }
+    if (Array.isArray(payload?.diff)) {
+      return payload.diff.filter((line): line is string => typeof line === "string")
+    }
+  }
+  return []
+}
+
+function readEstimateMinutes(entry: ApprovalEntry): number | null {
+  const action = entry.pendingAction
+  if (action.kind === "domain") {
+    const payload = action.planPayload as
+      | { estimateMinutes?: unknown }
+      | undefined
+    const estimate = payload?.estimateMinutes
+    if (typeof estimate === "number" && Number.isFinite(estimate) && estimate > 0) {
+      return Math.round(estimate)
+    }
+  }
+  return null
 }

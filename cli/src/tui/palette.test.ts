@@ -185,9 +185,13 @@ describe("tui host — command palette", () => {
 
     setup.mockInput.pressArrow("up")
     await pumpInput()
-    // The selection wrapped (5 entries → last), the composer draft
-    // did NOT become a recalled history entry.
-    await setup.waitForFrame((frame) => frame.includes("> Command palette"))
+    // The selection wrapped (n entries → last), the composer draft
+    // did NOT become a recalled history entry. Issue #76 added
+    // `show-receipt` at the end of the registry; the wrap lands
+    // there now.
+    await setup.waitForFrame(
+      (frame) => frame.includes("> Show approval receipt")
+    )
     expect(host.getDraft()).toBe("")
   })
 })

@@ -5,7 +5,10 @@
  * - `dispatch(intent)` — the renderer's entire vocabulary;
  * - `accept(event)` — normalized server/runtime events in;
  * - `snapshot()` — immutable state out;
- * - `subscribe(listener)` — change notification.
+ * - `subscribe(listener)` — change notification;
+ * - `recordDecision(receipt)` — append one row to the audit ledger
+ *   (issue #76). Sync from the caller's POV; the writer chains
+ *   file writes in a lane so concurrent decisions never interleave.
  *
  * Internally the kernel owns the ClientWorkspace aggregate (open
  * session refs, active session, drafts, cursors, outbound idempotency
@@ -17,6 +20,8 @@
  *
  * The kernel contains no Ink/React/ANSI code; it talks to the world
  * exclusively through ports (`harness/effect-runner.ts`, `./feed.ts`).
+ * The receipt writer is owned by the kernel (it's the only stateful
+ * side of an otherwise pure projection); no port seam is needed.
  */
 import type { HarnessEffect } from "../harness/effects"
 import { runEffect, type HarnessEffectPorts } from "../harness/effect-runner"
@@ -33,6 +38,12 @@ import {
   applyWorkspaceToState,
   migrateWorkspaceDocument,
 } from "../harness/workspace"
+import {
+  createDecisionReceiptStore,
+  defaultStateDirectory,
+  type DecisionReceipt,
+  type DecisionReceiptStore,
+} from "./receipts"
 import type { EventFeedPort, FeedMessage } from "./feed"
 
 /** Normalized server/runtime event accepted by the kernel. */
@@ -56,6 +67,13 @@ export interface ClientKernel {
   stop(): void
   /** Resolves when every scheduled effect has settled (test/stop seam). */
   whenIdle(): Promise<void>
+  /**
+   * Append one row to the decision ledger (issue #76). Sync from the
+   * caller's POV; the actual file write runs in the kernel's chained
+   * lane. A corrupt filesystem must not break the dispatch chain —
+   * the writer absorbs errors.
+   */
+  recordDecision(receipt: DecisionReceipt): void
 }
 
 export interface ClientKernelOptions {
@@ -70,6 +88,12 @@ export interface ClientKernelOptions {
    * reports here. Optional; production hosts can wire a status line.
    */
   readonly onDegrade?: (reason: string) => void
+  /**
+   * Override the receipt writer (issue #76). Defaults to an XDG-aware
+   * writer rooted at the platform state directory; tests inject a
+   * stub rooted at a temp directory.
+   */
+  readonly receipts?: DecisionReceiptStore
 }
 
 export function createClientKernel(options: ClientKernelOptions): ClientKernel {
@@ -77,6 +101,11 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
   const feed = options.feed
   const now = options.now ?? (() => Date.now())
   const controller = new AbortController()
+  // Receipt writer — singleton, lazy-initialised so tests can inject
+  // before the first `recordDecision` call. The default root is the
+  // XDG state directory; production wires nothing and gets that.
+  const receipts: DecisionReceiptStore =
+    options.receipts ?? createDecisionReceiptStore({ stateDirectory: defaultStateDirectory() })
 
   let state: HarnessState = initialHarnessState()
   let revision = 0
@@ -394,6 +423,12 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
         }
         idleWaiters.push(resolve)
       }).then(() => chain)
+    },
+    recordDecision(receipt) {
+      if (stopped) {
+        return
+      }
+      receipts.append(receipt)
     },
   }
 }

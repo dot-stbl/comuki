@@ -73,6 +73,25 @@ export const REQUIRED_KEYS = [
   "cmd.close-session.description",
   "cmd.exit.label",
   "cmd.exit.description",
+  "cmd.help.label",
+  "cmd.help.description",
+  "cmd.rename-session.label",
+  "cmd.rename-session.description",
+  "cmd.rename-session.argsHint",
+  "cmd.clear-draft.label",
+  "cmd.clear-draft.description",
+  "cmd.open-editor.label",
+  "cmd.open-editor.description",
+  "cmd.open-palette.label",
+  "cmd.open-palette.description",
+  "menu.commandsTitle",
+  "menu.commandsHint",
+  "palette.title",
+  "palette.placeholder",
+  "palette.empty",
+  "help.title",
+  "queue.prefix",
+  "queue.moreSuffix",
   "cli.unknownTuiHost",
   "cli.tuiHostsAvailable",
 ] as const
@@ -151,6 +170,43 @@ export const EN = {
       label: "Exit",
       description: "Stop the kernel, restore the terminal, quit.",
     },
+    help: {
+      label: "Help",
+      description: "List every registered command with its binding.",
+    },
+    "rename-session": {
+      label: "Rename session",
+      description: "Rename the active session (/rename <title>).",
+      argsHint: "<title>",
+    },
+    "clear-draft": {
+      label: "Clear draft",
+      description: "Empty the composer and drop the saved draft.",
+    },
+    "open-editor": {
+      label: "Edit in $EDITOR",
+      description: "Edit the draft in the external editor (ctrl+e).",
+    },
+    "open-palette": {
+      label: "Command palette",
+      description: "Open the fuzzy command palette (ctrl+p).",
+    },
+  },
+  menu: {
+    commandsTitle: "commands",
+    commandsHint: "arrows select · tab/enter complete · esc close",
+  },
+  palette: {
+    title: "command palette",
+    placeholder: "type to filter…",
+    empty: "no matching commands",
+  },
+  help: {
+    title: "commands · esc to close",
+  },
+  queue: {
+    prefix: "queued:",
+    moreSuffix: "more",
   },
   cli: {
     unknownTuiHost: "unknown --tui host:",
@@ -230,6 +286,43 @@ export const RU = {
       label: "Выход",
       description: "Остановить ядро, восстановить терминал, выйти.",
     },
+    help: {
+      label: "Справка",
+      description: "Показать все зарегистрированные команды и их клавиши.",
+    },
+    "rename-session": {
+      label: "Переименовать сессию",
+      description: "Переименовать активную сессию (/rename <название>).",
+      argsHint: "<название>",
+    },
+    "clear-draft": {
+      label: "Очистить черновик",
+      description: "Опустошить композер и убрать сохранённый черновик.",
+    },
+    "open-editor": {
+      label: "Открыть в $EDITOR",
+      description: "Править черновик во внешнем редакторе (ctrl+e).",
+    },
+    "open-palette": {
+      label: "Палитра команд",
+      description: "Открыть палитру команд с фильтром (ctrl+p).",
+    },
+  },
+  menu: {
+    commandsTitle: "команды",
+    commandsHint: "стрелки — выбор · tab/enter — подставить · esc — закрыть",
+  },
+  palette: {
+    title: "палитра команд",
+    placeholder: "фильтр…",
+    empty: "нет подходящих команд",
+  },
+  help: {
+    title: "команды · esc — закрыть",
+  },
+  queue: {
+    prefix: "в очереди:",
+    moreSuffix: "ещё",
   },
   cli: {
     unknownTuiHost: "неизвестный --tui хост:",

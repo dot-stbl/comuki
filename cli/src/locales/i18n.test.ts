@@ -59,6 +59,19 @@ describe("tui locales — parity between en and ru", () => {
       "approval.decideLabel",
       "cmd.submit-turn.label",
       "cmd.exit.description",
+      "cmd.help.label",
+      "cmd.rename-session.argsHint",
+      "cmd.clear-draft.description",
+      "cmd.open-editor.label",
+      "cmd.open-palette.label",
+      "menu.commandsTitle",
+      "menu.commandsHint",
+      "palette.title",
+      "palette.placeholder",
+      "palette.empty",
+      "help.title",
+      "queue.prefix",
+      "queue.moreSuffix",
     ] as const
     for (const key of samples) {
       expect(tr(en, key)).not.toBe(tr(ru, key))

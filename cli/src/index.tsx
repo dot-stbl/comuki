@@ -25,6 +25,8 @@ import {
   runOneshot,
 } from "./commands/oneshot"
 import { ComukiClient } from "./lib/client"
+import { JsonOutput } from "./machine/output"
+import { machineErrorFrom } from "./machine/mapping"
 import {
   createI18nFor,
   tr,
@@ -38,7 +40,7 @@ import {
 import { resolveCommand } from "./lib/commands"
 import { CLI_VERSION } from "./components/StatusLine"
 import { formatWhoamiLines, whoAmI, whoFromError, whoFromMe } from "./lib/auth"
-import { mapWhoamiJson, printJson } from "./lib/jsonout"
+import { mapWhoamiJson } from "./lib/jsonout"
 import { stripMarkdownToPlain } from "./lib/markdown"
 import {
   DEFAULT_THEME_CHOICE,
@@ -291,6 +293,25 @@ async function main(): Promise<void> {
     return
   }
   if (command === "whoami") {
+    if (json) {
+      const out = new JsonOutput()
+      out.start("whoami")
+      try {
+        const client = new ComukiClient(config)
+        const who = await whoAmI(client)
+        let me = null
+        try {
+          me = await client.me()
+        } catch {
+          // whoAmI already reported the failure shape.
+        }
+        out.complete({ ...mapWhoamiJson(who, me) })
+      } catch (error) {
+        out.fail(machineErrorFrom(error))
+        process.exitCode = out.exitCode
+      }
+      return
+    }
     const client = new ComukiClient(config)
     const who = await whoAmI(client)
     let me = null
@@ -298,10 +319,6 @@ async function main(): Promise<void> {
       me = await client.me()
     } catch {
       // whoAmI already reported the failure shape.
-    }
-    if (json) {
-      printJson(mapWhoamiJson(who, me))
-      return
     }
     if (me) {
       for (const line of formatWhoamiLines(whoFromMe(me), me)) {

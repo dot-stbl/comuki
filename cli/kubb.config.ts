@@ -36,6 +36,11 @@ if (!existsSync(resolve(process.cwd(), SPEC_PATH))) {
 
 export default defineConfig({
   root: ".",
+  // Kubb's default done-hook pipes output through prettier; the CLI has
+  // no prettier (eslint owns formatting). Empty the hook — raw kubb
+  // output is deterministic on its own, which is what the drift diff
+  // needs. (Root-level option; under `output` it is silently ignored.)
+  hooks: { done: [] },
   input: {
     path: SPEC_PATH,
   },
@@ -54,10 +59,6 @@ export default defineConfig({
     // No entry re-exports: domains import concrete paths (e.g.
     // `import type { ChatSessionView } from "@/contracts/_generated/http/types/ChatSessionView"`).
     barrelType: false,
-    // Kubb's default done-hook pipes output through prettier; the CLI has no
-    // prettier (eslint owns formatting). Disable the hook — raw kubb output
-    // is deterministic on its own, which is what the drift diff needs.
-    hooks: { done: [] },
   },
   plugins: [
     pluginOas(),

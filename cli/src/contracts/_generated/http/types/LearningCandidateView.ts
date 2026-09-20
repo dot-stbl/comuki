@@ -5,7 +5,7 @@
 
 
 /**
- * @description Read-model of one learning candidate for the approvals API and the\r\nlearning.suggest acknowledgement. Status is the wire key of\r\nLearningStatus (pending / approved / rejected).
+ * @description Read-model of one learning candidate for the approvals API and the\nlearning.suggest acknowledgement. Status is the wire key of\nLearningStatus (pending / approved / rejected).
 */
 export type LearningCandidateView = {
     /**

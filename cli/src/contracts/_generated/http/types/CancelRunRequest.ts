@@ -5,7 +5,7 @@
 
 
 /**
- * @description Body of `POST /api/v1/runs/{runId}/cancel`. The `reason`\r\n(when present) is journalled verbatim on the `run.status_changed`\r\nevent\'s jsonb payload — the operator\'s note that survives the run\'s\r\ntimeline.
+ * @description Body of `POST /api/v1/runs/{runId}/cancel`. The `reason`\n(when present) is journalled verbatim on the `run.status_changed`\nevent\'s jsonb payload — the operator\'s note that survives the run\'s\ntimeline.
 */
 export type CancelRunRequest = {
     /**

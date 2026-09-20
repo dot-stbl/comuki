@@ -5,7 +5,7 @@
 
 
 /**
- * @description Scheduled job partial-update body\r\n(`PATCH /api/v1/projects/{projectId}/scheduled-jobs/{jobId}`).\r\nNull fields leave the stored value untouched — the canonical PATCH\r\nsemantics. `cronExpression` is re-parsed on write; a malformed\r\nvalue surfaces `400` with the `scheduler.invalid_cron`\r\ncode.
+ * @description Scheduled job partial-update body\n(`PATCH /api/v1/projects/{projectId}/scheduled-jobs/{jobId}`).\nNull fields leave the stored value untouched — the canonical PATCH\nsemantics. `cronExpression` is re-parsed on write; a malformed\nvalue surfaces `400` with the `scheduler.invalid_cron`\ncode.
 */
 export type UpdateScheduledJobRequest = {
     /**

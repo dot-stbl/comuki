@@ -8,7 +8,7 @@ import type { OrchestrationSettingsView } from "./OrchestrationSettingsView";
 import type { ProxySettingsView } from "./ProxySettingsView";
 
 /**
- * @description Wire shape of `GET /api/v1/settings` — a read-only snapshot of the\r\nplatform-level settings that already exist as bound options. Every value\r\nis `IOptions`-backed (fixed at startup); there is deliberately no\r\nPUT: nothing in this surface is mutable at runtime, and pretending\r\notherwise would be phantom success. Changes go through configuration +\r\na restart.
+ * @description Wire shape of `GET /api/v1/settings` — a read-only snapshot of the\nplatform-level settings that already exist as bound options. Every value\nis `IOptions`-backed (fixed at startup); there is deliberately no\nPUT: nothing in this surface is mutable at runtime, and pretending\notherwise would be phantom success. Changes go through configuration +\na restart.
 */
 export type SettingsView = {
     /**

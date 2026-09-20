@@ -6,7 +6,7 @@
 import type { PermissionsView } from "./PermissionsView";
 
 /**
- * @description The authenticated caller\'s identity for SPA session bootstrap:\r\nwho the principal resolves to, the roles it holds, and the\r\neffective permission sets per scope. Permissions are computed for\r\nthe request\'s subject — an API-key request reports the key\'s\r\nassignments, not its owner\'s.
+ * @description The authenticated caller\'s identity for SPA session bootstrap:\nwho the principal resolves to, the roles it holds, and the\neffective permission sets per scope. Permissions are computed for\nthe request\'s subject — an API-key request reports the key\'s\nassignments, not its owner\'s.
 */
 export type MeResponse = {
     /**

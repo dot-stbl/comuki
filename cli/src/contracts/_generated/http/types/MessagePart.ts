@@ -12,7 +12,7 @@ import type { MessagePartThinkingPart } from "./MessagePartThinkingPart";
 import type { MessagePartToolPart } from "./MessagePartToolPart";
 
 /**
- * @description             One fragment of a chat message. A message is an ordered list of parts,\r\n            so a single assistant turn can carry prose, three tool calls and a plan\r\n            card without becoming five unrelated transcript rows.\r\n            The union is closed to nested records (private constructor) and\r\ndiscriminated on the wire by kind — the keys live in\r\nMessagePartKinds. New kinds are added here as further\r\nnested records plus a JsonDerivedTypeAttribute line; the\r\nP2 question/decision parts land exactly that way.
+ * @description             One fragment of a chat message. A message is an ordered list of parts,\n            so a single assistant turn can carry prose, three tool calls and a plan\n            card without becoming five unrelated transcript rows.\n            The union is closed to nested records (private constructor) and\ndiscriminated on the wire by kind — the keys live in\nMessagePartKinds. New kinds are added here as further\nnested records plus a JsonDerivedTypeAttribute line; the\nP2 question/decision parts land exactly that way.
 */
 export type MessagePart = ((MessagePartTextPart & {
     kind: "text";

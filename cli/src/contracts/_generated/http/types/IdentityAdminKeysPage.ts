@@ -6,7 +6,7 @@
 import type { ApiKeyView } from "./ApiKeyView";
 
 /**
- * @description Paged envelope for API keys. The plaintext is never carried —\r\n    only the public-facing view record (prefix, name, status…).
+ * @description Paged envelope for API keys. The plaintext is never carried —\n    only the public-facing view record (prefix, name, status…).
 */
 export type IdentityAdminKeysPage = {
     /**

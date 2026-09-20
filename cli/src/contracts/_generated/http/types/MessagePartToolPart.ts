@@ -11,7 +11,7 @@ export const messagePartToolPartKindEnum = {
 export type MessagePartToolPartKindEnumKey = (typeof messagePartToolPartKindEnum)[keyof typeof messagePartToolPartKindEnum];
 
 /**
- * @description One tool invocation. A running call is journalled with\r\nstring ToolPartStatuses.Running and no output; the terminal\r\nform carries the observation.
+ * @description One tool invocation. A running call is journalled with\nstring ToolPartStatuses.Running and no output; the terminal\nform carries the observation.
 */
 export type MessagePartToolPart = {
     /**

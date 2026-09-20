@@ -5,7 +5,7 @@
 
 
 /**
- * @description Wire row of one worker as the dashboard queue page sees it. Workers are\r\n<b>derived</b>, not registered: a busy worker is a live work-item lease\r\n(`leased_by` on a `Running` row); an idle worker is one whose\r\nlast claim still shows in the recent journal window. Fields only a\r\ncontainer runtime could answer (provider handle, uptime) are absent on\r\npurpose — this host does not compose the compute engine.
+ * @description Wire row of one worker as the dashboard queue page sees it. Workers are\n<b>derived</b>, not registered: a busy worker is a live work-item lease\n(`leased_by` on a `Running` row); an idle worker is one whose\nlast claim still shows in the recent journal window. Fields only a\ncontainer runtime could answer (provider handle, uptime) are absent on\npurpose — this host does not compose the compute engine.
 */
 export type WorkerView = {
     /**

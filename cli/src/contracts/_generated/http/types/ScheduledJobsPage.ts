@@ -6,7 +6,7 @@
 import type { ScheduledJobView } from "./ScheduledJobView";
 
 /**
- * @description One paginated read of scheduled jobs for a project.\r\nWire shape: `{ \"items\": [ScheduledJobView], \"total\": N }`.\r\nThe scheduler surface is small (per project, one page per request)\r\n— pagination is opt-in via `?page` + `?pageSize`; the\r\ndefault returns everything.
+ * @description One paginated read of scheduled jobs for a project.\nWire shape: `{ \"items\": [ScheduledJobView], \"total\": N }`.\nThe scheduler surface is small (per project, one page per request)\n— pagination is opt-in via `?page` + `?pageSize`; the\ndefault returns everything.
 */
 export type ScheduledJobsPage = {
     /**

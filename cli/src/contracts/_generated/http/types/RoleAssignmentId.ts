@@ -5,7 +5,7 @@
 
 
 /**
- * @description Strong-typed identifier of a role assignment row. UUIDv7 like every\r\nIdentity entity id.
+ * @description Strong-typed identifier of a role assignment row. UUIDv7 like every\nIdentity entity id.
 */
 export type RoleAssignmentId = {
     /**

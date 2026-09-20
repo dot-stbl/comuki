@@ -5,7 +5,7 @@
 
 
 /**
- * @description Body for `POST /api/v1/sources/probe` — the operator types a\r\ndraft plus a plaintext credential in the connect form and asks the\r\nhost to reach the upstream before saving.
+ * @description Body for `POST /api/v1/sources/probe` — the operator types a\ndraft plus a plaintext credential in the connect form and asks the\nhost to reach the upstream before saving.
 */
 export type ProbeSourceDraftRequest = {
     /**

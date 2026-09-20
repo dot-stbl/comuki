@@ -5,7 +5,7 @@
 
 
 /**
- * @description Wire row of one knowledge source document (the library page) with its\r\nchunk aggregates. Money-free, vector-free — text metadata only.
+ * @description Wire row of one knowledge source document (the library page) with its\nchunk aggregates. Money-free, vector-free — text metadata only.
 */
 export type KnowledgeDocumentSummary = {
     /**

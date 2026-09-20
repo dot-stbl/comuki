@@ -6,11 +6,11 @@
 import type { RoleAssignmentId } from "./RoleAssignmentId";
 
 /**
- * @description Read model of a role assignment. Wire-friendly strings (role key,\r\nscope key) — the API never leaks enum names.
+ * @description Read model of a role assignment. Wire-friendly strings (role key,\nscope key) — the API never leaks enum names.
 */
 export type RoleAssignmentView = {
     /**
-     * @description Strong-typed identifier of a role assignment row. UUIDv7 like every\r\nIdentity entity id.
+     * @description Strong-typed identifier of a role assignment row. UUIDv7 like every\nIdentity entity id.
      * @type object
     */
     id: RoleAssignmentId;

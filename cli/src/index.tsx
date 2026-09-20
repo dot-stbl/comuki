@@ -27,6 +27,7 @@ import {
 import { ComukiClient } from "./lib/client"
 import { JsonOutput } from "./machine/output"
 import { machineErrorFrom } from "./machine/mapping"
+import { runOneshotMachine } from "./machine/oneshot-machine"
 import {
   createI18nFor,
   tr,
@@ -91,6 +92,12 @@ async function main(): Promise<void> {
       alias: "m",
       type: "string",
       describe: "one-shot prompt (skips the REPL)",
+    })
+    .option("format", {
+      type: "string",
+      choices: ["text", "json", "ndjson"],
+      default: "text",
+      describe: "oneshot output format (with -m or piped stdin)",
     })
     .command("status", "platform snapshot")
     .command("runs [list]", "run ledger", (y) =>
@@ -212,29 +219,51 @@ async function main(): Promise<void> {
         oneshot === "flag"
           ? String(argv.message ?? "")
           : await readStdinText()
-      if (message.trim().length === 0) {
-        console.error(
-          `${colors.error}empty message — pass -m <text> or pipe stdin${colors.reset}`
-        )
-        process.exitCode = 1
+      const format =
+        argv.format !== "text"
+          ? (argv.format as "json" | "ndjson")
+          : json
+            ? "json"
+            : "text"
+      if (format === "text") {
+        if (message.trim().length === 0) {
+          console.error(
+            `${colors.error}empty message — pass -m <text> or pipe stdin${colors.reset}`
+          )
+          process.exitCode = 1
+          return
+        }
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), ONESHOT_TIMEOUT_MS)
+        try {
+          const result = await runOneshot({
+            client: new ComukiClient(config, { signal: controller.signal }),
+            message,
+            projectId: config.defaultProject,
+            signal: controller.signal,
+          })
+          const body = raw ? result.reply : stripMarkdownToPlain(result.reply)
+          process.stdout.write(body.endsWith("\n") ? body : `${body}\n`)
+        } catch (error) {
+          console.error(
+            `${colors.error}${symbols.cross} ${describeError(error)}${colors.reset}`
+          )
+          process.exitCode = 1
+        } finally {
+          clearTimeout(timer)
+        }
         return
       }
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), ONESHOT_TIMEOUT_MS)
       try {
-        const result = await runOneshot({
+        process.exitCode = await runOneshotMachine({
           client: new ComukiClient(config, { signal: controller.signal }),
           message,
           projectId: config.defaultProject,
+          format,
           signal: controller.signal,
         })
-        const body = raw ? result.reply : stripMarkdownToPlain(result.reply)
-        process.stdout.write(body.endsWith("\n") ? body : `${body}\n`)
-      } catch (error) {
-        console.error(
-          `${colors.error}${symbols.cross} ${describeError(error)}${colors.reset}`
-        )
-        process.exitCode = 1
       } finally {
         clearTimeout(timer)
       }

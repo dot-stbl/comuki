@@ -108,43 +108,57 @@ export async function readStdinText(
   return (await stream.text()).replace(/\r\n?/g, "\n").trimEnd()
 }
 
-/**
- * Create a session when none is persisted, POST the message, persist
- * the tab so the next REPL restore picks it up.
- */
-export async function runOneshot(
-  options: OneshotOptions
-): Promise<OneshotResult> {
-  const title = sessionNameFromMessage(options.message)
-  const persistPath = options.persistPath ?? sessionsFilePath()
-  const restored = fromPersisted(await readSessionsFile(persistPath))
-  const active = restored.sessions[restored.activeIndex]
-  let sessionId =
-    active && !active.id.startsWith(PENDING_PREFIX) ? active.id : undefined
-  if (sessionId === undefined) {
-    const created = await options.client.createSession({
-      projectId: options.projectId,
-      title,
-    })
-    sessionId = created.id
-  }
-  const result = await options.client.postMessage(
-    sessionId,
-    options.message,
-    options.signal
-  )
-  try {
-    await persistOneshotSession({ id: sessionId, title }, restored, persistPath)
-  } catch {
-    // Restore is best-effort; a failed write must not hide the reply.
-  }
-  return { sessionId, reply: assistantReplyText(result) }
+export interface ResolvedOneshotSession {
+  readonly sessionId: string
+  readonly createdSession: boolean
+  readonly title: string
+  readonly restored: ReturnType<typeof fromPersisted>
 }
 
-async function persistOneshotSession(
+/**
+ * Pick the active non-pending session from `persistPath` when one
+ * exists, otherwise `createSession` a new one. `title` is always derived
+ * from the message so the caller can persist it on completion; the
+ * restored tab list travels back on `resolved.restored` so the persist
+ * step doesn't need a second read.
+ */
+export async function resolveOneshotSession(
+  client: Pick<OneshotClient, "createSession">,
+  message: string,
+  projectId: string | undefined,
+  persistPath: string
+): Promise<ResolvedOneshotSession> {
+  const title = sessionNameFromMessage(message)
+  const restored = fromPersisted(await readSessionsFile(persistPath))
+  const active = restored.sessions[restored.activeIndex]
+  const reusedId =
+    active && !active.id.startsWith(PENDING_PREFIX) ? active.id : undefined
+  if (reusedId !== undefined) {
+    return {
+      sessionId: reusedId,
+      createdSession: false,
+      title,
+      restored,
+    }
+  }
+  const created = await client.createSession({ projectId, title })
+  return {
+    sessionId: created.id,
+    createdSession: true,
+    title,
+    restored,
+  }
+}
+
+/**
+ * Patch (or append) the session in `restored` and write back to
+ * `persistPath`. Caller wraps in best-effort `try { } catch { }` — a
+ * failed write must not hide the reply.
+ */
+export async function persistOneshotSessionResult(
   session: { id: string; title: string },
   restored: ReturnType<typeof fromPersisted>,
-  persistPath?: string
+  persistPath: string
 ): Promise<void> {
   const existing = restored.sessions.find((item) => item.id === session.id)
   if (existing) {
@@ -165,4 +179,35 @@ async function persistOneshotSession(
     }),
     persistPath
   )
+}
+
+/**
+ * Create a session when none is persisted, POST the message, persist
+ * the tab so the next REPL restore picks it up.
+ */
+export async function runOneshot(
+  options: OneshotOptions
+): Promise<OneshotResult> {
+  const persistPath = options.persistPath ?? sessionsFilePath()
+  const resolved = await resolveOneshotSession(
+    options.client,
+    options.message,
+    options.projectId,
+    persistPath
+  )
+  const result = await options.client.postMessage(
+    resolved.sessionId,
+    options.message,
+    options.signal
+  )
+  try {
+    await persistOneshotSessionResult(
+      { id: resolved.sessionId, title: resolved.title },
+      resolved.restored,
+      persistPath
+    )
+  } catch {
+    // Restore is best-effort; a failed write must not hide the reply.
+  }
+  return { sessionId: resolved.sessionId, reply: assistantReplyText(result) }
 }

@@ -47,6 +47,8 @@ export type TuiCommandName =
   | "clear-draft"
   | "open-editor"
   | "open-palette"
+  | "toggle-details-last"
+  | "toggle-details"
 
 /**
  * Availability tags every command declares ONCE. The slash menu, the
@@ -161,6 +163,15 @@ export function buildTuiCommands(i18n: I18nInstance): readonly TuiCommandSpec[] 
       aliases: [],
       argsHintKey: null,
     }),
+    // Progressive disclosure (issue #74): ctrl+o toggles the LAST
+    // collapsed entry (Ink's verbose-toggle chord, retargeted at the
+    // structured entries); ctrl+shift+o flips every entry at once.
+    // Palette/keymap only — no slash surface, so the composer's `/`
+    // menu stays as small as it was. Registered before open-editor
+    // so open-palette remains the palette's last entry (its wrap
+    // assertion names that row).
+    command(i18n, "toggle-details-last", "ctrl+o", "session", null),
+    command(i18n, "toggle-details", "ctrl+shift+o", "session", null),
     command(i18n, "open-editor", "ctrl+e", "always", null),
     command(i18n, "open-palette", "ctrl+p", "always", null),
   ]

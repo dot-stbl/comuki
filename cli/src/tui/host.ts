@@ -22,16 +22,27 @@
  */
 
 import {
+  bold,
   BoxRenderable,
+  fg,
+  italic,
   ScrollBoxRenderable,
   SelectRenderable,
+  strikethrough,
+  StyledText,
   TextRenderable,
   TextareaRenderable,
   type CliRenderer,
+  type TextChunk,
+  underline,
 } from "@opentui/core"
 import type { ClientKernel } from "../kernel"
 import { activeSession } from "../harness/selectors"
-import type { ProjectId, SessionId } from "../harness/state"
+import type {
+  ProjectId,
+  SessionId,
+  SessionKey,
+} from "../harness/state"
 import { createI18nFor, tr, type I18nInstance, type LocaleCode } from "../locales"
 import { spawnExternalEditor } from "./external-editor"
 import {
@@ -61,11 +72,17 @@ import {
 } from "./commands"
 import {
   activeApprovalCard,
-  buildTranscriptLines,
+  buildTranscriptStyledLines,
   queuedFollowUpLine,
   topBarContent,
   type ApprovalCardModel,
 } from "./view"
+import {
+  buildTranscriptEntries,
+  collapsibleIds,
+  lastCollapsibleId,
+} from "./entries"
+import { TONE_HEX, type Segment, type StyledLine } from "./styled"
 
 /**
  * Terminal lifecycle seam (adapted from the spike). Resolution order:
@@ -225,6 +242,14 @@ export async function createTuiHost(
   let programmaticTextChange = false
   let recall: HistoryRecallState = LIVE_RECALL
   let unregisterHistoryLayer: (() => void) | null = null
+
+  // -- transcript progressive disclosure (issue #74) ------------------------
+  // Entry ids revealed by ctrl+o / ctrl+shift+o, per session. The
+  // kernel knows nothing about expansion — this is host-owned view
+  // state keyed by stable entry ids (it survives re-renders).
+  const expandedEntryIds = new Map<SessionKey, Set<string>>()
+  /** Shared empty set — sessions with nothing expanded. */
+  const EMPTY_ENTRY_SET: ReadonlySet<string> = new Set<string>()
   const externalEditor: ExternalEditor | null =
     options.externalEditor ??
     (options.memoryMode === true ? null : spawnExternalEditor)
@@ -232,6 +257,31 @@ export async function createTuiHost(
   function nextCommandId(prefix: string): string {
     commandSeq += 1
     return `${prefix}-${commandSeq}-${Date.now()}`
+  }
+
+  /** One styled transcript line → a chunk-per-segment StyledText. */
+  function styledContent(line: StyledLine): StyledText {
+    if (line.length === 0) {
+      return new StyledText([fg(TONE_HEX.text)(" ")])
+    }
+    return new StyledText(line.map(segmentChunk))
+  }
+
+  function segmentChunk(segment: Segment): TextChunk {
+    let chunk: TextChunk = fg(TONE_HEX[segment.tone])(segment.text)
+    if (segment.style.bold) {
+      chunk = bold(chunk)
+    }
+    if (segment.style.italic) {
+      chunk = italic(chunk)
+    }
+    if (segment.style.underline) {
+      chunk = underline(chunk)
+    }
+    if (segment.style.strike) {
+      chunk = strikethrough(chunk)
+    }
+    return chunk
   }
 
   const root = renderer.root
@@ -431,9 +481,76 @@ export async function createTuiHost(
       }
     }
     const session = activeSession(lastState)
-    for (const line of buildTranscriptLines(session, i18n, width)) {
-      viewport.add(new TextRenderable(renderer, { content: line, fg: "#e8e8ee" }))
+    const expanded =
+      session !== null
+        ? (expandedEntryIds.get(session.identity.id) ?? EMPTY_ENTRY_SET)
+        : EMPTY_ENTRY_SET
+    for (const line of buildTranscriptStyledLines(session, i18n, width, expanded)) {
+      viewport.add(new TextRenderable(renderer, { content: styledContent(line) }))
     }
+  }
+
+  // -- transcript progressive disclosure (issue #74) -------------------------
+
+  /**
+   * While a palette/slash/help surface is open its layer owns the
+   * composer's extra keys — the disclosure toggles stay inert so
+   * ctrl+o belongs to the menu, not the transcript (surface
+   * ownership, the issue #75 pattern).
+   */
+  function disclosureAvailable(): boolean {
+    return surface === "none"
+  }
+
+  /** ctrl+o — flip the LAST collapsible entry of the active session. */
+  function toggleLastDetail(): boolean {
+    if (!disclosureAvailable()) {
+      return false
+    }
+    const session = activeSession(kernel.snapshot().state)
+    if (session === null) {
+      return false
+    }
+    const id = lastCollapsibleId(buildTranscriptEntries(session))
+    if (id === null) {
+      return false
+    }
+    const expanded = expandedEntryIds.get(session.identity.id) ?? new Set<string>()
+    if (expanded.has(id)) {
+      expanded.delete(id)
+    } else {
+      expanded.add(id)
+    }
+    expandedEntryIds.set(session.identity.id, expanded)
+    render()
+    return true
+  }
+
+  /** ctrl+shift+o — expand every entry, or collapse when all are open. */
+  function toggleAllDetails(): boolean {
+    if (!disclosureAvailable()) {
+      return false
+    }
+    const session = activeSession(kernel.snapshot().state)
+    if (session === null) {
+      return false
+    }
+    const ids = collapsibleIds(buildTranscriptEntries(session))
+    if (ids.length === 0) {
+      return false
+    }
+    const expanded = expandedEntryIds.get(session.identity.id) ?? new Set<string>()
+    const allExpanded = ids.every((id) => expanded.has(id))
+    if (allExpanded) {
+      expanded.clear()
+    } else {
+      for (const id of ids) {
+        expanded.add(id)
+      }
+    }
+    expandedEntryIds.set(session.identity.id, expanded)
+    render()
+    return true
   }
 
   function seedDraftOnce(): void {
@@ -1096,6 +1213,8 @@ export async function createTuiHost(
     help: () => openHelp(),
     "open-editor": () => openExternalEditor(),
     "open-palette": () => openPalette(),
+    "toggle-details-last": () => toggleLastDetail(),
+    "toggle-details": () => toggleAllDetails(),
     exit: () => {
       void close()
       return true

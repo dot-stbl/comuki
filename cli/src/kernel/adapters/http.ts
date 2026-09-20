@@ -16,8 +16,9 @@ import type {
 import type { HarnessMessage, ProjectId, SessionId } from "../../harness/state"
 import { projectId, sessionId } from "../../harness/state"
 import type { WorkspaceDocument } from "../../harness/workspace"
+import type {
+  ComukiClient} from "../../lib/client";
 import {
-  ComukiClient,
   type ChatMessageView,
 } from "../../lib/client"
 import { readJsonFile, writeJsonFile } from "../../lib/json"

@@ -11,7 +11,7 @@
  * The cycle through `./chat` (describeError) is benign: both sides
  * only call each other inside function bodies, never at module init.
  */
-import { ComukiClient } from "../lib/client"
+import type { ComukiClient } from "../lib/client"
 import {
   RUNS_FEED_PAGE_SIZE,
   runsFeedRows,

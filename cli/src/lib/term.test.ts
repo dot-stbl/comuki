@@ -71,7 +71,7 @@ describe("linkSequence", () => {
     // Every other byte of the sequence is an escape — stripping the
     // two OSC 8 wrappers leaves exactly the label.
     const stripped = linkSequence("http://h/runs/abc123", plain).replace(
-      // eslint-disable-next-line no-control-regex
+
       /\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g,
       ""
     )

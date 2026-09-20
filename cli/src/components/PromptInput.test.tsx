@@ -331,7 +331,7 @@ describe("PromptInput slash autocomplete", () => {
 
 describe("PromptInput multiline", () => {
   test("a raw LF inserts a newline instead of submitting", async () => {
-    const { stdin, lastFrame, unmount, submitted } = await renderMenuPrompt()
+    const { stdin, unmount, submitted } = await renderMenuPrompt()
     stdin.write("one")
     await settle()
     stdin.write(LF)

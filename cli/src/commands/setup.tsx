@@ -262,7 +262,7 @@ export function SetupApp({ fetchImpl }: SetupAppProps) {
     undefined
   )
   const [chosenTheme, setChosenTheme] = useState<CliTheme>(CLI_THEMES[0])
-  const [chosenMode, setChosenMode] = useState<ThemeMode>("dark")
+  const [, setChosenMode] = useState<ThemeMode>("dark")
   const [summary, setSummary] = useState("")
 
   // Prefill the url from an existing config (re-runs of the wizard).

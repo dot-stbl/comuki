@@ -15,7 +15,6 @@ import type {
 } from "@microsoft/signalr"
 import type { RealtimePort } from "../../harness/effect-runner"
 import type { SessionId } from "../../harness/state"
-import { sessionId } from "../../harness/state"
 import {
   bindChatEvents,
   joinChatGroup,

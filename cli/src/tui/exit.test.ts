@@ -142,13 +142,25 @@ describe("tui host — exit lifecycle ordering", () => {
     expect(destroyIndex).toBeGreaterThan(idleIndex)
     expect(sequence.filter((entry) => entry === "kernel-stop").length).toBe(1)
 
-    // The stopped kernel ignores further dispatch.
+    kernel.stop()
+    endFeed()
+  })
+
+  test("stopped kernel ignores further dispatch", async () => {
+    const host = await createTuiHost(kernel, {
+      renderer: setup.renderer,
+      width: 80,
+      height: 24,
+      memoryMode: true,
+    })
+    await setup.waitForVisualIdle()
+    await host.close()
+
     const revision = kernel.snapshot().revision
     kernel.dispatch({ kind: "open-session" })
     expect(kernel.snapshot().revision).toBe(revision)
 
     kernel.stop()
-    endFeed()
   })
 
   test("ctrl+c alias is the exit command (clean exit chord)", async () => {

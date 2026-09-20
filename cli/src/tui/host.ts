@@ -401,19 +401,21 @@ export async function createTuiHost(
       return false
     }
     let state = kernel.snapshot().state
-    let key = state.activeSessionId
-    if (key === null) {
+    let activeKey = state.activeSessionId
+    if (activeKey === null) {
       kernel.dispatch({
         kind: "open-session",
         projectId: options.newSessionProjectId ?? null,
       })
       state = kernel.snapshot().state
-      key = state.activeSessionId
-      if (key === null) {
+      activeKey = state.activeSessionId
+      if (activeKey === null) {
         return false
       }
     }
-    const session = state.sessions.find((entry) => entry.identity.id === key)
+    const session = state.sessions.find(
+      (entry) => entry.identity.id === activeKey
+    )
     const titleHint =
       session !== undefined &&
       session.identity.kind === "pending" &&
@@ -422,7 +424,7 @@ export async function createTuiHost(
         : undefined
     kernel.dispatch({
       kind: "submit-turn",
-      sessionId: key,
+      sessionId: activeKey,
       message: text,
       commandId: nextCommandId("tui"),
       echoText: text,
@@ -529,12 +531,21 @@ export async function createTuiHost(
     kernel.stop()
     kernelStopped = true
     await kernel.whenIdle()
+    teardownRenderer()
+    options.onExit?.()
+  }
+
+  /**
+   * The single renderer-teardown path — both the graceful close
+   * sequence and `destroy()` funnel here so a future teardown step
+   * lands in exactly one place.
+   */
+  function teardownRenderer(): void {
     try {
       renderer.destroy()
     } catch {
       // idempotent
     }
-    options.onExit?.()
   }
 
   lastState = kernel.snapshot().state
@@ -560,11 +571,7 @@ export async function createTuiHost(
       unsubscribe()
       clearApproval()
       keymap.destroy()
-      try {
-        renderer.destroy()
-      } catch {
-        // idempotent
-      }
+      teardownRenderer()
     },
     async waitForIdle() {
       await renderer.idle()

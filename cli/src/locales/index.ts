@@ -73,6 +73,8 @@ export const REQUIRED_KEYS = [
   "cmd.close-session.description",
   "cmd.exit.label",
   "cmd.exit.description",
+  "cli.unknownTuiHost",
+  "cli.tuiHostsAvailable",
 ] as const
 
 export type RequiredKey = (typeof REQUIRED_KEYS)[number]
@@ -150,6 +152,10 @@ export const EN = {
       description: "Stop the kernel, restore the terminal, quit.",
     },
   },
+  cli: {
+    unknownTuiHost: "unknown --tui host:",
+    tuiHostsAvailable: "available: opentui, ink (default)",
+  },
 } as const
 
 /** Russian resource — parallel to EN, same key set. */
@@ -224,6 +230,10 @@ export const RU = {
       label: "Выход",
       description: "Остановить ядро, восстановить терминал, выйти.",
     },
+  },
+  cli: {
+    unknownTuiHost: "неизвестный --tui хост:",
+    tuiHostsAvailable: "доступно: opentui, ink (по умолчанию)",
   },
 } as const
 

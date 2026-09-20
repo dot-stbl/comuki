@@ -1,11 +1,1 @@
-{
-  "required": ["userId", "email", "displayName"],
-  "type": "object",
-  "properties": {
-    "userId": { "type": "string", "format": "uuid" },
-    "email": { "type": "string" },
-    "displayName": { "type": "string" }
-  },
-  "description": "Body of a successful login — the session itself lives in the cookie.",
-  "x-readme-ref-name": "LoginResponse"
-}
+{"required":["userId","email","displayName"],"type":"object","properties":{"userId":{"type":"string","format":"uuid"},"email":{"type":"string"},"displayName":{"type":"string"}},"description":"Body of a successful login — the session itself lives in the cookie.","x-readme-ref-name":"LoginResponse"}

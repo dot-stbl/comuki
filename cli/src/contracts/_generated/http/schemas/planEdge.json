@@ -1,10 +1,1 @@
-{
-  "required": ["from", "to"],
-  "type": "object",
-  "properties": {
-    "from": { "type": "string", "description": "Id of the upstream node." },
-    "to": { "type": "string", "description": "Id of the downstream node." }
-  },
-  "description": "A dependency: To starts after From finishes.",
-  "x-readme-ref-name": "PlanEdge"
-}
+{"required":["from","to"],"type":"object","properties":{"from":{"type":"string","description":"Id of the upstream node."},"to":{"type":"string","description":"Id of the downstream node."}},"description":"A dependency: To starts after From finishes.","x-readme-ref-name":"PlanEdge"}

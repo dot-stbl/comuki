@@ -1,0 +1,26 @@
+{
+  "_comment": "Faithful JSON of Comuki.Host.Chat.Models.Views.ChatMessagesPageView (C#). System.Text.Json web defaults (camelCase, numeric ints). Source record: platform/src/host/Comuki.Host/Chat/Models/Views/ChatMessagesPageView.cs. Items carry their own createdAt anchored to known instants so the codec test can assert each converted unix ms.",
+  "items": [
+    {
+      "id": "7e3c4d2f-9a2b-4f8a-bd61-4e9f3a8c1b22",
+      "role": "assistant",
+      "content": "Here is the plan, the relevant source listing, and a quick diagram of the chunk flow.",
+      "toolName": null,
+      "parts": null,
+      "meta": null,
+      "createdAt": "2026-09-20T10:16:12.000+00:00"
+    },
+    {
+      "id": "c8a5f4d2-1e3b-47a9-8d6f-2b1c0e9a3f77",
+      "role": "user",
+      "content": "Why does the chunk stream drop seq=2?",
+      "toolName": null,
+      "parts": null,
+      "meta": null,
+      "createdAt": "2026-09-20T10:16:38.500+00:00"
+    }
+  ],
+  "page": 1,
+  "pageSize": 50,
+  "total": 2
+}

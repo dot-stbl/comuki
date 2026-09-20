@@ -18,6 +18,10 @@ export default tseslint.config(
       "bin/**",
       "spikes/**",
       "scripts/build.ts",
+      // Generated contract artifacts (kubb http/ + Comuki.Codegen.Realtime
+      // realtime.ts) — machine-written, read-only; typecheck still covers
+      // them via tsconfig include.
+      "src/contracts/_generated/**",
       "comuki",
       "comuki.exe",
     ],

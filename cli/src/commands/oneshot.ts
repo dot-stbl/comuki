@@ -75,7 +75,7 @@ export function assistantReplyText(result: ChatTurnResultView): string {
     if (message?.role !== "assistant") {
       continue
     }
-    if (message.parts !== null && message.parts.length > 0) {
+    if (message.parts != null && message.parts.length > 0) {
       const body = message.parts
         .map(partToText)
         .filter((part) => part.length > 0)

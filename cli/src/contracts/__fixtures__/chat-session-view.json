@@ -1,0 +1,9 @@
+{
+  "_comment": "Faithful JSON of Comuki.Host.Chat.Models.Views.ChatSessionView (C#). Serialised by ASP.NET Core System.Text.Json web defaults: camelCase property names; DateTimeOffset written with the offset of the authored value (this fixture anchored to +00:00). Source record: platform/src/host/Comuki.Host/Chat/Models/Views/ChatSessionView.cs. Anchored createdAt = 2026-09-20T10:15:30.125+00:00 → unix ms 1758363330125.",
+  "id": "9f3e5d3a-5b1f-4d6f-9d77-2f7b9f1a6c3d",
+  "projectId": "1b4e1d6f-9c0b-4a5b-9c2d-3e8a7c4f5b21",
+  "title": "Investigate flaky chat chunk sequencing",
+  "status": "active",
+  "createdAt": "2026-09-20T10:15:30.125+00:00",
+  "updatedAt": "2026-09-20T10:18:42.504+00:00"
+}

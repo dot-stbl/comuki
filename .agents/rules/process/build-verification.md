@@ -30,15 +30,26 @@ CI (`ci.yml`) — единственный автоматический гейт
 | `test backend (integration)` | `dotnet run --project <project> -c Debug` по каждой папке `tests/integration/*/`, кроме `Comuki.Host.Testing` (общая харнесс-библиотека без entry point) |
 | `build frontend (dashboard)` | из `dashboard/`: `bun install` → `bun run typecheck` → `bun run lint` → `bun run test` |
 | `build agents (ts sdks)` | из `agents/`: `bun install` → `bun run build` (экспорт типов SDK) |
-| `build cli` | из `cli/`: `bun install` → `bun run lint` → `bun run typecheck` → `bun run test` → `bun run build` |
+| `build cli` | из `cli/`: `bun install` → `bun run lint` → `bun run typecheck` → `bun run test` → `bun run build` → `bun run test:contracts` |
 
-**CLI (`cli/`)** — отдельный TypeScript-пакет (Bun + Ink), с недавних пор в
-CI-гейте (job `build cli`, закрыл CI-часть issue #108). Agent contract для
-работы в `cli/` — те же пять шагов, что гоняет job: из `cli/` —
-`bun install` → `bun run lint` → `bun run typecheck` → `bun run test` →
-`bun run build`. Рантайм-депы opentui-спайка запинены в `cli/package.json`,
-поэтому один `bun install` в корне `cli/` покрывает и тесты
-`cli/spikes/opentui/tests/*` — отдельной установки спайка не нужно.
+**CLI (`cli/`)** — отдельный TypeScript-пакет (Bun + Ink), в CI-гейте
+(job `build cli`, закрыл CI-часть issue #108; drift-гейт — issue #84).
+Agent contract для работы в `cli/` — те же шаги, что гоняет job: из
+`cli/` — `bun install` → `bun run lint` → `bun run typecheck` →
+`bun run test` → `bun run build` → `bun run test:contracts`. Рантайм-депы
+opentui-спайка запинены в `cli/package.json`, поэтому один `bun install`
+в корне `cli/` покрывает и тесты `cli/spikes/opentui/tests/*` — отдельной
+установки спайка не нужно.
+
+**Контракты CLI (issue #84).** Транспортные контракты CLI — сгенерированные
+артефакты в `cli/src/contracts/_generated/` (kubb http-типы из
+`artifacts/openapi.json` + realtime-модуль из `tools/Comuki.Codegen.Realtime`),
+закоммичены как read-only. После правок серверного API-контракта
+(`platform/**/Controllers/**`, `Comuki.Shared.Contracts/**`) или самого
+`cli/src/contracts/**` — обязательно `cd cli && bun run test:contracts`:
+скрипт регенерирует оба артефакта и валится (exit ≠ 0) при любом расхождении
+с закоммиченным деревом. Лечение: `bun run generate:contracts` из `cli/` и
+коммит результата. CI гоняет это в job `build-cli`.
 
 Всё из этой таблицы **блокирует**. Ни один шаг здесь не «рекомендуется»:
 `bun run lint` (eslint) падает — PR не идёт, ровно как и `dotnet build`.
@@ -88,6 +99,7 @@ verify занимает слишком долго — прогнать хотя 
 | Только FE | `dashboard/src/**`, `dashboard/*.config.*`, `dashboard/package.json`, `dashboard/tsconfig*.json` | FE гейт + build |
 | Обе стороны | mix of above | **Оба** (см. Dual-Build Rule) |
 | OpenAPI / контроллеры API | `**/*.cs` с `[ApiController]` | BE + регенерация FE API client (`bun run generate-api`) |
+| Контракты CLI / серверный API-контракт | `platform/**/Controllers/**`, `Comuki.Shared.Contracts/**`, `cli/src/contracts/**` | BE + CLI гейт + `cd cli && bun run test:contracts` |
 
 **Тривиальные правки** (опечатки в markdown, переименование файла) — полный
 прогон не требуется, но перед коммитом всё равно проверить сторону,

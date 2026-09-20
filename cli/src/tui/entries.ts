@@ -18,6 +18,12 @@
 import type { HarnessMessage, HarnessSession } from "../harness/state"
 import { TUI_NAMESPACE, tr, type I18nInstance } from "../locales"
 import {
+  pendingApprovalEntry,
+  type ApprovalEntry,
+} from "./approvals"
+import {
+  approvalDetail,
+  approvalSummary,
   blankLine,
   codeFrameLines,
   diffLines,
@@ -26,6 +32,7 @@ import {
   seg,
   truncateTail,
   wrapSegments,
+  type ApprovalRenderContext,
   type Segment,
   type SegmentStyle,
   type StyledLine,
@@ -123,6 +130,16 @@ export interface StreamingEntry extends EntryBase {
   readonly text: string
 }
 
+/**
+ * A pending approval (issue #76) — never collapsible; the user always
+ * needs the detail visible to decide. The renderer reads `risk` and
+ * delegates to `approvalSummary` / `approvalDetail` per density.
+ */
+export interface ApprovalEntryView extends EntryBase {
+  readonly kind: "approval"
+  readonly approval: ApprovalEntry
+}
+
 export type TranscriptEntry =
   | MessageEntry
   | AssistantEntry
@@ -133,6 +150,7 @@ export type TranscriptEntry =
   | PlanEntry
   | HandoffEntry
   | StreamingEntry
+  | ApprovalEntryView
 
 // ---------------------------------------------------------------------------
 // Truncation budgets (exported for tests)
@@ -293,6 +311,12 @@ export const STREAMING_ENTRY_ID = "live#streaming"
  * The active session's transcript + live turn → the flat entry list.
  * Pure: stable ids (`<messageId>#<marker>`), consecutive tool parts
  * of one message grouped into a single entry.
+ *
+ * Issue #76: when the turn is `awaiting-approval` and the session
+ * carries a `pendingPlan`, one ApprovalEntryView is appended at the
+ * end — the live approve card moves from an overlay (issue #73) to
+ * a transcript entry. The renderer expands it by default; y/n and
+ * the palette still drive the decision.
  */
 export function buildTranscriptEntries(
   session: HarnessSession | null
@@ -301,8 +325,15 @@ export function buildTranscriptEntries(
     return []
   }
   const entries: TranscriptEntry[] = []
+  // The message that announced the approval (best-effort — fall back to
+  // the most recent assistant turn). The view's meta, when present,
+  // rides on this entry's trailing line.
+  let lastMessage: HarnessMessage | null = null
   for (const message of session.transcript) {
     entries.push(...messageEntries(message))
+    if (message.role === "assistant") {
+      lastMessage = message
+    }
   }
   if (session.turn.kind === "thinking") {
     entries.push({
@@ -314,7 +345,38 @@ export function buildTranscriptEntries(
       text: session.turn.accumulatedText,
     })
   }
+  if (session.turn.kind === "awaiting-approval") {
+    const approval = pendingApprovalEntry({
+      session,
+      messageId: lastMessage?.id ?? "awaiting-approval",
+      requester: requesterFor(lastMessage),
+      createdAtUnixMs: lastMessage?.createdAtUnixMs ?? 0,
+      trailingMeta: lastMessage?.view?.meta ?? null,
+    })
+    if (approval !== null) {
+      entries.push({
+        kind: "approval",
+        id: approval.id,
+        createdAtUnixMs: approval.createdAtUnixMs,
+        messageId: approval.messageId,
+        trailingMeta: (lastMessage?.view?.meta ?? null) as WireMeta | null,
+        approval,
+      })
+    }
+  }
   return entries
+}
+
+/** Best-effort requester — empty string when no assistant turn observed yet. */
+function requesterFor(message: HarnessMessage | null): string {
+  if (message === null) {
+    return ""
+  }
+  // The harness stores no subject; the kernel resolves the auth subject
+  // at session creation. For the receipt's `requester` column we use the
+  // stable message id — it doubles as the actor handle until the
+  // platform ships a richer sender identity.
+  return message.id
 }
 
 function messageEntries(message: HarnessMessage): readonly TranscriptEntry[] {
@@ -491,6 +553,10 @@ export function entryCollapsible(entry: TranscriptEntry): boolean {
     case "diff":
     case "plan":
       return true
+    case "approval":
+      // Approvals auto-expand — collapsible semantics would hide the
+      // fields the user needs to decide.
+      return false
     default:
       return false
   }
@@ -571,6 +637,8 @@ function entryBodyLines(
       return handoffLines(entry, context.i18n)
     case "streaming":
       return streamingLines(entry, context)
+    case "approval":
+      return approvalEntryLines(entry, context)
   }
 }
 
@@ -998,4 +1066,28 @@ function streamingLines(
     {},
     context.width
   )
+}
+
+// -- approval (issue #76) -----------------------------------------------------
+
+/**
+ * The approval entry is never collapsible: the user always needs the
+ * detail visible to decide. We keep the same `collapsibleEntryLines`
+ * shape (summary as header + detail as body) so the renderer seams
+ * stay uniform — the detail block is always rendered.
+ */
+function approvalEntryLines(
+  entry: ApprovalEntryView,
+  context: EntryRenderContext
+): StyledLine[] {
+  const i18n = context.i18n
+  const summary = approvalSummary(entry.approval, i18n)
+  const approvalContext: ApprovalRenderContext = {
+    i18n: context.i18n,
+    width: context.width,
+    expanded: context.expanded,
+  }
+  // Approvals auto-expand — the user needs every field to decide.
+  // Collapsing would hide the plan steps and the decide label.
+  return [summary, ...approvalDetail(entry.approval, approvalContext)]
 }

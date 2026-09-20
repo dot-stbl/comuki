@@ -66,6 +66,11 @@ export const REQUIRED_KEYS = [
   "transcript.entry.omitted",
   "transcript.entry.lineCount",
   "transcript.entry.nodeCount",
+  "transcript.entry.approval",
+  "transcript.entry.approval.stackedHeader",
+  "transcript.palette.approve",
+  "transcript.palette.reject",
+  "transcript.palette.showReceipt",
   "approval.intentPrefix",
   "approval.scopePrefix",
   "approval.riskPrefix",
@@ -105,6 +110,8 @@ export const REQUIRED_KEYS = [
   "cmd.toggle-details-last.description",
   "cmd.toggle-details.label",
   "cmd.toggle-details.description",
+  "cmd.show-receipt.label",
+  "cmd.show-receipt.description",
   "menu.commandsTitle",
   "menu.commandsHint",
   "palette.title",
@@ -165,6 +172,15 @@ export const EN = {
       omitted: "+{{lines}} lines omitted",
       lineCount: "{{lines}} lines",
       nodeCount: "{{nodes}} nodes",
+      approval: {
+        label: "approval",
+        stackedHeader: "{{nodes}} nodes",
+      },
+    },
+    palette: {
+      approve: "approve",
+      reject: "reject",
+      showReceipt: "show receipt",
     },
   },
   approval: {
@@ -241,6 +257,11 @@ export const EN = {
       description:
         "Expand every transcript entry, or collapse them all (ctrl+shift+o).",
     },
+    "show-receipt": {
+      label: "Show approval receipt",
+      description:
+        "Open the session's decision ledger (the NDJSON file of every approve/reject).",
+    },
   },
   menu: {
     commandsTitle: "commands",
@@ -310,6 +331,15 @@ export const RU = {
       omitted: "опущено строк: {{lines}}",
       lineCount: "строк: {{lines}}",
       nodeCount: "узлов: {{nodes}}",
+      approval: {
+        label: "одобрение",
+        stackedHeader: "{{nodes}} узлов",
+      },
+    },
+    palette: {
+      approve: "одобрить",
+      reject: "отклонить",
+      showReceipt: "показать запись",
     },
   },
   approval: {
@@ -385,6 +415,11 @@ export const RU = {
       label: "Подробности всех записей",
       description:
         "Раскрыть все записи транскрипта или свернуть их (ctrl+shift+o).",
+    },
+    "show-receipt": {
+      label: "Показать запись об одобрении",
+      description:
+        "Открыть журнал решений сессии (NDJSON-файл каждого одобрения/отклонения).",
     },
   },
   menu: {

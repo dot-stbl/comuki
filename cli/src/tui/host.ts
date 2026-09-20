@@ -33,13 +33,36 @@ import type { ClientKernel } from "../kernel"
 import { activeSession } from "../harness/selectors"
 import type { ProjectId, SessionId } from "../harness/state"
 import { createI18nFor, tr, type I18nInstance, type LocaleCode } from "../locales"
+import { spawnExternalEditor } from "./external-editor"
 import {
+  LIVE_RECALL,
+  recallAfterEdit,
+  recallArrowsActive,
+  stepRecall,
+  type HistoryDirection,
+  type HistoryRecallState,
+} from "./history"
+import {
+  allTuiCommands,
+  commandAvailable,
+  completeSlashCommand,
   createTuiKeymap,
+  filterSlashCommands,
+  paletteMatches,
+  parseSlashInput,
+  slashMenuQuery,
+  TUI_UI_LAYER_PRIORITY,
+  type TuiCommandContext,
+  type TuiCommandPayload,
+  type TuiCommandSpec,
   type TuiKeymapSurface,
+  type TuiSlashSpec,
+  type TuiUiBinding,
 } from "./commands"
 import {
   activeApprovalCard,
   buildTranscriptLines,
+  queuedFollowUpLine,
   topBarContent,
   type ApprovalCardModel,
 } from "./view"
@@ -53,6 +76,13 @@ export interface TerminalLifecycle {
   resume(): void
 }
 
+/**
+ * The external-editor seam: edit `draft`, resolve the adopted text,
+ * throw on failure (the draft then stays untouched). Production
+ * defaults to `spawnExternalEditor`; memory-mode tests inject fakes.
+ */
+export type ExternalEditor = (draft: string) => Promise<string>
+
 export interface TuiHostOptions {
   readonly renderer: CliRenderer
   readonly width: number
@@ -62,11 +92,14 @@ export interface TuiHostOptions {
   readonly i18n?: I18nInstance
   /**
    * When `true` the caller owns terminal side-effects — the lifecycle
-   * seam resolves to a no-op (explicit, no constructor sniffing).
+   * seam resolves to a no-op and no external editor is available
+   * unless one is injected explicitly.
    */
   readonly memoryMode?: boolean
   /** Injected lifecycle seam; wins over memoryMode/renderer adapter. */
   readonly terminalLifecycle?: TerminalLifecycle
+  /** Injected external editor; wins over the memoryMode default. */
+  readonly externalEditor?: ExternalEditor
   /**
    * Project every NEW session opens in (resolved by the boot path
    * from --project/config); existing sessions keep their own.
@@ -85,6 +118,8 @@ export interface TuiHost {
   setSize(width: number, height: number): Promise<void>
   setDraft(text: string): void
   getDraft(): string
+  /** Which composer surface (menu/palette/help) is open, if any. */
+  getSurfaceKind(): TuiSurfaceKind
   /** Teardown without touching the kernel (test cleanup path). */
   destroy(): Promise<void>
   /**
@@ -108,12 +143,20 @@ export interface TuiHost {
   >
 }
 
+/** The overlay surface currently owning the composer's extra keys. */
+export type TuiSurfaceKind = "none" | "slash-menu" | "palette" | "help"
+
 interface Geometry {
   readonly topBarHeight: number
   readonly composerHeight: number
 }
 
 type LayoutMode = "regular" | "compact"
+
+/** UI-layer priority for the dynamic history-recall layer. */
+const HISTORY_LAYER_PRIORITY = 150
+
+const MENU_MAX_ROWS = 6
 
 function pickLayoutMode(width: number, height: number): LayoutMode {
   if (width < 60 || height < 18) {
@@ -165,6 +208,26 @@ export async function createTuiHost(
   let commandSeq = 0
   let lastState = kernel.snapshot().state
   const seededDrafts = new Set<string>()
+  const specs: readonly TuiCommandSpec[] = allTuiCommands(i18n)
+
+  // -- composer surface state (issue #75) ---------------------------------
+  let surface: TuiSurfaceKind = "none"
+  let surfaceOverlay: BoxRenderable | null = null
+  let unregisterSurfaceLayer: (() => void) | null = null
+  let slashDismissed = false
+  let slashMatches: readonly TuiCommandSpec[] = []
+  let slashIndex = 0
+  let paletteQuery: TextareaRenderable | null = null
+  let paletteRows: BoxRenderable | null = null
+  let paletteIndex = 0
+  let paletteWindowStart = 0
+  let slashWindowStart = 0
+  let programmaticTextChange = false
+  let recall: HistoryRecallState = LIVE_RECALL
+  let unregisterHistoryLayer: (() => void) | null = null
+  const externalEditor: ExternalEditor | null =
+    options.externalEditor ??
+    (options.memoryMode === true ? null : spawnExternalEditor)
 
   function nextCommandId(prefix: string): string {
     commandSeq += 1
@@ -209,6 +272,17 @@ export async function createTuiHost(
     rootOptions: { backgroundColor: "#0e0e12" },
   })
   shell.add(viewport)
+
+  // The queued-follow-up indicator — one row between the viewport and
+  // the composer, visible only while the kernel queue is non-empty.
+  const queueLine = new TextRenderable(renderer, {
+    content: "",
+    fg: "#d2d228",
+    width,
+    height: 1,
+  })
+  queueLine.visible = false
+  shell.add(queueLine)
 
   composer.flexBasis = geometry.composerHeight
   composer.height = geometry.composerHeight
@@ -330,11 +404,11 @@ export async function createTuiHost(
 
     approvalUnregister = keymap.registerApprovalLayer({
       approve: () => decideApproval(true),
-      reject: () => decideApproval(false),
+      reject: (payload) => decideApproval(false, payload.text),
     })
   }
 
-  function decideApproval(approved: boolean): boolean {
+  function decideApproval(approved: boolean, reason?: string): boolean {
     const card = activeApprovalCard(kernel.snapshot().state)
     if (card === null) {
       return false
@@ -343,6 +417,7 @@ export async function createTuiHost(
       kind: "decide-approval",
       sessionId: card.sessionId,
       approved,
+      ...(reason !== undefined && reason.length > 0 ? { reason } : {}),
       commandId: nextCommandId("approval"),
     })
     return true
@@ -372,7 +447,7 @@ export async function createTuiHost(
     }
     const draft = lastState.drafts.find((entry) => entry.sessionId === key)
     if (draft && draft.text.length > 0) {
-      composer.setText(draft.text)
+      setComposerText(draft.text)
     }
     seededDrafts.add(key)
   }
@@ -385,6 +460,21 @@ export async function createTuiHost(
     const session = activeSession(lastState)
     topBar.content = topBarContent(lastState, session, i18n, layoutMode === "compact")
     refreshViewport()
+
+    const queuedLine = queuedFollowUpLine(session, i18n)
+    if (queuedLine === null) {
+      queueLine.visible = false
+    } else {
+      queueLine.content = queuedLine
+      queueLine.visible = true
+    }
+
+    // Availability is state-derived: keep open surfaces' lists fresh.
+    if (surface === "slash-menu") {
+      refreshSlashMenu()
+    } else if (surface === "palette") {
+      refreshPaletteRows()
+    }
 
     const card = activeApprovalCard(lastState)
     if (card !== null) {
@@ -399,6 +489,20 @@ export async function createTuiHost(
     const text = composer.plainText.trim()
     if (text.length === 0) {
       return false
+    }
+    // A registered `/command` dispatches through the named-command
+    // registry instead of riding the wire; anything else is a message.
+    const parsed = parseSlashInput(text, specs)
+    if (parsed !== null) {
+      // Unavailable in this state → inert: the draft stays so the
+      // user sees the command did not run (e.g. /stop while idle).
+      if (!commandAvailable(parsed.spec, commandContext())) {
+        return false
+      }
+      setComposerText("")
+      recall = LIVE_RECALL
+      slashDismissed = false
+      return keymap.dispatch(parsed.spec.name, { text: parsed.args })
     }
     let state = kernel.snapshot().state
     let activeKey = state.activeSessionId
@@ -430,7 +534,9 @@ export async function createTuiHost(
       echoText: text,
       ...(titleHint !== undefined ? { titleHint } : {}),
     })
-    composer.setText("")
+    setComposerText("")
+    recall = LIVE_RECALL
+    slashDismissed = false
     return true
   }
 
@@ -464,16 +570,556 @@ export async function createTuiHost(
     return true
   }
 
+  function renameSession(title: string): boolean {
+    const session = activeSession(kernel.snapshot().state)
+    if (session === null || title.length === 0) {
+      return false
+    }
+    kernel.dispatch({
+      kind: "rename-session",
+      sessionId: session.identity.id,
+      title,
+    })
+    return true
+  }
+
+  function clearDraft(): boolean {
+    // The visible composer empties regardless; the kernel intent is
+    // best-effort (nothing is persisted without a session).
+    const session = activeSession(kernel.snapshot().state)
+    setComposerText("")
+    recall = LIVE_RECALL
+    if (session !== null) {
+      kernel.dispatch({ kind: "clear-draft", sessionId: session.identity.id })
+    }
+    return true
+  }
+
+  function openExternalEditor(): boolean {
+    if (externalEditor === null) {
+      return false
+    }
+    void suspendForEdit(() => externalEditor(composer.plainText))
+    return true
+  }
+
+  // -- composer surfaces: slash menu, palette, help (issue #75) -----------
+
+  function commandContext(): TuiCommandContext {
+    const session = activeSession(kernel.snapshot().state)
+    return {
+      sessionOpen: session !== null,
+      hasDraft: composer.plainText.trim().length > 0,
+      turnKind: session?.turn.kind ?? "idle",
+    }
+  }
+
+  function setComposerText(text: string): void {
+    programmaticTextChange = true
+    try {
+      composer.setText(text)
+      // setText resets the caret to the buffer start — recall and
+      // completion both read best with the caret at the end.
+      composer.gotoBufferEnd()
+    } finally {
+      programmaticTextChange = false
+    }
+    refreshSlashMenu()
+    updateHistoryLayer()
+  }
+
+  function onComposerEdited(): void {
+    recall = recallAfterEdit(recall, composer.plainText)
+    // Any edit lifts a dismissal — typing after esc reopens the menu
+    // for the new query (the Ink menuDismissed behavior).
+    slashDismissed = false
+    refreshSlashMenu()
+    updateHistoryLayer()
+  }
+
+  function historyItems(): readonly string[] {
+    return activeSession(kernel.snapshot().state)?.history ?? []
+  }
+
+  function stepHistory(direction: HistoryDirection): boolean {
+    const items = historyItems()
+    if (items.length === 0) {
+      return false
+    }
+    const step = stepRecall(recall, direction, items)
+    recall = step.state
+    if (step.text !== null) {
+      setComposerText(step.text)
+    }
+    updateHistoryLayer()
+    return true
+  }
+
+  /**
+   * The history layer owns ↑/↓ only while no surface is open and the
+   * draft is empty or currently recalled; otherwise the arrows stay
+   * with the composer (cursor movement) or the open surface.
+   */
+  function updateHistoryLayer(): void {
+    const active =
+      surface === "none" &&
+      historyItems().length > 0 &&
+      recallArrowsActive(recall, composer.plainText)
+    if (active && unregisterHistoryLayer === null) {
+      unregisterHistoryLayer = keymap.registerUiLayer(
+        [
+          { key: "up", run: () => stepHistory("older") },
+          { key: "down", run: () => stepHistory("newer") },
+        ],
+        HISTORY_LAYER_PRIORITY
+      )
+    } else if (!active && unregisterHistoryLayer !== null) {
+      unregisterHistoryLayer()
+      unregisterHistoryLayer = null
+    }
+  }
+
+  function refreshSlashMenu(): void {
+    if (surface === "palette" || surface === "help") {
+      return
+    }
+    const query = slashMenuQuery(composer.plainText)
+    const matches =
+      query === null || slashDismissed
+        ? []
+        : filterSlashCommands(specs, query, commandContext())
+    const shouldOpen = matches.length > 0
+    if (shouldOpen) {
+      const reopened = surface !== "slash-menu"
+      slashMatches = matches
+      // A new query always restarts the selection at the top.
+      slashIndex = 0
+      slashWindowStart = 0
+      if (reopened) {
+        surface = "slash-menu"
+        renderSurfaceOverlay()
+        refreshSurfaceLayer()
+      } else {
+        renderSurfaceOverlay()
+      }
+      return
+    }
+    slashMatches = []
+    if (surface === "slash-menu") {
+      closeSurface()
+    }
+  }
+
+  function currentPaletteMatches(): readonly TuiCommandSpec[] {
+    return paletteMatches(
+      specs,
+      paletteQuery?.plainText ?? "",
+      commandContext()
+    )
+  }
+
+  function openPalette(): boolean {
+    // While an approval card is up the approval layer owns the keys —
+    // the palette stays suppressed.
+    if (activeApprovalCard(kernel.snapshot().state) !== null) {
+      return false
+    }
+    if (surface === "palette") {
+      return false
+    }
+    closeSurface()
+    surface = "palette"
+    paletteIndex = 0
+    paletteWindowStart = 0
+    renderSurfaceOverlay()
+    refreshSurfaceLayer()
+    return true
+  }
+
+  function openHelp(): boolean {
+    if (surface === "help") {
+      return false
+    }
+    closeSurface()
+    surface = "help"
+    renderSurfaceOverlay()
+    refreshSurfaceLayer()
+    return true
+  }
+
+  function closeSurface(): void {
+    if (surfaceOverlay !== null) {
+      shell.remove(surfaceOverlay)
+      surfaceOverlay = null
+    }
+    paletteQuery = null
+    paletteRows = null
+    if (unregisterSurfaceLayer !== null) {
+      unregisterSurfaceLayer()
+      unregisterSurfaceLayer = null
+    }
+    const wasSurface = surface !== "none"
+    surface = "none"
+    if (wasSurface) {
+      composer.focus()
+      renderer.requestRender()
+    }
+  }
+
+  /** Esc on a palette/help surface — the draft may warrant the /-menu. */
+  function closeSurfaceAndRescan(): boolean {
+    closeSurface()
+    refreshSlashMenu()
+    refreshSurfaceLayer()
+    return true
+  }
+
+  function completeSlashSelection(): boolean {
+    if (surface !== "slash-menu" || slashMatches.length === 0) {
+      return false
+    }
+    const chosen = slashMatches[Math.min(slashIndex, slashMatches.length - 1)]
+    if (chosen === undefined) {
+      return false
+    }
+    // The trailing space closes the menu by itself (whitespace query).
+    setComposerText(completeSlashCommand(chosen))
+    return true
+  }
+
+  function runPaletteSelection(): boolean {
+    if (surface !== "palette") {
+      return false
+    }
+    const matches = currentPaletteMatches()
+    const chosen = matches[Math.min(paletteIndex, matches.length - 1)]
+    if (chosen === undefined) {
+      return false
+    }
+    closeSurface()
+    return keymap.dispatch(chosen.name)
+  }
+
+  function moveSelection(delta: number): boolean {
+    if (surface === "slash-menu") {
+      if (slashMatches.length === 0) {
+        return false
+      }
+      slashIndex = (slashIndex + delta + slashMatches.length) % slashMatches.length
+      slashWindowStart = windowStartFor(slashIndex, slashWindowStart)
+      renderSurfaceOverlay()
+      return true
+    }
+    if (surface === "palette") {
+      const matches = currentPaletteMatches()
+      if (matches.length === 0) {
+        return false
+      }
+      paletteIndex = (paletteIndex + delta + matches.length) % matches.length
+      paletteWindowStart = windowStartFor(paletteIndex, paletteWindowStart)
+      refreshPaletteRows()
+      return true
+    }
+    return false
+  }
+
+  /** Keep the visible window pinned to the selection (cap-sized). */
+  function windowStartFor(index: number, currentStart: number): number {
+    const maxStart = Math.max(0, index - MENU_MAX_ROWS + 1)
+    if (index < currentStart) {
+      return index
+    }
+    if (index > currentStart + MENU_MAX_ROWS - 1) {
+      return maxStart
+    }
+    return currentStart
+  }
+
+  /** Refill the palette list in place — the query keeps focus + text. */
+  function refreshPaletteRows(): void {
+    if (paletteRows !== null) {
+      fillPaletteRows(paletteRows)
+    }
+    renderer.requestRender()
+  }
+
+  function refreshSurfaceLayer(): void {
+    if (unregisterSurfaceLayer !== null) {
+      unregisterSurfaceLayer()
+      unregisterSurfaceLayer = null
+    }
+    if (surface === "none") {
+      updateHistoryLayer()
+      return
+    }
+    const bindings: TuiUiBinding[] =
+      surface === "slash-menu"
+        ? [
+            { key: "up", run: () => moveSelection(-1) },
+            { key: "down", run: () => moveSelection(1) },
+            { key: "tab", run: () => completeSlashSelection() },
+            { key: "return", run: () => completeSlashSelection() },
+            { key: "kpenter", run: () => completeSlashSelection() },
+            { key: "escape", run: () => {
+                slashDismissed = true
+                closeSurface()
+                return true
+              } },
+          ]
+        : surface === "palette"
+          ? [
+              { key: "up", run: () => moveSelection(-1) },
+              { key: "down", run: () => moveSelection(1) },
+              { key: "return", run: () => runPaletteSelection() },
+              { key: "kpenter", run: () => runPaletteSelection() },
+              { key: "escape", run: () => closeSurfaceAndRescan() },
+            ]
+          : [
+              { key: "escape", run: () => closeSurfaceAndRescan() },
+              { key: "return", run: () => closeSurfaceAndRescan() },
+            ]
+    unregisterSurfaceLayer = keymap.registerUiLayer(bindings, TUI_UI_LAYER_PRIORITY)
+    updateHistoryLayer()
+  }
+
+  function overlayHeight(needed: number): number {
+    const reserved = geometry.topBarHeight + geometry.composerHeight + 2
+    return Math.min(needed, Math.max(4, height - reserved))
+  }
+
+  function overlayWidth(): number {
+    return Math.max(24, Math.min(width - 4, 80))
+  }
+
+  /**
+   * Single-line row content: a wrapped row would blow the fixed
+   * overlay height, so overlong rows clip with an ellipsis.
+   */
+  function clipRow(text: string): string {
+    const usable = overlayWidth() - 5
+    return text.length > usable ? `${text.slice(0, usable - 1)}…` : text
+  }
+
+  function insertOverlay(overlay: BoxRenderable): void {
+    const composerIndex = shell.getChildren().indexOf(composer)
+    shell.add(overlay, composerIndex >= 0 ? composerIndex : shell.getChildren().length)
+  }
+
+  function slashUsage(spec: TuiCommandSpec): string {
+    const slash: TuiSlashSpec | null = spec.slash
+    if (slash === null) {
+      return spec.name
+    }
+    const hint =
+      slash.argsHintKey !== null ? ` ${tr(i18n, slash.argsHintKey)}` : ""
+    const aliases =
+      slash.aliases.length > 0 ? ` [${slash.aliases.join(",")}]` : ""
+    return `/${slash.name}${hint}${aliases}`
+  }
+
+  function renderSurfaceOverlay(): void {
+    if (surfaceOverlay !== null) {
+      shell.remove(surfaceOverlay)
+      surfaceOverlay = null
+    }
+    paletteQuery = null
+    paletteRows = null
+    if (surface === "none") {
+      return
+    }
+    if (surface === "slash-menu") {
+      const rows = slashMatches.slice(
+        slashWindowStart,
+        slashWindowStart + MENU_MAX_ROWS
+      )
+      const usageWidth = Math.max(...rows.map((row) => slashUsage(row).length), 8)
+      const overlay = new BoxRenderable(renderer, {
+        flexDirection: "column",
+        width: overlayWidth(),
+        height: overlayHeight(rows.length + 3),
+        flexShrink: 0,
+        backgroundColor: "#1c1c20",
+        borderStyle: "single",
+        borderColor: "#8787f3",
+      })
+      overlay.add(
+        new TextRenderable(renderer, {
+          content: `  ${tr(i18n, "menu.commandsTitle")}  ${tr(i18n, "menu.commandsHint")}`,
+          fg: "#d7d7ff",
+          bg: "#1c1c20",
+          width: overlayWidth(),
+        })
+      )
+      rows.forEach((spec, index) => {
+        const selected = index + slashWindowStart === slashIndex
+        overlay.add(
+          new TextRenderable(renderer, {
+            content: clipRow(
+              `${selected ? ">" : " "} ${slashUsage(spec).padEnd(usageWidth + 2)}${spec.description}`
+            ),
+            fg: selected ? "#d7d7ff" : "#b8b8bd",
+            bg: "#1c1c20",
+            width: overlayWidth(),
+          })
+        )
+      })
+      surfaceOverlay = overlay
+      insertOverlay(overlay)
+      return
+    }
+
+    if (surface === "palette") {
+      const overlay = new BoxRenderable(renderer, {
+        flexDirection: "column",
+        width: overlayWidth(),
+        height: overlayHeight(MENU_MAX_ROWS + 4),
+        flexShrink: 0,
+        backgroundColor: "#1c1c20",
+        borderStyle: "single",
+        borderColor: "#8787f3",
+      })
+      overlay.add(
+        new TextRenderable(renderer, {
+          content: `  ${tr(i18n, "palette.title")}`,
+          fg: "#d7d7ff",
+          bg: "#1c1c20",
+          width: overlayWidth(),
+        })
+      )
+      const query = new TextareaRenderable(renderer, {
+        width: overlayWidth(),
+        height: 1,
+        placeholder: tr(i18n, "palette.placeholder"),
+        backgroundColor: "#26262b",
+        textColor: "#e8e8ee",
+      })
+      query.onContentChange = () => {
+        paletteIndex = 0
+        paletteWindowStart = 0
+        refreshPaletteRows()
+      }
+      overlay.add(query)
+      paletteQuery = query
+      const rows = new BoxRenderable(renderer, {
+        flexDirection: "column",
+        width: overlayWidth(),
+        flexShrink: 0,
+      })
+      overlay.add(rows)
+      paletteRows = rows
+      fillPaletteRows(rows)
+      surfaceOverlay = overlay
+      insertOverlay(overlay)
+      query.focus()
+      return
+    }
+
+    // help — every registered command with binding and description.
+    const all = specs
+    const usageWidth = Math.max(...all.map((spec) => slashUsage(spec).length), 8)
+    const overlay = new BoxRenderable(renderer, {
+      flexDirection: "column",
+      width: overlayWidth(),
+      height: overlayHeight(all.length + 3),
+      flexShrink: 0,
+      backgroundColor: "#1c1c20",
+      borderStyle: "single",
+      borderColor: "#8787f3",
+    })
+    overlay.add(
+      new TextRenderable(renderer, {
+        content: `  ${tr(i18n, "help.title")}`,
+        fg: "#d7d7ff",
+        bg: "#1c1c20",
+        width: overlayWidth(),
+      })
+    )
+    for (const spec of all) {
+      const key = spec.key.length > 0 ? spec.key : "—"
+      overlay.add(
+        new TextRenderable(renderer, {
+          content: clipRow(
+            `  ${slashUsage(spec).padEnd(usageWidth + 2)}${key.padEnd(8)}${spec.description}`
+          ),
+          fg: "#e8e8ee",
+          bg: "#1c1c20",
+          width: overlayWidth(),
+        })
+      )
+    }
+    surfaceOverlay = overlay
+    insertOverlay(overlay)
+  }
+
+  function fillPaletteRows(rows: BoxRenderable): void {
+    while (rows.getChildren().length > 0) {
+      const child = rows.getChildren()[0]
+      if (child) {
+        rows.remove(child)
+      }
+    }
+    const matches = currentPaletteMatches().slice(
+      paletteWindowStart,
+      paletteWindowStart + MENU_MAX_ROWS
+    )
+    if (matches.length === 0) {
+      rows.add(
+        new TextRenderable(renderer, {
+          content: `  ${tr(i18n, "palette.empty")}`,
+          fg: "#8a8a8f",
+          width: overlayWidth(),
+        })
+      )
+      return
+    }
+    matches.forEach((spec, index) => {
+      const selected = index + paletteWindowStart === paletteIndex
+      const key = spec.key.length > 0 ? ` · ${spec.key}` : ""
+      rows.add(
+        new TextRenderable(renderer, {
+          content: clipRow(`${selected ? ">" : " "} ${spec.label}${key} — ${spec.description}`),
+          fg: selected ? "#d7d7ff" : "#b8b8bd",
+          width: overlayWidth(),
+        })
+      )
+    })
+  }
+
   const keymap = createTuiKeymap(renderer, i18n, {
     "submit-turn": () => submitTurn(),
     "cancel-turn": () => cancelTurn(),
     "new-session": () => newSession(),
     "close-session": () => closeSession(),
+    "rename-session": (payload: TuiCommandPayload) =>
+      renameSession((payload.text ?? "").trim()),
+    "clear-draft": () => clearDraft(),
+    help: () => openHelp(),
+    "open-editor": () => openExternalEditor(),
+    "open-palette": () => openPalette(),
     exit: () => {
       void close()
       return true
     },
   })
+
+  // Typing into the composer drives the slash menu + history layer.
+  // The content-change listener fires ASYNCHRONOUSLY (after the
+  // programmatic flag drops), so recall-driven setText is recognized
+  // by content instead: text equal to the recalled entry keeps the
+  // recall position (editing AWAY from it breaks recall).
+  composer.onContentChange = () => {
+    if (programmaticTextChange) {
+      return
+    }
+    const text = composer.plainText
+    if (
+      recall.index !== null &&
+      text === (historyItems()[recall.index] ?? null)
+    ) {
+      return
+    }
+    onComposerEdited()
+  }
 
   const unsubscribe = kernel.subscribe((snapshot) => {
     lastState = snapshot.state
@@ -491,6 +1137,7 @@ export async function createTuiHost(
     topBar.width = width
     topBar.height = geometry.topBarHeight
     viewport.width = width
+    queueLine.width = width
     composer.width = width
     composer.flexBasis = geometry.composerHeight
     composer.height = geometry.composerHeight
@@ -505,6 +1152,9 @@ export async function createTuiHost(
     } else {
       clearApproval()
     }
+    if (surface !== "none") {
+      renderSurfaceOverlay()
+    }
     refreshViewport()
     composer.focus()
     renderer.requestRender()
@@ -512,6 +1162,50 @@ export async function createTuiHost(
   }
 
   let closePromise: Promise<void> | null = null
+
+  /**
+   * The spike's lifecycle seam contract: `suspend()` first (a throw
+   * skips editor/onRestore/resume), `onRestore` exactly once,
+   * `resume()` exactly once on a successful suspend. A string result
+   * adopts as the composer draft.
+   */
+  async function suspendForEdit<T>(
+    editor: () => Promise<T> | T,
+    suspendOptions?: { onRestore?: () => void }
+  ): Promise<
+    { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: Error }
+  > {
+    let suspendSucceeded = false
+    try {
+      lifecycle.suspend()
+      suspendSucceeded = true
+      try {
+        const value = await editor()
+        if (typeof value === "string") {
+          setComposerText(value)
+        }
+        suspendOptions?.onRestore?.()
+        return { ok: true as const, value }
+      } catch (caught) {
+        suspendOptions?.onRestore?.()
+        return {
+          ok: false as const,
+          error: caught instanceof Error ? caught : new Error(String(caught)),
+        }
+      }
+    } catch (caught) {
+      return {
+        ok: false as const,
+        error: caught instanceof Error ? caught : new Error(String(caught)),
+      }
+    } finally {
+      if (suspendSucceeded) {
+        lifecycle.resume()
+        composer.focus()
+        renderer.requestRender()
+      }
+    }
+  }
 
   async function close(): Promise<void> {
     // Memoized: a second call awaits the same shutdown sequence
@@ -527,6 +1221,11 @@ export async function createTuiHost(
     closed = true
     unsubscribe()
     clearApproval()
+    closeSurface()
+    if (unregisterHistoryLayer !== null) {
+      unregisterHistoryLayer()
+      unregisterHistoryLayer = null
+    }
     keymap.destroy()
     kernel.stop()
     kernelStopped = true
@@ -552,17 +1251,12 @@ export async function createTuiHost(
   composer.placeholder = composerPlaceholder(layoutMode)
   render()
   composer.focus()
+  updateHistoryLayer()
   renderer.requestRender()
 
   return {
     renderer,
-    keymap: {
-      dispatch: keymap.dispatch,
-      dispatchByKeymap: keymap.dispatchByKeymap,
-      commandNames: keymap.commandNames,
-      registerApprovalLayer: keymap.registerApprovalLayer,
-      destroy: keymap.destroy,
-    },
+    keymap,
     async destroy() {
       if (closed) {
         return
@@ -570,6 +1264,11 @@ export async function createTuiHost(
       closed = true
       unsubscribe()
       clearApproval()
+      closeSurface()
+      if (unregisterHistoryLayer !== null) {
+        unregisterHistoryLayer()
+        unregisterHistoryLayer = null
+      }
       keymap.destroy()
       teardownRenderer()
     },
@@ -580,11 +1279,14 @@ export async function createTuiHost(
       await setSize(nextWidth, nextHeight)
     },
     setDraft(text: string) {
-      composer.setText(text)
+      setComposerText(text)
       renderer.requestRender()
     },
     getDraft(): string {
       return composer.plainText
+    },
+    getSurfaceKind(): TuiSurfaceKind {
+      return surface
     },
     async close() {
       await close()
@@ -601,36 +1303,7 @@ export async function createTuiHost(
     ): Promise<
       { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: Error }
     > {
-      let suspendSucceeded = false
-      try {
-        lifecycle.suspend()
-        suspendSucceeded = true
-        try {
-          const value = await editor()
-          if (typeof value === "string") {
-            composer.setText(value)
-          }
-          suspendOptions?.onRestore?.()
-          return { ok: true as const, value }
-        } catch (caught) {
-          suspendOptions?.onRestore?.()
-          return {
-            ok: false as const,
-            error: caught instanceof Error ? caught : new Error(String(caught)),
-          }
-        }
-      } catch (caught) {
-        return {
-          ok: false as const,
-          error: caught instanceof Error ? caught : new Error(String(caught)),
-        }
-      } finally {
-        if (suspendSucceeded) {
-          lifecycle.resume()
-          composer.focus()
-          renderer.requestRender()
-        }
-      }
+      return suspendForEdit(editor, suspendOptions)
     },
   }
 }

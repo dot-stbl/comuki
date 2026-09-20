@@ -96,22 +96,19 @@ export const neverGiveUpRetryPolicy: IRetryPolicy = {
  *
  * Belt-and-braces: a second `.configureLogging(LogLevel.None)` defends
  * against any internal call site that bypasses the injected logger.
+ *
+ * Realtime transport constants + chat-frame shapes are GENERATED from
+ * `Comuki.Shared.Contracts/Realtime` (issue #84) — re-exported here so
+ * the rest of the CLI keeps importing from `lib/signalr`. Frame
+ * validation against these shapes lives in the codecs module.
  */
-export const RealtimeTransportMethods = {
-  ChatChunk: "ChatChunk",
-  ChatTurnComplete: "ChatTurnComplete",
-} as const
+import { RealtimeTransportMethods } from "../contracts/_generated/realtime"
 
-export interface ChatChunkView {
-  readonly sessionId: string
-  readonly seq: number
-  readonly text: string
-}
-
-export interface ChatTurnCompleteView {
-  readonly sessionId: string
-  readonly outcome: string
-}
+export { RealtimeTransportMethods }
+export type {
+  ChatChunkView,
+  ChatTurnCompleteView,
+} from "../contracts/_generated/realtime"
 
 export interface ChatHubOptions {
   readonly hubUrl: string
@@ -435,17 +432,24 @@ export async function leaveChatGroup(
   }
 }
 
-/** Registers the two chat callbacks. Pure wiring, testable with a stub. */
+/**
+ * Registers the two chat callbacks. Frames are passed through as
+ * `unknown` — the receiver (kernel/adapters/signalr.ts) owns the
+ * shape validation through `decodeChatChunk` / `decodeChatTurnComplete`
+ * in `contracts/codecs`. This keeps the wire seam thin and means
+ * adding a new field on the server is a codec test change, not a
+ * re-export change.
+ */
 export function bindChatEvents(
   connection: Pick<HubConnection, "on">,
-  onChunk: (chunk: ChatChunkView) => void,
-  onComplete: (event: ChatTurnCompleteView) => void
+  onChunk: (frame: unknown) => void,
+  onComplete: (frame: unknown) => void
 ): void {
-  connection.on(RealtimeTransportMethods.ChatChunk, (chunk: ChatChunkView) =>
-    onChunk(chunk)
+  connection.on(RealtimeTransportMethods.ChatChunk, (frame: unknown) =>
+    onChunk(frame)
   )
   connection.on(
     RealtimeTransportMethods.ChatTurnComplete,
-    (event: ChatTurnCompleteView) => onComplete(event)
+    (frame: unknown) => onComplete(frame)
   )
 }

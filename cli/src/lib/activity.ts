@@ -59,7 +59,7 @@ export function activityItemsFromTranscript(
     }
   }
   for (const block of blocks.slice(lastUserIndex + 1)) {
-    if (block.kind !== "message" || block.message.parts === null) {
+    if (block.kind !== "message" || block.message.parts == null) {
       continue
     }
     for (let index = 0; index < block.message.parts.length; index += 1) {
@@ -71,13 +71,17 @@ export function activityItemsFromTranscript(
       const name = part.name.toLowerCase()
       const input = parseInput(part.inputJson)
       const status = normalizeActivityStatus(part.status)
+      // The wire integer fields arrive as number | string (OpenAPI
+      // marks int64/int32 string-tolerant) — coerce to a plain number.
+      const durationMs =
+        part.durationMs == null ? undefined : Number(part.durationMs)
       if (shellNames.has(name)) {
         items.push({
           kind: "shell",
           id,
           command: stringField(input, "command") ?? part.inputJson,
           status,
-          ...(part.durationMs == null ? {} : { durationMs: part.durationMs }),
+          ...(durationMs === undefined ? {} : { durationMs }),
           ...(part.outputJson ? { outputPreview: preview(part.outputJson) } : {}),
         })
       } else if (readNames.has(name) || writeNames.has(name)) {
@@ -95,7 +99,7 @@ export function activityItemsFromTranscript(
           name: part.name,
           summary: summaryFromInput(input, part.inputJson),
           status,
-          ...(part.durationMs == null ? {} : { durationMs: part.durationMs }),
+          ...(durationMs === undefined ? {} : { durationMs }),
         })
       }
     }

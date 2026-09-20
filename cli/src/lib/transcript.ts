@@ -198,7 +198,7 @@ export function hasCollapsedThinking(
   return blocks.some(
     (block) =>
       block.kind === "message" &&
-      block.message.parts !== null &&
+      block.message.parts != null &&
       block.message.parts.some((part) => part.kind === "thinking")
   )
 }

@@ -3,7 +3,7 @@ declare const pendingSessionIdBrand: unique symbol
 declare const turnRequestIdBrand: unique symbol
 declare const projectIdBrand: unique symbol
 
-import type { ChatMessageView } from "../lib/client"
+import type { ChatMessageView } from "../contracts/_generated/http/types/ChatMessageView"
 
 export type SessionId = string & { readonly [sessionIdBrand]: true }
 export type PendingSessionId = string & { readonly [pendingSessionIdBrand]: true }

@@ -10,11 +10,14 @@
  *
  * Three concerns live here:
  *
- * - `harnessMessageFromWire` / `turnOutcomeFromWire` normalise an HTTP
- *   turn payload into the kernel's `HarnessMessage` / `TurnOutcome`
- *   shapes, including the structural lift from generated
- *   `ChatMessageView` to the kernel `ChatMessageView` (the older
- *   lib/client shape with required-null fields).
+ * - `harnessMessageFromWire` / `turnOutcomeFromWire` lift a wire turn
+ *   payload into the kernel's `HarnessMessage` / `TurnOutcome`
+ *   shapes. `view` is the generated `ChatMessageView` carried
+ *   verbatim — the `HarnessMessage.view` field is the same type the
+ *   generated `_generated` exports, so no structural normalisation
+ *   happens here. The only kernel-specific bits are role coercion
+ *   (recognised roles pass through; anything else collapses to
+ *   `"system"`) and a precomputed `createdAtUnixMs`.
  *
  * - `decodeChatChunk` / `decodeChatTurnComplete` guard realtime frames
  *   so unknown or malformed input becomes a cursor-advancing "unknown"
@@ -31,13 +34,9 @@ import type { FeedMessage } from "../kernel/feed";
 import type { TurnOutcome } from "../harness/effect-runner";
 import type { HarnessMessage } from "../harness/state";
 
-import type { ChatMessageMeta as GeneratedChatMessageMeta } from "./_generated/http/types/ChatMessageMeta";
 import type { ChatMessageView as GeneratedChatMessageView } from "./_generated/http/types/ChatMessageView";
 import type { ChatMessagesPageView as GeneratedChatMessagesPageView } from "./_generated/http/types/ChatMessagesPageView";
 import type { ChatTurnResultView as GeneratedChatTurnResultView } from "./_generated/http/types/ChatTurnResultView";
-import type { MessagePart as GeneratedMessagePart } from "./_generated/http/types/MessagePart";
-import type { PlanEdge as GeneratedPlanEdge } from "./_generated/http/types/PlanEdge";
-import type { PlanNode as GeneratedPlanNode } from "./_generated/http/types/PlanNode";
 
 // ---------------------------------------------------------------------------
 // HarnessMessage / TurnOutcome
@@ -52,10 +51,9 @@ import type { PlanNode as GeneratedPlanNode } from "./_generated/http/types/Plan
  * - createdAtUnixMs: `Date.parse` of the wire ISO timestamp. The
  *   kernel never re-parses, so all downstream time math reads the
  *   precomputed unix ms.
- * - view: the wire view is structurally normalised to the kernel
- *   `ChatMessageView` shape (required-null fields, kernel-side
- *   MessagePart union with literal discriminators, `PlanItemView`
- *   derived from generated `PlanNode` + `PlanEdge`).
+ * - view: the generated wire view, carried verbatim. Optional fields
+ *   (`toolName`, `parts`, `meta`) are nullable on the wire; renderers
+ *   narrow defensively before reading them.
  */
 export function harnessMessageFromWire(view: GeneratedChatMessageView): HarnessMessage {
   return {
@@ -63,7 +61,7 @@ export function harnessMessageFromWire(view: GeneratedChatMessageView): HarnessM
     role: normalizeRole(view.role),
     content: view.content,
     createdAtUnixMs: Date.parse(view.createdAt),
-    view: normalizeMessageView(view),
+    view,
   };
 }
 
@@ -91,143 +89,6 @@ function normalizeRole(role: string): HarnessMessage["role"] {
     return role;
   }
   return "system";
-}
-
-/**
- * Lift a generated `ChatMessageView` into the kernel shape
- * (`ChatMessageView` from `lib/client`, referenced transitively via
- * `HarnessMessage.view`). Generated makes optional fields nullable;
- * kernel makes them required-null. We construct every required key,
- * coercing `undefined` to `null`, so the value is assignable to the
- * kernel shape without any `as` cast.
- */
-function normalizeMessageView(input: GeneratedChatMessageView): HarnessMessage["view"] {
-  const parts = input.parts === null || input.parts === undefined
-    ? null
-    : input.parts.map((part) => normalizePart(part));
-  const meta = normalizeMeta(input.meta);
-  return {
-    id: input.id,
-    role: input.role,
-    content: input.content,
-    toolName: input.toolName ?? null,
-    parts,
-    meta,
-    createdAt: input.createdAt,
-  };
-}
-
-function normalizeMeta(
-  input: GeneratedChatMessageMeta | null | undefined
-): NonNullable<HarnessMessage["view"]>["meta"] {
-  if (input === null || input === undefined) {
-    return null;
-  }
-  return {
-    model: input.model ?? null,
-    tokensIn: numericOrNull(input.tokensIn),
-    tokensOut: numericOrNull(input.tokensOut),
-    costMicros: numericOrNull(input.costMicros),
-    latencyMs: numericOrNull(input.latencyMs),
-    stopReason: input.stopReason ?? null,
-  };
-}
-
-function numericOrNull(value: number | string | null | undefined): number | null {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  if (typeof value === "number") {
-    return value;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-/**
- * Lift a generated `MessagePart` into the kernel variant.
- *
- * The kernel variant for a plan part carries `PlanItemView` nodes with
- * a `dependsOn` array (vs the generated `PlanNode` with `id`/`title`);
- * the codec derives `dependsOn` from the edges — every edge whose `to`
- * is the node's id contributes its `from` to the dependency list.
- *
- * Discriminator-missing parts are coerced to an empty text part so
- * the surface cannot silently drop the row.
- */
-function normalizePart(
-  input: GeneratedMessagePart
-): NonNullable<NonNullable<HarnessMessage["view"]>["parts"]>[number] {
-  const kind = input.kind;
-  if (kind === "text") {
-    return { kind: "text" as const, markdown: input.markdown };
-  }
-  if (kind === "code") {
-    return {
-      kind: "code" as const,
-      language: input.language,
-      source: input.source,
-      path: input.path ?? null,
-      startLine: numericOrNull(input.startLine),
-    };
-  }
-  if (kind === "diagram") {
-    return {
-      kind: "diagram" as const,
-      dialect: input.dialect,
-      source: input.source,
-    };
-  }
-  if (kind === "thinking") {
-    return {
-      kind: "thinking" as const,
-      text: input.text,
-      tokens: numericOrNull(input.tokens),
-    };
-  }
-  if (kind === "tool") {
-    return {
-      kind: "tool" as const,
-      name: input.name,
-      inputJson: input.inputJson,
-      status: input.status,
-      outputJson: input.outputJson ?? null,
-      durationMs: numericOrNull(input.durationMs),
-    };
-  }
-  if (kind === "handoff") {
-    return { kind: "handoff" as const, query: input.query };
-  }
-  if (kind === "plan") {
-    const nodeViews = input.nodes.map((node) => normalizePlanNode(node, input.edges));
-    const edgeViews = input.edges.map((edge) => normalizePlanEdge(edge));
-    return { kind: "plan" as const, nodes: nodeViews, edges: edgeViews };
-  }
-  // Unknown / missing discriminator — collapse to an empty text part so
-  // the row still surfaces in the transcript.
-  return { kind: "text" as const, markdown: "" };
-}
-
-function normalizePlanNode(
-  node: GeneratedPlanNode,
-  edges: readonly GeneratedPlanEdge[]
-): { readonly key: string; readonly profileKey: string; readonly brief: string; readonly dependsOn: readonly string[] } {
-  const dependsOn: string[] = [];
-  for (const edge of edges) {
-    if (edge.to === node.id) {
-      dependsOn.push(edge.from);
-    }
-  }
-  return {
-    key: node.id,
-    profileKey: node.profileKey,
-    brief: node.brief,
-    dependsOn,
-  };
-}
-
-function normalizePlanEdge(edge: GeneratedPlanEdge): { readonly from: string; readonly to: string } {
-  return { from: edge.from, to: edge.to };
 }
 
 // ---------------------------------------------------------------------------

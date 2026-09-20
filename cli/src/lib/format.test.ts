@@ -302,19 +302,18 @@ describe("summarizeToolArgs", () => {
 })
 
 describe("collapsedSummary", () => {
-  it("derives a thinking summary with tokens and duration when known", () => {
+  it("derives a thinking summary with tokens when known", () => {
     expect(
       collapsedSummary({
         kind: "thinking",
         text: "reasoning here",
         tokens: 4_100,
-        durationMs: 6_200,
       })
     ).toEqual({
       icon: symbols.event,
       label: "thinking",
       badge: null,
-      details: ["4.1k tok", "6.2s"],
+      details: ["4.1k tok"],
     })
   })
 
@@ -378,7 +377,13 @@ describe("collapsedSummary", () => {
     ).toBeNull()
     expect(collapsedSummary({ kind: "diagram", dialect: "mmd", source: "x" })).toBeNull()
     expect(collapsedSummary({ kind: "handoff", query: "q" })).toBeNull()
-    expect(collapsedSummary({ kind: "plan", nodes: [], edges: [] })).toBeNull()
+    expect(
+      collapsedSummary({
+        kind: "plan",
+        nodes: [],
+        edges: [],
+      } as unknown as never)
+    ).toBeNull()
   })
 })
 
@@ -490,16 +495,16 @@ describe("renderPart — full blocks", () => {
       kind: "plan",
       nodes: [
         {
-          key: "a",
+          id: "a",
+          title: "split Identity",
           profileKey: "implement",
           brief: "split Identity into Users/Grants/Keys\ndetails",
-          dependsOn: [],
         },
         {
-          key: "b",
+          id: "b",
+          title: "review the split",
           profileKey: "review",
           brief: "review the split",
-          dependsOn: ["a"],
         },
       ],
       edges: [{ from: "a", to: "b" }],

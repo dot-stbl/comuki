@@ -9,6 +9,10 @@
  * at-least-once redelivery after a reconnect must not double-render
  * text — and normalizes malformed frames into `unknown` messages so
  * the kernel's cursor still advances without crashing (issue #83).
+ *
+ * Frame validation lives in `contracts/codecs` (`decodeChatChunk` /
+ * `decodeChatTurnComplete`); this module just decides which messages
+ * to drop, surface as `unknown`, or feed forward to the kernel.
  */
 import type {
   HubConnection,
@@ -21,9 +25,8 @@ import {
   leaveChatGroup,
   rejoinChatGroups,
   startChatHubConnection,
-  type ChatChunkView,
-  type ChatTurnCompleteView,
 } from "../../lib/signalr"
+import { decodeChatChunk, decodeChatTurnComplete } from "../../contracts/codecs"
 import type { EventFeedPort, FeedMessage } from "../feed"
 
 export interface SignalRFeedOptions {
@@ -126,61 +129,43 @@ export class SignalRKernelTransport implements EventFeedPort, RealtimePort {
   private bind(connection: HubConnection): void {
     bindChatEvents(
       connection,
-      (chunk: ChatChunkView) => {
-        this.handleChunk(chunk)
+      (frame) => {
+        this.handleChunk(frame)
       },
-      (event: ChatTurnCompleteView) => {
-        this.handleComplete(event)
+      (frame) => {
+        this.handleComplete(frame)
       }
     )
   }
 
-  private handleChunk(chunk: ChatChunkView): void {
+  private handleChunk(frame: unknown): void {
     const receivedAtUnixMs = Date.now()
-    if (
-      typeof chunk?.sessionId !== "string" ||
-      typeof chunk?.text !== "string" ||
-      typeof chunk?.seq !== "number"
-    ) {
-      this.emit({
-        kind: "unknown",
-        sessionId: typeof chunk?.sessionId === "string" ? chunk.sessionId : undefined,
-        receivedAtUnixMs: receivedAtUnixMs,
-      })
+    const message = decodeChatChunk(frame, receivedAtUnixMs)
+    if (message.kind !== "chunk") {
+      // Codec already produced an "unknown" feed message — forward
+      // it so the cursor still advances.
+      this.emit(message)
       return
     }
     // Stale/duplicate frame after a reconnect — drop, cursor still
-    // advanced by the first delivery.
-    const lastSeq = this.lastSeqBySession.get(chunk.sessionId)
-    if (lastSeq !== undefined && chunk.seq <= lastSeq) {
+    // advanced by the first delivery. Emit "unknown" so the kernel
+    // still gets a feed step.
+    const lastSeq = this.lastSeqBySession.get(message.sessionId)
+    if (lastSeq !== undefined && message.seq <= lastSeq) {
       this.emit({
         kind: "unknown",
-        sessionId: chunk.sessionId,
+        sessionId: message.sessionId,
         receivedAtUnixMs,
       })
       return
     }
-    this.lastSeqBySession.set(chunk.sessionId, chunk.seq)
-    this.emit({
-      kind: "chunk",
-      sessionId: chunk.sessionId,
-      seq: chunk.seq,
-      text: chunk.text,
-      receivedAtUnixMs,
-    })
+    this.lastSeqBySession.set(message.sessionId, message.seq)
+    this.emit(message)
   }
 
-  private handleComplete(event: ChatTurnCompleteView): void {
-    if (typeof event?.sessionId !== "string") {
-      this.emit({ kind: "unknown", receivedAtUnixMs: Date.now() })
-      return
-    }
-    this.emit({
-      kind: "turn-complete",
-      sessionId: event.sessionId,
-      outcome: typeof event.outcome === "string" ? event.outcome : "unknown",
-      receivedAtUnixMs: Date.now(),
-    })
+  private handleComplete(frame: unknown): void {
+    const message = decodeChatTurnComplete(frame, Date.now())
+    this.emit(message)
   }
 
   private emit(message: FeedMessage): void {

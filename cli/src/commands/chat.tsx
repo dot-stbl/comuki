@@ -931,7 +931,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       }
       try {
         const first = await client.listMessages(sessionId, 1, 50)
-        const lastPage = Math.max(1, Math.ceil(first.total / 50))
+        const lastPage = Math.max(1, Math.ceil(Number(first.total) / 50))
         const page =
           lastPage === 1
             ? first

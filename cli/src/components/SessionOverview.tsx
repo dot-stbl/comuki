@@ -80,7 +80,7 @@ export function sessionTokenTotals(
       continue
     }
     const meta = block.message.meta
-    if (meta === null) {
+    if (meta == null) {
       continue
     }
     if (typeof meta.tokensIn === "number") {
@@ -126,7 +126,7 @@ export function waitingApprovalRows(
     if (!session.awaitingApproval) {
       continue
     }
-    const brief = extractPlanNodes(session.pendingPlan)[0]?.brief ?? ""
+    const brief = extractPlanNodes(session.pendingPlan).nodes[0]?.brief ?? ""
     const firstStep = brief.split("\n", 1)[0]?.trim() ?? ""
     rows.push({
       index,

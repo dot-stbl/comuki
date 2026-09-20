@@ -24,33 +24,29 @@ function stubConnection() {
 }
 
 describe("bindChatEvents", () => {
-  it("routes ChatChunk and ChatTurnComplete to their callbacks", () => {
+  it("routes ChatChunk and ChatTurnComplete to their callbacks with unknown frames", () => {
+    // Frames arrive as `unknown` — the test asserts the *raw* payload is
+    // forwarded unchanged. The kernel adapter owns validation through
+    // decodeChatChunk/decodeChatTurnComplete.
     const connection = stubConnection()
-    const chunks: string[] = []
-    const outcomes: string[] = []
+    const chunks: unknown[] = []
+    const outcomes: unknown[] = []
     bindChatEvents(
       connection,
-      (chunk) => chunks.push(chunk.text),
-      (event) => outcomes.push(event.outcome)
+      (frame) => chunks.push(frame),
+      (frame) => outcomes.push(frame)
     )
 
-    connection.emit(RealtimeTransportMethods.ChatChunk, {
-      sessionId: "s1",
-      seq: 1,
-      text: "План ",
-    })
-    connection.emit(RealtimeTransportMethods.ChatChunk, {
-      sessionId: "s1",
-      seq: 2,
-      text: "рефакторинга",
-    })
-    connection.emit(RealtimeTransportMethods.ChatTurnComplete, {
-      sessionId: "s1",
-      outcome: "awaiting_approval",
-    })
+    const chunkA = { sessionId: "s1", seq: 1, text: "План " }
+    const chunkB = { sessionId: "s1", seq: 2, text: "рефакторинга" }
+    const complete = { sessionId: "s1", outcome: "awaiting_approval" }
 
-    expect(chunks).toEqual(["План ", "рефакторинга"])
-    expect(outcomes).toEqual(["awaiting_approval"])
+    connection.emit(RealtimeTransportMethods.ChatChunk, chunkA)
+    connection.emit(RealtimeTransportMethods.ChatChunk, chunkB)
+    connection.emit(RealtimeTransportMethods.ChatTurnComplete, complete)
+
+    expect(chunks).toEqual([chunkA, chunkB])
+    expect(outcomes).toEqual([complete])
   })
 })
 

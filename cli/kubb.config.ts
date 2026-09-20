@@ -36,11 +36,13 @@ if (!existsSync(resolve(process.cwd(), SPEC_PATH))) {
 
 export default defineConfig({
   root: ".",
-  // Kubb's default done-hook pipes output through prettier; the CLI has
-  // no prettier (eslint owns formatting). Empty the hook — raw kubb
-  // output is deterministic on its own, which is what the drift diff
-  // needs. (Root-level option; under `output` it is silently ignored.)
-  hooks: { done: [] },
+  // Kubb 4.39.2 ships a default `done` hook that pipes output through
+  // prettier; passing `[]` still leaves that default in place (verified —
+  // CI runs `prettier --write` and fails with ENOENT when prettier is
+  // not installed). Replace it with a no-op `echo done` so the gate's
+  // contract is exactly the bytes kubb emits. (Root-level option; under
+  // `output` it is silently ignored.)
+  hooks: { done: ["echo done"] },
   input: {
     path: SPEC_PATH,
   },

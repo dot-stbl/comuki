@@ -1,1 +1,7 @@
-{"required":["reason"],"type":"object","properties":{"reason":{"type":"string"}},"description":"Failure body: human-readable reason text.","x-readme-ref-name":"FailWorkItemRequest"}
+{
+  "required": ["reason"],
+  "type": "object",
+  "properties": { "reason": { "type": "string" } },
+  "description": "Failure body: human-readable reason text.",
+  "x-readme-ref-name": "FailWorkItemRequest"
+}

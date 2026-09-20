@@ -1,1 +1,13 @@
-{"required":["id","projectId","mode","filterJson","enabled"],"type":"object","properties":{"id":{"type":"string","format":"uuid"},"projectId":{"type":"string","format":"uuid"},"mode":{"type":"string","description":"watch | inbox."},"filterJson":{"type":"string"},"enabled":{"type":"boolean"}},"description":"Read-model of an admission rule.","x-readme-ref-name":"AdmissionRuleView"}
+{
+  "required": ["id", "projectId", "mode", "filterJson", "enabled"],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "projectId": { "type": "string", "format": "uuid" },
+    "mode": { "type": "string", "description": "watch | inbox." },
+    "filterJson": { "type": "string" },
+    "enabled": { "type": "boolean" }
+  },
+  "description": "Read-model of an admission rule.",
+  "x-readme-ref-name": "AdmissionRuleView"
+}

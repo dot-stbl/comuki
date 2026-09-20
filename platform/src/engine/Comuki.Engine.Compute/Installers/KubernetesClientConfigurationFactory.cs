@@ -2,9 +2,16 @@ using k8s;
 
 namespace Comuki.Engine.Compute.Installers;
 
-internal static class KubernetesClientConfigurationFactory
+/// <summary>
+/// Default <see cref="IKubernetesClientConfigurationFactory"/>: strict in-cluster
+/// when <c>KubeconfigPath</c> is empty/whitespace, file-based otherwise.
+/// BuildDefaultConfig is intentionally not used — its final fallback targets
+/// <c>http://localhost:8080</c>, which would silently mask a missing
+/// ServiceAccount mount.
+/// </summary>
+internal sealed class KubernetesClientConfigurationFactory : IKubernetesClientConfigurationFactory
 {
-    public static KubernetesClientConfiguration Build(string? kubeconfigPath)
+    public KubernetesClientConfiguration Build(string? kubeconfigPath)
     {
         return Build(
             kubeconfigPath,
@@ -12,6 +19,10 @@ internal static class KubernetesClientConfigurationFactory
             static path => KubernetesClientConfiguration.BuildConfigFromConfigFile(path));
     }
 
+    /// <summary>
+    /// Test seam: lets unit tests supply their own in-cluster / file-build
+    /// delegates without touching the real <c>k8s</c> SDK calls.
+    /// </summary>
     public static KubernetesClientConfiguration Build(
         string? kubeconfigPath,
         Func<KubernetesClientConfiguration> buildInCluster,

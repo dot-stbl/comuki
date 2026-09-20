@@ -90,6 +90,7 @@ public static class ComputeInstaller
 
         // An absent path means strictly in-cluster. BuildDefaultConfig is not
         // used because its final fallback targets http://localhost:8080.
+        services.AddSingleton<IKubernetesClientConfigurationFactory, KubernetesClientConfigurationFactory>();
         services.AddSingleton<IKubernetes>(static serviceProvider =>
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
@@ -97,10 +98,33 @@ public static class ComputeInstaller
             var kubeconfigPath = serviceProvider
                 .GetRequiredService<IOptions<KubernetesComputeOptions>>()
                 .Value.KubeconfigPath;
-            var config = KubernetesClientConfigurationFactory.Build(kubeconfigPath);
+            var factory = serviceProvider.GetRequiredService<IKubernetesClientConfigurationFactory>();
+            var mode = string.IsNullOrWhiteSpace(kubeconfigPath) ? "in-cluster" : kubeconfigPath;
+            KubernetesClientConfiguration config;
+            try
+            {
+                config = factory.Build(kubeconfigPath);
+            }
+            catch (Exception exception)
+            {
+                // Diagnostics goal: when a host pod is shipped without the SA
+                // token mount (e.g. image 664bdfaf "brain" profile), the SDK
+                // throws KubernetesClientException with no caller-visible
+                // context. Surface the actual failure and an actionable hint
+                // before rethrowing so the host still fails fast — a silent
+                // DI crash leaves the scale supervisor dead with no trace.
+                logger.LogError(
+                    exception,
+                    "Kubernetes client failed to initialise (kubeconfig: {Mode}). "
+                      + "Verify the pod has a ServiceAccount mounted with a token, and "
+                      + "KUBERNETES_SERVICE_HOST/KUBERNETES_SERVICE_PORT are set; "
+                      + "if not deploying workers, set Compute:Provider=docker instead.",
+                    mode);
+                throw;
+            }
             logger.LogInformation(
                 "Kubernetes client ready ({Mode}), host: {Host}",
-                string.IsNullOrWhiteSpace(kubeconfigPath) ? "in-cluster" : kubeconfigPath,
+                mode,
                 config.Host);
             return new Kubernetes(config);
         });

@@ -30,21 +30,23 @@ CI (`ci.yml`) — единственный автоматический гейт
 | `test backend (integration)` | `dotnet run --project <project> -c Debug` по каждой папке `tests/integration/*/`, кроме `Comuki.Host.Testing` (общая харнесс-библиотека без entry point) |
 | `build frontend (dashboard)` | из `dashboard/`: `bun install` → `bun run typecheck` → `bun run lint` → `bun run test` |
 | `build agents (ts sdks)` | из `agents/`: `bun install` → `bun run build` (экспорт типов SDK) |
+| `build cli` | из `cli/`: `bun install` → `bun run lint` → `bun run typecheck` → `bun run test` → `bun run build` |
 
-**CLI (`cli/`)** — отдельный TypeScript-пакет (Bun + Ink), не входящий в
-CI-гейт на момент написания (см. issue #108). Agent contract для работы в
-`cli/`: из `cli/` — `bun install` → `bun run typecheck` → `bun run test` →
-`bun run build`. Известный baseline: `bun run test` падает на
-`cli/spikes/opentui/tests/*` (5 fail + 5 errors) из-за отсутствующих
-spike-депов в корневом workspace — это pre-existing и не связано с
-продуктовым кодом `cli/src/`.
+**CLI (`cli/`)** — отдельный TypeScript-пакет (Bun + Ink), с недавних пор в
+CI-гейте (job `build cli`, закрыл CI-часть issue #108). Agent contract для
+работы в `cli/` — те же пять шагов, что гоняет job: из `cli/` —
+`bun install` → `bun run lint` → `bun run typecheck` → `bun run test` →
+`bun run build`. Рантайм-депы opentui-спайка запинены в `cli/package.json`,
+поэтому один `bun install` в корне `cli/` покрывает и тесты
+`cli/spikes/opentui/tests/*` — отдельной установки спайка не нужно.
 
 Всё из этой таблицы **блокирует**. Ни один шаг здесь не «рекомендуется»:
 `bun run lint` (eslint) падает — PR не идёт, ровно как и `dotnet build`.
 
-Чего в CI **нет**: `dotnet format`, `bun run build`, e2e (`playwright`),
-`test:coverage`, Storybook. Это не значит «можно не проверять» — это значит,
-что за них отвечает агент перед тем, как сказать «готово» (см. ниже).
+Чего в CI **нет**: `dotnet format`, `bun run build` для `dashboard/`, e2e
+(`playwright`), `test:coverage`, Storybook. Это не значит «можно не
+проверять» — это значит, что за них отвечает агент перед тем, как сказать
+«готово» (см. ниже).
 
 ## Agent contract — Definition of Done
 

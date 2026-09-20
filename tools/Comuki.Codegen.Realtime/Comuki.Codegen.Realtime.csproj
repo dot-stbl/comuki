@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Comuki.Codegen.Realtime</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

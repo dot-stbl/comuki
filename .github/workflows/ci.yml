@@ -213,25 +213,41 @@ jobs:
       - name: Unit tests
         run: bun test
 
-  # cli/ — the terminal client (Bun + Ink) — sat in no job at all: its
-  # thousand-test gate ran only on the machines of whoever remembered
-  # (issue #108). The opentui spike needs no install of its own here: its
-  # runtime deps are pinned in cli/package.json, so the root workspace
-  # install covers cli/spikes/opentui/tests too.
+  # The CLI (issue #84): gates plus the contract drift check. The CLI
+  # consumes GENERATED transport contracts — cli/src/contracts/_generated
+  # (kubb http types from the backend-emitted OpenAPI doc + the realtime
+  # module from tools/Comuki.Codegen.Realtime). The tree is committed; a
+  # server contract change without a matching `bun run generate:contracts`
+  # must fail here, before merge, not in a user's terminal.
   build-cli:
     name: build cli
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: cli
     steps:
       - uses: actions/checkout@v4
 
+      # test:contracts shells out to `dotnet build ../comuki.slnx` (re-emits
+      # artifacts/openapi.json) and `dotnet run` for the realtime codegen —
+      # same 10.0.x the backend jobs pin.
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      # cli/bun.lock is not committed yet -> plain install, no --frozen-lockfile.
+      # cli/bun.lock is not committed (same as dashboard) — plain install.
       - name: Install dependencies
         run: bun install
 
@@ -246,3 +262,10 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      # Regenerates both contract artifacts from the server sources and
+      # fails on any diff under cli/src/contracts/_generated. Exit != 0
+      # means the committed contract tree is stale: run
+      # `bun run generate:contracts` from cli/ and commit the result.
+      - name: Contract drift gate
+        run: bun run test:contracts

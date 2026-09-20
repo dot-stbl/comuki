@@ -234,7 +234,7 @@ describe("flattenTranscript", () => {
         kind: "message",
         key: "a",
         message: message("m1", "assistant", "", [
-          { kind: "thinking", text: "secret reasoning", tokens: 4_100, durationMs: 6_200 },
+          { kind: "thinking", text: "secret reasoning", tokens: 4_100 },
           {
             kind: "tool",
             name: "memory.recall",
@@ -249,7 +249,7 @@ describe("flattenTranscript", () => {
     const lines = flattenTranscript(snapshot({ blocks }), 90, 0)
     const plain = lines.map(stripAnsi)
     // Assistant rows carry the one-space gutter over the event indent.
-    expect(plain).toContain("   * thinking  4.1k tok 6.2s")
+    expect(plain).toContain("   * thinking  4.1k tok")
     expect(plain).toContain(`   * memory.recall("identity module", 5)  ok 41ms`)
     expect(plain.join("\n")).not.toContain("secret reasoning")
     expect(plain.some((line) => line.includes("the answer"))).toBe(true)

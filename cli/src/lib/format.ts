@@ -18,7 +18,9 @@ import {
   stripAnsi,
   symbols,
 } from "../theme"
-import type { ChatMessageView, MessagePart, PlanItemView } from "./client"
+import type { ChatMessageView, MessagePart } from "./client"
+import type { PlanNode } from "../contracts/_generated/http/types/PlanNode"
+import type { PlanEdge } from "../contracts/_generated/http/types/PlanEdge"
 import type { ChatBlock } from "./sessions"
 import { MENTION_TOKEN, stripMentionPreamble } from "./mentions"
 import { DEFAULT_MARKDOWN_WIDTH, renderMarkdownLines } from "./markdown"
@@ -130,15 +132,43 @@ export function summarizeToolArgs(inputJson: string, maxChars = 40): string {
 // Plans — a distinct approval slab in the transcript
 // ---------------------------------------------------------------------------
 
-export function renderPlanItems(nodes: readonly PlanItemView[]): string[] {
+/**
+ * Render one plan as transcript lines: each node becomes a line with
+ * profile key + brief + dependency arrow, derived from the edges. Edges
+ * are required because the canonical wire shape stores dependencies
+ * as `from` → `to` edges, not as a `dependsOn` field on each node.
+ */
+export function renderPlanItems(
+  nodes: readonly PlanNode[],
+  edges: readonly PlanEdge[] = []
+): string[] {
   return nodes.map((node) => {
     const brief = firstLine(node.brief) || "(no brief)"
-    const deps =
-      node.dependsOn.length > 0
-        ? paint(`  <- ${node.dependsOn.join(", ")}`, colors.dim)
+    const deps = dependsOn(node.id, edges)
+    const depsSuffix =
+      deps.length > 0
+        ? paint(`  <- ${deps.join(", ")}`, colors.dim)
         : ""
-    return `  ${paint(symbols.bullet, colors.accent)} ${paint(node.profileKey, colors.bright)} ${paint(symbols.arrow, colors.dim)} ${brief}${deps}`
+    const key =
+      node.title.length > 0 ? node.title : node.id
+    return `  ${paint(symbols.bullet, colors.accent)} ${paint(node.profileKey, colors.bright)} ${paint(symbols.arrow, colors.dim)} ${brief}${depsSuffix}${key === node.profileKey ? "" : paint(`  (${key})`, colors.faint)}`
   })
+}
+
+/**
+ * Derive the upstream `from` ids that point at a given node. The
+ * canonical plan wire shape expresses ordering as edges, so the
+ * "depends on" list for one node is the set of edges whose `to` is
+ * the node's `id`.
+ */
+function dependsOn(nodeId: string, edges: readonly PlanEdge[]): readonly string[] {
+  const result: string[] = []
+  for (const edge of edges) {
+    if (edge.to === nodeId) {
+      result.push(edge.from)
+    }
+  }
+  return result
 }
 
 /**
@@ -149,7 +179,7 @@ export function renderPendingPlan(
   plan: unknown,
   width: number = DEFAULT_MARKDOWN_WIDTH
 ): string[] {
-  const nodes = extractPlanNodes(plan)
+  const { nodes } = extractPlanNodes(plan)
   if (nodes.length === 0) {
     return [paint("  (plan payload unreadable)", colors.dim)]
   }
@@ -197,49 +227,67 @@ function estimateMinutes(plan: unknown): number | null {
 }
 
 /**
- * Normalizes raw plan nodes. The canonical wire shape is
- * `{ id, title, profileKey, brief }` (camelCase `PlanNode`); older or
- * test payloads may carry `key` — both identify a node, `brief` falls
- * back to `title`.
+ * Normalizes the raw plan payload into canonical `PlanNode` + `PlanEdge`
+ * arrays. The wire shape is `{ nodes: PlanNode[], edges: PlanEdge[] }`;
+ * both arrays are independently optional and may be empty. Older or
+ * test payloads carrying the legacy `key` field are normalized to
+ * `id`, and `title` falls back to `brief` when `brief` is missing —
+ * keeps `/plan` rendering useful on legacy state.
  */
-export function extractPlanNodes(plan: unknown): PlanItemView[] {
+export function extractPlanNodes(plan: unknown): {
+  nodes: readonly PlanNode[]
+  edges: readonly PlanEdge[]
+} {
   if (plan === null || typeof plan !== "object") {
-    return []
+    return { nodes: [], edges: [] }
   }
-  const nodes = (plan as { nodes?: unknown }).nodes
-  if (!Array.isArray(nodes)) {
-    return []
-  }
-  return nodes.flatMap((node): PlanItemView[] => {
-    if (node === null || typeof node !== "object") {
-      return []
-    }
-    const record = node as Record<string, unknown>
-    const key =
-      typeof record.key === "string"
-        ? record.key
-        : typeof record.id === "string"
-          ? record.id
-          : null
-    if (key === null) {
-      return []
-    }
-    const brief =
-      typeof record.brief === "string" && record.brief.trim().length > 0
-        ? record.brief
-        : typeof record.title === "string"
-          ? record.title
-          : ""
-    return [
-      {
-        key,
-        profileKey:
-          typeof record.profileKey === "string" ? record.profileKey : "",
-        brief,
-        dependsOn: [],
-      },
-    ]
-  })
+  const rawNodes = (plan as { nodes?: unknown }).nodes
+  const rawEdges = (plan as { edges?: unknown }).edges
+  const nodes: PlanNode[] = Array.isArray(rawNodes)
+    ? rawNodes.flatMap((node): PlanNode[] => {
+        if (node === null || typeof node !== "object") {
+          return []
+        }
+        const record = node as Record<string, unknown>
+        const id =
+          typeof record.id === "string"
+            ? record.id
+            : typeof record.key === "string"
+              ? record.key
+              : null
+        if (id === null) {
+          return []
+        }
+        const title =
+          typeof record.title === "string" && record.title.trim().length > 0
+            ? record.title
+            : typeof record.brief === "string"
+              ? record.brief
+              : ""
+        const profileKey =
+          typeof record.profileKey === "string" ? record.profileKey : ""
+        const brief =
+          typeof record.brief === "string" && record.brief.trim().length > 0
+            ? record.brief
+            : typeof record.title === "string"
+              ? record.title
+              : ""
+        return [{ id, title, profileKey, brief }]
+      })
+    : []
+  const edges: PlanEdge[] = Array.isArray(rawEdges)
+    ? rawEdges.flatMap((edge): PlanEdge[] => {
+        if (edge === null || typeof edge !== "object") {
+          return []
+        }
+        const record = edge as Record<string, unknown>
+        if (typeof record.from !== "string" || typeof record.to !== "string") {
+          return []
+        }
+        return [{ from: record.from, to: record.to }]
+      })
+    : []
+  return { nodes, edges }
 }
 
 // ---------------------------------------------------------------------------
@@ -273,9 +321,9 @@ export function collapsedSummary(part: MessagePart): CollapsedSummary | null {
     if (typeof part.tokens === "number" && part.tokens > 0) {
       details.push(formatTokenCount(part.tokens))
     }
-    if (typeof part.durationMs === "number") {
-      details.push(formatDurationMs(part.durationMs))
-    }
+    // The wire contract (C# ThinkingPart) carries text+tokens only —
+    // no durationMs. If a future contract adds it, the generated type
+    // will surface it here again.
     return { icon: symbols.event, label: "thinking", badge: null, details }
   }
   if (part.kind === "tool") {
@@ -453,7 +501,7 @@ export function renderPart(
     case "handoff":
       return [`  ${paint(symbols.arrow, colors.accent)} open ${part.query}`]
     case "plan":
-      return renderPlanItems(part.nodes)
+      return renderPlanItems(part.nodes, part.edges)
     case "text":
       return renderMarkdownLines(part.markdown, width)
   }
@@ -509,7 +557,7 @@ export function renderMessage(
   }
   if (message.role === "assistant") {
     const innerWidth = Math.max(8, width - gutter.length)
-    const parts = message.parts
+    const parts = message.parts ?? null
     const eventParts =
       parts === null
         ? []
@@ -699,9 +747,9 @@ export function lastCodeFence(blocks: readonly ChatBlock[]): string | null {
 }
 
 function lastCodeFromParts(
-  parts: readonly MessagePart[] | null
+  parts: readonly MessagePart[] | null | undefined
 ): string | null {
-  if (parts === null || parts.length === 0) {
+  if (parts === null || parts === undefined || parts.length === 0) {
     return null
   }
   for (let index = parts.length - 1; index >= 0; index--) {

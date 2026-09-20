@@ -10,7 +10,9 @@
 import { collapsedSummary } from "./format"
 import { stripAnsi } from "../theme"
 import type { ChatBlock } from "./sessions"
-import type { ChatMessageView, MessagePart, PlanItemView } from "./client"
+import type { ChatMessageView, MessagePart } from "./client"
+import type { PlanNode } from "../contracts/_generated/http/types/PlanNode"
+import type { PlanEdge } from "../contracts/_generated/http/types/PlanEdge"
 
 function firstLine(text: string): string {
   return (text.split("\n", 1)[0] ?? "").trim()
@@ -23,16 +25,30 @@ function partQuote(segments: readonly (string | null)[]): string {
   return `> ${joined}`
 }
 
-function planList(nodes: readonly PlanItemView[]): string {
+/**
+ * Render a plan part as a markdown list. Dependencies are derived from
+ * the edges (`from` → `to`), since the canonical wire shape stores
+ * ordering as edges rather than as a `dependsOn` field on each node.
+ */
+function planList(
+  nodes: readonly PlanNode[],
+  edges: readonly PlanEdge[] = []
+): string {
   if (nodes.length === 0) {
     return "> plan · (empty)"
   }
   return nodes
     .map((node) => {
       const brief = firstLine(node.brief) || "(no brief)"
-      const deps =
-        node.dependsOn.length > 0 ? ` — depends on ${node.dependsOn.join(", ")}` : ""
-      return `- **${node.profileKey || node.key}** → ${brief}${deps}`
+      const deps: string[] = []
+      for (const edge of edges) {
+        if (edge.to === node.id) {
+          deps.push(edge.from)
+        }
+      }
+      const depsSuffix =
+        deps.length > 0 ? ` — depends on ${deps.join(", ")}` : ""
+      return `- **${node.profileKey || node.id}** → ${brief}${depsSuffix}`
     })
     .join("\n")
 }
@@ -77,7 +93,7 @@ function partToMarkdown(part: MessagePart): string | null {
     case "handoff":
       return `> handoff → ${part.query}`
     case "plan":
-      return planList(part.nodes)
+      return planList(part.nodes, part.edges)
   }
 }
 
@@ -87,7 +103,7 @@ function messageToMarkdown(message: ChatMessageView): string {
   }
   if (message.role === "assistant") {
     const body =
-      message.parts !== null && message.parts.length > 0
+      message.parts != null && message.parts.length > 0
         ? message.parts
             .map(partToMarkdown)
             .filter((part): part is string => part !== null)

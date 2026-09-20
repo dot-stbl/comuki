@@ -20,7 +20,7 @@ function message(
     role,
     content,
     toolName,
-    parts,
+    parts: parts === null ? null : [...parts],
     meta: null,
     createdAt: "2026-09-18T10:00:00Z",
   }
@@ -43,7 +43,7 @@ describe("exportMarkdown", () => {
 
   it("renders assistant parts in wire order — collapsed quotes, text verbatim", () => {
     const parts: readonly MessagePart[] = [
-      { kind: "thinking", text: "hmm", tokens: 4100, durationMs: 6200 },
+      { kind: "thinking", text: "hmm", tokens: 4100 },
       {
         kind: "tool",
         name: "memory.recall",
@@ -58,7 +58,7 @@ describe("exportMarkdown", () => {
       [
         "## comuki",
         "",
-        "> thinking · 4.1k tok · 6.2s",
+        "> thinking · 4.1k tok",
         "",
         '> memory.recall("identity module", 5) · ok · 41ms',
         "",
@@ -89,8 +89,8 @@ describe("exportMarkdown", () => {
       {
         kind: "plan",
         nodes: [
-          { key: "n1", profileKey: "coder", brief: "write the parser", dependsOn: [] },
-          { key: "n2", profileKey: "reviewer", brief: "review it\nline two is dropped", dependsOn: ["n1"] },
+          { id: "n1", title: "write the parser", profileKey: "coder", brief: "write the parser" },
+          { id: "n2", title: "review it", profileKey: "reviewer", brief: "review it\nline two is dropped" },
         ],
         edges: [{ from: "n1", to: "n2" }],
       },

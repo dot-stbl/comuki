@@ -12,6 +12,11 @@
   "keywords": ["cli", "agent", "orchestration", "ai", "terminal"],
   "license": "MIT",
   "type": "module",
+  "overrides": {
+    "ajv-draft-04": {
+      "ajv": "^8.5.0"
+    }
+  },
   "bin": {
     "comuki": "./bin/comuki.ts"
   },
@@ -20,7 +25,9 @@
     "lint": "eslint .",
     "test": "bun test",
     "start": "bun bin/comuki.ts",
-    "build": "bun scripts/build.ts"
+    "build": "bun scripts/build.ts",
+    "generate:contracts": "dotnet build ../comuki.slnx -c Debug && bun scripts/normalize-openapi.ts && bunx @kubb/cli@4.39.2 generate && dotnet run --project ../tools/Comuki.Codegen.Realtime -c Debug -- --out src/contracts/_generated/realtime.ts",
+    "test:contracts": "bun scripts/contracts-drift.ts"
   },
   "dependencies": {
     "@microsoft/signalr": "^8.0.7",
@@ -36,10 +43,15 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@kubb/cli": "4.39.2",
+    "@kubb/core": "4.39.2",
+    "@kubb/plugin-oas": "4.39.2",
+    "@kubb/plugin-ts": "4.39.2",
     "@types/bun": "^1.4.2",
     "@types/ink-testing-library": "^1.0.4",
     "@types/react": "^18.3.12",
     "@types/yargs": "^17.0.33",
+    "ajv": "^8.5.0",
     "eslint": "^9",
     "ink-testing-library": "^4.0.0",
     "typescript": "^5.9.3",

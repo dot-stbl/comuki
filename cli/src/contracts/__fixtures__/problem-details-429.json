@@ -1,0 +1,9 @@
+{
+  "_comment": "RFC 9457 application/problem+json response body for a rate-limit. The dot.case code 'chat.rate_limited' refines the classification via the suffix-after-underscore-normalisation rule (chat.rate_limited → suffix 'rate_limited' → kind 'rate-limited').",
+  "type": "https://comuki/problems/chat-rate-limited",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "Chat session 9f3e5d3a-5b1f-4d6f-9d77-2f7b9f1a6c3d exceeded 30 turns/minute.",
+  "instance": "/api/v1/chat/sessions/9f3e5d3a-5b1f-4d6f-9d77-2f7b9f1a6c3d/messages",
+  "code": "chat.rate_limited"
+}

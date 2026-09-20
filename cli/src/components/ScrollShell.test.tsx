@@ -21,7 +21,6 @@ import { useTranscriptScroll } from "../hooks/useTranscriptScroll"
 const PGUP = "\x1b[5~"
 const PGDN = "\x1b[6~"
 const UP = "\x1b[A"
-const DOWN = "\x1b[B"
 
 interface ShellProps {
   readonly lines: readonly string[]
@@ -31,7 +30,7 @@ interface ShellProps {
 /** The same wiring `ChatApp` uses for the transcript + prompt block. */
 function ScrollShell({ lines, height }: ShellProps) {
   const scroll = useTranscriptScroll(lines.length, height, "s1")
-  const [submitted, setSubmitted] = useState<string[]>([])
+  const [, setSubmitted] = useState<string[]>([])
   useInput((input, key) => {
     if (key.pageUp || input === "\x1b[5~" || input === "[5~") {
       scroll.pageUp()

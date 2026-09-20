@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import type { ChildProcess } from "node:child_process"
+import type { ChildProcess, spawn as spawnFn } from "node:child_process"
 import { PENDING_PREFIX } from "./sessions"
 import { linkSequence } from "./term"
 import {
@@ -15,6 +15,8 @@ import {
   toolsUnavailableLines,
 } from "./ops"
 import { stripAnsi } from "../theme"
+
+type SpawnFn = typeof spawnFn
 
 describe("dashboardOpenUrl", () => {
   it("a live session lands on /chat — there is no /chat/{id} route", () => {
@@ -119,7 +121,7 @@ describe("openDashboardUrl", () => {
       spawnImpl: ((command: string, args: readonly string[]) => {
         seen.push({ command, args })
         return { unref() {} } as ChildProcess
-      }) as typeof import("node:child_process").spawn,
+      }) as SpawnFn,
     })
     expect(ok).toBe(true)
     expect(seen).toEqual([{ command: "xdg-open", args: ["http://h/chat"] }])
@@ -132,7 +134,7 @@ describe("openDashboardUrl", () => {
       spawnImpl: ((command: string, args: readonly string[]) => {
         seen.push({ command, args })
         return { unref() {} } as ChildProcess
-      }) as typeof import("node:child_process").spawn,
+      }) as SpawnFn,
     })
     expect(ok).toBe(true)
     expect(seen[0]?.command).toBe("cmd")
@@ -148,7 +150,7 @@ describe("openDashboardUrl", () => {
         platform: "linux",
         spawnImpl: (() => {
           throw new Error("ENOENT")
-        }) as unknown as typeof import("node:child_process").spawn,
+        }) as unknown as SpawnFn,
       })
     ).toBe(false)
   })

@@ -32,18 +32,18 @@ you  › approve
 ## Запуск
 
 ```bash
-cd agents && bun install
+cd cli && bun install
 
 # из исходников (REPL — команда по умолчанию)
-COMUKI_URL=http://localhost:8080 COMUKI_API_KEY=ck_… \
-  bun run --filter '@comuki/cli' start
+COMUKI_URL=http://localhost:17172 COMUKI_API_KEY=ck_… \
+  bun run start
 
 # или прямо бинарём
-COMUKI_URL=http://localhost:8080 COMUKI_API_KEY=ck_… \
-  bun agents/comuki-cli/bin/comuki.ts
+COMUKI_URL=http://localhost:17172 COMUKI_API_KEY=ck_… \
+  bun bin/comuki.ts
 
-# скомпилированный single-file бинарень (~110 MB, bun compile)
-cd agents/comuki-cli && bun run build   # → ./comuki.exe (Windows) / comuki
+# скомпилированный single-file бинарень (~128 MB, bun compile)
+cd cli && bun run build   # → ./comuki.exe (Windows) / comuki
 ```
 
 ## Команды
@@ -59,8 +59,41 @@ cd agents/comuki-cli && bun run build   # → ./comuki.exe (Windows) / comuki
 Глобальные опции: `--url`, `--api-key`, `--project` (id, slug или имя),
 `--theme <name>-<dark|light>` (по умолчанию `dichromat-dark` — все семь
 тем дашборда: dichromat, graphite, dockside, blueprint, bureau,
-aperture, dispatcher; выбор сохраняется в `config.json` → `theme`).
+aperture, dispatcher; выбор сохраняется в `config.json` → `theme`),
+`--tui opentui` (REPL на OpenTUI Core — см. ниже).
 Субкоманды `chat` больше нет — голый `comuki` и есть чат.
+
+## OpenTUI-хост (`--tui opentui`)
+
+Опциональный focus-mode REPL на `@opentui/core` + `@opentui/keymap`
+(ADR-0002; Ink остаётся хостом по умолчанию и не тронут):
+
+```bash
+comuki --tui opentui     # тот же config/ auth/ sessions.json, новый рендер-стек
+COMUKI_LANG=ru comuki --tui opentui   # ru-локаль chrome/карточки (по умолчанию en)
+```
+
+Что работает в этом срезе: alternate-screen, compact-раскладка на узких
+терминалах (48x16), транскрипт прямо из снапшотов ClientKernel (эхо,
+живой текст стрима, финальный ответ, строка ошибки), инлайн-карточка
+одобрения (intent/scope/risk/plan-steps/diff, реальные опции
+approve/reject), named-command keymap, чистый выход
+(kernel.stop → whenIdle → renderer.destroy, терминал восстановлен).
+
+| Клавиша | Действие |
+|---|---|
+| `enter` | отправить сообщение |
+| `esc` | прервать текущий ход (клиентский abort, `/stop`) |
+| `y` / `n` | одобрить / отклонить план (только пока карточка на экране) |
+| `ctrl+n` | новая сессия |
+| `ctrl+w` | закрыть таб (задача продолжает работать на сервере) |
+| `ctrl+c` | выход |
+
+Чего пока нет: палитра команд, slash-команды, очередь follow-up,
+переключение табов (одна активная сессия), $EDITOR через lifecycle-seam
+(seam встроен и тестируется, редактор не подключён). Хост использует
+собственную тёмную палитру и в этом срезе игнорирует `--theme`
+(theming-интеграция — следующий срез).
 
 ## Сессии — табы
 
@@ -130,7 +163,8 @@ prefill, поэтому сниппет уходит в чат целиком; `/
 ## Конфигурация
 
 Прецедентность: CLI-флаги > переменные окружения >
-`~/.config/comuki/config.json` > `http://localhost:8080`.
+`~/.config/comuki/config.json` > `http://localhost:8080` (dev-фолбэк;
+прод-хост слушает пул-порт `17172` — см. `.agents/rules/process/ports.md`).
 
 | Источник | Переменная |
 |---|---|
@@ -173,7 +207,7 @@ prefill, поэтому сниппет уходит в чат целиком; `/
 ## Тесты
 
 ```bash
-cd agents && bun test comuki-cli   # config / client / format / signalr / sessions / commands
+cd cli && bun run test   # config / client / format / signalr / sessions / commands / tui / kernel
 ```
 
 API замокан через инжектируемый `fetch` — живой сервер не нужен.

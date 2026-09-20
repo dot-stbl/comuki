@@ -17,6 +17,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
+    "lint": "eslint .",
     "test": "bun test",
     "start": "bun bin/comuki.ts",
     "build": "bun scripts/build.ts"
@@ -39,7 +40,9 @@
     "@types/ink-testing-library": "^1.0.4",
     "@types/react": "^18.3.12",
     "@types/yargs": "^17.0.33",
+    "eslint": "^9",
     "ink-testing-library": "^4.0.0",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8"
   }
 }

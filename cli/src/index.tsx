@@ -26,6 +26,11 @@ import {
 } from "./commands/oneshot"
 import { ComukiClient } from "./lib/client"
 import {
+  createI18nFor,
+  tr,
+  DEFAULT_LOCALE,
+} from "./locales"
+import {
   configStore,
   resolveConfig,
   type ResolvedConfig,
@@ -238,11 +243,12 @@ async function main(): Promise<void> {
     const tuiHost = argv.tui as string | undefined
     if (tuiHost !== undefined && tuiHost !== "ink") {
       if (tuiHost !== "opentui") {
+        const i18n = await createI18nFor(DEFAULT_LOCALE)
         console.error(
-          `${colors.error}unknown --tui host: ${tuiHost}${colors.reset}`
+          `${colors.error}${tr(i18n, "cli.unknownTuiHost")} ${tuiHost}${colors.reset}`
         )
         console.error(
-          `${colors.faint}available: opentui, ink (default)${colors.reset}`
+          `${colors.faint}${tr(i18n, "cli.tuiHostsAvailable")}${colors.reset}`
         )
         process.exitCode = 1
         return

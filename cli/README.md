@@ -32,18 +32,18 @@ you  › approve
 ## Запуск
 
 ```bash
-cd agents && bun install
+cd cli && bun install
 
 # из исходников (REPL — команда по умолчанию)
-COMUKI_URL=http://localhost:8080 COMUKI_API_KEY=ck_… \
-  bun run --filter '@comuki/cli' start
+COMUKI_URL=http://localhost:17172 COMUKI_API_KEY=ck_… \
+  bun run start
 
 # или прямо бинарём
-COMUKI_URL=http://localhost:8080 COMUKI_API_KEY=ck_… \
-  bun agents/comuki-cli/bin/comuki.ts
+COMUKI_URL=http://localhost:17172 COMUKI_API_KEY=ck_… \
+  bun bin/comuki.ts
 
-# скомпилированный single-file бинарень (~110 MB, bun compile)
-cd agents/comuki-cli && bun run build   # → ./comuki.exe (Windows) / comuki
+# скомпилированный single-file бинарень (~128 MB, bun compile)
+cd cli && bun run build   # → ./comuki.exe (Windows) / comuki
 ```
 
 ## Команды
@@ -91,7 +91,9 @@ approve/reject), named-command keymap, чистый выход
 
 Чего пока нет: палитра команд, slash-команды, очередь follow-up,
 переключение табов (одна активная сессия), $EDITOR через lifecycle-seam
-(seam встроен и тестируется, редактор не подключён).
+(seam встроен и тестируется, редактор не подключён). Хост использует
+собственную тёмную палитру и в этом срезе игнорирует `--theme`
+(theming-интеграция — следующий срез).
 
 ## Сессии — табы
 
@@ -161,7 +163,8 @@ prefill, поэтому сниппет уходит в чат целиком; `/
 ## Конфигурация
 
 Прецедентность: CLI-флаги > переменные окружения >
-`~/.config/comuki/config.json` > `http://localhost:8080`.
+`~/.config/comuki/config.json` > `http://localhost:8080` (dev-фолбэк;
+прод-хост слушает пул-порт `17172` — см. `.agents/rules/process/ports.md`).
 
 | Источник | Переменная |
 |---|---|
@@ -204,7 +207,7 @@ prefill, поэтому сниппет уходит в чат целиком; `/
 ## Тесты
 
 ```bash
-cd agents && bun test comuki-cli   # config / client / format / signalr / sessions / commands
+cd cli && bun run test   # config / client / format / signalr / sessions / commands / tui / kernel
 ```
 
 API замокан через инжектируемый `fetch` — живой сервер не нужен.

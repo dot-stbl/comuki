@@ -154,13 +154,12 @@ describe("tui keymap — base layer dispatch", () => {
 
 describe("tui keymap — approval layer gating", () => {
   test("plain y/n are inert while no approval layer is registered", async () => {
-    let approvals = 0
-    let rejects = 0
     const harness = await newHarness({})
     harness.press("y")
     harness.press("n")
-    expect(approvals).toBe(0)
-    expect(rejects).toBe(0)
+    // No approval layer is registered, so the presses resolve to no
+    // command at all — assert through the keymap, not dead counters.
+    expect(harness.lastDispatched.command).toBeUndefined()
   })
 
   test("registered approval layer routes y → approve and n → reject exactly once each", async () => {

@@ -1,5 +1,4 @@
 import type {
-  HarnessSession,
   PendingSessionId,
   ProjectId,
   SessionId,

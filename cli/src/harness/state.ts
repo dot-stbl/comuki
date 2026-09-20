@@ -3,6 +3,8 @@ declare const pendingSessionIdBrand: unique symbol
 declare const turnRequestIdBrand: unique symbol
 declare const projectIdBrand: unique symbol
 
+import type { ChatMessageView } from "../lib/client"
+
 export type SessionId = string & { readonly [sessionIdBrand]: true }
 export type PendingSessionId = string & { readonly [pendingSessionIdBrand]: true }
 export type TurnRequestId = string & { readonly [turnRequestIdBrand]: true }
@@ -88,7 +90,7 @@ export interface HarnessMessage {
    * server. Pure logic reads `content`; renderers that need parts /
    * meta read `view`. Absent on synthesized messages (user echoes).
    */
-  readonly view?: import("../lib/client").ChatMessageView
+  readonly view?: ChatMessageView
 }
 
 export interface QueuedTurn {

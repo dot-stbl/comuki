@@ -1,11 +1,14 @@
 /**
  * Typed REST client for the Comuki host API.
  *
- * Wire shapes mirror the C# read models byte-for-byte (camelCase JSON):
- * `ChatSessionView`, `ChatMessageView` + `MessagePart` polymorphism, run /
- * knowledge / compute / project views. The C# records in
- * `platform/src/host/Comuki.Host` are the source of truth — renaming either
- * side is a wire break.
+ * Chat-slice wire shapes are GENERATED from the OpenAPI document by Kubb
+ * (`./contracts/_generated/http/types/*`); the manual mirrors that used
+ * to live here are deleted as of issue #84 acceptance. Non-chat shapes
+ * (auth/me, runs, knowledge, compute, projects, profiles, health) stay
+ * hand-written — they have not yet been migrated to the generator.
+ *
+ * The C# records in `platform/src/host/Comuki.Host` are the source of
+ * truth for the wire contract; renaming either side is a wire break.
  *
  * Auth: API key rides as `Authorization: Bearer ck_…` (plus
  * `X-Comuki-Tenant` for tenant-scoped keys); a `comuki login` cookie rides
@@ -13,6 +16,27 @@
  * transport, never the endpoints.
  */
 import type { ResolvedConfig } from "./config"
+
+// Chat-slice wire types — generated (issue #84). Imported once so this
+// module's own method signatures see the names, and re-exported below so
+// every existing `from "./client"` import site keeps compiling.
+import type { ChatMessageView } from "../contracts/_generated/http/types/ChatMessageView"
+import type { ChatMessageMeta } from "../contracts/_generated/http/types/ChatMessageMeta"
+import type { ChatMessagesPageView } from "../contracts/_generated/http/types/ChatMessagesPageView"
+import type { ChatSessionView } from "../contracts/_generated/http/types/ChatSessionView"
+import type { ChatTurnResultView } from "../contracts/_generated/http/types/ChatTurnResultView"
+import type { MessagePart } from "../contracts/_generated/http/types/MessagePart"
+
+export type {
+  ChatSessionView,
+  ChatMessageView,
+  ChatMessagesPageView,
+  ChatTurnResultView,
+  MessagePart,
+}
+export type { ChatMessageMeta as ChatMessageMetaView }
+export type { PlanNode } from "../contracts/_generated/http/types/PlanNode"
+export type { PlanEdge } from "../contracts/_generated/http/types/PlanEdge"
 
 export class ComukiApiError extends Error {
   constructor(
@@ -52,95 +76,6 @@ export interface MeView {
 /** Wire of `GET /api/v1/health` — anonymous liveness `{ status: "ok" }`. */
 export interface HealthView {
   readonly status: string
-}
-
-export interface ChatSessionView {
-  readonly id: string
-  readonly projectId: string | null
-  readonly title: string
-  readonly status: string
-  readonly createdAt: string
-  readonly updatedAt: string
-}
-
-export type MessagePart =
-  | { readonly kind: "text"; readonly markdown: string }
-  | {
-      readonly kind: "code"
-      readonly language: string
-      readonly source: string
-      readonly path?: string | null
-      readonly startLine?: number | null
-    }
-  | {
-      readonly kind: "diagram"
-      readonly dialect: string
-      readonly source: string
-    }
-  | {
-      readonly kind: "thinking"
-      readonly text: string
-      readonly tokens?: number | null
-      /** Optional on the wire today — the collapsed line shows it when present. */
-      readonly durationMs?: number | null
-    }
-  | {
-      readonly kind: "tool"
-      readonly name: string
-      readonly inputJson: string
-      readonly status: string
-      readonly outputJson?: string | null
-      readonly durationMs?: number | null
-    }
-  | { readonly kind: "handoff"; readonly query: string }
-  | {
-      readonly kind: "plan"
-      readonly nodes: readonly PlanItemView[]
-      readonly edges: readonly PlanEdgeView[]
-    }
-
-export interface PlanItemView {
-  readonly key: string
-  readonly profileKey: string
-  readonly brief: string
-  readonly dependsOn: readonly string[]
-}
-
-export interface PlanEdgeView {
-  readonly from: string
-  readonly to: string
-}
-
-export interface ChatMessageMetaView {
-  readonly model?: string | null
-  readonly tokensIn?: number | null
-  readonly tokensOut?: number | null
-  readonly costMicros?: number | null
-  readonly latencyMs?: number | null
-  readonly stopReason?: string | null
-}
-
-export interface ChatMessageView {
-  readonly id: string
-  readonly role: string
-  readonly content: string
-  readonly toolName: string | null
-  readonly parts: readonly MessagePart[] | null
-  readonly meta: ChatMessageMetaView | null
-  readonly createdAt: string
-}
-
-export interface ChatTurnResultView {
-  readonly messages: readonly ChatMessageView[]
-  readonly awaitingApproval: boolean
-  readonly pendingPlan: unknown
-}
-
-export interface ChatMessagesPageView {
-  readonly items: readonly ChatMessageView[]
-  readonly page: number
-  readonly pageSize: number
-  readonly total: number
 }
 
 export interface RunView {

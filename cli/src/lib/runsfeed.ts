@@ -316,15 +316,15 @@ export function planPanelLines(
   pendingPlan: unknown
 ): string[] {
   const pending = extractPlanNodes(pendingPlan)
-  if (pending.length > 0) {
+  if (pending.nodes.length > 0) {
     return [
-      planHeader(`${pending.length} ${stepWord(pending.length)} · awaiting approval`),
-      ...renderPlanItems(pending),
+      planHeader(`${pending.nodes.length} ${stepWord(pending.nodes.length)} · awaiting approval`),
+      ...renderPlanItems(pending.nodes, pending.edges),
     ]
   }
   for (let blockIndex = blocks.length - 1; blockIndex >= 0; blockIndex--) {
     const block = blocks[blockIndex]
-    if (block.kind !== "message" || block.message.parts === null) {
+    if (block.kind !== "message" || block.message.parts == null) {
       continue
     }
     const parts = block.message.parts
@@ -333,7 +333,7 @@ export function planPanelLines(
       if (part.kind === "plan") {
         return [
           planHeader(`${part.nodes.length} ${stepWord(part.nodes.length)}`),
-          ...renderPlanItems(part.nodes),
+          ...renderPlanItems(part.nodes, part.edges),
         ]
       }
     }

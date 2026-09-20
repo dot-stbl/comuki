@@ -245,13 +245,13 @@ describe("planPanelLines", () => {
       kind: "plan",
       nodes: [
         {
-          key: "n1",
+          id: "n1",
+          title: "check it",
           profileKey: "review",
           brief: "check it",
-          dependsOn: ["n0"],
         },
       ],
-      edges: [],
+      edges: [{ from: "n0", to: "n1" }],
     }
     const lines = planPanelLines(
       [
@@ -275,7 +275,7 @@ describe("planPanelLines", () => {
           {
             kind: "plan",
             nodes: [
-              { key: "t1", profileKey: "stale", brief: "old", dependsOn: [] },
+              { id: "t1", title: "old", profileKey: "stale", brief: "old" },
             ],
             edges: [],
           },

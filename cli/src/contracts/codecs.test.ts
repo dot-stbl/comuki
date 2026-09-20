@@ -170,9 +170,7 @@ describe("harnessMessageFromWire", () => {
   it("chat-message-view.json parts cover every MessagePart kind", () => {
     const raw = loadFixture<GeneratedChatMessageView>("chat-message-view.json");
     const message = harnessMessageFromWire(raw);
-    const kinds = new Set<NonNullable<typeof message.view>["parts"] extends readonly (infer P)[] | null
-      ? P extends { readonly kind: infer K } ? K : never
-      : never>();
+    const kinds = new Set<GeneratedMessagePart["kind"]>();
 
     if (message.view?.parts) {
       for (const part of message.view.parts) {
@@ -181,11 +179,11 @@ describe("harnessMessageFromWire", () => {
     }
     expect(kinds.size).toBe(Object.keys(ALL_MESSAGE_PART_KINDS).length);
     for (const expectedKind of Object.keys(ALL_MESSAGE_PART_KINDS) as Array<keyof typeof ALL_MESSAGE_PART_KINDS>) {
-      expect(kinds.has(expectedKind as never)).toBe(true);
+      expect(kinds.has(expectedKind)).toBe(true);
     }
   });
 
-  it("chat-message-view.json plan part lifts PlanNode to PlanItemView with dependsOn", () => {
+  it("chat-message-view.json plan part passes through the canonical nodes/edges shape", () => {
     const raw = loadFixture<GeneratedChatMessageView>("chat-message-view.json");
     const message = harnessMessageFromWire(raw);
     const planPart = message.view?.parts?.find((p) => p.kind === "plan");
@@ -193,16 +191,17 @@ describe("harnessMessageFromWire", () => {
     if (!planPart || planPart.kind !== "plan") {
       return;
     }
-    const n1 = planPart.nodes.find((n) => n.key === "n1");
-    const n2 = planPart.nodes.find((n) => n.key === "n2");
+    const n1 = planPart.nodes.find((n) => n.id === "n1");
     expect(n1?.profileKey).toBe("implement");
     expect(n1?.brief).toContain("harnessMessageFromWire");
-    expect(n1?.dependsOn).toEqual([]);
-    expect(n2?.dependsOn).toEqual(["n1"]);
+    expect(n1?.title).toBeDefined();
     expect(planPart.edges.map((e) => ({ from: e.from, to: e.to }))).toEqual([
       { from: "n1", to: "n2" },
       { from: "n2", to: "n3" },
     ]);
+    // Dependencies live in the edges, not on the node — a consumer
+    // derives n2's upstream as [n1] from the edge list.
+    expect(planPart.edges.filter((e) => e.to === "n2").map((e) => e.from)).toEqual(["n1"]);
   });
 
   it("tool part carries outputJson and durationMs from the fixture", () => {
@@ -219,7 +218,7 @@ describe("harnessMessageFromWire", () => {
     expect(tool.durationMs).toBe(312);
   });
 
-  it("meta fields lift numeric-or-string scalars to numbers or null", () => {
+  it("meta fields carry the fixture scalars verbatim", () => {
     const raw = loadFixture<GeneratedChatMessageView>("chat-message-view.json");
     const message = harnessMessageFromWire(raw);
     expect(message.view?.meta).toEqual({

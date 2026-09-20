@@ -1182,7 +1182,7 @@ export async function createTuiHost(
       try {
         const value = await editor()
         if (typeof value === "string") {
-          composer.setText(value)
+          setComposerText(value)
         }
         suspendOptions?.onRestore?.()
         return { ok: true as const, value }

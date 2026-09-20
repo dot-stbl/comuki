@@ -36,13 +36,6 @@ if (!existsSync(resolve(process.cwd(), SPEC_PATH))) {
 
 export default defineConfig({
   root: ".",
-  // Kubb 4.39.2 ships a default `done` hook that pipes output through
-  // prettier; passing `[]` still leaves that default in place (verified —
-  // CI runs `prettier --write` and fails with ENOENT when prettier is
-  // not installed). Replace it with a no-op `echo done` so the gate's
-  // contract is exactly the bytes kubb emits. (Root-level option; under
-  // `output` it is silently ignored.)
-  hooks: { done: ["echo done"] },
   input: {
     path: SPEC_PATH,
   },
@@ -61,6 +54,14 @@ export default defineConfig({
     // No entry re-exports: domains import concrete paths (e.g.
     // `import type { ChatSessionView } from "@/contracts/_generated/http/types/ChatSessionView"`).
     barrelType: false,
+    // Disable kubb's default prettier post-hook. Without this, kubb
+    // 4.39.2 spawns `prettier --write` on every run and fails with
+    // ENOENT when prettier isn't installed, or produces byte-level
+    // drift between machines when prettier is installed at a different
+    // version. The drift gate then fails. `false` is the supported
+    // kubb way to opt out (@kubb/core types.ts:208 —
+    // `format?: 'auto' | 'prettier' | 'biome' | 'oxfmt' | false`).
+    format: false,
   },
   plugins: [
     pluginOas(),

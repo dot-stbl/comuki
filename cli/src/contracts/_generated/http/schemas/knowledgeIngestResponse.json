@@ -1,18 +1,1 @@
-{
-  "required": ["sourceDocumentId", "chunksWritten"],
-  "type": "object",
-  "properties": {
-    "sourceDocumentId": {
-      "type": "string",
-      "description": "The `memory.source_documents` row the ingest produced."
-    },
-    "chunksWritten": {
-      "pattern": "^-?(?:0|[1-9]\\d*)$",
-      "type": ["integer", "string"],
-      "description": "Chunks the chunker split out and persisted with embeddings.",
-      "format": "int32"
-    }
-  },
-  "description": "Response body for `POST /api/v1/knowledge/ingest` — the source id + chunk count.",
-  "x-readme-ref-name": "KnowledgeIngestResponse"
-}
+{"required":["sourceDocumentId","chunksWritten"],"type":"object","properties":{"sourceDocumentId":{"type":"string","description":"The `memory.source_documents` row the ingest produced."},"chunksWritten":{"pattern":"^-?(?:0|[1-9]\\d*)$","type":["integer","string"],"description":"Chunks the chunker split out and persisted with embeddings.","format":"int32"}},"description":"Response body for `POST /api/v1/knowledge/ingest` — the source id + chunk count.","x-readme-ref-name":"KnowledgeIngestResponse"}

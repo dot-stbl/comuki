@@ -27,7 +27,6 @@ import {
   fg,
   italic,
   ScrollBoxRenderable,
-  SelectRenderable,
   strikethrough,
   StyledText,
   TextRenderable,
@@ -39,6 +38,8 @@ import {
 import type { ClientKernel } from "../kernel"
 import { activeSession } from "../harness/selectors"
 import type {
+  HarnessMessage,
+  HarnessSession,
   ProjectId,
   SessionId,
   SessionKey,
@@ -71,17 +72,25 @@ import {
   type TuiUiBinding,
 } from "./commands"
 import {
-  activeApprovalCard,
   buildTranscriptStyledLines,
   queuedFollowUpLine,
   topBarContent,
-  type ApprovalCardModel,
 } from "./view"
 import {
   buildTranscriptEntries,
   collapsibleIds,
   lastCollapsibleId,
 } from "./entries"
+import {
+  approvalFingerprint,
+  pendingApprovalEntry,
+  type ApprovalEntry,
+} from "./approvals"
+import {
+  defaultStateDirectory,
+  receiptsFilePath,
+  type DecisionReceipt,
+} from "../kernel/receipts"
 import { TONE_HEX, type Segment, type StyledLine } from "./styled"
 
 /**
@@ -221,7 +230,6 @@ export async function createTuiHost(
   let closed = false
   let kernelStopped = false
   let approvalUnregister: (() => void) | null = null
-  let approvalOverlay: BoxRenderable | null = null
   let commandSeq = 0
   let lastState = kernel.snapshot().state
   const seededDrafts = new Set<string>()
@@ -343,133 +351,110 @@ export async function createTuiHost(
     return tr(i18n, mode === "compact" ? "composer.placeholderCompact" : "composer.placeholder")
   }
 
-  function approvalHeight(model: ApprovalCardModel): number {
-    let rows = 1 // intent
-    if (model.scope !== null) {
-      rows += 1
+  /**
+   * Issue #76 — the pending approval for the active session, or
+   * `null` when nothing awaits. The entry pipeline renders the
+   * approval inline in the transcript; y/n and the palette drive
+   * the same dispatch path through `decideCurrentApproval`.
+   */
+  function currentPendingApproval(): { readonly entry: ApprovalEntry; readonly sessionId: SessionId } | null {
+    const session = activeSession(kernel.snapshot().state)
+    if (session === null || session.identity.kind !== "remote") {
+      return null
     }
-    if (model.risk !== null) {
-      rows += 1
+    const last = lastAssistantMessage(session)
+    const entry = pendingApprovalEntry({
+      session,
+      messageId: last?.id ?? "awaiting-approval",
+      requester: last?.id ?? "",
+      createdAtUnixMs: last?.createdAtUnixMs ?? 0,
+      trailingMeta: last?.view?.meta ?? null,
+    })
+    if (entry === null) {
+      return null
     }
-    rows += 1 // plan header
-    rows += model.steps.length > 0 ? model.steps.length : 1
-    if (model.diff.length > 0) {
-      rows += 1 + model.diff.length
-    }
-    rows += 1 // decide label
-    rows += 4 // select
-    return rows
+    return { entry, sessionId: session.identity.id }
   }
 
-  function clearApproval(): void {
-    if (approvalOverlay !== null) {
-      shell.remove(approvalOverlay)
-      approvalOverlay = null
+  function lastAssistantMessage(session: HarnessSession): HarnessMessage | null {
+    for (let index = session.transcript.length - 1; index >= 0; index -= 1) {
+      const message = session.transcript[index]
+      if (message !== undefined && message.role === "assistant") {
+        return message
+      }
+    }
+    return null
+  }
+
+  /**
+   * Clear the approval layer (y/n keys) when nothing awaits. Called
+   * by `render()` whenever the active session's awaiting-approval
+   * state changes.
+   */
+  function ensureApprovalLayer(pending: { readonly entry: ApprovalEntry; readonly sessionId: SessionId } | null): void {
+    if (pending === null) {
+      if (approvalUnregister !== null) {
+        approvalUnregister()
+        approvalUnregister = null
+      }
+      return
     }
     if (approvalUnregister !== null) {
-      approvalUnregister()
-      approvalUnregister = null
+      // Already registered; the handlers close over the latest
+      // `pending` via `decideCurrentApproval`, which looks the value
+      // up on every press — no need to re-register.
+      return
     }
-    viewport.visible = true
-  }
-
-  function renderApprovalCard(sessionId: SessionId, model: ApprovalCardModel): void {
-    clearApproval()
-
-    const overlayWidth = Math.max(20, Math.min(width - 4, 80))
-    const nonApprovalRows = geometry.topBarHeight + geometry.composerHeight + 1
-    const overlayHeight = Math.min(
-      approvalHeight(model),
-      Math.max(4, height - nonApprovalRows)
-    )
-
-    // The card replaces the viewport while the turn awaits approval —
-    // `visible = false` collapses the viewport so the card fits.
-    viewport.visible = false
-
-    const overlay = new BoxRenderable(renderer, {
-      flexDirection: "column",
-      width: overlayWidth,
-      height: overlayHeight,
-      flexShrink: 0,
-      backgroundColor: "#1c1c20",
-      borderStyle: "single",
-      borderColor: "#8787f3",
-    })
-    const composerIndex = shell.getChildren().indexOf(composer)
-    shell.add(overlay, composerIndex >= 0 ? composerIndex : shell.getChildren().length)
-
-    const row = (content: string, fg: string): void => {
-      overlay.add(
-        new TextRenderable(renderer, {
-          content,
-          fg,
-          bg: "#1c1c20",
-          width: overlayWidth,
-        })
-      )
-    }
-
-    row(`  ⏸ ${tr(i18n, "approval.intentPrefix")} ${model.intent ?? sessionId}`, "#d7d7ff")
-    if (model.scope !== null) {
-      row(`  ${tr(i18n, "approval.scopePrefix")} ${model.scope}`, "#b8b8bd")
-    }
-    if (model.risk !== null) {
-      row(
-        `  ${tr(i18n, "approval.riskPrefix")} ${model.risk}`,
-        model.risk === "high" ? "#d2d228" : "#8a8a8f"
-      )
-    }
-    const estimate =
-      model.estimateMinutes !== null ? ` (~${model.estimateMinutes}m)` : ""
-    row(`  ${tr(i18n, "approval.planPrefix")}${estimate}`, "#8a8a8f")
-    if (model.steps.length > 0) {
-      for (const step of model.steps) {
-        row(`    ${tr(i18n, "approval.stepPrefix")} ${step}`, "#e8e8ee")
-      }
-    } else {
-      row(`    ${tr(i18n, "approval.unreadablePlan")}`, "#8a8a8f")
-    }
-    if (model.diff.length > 0) {
-      row(`  ${tr(i18n, "approval.diffPrefix")}`, "#8a8a8f")
-      for (const line of model.diff) {
-        row(`    ${line}`, "#d7d7ff")
-      }
-    }
-    row(tr(i18n, "approval.decideLabel"), "#8a8a8f")
-    overlay.add(
-      new SelectRenderable(renderer, {
-        options: [
-          { name: tr(i18n, "approval.action.approve"), description: "" },
-          { name: tr(i18n, "approval.action.reject"), description: "" },
-        ],
-        width: overlayWidth,
-        height: 4,
-        backgroundColor: "#26262b",
-        focusedBackgroundColor: "#2b2b30",
-        textColor: "#e8e8ee",
-      })
-    )
-    approvalOverlay = overlay
-
     approvalUnregister = keymap.registerApprovalLayer({
-      approve: () => decideApproval(true),
-      reject: (payload) => decideApproval(false, payload.text),
+      approve: () => decideCurrentApproval(true),
+      reject: (payload) => decideCurrentApproval(false, payload.text),
     })
   }
 
-  function decideApproval(approved: boolean, reason?: string): boolean {
-    const card = activeApprovalCard(kernel.snapshot().state)
-    if (card === null) {
+  /**
+   * Dispatch the approve/reject decision for the active session's
+   * pending approval. Writes one row to the audit ledger first
+   * (issue #76 — fire-and-forget into the kernel's writer queue),
+   * then posts the kernel intent for the wire-level decision.
+   */
+  function decideCurrentApproval(approved: boolean, reason?: string): boolean {
+    const pending = currentPendingApproval()
+    if (pending === null) {
       return false
     }
+    const receipt: DecisionReceipt = {
+      decision: approved ? "approved" : "rejected",
+      approvalId: pending.entry.approvalId,
+      sessionId: pending.sessionId,
+      scope: pending.entry.applicability.scope,
+      requester: pending.entry.applicability.requester,
+      fingerprint: approvalFingerprint(pending.entry),
+      ...(reason !== undefined && reason.length > 0 ? { reason } : {}),
+    }
+    kernel.recordDecision(receipt)
     kernel.dispatch({
       kind: "decide-approval",
-      sessionId: card.sessionId,
+      sessionId: pending.sessionId,
       approved,
       ...(reason !== undefined && reason.length > 0 ? { reason } : {}),
       commandId: nextCommandId("approval"),
     })
+    return true
+  }
+
+  /**
+   * Issue #76 — palette handler for `show-receipt`. The full
+   * receipt viewer is out of scope for this PR; we emit the
+   * session's NDJSON path to stderr so the user knows where the
+   * ledger lives.
+   */
+  function showReceipt(): boolean {
+    const session = activeSession(kernel.snapshot().state)
+    if (session === null || session.identity.kind !== "remote") {
+      return false
+    }
+    const path = receiptsFilePath(defaultStateDirectory(), session.identity.id)
+    console.error(`approvals ledger: ${path}`)
     return true
   }
 
@@ -593,12 +578,11 @@ export async function createTuiHost(
       refreshPaletteRows()
     }
 
-    const card = activeApprovalCard(lastState)
-    if (card !== null) {
-      renderApprovalCard(card.sessionId, card.card)
-    } else {
-      clearApproval()
-    }
+    // Issue #76 — the approval is now an entry in the transcript;
+    // register the y/n layer when something awaits, unregister
+    // when it doesn't. The viewport keeps showing the entry even
+    // while the composer has focus.
+    ensureApprovalLayer(currentPendingApproval())
     renderer.requestRender()
   }
 
@@ -836,9 +820,11 @@ export async function createTuiHost(
   }
 
   function openPalette(): boolean {
-    // While an approval card is up the approval layer owns the keys —
-    // the palette stays suppressed.
-    if (activeApprovalCard(kernel.snapshot().state) !== null) {
+    // While an approval awaits, the approval layer owns the keys —
+    // the palette stays suppressed. Issue #76 moved the card from
+    // an overlay into a transcript entry, so the gate checks the
+    // pending approval directly.
+    if (currentPendingApproval() !== null) {
       return false
     }
     if (surface === "palette") {
@@ -1215,6 +1201,13 @@ export async function createTuiHost(
     "open-palette": () => openPalette(),
     "toggle-details-last": () => toggleLastDetail(),
     "toggle-details": () => toggleAllDetails(),
+    // Issue #76 — palette-driven approve/reject reach the same
+    // dispatch path as the y/n approval layer. `show-receipt` opens
+    // the session's NDJSON ledger location.
+    approve: () => decideCurrentApproval(true),
+    reject: (payload: TuiCommandPayload) =>
+      decideCurrentApproval(false, payload.text),
+    "show-receipt": () => showReceipt(),
     exit: () => {
       void close()
       return true
@@ -1262,15 +1255,10 @@ export async function createTuiHost(
     composer.height = geometry.composerHeight
     composer.placeholder = composerPlaceholder(layoutMode)
 
-    // A card that exists at the old width re-lays-out to the new
-    // geometry; clearing first restores viewport visibility for the
-    // re-render decision below.
-    const card = activeApprovalCard(lastState)
-    if (card !== null) {
-      renderApprovalCard(card.sessionId, card.card)
-    } else {
-      clearApproval()
-    }
+    // Issue #76 — the approval is a transcript entry; re-register
+    // the y/n layer when something awaits. The viewport re-renders
+    // below, picking up the entry at its new width.
+    ensureApprovalLayer(currentPendingApproval())
     if (surface !== "none") {
       renderSurfaceOverlay()
     }
@@ -1339,7 +1327,10 @@ export async function createTuiHost(
     }
     closed = true
     unsubscribe()
-    clearApproval()
+    if (approvalUnregister !== null) {
+      approvalUnregister()
+      approvalUnregister = null
+    }
     closeSurface()
     if (unregisterHistoryLayer !== null) {
       unregisterHistoryLayer()
@@ -1382,7 +1373,10 @@ export async function createTuiHost(
       }
       closed = true
       unsubscribe()
-      clearApproval()
+      if (approvalUnregister !== null) {
+        approvalUnregister()
+        approvalUnregister = null
+      }
       closeSurface()
       if (unregisterHistoryLayer !== null) {
         unregisterHistoryLayer()

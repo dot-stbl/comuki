@@ -26,7 +26,8 @@
     "test": "bun test",
     "start": "bun bin/comuki.ts",
     "build": "bun scripts/build.ts",
-    "generate:contracts": "dotnet build ../comuki.slnx -c Debug && bunx @kubb/cli@4.39.2 generate && dotnet run --project ../tools/Comuki.Codegen.Realtime -c Debug -- --out src/contracts/_generated/realtime.ts"
+    "generate:contracts": "dotnet build ../comuki.slnx -c Debug && bunx @kubb/cli@4.39.2 generate && dotnet run --project ../tools/Comuki.Codegen.Realtime -c Debug -- --out src/contracts/_generated/realtime.ts",
+    "test:contracts": "bun scripts/contracts-drift.ts"
   },
   "dependencies": {
     "@microsoft/signalr": "^8.0.7",

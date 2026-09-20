@@ -1,1 +1,56 @@
-{"required":["id","prefix","projectId","provider","baseUrl","defaultModel","allowedModels","budgetUsd","expiresAt"],"type":"object","properties":{"id":{"type":"string","description":"SHA-256 fingerprint of the token — the id revoke addresses."},"prefix":{"type":"string","description":"Display prefix of the token."},"projectId":{"type":"string","description":"Project spend attribution.","format":"uuid"},"provider":{"type":"string","description":"Upstream cluster id: `openai` / `anthropic` / `custom`."},"baseUrl":{"type":"string","description":"Upstream root URL."},"defaultModel":{"type":["null","string"],"description":"Default model when the caller's body omits one; null = none."},"allowedModels":{"type":"array","items":{"type":"string"},"description":"Model allow-list; empty = every model permitted."},"budgetUsd":{"pattern":"^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$","type":["null","number","string"],"description":"Optional monthly USD cap; null = unlimited.","format":"double"},"expiresAt":{"type":["null","string"],"description":"Optional UTC expiry; null = never.","format":"date-time"}},"description":"Wire row of one virtual key — fingerprinted; no token material.","x-readme-ref-name":"ProxyKeyView"}
+{
+  "required": [
+    "id",
+    "prefix",
+    "projectId",
+    "provider",
+    "baseUrl",
+    "defaultModel",
+    "allowedModels",
+    "budgetUsd",
+    "expiresAt"
+  ],
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "SHA-256 fingerprint of the token — the id revoke addresses."
+    },
+    "prefix": {
+      "type": "string",
+      "description": "Display prefix of the token."
+    },
+    "projectId": {
+      "type": "string",
+      "description": "Project spend attribution.",
+      "format": "uuid"
+    },
+    "provider": {
+      "type": "string",
+      "description": "Upstream cluster id: `openai` / `anthropic` / `custom`."
+    },
+    "baseUrl": { "type": "string", "description": "Upstream root URL." },
+    "defaultModel": {
+      "type": ["null", "string"],
+      "description": "Default model when the caller's body omits one; null = none."
+    },
+    "allowedModels": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Model allow-list; empty = every model permitted."
+    },
+    "budgetUsd": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+      "type": ["null", "number", "string"],
+      "description": "Optional monthly USD cap; null = unlimited.",
+      "format": "double"
+    },
+    "expiresAt": {
+      "type": ["null", "string"],
+      "description": "Optional UTC expiry; null = never.",
+      "format": "date-time"
+    }
+  },
+  "description": "Wire row of one virtual key — fingerprinted; no token material.",
+  "x-readme-ref-name": "ProxyKeyView"
+}

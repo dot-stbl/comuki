@@ -1,1 +1,25 @@
-{"required":["projectId","costUsdMicros","runs"],"type":"object","properties":{"projectId":{"type":"string","description":"Project the spend is attributed to.","format":"uuid"},"costUsdMicros":{"pattern":"^-?(?:0|[1-9]\\d*)$","type":["integer","string"],"description":"Window spend in USD micros.","format":"int64"},"runs":{"pattern":"^-?(?:0|[1-9]\\d*)$","type":["integer","string"],"description":"Distinct runs the window's events name.","format":"int32"}},"description":"Wire row of one project's slice.","x-readme-ref-name":"ProjectCostSliceView"}
+{
+  "required": ["projectId", "costUsdMicros", "runs"],
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "type": "string",
+      "description": "Project the spend is attributed to.",
+      "format": "uuid"
+    },
+    "costUsdMicros": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Window spend in USD micros.",
+      "format": "int64"
+    },
+    "runs": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Distinct runs the window's events name.",
+      "format": "int32"
+    }
+  },
+  "description": "Wire row of one project's slice.",
+  "x-readme-ref-name": "ProjectCostSliceView"
+}

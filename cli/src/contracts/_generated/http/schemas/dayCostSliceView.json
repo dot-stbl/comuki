@@ -1,1 +1,19 @@
-{"required":["date","costUsdMicros"],"type":"object","properties":{"date":{"type":"string","description":"The UTC day (ISO date).","format":"date"},"costUsdMicros":{"pattern":"^-?(?:0|[1-9]\\d*)$","type":["integer","string"],"description":"Day spend in USD micros.","format":"int64"}},"description":"Wire row of one UTC day of the series.","x-readme-ref-name":"DayCostSliceView"}
+{
+  "required": ["date", "costUsdMicros"],
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "The UTC day (ISO date).",
+      "format": "date"
+    },
+    "costUsdMicros": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Day spend in USD micros.",
+      "format": "int64"
+    }
+  },
+  "description": "Wire row of one UTC day of the series.",
+  "x-readme-ref-name": "DayCostSliceView"
+}

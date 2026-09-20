@@ -1,1 +1,46 @@
-{"required":["id","runId","source","model","inputTokens","outputTokens","costUsdMicros","occurredAt"],"type":"object","properties":{"id":{"type":"string","format":"uuid"},"runId":{"oneOf":[{"type":"null"},{"type":"object","properties":{"value":{"type":"string","format":"uuid"}},"x-readme-ref-name":"RunId"}]},"source":{"type":"string"},"model":{"type":"string"},"inputTokens":{"pattern":"^-?(?:0|[1-9]\\d*)$","type":["integer","string"],"format":"int32"},"outputTokens":{"pattern":"^-?(?:0|[1-9]\\d*)$","type":["integer","string"],"format":"int32"},"costUsdMicros":{"pattern":"^-?(?:0|[1-9]\\d*)$","type":["integer","string"],"format":"int64"},"occurredAt":{"type":"string","format":"date-time"}},"description":"One usage row in the costs feed.","x-readme-ref-name":"UsageEventView"}
+{
+  "required": [
+    "id",
+    "runId",
+    "source",
+    "model",
+    "inputTokens",
+    "outputTokens",
+    "costUsdMicros",
+    "occurredAt"
+  ],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "runId": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "properties": { "value": { "type": "string", "format": "uuid" } },
+          "x-readme-ref-name": "RunId"
+        }
+      ]
+    },
+    "source": { "type": "string" },
+    "model": { "type": "string" },
+    "inputTokens": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int32"
+    },
+    "outputTokens": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int32"
+    },
+    "costUsdMicros": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "format": "int64"
+    },
+    "occurredAt": { "type": "string", "format": "date-time" }
+  },
+  "description": "One usage row in the costs feed.",
+  "x-readme-ref-name": "UsageEventView"
+}

@@ -290,3 +290,27 @@ export function activeApprovalCard(
     card: approvalCardModel(session.pendingPlan),
   }
 }
+
+/**
+ * The queued-follow-up indicator line for the active session, or
+ * `null` when the queue is empty. Pure: the kernel's per-session
+ * queue (turns submitted while a turn was in flight) in, one line
+ * out — `⧗ queued: <first 20 chars>` plus a `(+N more)` suffix when
+ * more turns sit behind the head.
+ */
+export function queuedFollowUpLine(
+  session: HarnessSession | null,
+  i18n: I18nInstance
+): string | null {
+  if (session === null || session.queue.length === 0) {
+    return null
+  }
+  const head = session.queue[0]!.message
+  const preview = head.length > 20 ? `${head.slice(0, 20)}…` : head
+  const rest = session.queue.length - 1
+  const more =
+    rest > 0
+      ? ` (+${rest} ${tr(i18n, "queue.moreSuffix")})`
+      : ""
+  return `⧗ ${tr(i18n, "queue.prefix")} ${preview}${more}`
+}

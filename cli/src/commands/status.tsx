@@ -19,44 +19,53 @@ import {
   statusLines,
   type StatusLine,
 } from "../lib/status"
-import { mapStatusJson, printJson, type StatusJsonError } from "../lib/jsonout"
+import { mapStatusJson, type StatusJsonError } from "../lib/jsonout"
+import { JsonOutput } from "../machine/output"
+import { machineErrorFrom } from "../machine/mapping"
 import { symbols } from "../theme"
 import { StatusLine as IdentityLine } from "../components/StatusLine"
 
-/** `--json` path — no Ink, stdout only. */
+/** `--json` path — no Ink, one machine envelope on stdout. */
 export async function printStatusJson(config: ResolvedConfig): Promise<void> {
-  const client = new ComukiClient(config)
-  const who = await whoAmI(client)
-  const [compute, projects, knowledge, runs] = await Promise.allSettled([
-    client.compute(),
-    client.projects(),
-    client.knowledgeDocuments(1, 100),
-    client.runs(1, 100),
-  ])
-  const errors: StatusJsonError = {}
-  if (compute.status === "rejected") {
-    errors.compute = describeError(compute.reason)
-  }
-  if (projects.status === "rejected") {
-    errors.projects = describeError(projects.reason)
-  }
-  if (knowledge.status === "rejected") {
-    errors.knowledge = describeError(knowledge.reason)
-  }
-  if (runs.status === "rejected") {
-    errors.runs = describeError(runs.reason)
-  }
-  printJson(
-    mapStatusJson({
-      who,
-      compute: compute.status === "fulfilled" ? compute.value : undefined,
-      projects: projects.status === "fulfilled" ? projects.value : undefined,
-      knowledge:
-        knowledge.status === "fulfilled" ? knowledge.value : undefined,
-      runs: runs.status === "fulfilled" ? runs.value : undefined,
-      errors,
+  const out = new JsonOutput()
+  out.start("status")
+  try {
+    const client = new ComukiClient(config)
+    const who = await whoAmI(client)
+    const [compute, projects, knowledge, runs] = await Promise.allSettled([
+      client.compute(),
+      client.projects(),
+      client.knowledgeDocuments(1, 100),
+      client.runs(1, 100),
+    ])
+    const errors: StatusJsonError = {}
+    if (compute.status === "rejected") {
+      errors.compute = describeError(compute.reason)
+    }
+    if (projects.status === "rejected") {
+      errors.projects = describeError(projects.reason)
+    }
+    if (knowledge.status === "rejected") {
+      errors.knowledge = describeError(knowledge.reason)
+    }
+    if (runs.status === "rejected") {
+      errors.runs = describeError(runs.reason)
+    }
+    out.complete({
+      ...mapStatusJson({
+        who,
+        compute: compute.status === "fulfilled" ? compute.value : undefined,
+        projects: projects.status === "fulfilled" ? projects.value : undefined,
+        knowledge:
+          knowledge.status === "fulfilled" ? knowledge.value : undefined,
+        runs: runs.status === "fulfilled" ? runs.value : undefined,
+        errors,
+      }),
     })
-  )
+  } catch (error) {
+    out.fail(machineErrorFrom(error))
+    process.exitCode = out.exitCode
+  }
 }
 
 export function StatusApp({ config }: { config: ResolvedConfig }) {

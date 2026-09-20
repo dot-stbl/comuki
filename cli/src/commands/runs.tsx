@@ -11,7 +11,9 @@ import { whoAmI } from "../lib/auth"
 import { describeError } from "./chat"
 import type { ResolvedConfig } from "../lib/config"
 import { ageFromIso, paintStatus, tableRow } from "../lib/format"
-import { mapRunsPageJson, printJson } from "../lib/jsonout"
+import { mapRunsPageJson } from "../lib/jsonout"
+import { JsonOutput } from "../machine/output"
+import { machineErrorFrom } from "../machine/mapping"
 import { colors, palette, symbols } from "../theme"
 import { StatusLine } from "../components/StatusLine"
 
@@ -22,24 +24,26 @@ export interface RunsCommandProps {
   readonly filter?: string
 }
 
-/** `--json` path — no Ink, stdout only. Non-zero exit on fetch failure. */
+/** `--json` path — no Ink, one machine envelope on stdout. */
 export async function printRunsJson(
   config: ResolvedConfig,
   page: number,
   pageSize: number,
   filter?: string
 ): Promise<void> {
-  const client = new ComukiClient(config)
+  const out = new JsonOutput()
+  out.start("runs")
   try {
+    const client = new ComukiClient(config)
     const [runsPage, projects] = await Promise.all([
       client.runs(page, pageSize, filter),
       client.projects().catch(() => []),
     ])
     const nameByProject = new Map(projects.map((item) => [item.id, item.slug]))
-    printJson(mapRunsPageJson(runsPage, nameByProject))
+    out.complete({ ...mapRunsPageJson(runsPage, nameByProject) })
   } catch (reason) {
-    printJson({ error: describeError(reason) })
-    process.exitCode = 1
+    out.fail(machineErrorFrom(reason))
+    process.exitCode = out.exitCode
   }
 }
 

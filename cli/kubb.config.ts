@@ -18,7 +18,13 @@ import { pluginTs } from "@kubb/plugin-ts"
 // From `cli/`, that's one segment up. The guard runs BEFORE output.clean:
 // true fires, otherwise `output.clean` wipes the generated tree on every
 // miss instead of failing fast.
-const SPEC_PATH = "../artifacts/openapi.json"
+//
+// Drift gate (`scripts/contracts-drift.ts`) sets `KUBB_INPUT_SPEC` to a
+// line-ending-normalized copy of the freshly-built openapi.json. Without
+// normalization the .NET emitter's Environment.NewLine (CRLF on Windows,
+// LF on Linux) propagates into the generated JSON descriptions and the
+// gate drifts between contributor machines.
+const SPEC_PATH = process.env.KUBB_INPUT_SPEC ?? "../artifacts/openapi.json"
 
 if (!existsSync(resolve(process.cwd(), SPEC_PATH))) {
   console.error(

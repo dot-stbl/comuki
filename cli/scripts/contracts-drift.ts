@@ -12,13 +12,23 @@
  *
  * Read-only git usage — never `git add`, `git stash`, or anything that
  * mutates the worktree.
+ *
+ * The dotnet emitter writes JSON description text with `Environment.NewLine`
+ * (CRLF on Windows hosts, LF on Linux). Kubb then stringifies that text
+ * into the generated schema JSON, so the bytes diverge by platform. To
+ * keep the drift gate reproducible across macOS / Linux / Windows
+ * contributors, we normalize the openapi spec to LF before kubb reads it.
+ * The change happens inside a scratch directory (not in the committed
+ * `artifacts/` path) so the workspace stays clean for the next `dotnet build`.
  */
 
-import { dirname } from "node:path"
+import { dirname, resolve } from "node:path"
 
 const cliCwd = dirname(import.meta.dir)
 
 const driftPath = "src/contracts/_generated"
+
+const normalizedOpenapiSpec = "../artifacts/openapi.normalized.json"
 
 interface SpawnStep {
   readonly name: string
@@ -50,6 +60,23 @@ const regenSteps: ReadonlyArray<SpawnStep> = [
     ],
   },
 ]
+
+/**
+ * Run the standalone normalize-openapi helper. The helper handles its own
+ * logging and exit codes; we delegate so the same normalization is used
+ * by `bun run generate:contracts` and the drift gate.
+ */
+async function normalizeOpenapiSpec(): Promise<void> {
+  const proc = Bun.spawn(["bun", "scripts/normalize-openapi.ts"], {
+    cwd: cliCwd,
+    stdio: inheritStdio,
+    env: process.env,
+  })
+  const code = await proc.exited
+  if (code !== 0) {
+    throw new Error(`normalize-openapi.ts exited with code ${code}`)
+  }
+}
 
 type Stdio = [Bun.SpawnOptions.Stdio, Bun.SpawnOptions.Stdio, Bun.SpawnOptions.Stdio]
 
@@ -104,6 +131,20 @@ export async function main(): Promise<number> {
   }
 
   for (const step of regenSteps) {
+    if (step.name === "kubb generate") {
+      try {
+        await normalizeOpenapiSpec()
+      } catch (error) {
+        console.error(
+          `[contracts-drift] FAIL: openapi spec normalization failed:`,
+          error,
+        )
+        return 1
+      }
+      env.KUBB_INPUT_SPEC = resolve(cliCwd, normalizedOpenapiSpec)
+      console.error(`[contracts-drift] KUBB_INPUT_SPEC=${env.KUBB_INPUT_SPEC}`)
+    }
+
     const code = await runRegenStep(step.name, step.cmd, env)
     if (code !== 0) {
       console.error(

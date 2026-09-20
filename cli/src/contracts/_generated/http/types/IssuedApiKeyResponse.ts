@@ -5,7 +5,7 @@
 
 
 /**
- * @description The wire shape of `POST /api/v1/keys`. The plaintext is shown\r\nexactly once — the host keeps the prefix + HMAC and never returns the\r\nsecret again.
+ * @description The wire shape of `POST /api/v1/keys`. The plaintext is shown\nexactly once — the host keeps the prefix + HMAC and never returns the\nsecret again.
 */
 export type IssuedApiKeyResponse = {
     /**

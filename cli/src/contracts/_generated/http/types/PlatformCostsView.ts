@@ -7,7 +7,7 @@ import type { DayCostSliceView } from "./DayCostSliceView";
 import type { ProjectCostSliceView } from "./ProjectCostSliceView";
 
 /**
- * @description Platform-wide cost rollup for `GET /api/v1/costs`. Money fields are\r\nUSD micros (1 USD = 1_000_000) — same unit as the per-project view.
+ * @description Platform-wide cost rollup for `GET /api/v1/costs`. Money fields are\nUSD micros (1 USD = 1_000_000) — same unit as the per-project view.
 */
 export type PlatformCostsView = {
     /**

@@ -5,7 +5,7 @@
 
 
 /**
- * @description One ingest call — the body of `POST /api/v1/knowledge/ingest`.\r\nstring KnowledgeIngestRequest.Source is a wire key (`git` | `upload` |\r\n`url`); the text is the raw bytes the worker chunks and\r\nembeds. The request is project-scoped (projectId) or global\r\n(projectId omitted).
+ * @description One ingest call — the body of `POST /api/v1/knowledge/ingest`.\nstring KnowledgeIngestRequest.Source is a wire key (`git` | `upload` |\n`url`); the text is the raw bytes the worker chunks and\nembeds. The request is project-scoped (projectId) or global\n(projectId omitted).
 */
 export type KnowledgeIngestRequest = {
     /**

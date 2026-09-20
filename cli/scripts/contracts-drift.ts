@@ -13,22 +13,19 @@
  * Read-only git usage — never `git add`, `git stash`, or anything that
  * mutates the worktree.
  *
- * The dotnet emitter writes JSON description text with `Environment.NewLine`
- * (CRLF on Windows hosts, LF on Linux). Kubb then stringifies that text
- * into the generated schema JSON, so the bytes diverge by platform. To
- * keep the drift gate reproducible across macOS / Linux / Windows
- * contributors, we normalize the openapi spec to LF before kubb reads it.
- * The change happens inside a scratch directory (not in the committed
- * `artifacts/` path) so the workspace stays clean for the next `dotnet build`.
+ * The dotnet emitter writes JSON description text with platform-specific
+ * line endings (CRLF on Windows hosts, LF on Linux). Kubb then stringifies
+ * that text into the generated schema JSON, so the bytes diverge by
+ * platform. We normalize the openapi spec in place before kubb reads
+ * it. The normalize script lives under `artifacts/` (gitignored), so the
+ * workspace stays clean for the next `dotnet build`.
  */
 
-import { dirname, resolve } from "node:path"
+import { dirname } from "node:path"
 
 const cliCwd = dirname(import.meta.dir)
 
 const driftPath = "src/contracts/_generated"
-
-const normalizedOpenapiSpec = "../artifacts/openapi.normalized.json"
 
 interface SpawnStep {
   readonly name: string
@@ -141,8 +138,6 @@ export async function main(): Promise<number> {
         )
         return 1
       }
-      env.KUBB_INPUT_SPEC = resolve(cliCwd, normalizedOpenapiSpec)
-      console.error(`[contracts-drift] KUBB_INPUT_SPEC=${env.KUBB_INPUT_SPEC}`)
     }
 
     const code = await runRegenStep(step.name, step.cmd, env)

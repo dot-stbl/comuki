@@ -5,7 +5,7 @@
 
 
 /**
- * @description What producing one message cost. Everything is optional — a user row\r\nhas no model and a journal row has no tokens — so a partial reading is\r\nexpressible without inventing zeroes.
+ * @description What producing one message cost. Everything is optional — a user row\nhas no model and a journal row has no tokens — so a partial reading is\nexpressible without inventing zeroes.
 */
 export type ChatMessageMeta = {
     /**

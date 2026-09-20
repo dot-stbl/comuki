@@ -19,12 +19,11 @@ import { pluginTs } from "@kubb/plugin-ts"
 // true fires, otherwise `output.clean` wipes the generated tree on every
 // miss instead of failing fast.
 //
-// Drift gate (`scripts/contracts-drift.ts`) sets `KUBB_INPUT_SPEC` to a
-// line-ending-normalized copy of the freshly-built openapi.json. Without
-// normalization the .NET emitter's Environment.NewLine (CRLF on Windows,
-// LF on Linux) propagates into the generated JSON descriptions and the
-// gate drifts between contributor machines.
-const SPEC_PATH = process.env.KUBB_INPUT_SPEC ?? "../artifacts/openapi.json"
+// Both `bun run generate:contracts` and `bun run test:contracts` run
+// `scripts/normalize-openapi.ts` immediately before kubb; that helper
+// rewrites the spec in place to strip CRLF / `\r\n` text so kubb's
+// output is reproducible across macOS / Linux / Windows contributors.
+const SPEC_PATH = "../artifacts/openapi.json"
 
 if (!existsSync(resolve(process.cwd(), SPEC_PATH))) {
   console.error(

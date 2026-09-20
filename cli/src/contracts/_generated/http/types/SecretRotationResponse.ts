@@ -5,7 +5,7 @@
 
 
 /**
- * @description Wire shape of a secret-rotation result (issue #46). Carries the\r\nfreshly-generated secret exactly once — the operator needs it to\r\nconfigure the tracker; it does not appear in any other endpoint\r\nresponse (list / get / source-connection-view).
+ * @description Wire shape of a secret-rotation result (issue #46). Carries the\nfreshly-generated secret exactly once — the operator needs it to\nconfigure the tracker; it does not appear in any other endpoint\nresponse (list / get / source-connection-view).
 */
 export type SecretRotationResponse = {
     /**

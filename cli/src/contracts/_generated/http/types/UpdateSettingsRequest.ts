@@ -6,7 +6,7 @@
 import type { ProjectDomainType } from "./ProjectDomainType";
 
 /**
- * @description Wire body of PUT /api/v1/projects/{projectId}/settings.\r\nint UpdateSettingsRequest.Version is the version the client read — a stale version\r\nis refused with 409.
+ * @description Wire body of PUT /api/v1/projects/{projectId}/settings.\nint UpdateSettingsRequest.Version is the version the client read — a stale version\nis refused with 409.
 */
 export type UpdateSettingsRequest = {
     /**
@@ -50,7 +50,7 @@ export type UpdateSettingsRequest = {
     */
     hardBudgetUsdMicros: (number | string) | null;
     /**
-     * @description Per-project routing mode for user-facing domain types\r\n(`code`, `data`, `infra`, `research`, …).\r\nA Standard project sends every domain through the fixed default\r\nprofile. A Custom project routes only via the\r\nstring? ProjectSettings.CustomDomainTypesJson map. A Hybrid\r\nproject tries the default first, falls back to the JSON map.
+     * @description Per-project routing mode for user-facing domain types\n(`code`, `data`, `infra`, `research`, …).\nA Standard project sends every domain through the fixed default\nprofile. A Custom project routes only via the\nstring? ProjectSettings.CustomDomainTypesJson map. A Hybrid\nproject tries the default first, falls back to the JSON map.
     */
     domainType: ProjectDomainType;
     /**

@@ -19,7 +19,7 @@ export type InviteUserRequest = {
     */
     displayName?: string | null;
     /**
-     * @description Optional bootstrap password. When omitted the operator intends to send a\r\nseparate invitation link and the new account lands password-less.
+     * @description Optional bootstrap password. When omitted the operator intends to send a\nseparate invitation link and the new account lands password-less.
      * @type null,string
     */
     password?: string | null;

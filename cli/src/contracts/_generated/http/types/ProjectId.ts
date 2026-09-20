@@ -5,7 +5,7 @@
 
 
 /**
- * @description Strong-typed identifier of a project — the scope unit for runs, work items,\r\nsettings and role assignments.
+ * @description Strong-typed identifier of a project — the scope unit for runs, work items,\nsettings and role assignments.
 */
 export type ProjectId = {
     /**

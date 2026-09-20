@@ -11,7 +11,7 @@ export const messagePartCodePartKindEnum = {
 export type MessagePartCodePartKindEnumKey = (typeof messagePartCodePartKindEnum)[keyof typeof messagePartCodePartKindEnum];
 
 /**
- * @description A source listing. Path and\r\nStartLine anchor it in a repository when the\r\nfragment was read from one.
+ * @description A source listing. Path and\nStartLine anchor it in a repository when the\nfragment was read from one.
 */
 export type MessagePartCodePart = {
     /**

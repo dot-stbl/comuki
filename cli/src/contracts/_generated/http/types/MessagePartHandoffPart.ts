@@ -11,7 +11,7 @@ export const messagePartHandoffPartKindEnum = {
 export type MessagePartHandoffPartKindEnumKey = (typeof messagePartHandoffPartKindEnum)[keyof typeof messagePartHandoffPartKindEnum];
 
 /**
- * @description A hand-off to a screen. The console resolves the query through the\r\nsame search shapes the command palette uses, so chat and palette\r\ncannot disagree about where an answer lives.
+ * @description A hand-off to a screen. The console resolves the query through the\nsame search shapes the command palette uses, so chat and palette\ncannot disagree about where an answer lives.
 */
 export type MessagePartHandoffPart = {
     /**

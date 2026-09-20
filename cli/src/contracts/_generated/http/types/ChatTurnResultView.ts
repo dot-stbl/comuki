@@ -7,7 +7,7 @@ import type { ChatMessageView } from "./ChatMessageView";
 import type { JsonDocument } from "./JsonDocument";
 
 /**
- * @description Turn outcome: the reply view plus the pending approve card when the\r\nthread interrupted. The card carries the canonical plan JSON the\r\ndashboard renders; approve/reject posts to\r\n`/api/v1/chat/sessions/{id}/approve`.
+ * @description Turn outcome: the reply view plus the pending approve card when the\nthread interrupted. The card carries the canonical plan JSON the\ndashboard renders; approve/reject posts to\n`/api/v1/chat/sessions/{id}/approve`.
 */
 export type ChatTurnResultView = {
     /**

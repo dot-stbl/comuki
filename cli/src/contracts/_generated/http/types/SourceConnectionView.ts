@@ -5,7 +5,7 @@
 
 
 /**
- * @description Read-model of a source connection. Settings and secret env NAMES are\r\nreturned (never secret values) plus the hook path to paste into the\r\ntracker\'s webhook settings.
+ * @description Read-model of a source connection. Settings and secret env NAMES are\nreturned (never secret values) plus the hook path to paste into the\ntracker\'s webhook settings.
 */
 export type SourceConnectionView = {
     /**

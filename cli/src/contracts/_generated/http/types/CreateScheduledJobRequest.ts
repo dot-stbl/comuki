@@ -5,7 +5,7 @@
 
 
 /**
- * @description Scheduled job creation body\r\n(`POST /api/v1/projects/{projectId}/scheduled-jobs`). The\r\ndispatcher stores the brief jsonb verbatim and the\r\n`profileKey` drives the work item the launched run resolves.\r\n`enabled` defaults to `true` when omitted; a one-shot\r\n`runOnOnceAt` in the past fast-forwards the dispatcher\'s first\r\npoll (useful for smoke tests).
+ * @description Scheduled job creation body\n(`POST /api/v1/projects/{projectId}/scheduled-jobs`). The\ndispatcher stores the brief jsonb verbatim and the\n`profileKey` drives the work item the launched run resolves.\n`enabled` defaults to `true` when omitted; a one-shot\n`runOnOnceAt` in the past fast-forwards the dispatcher\'s first\npoll (useful for smoke tests).
 */
 export type CreateScheduledJobRequest = {
     /**

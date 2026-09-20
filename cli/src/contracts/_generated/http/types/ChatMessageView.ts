@@ -7,7 +7,7 @@ import type { ChatMessageMeta } from "./ChatMessageMeta";
 import type { MessagePart } from "./MessagePart";
 
 /**
- * @description Transcript row read model. IReadOnlyList&lt;MessagePart&gt;? ChatMessageView.Parts is the rich shape the\r\nconsole renders; string ChatMessageView.Content is the flat projection of the\r\nsame row and stays populated for every reader that predates parts.
+ * @description Transcript row read model. IReadOnlyList&lt;MessagePart&gt;? ChatMessageView.Parts is the rich shape the\nconsole renders; string ChatMessageView.Content is the flat projection of the\nsame row and stays populated for every reader that predates parts.
 */
 export type ChatMessageView = {
     /**
@@ -31,7 +31,7 @@ export type ChatMessageView = {
     */
     toolName?: string | null;
     /**
-     * @description Ordered message parts, discriminated by `kind`; null on a row\r\nwritten before parts existed or one whose payload no longer parses.
+     * @description Ordered message parts, discriminated by `kind`; null on a row\nwritten before parts existed or one whose payload no longer parses.
      * @type null,array
     */
     parts?: MessagePart[] | null;

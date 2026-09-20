@@ -7,11 +7,11 @@ import type { ProjectId } from "./ProjectId";
 import type { UsageEventView } from "./UsageEventView";
 
 /**
- * @description Project cost summary for GET /api/v1/projects/{id}/costs.\r\nMoney fields are USD micros (1 USD = 1_000_000).
+ * @description Project cost summary for GET /api/v1/projects/{id}/costs.\nMoney fields are USD micros (1 USD = 1_000_000).
 */
 export type ProjectCostsView = {
     /**
-     * @description Strong-typed identifier of a project — the scope unit for runs, work items,\r\nsettings and role assignments.
+     * @description Strong-typed identifier of a project — the scope unit for runs, work items,\nsettings and role assignments.
      * @type object
     */
     projectId: ProjectId;

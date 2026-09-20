@@ -7,7 +7,7 @@ import type { ComputePoolView } from "./ComputePoolView";
 import type { ComputeScaleDefaultsView } from "./ComputeScaleDefaultsView";
 
 /**
- * @description Wire shape of `GET /api/v1/compute` — a read-only snapshot of what\r\nthe host can honestly observe: the configured provider, the scale\r\ndefaults from `Compute:Scale`, and per-profile pool counts derived\r\nfrom the work-item queue. Capacity (`freeSlots`) and recent spawns\r\nare omitted on purpose — they need a composed compute provider, which\r\nthis host does not wire.
+ * @description Wire shape of `GET /api/v1/compute` — a read-only snapshot of what\nthe host can honestly observe: the configured provider, the scale\ndefaults from `Compute:Scale`, and per-profile pool counts derived\nfrom the work-item queue. Capacity (`freeSlots`) and recent spawns\nare omitted on purpose — they need a composed compute provider, which\nthis host does not wire.
 */
 export type ComputeSnapshotView = {
     /**

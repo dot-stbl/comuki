@@ -5,7 +5,7 @@
 
 
 /**
- * @description The outcome of a probe — does the upstream answer, how fast, what id\r\nwould the host suggest for a follow-up create. The `latencyMs`\r\nis measured end-to-end (HTTP request to first response byte) and is\r\nonly meaningful when `reachable` is true.
+ * @description The outcome of a probe — does the upstream answer, how fast, what id\nwould the host suggest for a follow-up create. The `latencyMs`\nis measured end-to-end (HTTP request to first response byte) and is\nonly meaningful when `reachable` is true.
 */
 export type SourceProbeResult = {
     /**

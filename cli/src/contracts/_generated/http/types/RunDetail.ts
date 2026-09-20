@@ -8,7 +8,7 @@ import type { RunDetailRevision } from "./RunDetailRevision";
 import type { RunDetailWorkItem } from "./RunDetailWorkItem";
 
 /**
- * @description Full wire shape of one run for `GET /api/v1/runs/{runId}`. Carries\r\neverything the FE `RunDetail` mapper needs without a second round-trip.\r\n\r\nSeveral fields (Title, App, Model, CostUsd, Tokens, Rules) are placeholders\r\nfor data the platform does not yet store on the run row — see\r\nGetRunDetailHandler for what is and is not populated, and\r\naudit-report §2.7 for the broader metering / plan-extent gaps.
+ * @description Full wire shape of one run for `GET /api/v1/runs/{runId}`. Carries\neverything the FE `RunDetail` mapper needs without a second round-trip.\n\nSeveral fields (Title, App, Model, CostUsd, Tokens, Rules) are placeholders\nfor data the platform does not yet store on the run row — see\nGetRunDetailHandler for what is and is not populated, and\naudit-report §2.7 for the broader metering / plan-extent gaps.
 */
 export type RunDetail = {
     /**

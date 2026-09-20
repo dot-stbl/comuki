@@ -5,7 +5,7 @@
 
 
 /**
- * @description One slash command as listed to the dashboard / autocomplete and expanded\r\ninto the brain task by the router.
+ * @description One slash command as listed to the dashboard / autocomplete and expanded\ninto the brain task by the router.
 */
 export type ChatSlashCommand = {
     /**

@@ -1,0 +1,9 @@
+{
+  "_comment": "RFC 9457 application/problem+json response body for an approval conflict. The dot.case code 'chat.conflict' refines the classification (overriding the 400 fallback via code-suffix match).",
+  "type": "https://comuki/problems/chat-conflict",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "The session is no longer awaiting approval — the turn has already settled.",
+  "instance": "/api/v1/chat/sessions/9f3e5d3a-5b1f-4d6f-9d77-2f7b9f1a6c3d/approve",
+  "code": "chat.conflict"
+}

@@ -1,0 +1,9 @@
+{
+  "_comment": "RFC 9457 application/problem+json response body. title is stable ('Not Found'); code extension carries the dot.case machine string ('chat.session_not_found') the kernel decodes through classifyProblem. Detail is the human-readable message.",
+  "type": "https://comuki/problems/chat-session-not-found",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Chat session 9f3e5d3a-5b1f-4d6f-9d77-2f7b9f1a6c3d does not exist or has been archived.",
+  "instance": "/api/v1/chat/sessions/9f3e5d3a-5b1f-4d6f-9d77-2f7b9f1a6c3d/messages",
+  "code": "chat.session_not_found"
+}

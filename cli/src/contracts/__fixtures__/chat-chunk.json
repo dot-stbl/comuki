@@ -1,0 +1,6 @@
+{
+  "_comment": "Faithful JSON of Comuki.Shared.Contracts.Realtime.ChatChunkView (C#) as serialised by the SignalR hub invocation payload wrapper (camelCase). Source record: platform/src/shared/Comuki.Shared.Contracts/Realtime/ChatChunkView.cs. Hand-written here because the SignalR transport wraps the payload but the shape is byte-identical.",
+  "sessionId": "9f3e5d3a-5b1f-4d6f-9d77-2f7b9f1a6c3d",
+  "seq": 17,
+  "text": "Here is the plan, the relevant source listing,"
+}

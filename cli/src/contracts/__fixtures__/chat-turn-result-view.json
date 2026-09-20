@@ -1,0 +1,35 @@
+{
+  "_comment": "Faithful JSON of Comuki.Host.Chat.Models.Responses.ChatTurnResultView (C#). pendingPlan is a JsonDocument that the C# serializer writes as its underlying JSON; here represented as an object with nodes + edges (the canonical Plan payload). Source record: platform/src/host/Comuki.Host/Chat/Models/Responses/ChatTurnResultView.cs. Items use the same chat-message-view.json shape.",
+  "messages": [
+    {
+      "id": "8c4f7b1a-2d6e-49c1-9b33-1f7a8c2e9b44",
+      "role": "assistant",
+      "content": "I have a plan — should I run it?",
+      "toolName": null,
+      "parts": [
+        {
+          "kind": "plan",
+          "nodes": [
+            { "id": "n1", "title": "Author codec", "profileKey": "implement", "brief": "Write harnessMessageFromWire and decodeChatChunk." },
+            { "id": "n2", "title": "Author fixtures", "profileKey": "implement", "brief": "Hand-write one JSON per C# record." }
+          ],
+          "edges": [
+            { "from": "n1", "to": "n2" }
+          ]
+        }
+      ],
+      "meta": null,
+      "createdAt": "2026-09-20T10:18:00.000+00:00"
+    }
+  ],
+  "awaitingApproval": true,
+  "pendingPlan": {
+    "nodes": [
+      { "id": "n1", "title": "Author codec", "profileKey": "implement", "brief": "Write harnessMessageFromWire and decodeChatChunk." },
+      { "id": "n2", "title": "Author fixtures", "profileKey": "implement", "brief": "Hand-write one JSON per C# record." }
+    ],
+    "edges": [
+      { "from": "n1", "to": "n2" }
+    ]
+  }
+}

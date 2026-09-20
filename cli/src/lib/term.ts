@@ -16,7 +16,7 @@ const ST = "\x1b\\"
 
 /** Strips C0/C1 controls so a hostile session title cannot inject sequences. */
 function sanitize(text: string): string {
-   
+
   return text.replace(/[\x00-\x1f\x7f-\x9f]/g, "")
 }
 

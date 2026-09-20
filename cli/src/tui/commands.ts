@@ -49,6 +49,7 @@ export type TuiCommandName =
   | "open-palette"
   | "toggle-details-last"
   | "toggle-details"
+  | "show-receipt"
 
 /**
  * Availability tags every command declares ONCE. The slash menu, the
@@ -174,6 +175,8 @@ export function buildTuiCommands(i18n: I18nInstance): readonly TuiCommandSpec[] 
     command(i18n, "toggle-details", "ctrl+shift+o", "session", null),
     command(i18n, "open-editor", "ctrl+e", "always", null),
     command(i18n, "open-palette", "ctrl+p", "always", null),
+    // Issue #76 — palette-only viewer for the session's audit ledger.
+    command(i18n, "show-receipt", "", "session", null),
   ]
 }
 

@@ -1,0 +1,10 @@
+{
+  "_comment": "Same C# record as chat-message-view.json but written before parts/meta/toolName existed on the wire, or whose payload no longer parses. Serialised by ASP.NET Core System.Text.Json with JsonIgnoreCondition.Never default: null fields are emitted as JSON null. Source record: platform/src/host/Comuki.Host/Chat/Models/Views/ChatMessageView.cs (ToolName?, Parts?, Meta?). CreatedAt anchored to 2026-09-18T08:02:55.250+00:00 → unix ms 1758187375250. role=tool reflects the only field that must be non-null for a tool row.",
+  "id": "a1c0fe2b-3d5e-4b71-9a44-7f3d8e1c0a55",
+  "role": "tool",
+  "content": "create_ticket completed (tk-9af1).",
+  "toolName": null,
+  "parts": null,
+  "meta": null,
+  "createdAt": "2026-09-18T08:02:55.250+00:00"
+}

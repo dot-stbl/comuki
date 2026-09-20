@@ -1,0 +1,16 @@
+{
+  "_comment": "Same C# record as chat-turn-result-view.json but the turn completed without interruption: awaitingApproval=false, pendingPlan=null. The C# serializer writes null fields as JSON null by default (JsonIgnoreCondition.Never).",
+  "messages": [
+    {
+      "id": "e1b3d7c4-5a2f-4e88-9b61-3c7d4a8e2f19",
+      "role": "assistant",
+      "content": "Done — chunk sequencing is now wired end-to-end.",
+      "toolName": null,
+      "parts": null,
+      "meta": null,
+      "createdAt": "2026-09-20T10:19:30.000+00:00"
+    }
+  ],
+  "awaitingApproval": false,
+  "pendingPlan": null
+}

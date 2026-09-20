@@ -1,0 +1,63 @@
+{
+  "_comment": "Faithful JSON of Comuki.Host.Chat.Models.Views.ChatMessageView (C#) with parts populated. One MessagePart of every kind in MessagePartKinds. Serialised by ASP.NET Core System.Text.Json web defaults (camelCase, DateTimeOffset with offset). Source record: platform/src/host/Comuki.Host/Chat/Models/Views/ChatMessageView.cs; parts source: platform/src/shared/Comuki.Shared.Contracts/Chat/MessagePart.cs (TextPart, CodePart, DiagramPart, ThinkingPart, ToolPart, HandoffPart, PlanPart). CreatedAt anchored to 2026-09-20T10:16:12.000+00:00 → unix ms 1758363372000. Tokens/durations emitted as numbers (C# long?/int?; kubb typedef has number|string).",
+  "id": "7e3c4d2f-9a2b-4f8a-bd61-4e9f3a8c1b22",
+  "role": "assistant",
+  "content": "Here is the plan, the relevant source listing, and a quick diagram of the chunk flow.",
+  "toolName": null,
+  "parts": [
+    {
+      "kind": "text",
+      "markdown": "**Plan:** investigate chunk sequencing, add a wire fixture, and replay it through the codecs."
+    },
+    {
+      "kind": "code",
+      "language": "csharp",
+      "source": "public sealed class ChatMessageView\n{\n    public required Guid Id { get; init; }\n    public required string Role { get; init; }\n}",
+      "path": "platform/src/host/Comuki.Host/Chat/Models/Views/ChatMessageView.cs",
+      "startLine": 11
+    },
+    {
+      "kind": "diagram",
+      "dialect": "mermaid",
+      "source": "sequenceDiagram\n    Hub->>CLI: ChatChunk(seq=N, text)\n    CLI->>Kernel: decodeChatChunk(frame, ts)\n    Kernel-->>Hub: FeedMessage{kind:chunk}"
+    },
+    {
+      "kind": "thinking",
+      "text": "We need a one-fixture-per-kind mapping because the discriminated union is closed; an exhaustive test guards against silent drift.",
+      "tokens": 184
+    },
+    {
+      "kind": "tool",
+      "name": "create_ticket",
+      "inputJson": "{\"title\":\"Chunk sequencing\",\"kind\":\"investigation\"}",
+      "status": "succeeded",
+      "outputJson": "{\"id\":\"tk-9af1\",\"status\":\"open\"}",
+      "durationMs": 312
+    },
+    {
+      "kind": "handoff",
+      "query": "inbox chunk sequencing"
+    },
+    {
+      "kind": "plan",
+      "nodes": [
+        { "id": "n1", "title": "Author codec", "profileKey": "implement", "brief": "Write harnessMessageFromWire and decodeChatChunk." },
+        { "id": "n2", "title": "Author fixtures", "profileKey": "implement", "brief": "Hand-write one JSON per C# record." },
+        { "id": "n3", "title": "Author tests", "profileKey": "implement", "brief": "bun:test replay + classify + malformed frame guards." }
+      ],
+      "edges": [
+        { "from": "n1", "to": "n2" },
+        { "from": "n2", "to": "n3" }
+      ]
+    }
+  ],
+  "meta": {
+    "model": "glm-4.7",
+    "tokensIn": 412,
+    "tokensOut": 188,
+    "costMicros": 18400,
+    "latencyMs": 1820,
+    "stopReason": "stop"
+  },
+  "createdAt": "2026-09-20T10:16:12.000+00:00"
+}

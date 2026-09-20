@@ -14,9 +14,18 @@ import type {
   HarnessSession,
   HarnessState,
   SessionId,
-  TurnState,
 } from "../harness/state"
 import { tr, type I18nInstance } from "../locales"
+import {
+  buildTranscriptEntries,
+  entryLines,
+  type EntryRenderContext,
+} from "./entries"
+import {
+  lineText,
+  uniformLine,
+  type StyledLine,
+} from "./styled"
 
 /**
  * The decoded approval card. `pendingPlan` on the wire is `unknown`;
@@ -141,136 +150,52 @@ export function topBarContent(
 
 /**
  * Transcript lines rendered into the sticky-bottom viewport. Pure:
- * `session + i18n + width` in, lines out.
+ * `session + i18n + width + expanded-entry ids` in, styled lines out.
  *
- * - transcript messages get a role prefix, continuation lines indent;
- * - a thinking turn appends its live text under a "thinking" prefix;
+ * - transcript entries render per kind: message echoes keep the role
+ *   prefix, assistant markdown renders through the styled renderer,
+ *   collapsible entries (thinking/tools/code/diff/plan) collapse to a
+ *   summary line unless their id sits in `expanded`;
+ * - a thinking turn appends its live text as an uncollapsed entry;
  * - a failed turn appends one alert line with the error message;
  * - `null` session renders the empty-session hint.
+ */
+export function buildTranscriptStyledLines(
+  session: HarnessSession | null,
+  i18n: I18nInstance,
+  width: number,
+  expanded: ReadonlySet<string>
+): readonly StyledLine[] {
+  if (session === null) {
+    return [uniformLine(tr(i18n, "transcript.emptySession"), "muted")]
+  }
+  const context: EntryRenderContext = { i18n, width, expanded }
+  const lines: StyledLine[] = []
+  for (const entry of buildTranscriptEntries(session)) {
+    lines.push(...entryLines(entry, context))
+  }
+  if (session.turn.kind === "failed") {
+    lines.push(
+      uniformLine(
+        `${tr(i18n, "transcript.failed")} ${session.turn.error.message}`,
+        "error"
+      )
+    )
+  }
+  return lines
+}
+
+/**
+ * Plain-text transcript — the byte-identical flat view of the styled
+ * pipeline (collapsed by default). Tests and callers that don't care
+ * about tones read this.
  */
 export function buildTranscriptLines(
   session: HarnessSession | null,
   i18n: I18nInstance,
   width: number
 ): readonly string[] {
-  if (session === null) {
-    return [tr(i18n, "transcript.emptySession")]
-  }
-  const lines: string[] = []
-  for (const message of session.transcript) {
-    pushPrefixed(lines, rolePrefix(message.role, i18n), message.content, width)
-  }
-  pushTurnLines(lines, session.turn, i18n, width)
-  return lines
-}
-
-function pushTurnLines(
-  lines: string[],
-  turn: TurnState,
-  i18n: I18nInstance,
-  width: number
-): void {
-  switch (turn.kind) {
-    case "thinking": {
-      const prefix = tr(i18n, "transcript.thinking")
-      if (turn.accumulatedText.length > 0) {
-        pushPrefixed(lines, prefix, turn.accumulatedText, width)
-      } else {
-        lines.push(prefix)
-      }
-      return
-    }
-    case "failed": {
-      lines.push(`${tr(i18n, "transcript.failed")} ${turn.error.message}`)
-      return
-    }
-    case "idle":
-    case "awaiting-approval":
-      return
-  }
-}
-
-function rolePrefix(
-  role: HarnessSession["transcript"][number]["role"],
-  i18n: I18nInstance
-): string {
-  switch (role) {
-    case "user":
-      return tr(i18n, "transcript.you")
-    case "assistant":
-      return tr(i18n, "transcript.comuki")
-    case "system":
-      return tr(i18n, "transcript.system")
-    case "tool":
-      return tr(i18n, "transcript.tool")
-  }
-}
-
-/**
- * `prefix first-line` + indented wrapped continuation. Existing
- * newlines split first; long segments word-wrap at `width`.
- */
-function pushPrefixed(
-  lines: string[],
-  prefix: string,
-  content: string,
-  width: number
-): void {
-  const room = Math.max(8, width - prefix.length - 1)
-  // Word-wrap each paragraph; the first wrapped line carries the
-  // prefix, the rest indent under it.
-  let isFirstLine = true
-  for (const paragraph of content.split("\n")) {
-    const pieces = wrapText(paragraph, room)
-    if (pieces.length === 0) {
-      lines.push(isFirstLine ? `${prefix} ` : "")
-      isFirstLine = false
-      continue
-    }
-    for (const piece of pieces) {
-      lines.push(isFirstLine ? `${prefix} ${piece}` : `${" ".repeat(prefix.length + 1)}${piece}`)
-      isFirstLine = false
-    }
-  }
-}
-
-/** Word-wrap `text` to `width`; empty text wraps to nothing. */
-export function wrapText(text: string, width: number): readonly string[] {
-  if (text.length === 0) {
-    return []
-  }
-  const words = text.split(/\s+/).filter((word) => word.length > 0)
-  if (words.length === 0) {
-    return []
-  }
-  const lines: string[] = []
-  let current = ""
-  for (const word of words) {
-    // A single word longer than the width hard-splits by characters.
-    let token = word
-    while (token.length > width) {
-      if (current.length > 0) {
-        lines.push(current)
-        current = ""
-      }
-      lines.push(token.slice(0, width))
-      token = token.slice(width)
-    }
-    if (current.length === 0) {
-      current = token
-      continue
-    }
-    if (current.length + 1 + token.length <= width) {
-      current = `${current} ${token}`
-      continue
-    }
-    lines.push(current)
-    current = token
-  }
-  if (current.length > 0) {
-    lines.push(current)
-  }
-  return lines
+  return buildTranscriptStyledLines(session, i18n, width, new Set()).map(lineText)
 }
 
 /** The card model for the active session's awaiting-approval turn. */

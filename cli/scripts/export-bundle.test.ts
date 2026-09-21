@@ -14,7 +14,7 @@ import { mkdir, rm, writeFile, readFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-import { encodeTarGz, encodeZip, exportBundle } from "./export-bundle"
+import { encodeTarGz, encodeZip, exportBundle, readZip } from "./export-bundle"
 
 async function mkTempDir(label: string): Promise<string> {
   const stamp = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`
@@ -59,25 +59,23 @@ describe("encodeTarGz", () => {
 })
 
 describe("encodeZip", () => {
-  test("round-trips through Expand-Archive", async () => {
+  test("round-trips through readZip (in-process)", () => {
     const entries = [
       { name: "manifest.json", data: Buffer.from('{"v":1}', "utf8") },
       { name: "diagnostics.log", data: Buffer.from("hello\n", "utf8") },
     ]
     const zip = encodeZip(entries)
-    await Bun.write("/tmp/test-bundle.zip", zip)
-    const proc = Bun.spawn({
-      cmd: [
-        "powershell",
-        "-NoProfile",
-        "-Command",
-        "Expand-Archive -Path /tmp/test-bundle.zip -DestinationPath /tmp/test-bundle-out -Force; Get-Content /tmp/test-bundle-out/manifest.json",
-      ],
-      stdout: "pipe",
-    })
-    const out = await new Response(proc.stdout).text()
-    await proc.exited
-    expect(out.replace(/\s+/g, "")).toContain('"v":1')
+    const decoded = readZip(zip)
+    expect(decoded).toHaveLength(2)
+    expect(decoded[0]!.name).toBe("manifest.json")
+    expect(decoded[0]!.data.toString("utf8")).toBe('{"v":1}')
+    expect(decoded[1]!.name).toBe("diagnostics.log")
+    expect(decoded[1]!.data.toString("utf8")).toBe("hello\n")
+  })
+
+  test("rejects malformed archives", () => {
+    const bad = Buffer.from("not a zip archive")
+    expect(() => readZip(bad)).toThrow(/EOCD/)
   })
 })
 
@@ -151,17 +149,11 @@ describe("exportBundle — script behaviour", () => {
     })
     expect(report.format).toBe("zip")
 
-    const proc = Bun.spawn({
-      cmd: [
-        "powershell",
-        "-NoProfile",
-        "-Command",
-        `Expand-Archive -Path '${destination}' -DestinationPath '${join(tempDir, "zip-out")}' -Force; Get-Content '${join(tempDir, "zip-out", "manifest.json")}'`,
-      ],
-      stdout: "pipe",
-    })
-    const out = await new Response(proc.stdout).text()
-    await proc.exited
+    const buf = await Bun.file(destination).bytes()
+    const entries = readZip(Buffer.from(buf))
+    const manifest = entries.find((e) => e.name === "manifest.json")
+    expect(manifest).toBeDefined()
+    const out = manifest!.data.toString("utf8")
     expect(out).toContain("bundleVersion")
     expect(out).toContain("clientVersion")
   })

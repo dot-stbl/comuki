@@ -488,6 +488,74 @@ export function encodeZip(entries: ReadonlyArray<{ name: string; data: Buffer }>
   return Buffer.concat([localSection, centralSection, end])
 }
 
+/**
+ * In-process zip reader — parses the central directory and returns
+ * one entry per file. Used by the test suite so the round-trip
+ * doesn't depend on a system `unzip` / `Expand-Archive` /
+ * `tar -xf` binary being available.
+ *
+ * Only the subset needed for our archives: stored (method 0),
+ * uncompressed, no encryption, no extra fields, no comments,
+ * single-disk. Deflate / encryption are not used here — we
+ * archive stored.
+ */
+export interface ZipEntry {
+  readonly name: string
+  readonly data: Buffer
+}
+
+export function readZip(buffer: Buffer): ZipEntry[] {
+  // EOCD is the last 22 bytes (plus optional comment, which we
+  // never emit). Walk back from the end to find the signature.
+  const eocdSig = 0x06054b50
+  let eocdOffset = -1
+  for (let i = buffer.byteLength - 22; i >= Math.max(0, buffer.byteLength - 22 - 0xffff); i--) {
+    if (buffer.readUInt32LE(i) === eocdSig) {
+      eocdOffset = i
+      break
+    }
+  }
+  if (eocdOffset < 0) {
+    throw new Error("readZip: EOCD signature not found")
+  }
+  const centralCount = buffer.readUInt16LE(eocdOffset + 10)
+  const centralDirOffset = buffer.readUInt32LE(eocdOffset + 16)
+
+  const out: ZipEntry[] = []
+  const centralSig = 0x02014b50
+  const localSig = 0x04034b50
+  let cursor = centralDirOffset
+  for (let i = 0; i < centralCount; i++) {
+    if (buffer.readUInt32LE(cursor) !== centralSig) {
+      throw new Error(`readZip: bad central signature at offset ${cursor}`)
+    }
+    const compressedSize = buffer.readUInt32LE(cursor + 20)
+    const uncompressedSize = buffer.readUInt32LE(cursor + 24)
+    const nameLength = buffer.readUInt16LE(cursor + 28)
+    const extraLength = buffer.readUInt16LE(cursor + 30)
+    const commentLength = buffer.readUInt16LE(cursor + 32)
+    const localHeaderOffset = buffer.readUInt32LE(cursor + 42)
+    const name = buffer.toString("utf8", cursor + 46, cursor + 46 + nameLength)
+
+    if (buffer.readUInt32LE(localHeaderOffset) !== localSig) {
+      throw new Error(`readZip: bad local signature at offset ${localHeaderOffset}`)
+    }
+    const localExtraLength = buffer.readUInt16LE(localHeaderOffset + 28)
+    const dataStart = localHeaderOffset + 30 + nameLength + localExtraLength
+    const dataEnd = dataStart + compressedSize
+    if (compressedSize !== uncompressedSize) {
+      throw new Error(
+        `readZip: only stored (uncompressed) entries are supported; entry '${name}' is compressed`,
+      )
+    }
+    const data = Buffer.from(buffer.subarray(dataStart, dataEnd))
+    out.push({ name, data })
+
+    cursor += 46 + nameLength + extraLength + commentLength
+  }
+  return out
+}
+
 // ---------------------------------------------------------------------------
 // Script entry — `bun run scripts/export-bundle.ts <path>` produces the
 // archive and prints a one-line report.

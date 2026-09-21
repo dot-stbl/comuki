@@ -26,6 +26,10 @@
     "test": "bun test",
     "start": "bun bin/comuki.ts",
     "build": "bun scripts/build.ts",
+    "package": "bun scripts/package.ts",
+    "profile": "bun scripts/profile.ts",
+    "budgets": "bun scripts/budgets.ts",
+    "dogfood": "bun scripts/dogfood.ts --mock",
     "generate:contracts": "dotnet build ../comuki.slnx -c Debug && bun scripts/normalize-openapi.ts && bunx @kubb/cli@4.39.2 generate && dotnet run --project ../tools/Comuki.Codegen.Realtime -c Debug -- --out src/contracts/_generated/realtime.ts",
     "test:contracts": "bun scripts/contracts-drift.ts"
   },

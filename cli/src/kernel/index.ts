@@ -81,3 +81,19 @@ export {
   SESSIONS_FILE,
   sessionsFilePath,
 } from "./sessions"
+export type { LogLevel, StructuredLog, StructuredLogEvent } from "./telemetry"
+export { createStructuredLog, diagnosticsFilePath, DIAGNOSTICS_FILE } from "./telemetry"
+export type { CrashHandlers } from "./crash"
+export { installCrashHandlers, resetTerminal } from "./crash"
+export type { SemVer, ServerVersion, VersionFetch, VersionHandshake } from "./version"
+export {
+  CLIENT_SEMVER,
+  CLIENT_VERSION_STRING,
+  compareVersions,
+  fetchServerVersion,
+  parseSemVer,
+  resolveVersionHandshake,
+  VERSION_PATH,
+  VersionFetchError,
+  VersionMismatchError,
+} from "./version"

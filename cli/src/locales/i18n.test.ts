@@ -46,6 +46,15 @@ describe("tui locales — parity between en and ru", () => {
     expect(() => tr(instance, "definitely.not.a.key")).toThrow()
   })
 
+  test("Issue #81 — chrome.budgets / chrome.exportBundleHint / chrome.versionMismatch resolve in both locales", async () => {
+    for (const locale of LOCALES) {
+      const instance = await createI18nFor(locale)
+      expect(tr(instance, "chrome.budgets")).toMatch(/.+/)
+      expect(tr(instance, "chrome.exportBundleHint")).toMatch(/.+/)
+      expect(tr(instance, "chrome.versionMismatch")).toMatch(/.+/)
+    }
+  })
+
   test("en and ru differ on user-facing copy", async () => {
     const en = await createI18nFor("en")
     const ru = await createI18nFor("ru")

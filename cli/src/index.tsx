@@ -10,6 +10,13 @@
  * pick the renderer. Default host behaviour stays OpenTUI; explicit
  * `--mode linear` forces the linear renderer; `--machine` writes
  * NDJSON envelopes on stdout.
+ *
+ * Issue #81 — `installCrashHandlers()` runs at the very top of the
+ * module (before any other code that might throw), so a panic in
+ * the boot path lands in the diagnostics log instead of vanishing
+ * into stderr. `--explain-budgets` prints the performance budget
+ * table and exits; `comuki export-bundle <path>` packages the
+ * diagnostics + receipts + sessions + drafts for a bug report.
  */
 import { render } from "ink"
 import React from "react"
@@ -59,6 +66,15 @@ import {
   resolveTheme,
   symbols,
 } from "./theme"
+import { installCrashHandlers } from "./kernel/crash"
+import { renderBudgetTable } from "../scripts/budgets"
+import { exportBundle } from "../scripts/export-bundle"
+
+// Issue #81 — install the global crash handlers BEFORE any other
+// code runs, so a panic in the boot path produces a structured
+// `crash` event in the diagnostics log instead of disappearing.
+// Idempotent — a second install is a no-op.
+installCrashHandlers()
 
 interface GlobalOptions {
   url?: string
@@ -116,6 +132,38 @@ async function maybeExplainMode(): Promise<boolean> {
 void main()
 
 async function main(): Promise<void> {
+  // Issue #81 — `--explain-budgets` short-circuits before the
+  // yargs parser below (which fails on unknown flags without a
+  // pre-parse). We reuse the same argv shape so the printed table
+  // matches the one in `scripts/budgets.ts`.
+  if (process.argv.includes("--explain-budgets")) {
+    process.stdout.write(renderBudgetTable())
+    return
+  }
+  // Issue #81 — `comuki export-bundle <path>` packages the
+  // diagnostics + receipts + sessions + drafts into a single
+  // archive. Runs before yargs to keep the help text clean.
+  const exportIdx = process.argv.indexOf("export-bundle")
+  if (exportIdx >= 0) {
+    const dest = process.argv[exportIdx + 1]
+    if (dest === undefined || dest.startsWith("--")) {
+      process.stderr.write("usage: comuki export-bundle <path>\n")
+      process.exitCode = 2
+      return
+    }
+    try {
+      const report = await exportBundle({ destination: dest })
+      process.stdout.write(
+        `${report.destination} (${report.format}, ${report.bytes} bytes, ${report.entries} entries)\n`
+      )
+    } catch (error: unknown) {
+      process.stderr.write(
+        `comuki: export-bundle failed: ${error instanceof Error ? error.message : String(error)}\n`
+      )
+      process.exitCode = 1
+    }
+    return
+  }
   if (await maybeExplainMode()) {
     return
   }
@@ -198,6 +246,13 @@ async function main(): Promise<void> {
       type: "boolean",
       default: false,
       describe: "print the resolved mode set and exit",
+    })
+    // Issue #81 — performance budgets table (mirrors the
+    // `--explain-mode` shape: print + exit).
+    .option("explain-budgets", {
+      type: "boolean",
+      default: false,
+      describe: "print the performance budgets table and exit",
     })
     .command("status", "platform snapshot")
     .command("runs [list]", "run ledger", (y) =>

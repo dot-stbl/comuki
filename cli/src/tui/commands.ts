@@ -50,6 +50,9 @@ export type TuiCommandName =
   | "toggle-details-last"
   | "toggle-details"
   | "show-receipt"
+  | "toggle-swarm-canvas"
+  | "swarm-canvas-refresh"
+  | "swarm-canvas-inspect"
 
 /**
  * Availability tags every command declares ONCE. The slash menu, the
@@ -177,6 +180,19 @@ export function buildTuiCommands(i18n: I18nInstance): readonly TuiCommandSpec[] 
     command(i18n, "open-palette", "ctrl+p", "always", null),
     // Issue #76 — palette-only viewer for the session's audit ledger.
     command(i18n, "show-receipt", "", "session", null),
+    // Issue #78 — the swarm canvas surfaces attention rather than
+    // activity. Hidden by default; ctrl+shift+a toggles, palette
+    // opens. The refresh + inspect commands reach the same canvas
+    // without the key chord.
+    command(i18n, "toggle-swarm-canvas", "ctrl+shift+a", "always", null),
+    command(i18n, "swarm-canvas-refresh", "", "always", null),
+    command(
+      i18n,
+      "swarm-canvas-inspect",
+      "",
+      "always",
+      { name: "swarm-canvas-inspect", aliases: [], argsHintKey: "cmd.swarm-canvas-inspect.argsHint" }
+    ),
   ]
 }
 

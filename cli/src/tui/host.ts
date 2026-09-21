@@ -36,6 +36,7 @@ import {
   underline,
 } from "@opentui/core"
 import type { ClientKernel } from "../kernel"
+import type { AttentionListener, AttentionSignal } from "../kernel/attention"
 import { activeSession } from "../harness/selectors"
 import type {
   HarnessMessage,
@@ -92,6 +93,7 @@ import {
   type DecisionReceipt,
 } from "../kernel/receipts"
 import { TONE_HEX, type Segment, type StyledLine } from "./styled"
+import { renderSwarmCanvas, type SwarmCanvasContext } from "./swarmcanvas"
 
 /**
  * Terminal lifecycle seam (adapted from the spike). Resolution order:
@@ -258,6 +260,20 @@ export async function createTuiHost(
   const expandedEntryIds = new Map<SessionKey, Set<string>>()
   /** Shared empty set — sessions with nothing expanded. */
   const EMPTY_ENTRY_SET: ReadonlySet<string> = new Set<string>()
+
+  // -- swarm canvas (issue #78) ----------------------------------------------
+  // Hidden by default; ctrl+shift+a or the palette toggles the surface.
+  // While open, the viewport collapses to its last line so the canvas
+  // takes the remaining vertical space — the right-pane-of-the-shell
+  // metaphor from the issue, kept on the same column layout.
+  let swarmSurfaceOpen = false
+  let swarmSignal: AttentionSignal = kernel.attention()
+  let swarmInspectedId: string | null = null
+  const swarmAttentionListener: AttentionListener = (signal) => {
+    swarmSignal = signal
+    render()
+  }
+  kernel.addAttentionListener(swarmAttentionListener)
   const externalEditor: ExternalEditor | null =
     options.externalEditor ??
     (options.memoryMode === true ? null : spawnExternalEditor)
@@ -330,6 +346,23 @@ export async function createTuiHost(
     rootOptions: { backgroundColor: "#0e0e12" },
   })
   shell.add(viewport)
+
+  // Issue #78 — the swarm canvas pane, hidden by default. While open
+  // it occupies the same vertical slot as the viewport (which
+  // collapses to its tail line so the layout stays one-column).
+  const swarmCanvas = new ScrollBoxRenderable(renderer, {
+    flexGrow: 1,
+    flexBasis: 0,
+    flexShrink: 1,
+    scrollY: true,
+    scrollX: false,
+    stickyScroll: true,
+    stickyStart: "top",
+    width,
+    rootOptions: { backgroundColor: "#0e0e12" },
+  })
+  swarmCanvas.visible = false
+  shell.add(swarmCanvas)
 
   // The queued-follow-up indicator — one row between the viewport and
   // the composer, visible only while the kernel queue is non-empty.
@@ -475,6 +508,94 @@ export async function createTuiHost(
     }
   }
 
+  /**
+   * Issue #78 — refresh the swarm canvas from the latest attention
+   * signal. The canvas pane holds styled lines; we drop and refill
+   * on each render so the surface stays a pure function of the
+   * signal. When the signal is empty (focus-mode quiet case), the
+   * pane is left empty — the host shows nothing in the right pane.
+   */
+  function refreshSwarmCanvas(): void {
+    while (swarmCanvas.getChildren().length > 0) {
+      const child = swarmCanvas.getChildren()[0]
+      if (child) {
+        swarmCanvas.remove(child)
+      }
+    }
+    const sessions = new Map<string, HarnessSession>()
+    for (const session of lastState.sessions) {
+      sessions.set(session.identity.id, session)
+    }
+    const context: SwarmCanvasContext = {
+      i18n,
+      width,
+      inspectedId: swarmInspectedId,
+      sessions,
+    }
+    const lines = renderSwarmCanvas(swarmSignal, context)
+    for (const line of lines) {
+      swarmCanvas.add(new TextRenderable(renderer, { content: styledContent(line) }))
+    }
+  }
+
+  /** Issue #78 — toggle the canvas pane and the viewport's collapse. */
+  function toggleSwarmCanvas(): boolean {
+    swarmSurfaceOpen = !swarmSurfaceOpen
+    applySwarmSurfaceLayout()
+    render()
+    return true
+  }
+
+  /** Issue #78 — re-derive the attention signal from the kernel. */
+  function refreshSwarmCanvasFromKernel(): boolean {
+    swarmSignal = kernel.attention()
+    render()
+    return true
+  }
+
+  /**
+   * Issue #78 — deep-link a row by id (worker or correlation). The
+   * canvas pane must already be open; otherwise we open it first so
+   * the inspect actually surfaces a row.
+   */
+  function inspectSwarmCanvas(id: string): boolean {
+    const trimmed = id.trim()
+    if (trimmed.length === 0) {
+      return false
+    }
+    if (!swarmSurfaceOpen) {
+      swarmSurfaceOpen = true
+      applySwarmSurfaceLayout()
+    }
+    swarmInspectedId = trimmed
+    render()
+    return true
+  }
+
+  /**
+   * Issue #78 — switch the layout between the full viewport and
+   * the collapsed-viewport + canvas configuration. The viewport keeps
+   * its scrollback; the canvas appears or disappears in the same
+   * flex slot.
+   */
+  function applySwarmSurfaceLayout(): void {
+    if (swarmSurfaceOpen) {
+      // The viewport shrinks to a single summary line; the canvas
+      // takes the rest. The viewport's flexGrow drops to 0 so the
+      // canvas claims the space.
+      viewport.flexGrow = 0
+      viewport.height = 1
+      swarmCanvas.visible = true
+      swarmCanvas.flexGrow = 1
+    } else {
+      viewport.flexGrow = 1
+      viewport.height = undefined as unknown as number
+      swarmCanvas.visible = false
+      swarmCanvas.flexGrow = 0
+      swarmInspectedId = null
+    }
+  }
+
   // -- transcript progressive disclosure (issue #74) -------------------------
 
   /**
@@ -562,6 +683,7 @@ export async function createTuiHost(
     const session = activeSession(lastState)
     topBar.content = topBarContent(lastState, session, i18n, layoutMode === "compact")
     refreshViewport()
+    refreshSwarmCanvas()
 
     const queuedLine = queuedFollowUpLine(session, i18n)
     if (queuedLine === null) {
@@ -1208,6 +1330,11 @@ export async function createTuiHost(
     reject: (payload: TuiCommandPayload) =>
       decideCurrentApproval(false, payload.text),
     "show-receipt": () => showReceipt(),
+    // Issue #78 — swarm canvas surface.
+    "toggle-swarm-canvas": () => toggleSwarmCanvas(),
+    "swarm-canvas-refresh": () => refreshSwarmCanvasFromKernel(),
+    "swarm-canvas-inspect": (payload: TuiCommandPayload) =>
+      inspectSwarmCanvas(payload.text ?? ""),
     exit: () => {
       void close()
       return true

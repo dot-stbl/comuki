@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Comuki.Host.Brain.Brain.Exceptions;
 using Comuki.Shared.Contracts.Brain;
+using Comuki.Shared.Kernel.Scoping;
 using Grpc.Core;
 using ProtoBuf.Grpc;
 
@@ -15,8 +16,20 @@ namespace Comuki.Host.Brain.Brain;
 /// exhausted loop or an unconfigured model.
 /// </summary>
 /// <param name="agent"></param>
+/// <param name="scopeAccessor">
+/// The gRPC surface is a system consumer too — the agent declares its own
+/// <c>brain-agent</c> scope inside <see cref="BrainAgent.RunAsync"/>, but
+/// that scope lives only while the agent method is on the stack; it does
+/// not survive the enumerator boundaries the gRPC streaming mapper opens.
+/// The scope here outlives those moves so any tool that consults
+/// <see cref="ISubjectScopeAccessor.Current"/> mid-stream sees an
+/// established scope rather than throwing.
+/// </param>
 /// <param name="logger"></param>
-public sealed class BrainGrpcService(BrainAgent agent, ILogger<BrainGrpcService> logger) : IBrainService
+public sealed class BrainGrpcService(
+    BrainAgent agent,
+    ISubjectScopeAccessor scopeAccessor,
+    ILogger<BrainGrpcService> logger) : IBrainService
 {
     /// <inheritdoc />
     public async IAsyncEnumerable<BrainChunk> Think(BrainRequest request, CallContext context)
@@ -39,7 +52,7 @@ public sealed class BrainGrpcService(BrainAgent agent, ILogger<BrainGrpcService>
             request.Task.Length);
 
         await foreach (var chunk in BrainFaultMapping
-            .StreamAsync(agent, request, logger, context.CancellationToken)
+            .StreamAsync(agent, scopeAccessor, request, logger, context.CancellationToken)
             .WithCancellation(context.CancellationToken))
         {
             yield return chunk;
@@ -60,10 +73,19 @@ file static class BrainFaultMapping
 {
     public static async IAsyncEnumerable<BrainChunk> StreamAsync(
         BrainAgent agent,
+        ISubjectScopeAccessor scopeAccessor,
         BrainRequest request,
         ILogger logger,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        // Establish a named system scope that outlives the agent's own
+        // `brain-agent` scope: the enumerator below resumes on each
+        // MoveNextAsync, including after the inner `using var scope = ...`
+        // inside `BrainAgent.RunAsync` has already been disposed on
+        // earlier-yield boundaries — without this outer scope any tool
+        // that reads `ISubjectScopeAccessor.Current` mid-stream sees "no
+        // scope established" and throws.
+        using var systemScope = scopeAccessor.AsSystem("brain-grpc");
         await using var enumerator = agent.RunAsync(request, cancellationToken).GetAsyncEnumerator(cancellationToken);
         var lastSeq = -1;
         while (true)

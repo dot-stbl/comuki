@@ -90,7 +90,7 @@ public sealed class BrainGrpcServiceShould
 
     private static BrainGrpcService Service(BrainAgent agent)
     {
-        return new BrainGrpcService(agent, NullLogger<BrainGrpcService>.Instance);
+        return new BrainGrpcService(agent, new AsyncLocalSubjectScopeAccessor(), NullLogger<BrainGrpcService>.Instance);
     }
     private static async Task<List<BrainChunk>> DrainAsync(BrainGrpcService service, BrainRequest request)
     {

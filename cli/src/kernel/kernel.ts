@@ -44,6 +44,7 @@ import {
   type DecisionReceipt,
   type DecisionReceiptStore,
 } from "./receipts"
+import { AttentionSource, type AttentionListener, type AttentionSignal } from "./attention"
 import type { EventFeedPort, FeedMessage } from "./feed"
 
 /** Normalized server/runtime event accepted by the kernel. */
@@ -74,6 +75,18 @@ export interface ClientKernel {
    * the writer absorbs errors.
    */
   recordDecision(receipt: DecisionReceipt): void
+  /**
+   * Issue #78 — the freshest derived `AttentionSignal`. The host
+   * awaits `whenIdle()` before reading so the signal reflects every
+   * queued effect. Recomputed once per kernel commit (the underlying
+   * `AttentionSource` subscribes internally).
+   */
+  attention(): AttentionSignal
+  /**
+   * Issue #78 — subscribe to attention-signal updates. Matches the
+   * `EventTarget.addEventListener` shape used by `subscribe(...)`.
+   */
+  addAttentionListener(listener: AttentionListener): Unsubscribe
 }
 
 export interface ClientKernelOptions {
@@ -113,6 +126,11 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
   let started = false
   let stopped = false
   const listeners = new Set<(snapshot: ClientSnapshot) => void>()
+  // Issue #78 — singleton attention source per kernel. The
+  // `AttentionSource` type imports `ClientKernel` (for the surface
+  // shape), but never reaches into kernel internals beyond the
+  // public API; the type-only import erases at runtime.
+  let attentionSource: AttentionSource | null = null
 
   /** Duplicate server events must not produce duplicate effects. */
   const appliedServerEvents = new Set<string>()
@@ -142,6 +160,19 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
     snapshot = { revision, state }
     for (const listener of [...listeners]) {
       listener(snapshot)
+    }
+  }
+
+  /** Local subscription helper — referenced by both the public surface and
+   * the lazily-built `AttentionSource`. The AttentionSource wires itself
+   * here before any host listener fires, so its first snapshot reflects
+   * the kernel's commit-on-subscribe invariant. */
+  function subscribeInternal(
+    listener: (snapshot: ClientSnapshot) => void
+  ): Unsubscribe {
+    listeners.add(listener)
+    return () => {
+      listeners.delete(listener)
     }
   }
 
@@ -378,10 +409,7 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
       return snapshot
     },
     subscribe(listener) {
-      listeners.add(listener)
-      return () => {
-        listeners.delete(listener)
-      }
+      return subscribeInternal(listener)
     },
     start() {
       if (started || stopped) {
@@ -414,6 +442,8 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
       stopped = true
       controller.abort()
       listeners.clear()
+      attentionSource?.destroy()
+      attentionSource = null
     },
     whenIdle() {
       return new Promise<void>((resolve) => {
@@ -430,6 +460,34 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
       }
       receipts.append(receipt)
     },
+    attention() {
+      if (attentionSource === null) {
+        attentionSource = createAttentionSource()
+      }
+      return attentionSource.snapshot()
+    },
+    addAttentionListener(listener) {
+      if (attentionSource === null) {
+        attentionSource = createAttentionSource()
+      }
+      return attentionSource.addAttentionListener(listener)
+    },
+  }
+
+  /**
+   * Wrap the kernel's own surface — `snapshot` + `subscribe` — into
+   * the `ClientKernel` shape the `AttentionSource` expects. The
+   * source never reads internals beyond these two methods, so the
+   * cast is honest. (We do NOT forward `attention()` here — that
+   * would recurse, since the source's own snapshot is the result.)
+   */
+  function createAttentionSource(): AttentionSource {
+    const surface = {
+      snapshot: () => snapshot,
+      subscribe: (listener: (snapshot: ClientSnapshot) => void) =>
+        subscribeInternal(listener),
+    } as unknown as ClientKernel
+    return new AttentionSource(surface, now)
   }
 }
 

@@ -146,6 +146,7 @@ describe("tui command registry — availability, slash, palette derivations", ()
       "help",
       "rename",
       "clear-draft",
+      "swarm-canvas-inspect",
     ])
 
     const exitOnly = filterSlashCommands(specs, "q", openWithDraft)

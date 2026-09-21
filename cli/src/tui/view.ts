@@ -192,7 +192,9 @@ export function buildTranscriptStyledLines(
   expanded: ReadonlySet<string>
 ): readonly StyledLine[] {
   if (session === null) {
-    return [uniformLine(tr(i18n, "transcript.emptySession"), "muted")]
+    // The welcome block from `buildHomeLines` already explains the
+    // empty state — don't add a second competing hint here.
+    return []
   }
   const context: EntryRenderContext = { i18n, width, expanded }
   const lines: StyledLine[] = []

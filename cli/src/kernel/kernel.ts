@@ -25,6 +25,18 @@
  * and the ReconnectOrchestrator (the coarse offline / recovering /
  * online state that gates mutating sends).
  *
+ * Issue #81 — the kernel also owns three release-blocking subsystems:
+ *   - `telemetry()` — structured diagnostics log (NDJSON under
+ *     `<state>/diagnostics.log`, fire-and-forget).
+ *   - `clientVersion()` — the result of the `GET /api/v1/version`
+ *     handshake against the server; the host reads it for the
+ *     `chrome.versionMismatch` hint.
+ *   - `crash()` — the global `uncaughtException` /
+ *     `unhandledRejection` handler chain; the host invokes
+ *     `kernel.start()` and the kernel installs its handler as part
+ *     of `start()` (the host can opt out via
+ *     `options.skipCrashHandlers`).
+ *
  * The kernel contains no Ink/React/ANSI code; it talks to the world
  * exclusively through ports (`harness/effect-runner.ts`, `./feed.ts`).
  * The receipt writer is owned by the kernel (it's the only stateful
@@ -70,6 +82,21 @@ import {
   type SessionMeta,
   type SessionStore,
 } from "./sessions"
+import {
+  installCrashHandlers,
+  type CrashHandlers,
+} from "./crash"
+import {
+  createStructuredLog,
+  type StructuredLog,
+} from "./telemetry"
+import {
+  CLIENT_VERSION_STRING,
+  resolveVersionHandshake,
+  VersionMismatchError,
+  type VersionFetch,
+  type VersionHandshake,
+} from "./version"
 
 /** Normalized server/runtime event accepted by the kernel. */
 export type ClientEvent = HarnessEvent
@@ -150,6 +177,27 @@ export interface ClientKernel {
   cursors(): CursorStore
   /** Issue #77 — coarse offline / recovering / online orchestrator. */
   reconnect(): ReconnectOrchestrator
+  /**
+   * Issue #81 — the structured diagnostics writer. The kernel owns a
+   * single instance and exposes it via `telemetry()`; the host
+   * calls `log(...)` from its error paths. Fire-and-forget: every
+   * write is async; the chain resolves on `whenIdle()`.
+   */
+  telemetry(): StructuredLog
+  /**
+   * Issue #81 — the result of the server `GET /api/v1/version`
+   * handshake. `null` before `start()` runs the handshake; after
+   * `start()` the host reads the resolved status (`ok` / `warn`
+   * / `refused`) to drive the `chrome.versionMismatch` UI hint.
+   */
+  clientVersion(): VersionHandshake | null
+  /**
+   * Issue #81 — the global crash handler chain. The kernel owns a
+   * single instance and exposes it via `crash()`; tests read
+   * `crash().installed` to assert idempotency. `crash().flush()`
+   * drains the chained log lane before the host exits.
+   */
+  crash(): CrashHandlers
 }
 
 export interface ClientKernelOptions {
@@ -178,6 +226,26 @@ export interface ClientKernelOptions {
   readonly drafts?: DraftStore
   readonly cursors?: CursorStore
   readonly reconnect?: ReconnectOrchestrator
+  /**
+   * Issue #81 — override the structured-log writer. Tests inject a
+   * stub rooted at a temp directory; production wires nothing and
+   * gets the XDG-aware default.
+   */
+  readonly telemetry?: StructuredLog
+  /**
+   * Issue #81 — the host's resolved server base URL. When set,
+   * `start()` performs `GET /api/v1/version` against this URL before
+   * it begins accepting events. Tests omit it to skip the handshake.
+   */
+  readonly serverBaseUrl?: string
+  /** Issue #81 — the fetch surface for the version handshake. */
+  readonly versionFetch?: VersionFetch
+  /**
+   * Issue #81 — set `true` to skip the crash-handler install. The
+   * default installs `uncaughtException` / `unhandledRejection`
+   * listeners that route into the kernel's telemetry sink.
+   */
+  readonly skipCrashHandlers?: boolean
 }
 
 export function createClientKernel(options: ClientKernelOptions): ClientKernel {
@@ -202,6 +270,21 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
     options.cursors ?? createCursorStore({ stateDirectory })
   const reconnectOrchestrator: ReconnectOrchestrator =
     options.reconnect ?? createReconnectOrchestrator()
+  // Issue #81 — structured diagnostics log + crash handlers. The
+  // telemetry sink is shared with the crash handler so a panic
+  // produces a structured `crash` event before the process exits.
+  const telemetryLog: StructuredLog =
+    options.telemetry ?? createStructuredLog({ stateDirectory })
+  const crashHandlers: CrashHandlers =
+    options.skipCrashHandlers === true
+      ? { installed: false, flush: async () => undefined }
+      : installCrashHandlers({ log: telemetryLog })
+  // Issue #81 — the resolved server-version handshake. The host
+  // reads `kernel.clientVersion()` to surface the
+  // `chrome.versionMismatch` hint. Filled by `start()` when the
+  // host provides `serverBaseUrl` + `versionFetch`; otherwise
+  // stays `null` and the host treats it as "no handshake ran".
+  let clientVersionResult: VersionHandshake | null = null
 
   let state: HarnessState = initialHarnessState()
   let revision = 0
@@ -611,6 +694,56 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
       trackStart()
       chain = chain
         .then(async () => {
+          // Issue #81 — run the version handshake BEFORE the
+          // workspace read so a refused handshake short-circuits the
+          // rest of the boot sequence. The brief's matrix:
+          //   - ok / warn → proceed; the host reads the result
+          //     via `kernel.clientVersion()` for the UI hint.
+          //   - refused → `VersionMismatchError` propagates up to
+          //     the boot path; the host's try/catch surfaces the
+          //     `chrome.versionMismatch` UI hint and exits.
+          // We only run the handshake when both `serverBaseUrl` and
+          // `versionFetch` are configured; tests + the offline
+          // path omit them and the host treats it as "no handshake".
+          if (options.serverBaseUrl !== undefined && options.versionFetch !== undefined) {
+            try {
+              clientVersionResult = await resolveVersionHandshake(
+                options.serverBaseUrl,
+                options.versionFetch,
+                { clientVersion: CLIENT_VERSION_STRING }
+              )
+              telemetryLog.logFields(
+                clientVersionResult.status === "ok" ? "info" : "warn",
+                "version-handshake",
+                {
+                  client: clientVersionResult.client,
+                  server: clientVersionResult.server,
+                  status: clientVersionResult.status,
+                  ...(clientVersionResult.reason !== undefined
+                    ? { reason: clientVersionResult.reason }
+                    : {}),
+                }
+              )
+            } catch (error: unknown) {
+              if (error instanceof VersionMismatchError) {
+                // Refused — the host owns the user-facing surface.
+                // Log to telemetry for the export-bundle bug report,
+                // then re-throw so the host's boot path can decide
+                // whether to surface the UI hint and exit.
+                telemetryLog.logFields(
+                  "error",
+                  "version-handshake-refused",
+                  {
+                    client: error.clientVersion,
+                    server: error.serverVersion,
+                    reason: error.reason,
+                  }
+                )
+                throw error
+              }
+              throw error
+            }
+          }
           const document = await ports.workspace.read()
           const workspace = migrateWorkspaceDocument(document)
           state = applyWorkspaceToState(state, workspace)
@@ -623,6 +756,11 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
           commit()
         })
         .catch((error: unknown) => {
+          if (error instanceof VersionMismatchError) {
+            // The host catches this — pass through unchanged so the
+            // UI hint can read the typed reason.
+            throw error
+          }
           // An unreadable workspace degrades to an empty one.
           options.onDegrade?.(
             `workspace unreadable: ${
@@ -682,6 +820,15 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
     },
     reconnect() {
       return reconnectOrchestrator
+    },
+    telemetry() {
+      return telemetryLog
+    },
+    clientVersion() {
+      return clientVersionResult
+    },
+    crash() {
+      return crashHandlers
     },
   }
 

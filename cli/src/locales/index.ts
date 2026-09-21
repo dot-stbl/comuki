@@ -32,6 +32,9 @@ export const TUI_NAMESPACE = "tui" as const
 export const REQUIRED_KEYS = [
   "chrome.title",
   "chrome.titleCompact",
+  "chrome.budgets",
+  "chrome.exportBundleHint",
+  "chrome.versionMismatch",
   "connection.connected",
   "connection.connecting",
   "connection.reconnecting",
@@ -191,6 +194,15 @@ export const EN = {
   chrome: {
     title: "  comuki · opentui (core) · focus-mode",
     titleCompact: " comuki",
+    // Issue #81 — performance budgets surfaced through the REPL.
+    // The first row mirrors `scripts/budgets.ts`; the rest are
+    // host-level copy for `--explain-budgets` and the export
+    // hint surfaced after a render / dispatch failure.
+    budgets: "performance budgets",
+    exportBundleHint:
+      "render error — run `comuki export-bundle <path>` to attach a bug report",
+    versionMismatch:
+      "client {client} is incompatible with server {server} — please upgrade the CLI",
   },
   connection: {
     connected: "connected",
@@ -442,6 +454,11 @@ export const RU = {
   chrome: {
     title: "  comuki · opentui (core) · focus-mode",
     titleCompact: " comuki",
+    budgets: "бюджеты производительности",
+    exportBundleHint:
+      "ошибка отрисовки — выполните `comuki export-bundle <path>`, чтобы приложить отчёт",
+    versionMismatch:
+      "клиент {client} несовместим с сервером {server} — обновите CLI",
   },
   connection: {
     connected: "связь установлена",

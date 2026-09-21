@@ -186,11 +186,11 @@ describe("tui host — command palette", () => {
     setup.mockInput.pressArrow("up")
     await pumpInput()
     // The selection wrapped (n entries → last), the composer draft
-    // did NOT become a recalled history entry. Issue #76 added
-    // `show-receipt` at the end of the registry; the wrap lands
-    // there now.
+    // did NOT become a recalled history entry. Issue #78 added
+    // `swarm-canvas-inspect` at the end of the registry; the wrap
+    // lands there now.
     await setup.waitForFrame(
-      (frame) => frame.includes("> Show approval receipt")
+      (frame) => frame.includes("> Inspect swarm item")
     )
     expect(host.getDraft()).toBe("")
   })

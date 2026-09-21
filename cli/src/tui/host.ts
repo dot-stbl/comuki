@@ -63,6 +63,7 @@ import {
   filterSlashCommands,
   paletteMatches,
   parseSlashInput,
+  setTuiDispatchErrorSink,
   slashMenuQuery,
   TUI_UI_LAYER_PRIORITY,
   type TuiCommandContext,
@@ -749,38 +750,91 @@ export async function createTuiHost(
     if (closed) {
       return
     }
-    seedDraftOnce()
-    const session = activeSession(lastState)
-    topBar.content = topBarContent(
-      lastState,
-      session,
-      i18n,
-      layoutMode === "compact",
-      lastSnapshot.online
-    )
-    refreshViewport()
-    refreshSwarmCanvas()
+    // Issue #81 — wrap the entire render frame so a renderer defect
+    // (a TextRenderable that throws on its content setter, a ScrollBox
+    // that crashes on setY, ...) never kills the host. The catch
+    // routes the failure to the kernel's telemetry sink (issue #81)
+    // and surfaces a single-line status hint at the bottom of the
+    // composer; the user can still type and the next render frame
+    // recovers automatically.
+    try {
+      seedDraftOnce()
+      const session = activeSession(lastState)
+      topBar.content = topBarContent(
+        lastState,
+        session,
+        i18n,
+        layoutMode === "compact",
+        lastSnapshot.online
+      )
+      refreshViewport()
+      refreshSwarmCanvas()
 
-    const queuedLine = queuedFollowUpLine(session, i18n)
-    if (queuedLine === null) {
-      queueLine.visible = false
-    } else {
-      queueLine.content = queuedLine
-      queueLine.visible = true
+      const queuedLine = queuedFollowUpLine(session, i18n)
+      if (queuedLine === null) {
+        queueLine.visible = false
+      } else {
+        queueLine.content = queuedLine
+        queueLine.visible = true
+      }
+
+      // Availability is state-derived: keep open surfaces' lists fresh.
+      if (surface === "slash-menu") {
+        refreshSlashMenu()
+      } else if (surface === "palette") {
+        refreshPaletteRows()
+      }
+
+      // Issue #76 — the approval is now an entry in the transcript;
+      // register the y/n layer when something awaits, unregister
+      // when it doesn't. The viewport keeps showing the entry even
+      // while the composer has focus.
+      ensureApprovalLayer(currentPendingApproval())
+      renderer.requestRender()
+    } catch (error: unknown) {
+      handleRenderError(error)
     }
+  }
 
-    // Availability is state-derived: keep open surfaces' lists fresh.
-    if (surface === "slash-menu") {
-      refreshSlashMenu()
-    } else if (surface === "palette") {
-      refreshPaletteRows()
+  /**
+   * Issue #81 — render-frame error path. The kernel owns the
+   * structured-log sink; we route through it so `comuki export-bundle`
+   * has the failure on disk for the bug report. The hint is rendered
+   * into the composer's footer line so the user can act on it without
+   * scrolling.
+   */
+  function handleRenderError(error: unknown): void {
+    try {
+      kernel.telemetry().logFields("error", "render-error", {
+        name: error instanceof Error ? error.name : "unknown",
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack ?? "" : "",
+      })
+    } catch {
+      // telemetry itself must never throw — keep the host alive.
     }
+    // Show the user a non-modal hint at the bottom of the composer.
+    // The i18n key lives in `locales/index.ts`; absent it we fall back
+    // to a literal so the host stays usable during a partial deploy.
+    tryHintRenderError()
+  }
 
-    // Issue #76 — the approval is now an entry in the transcript;
-    // register the y/n layer when something awaits, unregister
-    // when it doesn't. The viewport keeps showing the entry even
-    // while the composer has focus.
-    ensureApprovalLayer(currentPendingApproval())
+  function tryHint(instance: I18nInstance): string {
+    try {
+      return tr(instance, "chrome.exportBundleHint")
+    } catch {
+      return "render error — run `comuki export-bundle <path>` to attach a bug report"
+    }
+  }
+
+  /**
+   * Issue #81 — show the export-bundle hint at the bottom of the
+   * composer (shared between render-frame and dispatch failures).
+   */
+  function tryHintRenderError(): void {
+    queueLine.content = tryHint(i18n)
+    queueLine.fg = "#d2d228"
+    queueLine.visible = true
     renderer.requestRender()
   }
 
@@ -1493,6 +1547,24 @@ export async function createTuiHost(
     const result = await kernel.sessions().fork(args.id, forkId)
     return result !== null
   }
+
+  // Issue #81 — every dispatched command runs inside a try/catch
+  // (see commandsWithHandlers in ./commands). The host owns the
+  // sink so a thrown handler writes a structured `dispatch-failed`
+  // event into the kernel's telemetry log and the user sees the
+  // `chrome.exportBundleHint` line at the bottom of the composer.
+  setTuiDispatchErrorSink((commandName, message, stack) => {
+    try {
+      kernel.telemetry().logFields("error", "dispatch-failed", {
+        command: commandName,
+        message,
+        stack,
+      })
+    } catch {
+      // telemetry itself must never throw — keep the host alive.
+    }
+    tryHintRenderError()
+  })
 
   const keymap = createTuiKeymap(renderer, i18n, {
     "submit-turn": () => submitTurn(),

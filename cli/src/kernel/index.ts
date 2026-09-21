@@ -3,7 +3,7 @@
  * everything else (`fakes.ts`, `adapters/`) is wiring for hosts and
  * tests.
  */
-export type { ClientEvent, ClientKernel, ClientSnapshot, Unsubscribe } from "./kernel"
+export type { ClientEvent, ClientKernel, ClientSnapshot, DispatchResult, Unsubscribe } from "./kernel"
 export { createClientKernel, type ClientKernelOptions } from "./kernel"
 export type {
   AttentionItem,
@@ -42,3 +42,42 @@ export {
   fingerprintFor,
   receiptsFilePath,
 } from "./receipts"
+export type {
+  CatchUpRequest,
+  CatchUpResult,
+  CursorEntry,
+  CursorStore,
+  CursorStoreOptions,
+} from "./cursors"
+export {
+  createCursorStore,
+  cursorsFilePath,
+  decodeCursor,
+  encodeCursor,
+} from "./cursors"
+export type { DraftStore, DraftStoreOptions } from "./drafts"
+export {
+  createDraftStore,
+  draftFilePath,
+  DRAFTS_SUBDIR,
+} from "./drafts"
+export type {
+  ReconnectListener,
+  ReconnectOrchestrator,
+  ReconnectState,
+} from "./reconnect"
+export { createReconnectOrchestrator } from "./reconnect"
+export type {
+  SessionFilter,
+  SessionMeta,
+  SessionMetaUpdate,
+  SessionStore,
+  SessionStoreOptions,
+} from "./sessions"
+export {
+  createSessionStore,
+  decodeMeta,
+  encodeMeta,
+  SESSIONS_FILE,
+  sessionsFilePath,
+} from "./sessions"

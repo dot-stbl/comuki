@@ -40,7 +40,16 @@ function kernelWith(initialWorkspace: unknown = null) {
     feed: feed.port,
     now: () => clock,
   })
-  return { fake, feed, kernel, tick: (ms: number) => (clock += ms) }
+  return {
+    fake,
+    feed,
+    kernel,
+    tick: (ms: number) => (clock += ms),
+    /** Issue #77 — bring the realtime hub online before any submit-turn. */
+    bringOnline: () => {
+      feed.push({ kind: "connection", event: "started" })
+    },
+  }
 }
 
 describe("ClientKernel bootstrap", () => {
@@ -71,9 +80,12 @@ describe("ClientKernel bootstrap", () => {
 
 describe("ClientKernel crown flow", () => {
   it("runs submit → adopt → stream → authoritative completion", async () => {
-    const { fake, feed, kernel } = kernelWith(null)
+    const { fake, feed, kernel, bringOnline } = kernelWith(null)
     kernel.start()
     await kernel.whenIdle()
+
+    bringOnline()
+    await until(() => kernel.snapshot().online)
 
     kernel.dispatch({ kind: "open-session" })
     kernel.dispatch({
@@ -131,9 +143,12 @@ describe("ClientKernel crown flow", () => {
   })
 
   it("queues a second message while a turn is in flight and drains it after", async () => {
-    const { fake, kernel } = kernelWith(legacyDoc())
+    const { fake, kernel, bringOnline } = kernelWith(legacyDoc())
     kernel.start()
     await kernel.whenIdle()
+
+    bringOnline()
+    await until(() => kernel.snapshot().online)
 
     kernel.dispatch({
       kind: "submit-turn",
@@ -167,9 +182,12 @@ describe("ClientKernel crown flow", () => {
   })
 
   it("decides approvals online and never queues them", async () => {
-    const { fake, kernel } = kernelWith(legacyDoc())
+    const { fake, kernel, bringOnline } = kernelWith(legacyDoc())
     kernel.start()
     await kernel.whenIdle()
+
+    bringOnline()
+    await until(() => kernel.snapshot().online)
 
     // No approval pending — the intent must translate to nothing.
     kernel.dispatch({
@@ -220,9 +238,12 @@ describe("ClientKernel crown flow", () => {
   })
 
   it("cancels an in-flight turn from the client side", async () => {
-    const { fake, kernel } = kernelWith(legacyDoc())
+    const { fake, kernel, bringOnline } = kernelWith(legacyDoc())
     kernel.start()
     await kernel.whenIdle()
+
+    bringOnline()
+    await until(() => kernel.snapshot().online)
 
     kernel.dispatch({
       kind: "submit-turn",
@@ -293,9 +314,12 @@ describe("ClientKernel robustness", () => {
   })
 
   it("rejects stale completions for a different in-flight request", async () => {
-    const { fake, kernel } = kernelWith(legacyDoc())
+    const { fake, kernel, bringOnline } = kernelWith(legacyDoc())
     kernel.start()
     await kernel.whenIdle()
+
+    bringOnline()
+    await until(() => kernel.snapshot().online)
 
     kernel.dispatch({
       kind: "submit-turn",
@@ -320,5 +344,32 @@ describe("ClientKernel robustness", () => {
     const session = kernel.snapshot().state.sessions[0]
     expect(session?.transcript.some((message) => message.id === "stale")).toBeFalse()
     expect(session?.turn.kind).toBe("thinking")
+  })
+
+  it("issue #77 — submit-turn is rejected with reason=offline when the transport is down", async () => {
+    const { fake, kernel } = kernelWith(null)
+    kernel.start()
+    await kernel.whenIdle()
+
+    // No bringOnline — the orchestrator is still offline.
+    kernel.dispatch({ kind: "open-session" })
+    const result = kernel.dispatch(
+      {
+        kind: "submit-turn",
+        sessionId: pendingSessionId("local-1000-0"),
+        message: "draft text",
+        commandId: "cmd-1",
+        echoText: "draft text",
+      },
+      "composer body"
+    )
+
+    expect(result.ok).toBe(false)
+    if (result.ok === false) {
+      expect(result.reason).toBe("offline")
+      expect(result.draft).toBe("composer body")
+    }
+    // The conversation port was never called.
+    expect(fake.conversation.submits).toHaveLength(0)
   })
 })

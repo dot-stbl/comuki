@@ -102,7 +102,15 @@ function snapshot(
     cursors,
     outbound: [],
   }
-  return { revision: 0, state }
+  // Issue #77 — the new fields on ClientSnapshot default to the
+  // empty / offline state; the attention derivation does not read them.
+  return {
+    revision: 0,
+    state,
+    sessions: [],
+    cursors: {},
+    online: true,
+  }
 }
 
 describe("deriveAttention — classification rules", () => {
@@ -336,7 +344,13 @@ describe("AttentionSource — listener pattern matches addEventListener", () => 
    */
   function fakeKernel(initial: HarnessState): ClientKernel {
     const listeners = new Set<(snapshot: ClientSnapshot) => void>()
-    const snapshotValue: ClientSnapshot = { revision: 0, state: initial }
+    const snapshotValue: ClientSnapshot = {
+      revision: 0,
+      state: initial,
+      sessions: [],
+      cursors: {},
+      online: true,
+    }
     const surface = {
       snapshot: () => snapshotValue,
       subscribe: (listener: (snapshot: ClientSnapshot) => void) => {

@@ -59,6 +59,7 @@ interface Harness {
   }
   readonly pushChunk: (sessionId: string, text: string) => void
   readonly stopFeed: () => void
+  readonly bringOnline: () => void
 }
 
 function makeKernel(): Harness {
@@ -66,6 +67,11 @@ function makeKernel(): Harness {
   const feed = fakeFeed()
   const kernel = createClientKernel({ ports: ports.ports, feed: feed.port })
   kernel.start()
+  // Issue #77 — bring the hub online before any submit-turn /
+  // decide-approval dispatch. Tests that exercise the offline
+  // path explicitly call `bringOnline` then `markOffline` (via
+  // the dedicated connection: closed frame).
+  feed.push({ kind: "connection", event: "started" })
   return {
     kernel,
     ports: ports as unknown as Harness["ports"],
@@ -80,6 +86,9 @@ function makeKernel(): Harness {
     },
     stopFeed() {
       feed.end()
+    },
+    bringOnline() {
+      feed.push({ kind: "connection", event: "started" })
     },
   }
 }

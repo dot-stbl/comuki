@@ -92,11 +92,12 @@ import {
   receiptsFilePath,
   type DecisionReceipt,
 } from "../kernel/receipts"
-import { TONE_HEX, type Segment, type StyledLine } from "./styled"
+import { TONE_HEX, uniformLine, type Segment, type StyledLine } from "./styled"
 import { renderSwarmCanvas, type SwarmCanvasContext } from "./swarmcanvas"
 import type { ResolvedModes } from "./modes"
 import { createLinearRenderer, type LinearRenderer } from "./linear"
 import type { HarnessState } from "../harness/state"
+import { sessionId } from "../harness/state"
 
 /**
  * Terminal lifecycle seam (adapted from the spike). Resolution order:
@@ -263,7 +264,8 @@ export async function createTuiHost(
   let kernelStopped = false
   let approvalUnregister: (() => void) | null = null
   let commandSeq = 0
-  let lastState = kernel.snapshot().state
+  let lastSnapshot = kernel.snapshot()
+  let lastState = lastSnapshot.state
   const seededDrafts = new Set<string>()
   const specs: readonly TuiCommandSpec[] = allTuiCommands(i18n)
 
@@ -521,6 +523,34 @@ export async function createTuiHost(
     return true
   }
 
+  /**
+   * Issue #77 — the home view: the durable session list rendered
+   * above the transcript. Pre-loaded once the SessionStore has read
+   * its NDJSON file (`snapshot.sessions !== null`); shows the empty
+   * hint when there are zero live sessions.
+   */
+  function buildHomeLines(): readonly StyledLine[] {
+    const sessions = lastSnapshot.sessions
+    if (sessions === null) {
+      return []
+    }
+    if (sessions.length === 0) {
+      return [uniformLine(tr(i18n, "transcript.session.home.empty"), "muted")]
+    }
+    const header = `${tr(i18n, "transcript.session.home.sessionsHeader")} (${sessions.length})`
+    const lines: StyledLine[] = [uniformLine(header, "muted")]
+    for (const entry of sessions.slice(0, 8)) {
+      const marker = entry.renamed ? "*" : " "
+      lines.push(uniformLine(`${marker} ${entry.name}`, "text"))
+    }
+    if (sessions.length > 8) {
+      lines.push(
+        uniformLine(`… +${sessions.length - 8} more`, "muted")
+      )
+    }
+    return lines
+  }
+
   function refreshViewport(): void {
     while (viewport.getChildren().length > 0) {
       const child = viewport.getChildren()[0]
@@ -533,7 +563,17 @@ export async function createTuiHost(
       session !== null
         ? (expandedEntryIds.get(session.identity.id) ?? EMPTY_ENTRY_SET)
         : EMPTY_ENTRY_SET
-    for (const line of buildTranscriptStyledLines(session, i18n, width, expanded)) {
+    const homeLines = buildHomeLines()
+    const transcriptLines = buildTranscriptStyledLines(
+      session,
+      i18n,
+      width,
+      expanded
+    )
+    for (const line of homeLines) {
+      viewport.add(new TextRenderable(renderer, { content: styledContent(line) }))
+    }
+    for (const line of transcriptLines) {
       viewport.add(new TextRenderable(renderer, { content: styledContent(line) }))
     }
   }
@@ -711,7 +751,13 @@ export async function createTuiHost(
     }
     seedDraftOnce()
     const session = activeSession(lastState)
-    topBar.content = topBarContent(lastState, session, i18n, layoutMode === "compact")
+    topBar.content = topBarContent(
+      lastState,
+      session,
+      i18n,
+      layoutMode === "compact",
+      lastSnapshot.online
+    )
     refreshViewport()
     refreshSwarmCanvas()
 
@@ -1340,6 +1386,114 @@ export async function createTuiHost(
     })
   }
 
+  /**
+   * Issue #77 — split the palette payload on whitespace into the
+   * first token (session id) and the rest (new title). Returns
+   * `null` when the payload is empty.
+   */
+  function splitSessionArgs(
+    payload: TuiCommandPayload | undefined
+  ): { readonly id: string; readonly rest: string } | null {
+    const text = (payload?.text ?? "").trim()
+    if (text.length === 0) {
+      return null
+    }
+    const firstSpace = text.indexOf(" ")
+    if (firstSpace < 0) {
+      return { id: text, rest: "" }
+    }
+    return {
+      id: text.slice(0, firstSpace).trim(),
+      rest: text.slice(firstSpace + 1).trim(),
+    }
+  }
+
+  /**
+   * Issue #77 — surface the durable session list to stderr so the
+   * user can see what the SessionStore holds. The full home view
+   * (an entry before the transcript) is rendered separately via
+   * `kernel.snapshot().sessions` — this command is the palette's
+   * "show me what sessions exist right now" surface.
+   */
+  async function listSessions(): Promise<boolean> {
+    const list = await kernel.sessions().list()
+    if (list.length === 0) {
+      console.error(tr(i18n, "transcript.session.home.empty"))
+      return true
+    }
+    for (const entry of list) {
+      const marker = entry.renamed ? "*" : " "
+      console.error(`${marker} ${entry.id}\t${entry.name}`)
+    }
+    return true
+  }
+
+  /**
+   * Issue #77 — focus one durable session by id. The id is matched
+   * against the SessionStore; the kernel then focuses the session
+   * (workspace open or server fetch as appropriate).
+   */
+  async function resumeSession(
+    payload: TuiCommandPayload | undefined
+  ): Promise<boolean> {
+    const args = splitSessionArgs(payload)
+    if (args === null) {
+      return false
+    }
+    const entry = await kernel.sessions().get(args.id)
+    if (entry === null) {
+      console.error(`session not found: ${args.id}`)
+      return false
+    }
+    kernel.dispatch({ kind: "focus-session", sessionId: sessionId(entry.id) })
+    return true
+  }
+
+  async function archiveSession(
+    payload: TuiCommandPayload | undefined
+  ): Promise<boolean> {
+    const args = splitSessionArgs(payload)
+    if (args === null) {
+      return false
+    }
+    const result = await kernel.sessions().archive(args.id)
+    return result !== null
+  }
+
+  async function renameSessionById(
+    payload: TuiCommandPayload | undefined
+  ): Promise<boolean> {
+    const args = splitSessionArgs(payload)
+    if (args === null || args.rest.length === 0) {
+      return false
+    }
+    const result = await kernel.sessions().rename(args.id, args.rest)
+    if (result === null) {
+      return false
+    }
+    kernel.dispatch({
+      kind: "rename-session",
+      sessionId: sessionId(args.id),
+      title: result.name,
+    })
+    return true
+  }
+
+  async function forkSession(
+    payload: TuiCommandPayload | undefined
+  ): Promise<boolean> {
+    const args = splitSessionArgs(payload)
+    if (args === null) {
+      return false
+    }
+    // The fork id is derived from the source id + a clock tick —
+    // a fresh conversation is the goal, so the new id is
+    // deterministic but unique. Tests inject their own.
+    const forkId = `${args.id}-fork-${Date.now().toString(36)}`
+    const result = await kernel.sessions().fork(args.id, forkId)
+    return result !== null
+  }
+
   const keymap = createTuiKeymap(renderer, i18n, {
     "submit-turn": () => submitTurn(),
     "cancel-turn": () => cancelTurn(),
@@ -1365,6 +1519,12 @@ export async function createTuiHost(
     "swarm-canvas-refresh": () => refreshSwarmCanvasFromKernel(),
     "swarm-canvas-inspect": (payload: TuiCommandPayload) =>
       inspectSwarmCanvas(payload.text ?? ""),
+    // Issue #77 — durable session lifecycle (palette commands).
+    "session-list": () => listSessions(),
+    "session-resume": (payload: TuiCommandPayload) => resumeSession(payload),
+    "session-archive": (payload: TuiCommandPayload) => archiveSession(payload),
+    "session-rename": (payload: TuiCommandPayload) => renameSessionById(payload),
+    "session-fork": (payload: TuiCommandPayload) => forkSession(payload),
     exit: () => {
       void close()
       return true
@@ -1392,6 +1552,7 @@ export async function createTuiHost(
 
   const unsubscribe = kernel.subscribe((snapshot) => {
     lastState = snapshot.state
+    lastSnapshot = snapshot
     render()
   })
 

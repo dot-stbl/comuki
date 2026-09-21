@@ -120,6 +120,8 @@ describe("tui host — history recall through the keymap", () => {
     conversation = ports.conversation
     kernel = createClientKernel({ ports: ports.ports, feed: feed.port })
     kernel.start()
+    // Issue #77 — bring the hub online.
+    feed.push({ kind: "connection", event: "started" })
     host = await createTuiHost(kernel, {
       renderer: setup.renderer,
       width: 80,

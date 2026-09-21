@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test"
+import { activeSession, attentionCount } from "./selectors"
 import { reduceHarness } from "./reducer"
 import {
   initialHarnessState,
@@ -206,6 +207,16 @@ describe("reduceHarness session lifecycle", () => {
 
     expect(unread.sessions[0]?.unread).toBe(true)
     expect(focused.sessions[0]?.unread).toBe(false)
+  })
+
+  it("selectors read the post-focus state (HarnessEngine step 1)", () => {
+    const focused = reduceHarness(remoteState(), {
+      type: "session-focused",
+      sessionId: remoteId,
+    }).state
+
+    expect(activeSession(focused)?.identity.id).toBe(remoteId)
+    expect(attentionCount(focused)).toBe(0)
   })
 
   it("records a failed turn without discarding its transcript", () => {

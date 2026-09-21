@@ -94,6 +94,9 @@ import {
 } from "../kernel/receipts"
 import { TONE_HEX, type Segment, type StyledLine } from "./styled"
 import { renderSwarmCanvas, type SwarmCanvasContext } from "./swarmcanvas"
+import type { ResolvedModes } from "./modes"
+import { createLinearRenderer, type LinearRenderer } from "./linear"
+import type { HarnessState } from "../harness/state"
 
 /**
  * Terminal lifecycle seam (adapted from the spike). Resolution order:
@@ -135,6 +138,21 @@ export interface TuiHostOptions {
   readonly newSessionProjectId?: ProjectId | null
   /** Fires once after `close()` finished the shutdown sequence. */
   readonly onExit?: () => void
+  /**
+   * Issue #79 — the resolved render-mode set. When set, the host
+   * branches: machine → NDJSON envelopes on stdout + skip the OpenTUI
+   * loop entirely; linear → write the LinearRenderer output on every
+   * snapshot; otherwise OpenTUI as today.
+   *
+   * Omitted = legacy OpenTUI host (every test that pre-dates #79
+   * still passes — `modes` is opt-in).
+   */
+  readonly modes?: ResolvedModes
+  /**
+   * The output stream the linear / machine paths write to. Defaults
+   * to `process.stdout`. Memory-mode tests pass a captured buffer.
+   */
+  readonly output?: NodeJS.WritableStream
 }
 
 export interface TuiHost {
@@ -224,6 +242,18 @@ export async function createTuiHost(
         })
   const i18n: I18nInstance =
     options.i18n ?? (await createI18nFor(options.locale ?? "en"))
+  const modes: ResolvedModes | null = options.modes ?? null
+  const output: NodeJS.WritableStream = options.output ?? process.stdout
+
+  // Issue #79 — when modes are set, branch early: machine writes
+  // NDJSON envelopes and skips the host loop entirely; linear builds
+  // a LinearRenderer and writes plain text on every snapshot.
+  if (modes !== null && modes.machine) {
+    return createMachineHost(kernel, i18n, output, options)
+  }
+  if (modes !== null && modes.linear) {
+    return createLinearHost(kernel, i18n, modes, options)
+  }
 
   let width = options.width
   let height = options.height
@@ -1545,5 +1575,222 @@ export async function createTuiHost(
     > {
       return suspendForEdit(editor, suspendOptions)
     },
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Issue #79 — the machine + linear host variants
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal `TuiHost` shape the linear / machine paths return. Same
+ * surface as the OpenTUI host but with a no-op renderer (linear
+ * reads the kernel directly; machine writes envelopes and exits
+ * when the kernel closes).
+ */
+function createMachineHost(
+  kernel: ClientKernel,
+  _i18n: I18nInstance,
+  output: NodeJS.WritableStream,
+  options: TuiHostOptions
+): TuiHost {
+  let closed = false
+  let kernelStopped = false
+  let envelopeSeq = 0
+
+  const writeEnvelope = (snapshot: ReturnType<typeof kernel.snapshot>): void => {
+    envelopeSeq += 1
+    const envelope = {
+      kind: "snapshot",
+      seq: envelopeSeq,
+      at: snapshot.state.connection.kind === "connected" ? "live" : snapshot.state.connection.kind,
+      state: serialiseSnapshot(snapshot.state),
+    }
+    output.write(`${JSON.stringify(envelope)}\n`)
+  }
+
+  const unsubscribe = kernel.subscribe((snapshot) => {
+    if (closed) {
+      return
+    }
+    writeEnvelope(snapshot)
+  })
+
+  // Emit the initial snapshot once — the kernel's subscribe only
+  // fires on state changes, and the first commit may happen before
+  // our listener is in the set.
+  if (kernel.snapshot().state.sessions.length > 0 || kernel.snapshot().revision > 0) {
+    writeEnvelope(kernel.snapshot())
+  }
+
+  return {
+    renderer: options.renderer,
+    keymap: createNoopKeymap(),
+    async destroy() {
+      if (closed) {
+        return
+      }
+      closed = true
+      unsubscribe()
+    },
+    async waitForIdle() {
+      await kernel.whenIdle()
+    },
+    async setSize(width) {
+      void width
+    },
+    setDraft(_text) {
+      // machine mode is non-interactive — composer draft is a no-op.
+    },
+    getDraft() {
+      return ""
+    },
+    getSurfaceKind() {
+      return "none"
+    },
+    async close() {
+      if (closed) {
+        return
+      }
+      closed = true
+      unsubscribe()
+      kernel.stop()
+      kernelStopped = true
+      await kernel.whenIdle()
+      options.onExit?.()
+    },
+    isClosed() {
+      return closed
+    },
+    isKernelStopped() {
+      return kernelStopped
+    },
+    async suspendForEdit(editor) {
+      return { ok: true as const, value: await editor() }
+    },
+  }
+}
+
+function createLinearHost(
+  kernel: ClientKernel,
+  i18n: I18nInstance,
+  modes: ResolvedModes,
+  options: TuiHostOptions
+): TuiHost {
+  const output: NodeJS.WritableStream = options.output ?? process.stdout
+  let closed = false
+  let kernelStopped = false
+  const expanded = new Map<SessionKey, Set<string>>()
+
+  const renderer: LinearRenderer = createLinearRenderer({
+    i18n,
+    modes,
+    width: options.width,
+    expanded,
+  })
+
+  output.write(`${renderer.modeBanner()}\n`)
+
+  const unsubscribe = kernel.subscribe((snapshot) => {
+    if (closed) {
+      return
+    }
+    const state = snapshot.state
+    const session = activeSession(state)
+    output.write(`${renderer.topBar(state, session)}\n`)
+    output.write(`${renderer.transcript(state, session).join("\n")}\n`)
+    output.write(`${renderer.swarm(kernel.attention(), sessionById(state.sessions)).join("\n")}\n`)
+  })
+
+  return {
+    renderer: options.renderer,
+    keymap: createNoopKeymap(),
+    async destroy() {
+      if (closed) {
+        return
+      }
+      closed = true
+      unsubscribe()
+    },
+    async waitForIdle() {
+      await kernel.whenIdle()
+    },
+    async setSize(width) {
+      void width
+    },
+    setDraft(_text) {
+      // linear mode is non-interactive in this minimal stub — the
+      // full interactive keyboard surface lands in a follow-up PR.
+    },
+    getDraft() {
+      return ""
+    },
+    getSurfaceKind() {
+      return "none"
+    },
+    async close() {
+      if (closed) {
+        return
+      }
+      closed = true
+      unsubscribe()
+      kernel.stop()
+      kernelStopped = true
+      await kernel.whenIdle()
+      options.onExit?.()
+    },
+    isClosed() {
+      return closed
+    },
+    isKernelStopped() {
+      return kernelStopped
+    },
+    async suspendForEdit(editor) {
+      return { ok: true as const, value: await editor() }
+    },
+  }
+}
+
+function createNoopKeymap(): TuiKeymapSurface {
+  return {
+    registerApprovalLayer() {
+      return () => {}
+    },
+    registerUiLayer() {
+      return () => {}
+    },
+    dispatch() {
+      return false
+    },
+    dispatchByKeymap() {
+      return false
+    },
+    commandNames() {
+      return []
+    },
+    destroy() {
+      // no-op
+    },
+  }
+}
+
+function sessionById(
+  sessions: readonly HarnessSession[]
+): ReadonlyMap<string, HarnessSession> {
+  const map = new Map<string, HarnessSession>()
+  for (const session of sessions) {
+    if (session.identity.kind === "remote") {
+      map.set(session.identity.id, session)
+    }
+  }
+  return map
+}
+
+function serialiseSnapshot(state: HarnessState): unknown {
+  return {
+    sessions: state.sessions.length,
+    activeSessionId: state.activeSessionId,
+    connection: state.connection.kind,
+    auth: state.auth.kind,
   }
 }

@@ -18,6 +18,7 @@ import { createClientKernel, type ClientKernel } from "../kernel"
 import { fakeFeed, fakePorts } from "../kernel/fakes"
 import type { HarnessEffectPorts } from "../harness/effect-runner"
 import { createTuiHost, type TuiHost } from "./host"
+import { resolveModes } from "./modes"
 
 const DRAFT = "TUI-DRAFT-PRESERVED"
 const GEOMETRIES = [
@@ -241,5 +242,174 @@ describe("tui host — transcript renders from kernel snapshots (fake ports)", (
     const state = harness.kernel.snapshot().state
     expect(state.sessions.length).toBe(1)
     expect(state.sessions[0]!.identity.kind).toBe("pending")
+  })
+})
+
+describe("tui host — render-mode wiring (issue #79)", () => {
+  test("--mode linear routes to LinearRenderer, no OpenTUI renderables", async () => {
+    const setup = await createTestRenderer({
+      width: 80,
+      height: 24,
+      kittyKeyboard: false,
+      otherModifiersMode: true,
+    })
+    const harness = makeKernel()
+    const modes = resolveModes(
+      { mode: "linear" },
+      { TERM: "xterm-256color", COLORTERM: "truecolor" },
+      { stdoutIsTTY: true, stdinIsTTY: true, columns: 80, rows: 24 }
+    )
+    const captured: string[] = []
+    const output = new (class {
+      chunks: string[] = []
+      write(chunk: string): boolean {
+        captured.push(chunk)
+        return true
+      }
+    })()
+    const host = await createTuiHost(harness.kernel, {
+      renderer: setup.renderer,
+      width: 80,
+      height: 24,
+      memoryMode: true,
+      modes,
+      output: output as unknown as NodeJS.WritableStream,
+    })
+    try {
+      harness.kernel.start()
+      await host.waitForIdle()
+      // Give the subscribe callback a tick to fire after the chain's
+      // initial commit lands (whenIdle resolves before microtasks drain).
+      await new Promise((resolve) => setImmediate(resolve))
+      const joined = captured.join("")
+      expect(joined).toContain("Mode:")
+      expect(joined).toContain("linear=on")
+    } finally {
+      await host.destroy()
+      harness.kernel.stop()
+      harness.stopFeed()
+    }
+  })
+
+  test("--machine routes to NDJSON envelope host", async () => {
+    const setup = await createTestRenderer({
+      width: 80,
+      height: 24,
+      kittyKeyboard: false,
+      otherModifiersMode: true,
+    })
+    const harness = makeKernel()
+    const modes = resolveModes(
+      { machine: true },
+      { TERM: "xterm-256color", COLORTERM: "truecolor" },
+      { stdoutIsTTY: true, stdinIsTTY: true, columns: 80, rows: 24 }
+    )
+    const captured: string[] = []
+    const output = new (class {
+      chunks: string[] = []
+      write(chunk: string): boolean {
+        captured.push(chunk)
+        return true
+      }
+    })()
+    const host = await createTuiHost(harness.kernel, {
+      renderer: setup.renderer,
+      width: 80,
+      height: 24,
+      memoryMode: true,
+      modes,
+      output: output as unknown as NodeJS.WritableStream,
+    })
+    try {
+      harness.kernel.start()
+      await host.waitForIdle()
+      await new Promise((resolve) => setImmediate(resolve))
+      const joined = captured.join("")
+      expect(joined).toContain("\"kind\":\"snapshot\"")
+    } finally {
+      await host.destroy()
+      harness.kernel.stop()
+      harness.stopFeed()
+    }
+  })
+
+  test("--machine + --mode linear: machine wins (NDJSON over linear text)", async () => {
+    const setup = await createTestRenderer({
+      width: 80,
+      height: 24,
+      kittyKeyboard: false,
+      otherModifiersMode: true,
+    })
+    const harness = makeKernel()
+    const modes = resolveModes(
+      { machine: true, mode: "linear" },
+      { TERM: "xterm-256color", COLORTERM: "truecolor" },
+      { stdoutIsTTY: true, stdinIsTTY: true, columns: 80, rows: 24 }
+    )
+    const captured: string[] = []
+    const output = new (class {
+      chunks: string[] = []
+      write(chunk: string): boolean {
+        captured.push(chunk)
+        return true
+      }
+    })()
+    const host = await createTuiHost(harness.kernel, {
+      renderer: setup.renderer,
+      width: 80,
+      height: 24,
+      memoryMode: true,
+      modes,
+      output: output as unknown as NodeJS.WritableStream,
+    })
+    try {
+      harness.kernel.start()
+      await host.waitForIdle()
+      await new Promise((resolve) => setImmediate(resolve))
+      const joined = captured.join("")
+      expect(joined).toContain("\"kind\":\"snapshot\"")
+      expect(joined).not.toContain("[#transcript]")
+    } finally {
+      await host.destroy()
+      harness.kernel.stop()
+      harness.stopFeed()
+    }
+  })
+
+  test("no modes → OpenTUI host path (no machine envelope, no linear banner)", async () => {
+    const setup = await createTestRenderer({
+      width: 80,
+      height: 24,
+      kittyKeyboard: false,
+      otherModifiersMode: true,
+    })
+    const harness = makeKernel()
+    const captured: string[] = []
+    const output = new (class {
+      chunks: string[] = []
+      write(chunk: string): boolean {
+        captured.push(chunk)
+        return true
+      }
+    })()
+    const host = await createTuiHost(harness.kernel, {
+      renderer: setup.renderer,
+      width: 80,
+      height: 24,
+      memoryMode: true,
+      output: output as unknown as NodeJS.WritableStream,
+    })
+    try {
+      harness.kernel.start()
+      await setup.waitForVisualIdle()
+      const joined = captured.join("")
+      expect(joined).toBe("")
+      // The OpenTUI host still renders through its own renderer.
+      expect(setup.captureCharFrame()).toContain("comuki")
+    } finally {
+      await host.destroy()
+      harness.kernel.stop()
+      harness.stopFeed()
+    }
   })
 })

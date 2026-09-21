@@ -44,6 +44,8 @@ describe("tui host — follow-up queue", () => {
     conversation = ports.conversation
     kernel = createClientKernel({ ports: ports.ports, feed: feed.port })
     kernel.start()
+    // Issue #77 — bring the hub online so submit-turn dispatches land.
+    feed.push({ kind: "connection", event: "started" })
     host = await createTuiHost(kernel, {
       renderer: setup.renderer,
       width: 80,

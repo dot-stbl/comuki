@@ -62,6 +62,8 @@ describe("tui host — inline approval card over the kernel", () => {
     approval = ports.approval
     kernel = createClientKernel({ ports: ports.ports, feed: feed.port })
     kernel.start()
+    // Issue #77 — bring the hub online for submit-turn + approval.
+    feed.push({ kind: "connection", event: "started" })
     host = await createTuiHost(kernel, {
       renderer: setup.renderer,
       width: 80,

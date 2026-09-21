@@ -51,6 +51,8 @@ describe("tui host — exit lifecycle ordering", () => {
     submits = ports.conversation.submits
     kernel = createClientKernel({ ports: ports.ports, feed: feed.port })
     kernel.start()
+    // Issue #77 — bring the hub online for submit-turn.
+    feed.push({ kind: "connection", event: "started" })
   })
 
   test("exit: kernel.stop → whenIdle → renderer.destroy, exactly once, idempotent", async () => {

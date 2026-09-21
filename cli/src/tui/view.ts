@@ -134,18 +134,43 @@ export function connectionLabel(
   }
 }
 
+/**
+ * Issue #77 — the coarse reconnect badge for the top bar. Lives
+ * alongside the existing connection label so the user sees both:
+ * the harness's fine-grained state (connecting / connected / ...) and
+ * the orchestrator's coarse gate (online / recovering / offline).
+ *
+ * Returns `null` when the state is `online` and the badge would be
+ * noise.
+ */
+export function reconnectBadge(
+  online: boolean,
+  i18n: I18nInstance
+): string | null {
+  if (online) {
+    return null
+  }
+  // The orchestrator only exposes three states; we surface recovering
+  // and offline here. The harness reducer separately tracks the
+  // fine-grained `connection` field — `topBarContent` shows both.
+  return tr(i18n, "transcript.session.home.recovering")
+}
+
 /** Top-bar chrome string for the active layout mode. */
 export function topBarContent(
   state: HarnessState,
   session: HarnessSession | null,
   i18n: I18nInstance,
-  compact: boolean
+  compact: boolean,
+  online: boolean = true
 ): string {
+  const badge = reconnectBadge(online, i18n)
+  const badgePart = badge !== null ? ` [${badge}]` : ""
   if (compact) {
-    return `${tr(i18n, "chrome.titleCompact")}·${connectionLabel(state, i18n, true)}`
+    return `${tr(i18n, "chrome.titleCompact")}·${connectionLabel(state, i18n, true)}${badgePart}`
   }
   const title = session !== null && session.title.length > 0 ? ` · ${session.title}` : ""
-  return `${tr(i18n, "chrome.title")} · ${connectionLabel(state, i18n)}${title}`
+  return `${tr(i18n, "chrome.title")} · ${connectionLabel(state, i18n)}${badgePart}${title}`
 }
 
 /**

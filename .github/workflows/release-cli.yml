@@ -1,0 +1,208 @@
+# release-cli — manual-trigger CLI release pipeline (issue #81).
+#
+# The OSS backend release is tag-driven (.github/workflows/release.yml);
+# the CLI release is manual because:
+#   - the user cuts a release from the feature/cli-package branch,
+#   - the tag format is `cli-vX.Y.Z` (mirrors the npm version in
+#     cli/package.json), and
+#   - we ship three platform binaries (linux-x64, darwin-arm64,
+#     windows-x64) and want a draft release so the owner can edit
+#     the notes before publishing.
+#
+# Sequence:
+#   1. Run `bun install` + the full gate (lint + typecheck + test +
+#      build + test:contracts) — every gate must pass before any
+#      binary lands in the draft.
+#   2. Build the linux-x64 binary on the ubuntu runner, the
+#      darwin-arm64 binary on the macos runner, and the windows-x64
+#      binary on the windows runner.
+#   3. Collect the three binaries into a single draft release with
+#      a tag derived from cli/package.json (e.g. cli-v0.2.0).
+#
+# Each platform job is independent — a failure on one does not
+# block the others — and the release job runs only when all three
+# succeed.
+name: release-cli
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag suffix (e.g. 'cli-v0.2.0'). Defaults to 'cli-v<package.json version>'."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-cli-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linux:
+    name: build linux-x64
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+
+      - name: Install deps
+        working-directory: cli
+        run: bun install --frozen-lockfile
+
+      - name: Run gate (lint + typecheck + test + build + test:contracts)
+        working-directory: cli
+        run: |
+          bun run lint
+          bun run typecheck
+          bun run test
+          bun run build
+          bun run test:contracts
+
+      - name: Package linux-x64
+        working-directory: cli
+        run: bun run package
+
+      - name: Upload linux-x64 binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: comuki-linux-x64
+          path: cli/dist/linux-x64/comuki
+          if-no-files-found: error
+
+  darwin:
+    name: build darwin-arm64
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+
+      - name: Install deps
+        working-directory: cli
+        run: bun install --frozen-lockfile
+
+      - name: Run gate (lint + typecheck + test + build + test:contracts)
+        working-directory: cli
+        run: |
+          bun run lint
+          bun run typecheck
+          bun run test
+          bun run build
+          bun run test:contracts
+
+      - name: Package darwin-arm64
+        working-directory: cli
+        run: bun run package
+
+      - name: Upload darwin-arm64 binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: comuki-darwin-arm64
+          path: cli/dist/darwin-arm64/comuki
+          if-no-files-found: error
+
+  windows:
+    name: build windows-x64
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.x
+
+      - name: Install deps
+        working-directory: cli
+        run: bun install --frozen-lockfile
+
+      - name: Run gate (lint + typecheck + test + build + test:contracts)
+        working-directory: cli
+        run: |
+          bun run lint
+          bun run typecheck
+          bun run test
+          bun run build
+          bun run test:contracts
+
+      - name: Package windows-x64
+        working-directory: cli
+        run: bun run package
+
+      - name: Upload windows-x64 binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: comuki-windows-x64
+          path: cli/dist/windows-x64/comuki.exe
+          if-no-files-found: error
+
+  release:
+    name: draft release
+    needs: [linux, darwin, windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            VERSION=$(node -e "console.log(require('./cli/package.json').version)")
+            echo "value=cli-v${VERSION}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download linux-x64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: comuki-linux-x64
+          path: artifacts/linux-x64
+
+      - name: Download darwin-arm64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: comuki-darwin-arm64
+          path: artifacts/darwin-arm64
+
+      - name: Download windows-x64 binary
+        uses: actions/download-artifact@v4
+        with:
+          name: comuki-windows-x64
+          path: artifacts/windows-x64
+
+      - name: Generate SHA256 sums
+        working-directory: artifacts
+        run: |
+          sha256sum linux-x64/comuki > linux-x64/comuki.sha256
+          sha256sum darwin-arm64/comuki > darwin-arm64/comuki.sha256
+          sha256sum windows-x64/comuki.exe > windows-x64/comuki.exe.sha256
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.value }}
+          name: ${{ steps.tag.outputs.value }}
+          draft: true
+          generate_release_notes: true
+          files: |
+            artifacts/linux-x64/comuki
+            artifacts/linux-x64/comuki.sha256
+            artifacts/darwin-arm64/comuki
+            artifacts/darwin-arm64/comuki.sha256
+            artifacts/windows-x64/comuki.exe
+            artifacts/windows-x64/comuki.exe.sha256

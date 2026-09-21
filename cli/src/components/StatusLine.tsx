@@ -36,7 +36,14 @@ export interface StatusLineProps {
   readonly tick?: number
 }
 
-export const CLI_VERSION = "0.2.0"
+/**
+ * Re-export the canonical client version. The source of truth lives in
+ * `kernel/version.ts`; this re-export keeps the existing
+ * `import { CLI_VERSION } from "../components/StatusLine"` path live
+ * without forcing callers to learn the new module.
+ */
+import { CLIENT_VERSION_STRING as CLI_VERSION } from "../kernel/version"
+export { CLI_VERSION }
 
 /** `https://api.comuki.dev/ws/runs` → `api.comuki.dev`; unparsable → null. */
 export function hostFromUrl(url: string): string | null {

@@ -330,9 +330,40 @@ function commandsWithHandlers(
       if (!handler) {
         return { ok: false as const, reason: "inactive" }
       }
-      return handler(ctx.payload ?? {})
+      // Issue #81 — wrap every dispatched command so a handler
+      // defect (a stale closure over a dropped session id, a draft
+      // that fails to parse, ...) cannot kill the host. The host
+      // renders an export-bundle hint; the structured event lands
+      // in the diagnostics log via the sink injected below.
+      try {
+        return handler(ctx.payload ?? {})
+      } catch (error: unknown) {
+        dispatchErrorSink?.(
+          spec.name,
+          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.stack ?? "" : ""
+        )
+        return { ok: false as const, reason: "error" }
+      }
     },
   }))
+}
+
+/**
+ * Issue #81 — the sink the dispatch wrapper routes failures into.
+ * `createTuiKeymap` sets this once per host so a defect in one
+ * command lands in the same diagnostics log as a render-frame
+ * defect. Default = no-op (avoids forcing every test harness to
+ * inject a sink).
+ */
+type DispatchErrorSink = (
+  commandName: string,
+  message: string,
+  stack: string
+) => void
+let dispatchErrorSink: DispatchErrorSink | null = null
+export function setTuiDispatchErrorSink(sink: DispatchErrorSink | null): void {
+  dispatchErrorSink = sink
 }
 
 function layerFor(

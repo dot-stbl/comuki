@@ -5,6 +5,21 @@
  */
 export type { ClientEvent, ClientKernel, ClientSnapshot, Unsubscribe } from "./kernel"
 export { createClientKernel, type ClientKernelOptions } from "./kernel"
+export type {
+  AttentionItem,
+  AttentionListener,
+  AttentionPriority,
+  AttentionReason,
+  AttentionSignal,
+  AttentionSource,
+  AttentionStateKind,
+} from "./attention"
+export {
+  DEFAULT_EVIDENCE_WINDOW_MS,
+  DEFAULT_FAILED_WINDOW_MS,
+  DEFAULT_STALL_THRESHOLD_MS,
+  deriveAttention,
+} from "./attention"
 export type { EventFeedPort, FeedMessage } from "./feed"
 export type {
   ApprovalPort,

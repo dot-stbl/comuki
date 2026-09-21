@@ -1,7 +1,7 @@
 import { Box } from "ink"
 import React from "react"
 import type { ActivityItem, ActivityStatus } from "../lib/activity"
-import { palette } from "../theme"
+import { palette, stripAnsi } from "../theme"
 import { SurfaceLine, type SurfaceTextSegment } from "./SurfaceLine"
 
 export interface ActivityStreamProps {
@@ -13,6 +13,7 @@ export interface ActivityStreamProps {
 }
 
 const frames = ["|", "/", "-", "\\"] as const
+const SHELL_MERGE_GAP = " · "
 
 export function activityMark(status: ActivityStatus, frame: number): string {
   if (status === "running") {
@@ -35,6 +36,46 @@ export function formatActivityDuration(durationMs: number): string {
   const minutes = Math.floor(seconds / 60)
   const remainder = seconds % 60
   return minutes > 0 ? `${minutes}m ${remainder}s` : `${remainder}s`
+}
+
+/**
+ * One shell line as a self-contained sentence: `$ cmd · 4.2s · ok`.
+ * Verb/duration/status are derived from the wire shape so the renderer
+ * stays a thin mapper — the file does not invent a vocabulary.
+ */
+function shellSentence(
+  item: Extract<ActivityItem, { kind: "shell" }>
+): readonly SurfaceTextSegment[] {
+  const elapsed =
+    typeof item.durationMs === "number"
+      ? formatActivityDuration(item.durationMs)
+      : null
+  const statusTail =
+    item.status === "running"
+      ? "running"
+      : item.status === "succeeded"
+        ? "ok"
+        : item.status === "failed"
+          ? "failed"
+          : item.status === "queued"
+            ? "queued"
+            : "stopped"
+  return [
+    { text: "  + ", color: tone(item.status) },
+    { text: `$ ${item.command}`, bold: item.status === "running" },
+    ...(elapsed !== null
+      ? [{ text: ` · ${elapsed}`, dim: true } as SurfaceTextSegment]
+      : []),
+    { text: ` · ${statusTail}`, color: tone(item.status) },
+  ]
+}
+
+function segmentWidth(segments: readonly SurfaceTextSegment[]): number {
+  let total = 0
+  for (const segment of segments) {
+    total += stripAnsi(segment.text).length
+  }
+  return total
 }
 
 export function activityLines(
@@ -62,19 +103,48 @@ export function activityLines(
   if (group?.kind === "group" && group.status !== "running" && !expanded) {
     return lines
   }
-  for (const item of children) {
-    if (item.kind === "shell") {
-      lines.push([
-        { text: "  + ", color: tone(item.status) },
-        { text: `$ ${item.command}` },
-        ...(item.durationMs === undefined
-          ? []
-          : [{ text: ` · ${formatActivityDuration(item.durationMs)}`, dim: true }]),
-      ])
-      if (item.outputPreview) {
+
+  const shells = children.filter(
+    (item): item is Extract<ActivityItem, { kind: "shell" }> => item.kind === "shell"
+  )
+  const nonShells = children.filter((item) => item.kind !== "shell")
+
+  if (!expanded && shells.length > 1) {
+    const sentences = shells.map(shellSentence)
+    const firstStatus = shells[0]?.status ?? "running"
+    const merged: SurfaceTextSegment[] = [
+      { text: "  + ", color: tone(firstStatus) },
+    ]
+    let visible = 2
+    let fitCount = 0
+    for (const sentence of sentences) {
+      const gap = fitCount === 0 ? [] : [{ text: SHELL_MERGE_GAP, dim: true } as SurfaceTextSegment]
+      const gapWidth = gap.reduce((sum, segment) => sum + stripAnsi(segment.text).length, 0)
+      const sentenceWidth = segmentWidth(sentence)
+      if (visible + gapWidth + sentenceWidth > 64) {
+        break
+      }
+      merged.push(...gap, ...sentence)
+      visible += gapWidth + sentenceWidth
+      fitCount += 1
+    }
+    if (fitCount < sentences.length) {
+      const omitted = sentences.length - fitCount
+      merged.push({ text: SHELL_MERGE_GAP, dim: true })
+      merged.push({ text: `+${omitted}`, dim: true })
+    }
+    lines.push(merged)
+  } else {
+    for (const item of shells) {
+      lines.push([...shellSentence(item)])
+      if (expanded && item.outputPreview) {
         lines.push([{ text: `  | ${item.outputPreview}`, dim: true }])
       }
-    } else if (item.kind === "file") {
+    }
+  }
+
+  for (const item of nonShells) {
+    if (item.kind === "file") {
       const action = item.action === "loaded" ? "Loaded" : item.action === "read" ? "Read" : "Wrote"
       lines.push([
         { text: "  \\_ ", color: tone(item.status) },
@@ -87,6 +157,7 @@ export function activityLines(
       ])
     }
   }
+
   return lines
 }
 

@@ -54,12 +54,13 @@ describe("renderPendingPlan", () => {
     })
     const plain = lines.map(stripAnsi)
     expect(plain[0]).toContain("[approval] plan / 2 шага")
-    expect(plain[1]).toContain("1. do it")
-    expect(plain[2]).toContain("2. check it")
-    expect(plain[3]).toContain("[approve] [reject reason]")
+    expect(plain[2]).toContain("1. do it")
+    expect(plain[3]).toContain("2. check it")
+    expect(plain.at(-1)).toContain("[approve] [reject reason]")
     expect(lines[0]).toContain(colors.waiting)
-    expect(lines[3]).toContain(colors.ok)
-    expect(lines[3]).toContain(colors.error)
+    const actionLine = lines.at(-1) ?? ""
+    expect(actionLine).toContain(colors.ok)
+    expect(actionLine).toContain(colors.error)
   })
 
   it("reads the canonical wire nodes (id + title) too", () => {
@@ -68,7 +69,20 @@ describe("renderPendingPlan", () => {
         { id: "n1", title: "wire step", profileKey: "implement", brief: "" },
       ],
     })
-    expect(stripAnsi(lines[1] ?? "")).toContain("1. wire step")
+    expect(stripAnsi(lines[2] ?? "")).toContain("1. wire step")
+  })
+
+  it("breathes between summary, steps, and awaiting-action", () => {
+    const lines = renderPendingPlan({
+      nodes: [
+        { key: "n1", profileKey: "implement", brief: "do it", dependsOn: [] },
+      ],
+    })
+    const plain = lines.map(stripAnsi)
+    expect(plain[1]).toBe("")
+    expect(plain.at(-2)).toBe("")
+    expect(plain[0]).toContain("[approval] plan / 1 шаг")
+    expect(plain.at(-1)).toContain("[approve] [reject reason]")
   })
 
   it("russianizes the step count in the header", () => {
@@ -113,7 +127,7 @@ describe("renderPendingPlan", () => {
       },
       60
     )
-    for (const line of lines.slice(0, 4)) {
+    for (const line of lines) {
       expect(stripAnsi(line).length).toBeLessThanOrEqual(60)
     }
   })

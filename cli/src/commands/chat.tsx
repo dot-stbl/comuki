@@ -490,6 +490,17 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
   const thinking = activeSession?.status === "thinking"
   const typingFrame = useSpinnerFrame(thinking)
+  // In compact terminals the absolute notification plane would overlap
+  // the activity stream and the prompt: Ink can't reflow absolute
+  // boxes, and `notificationRows` here would not be reflected in
+  // `promptBlockRows`. In compact mode we render the same component
+  // inside the base column above the prompt so its height counts
+  // toward the viewport budget, and we cap the surface to two rows so
+  // a flood of toasts can't push the composer off-screen.
+  const isCompactFooter = harness.mode === "compact"
+  const inlineNotifications = isCompactFooter
+    ? visibleNotifications(notificationState).slice(0, 2)
+    : []
   const activityItems = useMemo(() => {
     const children = activityItemsFromTranscript(
       activeSession?.blocks ?? [],
@@ -579,7 +590,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       ).length,
     [activityItems, activityExpanded, typingFrame]
   )
-  const promptBlockRows = promptRows + 1 + activityRows
+  const promptBlockRows = promptRows + 1 + activityRows + inlineNotifications.length
   const viewportHeight = Math.max(
     1,
     rows -
@@ -2518,7 +2529,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       <LayerHost
         width={columns}
         height={rows}
-        notificationBottomRows={promptRows + 1}
+        notificationBottomRows={isCompactFooter ? 0 : promptRows + 1}
         base={<Box flexDirection="column" width={columns} height={rows}>
         <TopBar
           width={columns}
@@ -2584,6 +2595,18 @@ export function ChatApp({ config, project }: ChatCommandProps) {
               now={Date.now()}
               frame={typingFrame}
               expanded={activeSession?.blocksExpanded === true || thinking}
+            />
+          ) : null}
+          {isCompactFooter && inlineNotifications.length > 0 ? (
+            <NotificationCenter
+              width={contentWidth}
+              terminalTop={rows - promptRows - inlineNotifications.length}
+              state={{
+                items: inlineNotifications,
+              }}
+              onDismiss={(id) => dispatchNotification({ type: "dismiss", id })}
+              onAction={handleSubmit}
+              active={!overlayVisible}
             />
           ) : null}
           <Fill width={contentWidth} height={promptRows} color={palette.floor}>
@@ -2690,16 +2713,18 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           ) : undefined
         }
         notifications={
-          notificationRows > 0 ? (
-            <NotificationCenter
-              width={contentWidth}
-              terminalTop={rows - promptRows - notificationRows}
-              state={notificationState}
-              onDismiss={(id) => dispatchNotification({ type: "dismiss", id })}
-              onAction={handleSubmit}
-              active={!overlayVisible}
-            />
-          ) : undefined
+          isCompactFooter || notificationRows === 0
+            ? undefined
+            : (
+                <NotificationCenter
+                  width={contentWidth}
+                  terminalTop={rows - promptRows - notificationRows}
+                  state={notificationState}
+                  onDismiss={(id) => dispatchNotification({ type: "dismiss", id })}
+                  onAction={handleSubmit}
+                  active={!overlayVisible}
+                />
+              )
         }
       />
     </Fill>

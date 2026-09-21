@@ -445,7 +445,7 @@ export const EN = {
   },
   cli: {
     unknownTuiHost: "unknown --tui host:",
-    tuiHostsAvailable: "available: opentui, ink (default)",
+    tuiHostsAvailable: "available: opentui (default), ink",
   },
 } as const
 
@@ -701,7 +701,7 @@ export const RU = {
   },
   cli: {
     unknownTuiHost: "неизвестный --tui хост:",
-    tuiHostsAvailable: "доступно: opentui, ink (по умолчанию)",
+    tuiHostsAvailable: "доступно: opentui (по умолчанию), ink",
   },
 } as const
 

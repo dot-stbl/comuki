@@ -189,7 +189,7 @@ async function main(): Promise<void> {
     })
     .option("tui", {
       type: "string",
-      describe: "REPL host: opentui (OpenTUI Core focus mode) or ink (default)",
+      describe: "REPL host: opentui (OpenTUI Core focus mode, default) or ink",
     })
     .option("message", {
       alias: "m",
@@ -424,21 +424,23 @@ async function main(): Promise<void> {
       }
       return
     }
-    // Opt-in OpenTUI Core host (issue #73). Anything but "opentui"/"ink"
-    // is a hard error — the user just typed it.
-    const tuiHost = argv.tui as string | undefined
-    if (tuiHost !== undefined && tuiHost !== "ink") {
-      if (tuiHost !== "opentui") {
-        const i18n = await createI18nFor(DEFAULT_LOCALE)
-        console.error(
-          `${colors.error}${tr(i18n, "cli.unknownTuiHost")} ${tuiHost}${colors.reset}`
-        )
-        console.error(
-          `${colors.faint}${tr(i18n, "cli.tuiHostsAvailable")}${colors.reset}`
-        )
-        process.exitCode = 1
-        return
-      }
+    // Default host (issue #71 finale): opentui (OpenTUI Core focus mode).
+    // Anything but "opentui"/"ink" is a hard error — the user just typed it.
+    // `--tui ink` opts out to the legacy React/Ink host. The bare `comuki`
+    // form (no `--tui`) lands here too, on the OpenTUI host.
+    const tuiHost = (argv.tui as string | undefined) ?? "opentui"
+    if (tuiHost !== "opentui" && tuiHost !== "ink") {
+      const i18n = await createI18nFor(DEFAULT_LOCALE)
+      console.error(
+        `${colors.error}${tr(i18n, "cli.unknownTuiHost")} ${tuiHost}${colors.reset}`
+      )
+      console.error(
+        `${colors.faint}${tr(i18n, "cli.tuiHostsAvailable")}${colors.reset}`
+      )
+      process.exitCode = 1
+      return
+    }
+    if (tuiHost === "opentui") {
       await runOpentuiRepl(config, overrides.project)
       return
     }

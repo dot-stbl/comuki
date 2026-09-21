@@ -3,6 +3,13 @@
  * REPL), `status`, `runs list`, `login`, `whoami`, `config [show]`,
  * `setup`, `completion`, `doctor`, `archive`. `-m` / piped stdin skip
  * the REPL. Plain-console: config show, completion, doctor, archive, oneshot, --json.
+ *
+ * Issue #79 — `--mode`, `--reduced-motion`, `--high-contrast`,
+ * `--no-color`, `--ascii`, `--no-mouse`, `--unicode-narrow`,
+ * `--machine` and `--explain-mode` route through `resolveModes()` and
+ * pick the renderer. Default host behaviour stays OpenTUI; explicit
+ * `--mode linear` forces the linear renderer; `--machine` writes
+ * NDJSON envelopes on stdout.
  */
 import { render } from "ink"
 import React from "react"
@@ -43,6 +50,7 @@ import { CLI_VERSION } from "./components/StatusLine"
 import { formatWhoamiLines, whoAmI, whoFromError, whoFromMe } from "./lib/auth"
 import { mapWhoamiJson } from "./lib/jsonout"
 import { stripMarkdownToPlain } from "./lib/markdown"
+import { explainMode, resolveModes } from "./tui/modes"
 import {
   DEFAULT_THEME_CHOICE,
   THEME_CHOICE_IDS,
@@ -63,7 +71,54 @@ async function loadConfig(overrides: GlobalOptions): Promise<ResolvedConfig> {
   return resolveConfig(process.env, await configStore.read(), overrides)
 }
 
+async function maybeExplainMode(): Promise<boolean> {
+  const preParsed = await yargs(hideBin(process.argv))
+    .scriptName("comuki")
+    .option("mode", { type: "string" })
+    .option("machine", { type: "boolean", default: false })
+    .option("reduced-motion", { type: "boolean", default: false })
+    .option("high-contrast", { type: "boolean", default: false })
+    .option("no-color", { type: "boolean", default: false })
+    .option("ascii", { type: "boolean", default: false })
+    .option("no-mouse", { type: "boolean", default: false })
+    .option("unicode-narrow", { type: "boolean", default: false })
+    .option("explain-mode", { type: "boolean", default: false })
+    .parse()
+  if (preParsed["explain-mode"] !== true) {
+    return false
+  }
+  const modes = resolveModes(
+    {
+      mode: typeof preParsed["mode"] === "string" ? (preParsed["mode"] as string) : undefined,
+      machine: preParsed["machine"] === true,
+      reducedMotion: preParsed["reduced-motion"] === true,
+      highContrast: preParsed["high-contrast"] === true,
+      noColor: preParsed["no-color"] === true,
+      ascii: preParsed["ascii"] === true,
+      noMouse: preParsed["no-mouse"] === true,
+      unicodeNarrow: preParsed["unicode-narrow"] === true,
+    },
+    process.env,
+    {
+      stdoutIsTTY: process.stdout.isTTY ?? false,
+      stdinIsTTY: process.stdin.isTTY ?? false,
+      columns: process.stdout.columns ?? null,
+      rows: process.stdout.rows ?? null,
+    }
+  )
+  console.log(explainMode(modes))
+  for (const warning of modes.warnings) {
+    console.error(`warning: ${warning}`)
+  }
+  return true
+}
+
+void main()
+
 async function main(): Promise<void> {
+  if (await maybeExplainMode()) {
+    return
+  }
   const argv = await yargs(hideBin(process.argv))
     .scriptName("comuki")
     .version(CLI_VERSION)
@@ -98,6 +153,51 @@ async function main(): Promise<void> {
       choices: ["text", "json", "ndjson"],
       default: "text",
       describe: "oneshot output format (with -m or piped stdin)",
+    })
+    // Issue #79 — accessibility / terminal compatibility flags.
+    .option("mode", {
+      type: "string",
+      describe: "force render mode: linear (screen-reader friendly)",
+    })
+    .option("machine", {
+      type: "boolean",
+      default: false,
+      describe: "machine envelope output (NDJSON on stdout, no TTY)",
+    })
+    .option("reduced-motion", {
+      type: "boolean",
+      default: false,
+      describe: "disable animations / fade-in",
+    })
+    .option("high-contrast", {
+      type: "boolean",
+      default: false,
+      describe: "bold + accent for state, not just hue",
+    })
+    .option("no-color", {
+      type: "boolean",
+      default: false,
+      describe: "monochrome, glyph-only state",
+    })
+    .option("ascii", {
+      type: "boolean",
+      default: false,
+      describe: "replace box-drawing / arrows with ASCII glyphs",
+    })
+    .option("no-mouse", {
+      type: "boolean",
+      default: false,
+      describe: "disable mouse capture; rely on keystrokes only",
+    })
+    .option("unicode-narrow", {
+      type: "boolean",
+      default: false,
+      describe: "clamp ambiguous-width characters to 1 column",
+    })
+    .option("explain-mode", {
+      type: "boolean",
+      default: false,
+      describe: "print the resolved mode set and exit",
     })
     .command("status", "platform snapshot")
     .command("runs [list]", "run ledger", (y) =>
@@ -366,5 +466,3 @@ async function main(): Promise<void> {
   )
   process.exitCode = 1
 }
-
-void main()

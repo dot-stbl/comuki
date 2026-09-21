@@ -215,7 +215,7 @@ import { TranscriptViewport } from "../components/TranscriptViewport"
 import { Welcome } from "../components/Welcome"
 import { CommandPalette } from "../components/CommandPalette"
 import { ContextWorkbench } from "../components/ContextWorkbench"
-import { ActivityStream } from "../components/ActivityStream"
+import { ActivityStream, activityLines } from "../components/ActivityStream"
 import { HarnessFooter } from "../components/HarnessFooter"
 import { LayerHost } from "../components/LayerHost"
 import { NotificationCenter } from "../components/NotificationCenter"
@@ -567,14 +567,18 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   // Header, activity, composer and footer are the only permanent chrome.
   // Everything left belongs to the scrolling transcript.
   const queuedCount = activeSession?.queued?.length ?? 0
-  const activityRows = activityItems.length > 0
-    ? 1 + (activeSession?.blocksExpanded || thinking
-      ? activityItems.slice(1).reduce(
-          (rows, item) => rows + (item.kind === "shell" && item.outputPreview ? 2 : 1),
-          0
-        )
-      : 0)
-    : 0
+  const activityExpanded =
+    activeSession?.blocksExpanded === true || thinking
+  const activityRows = useMemo(
+    () =>
+      activityLines(
+        activityItems,
+        Date.now(),
+        typingFrame,
+        activityExpanded
+      ).length,
+    [activityItems, activityExpanded, typingFrame]
+  )
   const promptBlockRows = promptRows + 1 + activityRows
   const viewportHeight = Math.max(
     1,

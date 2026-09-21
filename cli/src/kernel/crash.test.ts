@@ -20,6 +20,7 @@ import { join } from "node:path"
 import {
   buildCrashEvent,
   installCrashHandlers,
+  recordCrashForTests,
   resetTerminal,
   uninstallCrashHandlersForTests,
   type CrashHandlers,
@@ -102,20 +103,31 @@ describe("installCrashHandlers — idempotency + crash recording", () => {
   })
 
   test("synthetic throw inside the wrapped callback lands the crash event on disk", async () => {
-    const handle = installCrashHandlers({
+    // installCrashHandlers still runs (idempotency is tested above),
+    // but we exercise the actual record-and-exit code path via the
+    // dedicated test seam. That bypasses `process.emit(...)` so the
+    // test does not also fire bun test's reporter listener (which
+    // prints the synthetic stack + may abort the process on some
+    // platforms). Same code path, no global side effects.
+    installCrashHandlers({
       log,
       writeStderr: captured.write,
       exit: exitCapture.exit,
     })
 
     const err = new Error("synthetic panic from the crash test")
-    // Simulate the uncaughtException path: the handler must write the
-    // structured event AND schedule the exit (we capture the exit
-    // code so the process doesn't actually die).
-    process.emit("uncaughtException", err)
+    recordCrashForTests(
+      {
+        log,
+        writeStderr: captured.write,
+        exit: exitCapture.exit,
+      },
+      "uncaughtException",
+      err
+    )
 
     // The chained write lane flushes; wait for it.
-    await handle.flush()
+    await log.whenIdle()
     // The postExit microtask hop must complete before we observe.
     await new Promise((resolve) => setImmediate(resolve))
 
@@ -146,14 +158,23 @@ describe("installCrashHandlers — idempotency + crash recording", () => {
   })
 
   test("unhandledRejection uses the same code path with reason=unhandledRejection", async () => {
-    const handle = installCrashHandlers({
+    installCrashHandlers({
       log,
       writeStderr: captured.write,
       exit: exitCapture.exit,
     })
 
-    process.emit("unhandledRejection", "string-rejection-value")
-    await handle.flush()
+    recordCrashForTests(
+      {
+        log,
+        writeStderr: captured.write,
+        exit: exitCapture.exit,
+      },
+      "unhandledRejection",
+      "string-rejection-value"
+    )
+
+    await log.whenIdle()
     await new Promise((resolve) => setImmediate(resolve))
 
     const text = await readFile(diagnosticsFilePath(tempDir), "utf8")

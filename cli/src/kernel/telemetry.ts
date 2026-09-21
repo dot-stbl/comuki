@@ -223,14 +223,20 @@ export function createStructuredLog(options: StructuredLogOptions = {}): Structu
   }
 
   async function whenIdle(): Promise<void> {
-    await chain
+    try {
+      await chain
+    } catch (error) {
+      onWriteError(error)
+    }
   }
 
   return { log, logFields, whenIdle, filePath }
 }
 
 async function writeOne(filePath: string, event: StructuredLogEvent): Promise<void> {
-  await mkdir(dirname(filePath), { recursive: true, mode: 0o700 })
+  // POSIX `mode` is ignored on Windows; harmless on Linux/macOS. The
+  // recursive: true is the only thing that matters across platforms.
+  await mkdir(dirname(filePath), { recursive: true })
   await appendFile(filePath, encodeEvent(event), "utf8")
 }
 

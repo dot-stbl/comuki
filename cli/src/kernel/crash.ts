@@ -133,8 +133,8 @@ export function installCrashHandlers(options: CrashHandlerOptions = {}): CrashHa
     }
     // We intentionally do not await the chained log write — exit is
     // racing the OS. The fire-and-forget log() call enqueues the
-    // event in the chained lane; the postExit() flush below gives
-    // that lane one tick to settle before the process actually dies.
+    // event in the chained lane; the chained write races Node's
+    // own default handler below.
     try {
       log.log(event)
     } catch {
@@ -221,6 +221,61 @@ export function uninstallCrashHandlersForTests(): CrashHandlers | null {
   // flag for idempotency; the listeners left behind are inert in
   // unit-test contexts (no panics are triggered after uninstall).
   return previous
+}
+
+/**
+ * Test seam — direct invocation of the crash handler without
+ * going through `process.emit("uncaughtException", ...)`. The
+ * latter fires every listener on the bus (including bun test's
+ * own reporter, which prints + may abort), making the round-trip
+ * test flaky. Tests pass the same `options` they would to
+ * `installCrashHandlers`; this call does NOT install listeners,
+ * does NOT exit, and does NOT print a banner — the test calls
+ * `recordAndExit` directly.
+ */
+export function recordCrashForTests(
+  options: CrashHandlerOptions,
+  reason: "uncaughtException" | "unhandledRejection",
+  value: unknown
+): void {
+  // Construct the same internals installCrashHandlers builds, but
+  // do NOT install listeners and do NOT touch `installedHandle`.
+  // Tests use this for round-trip assertions without disturbing
+  // the process event bus.
+  const log: StructuredLog =
+    options.log ?? createStructuredLog({ stateDirectory: defaultStateDirectory() })
+  const writeStderr =
+    options.writeStderr ??
+    ((line: string) => {
+      try {
+        process.stderr.write(line)
+      } catch {
+        // swallow
+      }
+    })
+  const exit = options.exit ?? ((code: number) => process.exit(code))
+
+  const error = asError(value)
+  const event: StructuredLogEvent = {
+    ts: Date.now(),
+    level: "error",
+    kind: "crash",
+    payload: formatCrashPayload(reason, error),
+  }
+  try {
+    log.log(event)
+  } catch {
+    // log() is "never throw"; belt-and-braces.
+  }
+  const banner = `comuki: crash (${reason}) — ${error.name}: ${error.message}\n`
+  writeStderr(banner)
+  if (process.stdout.isTTY === true) {
+    resetTerminal(process.stdout)
+  }
+  if (process.stderr.isTTY === true) {
+    resetTerminal(process.stderr)
+  }
+  void postExit(log, exit)
 }
 
 /**

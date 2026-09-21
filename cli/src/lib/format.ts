@@ -173,7 +173,11 @@ function dependsOn(nodeId: string, edges: readonly PlanEdge[]): readonly string[
 
 /**
  * The pending approval block is a filled transcript slab. Text carries
- * every state; there is no pseudo-window made from ASCII borders.
+ * every state; there is no pseudo-window made from ASCII borders. The
+ * three regions (summary, steps, awaiting-action) breathe apart with a
+ * blank line between each so the awaiting-action moment reads as its
+ * own beat — the conversation-first review wants the eye to land on
+ * `[approve]` / `[reject reason]` without scanning steps a second time.
  */
 export function renderPendingPlan(
   plan: unknown,
@@ -192,7 +196,9 @@ export function renderPendingPlan(
   )
   return [
     paint(header, colors.waiting),
+    "",
     ...steps.map((step) => paint(fitPlanLine(step, width), colors.text)),
+    "",
     `  ${paint("[approve]", colors.ok)} ${paint("[reject reason]", colors.error)}`,
   ]
 }

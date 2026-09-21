@@ -10,6 +10,14 @@ export interface LayerHostProps {
   readonly height: number
   readonly base: React.ReactNode
   readonly overlay?: React.ReactNode
+  /**
+   * Notification plane — paints as an absolute layer above the base.
+   * Used for the "toast over the chat" feel when the terminal is wide
+   * enough that the prompt is far from the viewport edge. In narrow
+   * terminals the chat wiring routes notifications into the `base`
+   * column instead (see `commands/chat.tsx`) so the footer stack and
+   * the activity stream share one budget and never overflow the prompt.
+   */
   readonly notifications?: React.ReactNode
   readonly placement?: OverlayPlacement
   readonly notificationBottomRows?: number

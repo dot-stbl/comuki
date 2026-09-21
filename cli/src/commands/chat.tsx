@@ -114,6 +114,14 @@ import {
 } from "../kernel/adapters/http"
 import { SignalRKernelTransport } from "../kernel/adapters/signalr"
 import {
+  HarnessEngineAdapter,
+  throwawayApprovalPort,
+  throwawayConversationPort,
+  type HarnessEnginePorts,
+} from "../harness/engine-adapter"
+import type { HarnessEngineInterface } from "../harness/engine-types"
+import { mirrorTabsFromHarness } from "../harness/tabs-bridge"
+import {
   emptyMirrorMemory,
   mirrorKernelSnapshot,
   type MirrorMemory,
@@ -366,6 +374,19 @@ export function ChatApp({ config, project }: ChatCommandProps) {
    */
   const kernelRef = useRef<ClientKernel | null>(null)
   const kernelUnsubscribeRef = useRef<(() => void) | null>(null)
+  /**
+   * HarnessEngine migration step 1 — the new engine fronts the kernel
+   * for two reducer events (`focus-session` / `session-closed`). It
+   * reuses the kernel's transport (`realtime`) and workspace store
+   * (`workspace`) as ports so its `persist-sessions` and
+   * `set-subscriptions` effects run through the same machinery the
+   * kernel does. The bridge subscriber mirrors the harness state
+   * into the legacy `tabs` for the Ink render. When the engine is
+   * absent (mount without `startKernel()`), the legacy local-patch
+   * path stays hot.
+   */
+  const harnessEngineRef = useRef<HarnessEngineInterface | null>(null)
+  const harnessUnsubscribeRef = useRef<(() => void) | null>(null)
   const mirrorRef = useRef<MirrorMemory>(emptyMirrorMemory())
   const tabsRef = useRef<SessionsState>({ sessions: [], activeIndex: -1 })
   /** Monotonic client command ids — the idempotency keys of turns. */
@@ -739,6 +760,8 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   const startKernel = useCallback(() => {
     kernelUnsubscribeRef.current?.()
     kernelRef.current?.stop()
+    harnessUnsubscribeRef.current?.()
+    harnessEngineRef.current = null
     const client = clientRef.current
     if (!client) {
       return null
@@ -754,6 +777,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         hubStopRef.current = stop
       },
     })
+    const workspaceStore = new JsonWorkspaceStore(sessionsFilePath())
     const kernel = createClientKernel({
       ports: {
         // The getter picks up a client swapped by a later cookie login.
@@ -762,7 +786,7 @@ export function ChatApp({ config, project }: ChatCommandProps) {
         ),
         approval: new HttpApprovalPort(() => clientRef.current ?? client),
         realtime: transport,
-        workspace: new JsonWorkspaceStore(sessionsFilePath()),
+        workspace: workspaceStore,
       },
       feed: transport,
     })
@@ -817,6 +841,27 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     })
     kernelRef.current = kernel
     kernel.start()
+    // HarnessEngine migration step 1 — front the kernel for focus /
+    // close events. The engine owns its own reducer state, seeded
+    // from the kernel's snapshot; its `realtime` and `workspace`
+    // ports are the kernel's transport and the same JSON store, so
+    // `persist-sessions` and `set-subscriptions` effects land on the
+    // same machinery the kernel uses. The conversation / approval
+    // ports stay throw-on-use — only step 2 wires real ones.
+    const enginePorts: HarnessEnginePorts = {
+      conversation: throwawayConversationPort,
+      approval: throwawayApprovalPort,
+      realtime: transport,
+      workspace: workspaceStore,
+    }
+    const harnessEngine = new HarnessEngineAdapter({
+      initial: kernel.snapshot().state,
+      ports: enginePorts,
+    })
+    harnessEngineRef.current = harnessEngine
+    harnessUnsubscribeRef.current = harnessEngine.subscribe((state) => {
+      setTabs((current) => mirrorTabsFromHarness(state, current))
+    })
     return kernel
   }, [])
 
@@ -916,6 +961,9 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       disposed = true
       kernelUnsubscribeRef.current?.()
       kernelRef.current?.stop()
+      harnessUnsubscribeRef.current?.()
+      harnessUnsubscribeRef.current = null
+      harnessEngineRef.current = null
       const stop = hubStopRef.current
       if (stop) {
         void stop()
@@ -1063,6 +1111,20 @@ export function ChatApp({ config, project }: ChatCommandProps) {
 
   const closeSession = useCallback((index: number) => {
     const closing = tabsRef.current.sessions[index]
+    const engine = harnessEngineRef.current
+    if (engine && closing) {
+      // HarnessEngine step 1 — focus / close flows through the reducer
+      // (`reduceHarness → runEffect → ports`). The task keeps running
+      // on the server; only the tab goes away. The bridge subscriber
+      // mirrors the post-effect state into `tabs` for the Ink render.
+      void engine.dispatch({
+        type: "session-closed",
+        sessionId: closing.id.startsWith(PENDING_PREFIX)
+          ? harnessPendingSessionId(closing.id)
+          : harnessSessionId(closing.id),
+      })
+      return
+    }
     const kernel = kernelRef.current
     if (kernel && closing) {
       // The task keeps running on the server — only the tab goes away;
@@ -1079,8 +1141,21 @@ export function ChatApp({ config, project }: ChatCommandProps) {
   }, [])
 
   const focusSession = useCallback((index: number) => {
-    const kernel = kernelRef.current
+    const engine = harnessEngineRef.current
     const chosen = tabsRef.current.sessions[index]
+    if (chosen && engine) {
+      // HarnessEngine step 1 — focus dispatches into the reducer; the
+      // bridge subscriber mirrors the post-reduce state (active index
+      // + unread: false) into `tabs` so the render flips on this frame.
+      void engine.dispatch({
+        type: "session-focused",
+        sessionId: chosen.id.startsWith(PENDING_PREFIX)
+          ? harnessPendingSessionId(chosen.id)
+          : harnessSessionId(chosen.id),
+      })
+      return
+    }
+    const kernel = kernelRef.current
     if (chosen && kernel) {
       kernel.dispatch({
         kind: "focus-session",

@@ -58,6 +58,8 @@ describe("tui host — command palette", () => {
     approval = ports.approval
     kernel = createClientKernel({ ports: ports.ports, feed: feed.port })
     kernel.start()
+    // Issue #77 — bring the hub online for submit-turn.
+    feed.push({ kind: "connection", event: "started" })
     host = await createTuiHost(kernel, {
       renderer: setup.renderer,
       width: 80,
@@ -186,11 +188,11 @@ describe("tui host — command palette", () => {
     setup.mockInput.pressArrow("up")
     await pumpInput()
     // The selection wrapped (n entries → last), the composer draft
-    // did NOT become a recalled history entry. Issue #78 added
-    // `swarm-canvas-inspect` at the end of the registry; the wrap
-    // lands there now.
+    // did NOT become a recalled history entry. Issue #77 added
+    // session-list / resume / rename / archive / fork at the end
+    // of the registry; the wrap lands on `Fork session` now.
     await setup.waitForFrame(
-      (frame) => frame.includes("> Inspect swarm item")
+      (frame) => frame.includes("> Fork session")
     )
     expect(host.getDraft()).toBe("")
   })

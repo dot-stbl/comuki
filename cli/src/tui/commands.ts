@@ -53,6 +53,13 @@ export type TuiCommandName =
   | "toggle-swarm-canvas"
   | "swarm-canvas-refresh"
   | "swarm-canvas-inspect"
+  // Issue #77 — palette-driven session lifecycle: list, resume,
+  // rename, archive, fork.
+  | "session-list"
+  | "session-resume"
+  | "session-rename"
+  | "session-archive"
+  | "session-fork"
 
 /**
  * Availability tags every command declares ONCE. The slash menu, the
@@ -193,6 +200,34 @@ export function buildTuiCommands(i18n: I18nInstance): readonly TuiCommandSpec[] 
       "always",
       { name: "swarm-canvas-inspect", aliases: [], argsHintKey: "cmd.swarm-canvas-inspect.argsHint" }
     ),
+    // Issue #77 — palette-driven session lifecycle. Each command
+    // reads its arguments from `payload.text`; the host resolves the
+    // referenced session id from the durable SessionStore when needed.
+    command(i18n, "session-list", "", "always", {
+      name: "sessions",
+      aliases: [],
+      argsHintKey: null,
+    }),
+    command(i18n, "session-resume", "", "always", {
+      name: "resume",
+      aliases: [],
+      argsHintKey: "cmd.session-resume.argsHint",
+    }),
+    command(i18n, "session-rename", "", "always", {
+      name: "rename-session",
+      aliases: ["rename-session"],
+      argsHintKey: "cmd.session-rename.argsHint",
+    }),
+    command(i18n, "session-archive", "", "always", {
+      name: "archive",
+      aliases: [],
+      argsHintKey: "cmd.session-archive.argsHint",
+    }),
+    command(i18n, "session-fork", "", "always", {
+      name: "fork",
+      aliases: [],
+      argsHintKey: "cmd.session-fork.argsHint",
+    }),
   ]
 }
 
@@ -235,7 +270,9 @@ export interface TuiCommandPayload {
   readonly reason?: string
 }
 
-export type TuiCommandHandler = (payload: TuiCommandPayload) => boolean | void
+export type TuiCommandHandler = (
+  payload: TuiCommandPayload
+) => boolean | void | Promise<boolean | void>
 
 /** Adapter surface the host installs: command name → handler. */
 export type TuiHandlers = Partial<Record<TuiCommandName, TuiCommandHandler>>

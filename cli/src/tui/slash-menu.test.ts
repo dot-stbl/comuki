@@ -67,6 +67,8 @@ function makeKernel(): Harness {
   const feed = fakeFeed()
   const kernel = createClientKernel({ ports: ports.ports, feed: feed.port })
   kernel.start()
+  // Issue #77 — bring the hub online for tests that submit turns.
+  feed.push({ kind: "connection", event: "started" })
   return {
     kernel,
     ports: ports as unknown as Harness["ports"],

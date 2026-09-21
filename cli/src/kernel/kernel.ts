@@ -18,6 +18,13 @@
  * (Ink today, OpenTUI per ADR-0002) read snapshots and dispatch
  * intents — nothing else.
  *
+ * Issue #77 — the kernel owns four durable singletons that survive
+ * the same crash but layer separately: SessionStore (durable session
+ * metadata), DraftStore (plain UTF-8 composer drafts), CursorStore
+ * (per-session stream cursors + the reconnect `catchUp` primitive),
+ * and the ReconnectOrchestrator (the coarse offline / recovering /
+ * online state that gates mutating sends).
+ *
  * The kernel contains no Ink/React/ANSI code; it talks to the world
  * exclusively through ports (`harness/effect-runner.ts`, `./feed.ts`).
  * The receipt writer is owned by the kernel (it's the only stateful
@@ -46,19 +53,63 @@ import {
 } from "./receipts"
 import { AttentionSource, type AttentionListener, type AttentionSignal } from "./attention"
 import type { EventFeedPort, FeedMessage } from "./feed"
+import {
+  createCursorStore,
+  type CursorStore,
+} from "./cursors"
+import {
+  createDraftStore,
+  type DraftStore,
+} from "./drafts"
+import {
+  createReconnectOrchestrator,
+  type ReconnectOrchestrator,
+} from "./reconnect"
+import {
+  createSessionStore,
+  type SessionMeta,
+  type SessionStore,
+} from "./sessions"
 
 /** Normalized server/runtime event accepted by the kernel. */
 export type ClientEvent = HarnessEvent
 
+/**
+ * Issue #77 — the result of a `dispatch` call. `ok: true` means the
+ * intent translated to events and the kernel applied them; `ok: false`
+ * means the kernel rejected the intent (the transport is offline /
+ * recovering, or the kernel is stopped) and the host should keep the
+ * draft text intact and surface the reason.
+ *
+ * `draft` is the composer body at the moment of rejection — the host
+ * echoes it back unchanged so the user sees their work preserved.
+ */
+export type DispatchResult =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly reason: "offline" | "stopped"; readonly draft: string }
+
 export interface ClientSnapshot {
   readonly revision: number
   readonly state: HarnessState
+  /**
+   * Issue #77 — the durable session list (home view), the per-session
+   * cursor map, and the coarse reconnect state. Three layers
+   * independent of the workspace's transient session refs.
+   *
+   * `sessions` is `null` while the SessionStore is still loading from
+   * disk — the host treats it as "still resolving". `cursors` is a
+   * snapshot of the durable high-water marks. `online` is the
+   * orchestrator's coarse state at the moment the snapshot was built.
+   */
+  readonly sessions: ReadonlyArray<SessionMeta> | null
+  readonly cursors: Readonly<Record<string, number>>
+  readonly online: boolean
 }
 
 export type Unsubscribe = () => void
 
 export interface ClientKernel {
-  dispatch(intent: UserIntent): void
+  dispatch(intent: UserIntent, draft?: string): DispatchResult
   accept(event: ClientEvent): void
   snapshot(): ClientSnapshot
   subscribe(listener: (snapshot: ClientSnapshot) => void): Unsubscribe
@@ -87,6 +138,18 @@ export interface ClientKernel {
    * `EventTarget.addEventListener` shape used by `subscribe(...)`.
    */
   addAttentionListener(listener: AttentionListener): Unsubscribe
+  /**
+   * Issue #77 — durable session metadata singleton. The host reads
+   * `kernel.sessions().list()` for the home view and calls
+   * `upsert / rename / archive / fork` on it.
+   */
+  sessions(): SessionStore
+  /** Issue #77 — composer drafts singleton, keyed by session id. */
+  drafts(): DraftStore
+  /** Issue #77 — per-session stream cursors + reconnect `catchUp`. */
+  cursors(): CursorStore
+  /** Issue #77 — coarse offline / recovering / online orchestrator. */
+  reconnect(): ReconnectOrchestrator
 }
 
 export interface ClientKernelOptions {
@@ -107,6 +170,14 @@ export interface ClientKernelOptions {
    * stub rooted at a temp directory.
    */
   readonly receipts?: DecisionReceiptStore
+  /**
+   * Issue #77 — override the durable session / draft / cursor
+   * stores. Each defaults to a fresh XDG-rooted instance.
+   */
+  readonly sessions?: SessionStore
+  readonly drafts?: DraftStore
+  readonly cursors?: CursorStore
+  readonly reconnect?: ReconnectOrchestrator
 }
 
 export function createClientKernel(options: ClientKernelOptions): ClientKernel {
@@ -119,10 +190,32 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
   // XDG state directory; production wires nothing and gets that.
   const receipts: DecisionReceiptStore =
     options.receipts ?? createDecisionReceiptStore({ stateDirectory: defaultStateDirectory() })
+  // Issue #77 — four durable singletons. The default state root is the
+  // same one receipts already uses; tests inject per-kernel stores
+  // rooted at temp directories.
+  const stateDirectory = defaultStateDirectory()
+  const sessionsStore: SessionStore =
+    options.sessions ?? createSessionStore({ stateDirectory })
+  const draftsStore: DraftStore =
+    options.drafts ?? createDraftStore({ stateDirectory })
+  const cursorsStore: CursorStore =
+    options.cursors ?? createCursorStore({ stateDirectory })
+  const reconnectOrchestrator: ReconnectOrchestrator =
+    options.reconnect ?? createReconnectOrchestrator()
 
   let state: HarnessState = initialHarnessState()
   let revision = 0
-  let snapshot: ClientSnapshot = { revision, state }
+  /** Issue #77 — the durable session list. `null` while the SessionStore loads. */
+  let durableSessions: ReadonlyArray<SessionMeta> | null = null
+  /** Issue #77 — the cursor snapshot, refreshed after every cursor mutation. */
+  let cursorSnapshot: Readonly<Record<string, number>> = {}
+  let snapshot: ClientSnapshot = {
+    revision,
+    state,
+    sessions: durableSessions,
+    cursors: cursorSnapshot,
+    online: reconnectOrchestrator.state() === "online",
+  }
   let started = false
   let stopped = false
   const listeners = new Set<(snapshot: ClientSnapshot) => void>()
@@ -141,6 +234,25 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
   /** Ordered lane for persist/subscriptions — last writer, newest state. */
   let chain: Promise<void> = Promise.resolve()
 
+  /**
+   * Issue #77 — refresh the durable session list. Called from the
+   * start sequence (initial load) and from kernel commits (whenever
+   * a session list mutation may have happened). The SessionStore
+   * pre-loads on first call so subsequent reads are cheap.
+   */
+  async function refreshSessions(): Promise<void> {
+    const list = await sessionsStore.list({ archived: false })
+    durableSessions = list
+  }
+
+  /**
+   * Issue #77 — refresh the cursor snapshot. Called after every
+   * cursor mutation. Cheap (the store holds the in-memory map).
+   */
+  async function refreshCursors(): Promise<void> {
+    cursorSnapshot = await cursorsStore.snapshot()
+  }
+
   function safeReduce(event: ClientEvent): {
     readonly state: HarnessState
     readonly effects: readonly HarnessEffect[]
@@ -157,11 +269,30 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
 
   function commit(): void {
     revision += 1
-    snapshot = { revision, state }
+    snapshot = {
+      revision,
+      state,
+      sessions: durableSessions,
+      cursors: cursorSnapshot,
+      online: reconnectOrchestrator.state() === "online",
+    }
     for (const listener of [...listeners]) {
       listener(snapshot)
     }
   }
+
+  /**
+   * Issue #77 — the orchestrator fires on every transition; the
+   * kernel's commit fires once on every change, and the coarse state
+   * is part of the snapshot. Subscribe once at boot so offline /
+   * recovering / online flip the snapshot's `online` flag.
+   */
+  const unsubscribeOrchestrator = reconnectOrchestrator.addEventListener(() => {
+    if (stopped) {
+      return
+    }
+    commit()
+  })
 
   /** Local subscription helper — referenced by both the public surface and
    * the lazily-built `AttentionSource`. The AttentionSource wires itself
@@ -254,6 +385,32 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
     }
   }
 
+  /**
+   * Issue #77 — flip the orchestrator when a connection event lands
+   * through any path (the feed adapter OR a direct accept call).
+   * The reducer updates the harness's `connection` field; the
+   * orchestrator tracks the coarse offline / recovering / online
+   * state for the dispatch gate.
+   */
+  function applyOrchestratorTransition(event: ClientEvent): void {
+    switch (event.type) {
+      case "connection-started":
+        reconnectOrchestrator.markRecovering()
+        return
+      case "connection-established":
+        reconnectOrchestrator.markOnline()
+        return
+      case "connection-lost":
+        reconnectOrchestrator.markRecovering()
+        return
+      case "connection-stopped":
+        reconnectOrchestrator.markOffline()
+        return
+      default:
+        return
+    }
+  }
+
   function applyEvents(events: readonly ClientEvent[]): void {
     const effects: HarnessEffect[] = []
     let changed = false
@@ -261,6 +418,7 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
       if (stopped) {
         return
       }
+      applyOrchestratorTransition(event)
       const key = serverEventKey(event)
       if (key !== null) {
         if (appliedServerEvents.has(key)) {
@@ -316,6 +474,10 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
   function connectionEvent(
     event: "connecting" | "started" | "reconnecting" | "reconnected" | "closed"
   ): ClientEvent {
+    // The orchestrator transition lives in `applyOrchestratorTransition`
+    // so direct `accept` calls land in the same code path as feed
+    // frames — the orchestrator is the kernel-side counterpart of the
+    // hub for both flows.
     switch (event) {
       case "connecting":
         return { type: "connection-started" }
@@ -347,6 +509,11 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
           session?.identity.kind === "remote" &&
           session.turn.kind === "thinking"
         ) {
+          // Issue #77 — persist the cursor high-water mark alongside
+          // the harness event so a reconnect knows where to backfill
+          // from. Done asynchronously so the dispatch path stays
+          // sync.
+          void cursorsStore.set(message.sessionId, message.receivedAtUnixMs)
           return [
             ...cursor,
             {
@@ -357,13 +524,22 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
             },
           ]
         }
+        // Even on a stale chunk, the cursor advances — issue #77's
+        // "no event id should be lost" invariant.
+        void cursorsStore.set(message.sessionId, message.receivedAtUnixMs)
         return cursor
       }
       case "turn-complete":
         // REST is authoritative — the POST result renders the turn; a
         // completion frame only advances the cursor.
+        if (message.sessionId !== undefined) {
+          void cursorsStore.set(message.sessionId, message.receivedAtUnixMs)
+        }
         return cursorEvent(message.sessionId, message.receivedAtUnixMs)
       case "unknown":
+        if (message.sessionId !== undefined) {
+          void cursorsStore.set(message.sessionId, message.receivedAtUnixMs)
+        }
         return cursorEvent(message.sessionId, message.receivedAtUnixMs)
       default:
         return []
@@ -392,12 +568,28 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
     }
   }
 
+  /**
+   * Issue #77 — only mutating sends that hit the wire need the
+   * online gate. Local workspace operations (open / focus / close /
+   * rename / save-draft / clear-draft / cancel-turn) work even when
+   * the realtime hub is down — they only affect the local state.
+   * Turns and approvals need a live connection; the host shows
+   * "draft retained" until the transport comes back.
+   */
+  function requiresOnline(intent: UserIntent): boolean {
+    return intent.kind === "submit-turn" || intent.kind === "decide-approval"
+  }
+
   return {
-    dispatch(intent) {
+    dispatch(intent, draft) {
       if (stopped) {
-        return
+        return { ok: false, reason: "stopped", draft: draft ?? "" }
+      }
+      if (requiresOnline(intent) && !reconnectOrchestrator.canDispatch()) {
+        return { ok: false, reason: "offline", draft: draft ?? "" }
       }
       applyEvents(translateIntent(state, intent, now()))
+      return { ok: true }
     },
     accept(event) {
       if (stopped) {
@@ -422,6 +614,12 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
           const document = await ports.workspace.read()
           const workspace = migrateWorkspaceDocument(document)
           state = applyWorkspaceToState(state, workspace)
+          // Issue #77 — load the durable session list + cursor map
+          // once at boot so the snapshot's `sessions` and `cursors`
+          // are populated for the home view. Both stores pre-load
+          // on first call; we force them in parallel with the
+          // workspace read.
+          await Promise.all([refreshSessions(), refreshCursors()])
           commit()
         })
         .catch((error: unknown) => {
@@ -441,6 +639,7 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
       }
       stopped = true
       controller.abort()
+      unsubscribeOrchestrator()
       listeners.clear()
       attentionSource?.destroy()
       attentionSource = null
@@ -471,6 +670,18 @@ export function createClientKernel(options: ClientKernelOptions): ClientKernel {
         attentionSource = createAttentionSource()
       }
       return attentionSource.addAttentionListener(listener)
+    },
+    sessions() {
+      return sessionsStore
+    },
+    drafts() {
+      return draftsStore
+    },
+    cursors() {
+      return cursorsStore
+    },
+    reconnect() {
+      return reconnectOrchestrator
     },
   }
 

@@ -91,10 +91,18 @@ describe("determinism and duplicate rejection", () => {
 
   it("never issues a second submit for a repeated command id", async () => {
     const fake = fakePorts()
-    const kernel = createClientKernel({ ports: fake.ports, now: () => 1 })
+    const { port: feedPort } = fakeFeed()
+    const kernel = createClientKernel({
+      ports: fake.ports,
+      feed: feedPort,
+      now: () => 1,
+    })
     kernel.start()
     await kernel.whenIdle()
     kernel.dispatch({ kind: "open-session" })
+    // Issue #77 — bring the hub online AFTER the session exists so
+    // the subscriptions effect sees the open set.
+    kernel.accept({ type: "connection-established" })
     const pending = pendingSessionId("local-1-0")
     for (const attempt of [1, 2, 3]) {
       void attempt

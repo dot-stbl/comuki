@@ -44,6 +44,8 @@ describe("tui host — external editor through the lifecycle seam", () => {
     endFeed = feed.end
     kernel = createClientKernel({ ports: ports.ports, feed: feed.port })
     kernel.start()
+    // Issue #77 — bring the hub online.
+    feed.push({ kind: "connection", event: "started" })
   })
 
   afterEach(async () => {

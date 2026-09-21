@@ -84,7 +84,13 @@ function snapshot(
     cursors,
     outbound: [],
   }
-  return { revision: 0, state }
+  return {
+    revision: 0,
+    state,
+    sessions: [],
+    cursors: {},
+    online: true,
+  }
 }
 
 function signalFor(

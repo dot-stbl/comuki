@@ -94,6 +94,7 @@ import {
   type DecisionReceipt,
 } from "../kernel/receipts"
 import { TONE_HEX, uniformLine, type Segment, type StyledLine } from "./styled"
+import { MARK_WELCOME } from "../lib/mark"
 import { renderSwarmCanvas, type SwarmCanvasContext } from "./swarmcanvas"
 import type { ResolvedModes } from "./modes"
 import { createLinearRenderer, type LinearRenderer } from "./linear"
@@ -532,11 +533,34 @@ export async function createTuiHost(
    */
   function buildHomeLines(): readonly StyledLine[] {
     const sessions = lastSnapshot.sessions
-    if (sessions === null) {
-      return []
-    }
-    if (sessions.length === 0) {
-      return [uniformLine(tr(i18n, "transcript.session.home.empty"), "muted")]
+    // Cold start: the SessionStore hasn't loaded yet, or it loaded
+    // and the user has zero saved sessions. Either way, the viewport
+    // needs SOMETHING — a welcome block + a one-liner hint — so the
+    // focus-mode opens to content, not to a 22-row void. The hint
+    // changes based on whether this is the user's first run.
+    if (sessions === null || sessions.length === 0) {
+      const lines: StyledLine[] = []
+      // The brand mark in the accent color — printable ASCII so
+      // terminals without UTF-8 box drawing still render it.
+      for (const line of MARK_WELCOME) {
+        lines.push(uniformLine(line, "accent"))
+      }
+      // The "what now" hint sits below the mark with the same
+      // copy the Ink host shows in <Welcome>, minus the React
+      // chrome. Same text on both hosts.
+      lines.push(uniformLine("", "muted"))
+      lines.push(uniformLine(tr(i18n, "transcript.welcome.lead"), "muted"))
+      lines.push(uniformLine("", "muted"))
+      lines.push(
+        uniformLine(tr(i18n, "transcript.welcome.ctaAsk"), "text"),
+      )
+      lines.push(
+        uniformLine(tr(i18n, "transcript.welcome.ctaSlash"), "text"),
+      )
+      lines.push(
+        uniformLine(tr(i18n, "transcript.welcome.ctaPalette"), "text"),
+      )
+      return lines
     }
     const header = `${tr(i18n, "transcript.session.home.sessionsHeader")} (${sessions.length})`
     const lines: StyledLine[] = [uniformLine(header, "muted")]

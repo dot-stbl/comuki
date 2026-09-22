@@ -72,9 +72,12 @@ Milestone **v1**, phase **3 complete** (design system + testing infra).
    analyzers, format. Exit ≠ 0 → не готово. Полный контракт:
    [`.agents/rules/process/build-verification.md`](.agents/rules/process/build-verification.md).
 
-2. **Commits:** `[hybrid] <type>(<scope>): <description>` —
-   Conventional Commits + префикс `[hybrid]`. Не `[stbl]`, не `feat/` без
-   type. См. [commit-format.md](.agents/rules/process/commit-format.md).
+2. **Commits:** `[.stbl](feat/<area>): <description>` —
+   префикс `[.stbl]`, feature-путь после `(` обязателен. Legacy-форма
+   `[.stbl] <type>(<scope>): <description>` тоже принимается хуком
+   (`scripts/commit-lint.mjs`). Старый `[hybrid]` отвергается —
+   `commit-format.md` о причинах. См.
+   [commit-format.md](.agents/rules/process/commit-format.md).
    Байлайнов модели (`Co-Authored-By: Claude`, `🤖 Generated with …`) нет
    нигде — хук `commit-msg` их вырезает, см.
    [no-ai-attribution.md](.agents/rules/process/no-ai-attribution.md).

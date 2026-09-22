@@ -227,18 +227,7 @@ public sealed class RunDecisionsEndpointShould : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var run = Run.Create(ProjectId.New(), DateTimeOffset.UtcNow);
-        var chain = target switch
-        {
-            RunStatus.Queued => Array.Empty<RunStatus>(),
-            RunStatus.Waiting => [RunStatus.Waiting],
-            RunStatus.Running => [RunStatus.Running],
-            RunStatus.Succeeded => [RunStatus.Running, RunStatus.Succeeded],
-            RunStatus.Failed => [RunStatus.Failed],
-            RunStatus.Cancelled => [RunStatus.Cancelled],
-            RunStatus.Escalated => [RunStatus.Running, RunStatus.Escalated],
-            _ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
-        };
-
+        var chain = ResolveChain(target);
         var now = DateTimeOffset.UtcNow;
         var step = now.AddSeconds(1);
         foreach (var hop in chain)
@@ -251,6 +240,53 @@ public sealed class RunDecisionsEndpointShould : IAsyncLifetime
         seedContext.Runs.Add(run);
         await seedContext.SaveChangesAsync(cancellationToken);
         return run.Id.Value;
+    }
+
+    /// <summary>
+    /// Map a target <see cref="RunStatus"/> to the legal sequence of
+    /// transitions needed to reach it from <see cref="RunStatus.Queued"/>.
+    /// </summary>
+    /// <param name="target"></param>
+    private static IReadOnlyList<RunStatus> ResolveChain(RunStatus target)
+    {
+        if (target == RunStatus.Queued)
+        {
+            return [];
+        }
+
+        if (target == RunStatus.Waiting)
+        {
+            return [RunStatus.Waiting];
+        }
+
+        if (target == RunStatus.Running)
+        {
+            return [RunStatus.Running];
+        }
+
+        if (target == RunStatus.Succeeded)
+        {
+            return [RunStatus.Running, RunStatus.Succeeded];
+        }
+
+        if (target == RunStatus.Failed)
+        {
+            return [RunStatus.Failed];
+        }
+
+        if (target == RunStatus.Cancelled)
+        {
+            return [RunStatus.Cancelled];
+        }
+
+        if (target == RunStatus.Escalated)
+        {
+            return [RunStatus.Running, RunStatus.Escalated];
+        }
+
+#pragma warning disable IDE0046
+        throw new ArgumentOutOfRangeException(nameof(target), target, null);
+#pragma warning restore IDE0046
     }
 
     private static int FreeTcpPort()

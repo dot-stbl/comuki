@@ -19,17 +19,41 @@ namespace Comuki.Architecture.Tests;
 /// </summary>
 public sealed class RunStatusesShould
 {
-    [Theory(DisplayName = "Given a RunStatus member, when compared to RunStatuses, then the constant equals the enum member name")]
-    [InlineData(nameof(RunStatus.Queued), RunStatuses.Queued)]
-    [InlineData(nameof(RunStatus.Waiting), RunStatuses.Waiting)]
-    [InlineData(nameof(RunStatus.Running), RunStatuses.Running)]
-    [InlineData(nameof(RunStatus.Succeeded), RunStatuses.Succeeded)]
-    [InlineData(nameof(RunStatus.Failed), RunStatuses.Failed)]
-    [InlineData(nameof(RunStatus.Cancelled), RunStatuses.Cancelled)]
-    [InlineData(nameof(RunStatus.Escalated), RunStatuses.Escalated)]
+    [Theory(DisplayName = "Given a RunStatus member, when compared to RunStatuses, then the constant equals the smart-type member name")]
+    [MemberData(nameof(StatusKeys))]
     public void MatchTheEnumMemberName(string enumMemberName, string key)
     {
         key.ShouldBe(enumMemberName);
+    }
+
+    /// <summary>
+    /// Pairs every <see cref="RunStatus"/> static member name with the matching
+    /// <see cref="RunStatuses"/> constant. <see cref="MemberDataAttribute"/>
+    /// because <see cref="InlineDataAttribute"/> requires constants and
+    /// <c>RunStatus.X</c> members are static properties.
+    /// </summary>
+    public static TheoryData<string, string> StatusKeys
+    {
+        get
+        {
+            var data = new TheoryData<string, string>();
+            foreach (var status in RunStatus.All)
+            {
+                var name = status.Value;
+                switch (name)
+                {
+                    case "Queued": data.Add(name, RunStatuses.Queued); break;
+                    case "Waiting": data.Add(name, RunStatuses.Waiting); break;
+                    case "Running": data.Add(name, RunStatuses.Running); break;
+                    case "Succeeded": data.Add(name, RunStatuses.Succeeded); break;
+                    case "Failed": data.Add(name, RunStatuses.Failed); break;
+                    case "Cancelled": data.Add(name, RunStatuses.Cancelled); break;
+                    case "Escalated": data.Add(name, RunStatuses.Escalated); break;
+                }
+            }
+
+            return data;
+        }
     }
 
     [Fact(DisplayName = "Given every RunStatus member, when enumerated, then RunStatuses defines a matching constant")]
@@ -46,6 +70,8 @@ public sealed class RunStatusesShould
             RunStatuses.Escalated,
         ];
 
-        keys.ShouldBe(Enum.GetNames<RunStatus>(), ignoreOrder: true);
+        // Smart-type no longer supports Enum.GetNames; All enumerates every
+        // working member in declaration order (excludes Unspecified).
+        keys.ShouldBe([.. RunStatus.All.Select(static status => status.Value)], ignoreOrder: true);
     }
 }

@@ -40,13 +40,13 @@ public sealed class MergeQueueConfiguration : IEntityTypeConfiguration<MergeQueu
 
         builder.Property(static entry => entry.Status)
             .HasColumnName("status")
-            .HasConversion<string>()
+            .HasConversion(SmartTypeConverters.MergeQueueStatusToString)
             .HasMaxLength(16)
             .IsRequired();
 
         builder.Property(static entry => entry.ConflictResolution)
             .HasColumnName("conflict_resolution")
-            .HasConversion<string>()
+            .HasConversion(SmartTypeConverters.ConflictResolutionToString)
             .HasMaxLength(16)
             .IsRequired();
 

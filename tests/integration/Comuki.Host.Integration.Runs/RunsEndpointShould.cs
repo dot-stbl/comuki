@@ -67,7 +67,7 @@ public sealed class RunsEndpointShould : IAsyncLifetime
             {
                 var run = Run.Create(ProjectId.New(), now + age);
 
-                if (status is RunStatus.Succeeded)
+                if (status == RunStatus.Succeeded)
                 {
                     run.TransitionTo(RunStatus.Running, now + age + TimeSpan.FromMinutes(1));
                 }

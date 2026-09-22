@@ -24,7 +24,7 @@ namespace Comuki.Host.Auth.Controllers;
 /// <c>[FromServices]</c>.
 /// </summary>
 [ApiController]
-[Route("api/v1/grants")]
+[Route(ApiRoutes.IdentityAdminGrants)]
 public sealed class GrantsController(
     GrantRoleHandler grantRole,
     RevokeRoleHandler revokeRole,

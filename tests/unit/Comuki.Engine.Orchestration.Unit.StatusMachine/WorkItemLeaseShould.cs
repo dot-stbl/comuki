@@ -35,11 +35,7 @@ public sealed class WorkItemLeaseShould
     }
 
     [Theory(DisplayName = "Given a non-queued item, when AssignLease is called, then it throws")]
-    [InlineData(WorkItemStatus.Blocked)]
-    [InlineData(WorkItemStatus.Running)]
-    [InlineData(WorkItemStatus.Succeeded)]
-    [InlineData(WorkItemStatus.Failed)]
-    [InlineData(WorkItemStatus.Cancelled)]
+    [MemberData(nameof(NonQueuedStatuses))]
     public void RejectAssignLeaseFromNonQueued(WorkItemStatus status)
     {
         var item = CreateItemIn(status);
@@ -47,6 +43,16 @@ public sealed class WorkItemLeaseShould
         var exception = Should.Throw<InvalidOperationException>(() => item.AssignLease(WorkerId.New(), now.AddMinutes(2), now));
         exception.Message.ShouldContain("queued");
     }
+
+    /// <summary>Statuses that are not Queued (smart-type properties — xUnit <see cref="MemberDataAttribute"/> needs static members, not <see cref="InlineDataAttribute"/> constants).</summary>
+    public static TheoryData<WorkItemStatus> NonQueuedStatuses =>
+    [
+        WorkItemStatus.Blocked,
+        WorkItemStatus.Running,
+        WorkItemStatus.Succeeded,
+        WorkItemStatus.Failed,
+        WorkItemStatus.Cancelled,
+    ];
 
     [Fact(DisplayName = "Given a leased running item, when Heartbeat is called, then the lease extends")]
     public void ExtendLeaseThroughHeartbeat()
@@ -146,7 +152,7 @@ public sealed class WorkItemLeaseShould
             item.TransitionTo(WorkItemStatus.Running, now);
             item.TransitionTo(WorkItemStatus.Succeeded, now);
         }
-        else if (status is not (WorkItemStatus.Queued or WorkItemStatus.Blocked))
+        else if (status != WorkItemStatus.Queued && status != WorkItemStatus.Blocked)
         {
             item.TransitionTo(status, now);
         }

@@ -1,5 +1,6 @@
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Domain;
+using Comuki.Engine.Orchestration.Domain.Exceptions;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Shared.Kernel.Ids;
 using Shouldly;
@@ -31,9 +32,9 @@ public sealed class RunStatusMachineShould
         get
         {
             var data = new TheoryData<RunStatus, RunStatus, bool>();
-            foreach (var from in Enum.GetValues<RunStatus>())
+            foreach (var from in RunStatus.All)
             {
-                foreach (var to in Enum.GetValues<RunStatus>())
+                foreach (var to in RunStatus.All)
                 {
                     data.Add(from, to, expectedTransitions[from].Contains(to));
                 }
@@ -76,7 +77,7 @@ public sealed class RunStatusMachineShould
     {
         var machine = new RunStatusMachine();
 
-        foreach (var from in Enum.GetValues<RunStatus>())
+        foreach (var from in RunStatus.All)
         {
             machine.AllowedTargets(from).ShouldBe(expectedTransitions[from], ignoreOrder: true);
         }
@@ -115,6 +116,6 @@ public sealed class RunStatusMachineShould
         var run = Run.Create(ProjectId.New(), DateTimeOffset.UtcNow);
         run.TransitionTo(RunStatus.Cancelled, DateTimeOffset.UtcNow);
 
-        Should.Throw<InvalidOperationException>(() => run.TransitionTo(RunStatus.Running, DateTimeOffset.UtcNow));
+        Should.Throw<OrchestrationDomainException>(() => run.TransitionTo(RunStatus.Running, DateTimeOffset.UtcNow));
     }
 }

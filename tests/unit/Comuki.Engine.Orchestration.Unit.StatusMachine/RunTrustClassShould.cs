@@ -67,8 +67,7 @@ public sealed class RunTrustClassShould
     }
 
     [Theory(DisplayName = "Given a non-supervised run, when DemoteTo is called, then it returns to Supervised and updates updated_at")]
-    [InlineData(RunTrustClass.Pilot)]
-    [InlineData(RunTrustClass.Trusted)]
+    [MemberData(nameof(NonSupervisedTrustClasses))]
     public void DemoteToSupervised(RunTrustClass starting)
     {
         var createdAt = DateTimeOffset.UtcNow;
@@ -91,6 +90,18 @@ public sealed class RunTrustClassShould
         run.TrustClass.ShouldBe(RunTrustClass.Supervised);
         run.UpdatedAt.ShouldBe(demotedAt);
     }
+
+    /// <summary>
+    /// Non-supervised trust classes (Pilot + Trusted) — smart-type members are
+    /// static properties, so <see cref="InlineDataAttribute"/>'s
+    /// constant-only requirement means we hand the test matrix in via
+    /// <see cref="MemberDataAttribute"/> instead.
+    /// </summary>
+    public static TheoryData<RunTrustClass> NonSupervisedTrustClasses =>
+    [
+        RunTrustClass.Pilot,
+        RunTrustClass.Trusted,
+    ];
 
     [Fact(DisplayName = "Given a supervised run, when DemoteTo is called, then it is a no-op")]
     public void DemoteSupervisedIsNoOp()

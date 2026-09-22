@@ -1,5 +1,6 @@
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Domain;
+using Comuki.Engine.Orchestration.Domain.Exceptions;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Shared.Kernel.Ids;
 using Shouldly;
@@ -35,9 +36,9 @@ public sealed class WorkItemStatusMachineShould
         get
         {
             var data = new TheoryData<WorkItemStatus, WorkItemStatus, bool>();
-            foreach (var from in Enum.GetValues<WorkItemStatus>())
+            foreach (var from in WorkItemStatus.All)
             {
-                foreach (var to in Enum.GetValues<WorkItemStatus>())
+                foreach (var to in WorkItemStatus.All)
                 {
                     data.Add(from, to, expectedTransitions[from].Contains(to));
                 }
@@ -80,7 +81,7 @@ public sealed class WorkItemStatusMachineShould
     {
         var machine = new WorkItemStatusMachine();
 
-        foreach (var from in Enum.GetValues<WorkItemStatus>())
+        foreach (var from in WorkItemStatus.All)
         {
             machine.AllowedTargets(from).ShouldBe(expectedTransitions[from], ignoreOrder: true);
         }
@@ -117,20 +118,20 @@ public sealed class WorkItemStatusMachineShould
     [Fact(DisplayName = "Given an initial status other than queued/blocked, when Create is called, then it throws")]
     public void RejectInvalidInitialStatus()
     {
-        Should.Throw<ArgumentException>(
+        Should.Throw<OrchestrationDomainException>(
             static () => WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Running, DateTimeOffset.UtcNow));
     }
 
     [Fact(DisplayName = "Given an empty profile key, image, profiles ref or brief, when Create is called, then it throws")]
     public void RejectEmptyLabelsAndBrief()
     {
-        Should.Throw<ArgumentException>(
+        Should.Throw<OrchestrationDomainException>(
             static () => WorkItem.Create(RunId.New(), " ", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
-        Should.Throw<ArgumentException>(
+        Should.Throw<OrchestrationDomainException>(
             static () => WorkItem.Create(RunId.New(), "implement", "", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
-        Should.Throw<ArgumentException>(
+        Should.Throw<OrchestrationDomainException>(
             static () => WorkItem.Create(RunId.New(), "implement", Image, " ", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
-        Should.Throw<ArgumentException>(
+        Should.Throw<OrchestrationDomainException>(
             static () => WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, "", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
     }
 
@@ -152,7 +153,7 @@ public sealed class WorkItemStatusMachineShould
         item.TransitionTo(WorkItemStatus.Running, DateTimeOffset.UtcNow);
         item.TransitionTo(WorkItemStatus.Succeeded, DateTimeOffset.UtcNow);
 
-        Should.Throw<InvalidOperationException>(() => item.TransitionTo(WorkItemStatus.Running, DateTimeOffset.UtcNow));
+        Should.Throw<OrchestrationDomainException>(() => item.TransitionTo(WorkItemStatus.Running, DateTimeOffset.UtcNow));
     }
 
     [Fact(DisplayName = "Given a self-referencing edge, when WorkItemDependency.Create is called, then it throws")]

@@ -52,7 +52,7 @@ public sealed class OrchestrationBudgetGate(
             return;
         }
 
-        if (run.Status is RunStatus.Succeeded or RunStatus.Cancelled)
+        if (run.Status == RunStatus.Succeeded || run.Status == RunStatus.Cancelled)
         {
             return;
         }

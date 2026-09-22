@@ -59,12 +59,12 @@ public sealed class RunsFilteringShould : IAsyncLifetime
             var run = Run.Create(ProjectId.New(), createdAt);
 
             // legal hops only (RunTransitions): Succeeded needs Running first.
-            if (status is RunStatus.Succeeded)
+            if (status == RunStatus.Succeeded)
             {
                 run.TransitionTo(RunStatus.Running, createdAt.AddMinutes(1));
             }
 
-            if (status is not RunStatus.Queued)
+            if (status != RunStatus.Queued)
             {
                 run.TransitionTo(status, createdAt.AddMinutes(5));
             }

@@ -1,3 +1,5 @@
+using Comuki.Engine.Orchestration.Domain.Exceptions;
+
 namespace Comuki.Engine.Orchestration.Domain.MergeQueue;
 
 /// <summary>
@@ -85,12 +87,14 @@ public sealed class MergeBatch
 
     /// <summary>Applies a status transition; illegal transitions throw — see <see cref="MergeBatchTransitions"/>.</summary>
     /// <param name="to"></param>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <exception cref="OrchestrationDomainException">the transition is not in <see cref="MergeBatchTransitions"/>.</exception>
     public void TransitionTo(MergeBatchStatus to)
     {
         if (!MergeBatchTransitions.IsLegal(Status, to))
         {
-            throw new InvalidOperationException($"illegal merge-batch transition {Status} -> {to}");
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.MergeBatchIllegalTransition,
+                $"illegal merge-batch transition {Status} -> {to}");
         }
 
         Status = to;
@@ -147,7 +151,7 @@ public sealed class MergeBatch
             throw new ArgumentException("abandon reason must not be empty", nameof(reason));
         }
 
-        if (Status is not (MergeBatchStatus.Pending or MergeBatchStatus.InProgress))
+        if (Status != MergeBatchStatus.Pending && Status != MergeBatchStatus.InProgress)
         {
             throw new InvalidOperationException($"abandon is only legal from {nameof(MergeBatchStatus.Pending)} or {nameof(MergeBatchStatus.InProgress)}, got {Status}");
         }

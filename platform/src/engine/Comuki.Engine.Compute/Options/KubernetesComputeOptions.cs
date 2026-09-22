@@ -56,4 +56,16 @@ public sealed class KubernetesComputeOptions
     ///     itself runs inside the target cluster).
     /// </summary>
     public string? KubeconfigPath { get; init; }
+
+    /// <summary>
+    ///     When true and <see cref="KubeconfigPath"/> is empty/whitespace, the
+    ///     factory skips in-cluster initialisation entirely and returns null —
+    ///     the installer wires the <c>IKubernetes</c> service to no-op so DI
+    ///     resolves. Intended for hosts that load the compute engine for
+    ///     composition symmetry but never actually call the Kubernetes
+    ///     provider at runtime (e.g. integration fixtures, hosts pinned to
+    ///     <c>Compute:Provider=docker</c> via env on a pod whose ServiceAccount
+    ///     token is intentionally not mounted).
+    /// </summary>
+    public bool SkipKubernetesConfig { get; init; }
 }

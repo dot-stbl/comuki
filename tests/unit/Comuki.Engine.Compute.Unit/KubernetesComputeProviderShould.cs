@@ -6,6 +6,7 @@ using Comuki.Shared.Kernel.Ids;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Shouldly;
@@ -43,7 +44,12 @@ public sealed class KubernetesComputeProviderShould
         var kubernetes = Substitute.For<IKubernetes>();
         kubernetes.BatchV1.Returns(batchV1);
         kubernetes.CoreV1.Returns(coreV1);
-        Provider = new KubernetesComputeProvider(kubernetes, Microsoft.Extensions.Options.Options.Create(options));
+        var services = Substitute.For<IServiceProvider>();
+        services.GetService(typeof(IKubernetes)).Returns(kubernetes);
+        Provider = new KubernetesComputeProvider(
+            services,
+            Microsoft.Extensions.Options.Options.Create(options),
+            NullLogger<KubernetesComputeProvider>.Instance);
     }
 
     private KubernetesComputeProvider Provider { get; }

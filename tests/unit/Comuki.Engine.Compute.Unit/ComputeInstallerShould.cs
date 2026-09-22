@@ -1,3 +1,4 @@
+using Comuki.Engine.Compute.Exceptions;
 using Comuki.Engine.Compute.Installers;
 using Comuki.Engine.Compute.Providers;
 using Comuki.Engine.Compute.Providers.Kubernetes;
@@ -19,7 +20,12 @@ namespace Comuki.Engine.Compute.Unit;
 /// <summary>
 /// Provider-selection wiring of <see cref="ComputeInstaller.AddComukiCompute"/>:
 /// Compute:Provider picks the concrete behind <see cref="IComputeProvider"/>
-/// (factory, both registered; the unselected one never constructed).
+/// (factory, both registered; the unselected one never constructed), plus
+/// the resolution contract for <see cref="IKubernetes"/>: file path wins,
+/// <c>SkipKubernetesConfig</c> short-circuits to a null client and turns the
+/// provider into a no-op, and a missing in-cluster config now throws the
+/// typed <see cref="KubernetesConfigUnavailableException"/> rather than the
+/// raw SDK exception.
 /// </summary>
 public sealed class ComputeInstallerShould
 {
@@ -36,9 +42,11 @@ public sealed class ComputeInstallerShould
 
         var configuration = KubernetesClientConfigurationFactory.Build(
             kubeconfigPath,
+            skipInCluster: false,
             () => inClusterConfiguration,
             _ => throw new InvalidOperationException("External kubeconfig must not be read"));
 
+        configuration.ShouldNotBeNull();
         configuration.ShouldBeSameAs(inClusterConfiguration);
         configuration.Host.ShouldNotBe("http://localhost:8080");
     }
@@ -55,6 +63,7 @@ public sealed class ComputeInstallerShould
 
         var configuration = KubernetesClientConfigurationFactory.Build(
             KubeconfigPath,
+            skipInCluster: false,
             () => throw new InvalidOperationException("In-cluster configuration must not be read"),
             path =>
             {
@@ -64,6 +73,60 @@ public sealed class ComputeInstallerShould
 
         configuration.ShouldBeSameAs(externalConfiguration);
         observedPath.ShouldBe(KubeconfigPath);
+    }
+
+    [Theory(DisplayName = "Given empty kubeconfig path and SkipKubernetesConfig, when building Kubernetes configuration, then returns null")]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void SkipInClusterWhenSkipFlagIsSet(string? kubeconfigPath)
+    {
+        var configuration = KubernetesClientConfigurationFactory.Build(
+            kubeconfigPath,
+            skipInCluster: true,
+            static () => throw new InvalidOperationException("In-cluster configuration must not be read when SkipKubernetesConfig is true"),
+            static _ => throw new InvalidOperationException("External kubeconfig must not be read when path is empty"));
+
+        configuration.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Given explicit kubeconfig path and SkipKubernetesConfig, when building Kubernetes configuration, then file path still wins")]
+    public void ExplicitKubeconfigPathStillWinsWhenSkipKubernetesConfigIsSet()
+    {
+        const string KubeconfigPath = "clusters/worker.kubeconfig";
+        var externalConfiguration = new KubernetesClientConfiguration
+        {
+            Host = "https://worker.example.test",
+        };
+
+        var configuration = KubernetesClientConfigurationFactory.Build(
+            KubeconfigPath,
+            skipInCluster: true,
+            () => throw new InvalidOperationException("In-cluster configuration must not be read when an explicit path is supplied"),
+            path => path == KubeconfigPath ? externalConfiguration : throw new InvalidOperationException("Unexpected path"));
+
+        configuration.ShouldBeSameAs(externalConfiguration);
+    }
+
+    [Fact(DisplayName = "Given hard-coded factory, when the in-cluster delegate throws KubernetesClientException, then the factory surfaces KubernetesConfigUnavailableException with an actionable hint")]
+    public void WrapInClusterExceptionAsTypedConfigUnavailable()
+    {
+        var sdkException = new KubernetesClientException(
+            "Unable to load in-cluster configuration, service account token is missing");
+
+        var thrown = Should.Throw<KubernetesConfigUnavailableException>(() =>
+            KubernetesClientConfigurationFactory.Build(
+                kubeconfigPath: null,
+                skipInCluster: false,
+                buildInCluster: () => throw sdkException,
+                buildFromConfigFile: _ => throw new InvalidOperationException("File path must not be taken")));
+
+        thrown.InnerException.ShouldBeSameAs(sdkException);
+        thrown.Message.ShouldContain("KUBERNETES_SERVICE_HOST");
+        thrown.Message.ShouldContain("Compute:Provider=docker");
+        thrown.Message.ShouldContain("automountServiceAccountToken");
+        thrown.Message.ShouldContain("KubeconfigPath");
+        thrown.Message.ShouldContain("SkipKubernetesConfig");
     }
 
     [Fact(DisplayName = "When resolve Docker Provider By Default, then test passes")]
@@ -96,16 +159,16 @@ public sealed class ComputeInstallerShould
 
         provider.GetRequiredService<IComputeProvider>().ShouldBeOfType<DockerComputeProvider>();
 
-        factory.DidNotReceive().Build(Arg.Any<string?>());
+        factory.DidNotReceive().Build(Arg.Any<string?>(), Arg.Any<bool>());
     }
 
-    [Fact(DisplayName = "Given kubernetes provider with no kubeconfig, when the in-cluster factory throws, then the host rethrows and logs an actionable error")]
+    [Fact(DisplayName = "Given kubernetes provider with no kubeconfig, when the factory throws KubernetesConfigUnavailableException, then the host rethrows the typed exception and logs an actionable error")]
     public void RethrowAndLogErrorWhenInClusterFactoryThrows()
     {
         var factory = Substitute.For<IKubernetesClientConfigurationFactory>();
-        var exception = new KubernetesClientException(
-            "Unable to load in-cluster configuration, service account token is missing");
-        factory.Build(Arg.Any<string?>()).Throws(exception);
+        var exception = new KubernetesConfigUnavailableException(
+            "Kubernetes in-cluster configuration is unavailable (hint)");
+        factory.Build(Arg.Any<string?>(), Arg.Any<bool>()).Throws(exception);
 
         var capture = new CapturingLoggerProvider();
         using var provider = BuildProvider(
@@ -114,7 +177,7 @@ public sealed class ComputeInstallerShould
             captureLoggerFactory: out var loggerFactory);
         loggerFactory.AddProvider(capture);
 
-        var thrown = Should.Throw<KubernetesClientException>(provider.GetRequiredService<IKubernetes>);
+        var thrown = Should.Throw<KubernetesConfigUnavailableException>(provider.GetRequiredService<IKubernetes>);
         thrown.ShouldBeSameAs(exception);
 
         var errorEntry = capture.Entries.SingleOrDefault(static entry =>
@@ -125,6 +188,39 @@ public sealed class ComputeInstallerShould
         errorEntry.Message.ShouldContain("Kubernetes client failed to initialise");
         errorEntry.Message.ShouldContain("ServiceAccount");
         errorEntry.Message.ShouldContain("Compute:Provider=docker");
+    }
+
+    [Fact(DisplayName = "Given SkipKubernetesConfig and no kubeconfig, when resolving IKubernetes, then null is returned and the provider runs as no-op")]
+    public void ReturnNullKubernetesClientWhenSkipKubernetesConfigIsSet()
+    {
+        var factory = Substitute.For<IKubernetesClientConfigurationFactory>();
+        factory.Build(Arg.Any<string?>(), Arg.Any<bool>()).Returns((KubernetesClientConfiguration?)null);
+
+        using var provider = BuildProvider(
+            settings: new Dictionary<string, string?>
+            {
+                ["Compute:Provider"] = "kubernetes",
+                ["Compute:Kubernetes:SkipKubernetesConfig"] = "true",
+            },
+            kubernetesClientConfigurationFactory: factory,
+            captureLoggerFactory: out _);
+
+        provider.GetService<IKubernetes>().ShouldBeNull();
+        var kubernetesProvider = provider.GetRequiredService<KubernetesComputeProvider>();
+
+        Should.Throw<NotSupportedException>(async () =>
+            await kubernetesProvider.StartAsync(
+                new ComputeStartRequest
+                {
+                    ProjectId = Shared.Kernel.Ids.ProjectId.New(),
+                    ProfileKey = "implement",
+                    ProfilesGitRef = "refs/tags/v1",
+                    Image = "ghcr.io/comuki/worker:latest",
+                    WorkerToken = "secret",
+                    OrchestratorGrpcUrl = new Uri("http://orch:5051"),
+                },
+                TestContext.Current.CancellationToken));
+        provider.GetRequiredService<IComputeProvider>().ShouldBeOfType<KubernetesComputeProvider>();
     }
 
     private static ServiceProvider BuildProvider(Dictionary<string, string?> settings)

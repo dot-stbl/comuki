@@ -3,11 +3,13 @@ using FluentValidation;
 namespace Comuki.Engine.Orchestration.Application.MergeQueue;
 
 /// <summary>
-/// Structural validation of the merge-queue commands: bounded string
-/// lengths (the EF column constraints re-enforce them at the store),
-/// non-empty branch / URL, non-empty operator id on Claim / Abandon.
-/// Domain factory throws on invariant violations (operator id check
-/// on Claim, reason check on Abandon) — these rules catch them earlier.
+/// Structural validation of <see cref="EnqueueMergeRequestCommand"/>:
+/// bounded string lengths (the EF column constraints re-enforce them
+/// at the store), non-empty branch / URL, bounded notes. Domain factory
+/// throws on invariant violations — these rules catch them earlier with
+/// bounded-length feedback. The per-verb action commands have their own
+/// validators under <see cref="Claim"/>, <see cref="Release"/>,
+/// <see cref="MergeEntry"/>, <see cref="Abandon"/>, <see cref="Annotate"/>.
 /// </summary>
 public sealed class MergeQueueValidator : AbstractValidator<EnqueueMergeRequestCommand>
 {
@@ -33,41 +35,5 @@ public sealed class MergeQueueValidator : AbstractValidator<EnqueueMergeRequestC
 
         RuleFor(static command => command.Notes)
             .MaximumLength(MaxNotesLength);
-    }
-}
-
-/// <summary>Update-side structural validation: operator id on Claim / Abandon; reason on Abandon.</summary>
-public sealed class UpdateMergeQueueValidator : AbstractValidator<UpdateMergeQueueCommand>
-{
-    /// <summary>Maximum operator id length we accept.</summary>
-    public const int MaxOperatorIdLength = 128;
-
-    /// <summary>Maximum abandon-reason length we accept.</summary>
-    public const int MaxReasonLength = 1024;
-
-    /// <summary>Rules.</summary>
-    public UpdateMergeQueueValidator()
-    {
-        RuleFor(static command => command.EntryId)
-            .NotEqual(Guid.Empty);
-
-        RuleFor(static command => command.OperatorId)
-            .NotEmpty()
-            .MaximumLength(MaxOperatorIdLength)
-            .When(static command => command.Action is MergeQueueAction.Claim);
-
-        RuleFor(static command => command.OperatorId)
-            .NotEmpty()
-            .MaximumLength(MaxOperatorIdLength)
-            .When(static command => command.Action is MergeQueueAction.Abandon);
-
-        RuleFor(static command => command.Reason)
-            .NotEmpty()
-            .MaximumLength(MaxReasonLength)
-            .When(static command => command.Action is MergeQueueAction.Abandon);
-
-        RuleFor(static command => command.Notes)
-            .MaximumLength(MergeQueueValidator.MaxNotesLength)
-            .When(static command => command.Action is MergeQueueAction.Annotate);
     }
 }

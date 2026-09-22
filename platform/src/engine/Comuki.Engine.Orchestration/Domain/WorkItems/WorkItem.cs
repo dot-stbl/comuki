@@ -1,3 +1,4 @@
+using Comuki.Engine.Orchestration.Domain.Exceptions;
 using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Engine.Orchestration.Domain.WorkItems;
@@ -67,7 +68,7 @@ public sealed class WorkItem
     /// <param name="brief"></param>
     /// <param name="initialStatus"></param>
     /// <param name="now"></param>
-    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="OrchestrationDomainException">a factory invariant was violated.</exception>
     public static WorkItem Create(
         RunId runId,
         string profileKey,
@@ -79,29 +80,37 @@ public sealed class WorkItem
     {
         if (string.IsNullOrWhiteSpace(profileKey))
         {
-            throw new ArgumentException("profile key must not be empty", nameof(profileKey));
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.WorkItemProfileKeyEmpty,
+                "profile key must not be empty");
         }
 
         if (string.IsNullOrWhiteSpace(image))
         {
-            throw new ArgumentException("image must not be empty", nameof(image));
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.WorkItemImageEmpty,
+                "image must not be empty");
         }
 
         if (string.IsNullOrWhiteSpace(profilesRef))
         {
-            throw new ArgumentException("profiles ref must not be empty", nameof(profilesRef));
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.WorkItemProfilesRefEmpty,
+                "profiles ref must not be empty");
         }
 
         if (string.IsNullOrWhiteSpace(brief))
         {
-            throw new ArgumentException("brief must not be empty", nameof(brief));
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.WorkItemBriefEmpty,
+                "brief must not be empty");
         }
 
-        if (initialStatus is not (WorkItemStatus.Queued or WorkItemStatus.Blocked))
+        if (initialStatus != WorkItemStatus.Queued && initialStatus != WorkItemStatus.Blocked)
         {
-            throw new ArgumentException(
-                $"initial work item status must be {nameof(WorkItemStatus.Queued)} or {nameof(WorkItemStatus.Blocked)}, got {initialStatus}",
-                nameof(initialStatus));
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.WorkItemInitialStatusInvalid,
+                $"initial work item status must be {nameof(WorkItemStatus.Queued)} or {nameof(WorkItemStatus.Blocked)}, got {initialStatus}");
         }
 
         var id = Guid.CreateVersion7();
@@ -122,12 +131,14 @@ public sealed class WorkItem
     /// <summary>Applies a status transition; illegal transitions throw — see <see cref="WorkItemTransitions"/>.</summary>
     /// <param name="to"></param>
     /// <param name="now"></param>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <exception cref="OrchestrationDomainException">the transition is not in <see cref="WorkItemTransitions"/>.</exception>
     public void TransitionTo(WorkItemStatus to, DateTimeOffset now)
     {
         if (!WorkItemTransitions.IsLegal(Status, to))
         {
-            throw new InvalidOperationException($"illegal work item transition {Status} -> {to}");
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.WorkItemIllegalTransition,
+                $"illegal work item transition {Status} -> {to}");
         }
 
         Status = to;

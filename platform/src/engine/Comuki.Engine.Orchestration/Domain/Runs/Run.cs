@@ -1,3 +1,4 @@
+using Comuki.Engine.Orchestration.Domain.Exceptions;
 using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Engine.Orchestration.Domain.Runs;
@@ -56,12 +57,14 @@ public sealed class Run
     /// <summary>Applies a status transition; illegal transitions throw — see <see cref="RunTransitions"/>.</summary>
     /// <param name="to"></param>
     /// <param name="now"></param>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <exception cref="OrchestrationDomainException">the transition is not in <see cref="RunTransitions"/>.</exception>
     public void TransitionTo(RunStatus to, DateTimeOffset now)
     {
         if (!RunTransitions.IsLegal(Status, to))
         {
-            throw new InvalidOperationException($"illegal run transition {Status} -> {to}");
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.RunIllegalTransition,
+                $"illegal run transition {Status} -> {to}");
         }
 
         Status = to;
@@ -79,15 +82,16 @@ public sealed class Run
     /// <param name="now"></param>
     public void PromoteTo(DateTimeOffset now)
     {
-        var next = TrustClass switch
+        RunTrustClass next;
+        if (TrustClass == RunTrustClass.Supervised)
         {
-            RunTrustClass.Supervised => RunTrustClass.Pilot,
-            RunTrustClass.Pilot => RunTrustClass.Trusted,
-            RunTrustClass.Trusted => RunTrustClass.Trusted,
-            _ => TrustClass,
-        };
-
-        if (next == TrustClass)
+            next = RunTrustClass.Pilot;
+        }
+        else if (TrustClass == RunTrustClass.Pilot)
+        {
+            next = RunTrustClass.Trusted;
+        }
+        else
         {
             return;
         }

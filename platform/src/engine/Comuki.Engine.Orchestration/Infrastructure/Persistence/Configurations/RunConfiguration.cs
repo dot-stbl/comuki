@@ -24,13 +24,13 @@ public sealed class RunConfiguration : IEntityTypeConfiguration<Run>
 
         builder.Property(static run => run.Status)
             .HasColumnName("status")
-            .HasConversion<string>()
+            .HasConversion(SmartTypeConverters.RunStatusToString)
             .HasMaxLength(16)
             .IsRequired();
 
         builder.Property(static run => run.TrustClass)
             .HasColumnName("trust_class")
-            .HasConversion<string>()
+            .HasConversion(SmartTypeConverters.RunTrustClassToString)
             .HasMaxLength(16)
             .IsRequired()
             .HasDefaultValue(RunTrustClass.Supervised);

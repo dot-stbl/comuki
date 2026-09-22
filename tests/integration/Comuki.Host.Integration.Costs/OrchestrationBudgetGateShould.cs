@@ -99,17 +99,17 @@ public sealed class OrchestrationBudgetGateShould : IAsyncLifetime
         // Drive through the legal transition chain so the aggregate guard
         // accepts the target status — Queued is the only legal entry and
         // Succeeded has to come through Running first.
-        if (targetStatus is RunStatus.Running or RunStatus.Succeeded or RunStatus.Cancelled)
+        if (targetStatus == RunStatus.Running || targetStatus == RunStatus.Succeeded || targetStatus == RunStatus.Cancelled)
         {
             run.TransitionTo(RunStatus.Running, now);
         }
 
-        if (targetStatus is RunStatus.Succeeded)
+        if (targetStatus == RunStatus.Succeeded)
         {
             run.TransitionTo(RunStatus.Succeeded, now);
         }
 
-        if (targetStatus is RunStatus.Cancelled)
+        if (targetStatus == RunStatus.Cancelled)
         {
             run.TransitionTo(RunStatus.Cancelled, now);
         }

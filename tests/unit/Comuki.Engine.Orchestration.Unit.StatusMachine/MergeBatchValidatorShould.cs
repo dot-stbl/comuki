@@ -1,4 +1,7 @@
 using Comuki.Engine.Orchestration.Application.MergeQueue;
+using Comuki.Engine.Orchestration.Application.MergeQueue.BatchAbandon;
+using Comuki.Engine.Orchestration.Application.MergeQueue.BatchClaim;
+using Comuki.Engine.Orchestration.Application.MergeQueue.BatchMerge;
 using Shouldly;
 using Xunit;
 
@@ -83,20 +86,17 @@ public sealed class MergeBatchValidatorShould
 }
 
 /// <summary>
-/// Structural validation of <see cref="UpdateMergeBatchCommand"/>:
-/// reason on Abandon, bounded string length.
+/// Structural validation of <see cref="AbandonMergeBatchCommand"/>:
+/// non-empty reason, bounded length.
 /// </summary>
-public sealed class UpdateMergeBatchValidatorShould
+public sealed class AbandonMergeBatchValidatorShould
 {
-    private readonly UpdateMergeBatchValidator validator = new();
+    private readonly AbandonMergeBatchValidator validator = new();
 
     [Fact(DisplayName = "Given an Abandon without reason, when validated, then it fails")]
     public void RequireReasonOnAbandon()
     {
-        var command = new UpdateMergeBatchCommand(
-            Guid.CreateVersion7(),
-            MergeBatchAction.Abandon,
-            Reason: " ");
+        var command = new AbandonMergeBatchCommand(Guid.CreateVersion7(), Reason: " ");
 
         var result = validator.Validate(command);
 
@@ -107,27 +107,35 @@ public sealed class UpdateMergeBatchValidatorShould
     [Fact(DisplayName = "Given an empty batch id, when validated, then it fails")]
     public void RefuseEmptyBatchId()
     {
-        var command = new UpdateMergeBatchCommand(
-            Guid.Empty,
-            MergeBatchAction.Merge,
-            Reason: null);
+        var command = new AbandonMergeBatchCommand(Guid.Empty, Reason: "stale batch");
 
         var result = validator.Validate(command);
 
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(static failure => failure.PropertyName == "BatchId");
     }
+}
 
-    [Fact(DisplayName = "Given a Merge command, when validated, then it passes without reason")]
-    public void AcceptMergeWithoutReason()
+/// <summary>
+/// Claim and Merge handlers share a "non-empty batch id" rule.
+/// </summary>
+public sealed class ClaimAndMergeMergeBatchValidatorShould
+{
+    [Fact(DisplayName = "Given a claim with an empty batch id, when validated, then it fails")]
+    public void RefuseEmptyBatchIdOnClaim()
     {
-        var command = new UpdateMergeBatchCommand(
-            Guid.CreateVersion7(),
-            MergeBatchAction.Merge,
-            Reason: null);
+        var result = new ClaimMergeBatchValidator().Validate(new ClaimMergeBatchCommand(Guid.Empty));
 
-        var result = validator.Validate(command);
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(static failure => failure.PropertyName == "BatchId");
+    }
 
-        result.IsValid.ShouldBeTrue();
+    [Fact(DisplayName = "Given a merge with an empty batch id, when validated, then it fails")]
+    public void RefuseEmptyBatchIdOnMerge()
+    {
+        var result = new MergeMergeBatchValidator().Validate(new MergeMergeBatchCommand(Guid.Empty));
+
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(static failure => failure.PropertyName == "BatchId");
     }
 }

@@ -3,11 +3,14 @@ using FluentValidation;
 namespace Comuki.Engine.Orchestration.Application.MergeQueue;
 
 /// <summary>
-/// Structural validation of the merge-batch commands: bounded name
-/// length (mirrors the EF column), non-empty PR URL list, bounded URL
-/// length per entry, and the abandon-reason length. Domain factory
-/// throws on invariant violations (name / list / url emptiness) — these
-/// rules catch them earlier with bounded-length feedback.
+/// Structural validation of <see cref="CreateMergeBatchCommand"/>:
+/// bounded name length (mirrors the EF column), non-empty PR URL list,
+/// bounded URL length per entry, and a cap on the array size to keep
+/// writes predictable. Domain factory throws on invariant violations
+/// (name / list / url emptiness) — these rules catch them earlier
+/// with bounded-length feedback. The per-verb action commands have
+/// their own validators under <see cref="BatchClaim"/>,
+/// <see cref="BatchMerge"/>, <see cref="BatchAbandon"/>.
 /// </summary>
 public sealed class MergeBatchValidator : AbstractValidator<CreateMergeBatchCommand>
 {
@@ -34,24 +37,5 @@ public sealed class MergeBatchValidator : AbstractValidator<CreateMergeBatchComm
 
         RuleFor(static command => command.PullRequestUrls)
             .ForEach(static rule => rule.NotEmpty().MaximumLength(MaxPullRequestUrlLength));
-    }
-}
-
-/// <summary>Update-side structural validation: reason on Abandon.</summary>
-public sealed class UpdateMergeBatchValidator : AbstractValidator<UpdateMergeBatchCommand>
-{
-    /// <summary>Maximum abandon-reason length we accept.</summary>
-    public const int MaxReasonLength = 1024;
-
-    /// <summary>Rules.</summary>
-    public UpdateMergeBatchValidator()
-    {
-        RuleFor(static command => command.BatchId)
-            .NotEqual(Guid.Empty);
-
-        RuleFor(static command => command.Reason)
-            .NotEmpty()
-            .MaximumLength(MaxReasonLength)
-            .When(static command => command.Action is MergeBatchAction.Abandon);
     }
 }

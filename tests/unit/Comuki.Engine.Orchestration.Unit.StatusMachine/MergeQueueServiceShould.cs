@@ -11,10 +11,10 @@ using Xunit;
 namespace Comuki.Engine.Orchestration.Unit.StatusMachine;
 
 /// <summary>
-/// <see cref="MergeQueueService"/> wiring: enqueue delegates to the
-/// store and projects the new entry through <see cref="MergeQueueEntryView"/>;
-/// claim-next returns null when the queue is empty; update by action
-/// translates to the right domain mutator and round-trips the view.
+/// <see cref="MergeQueueService"/> read-side wiring: enqueue delegates
+/// to the store and projects the new entry through
+/// <see cref="MergeQueueEntryView"/>; claim-next returns null when the
+/// queue is empty. Transition actions live in per-verb handler tests.
 /// </summary>
 public sealed class MergeQueueServiceShould
 {
@@ -27,7 +27,7 @@ public sealed class MergeQueueServiceShould
         var store = Substitute.For<IMergeQueueStore>();
         var projectId = ProjectId.New();
         var validator = new MergeQueueValidator();
-        var service = new MergeQueueService(store, validator, new UpdateMergeQueueValidator(), clock, NullLogger<MergeQueueService>.Instance);
+        var service = new MergeQueueService(store, validator, clock, NullLogger<MergeQueueService>.Instance);
 
         var view = await service.EnqueueAsync(
             new EnqueueMergeRequestCommand(
@@ -56,7 +56,7 @@ public sealed class MergeQueueServiceShould
     {
         var clock = new MergeQueueFakeTimeProvider(now);
         var store = Substitute.For<IMergeQueueStore>();
-        var service = new MergeQueueService(store, new MergeQueueValidator(), new UpdateMergeQueueValidator(), clock, NullLogger<MergeQueueService>.Instance);
+        var service = new MergeQueueService(store, new MergeQueueValidator(), clock, NullLogger<MergeQueueService>.Instance);
 
         var exception = await Should.ThrowAsync<ValidationException>(
             () => service.EnqueueAsync(
@@ -79,62 +79,9 @@ public sealed class MergeQueueServiceShould
         var store = Substitute.For<IMergeQueueStore>();
         store.ClaimNextAsync(Arg.Any<ProjectId?>(), Arg.Any<string>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns((MergeQueueEntry?)null);
-        var service = new MergeQueueService(store, new MergeQueueValidator(), new UpdateMergeQueueValidator(), clock, NullLogger<MergeQueueService>.Instance);
+        var service = new MergeQueueService(store, new MergeQueueValidator(), clock, NullLogger<MergeQueueService>.Instance);
 
         var view = await service.ClaimNextAsync(null, "operator-alice", TestContext.Current.CancellationToken);
-
-        view.ShouldBeNull();
-    }
-
-    [Fact(DisplayName = "Given a queued entry, when UpdateAsync(Claim) is called, then it delegates to entry.Claim + SaveAsync")]
-    public async Task ClaimActionTransitionsAndPersistsAsync()
-    {
-        var entryId = Guid.CreateVersion7();
-        var projectId = ProjectId.New();
-        var entry = MergeQueueEntry.Create(projectId, "feature/x", "https://example.com/pr/2", ConflictResolution.None, null, now);
-        // Force the entry id to a known value for the Arg matcher.
-        var store = Substitute.For<IMergeQueueStore>();
-        store.FindByIdAsync(entryId, Arg.Any<CancellationToken>()).Returns(entry);
-        var clock = new MergeQueueFakeTimeProvider(now);
-        var service = new MergeQueueService(store, new MergeQueueValidator(), new UpdateMergeQueueValidator(), clock, NullLogger<MergeQueueService>.Instance);
-
-        var view = await service.UpdateAsync(
-            new UpdateMergeQueueCommand(entryId, MergeQueueAction.Claim, "operator-bob", null, null),
-            TestContext.Current.CancellationToken);
-
-        view.ShouldNotBeNull();
-        view.Status.ShouldBe(MergeQueueStatus.InProgress);
-        view.ClaimedBy.ShouldBe("operator-bob");
-        await store.Received(1).SaveAsync(
-            Arg.Is<MergeQueueEntry>(static updated => updated.Status == MergeQueueStatus.InProgress),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact(DisplayName = "Given a Claim with empty operator id, when UpdateAsync is called, then it throws and never touches the store")]
-    public async Task RejectClaimWithoutOperatorIdAsync()
-    {
-        var store = Substitute.For<IMergeQueueStore>();
-        var service = new MergeQueueService(store, new MergeQueueValidator(), new UpdateMergeQueueValidator(), new MergeQueueFakeTimeProvider(now), NullLogger<MergeQueueService>.Instance);
-
-        var exception = await Should.ThrowAsync<ValidationException>(
-            () => service.UpdateAsync(
-                new UpdateMergeQueueCommand(Guid.CreateVersion7(), MergeQueueAction.Claim, " ", null, null),
-                TestContext.Current.CancellationToken));
-
-        exception.ShouldNotBeNull();
-        await store.DidNotReceiveWithAnyArgs().FindByIdAsync(Guid.Empty, TestContext.Current.CancellationToken);
-    }
-
-    [Fact(DisplayName = "Given an unknown entry id, when UpdateAsync is called, then it returns null")]
-    public async Task UpdateReturnsNullForUnknownEntryAsync()
-    {
-        var store = Substitute.For<IMergeQueueStore>();
-        store.FindByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((MergeQueueEntry?)null);
-        var service = new MergeQueueService(store, new MergeQueueValidator(), new UpdateMergeQueueValidator(), new MergeQueueFakeTimeProvider(now), NullLogger<MergeQueueService>.Instance);
-
-        var view = await service.UpdateAsync(
-            new UpdateMergeQueueCommand(Guid.CreateVersion7(), MergeQueueAction.Merge, null, null, null),
-            TestContext.Current.CancellationToken);
 
         view.ShouldBeNull();
     }

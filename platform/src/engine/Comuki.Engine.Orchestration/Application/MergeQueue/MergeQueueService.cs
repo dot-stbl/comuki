@@ -7,21 +7,22 @@ using Microsoft.Extensions.Logging;
 namespace Comuki.Engine.Orchestration.Application.MergeQueue;
 
 /// <summary>
-/// Merge-queue orchestration: enqueue, list, atomic claim (via the
-/// guarded raw-SQL claim), transition by id (claim / release / merge /
-/// abandon / annotate). Domain factory enforces status invariants
-/// (illegal transitions throw) and the validator catches structural
-/// mistakes before they hit the store.
+/// Merge-queue read-side: enqueue, paged list, and atomic claim-next
+/// (via the guarded raw-SQL claim path). The transition actions
+/// (claim / release / merge / abandon / annotate) are owned by
+/// per-verb handlers in <see cref="Claim"/>,
+/// <see cref="Release"/>, <see cref="MergeEntry"/>,
+/// <see cref="Abandon"/>, <see cref="Annotate"/> — each handler has
+/// its own command and validator, so each is independently
+/// validatable and auditable.
 /// </summary>
 /// <param name="store"></param>
 /// <param name="validator"></param>
-/// <param name="updateValidator"></param>
 /// <param name="clock"></param>
 /// <param name="logger"></param>
 public sealed class MergeQueueService(
     IMergeQueueStore store,
     IValidator<EnqueueMergeRequestCommand> validator,
-    IValidator<UpdateMergeQueueCommand> updateValidator,
     TimeProvider clock,
     ILogger<MergeQueueService> logger)
 {
@@ -69,7 +70,7 @@ public sealed class MergeQueueService(
             views.Add(MergeQueueEntryView.FromEntry(entry));
         }
 
-        return new MergeQueuePage(views, views.Count);
+        return new MergeQueuePage { Items = views, Total = views.Count };
     }
 
     /// <summary>Atomically claims the oldest pending entry in the requested scope.</summary>
@@ -88,53 +89,5 @@ public sealed class MergeQueueService(
 
         var claimed = await store.ClaimNextAsync(projectId, operatorId, clock.GetUtcNow(), cancellationToken);
         return claimed is null ? null : MergeQueueEntryView.FromEntry(claimed);
-    }
-
-    /// <summary>
-    /// Dispatches one PATCH command: Claim / Release / Merge / Abandon / Annotate. Returns
-    /// the post-action view, or null when the entry id is unknown.
-    /// </summary>
-    /// <param name="command"></param>
-    /// <param name="cancellationToken"></param>
-    /// <exception cref="InvalidOperationException">the entry is in a status the action cannot run from.</exception>
-    public async Task<MergeQueueEntryView?> UpdateAsync(UpdateMergeQueueCommand command, CancellationToken cancellationToken = default)
-    {
-        await updateValidator.ValidateAndThrowAsync(command, cancellationToken);
-
-        var entry = await store.FindByIdAsync(command.EntryId, cancellationToken);
-        if (entry is null)
-        {
-            return null;
-        }
-
-        var now = clock.GetUtcNow();
-        switch (command.Action)
-        {
-            case MergeQueueAction.Claim:
-                entry.Claim(command.OperatorId!, now);
-                break;
-            case MergeQueueAction.Release:
-                entry.Release();
-                break;
-            case MergeQueueAction.Merge:
-                entry.MarkMerged(now);
-                break;
-            case MergeQueueAction.Abandon:
-                entry.MarkAbandoned(command.Reason!, now);
-                break;
-            case MergeQueueAction.Annotate:
-                entry.SetNotes(command.Notes);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(command), command.Action, "unknown merge-queue action");
-        }
-
-        await store.SaveAsync(entry, cancellationToken);
-        logger.LogInformation(
-            "Merge-queue entry {EntryId} transitioned via {Action} (operator {OperatorId})",
-            entry.Id,
-            command.Action,
-            command.OperatorId);
-        return MergeQueueEntryView.FromEntry(entry);
     }
 }

@@ -26,9 +26,19 @@ public sealed class CreateApiKeyRequest
 /// <summary>Validation of <see cref="CreateApiKeyRequest"/>.</summary>
 public sealed class CreateApiKeyRequestValidator : AbstractValidator<CreateApiKeyRequest>
 {
+    private readonly TimeProvider clock;
+
     /// <summary>Rules: user id, label length, expiry in the future when present.</summary>
-    public CreateApiKeyRequestValidator()
+    /// <param name="clock">
+    ///     Time source for "now" comparisons. Injected so the "expiry must be in the future"
+    ///     rule resolves per request — a captured <c>DateTimeOffset.UtcNow</c> at validator
+    ///     construction would drift forward by the validator's lifetime and start rejecting
+    ///     freshly issued near-future expiries within hours.
+    /// </param>
+    public CreateApiKeyRequestValidator(TimeProvider clock)
     {
+        this.clock = clock;
+
         RuleFor(static request => request.UserId)
             .NotEqual(Guid.Empty);
 
@@ -36,8 +46,11 @@ public sealed class CreateApiKeyRequestValidator : AbstractValidator<CreateApiKe
             .NotEmpty()
             .MaximumLength(128);
 
+        // Per-request "now" — a captured UtcNow at validator-construction time would
+        // drift forward by however long the process lives and start rejecting
+        // freshly issued near-future expiries within hours.
         RuleFor(static request => request.ExpiresAt)
-            .GreaterThan(static _ => DateTimeOffset.UtcNow)
+            .GreaterThan(_ => this.clock.GetUtcNow())
             .When(static request => request.ExpiresAt.HasValue);
 
         RuleFor(static request => request.TenantProjectId)

@@ -17,7 +17,7 @@ namespace Comuki.Host.Artifacts;
 /// </summary>
 /// <param name="store">EF + MinIO-backed store.</param>
 [ApiController]
-[Route("api/v1/projects/{projectId:guid}/artifacts")]
+[Route(ApiRoutes.VisualArtifacts)]
 [RequiresPermission("run:read")]
 public sealed class VisualArtifactsController(IVisualArtifactStore store) : ControllerBase
 {

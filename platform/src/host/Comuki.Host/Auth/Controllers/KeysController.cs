@@ -20,7 +20,7 @@ namespace Comuki.Host.Auth.Controllers;
 /// via <c>[FromServices]</c>.
 /// </summary>
 [ApiController]
-[Route("api/v1/keys")]
+[Route(ApiRoutes.IdentityAdminKeys)]
 public sealed class KeysController(
     IssueApiKeyHandler issueApiKey,
     RevokeApiKeyHandler revokeApiKey,

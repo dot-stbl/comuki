@@ -1,3 +1,4 @@
+using Comuki.Engine.Compute.Exceptions;
 using Comuki.Engine.Compute.Options;
 using Comuki.Engine.Compute.Pool;
 using Comuki.Engine.Compute.Ports;
@@ -90,37 +91,51 @@ public static class ComputeInstaller
 
         // An absent path means strictly in-cluster. BuildDefaultConfig is not
         // used because its final fallback targets http://localhost:8080.
+        // IKubernetes is registered through IServiceProvider access (see below)
+        // so KubernetesComputeProvider can resolve it lazily and survive the
+        // SkipKubernetesConfig=true no-op path.
         services.AddSingleton<IKubernetesClientConfigurationFactory, KubernetesClientConfigurationFactory>();
         services.AddSingleton<IKubernetes>(static serviceProvider =>
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
                 .CreateLogger("Comuki.Compute.KubernetesClient");
-            var kubeconfigPath = serviceProvider
-                .GetRequiredService<IOptions<KubernetesComputeOptions>>()
-                .Value.KubeconfigPath;
+            var options = serviceProvider.GetRequiredService<IOptions<KubernetesComputeOptions>>().Value;
+            var kubeconfigPath = options.KubeconfigPath;
             var factory = serviceProvider.GetRequiredService<IKubernetesClientConfigurationFactory>();
-            var mode = string.IsNullOrWhiteSpace(kubeconfigPath) ? "in-cluster" : kubeconfigPath;
-            KubernetesClientConfiguration config;
+            var mode = string.IsNullOrWhiteSpace(kubeconfigPath)
+                ? (options.SkipKubernetesConfig ? "skip" : "in-cluster")
+                : kubeconfigPath;
+            KubernetesClientConfiguration? config;
             try
             {
-                config = factory.Build(kubeconfigPath);
+                config = factory.Build(kubeconfigPath, options.SkipKubernetesConfig);
             }
-            catch (Exception exception)
+            catch (KubernetesConfigUnavailableException exception)
             {
-                // Diagnostics goal: when a host pod is shipped without the SA
-                // token mount (e.g. image 664bdfaf "brain" profile), the SDK
-                // throws KubernetesClientException with no caller-visible
-                // context. Surface the actual failure and an actionable hint
-                // before rethrowing so the host still fails fast — a silent
-                // DI crash leaves the scale supervisor dead with no trace.
+                // The factory already wraps the SDK's KubernetesClientException
+                // with the actionable hint; log here so a host pod without a
+                // ServiceAccount token mount leaves a trace instead of failing
+                // the DI build silently. Re-throw — the host is expected to
+                // fail fast (or set SkipKubernetesConfig=true).
                 logger.LogError(
                     exception,
                     "Kubernetes client failed to initialise (kubeconfig: {Mode}). "
-                      + "Verify the pod has a ServiceAccount mounted with a token, and "
-                      + "KUBERNETES_SERVICE_HOST/KUBERNETES_SERVICE_PORT are set; "
-                      + "if not deploying workers, set Compute:Provider=docker instead.",
+                        + "Verify the pod has a ServiceAccount mounted with a token, and "
+                        + "KUBERNETES_SERVICE_HOST/KUBERNETES_SERVICE_PORT are set; "
+                        + "if not deploying workers, set Compute:Provider=docker instead.",
                     mode);
                 throw;
+            }
+            if (config is null)
+            {
+                logger.LogInformation(
+                    "Kubernetes client skipped (Compute:Kubernetes:SkipKubernetesConfig=true); "
+                        + "KubernetesComputeProvider will run as no-op.");
+                // Return null via the strongly-typed service registration — DI
+                // exposes it through GetService<IKubernetes>() (null) while
+                // GetRequiredService would throw. The provider consumes it via
+                // IServiceProvider to honour the nullable contract.
+                return null!;
             }
             logger.LogInformation(
                 "Kubernetes client ready ({Mode}), host: {Host}",

@@ -169,17 +169,7 @@ public sealed class GetRunDetailHandlerShould
     private static async Task<Run> SeedRunAsync(OrchestrationDbContext db, RunStatus status, DateTimeOffset at)
     {
         var run = Run.Create(ProjectId.New(), at);
-        var chain = status switch
-        {
-            RunStatus.Queued => [],
-            RunStatus.Waiting => new[] { RunStatus.Waiting },
-            RunStatus.Running => [RunStatus.Running],
-            RunStatus.Succeeded => [RunStatus.Running, RunStatus.Succeeded],
-            RunStatus.Failed => [RunStatus.Failed],
-            RunStatus.Cancelled => [RunStatus.Cancelled],
-            RunStatus.Escalated => [RunStatus.Running, RunStatus.Escalated],
-            _ => throw new ArgumentOutOfRangeException(nameof(status), status, null),
-        };
+        var chain = ResolveRunStatusChain(status);
 
         var step = at.AddSeconds(1);
         foreach (var hop in chain)
@@ -191,6 +181,55 @@ public sealed class GetRunDetailHandlerShould
         db.Runs.Add(run);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return run;
+    }
+
+    /// <summary>
+    /// Map a target <see cref="RunStatus"/> to the legal sequence of
+    /// transitions needed to reach it from <see cref="RunStatus.Queued"/>.
+    /// Plain if-chain because smart-type members are static properties
+    /// and switch-expression arm patterns require constants.
+    /// </summary>
+    /// <param name="status"></param>
+    private static IReadOnlyList<RunStatus> ResolveRunStatusChain(RunStatus status)
+    {
+        if (status == RunStatus.Queued)
+        {
+            return [];
+        }
+
+        if (status == RunStatus.Waiting)
+        {
+            return [RunStatus.Waiting];
+        }
+
+        if (status == RunStatus.Running)
+        {
+            return [RunStatus.Running];
+        }
+
+        if (status == RunStatus.Succeeded)
+        {
+            return [RunStatus.Running, RunStatus.Succeeded];
+        }
+
+        if (status == RunStatus.Failed)
+        {
+            return [RunStatus.Failed];
+        }
+
+        if (status == RunStatus.Cancelled)
+        {
+            return [RunStatus.Cancelled];
+        }
+
+        if (status == RunStatus.Escalated)
+        {
+            return [RunStatus.Running, RunStatus.Escalated];
+        }
+
+#pragma warning disable IDE0046
+        throw new ArgumentOutOfRangeException(nameof(status), status, null);
+#pragma warning restore IDE0046
     }
 
     private static async Task<WorkItem> SeedWorkItemAsync(

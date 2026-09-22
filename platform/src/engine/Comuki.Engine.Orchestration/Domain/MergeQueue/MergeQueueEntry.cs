@@ -1,3 +1,4 @@
+using Comuki.Engine.Orchestration.Domain.Exceptions;
 using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Engine.Orchestration.Domain.MergeQueue;
@@ -110,12 +111,14 @@ public sealed class MergeQueueEntry
 
     /// <summary>Applies a status transition; illegal transitions throw — see <see cref="MergeQueueTransitions"/>.</summary>
     /// <param name="to"></param>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <exception cref="OrchestrationDomainException">the transition is not in <see cref="MergeQueueTransitions"/>.</exception>
     public void TransitionTo(MergeQueueStatus to)
     {
         if (!MergeQueueTransitions.IsLegal(Status, to))
         {
-            throw new InvalidOperationException($"illegal merge-queue transition {Status} -> {to}");
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.MergeQueueIllegalTransition,
+                $"illegal merge-queue transition {Status} -> {to}");
         }
 
         Status = to;
@@ -203,7 +206,7 @@ public sealed class MergeQueueEntry
             throw new ArgumentException("abandon reason must not be empty", nameof(reason));
         }
 
-        if (Status is not (MergeQueueStatus.Pending or MergeQueueStatus.InProgress))
+        if (Status != MergeQueueStatus.Pending && Status != MergeQueueStatus.InProgress)
         {
             throw new InvalidOperationException($"abandon is only legal from {nameof(MergeQueueStatus.Pending)} or {nameof(MergeQueueStatus.InProgress)}, got {Status}");
         }

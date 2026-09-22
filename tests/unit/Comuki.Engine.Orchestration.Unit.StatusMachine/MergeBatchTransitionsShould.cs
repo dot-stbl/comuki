@@ -12,21 +12,38 @@ namespace Comuki.Engine.Orchestration.Unit.StatusMachine;
 public sealed class MergeBatchTransitionsShould
 {
     [Theory(DisplayName = "Given two statuses, when IsLegal is called, then it matches the transition table")]
-    [InlineData(MergeBatchStatus.Pending, MergeBatchStatus.InProgress, true)]
-    [InlineData(MergeBatchStatus.Pending, MergeBatchStatus.Merged, false)]
-    [InlineData(MergeBatchStatus.Pending, MergeBatchStatus.Abandoned, true)]
-    [InlineData(MergeBatchStatus.InProgress, MergeBatchStatus.Merged, true)]
-    [InlineData(MergeBatchStatus.InProgress, MergeBatchStatus.Abandoned, true)]
-    [InlineData(MergeBatchStatus.InProgress, MergeBatchStatus.Pending, false)]
-    [InlineData(MergeBatchStatus.Merged, MergeBatchStatus.Pending, false)]
-    [InlineData(MergeBatchStatus.Merged, MergeBatchStatus.InProgress, false)]
-    [InlineData(MergeBatchStatus.Merged, MergeBatchStatus.Abandoned, false)]
-    [InlineData(MergeBatchStatus.Abandoned, MergeBatchStatus.Pending, false)]
-    [InlineData(MergeBatchStatus.Abandoned, MergeBatchStatus.InProgress, false)]
-    [InlineData(MergeBatchStatus.Abandoned, MergeBatchStatus.Merged, false)]
+    [MemberData(nameof(LegalTransitionMatrix))]
     public void CheckLegalTransitions(MergeBatchStatus from, MergeBatchStatus to, bool legal)
     {
         MergeBatchTransitions.IsLegal(from, to).ShouldBe(legal);
+    }
+
+    /// <summary>
+    /// Full <c>(from, to, legal)</c> matrix — <see cref="MemberDataAttribute"/>
+    /// because <see cref="InlineDataAttribute"/> requires constants and
+    /// <see cref="MergeBatchStatus"/> members are static properties.
+    /// </summary>
+    public static TheoryData<MergeBatchStatus, MergeBatchStatus, bool> LegalTransitionMatrix
+    {
+        get
+        {
+            var data = new TheoryData<MergeBatchStatus, MergeBatchStatus, bool>
+            {
+                { MergeBatchStatus.Pending, MergeBatchStatus.InProgress, true },
+                { MergeBatchStatus.Pending, MergeBatchStatus.Merged, false },
+                { MergeBatchStatus.Pending, MergeBatchStatus.Abandoned, true },
+                { MergeBatchStatus.InProgress, MergeBatchStatus.Merged, true },
+                { MergeBatchStatus.InProgress, MergeBatchStatus.Abandoned, true },
+                { MergeBatchStatus.InProgress, MergeBatchStatus.Pending, false },
+                { MergeBatchStatus.Merged, MergeBatchStatus.Pending, false },
+                { MergeBatchStatus.Merged, MergeBatchStatus.InProgress, false },
+                { MergeBatchStatus.Merged, MergeBatchStatus.Abandoned, false },
+                { MergeBatchStatus.Abandoned, MergeBatchStatus.Pending, false },
+                { MergeBatchStatus.Abandoned, MergeBatchStatus.InProgress, false },
+                { MergeBatchStatus.Abandoned, MergeBatchStatus.Merged, false },
+            };
+            return data;
+        }
     }
 
     [Fact(DisplayName = "Given Merged status, when TargetsFrom is called, then it is empty (terminal)")]

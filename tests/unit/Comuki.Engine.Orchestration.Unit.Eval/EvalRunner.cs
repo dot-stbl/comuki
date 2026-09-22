@@ -200,19 +200,26 @@ public static class EvalRunner
 
     private static RunStatus ParseRunStatus(string value)
     {
-        return Enum.TryParse<RunStatus>(value, ignoreCase: true, out var status)
-            ? status
-            : throw new ArgumentException($"unknown run status '{value}'", nameof(value));
+        try
+        {
+            return RunStatus.FromWire(value);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            throw new ArgumentException($"unknown run status '{value}'", nameof(value));
+        }
     }
 
     private static WorkItemStatus ParseWorkItemStatus(string value, List<EvalMismatch> mismatches)
     {
-        if (!Enum.TryParse<WorkItemStatus>(value, ignoreCase: true, out var status))
+        try
+        {
+            return WorkItemStatus.FromWire(value);
+        }
+        catch (ArgumentOutOfRangeException)
         {
             mismatches.Add(new EvalMismatch("op.status", "Queued | Blocked | Running | Succeeded | Failed | Cancelled", value));
             return WorkItemStatus.Queued;
         }
-
-        return status;
     }
 }

@@ -49,7 +49,7 @@ public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
 
         builder.Property(static item => item.Status)
             .HasColumnName("status")
-            .HasConversion<string>()
+            .HasConversion(SmartTypeConverters.WorkItemStatusToString)
             .HasMaxLength(16)
             .IsRequired();
 

@@ -10,11 +10,11 @@ using Xunit;
 namespace Comuki.Engine.Orchestration.Unit.StatusMachine;
 
 /// <summary>
-/// <see cref="MergeBatchService"/> wiring: create delegates to the
-/// store and projects the new batch through
-/// <see cref="MergeBatchView"/>; update by action translates to the
-/// right domain mutator and round-trips the view. Mirrors
-/// <see cref="MergeQueueServiceShould"/> in shape.
+/// <see cref="MergeBatchService"/> read-side wiring: create delegates
+/// to the store and projects the new batch through
+/// <see cref="MergeBatchView"/>. Transition actions live in per-verb
+/// handler tests. Mirrors <see cref="MergeQueueServiceShould"/> in
+/// shape.
 /// </summary>
 public sealed class MergeBatchServiceShould
 {
@@ -25,7 +25,7 @@ public sealed class MergeBatchServiceShould
     {
         var clock = new MergeBatchFakeTimeProvider(now);
         var store = Substitute.For<IMergeBatchStore>();
-        var service = new MergeBatchService(store, new MergeBatchValidator(), new UpdateMergeBatchValidator(), clock, NullLogger<MergeBatchService>.Instance);
+        var service = new MergeBatchService(store, new MergeBatchValidator(), clock, NullLogger<MergeBatchService>.Instance);
 
         var view = await service.CreateAsync(
             new CreateMergeBatchCommand(
@@ -50,7 +50,7 @@ public sealed class MergeBatchServiceShould
     {
         var clock = new MergeBatchFakeTimeProvider(now);
         var store = Substitute.For<IMergeBatchStore>();
-        var service = new MergeBatchService(store, new MergeBatchValidator(), new UpdateMergeBatchValidator(), clock, NullLogger<MergeBatchService>.Instance);
+        var service = new MergeBatchService(store, new MergeBatchValidator(), clock, NullLogger<MergeBatchService>.Instance);
 
         var exception = await Should.ThrowAsync<ValidationException>(
             () => service.CreateAsync(
@@ -61,76 +61,6 @@ public sealed class MergeBatchServiceShould
 
         exception.ShouldNotBeNull();
         await store.DidNotReceiveWithAnyArgs().AddAsync(default!, TestContext.Current.CancellationToken);
-    }
-
-    [Fact(DisplayName = "Given a pending batch, when UpdateAsync(Claim) is called, then it delegates to batch.Claim + SaveAsync")]
-    public async Task ClaimActionTransitionsAndPersistsAsync()
-    {
-        var batchId = Guid.CreateVersion7();
-        var batch = MergeBatch.Create("release-train-q3", ["https://example.com/pr/1"], now);
-        var store = Substitute.For<IMergeBatchStore>();
-        store.FindByIdAsync(batchId, Arg.Any<CancellationToken>()).Returns(batch);
-        var clock = new MergeBatchFakeTimeProvider(now);
-        var service = new MergeBatchService(store, new MergeBatchValidator(), new UpdateMergeBatchValidator(), clock, NullLogger<MergeBatchService>.Instance);
-
-        var view = await service.UpdateAsync(
-            new UpdateMergeBatchCommand(batchId, MergeBatchAction.Claim, Reason: null),
-            TestContext.Current.CancellationToken);
-
-        view.ShouldNotBeNull();
-        view.Status.ShouldBe(MergeBatchStatus.InProgress);
-        await store.Received(1).SaveAsync(
-            Arg.Is<MergeBatch>(static updated => updated.Status == MergeBatchStatus.InProgress),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact(DisplayName = "Given an in-progress batch, when UpdateAsync(Merge) is called, then it is Merged with timestamp")]
-    public async Task MergeActionTransitionsAndPersistsAsync()
-    {
-        var batchId = Guid.CreateVersion7();
-        var batch = MergeBatch.Create("release-train-q3", ["https://example.com/pr/1"], now);
-        batch.Claim();
-        var store = Substitute.For<IMergeBatchStore>();
-        store.FindByIdAsync(batchId, Arg.Any<CancellationToken>()).Returns(batch);
-        var clock = new MergeBatchFakeTimeProvider(now);
-        var service = new MergeBatchService(store, new MergeBatchValidator(), new UpdateMergeBatchValidator(), clock, NullLogger<MergeBatchService>.Instance);
-
-        var view = await service.UpdateAsync(
-            new UpdateMergeBatchCommand(batchId, MergeBatchAction.Merge, Reason: null),
-            TestContext.Current.CancellationToken);
-
-        view.ShouldNotBeNull();
-        view.Status.ShouldBe(MergeBatchStatus.Merged);
-        view.MergedAtUnixMs.ShouldBe(now.ToUnixTimeMilliseconds());
-    }
-
-    [Fact(DisplayName = "Given an Abandon without reason, when UpdateAsync is called, then it throws and never touches the store")]
-    public async Task RejectAbandonWithoutReasonAsync()
-    {
-        var store = Substitute.For<IMergeBatchStore>();
-        var service = new MergeBatchService(store, new MergeBatchValidator(), new UpdateMergeBatchValidator(), new MergeBatchFakeTimeProvider(now), NullLogger<MergeBatchService>.Instance);
-
-        var exception = await Should.ThrowAsync<ValidationException>(
-            () => service.UpdateAsync(
-                new UpdateMergeBatchCommand(Guid.CreateVersion7(), MergeBatchAction.Abandon, Reason: null),
-                TestContext.Current.CancellationToken));
-
-        exception.ShouldNotBeNull();
-        await store.DidNotReceiveWithAnyArgs().FindByIdAsync(Guid.Empty, TestContext.Current.CancellationToken);
-    }
-
-    [Fact(DisplayName = "Given an unknown batch id, when UpdateAsync is called, then it returns null")]
-    public async Task UpdateReturnsNullForUnknownBatchAsync()
-    {
-        var store = Substitute.For<IMergeBatchStore>();
-        store.FindByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((MergeBatch?)null);
-        var service = new MergeBatchService(store, new MergeBatchValidator(), new UpdateMergeBatchValidator(), new MergeBatchFakeTimeProvider(now), NullLogger<MergeBatchService>.Instance);
-
-        var view = await service.UpdateAsync(
-            new UpdateMergeBatchCommand(Guid.CreateVersion7(), MergeBatchAction.Merge, Reason: null),
-            TestContext.Current.CancellationToken);
-
-        view.ShouldBeNull();
     }
 }
 

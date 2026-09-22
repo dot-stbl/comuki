@@ -45,10 +45,6 @@ public enum FilterTokenKind
 ///     Single token produced by the lexer. <see cref="OperatorPayload" /> carries the
 ///     resolved <see cref="FilterOperator" /> for <see cref="FilterTokenKind.Operator" />.
 /// </summary>
-/// <param name="Kind"></param>
-/// <param name="Text"></param>
-/// <param name="OperatorPayload"></param>
-/// <param name="Position"></param>
 public sealed record FilterToken(FilterTokenKind Kind, string Text, FilterOperator OperatorPayload, int Position);
 
 /// <summary>
@@ -81,7 +77,6 @@ internal sealed class FilterLexer
     ///     <see cref="FilterParseException" /> on unterminated strings, on
     ///     <see cref="MaxTokens" />+1 emitted tokens, or on any unexpected character.
     /// </summary>
-    /// <param name="source"></param>
     /// <exception cref="FilterParseException"></exception>
     public static IReadOnlyList<FilterToken> Tokenize(string source)
     {
@@ -215,8 +210,6 @@ internal sealed class FilterLexer
     ///     Checks whether <paramref name="symbol" /> occurs at the current
     ///     position. Does not advance the position — the caller does that on a match.
     /// </summary>
-    /// <param name="symbol"></param>
-    /// <param name="start"></param>
     private bool MatchesAt(string symbol, int start)
     {
         if (start + symbol.Length > sourceText.Length)

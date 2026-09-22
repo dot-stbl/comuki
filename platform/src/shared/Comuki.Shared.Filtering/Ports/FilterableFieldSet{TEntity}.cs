@@ -18,7 +18,6 @@ namespace Comuki.Shared.Filtering.Ports;
 ///     <see cref="FilterOperatorInference" />.
 /// </summary>
 /// <typeparam name="TEntity">Entity type.</typeparam>
-/// <param name="fields"></param>
 /// <remarks>Constructs from a pre-built field dictionary.</remarks>
 public sealed class FilterableFieldSet<TEntity>(IReadOnlyDictionary<string, FilterableField<TEntity>> fields)
 {
@@ -32,7 +31,6 @@ public sealed class FilterableFieldSet<TEntity>(IReadOnlyDictionary<string, Filt
     ///     field is unknown or excluded from the registry — the parser surfaces this as
     ///     a <see cref="Parser.FilterParseException" />.
     /// </summary>
-    /// <param name="name"></param>
     public FilterableField<TEntity>? Find(string name)
     {
         return fieldMap.TryGetValue(name, out var field) ? field : null;
@@ -60,7 +58,6 @@ public static class FilterableFieldRegistry
     private static readonly ConcurrentDictionary<Type, IReadOnlyList<UntypedFilterableField>> untypedCache = new();
 
     /// <summary>Returns the cached field set for <typeparamref name="TEntity" />, building it on first use.</summary>
-    /// <typeparam name="TEntity"></typeparam>
     public static FilterableFieldSet<TEntity> For<TEntity>()
     {
         return (FilterableFieldSet<TEntity>)typedCache.GetOrAdd(typeof(TEntity), static _ => FilterableFieldSetBuilder.Build<TEntity>());
@@ -71,7 +68,6 @@ public static class FilterableFieldRegistry
     ///     Used by OpenAPI schema transformers and other reflection-only consumers
     ///     that cannot name a generic <c>TEntity</c> at compile time.
     /// </summary>
-    /// <param name="type"></param>
     public static IReadOnlyList<UntypedFilterableField> BuildUntyped(Type type)
     {
         return untypedCache.GetOrAdd(type, static t => FilterableFieldSetBuilder.BuildUntypedCore(t));
@@ -84,9 +80,6 @@ public static class FilterableFieldRegistry
 ///     metadata (<see cref="Name" />, <see cref="ValueType" />, <see cref="Operators" />)
 ///     without the accessor expression, which needs a generic type.
 /// </summary>
-/// <param name="Name"></param>
-/// <param name="ValueType"></param>
-/// <param name="Operators"></param>
 public sealed record UntypedFilterableField(string Name, Type ValueType, FilterOperator Operators);
 
 file static class FilterableFieldSetBuilder
@@ -98,7 +91,6 @@ file static class FilterableFieldSetBuilder
     ///     not support (e.g. <c>byte[]</c>, <c>object</c>). A deny-list, in one mode — there is
     ///     no per-entity strict switch.
     /// </summary>
-    /// <typeparam name="TEntity"></typeparam>
     /// <remarks>
     ///     <para>
     ///         Sensitive properties (credentials, hashes, session and permission stamps) MUST be
@@ -162,7 +154,6 @@ file static class FilterableFieldSetBuilder
     ///     and rejected there is a documented query that answers <c>400</c> — and a field hidden
     ///     there but published here would advertise the very probe the hiding was for.
     /// </remarks>
-    /// <param name="type"></param>
     public static IReadOnlyList<UntypedFilterableField> BuildUntypedCore(Type type)
     {
         var fields = new List<UntypedFilterableField>();
@@ -196,7 +187,6 @@ file static class PropertyExclusions
     ///     <see cref="FilteredIgnoreAttribute" /> — either attribute counting when it is declared
     ///     on a base-class property this one overrides.
     /// </summary>
-    /// <param name="property"></param>
     /// <remarks>
     ///     <see cref="Attribute.IsDefined(MemberInfo, Type, bool)" /> and not
     ///     <c>property.IsDefined(…, inherit: true)</c>: for properties the latter's

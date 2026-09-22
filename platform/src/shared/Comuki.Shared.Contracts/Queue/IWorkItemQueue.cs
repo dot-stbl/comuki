@@ -15,11 +15,6 @@ public interface IWorkItemQueue
     /// leases it to the worker until <paramref name="leaseUntil"/> (bumping the
     /// attempt counter). Returns null when nothing matching is queued.
     /// </summary>
-    /// <param name="workerId"></param>
-    /// <param name="labels"></param>
-    /// <param name="leaseUntil"></param>
-    /// <param name="now"></param>
-    /// <param name="cancellationToken"></param>
     public Task<ClaimedWorkItem?> ClaimAsync(
         WorkerId workerId,
         WorkItemLabels labels,
@@ -32,11 +27,6 @@ public interface IWorkItemQueue
     /// item is unknown, not running, not leased to this worker, or the lease
     /// already expired (the reaper owns it from then on).
     /// </summary>
-    /// <param name="workItemId"></param>
-    /// <param name="workerId"></param>
-    /// <param name="leaseUntil"></param>
-    /// <param name="now"></param>
-    /// <param name="cancellationToken"></param>
     public Task<bool> HeartbeatAsync(
         Guid workItemId,
         WorkerId workerId,
@@ -49,11 +39,6 @@ public interface IWorkItemQueue
     /// worker's result JSON, releasing the lease. Returns false when the
     /// worker does not own a running item with this id.
     /// </summary>
-    /// <param name="workItemId"></param>
-    /// <param name="workerId"></param>
-    /// <param name="resultJson"></param>
-    /// <param name="now"></param>
-    /// <param name="cancellationToken"></param>
     public Task<bool> CompleteAsync(
         Guid workItemId,
         WorkerId workerId,
@@ -66,11 +51,6 @@ public interface IWorkItemQueue
     /// releasing the lease. Returns false when the worker does not own a
     /// running item with this id.
     /// </summary>
-    /// <param name="workItemId"></param>
-    /// <param name="workerId"></param>
-    /// <param name="reason"></param>
-    /// <param name="now"></param>
-    /// <param name="cancellationToken"></param>
     public Task<bool> FailAsync(
         Guid workItemId,
         WorkerId workerId,
@@ -79,7 +59,5 @@ public interface IWorkItemQueue
         CancellationToken cancellationToken = default);
 
     /// <summary>Count of queued items, optionally scoped to one profile key.</summary>
-    /// <param name="profileKey"></param>
-    /// <param name="cancellationToken"></param>
     public Task<int> CountQueuedAsync(string? profileKey = null, CancellationToken cancellationToken = default);
 }

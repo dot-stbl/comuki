@@ -20,7 +20,6 @@ public static class QueryableFilterExtensions
     ///     Applies the <see cref="FilterQuery.Filter" /> clause to <paramref name="source" />.
     ///     Returns <paramref name="source" /> unchanged when the filter is null/empty.
     /// </summary>
-    /// <typeparam name="TEntity"></typeparam>
     /// <param name="source"></param>
     /// <param name="filter"></param>
     /// <param name="fields"></param>
@@ -51,10 +50,6 @@ public static class QueryableFilterExtensions
     ///         field (stable, deterministic).
     ///     </para>
     /// </summary>
-    /// <typeparam name="TEntity"></typeparam>
-    /// <param name="source"></param>
-    /// <param name="sort"></param>
-    /// <param name="fields"></param>
     public static IOrderedQueryable<TEntity> ApplySort<TEntity>(
         this IQueryable<TEntity> source,
         string? sort,
@@ -82,9 +77,6 @@ public static class QueryableFilterExtensions
     ///     criteria that resolve. Empty / whitespace / no-recognised-criterion yields
     ///     an empty sequence and triggers the default-sort fallback.
     /// </summary>
-    /// <typeparam name="TEntity"></typeparam>
-    /// <param name="sort"></param>
-    /// <param name="fields"></param>
     private static IEnumerable<(FilterableField<TEntity> Field, bool Descending)> ParseSortCriteria<TEntity>(
         string? sort,
         FilterableFieldSet<TEntity> fields)
@@ -162,10 +154,6 @@ public static class QueryableFilterExtensions
     ///     <c>Queryable</c> method receives the property's real CLR type — required for
     ///     EF Core to translate the expression to SQL with the correct column type.
     /// </summary>
-    /// <typeparam name="TEntity"></typeparam>
-    /// <param name="sourceExpression"></param>
-    /// <param name="accessor"></param>
-    /// <param name="methodName"></param>
     private static (MethodCallExpression Call, Expression Body) BuildOrderCallExpression<TEntity>(
         Expression sourceExpression,
         Expression<Func<TEntity, object?>> accessor,
@@ -175,14 +163,13 @@ public static class QueryableFilterExtensions
                 ? unary.Operand
                 : accessor.Body;
 
-        var typed = Expression.Lambda(body, accessor.Parameters[0]);
-        var call = Expression.Call(
-            typeof(Queryable),
-            methodName,
-            [typeof(TEntity), body.Type],
-            sourceExpression,
-            typed);
-
-        return (call, body);
+        return (
+            Expression.Call(
+                typeof(Queryable),
+                methodName,
+                [typeof(TEntity), body.Type],
+                sourceExpression,
+                Expression.Lambda(body, accessor.Parameters[0])),
+            body);
     }
 }

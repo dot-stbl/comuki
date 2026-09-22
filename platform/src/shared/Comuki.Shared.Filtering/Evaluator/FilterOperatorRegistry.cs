@@ -53,7 +53,6 @@ public static class FilterOperatorRegistry
     ///     explicit error when the operator is unregistered (<c>None</c> or a
     ///     future value nobody added a descriptor for).
     /// </summary>
-    /// <param name="operator"></param>
     /// <exception cref="FilterParseException"></exception>
     public static FilterOperatorDescriptor Get(FilterOperator @operator)
     {
@@ -63,7 +62,6 @@ public static class FilterOperatorRegistry
     }
 
     /// <summary>The operators a CLR property type supports, derived from <see cref="FilterOperatorDescriptor.SupportsType" />.</summary>
-    /// <param name="type"></param>
     public static FilterOperator OperatorsFor(Type type)
     {
         var underlying = Nullable.GetUnderlyingType(type) ?? type;
@@ -85,10 +83,10 @@ public static class FilterOperatorRegistry
 
         // Null ops attach only to fields whose type permits null at runtime
         // (reference types + Nullable<T>), matching the old FilterOperatorInference.
-        var supportsNull = baseOps != FilterOperator.None
-                           && (Nullable.GetUnderlyingType(type) is not null || type.IsClass);
-
-        return supportsNull ? baseOps | FilterOperator.IsNull | FilterOperator.IsNotNull : baseOps;
+        return baseOps != FilterOperator.None
+                       && (Nullable.GetUnderlyingType(type) is not null || type.IsClass)
+                ? baseOps | FilterOperator.IsNull | FilterOperator.IsNotNull
+                : baseOps;
     }
 
     private static Dictionary<FilterOperator, FilterOperatorDescriptor> BuildDescriptors()
@@ -217,7 +215,6 @@ public static class FilterOperatorRegistry
     ///     object, custom classes without a known mapping) return false here, so
     ///     Eq/NotEq don't silently attach to them — the field is excluded instead.
     /// </summary>
-    /// <param name="type"></param>
     private static bool IsFilterable(Type type)
     {
         return IsString(type) || IsEnumerable(type) || IsOrdered(type) || Type.GetTypeCode(type) == TypeCode.Boolean;
@@ -228,7 +225,6 @@ public static class FilterOperatorRegistry
     ///     and the old inference table excluded it. Keep that rule to avoid widening
     ///     the operator surface for bool fields.
     /// </summary>
-    /// <param name="type"></param>
     private static bool IsNotBoolean(Type type)
     {
         return Type.GetTypeCode(type) != TypeCode.Boolean;

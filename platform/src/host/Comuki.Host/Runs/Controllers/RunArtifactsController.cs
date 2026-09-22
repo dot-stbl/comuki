@@ -17,7 +17,7 @@ namespace Comuki.Host.Runs.Controllers;
 /// </summary>
 /// <param name="store">MinIO-backed artifact store.</param>
 [ApiController]
-[Route("api/v1/projects/{projectId:guid}/runs/{runId:guid}/artifacts")]
+[Route(ApiRoutes.RunArtifacts)]
 [RequiresPermission("run:read")]
 public sealed class RunArtifactsController(IRunArtifactStore store) : ControllerBase
 {

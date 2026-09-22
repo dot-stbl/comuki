@@ -17,7 +17,7 @@ namespace Comuki.Host.Auth.Controllers;
 /// each endpoint pulls only the rule set it needs.
 /// </summary>
 [ApiController]
-[Route("api/v1/users")]
+[Route(ApiRoutes.IdentityAdminUsers)]
 public sealed class UsersController(
     InviteUserHandler inviteUser,
     SetUserDisabledHandler setUserDisabled,

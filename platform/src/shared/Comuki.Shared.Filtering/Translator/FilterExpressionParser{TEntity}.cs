@@ -35,19 +35,14 @@ public static class FilterExpression
         FilterableFieldSet<TEntity>? fields = null,
         TimeProvider? clock = null)
     {
-        var node = FilterParser.Parse(source);
-
-        if (node is null)
+        if (FilterParser.Parse(source) is not { } node)
         {
             return null;
         }
 
-        var fieldSet = fields ?? FilterableFieldRegistry.For<TEntity>();
-        var translator = new EfFilterTranslator<TEntity>(fieldSet, clock ?? TimeProvider.System);
+        var translator = new EfFilterTranslator<TEntity>(fields ?? FilterableFieldRegistry.For<TEntity>(), clock ?? TimeProvider.System);
         var parameter = Expression.Parameter(typeof(TEntity), "x");
-        var now = translator.Now();
-        var body = translator.Translate(node, parameter, now);
 
-        return Expression.Lambda<Func<TEntity, bool>>(body, parameter);
+        return Expression.Lambda<Func<TEntity, bool>>(translator.Translate(node, parameter, translator.Now()), parameter);
     }
 }

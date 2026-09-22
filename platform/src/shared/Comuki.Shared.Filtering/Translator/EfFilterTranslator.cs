@@ -39,9 +39,6 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
     ///     sampled once per translation and used by every <c>now(offset)</c> call —
     ///     the per-function resolution lands at translation time, not at query execution.
     /// </summary>
-    /// <param name="node"></param>
-    /// <param name="parameter"></param>
-    /// <param name="now"></param>
     /// <exception cref="NotSupportedException"></exception>
     public Expression Translate(FilterNode node, ParameterExpression parameter, DateTimeOffset now)
     {
@@ -171,10 +168,8 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
         }
 
         var parts = call.TrimEnd(')').Split('(', 2);
-        var functionName = parts[0];
-        var argument = parts.Length > 1 ? parts[1] : string.Empty;
 
-        return FilterFunctions.EvaluateNow(functionName, argument, 0, now);
+        return FilterFunctions.EvaluateNow(parts[0], parts.Length > 1 ? parts[1] : string.Empty, 0, now);
     }
 
     private static object ConvertValue(string text, Type targetType)

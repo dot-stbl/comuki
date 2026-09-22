@@ -39,8 +39,7 @@ public static class FilterParser
             return null;
         }
 
-        var tokens = FilterLexer.Tokenize(source);
-        var state = new ParserState(tokens, maxParenDepth);
+        var state = new ParserState(FilterLexer.Tokenize(source), maxParenDepth);
         var node = state.ParseOr();
 
         return state.Current.Kind != FilterTokenKind.EndOfInput
@@ -52,8 +51,6 @@ public static class FilterParser
 /// <summary>
 ///     Mutable parser state — cursor, tokens, parenthesis depth. Not thread-safe; one per parse call.
 /// </summary>
-/// <param name="tokens"></param>
-/// <param name="maxParenDepth"></param>
 file sealed class ParserState(IReadOnlyList<FilterToken> tokens, int maxParenDepth)
 {
     private readonly int maxDepth = maxParenDepth;

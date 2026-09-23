@@ -43,6 +43,9 @@
     <Project Path="platform/src/modules/Knowledge/Comuki.Modules.Knowledge.Domain/Comuki.Modules.Knowledge.Domain.csproj" />
     <Project Path="platform/src/modules/Knowledge/Comuki.Modules.Knowledge.Application/Comuki.Modules.Knowledge.Application.csproj" />
     <Project Path="platform/src/modules/Knowledge/Comuki.Modules.Knowledge.Infrastructure/Comuki.Modules.Knowledge.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Verify/Comuki.Modules.Verify.Domain/Comuki.Modules.Verify.Domain.csproj" />
+    <Project Path="platform/src/modules/Verify/Comuki.Modules.Verify.Application/Comuki.Modules.Verify.Application.csproj" />
+    <Project Path="platform/src/modules/Verify/Comuki.Modules.Verify.Infrastructure/Comuki.Modules.Verify.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/platform/src/" />
   <Folder Name="/platform/src/engine/">
@@ -89,6 +92,7 @@
     <Project Path="tests/unit/Comuki.Modules.Artifacts.Unit/Comuki.Modules.Artifacts.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Realtime/Comuki.Host.Unit.Realtime.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Scheduler.Unit/Comuki.Modules.Scheduler.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Verify.Unit/Comuki.Modules.Verify.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Knowledge.Unit/Comuki.Modules.Knowledge.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Knowledge.DomainLayerTests/Comuki.Modules.Knowledge.DomainLayerTests.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Proxy.DomainLayerTests/Comuki.Modules.Proxy.DomainLayerTests.csproj" />
@@ -110,6 +114,7 @@
     <Project Path="tests/integration/Comuki.Modules.Memory.Integration.Migrations/Comuki.Modules.Memory.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.Migrations/Comuki.Modules.Projects.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Intake.Integration.Migrations/Comuki.Modules.Intake.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Verify.Integration.Migrations/Comuki.Modules.Verify.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Chat/Comuki.Host.Integration.Chat.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Errors/Comuki.Host.Integration.Errors.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Intake/Comuki.Host.Integration.Intake.csproj" />

@@ -18,7 +18,6 @@ namespace Comuki.Host.Workers.Api;
 public static class WorkerEndpoints
 {
     /// <summary>Maps the worker REST endpoints onto the app.</summary>
-    /// <param name="app"></param>
     public static void MapWorkerEndpoints(WebApplication app)
     {
         app.MapPost(ApiRoutes.WorkerClaim, ClaimAsync);
@@ -33,6 +32,7 @@ public static class WorkerEndpoints
         WorkerTokenAuthenticator authenticator,
         ISubjectScopeAccessor scopeAccessor,
         ClaimWorkItemHandler claimHandler,
+        VirtualKeys.MintedVirtualKeyService virtualKeys,
         CancellationToken cancellationToken)
     {
         if (WorkerEndpointHelpers.AuthenticateWorker(authenticator, httpContext) is not { } workerId)
@@ -50,16 +50,26 @@ public static class WorkerEndpoints
         try
         {
             var claimed = await claimHandler.HandleAsync(command, cancellationToken);
-            return claimed is null
-                ? Results.NoContent()
-                : Results.Ok(new ClaimedWorkItemResponse(
-                    claimed.WorkItemId,
-                    claimed.RunId.Value,
-                    claimed.ProjectId,
-                    claimed.ProfileKey,
-                    claimed.Brief,
-                    claimed.LeaseUntil.ToUnixTimeMilliseconds(),
-                    claimed.Attempt));
+            if (claimed is null)
+            {
+                return Results.NoContent();
+            }
+
+            // Mint after the claim transaction: the queue's journal event
+            // mirrors the transition only, and the raw token appears
+            // exactly once — in this response body.
+            var minted = await virtualKeys.MintAsync(
+                claimed.ProjectId, claimed.WorkItemId, claimed.LeaseUntil, cancellationToken);
+            return Results.Ok(new ClaimedWorkItemResponse(
+                claimed.WorkItemId,
+                claimed.RunId.Value,
+                claimed.ProjectId,
+                claimed.ProfileKey,
+                claimed.Brief,
+                claimed.LeaseUntil.ToUnixTimeMilliseconds(),
+                claimed.Attempt,
+                ProxyBaseUrl: minted?.ProxyBaseUrl,
+                VirtualKey: minted?.Token));
         }
         catch (ValidationException exception)
         {
@@ -87,9 +97,10 @@ public static class WorkerEndpoints
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var now = clock.GetUtcNow();
-        var extended = await queue.HeartbeatAsync(
-            workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
-        return extended ? Results.NoContent() : WorkerResults.NotOwner();
+        return await queue.HeartbeatAsync(
+            workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken)
+            ? Results.NoContent()
+            : WorkerResults.NotOwner();
     }
 
     private static async Task<IResult> CompleteAsync(
@@ -100,6 +111,7 @@ public static class WorkerEndpoints
         ISubjectScopeAccessor scopeAccessor,
         IWorkItemQueue queue,
         TimeProvider clock,
+        VirtualKeys.MintedVirtualKeyService virtualKeys,
         CancellationToken cancellationToken)
     {
         if (WorkerEndpointHelpers.AuthenticateWorker(authenticator, httpContext) is not { } workerId)
@@ -108,8 +120,11 @@ public static class WorkerEndpoints
         }
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
-        var completed = await queue.CompleteAsync(workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken);
-        return completed ? Results.NoContent() : WorkerResults.NotOwner();
+        await virtualKeys.RevokeAsync(workItemId, cancellationToken);
+        return await queue.CompleteAsync(
+            workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken)
+            ? Results.NoContent()
+            : WorkerResults.NotOwner();
     }
 
     private static async Task<IResult> FailAsync(
@@ -120,6 +135,7 @@ public static class WorkerEndpoints
         ISubjectScopeAccessor scopeAccessor,
         IWorkItemQueue queue,
         TimeProvider clock,
+        VirtualKeys.MintedVirtualKeyService virtualKeys,
         CancellationToken cancellationToken)
     {
         if (WorkerEndpointHelpers.AuthenticateWorker(authenticator, httpContext) is not { } workerId)
@@ -128,7 +144,10 @@ public static class WorkerEndpoints
         }
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
-        var failed = await queue.FailAsync(workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken);
-        return failed ? Results.NoContent() : WorkerResults.NotOwner();
+        await virtualKeys.RevokeAsync(workItemId, cancellationToken);
+        return await queue.FailAsync(
+            workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken)
+            ? Results.NoContent()
+            : WorkerResults.NotOwner();
     }
 }

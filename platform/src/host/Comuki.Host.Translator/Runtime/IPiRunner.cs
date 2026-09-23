@@ -14,7 +14,15 @@ public interface IPiRunner
     /// ends the stream. A non-zero exit surfaces as
     /// <see cref="InvalidOperationException"/> after the last line.
     /// </summary>
-    /// <param name="brief"></param>
+    /// <param name="brief">The prompt body for <c>-p</c>.</param>
+    /// <param name="environment">
+    /// Process-environment overrides stamped onto this pi process only —
+    /// never into container-level config. <c>null</c> spawns the child
+    /// with the inherited environment untouched.
+    /// </param>
     /// <param name="cancellationToken"></param>
-    public IAsyncEnumerable<string> RunAsync(string brief, CancellationToken cancellationToken = default);
+    public IAsyncEnumerable<string> RunAsync(
+        string brief,
+        IReadOnlyDictionary<string, string>? environment = null,
+        CancellationToken cancellationToken = default);
 }

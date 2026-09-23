@@ -38,6 +38,13 @@ public static class WorkerRuntimeExtensions
         services.AddScoped<WorkerGrpcService>();
         services.AddCodeFirstGrpc();
 
+        // Per-execution proxy capability (issue #122): minted on claim,
+        // revoked on complete/fail. IVirtualKeyStore + ProxyOptions come
+        // from AddProxyApplication — every composition that maps the
+        // worker REST surface registers both (the full host and the
+        // worker test fixtures).
+        services.AddSingleton<VirtualKeys.MintedVirtualKeyService>();
+
         // The worker runtime is a system consumer by nature: the gRPC
         // service and the REST surface run every operation as
         // AsSystem("worker-runtime") and need the ambient-scope bus to do

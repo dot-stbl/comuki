@@ -1,9 +1,7 @@
-using Comuki.Host.Translator.Api.Models.Responses;
 using Comuki.Host.Translator.Execution.Outcomes;
 using Comuki.Host.Translator.Execution.Run;
 using Comuki.Host.Translator.Parsing;
 using Comuki.Host.Translator.Runtime;
-using Comuki.Shared.Contracts.Grpc;
 
 namespace Comuki.Host.Translator.Execution.Loop;
 
@@ -17,10 +15,13 @@ public static class PiPump
 {
     /// <summary>Runs pi for the claimed brief until it ends, is stopped, or fails.</summary>
     /// <param name="runner"></param>
-    /// <param name="run"></param>
-    /// <param name="summary"></param>
-    /// <param name="startedAt"></param>
-    /// <param name="clock"></param>
+    /// <param name="run">The run being pumped; <see cref="WorkerRun.RunCancellation"/> is the pump's
+    ///     cancellation source — PumpAsync takes no token of its own.</param>
+    /// <param name="summary">Fold target: every parsed pi event is observed by it; its result text
+    ///     becomes the outcome's on all three exits.</param>
+    /// <param name="startedAt">Duration base — the outcome's DurationMs counts elapsed milliseconds
+    ///     from this instant to outcome time.</param>
+    /// <param name="clock">Read once, at outcome time, to compute DurationMs.</param>
     /// <param name="logger"></param>
     public static async Task<PiOutcome> PumpAsync(
         IPiRunner runner,
@@ -32,7 +33,10 @@ public static class PiPump
     {
         try
         {
-            await foreach (var line in runner.RunAsync(run.Claimed.Brief, run.RunCancellation.Token))
+            await foreach (var line in runner.RunAsync(
+                 run.Claimed.Brief,
+                 PiEnvironment.FromClaim(run.Claimed),
+                 run.RunCancellation.Token))
             {
                 foreach (var piEvent in StreamJsonParser.ParseLine(line))
                 {
@@ -69,42 +73,5 @@ public static class PiPump
                 summary.ResultText,
                 exception.Message);
         }
-    }
-}
-
-/// <summary>Start/Report envelope builders over a claim and an outcome.</summary>
-public static class WorkerEventEnvelope
-{
-    /// <summary>The first event of a run: which item, which run, what brief.</summary>
-    /// <param name="claimed"></param>
-    public static WorkerEvent ToStartEvent(ClaimedWorkItemResponse claimed)
-    {
-        return new WorkerEvent
-        {
-            Start = new StageStart
-            {
-                WorkItemId = claimed.WorkItemId.ToString(),
-                RunId = claimed.RunId.ToString(),
-                Brief = claimed.Brief,
-            },
-        };
-    }
-
-    /// <summary>The last event of a run: the bottom line.</summary>
-    /// <param name="workItemId"></param>
-    /// <param name="outcome"></param>
-    public static WorkerEvent ToReportEvent(Guid workItemId, PiOutcome outcome)
-    {
-        return new WorkerEvent
-        {
-            Report = new StageReport
-            {
-                WorkItemId = workItemId.ToString(),
-                Status = outcome.Status,
-                DurationMs = outcome.DurationMs,
-                ResultText = outcome.ResultText,
-                ErrorText = outcome.ErrorText,
-            },
-        };
     }
 }

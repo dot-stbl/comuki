@@ -15,10 +15,12 @@ internal static class DockerComputeMapping
     /// <param name="request"></param>
     /// <param name="workerId"></param>
     /// <param name="options"></param>
+    /// <param name="networkMode">Effective network: the verified fenced network, or <see cref="Options.DockerComputeOptions.NetworkMode"/> under the unfenced dev override.</param>
     public static CreateContainerParameters ToCreateParameters(
         ComputeStartRequest request,
         WorkerId workerId,
-        Options.DockerComputeOptions options)
+        Options.DockerComputeOptions options,
+        string networkMode)
     {
         return new CreateContainerParameters
         {
@@ -26,7 +28,7 @@ internal static class DockerComputeMapping
             Name = ToContainerName(request.ProjectId, workerId),
             Env = BuildEnvironment(request),
             Labels = BuildLabels(request, workerId),
-            HostConfig = new HostConfig { NetworkMode = options.NetworkMode },
+            HostConfig = new HostConfig { NetworkMode = networkMode },
         };
     }
 

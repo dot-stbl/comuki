@@ -12,6 +12,24 @@ namespace Comuki.Engine.Compute.Providers.Kubernetes;
 /// </summary>
 internal static class KubernetesComputeMapping
 {
+    /// <summary>PolicyTypes value of the worker fence: egress-only default-deny.</summary>
+    public const string EgressPolicyType = "Egress";
+
+    /// <summary>Well-known label every namespace carries (Kubernetes API convention) — selects kube-system for the DNS allow.</summary>
+    internal const string NamespaceNameLabel = "kubernetes.io/metadata.name";
+
+    /// <summary>Pod label of the cluster DNS deployment (kube-dns / CoreDNS carry the same value).</summary>
+    internal const string KubeDnsPodLabel = "k8s-app";
+
+    /// <summary>Value of <see cref="KubeDnsPodLabel"/> on the cluster DNS pods.</summary>
+    internal const string KubeDnsPodLabelValue = "kube-dns";
+
+    /// <summary>Name of the namespace the DNS allow targets.</summary>
+    internal const string KubeSystemNamespace = "kube-system";
+
+    /// <summary>DNS port opened by the fence, tcp and udp.</summary>
+    internal const int DnsPort = 53;
+
     /// <summary>Worker Job name: comuki-w-{12-char worker-id suffix}, derivable from the id alone.</summary>
     /// <param name="workerId"></param>
     public static string ToJobName(WorkerId workerId)
@@ -22,11 +40,92 @@ internal static class KubernetesComputeMapping
         return $"comuki-w-{workerId.Value.ToString("N")[^12..]}";
     }
 
+    /// <summary>Per-worker egress fence name: comuki-w-egress-{12-char worker-id suffix}, derived from the same slice as the Job name.</summary>
+    /// <param name="workerId"></param>
+    public static string ToNetworkPolicyName(WorkerId workerId)
+    {
+        return $"comuki-w-egress-{workerId.Value.ToString("N")[^12..]}";
+    }
+
     /// <summary>Label-selector string selecting the worker Jobs of one project.</summary>
     /// <param name="projectId"></param>
     public static string ToProjectLabelSelector(ProjectId projectId)
     {
         return $"{ComputeLabels.Project}={projectId.Value}";
+    }
+
+    /// <summary>
+    /// Builds the per-worker egress fence: a networking.k8s.io/v1
+    /// NetworkPolicy that default-denies egress from the worker pods
+    /// (podSelector on the same comuki.* labels the Job stamps) and allows
+    /// only cluster DNS plus the operator-supplied CIDRs
+    /// (<see cref="KubernetesComputeOptions.Egress"/>).
+    /// </summary>
+    /// <param name="request"></param>
+    /// <param name="workerId"></param>
+    /// <param name="options"></param>
+    public static V1NetworkPolicy ToNetworkPolicy(ComputeStartRequest request, WorkerId workerId, KubernetesComputeOptions options)
+    {
+        var labels = BuildLabels(request);
+
+        return new V1NetworkPolicy
+        {
+            Metadata = new V1ObjectMeta
+            {
+                Name = ToNetworkPolicyName(workerId),
+                Labels = labels,
+            },
+            Spec = new V1NetworkPolicySpec
+            {
+                PodSelector = new V1LabelSelector { MatchLabels = labels },
+                PolicyTypes = [EgressPolicyType],
+                Egress = BuildEgressRules(options),
+            },
+        };
+    }
+
+    /// <summary>Egress allows of the fence: cluster DNS (53 tcp+udp) first, then one rule per operator-supplied CIDR; everything else is denied.</summary>
+    /// <param name="options"></param>
+    internal static List<V1NetworkPolicyEgressRule> BuildEgressRules(KubernetesComputeOptions options)
+    {
+        var rules = new List<V1NetworkPolicyEgressRule>
+        {
+            new()
+            {
+                To =
+                [
+                    new V1NetworkPolicyPeer
+                    {
+                        NamespaceSelector = new V1LabelSelector
+                        {
+                            MatchLabels = new Dictionary<string, string>(StringComparer.Ordinal)
+                            {
+                                [NamespaceNameLabel] = KubeSystemNamespace,
+                            },
+                        },
+                        PodSelector = new V1LabelSelector
+                        {
+                            MatchLabels = new Dictionary<string, string>(StringComparer.Ordinal)
+                            {
+                                [KubeDnsPodLabel] = KubeDnsPodLabelValue,
+                            },
+                        },
+                    },
+                ],
+                Ports =
+                [
+                    new V1NetworkPolicyPort { Protocol = "UDP", Port = DnsPort },
+                    new V1NetworkPolicyPort { Protocol = "TCP", Port = DnsPort },
+                ],
+            },
+        };
+
+        rules.AddRange(options.Egress.AllowedCidrs.Select(static cidr => new V1NetworkPolicyEgressRule
+        {
+            To = [new V1NetworkPolicyPeer { IpBlock = new V1IPBlock(cidr) }],
+        }));
+
+        return rules;
     }
 
     /// <summary>Builds the batch/v1 Job of one worker: backoffLimit 0, TTL cleanup, sanitized labels, env contract.</summary>

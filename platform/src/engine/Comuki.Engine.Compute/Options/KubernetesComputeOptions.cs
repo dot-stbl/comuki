@@ -49,6 +49,12 @@ public sealed class KubernetesComputeOptions
         new Dictionary<string, string>(StringComparer.Ordinal);
 
     /// <summary>
+    ///     Egress fence settings (<c>Compute:Kubernetes:Egress</c>): the
+    ///     CIDR allowlist of the per-worker default-deny NetworkPolicy.
+    /// </summary>
+    public KubernetesEgressOptions Egress { get; init; } = new();
+
+    /// <summary>
     ///     Path to an external kubeconfig file. When set, the Kubernetes client
     ///     reads this file instead of the in-cluster service account — used
     ///     when workers go to a separate cluster (e.g. vega) while the host

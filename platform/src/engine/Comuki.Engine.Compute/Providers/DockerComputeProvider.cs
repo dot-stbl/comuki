@@ -11,11 +11,17 @@ namespace Comuki.Engine.Compute.Providers;
 /// Docker implementation of <see cref="IComputeProvider"/> (dev / compose).
 /// All engine I/O goes through the injected container operations so unit
 /// tests substitute it. The Kubernetes provider (prod) lives elsewhere.
+/// Starts are fail-closed on the egress fence: <see cref="DockerEgressFence"/>
+/// resolves (and refuses) the fenced network before any container is created.
 /// </summary>
+/// <param name="egressFence">Egress fence verifier (fenced network must exist and be internal).</param>
 /// <param name="containers"></param>
+/// <param name="providerOptions">Compute-wide options (AllowUnfencedEgress dev override).</param>
 /// <param name="computeOptions"></param>
 public sealed class DockerComputeProvider(
+    DockerEgressFence egressFence,
     IContainerOperations containers,
+    IOptions<ComputeOptions> providerOptions,
     IOptions<DockerComputeOptions> computeOptions) : IComputeProvider
 {
     /// <summary>
@@ -32,7 +38,11 @@ public sealed class DockerComputeProvider(
     public async Task<WorkerHandle> StartAsync(ComputeStartRequest request, CancellationToken cancellationToken = default)
     {
         var workerId = request.PreIssuedWorkerId ?? WorkerId.New();
-        var createParameters = DockerComputeMapping.ToCreateParameters(request, workerId, computeOptions.Value);
+        var networkMode = await egressFence.ResolveNetworkModeAsync(
+            computeOptions.Value,
+            providerOptions.Value.AllowUnfencedEgress,
+            cancellationToken);
+        var createParameters = DockerComputeMapping.ToCreateParameters(request, workerId, computeOptions.Value, networkMode);
 
         var created = await containers.CreateContainerAsync(createParameters, cancellationToken);
         await containers.StartContainerAsync(created.ID, new ContainerStartParameters(), cancellationToken);

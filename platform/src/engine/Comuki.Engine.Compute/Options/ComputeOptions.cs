@@ -23,4 +23,21 @@ public sealed class ComputeOptions
     [Required]
     [MinLength(1)]
     public string Provider { get; init; } = DockerProvider;
+
+    /// <summary>
+    /// Development override: allow worker starts without a verified egress
+    /// fence. Never the production default — with it false, a fence the
+    /// provider cannot apply aborts the start
+    /// (<see cref="Exceptions.ComputeFenceException"/>, fail-closed).
+    /// </summary>
+    public bool AllowUnfencedEgress { get; init; }
+
+    /// <summary>
+    /// Deployment-default egress hosts (model proxy, package registry, git
+    /// host) — the baseline every project/profile allowlist may only
+    /// narrow (<see cref="Egress.EgressAllowlist"/>). v1 source is this
+    /// option; per-project / per-profile narrowing wires up with project
+    /// settings in a later slice. Empty = no default egress.
+    /// </summary>
+    public IReadOnlyList<string> EgressDefaultHosts { get; init; } = [];
 }

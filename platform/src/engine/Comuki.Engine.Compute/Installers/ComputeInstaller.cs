@@ -88,6 +88,11 @@ public static class ComputeInstaller
         services.AddSingleton(static _ => new DockerClientBuilder().Build());
         services.AddSingleton(static serviceProvider =>
             serviceProvider.GetRequiredService<DockerClient>().Containers);
+        // Network inspect for the Docker egress fence (DockerEgressFence):
+        // verifies Compute:Docker:FencedNetwork exists and is internal.
+        services.AddSingleton(static serviceProvider =>
+            serviceProvider.GetRequiredService<DockerClient>().Networks);
+        services.AddSingleton<DockerEgressFence>();
 
         // An absent path means strictly in-cluster. BuildDefaultConfig is not
         // used because its final fallback targets http://localhost:8080.

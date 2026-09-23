@@ -1,7 +1,10 @@
+using System.Net;
+using Comuki.Engine.Compute.Exceptions;
 using Comuki.Engine.Compute.Options;
 using Comuki.Shared.Contracts.Compute;
 using Comuki.Shared.Kernel.Ids;
 using k8s;
+using k8s.Autorest;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -12,9 +15,13 @@ namespace Comuki.Engine.Compute.Providers.Kubernetes;
 /// worker = one batch/v1 Job with <c>backoffLimit 0</c> and TTL cleanup,
 /// label-selected listing and a coarse allocatable-based capacity hint. All
 /// engine I/O goes through the injected <see cref="IKubernetes"/> (the
-/// BatchV1/CoreV1 operation groups) so unit tests substitute them. No
-/// real-cluster integration test exists by design — CI has no cluster;
-/// e2e on kind is the slice DoD.
+/// BatchV1/CoreV1/NetworkingV1 operation groups) so unit tests substitute
+/// them. No real-cluster integration test exists by design — CI has no
+/// cluster; e2e on kind is the slice DoD. Starts are fail-closed on the
+/// egress fence: the per-worker default-deny NetworkPolicy is created
+/// before the Job, and a creation failure aborts the start
+/// (<see cref="ComputeFenceException"/>) unless
+/// <c>Compute:AllowUnfencedEgress=true</c>.
 /// </summary>
 /// <param name="services">
 ///     Composition root access — the provider resolves <see cref="IKubernetes"/>
@@ -28,10 +35,12 @@ namespace Comuki.Engine.Compute.Providers.Kubernetes;
 ///     <see cref="NotSupportedException"/> because silently dropping would
 ///     mask caller mistakes).
 /// </param>
+/// <param name="providerOptions">Compute-wide options (AllowUnfencedEgress dev override).</param>
 /// <param name="computeOptions">Kubernetes options bound from configuration.</param>
 /// <param name="logger">Provider-scoped logger; used to surface no-op degradations.</param>
 public sealed class KubernetesComputeProvider(
     IServiceProvider services,
+    IOptions<ComputeOptions> providerOptions,
     IOptions<KubernetesComputeOptions> computeOptions,
     ILogger<KubernetesComputeProvider> logger) : IComputeProvider
 {
@@ -63,6 +72,35 @@ public sealed class KubernetesComputeProvider(
         }
 
         var workerId = request.PreIssuedWorkerId ?? WorkerId.New();
+        var policy = KubernetesComputeMapping.ToNetworkPolicy(request, workerId, computeOptions.Value);
+
+        // The fence goes in before the Job: on failure no Job is created
+        // (fail-closed) unless the unfenced dev override is set.
+        try
+        {
+            await kubernetes.NetworkingV1.CreateNamespacedNetworkPolicyAsync(
+                policy,
+                computeOptions.Value.Namespace,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception) when (exception is HttpOperationException or HttpRequestException)
+        {
+            if (!providerOptions.Value.AllowUnfencedEgress)
+            {
+                throw new ComputeFenceException(
+                    $"NetworkPolicy '{policy.Metadata.Name}' could not be created in namespace "
+                        + $"'{computeOptions.Value.Namespace}'; refusing to start a worker without an egress fence. "
+                        + "Grant the orchestrator RBAC on networking.k8s.io/networkpolicies "
+                        + "or set Compute:AllowUnfencedEgress=true for development.",
+                    exception);
+            }
+
+            logger.LogWarning(
+                exception,
+                "Worker starts unfenced: NetworkPolicy {PolicyName} creation failed (Compute:AllowUnfencedEgress=true)",
+                policy.Metadata.Name);
+        }
+
         var job = KubernetesComputeMapping.ToJob(request, workerId, computeOptions.Value);
 
         var created = await kubernetes.BatchV1.CreateNamespacedJobAsync(
@@ -94,11 +132,29 @@ public sealed class KubernetesComputeProvider(
                 deleteOptions,
                 cancellationToken: cancellationToken);
         }
-        catch (k8s.Autorest.HttpOperationException exception)
+        catch (HttpOperationException exception)
         {
             // Already TTL-collected — stopping an absent worker is a no-op,
             // mirroring the docker provider's empty-container-list path.
-            if (exception.Response?.StatusCode != System.Net.HttpStatusCode.NotFound)
+            if (exception.Response?.StatusCode != HttpStatusCode.NotFound)
+            {
+                throw;
+            }
+        }
+
+        // The per-worker egress fence dies with the Job; an absent policy
+        // (already collected, never created under the unfenced override) is
+        // a no-op with the same shape.
+        try
+        {
+            await kubernetes.NetworkingV1.DeleteNamespacedNetworkPolicyAsync(
+                KubernetesComputeMapping.ToNetworkPolicyName(workerId),
+                computeOptions.Value.Namespace,
+                cancellationToken: cancellationToken);
+        }
+        catch (HttpOperationException exception)
+        {
+            if (exception.Response?.StatusCode != HttpStatusCode.NotFound)
             {
                 throw;
             }

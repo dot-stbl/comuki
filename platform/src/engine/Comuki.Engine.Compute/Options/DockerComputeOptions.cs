@@ -16,6 +16,17 @@ public sealed class DockerComputeOptions
     [MinLength(1)]
     public string NetworkMode { get; init; } = "bridge";
 
+    /// <summary>
+    /// Name of the INTERNAL Docker network used as the worker egress fence
+    /// (deploy/compose defines <c>comuki-worker-net</c>). When set, the
+    /// provider verifies the network exists and is internal before every
+    /// start and places the worker container on it; a missing or
+    /// non-internal network aborts the start (fail-closed) unless
+    /// <c>Compute:AllowUnfencedEgress=true</c>. Null/empty = no fence
+    /// configured — starts are refused under the same rule.
+    /// </summary>
+    public string? FencedNetwork { get; init; }
+
     /// <summary>Upper bound of concurrently running worker containers.</summary>
     [Range(1, 1000)]
     public int MaxWorkers { get; init; } = 8;

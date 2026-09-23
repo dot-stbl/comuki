@@ -226,7 +226,7 @@ $EDITOR dashboard/src/domains/runs/api/queries.ts
 bun run typecheck && bun run lint && bun run test
 
 # 6. Commit (per project commit-format.md).
-git add ... && git commit -m "[hybrid] feat(dashboard): wire new runs endpoint"
+git add ... && git commit -m "[.stbl](feat/dashboard): wire new runs endpoint"
 ```
 
 ## Worktree lifecycle

@@ -63,7 +63,7 @@ worktrees под `.agents/worktree/` используют каждый свою 
 Проверить сообщение, ничего не коммитя:
 
 ```bash
-echo '[hybrid] feat(api): add the thing' | node scripts/commit-lint.mjs --stdin
+echo '[.stbl] feat(api): add the thing' | node scripts/commit-lint.mjs --stdin
 node scripts/commit-lint.mjs --range master..HEAD   # аудит существующих коммитов
 node --test scripts/commit-lint.test.mjs            # тесты линтера
 ```

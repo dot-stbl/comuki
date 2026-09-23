@@ -1,3 +1,4 @@
+using Comuki.Engine.Compute.Ports;
 using Comuki.Engine.Orchestration.Application.Handlers;
 using Comuki.Engine.Orchestration.Application.Models;
 using Comuki.Engine.Orchestration.Options;
@@ -14,6 +15,11 @@ namespace Comuki.Host.Workers.Api;
 /// token from the Authorization header — the worker id the queue sees is
 /// the one the token was issued for. Ownership misses (expired lease, wrong
 /// owner) are 409 ProblemDetails, not errors.
+///
+/// The pool bookkeeping rides the same calls: claim marks the worker busy,
+/// heartbeat touches its activity clock, complete/fail mark it idle again.
+/// Without this the scale supervisor sees every worker as perpetually idle
+/// and reaps it at the idle TTL mid-run.
 /// </summary>
 public static class WorkerEndpoints
 {
@@ -32,6 +38,7 @@ public static class WorkerEndpoints
         WorkerTokenAuthenticator authenticator,
         ISubjectScopeAccessor scopeAccessor,
         ClaimWorkItemHandler claimHandler,
+        IWorkerPoolState pool,
         VirtualKeys.MintedVirtualKeyService virtualKeys,
         CancellationToken cancellationToken)
     {
@@ -54,6 +61,10 @@ public static class WorkerEndpoints
             {
                 return Results.NoContent();
             }
+
+            // Busy from the claim until the terminal complete/fail call —
+            // the idle reaper must not collect a worker mid-run.
+            pool.MarkBusy(workerId);
 
             // Mint after the claim transaction: the queue's journal event
             // mirrors the transition only, and the raw token appears
@@ -86,6 +97,7 @@ public static class WorkerEndpoints
         WorkerTokenAuthenticator authenticator,
         ISubjectScopeAccessor scopeAccessor,
         IWorkItemQueue queue,
+        IWorkerPoolState pool,
         TimeProvider clock,
         IOptions<LeaseOptions> leaseOptions,
         CancellationToken cancellationToken)
@@ -97,10 +109,15 @@ public static class WorkerEndpoints
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var now = clock.GetUtcNow();
-        return await queue.HeartbeatAsync(
-            workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken)
-            ? Results.NoContent()
-            : WorkerResults.NotOwner();
+        var extended = await queue.HeartbeatAsync(
+            workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
+        if (extended)
+        {
+            pool.Touch(workerId);
+            return Results.NoContent();
+        }
+
+        return WorkerResults.NotOwner();
     }
 
     private static async Task<IResult> CompleteAsync(
@@ -110,6 +127,7 @@ public static class WorkerEndpoints
         WorkerTokenAuthenticator authenticator,
         ISubjectScopeAccessor scopeAccessor,
         IWorkItemQueue queue,
+        IWorkerPoolState pool,
         TimeProvider clock,
         VirtualKeys.MintedVirtualKeyService virtualKeys,
         CancellationToken cancellationToken)
@@ -121,10 +139,15 @@ public static class WorkerEndpoints
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         await virtualKeys.RevokeAsync(workItemId, cancellationToken);
-        return await queue.CompleteAsync(
-            workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken)
-            ? Results.NoContent()
-            : WorkerResults.NotOwner();
+        var completed = await queue.CompleteAsync(
+            workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken);
+        if (completed)
+        {
+            pool.MarkIdle(workerId);
+            return Results.NoContent();
+        }
+
+        return WorkerResults.NotOwner();
     }
 
     private static async Task<IResult> FailAsync(
@@ -134,6 +157,7 @@ public static class WorkerEndpoints
         WorkerTokenAuthenticator authenticator,
         ISubjectScopeAccessor scopeAccessor,
         IWorkItemQueue queue,
+        IWorkerPoolState pool,
         TimeProvider clock,
         VirtualKeys.MintedVirtualKeyService virtualKeys,
         CancellationToken cancellationToken)
@@ -145,9 +169,14 @@ public static class WorkerEndpoints
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         await virtualKeys.RevokeAsync(workItemId, cancellationToken);
-        return await queue.FailAsync(
-            workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken)
-            ? Results.NoContent()
-            : WorkerResults.NotOwner();
+        var failed = await queue.FailAsync(
+            workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken);
+        if (failed)
+        {
+            pool.MarkIdle(workerId);
+            return Results.NoContent();
+        }
+
+        return WorkerResults.NotOwner();
     }
 }

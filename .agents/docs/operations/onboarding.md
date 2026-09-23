@@ -56,22 +56,25 @@ banner means and how to act on it.
 ## 2. Commit format (the second thing that will trip you)
 
 ```
-[hybrid] <type>(<scope>): <description>
+[.stbl](feat/<area>): <description>
 ```
 
 | Part | Rule |
 |---|---|
-| `[hybrid]` | literal prefix, identifies this repo's commits |
-| `<type>` | `feat` / `fix` / `refactor` / `docs` / `test` / `perf` / `build` / `ci` / `chore` / `style` |
-| `<scope>` | optional; one of `bootstrap`, `orchestration`, `proxy`, `mcp`, `translator`, `database`, `routing`, `rules`, `artifacts`, `knowledge`, `agents`, `agent-core`, `worker-sdk`, `dev-sdk`, `dashboard`, `deploy`, `docker`, `docs`, `rules`, `roadmap`, `state`, `ci`, `deps` |
+| `[.stbl]` | literal project tag, identifies this repo's commits |
+| `(feat/<area>)` | required feature path, lowercase kebab-case |
 | `<description>` | imperative, lowercase, ≤72 chars, no period |
+
+Legacy form `[.stbl] <type>(<scope>): <description>` is also accepted by the
+hook (current commit-format.md, "legacy" example).
 
 Full reference: [`.agents/rules/process/commit-format.md`](../../.agents/rules/process/commit-format.md).
 
 Two anti-patterns that bit this repo in the past:
 
-- `[stbl](feat/...)` — old prefix from `.stbl` monorepo. **Banned.**
-- `[app](...)` — `[hybrid]` is the only valid prefix here. **Banned.**
+- `[hybrid]` — old prefix from the pre-`.stbl` era. **Banned by hook** with
+  the message "prefix `[hybrid]` is retired — this repo uses `[.stbl]`".
+- `[app](...)` — even older prefix from the `.stbl` monorepo. **Banned.**
 
 The git history before this rule took effect still has those old
 prefixes; do not rewrite history to match.
@@ -134,9 +137,9 @@ re-read in step 8.
 - **Random ports** — use the 17000–17200 pool.
 - **Comuki palette changes** — tokens are in `.agents/docs/design-system/`;
   see Comuki Design System doc.
-- **`feat/` without `feat/` prefix** in commit messages — `[hybrid]`
-  prefix is required; the feature-path-first style is from the old
-  `.stbl` era.
+- **`feat/` without `feat/` prefix** in commit messages — the
+  feature-path-first style (e.g. `[.stbl](feat/dashboard): ...`) is the
+  canonical current form per `commit-format.md`.
 
 ## 7. Where to ask
 

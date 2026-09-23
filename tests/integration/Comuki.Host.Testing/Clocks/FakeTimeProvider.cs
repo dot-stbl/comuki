@@ -1,4 +1,4 @@
-namespace Comuki.Host.Testing;
+namespace Comuki.Host.Testing.Clocks;
 
 /// <summary>
 /// Deterministic clock for expiry/lease tests — a store or reaper reads

@@ -44,9 +44,23 @@ public sealed class KubernetesComputeOptions
     [Range(16, int.MaxValue)]
     public int MemoryRequestMiB { get; init; } = 1024;
 
+    /// <summary>CPU limit of one worker container, millicores. Defaults to 2× <see cref="CpuRequestMillis"/>.</summary>
+    [Range(50, 64000)]
+    public int CpuLimitMillis { get; init; } = 1000;
+
+    /// <summary>Memory limit of one worker container, MiB. Defaults to 2× <see cref="MemoryRequestMiB"/>.</summary>
+    [Range(16, int.MaxValue)]
+    public int MemoryLimitMiB { get; init; } = 2048;
+
     /// <summary>Optional nodeSelector pinned on the worker pod template.</summary>
     public IReadOnlyDictionary<string, string> NodeSelector { get; init; } =
         new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>
+    ///     Egress fence settings (<c>Compute:Kubernetes:Egress</c>): the
+    ///     CIDR allowlist of the per-worker default-deny NetworkPolicy.
+    /// </summary>
+    public KubernetesEgressOptions Egress { get; init; } = new();
 
     /// <summary>
     ///     Path to an external kubeconfig file. When set, the Kubernetes client

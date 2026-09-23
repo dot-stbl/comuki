@@ -41,8 +41,6 @@ namespace Comuki.Engine.Compute.Installers;
 public static class ComputeInstaller
 {
     /// <summary>Adds the compute engine: options, both providers with Compute:Provider selection, the in-memory worker-token store, scale supervisor.</summary>
-    /// <param name="services"></param>
-    /// <param name="configuration"></param>
     public static IServiceCollection AddComukiCompute(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<ComputeOptions>()
@@ -88,6 +86,11 @@ public static class ComputeInstaller
         services.AddSingleton(static _ => new DockerClientBuilder().Build());
         services.AddSingleton(static serviceProvider =>
             serviceProvider.GetRequiredService<DockerClient>().Containers);
+        // Network inspect for the Docker egress fence (DockerEgressFence):
+        // verifies Compute:Docker:FencedNetwork exists and is internal.
+        services.AddSingleton(static serviceProvider =>
+            serviceProvider.GetRequiredService<DockerClient>().Networks);
+        services.AddSingleton<DockerEgressFence>();
 
         // An absent path means strictly in-cluster. BuildDefaultConfig is not
         // used because its final fallback targets http://localhost:8080.

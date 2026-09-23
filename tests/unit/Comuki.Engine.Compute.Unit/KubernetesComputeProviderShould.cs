@@ -1,4 +1,5 @@
 using System.Net;
+using Comuki.Engine.Compute.Exceptions;
 using Comuki.Engine.Compute.Options;
 using Comuki.Engine.Compute.Providers.Kubernetes;
 using Comuki.Shared.Contracts.Compute;
@@ -18,16 +19,19 @@ namespace Comuki.Engine.Compute.Unit;
 /// Unit tests for <see cref="KubernetesComputeProvider"/> against substituted
 /// <see cref="IKubernetes"/> operation groups: locks the batch/v1 Job manifest
 /// (labels, annotation, env, backoffLimit 0, TTL, serviceAccount, requests),
-/// the stop-reason→grace delete mapping and the list/capacity mapping. The
-/// SDK's operation extensions route to the *WithHttpMessagesAsync members, so
-/// the substitutes are configured and asserted on those (same arguments,
-/// wrapped <see cref="HttpOperationResponse{T}"/> results). No real cluster —
+/// the per-worker NetworkPolicy egress fence (created before the Job,
+/// fail-closed on failure, deleted on stop), the stop-reason→grace delete
+/// mapping and the list/capacity mapping. The SDK's operation extensions
+/// route to the *WithHttpMessagesAsync members, so the substitutes are
+/// configured and asserted on those (same arguments, wrapped
+/// <see cref="HttpOperationResponse{T}"/> results). No real cluster —
 /// CI has none; kind e2e is the slice DoD.
 /// </summary>
 public sealed class KubernetesComputeProviderShould
 {
     private readonly IBatchV1Operations batchV1 = Substitute.For<IBatchV1Operations>();
     private readonly ICoreV1Operations coreV1 = Substitute.For<ICoreV1Operations>();
+    private readonly INetworkingV1Operations networkingV1 = Substitute.For<INetworkingV1Operations>();
     private readonly KubernetesComputeOptions options = new()
     {
         Namespace = "comuki",
@@ -41,18 +45,80 @@ public sealed class KubernetesComputeProviderShould
 
     public KubernetesComputeProviderShould()
     {
+        EchoCreatedPolicy();
+        EchoDeletedPolicy();
+        Provider = CreateProvider();
+    }
+
+    private KubernetesComputeProvider Provider { get; }
+
+    private KubernetesComputeProvider CreateProvider(bool allowUnfencedEgress = false)
+    {
         var kubernetes = Substitute.For<IKubernetes>();
         kubernetes.BatchV1.Returns(batchV1);
         kubernetes.CoreV1.Returns(coreV1);
+        kubernetes.NetworkingV1.Returns(networkingV1);
         var services = Substitute.For<IServiceProvider>();
         services.GetService(typeof(IKubernetes)).Returns(kubernetes);
-        Provider = new KubernetesComputeProvider(
+        return new KubernetesComputeProvider(
             services,
+            Microsoft.Extensions.Options.Options.Create(new ComputeOptions { AllowUnfencedEgress = allowUnfencedEgress }),
             Microsoft.Extensions.Options.Options.Create(options),
             NullLogger<KubernetesComputeProvider>.Instance);
     }
 
-    private KubernetesComputeProvider Provider { get; }
+    private void EchoCreatedPolicy()
+    {
+        networkingV1.CreateNamespacedNetworkPolicyWithHttpMessagesAsync(
+                Arg.Any<V1NetworkPolicy>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(static callInfo => new HttpOperationResponse<V1NetworkPolicy>
+            {
+                Body = callInfo.Args().OfType<V1NetworkPolicy>().First(),
+            });
+    }
+
+    private void EchoDeletedPolicy()
+    {
+        networkingV1.DeleteNamespacedNetworkPolicyWithHttpMessagesAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<V1DeleteOptions>(),
+                Arg.Any<string?>(),
+                Arg.Any<int?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new HttpOperationResponse<V1Status>());
+    }
+
+    private void FailPolicyCreation(HttpStatusCode statusCode)
+    {
+        networkingV1.CreateNamespacedNetworkPolicyWithHttpMessagesAsync(
+                Arg.Any<V1NetworkPolicy>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                Arg.Any<CancellationToken>())
+            .Throws(new HttpOperationException
+            {
+                Response = new HttpResponseMessageWrapper(
+                    new HttpResponseMessage(statusCode),
+                    string.Empty),
+            });
+    }
 
     private static ComputeStartRequest CreateStartRequest(ProjectId projectId, WorkerId? preIssuedWorkerId = null)
     {
@@ -84,6 +150,89 @@ public sealed class KubernetesComputeProviderShould
             {
                 Body = callInfo.Args().OfType<V1Job>().First(),
             });
+    }
+
+    [Fact(DisplayName = "Given a fenced start, when the NetworkPolicy is created, then it precedes the Job and targets the worker pods")]
+    public async Task CreateNetworkPolicyBeforeTheJobAsync()
+    {
+        var projectId = ProjectId.New();
+        V1NetworkPolicy? policy = null;
+        networkingV1.CreateNamespacedNetworkPolicyWithHttpMessagesAsync(
+                Arg.Any<V1NetworkPolicy>(),
+                Arg.Any<string>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                policy = callInfo.Args().OfType<V1NetworkPolicy>().First();
+                return new HttpOperationResponse<V1NetworkPolicy> { Body = policy };
+            });
+        EchoCreatedJob();
+
+        var handle = await Provider.StartAsync(CreateStartRequest(projectId), TestContext.Current.CancellationToken);
+
+        var created = policy.ShouldNotBeNull();
+        created.Metadata?.Name.ShouldBe($"comuki-w-egress-{handle.Id.Value.ToString("N")[^12..]}");
+        created.Spec?.PodSelector?.MatchLabels.ShouldNotBeNull()[ComputeLabels.Project]
+            .ShouldBe(projectId.Value.ToString());
+        await networkingV1.Received(1).CreateNamespacedNetworkPolicyWithHttpMessagesAsync(
+            Arg.Any<V1NetworkPolicy>(),
+            "comuki",
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<bool?>(),
+            Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given NetworkPolicy creation fails, when the unfenced flag is false, then start is refused and no Job is created")]
+    public async Task RefuseStartWhenNetworkPolicyCreationFailsAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        FailPolicyCreation(HttpStatusCode.Forbidden);
+        EchoCreatedJob();
+
+        var exception = await Should.ThrowAsync<ComputeFenceException>(
+            async () => await Provider.StartAsync(CreateStartRequest(ProjectId.New()), cancellationToken));
+
+        exception.Message.ShouldContain("comuki-w-egress-");
+        exception.InnerException.ShouldBeOfType<HttpOperationException>();
+        await batchV1.DidNotReceiveWithAnyArgs().CreateNamespacedJobWithHttpMessagesAsync(
+            Arg.Any<V1Job>(),
+            Arg.Any<string>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<bool?>(),
+            Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given NetworkPolicy creation fails, when the unfenced flag is true, then the Job is still created")]
+    public async Task StartUnfencedWhenOverrideIsSetAndPolicyCreationFailsAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        FailPolicyCreation(HttpStatusCode.InternalServerError);
+        EchoCreatedJob();
+        var provider = CreateProvider(allowUnfencedEgress: true);
+
+        var handle = await provider.StartAsync(CreateStartRequest(ProjectId.New()), cancellationToken);
+
+        handle.ProviderRef.ShouldStartWith("comuki-w-");
+        await batchV1.Received(1).CreateNamespacedJobWithHttpMessagesAsync(
+            Arg.Any<V1Job>(),
+            "comuki",
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<bool?>(),
+            Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+            cancellationToken);
     }
 
     [Fact(DisplayName = "When create Job Through The Provider Then Echo Its Name Async, then test passes")]
@@ -192,6 +341,93 @@ public sealed class KubernetesComputeProviderShould
             Arg.Any<bool?>(),
             Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
             cancellationToken);
+    }
+
+    [Fact(DisplayName = "When stop A Worker, then the egress NetworkPolicy is deleted with the Job")]
+    public async Task DeleteNetworkPolicyWithJobOnStopAsync()
+    {
+        var workerId = WorkerId.New();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        batchV1.DeleteNamespacedJobWithHttpMessagesAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<V1DeleteOptions>(),
+                Arg.Any<string?>(),
+                Arg.Any<int?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new HttpOperationResponse<V1Status>());
+        networkingV1.DeleteNamespacedNetworkPolicyWithHttpMessagesAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<V1DeleteOptions>(),
+                Arg.Any<string?>(),
+                Arg.Any<int?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new HttpOperationResponse<V1Status>());
+
+        await Provider.StopAsync(workerId, ComputeStopReason.IdleTtl, cancellationToken);
+
+        await networkingV1.Received(1).DeleteNamespacedNetworkPolicyWithHttpMessagesAsync(
+            $"comuki-w-egress-{workerId.Value.ToString("N")[^12..]}",
+            "comuki",
+            Arg.Any<V1DeleteOptions>(),
+            Arg.Any<string?>(),
+            Arg.Any<int?>(),
+            Arg.Any<bool?>(),
+            Arg.Any<bool?>(),
+            Arg.Any<string?>(),
+            Arg.Any<bool?>(),
+            Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+            cancellationToken);
+    }
+
+    [Fact(DisplayName = "Given the policy is already collected, when stopping, then the policy NotFound is a no-op")]
+    public async Task TreatMissingNetworkPolicyAsNoOpAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        batchV1.DeleteNamespacedJobWithHttpMessagesAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<V1DeleteOptions>(),
+                Arg.Any<string?>(),
+                Arg.Any<int?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new HttpOperationResponse<V1Status>());
+        networkingV1.DeleteNamespacedNetworkPolicyWithHttpMessagesAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<V1DeleteOptions>(),
+                Arg.Any<string?>(),
+                Arg.Any<int?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool?>(),
+                Arg.Any<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                Arg.Any<CancellationToken>())
+            .Throws(new HttpOperationException
+            {
+                Response = new HttpResponseMessageWrapper(
+                    new HttpResponseMessage(HttpStatusCode.NotFound),
+                    string.Empty),
+            });
+
+        await Provider.StopAsync(WorkerId.New(), ComputeStopReason.IdleTtl, cancellationToken);
     }
 
     [Fact(DisplayName = "When treat Missing Job As No Op Async, then test passes")]

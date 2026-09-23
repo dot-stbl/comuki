@@ -28,7 +28,7 @@ services:
       POSTGRES_PASSWORD: ${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
       POSTGRES_DB: ${COMUKI_POSTGRES_DB:-comuki}
     ports:
-      - "${COMUKI_POSTGRES_PORT:-5432}:5432"
+      - "${COMUKI_POSTGRES_PORT:-17024}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d:ro
@@ -52,8 +52,8 @@ services:
       MINIO_ROOT_USER: ${COMUKI_MINIO_ROOT_USER:-comuki}
       MINIO_ROOT_PASSWORD: ${COMUKI_MINIO_ROOT_PASSWORD:-comuki_dev}
     ports:
-      - "${COMUKI_MINIO_PORT:-9000}:9000"    # S3 API
-      - "${COMUKI_MINIO_CONSOLE_PORT:-9001}:9001"  # web console
+      - "${COMUKI_MINIO_PORT:-17022}:9000"    # S3 API
+      - "${COMUKI_MINIO_CONSOLE_PORT:-17023}:9001"  # web console
     volumes:
       - minio-data:/data
     healthcheck:
@@ -110,6 +110,11 @@ services:
       COMUKI_ARTIFACTS_AUTOCREATEBUCKET: "true"
       COMUKI_COMPUTE_PROVIDER: docker
       COMUKI_COMPUTE_DOCKER_NETWORKMODE: ${COMUKI_DOCKER_NETWORK:-comuki-net}
+      # Egress fence: worker containers join ONLY this internal (no default
+      # route) network; the host verifies it exists and is internal before
+      # every start and refuses unfenced starts (ComputeFenceException)
+      # unless COMUKI_COMPUTE_ALLOWUNFENCEDEGRESS=true.
+      COMUKI_COMPUTE_DOCKER_FENCEDNETWORK: ${COMUKI_DOCKER_FENCED_NETWORK:-comuki-worker-net}
       COMUKI_COMPUTE_SCALE_WORKERIMAGE: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
       COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-host:8080
       COMUKI_CHAT_WORKER_IMAGE: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
@@ -156,6 +161,11 @@ services:
       start_period: 30s
     networks:
       - comuki-net
+      # Fence side: workers reach the host gRPC endpoint through this
+      # internal network by service DNS (comuki-host). Any service a worker
+      # must additionally reach (Nexus, the model proxy — when deployed into
+      # this stack) attaches here too.
+      - comuki-worker-net
 
 
   worker-image:
@@ -202,6 +212,14 @@ networks:
   comuki-net:
     name: ${COMUKI_DOCKER_NETWORK:-comuki-net}
     driver: bridge
+  # Worker egress fence: internal → no default route to the internet. Worker
+  # containers join ONLY this network (Compute:Docker:FencedNetwork);
+  # comuki-host (and nexus / the model proxy when present) attach to it in
+  # addition to the stack network so workers can reach exactly them.
+  comuki-worker-net:
+    name: ${COMUKI_DOCKER_FENCED_NETWORK:-comuki-worker-net}
+    driver: bridge
+    internal: true
 
 volumes:
   postgres-data:

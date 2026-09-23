@@ -1,7 +1,12 @@
 # Comuki — Agents (TS packages)
 
-Четыре TS-пакета: три агентских (два runtime'а — `pi` для воркеров, Claude
-Code для разрабов — плюс общее ядро) и терминальный CLI.
+Три TS-пакета: два runtime'а (`pi` для воркеров, Claude Code для разрабов)
+плюс общее ядро, которое они шарят.
+
+> **`comuki-cli` здесь больше нет.** Терминальный клиент
+> (`@dot-stbl/comuki`) переехал из `agents/comuki-cli` в `cli/` 2026-09-17
+> (`a2bddc27`) и с тех пор живёт и активно развивается там — это отдельный,
+> не-агентский пакет. См. `cli/README.md`.
 
 ## Пакеты
 
@@ -20,7 +25,7 @@ Code для разрабов — плюс общее ядро) и термина
 
 | Папка | Что будет |
 |---|---|
-| `src/pi-extensions/` | Адаптеры принуждения механикой pi (замки): запрет править тесты, install, push в main |
+| `src/pi-extensions/` | Адаптеры принуждения механикой pi (замки): запрет править тесты, install, push в main. **Пусто** (`.gitkeep` только) — блокируется на `openspec/changes/harden-pi-worker-sandbox` §6 (задачи 6.1–6.3: lock-gate, skills, MCP-клиент внутри pi); сегодня замки внутри воркера не действуют вообще, принуждение есть только на стороне dev-sdk (Claude Code hooks) |
 | `src/skills/` | Загрузка скиллов-рецептов из `control-plane/skills/` и проектных |
 
 ### `comuki-dev-sdk` — разрабы
@@ -31,12 +36,6 @@ Code для разрабов — плюс общее ядро) и термина
 |---|---|
 | `src/hooks/` | Те же замки, механикой Claude Code (pre-tool-use hook → блокировка Edit на test-файле) |
 | `src/subagents/` | Сабагенты, переопределённые под стадии Comuki (изучатель, контракт-агент, doc-агент) |
-
-### `comuki-cli` — терминальный клиент
-Ink (React for CLIs) поверх REST + SignalR хоста: мульти-сессия REPL с
-мозгом (табы, команда по умолчанию — голый `comuki`), `status`, `runs`,
-`login`, `whoami`. Не агентский SDK — отдельный потребитель тех же API.
-См. `comuki-cli/README.md`.
 
 ## Почему три, а не два
 
@@ -72,6 +71,12 @@ Ink (React for CLIs) поверх REST + SignalR хоста: мульти-сес
 | `comuki-dev-sdk/src/subagents/` | 7 (Slice 4) | Изучатель, контракт-агент, doc-агент |
 
 `package.json` / `tsconfig.json` / bun workspace setup — Phase 2 (Stack Foundation).
+
+**Статус на 2026-09-23** (фазы v1 выше — историческая заявка, не текущая
+нумерация): `events/`, `protocol/`, `rules/` (agent-core), `skills/`
+(worker-sdk), `hooks/` (dev-sdk) реализованы и покрыты тестами.
+Пустые до сих пор: `agent-core/src/mcp/`, `worker-sdk/src/pi-extensions/`
+(см. таблицу выше), `dev-sdk/src/subagents/`.
 
 ## Подробнее
 

@@ -34,4 +34,21 @@ public sealed class DockerComputeOptions
     /// <summary>Seconds between SIGTERM and SIGKILL when stopping a container.</summary>
     [Range(0, 600)]
     public int WaitBeforeKillSeconds { get; init; } = 10;
+
+    /// <summary>Memory limit of one worker container, bytes (2 GiB default). A worker exceeding it is killed by the runtime.</summary>
+    [Range(16L * 1024 * 1024, long.MaxValue)]
+    public long MemoryBytes { get; init; } = 2L * 1024 * 1024 * 1024;
+
+    /// <summary>CPU limit of one worker container in nanoCPUs (1 CPU = 1_000_000_000; default 1 CPU).</summary>
+    [Range(100_000_000L, long.MaxValue)]
+    public long NanoCpus { get; init; } = 1_000_000_000L;
+
+    /// <summary>
+    /// User the worker container runs as — uid (or uid:gid) string, non-root
+    /// by default; must match the USER baked into the worker image
+    /// (deploy/compose/docker/worker.Dockerfile).
+    /// </summary>
+    [Required]
+    [MinLength(1)]
+    public string RunAsUser { get; init; } = "1000";
 }

@@ -11,6 +11,12 @@ namespace Comuki.Engine.Compute.Providers;
 /// </summary>
 internal static class DockerComputeMapping
 {
+    /// <summary>CapDrop value dropping every Linux capability from the worker container.</summary>
+    internal const string DropAllCapabilities = "ALL";
+
+    /// <summary>SecurityOpt denying privilege escalation inside the worker container (Docker twin of allowPrivilegeEscalation=false).</summary>
+    internal const string NoNewPrivileges = "no-new-privileges:true";
+
     /// <summary>Builds the create-parameters for one worker container.</summary>
     /// <param name="request"></param>
     /// <param name="workerId"></param>
@@ -28,7 +34,15 @@ internal static class DockerComputeMapping
             Name = ToContainerName(request.ProjectId, workerId),
             Env = BuildEnvironment(request),
             Labels = BuildLabels(request, workerId),
-            HostConfig = new HostConfig { NetworkMode = networkMode },
+            User = options.RunAsUser,
+            HostConfig = new HostConfig
+            {
+                NetworkMode = networkMode,
+                Memory = options.MemoryBytes,
+                NanoCPUs = options.NanoCpus,
+                CapDrop = [DropAllCapabilities],
+                SecurityOpt = [NoNewPrivileges],
+            },
         };
     }
 

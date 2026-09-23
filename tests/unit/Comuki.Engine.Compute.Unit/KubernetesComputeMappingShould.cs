@@ -24,6 +24,8 @@ public sealed class KubernetesComputeMappingShould
         TerminationGraceSeconds = 12,
         CpuRequestMillis = 250,
         MemoryRequestMiB = 512,
+        CpuLimitMillis = 750,
+        MemoryLimitMiB = 1536,
         NodeSelector = new Dictionary<string, string>(StringComparer.Ordinal) { ["pool"] = "workers" },
     };
 
@@ -82,6 +84,19 @@ public sealed class KubernetesComputeMappingShould
         requests["cpu"].ToString().ShouldBe("250m");
         // quantity canonicalizes freely (512Mi ⇄ 0.5Gi) — compare parsed bytes
         KubernetesCapacityMath.ParseMemoryBytes(requests["memory"].ToString()).ShouldBe(512L * 1024 * 1024);
+        var limits = resources.Limits.ShouldNotBeNull();
+        limits["cpu"].ToString().ShouldBe("750m");
+        KubernetesCapacityMath.ParseMemoryBytes(limits["memory"].ToString()).ShouldBe(1536L * 1024 * 1024);
+
+        // hardening defaults: non-root pod, no escalation, no capabilities,
+        // runtime-default seccomp on the container.
+        podSpec.SecurityContext.ShouldNotBeNull().RunAsNonRoot.ShouldBe(true);
+        var security = container.SecurityContext.ShouldNotBeNull();
+        security.AllowPrivilegeEscalation.ShouldBe(false);
+        security.Capabilities.ShouldNotBeNull().Drop.ShouldNotBeNull()
+            .ShouldContain(KubernetesComputeMapping.DropAllCapabilities);
+        security.SeccompProfile.ShouldNotBeNull().Type
+            .ShouldBe(KubernetesComputeMapping.SeccompRuntimeDefault);
     }
 
     [Fact(DisplayName = "When omit Node Selector When Not Configured, then test passes")]

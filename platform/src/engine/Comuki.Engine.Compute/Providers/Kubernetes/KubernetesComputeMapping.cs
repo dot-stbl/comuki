@@ -15,6 +15,12 @@ internal static class KubernetesComputeMapping
     /// <summary>PolicyTypes value of the worker fence: egress-only default-deny.</summary>
     public const string EgressPolicyType = "Egress";
 
+    /// <summary>Capabilities drop value clearing the worker container's Linux capability set.</summary>
+    internal const string DropAllCapabilities = "ALL";
+
+    /// <summary>Seccomp profile type of the worker container — the runtime default.</summary>
+    internal const string SeccompRuntimeDefault = "RuntimeDefault";
+
     /// <summary>Well-known label every namespace carries (Kubernetes API convention) — selects kube-system for the DNS allow.</summary>
     internal const string NamespaceNameLabel = "kubernetes.io/metadata.name";
 
@@ -163,6 +169,9 @@ internal static class KubernetesComputeMapping
                             ? new Dictionary<string, string>(options.NodeSelector, StringComparer.Ordinal)
                             : null,
                         RestartPolicy = "Never",
+                        // Non-root, no privilege escalation, no capabilities,
+                        // runtime-default seccomp (worker-sandbox hardening).
+                        SecurityContext = new V1PodSecurityContext { RunAsNonRoot = true },
                         Containers =
                         [
                             new V1Container
@@ -177,6 +186,17 @@ internal static class KubernetesComputeMapping
                                         ["cpu"] = new($"{options.CpuRequestMillis}m"),
                                         ["memory"] = new($"{options.MemoryRequestMiB}Mi"),
                                     },
+                                    Limits = new Dictionary<string, ResourceQuantity>(StringComparer.Ordinal)
+                                    {
+                                        ["cpu"] = new($"{options.CpuLimitMillis}m"),
+                                        ["memory"] = new($"{options.MemoryLimitMiB}Mi"),
+                                    },
+                                },
+                                SecurityContext = new V1SecurityContext
+                                {
+                                    AllowPrivilegeEscalation = false,
+                                    Capabilities = new V1Capabilities(drop: [DropAllCapabilities]),
+                                    SeccompProfile = new V1SeccompProfile(SeccompRuntimeDefault),
                                 },
                             },
                         ],

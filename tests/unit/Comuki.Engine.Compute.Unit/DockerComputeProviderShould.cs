@@ -197,6 +197,34 @@ public sealed class DockerComputeProviderShould
             cancellationToken);
     }
 
+    [Fact(DisplayName = "Given hardening defaults, when creating the container, then limits, cap drop, no-new-privileges and non-root user are set")]
+    public async Task StampLimitsAndHardeningOnWorkerContainerAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        InspectFenceReturns(internalNetwork: true);
+        CreateContainerParameters? captured = null;
+        containers.CreateContainerAsync(Arg.Any<CreateContainerParameters>(), cancellationToken)
+            .Returns(callInfo =>
+            {
+                captured = callInfo.Arg<CreateContainerParameters>();
+                return new CreateContainerResponse { ID = "container-hardened" };
+            });
+        var provider = CreateProvider();
+
+        await provider.StartAsync(CreateStartRequest(ProjectId.New()), cancellationToken);
+
+        var parameters = captured.ShouldNotBeNull();
+        parameters.User.ShouldBe("1000");
+        var hostConfig = parameters.HostConfig.ShouldNotBeNull();
+        hostConfig.Memory.ShouldBe(2L * 1024 * 1024 * 1024);
+        hostConfig.NanoCPUs.ShouldBe(1_000_000_000L);
+        hostConfig.CapDrop.ShouldNotBeNull().ShouldContain(DockerComputeMapping.DropAllCapabilities);
+        hostConfig.SecurityOpt.ShouldNotBeNull().ShouldContain(DockerComputeMapping.NoNewPrivileges);
+
+        // no bind mounts at all — the docker socket never enters a worker.
+        hostConfig.Binds.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "When honor Pre Issued Worker Id When Provided Async, then test passes")]
     public async Task HonorPreIssuedWorkerIdWhenProvidedAsync()
     {

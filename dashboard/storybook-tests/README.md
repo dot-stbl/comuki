@@ -5,6 +5,17 @@ WS16 of `openspec/changes/add-agentic-test-contour` (branch
 and `design.md` ("Report format for agents", "Local dev commands") for the
 full spec this implements.
 
+Looking for a way to render **one** story (or page) and get back a
+screenshot/DOM/aria/axe/console snapshot to check a change you just made,
+rather than a full multi-story batch pass? That's `bun run ui:probe` (WS17,
+depends on this workstream) — see
+[`../scripts/UI-PROBE.md`](../scripts/UI-PROBE.md). It reuses this
+workstream's `../scripts/lib/static-server.ts` and the same
+`bun run build-storybook` static build, but is a different tool with a
+different job: this harness batch-tests a tagged set of stories against
+committed baselines; `ui:probe` is a one-shot capture of a single target for
+an agent to read, no baseline involved.
+
 ```
 bun run test:storybook                          # compare, first batch only
 bun run test:storybook -- --update-snapshots     # (re)write baselines locally

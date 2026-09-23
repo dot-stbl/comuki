@@ -31,7 +31,7 @@ public sealed class ScopeGuardTests
 {
     /// <summary>
     /// DbContext types with a documented reason they carry no
-    /// object-axis query filter at all — currently empty: all ten
+    /// object-axis query filter at all — currently empty: all eleven
     /// DbContexts in the solution declare at least one. Add an entry here
     /// (with the reason in a comment) rather than silently letting a new
     /// DbContext ship with no scoping story.
@@ -69,6 +69,7 @@ public sealed class ScopeGuardTests
         typeof(Modules.Memory.Infrastructure.Persistence.MemoryDbContext),
         typeof(Modules.Projects.Infrastructure.Persistence.ProjectsDbContext),
         typeof(Modules.Scheduler.Infrastructure.Persistence.SchedulerDbContext),
+        typeof(Modules.Verify.Infrastructure.Persistence.VerifyDbContext),
     ];
 
     /// <summary>

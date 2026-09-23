@@ -5,8 +5,13 @@
 #   master (GitLab mirror of local `hybrid`) → dev
 #     test:unit + migrate:validate (gates) → build:image + build:image:worker
 #     + secrets:dev → ▶ migrate:dev → ▶ promote:dev
-#     (manual: infra:dev)
-#   MR → test:unit + migrate:validate only
+#     (manual: infra:dev, test:integration)
+#   MR → test:unit + migrate:validate only (manual: test:integration)
+#
+# test:integration (stage test-e2e) is manual/non-blocking — it does NOT
+# gate build/deploy — until a docker/podman-capable runner behind
+# $NOVA_RUNNER_DOCKER_TAG is confirmed with the platform-runner owner. See
+# the comment on that job for why.
 #
 # Dev deploy is AppSet-driven: `hybrid-services-dev` (corp Argo) discovers
 # deploy/hybrid/dev.yaml on master and pins image.tag = short_sha with
@@ -34,6 +39,7 @@ workflow:
 
 stages:
   - test
+  - test-e2e   # integration suites (docker/podman-capable runner) — see test:integration below
   - migrate
   - build
   - deploy
@@ -78,12 +84,19 @@ include:
       - "/templates/secrets/materialize/template.yml"
 
 # -----------------------------------------------------------------------------
-# Unit gate: solution build (warnings-as-errors + format gate) + fast suites.
+# Unit gate: solution build (warnings-as-errors + format gate) + the FULL
+# unit matrix — changed from a hand-picked 3-project fast subset to the
+# complete tests/unit/*/ + tests/Comuki.Architecture.Tests set, discovered
+# and run by scripts/ci/dotnet-test.mjs (openspec/changes/add-agentic-test-contour).
+# GitHub Actions' test-be job (.github/workflows/ci.yml) calls the same
+# script with the same flags, so the two pipelines agree on pass/fail for a
+# given commit instead of one gating a 3-project subset and the other 37+.
 #
 # xUnit v3 = MTP (Microsoft.Testing.Platform): VSTest discovery does not
-# work, tests run via `dotnet run --project`. Full suite list lives in
-# comuki.slnx; CI keeps 3 fast, deployment-relevant suites for pipeline
-# speed — the rest run on the dev machine (dotnet build is the real gate).
+# work, tests run via `dotnet run --project`. The sdk image has no Node —
+# scripts/ci/dotnet-test.mjs is plain zero-dependency ESM (bun/node only,
+# per allowed-scripts.md), so a bare `apt-get install nodejs` is enough,
+# no npm/bun toolchain needed to just run it.
 # -----------------------------------------------------------------------------
 test:unit:
   stage: test
@@ -99,20 +112,74 @@ test:unit:
     - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
   script:
     - dotnet --version
+    - apt-get update -qq && apt-get install -y --no-install-recommends nodejs > /dev/null
+    - node --version
     - dotnet restore comuki.slnx
     - dotnet build comuki.slnx -c Debug --no-restore
-    - |
-      set -e
-      PROJECTS="
-        tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine
-        tests/unit/Comuki.Host.Translator.Unit.StreamJson
-        tests/unit/Comuki.Host.Unit.ProductionSecrets
-      "
-      for proj in $PROJECTS; do
-        test -f "$proj/$(basename "$proj").csproj" || { echo "ERROR: missing $proj"; exit 1; }
-        echo "suite: $proj"
-        dotnet run --project "$proj" -c Debug --no-build
-      done
+    - node scripts/ci/dotnet-test.mjs --tier=unit --full --report-dir artifacts/test-reports/unit
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - artifacts/test-reports/unit/
+
+# -----------------------------------------------------------------------------
+# test:integration — tests/integration/*/ (minus Comuki.Host.Testing) via
+# the same scripts/ci/dotnet-test.mjs, --tier=integration.
+#
+# MANUAL / non-blocking, not yet part of the automatic gate. These suites
+# use Testcontainers directly (PostgreSqlBuilder etc. — see
+# Comuki.Host.Integration.Auth/HostAuthServer.cs), which needs an actual
+# Docker/Podman daemon reachable from the runner, not a GitLab `services:`
+# sidecar (that pattern only covers migrate:validate's single Postgres
+# container). `$NOVA_RUNNER_DOCKER_TAG` ("nova-dev-docker") already exists
+# as a pipeline variable but was unused until this job — and per design.md's
+# own open question, whether a runner actually carries that tag with a
+# working docker/podman socket has NOT been confirmed with the
+# platform-runner owner as of this change. Flipping this to automatic (and
+# giving promote:dev a `needs:` on it, per design.md's CI job layout) is a
+# follow-up once that's verified — not done here, to avoid silently gating
+# `dev` deploys on an unproven runner lane.
+#
+# Locally (Windows + Podman, no Docker Desktop) this exact script/tier
+# combination was verified against a real Postgres container with:
+#   DOCKER_HOST=npipe://./pipe/podman-machine-default
+#   TESTCONTAINERS_RYUK_DISABLED=true
+# (the quadruple-slash `npipe:////./pipe/...` form some docs suggest fails
+# with "the endpoint is not a npipe URI" against this Testcontainers/
+# Docker.DotNet version — the double-slash form above is the one that
+# works). Left undocumented as a runner default here since the actual
+# nova-dev-docker executor's docker/podman setup is unconfirmed; whoever
+# provisions that runner should sanity-check DOCKER_HOST against it.
+# -----------------------------------------------------------------------------
+test:integration:
+  stage: test-e2e
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  tags:
+    - $NOVA_RUNNER_DOCKER_TAG
+  when: manual
+  allow_failure: true
+  cache:
+    key:
+      files:
+        - Directory.Packages.props
+    paths:
+      - .nuget/packages/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH || $CI_COMMIT_TAG
+  script:
+    - dotnet --version
+    - apt-get update -qq && apt-get install -y --no-install-recommends nodejs > /dev/null
+    - node --version
+    - dotnet restore comuki.slnx
+    - dotnet build comuki.slnx -c Debug --no-restore
+    - node scripts/ci/dotnet-test.mjs --tier=integration --report-dir artifacts/test-reports/integration
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - artifacts/test-reports/integration/
 
 # -----------------------------------------------------------------------------
 # migrate:validate — prove all 9 module schemas apply cleanly + idempotently

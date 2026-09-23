@@ -27,6 +27,7 @@ import {
   loadProjectGraph,
   openspecItemsFromChangedFiles,
   parseArgs,
+  parseNodeTestOutput,
   parseProjectReferences,
   renderPlanText,
   resolveBaseRef,
@@ -372,6 +373,103 @@ describe('dashboardVitestMode', () => {
 
   it('falls back to full mode when there are no changed files', () => {
     assert.equal(dashboardVitestMode([]), 'full');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseNodeTestOutput
+// ---------------------------------------------------------------------------
+
+describe('parseNodeTestOutput', () => {
+  it('returns null when the output has no ℹ tests summary (e.g. a crash before the runner starts)', () => {
+    assert.equal(parseNodeTestOutput('SyntaxError: Unexpected token\n'), null);
+  });
+
+  it('reads the real counts from a clean pass, with no failures', () => {
+    const output = [
+      '▶ parseArgs',
+      '  ✔ defaults everything to unset/false (1.2ms)',
+      '✔ parseArgs (1.5ms)',
+      'ℹ tests 3',
+      'ℹ suites 1',
+      'ℹ pass 3',
+      'ℹ fail 0',
+      'ℹ cancelled 0',
+      'ℹ skipped 0',
+      'ℹ todo 0',
+      'ℹ duration_ms 12.3',
+      '',
+    ].join('\n');
+    const result = parseNodeTestOutput(output);
+    assert.deepEqual(result.counts, { total: 3, passed: 3, failed: 0, skipped: 0 });
+    assert.deepEqual(result.failures, []);
+  });
+
+  it('extracts location + name + first message line per failing test from the "failing tests:" section', () => {
+    const output = [
+      '▶ parseArgs',
+      '  ✖ defaults everything to unset/false (1.4ms)',
+      '✖ parseArgs (3.5ms)',
+      'ℹ tests 205',
+      'ℹ suites 35',
+      'ℹ pass 204',
+      'ℹ fail 1',
+      'ℹ cancelled 0',
+      'ℹ skipped 0',
+      'ℹ todo 0',
+      'ℹ duration_ms 456',
+      '',
+      '✖ failing tests:',
+      '',
+      'test at scripts\\ci\\test-affected.test.mjs:43:3',
+      '✖ defaults everything to unset/false (1.4615ms)',
+      '  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:',
+      '  ',
+      '  false !== true',
+      '  ',
+      '      at TestContext.<anonymous> (file:///.../test-affected.test.mjs:47:12)',
+    ].join('\n');
+    const result = parseNodeTestOutput(output);
+    assert.deepEqual(result.counts, { total: 205, passed: 204, failed: 1, skipped: 0 });
+    assert.equal(result.failures.length, 1);
+    assert.equal(result.failures[0].name, 'defaults everything to unset/false');
+    assert.equal(result.failures[0].location, 'scripts\\ci\\test-affected.test.mjs:43:3');
+    assert.match(result.failures[0].message, /AssertionError \[ERR_ASSERTION\]/);
+  });
+
+  it('extracts one failure block per failing test when several fail', () => {
+    const output = [
+      'ℹ tests 4',
+      'ℹ pass 2',
+      'ℹ fail 2',
+      'ℹ skipped 0',
+      'ℹ cancelled 0',
+      '',
+      '✖ failing tests:',
+      '',
+      'test at a.test.mjs:1:1',
+      '✖ first thing (0.1ms)',
+      '  boom one',
+      '',
+      'test at b.test.mjs:2:2',
+      '✖ second thing (0.2ms)',
+      '  boom two',
+    ].join('\n');
+    const result = parseNodeTestOutput(output);
+    assert.equal(result.failures.length, 2);
+    assert.deepEqual(
+      result.failures.map((f) => f.name),
+      ['first thing', 'second thing'],
+    );
+    assert.deepEqual(
+      result.failures.map((f) => f.location),
+      ['a.test.mjs:1:1', 'b.test.mjs:2:2'],
+    );
+  });
+
+  it('folds skipped and cancelled together into skipped', () => {
+    const output = ['ℹ tests 5', 'ℹ pass 3', 'ℹ fail 0', 'ℹ skipped 1', 'ℹ cancelled 1'].join('\n');
+    assert.equal(parseNodeTestOutput(output).counts.skipped, 2);
   });
 });
 

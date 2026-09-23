@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using Comuki.Engine.Compute.Security;
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Domain;
@@ -12,6 +13,7 @@ using Comuki.Host.Translator.Grpc;
 using Comuki.Host.Translator.Profiles;
 using Comuki.Host.Translator.Runtime;
 using Comuki.Host.Workers;
+using Comuki.Modules.Proxy.Application;
 using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Kernel.Ids;
@@ -61,8 +63,20 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
                 ["Orchestration:Lease:ReapGrace"] = "00:00:30",
                 ["Orchestration:Lease:MaxAttempts"] = "2",
                 ["Orchestration:Lease:ReapInterval"] = "01:00:00",
+
+                // Proxy minting (issue #122): enabled with a dummy worker
+                // base URL — no proxy listener exists in this fixture, the
+                // tests only assert the claim response and the env stamp.
+                ["Proxy:Enabled"] = "true",
+                ["Proxy:WorkerBaseUrl"] = "http://127.0.0.1:9/",
+                ["Proxy:VirtualKeys:0:Token"] = "vkey_e2e_anthropic",
+                ["Proxy:VirtualKeys:0:ProjectId"] = Guid.NewGuid().ToString(),
+                ["Proxy:VirtualKeys:0:Provider"] = "anthropic",
+                ["Proxy:VirtualKeys:0:BaseUrl"] = "http://127.0.0.1:9/upstream",
+                ["Proxy:VirtualKeys:0:ApiKeyEnvRef"] = "FAKE_PI_E2E_UPSTREAM_KEY",
             })
             .Build();
+        Environment.SetEnvironmentVariable("FAKE_PI_E2E_UPSTREAM_KEY", "sk-not-called-in-this-fixture");
 
         // Migrations MUST land before the host starts: the lease reaper
         // sweeps on boot and its first cycle would otherwise fail against
@@ -76,6 +90,12 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
                 .AddOrchestrationQueue(configuration)
                 .AddOrchestrationApplication()
                 .AddWorkerRuntime(configuration);
+            // The claim endpoint mints into IVirtualKeyStore — the proxy
+            // application services provide the store and ProxyOptions.
+            services.AddSingleton<Shared.Kernel.Secrets.ISecretResolver>(
+                new Shared.Kernel.Secrets.CompositeSecretResolver(
+                    [new Shared.Kernel.Secrets.EnvSecretProvider()]));
+            services.AddProxyApplication(configuration);
             // The lease reaper registers as an IComukiWorker — this
             // registry is what runs it in this fixture.
             services.AddComukiWorkers();
@@ -137,6 +157,81 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
         var timeline = await ReadTimelineAsync(runId);
         timeline.ShouldContain(static entry => entry.Type == "worker.reported" && entry.PayloadJson.Contains("failed", StringComparison.Ordinal), "the failure StageReport is journaled");
         timeline.ShouldContain(static entry => entry.Type == "work_item.status_changed" && entry.PayloadJson.Contains("Failed", StringComparison.Ordinal), "the failure is journaled");
+    }
+
+    [Fact]
+    public async Task MintOnClaimRevokeOnCompleteAndKeepTheJournalCleanAsync()
+    {
+        var (runId, workItemId) = await SeedQueuedItemAsync(/*lang=json,strict*/ """{"goal":"claim only"}""");
+        var store = host.GetService<Modules.Proxy.Application.Ports.IVirtualKeyStore>();
+
+        using var client = new HttpClient { BaseAddress = host.BaseAddress };
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", workerToken);
+
+        // Claim over the real REST surface: the minted key rides on the
+        // response exactly once.
+        using var claim = await client.PostAsync(
+            "/workers/claim",
+            new StringContent(
+                /*lang=json,strict*/ $$"""{"image":"{{Image}}","profilesRef":"{{ProfilesRef}}","profileKey":"{{ProfileKey}}"}""",
+                System.Text.Encoding.UTF8,
+                "application/json"),
+            TestContext.Current.CancellationToken);
+        claim.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK);
+
+        using var claimDocument = JsonDocument.Parse(await claim.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        var proxyBaseUrl = claimDocument.RootElement.GetProperty("proxyBaseUrl").GetString();
+        var virtualKey = claimDocument.RootElement.GetProperty("virtualKey").GetString();
+        proxyBaseUrl.ShouldBe("http://127.0.0.1:9", "the configured WorkerBaseUrl, trailing slash trimmed");
+        virtualKey.ShouldNotBeNullOrWhiteSpace();
+
+        (await store.FindAsync(virtualKey, TestContext.Current.CancellationToken))
+            .ShouldNotBeNull("the minted key resolves beside the config-seeded keys");
+
+        // The journal path that mirrors the claim transition must never
+        // carry the raw token.
+        var claimedTimeline = await ReadTimelineAsync(runId);
+        claimedTimeline.ShouldNotContain(entry => entry.PayloadJson.Contains(virtualKey!, StringComparison.Ordinal), "the raw minted token is never journaled");
+
+        using var complete = await client.PostAsync(
+            $"/workers/{workItemId}/complete",
+            new StringContent(/*lang=json,strict*/ """{"resultJson":"{\"ok\":true}"}""", System.Text.Encoding.UTF8, "application/json"),
+            TestContext.Current.CancellationToken);
+        complete.StatusCode.ShouldBe(System.Net.HttpStatusCode.NoContent);
+
+        (await store.FindAsync(virtualKey, TestContext.Current.CancellationToken))
+            .ShouldBeNull("complete revokes the minted key immediately");
+    }
+
+    [Fact]
+    public async Task StampTheMintedVirtualKeyIntoTheFakePiEnvironmentAsync()
+    {
+        var (_, workItemId) = await SeedQueuedItemAsync(/*lang=json,strict*/ """{"goal":"stamp the env"}""");
+
+        var loop = translatorProvider.GetRequiredService<TranslatorLoop>();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        var ran = await loop.TryRunOnceAsync(timeout.Token);
+
+        ran.ShouldBeTrue("the seeded item should have been claimed");
+
+        var item = await LoadItemAsync(workItemId);
+        item.Status.ShouldBe(WorkItemStatus.Succeeded, "the run itself is unaffected by the stamp");
+
+        // TestFakePi dumps the model-gateway env it received into the
+        // run's working directory when the token stamp is present.
+        var workingDirectory = translatorProvider.GetRequiredService<IOptions<TranslatorOptions>>().Value.WorkingDirectory;
+        var dump = await File.ReadAllTextAsync(
+            Path.Combine(workingDirectory, "fake-pi-env.json"),
+            TestContext.Current.CancellationToken);
+        dump.ShouldContain("http://127.0.0.1:9");
+        using var dumpDocument = JsonDocument.Parse(dump);
+        dumpDocument.RootElement.GetProperty("anthropicAuthToken").GetString().ShouldNotBeNullOrWhiteSpace();
+
+        // The mint died with the completed execution.
+        var store = host.GetService<Modules.Proxy.Application.Ports.IVirtualKeyStore>();
+        var keys = await store.ListAsync(TestContext.Current.CancellationToken);
+        keys.ShouldNotContain(key => key.WorkItemId == workItemId, "the completed execution's mint is revoked");
     }
 
     private ServiceProvider BuildTranslatorProvider(string piExecutable)

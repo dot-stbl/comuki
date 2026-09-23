@@ -18,6 +18,7 @@ namespace Comuki.Host.Integration.Proxy;
 /// v1 ships auth + passthrough only; the unit suite covers the meter
 /// path end-to-end.
 /// </summary>
+[Collection(nameof(ProxyIntegrationCollection))]
 public sealed class ProxyPassthroughShould : IAsyncLifetime
 {
     private const string VirtualKey = "vkey_test_alpha";

@@ -17,6 +17,7 @@ namespace Comuki.Modules.Proxy.Application.Models;
 /// <param name="AllowedModels">Optional model allow-list; empty / null = every model permitted.</param>
 /// <param name="MaxInputTokens">Optional per-call input token cap; <c>null</c> = no cap.</param>
 /// <param name="MaxOutputTokens">Optional per-call output token cap; <c>null</c> = no cap.</param>
+/// <param name="WorkItemId">Work item a runtime mint is bound to; <c>null</c> for config-seeded keys.</param>
 public sealed record VirtualKey(
     string Token,
     ProjectId ProjectId,
@@ -25,4 +26,5 @@ public sealed record VirtualKey(
     DateTimeOffset? ExpiresAt = null,
     IReadOnlyList<string>? AllowedModels = null,
     int? MaxInputTokens = null,
-    int? MaxOutputTokens = null);
+    int? MaxOutputTokens = null,
+    Guid? WorkItemId = null);

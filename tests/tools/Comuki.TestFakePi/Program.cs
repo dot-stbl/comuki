@@ -8,6 +8,11 @@ namespace Comuki.TestFakePi;
 /// directory, one JSON object per line. Exits 0. Honors
 /// <c>--fixtures-dir=PATH</c> (forwarded via the prompt args) to emit a
 /// custom stream, and <c>--exit-code=N</c> to exercise the failure path.
+/// When <c>ANTHROPIC_AUTH_TOKEN</c> is set in its environment (the
+/// Translator stamps it per execution — issue #122), also writes
+/// <c>fake-pi-env.json</c> into the working directory reporting the
+/// model-gateway env it received, so tests can assert the stamp reached
+/// the child process without polluting the streamed/journaled output.
 /// </summary>
 public static class Program
 {
@@ -22,6 +27,8 @@ public static class Program
 
         await Console.Out.WriteLineAsync(/*lang=json,strict*/ """{"type":"session","version":3,"id":"0f1e2d3c-4b5a-6978-8776-655443332211","timestamp":"2026-08-31T12:00:00.000Z","cwd":"/work"}""");
 
+        DumpModelGatewayEnvironment();
+
         foreach (var file in Directory.EnumerateFiles(fixturesDir, "*.json").Order(StringComparer.Ordinal))
         {
             await Console.Out.WriteLineAsync(await File.ReadAllTextAsync(file));
@@ -32,6 +39,25 @@ public static class Program
         return ExtractOption(args, "--exit-code=") is { } exitFlag && int.TryParse(exitFlag, out var forcedExit)
             ? forcedExit
             : 0;
+    }
+
+    /// <summary>
+    /// Dumps the env only when the minted-token stamp is present, so
+    /// suites that never stamp see no file. Values are test-controlled
+    /// (base URL + base64url token) — no JSON escaping needed.
+    /// </summary>
+    private static void DumpModelGatewayEnvironment()
+    {
+        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ANTHROPIC_AUTH_TOKEN")))
+        {
+            return;
+        }
+
+        var baseUrl = Environment.GetEnvironmentVariable("ANTHROPIC_BASE_URL");
+        var token = Environment.GetEnvironmentVariable("ANTHROPIC_AUTH_TOKEN");
+        File.WriteAllText(
+            Path.Combine(Directory.GetCurrentDirectory(), "fake-pi-env.json"),
+            $$"""{"anthropicBaseUrl":"{{(string.IsNullOrEmpty(baseUrl) ? "<unset>" : baseUrl)}}","anthropicAuthToken":"{{(string.IsNullOrEmpty(token) ? "<unset>" : token)}}"}""");
     }
 
     private static string? ExtractOption(string[] args, string prefix)

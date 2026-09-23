@@ -9,11 +9,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Shouldly only, for the login-response assertion in
-         TestBootstrapAdmin's HttpClient extension — no [Fact] here, so no
-         xunit/Testcontainers package: each Host*Server fixture owns its own
-         Testcontainers instance and its own IAsyncLifetime implementation. -->
+    <!-- Shouldly, for the login-response assertion in
+         TestBootstrapAdmin's HttpClient extension. -->
     <PackageReference Include="Shouldly" />
+    <!-- WS2 (add-agentic-test-contour): PostgresCollectionFixture
+         implements xunit's IAsyncLifetime and reads TestContext.Current —
+         the only reason this otherwise-not-a-test-project references
+         xunit.v3. It still carries no [Fact]/[Theory], so IsTestProject /
+         UseMicrosoftTestingPlatformRunner stay unset (see the note above);
+         CI builds this project but never runs it as a suite. Owns the one
+         shared Postgres container + Respawner every converted integration
+         project's collection now reuses, instead of each Host*Server
+         building its own. -->
+    <PackageReference Include="xunit.v3.extensibility.core" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Respawn" />
+    <PackageReference Include="Npgsql" />
   </ItemGroup>
 
   <ItemGroup>

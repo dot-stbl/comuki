@@ -57,6 +57,12 @@ internal static class KubernetesComputeMapping
     /// <summary>Propagation policy of Job deletion — foreground, so the pod dies with the Job.</summary>
     internal const string ForegroundPropagation = "Foreground";
 
+    /// <summary>UID/GID the worker container runs as — the same app user
+    /// (1654) the host image bakes in. Stated explicitly on the pod spec so
+    /// <c>RunAsNonRoot</c> is satisfiable even when the worker image itself
+    /// declares no <c>USER</c>.</summary>
+    internal const int WorkerRunAsUser = 1654;
+
     /// <summary>Worker Job name: comuki-w-{12-char worker-id suffix}, derivable from the id alone.</summary>
     public static string ToJobName(WorkerId workerId)
     {
@@ -187,7 +193,17 @@ internal static class KubernetesComputeMapping
                         RestartPolicy = RestartPolicyNever,
                         // Non-root, no privilege escalation, no capabilities,
                         // runtime-default seccomp (worker-sandbox hardening).
-                        SecurityContext = new V1PodSecurityContext { RunAsNonRoot = true },
+                        // The numeric UID/GID is stated here because the
+                        // worker image declares no USER of its own — without
+                        // it kubelet refuses the container under
+                        // RunAsNonRoot ("image will run as root").
+                        SecurityContext = new V1PodSecurityContext
+                        {
+                            RunAsNonRoot = true,
+                            RunAsUser = WorkerRunAsUser,
+                            RunAsGroup = WorkerRunAsUser,
+                            FsGroup = WorkerRunAsUser,
+                        },
                         Containers =
                         [
                             new V1Container

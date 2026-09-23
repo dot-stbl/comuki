@@ -15,7 +15,6 @@ public sealed class FixedStepClock(DateTimeOffset epoch, TimeSpan step) : TimePr
     /// <inheritdoc />
     public override DateTimeOffset GetUtcNow()
     {
-        var callIndex = Interlocked.Increment(ref callCount);
-        return epoch + step * callIndex;
+        return epoch + step * Interlocked.Increment(ref callCount);
     }
 }

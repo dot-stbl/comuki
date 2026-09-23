@@ -98,11 +98,13 @@ file static class AnthropicSseEventWriter
         int requestIndex,
         CancellationToken cancellationToken)
     {
-        var toolUseId = DeterministicIds.ToolUseId(scenarioName, requestIndex, index);
         await WriteEventAsync(
             response,
             "content_block_start",
-            new ContentBlockStartEvent("content_block_start", index, new AnthropicToolUseBlock("tool_use", toolUseId, toolUse.Name, DynamicJsonConverter.EmptyObject)),
+            new ContentBlockStartEvent(
+                "content_block_start",
+                index,
+                new AnthropicToolUseBlock("tool_use", DeterministicIds.ToolUseId(scenarioName, requestIndex, index), toolUse.Name, DynamicJsonConverter.EmptyObject)),
             cancellationToken);
 
         foreach (var chunk in TextChunker.Chunk(JsonSerializer.Serialize(toolUse.Input, JsonSerializerOptions.Web), TextChunker.DefaultChunkSize))

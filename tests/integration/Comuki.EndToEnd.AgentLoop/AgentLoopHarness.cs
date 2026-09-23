@@ -30,16 +30,12 @@ public sealed class AgentLoopHarness(AgentLoopHost host) : IAgentLoopHarness
     /// <inheritdoc />
     public async Task<SeededWorkItem> SeedTicketAsync(ScenarioDefinition scenario, CancellationToken cancellationToken = default)
     {
-        if (!issueNumbersByScenario.TryGetValue(scenario.Name, out var issueNumber))
-        {
-            throw new ScenarioValidationException(
+        return !issueNumbersByScenario.TryGetValue(scenario.Name, out var issueNumber)
+            ? throw new ScenarioValidationException(
                 $"scenario '{scenario.Name}' has no assigned fixture issue number — add one to "
-                    + $"{nameof(AgentLoopHarness)}.{nameof(issueNumbersByScenario)}");
-        }
-
-        var (runId, workItemId) = await host.SeedTicketAsync(
-            scenario.Ticket.Title, scenario.Ticket.Body, scenario.Ticket.Labels, issueNumber, cancellationToken);
-        return new SeededWorkItem(runId, workItemId);
+                    + $"{nameof(AgentLoopHarness)}.{nameof(issueNumbersByScenario)}")
+            : await host.SeedTicketAsync(
+                scenario.Ticket.Title, scenario.Ticket.Body, scenario.Ticket.Labels, issueNumber, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -65,9 +61,26 @@ public sealed class AgentLoopHarness(AgentLoopHost host) : IAgentLoopHarness
             // COMUKI_ORCH_HTTP itself (only COMUKI_ORCH_GRPC) — the REST
             // claim/heartbeat/complete/fail surface needs it too, so it
             // rides the caller-supplied Env extras.
+            //
+            // COMUKI_WORKING_DIRECTORY: a found production gap, not a
+            // cosmetic default — see the WS6 report. With neither
+            // COMUKI_PROFILES_PATH nor COMUKI_PROFILES_GIT_URL set (the
+            // documented "skip, log a warning" path —
+            // ProfilesProvider.PrepareAsync's own doc comment), the real
+            // container observed TranslatorOptions.WorkingDirectory as
+            // null at runtime (not its Directory.GetCurrentDirectory()
+            // default), and ProfilesProvider.PrepareAsync's unguarded
+            // Path.Combine(opts.WorkingDirectory, "profiles") threw
+            // ArgumentNullException, crashing the whole host (fatal,
+            // BackgroundServiceExceptionBehavior.StopHost) immediately
+            // after a real claim succeeded. Stamped explicitly here to
+            // unblock T2a; deploy/hybrid/worker.Dockerfile does not set it
+            // either, so a real deployment with no profiles source
+            // configured would hit the same crash.
             Env = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["COMUKI_ORCH_HTTP"] = containerReachableBase.ToString().TrimEnd('/'),
+                ["COMUKI_WORKING_DIRECTORY"] = "/work",
             },
         };
 

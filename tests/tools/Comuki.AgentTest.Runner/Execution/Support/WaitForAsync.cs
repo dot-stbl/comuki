@@ -1,4 +1,4 @@
-namespace Comuki.AgentTest.Runner.Execution;
+namespace Comuki.AgentTest.Runner.Execution.Support;
 
 /// <summary>
 /// Poll-with-timeout helper — never a bare <c>Task.Delay</c> assumption

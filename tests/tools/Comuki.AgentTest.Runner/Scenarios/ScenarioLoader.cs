@@ -42,7 +42,15 @@ public static class ScenarioLoader
         }
         catch (YamlDotNet.Core.YamlException exception)
         {
-            throw new ScenarioValidationException($"scenario file '{scenarioPath}' failed to parse: {exception.Message}", exception);
+            // YamlDotNet wraps a custom IYamlTypeConverter's own exception
+            // (e.g. ScenarioModelModeYamlConverter's "not one of fake|replay|live")
+            // as YamlException.InnerException with a generic outer message —
+            // surface the innermost one too, or the specific problem is lost.
+            var innermost = InnermostMessage(exception);
+            throw new ScenarioValidationException(
+                $"scenario file '{scenarioPath}' failed to parse: {exception.Message}"
+                    + (innermost == exception.Message ? string.Empty : $" ({innermost})"),
+                exception);
         }
 
         Validate(scenario, scenarioPath);
@@ -100,5 +108,16 @@ public static class ScenarioLoader
         var scenarioDirectory = Path.GetDirectoryName(Path.GetFullPath(scenarioPath))
             ?? throw new ScenarioValidationException($"could not resolve the directory of '{scenarioPath}'");
         return Path.GetFullPath(Path.Combine(scenarioDirectory, relativePath));
+    }
+
+    private static string InnermostMessage(Exception exception)
+    {
+        var current = exception;
+        while (current.InnerException is { } inner)
+        {
+            current = inner;
+        }
+
+        return current.Message;
     }
 }

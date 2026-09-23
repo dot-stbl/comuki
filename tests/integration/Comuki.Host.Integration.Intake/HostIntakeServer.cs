@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Modules.Intake.Application.Ports.Sync;
 using Comuki.Modules.Intake.Application.Ports.Tickets;
 using Comuki.Modules.Intake.Domain.Connections;
@@ -8,20 +9,20 @@ using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Intake;
 
 /// <summary>
 /// Boots the real host composition (<see cref="HostComposer"/>) on a
-/// random loopback port against one migrated Testcontainers Postgres —
-/// every module context, via <see cref="HostDatabaseMigrator"/> — with a
-/// fast bridge interval and a FAKE GitHub sync port pre-registered (the
-/// registry resolves first-match, so the fake shadows the real Refit
-/// client; no tracker HTTP in tests). One shared instance per test run
-/// (collection fixture): every test scopes itself by its own project id /
-/// delivery ids.
+/// random loopback port against one shared, migrated Postgres (owned by
+/// this type's own <see cref="PostgresCollectionFixture"/> — one container
+/// for the whole collection, not one per test class) with a fast bridge
+/// interval and a FAKE GitHub sync port pre-registered (the registry
+/// resolves first-match, so the fake shadows the real Refit client; no
+/// tracker HTTP in tests). One shared instance per test run (collection
+/// fixture): every test scopes itself by its own project id / delivery
+/// ids.
 /// </summary>
 public sealed class HostIntakeServer : IAsyncLifetime
 {
@@ -30,8 +31,7 @@ public sealed class HostIntakeServer : IAsyncLifetime
     public const string HookSecretEnv = "COMUKI_TEST_GH_HOOK";
     public const string HookSecret = "test-hook-secret";
 
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("pgvector/pgvector:pg16")
-        .Build();
+    private readonly PostgresCollectionFixture postgres = new();
 
     private WebApplication application = null!;
     private Uri baseAddress = null!;
@@ -45,10 +45,8 @@ public sealed class HostIntakeServer : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await container.StartAsync(cancellationToken);
-
-        ConnectionString = container.GetConnectionString();
-        await HostDatabaseMigrator.MigrateAllAsync(ConnectionString, cancellationToken);
+        await postgres.InitializeAsync();
+        ConnectionString = postgres.ConnectionString;
 
         Environment.SetEnvironmentVariable(HookSecretEnv, HookSecret, EnvironmentVariableTarget.Process);
 
@@ -131,7 +129,7 @@ public sealed class HostIntakeServer : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await application.DisposeAsync();
-        await container.DisposeAsync();
+        await postgres.DisposeAsync();
     }
 }
 

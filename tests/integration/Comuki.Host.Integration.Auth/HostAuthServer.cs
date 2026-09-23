@@ -4,6 +4,7 @@ using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Auth;
 using Comuki.Host.Testing;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Modules.Identity.Application.ApiKeys;
 using Comuki.Modules.Identity.Application.Assignments.Grant;
 using Comuki.Modules.Identity.Application.Authorization;
@@ -23,15 +24,15 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Auth;
 
 /// <summary>
 /// Boots the real host composition (<see cref="HostComposer"/>) on a
-/// random loopback port against a migrated Testcontainers Postgres (every
-/// module context, via <see cref="HostDatabaseMigrator"/>), a temp
+/// random loopback port against one shared, migrated Postgres (owned by
+/// this type's own <see cref="Comuki.Host.Testing.Fixtures.PostgresCollectionFixture"/> —
+/// one container for the whole collection, not one per test class), a temp
 /// control-plane root, a configured bootstrap admin. One browser-like
 /// client carries the cookie session; the client from <see cref="CreateApiKeyClient"/> is
 /// cookie-less for bearer flows.
@@ -41,8 +42,7 @@ public sealed class HostAuthServer : IAsyncLifetime
     public const string BootstrapEmail = TestBootstrapAdmin.Email;
     public const string BootstrapPassword = TestBootstrapAdmin.Password;
 
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("pgvector/pgvector:pg16")
-        .Build();
+    private readonly PostgresCollectionFixture postgres = new();
 
     private WebApplication application = null!;
     private TempControlPlaneRoot controlPlane = null!;
@@ -52,10 +52,8 @@ public sealed class HostAuthServer : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await container.StartAsync(cancellationToken);
-
-        var connectionString = container.GetConnectionString();
-        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
+        await postgres.InitializeAsync();
+        var connectionString = postgres.ConnectionString;
 
         controlPlane = new TempControlPlaneRoot("auth");
         controlPlane.Write("profiles", "implement.md", """
@@ -290,6 +288,6 @@ public sealed class HostAuthServer : IAsyncLifetime
     {
         await application.DisposeAsync();
         controlPlane.Dispose();
-        await container.DisposeAsync();
+        await postgres.DisposeAsync();
     }
 }

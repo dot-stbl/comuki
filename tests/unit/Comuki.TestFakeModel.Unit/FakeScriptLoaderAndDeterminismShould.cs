@@ -1,6 +1,10 @@
 using System.Text;
 using System.Text.Json;
-using Comuki.TestFakeModel.Scripting;
+using Comuki.TestFakeModel.Hosting;
+using Comuki.TestFakeModel.Scripting.Building;
+using Comuki.TestFakeModel.Scripting.Loading;
+using Comuki.TestFakeModel.Scripting.Model;
+using Comuki.TestFakeModel.Scripting.Model.Response;
 using Shouldly;
 using Xunit;
 

@@ -1,10 +1,11 @@
 using Comuki.TestFakeModel.Anthropic;
 using Comuki.TestFakeModel.Determinism;
+using Comuki.TestFakeModel.Networking;
 using Comuki.TestFakeModel.Scripting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
-namespace Comuki.TestFakeModel;
+namespace Comuki.TestFakeModel.Hosting;
 
 /// <summary>
 /// In-process fake for the Anthropic Messages API (<c>POST /v1/messages</c>,
@@ -26,8 +27,6 @@ public sealed class FakeModelServer : IAsyncDisposable
     /// <summary>Builds (but does not start) the server for <paramref name="options"/>.</summary>
     public FakeModelServer(FakeModelServerOptions options)
     {
-        ArgumentNullException.ThrowIfNull(options);
-
         state = new FakeModelState(options.Script, new FixedStepClock(options.ClockEpoch, options.ClockStep));
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -44,6 +43,8 @@ public sealed class FakeModelServer : IAsyncDisposable
     }
 
     /// <summary>The loopback base address Kestrel bound to — populated after <see cref="StartAsync"/>.</summary>
+    // boundary: set inside StartAsync before any caller can observe it; there is no
+    // meaningful default before the server has started.
     public Uri BaseAddress { get; private set; } = null!;
 
     /// <summary>Every <c>POST /v1/messages</c> request observed so far, in arrival order.</summary>
@@ -56,11 +57,10 @@ public sealed class FakeModelServer : IAsyncDisposable
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         await application.StartAsync(cancellationToken);
-        BaseAddress = new Uri(
-            application.Services
-                .GetRequiredService<IServer>()
-                .Features.Get<IServerAddressesFeature>()!
-                .Addresses.Single());
+        // boundary: Kestrel always publishes at least one address once StartAsync
+        // completes for a host configured with UseUrls — IServerAddressesFeature
+        // itself is never absent on the Kestrel server implementation.
+        BaseAddress = new Uri(application.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.Single());
         started = true;
     }
 

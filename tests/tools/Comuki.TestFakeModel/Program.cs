@@ -1,4 +1,5 @@
-using Comuki.TestFakeModel.Scripting;
+using Comuki.TestFakeModel.Hosting;
+using Comuki.TestFakeModel.Scripting.Loading;
 
 namespace Comuki.TestFakeModel;
 
@@ -21,7 +22,7 @@ public static class Program
     /// </summary>
     public static async Task<int> Main(string[] args)
     {
-        var mode = ExtractOption(args, "--mode=") ?? "fake";
+        var mode = ProgramArgs.ExtractOption(args, "--mode=") ?? "fake";
         if (!mode.Equals("fake", StringComparison.OrdinalIgnoreCase))
         {
             await Console.Error.WriteLineAsync(
@@ -29,24 +30,19 @@ public static class Program
             return 1;
         }
 
-        var scriptPath = ExtractOption(args, "--script=") ?? Path.Combine(AppContext.BaseDirectory, "Fixtures", "hello.fake.json");
+        var scriptPath = ProgramArgs.ExtractOption(args, "--script=") ?? Path.Combine(AppContext.BaseDirectory, "Fixtures", "hello.fake.json");
         if (!File.Exists(scriptPath))
         {
             await Console.Error.WriteLineAsync($"[TestFakeModel] script file not found: {scriptPath}");
             return 1;
         }
 
-        var scenarioNameOverride = ExtractOption(args, "--scenario-name=");
-        var script = FakeScriptLoader.LoadFromFile(scriptPath, scenarioNameOverride);
-
-        var port = ExtractOption(args, "--port=") is { } portArg && int.TryParse(portArg, out var parsedPort)
-            ? parsedPort
-            : DefaultPort;
+        var script = FakeScriptLoader.LoadFromFile(scriptPath, ProgramArgs.ExtractOption(args, "--scenario-name="));
 
         await using var server = new FakeModelServer(new FakeModelServerOptions
         {
             Script = script,
-            Port = port,
+            Port = ProgramArgs.ExtractOption(args, "--port=") is { } portArg && int.TryParse(portArg, out var parsedPort) ? parsedPort : DefaultPort,
         });
 
         await server.StartAsync();
@@ -65,8 +61,12 @@ public static class Program
         await server.StopAsync();
         return 0;
     }
+}
 
-    private static string? ExtractOption(string[] args, string prefix)
+/// <summary>The CLI-argument extraction step <see cref="Program"/> composes — extracted per class-layout-and-tooling.md §1a.</summary>
+file static class ProgramArgs
+{
+    public static string? ExtractOption(string[] args, string prefix)
     {
         foreach (var arg in args)
         {

@@ -1,7 +1,9 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Comuki.TestFakeModel.Scripting;
+using Comuki.TestFakeModel.Hosting;
+using Comuki.TestFakeModel.Scripting.Building;
+using Comuki.TestFakeModel.Scripting.Model.Response;
 using Shouldly;
 using Xunit;
 
@@ -18,6 +20,7 @@ public sealed class FakeModelServerStreamingShould : IAsyncLifetime
     private const string ScriptedText =
         "This is a longer scripted reply so the deterministic chunker has to split it into more than one text_delta event.";
 
+    // boundary: assigned in InitializeAsync before any [Fact] can observe it.
     private FakeModelServer server = null!;
 
     /// <inheritdoc />
@@ -47,6 +50,7 @@ public sealed class FakeModelServerStreamingShould : IAsyncLifetime
         using var response = await PostStreamAsync(client, "hi", TestContext.Current.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        // boundary: a 200 SSE response always carries a Content-Type header.
         response.Content.Headers.ContentType!.MediaType.ShouldBe("text/event-stream");
 
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
@@ -61,7 +65,7 @@ public sealed class FakeModelServerStreamingShould : IAsyncLifetime
 
         var deltaEvents = events.Skip(2).Take(events.Count - 5).ToList();
         deltaEvents.ShouldNotBeEmpty();
-        deltaEvents.ShouldAllBe(static e => e.EventType == "content_block_delta");
+        deltaEvents.ShouldAllBe(static deltaEvent => deltaEvent.EventType == "content_block_delta");
 
         var reassembled = new StringBuilder();
         foreach (var delta in deltaEvents)

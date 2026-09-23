@@ -1,6 +1,6 @@
-using Comuki.TestFakeModel.Scripting;
+using Comuki.TestFakeModel.Scripting.Model;
 
-namespace Comuki.TestFakeModel;
+namespace Comuki.TestFakeModel.Hosting;
 
 /// <summary>Construction options for <see cref="FakeModelServer"/>.</summary>
 public sealed class FakeModelServerOptions

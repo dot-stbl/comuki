@@ -1,7 +1,10 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Comuki.TestFakeModel.Scripting;
+using Comuki.TestFakeModel.Hosting;
+using Comuki.TestFakeModel.Scripting.Building;
+using Comuki.TestFakeModel.Scripting.Model;
+using Comuki.TestFakeModel.Scripting.Model.Response;
 using Shouldly;
 using Xunit;
 
@@ -35,6 +38,7 @@ public sealed class FakeScriptMatchingShould
             using var response = await PostAsync(client, "whatever", TestContext.Current.CancellationToken);
             var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
             using var document = JsonDocument.Parse(body);
+            // boundary: scripted text block, guaranteed non-null by the fakeScript under test.
             texts.Add(document.RootElement.GetProperty("content")[0].GetProperty("text").GetString()!);
         }
 
@@ -100,6 +104,7 @@ public sealed class FakeScriptMatchingShould
         response.StatusCode.ShouldBe(HttpStatusCode.InternalServerError);
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(body);
+        // boundary: scripted server-error message, guaranteed non-null by AnthropicErrors.
         document.RootElement.GetProperty("error").GetProperty("message").GetString()!.ShouldContain("did not satisfy");
     }
 
@@ -107,6 +112,7 @@ public sealed class FakeScriptMatchingShould
     {
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(body);
+        // boundary: scripted text block, guaranteed non-null by the fakeScript under test.
         return document.RootElement.GetProperty("content")[0].GetProperty("text").GetString()!;
     }
 

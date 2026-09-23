@@ -1,22 +1,26 @@
 ---
-milestone: v1 → v2 (planning)
-status: v2-change-drafted
-last_updated: 2026-09-15
+milestone: v1 (shipped) → v2 (mission-cowork epic drafted, 0 built)
+status: v2-epic-drafted
+last_updated: 2026-09-23
 openspec_changes_in_flight:
-  - agent-runtime-capabilities (planning complete, awaiting /opsx-apply)
+  - harden-pi-worker-sandbox (15/27 tasks; issue #121 + follow-up #125; actively landing)
+  - enrich-chat-parts (22/24 tasks; near done — Testcontainers suite + spec sync remain)
+  - agent-runtime-capabilities (planning complete, awaiting /opsx-apply — unchanged since 2026-09-15)
+  - add-mission-cowork (issue #70; v2 umbrella epic, proposal/design/tasks complete, 0/131 built;
+    18 child stubs #87-#105 are empty .openspec.yaml only — real spec content still lives in
+    add-mission-cowork itself, decomposition is future work)
 progress:
-  total_slices: 24
-  completed_slices: 24
-  percent: 100
   v1_core_slices: "15 (S0–S14, original v1 scope)"
   additional_slices: "9 (5 FE wire-up + 2 polish + 1 admin endpoints + 1 docs)"
   issues_total: 50
   issues_closed: 50
   issues_open: 0
-  master_tip: fa659fd
+  cli_rebuild_epic: "shipped — issue #71 (15 sub-issues #72-#85), closed 2026-09-19 to 2026-09-21"
+  mission_cowork_epic: "drafted only — issue #70, 19 phases / 131 tasks, 0 built"
+  master_tip: 86d15e10
   openapi_emission: artifacts/openapi.json
-  fe_tests: 1560
-  be_tests: 1567
+  be_tests: "2075 across 37 unit-category projects (2073 pass, 2 known-fail — see Tests)"
+  fe_tests: "dashboard 2032 pass; agents/ 155 pass; cli 1433 pass / 4 fail (Windows-only path bug)"
   rule_bootstrap: |
     Agent onboarding ritual enforced by three machine-checkable artefacts
     (see `.agents/RULES-BOOTSTRAP.md`):
@@ -30,7 +34,95 @@ progress:
 
 # Project State
 
-## Current Position
+## Текущая позиция (2026-09-23)
+
+**v1 шипнут** (детали ниже, master `fa659fd`, 2026-09-08). После него
+прошли четыре волны работы:
+
+1. **CLI rebuild epic (issue #71, закрыт).** 15 под-issues (#72-#85):
+   harness engine + reducer, OpenTUI как дефолтный `--tui` (`b75eb179`,
+   2026-09-21), risk-tiered approvals, swarm canvas, a11y linear
+   renderer, machine-режим (`--json`/`--ndjson`), generated-contracts
+   pipeline (kubb HTTP types + realtime codegen), reconnectable
+   sessions, single-file packaging + телеметрия. Закрыт 2026-09-19 →
+   2026-09-21. **`comuki-cli` физически переехал `agents/comuki-cli` →
+   `cli/` 2026-09-17 (`a2bddc27`)** — отдельный активно растущий пакет
+   (458 файлов / ~64.6K LOC), больше не под `agents/`. Следующий
+   инкремент — issue #105 `rewrite-cli-for-shared-contracts`
+   (strangler-миграция на `HarnessEngine` + сгенерированные контракты,
+   внешние ADR-0002/0003); в openspec только один plan-документ
+   ("step 1"), а сам step 1 уже реализован (`4687613c`/`f29a2415`,
+   2026-09-21) — код обогнал план.
+2. **`harden-pi-worker-sandbox` (issue #121 + follow-up #125), в работе
+   сегодня.** Floor для isolation class `strong`: default-deny egress
+   (Docker fenced network + K8s NetworkPolicy, `eb87e5b6`), минтинг
+   virtual key на claim + стемпинг в `pi` (`bd61e47f`), worker CPU/mem
+   limits (issue #124, закрыт). 15/27 задач `tasks.md`. Осталось:
+   git-clone-based workspace prep (без `docker.sock`), journal
+   conditions + artifact drain, operator exec opt-in, image-pin-by-digest,
+   и `agents/comuki-worker-sdk/src/pi-extensions/` (задачи 6.1-6.3) —
+   сегодня локи внутри воркера **не действуют вообще** (только dev-sdk
+   hooks на стороне разработчика).
+3. **v2-эпик `add-mission-cowork` (issue #70), расписан — код не
+   начат.** 19 фаз / 131 задача в
+   `openspec/changes/add-mission-cowork/tasks.md` (Missions, standalone
+   Tasks, Capability Broker, Context Fabric, тёплые worker pools,
+   dashboard/CLI паритет). **BREAKING**: Run перестаёт быть durable-
+   целью. Из него объявлено 18 дочерних openspec-стабов (issues
+   #87-#105) — каждый пока только `.openspec.yaml`, без proposal/tasks;
+   реальный spec-контент живёт в самом `add-mission-cowork`,
+   декомпозиция — будущая работа. `openspec validate --all`: 27 pass /
+   23 fail (стабы + пара changes без `specs/`-дельты).
+4. **Audit fixes U1-U7 landed** (2026-09-16→17): `canon.mjs`
+   directory-expansion fix, `TimeProvider` в
+   `CreateApiKeyRequestValidator`, status enums → smart-types +
+   `OrchestrationDomainException`, `MergeQueue`/`MergeBatch` split в
+   commands/handlers, `ApiRoutes`-константы в контроллерах, filtering
+   doc-tag cleanup, `[hybrid]` → `[.stbl]` commit-prefix correction в
+   `.agents/` докам.
+
+Master tip: `86d15e10` (2026-09-23). 28 открытых GitHub issues на
+момент проверки — не дублируем список здесь, `gh issue list -R
+dot-stbl/comuki` (#87-#105 = openspec-стабы выше; #121/#125 = sandbox;
+#100-104 = поздние mission-cowork фазы; #51/#53/#65/#66 = старый мелкий
+backlog). Тестовые числа — раздел "Tests" ниже.
+
+## Tests (2026-09-23, master `86d15e10`)
+
+Real counts from a full read-only run (audit report, same date). Numbers
+below supersede any older count elsewhere in this file.
+
+- **Backend** — xUnit v3 / MTP, **2075 tests, 2073 pass, 2 fail**, across
+  all 37 unit-category projects (36 `tests/unit/*` + `Comuki.Architecture.Tests`,
+  38/38 green). The 2 failures are both `Comuki.Host.Brain.Unit`
+  `DeploymentProfileCatalogShould` — real drift between `deploy/hybrid/infra-dev.yaml`
+  (missing `COMUKI_BRAIN_CONTROLPLANEPROFILESPATH`) and
+  `deploy/helm/templates/brain.yaml` (sets it correctly), plus a second
+  Dockerfile/test contract mismatch on the `COPY` scope for control-plane
+  profiles — not a stale test, a live deployment-manifest bug worth
+  fixing. All 22 `tests/integration/*` (Testcontainers) build clean but
+  were not run in that pass (no Docker in the audit shell); they do run
+  in GitHub Actions CI.
+- **Frontend `dashboard/`** — vitest, **176 files, 2032 tests pass**.
+- **`agents/`** (3 TS SDKs) — bun test, **155/155 pass** (11 files).
+- **`cli/`** — bun test, **1433 pass, 4 fail** (131 files). All 4
+  failures are one root cause: `cli/scripts/export-bundle.test.ts`
+  hard-codes `/tmp/test-tar.tar.gz` and shells out to `tar`; on Windows
+  Git-Bash `tar` reads `C:\...` as `host:path`. Portability bug in the
+  test (should use `os.tmpdir()`, already imported), not a logic bug —
+  likely green on Linux CI.
+- **CI** — two independent pipelines exist: GitHub Actions
+  (`.github/workflows/ci.yml`) runs a 2-3 project subset of unit tests
+  plus the **full** integration suite; the GitLab deploy pipeline
+  (`deploy/hybrid/ci.yml`, gitignored on GitHub) that actually promotes
+  images to `dev` runs 3 hand-picked unit suites and a migration-
+  idempotency check — **no integration or E2E stage** before
+  `promote:dev`. See `.agents/docs/audits/testing-audit-report.md`
+  (2026-09-09) for the fuller gap analysis; most of its P1 findings
+  (Testcontainers-per-class cost, zero `Respawn` usage, duplicated fake
+  helpers) were still open as of 2026-09-23.
+
+## v1 — историческая точка (шипнут 2026-09-08)
 
 **v1 milestone is complete and shipping.** All 50 GitHub issues closed
 (0 open). 24 slices shipped — 15 original v1 core slices plus 9 follow-on
@@ -80,13 +172,25 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
 | Sub-slice | SHA | Description |
 |---|---|---|
 | Merge-queue entity | `6072dd9` | MergeQueue aggregate + IMergeQueueStore + AddMergeQueueTable |
-| Eval-harness | `7989779` | EvalRunner + 7 golden tasks + JSON parser + Markdown writer |
+| Status-machine golden-replay tester (historically mislabeled "Eval-harness") | `7989779` | `EvalRunner` + 7 golden `Golden/0N-*.json` fixtures + JSON parser + Markdown writer — a deterministic replay of `Create`/`Transition` ops against the pure Run/WorkItem domain, asserting `transitionLog`/`finalStatus`. **Not** an agent/model-quality eval — no LLM, no rubric, no golden *tasks for the brain or pi worker*. See `tests/unit/Comuki.Engine.Orchestration.Unit.Eval/`. |
 | Autonomy ratchet (slice 1) | `6f2ddb8` + `3f769f5` | RunTrustClass enum + TrustClassRatchetSweeper + AddRunTrustClass migration |
 | Domain-user intake (slice 1) | `1ac0550` | DomainTypeAdmission EF + gate service + AddDomainTypeAdmissions |
-| Redis cache | `b29e688` → `5f62928` | Comuki.Shared.Redis + IDistributedCache wrap + DistributedProjectSettingsCache |
-| Fleet runners (slice 1) | merged | IRunnerRegistry + EfRunnerRegistry + heartbeat reaper |
-| Generic-command verifier | `ec3ce24` → `493704c` | GenericCommandRun EF + IGenericCommandRunner + ProcessRunner + GenericCommandVerifierWorker |
 | C#→TS codegen (Option A) | `77561c9` → `0aeae3e` | RealtimeContractAttribute + RealtimeContractEmitter + contracts in Shared.Contracts |
+
+**Verified absent from the current tree (2026-09-23) despite being listed
+"shipped" in earlier revisions of this file — do not cite as done:**
+- **Redis cache** (`Comuki.Shared.Redis` + `DistributedProjectSettingsCache`)
+  — no `Comuki.Shared.Redis` project exists anywhere in `platform/`;
+  `ProjectSettingsCacheRefresherComukiWorker`'s own XML doc still calls
+  Redis "planned... when it lands," i.e. future tense, not shipped. The
+  live cache is DB-backed with an in-memory fallback snapshot + TTL.
+- **Fleet runners** (`IRunnerRegistry` / `EfRunnerRegistry`) — zero
+  matches anywhere in `platform/src`.
+- **Generic-command verifier / `Comuki.Modules.Verify`** — the module
+  was built (`ec3ce24`, `493704c`) but later dropped as an unbuildable
+  skeleton (`chore(slnx): drop unbuildable Verify module skeleton`); it
+  does not exist in `platform/src/modules/` or `comuki.slnx` today.
+  `GenericCommandRun` has zero matches anywhere in the tree.
 
 **Deferred to v2 (4 issues closed as deferred, not in v1.1):**
 - #47 Generic-command runner-container (Process.Start isolation)
@@ -105,20 +209,25 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
   `Comuki.Engine.Compute` (Docker + Kubernetes providers,
   `KubernetesComputeProvider` использует `batch/v1 Job` с
   `backoffLimit=0` / `ttlSecondsAfterFinished`, ScaleSupervisor cycle).
-- **Shared**: `Comuki.Shared.Kernel` (ids, exceptions, subject scoping) ·
-  `Comuki.Shared.Contracts` (gRPC, brain, queue, journal, plans, memory,
-  control-plane, realtime) · `Comuki.Shared.Telemetry` (ActivitySource + Meter,
+- **Shared**: `Comuki.Shared.Kernel` (ids, exceptions, subject scoping,
+  secrets abstraction) · `Comuki.Shared.Contracts` (gRPC, brain, queue,
+  journal, plans, memory, control-plane, realtime) ·
+  `Comuki.Shared.Telemetry` (ActivitySource + Meter,
   `AddComukiTelemetry()` installer) · `Comuki.Shared.Filtering` (DSL parser
-  → IQueryable; kubb-exposed filter types via OpenAPI transformer).
-  (`Comuki.Shared.Redis` отложен — кэш settings пока не введён, см.
-  v2 backlog.)
-- **11 модулей** в `platform/src/modules/`:
+  → IQueryable; kubb-exposed filter types via OpenAPI transformer) ·
+  `Comuki.Shared.Bootstrap` (host composition: CLI, config, correlation,
+  logging, versioning, worker registry) · `Comuki.Shared.Migrations`
+  (cross-module DbContext list for the Migrator). **No `Comuki.Shared.Redis`
+  project exists** — the settings cache is DB-backed with an in-process
+  fallback snapshot; Redis is future work, not shipped (see the "Verified
+  absent" note above).
+- **10 модулей** в `platform/src/modules/` (1:1 с `comuki.slnx`):
   - **Identity** — RBAC (`RoleMatrix`/`RoleKeys` в коде, `ck_` API keys с
     HMAC pepper, OIDC linker с per-provider схемами + `OidcAccountLinker`,
     bootstrap admin, 7 admin endpoints #31–#37.
   - **Projects** — CRUD + per-project settings с live-reload, бюджеты и
-    concurrency caps (`ProjectSettingsCacheRefresher` через in-process
-    cache; Redis отложен до v2).
+    concurrency caps (`ProjectSettingsCacheRefresherComukiWorker` через
+    DB-backed cache + in-process fallback snapshot; Redis не введён).
   - **Chat** — Voluta-graph integration в Host, checkpoints +
     `chat_sessions` / `chat_messages` storage, slash-commands.
   - **Memory** — long-term facts с pgvector (`SourceDocument` +
@@ -138,16 +247,15 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
     bundle in MinIO; `ArtifactBucketInitializer` BackgroundService создаёт
     bucket idempotent на старте (`8825387`).
   - **Proxy** *(S9)* — `Comuki.Modules.Proxy` (resolver, store,
-    extractors, budget, meter) + `Comuki.Host.Proxy` YARP
-    OpenAI/Anthropic passthrough + virtual-key HMAC (models/budget/expiry)
-    + metering → `usage_events`.
+    extractors, budget, meter); YARP OpenAI/Anthropic passthrough runs
+    **in-process inside `Comuki.Host`** (`Comuki.Host/Proxy/*Endpoints.cs`)
+    — there is no separate `Comuki.Host.Proxy` project — + virtual-key
+    HMAC (models/budget/expiry) + metering → `usage_events`.
   - **Knowledge** *(S10)* — `Comuki.Modules.Knowledge` (embedder /
     chunker / ingestor / searcher) + pgvector schema + MCP JSON-RPC 2.0
     endpoint на host (`/api/v1/mcp` с tools `search_knowledge` +
     `list_runs`) + `/api/v1/knowledge/ingest` за `knowledge:write`
     permission.
-  - **Verify** — `Comuki.Modules.Verify` (GenericCommandRun EF entity +
-    `IGenericCommandRunner` + `ProcessRunner` + `GenericCommandVerifierWorker`).
   - **Scheduler** — `Comuki.Modules.Scheduler` (cron + sentry observability
     via `scheduler.scheduled_jobs` table, `ScheduledJobDispatcherWorker`
     polls via `FOR UPDATE SKIP LOCKED`, fires ephemeral workers; S15 issue
@@ -195,13 +303,28 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
 
 ### Frontend (`dashboard/`)
 
-- **5 доменов на реальный backend** (slices 1–5): runs · identity
-  (session: login/me/oidc) · projects · inbox · OIDC start. FE генерирует
-  kubb client из `artifacts/openapi.json`; per-domain mappers из wire в
-  domain.
-- **Mock-first домены (post-v1 follow-up)**: identity admin mutations +
-  sources admin pages (`#31–#42`), tasks, models, observability, verify,
-  cost, compute, knowledge, queue, approvals, settings, home.
+- **Реальный backend, оба branch'а реализованы (2026-09-23, сильно шире
+  исходных 5 доменов):** runs · approvals (runs + learning candidates) ·
+  queue (workers, drain/stop) · sources (CRUD, probe, rotate-secret,
+  rules) · projects (+ scheduled-jobs) · identity (users/grants/keys) ·
+  auth (`/auth/me`, OIDC) · inbox/tasks (claim, tickets) · chat
+  (sessions, messages, slash) · knowledge (documents, search) · models
+  (proxy keys list/revoke) · artifacts (visual list — но
+  `FetchAsync` пока всегда возвращает `[]`, backend placeholder). FE
+  генерирует kubb client из `artifacts/openapi.json`; per-domain
+  mappers из wire в domain.
+- **Смешанные/частичные (read реальный, write мок или наоборот):**
+  compute (registry read реальный; take-work/retire throw — эндпоинтов
+  нет в spec) · cost (real-mode дергает `/projects/{id}/costs`, но
+  **выбрасывает результат** и возвращает seed — платформенный rollup
+  не отдаёт backend, "issue Q3/v1.1") · settings (`GET` реальный; PUT
+  в spec нет вообще, все мутации throw) · home (список ранов реальный;
+  outcomes throw, эндпоинта нет) · models (enable/disable toggle
+  принципиально не может работать — ключи config-seeded и immutable,
+  UI прячет его в real-mode).
+- **Только мок, backend-аналога нет вовсе:** observability, verify
+  (целый gate-домен с UI-сообщением "gate not connected"). Ни у одного
+  нет пути в OpenAPI spec.
   Mutations бросают loud error в real-mode, read path пустой —
   misconfigured `VITE_USE_MOCK=false` лендит на empty-state, не на
   phantom success.
@@ -217,12 +340,12 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
   (`window.location.assign`), `VITE_OIDC_PROVIDER` env, OIDC callback
   обрабатывает Host (`/api/v1/auth/oidc/{provider}/callback`) и возвращает
   `/` с кукой.
-- **Tests** — `bun run test` → **136 файлов, 1560 тестов pass** (`2026-09-08`).
-  Mock-режим (`VITE_USE_MOCK=true`) не требует `VITE_API_BASE_URL`;
-  real-mode throws на первом hook call без base URL.
-- **Dashboard polish** (post-v1, `fa659fd`): animated action icons, chat
-  dock growth, tailwind v4 restored (preflight reset is load-bearing),
-  auth query boot moved inside `QueryClientProvider` (`f000001`).
+- **Tests** — `bun run test` → **176 файлов, 2032 теста pass** (`2026-09-23`,
+  ~150K LOC в `src/`, 19 доменов). Mock-режим (`VITE_USE_MOCK=true`, до
+  сих пор default) не требует `VITE_API_BASE_URL`; real-mode throws на
+  первом hook call без base URL. `predev` гоняет полный `dotnet build`
+  даже в mock-режиме (нужен spec для kubb); `prebuild` — только
+  `audit:fe` (`dashboard/scripts/rule-audit.ts`, warning-only).
 
 ### Хранилища
 
@@ -284,9 +407,14 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
    (жёсткий формат-гейт в графе билда).
 2. Все suite'ы зелёные (`dotnet run --project <test>` — MTP, не `dotnet test`).
 3. FE (когда тронут): `cd dashboard && bun run typecheck && bun run lint && bun run test`.
-   На `2026-09-08`: typecheck ok, lint ok, 1560/1560 tests pass.
+   На `2026-09-23`: typecheck ok, lint ok, 2032/2032 tests pass (176 файлов).
 4. Agents TS: `cd agents && bun install && bun run typecheck && bun test`.
-5. **OpenAPI emission gate** — `artifacts/openapi.json` должен появиться после
+   На `2026-09-23`: 155/155 pass.
+5. CLI (когда тронут): `cd cli && bun run typecheck && bun run lint && bun run test`
+   + `test:contracts` (drift-гейт против сгенерированных OpenAPI/realtime
+   контрактов, требует `dotnet` в PATH). На `2026-09-23`: 1433/1437 pass —
+   4 known-fail — см. раздел "Tests" выше.
+6. **OpenAPI emission gate** — `artifacts/openapi.json` должен появиться после
    build (Debug). kubb `predev` хук упадёт с подсказкой, если spec отсутствует
    — поэтому fail-fast ДО `output.clean` (см.
    [openapi-codegen.md](./operations/openapi-codegen.md)).
@@ -315,10 +443,10 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
 | Coverage floor | 70% line (BE + FE) |
 | slnx | править руками (`dotnet sln add --solution-folder` ломает пути на Win) |
 | Folder cap | max 3 .cs files per folder (#25) |
-| Proxy | YARP passthrough on Host:Proxy, virtual-key HMAC, optional (`Proxy:Enabled=false` → off, `T9.6`) |
+| Proxy | YARP passthrough in-process inside `Comuki.Host` (no standalone `Comuki.Host.Proxy`), virtual-key HMAC, optional (config section `Proxy`, `Proxy:Enabled=false` → off, `T9.6`) |
 | Knowledge | pgvector в schema `knowledge`, MCP JSON-RPC 2.0 на host (`/api/v1/mcp`), `knowledge:write` permission для ingest (#9) |
 | TrustClass | enum (Supervised/Trusted/Autonomous) + `TrustClassRatchetSweeper` (passive timeout); future: confidence scoring (#49) |
-| Realtime contracts | C#→TS source-gen: `RealtimeContractAttribute` → `agents/Comuki.Shared.Contracts.Realtime` (Option A) |
+| Realtime contracts | C#→TS source-gen: `RealtimeContractAttribute` in `Comuki.Shared.Contracts/Realtime/` (Option A); FE-side codegen landed later via `tools/Comuki.Codegen.Realtime` → `cli/src/contracts/_generated/realtime.ts` (dashboard's realtime layer is still hand-written) |
 
 ## Осторожно (грабли, уже стреляли)
 
@@ -367,6 +495,33 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
   тесты с `OrchestrationDbContext` падают с warning-as-error.
 
 ## Дальше (v2 backlog)
+
+### В работе сейчас
+
+- **`harden-pi-worker-sandbox`** (issue #121 + #125) — 15/27. Осталось:
+  git-clone-based workspace prep (без `docker.sock`), journal
+  conditions + artifact drain, operator exec opt-in, image-pin-by-digest,
+  `agents/comuki-worker-sdk/src/pi-extensions/` (задачи 6.1-6.3).
+- **`enrich-chat-parts`** — 22/24. Осталось: Testcontainers integration
+  suite + синхронизация дельты в `openspec/specs/chat/spec.md` + архивация.
+
+### Расписано, код не начат
+
+- **`add-mission-cowork`** (issue #70) — 19 фаз / 131 задача,
+  `openspec/changes/add-mission-cowork/tasks.md` — единственный source
+  of truth для порядка фаз, не дублируем его здесь. Из него объявлены
+  18 дочерних change-стабов (issues #87-#105), сейчас пустые
+  `.openspec.yaml`; порядок и зависимости между ними — там же в
+  `add-mission-cowork/design.md`/`architecture.md`.
+- **`rewrite-cli-for-shared-contracts`** (issue #105) — один
+  plan-документ ("step 1: HarnessEngine + 2 reducer events"), без
+  proposal/tasks triad; сам step 1 уже реализован
+  (`4687613c`/`f29a2415`, 2026-09-21).
+- **`execution-spine-orchestration`** (#87) и
+  **`hard-rename-intake-to-integrations`** (#88) — пустые стабы, но
+  оба помечены как ранние/foundational фазы `add-mission-cowork`.
+
+### Закрыто / deferred
 
 - #47 Generic-command runner-container (Process.Start isolation) — closed
 - #48 Fleet runner host-agent for bare-metal — closed

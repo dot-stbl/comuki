@@ -1,8 +1,10 @@
 using System.Text.Json;
+using Comuki.Engine.Compute.Options;
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.Plans;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Options;
@@ -19,10 +21,12 @@ namespace Comuki.Host.Chat.RunStarter;
 /// </summary>
 /// <param name="db">Orchestration context of the current scope.</param>
 /// <param name="defaults">Claim labels for chat-created items.</param>
+/// <param name="buildInformation">Build identity — pins the item image to the running version.</param>
 /// <param name="clock">Time source for domain stamps.</param>
 public sealed class ChatRunStarter(
     OrchestrationDbContext db,
     IOptions<ChatWorkerDefaults> defaults,
+    ComukiBuildInformation buildInformation,
     TimeProvider clock)
 {
     /// <summary>Applies the plan; returns the created run id.</summary>
@@ -35,12 +39,19 @@ public sealed class ChatRunStarter(
         var run = Run.Create(projectId, now);
         var itemsById = new Dictionary<string, WorkItem>(StringComparer.Ordinal);
 
+        // Claim matching compares the item's image with the worker's
+        // labels for equality — the supervisor pins its spawn through
+        // WorkerImagePinning, so the item side must resolve through the
+        // same function or no worker ever matches (release contract,
+        // see WorkerImagePinning).
+        var image = WorkerImagePinning.Resolve(defaults.Value.Image, buildInformation);
+
         foreach (var node in plan.Nodes)
         {
             var workItem = WorkItem.Create(
                 run.Id,
                 node.ProfileKey,
-                defaults.Value.Image,
+                image,
                 defaults.Value.ProfilesRef,
                 ChatItemBrief.ToJson(node.Brief),
                 WorkItemStatus.Queued,

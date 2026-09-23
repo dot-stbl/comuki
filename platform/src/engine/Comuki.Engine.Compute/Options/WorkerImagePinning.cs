@@ -10,8 +10,13 @@ namespace Comuki.Engine.Compute.Options;
 /// e.g. a local <c>dotnet build</c> or an unstamped container image —
 /// falls back to <see cref="LatestTag"/>. An explicit tag or digest is
 /// never modified: operator overrides always win.
+///
+/// Shared by BOTH sides of claim matching: the scale supervisor pins the
+/// image it spawns, and the run starters (chat/intake/scheduler) pin the
+/// image they stamp on queued work items — the claim SQL compares the two
+/// for equality, so they must resolve through this one function.
 /// </summary>
-internal static class WorkerImagePinning
+public static class WorkerImagePinning
 {
     /// <summary>Tag used when the running build carries no release version.</summary>
     public const string LatestTag = "latest";

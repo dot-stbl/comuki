@@ -27,7 +27,7 @@ public sealed class DockerEgressFence(
     /// </summary>
     /// <param name="options">Docker compute options (fenced network + fallback network mode).</param>
     /// <param name="allowUnfenced">Value of <c>Compute:AllowUnfencedEgress</c>.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancels the Docker network inspect only; once the inspect returns, the fence verdict is synchronous.</param>
     /// <returns>The Docker network the worker container joins.</returns>
     public async Task<string> ResolveNetworkModeAsync(
         DockerComputeOptions options,

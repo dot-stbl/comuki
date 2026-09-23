@@ -32,7 +32,10 @@ public static class PiPump
     {
         try
         {
-            await foreach (var line in runner.RunAsync(run.Claimed.Brief, run.RunCancellation.Token))
+            await foreach (var line in runner.RunAsync(
+                 run.Claimed.Brief,
+                 PiEnvironment.FromClaim(run.Claimed),
+                 run.RunCancellation.Token))
             {
                 foreach (var piEvent in StreamJsonParser.ParseLine(line))
                 {

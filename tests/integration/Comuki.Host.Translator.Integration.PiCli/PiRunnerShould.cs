@@ -35,7 +35,7 @@ public sealed class PiRunnerShould
             NullLogger<PiRunner>.Instance);
 
         var events = new List<PiEvent>();
-        await foreach (var line in runner.RunAsync("ignored prompt", TestContext.Current.CancellationToken))
+        await foreach (var line in runner.RunAsync("ignored prompt", environment: null, TestContext.Current.CancellationToken))
         {
             events.AddRange(StreamJsonParser.ParseLine(line));
         }
@@ -66,10 +66,74 @@ public sealed class PiRunnerShould
 
         await Should.ThrowAsync<InvalidOperationException>(async () =>
         {
-            await foreach (var line in runner.RunAsync("prompt", TestContext.Current.CancellationToken))
+            await foreach (var line in runner.RunAsync("prompt", environment: null, TestContext.Current.CancellationToken))
             {
             }
         });
+    }
+
+    [Fact]
+    public async Task StampEnvironmentOverridesOntoTheChildProcessOnlyAsync()
+    {
+        var workingDirectory = Directory.CreateTempSubdirectory("comuki-pirunner-env-");
+        var runner = NewRunner(workingDirectory.FullName);
+
+        await foreach (var _ in runner.RunAsync(
+             "ignored prompt",
+             new Dictionary<string, string>
+             {
+                 ["ANTHROPIC_BASE_URL"] = "http://comuki-proxy:17080",
+                 ["ANTHROPIC_AUTH_TOKEN"] = "minted_runner_token",
+             },
+             TestContext.Current.CancellationToken))
+        {
+        }
+
+        var dumpPath = Path.Combine(workingDirectory.FullName, "fake-pi-env.json");
+        File.Exists(dumpPath).ShouldBeTrue("TestFakePi dumps the received model-gateway env when the token stamp is present");
+        var dump = await File.ReadAllTextAsync(dumpPath, TestContext.Current.CancellationToken);
+        dump.ShouldContain("http://comuki-proxy:17080");
+        dump.ShouldContain("minted_runner_token");
+    }
+
+    [Fact]
+    public async Task StampNothingWhenNoEnvironmentOverridesAreGivenAsync()
+    {
+        var workingDirectory = Directory.CreateTempSubdirectory("comuki-pirunner-env-");
+        var runner = NewRunner(workingDirectory.FullName);
+
+        // Empty strings override any machine-level ANTHROPIC_* the child
+        // would otherwise inherit, so the absence assertion is hermetic.
+        await foreach (var _ in runner.RunAsync(
+             "ignored prompt",
+             new Dictionary<string, string>
+             {
+                 ["ANTHROPIC_BASE_URL"] = string.Empty,
+                 ["ANTHROPIC_AUTH_TOKEN"] = string.Empty,
+             },
+             TestContext.Current.CancellationToken))
+        {
+        }
+
+        File.Exists(Path.Combine(workingDirectory.FullName, "fake-pi-env.json"))
+            .ShouldBeFalse("no token stamp means no env dump and the inherited environment is untouched");
+    }
+
+    private static PiRunner NewRunner(string workingDirectory)
+    {
+        return new PiRunner(
+            Options.Create(new TranslatorOptions
+            {
+                OrchestratorBaseUrl = new Uri("http://localhost:8080"),
+                OrchestratorGrpcUrl = new Uri("http://localhost:5051"),
+                WorkerToken = "not-used-in-this-test",
+                ProfileKey = "implement",
+                ProfilesRef = "refs/heads/main",
+                WorkerImage = "ghcr.io/comuki/worker:s3",
+                PiExecutable = ResolveTestFakePiPath(),
+                WorkingDirectory = workingDirectory,
+            }),
+            NullLogger<PiRunner>.Instance);
     }
 
     private static string ResolveTestFakePiPath()

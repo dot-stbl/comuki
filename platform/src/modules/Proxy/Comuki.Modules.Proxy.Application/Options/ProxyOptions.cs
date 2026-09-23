@@ -18,6 +18,16 @@ public sealed class ProxyOptions
     /// <summary>Master switch. When <c>false</c> <see cref="ProxyApplicationExtensions.AddProxyApplication"/> registers no routes.</summary>
     public bool Enabled { get; init; }
 
+    /// <summary>
+    /// Worker-facing base URL of this proxy (e.g. <c>http://comuki-proxy:8080</c>).
+    /// When set and the proxy is enabled, a successful worker claim mints a
+    /// short-lived virtual key and returns this URL as the claim's
+    /// <c>proxyBaseUrl</c> — the Translator stamps both into the pi process
+    /// environment. Unset (the default) keeps the claim response free of
+    /// proxy fields; ValidateOnStart-safe because it is optional.
+    /// </summary>
+    public Uri? WorkerBaseUrl { get; init; }
+
     /// <summary>Per-token pricing fallback (USD per million tokens). Used when a model id is missing from <see cref="Pricing"/>.</summary>
     public PricingTier DefaultPricing { get; init; } = new();
 

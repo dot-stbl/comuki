@@ -8,7 +8,9 @@ namespace Comuki.Host.Translator.Runtime;
 /// Default <see cref="IPiRunner"/>: spawns the configured executable with
 /// <c>-p BRIEF --mode json --no-session</c> and yields stdout lines as
 /// they arrive. Kills the whole process tree on cancellation (pi may have
-/// spawned child node processes).
+/// spawned child node processes). Environment overrides supplied by the
+/// caller land on <see cref="ProcessStartInfo.Environment"/> of this one
+/// process — the container's own environment and config stay untouched.
 /// </summary>
 /// <param name="options"></param>
 /// <param name="logger"></param>
@@ -19,6 +21,7 @@ public sealed class PiRunner(
     /// <inheritdoc />
     public async IAsyncEnumerable<string> RunAsync(
         string brief,
+        IReadOnlyDictionary<string, string>? environment = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var executable = options.Value.PiExecutable;
@@ -35,6 +38,14 @@ public sealed class PiRunner(
         startInfo.ArgumentList.Add("--mode");
         startInfo.ArgumentList.Add("json");
         startInfo.ArgumentList.Add("--no-session");
+
+        if (environment is { Count: > 0 })
+        {
+            foreach (var (name, value) in environment)
+            {
+                startInfo.Environment[name] = value;
+            }
+        }
 
         using var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException($"failed to start '{executable}'");

@@ -310,7 +310,7 @@ a trend-appendable report.
 `.agents/rules/process/local-test-runtime.md`.
 
 - [ ] 11.1 `scripts/test-env/podman-up.mjs`: checks/starts a Podman machine
-      on Windows/WSL, prints the `DOCKER_HOST=npipe:////./pipe/podman-machine-default`
+      on Windows/WSL, prints the `DOCKER_HOST=npipe://./pipe/podman-machine-default`
       and `TESTCONTAINERS_RYUK_DISABLED=true` exports (documents, doesn't
       silently `export` into the caller's shell — Windows/PowerShell can't
       inherit env back to the parent process).

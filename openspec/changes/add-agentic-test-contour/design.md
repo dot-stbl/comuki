@@ -332,7 +332,7 @@ identical logic and only differ in trigger/runner shape.
 ```bash
 # One-time: point Testcontainers at Podman (Windows/WSL)
 bun run scripts/test-env/podman-up.mjs      # docs the DOCKER_HOST/RYUK vars below, doesn't hide them
-export DOCKER_HOST=npipe:////./pipe/podman-machine-default
+export DOCKER_HOST=npipe://./pipe/podman-machine-default
 export TESTCONTAINERS_RYUK_DISABLED=true    # Ryuk's reaper container fights rootless Podman on Windows
 
 # Feedback loop for a coding agent

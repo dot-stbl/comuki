@@ -86,7 +86,7 @@ public sealed class DockerComputeProviderShould
             && parameters.Labels is not null
             && string.Equals(parameters.Labels[ComputeLabels.Project], projectId.Value.ToString(), StringComparison.Ordinal)
             && string.Equals(parameters.Labels[ComputeLabels.Profile], "implement", StringComparison.Ordinal)
-            && string.Equals(parameters.Labels[ComputeLabels.Image], "ghcr.io_comuki_worker@sha256:abc", StringComparison.Ordinal)
+            && string.Equals(parameters.Labels[ComputeLabels.Image], "ghcr.io_comuki_worker_sha256_abc", StringComparison.Ordinal)
             && string.Equals(parameters.Labels[ComputeLabels.ProfilesRef], "refs_tags_v1.2", StringComparison.Ordinal)
             && string.Equals(parameters.Labels[DockerComputeProvider.WorkerIdLabel], handle.Id.Value.ToString(), StringComparison.Ordinal)
             && parameters.HostConfig is not null

@@ -33,8 +33,12 @@ namespace Comuki.Host.Testing.Fixtures;
 /// bootstrap admin account, seeded once by <c>BootstrapAdminComukiWorker</c>
 /// when the host starts) must re-seed that state itself after a reset —
 /// this type has no knowledge of any particular host composition. See
-/// <c>HostAuthServer.ResetAsync</c> for the pattern: reset the database,
-/// then re-run the seeder through the already-running host's DI container.
+/// <c>Comuki.Host.Integration.Costs.PlatformCostsEndpointShould.InitializeAsync</c>
+/// for the pattern: reset the database, then boot (or reboot) the host so
+/// its own startup seeding runs again against the now-empty tables. Auth
+/// and Intake never call <see cref="ResetDatabaseAsync"/> at all — both
+/// already shared one host/database across their whole suite before WS2,
+/// with no per-test reset, and that conversion intentionally preserved it.
 /// </para>
 /// <para>
 /// <b><c>WithReuse(true)</c> is opt-in-safe by construction.</b> This
@@ -68,6 +72,9 @@ public sealed class PostgresCollectionFixture : IAsyncLifetime
     /// <summary>EF Core's per-schema migrations-history table name (see every <c>&lt;Module&gt;DbContext.OnConfiguring</c>'s <c>MigrationsHistoryTable</c> call) — Respawn must never truncate it, or the next process's migrate pass thinks nothing is applied.</summary>
     private const string MigrationsHistoryTableName = "__ef_migrations_history";
 
+    private static bool ReuseRequested =>
+        string.Equals(Environment.GetEnvironmentVariable(ReuseEnabledEnvVar), "true", StringComparison.OrdinalIgnoreCase);
+
     private readonly PostgreSqlContainer container;
     private NpgsqlConnection connection = null!;
     private Respawner respawner = null!;
@@ -85,9 +92,6 @@ public sealed class PostgresCollectionFixture : IAsyncLifetime
 
     /// <summary>The migrated container's connection string. Valid only after <see cref="InitializeAsync"/> completes.</summary>
     public string ConnectionString { get; private set; } = string.Empty;
-
-    private static bool ReuseRequested =>
-        string.Equals(Environment.GetEnvironmentVariable(ReuseEnabledEnvVar), "true", StringComparison.OrdinalIgnoreCase);
 
     /// <inheritdoc />
     public async ValueTask InitializeAsync()

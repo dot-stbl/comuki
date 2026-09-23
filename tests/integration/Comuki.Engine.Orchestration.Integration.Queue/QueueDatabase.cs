@@ -5,7 +5,7 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
-using Comuki.Host.Testing;
+using Comuki.Host.Testing.Clocks;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;

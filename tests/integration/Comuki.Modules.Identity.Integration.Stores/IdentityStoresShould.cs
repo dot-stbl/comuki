@@ -1,4 +1,4 @@
-using Comuki.Host.Testing;
+using Comuki.Host.Testing.Clocks;
 using Comuki.Modules.Identity.Domain.ApiKeys;
 using Comuki.Modules.Identity.Domain.Assignments;
 using Comuki.Modules.Identity.Domain.Oidc;

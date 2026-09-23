@@ -1,0 +1,9 @@
+# Build-context override for Dockerfile in this directory (see its header
+# comment). The repo-root .dockerignore excludes `tests/` wholesale for
+# the deploy/ images, which don't need it; this image does. Pass this file
+# as --ignorefile so THIS build gets its own (much smaller) exclusion list
+# instead of the repo-root one.
+.git
+**/bin
+**/obj
+**/*.user

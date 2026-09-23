@@ -17,10 +17,19 @@ namespace Comuki.TestFakeModel.Anthropic;
 /// </summary>
 public static class AnthropicMessagesEndpoint
 {
+    /// <summary>
+    /// The Anthropic Messages route — a public contract constant: the
+    /// literal <c>Cassettes</c> mode dispatcher matches an inbound
+    /// request's path against this (and <c>OpenAi.OpenAiChatCompletionsEndpoint.RoutePath</c>)
+    /// to pick which protocol parser produced the cassette's recorded
+    /// <c>ObservedRequest</c>.
+    /// </summary>
+    public const string RoutePath = "/v1/messages";
+
     /// <summary>Registers the endpoint on <paramref name="endpoints"/>.</summary>
     public static IEndpointRouteBuilder MapAnthropicMessages(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/v1/messages", HandleAsync);
+        endpoints.MapPost(RoutePath, HandleAsync);
         return endpoints;
     }
 

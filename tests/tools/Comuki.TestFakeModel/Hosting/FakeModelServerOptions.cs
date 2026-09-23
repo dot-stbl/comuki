@@ -17,6 +17,16 @@ public sealed class FakeModelServerOptions
     /// </summary>
     public int? Port { get; init; }
 
+    /// <summary>
+    /// Address Kestrel binds. Defaults to loopback-only — right for an
+    /// in-process xUnit fixture (nothing outside this process should ever
+    /// reach it). <c>Program.cs</c>'s standalone/container host overrides
+    /// this to <c>0.0.0.0</c>: a container's loopback interface isn't
+    /// reachable through the host's port mapping, only its bridge
+    /// interface is.
+    /// </summary>
+    public string BindAddress { get; init; } = "127.0.0.1";
+
     /// <summary>Epoch the fixed clock starts counting from (determinism knob — design.md).</summary>
     public DateTimeOffset ClockEpoch { get; init; } = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
 

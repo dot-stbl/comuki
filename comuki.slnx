@@ -124,9 +124,11 @@
     <Project Path="tests/integration/Comuki.Host.Integration.Secrets/Comuki.Host.Integration.Secrets.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Stores/Comuki.Modules.Identity.Integration.Stores.csproj" />
     <Project Path="tests/integration/Comuki.Shared.Filtering.Integration.Ef/Comuki.Shared.Filtering.Integration.Ef.csproj" />
+    <Project Path="tests/integration/Comuki.EndToEnd.AgentLoop/Comuki.EndToEnd.AgentLoop.csproj" />
   </Folder>
   <Folder Name="/tests/tools/">
     <Project Path="tests/tools/Comuki.TestFakePi/Comuki.TestFakePi.csproj" />
+    <Project Path="tests/tools/Comuki.AgentTest.Runner/Comuki.AgentTest.Runner.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Comuki.Codegen.Realtime/Comuki.Codegen.Realtime.csproj" />

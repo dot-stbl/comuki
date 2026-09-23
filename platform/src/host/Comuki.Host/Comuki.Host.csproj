@@ -95,6 +95,14 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Knowledge" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Secrets" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Smoke" />
+    <!-- add-agentic-test-contour WS6 (T2a): Comuki.EndToEnd.AgentLoop boots
+         the real HostComposer.ComposeAsync composition (same pattern as
+         every grant above) so a real Comuki.Engine.Compute.Docker container
+         claims against it — see the WS6 report for why this one line was
+         added outside that workstream's stated new-files-only scope
+         (purely additive, identical shape to the ~19 grants above, no
+         Compute/Proxy/Translator logic touched). -->
+    <InternalsVisibleTo Include="Comuki.EndToEnd.AgentLoop" />
   </ItemGroup>
 
   <!--

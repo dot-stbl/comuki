@@ -1,0 +1,54 @@
+# WS6 T2a worked example (openspec/changes/add-agentic-test-contour,
+# design.md "Scenario format" — the ticket/target-repo text mirrors that
+# doc's worked example verbatim). Runner: tests/tools/Comuki.AgentTest.Runner.
+# Consuming suite: tests/integration/Comuki.EndToEnd.AgentLoop.
+schemaVersion: 1
+name: add-null-check
+description: >
+  Ticket asks for a null guard on OrderTotal.Calculate in the small-repo
+  fixture target repo. Difficulty: trivial. T2a: proves the real container
+  lifecycle (Comuki.Engine.Compute.Docker provisions a real container ->
+  gRPC bidi stream -> journal) with TestFakePi standing in for pi, no
+  model call involved.
+ticket:
+  source: github
+  title: "NullReferenceException in OrderTotal.Calculate"
+  body: |
+    Calculate() throws when orders is null. Add a guard and a test.
+  labels: [bug, comuki]
+  targetRepo:
+    fixture: small-repo
+    ref: main
+worker:
+  # Built once per Comuki.EndToEnd.AgentLoop collection by
+  # WorkerTestImage.BuildAsync from tests/tools/Comuki.TestFakePi/worker-test.Dockerfile.
+  image: comuki-agent-test-worker:ws6
+  profileKey: implement
+  profilesRef: test
+  # piFixturesDir omitted: TestFakePi's own bundled default fixtures
+  # (tests/tools/Comuki.TestFakePi/Fixtures/*.json — a text delta, a Bash
+  # tool call, then message_end) are what this scenario exercises.
+model:
+  mode: fake
+  # cassette/fakeScript intentionally omitted — T2a never calls a model at
+  # all (TestFakePi fakes the whole pi PROCESS, not just the model HTTP
+  # surface — see design.md D2). worker.piFixturesDir is what would vary
+  # this scenario's stream, not this block; it stays here only so the
+  # field round-trips for T2b (WS7), which does point a real pi at a
+  # fake-model server using this same block.
+expectedTrajectory:
+  # Not evaluated by the T2a runner (WS6.4 asserts journal conditions +
+  # final status only) — WS7 (task 7.2) is the first consumer that checks
+  # forbiddenTools against real worker-sdk lock/allowlist enforcement.
+  # Recorded here so the field, and this scenario, are ready for that.
+  - stage: work-item
+    toolsUsed: [Bash]
+    forbiddenTools: [WebFetch]
+assertions:
+  journal:
+    - condition: WorkspacePrepared
+      expected: true
+    - condition: AgentRunning
+      expected: true
+  run:
+    finalStatus: succeeded

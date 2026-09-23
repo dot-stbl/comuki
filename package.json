@@ -1,0 +1,8 @@
+{
+  "name": "comuki",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:affected": "node scripts/ci/test-affected.mjs"
+  }
+}

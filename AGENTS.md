@@ -58,11 +58,12 @@ Comuki **не пишет свой код сам** — это инструмен�
 
 ## Текущий статус (кратко)
 
-Milestone **v1**, phase **3 complete** (design system + testing infra).
-Дальше — **Phase 4: Slice 0** (вертикальный срез: один тикет через
-одного воркера — pull-claim, Translator/gRPC, container lifecycle).
+**v1 шипнут.** Сейчас в работе v2: эпик `add-mission-cowork` (issue #70,
+19 фаз, 18 дочерних change-стабов #87–#105) расписан, но код ещё не начат;
+CLI rebuild epic (#71–#85) закрыт; `harden-pi-worker-sandbox` (#121)
+активно строится.
 
-Смотри актуальные цифры в `.agents/STATE.md`.
+Актуальная картина, цифры тестов и master tip — в `.agents/STATE.md`.
 
 ---
 

@@ -32,12 +32,13 @@ specs → apply → archive), not by silently editing a main spec.
 | [agents-sdk](specs/agents-sdk/spec.md) | Bun workspace layout, `@comuki/api-core`, `@@@/worker-sdk` |
 | [build-and-ci](specs/build-and-ci/spec.md) | Single build gate, format-verify, analyzer policy, CI jobs |
 
-Active OpenSpec changes under `changes/` backfill Wave 5–6 docs (`backfill-*`).
-The post-Wave-6 audit (`audit-wave-6`) is applied — see its
-`audit.md` for the per-issue gap analysis and the `changes/audit-wave-6/`
-folder is retained as the audit record.
-The earlier design-only `add-chat-memory` change remains for historical S5
-intent; prefer the backfill + main `chat`/`memory` specs for landed behavior.
+The Wave 5–6 backfill docs (`backfill-*`), the post-Wave-6 audit
+(`audit-wave-6`), and the earlier design-only `add-chat-memory` change are
+all applied and archived under
+[`changes/archive/`](changes/archive/) — see
+`changes/archive/2026-09-23-audit-wave-6/audit.md` for the per-issue gap
+analysis. Prefer the main `specs/` tree for landed behavior; the archived
+folders are history, not the current contract.
 
 ## Conventions
 
@@ -92,13 +93,14 @@ silently editing a main spec. The shape:
 Apply the change by syncing each delta spec into its target main spec
 (`openspec/specs/<capability>/spec.md`), then archiving the change folder
 into `openspec/changes/archive/<yyyymmdd>/<change-name>/` for history.
-The `audit-wave-6` folder is the canonical example of an archived
-change.
+`changes/archive/2026-09-23-audit-wave-6/` is the canonical example of an
+archived change.
 
 ### Verifying a spec
 
-`audit-wave-6/specs/*/spec.md` is the canonical retrospective — the
-table at the top of `audit-wave-6/audit.md` lists every closed issue
+`changes/archive/2026-09-23-audit-wave-6/specs/*/spec.md` is the canonical
+retrospective — the table at the top of
+`changes/archive/2026-09-23-audit-wave-6/audit.md` lists every closed issue
 and which spec entry covers it. When in doubt about whether a code path
 has a spec entry:
 
@@ -110,7 +112,7 @@ grep -rn '<feature>' platform/src/ | head
 grep -rn '<feature>' openspec/specs/
 
 # 3. Cross-check the change that introduced it.
-ls openspec/changes/audit-wave-6/specs/
+ls openspec/changes/archive/2026-09-23-audit-wave-6/specs/
 ```
 
 If the implementation has no spec entry, the gap belongs in a new
@@ -131,5 +133,5 @@ contract is enforced by code review against the rules in
 - Specs describe user-visible / API-visible behavior, not
   implementation gossip.
 
-The `audit-wave-6/audit.md` table is the most recent retro and the
-template for the next one.
+The `changes/archive/2026-09-23-audit-wave-6/audit.md` table is the most
+recent retro and the template for the next one.

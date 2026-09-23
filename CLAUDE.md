@@ -8,5 +8,6 @@
 
 Этот файл существует только чтобы Claude Code / Claude-based харнессы
 подхватили контекст без скана всего дерева. **Не дублируй содержание
-сюда** — `AGENTS.md` единственный source of truth (см.
-[`.agents/rules/coding/RULES-FORMAT.md`](.agents/rules/coding/RULES-FORMAT.md)).
+сюда** — `AGENTS.md` единственный source of truth (формат правил см.
+`~/.agents/rules/csharp/rules-format.md`, user-global — in-repo копия
+удалена в `881ce7fe`).

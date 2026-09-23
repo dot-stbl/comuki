@@ -50,8 +50,10 @@ Comuki **не пишет свой код сам** — это инструмен�
 | Архитектура / почему так | [`.agents/docs/architecture/`](.agents/docs/architecture/) |
 | Структура репо / слои C# | [`.agents/docs/architecture/comuki-project-structure.md`](.agents/docs/architecture/comuki-project-structure.md) |
 | Визуальный мир / токены | [`DESIGN.md`](DESIGN.md) + [`dashboard/src/app/styles/tokens.css`](dashboard/src/app/styles/tokens.css) |
-| C# style / DI / testing | [`.agents/rules/coding/`](.agents/rules/coding/) |
-| Build / commits / scripts | [`.agents/rules/process/`](.agents/rules/process/) |
+| C# style / DI — canon | `~/.agents/rules/csharp/` (user-global; [`.agents/rules/coding/`](.agents/rules/coding/) holds only project specifics — layers, ports, module structure) |
+| Unit/integration test conventions (этот репо) | `.agents/rules/coding/testing-unit.md` / `testing-integration.md` (landing via `docs/ws0-testing-rules`) |
+| Build / commits / scripts | [`.agents/rules/process/`](.agents/rules/process/) + `~/.agents/rules/process/` (canon: `build-verification.md`, `commit-format.md`) |
+| Local test runtime (podman) | `.agents/rules/process/local-test-runtime.md` (landing via WS11 — not merged yet) |
 | Текущая фаза (контекст) | [`.agents/phases/`](.agents/phases/) |
 
 ---
@@ -71,14 +73,15 @@ CLI rebuild epic (#71–#85) закрыт; `harden-pi-worker-sandbox` (#121)
 
 1. **Build = gate.** `dotnet build comuki.slnx -c Debug` — warnings-as-errors,
    analyzers, format. Exit ≠ 0 → не готово. Полный контракт:
-   [`.agents/rules/process/build-verification.md`](.agents/rules/process/build-verification.md).
+   `~/.agents/rules/process/build-verification.md` (user-global canon —
+   in-repo копия удалена в `881ce7fe`, дубликат вёл к рассинхрону).
 
 2. **Commits:** `[.stbl](feat/<area>): <description>` —
    префикс `[.stbl]`, feature-путь после `(` обязателен. Legacy-форма
    `[.stbl] <type>(<scope>): <description>` тоже принимается хуком
    (`scripts/commit-lint.mjs`). Старый `[hybrid]` отвергается —
-   `commit-format.md` о причинах. См.
-   [commit-format.md](.agents/rules/process/commit-format.md).
+   `~/.agents/rules/process/commit-format.md` о причинах (user-global,
+   та же причина удаления копии).
    Байлайнов модели (`Co-Authored-By: Claude`, `🤖 Generated with …`) нет
    нигде — хук `commit-msg` их вырезает, см.
    [no-ai-attribution.md](.agents/rules/process/no-ai-attribution.md).
@@ -124,6 +127,11 @@ CLI rebuild epic (#71–#85) закрыт; `harden-pi-worker-sandbox` (#121)
    Dashboard = **17173** (`strictPort`). Таблица и резервы:
    [`.agents/rules/process/ports.md`](.agents/rules/process/ports.md).
 
+10. **После любого C#-изменения, перед MR** — прогони `review`-скилл
+    (canon + drift + nitor в одном отчёте) и сверься с `~/.agents/rules/`
+    (user rule). Пропуск этого шага — не экономия времени, а перенос
+    правки в ревью человека.
+
 ---
 
 ## Команды
@@ -147,7 +155,11 @@ cd dashboard && bun run build
 
 ## Правила — куда править
 
-- Проектные: `.agents/rules/**` (этот репо).
-- User-global: `~/.agents/rules/` (не дублировать сюда).
+- Проектные: `.agents/rules/**` (этот репо) — только специфика проекта
+  (layers, ports, module structure); общий C#/TS canon сюда не копируем.
+- User-global: `~/.agents/rules/` (не дублировать сюда; `881ce7fe` уже
+  убрал 8 таких дублей — расхождение путей `coding/` vs `csharp/`
+  приводило к тому, что на один файл грузились сразу два несовпадающих
+  набора исключений).
 - `.claude/rules/` — только тонкие ссылки, без копий текста.
-- Новый rule → frontmatter обязателен (`RULES-FORMAT.md`).
+- Новый rule → frontmatter обязателен (`~/.agents/rules/csharp/rules-format.md`).

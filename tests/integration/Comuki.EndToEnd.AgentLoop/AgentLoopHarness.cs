@@ -1,0 +1,94 @@
+using Comuki.AgentTest.Runner.Execution;
+using Comuki.AgentTest.Runner.Scenarios;
+using Comuki.Shared.Contracts.Compute;
+using Comuki.Shared.Contracts.Journal;
+using Comuki.Shared.Kernel.Ids;
+
+namespace Comuki.EndToEnd.AgentLoop;
+
+/// <summary>
+/// T2a's <see cref="IAgentLoopHarness"/>: seeds through the real webhook,
+/// provisions the real <see cref="Engine.Compute.Providers.DockerComputeProvider"/>
+/// against Podman, and reads the real journal/work-item status —
+/// everything <see cref="ScenarioRunner"/> needs, all
+/// backed by <see cref="AgentLoopHost"/>.
+/// </summary>
+/// <param name="host"></param>
+public sealed class AgentLoopHarness(AgentLoopHost host) : IAgentLoopHarness
+{
+    /// <summary>
+    /// Stable, collision-free GitHub issue numbers per scenario name in this
+    /// suite's fixture corpus — Intake's duplicate-active-ticket check keys
+    /// on <c>{repo}#{number}</c>, so two scenarios must never share one.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, int> issueNumbersByScenario = new Dictionary<string, int>(StringComparer.Ordinal)
+    {
+        ["add-null-check"] = 9001,
+        ["bad-image-label"] = 9002,
+    };
+
+    /// <inheritdoc />
+    public async Task<SeededWorkItem> SeedTicketAsync(ScenarioDefinition scenario, CancellationToken cancellationToken = default)
+    {
+        if (!issueNumbersByScenario.TryGetValue(scenario.Name, out var issueNumber))
+        {
+            throw new ScenarioValidationException(
+                $"scenario '{scenario.Name}' has no assigned fixture issue number — add one to "
+                    + $"{nameof(AgentLoopHarness)}.{nameof(issueNumbersByScenario)}");
+        }
+
+        var (runId, workItemId) = await host.SeedTicketAsync(
+            scenario.Ticket.Title, scenario.Ticket.Body, scenario.Ticket.Labels, issueNumber, cancellationToken);
+        return new SeededWorkItem(runId, workItemId);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkerHandle> StartWorkerAsync(ScenarioDefinition scenario, CancellationToken cancellationToken = default)
+    {
+        var workerId = WorkerId.New();
+        var token = host.ResolveTokenIssuer().Issue(workerId);
+        var containerReachableBase = host.ContainerReachableBaseUri();
+
+        var request = new ComputeStartRequest
+        {
+            // Unused by the Translator (no COMUKI_* env mapping reads
+            // COMUKI_PROJECT_ID today) — a container label only. Does not
+            // need to match the webhook-seeded run's project.
+            ProjectId = ProjectId.New(),
+            PreIssuedWorkerId = workerId,
+            ProfileKey = scenario.Worker.ProfileKey,
+            ProfilesGitRef = scenario.Worker.ProfilesRef,
+            Image = scenario.Worker.Image,
+            WorkerToken = token,
+            OrchestratorGrpcUrl = containerReachableBase,
+            // DockerComputeMapping.BuildEnvironment never sets
+            // COMUKI_ORCH_HTTP itself (only COMUKI_ORCH_GRPC) — the REST
+            // claim/heartbeat/complete/fail surface needs it too, so it
+            // rides the caller-supplied Env extras.
+            Env = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["COMUKI_ORCH_HTTP"] = containerReachableBase.ToString().TrimEnd('/'),
+            },
+        };
+
+        return await host.ComputeProvider.StartAsync(request, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<RunEventEntry>> ReadTimelineAsync(Guid runId, CancellationToken cancellationToken = default)
+    {
+        return host.ReadTimelineAsync(runId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<string> ReadWorkItemStatusAsync(Guid workItemId, CancellationToken cancellationToken = default)
+    {
+        return host.ReadWorkItemStatusAsync(workItemId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task StopWorkerAsync(WorkerHandle handle, CancellationToken cancellationToken = default)
+    {
+        await host.ComputeProvider.StopAsync(handle.Id, ComputeStopReason.Draining, cancellationToken);
+    }
+}

@@ -11,9 +11,16 @@ public sealed class ChatWorkerDefaults
     /// <summary>Config section name.</summary>
     public const string SectionName = "Chat:Worker";
 
-    /// <summary>Worker image (with digest) chat-created items claim on.</summary>
+    /// <summary>Worker image chat-created items claim on. The same
+    /// configured reference the scale supervisor spawns — an untagged one
+    /// is pinned to the running build's version at item-creation time
+    /// (see <c>WorkerImagePinning</c>), so both sides of the claim
+    /// comparison resolve to the same string.</summary>
     public string Image { get; init; } = "ghcr.io/comuki/worker:dev";
 
-    /// <summary>Pinned git ref of the profiles repo chat-created items claim on.</summary>
-    public string ProfilesRef { get; init; } = "refs/heads/main";
+    /// <summary>Pinned git ref of the profiles repo chat-created items
+    /// claim on. Must equal the scale supervisor's
+    /// <c>Compute:Scale:ProfilesGitRef</c> (both default to
+    /// <c>main</c>) — the claim SQL compares them for equality.</summary>
+    public string ProfilesRef { get; init; } = "main";
 }

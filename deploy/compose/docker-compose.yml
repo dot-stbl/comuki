@@ -28,7 +28,7 @@ services:
       POSTGRES_PASSWORD: ${COMUKI_POSTGRES_PASSWORD:-comuki_dev}
       POSTGRES_DB: ${COMUKI_POSTGRES_DB:-comuki}
     ports:
-      - "${COMUKI_POSTGRES_PORT:-5432}:5432"
+      - "${COMUKI_POSTGRES_PORT:-17024}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d:ro
@@ -52,8 +52,8 @@ services:
       MINIO_ROOT_USER: ${COMUKI_MINIO_ROOT_USER:-comuki}
       MINIO_ROOT_PASSWORD: ${COMUKI_MINIO_ROOT_PASSWORD:-comuki_dev}
     ports:
-      - "${COMUKI_MINIO_PORT:-9000}:9000"    # S3 API
-      - "${COMUKI_MINIO_CONSOLE_PORT:-9001}:9001"  # web console
+      - "${COMUKI_MINIO_PORT:-17022}:9000"    # S3 API
+      - "${COMUKI_MINIO_CONSOLE_PORT:-17023}:9001"  # web console
     volumes:
       - minio-data:/data
     healthcheck:

@@ -41,8 +41,6 @@ namespace Comuki.Engine.Compute.Installers;
 public static class ComputeInstaller
 {
     /// <summary>Adds the compute engine: options, both providers with Compute:Provider selection, the in-memory worker-token store, scale supervisor.</summary>
-    /// <param name="services"></param>
-    /// <param name="configuration"></param>
     public static IServiceCollection AddComukiCompute(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<ComputeOptions>()

@@ -15,9 +15,9 @@ namespace Comuki.Engine.Compute.Providers;
 /// resolves (and refuses) the fenced network before any container is created.
 /// </summary>
 /// <param name="egressFence">Egress fence verifier (fenced network must exist and be internal).</param>
-/// <param name="containers"></param>
+/// <param name="containers">Docker container operations — create, start, list, stop, remove.</param>
 /// <param name="providerOptions">Compute-wide options (AllowUnfencedEgress dev override).</param>
-/// <param name="computeOptions"></param>
+/// <param name="computeOptions">Docker options bound from Compute:Docker — fenced network, RunAsUser, memory/cpu limits.</param>
 public sealed class DockerComputeProvider(
     DockerEgressFence egressFence,
     IContainerOperations containers,
@@ -38,13 +38,17 @@ public sealed class DockerComputeProvider(
     public async Task<WorkerHandle> StartAsync(ComputeStartRequest request, CancellationToken cancellationToken = default)
     {
         var workerId = request.PreIssuedWorkerId ?? WorkerId.New();
-        var networkMode = await egressFence.ResolveNetworkModeAsync(
-            computeOptions.Value,
-            providerOptions.Value.AllowUnfencedEgress,
-            cancellationToken);
-        var createParameters = DockerComputeMapping.ToCreateParameters(request, workerId, computeOptions.Value, networkMode);
 
-        var created = await containers.CreateContainerAsync(createParameters, cancellationToken);
+        var created = await containers.CreateContainerAsync(
+            DockerComputeMapping.ToCreateParameters(
+                request,
+                workerId,
+                computeOptions.Value,
+                await egressFence.ResolveNetworkModeAsync(
+                    computeOptions.Value,
+                    providerOptions.Value.AllowUnfencedEgress,
+                    cancellationToken)),
+            cancellationToken);
         await containers.StartContainerAsync(created.ID, new ContainerStartParameters(), cancellationToken);
 
         return new WorkerHandle(workerId, created.ID);
@@ -53,10 +57,8 @@ public sealed class DockerComputeProvider(
     /// <inheritdoc />
     public async Task StopAsync(WorkerId workerId, ComputeStopReason reason, CancellationToken cancellationToken = default)
     {
-        var matches = await containers.ListContainersAsync(
-            DockerComputeMapping.ToWorkerListParameters(workerId), cancellationToken);
-
-        foreach (var container in matches)
+        foreach (var container in await containers.ListContainersAsync(
+                     DockerComputeMapping.ToWorkerListParameters(workerId), cancellationToken))
         {
             await containers.StopContainerAsync(
                 container.ID,
@@ -72,20 +74,18 @@ public sealed class DockerComputeProvider(
     /// <inheritdoc />
     public async Task<IReadOnlyList<WorkerInfo>> ListAsync(ProjectId projectId, CancellationToken cancellationToken = default)
     {
-        var matches = await containers.ListContainersAsync(
-            DockerComputeMapping.ToProjectListParameters(projectId), cancellationToken);
-
-        return [.. matches.Select(DockerComputeMapping.ToWorkerInfo).OfType<WorkerInfo>()];
+        return [.. (await containers.ListContainersAsync(
+                DockerComputeMapping.ToProjectListParameters(projectId), cancellationToken))
+            .Select(DockerComputeMapping.ToWorkerInfo)
+            .OfType<WorkerInfo>()];
     }
 
     /// <inheritdoc />
     public async Task<ComputeCapacity> GetCapacityAsync(CancellationToken cancellationToken = default)
     {
-        var matches = await containers.ListContainersAsync(
-            DockerComputeMapping.ToWorkerListParameters(), cancellationToken);
+        var runningWorkers = (await containers.ListContainersAsync(
+            DockerComputeMapping.ToWorkerListParameters(), cancellationToken)).Count;
 
-        var runningWorkers = matches.Count;
-        var freeSlots = Math.Max(0, computeOptions.Value.MaxWorkers - runningWorkers);
-        return new ComputeCapacity(freeSlots, runningWorkers);
+        return new ComputeCapacity(Math.Max(0, computeOptions.Value.MaxWorkers - runningWorkers), runningWorkers);
     }
 }

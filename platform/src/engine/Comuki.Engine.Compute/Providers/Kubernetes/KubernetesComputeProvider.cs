@@ -101,14 +101,13 @@ public sealed class KubernetesComputeProvider(
                 policy.Metadata.Name);
         }
 
-        var job = KubernetesComputeMapping.ToJob(request, workerId, computeOptions.Value);
-
-        var created = await kubernetes.BatchV1.CreateNamespacedJobAsync(
-            job,
-            computeOptions.Value.Namespace,
-            cancellationToken: cancellationToken);
-
-        return new WorkerHandle(workerId, created.Metadata.Name ?? KubernetesComputeMapping.ToJobName(workerId));
+        return new WorkerHandle(
+            workerId,
+            (await kubernetes.BatchV1.CreateNamespacedJobAsync(
+                KubernetesComputeMapping.ToJob(request, workerId, computeOptions.Value),
+                computeOptions.Value.Namespace,
+                cancellationToken: cancellationToken)).Metadata.Name
+            ?? KubernetesComputeMapping.ToJobName(workerId));
     }
 
     /// <inheritdoc />
@@ -123,13 +122,12 @@ public sealed class KubernetesComputeProvider(
             return;
         }
 
-        var deleteOptions = KubernetesComputeMapping.ToDeleteOptions(reason, computeOptions.Value);
         try
         {
             await kubernetes.BatchV1.DeleteNamespacedJobAsync(
                 KubernetesComputeMapping.ToJobName(workerId),
                 computeOptions.Value.Namespace,
-                deleteOptions,
+                KubernetesComputeMapping.ToDeleteOptions(reason, computeOptions.Value),
                 cancellationToken: cancellationToken);
         }
         catch (HttpOperationException exception)
@@ -170,36 +168,26 @@ public sealed class KubernetesComputeProvider(
             return [];
         }
 
-        var jobs = await kubernetes.BatchV1.ListNamespacedJobAsync(
-            computeOptions.Value.Namespace,
-            labelSelector: KubernetesComputeMapping.ToProjectLabelSelector(projectId),
-            cancellationToken: cancellationToken);
-
-        var workers = new List<WorkerInfo>();
-        foreach (var job in jobs.Items)
-        {
-            // Finished Jobs linger until the TTL controller collects them;
-            // only Jobs with an active pod are running workers.
-            if (KubernetesComputeMapping.IsRunning(job) && KubernetesComputeMapping.ToWorkerInfo(job) is { } worker)
-            {
-                workers.Add(worker);
-            }
-        }
-
-        return workers;
+        // Finished Jobs linger until the TTL controller collects them;
+        // only Jobs with an active pod are running workers.
+        return [.. (await kubernetes.BatchV1.ListNamespacedJobAsync(
+                computeOptions.Value.Namespace,
+                labelSelector: KubernetesComputeMapping.ToProjectLabelSelector(projectId),
+                cancellationToken: cancellationToken))
+            .Items
+            .Where(KubernetesComputeMapping.IsRunning)
+            .Select(KubernetesComputeMapping.ToWorkerInfo)
+            .OfType<WorkerInfo>()];
     }
 
     /// <inheritdoc />
     public async Task<ComputeCapacity> GetCapacityAsync(CancellationToken cancellationToken = default)
     {
-        if (Kubernetes is not { } kubernetes)
-        {
-            return new ComputeCapacity(FreeSlots: 0, RunningWorkers: 0);
-        }
-
-        var nodes = await kubernetes.CoreV1.ListNodeAsync(cancellationToken: cancellationToken);
-        var pods = await kubernetes.CoreV1.ListPodForAllNamespacesAsync(cancellationToken: cancellationToken);
-
-        return KubernetesCapacityMath.ToCapacity(nodes.Items, pods.Items, computeOptions.Value);
+        return Kubernetes is not { } kubernetes
+            ? new ComputeCapacity(FreeSlots: 0, RunningWorkers: 0)
+            : KubernetesCapacityMath.ToCapacity(
+            (await kubernetes.CoreV1.ListNodeAsync(cancellationToken: cancellationToken)).Items,
+            (await kubernetes.CoreV1.ListPodForAllNamespacesAsync(cancellationToken: cancellationToken)).Items,
+            computeOptions.Value);
     }
 }

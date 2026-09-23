@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Status (2026-09-23, master `86d15e10`).** v1 milestone complete since
+> **Status (2026-09-23, master `9c82eb9f`).** v1 milestone complete since
 > 2026-09-08 (24 slices, 50/50 issues closed — see Phases 1-9 below,
 > unchanged). Since then, three tracks not represented in the phase
 > numbering below have shipped or landed:
@@ -337,18 +337,27 @@ inside the `add-mission-cowork` tree, not a sibling of it.
 |---|---|---|
 | Merge-queue entity | `6072dd9` | MergeQueue aggregate + IMergeQueueStore + AddMergeQueueTable |
 | Status-machine golden-replay tester (misnamed "Eval-harness") | `7989779` | EvalRunner + 7 golden tasks — not an agent/model eval, see Phase 9 note above |
-| Autonomy ratchet (slice 1) | `6f2ddb8` + `3f769f5` | RunTrustClass enum + TrustClassRatchetSweeper |
+| Autonomy ratchet (slice 1) | `6f2ddb8` + `3f769f5` | RunTrustClass enum + `AddRunTrustClass` migration — shipped. `TrustClassRatchetSweeper` was never built. |
 | Domain-user intake (slice 1) | `1ac0550` | DomainTypeAdmission EF + gate service |
 | C#→TS codegen (Option A) | `77561c9` → `0aeae3e` | RealtimeContractAttribute + RealtimeContractEmitter |
 
-**Verified absent from the current tree (2026-09-23)** despite being
-listed here in earlier revisions: Redis cache (`Comuki.Shared.Redis` —
-no such project anywhere in `platform/`; the settings cache is DB-backed
-with an in-process fallback), Fleet runners (`IRunnerRegistry` — zero
-matches in `platform/src`), and the generic-command verifier
-(`Comuki.Modules.Verify` — built, then dropped as an unbuildable
-skeleton; `GenericCommandRun` has zero matches today). See
-[`STATE.md`](./STATE.md) for detail.
+**Corrected against full unshallowed history (2026-09-23)** — three
+different situations for what earlier revisions of this table listed as
+shipped:
+- **Recoverable, pending decision:** Redis cache and the generic-command
+  verifier (`Comuki.Modules.Verify`) are real, complete implementations
+  that were never merged to any branch reaching master — recovered from
+  loose objects onto `rescue/redis-cache` (`b29e6885`) and
+  `rescue/generic-command-verifier` (`ec3ce24`), pushed to `gitlab`.
+  Neither is on master; no decision yet on restoring vs. folding into v2.
+- **Net-new v2 work, nothing to restore:** Fleet runners
+  (`IRunnerRegistry`) and `TrustClassRatchetSweeper` were never built on
+  any branch, ever (`git log --all -S` over the full history: zero
+  hits). Issue #48's acceptance criteria are a usable spec for Fleet
+  runners; the sweeper has no spec beyond "passive timeout automation
+  for `RunTrustClass`."
+
+See [`STATE.md`](./STATE.md) for the full detail and SHAs.
 
 FE admin mutations wire-up (#31–#42) — backend landed, dashboard
 mutations are mock-first (post-v1 follow-up, not blocking).
@@ -408,10 +417,10 @@ through workers that already carry the credentials they need.
 
 | Issue | Title |
 |---|---|
-| #47 | Generic-command runner-container (Process.Start isolation) |
-| #48 | Fleet runner host-agent for bare-metal |
-| #49 | Autonomy ratchet continuation (confidence scoring, daily decay) |
-| #50 | Merge-queue multi-feature batch + dependency ordering |
+| #47 | Generic-command runner-container (Process.Start isolation) — builds on the recoverable `rescue/generic-command-verifier` base, not yet restored |
+| #48 | Fleet runner host-agent for bare-metal — no Fleet runner registry was ever built (see "Open slice work" above); this and its base are both net-new |
+| #49 | Autonomy ratchet continuation (confidence scoring, daily decay) — the passive-timeout sweeper it would extend was also never built; #49's scope now includes building that base, not just extending it |
+| #50 | Merge-queue multi-feature batch + dependency ordering — base (`MergeQueue`) is real and on master |
 
 Re-open when v2 scope approved.
 

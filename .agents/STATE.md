@@ -17,7 +17,8 @@ progress:
   issues_open: 0
   cli_rebuild_epic: "shipped — issue #71 (15 sub-issues #72-#85), closed 2026-09-19 to 2026-09-21"
   mission_cowork_epic: "drafted only — issue #70, 19 phases / 131 tasks, 0 built"
-  master_tip: 86d15e10
+  rescue_branches: "rescue/redis-cache (b29e6885) and rescue/generic-command-verifier (ec3ce24) — real, complete, never-merged implementations recovered from loose objects 2026-09-23, pushed to gitlab; recoverable, pending a restore-vs-v2 decision, not on master"
+  master_tip: 9c82eb9f
   openapi_emission: artifacts/openapi.json
   be_tests: "2075 across 37 unit-category projects (2073 pass, 2 known-fail — see Tests)"
   fe_tests: "dashboard 2032 pass; agents/ 155 pass; cli 1433 pass / 4 fail (Windows-only path bug)"
@@ -37,7 +38,7 @@ progress:
 ## Текущая позиция (2026-09-23)
 
 **v1 шипнут** (детали ниже, master `fa659fd`, 2026-09-08). После него
-прошли четыре волны работы:
+прошли пять волн работы:
 
 1. **CLI rebuild epic (issue #71, закрыт).** 15 под-issues (#72-#85):
    harness engine + reducer, OpenTUI как дефолтный `--tui` (`b75eb179`,
@@ -80,14 +81,26 @@ progress:
    commands/handlers, `ApiRoutes`-константы в контроллерах, filtering
    doc-tag cleanup, `[hybrid]` → `[.stbl]` commit-prefix correction в
    `.agents/` докам.
+5. **Full-history audit (2026-09-23) нашёл две реальные, никогда не
+   вмерженные фичи из issue #11 и одну полностью выдуманную.** Redis
+   cache и generic-command verifier (Verify-модуль) — рабочий, complete
+   код, потерянный в истории (не потомки текущего master), спасён на
+   ветках `rescue/redis-cache` (`b29e6885`) и
+   `rescue/generic-command-verifier` (`ec3ce24`), запушен на `gitlab`.
+   Fleet runners (`IRunnerRegistry`) — `git log --all -S` по всей
+   истории не находит вообще ничего, восстанавливать нечего. Заодно
+   поймана четвёртая: `TrustClassRatchetSweeper` тоже никогда не
+   существовал — `RunTrustClass` enum на master реален, автоматика нет.
+   Детали — раздел "Что живёт" → "Corrected against full history" ниже.
 
-Master tip: `86d15e10` (2026-09-23). 28 открытых GitHub issues на
-момент проверки — не дублируем список здесь, `gh issue list -R
-dot-stbl/comuki` (#87-#105 = openspec-стабы выше; #121/#125 = sandbox;
-#100-104 = поздние mission-cowork фазы; #51/#53/#65/#66 = старый мелкий
-backlog). Тестовые числа — раздел "Tests" ниже.
+Master tip: `9c82eb9f` (2026-09-23, один commit после `86d15e10` —
+несвязанный `feat/compute`). 28 открытых GitHub issues на момент
+проверки — не дублируем список здесь, `gh issue list -R dot-stbl/comuki`
+(#87-#105 = openspec-стабы выше; #121/#125 = sandbox; #100-104 = поздние
+mission-cowork фазы; #51/#53/#65/#66 = старый мелкий backlog). Тестовые
+числа — раздел "Tests" ниже.
 
-## Tests (2026-09-23, master `86d15e10`)
+## Tests (2026-09-23, master `9c82eb9f`)
 
 Real counts from a full read-only run (audit report, same date). Numbers
 below supersede any older count elsewhere in this file.
@@ -173,24 +186,65 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
 |---|---|---|
 | Merge-queue entity | `6072dd9` | MergeQueue aggregate + IMergeQueueStore + AddMergeQueueTable |
 | Status-machine golden-replay tester (historically mislabeled "Eval-harness") | `7989779` | `EvalRunner` + 7 golden `Golden/0N-*.json` fixtures + JSON parser + Markdown writer — a deterministic replay of `Create`/`Transition` ops against the pure Run/WorkItem domain, asserting `transitionLog`/`finalStatus`. **Not** an agent/model-quality eval — no LLM, no rubric, no golden *tasks for the brain or pi worker*. See `tests/unit/Comuki.Engine.Orchestration.Unit.Eval/`. |
-| Autonomy ratchet (slice 1) | `6f2ddb8` + `3f769f5` | RunTrustClass enum + TrustClassRatchetSweeper + AddRunTrustClass migration |
+| Autonomy ratchet (slice 1) | `6f2ddb8` + `3f769f5` | RunTrustClass enum (`Supervised/Trusted/Autonomous`) + `AddRunTrustClass` migration — **shipped**. `TrustClassRatchetSweeper` was never built (see below), despite this row historically listing it. |
 | Domain-user intake (slice 1) | `1ac0550` | DomainTypeAdmission EF + gate service + AddDomainTypeAdmissions |
 | C#→TS codegen (Option A) | `77561c9` → `0aeae3e` | RealtimeContractAttribute + RealtimeContractEmitter + contracts in Shared.Contracts |
 
-**Verified absent from the current tree (2026-09-23) despite being listed
-"shipped" in earlier revisions of this file — do not cite as done:**
-- **Redis cache** (`Comuki.Shared.Redis` + `DistributedProjectSettingsCache`)
-  — no `Comuki.Shared.Redis` project exists anywhere in `platform/`;
-  `ProjectSettingsCacheRefresherComukiWorker`'s own XML doc still calls
-  Redis "planned... when it lands," i.e. future tense, not shipped. The
-  live cache is DB-backed with an in-memory fallback snapshot + TTL.
-- **Fleet runners** (`IRunnerRegistry` / `EfRunnerRegistry`) — zero
-  matches anywhere in `platform/src`.
-- **Generic-command verifier / `Comuki.Modules.Verify`** — the module
-  was built (`ec3ce24`, `493704c`) but later dropped as an unbuildable
-  skeleton (`chore(slnx): drop unbuildable Verify module skeleton`); it
-  does not exist in `platform/src/modules/` or `comuki.slnx` today.
-  `GenericCommandRun` has zero matches anywhere in the tree.
+**Corrected against full unshallowed history (2026-09-23) — a prior
+revision of this file had a shallow/grafted clone and could only say
+these were "absent"; unshallowing (`git fetch --unshallow`) plus
+`git log --all -S` and `git merge-base --is-ancestor` checks across all
+47 branches, worktrees, and GitLab MR refs found three different
+situations, not one:**
+
+1. **Recoverable, pending decision — real, complete implementations
+   exist but were never merged to any branch that reached master.**
+   Both sit on rescue branches (created 2026-09-23, pushed to `gitlab`)
+   off the same fork point `6f2ddb8f` (which *is* on master):
+   - **Redis cache** — `rescue/redis-cache` (tip `b29e6885`, 6 commits,
+     +805/-25, 20 files: `Comuki.Shared.Redis.csproj`,
+     `RedisCacheExtensions.cs`, `DistributedProjectSettingsCache.cs`
+     Redis-backed impl, a Testcontainers.Redis integration project,
+     deploy/compose wiring). STATE.md's own prior citation
+     (`b29e688 → 5f62928`) was wrong on both ends — `b29e688` is the
+     chain's *last* commit (a test cleanup), and `5f62928` is unrelated
+     (the C#→TS codegen merge). The live settings cache today is
+     DB-backed with an in-memory fallback snapshot; Redis is not wired
+     in and not on `master`.
+   - **Generic-command verifier / `Comuki.Modules.Verify`** —
+     `rescue/generic-command-verifier` (single commit `ec3ce24`,
+     +1422/28 files: Domain+Application+Infrastructure,
+     `GenericCommandRun`, `IGenericCommandRunner`,
+     `GenericCommandVerifierWorker`, EF migration
+     `AddGenericCommandRunsSchema`). The follow-up `493704c` that *is*
+     on master only added two empty scaffold `.csproj` files assuming
+     `ec3ce24` had landed — it hadn't. `13e050d7`
+     (`chore(slnx): drop unbuildable Verify module skeleton`, on
+     master) independently caught and removed that orphaned scaffold.
+     Restoring needs re-wiring `HostComposer.cs` + `comuki.slnx`
+     (drifted since 2026-09-07) but hits no file-level conflicts — the
+     path is empty today.
+   - Both need a decision (restore into v1.1 vs. fold into the
+     relevant v2 capability) before any cherry-pick; not scheduled yet.
+2. **Fabricated — never built, on any branch, ever.** **Fleet runners**
+   (`IRunnerRegistry` / `EfRunnerRegistry` / heartbeat reaper) — `git
+   log --all -S` across the full 1295-commit unshallowed history
+   returns zero hits for any of the type names. Issue #11's closing
+   comment cited no SHA for this bullet (the only one without one), and
+   companion issue #48 misattributes the merge-queue commit `6072dd9`
+   as "the existing Fleet runner registry entity." Treat as **net-new
+   v2 work** — issue #48's acceptance criteria are a usable spec, there
+   is nothing to recover.
+3. **Partial — the domain model shipped, the automation never did.**
+   **`TrustClassRatchetSweeper`** (autonomy ratchet sweeper) — `git log
+   --all -S "TrustClassRatchetSweeper"` returns zero code hits anywhere;
+   the string only ever appears in documentation (this file's own prior
+   revisions, `HANDOFF.json`, audit docs). `6f2ddb8f`'s own commit
+   message says explicitly it shipped the enum "without EF
+   migration/DI wiring — those layers are the next slice"; no later
+   commit ever built that slice. The `RunTrustClass` enum + migration
+   (row above) are real and on master. The sweeper is **net-new v2
+   work**, not a restore.
 
 **Deferred to v2 (4 issues closed as deferred, not in v1.1):**
 - #47 Generic-command runner-container (Process.Start isolation)
@@ -285,8 +339,10 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
   (Scoped-lifetime, two-phase poll, `8825387`),
   `OidcStateSweeper` (5-min interval, configurable TTL,
   `Host:OidcSweep:{Enabled,Interval,StateTtl}`, `40fca53`),
-  `ArtifactBucketInitializer` (idempotent bucket create at startup),
-  `TrustClassRatchetSweeper` (autonomy ratchet sweeper).
+  `ArtifactBucketInitializer` (idempotent bucket create at startup).
+  **No `TrustClassRatchetSweeper` exists** — `RunTrustClass` shipped as
+  a domain enum only, its automation was never built (net-new v2 work,
+  see "Corrected against full history" above).
 - **OpenAPI emission** — `Microsoft.AspNetCore.OpenApi 10.0.9` +
   `Microsoft.Extensions.ApiDescription.Server` спавнят `GetDocument.Insider`
   при `dotnet build` (Debug only); csproj target
@@ -445,7 +501,7 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
 | Folder cap | max 3 .cs files per folder (#25) |
 | Proxy | YARP passthrough in-process inside `Comuki.Host` (no standalone `Comuki.Host.Proxy`), virtual-key HMAC, optional (config section `Proxy`, `Proxy:Enabled=false` → off, `T9.6`) |
 | Knowledge | pgvector в schema `knowledge`, MCP JSON-RPC 2.0 на host (`/api/v1/mcp`), `knowledge:write` permission для ingest (#9) |
-| TrustClass | enum (Supervised/Trusted/Autonomous) + `TrustClassRatchetSweeper` (passive timeout); future: confidence scoring (#49) |
+| TrustClass | enum (Supervised/Trusted/Autonomous), shipped domain-only — no sweeper/automation exists (net-new v2 work, not "future"); confidence scoring (#49) still deferred |
 | Realtime contracts | C#→TS source-gen: `RealtimeContractAttribute` in `Comuki.Shared.Contracts/Realtime/` (Option A); FE-side codegen landed later via `tools/Comuki.Codegen.Realtime` → `cli/src/contracts/_generated/realtime.ts` (dashboard's realtime layer is still hand-written) |
 
 ## Осторожно (грабли, уже стреляли)

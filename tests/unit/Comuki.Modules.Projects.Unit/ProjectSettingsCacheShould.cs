@@ -1,4 +1,4 @@
-using Comuki.Modules.Projects.Application.Settings;
+using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Caching.Memory;

@@ -67,6 +67,7 @@ using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Secrets;
 using Comuki.Shared.Migrations;
+using Comuki.Shared.Redis;
 using Comuki.Shared.Telemetry.Installers;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
@@ -179,6 +180,16 @@ internal static class HostComposer
             .AddIdentityApplication()
             .AddIdentityPersistence(database.ConnectionString)
             .AddIdentityAuth(builder.Configuration, typeof(HostComposer).Assembly);
+
+        // Redis distributed cache (issue #11, "Redis cache при
+        // multi-replica Host"): registers IDistributedCache when
+        // Redis:Enabled=true. Registration order relative to
+        // AddProjectsApplication below does not matter — DI resolves
+        // lazily from the fully-built container, not incrementally as
+        // Add* calls run — but keeping it here documents the dependency
+        // for the reader. Disabled (the default) is a no-op and every
+        // replica keeps the in-process ProjectSettingsCache.
+        builder.Services.AddComukiRedisCache(builder.Configuration);
 
         builder.Services.AddProjectsApplication();
         builder.Services.AddProjectsPersistence(database.ConnectionString);

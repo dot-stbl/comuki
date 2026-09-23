@@ -83,6 +83,18 @@ grpcPort = 17004
 # unset = no OTel SDK.
 # otlpEndpoint = "http://victoriametrics:8431"
 
+[redis]
+# Distributed cache for multi-replica Host (issue #11, "Redis cache при
+# multi-replica Host"): when enabled, the Projects settings snapshot
+# cache swaps from in-process memory to Redis-backed storage, so every
+# replica sees a settings write immediately instead of waiting for its
+# own refresher poll. Disabled by default — a single replica keeps
+# using in-process memory, no [redis] section required.
+# enabled = true
+# connectionString = "redis:6379"
+# instanceName = "comuki:"
+# Env overrides: COMUKI_REDIS_ENABLED / _CONNECTIONSTRING / _INSTANCENAME.
+
 [connectionStrings]
 # Fallback for the migrator when COMUKI_DB / COMUKI_DATABASE are unset.
 # Blank Password= is filled from COMUKI_MIGRATOR_DB_PASSWORD.

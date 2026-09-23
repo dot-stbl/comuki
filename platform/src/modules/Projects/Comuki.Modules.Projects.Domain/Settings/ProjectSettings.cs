@@ -109,6 +109,66 @@ public sealed class ProjectSettings
     }
 
     /// <summary>
+    /// Reconstructs a snapshot from already-persisted state, every field
+    /// supplied explicitly including <see cref="Version"/> — unlike
+    /// <see cref="Apply"/>, which always advances the version by one, this
+    /// is not a mutation. The distributed settings cache
+    /// (<c>DistributedProjectSettingsCache</c>) is the caller: it stores a
+    /// JSON snapshot of a settings row in Redis and needs to rebuild the
+    /// exact same row (same version) on the next read, without touching
+    /// EF Core's own materialization path (the internal parameterless
+    /// constructor stays EF's alone).
+    /// </summary>
+    /// <param name="projectId">Primary key — the project this snapshot belongs to.</param>
+    /// <param name="minIdle">See <see cref="MinIdle"/>.</param>
+    /// <param name="maxConcurrent">See <see cref="MaxConcurrent"/>.</param>
+    /// <param name="idleTtlSeconds">See <see cref="IdleTtlSeconds"/>.</param>
+    /// <param name="approveRequired">See <see cref="ApproveRequired"/>.</param>
+    /// <param name="knowledgeEnabled">See <see cref="KnowledgeEnabled"/>.</param>
+    /// <param name="verifyEnabled">See <see cref="VerifyEnabled"/>.</param>
+    /// <param name="proxyEnabled">See <see cref="ProxyEnabled"/>.</param>
+    /// <param name="softBudgetUsdMicros">See <see cref="SoftBudgetUsdMicros"/>.</param>
+    /// <param name="hardBudgetUsdMicros">See <see cref="HardBudgetUsdMicros"/>.</param>
+    /// <param name="domainType">See <see cref="DomainType"/>.</param>
+    /// <param name="customDomainTypesJson">See <see cref="CustomDomainTypesJson"/>.</param>
+    /// <param name="updatedAt">Captured mutation timestamp — carried through as-is, not re-stamped.</param>
+    /// <param name="version">Exact version to restore — unlike <see cref="Apply"/>, this is not incremented.</param>
+    public static ProjectSettings FromSnapshot(
+        ProjectId projectId,
+        int minIdle,
+        int maxConcurrent,
+        int? idleTtlSeconds,
+        bool approveRequired,
+        bool knowledgeEnabled,
+        bool verifyEnabled,
+        bool proxyEnabled,
+        long? softBudgetUsdMicros,
+        long? hardBudgetUsdMicros,
+        ProjectDomainType domainType,
+        string? customDomainTypesJson,
+        DateTimeOffset updatedAt,
+        int version)
+    {
+        return new ProjectSettings
+        {
+            ProjectId = projectId,
+            MinIdle = minIdle,
+            MaxConcurrent = maxConcurrent,
+            IdleTtlSeconds = idleTtlSeconds,
+            ApproveRequired = approveRequired,
+            KnowledgeEnabled = knowledgeEnabled,
+            VerifyEnabled = verifyEnabled,
+            ProxyEnabled = proxyEnabled,
+            SoftBudgetUsdMicros = softBudgetUsdMicros,
+            HardBudgetUsdMicros = hardBudgetUsdMicros,
+            DomainType = domainType,
+            CustomDomainTypesJson = customDomainTypesJson,
+            UpdatedAt = updatedAt,
+            Version = version,
+        };
+    }
+
+    /// <summary>
     /// Replaces the tunables and bumps <see cref="Version"/>. The caller is
     /// expected to have verified the presented version against the loaded
     /// row; the store re-checks (and the version concurrency token guards)

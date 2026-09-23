@@ -70,6 +70,7 @@
     <ProjectReference Include="..\..\shared\Comuki.Shared.Migrations\Comuki.Shared.Migrations.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Filtering\Comuki.Shared.Filtering.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
+    <ProjectReference Include="..\..\shared\Comuki.Shared.Redis\Comuki.Shared.Redis.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Telemetry\Comuki.Shared.Telemetry.csproj" />
   </ItemGroup>
 

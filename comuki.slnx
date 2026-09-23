@@ -12,6 +12,7 @@
     <Project Path="platform/src/shared/Comuki.Shared.Telemetry/Comuki.Shared.Telemetry.csproj" />
     <Project Path="platform/src/shared/Comuki.Shared.Bootstrap/Comuki.Shared.Bootstrap.csproj" />
     <Project Path="platform/src/shared/Comuki.Shared.Migrations/Comuki.Shared.Migrations.csproj" />
+    <Project Path="platform/src/shared/Comuki.Shared.Redis/Comuki.Shared.Redis.csproj" />
   </Folder>
   <Folder Name="/platform/src/modules/">
     <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Domain/Comuki.Modules.Identity.Domain.csproj" />
@@ -109,6 +110,7 @@
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Migrations/Comuki.Modules.Identity.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Memory.Integration.Migrations/Comuki.Modules.Memory.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.Migrations/Comuki.Modules.Projects.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Projects.Integration.RedisCache/Comuki.Modules.Projects.Integration.RedisCache.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Intake.Integration.Migrations/Comuki.Modules.Intake.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Chat/Comuki.Host.Integration.Chat.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Errors/Comuki.Host.Integration.Errors.csproj" />

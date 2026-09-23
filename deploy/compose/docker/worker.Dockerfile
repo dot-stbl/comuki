@@ -98,4 +98,17 @@ ENV COMUKI_ORCH_HTTP=http://comuki-host:8080 \
 WORKDIR /work
 VOLUME /work
 
+# Non-root worker (worker-sandbox hardening defaults): the agent process
+# must never run as uid 0. /work (the volume root; docker copies its
+# ownership into fresh volumes) and the agents workspace are chowned so
+# translator/pi/bun can write; the translator tree stays root-owned r-x.
+# pi is installed under bun's global prefix as root — expose it on the
+# system PATH so the non-root user can exec it regardless of prefix.
+RUN groupadd --gid 1000 comuki \
+    && useradd --uid 1000 --gid 1000 --create-home --shell /bin/sh comuki \
+    && chown -R 1000:1000 /work /opt/comuki \
+    && ln -sf "$(bun pm -g bin)/pi" /usr/local/bin/pi
+
+USER 1000:1000
+
 ENTRYPOINT ["/app/translator/comuki-translator"]

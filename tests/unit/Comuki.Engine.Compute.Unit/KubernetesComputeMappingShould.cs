@@ -24,6 +24,8 @@ public sealed class KubernetesComputeMappingShould
         TerminationGraceSeconds = 12,
         CpuRequestMillis = 250,
         MemoryRequestMiB = 512,
+        CpuLimitMillis = 750,
+        MemoryLimitMiB = 1536,
         NodeSelector = new Dictionary<string, string>(StringComparer.Ordinal) { ["pool"] = "workers" },
     };
 
@@ -82,6 +84,19 @@ public sealed class KubernetesComputeMappingShould
         requests["cpu"].ToString().ShouldBe("250m");
         // quantity canonicalizes freely (512Mi ⇄ 0.5Gi) — compare parsed bytes
         KubernetesCapacityMath.ParseMemoryBytes(requests["memory"].ToString()).ShouldBe(512L * 1024 * 1024);
+        var limits = resources.Limits.ShouldNotBeNull();
+        limits["cpu"].ToString().ShouldBe("750m");
+        KubernetesCapacityMath.ParseMemoryBytes(limits["memory"].ToString()).ShouldBe(1536L * 1024 * 1024);
+
+        // hardening defaults: non-root pod, no escalation, no capabilities,
+        // runtime-default seccomp on the container.
+        podSpec.SecurityContext.ShouldNotBeNull().RunAsNonRoot.ShouldBe(true);
+        var security = container.SecurityContext.ShouldNotBeNull();
+        security.AllowPrivilegeEscalation.ShouldBe(false);
+        security.Capabilities.ShouldNotBeNull().Drop.ShouldNotBeNull()
+            .ShouldContain(KubernetesComputeMapping.DropAllCapabilities);
+        security.SeccompProfile.ShouldNotBeNull().Type
+            .ShouldBe(KubernetesComputeMapping.SeccompRuntimeDefault);
     }
 
     [Fact(DisplayName = "When omit Node Selector When Not Configured, then test passes")]
@@ -112,6 +127,73 @@ public sealed class KubernetesComputeMappingShould
 
         KubernetesComputeMapping.ToProjectLabelSelector(projectId)
             .ShouldBe($"{ComputeLabels.Project}={projectId.Value}");
+    }
+
+    [Fact(DisplayName = "When build The Egress Network Policy, then default-deny Egress selects the worker pods and allows DNS plus configured CIDRs")]
+    public void BuildDefaultDenyEgressNetworkPolicy()
+    {
+        var projectId = ProjectId.New();
+        var workerId = WorkerId.New();
+        var request = CreateStartRequest(projectId);
+        var fencedOptions = new KubernetesComputeOptions
+        {
+            Namespace = "comuki",
+            Egress = new KubernetesEgressOptions
+            {
+                AllowedCidrs = ["10.96.0.0/12", "10.244.0.0/16"],
+            },
+        };
+
+        var policy = KubernetesComputeMapping.ToNetworkPolicy(request, workerId, fencedOptions);
+
+        policy.Metadata?.Name.ShouldBe($"comuki-w-egress-{workerId.Value.ToString("N")[^12..]}");
+        var labels = policy.Metadata.ShouldNotBeNull().Labels.ShouldNotBeNull();
+        labels[ComputeLabels.Project].ShouldBe(projectId.Value.ToString());
+        labels[ComputeLabels.Profile].ShouldBe("implement");
+
+        var spec = policy.Spec.ShouldNotBeNull();
+        spec.PolicyTypes.ShouldBe([KubernetesComputeMapping.EgressPolicyType]);
+        var podSelector = spec.PodSelector.ShouldNotBeNull();
+        podSelector.MatchLabels.ShouldNotBeNull()[ComputeLabels.Project]
+            .ShouldBe(projectId.Value.ToString());
+        podSelector.MatchLabels?.Count.ShouldBe(labels.Count);
+
+        // DNS first, then one rule per allowed CIDR; everything else denied.
+        var egress = spec.Egress.ShouldNotBeNull();
+        egress.Count.ShouldBe(3);
+        var dns = egress[0];
+        var dnsPeer = dns.To.ShouldHaveSingleItem();
+        dnsPeer.NamespaceSelector?.MatchLabels?["kubernetes.io/metadata.name"].ShouldBe("kube-system");
+        dnsPeer.PodSelector?.MatchLabels?["k8s-app"].ShouldBe("kube-dns");
+        dns.Ports.ShouldNotBeNull();
+        dns.Ports!.Select(static port => (port.Protocol, port.Port?.Value)).ShouldBe(
+            [("UDP", "53"), ("TCP", "53")]);
+        egress[1].To.ShouldHaveSingleItem().IpBlock?.Cidr.ShouldBe("10.96.0.0/12");
+        egress[2].To.ShouldHaveSingleItem().IpBlock?.Cidr.ShouldBe("10.244.0.0/16");
+    }
+
+    [Fact(DisplayName = "Given no allowed CIDRs, when building the policy, then the fence is DNS-only")]
+    public void BuildDnsOnlyFenceWithoutAllowedCidrs()
+    {
+        var policy = KubernetesComputeMapping.ToNetworkPolicy(
+            CreateStartRequest(ProjectId.New()),
+            WorkerId.New(),
+            new KubernetesComputeOptions { Namespace = "comuki" });
+
+        var egress = policy.Spec.ShouldNotBeNull().Egress.ShouldNotBeNull();
+        egress.Count.ShouldBe(1);
+        egress[0].To.ShouldHaveSingleItem();
+    }
+
+    [Fact(DisplayName = "When derive Egress Policy Name From Worker Id Alone, then it shares the Job name suffix")]
+    public void DeriveEgressPolicyNameFromWorkerIdAlone()
+    {
+        var workerId = WorkerId.New();
+
+        var name = KubernetesComputeMapping.ToNetworkPolicyName(workerId);
+
+        name.ShouldBe($"comuki-w-egress-{workerId.Value.ToString("N")[^12..]}");
+        name.ShouldNotBe(KubernetesComputeMapping.ToNetworkPolicyName(WorkerId.New()));
     }
 
     [Theory(DisplayName = "Given a stop reason, when delete options are mapped, then grace is configured for soft reasons and zero for Force")]

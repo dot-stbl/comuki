@@ -240,13 +240,15 @@ public sealed class ComputeInstallerShould
         services.AddLogging();
         services.AddComukiCompute(configuration);
 
-        // Substitute the container-operations facade so the docker socket
-        // is not touched when the docker concretes resolve. The IKubernetes
+        // Substitute the container-operations and network-operations facades
+        // so the docker socket is not touched when the docker concretes
+        // resolve (DockerEgressFence inspects networks). The IKubernetes
         // client is only substituted when the test does NOT install a custom
         // KubernetesClientConfigurationFactory — otherwise the test needs
         // the real IKubernetes factory to run (and throw) so the host
         // rethrow path is exercised.
         services.AddSingleton(Substitute.For<IContainerOperations>());
+        services.AddSingleton(Substitute.For<INetworkOperations>());
         if (kubernetesClientConfigurationFactory is null)
         {
             services.AddSingleton(Substitute.For<IKubernetes>());

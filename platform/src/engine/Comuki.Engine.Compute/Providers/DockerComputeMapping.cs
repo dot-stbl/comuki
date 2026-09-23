@@ -11,14 +11,25 @@ namespace Comuki.Engine.Compute.Providers;
 /// </summary>
 internal static class DockerComputeMapping
 {
-    /// <summary>Builds the create-parameters for one worker container.</summary>
-    /// <param name="request"></param>
-    /// <param name="workerId"></param>
-    /// <param name="options"></param>
+    /// <summary>CapDrop value dropping every Linux capability from the worker container.</summary>
+    internal const string DropAllCapabilities = "ALL";
+
+    /// <summary>SecurityOpt denying privilege escalation inside the worker container (Docker twin of allowPrivilegeEscalation=false).</summary>
+    internal const string NoNewPrivileges = "no-new-privileges:true";
+
+    /// <summary>
+    /// Builds the create-parameters for one worker container: image, env, sanitized
+    /// labels, RunAsUser, memory/cpu limits, cap-drop ALL, no-new-privileges. The name
+    /// and the <see cref="DockerComputeProvider.WorkerIdLabel"/> stamp derive from the
+    /// worker id; the network is the verified fenced one, or
+    /// <see cref="Options.DockerComputeOptions.NetworkMode"/> under the unfenced dev
+    /// override.
+    /// </summary>
     public static CreateContainerParameters ToCreateParameters(
         ComputeStartRequest request,
         WorkerId workerId,
-        Options.DockerComputeOptions options)
+        Options.DockerComputeOptions options,
+        string networkMode)
     {
         return new CreateContainerParameters
         {
@@ -26,27 +37,31 @@ internal static class DockerComputeMapping
             Name = ToContainerName(request.ProjectId, workerId),
             Env = BuildEnvironment(request),
             Labels = BuildLabels(request, workerId),
-            HostConfig = new HostConfig { NetworkMode = options.NetworkMode },
+            User = options.RunAsUser,
+            HostConfig = new HostConfig
+            {
+                NetworkMode = networkMode,
+                Memory = options.MemoryBytes,
+                NanoCPUs = options.NanoCpus,
+                CapDrop = [DropAllCapabilities],
+                SecurityOpt = [NoNewPrivileges],
+            },
         };
     }
 
     /// <summary>Container name: comuki-{projectId}-{short worker suffix}, unique per start.</summary>
-    /// <param name="projectId"></param>
-    /// <param name="workerId"></param>
     public static string ToContainerName(ProjectId projectId, WorkerId workerId)
     {
         return $"comuki-{projectId.Value:N}-{workerId.Value.ToString("N")[..12]}";
     }
 
     /// <summary>List parameters selecting containers of one project (running only).</summary>
-    /// <param name="projectId"></param>
     public static ContainersListParameters ToProjectListParameters(ProjectId projectId)
     {
         return ToLabelListParameters($"{ComputeLabels.Project}={projectId.Value}", all: false);
     }
 
     /// <summary>List parameters selecting containers of one worker (any state, for stop/cleanup).</summary>
-    /// <param name="workerId"></param>
     public static ContainersListParameters ToWorkerListParameters(WorkerId workerId)
     {
         return ToLabelListParameters($"{DockerComputeProvider.WorkerIdLabel}={workerId.Value}", all: true);
@@ -59,7 +74,6 @@ internal static class DockerComputeMapping
     }
 
     /// <summary>Maps a listed container to a <see cref="WorkerInfo"/>; null when labels are missing.</summary>
-    /// <param name="container"></param>
     public static WorkerInfo? ToWorkerInfo(ContainerListResponse container)
     {
         if (container.Labels is null
@@ -80,16 +94,12 @@ internal static class DockerComputeMapping
     }
 
     /// <summary>Label value or empty string when the label is absent.</summary>
-    /// <param name="labels"></param>
-    /// <param name="key"></param>
     public static string LabelOrDefault(IDictionary<string, string> labels, string key)
     {
         return labels.TryGetValue(key, out var value) ? value : string.Empty;
     }
 
-    /// <summary>List parameters selecting containers by a docker label filter expression.</summary>
-    /// <param name="labelFilter"></param>
-    /// <param name="all"></param>
+    /// <summary>List parameters selecting containers by a docker label filter expression; all=true includes stopped containers (stop/cleanup must see them), false only running.</summary>
     public static ContainersListParameters ToLabelListParameters(string labelFilter, bool all)
     {
         return new ContainersListParameters
@@ -103,7 +113,6 @@ internal static class DockerComputeMapping
     }
 
     /// <summary>Env of the container: the COMUKI_* contract first, then the caller-supplied extras.</summary>
-    /// <param name="request"></param>
     public static List<string> BuildEnvironment(ComputeStartRequest request)
     {
         var environment = new List<string>
@@ -120,8 +129,6 @@ internal static class DockerComputeMapping
     }
 
     /// <summary>Match labels stamped on the container (claim matching reads them back via List).</summary>
-    /// <param name="request"></param>
-    /// <param name="workerId"></param>
     public static Dictionary<string, string> BuildLabels(ComputeStartRequest request, WorkerId workerId)
     {
         return new Dictionary<string, string>(StringComparer.Ordinal)

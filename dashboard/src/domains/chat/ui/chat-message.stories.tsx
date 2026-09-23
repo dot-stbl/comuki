@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react"
 import type { Meta, StoryObj } from "@storybook/react"
+import { expect, fn, userEvent } from "@storybook/test"
 import {
   createMemoryHistory,
   createRootRoute,
@@ -8,7 +9,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 
-import type { ChatMessage as Message } from "@/domains/chat/model/types"
+import type { ChatMessage as Message, ProposalDecision } from "@/domains/chat/model/types"
 import { PROJECTS_SEED, SESSION_USER_SEED } from "@/shared/api/mock"
 import { SessionProvider, type SessionUser } from "@/shared/session"
 
@@ -39,6 +40,16 @@ const router = createRouter({
   routeTree,
   history: createMemoryHistory({ initialEntries: ["/chat"] }),
 })
+
+/** Mirrors `chat-message.test.tsx`'s `at()` helper — this repo's components
+ *  key on `data-test`, not testing-library's default `data-testid`. */
+function byTest(root: HTMLElement, name: string): HTMLElement {
+  const found = root.querySelector<HTMLElement>(`[data-test="${name}"]`)
+  if (!found) {
+    throw new Error(`[data-test="${name}"] not found in story canvas`)
+  }
+  return found
+}
 
 /** Watches every project and decides on none — every proposal explains itself. */
 const WATCHER: SessionUser = {
@@ -78,11 +89,17 @@ function Frame({
   )
 }
 
-function One({ message, user }: { message: Message; user?: SessionUser }) {
+interface OneProps {
+  message: Message
+  user?: SessionUser
+  onDecide?: (proposalId: string, decision: ProposalDecision) => void
+}
+
+function One({ message, user, onDecide = () => {} }: OneProps) {
   return (
     <Frame user={user}>
       <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
-        <ChatMessage message={message} onDecide={() => {}} projectId={null} />
+        <ChatMessage message={message} onDecide={onDecide} projectId={null} />
       </ol>
     </Frame>
   )
@@ -92,7 +109,9 @@ const meta: Meta<typeof ChatMessage> = {
   title: "Chat/ChatMessage",
   component: ChatMessage,
   parameters: { layout: "fullscreen" },
-  tags: ["autodocs"],
+  // "ws16-batch1": test:storybook's first interaction/visual/a11y batch —
+  // see storybook-tests/README.md.
+  tags: ["autodocs", "ws16-batch1"],
 }
 
 export default meta
@@ -329,7 +348,8 @@ export const ToolCalls: Story = {
  * and no default answer.
  */
 export const Proposal: Story = {
-  render: () => (
+  args: { onDecide: fn() },
+  render: (args) => (
     <One
       message={{
         id: "m1",
@@ -348,8 +368,17 @@ export const Proposal: Story = {
           ],
         },
       }}
+      onDecide={args.onDecide}
     />
   ),
+  play: async ({ canvasElement, args }) => {
+    const confirm = byTest(canvasElement, "chat-proposal-confirm")
+    await expect(confirm).not.toHaveAttribute("aria-disabled", "true")
+
+    await userEvent.click(confirm)
+
+    await expect(args.onDecide).toHaveBeenCalledWith("cp_plan", "confirmed")
+  },
 }
 
 /**
@@ -361,9 +390,11 @@ export const Proposal: Story = {
  * only in a tooltip.
  */
 export const PermissionDenied: Story = {
-  render: () => (
+  args: { onDecide: fn() },
+  render: (args) => (
     <One
       user={WATCHER}
+      onDecide={args.onDecide}
       message={{
         id: "m1",
         kind: "proposal",
@@ -382,6 +413,18 @@ export const PermissionDenied: Story = {
       }}
     />
   ),
+  play: async ({ canvasElement, args }) => {
+    const confirm = byTest(canvasElement, "chat-proposal-confirm")
+    await expect(confirm).toHaveAttribute("aria-disabled", "true")
+
+    const denial = byTest(canvasElement, "chat-proposal-denial")
+    await expect(denial.textContent).toBeTruthy()
+
+    // The refusal swallows the click — `aria-disabled`, never `disabled`
+    // (see proposal-card.tsx), so the callback must never fire.
+    await userEvent.click(confirm)
+    await expect(args.onDecide).not.toHaveBeenCalled()
+  },
 }
 
 /**

@@ -6,6 +6,7 @@ using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Realtime;
 using Comuki.Host.Testing;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Modules.Identity.Application.Users;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
@@ -13,15 +14,14 @@ using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Realtime;
 
 /// <summary>
 /// Boots the real host composition (<see cref="HostComposer"/>) on a
-/// random loopback port against one migrated Testcontainers Postgres —
-/// every module context, via <see cref="HostDatabaseMigrator"/> — the
+/// random loopback port against one shared, migrated Postgres (owned by
+/// this type's own <see cref="PostgresCollectionFixture"/>) — the
 /// HostChatServer pattern, extended with helpers for the realtime suite:
 /// seeding a run with one queued work item, creating a permission-less
 /// member account, and building cookie-authenticated hub connections.
@@ -34,8 +34,7 @@ public sealed class HostRealtimeServer : IAsyncLifetime
     public const string MemberEmail = "member@comuki.test";
     public const string MemberPassword = "member-pass-1";
 
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("pgvector/pgvector:pg16")
-        .Build();
+    private readonly PostgresCollectionFixture postgres = new();
 
     private WebApplication application = null!;
     private TempControlPlaneRoot controlPlane = null!;
@@ -58,10 +57,8 @@ public sealed class HostRealtimeServer : IAsyncLifetime
             && string.Equals(already, "true", StringComparison.Ordinal);
         Environment.SetEnvironmentVariable(RealtimeExtensions.DetailedErrorsEnvVar, "true");
 
-        await container.StartAsync(cancellationToken);
-
-        var connectionString = container.GetConnectionString();
-        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
+        await postgres.InitializeAsync();
+        var connectionString = postgres.ConnectionString;
 
         controlPlane = new TempControlPlaneRoot("realtime");
         controlPlane.WriteDefaultChatCommand();
@@ -205,7 +202,7 @@ public sealed class HostRealtimeServer : IAsyncLifetime
         }
 
         controlPlane?.Dispose();
-        await container.DisposeAsync();
+        await postgres.DisposeAsync();
 
         if (!detailedErrorsPreviouslySet)
         {

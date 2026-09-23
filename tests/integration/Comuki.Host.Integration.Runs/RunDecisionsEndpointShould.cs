@@ -7,8 +7,7 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -17,7 +16,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Runs;
@@ -25,18 +23,18 @@ namespace Comuki.Host.Integration.Runs;
 /// <summary>
 /// End-to-end coverage for the operator decision endpoints
 /// (<c>POST /api/v1/runs/{runId}/approve</c> + <c>/cancel</c>). Boots the
-/// real host composition against one Testcontainers Postgres (same fixture
-/// the listing test uses), drives an admin through the wire, and
-/// asserts on the orchestration context + journal rows in the same
-/// database the request mutated.
+/// real host composition against one shared, migrated Postgres (owned by
+/// this collection's <see cref="PostgresCollectionFixture"/>, reset to
+/// empty before every test — see <see cref="RunsIntegrationCollection"/>),
+/// drives an admin through the wire, and asserts on the orchestration
+/// context + journal rows in the same database the request mutated.
 /// </summary>
-public sealed class RunDecisionsEndpointShould : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres — one container for the whole Runs suite, not one per test.</param>
+[Collection(nameof(RunsIntegrationCollection))]
+public sealed class RunDecisionsEndpointShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
     private const string BootstrapEmail = "bootstrap@comuki.test";
     private const string BootstrapPassword = "bootstrap-pass-1";
-
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
 
     private WebApplication application = null!;
     private Uri baseAddress = null!;
@@ -46,30 +44,9 @@ public sealed class RunDecisionsEndpointShould : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await container.StartAsync(cancellationToken);
+        await postgres.ResetDatabaseAsync();
 
-        connectionString = container.GetConnectionString();
-
-        var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
-        await using (var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options))
-        {
-            await orchestrationDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-        await using (var identityDb = new IdentityDbContext(identityOptions.Options))
-        {
-            await identityDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-        await using (var projectsDb = new ProjectsDbContext(projectsOptions.Options))
-        {
-            await projectsDb.Database.MigrateAsync(cancellationToken);
-        }
+        connectionString = postgres.ConnectionString;
 
         var builder = WebApplication.CreateBuilder(
             new WebApplicationOptions
@@ -117,7 +94,6 @@ public sealed class RunDecisionsEndpointShould : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await application.DisposeAsync();
-        await container.DisposeAsync();
     }
 
     private async Task<HttpClient> CreateAdminClientAsync()

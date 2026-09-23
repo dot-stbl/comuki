@@ -5,14 +5,12 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Costs;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Costs;
@@ -25,42 +23,23 @@ namespace Comuki.Host.Integration.Costs;
 /// a no-op on a terminal run, and a payload carrying the spent/limit
 /// deltas the gate is supposed to surface.
 /// </summary>
+/// <param name="postgres">The collection's shared Postgres (<see cref="CostsIntegrationCollection"/>) — reset to empty for every test, migrated once for the whole run.</param>
 [Collection(nameof(CostsIntegrationCollection))]
-public sealed class OrchestrationBudgetGateShould : IAsyncLifetime
+public sealed class OrchestrationBudgetGateShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
-
     private IServiceProvider services = null!;
 
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-
-        await container.StartAsync(cancellationToken);
-        var connectionString = container.GetConnectionString();
-
-        var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
-        await using (var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options))
-        {
-            await orchestrationDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-        await using (var identityDb = new IdentityDbContext(identityOptions.Options))
-        {
-            await identityDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-        await using (var projectsDb = new ProjectsDbContext(projectsOptions.Options))
-        {
-            await projectsDb.Database.MigrateAsync(cancellationToken);
-        }
+        // Every module's schema (Orchestration/Identity/Projects included)
+        // is already migrated once by PostgresCollectionFixture — this
+        // class used to hand-migrate only three contexts itself, which
+        // HostDatabaseMigrator.MigrateAllAsync now supersedes. Reset gets
+        // this test the same empty-tables starting point the old per-test
+        // container used to give it, without paying for a new container.
+        await postgres.ResetDatabaseAsync();
+        var connectionString = postgres.ConnectionString;
 
         var services = new ServiceCollection();
         services.AddLogging();
@@ -85,8 +64,6 @@ public sealed class OrchestrationBudgetGateShould : IAsyncLifetime
         {
             await provider.DisposeAsync();
         }
-
-        await container.DisposeAsync();
     }
 
     private async Task<Run> SeedRunAsync(RunStatus targetStatus)

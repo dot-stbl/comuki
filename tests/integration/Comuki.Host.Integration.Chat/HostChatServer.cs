@@ -1,26 +1,26 @@
 using Comuki.Host.Testing;
+using Comuki.Host.Testing.Fixtures;
 using Microsoft.AspNetCore.Builder;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Chat;
 
 /// <summary>
 /// Boots the real host composition (<see cref="HostComposer"/>) on a
-/// random loopback port against one migrated Testcontainers Postgres
-/// (every module context, via <see cref="HostDatabaseMigrator"/>), a temp
-/// control-plane root with one chat command, and the bootstrap admin for
-/// cookie login. The brain runs as the in-process stub; the memory digest
-/// is the real memory-module adapter over the migrated memory schema —
-/// the exact composition production boots.
+/// random loopback port against one shared, migrated Postgres (owned by
+/// this type's own <see cref="PostgresCollectionFixture"/> — one container
+/// for the whole test class, not rebuilt per test), a temp control-plane
+/// root with one chat command, and the bootstrap admin for cookie login.
+/// The brain runs as the in-process stub; the memory digest is the real
+/// memory-module adapter over the migrated memory schema — the exact
+/// composition production boots.
 /// </summary>
 public sealed class HostChatServer : IAsyncLifetime
 {
     public const string BootstrapEmail = TestBootstrapAdmin.Email;
     public const string BootstrapPassword = TestBootstrapAdmin.Password;
 
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("pgvector/pgvector:pg16")
-        .Build();
+    private readonly PostgresCollectionFixture postgres = new();
 
     private WebApplication application = null!;
     private TempControlPlaneRoot controlPlane = null!;
@@ -33,10 +33,8 @@ public sealed class HostChatServer : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await container.StartAsync(cancellationToken);
-
-        ConnectionString = container.GetConnectionString();
-        await HostDatabaseMigrator.MigrateAllAsync(ConnectionString, cancellationToken);
+        await postgres.InitializeAsync();
+        ConnectionString = postgres.ConnectionString;
 
         controlPlane = new TempControlPlaneRoot("chat");
         controlPlane.WriteDefaultChatCommand();
@@ -74,6 +72,6 @@ public sealed class HostChatServer : IAsyncLifetime
     {
         await application.DisposeAsync();
         controlPlane.Dispose();
-        await container.DisposeAsync();
+        await postgres.DisposeAsync();
     }
 }

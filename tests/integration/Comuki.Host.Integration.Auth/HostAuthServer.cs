@@ -31,7 +31,7 @@ namespace Comuki.Host.Integration.Auth;
 /// <summary>
 /// Boots the real host composition (<see cref="HostComposer"/>) on a
 /// random loopback port against one shared, migrated Postgres (owned by
-/// this type's own <see cref="Comuki.Host.Testing.Fixtures.PostgresCollectionFixture"/> —
+/// this type's own <see cref="PostgresCollectionFixture"/> —
 /// one container for the whole collection, not one per test class), a temp
 /// control-plane root, a configured bootstrap admin. One browser-like
 /// client carries the cookie session; the client from <see cref="CreateApiKeyClient"/> is

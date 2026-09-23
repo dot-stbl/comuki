@@ -1,60 +1,43 @@
 {
   "version": "2.0",
-  "timestamp": "2026-09-08T00:00:00Z",
-  "phase": 9,
-  "phase_name": "v1 milestone complete — 50/50 issues closed, master fa659fd",
-  "phase_dir": "C:\\Users\\bradw\\source\\hybrid\\comuki.orchestrator\\.agents\\phases\\09-mvp-polish",
+  "timestamp": "2026-09-23T13:55:55Z",
+  "phase": "post-9 (no new .agents/phases/*/ directory since 09-mvp-polish — tracking moved to openspec/changes/ + GitHub issues for all post-v1 work)",
+  "phase_name": "v1 shipped; three parallel v2 tracks in flight — CLI rebuild epic done, harden-pi-worker-sandbox landing, add-mission-cowork drafted",
+  "phase_dir": null,
   "plan": 0,
   "task": "—",
   "total_tasks": 0,
-  "status": "complete",
+  "status": "in_progress",
   "completed_tasks": [
-    {"id": "s0", "name": "S0 Skeleton platform/: shared · modules · engine · host", "issue": 1, "status": "shipped"},
-    {"id": "s1", "name": "S1 Runs · queue · journal", "issue": 2, "status": "shipped"},
-    {"id": "s2", "name": "S2 Compute: Docker provider + scale v0", "issue": 3, "status": "shipped"},
-    {"id": "s3", "name": "S3 Translator · worker image · gRPC (Slice 0 e2e)", "issue": 4, "status": "shipped"},
-    {"id": "s4", "name": "S4 Identity: users · API keys · RBAC · OIDC", "issue": 12, "status": "shipped"},
-    {"id": "s5", "name": "S5 Chat (Voluta в Host) + Host.Brain + approve + cancel", "issue": 5, "status": "shipped"},
-    {"id": "s6", "name": "S6 Intake: GH · GL · Yandex Tracker · Jira + sync-back + PR-review", "issue": 6, "status": "shipped"},
-    {"id": "s7", "name": "S7 FE ядро + SignalR realtime", "issue": 7, "status": "shipped"},
-    {"id": "s8-merged", "name": "S8 Compute k8s + quotas + observability (folded into Wave 6)", "issue": 13, "status": "shipped"},
-    {"id": "s9", "name": "S9 Cross-cutting kit + cost/budgets + optional proxy", "issue": 8, "status": "shipped"},
-    {"id": "s10", "name": "S10 Knowledge (opt-in): pgvector · MCP · docs worker", "issue": 9, "status": "shipped"},
-    {"id": "s11", "name": "S11 v1.0 polish: security · load · onboarding · docs sync", "issue": 10, "status": "shipped"},
-    {"id": "s12", "name": "S12 agents/ TS-пакеты: agent-core · worker-sdk · dev-sdk", "issue": 14, "status": "shipped"},
-    {"id": "s13", "name": "S13 control-plane дефолты: профили · каталог · chat-commands", "issue": 15, "status": "shipped"},
-    {"id": "s14", "name": "S14 CI: GitHub Actions", "issue": 16, "status": "shipped"},
-    {"id": "wave-6", "name": "Wave-6 polish: IExceptionHandler, schema-per-DbContext, folder cap, Dto suffix, costs permissions, dev-secret removal", "issue": "17-25", "status": "shipped"},
-    {"id": "artifacts", "name": "Artifacts: MinIO run-artifact bundle (brief/result/pins) + bucket auto-init", "issue": 28, "status": "shipped"},
-    {"id": "openapi-emit", "name": "OpenAPI: build-time emission + kubb alignment", "issue": 29, "status": "shipped"},
-    {"id": "pr-review", "name": "Inbound GH/GL pull-request admission + pr-review profile", "issue": 27, "status": "shipped"},
-    {"id": "fe-wire-runs", "name": "FE wire-up: kubb-client transport + runs queries + mappers", "issue": "slice-1", "status": "shipped"},
-    {"id": "fe-wire-identity", "name": "FE wire-up: login/me/oidc + kubb client + mappers", "issue": "slice-2", "status": "shipped"},
-    {"id": "fe-wire-projects", "name": "FE wire-up: projects queries/mutations wired", "issue": "slice-3", "status": "shipped"},
-    {"id": "fe-wire-inbox", "name": "FE wire-up: inbox queries/mutations wired", "issue": "slice-4", "status": "shipped"},
-    {"id": "fe-wire-oidc", "name": "FE wire-up: browser-driven OIDC start + callback", "issue": "slice-5", "status": "shipped"},
-    {"id": "admin-endpoints", "name": "Admin endpoints: 12 host endpoints (identity invite/grant/revoke/link/key + sources connect/update/probe/test)", "issue": "31-42", "status": "shipped"},
-    {"id": "post-1-backlog", "name": "Post-1.0 backlog #11: 13 sub-slices (merge-queue, eval, autonomy-ratchet slice 1, domain-user, redis, fleet, generic-cmd, csharp-ts-codegen)", "issue": 11, "status": "shipped"},
-    {"id": "artifacts-cleanup", "name": "Artifacts e2e test cleanup: drop dead postgresSeed container", "issue": 43, "status": "shipped"}
+    {"id": "v1-milestone", "name": "v1 milestone: 24 slices, 50/50 issues closed", "issue": "1-50", "status": "shipped", "note": "master fa659fd (2026-09-08); see .agents/STATE.md v1 section for the full slice table"},
+    {"id": "post-1-backlog-partial", "name": "Post-1.0 backlog #11: merge-queue, status-machine golden-replay tester, autonomy-ratchet slice 1, domain-user intake slice 1, C#->TS realtime codegen", "issue": 11, "status": "shipped", "note": "3 of the originally-claimed 8 sub-slices (Redis cache, Fleet runners, generic-command verifier) are verified ABSENT from the current tree as of 2026-09-23 - see STATE.md 'Verified absent' note. Their commit SHAs are not ancestors of current HEAD."},
+    {"id": "cli-rebuild-epic", "name": "CLI rebuild epic: focus-first OpenTUI experience", "issue": 71, "status": "shipped", "note": "15 sub-issues #72-#85 closed 2026-09-19 to 2026-09-21. comuki-cli moved agents/ -> cli/ (a2bddc27, 2026-09-17). OpenTUI flipped to default --tui (b75eb179, 2026-09-21)."},
+    {"id": "audit-fixes-u1-u7", "name": "Audit fixes U1-U7: canon.mjs dir-expansion, TimeProvider injection, smart-types + OrchestrationDomainException, MergeQueue/MergeBatch command split, ApiRoutes constants, filtering doc-tag cleanup, [hybrid]->[.stbl] prefix correction", "issue": null, "status": "shipped", "note": "landed 2026-09-16 to 17"},
+    {"id": "harden-pi-worker-sandbox-partial", "name": "harden-pi-worker-sandbox: default-deny egress, virtual-key mint-on-claim, worker CPU/mem limits", "issue": 121, "status": "in_progress", "note": "15/27 tasks per openspec/changes/harden-pi-worker-sandbox/tasks.md. Landed today (2026-09-23): eb87e5b6 (egress), bd61e47f (virtual-key mint), plus issue #124 (worker limits) closed."}
   ],
-  "remaining_tasks": [],
+  "remaining_tasks": [
+    {"id": "harden-pi-worker-sandbox-rest", "name": "git-clone-based workspace prep (no docker.sock), journal conditions + artifact drain, operator exec opt-in, image-pin-by-digest, worker-sdk pi-extensions lock-gate integration (tasks 6.1-6.3)", "issue": "121 / 125", "status": "not_started"},
+    {"id": "enrich-chat-parts-rest", "name": "Testcontainers integration suite + sync delta into openspec/specs/chat/spec.md + archive the change", "issue": null, "status": "not_started", "note": "22/24 tasks done, this is the smallest remaining lift of any in-flight change"},
+    {"id": "add-mission-cowork-decomposition", "name": "Decompose add-mission-cowork's 19 phases / 131 tasks into its 18 declared child openspec changes (#87-#105), starting with execution-spine-orchestration (#87, phase 2 tracer bullet)", "issue": 70, "status": "not_started", "note": "proposal/design/architecture/tasks already complete in add-mission-cowork itself; the 18 child dirs are empty .openspec.yaml stubs"},
+    {"id": "rewrite-cli-for-shared-contracts", "name": "Write the real proposal/design/tasks triad for the CLI shared-contracts rewrite (currently one plan doc only, and its own 'step 1' has already shipped)", "issue": 105, "status": "not_started"}
+  ],
   "deferred_to_v2": [
     {"id": "#47", "name": "Generic-command runner-container (Process.Start isolation)", "status": "deferred"},
     {"id": "#48", "name": "Fleet runner host-agent for bare-metal", "status": "deferred"},
     {"id": "#49", "name": "Autonomy ratchet continuation (confidence scoring)", "status": "deferred"},
-    {"id": "#50", "name": "Merge-queue multi-feature batch + dependency ordering", "status": "deferred"}
+    {"id": "#50", "name": "Merge-queue multi-feature batch + dependency ordering", "status": "deferred"},
+    {"id": "agent-runtime-capabilities", "name": "memory + discovery + secrets catalog + worker secret injection", "status": "drafted, awaiting /opsx-apply", "note": "unchanged since 2026-09-15; independent of add-mission-cowork, can land in either order"}
   ],
-  "blockers": [],
+  "blockers": [
+    {"id": "brain-deploy-manifest-drift", "name": "deploy/hybrid/infra-dev.yaml is missing COMUKI_BRAIN_CONTROLPLANEPROFILESPATH (deploy/helm/templates/brain.yaml sets it correctly); a second Dockerfile/test contract mismatch on the control-plane profiles COPY scope. Both fail Comuki.Host.Brain.Unit DeploymentProfileCatalogShould (2/2075 backend tests). Real drift, not a stale test.", "severity": "medium"}
+  ],
   "human_actions_pending": [],
   "decisions": [
-    {"decision": "Close issue #11 with summary of 13 sub-slices landed; defer 4 sub-issues to v2 backlog", "rationale": "Most #11 sub-slices shipped in 2026-09-04 → 2026-09-07 sprint. Remaining 4 (#47–#50) are post-v1.1 scope — re-open when v2 approved.", "phase": 9},
-    {"decision": "Use Microsoft.Extensions.ApiDescription.Server for build-time OpenAPI codegen", "rationale": "Single source of truth for FE kubb client. artifacts/openapi.json gitignored, regenerated by every `dotnet build`.", "phase": 2},
-    {"decision": "xUnit v3 + MTP, not VSTest", "rationale": "xUnit v3 ships MTP-only; `dotnet test` (VSTest) misses discoveries. Use `dotnet run --project <test>` instead.", "phase": 3},
-    {"decision": "9 Postgres schemas (orchestration, identity, projects, memory, chat, intake, costs, artifacts, knowledge), per-DbContext", "rationale": "Clean separation per bounded context. Per-schema __ef_migrations_history; Migrator runs EnsureSchema + MigrateAsync per context.", "phase": 9},
-    {"decision": "YARP proxy on Host.Proxy, optional (Proxy:Enabled=false → off)", "rationale": "Workers shouldn't hold real model keys. Virtual-key HMAC with models/budget/expiry, metering → usage_events.", "phase": 5},
-    {"decision": "Kubb v4.39.2 with custom transport (kubb-client)", "rationale": "VITE_API_BASE_URL required for real-mode, throws loud if unset. Mock-first via VITE_USE_MOCK=true.", "phase": 8}
+    {"decision": "Track post-v1 work through openspec/changes/ + GitHub issues instead of new .agents/phases/*/ directories", "rationale": "No phase directory has been created since 09-mvp-polish despite substantial shipped and in-flight work (CLI rebuild epic, harden-pi-worker-sandbox, add-mission-cowork); openspec + issues are now the source of truth for scope and sequencing.", "phase": "post-9"},
+    {"decision": "add-mission-cowork (issue #70) is the real, scoped v2 backlog - supersedes the old 'v2 backlog (TBD scope)' placeholder in ROADMAP.md", "rationale": "19 phases / 131 tasks with complete proposal/design/architecture/tasks docs; 18 child openspec stubs already reserve the decomposition slugs.", "phase": "post-9"},
+    {"decision": "comuki-cli is no longer an agents/ package", "rationale": "Moved to cli/ (a2bddc27, 2026-09-17) and has grown into the most actively developed corner of the TS surface (124+ commits) - keeping it documented under agents/README.md was actively misleading.", "phase": "post-9"}
   ],
   "uncommitted_files": [],
-  "next_action": "v1 ships. All 50 issues closed. When v2 approved, re-open #47-50 (deferred) + pull from ROADMAP.md v2 backlog section. Otherwise, idle — no work to dispatch.",
-  "context_notes": "Master tip: fa659fd (2026-09-08). 1567 BE tests pass (1354 unit + 213 integration); 1560 FE tests pass (136 files). Pre-existing flakes fixed in merge(fixes) batch 2026-09-08: PromoteTrustedIsNoOp test race, Scheduler ExecuteDeleteAsync InMemory compat, Runs EscalationTimeoutSweeper test seed cross-pollution, OIDC Keycloak integration (skipped on WSL2 — Docker Postgres unreachable), Scheduler CreateAsync FormatException wrap. Only Verify.Unit 0 tests remains (build green, no coverage yet). 63 dead worktree dirs cleaned up. 84 stale branches cleaned. Rule bootstrap in place: VerifyRuleAwareness + SelfAuditReport MSBuild targets + dashboard/scripts/rule-audit.ts."
+  "next_action": "No single next action - three independent tracks are open: (1) finish harden-pi-worker-sandbox's remaining 12/27 tasks, most urgently the worker-sdk pi-extensions lock-gate integration since locks do not run inside the pi worker at all today; (2) finish enrich-chat-parts (2 tasks left, cheapest win); (3) decompose add-mission-cowork into its first child change, execution-spine-orchestration (#87), which gates everything else in the epic.",
+  "context_notes": "Master tip: 86d15e10 (2026-09-23). Backend: 2075 tests across 37 unit-category projects, 2073 pass / 2 known-fail (see blockers). Frontend dashboard: 2032/2032 pass (176 files). agents/ (3 TS SDKs): 155/155 pass. cli/: 1433 pass / 4 fail, all one root cause - cli/scripts/export-bundle.test.ts hard-codes a /tmp path and shells out to tar, which breaks under Windows Git-Bash; likely green on Linux CI, not a logic bug. Comuki.Shared.Redis, Fleet runners (IRunnerRegistry), and Comuki.Modules.Verify/GenericCommandRun were previously documented as shipped in this file's history but are verified absent from the current tree - see STATE.md for detail. Comuki.Host.Proxy does not exist as a standalone host; Proxy/YARP runs in-process inside Comuki.Host."
 }

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Comuki.TestFakeModel;
+namespace Comuki.TestFakeModel.Networking;
 
 /// <summary>
 /// Binds an ephemeral loopback TCP port, then releases it immediately.
@@ -11,15 +11,20 @@ namespace Comuki.TestFakeModel;
 /// reasoning <c>Comuki.Host.Integration.Proxy/FakeUpstreamServer.cs</c>
 /// already applied to its own private copy.
 /// </summary>
-internal static class FreeTcpPort
+public static class FreeTcpPort
 {
     /// <summary>Returns a port number free at the moment of the call.</summary>
     public static int Next()
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-        return port;
+        try
+        {
+            return ((IPEndPoint)listener.LocalEndpoint).Port;
+        }
+        finally
+        {
+            listener.Stop();
+        }
     }
 }

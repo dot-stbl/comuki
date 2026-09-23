@@ -2,7 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Comuki.TestFakeModel.Scripting;
+using Comuki.TestFakeModel.Hosting;
+using Comuki.TestFakeModel.Scripting.Building;
+using Comuki.TestFakeModel.Scripting.Model.Response;
 using Shouldly;
 using Xunit;
 
@@ -15,6 +17,7 @@ namespace Comuki.TestFakeModel.Unit;
 /// </summary>
 public sealed class FakeModelServerNonStreamingShould : IAsyncLifetime
 {
+    // boundary: assigned in InitializeAsync before any [Fact] can observe it.
     private FakeModelServer server = null!;
 
     /// <inheritdoc />
@@ -131,6 +134,7 @@ public sealed class FakeModelServerNonStreamingShould : IAsyncLifetime
         using var document = JsonDocument.Parse(body);
         var error = document.RootElement.GetProperty("error");
         error.GetProperty("type").GetString().ShouldBe("api_error");
+        // boundary: scripted server-error message, guaranteed non-null by AnthropicErrors.
         error.GetProperty("message").GetString()!.ShouldContain("exhausted");
     }
 

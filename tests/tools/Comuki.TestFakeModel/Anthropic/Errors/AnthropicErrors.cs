@@ -1,9 +1,7 @@
-using System.Text.Json.Serialization;
-
-namespace Comuki.TestFakeModel.Anthropic;
+namespace Comuki.TestFakeModel.Anthropic.Errors;
 
 /// <summary>Anthropic-shaped <c>{"type":"error","error":{...}}</c> error bodies for the endpoint's failure paths.</summary>
-internal static class AnthropicErrors
+public static class AnthropicErrors
 {
     /// <summary>A malformed/unparseable request body — <c>invalid_request_error</c>, HTTP 400.</summary>
     public static AnthropicErrorBody InvalidRequest(string message)
@@ -17,13 +15,3 @@ internal static class AnthropicErrors
         return new AnthropicErrorBody("error", new AnthropicErrorDetail("api_error", message));
     }
 }
-
-/// <summary>The Anthropic error envelope.</summary>
-public sealed record AnthropicErrorBody(
-    [property: JsonPropertyName("type")] string Type,
-    [property: JsonPropertyName("error")] AnthropicErrorDetail Error);
-
-/// <summary>The nested <c>error</c> object.</summary>
-public sealed record AnthropicErrorDetail(
-    [property: JsonPropertyName("type")] string Type,
-    [property: JsonPropertyName("message")] string Message);

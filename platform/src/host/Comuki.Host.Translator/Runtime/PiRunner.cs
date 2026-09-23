@@ -12,7 +12,7 @@ namespace Comuki.Host.Translator.Runtime;
 /// caller land on <see cref="ProcessStartInfo.Environment"/> of this one
 /// process — the container's own environment and config stay untouched.
 /// </summary>
-/// <param name="options"></param>
+/// <param name="options">Bound <c>Translator</c> section — the runner reads <c>PiExecutable</c> and <c>WorkingDirectory</c>.</param>
 /// <param name="logger"></param>
 public sealed class PiRunner(
     IOptions<TranslatorOptions> options,

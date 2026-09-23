@@ -18,7 +18,6 @@ namespace Comuki.Host.Workers.Api;
 public static class WorkerEndpoints
 {
     /// <summary>Maps the worker REST endpoints onto the app.</summary>
-    /// <param name="app"></param>
     public static void MapWorkerEndpoints(WebApplication app)
     {
         app.MapPost(ApiRoutes.WorkerClaim, ClaimAsync);
@@ -98,9 +97,10 @@ public static class WorkerEndpoints
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var now = clock.GetUtcNow();
-        var extended = await queue.HeartbeatAsync(
-            workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
-        return extended ? Results.NoContent() : WorkerResults.NotOwner();
+        return await queue.HeartbeatAsync(
+            workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken)
+            ? Results.NoContent()
+            : WorkerResults.NotOwner();
     }
 
     private static async Task<IResult> CompleteAsync(
@@ -120,9 +120,11 @@ public static class WorkerEndpoints
         }
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
-        var completed = await queue.CompleteAsync(workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken);
         await virtualKeys.RevokeAsync(workItemId, cancellationToken);
-        return completed ? Results.NoContent() : WorkerResults.NotOwner();
+        return await queue.CompleteAsync(
+            workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken)
+            ? Results.NoContent()
+            : WorkerResults.NotOwner();
     }
 
     private static async Task<IResult> FailAsync(
@@ -142,8 +144,10 @@ public static class WorkerEndpoints
         }
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
-        var failed = await queue.FailAsync(workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken);
         await virtualKeys.RevokeAsync(workItemId, cancellationToken);
-        return failed ? Results.NoContent() : WorkerResults.NotOwner();
+        return await queue.FailAsync(
+            workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken)
+            ? Results.NoContent()
+            : WorkerResults.NotOwner();
     }
 }

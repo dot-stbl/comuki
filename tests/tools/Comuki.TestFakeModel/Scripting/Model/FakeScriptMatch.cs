@@ -15,10 +15,9 @@ public sealed record FakeScriptMatch(string? LastUserMessageContains, bool? HasT
     /// <summary>True when <paramref name="observed"/> satisfies every predicate this match declares.</summary>
     public bool Matches(ObservedRequest observed)
     {
-        var lastUserMessageOk = LastUserMessageContains is null
-            || (observed.LastUserMessageText is not null
-                && observed.LastUserMessageText.Contains(LastUserMessageContains, StringComparison.Ordinal));
-
-        return lastUserMessageOk && (HasToolResult is null || HasToolResult == observed.HasToolResult);
+        return (LastUserMessageContains is null
+                || (observed.LastUserMessageText is not null
+                    && observed.LastUserMessageText.Contains(LastUserMessageContains, StringComparison.Ordinal)))
+            && (HasToolResult is null || HasToolResult == observed.HasToolResult);
     }
 }

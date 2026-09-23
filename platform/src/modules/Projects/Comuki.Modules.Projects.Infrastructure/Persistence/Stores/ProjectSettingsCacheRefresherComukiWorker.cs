@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
-using Comuki.Modules.Projects.Application.Settings;
+using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Kernel.Ids;
@@ -17,9 +17,10 @@ namespace Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
 /// the first pass runs before the supervisor's first poll needs the data,
 /// and later passes pick up writes made outside this process.
 /// <para>
-/// Issue Q27 / v1.1: when the underlying store (DB today, Redis when
-/// the planned <c>DistributedProjectSettingsCache</c> lands) is
-/// unreachable, the cycle reports the failure to the worker registry and
+/// Issue Q27 / v1.1: when the underlying store (DB today, Redis via
+/// <c>DistributedProjectSettingsCache</c> when <c>Redis:Enabled</c> is
+/// set) is unreachable, the cycle reports the failure to the worker
+/// registry and
 /// falls back to the last-known snapshot held in
 /// <see cref="fallbackSnapshots"/>, each row with a hard
 /// <see cref="FallbackTtl"/>. After the TTL elapses the snapshot is
@@ -42,7 +43,7 @@ namespace Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
 public sealed class ProjectSettingsCacheRefresherComukiWorker(
     IDbContextFactory<ProjectsDbContext> dbFactory,
     ISubjectScopeAccessor scopeAccessor,
-    ProjectSettingsCache cache,
+    IProjectSettingsSnapshotCache cache,
     TimeProvider clock,
     ILogger<ProjectSettingsCacheRefresherComukiWorker> logger) : IComukiWorker
 {

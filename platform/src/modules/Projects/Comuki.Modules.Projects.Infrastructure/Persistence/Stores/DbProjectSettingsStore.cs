@@ -1,5 +1,6 @@
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Projects.Application.Settings;
+using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +18,11 @@ namespace Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
 /// refreshes the shared cache and fires the project's change token — that
 /// is the live-reload mechanism.
 /// </summary>
-/// <param name="dbFactory"></param>
 /// <param name="cache"></param>
+/// <param name="dbFactory"></param>
 public sealed class DbProjectSettingsStore(
-    IDbContextFactory<ProjectsDbContext> dbFactory,
-    ProjectSettingsCache cache) : IProjectSettingsStore
+    IProjectSettingsSnapshotCache cache,
+    IDbContextFactory<ProjectsDbContext> dbFactory) : IProjectSettingsStore
 {
     /// <inheritdoc />
     public async Task<ProjectSettings?> FindAsync(ProjectId projectId, CancellationToken cancellationToken = default)

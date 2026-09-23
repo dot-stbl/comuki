@@ -57,7 +57,10 @@ return 0;
 /// <summary>
 /// Maps the worker container's COMUKI_* environment onto the Translator
 /// config section. Keeping it explicit (instead of convention binding)
-/// makes the env contract visible in one place.
+/// makes the env contract visible in one place. Entries whose env var is
+/// unset are OMITTED (not written as null): a null value in the config
+/// would overwrite the option's default with null — WorkingDirectory
+/// crashed exactly that way (Path.Combine on null).
 /// </summary>
 file static class TranslatorEnvironment
 {
@@ -75,6 +78,8 @@ file static class TranslatorEnvironment
             ["Translator:ProfilesGitUrl"] = Environment.GetEnvironmentVariable("COMUKI_PROFILES_GIT_URL"),
             ["Translator:PiExecutable"] = Environment.GetEnvironmentVariable("COMUKI_PI_EXECUTABLE"),
             ["Translator:WorkingDirectory"] = Environment.GetEnvironmentVariable("COMUKI_WORKING_DIRECTORY"),
-        };
+        }
+            .Where(static pair => pair.Value is not null)
+            .ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal);
     }
 }

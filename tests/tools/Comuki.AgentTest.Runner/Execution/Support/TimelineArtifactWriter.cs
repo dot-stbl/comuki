@@ -1,12 +1,11 @@
 using System.Text.Json;
 using Comuki.Shared.Contracts.Journal;
 
-namespace Comuki.AgentTest.Runner.Execution;
+namespace Comuki.AgentTest.Runner.Execution.Support;
 
 /// <summary>Dumps a run's journal timeline to disk as evidence — the artifact a failure report's <c>artifactPaths</c> points at.</summary>
 public static class TimelineArtifactWriter
 {
-    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerOptions.Web) { WriteIndented = true };
 
     /// <summary>
     /// Writes <paramref name="timeline"/> to <c>&lt;directory&gt;/&lt;scenarioName&gt;.timeline.json</c>
@@ -36,7 +35,7 @@ public static class TimelineArtifactWriter
                     entry.OccurredAt,
                     Payload = JsonSerializer.Deserialize<JsonElement>(entry.PayloadJson),
                 }),
-                jsonOptions),
+                ScenarioJson.Options),
             cancellationToken);
         return fileName;
     }

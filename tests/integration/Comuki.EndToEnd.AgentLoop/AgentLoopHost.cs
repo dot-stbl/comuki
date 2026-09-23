@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Comuki.AgentTest.Runner.Compute;
+using Comuki.AgentTest.Runner.Execution;
 using Comuki.Engine.Compute.Providers;
 using Comuki.Engine.Compute.Security;
 using Comuki.Engine.Orchestration.Application;
@@ -167,7 +168,7 @@ public sealed class AgentLoopHost : IAsyncLifetime
     /// <param name="labels"></param>
     /// <param name="issueNumber">A unique issue number so two scenarios in the same suite never collide on intake's duplicate-active-ticket check.</param>
     /// <param name="cancellationToken"></param>
-    public async Task<(Guid RunId, Guid WorkItemId)> SeedTicketAsync(
+    public async Task<SeededWorkItem> SeedTicketAsync(
         string title,
         string body,
         IReadOnlyList<string> labels,
@@ -198,12 +199,17 @@ public sealed class AgentLoopHost : IAsyncLifetime
         await using var scope = application.Services.CreateAsyncScope();
         using var systemScope = scope.ServiceProvider.GetRequiredService<ISubjectScopeAccessor>().AsSystem("agent-loop-fixture");
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
-        var item = await db.WorkItems
+        // Brief is a jsonb column — Postgres has no LIKE (~~) operator over
+        // jsonb, so a translated .Contains() on it throws 42883. The recent
+        // slice is small (one webhook per scenario in this suite); filter
+        // client-side instead of fighting the SQL translation.
+        var recent = await db.WorkItems
             .AsNoTracking()
-            .Where(candidate => candidate.Brief.Contains(externalId))
             .OrderByDescending(static candidate => candidate.CreatedAt)
-            .FirstAsync(cancellationToken);
-        return (item.RunId.Value, item.Id);
+            .Take(20)
+            .ToListAsync(cancellationToken);
+        var item = recent.First(candidate => candidate.Brief.Contains(externalId, StringComparison.Ordinal));
+        return new SeededWorkItem(item.RunId.Value, item.Id);
     }
 
     /// <summary>Reads the run's timeline through the real <see cref="IRunJournal"/>, oldest first.</summary>

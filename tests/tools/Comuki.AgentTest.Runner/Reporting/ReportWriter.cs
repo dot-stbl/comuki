@@ -11,10 +11,6 @@ namespace Comuki.AgentTest.Runner.Reporting;
 /// </summary>
 public static class ReportWriter
 {
-    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerOptions.Web)
-    {
-        WriteIndented = true,
-    };
 
     /// <summary>
     /// Writes both report files next to <paramref name="basePath"/> (a path
@@ -36,7 +32,7 @@ public static class ReportWriter
         var jsonPath = basePath + ".json";
         var markdownPath = basePath + ".md";
 
-        await File.WriteAllTextAsync(jsonPath, JsonSerializer.Serialize(report, jsonOptions), cancellationToken);
+        await File.WriteAllTextAsync(jsonPath, JsonSerializer.Serialize(report, ScenarioJson.Options), cancellationToken);
         await File.WriteAllTextAsync(markdownPath, RenderMarkdown(report, Path.GetFileName(markdownPath)), cancellationToken);
 
         return Verdict(report, markdownPath);

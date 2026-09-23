@@ -1,3 +1,5 @@
+using Comuki.AgentTest.Runner.Reporting.Report;
+
 namespace Comuki.AgentTest.Runner.Reporting;
 
 /// <summary>
@@ -75,49 +77,4 @@ public sealed record RunReport
             },
         };
     }
-}
-
-/// <summary>Pass/fail/skip counts of a <see cref="RunReport"/>.</summary>
-public sealed record RunSummary
-{
-    /// <summary>Total scenarios run.</summary>
-    public int Total { get; init; }
-
-    /// <summary>Scenarios that passed every assertion.</summary>
-    public int Passed { get; init; }
-
-    /// <summary>Scenarios that failed at least one assertion.</summary>
-    public int Failed { get; init; }
-
-    /// <summary>Scenarios skipped (e.g. a T2b assertion blocked on an unmerged production seam).</summary>
-    public int Skipped { get; init; }
-}
-
-/// <summary>One failed scenario's report entry.</summary>
-public sealed record RunFailure
-{
-    /// <summary>The failing scenario's name.</summary>
-    public string Scenario { get; init; } = string.Empty;
-
-    /// <summary>Which assertion stage failed (e.g. <c>assertions.journal</c>, <c>assertions.run</c>, <c>claim</c>).</summary>
-    public string Stage { get; init; } = string.Empty;
-
-    /// <summary>Human-readable failure reason naming the exact violated assertion.</summary>
-    public string Message { get; init; } = string.Empty;
-
-    /// <summary>Paths (relative to the report) an agent can open to see the failure's evidence — transcript, timeline dump, diff.</summary>
-    public IReadOnlyList<string> ArtifactPaths { get; init; } = [];
-}
-
-/// <summary>Aggregate cost across a report's scenarios (zero in fake mode; populated once WS9 lands live-mode wiring).</summary>
-public sealed record RunCost
-{
-    /// <summary>Micro-USD spent (1,000,000 = $1).</summary>
-    public long UsdMicros { get; init; }
-
-    /// <summary>Total input tokens billed.</summary>
-    public long TokensIn { get; init; }
-
-    /// <summary>Total output tokens billed.</summary>
-    public long TokensOut { get; init; }
 }

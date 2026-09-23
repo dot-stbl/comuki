@@ -1,3 +1,5 @@
+using Comuki.AgentTest.Runner.Reporting.Report;
+
 namespace Comuki.AgentTest.Runner.Reporting;
 
 /// <summary>One scenario execution's outcome — the runner's per-scenario unit, aggregated by <see cref="RunReport.FromResults"/>.</summary>

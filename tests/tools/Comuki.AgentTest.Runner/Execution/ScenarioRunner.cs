@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Comuki.AgentTest.Runner.Execution.Support;
 using Comuki.AgentTest.Runner.Journal;
 using Comuki.AgentTest.Runner.Reporting;
 using Comuki.AgentTest.Runner.Scenarios;

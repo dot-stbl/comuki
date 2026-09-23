@@ -39,3 +39,8 @@ storybook-tests/artifacts
 storybook-tests/report.json
 storybook-tests/report.md
 
+# ui:probe run artifacts (WS17) — screenshots/DOM/aria/axe/console + summary,
+# per-run output, not source. Same reasoning as the storybook-tests entries
+# above.
+artifacts/ui-probe
+

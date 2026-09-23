@@ -583,6 +583,63 @@ export function dashboardVitestMode(dashboardFiles) {
 }
 
 // ---------------------------------------------------------------------------
+// scripts/ — parse node --test's own summary, so a failure is precise
+// (which test, not just "the target failed") without a new dependency.
+// ---------------------------------------------------------------------------
+
+/**
+ * Node's built-in test runner prints machine-stable `ℹ <key> <n>` summary
+ * lines and, on failure, a `✖ failing tests:` section with one
+ * `test at <file>:<line>:<col>` + `✖ <name> (<duration>)` + message block
+ * per failing test — present in both the default 'spec' reporter and its
+ * non-TTY fallback. Parsing that (rather than grepping arbitrary output)
+ * gives real per-test counts/failures, the same idea as dotnet-test.mjs
+ * preferring CTRF over grepping MTP's human summary line.
+ * @param {string} output combined stdout+stderr from `node --test ...`
+ * @returns {{ counts: { total: number, passed: number, failed: number, skipped: number }, failures: { name: string, location: string, message: string }[] } | null}
+ *   `null` when the output doesn't contain the `ℹ tests` summary at all
+ *   (e.g. a syntax error aborted before the runner produced one).
+ */
+export function parseNodeTestOutput(output) {
+  const stats = {};
+  for (const line of output.split(/\r?\n/)) {
+    const m = /^ℹ\s+(tests|pass|fail|skipped|cancelled)\s+(\d+)/.exec(line.trim());
+    if (m) {
+      stats[m[1]] = Number(m[2]);
+    }
+  }
+  if (stats.tests === undefined) {
+    return null;
+  }
+
+  const failures = [];
+  const marker = '✖ failing tests:';
+  const idx = output.indexOf(marker);
+  if (idx !== -1) {
+    const blocks = output.slice(idx + marker.length).split(/\ntest at /).slice(1);
+    for (const block of blocks) {
+      const lines = block.split(/\r?\n/);
+      const location = (lines[0] ?? '').trim();
+      const nameLine = (lines[1] ?? '').trim();
+      const nameMatch = /^✖\s+(.*?)\s+\(\d/.exec(nameLine);
+      const name = nameMatch ? nameMatch[1] : nameLine.replace(/^✖\s*/, '');
+      const detail = (lines.slice(2).find((l) => l.trim().length > 0) ?? '').trim();
+      failures.push({ name, location, message: detail || name });
+    }
+  }
+
+  return {
+    counts: {
+      total: stats.tests ?? 0,
+      passed: stats.pass ?? 0,
+      failed: stats.fail ?? 0,
+      skipped: (stats.skipped ?? 0) + (stats.cancelled ?? 0),
+    },
+    failures,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // openspec/ — validate the touched change(s)/spec(s), never --all
 // ---------------------------------------------------------------------------
 
@@ -854,6 +911,24 @@ function runShellTarget(t, repoRoot, reportDir) {
   writeFileSync(logPath, combined);
   process.stdout.write(combined);
   const relLog = toPosixPath(path.relative(repoRoot, logPath));
+
+  // `node --test` prints its own real per-test counts/failures — prefer
+  // those over the generic one-pseudo-test fallback below (same reasoning
+  // as dotnet-test.mjs preferring CTRF over a generic "run failed" result).
+  if (t.cmd === 'node' && t.args.includes('--test')) {
+    const parsed = parseNodeTestOutput(combined);
+    if (parsed) {
+      return {
+        counts: parsed.counts,
+        failures: parsed.failures.map((f) => ({
+          scenario: t.id,
+          stage: f.name,
+          message: `${f.location}: ${f.message}`,
+          artifactPaths: [relLog],
+        })),
+      };
+    }
+  }
 
   if (proc.status === 0) {
     return { counts: { total: 1, passed: 1, failed: 0, skipped: 0 }, failures: [] };

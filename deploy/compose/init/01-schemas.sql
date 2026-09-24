@@ -3,7 +3,7 @@
 --
 -- The migrator also runs `DatabaseSchemaEnsurer.EnsureAsync` for every
 -- schema before applying migrations, so this file is a belt-and-braces
--- bring-up: it guarantees the pgvector extension and all ten module
+-- bring-up: it guarantees the pgvector extension and all eleven module
 -- schemas exist before any Comuki binary touches the database.
 
 -- Vector store for the knowledge module (embeddings in schema
@@ -22,3 +22,4 @@ CREATE SCHEMA IF NOT EXISTS intake;
 CREATE SCHEMA IF NOT EXISTS costs;
 CREATE SCHEMA IF NOT EXISTS artifacts;
 CREATE SCHEMA IF NOT EXISTS scheduler;
+CREATE SCHEMA IF NOT EXISTS verify;

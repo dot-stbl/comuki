@@ -1,17 +1,32 @@
 # Roadmap
 
-> **Status (2026-09-15): v1 milestone is complete on master (`e679663`).
-> 24 slices landed — 15 original v1 core (S0–S14) plus 9 follow-on slices
-> (5 FE wire-up slices, 2 polish waves, 1 admin endpoints, 1 docs sweep)
-> plus the `#11` Post-1.0 backlog slice (13 sub-slices shipped
-> 2026-09-04 → 2026-09-07). **50 of 50 GitHub issues closed** (0 open).
-> 4 deferred issues (#47, #48, #49, #50) closed with "v2 backlog" note.
+> **Status (2026-09-23, master `9c82eb9f`).** v1 milestone complete since
+> 2026-09-08 (24 slices, 50/50 issues closed — see Phases 1-9 below,
+> unchanged). Since then, three tracks not represented in the phase
+> numbering below have shipped or landed:
 >
-> **v2 phase `agent-runtime-capabilities` drafted (2026-09-15)** —
-> OpenSpec change at
-> [`openspec/changes/agent-runtime-capabilities/`](../openspec/changes/agent-runtime-capabilities/)
-> (proposal / 7 spec deltas / design / tasks all complete;
-> `openspec validate` passes). Awaits `/opsx-apply`.
+> 1. **CLI rebuild epic (issue #71, closed 2026-09-19→21)** — 15
+>    sub-issues (#72-#85): OpenTUI as the default `--tui`, harness engine,
+>    risk-tiered approvals, swarm canvas, machine mode, generated
+>    contracts, reconnectable sessions, packaging. `comuki-cli` moved
+>    from `agents/` to `cli/` on 2026-09-17 (`a2bddc27`) and is no longer
+>    an agentic SDK package. Next increment: issue #105
+>    `rewrite-cli-for-shared-contracts` (plan-doc only so far).
+> 2. **`harden-pi-worker-sandbox` (issue #121 + #125), in flight** — 15/27
+>    tasks: default-deny egress, virtual-key mint-on-claim, worker
+>    CPU/mem limits landed; workspace prep, journal conditions, and the
+>    worker-sdk lock-gate integration remain.
+> 3. **v2 umbrella epic `add-mission-cowork` (issue #70), drafted, 0
+>    built.** 19 phases / 131 tasks in
+>    [`openspec/changes/add-mission-cowork/tasks.md`](../openspec/changes/add-mission-cowork/tasks.md)
+>    — supersedes the single-phase "Phase 10 — v2 Agent Runtime" framing
+>    below in scope (Missions, Work bounded context, Capability Broker,
+>    Context Fabric, worker pools, dashboard/CLI parity). 18 child
+>    openspec stubs (#87-#105) are currently empty, decomposition pending.
+>
+> `agent-runtime-capabilities` (Phase 10 below) is unchanged since
+> 2026-09-15 — still drafted, awaiting `/opsx-apply`, not superseded by
+> `add-mission-cowork` (different capability, can land independently).
 > Live status lives in [`.agents/STATE.md`](./STATE.md) and on
 > https://github.com/dot-stbl/comuki/issues.
 >
@@ -174,12 +189,14 @@ real worktrees (Phase 8).
 ## Phase 5 — Slice 1: Proxy & Virtual Keys (`05-slice-1-proxy`) — ✅ DONE (S2 + S4 + S12 + S9 T9.6)
 
 **Goal:** workers stop holding real model keys. Everything through
-`Comuki.Modules.Proxy` + `Comuki.Host.Proxy` on YARP; container
-knows only virtual URL + capability-scoped key.
+`Comuki.Modules.Proxy` on YARP, composed in-process inside `Comuki.Host`
+(no standalone Proxy host); container knows only virtual URL +
+capability-scoped key.
 
 **Scope**
 - `Comuki.Modules.Proxy` (resolver, store, extractors, budget, meter) ✅
-- `Comuki.Host.Proxy` — YARP OpenAI/Anthropic passthrough ✅
+- YARP OpenAI/Anthropic passthrough, in-process in `Comuki.Host`
+  (`Comuki.Host/Proxy/*Endpoints.cs`) ✅
 - Virtual-key HMAC (models/budget/expiry); metering → `usage_events` ✅
 - Cost-per-app, per-stage, per-agent metrics ✅
 - Health probes for proxy virtual keys ✅
@@ -257,7 +274,9 @@ operations UI.
 - Append-only event log: trace-id = run-id ✅
 - Idempotency keys on dispatch / merge / deploy ✅
 - Reaper for orphaned containers + reconciliation on restart ✅
-- Eval harness scaffolding: golden tasks from shipped skills ✅
+- Status-machine golden-replay tester (`EvalRunner` + 7 golden tasks) —
+  historically called "Eval harness" but it is a deterministic
+  Run/WorkItem transition replayer, not an agent/model-quality eval ✅
 - 70% line coverage target across BE + FE ✅
 - Onboarding doc: new dev runs the loop on a fresh checkout in ≤30 min ✅
 - Security review: dev-secret removal (#21), per-endpoint rate-limits +
@@ -296,12 +315,18 @@ operations UI.
                                               ▼
                                          9 MVP Polish                  (done)
                                               │
-                                              ▼
-                                         10 v2 Agent Runtime            (drafted)
-                                                (memory per-project + discovery
-                                                 + secrets catalog + worker
-                                                 injection; KMS / SaaS deferred)
+                              ┌───────────────┼───────────────────┐
+                              ▼               ▼                   ▼
+                    10 v2 Agent Runtime  CLI rebuild epic   add-mission-cowork
+                       (drafted,          #71-#85 (done,     epic #70 (drafted,
+                        agent-runtime-    2026-09-19→21)     0 built — 19 phases,
+                        capabilities)                        18 child stubs)
 ```
+
+Three independent post-v1 tracks, not a linear chain: Phase 10
+(`agent-runtime-capabilities`) can land in any order relative to the
+other two. `harden-pi-worker-sandbox` (in flight) is a prerequisite
+inside the `add-mission-cowork` tree, not a sibling of it.
 
 ## Open slice work (post-v1 scope)
 
@@ -311,13 +336,28 @@ operations UI.
 | Sub-slice | SHA | Description |
 |---|---|---|
 | Merge-queue entity | `6072dd9` | MergeQueue aggregate + IMergeQueueStore + AddMergeQueueTable |
-| Eval-harness | `7989779` | EvalRunner + 7 golden tasks |
-| Autonomy ratchet (slice 1) | `6f2ddb8` + `3f769f5` | RunTrustClass enum + TrustClassRatchetSweeper |
+| Status-machine golden-replay tester (misnamed "Eval-harness") | `7989779` | EvalRunner + 7 golden tasks — not an agent/model eval, see Phase 9 note above |
+| Autonomy ratchet (slice 1) | `6f2ddb8` + `3f769f5` | RunTrustClass enum + `AddRunTrustClass` migration — shipped. `TrustClassRatchetSweeper` was never built. |
 | Domain-user intake (slice 1) | `1ac0550` | DomainTypeAdmission EF + gate service |
-| Redis cache | `b29e688` → `5f62928` | Comuki.Shared.Redis + DistributedProjectSettingsCache |
-| Fleet runners (slice 1) | merged | IRunnerRegistry + EfRunnerRegistry + heartbeat reaper |
-| Generic-command verifier | `ec3ce24` → `493704c` | GenericCommandRun + IGenericCommandRunner + ProcessRunner |
 | C#→TS codegen (Option A) | `77561c9` → `0aeae3e` | RealtimeContractAttribute + RealtimeContractEmitter |
+
+**Corrected against full unshallowed history (2026-09-23)** — three
+different situations for what earlier revisions of this table listed as
+shipped:
+- **Recoverable, pending decision:** Redis cache and the generic-command
+  verifier (`Comuki.Modules.Verify`) are real, complete implementations
+  that were never merged to any branch reaching master — recovered from
+  loose objects onto `rescue/redis-cache` (`b29e6885`) and
+  `rescue/generic-command-verifier` (`ec3ce24`), pushed to `gitlab`.
+  Neither is on master; no decision yet on restoring vs. folding into v2.
+- **Net-new v2 work, nothing to restore:** Fleet runners
+  (`IRunnerRegistry`) and `TrustClassRatchetSweeper` were never built on
+  any branch, ever (`git log --all -S` over the full history: zero
+  hits). Issue #48's acceptance criteria are a usable spec for Fleet
+  runners; the sweeper has no spec beyond "passive timeout automation
+  for `RunTrustClass`."
+
+See [`STATE.md`](./STATE.md) for the full detail and SHAs.
 
 FE admin mutations wire-up (#31–#42) — backend landed, dashboard
 mutations are mock-first (post-v1 follow-up, not blocking).
@@ -377,26 +417,50 @@ through workers that already carry the credentials they need.
 
 | Issue | Title |
 |---|---|
-| #47 | Generic-command runner-container (Process.Start isolation) |
-| #48 | Fleet runner host-agent for bare-metal |
-| #49 | Autonomy ratchet continuation (confidence scoring, daily decay) |
-| #50 | Merge-queue multi-feature batch + dependency ordering |
+| #47 | Generic-command runner-container (Process.Start isolation) — builds on the recoverable `rescue/generic-command-verifier` base, not yet restored |
+| #48 | Fleet runner host-agent for bare-metal — no Fleet runner registry was ever built (see "Open slice work" above); this and its base are both net-new |
+| #49 | Autonomy ratchet continuation (confidence scoring, daily decay) — the passive-timeout sweeper it would extend was also never built; #49's scope now includes building that base, not just extending it |
+| #50 | Merge-queue multi-feature batch + dependency ordering — base (`MergeQueue`) is real and on master |
 
 Re-open when v2 scope approved.
 
-## v2 backlog (TBD scope)
+## Phase 11 — CLI rebuild + v2 Mission Cowork (drafted/shipped, 2026-09-23)
 
-When v2 is opened, the deferred #47–#50 issues provide the seed backlog.
-Additional v2 candidates (not yet tracked as issues):
+Not numbered as a single phase in practice — two tracks that both
+landed after Phase 10 was drafted, neither represented above:
 
-- **Confidence scoring** for TrustClass ratchet (auto-promote / auto-demote)
-- **Fleet host-agent** for bare-metal deployment
-- **Generic-command container isolation** (Process.Start hardening)
-- **Merge-queue multi-feature batch** with dependency graph
+- **CLI rebuild epic (issue #71) — ✅ shipped**, closed 2026-09-19→21.
+  15 sub-issues (#72-#85): harness engine, OpenTUI as default `--tui`
+  (`b75eb179`), risk-tiered approvals, swarm canvas, a11y linear
+  renderer, machine mode, generated-contracts pipeline, reconnectable
+  sessions, single-file packaging. `comuki-cli` moved `agents/` → `cli/`
+  (`a2bddc27`, 2026-09-17). Next increment: issue #105
+  `rewrite-cli-for-shared-contracts` — plan-doc only in openspec, but
+  its "step 1" already shipped (`4687613c`/`f29a2415`).
+- **`add-mission-cowork` (issue #70) — 📝 drafted, 0 built.** The real
+  v2 scope this section used to call "TBD" — 19 phases / 131 tasks in
+  [`openspec/changes/add-mission-cowork/tasks.md`](../openspec/changes/add-mission-cowork/tasks.md),
+  the authoritative phase order (not duplicated here). Breaking: Run
+  stops being the durable unit of work. 18 child openspec stubs
+  (issues #87-#105) are declared but empty pending decomposition.
+  `harden-pi-worker-sandbox` (issue #121+#125, 15/27 tasks, in flight)
+  is the isolation-class floor `add-worker-pools-and-isolation-classes`
+  (one of the 18 stubs) builds on.
+
+**Depends on:** Phase 9. Independent of Phase 10
+(`agent-runtime-capabilities`) — different capability, can land in
+either order.
+
+## v2 backlog — smaller, orthogonal items
+
+The deferred #47–#50 issues (table above) remain the seed backlog for
+anything not absorbed into `add-mission-cowork`. Still-open smaller
+candidates, not gated by the mission-cowork epic:
+
 - **Onboarding doc refresh** (post-v1, since v1 is shipped)
 - **Visual regression baselines** (Phase 3.3 deviation, SB 10 only)
 - **Kubb Zod schemas** for FE request validation (replaces manual Zod)
-- **Ladle catalog parity** (v1 used Storybook, v2 may switch)
+- Issues #51/#53/#65/#66 — small pre-existing backlog, unrelated to v2
 
 ## Related
 

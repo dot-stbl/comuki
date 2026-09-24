@@ -244,7 +244,10 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
 
         var events = await LoadEventsAsync(seeded.RunId);
         events.ShouldContain(static runEvent => runEvent.Type == "work_item.status_changed" && runEvent.OccurredAt == claimAt.AddMinutes(1));
-        var transition = events.Single(static runEvent => runEvent.OccurredAt == claimAt.AddMinutes(1));
+        // The completed item was also the run's last open one, so the same
+        // instant carries a sibling run.status_changed — filter by type to
+        // pick the work-item transition specifically.
+        var transition = events.Single(static runEvent => runEvent.Type == "work_item.status_changed" && runEvent.OccurredAt == claimAt.AddMinutes(1));
         using var payload = JsonDocument.Parse(transition.Payload);
         payload.RootElement.GetProperty("to").GetString().ShouldBe("Succeeded", transition.Payload);
         // the worker result JSON is embedded as the detail value itself
@@ -269,7 +272,10 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
 
         var events = await LoadEventsAsync(seeded.RunId);
         events.ShouldContain(static runEvent => runEvent.Type == "work_item.status_changed" && runEvent.OccurredAt == claimAt.AddSeconds(30));
-        var transition = events.Single(static runEvent => runEvent.OccurredAt == claimAt.AddSeconds(30));
+        // The failed item was also the run's last open one, so the same
+        // instant carries a sibling run.status_changed — filter by type to
+        // pick the work-item transition specifically.
+        var transition = events.Single(static runEvent => runEvent.Type == "work_item.status_changed" && runEvent.OccurredAt == claimAt.AddSeconds(30));
         using var payload = JsonDocument.Parse(transition.Payload);
         payload.RootElement.GetProperty("to").GetString().ShouldBe("Failed");
         payload.RootElement.GetProperty("detail").GetString().ShouldBe("OOM killed");
@@ -329,8 +335,10 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
 
         var timeline = await journal.ReadTimelineAsync(seeded.RunId, page: 1, pageSize: 10, cancellationToken);
 
-        var entry = timeline.ShouldHaveSingleItem();
-        entry.Type.ShouldBe("work_item.status_changed");
+        // The claim is also the run's first activation, so the timeline
+        // carries a sibling run.status_changed at the same instant — filter
+        // by type to isolate the work-item transition under test.
+        var entry = timeline.Single(static runEvent => runEvent.Type == "work_item.status_changed");
         entry.RunId.ShouldBe(seeded.RunId);
     }
 }

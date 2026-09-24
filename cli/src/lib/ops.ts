@@ -1,9 +1,8 @@
 /**
- * Pure ops-pack B formatters for the chat REPL (`/open`, `/tools`,
- * `/note`): dashboard URL + OSC-8 hyperlink, the honest-unavailable
- * notices when a GET/POST the slash would want does not exist on the
- * host. No React, no I/O — opening the OS browser is the caller's job
- * (`openDashboardUrl` below is the one side-effect, injectable).
+ * Pure ops-pack B formatters for the chat REPL (`/open`): dashboard
+ * URL + OSC-8 hyperlink. No React, no I/O — opening the OS browser is
+ * the caller's job (`openDashboardUrl` below is the one side-effect,
+ * injectable).
  *
  * Dashboard routes (see `dashboard/src/routeTree.gen.ts`): `/chat` is
  * the console (no `/chat/{id}` — sessions live in client state, not
@@ -72,62 +71,6 @@ export function openPanelLines(
         colors.faint
       )
   return [header, dashboardLinkLine(url), note, opener]
-}
-
-/**
- * Honest notice: there is no HTTP GET for brain tools or MCP tools.
- * Brain tools live inside the per-request BrainToolbox; MCP tools
- * answer `tools/list` over JSON-RPC at `/api/v1/mcp`, not REST.
- */
-export function toolsUnavailableLines(): string[] {
-  return [
-    `  ${paint(symbols.cross, colors.error)} ${paint(
-      "no HTTP GET for brain tools / MCP tools",
-      colors.error
-    )}`,
-    paint(
-      "  · brain tools are per-request inside the think loop (memory.search, emit_plan, …)",
-      colors.faint
-    ),
-    paint(
-      "  · MCP tools/list is JSON-RPC at POST /api/v1/mcp — not a REST catalogue",
-      colors.faint
-    ),
-  ]
-}
-
-/**
- * Honest notice: memory write is MCP-only. Workers POST `memory.note`
- * through `/api/v1/mcp`; the brain's `memory.write` is a think-loop
- * tool, not an HTTP endpoint. `/note` has nowhere to POST.
- */
-export function noteUnavailableLines(): string[] {
-  return [
-    `  ${paint(symbols.cross, colors.error)} ${paint(
-      "memory write is MCP-only",
-      colors.error
-    )}`,
-    paint(
-      "  · workers write via MCP memory.note (POST /api/v1/mcp) — there is no HTTP POST for notes",
-      colors.faint
-    ),
-    paint(
-      "  · the brain's memory.write is a think-loop tool, not a REST surface",
-      colors.faint
-    ),
-  ]
-}
-
-/**
- * `/note` without text — the command is registered so `/help` shows
- * it, but there is still nowhere to write. Usage first, then the
- * honest MCP-only notice.
- */
-export function noteUsageLines(): string[] {
-  return [
-    paint("  usage: /note <text>", colors.accent),
-    ...noteUnavailableLines(),
-  ]
 }
 
 /** The OS-specific opener binary: `start` / `xdg-open` / `open`. */

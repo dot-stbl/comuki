@@ -1,35 +1,12 @@
 /**
- * Session archive: `/archive` writes a markdown transcript under
- * `~/.config/comuki/archive/{id}-{slug}-{date}.md`; `comuki archive`
- * lists those files. Path building is pure so tests never touch disk.
+ * Session archive: `comuki archive` lists markdown transcripts under
+ * `~/.config/comuki/archive/`. Listing is pure so tests never touch
+ * disk beyond the injected directory.
  */
 import { readdir, stat } from "node:fs/promises"
 import { join } from "node:path"
 import { archiveDir } from "./config"
-import { sessionSlug } from "./export"
 import { formatBytes } from "./kb"
-
-/** `{id}-{slug}-{yyyymmdd}.md` — id is sanitised, slug from the tab name. */
-export function archiveFileName(
-  id: string,
-  sessionName: string,
-  now: Date = new Date()
-): string {
-  const safeId =
-    id.replace(/[^\p{L}\p{N}_.-]+/gu, "-").replace(/^-+|-+$/g, "") || "session"
-  const pad = (value: number) => String(value).padStart(2, "0")
-  const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`
-  return `${safeId}-${sessionSlug(sessionName)}-${date}.md`
-}
-
-export function archiveFilePath(
-  id: string,
-  sessionName: string,
-  now: Date = new Date(),
-  dir: string = archiveDir()
-): string {
-  return join(dir, archiveFileName(id, sessionName, now))
-}
 
 export interface ArchiveListing {
   readonly name: string

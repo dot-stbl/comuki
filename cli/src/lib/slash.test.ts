@@ -29,7 +29,6 @@ describe("resolveSlashAction", () => {
     expect(resolveSlashAction("/login")).toEqual({ kind: "login" })
     expect(resolveSlashAction("/sessions")).toEqual({ kind: "sessions" })
     expect(resolveSlashAction("/new")).toEqual({ kind: "new" })
-    expect(resolveSlashAction("/archive")).toEqual({ kind: "archive" })
     expect(resolveSlashAction("approve")).toEqual({ kind: "approve" })
     expect(resolveSlashAction("reject")).toEqual({ kind: "reject" })
   })
@@ -204,36 +203,11 @@ describe("resolveSlashAction", () => {
     expect(resolveSlashAction("/keys")).toEqual({ kind: "keys" })
   })
 
-  it("routes the ops pack B: /status, /open, /tools, /note", () => {
+  it("routes the ops pack B: /status, /open", () => {
     expect(resolveSlashAction("/status")).toEqual({ kind: "status" })
     expect(resolveSlashAction("STATUS")).toEqual({ kind: "status" })
     expect(resolveSlashAction("/open")).toEqual({ kind: "open" })
     expect(resolveSlashAction("open")).toEqual({ kind: "open" })
-    expect(resolveSlashAction("/tools")).toEqual({ kind: "tools" })
-  })
-
-  it("carries /note text; bare /note is an empty text (usage is downstream)", () => {
-    expect(resolveSlashAction("/note remember the auth cookie lives in config")).toEqual({
-      kind: "note",
-      text: "remember the auth cookie lives in config",
-    })
-    expect(resolveSlashAction("/note")).toEqual({ kind: "note", text: "" })
-    expect(resolveSlashAction("/note   ")).toEqual({ kind: "note", text: "" })
-  })
-
-  it("parses /profile: bare lists, a name stores the preference", () => {
-    expect(resolveSlashAction("/profile")).toEqual({
-      kind: "profile",
-      name: "",
-    })
-    expect(resolveSlashAction("/profile implement")).toEqual({
-      kind: "profile",
-      name: "implement",
-    })
-    expect(resolveSlashAction("/profile   explore-readonly")).toEqual({
-      kind: "profile",
-      name: "explore-readonly",
-    })
   })
 
   it("parses /alias: bare lists, set/rm carry the target", () => {
@@ -287,11 +261,7 @@ describe("slashHelpLines", () => {
     expect(help).toContain("/keys")
     expect(help).toContain("/status")
     expect(help).toContain("/open")
-    expect(help).toContain("/tools")
-    expect(help).toContain("/note <text>")
-    expect(help).toContain("/profile [name]")
     expect(help).toContain("/alias [set <name> <text>|rm <name>]")
-    expect(help).toContain("/archive")
     expect(help).toContain("/login")
   })
 

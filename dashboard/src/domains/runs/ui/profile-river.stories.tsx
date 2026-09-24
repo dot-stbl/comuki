@@ -1,5 +1,6 @@
 import { useState } from "react"
 import type { Meta, StoryObj } from "@storybook/react"
+import { expect, userEvent } from "@storybook/test"
 
 import { toRunSummary } from "@/domains/runs/api/mappers"
 import { buildProfileFlow } from "@/domains/runs/model/profile-flow"
@@ -45,11 +46,23 @@ function Strip({ flow }: { flow: typeof fullSwarm }) {
   )
 }
 
+/** This repo's components key on `data-test`, not testing-library's default
+ *  `data-testid` — see `chat-message.test.tsx`'s `at()` helper. */
+function byTest(root: HTMLElement, name: string): HTMLElement {
+  const found = root.querySelector<HTMLElement>(`[data-test="${name}"]`)
+  if (!found) {
+    throw new Error(`[data-test="${name}"] not found in story canvas`)
+  }
+  return found
+}
+
 const meta: Meta<typeof ProfileRiver> = {
   title: "Runs/Profile river",
   component: ProfileRiver,
   parameters: { layout: "fullscreen" },
-  tags: ["autodocs"],
+  // "ws16-batch1": test:storybook's first interaction/visual/a11y batch —
+  // see storybook-tests/README.md.
+  tags: ["autodocs", "ws16-batch1"],
 }
 
 export default meta
@@ -58,6 +71,18 @@ type Story = StoryObj<typeof ProfileRiver>
 /** The load the screen is designed for: a full shift, the worst profile marked. */
 export const FullSwarm: Story = {
   render: () => <Interactive flow={fullSwarm} />,
+  play: async ({ canvasElement }) => {
+    const node = byTest(canvasElement, "river-node")
+    await expect(node).toHaveAttribute("aria-pressed", "false")
+
+    await userEvent.click(node)
+    await expect(node).toHaveAttribute("aria-pressed", "true")
+
+    // `Interactive`'s onSelect toggles off on a second click of the same
+    // profile — the same gesture the runs table's profile filter uses.
+    await userEvent.click(node)
+    await expect(node).toHaveAttribute("aria-pressed", "false")
+  },
 }
 
 /** Four runs. The flow has to stay legible when the swarm is nearly idle, and

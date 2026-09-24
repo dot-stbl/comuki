@@ -150,7 +150,7 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
         var runStatusEvents = events.Where(static runEvent => runEvent.Type == "run.status_changed").ToList();
         // activation (Queued -> Running on first claim) + finalization (Running -> Succeeded)
         runStatusEvents.Count.ShouldBe(2);
-        var finalizations = runStatusEvents.Where(runEvent =>
+        var finalizations = runStatusEvents.Where(static runEvent =>
         {
             using var payload = JsonDocument.Parse(runEvent.Payload);
             return payload.RootElement.GetProperty("to").GetString() is "Succeeded" or "Failed";
@@ -188,7 +188,7 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
         var runStatusEvents = events.Where(static runEvent => runEvent.Type == "run.status_changed").ToList();
         // activation (Queued -> Running on first claim) + finalization (Running -> Failed)
         runStatusEvents.Count.ShouldBe(2);
-        var finalizations = runStatusEvents.Where(runEvent =>
+        var finalizations = runStatusEvents.Where(static runEvent =>
         {
             using var payload = JsonDocument.Parse(runEvent.Payload);
             return payload.RootElement.GetProperty("to").GetString() is "Succeeded" or "Failed";
@@ -254,7 +254,7 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
         var runStatusEvents = events.Where(static runEvent => runEvent.Type == "run.status_changed").ToList();
         // activation (Queued -> Running on first claim) + finalization (Running -> Failed)
         runStatusEvents.Count.ShouldBe(2);
-        var finalizations = runStatusEvents.Where(runEvent =>
+        var finalizations = runStatusEvents.Where(static runEvent =>
         {
             using var payload = JsonDocument.Parse(runEvent.Payload);
             return payload.RootElement.GetProperty("to").GetString() is "Succeeded" or "Failed";

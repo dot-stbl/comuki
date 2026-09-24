@@ -38,6 +38,9 @@
     <ProjectReference Include="..\..\platform\src\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Projects\Comuki.Modules.Projects.Domain\Comuki.Modules.Projects.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Scheduler\Comuki.Modules.Scheduler.Domain\Comuki.Modules.Scheduler.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Verify\Comuki.Modules.Verify.Domain\Comuki.Modules.Verify.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Verify\Comuki.Modules.Verify.Application\Comuki.Modules.Verify.Application.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Verify\Comuki.Modules.Verify.Infrastructure\Comuki.Modules.Verify.Infrastructure.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Artifacts\Comuki.Modules.Artifacts.Domain\Comuki.Modules.Artifacts.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />

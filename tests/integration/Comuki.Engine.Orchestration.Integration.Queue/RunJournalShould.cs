@@ -1,7 +1,13 @@
 using System.Text.Json;
+using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Journal;
+using Comuki.Engine.Orchestration.Domain.Runs;
+using Comuki.Engine.Orchestration.Domain.WorkItems;
+using Comuki.Engine.Orchestration.Infrastructure.Leases;
+using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Contracts.Journal;
+using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -94,5 +100,166 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
 
         await Should.ThrowAsync<ArgumentException>(() => journal.ReadTimelineAsync(RunId.New(), page: 0, pageSize: 10, cancellationToken));
         await Should.ThrowAsync<ArgumentException>(() => journal.ReadTimelineAsync(RunId.New(), page: 1, pageSize: 0, cancellationToken));
+    }
+
+    /// <summary>Seeds a run with <paramref name="count"/> Queued work items —
+    /// for the terminal-reconciliation race tests below.</summary>
+    private async Task<(Run Run, List<WorkItem> Items)> SeedRunWithQueuedItemsAsync(int count)
+    {
+        using var scope = CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+        var now = clock.GetUtcNow();
+        var run = Run.Create(ProjectId.New(), now);
+        var items = Enumerable.Range(0, count)
+            .Select(index => WorkItem.Create(run.Id, "implement", Image, ProfilesRef, $$"""{"goal":"item {{index}}"}""", WorkItemStatus.Queued, now))
+            .ToList();
+        db.Runs.Add(run);
+        db.WorkItems.AddRange(items);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return (run, items);
+    }
+
+    [Fact(DisplayName = "Given a run's last two items, when two workers complete concurrently, then the run finalizes to Succeeded exactly once")]
+    public async Task FinalizeExactlyOnceOnConcurrentCompletionsAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (run, items) = await SeedRunWithQueuedItemsAsync(2);
+        using var scopeA = CreateScope();
+        using var scopeB = CreateScope();
+        var queueA = scopeA.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var queueB = scopeB.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var workerA = WorkerId.New();
+        var workerB = WorkerId.New();
+        var claimedA = await queueA.ClaimAsync(workerA, ImplementLabels, baseTime.AddMinutes(2), baseTime, cancellationToken);
+        var claimedB = await queueB.ClaimAsync(workerB, ImplementLabels, baseTime.AddMinutes(2), baseTime, cancellationToken);
+        claimedA.ShouldNotBeNull();
+        claimedB.ShouldNotBeNull();
+
+        // fire both completions without awaiting either first — genuine
+        // concurrent transactions on separate connections/scopes
+        var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, /*lang=json,strict*/ """{"summary":"a done"}""", baseTime.AddMinutes(1), cancellationToken);
+        var completeB = queueB.CompleteAsync(claimedB.WorkItemId, workerB, /*lang=json,strict*/ """{"summary":"b done"}""", baseTime.AddMinutes(1), cancellationToken);
+        var resultA = await completeA;
+        var resultB = await completeB;
+
+        resultA.ShouldBeTrue();
+        resultB.ShouldBeTrue();
+        var finalRun = await LoadRunAsync(run.Id);
+        finalRun.Status.ShouldBe(RunStatus.Succeeded);
+        var events = await LoadEventsAsync(run.Id);
+        var runStatusEvents = events.Where(static runEvent => runEvent.Type == "run.status_changed").ToList();
+        // activation (Queued -> Running on first claim) + finalization (Running -> Succeeded)
+        runStatusEvents.Count.ShouldBe(2);
+        var finalizations = runStatusEvents.Where(runEvent =>
+        {
+            using var payload = JsonDocument.Parse(runEvent.Payload);
+            return payload.RootElement.GetProperty("to").GetString() is "Succeeded" or "Failed";
+        }).ToList();
+        // the actual exactly-once invariant: only one finalization event
+        finalizations.ShouldHaveSingleItem();
+    }
+
+    [Fact(DisplayName = "Given a run's last two items, when one fails and the other succeeds concurrently, then the run finalizes to Failed exactly once")]
+    public async Task FinalizeExactlyOnceOnConcurrentCompleteAndFailAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (run, items) = await SeedRunWithQueuedItemsAsync(2);
+        using var scopeA = CreateScope();
+        using var scopeB = CreateScope();
+        var queueA = scopeA.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var queueB = scopeB.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var workerA = WorkerId.New();
+        var workerB = WorkerId.New();
+        var claimedA = await queueA.ClaimAsync(workerA, ImplementLabels, baseTime.AddMinutes(2), baseTime, cancellationToken);
+        var claimedB = await queueB.ClaimAsync(workerB, ImplementLabels, baseTime.AddMinutes(2), baseTime, cancellationToken);
+        claimedA.ShouldNotBeNull();
+        claimedB.ShouldNotBeNull();
+
+        var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, /*lang=json,strict*/ """{"summary":"a done"}""", baseTime.AddMinutes(1), cancellationToken);
+        var failB = queueB.FailAsync(claimedB.WorkItemId, workerB, "boom", baseTime.AddMinutes(1), cancellationToken);
+        var resultA = await completeA;
+        var resultB = await failB;
+
+        resultA.ShouldBeTrue();
+        resultB.ShouldBeTrue();
+        var finalRun = await LoadRunAsync(run.Id);
+        finalRun.Status.ShouldBe(RunStatus.Failed);
+        var events = await LoadEventsAsync(run.Id);
+        var runStatusEvents = events.Where(static runEvent => runEvent.Type == "run.status_changed").ToList();
+        // activation (Queued -> Running on first claim) + finalization (Running -> Failed)
+        runStatusEvents.Count.ShouldBe(2);
+        var finalizations = runStatusEvents.Where(runEvent =>
+        {
+            using var payload = JsonDocument.Parse(runEvent.Payload);
+            return payload.RootElement.GetProperty("to").GetString() is "Succeeded" or "Failed";
+        }).ToList();
+        // the actual exactly-once invariant: only one finalization event
+        finalizations.ShouldHaveSingleItem();
+    }
+
+    [Fact(DisplayName = "Given a run's last two items, when one is completed while the other's lease is reaped-to-failed concurrently, then the run finalizes to Failed exactly once")]
+    public async Task FinalizeExactlyOnceOnCompleteVersusReaperRaceAsync()
+    {
+        // MaxAttempts=2 makes a single-sweep concurrent race impractical: one
+        // reap requeues B (attempt 1 < 2), not fail. Multi-cycle prep bumps B's
+        // attempt to 2 so a final reap fails it; the actual race (completeA vs
+        // reaper sweep on B) is still genuinely concurrent, mirroring tests 1/2.
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (run, items) = await SeedRunWithQueuedItemsAsync(2);
+        using var scopeA = CreateScope();
+        using var scopeB = CreateScope();
+        var queueA = scopeA.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var queueB = scopeB.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var reaper = scopeB.ServiceProvider.GetRequiredService<LeaseReaper>();
+        var workerA = WorkerId.New();
+        var workerB = WorkerId.New();
+
+        // Cycle 1: claim B with a short lease; first reap requeues it.
+        var firstClaimB = await queueB.ClaimAsync(workerB, ImplementLabels, baseTime.AddSeconds(30), baseTime, cancellationToken);
+        firstClaimB.ShouldNotBeNull();
+        firstClaimB.Attempt.ShouldBe(1);
+
+        clock.Advance(TimeSpan.FromSeconds(31).Add(TimeSpan.FromSeconds(31))); // past B's first lease + ReapGrace
+        var firstReap = await reaper.ReapAsync(cancellationToken);
+        var firstReapB = firstReap.ShouldHaveSingleItem();
+        firstReapB.WorkItemId.ShouldBe(firstClaimB.WorkItemId);
+        firstReapB.MarkedFailed.ShouldBeFalse();
+        (await LoadItemAsync(firstClaimB.WorkItemId)).ShouldNotBeNull().Status.ShouldBe(WorkItemStatus.Queued);
+
+        // Cycle 2 prep: claim A with a long lease (so the reaper ignores it) and
+        // re-claim B (attempt now bumps to 2).
+        var claimedA = await queueA.ClaimAsync(workerA, ImplementLabels, clock.GetUtcNow().AddMinutes(10), clock.GetUtcNow(), cancellationToken);
+        var claimedB = await queueB.ClaimAsync(workerB, ImplementLabels, clock.GetUtcNow().AddSeconds(30), clock.GetUtcNow(), cancellationToken);
+        claimedA.ShouldNotBeNull();
+        claimedB.ShouldNotBeNull();
+        claimedB.Attempt.ShouldBe(2);
+
+        // Advance past B's second lease + ReapGrace; A's 10-minute lease is still valid.
+        clock.Advance(TimeSpan.FromSeconds(31).Add(TimeSpan.FromSeconds(31)));
+
+        // Race: complete A and reap-fail B concurrently on separate scopes/connections.
+        var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, /*lang=json,strict*/ """{"summary":"a done"}""", clock.GetUtcNow(), cancellationToken);
+        var reapSweep = reaper.ReapAsync(cancellationToken);
+        var resultA = await completeA;
+        var reaped = await reapSweep;
+
+        resultA.ShouldBeTrue();
+        var reapedB = reaped.ShouldHaveSingleItem();
+        reapedB.WorkItemId.ShouldBe(claimedB.WorkItemId);
+        reapedB.MarkedFailed.ShouldBeTrue();
+
+        var finalRun = await LoadRunAsync(run.Id);
+        finalRun.Status.ShouldBe(RunStatus.Failed);
+        var events = await LoadEventsAsync(run.Id);
+        var runStatusEvents = events.Where(static runEvent => runEvent.Type == "run.status_changed").ToList();
+        // activation (Queued -> Running on first claim) + finalization (Running -> Failed)
+        runStatusEvents.Count.ShouldBe(2);
+        var finalizations = runStatusEvents.Where(runEvent =>
+        {
+            using var payload = JsonDocument.Parse(runEvent.Payload);
+            return payload.RootElement.GetProperty("to").GetString() is "Succeeded" or "Failed";
+        }).ToList();
+        // the actual exactly-once invariant: only one finalization event
+        finalizations.ShouldHaveSingleItem();
     }
 }

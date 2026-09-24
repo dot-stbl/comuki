@@ -63,6 +63,16 @@ public sealed class LeaseReaper(
                 now));
         }
 
+        // A reap-fail may have been the run's last open item — finalize the
+        // run exactly like a worker-driven complete/fail does (see
+        // RunProgression.FinalizeAsync in WorkItemQueueEf.cs). Only Failed
+        // reaps can produce a new terminal item; a requeued item goes back
+        // to Queued, which is never terminal, so it cannot finalize a run.
+        foreach (var runId in failed.Select(static lease => lease.RunId).Distinct())
+        {
+            await RunProgression.FinalizeAsync(db, transaction, runId, now, cancellationToken);
+        }
+
         if (requeued.Count + failed.Count > 0)
         {
             await db.SaveChangesAsync(cancellationToken);

@@ -120,6 +120,15 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
         return await db.WorkItems.AsNoTracking().SingleOrDefaultAsync(item => item.Id == workItemId, TestContext.Current.CancellationToken);
     }
 
+    /// <summary>Re-reads one run from a fresh scope (no tracking).</summary>
+    /// <param name="runId"></param>
+    protected async Task<Run> LoadRunAsync(RunId runId)
+    {
+        using var scope = CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+        return await db.Runs.AsNoTracking().SingleAsync(run => run.Id == runId, TestContext.Current.CancellationToken);
+    }
+
     /// <summary>Re-reads the journal of a run from a fresh scope (no tracking).</summary>
     /// <param name="runId"></param>
     protected async Task<List<RunEvent>> LoadEventsAsync(RunId runId)

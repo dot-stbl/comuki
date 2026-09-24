@@ -154,6 +154,21 @@ internal static class WorkItemQueueSql
         + "        WHERE wi.run_id = @runId AND wi.status IN ('" + Blocked + "', '" + Queued + "', '" + Running + "')) "
         + "RETURNING status";
 
+    /// <summary>Locks the run row before the finalization guard evaluates
+    /// <c>work_items</c> state via NOT EXISTS. Postgres only auto-serializes
+    /// concurrent UPDATEs that examine the TARGET row's own column (see
+    /// RunActivationSql's simple status guard) — a NOT EXISTS subquery
+    /// against a different table is not a conflict target for the runs row,
+    /// so without this explicit lock two transactions finalizing a run's
+    /// last two work items concurrently can each see the other's
+    /// not-yet-committed terminal write as still open and BOTH skip
+    /// finalization. Locking first forces the second transaction to wait
+    /// for the first to commit, so its next statement (a fresh snapshot)
+    /// sees the up-to-date work_items state.</summary>
+    public const string LockRunForFinalizationSql =
+        "SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " "
+        + "WHERE id = @runId FOR UPDATE";
+
     /// <summary>Creates a prepared claim command on the transaction's connection.</summary>
     /// <param name="transaction"></param>
     /// <param name="workerId"></param>
@@ -305,6 +320,20 @@ internal static class WorkItemQueueSql
         command.CommandText = RunFinalizationSql;
         AddParameter(command, "@runId", runId.Value);
         AddParameter(command, "@now", now);
+        return command;
+    }
+
+    /// <summary>Creates a prepared run-lock command (run before
+    /// <see cref="CreateRunFinalizationCommand"/> in the same transaction —
+    /// see <see cref="LockRunForFinalizationSql"/> remarks).</summary>
+    /// <param name="transaction"></param>
+    /// <param name="runId"></param>
+    public static DbCommand CreateLockRunForFinalizationCommand(DbTransaction transaction, RunId runId)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = LockRunForFinalizationSql;
+        AddParameter(command, "@runId", runId.Value);
         return command;
     }
 

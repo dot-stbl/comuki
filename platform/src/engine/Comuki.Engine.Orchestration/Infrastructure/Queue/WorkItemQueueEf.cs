@@ -199,7 +199,7 @@ file static class WorkItemOwnedTransition
 /// transaction — status guards make them no-ops under concurrency, and a
 /// returned row journals a <c>run.status_changed</c> event.
 /// </summary>
-file static class RunProgression
+internal static class RunProgression
 {
     public static async Task ActivateAsync(
         OrchestrationDbContext db,
@@ -243,6 +243,14 @@ file static class RunProgression
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        // Serialize concurrent finalization attempts on this run row before
+        // evaluating the NOT EXISTS guard — see LockRunForFinalizationSql
+        // remarks in WorkItemQueueSql.cs.
+        await using (var lockCommand = WorkItemQueueSql.CreateLockRunForFinalizationCommand(transaction.GetDbTransaction(), runId))
+        {
+            await lockCommand.ExecuteScalarAsync(cancellationToken);
+        }
+
         await using var command = WorkItemQueueSql.CreateRunFinalizationCommand(transaction.GetDbTransaction(), runId, now);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))

@@ -31,11 +31,11 @@ export function dashboardOpenUrl(
   sessionId: string | undefined
 ): string {
   const base = hostUrl.replace(/\/+$/, "")
-  const live =
-    sessionId !== undefined &&
+  return sessionId !== undefined &&
     sessionId.length > 0 &&
     !sessionId.startsWith(PENDING_PREFIX)
-  return live ? `${base}${DASHBOARD_CHAT_PATH}` : `${base}${DASHBOARD_RUNS_PATH}`
+    ? `${base}${DASHBOARD_CHAT_PATH}`
+    : `${base}${DASHBOARD_RUNS_PATH}`
 }
 
 /** One OSC-8 hyperlink wrapping `url` — terminals without OSC-8 show the bare URL. */
@@ -53,8 +53,9 @@ export function openPanelLines(
   opened: boolean,
   reason: "chat" | "runs"
 ): string[] {
-  const header = `  ${paint(symbols.event, colors.dim)} ${paint("open", colors.muted)}`
-  const note =
+  return [
+    `  ${paint(symbols.event, colors.dim)} ${paint("open", colors.muted)}`,
+    dashboardLinkLine(url),
     reason === "chat"
       ? paint(
           `  ${symbols.bullet} dashboard has no /chat/{id} — opening the console`,
@@ -63,14 +64,14 @@ export function openPanelLines(
       : paint(
           `  ${symbols.bullet} no live session — opening the runs ledger`,
           colors.faint
-        )
-  const opener = opened
-    ? paint(`  ${symbols.checkmark} opened in the system browser`, colors.ok)
-    : paint(
-        `  ${symbols.bullet} no system opener — copy the url above`,
-        colors.faint
-      )
-  return [header, dashboardLinkLine(url), note, opener]
+        ),
+    opened
+      ? paint(`  ${symbols.checkmark} opened in the system browser`, colors.ok)
+      : paint(
+          `  ${symbols.bullet} no system opener — copy the url above`,
+          colors.faint
+        ),
+  ]
 }
 
 /** The OS-specific opener binary: `start` / `xdg-open` / `open`. */

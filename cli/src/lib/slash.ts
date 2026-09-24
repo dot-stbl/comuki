@@ -246,8 +246,7 @@ export type SlashAction =
  * caller, so the full command grammar is testable without Ink.
  */
 export function resolveSlashAction(raw: string): SlashAction {
-  const bare = raw.replace(/^\//, "").trim()
-  const [head, ...rest] = bare.split(/\s+/)
+  const [head, ...rest] = raw.replace(/^\//, "").trim().split(/\s+/)
   const name = (head ?? "").toLowerCase()
   const args = rest.join(" ").trim()
 

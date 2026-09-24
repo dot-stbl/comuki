@@ -175,19 +175,6 @@ export interface ProjectView {
   readonly archived: boolean
 }
 
-/**
- * Catalog-facing worker profile (`GET /profiles`). Matches
- * `ProfileDefinition` on the wire — key/name/description; tools and
- * model are optional extras the listing does not need.
- */
-export interface ProfileView {
-  readonly key: string
-  readonly name: string
-  readonly description: string
-  readonly allowedTools?: readonly string[]
-  readonly model?: string | null
-}
-
 export interface LoginSuccess {
   readonly cookie: string
   readonly userId: string
@@ -571,14 +558,5 @@ export class ComukiClient {
 
   projects(): Promise<readonly ProjectView[]> {
     return this.request("GET", "/api/v1/projects?includeArchived=false")
-  }
-
-  /**
-   * Worker-profile catalog (`GET /profiles`, `plan:read`). Listing
-   * only — `createSession` has no profile field, so a selected name
-   * cannot ride the next turn.
-   */
-  profiles(): Promise<readonly ProfileView[]> {
-    return this.request("GET", "/profiles")
   }
 }

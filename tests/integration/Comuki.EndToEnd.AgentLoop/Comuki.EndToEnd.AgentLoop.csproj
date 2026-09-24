@@ -39,6 +39,15 @@
     <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Compute\Comuki.Engine.Compute.csproj" />
     <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
+    <!-- WS7/T2b (RealPi/*): Comuki.Host.Translator for TranslatorOptions/
+         IPiRunner/PiRunner/TranslatorLoop/ProfilesProvider/AddOrchestratorApi/
+         AddWorkerGrpcClient — the in-process translator cycle
+         RealPiFakeModelHarness runs a real pi binary through, mirroring
+         Comuki.Host.Translator.Integration.PiCli's TranslatorE2EShould
+         pattern. Comuki.TestFakeModel for FakeModelServer/FakeScriptLoader —
+         the scripted Anthropic-shape HTTP surface real pi is pointed at. -->
+    <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host.Translator\Comuki.Host.Translator.csproj" />
+    <ProjectReference Include="..\..\tools\Comuki.TestFakeModel\Comuki.TestFakeModel.csproj" />
   </ItemGroup>
 
 </Project>

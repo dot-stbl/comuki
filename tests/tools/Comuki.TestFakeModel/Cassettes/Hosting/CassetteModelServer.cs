@@ -51,7 +51,10 @@ public sealed class CassetteModelServer : IAsyncDisposable
                 options.RecordedAgainst,
                 options.Scenario,
                 options.Clock,
-                serviceProvider.GetRequiredService<CassetteUpstreamForwarder>()));
+                serviceProvider.GetRequiredService<CassetteUpstreamForwarder>(),
+                options.BudgetTracker,
+                options.UsdPerMillionInputTokens,
+                options.UsdPerMillionOutputTokens));
 
             application = builder.Build();
             application.MapCassetteRecording();

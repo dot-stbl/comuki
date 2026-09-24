@@ -1,4 +1,5 @@
 using Comuki.AgentTest.Runner.Execution;
+using Comuki.AgentTest.Runner.Execution.Budget;
 using Comuki.AgentTest.Runner.Scenarios;
 using Shouldly;
 using Xunit;
@@ -91,22 +92,41 @@ public sealed class RecordCassetteShould(RealPiInstallation realPi, RealPiFakeMo
                     + "Either add `cassette: <path>` to the scenario's model: block, or pass --cassette-out / " + CassetteOutEnvVar + ".");
 
         // Echo the budget before the run, so a human re-recording against
-        // a paid upstream sees what they asked for — even before WS9 wires
-        // real mid-run enforcement.
+        // a paid upstream sees what they asked for. WS9: the same
+        // scenario.budget.maxUsd / COMUKI_LIVE_BUDGET_MAX_USD combination
+        // the live-mode harness uses resolves into a single BudgetCap via
+        // BudgetCap.Resolve — the same shared rule, the same
+        // smaller-wins semantic, the same env-var name. We build a
+        // recorder-side BudgetTracker the recording endpoint consults
+        // pre-forward to refuse further upstream calls once over the cap;
+        // its accumulated micro-USD surfaces through ReadCostAsync so the
+        // runner's ScenarioResult.Cost reflects the actual spend.
+        var resolvedBudgetCap = BudgetCap.Resolve(
+            scenario.Budget?.MaxUsd,
+            ScenarioRunner.GlobalBudgetEnvVar);
         if (!string.IsNullOrWhiteSpace(budgetRaw))
         {
-            // TODO(WS9): wire real budget enforcement here — the upcoming
-            // shared BudgetTracker in Comuki.AgentTest.Runner is the
-            // planned integration point; for now this is plumbing only.
-            Console.Out.WriteLine($"record-cassette: budget requested = ${budgetRaw} (not yet enforced — WS9)");
+            Console.Out.WriteLine(
+                "record-cassette: budget requested = ${0} (effective cap = {1} micro-USD)",
+                budgetRaw,
+                resolvedBudgetCap.UsdMicros?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "unlimited");
         }
+
+        // Translate the runner-side cap (which the post-run budget
+        // check uses) into the recorder-side cap shape (which the
+        // pre-forward refusal checks). The two carry identical semantics.
+        var recorderBudgetCap = resolvedBudgetCap.IsBounded
+            ? new TestFakeModel.Cassettes.Hosting.BudgetCap(resolvedBudgetCap.UsdMicros ?? 0L)
+            : TestFakeModel.Cassettes.Hosting.BudgetCap.Unlimited;
+        var recorderBudgetTracker = new TestFakeModel.Cassettes.Hosting.BudgetTracker(recorderBudgetCap);
 
         var harness = new RecordingPiFakeModelHarness(
             realPi,
             host,
             cassettePath,
             upstreamBaseUrl,
-            recordedAgainst: $"recorded-upstream-{upstreamBaseUrl.Host}");
+            recordedAgainst: $"recorded-upstream-{upstreamBaseUrl.Host}",
+            budgetTracker: recorderBudgetTracker);
         await using (harness)
         {
             var runner = new ScenarioRunner(harness);

@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using Comuki.AgentTest.Runner.Execution.Budget;
 using Comuki.AgentTest.Runner.Execution.Support;
 using Comuki.AgentTest.Runner.Journal;
 using Comuki.AgentTest.Runner.Reporting;
+using Comuki.AgentTest.Runner.Reporting.Report;
 using Comuki.AgentTest.Runner.Scenarios;
 using Comuki.Shared.Contracts.Compute;
 using Comuki.Shared.Contracts.Journal;
@@ -14,16 +16,24 @@ namespace Comuki.AgentTest.Runner.Execution;
 /// wait for a terminal status, then check every declared assertion —
 /// journal conditions and the final run/work-item status (T2a, WS6), plus
 /// <see cref="ScenarioDefinition.ExpectedTrajectory"/> and
-/// <see cref="ScenarioAssertions.Diff"/> (T2b, WS7 tasks 7.2/7.3).
-/// <see cref="ScenarioAssertions.Cost"/>/<see cref="ScenarioAssertions.Judge"/>
-/// are still parsed and carried but not yet evaluated — WS8/WS9
-/// (cost/budget) and WS10 (judge) extend this same class rather than
+/// <see cref="ScenarioAssertions.Diff"/> (T2b, WS7 tasks 7.2/7.3),
+/// <see cref="ScenarioAssertions.Cost"/> (WS8) and the
+/// <see cref="ScenarioDefinition.Budget"/> live-mode cap (WS9).
+/// <see cref="ScenarioAssertions.Judge"/> is still parsed and carried but
+/// not yet evaluated — WS10 extends this same class rather than
 /// rewriting it, per the WS6 brief's "mode seams ready without
 /// implementing them."
 /// </summary>
 /// <param name="harness">The concrete seam to the real orchestrator/compute for this tier.</param>
 public sealed class ScenarioRunner(IAgentLoopHarness harness)
 {
+    /// <summary>
+    /// Name of the env var this runner reads for the process-wide live-mode
+    /// ceiling (<see cref="BudgetCap.Resolve"/>). Settled on
+    /// <c>COMUKI_LIVE_BUDGET_MAX_USD</c> in WS9 so live-eval.mjs, record-cassette.mjs,
+    /// and an explicit integration test all consume the same variable.
+    /// </summary>
+    public const string GlobalBudgetEnvVar = "COMUKI_LIVE_BUDGET_MAX_USD";
     /// <summary>
     /// Runs <paramref name="scenario"/> to completion (or until
     /// <see cref="ScenarioRunOptions.Timeout"/> elapses) and returns its
@@ -46,6 +56,7 @@ public sealed class ScenarioRunner(IAgentLoopHarness harness)
     {
         var stopwatch = Stopwatch.StartNew();
         WorkerHandle? handle = null;
+        RunCost cost = new();
 
         try
         {
@@ -57,7 +68,7 @@ public sealed class ScenarioRunner(IAgentLoopHarness harness)
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
-                return ScenarioResult.Failure(scenario.Name, "compute.start", FirstLine(exception.Message), stopwatch.Elapsed, []);
+                return ScenarioResult.Failure(scenario.Name, "compute.start", FirstLine(exception.Message), stopwatch.Elapsed, [], cost);
             }
 
             var timeline = await harness.ReadTimelineAsync(seeded.RunId, cancellationToken);
@@ -76,6 +87,23 @@ public sealed class ScenarioRunner(IAgentLoopHarness harness)
 
             var artifactPaths = await DumpTimelineAsync(scenario.Name, timeline, options, cancellationToken);
 
+            cost = await harness.ReadCostAsync(seeded.WorkItemId, cancellationToken);
+
+            if (scenario.Budget is { } scenarioBudget)
+            {
+                var cap = BudgetCap.Resolve(scenarioBudget.MaxUsd, GlobalBudgetEnvVar);
+                if (cap.IsOverBudget(cost.UsdMicros))
+                {
+                    return ScenarioResult.Failure(
+                        scenario.Name,
+                        "budget",
+                        $"scenario exceeded its live-mode budget: spent {cost.UsdMicros} micro-USD (cap was {(cap.UsdMicros is { } m ? m : 0L)} micro-USD across scenario.budget.maxUsd={scenarioBudget.MaxUsd:0.######} and {GlobalBudgetEnvVar}).",
+                        stopwatch.Elapsed,
+                        artifactPaths,
+                        cost);
+                }
+            }
+
             if (!reachedTerminal)
             {
                 return ScenarioResult.Failure(
@@ -85,7 +113,8 @@ public sealed class ScenarioRunner(IAgentLoopHarness harness)
                         + "This usually means the container's Translator never claimed the queued item — check that "
                         + "worker.image/profileKey/profilesRef in the scenario match Intake:Worker:* on the host.",
                     stopwatch.Elapsed,
-                    artifactPaths);
+                    artifactPaths,
+                    cost);
             }
 
             foreach (var journalAssertion in scenario.Assertions.Journal)
@@ -97,7 +126,7 @@ public sealed class ScenarioRunner(IAgentLoopHarness harness)
                 }
                 catch (ScenarioValidationException exception)
                 {
-                    return ScenarioResult.Failure(scenario.Name, "assertions.journal", exception.Message, stopwatch.Elapsed, artifactPaths);
+                    return ScenarioResult.Failure(scenario.Name, "assertions.journal", exception.Message, stopwatch.Elapsed, artifactPaths, cost);
                 }
 
                 if (actual != journalAssertion.Expected)
@@ -107,13 +136,14 @@ public sealed class ScenarioRunner(IAgentLoopHarness harness)
                         "assertions.journal",
                         $"condition '{journalAssertion.Condition}' evaluated to {actual}, expected {journalAssertion.Expected}",
                         stopwatch.Elapsed,
-                        artifactPaths);
+                        artifactPaths,
+                        cost);
                 }
             }
 
             if (TrajectoryAssertionEvaluator.Evaluate(scenario.ExpectedTrajectory, timeline) is { } trajectoryFailure)
             {
-                return ScenarioResult.Failure(scenario.Name, "expectedTrajectory", trajectoryFailure, stopwatch.Elapsed, artifactPaths);
+                return ScenarioResult.Failure(scenario.Name, "expectedTrajectory", trajectoryFailure, stopwatch.Elapsed, artifactPaths, cost);
             }
 
             if (scenario.Assertions.Diff is { } diffAssertion)
@@ -122,7 +152,21 @@ public sealed class ScenarioRunner(IAgentLoopHarness harness)
                 if (workingDirectory is not null
                     && await DiffAssertionEvaluator.EvaluateAsync(diffAssertion, workingDirectory, cancellationToken) is { } diffFailure)
                 {
-                    return ScenarioResult.Failure(scenario.Name, "assertions.diff", diffFailure, stopwatch.Elapsed, artifactPaths);
+                    return ScenarioResult.Failure(scenario.Name, "assertions.diff", diffFailure, stopwatch.Elapsed, artifactPaths, cost);
+                }
+            }
+
+            if (scenario.Assertions.Cost is { MaxUsdMicros: { } ceilingMicros })
+            {
+                if (cost.UsdMicros > ceilingMicros)
+                {
+                    return ScenarioResult.Failure(
+                        scenario.Name,
+                        "assertions.cost",
+                        $"run spent {cost.UsdMicros} micro-USD which exceeds the assertions.cost.maxUsdMicros ceiling of {ceilingMicros}.",
+                        stopwatch.Elapsed,
+                        artifactPaths,
+                        cost);
                 }
             }
 
@@ -133,8 +177,9 @@ public sealed class ScenarioRunner(IAgentLoopHarness harness)
                     "assertions.run",
                     $"final status was '{status}', expected '{runAssertion.FinalStatus}'",
                     stopwatch.Elapsed,
-                    artifactPaths)
-                : ScenarioResult.Success(scenario.Name, stopwatch.Elapsed, artifactPaths);
+                    artifactPaths,
+                    cost)
+                : ScenarioResult.Success(scenario.Name, stopwatch.Elapsed, artifactPaths, cost);
         }
         finally
         {

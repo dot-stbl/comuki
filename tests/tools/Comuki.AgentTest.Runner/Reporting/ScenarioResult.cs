@@ -33,7 +33,8 @@ public sealed record ScenarioResult
     /// <param name="scenarioName"></param>
     /// <param name="duration"></param>
     /// <param name="artifactPaths"></param>
-    public static ScenarioResult Success(string scenarioName, TimeSpan duration, IReadOnlyList<string> artifactPaths)
+    /// <param name="cost">Observed cost contribution — defaults to zero for harnesses that never meter tokens.</param>
+    public static ScenarioResult Success(string scenarioName, TimeSpan duration, IReadOnlyList<string> artifactPaths, RunCost? cost = null)
     {
         return new ScenarioResult
         {
@@ -41,6 +42,7 @@ public sealed record ScenarioResult
             Passed = true,
             Duration = duration,
             ArtifactPaths = artifactPaths,
+            Cost = cost ?? new RunCost(),
         };
     }
 
@@ -50,12 +52,14 @@ public sealed record ScenarioResult
     /// <param name="message"></param>
     /// <param name="duration"></param>
     /// <param name="artifactPaths"></param>
+    /// <param name="cost">Observed cost contribution — the budget-cap failure path uses this to report the actual spend alongside the cap.</param>
     public static ScenarioResult Failure(
         string scenarioName,
         string stage,
         string message,
         TimeSpan duration,
-        IReadOnlyList<string> artifactPaths)
+        IReadOnlyList<string> artifactPaths,
+        RunCost? cost = null)
     {
         return new ScenarioResult
         {
@@ -65,6 +69,7 @@ public sealed record ScenarioResult
             FailureMessage = message,
             Duration = duration,
             ArtifactPaths = artifactPaths,
+            Cost = cost ?? new RunCost(),
         };
     }
 }

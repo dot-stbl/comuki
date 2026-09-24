@@ -1,3 +1,4 @@
+using Comuki.AgentTest.Runner.Reporting.Report;
 using Comuki.AgentTest.Runner.Scenarios;
 using Comuki.TestFakeModel.Cassettes.Hosting;
 
@@ -34,7 +35,8 @@ public sealed class RecordingPiFakeModelHarness(
     RealPiFakeModelHost host,
     string cassettePath,
     Uri upstreamBaseUrl,
-    string recordedAgainst) : RealPiHarnessBase(realPi, host)
+    string recordedAgainst,
+    BudgetTracker? budgetTracker = null) : RealPiHarnessBase(realPi, host)
 {
     private CassetteModelServer? cassetteServer;
 
@@ -54,6 +56,7 @@ public sealed class RecordingPiFakeModelHarness(
             Scenario = scenario.Name,
             RecordedAgainst = recordedAgainst,
             UpstreamBaseUrl = upstreamBaseUrl,
+            BudgetTracker = budgetTracker,
         });
         await cassetteServer.StartAsync(cancellationToken);
 
@@ -68,5 +71,18 @@ public sealed class RecordingPiFakeModelHarness(
             await cassetteServer.DisposeAsync();
             cassetteServer = null;
         }
+    }
+
+    /// <inheritdoc />
+    public Task<RunCost> ReadCostAsync(Guid workItemId, CancellationToken cancellationToken = default)
+    {
+        return budgetTracker is { } tracker
+            ? Task.FromResult(new RunCost
+            {
+                UsdMicros = tracker.UsdMicros,
+                TokensIn = tracker.TokensIn,
+                TokensOut = tracker.TokensOut,
+            })
+            : Task.FromResult(new RunCost());
     }
 }

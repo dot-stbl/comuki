@@ -31,6 +31,21 @@ internal static class WorkItemQueueSql
     /// <summary>Compiler-checked status name — see the class remarks.</summary>
     private const string Failed = nameof(WorkItemStatus.Failed);
 
+    /// <summary>Compiler-checked status name — see the class remarks.</summary>
+    private const string Blocked = nameof(WorkItemStatus.Blocked);
+
+    /// <summary>Compiler-checked run status literals (nameof over the enum members).</summary>
+    private const string RunWaitingInQueue = nameof(RunStatus.Queued);
+
+    /// <summary>Compiler-checked run status literal.</summary>
+    private const string RunActivated = nameof(RunStatus.Running);
+
+    /// <summary>Compiler-checked run status literal.</summary>
+    private const string RunSucceeded = nameof(RunStatus.Succeeded);
+
+    /// <summary>Compiler-checked run status literal.</summary>
+    private const string RunFailed = nameof(RunStatus.Failed);
+
     /// <summary>Claim: oldest queued item matching the labels, row-locked for the update.</summary>
     public const string ClaimSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
@@ -84,6 +99,33 @@ internal static class WorkItemQueueSql
         + "SET status = '" + Failed + "', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
         + "WHERE status = '" + Running + "' AND lease_until IS NOT NULL AND lease_until <= @cutoff AND attempt >= @maxAttempts "
         + "RETURNING id, run_id, attempt";
+
+    /// <summary>Run activation on the first claim of a run's items:
+    /// <c>Queued -> Running</c>, guarded by the current status so concurrent
+    /// claims fire it exactly once. Empty <c>RETURNING</c> = someone else
+    /// already activated (or the run left Queued) — nothing to journal.</summary>
+    public const string RunActivationSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " "
+        + "SET status = '" + RunActivated + "', updated_at = @now "
+        + "WHERE id = @runId AND status = '" + RunWaitingInQueue + "' "
+        + "RETURNING status";
+
+    /// <summary>Run finalization after a terminal item transition: when every
+    /// item of the run is terminal, <c>Running -> Succeeded</c> (no failed
+    /// items) or <c>Running -> Failed</c> (any failed item). Only fires from
+    /// <c>Running</c> — Waiting/Escalated runs belong to their own flows
+    /// (the run transition table has no Waiting/Escalated -> Succeeded
+    /// edge). Empty <c>RETURNING</c> = items remain or the run is elsewhere.</summary>
+    public const string RunFinalizationSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " "
+        + "SET status = CASE WHEN EXISTS (SELECT 1 FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " wi "
+        + "        WHERE wi.run_id = @runId AND wi.status = '" + Failed + "') "
+        + "    THEN '" + RunFailed + "' ELSE '" + RunSucceeded + "' END, "
+        + "    updated_at = @now "
+        + "WHERE id = @runId AND status = '" + RunActivated + "' "
+        + "  AND NOT EXISTS (SELECT 1 FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " wi "
+        + "        WHERE wi.run_id = @runId AND wi.status IN ('" + Blocked + "', '" + Queued + "', '" + Running + "')) "
+        + "RETURNING status";
 
     /// <summary>Creates a prepared claim command on the transaction's connection.</summary>
     /// <param name="transaction"></param>
@@ -193,6 +235,34 @@ internal static class WorkItemQueueSql
         command.CommandText = ReapFailSql;
         AddParameter(command, "@cutoff", cutoff);
         AddParameter(command, "@maxAttempts", maxAttempts);
+        AddParameter(command, "@now", now);
+        return command;
+    }
+
+    /// <summary>Creates a prepared run-activation command on the transaction's connection.</summary>
+    /// <param name="transaction"></param>
+    /// <param name="runId"></param>
+    /// <param name="now"></param>
+    public static DbCommand CreateRunActivationCommand(DbTransaction transaction, RunId runId, DateTimeOffset now)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = RunActivationSql;
+        AddParameter(command, "@runId", runId.Value);
+        AddParameter(command, "@now", now);
+        return command;
+    }
+
+    /// <summary>Creates a prepared run-finalization command on the transaction's connection.</summary>
+    /// <param name="transaction"></param>
+    /// <param name="runId"></param>
+    /// <param name="now"></param>
+    public static DbCommand CreateRunFinalizationCommand(DbTransaction transaction, RunId runId, DateTimeOffset now)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = RunFinalizationSql;
+        AddParameter(command, "@runId", runId.Value);
         AddParameter(command, "@now", now);
         return command;
     }

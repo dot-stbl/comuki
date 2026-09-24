@@ -51,8 +51,8 @@ public static class AnthropicUsageExtractor
     public static UsageCounts Extract(CassetteResponse response)
     {
         return response.Streamed
-            ? ExtractStreamed(response.Events)
-            : ExtractNonStreamed(response.Body);
+            ? AnthropicUsageStreamedExtractor.Extract(response.Events)
+            : AnthropicUsageNonStreamedExtractor.Extract(response.Body);
     }
 
     /// <summary>Token counts the live harness adds to its recording-side budget tracker.</summary>
@@ -64,31 +64,45 @@ public static class AnthropicUsageExtractor
         /// <summary>Sum the two sides into a single integer pair for the parent's reporting RunCost contribution.</summary>
         public int TotalTokens => InputTokens + OutputTokens;
     }
+}
 
-    private static UsageCounts ExtractNonStreamed(JsonElement? body)
+/// <summary>The non-streamed usage-extraction step <see cref="AnthropicUsageExtractor.Extract"/> composes — extracted per class-layout-and-tooling.md §1a.</summary>
+file static class AnthropicUsageNonStreamedExtractor
+{
+    /// <summary>Reads <c>usage.input_tokens</c> + <c>usage.output_tokens</c> off the response body; returns <see cref="AnthropicUsageExtractor.UsageCounts.Empty"/> when the body is missing or has no usage object.</summary>
+    public static AnthropicUsageExtractor.UsageCounts Extract(JsonElement? body)
     {
         if (body is not { } b || b.ValueKind != JsonValueKind.Object)
         {
-            return UsageCounts.Empty;
+            return AnthropicUsageExtractor.UsageCounts.Empty;
         }
 
         if (b.TryGetProperty("usage", out var usage))
         {
             if (usage.ValueKind == JsonValueKind.Object)
             {
-                return new UsageCounts(ReadInt(usage, InputTokensField), ReadInt(usage, OutputTokensField));
+                return new AnthropicUsageExtractor.UsageCounts(
+                    AnthropicUsageStreamedExtractor.ReadInt(usage, AnthropicUsageExtractor.InputTokensField),
+                    AnthropicUsageStreamedExtractor.ReadInt(usage, AnthropicUsageExtractor.OutputTokensField));
             }
         }
 
-        return UsageCounts.Empty;
+        return AnthropicUsageExtractor.UsageCounts.Empty;
     }
+}
 
+/// <summary>The streamed usage-extraction step <see cref="AnthropicUsageExtractor.Extract"/> composes — extracted per class-layout-and-tooling.md §1a.</summary>
+file static class AnthropicUsageStreamedExtractor
+{
+    /// <summary>The Anthropic usage-object field name on streamed events.</summary>
+    private const string UsageField = "usage";
 
-    private static UsageCounts ExtractStreamed(IReadOnlyList<CassetteSseEvent>? events)
+    /// <summary>Walks <c>message_start.message.usage.input_tokens</c> + <c>message_delta.usage.output_tokens</c> off the SSE event stream; returns <see cref="AnthropicUsageExtractor.UsageCounts.Empty"/> when the stream is missing.</summary>
+    public static AnthropicUsageExtractor.UsageCounts Extract(IReadOnlyList<CassetteSseEvent>? events)
     {
         if (events is null)
         {
-            return UsageCounts.Empty;
+            return AnthropicUsageExtractor.UsageCounts.Empty;
         }
 
         var inputTokens = 0;
@@ -104,21 +118,19 @@ public static class AnthropicUsageExtractor
             switch (sseEvent.Type)
             {
                 case "message_start":
-                    inputTokens = ReadInt(sseEvent.Data, $"message.{UsageField}.{InputTokensField}");
+                    inputTokens = ReadInt(sseEvent.Data, $"message.{UsageField}.{AnthropicUsageExtractor.InputTokensField}");
                     break;
                 case "message_delta":
-                    outputTokens = ReadInt(sseEvent.Data, $"{UsageField}.{OutputTokensField}");
+                    outputTokens = ReadInt(sseEvent.Data, $"{UsageField}.{AnthropicUsageExtractor.OutputTokensField}");
                     break;
             }
         }
 
-        return new UsageCounts(inputTokens, outputTokens);
+        return new AnthropicUsageExtractor.UsageCounts(inputTokens, outputTokens);
     }
 
-    /// <summary>The Anthropic usage-object field name on streamed events.</summary>
-    private const string UsageField = "usage";
-
-    private static int ReadInt(JsonElement parent, string dottedPath)
+    /// <summary>Reads a single integer property at <paramref name="dottedPath"/> (e.g. <c>"usage.input_tokens"</c>) from <paramref name="parent"/>; returns 0 when any segment is missing or non-numeric.</summary>
+    public static int ReadInt(JsonElement parent, string dottedPath)
     {
         var current = parent;
         foreach (var segment in dottedPath.Split('.'))

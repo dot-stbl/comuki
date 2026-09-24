@@ -1,9 +1,8 @@
 /**
- * Pure ops-pack B formatters for the chat REPL (`/open`, `/tools`,
- * `/note`): dashboard URL + OSC-8 hyperlink, the honest-unavailable
- * notices when a GET/POST the slash would want does not exist on the
- * host. No React, no I/O — opening the OS browser is the caller's job
- * (`openDashboardUrl` below is the one side-effect, injectable).
+ * Pure ops-pack B formatters for the chat REPL (`/open`): dashboard
+ * URL + OSC-8 hyperlink. No React, no I/O — opening the OS browser is
+ * the caller's job (`openDashboardUrl` below is the one side-effect,
+ * injectable).
  *
  * Dashboard routes (see `dashboard/src/routeTree.gen.ts`): `/chat` is
  * the console (no `/chat/{id}` — sessions live in client state, not
@@ -32,11 +31,11 @@ export function dashboardOpenUrl(
   sessionId: string | undefined
 ): string {
   const base = hostUrl.replace(/\/+$/, "")
-  const live =
-    sessionId !== undefined &&
+  return sessionId !== undefined &&
     sessionId.length > 0 &&
     !sessionId.startsWith(PENDING_PREFIX)
-  return live ? `${base}${DASHBOARD_CHAT_PATH}` : `${base}${DASHBOARD_RUNS_PATH}`
+    ? `${base}${DASHBOARD_CHAT_PATH}`
+    : `${base}${DASHBOARD_RUNS_PATH}`
 }
 
 /** One OSC-8 hyperlink wrapping `url` — terminals without OSC-8 show the bare URL. */
@@ -54,8 +53,9 @@ export function openPanelLines(
   opened: boolean,
   reason: "chat" | "runs"
 ): string[] {
-  const header = `  ${paint(symbols.event, colors.dim)} ${paint("open", colors.muted)}`
-  const note =
+  return [
+    `  ${paint(symbols.event, colors.dim)} ${paint("open", colors.muted)}`,
+    dashboardLinkLine(url),
     reason === "chat"
       ? paint(
           `  ${symbols.bullet} dashboard has no /chat/{id} — opening the console`,
@@ -64,69 +64,13 @@ export function openPanelLines(
       : paint(
           `  ${symbols.bullet} no live session — opening the runs ledger`,
           colors.faint
-        )
-  const opener = opened
-    ? paint(`  ${symbols.checkmark} opened in the system browser`, colors.ok)
-    : paint(
-        `  ${symbols.bullet} no system opener — copy the url above`,
-        colors.faint
-      )
-  return [header, dashboardLinkLine(url), note, opener]
-}
-
-/**
- * Honest notice: there is no HTTP GET for brain tools or MCP tools.
- * Brain tools live inside the per-request BrainToolbox; MCP tools
- * answer `tools/list` over JSON-RPC at `/api/v1/mcp`, not REST.
- */
-export function toolsUnavailableLines(): string[] {
-  return [
-    `  ${paint(symbols.cross, colors.error)} ${paint(
-      "no HTTP GET for brain tools / MCP tools",
-      colors.error
-    )}`,
-    paint(
-      "  · brain tools are per-request inside the think loop (memory.search, emit_plan, …)",
-      colors.faint
-    ),
-    paint(
-      "  · MCP tools/list is JSON-RPC at POST /api/v1/mcp — not a REST catalogue",
-      colors.faint
-    ),
-  ]
-}
-
-/**
- * Honest notice: memory write is MCP-only. Workers POST `memory.note`
- * through `/api/v1/mcp`; the brain's `memory.write` is a think-loop
- * tool, not an HTTP endpoint. `/note` has nowhere to POST.
- */
-export function noteUnavailableLines(): string[] {
-  return [
-    `  ${paint(symbols.cross, colors.error)} ${paint(
-      "memory write is MCP-only",
-      colors.error
-    )}`,
-    paint(
-      "  · workers write via MCP memory.note (POST /api/v1/mcp) — there is no HTTP POST for notes",
-      colors.faint
-    ),
-    paint(
-      "  · the brain's memory.write is a think-loop tool, not a REST surface",
-      colors.faint
-    ),
-  ]
-}
-
-/**
- * `/note` without text — the command is registered so `/help` shows
- * it, but there is still nowhere to write. Usage first, then the
- * honest MCP-only notice.
- */
-export function noteUsageLines(): string[] {
-  return [
-    paint("  usage: /note <text>", colors.accent),
-    ...noteUnavailableLines(),
+        ),
+    opened
+      ? paint(`  ${symbols.checkmark} opened in the system browser`, colors.ok)
+      : paint(
+          `  ${symbols.bullet} no system opener — copy the url above`,
+          colors.faint
+        ),
   ]
 }
 

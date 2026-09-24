@@ -7,12 +7,9 @@ import {
   DASHBOARD_RUNS_PATH,
   dashboardLinkLine,
   dashboardOpenUrl,
-  noteUnavailableLines,
-  noteUsageLines,
   openDashboardUrl,
   openPanelLines,
   openerCommand,
-  toolsUnavailableLines,
 } from "./ops"
 import { stripAnsi } from "../theme"
 
@@ -74,30 +71,6 @@ describe("openPanelLines", () => {
     expect(lines[2]).toContain("no live session")
     expect(lines[3]).toContain("no system opener")
     expect(lines[3]).toContain("copy the url")
-  })
-})
-
-describe("toolsUnavailableLines", () => {
-  it("the honest notice names the missing GET and where tools actually live", () => {
-    const lines = toolsUnavailableLines().map(stripAnsi)
-    expect(lines[0]).toContain("no HTTP GET for brain tools / MCP tools")
-    expect(lines[1]).toContain("per-request")
-    expect(lines[2]).toContain("POST /api/v1/mcp")
-  })
-})
-
-describe("noteUnavailableLines", () => {
-  it("says memory write is MCP-only — there is no HTTP POST for notes", () => {
-    const lines = noteUnavailableLines().map(stripAnsi)
-    expect(lines[0]).toContain("memory write is MCP-only")
-    expect(lines[1]).toContain("memory.note")
-    expect(lines[1]).toContain("no HTTP POST")
-  })
-
-  it("/note without text shows usage then the same notice", () => {
-    const lines = noteUsageLines().map(stripAnsi)
-    expect(lines[0]).toContain("usage: /note <text>")
-    expect(lines[1]).toContain("memory write is MCP-only")
   })
 })
 

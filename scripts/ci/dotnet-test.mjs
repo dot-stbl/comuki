@@ -45,8 +45,11 @@ export const TIERS = Object.freeze(['unit', 'integration']);
 export const REPORT_SCHEMA_VERSION = 1;
 
 /** Project directories that exist under `tests/integration/` but are shared
- * test infrastructure, not a runnable suite (no MTP entry point). */
-const INTEGRATION_EXCLUDE = new Set(['Comuki.Host.Testing']);
+ * test infrastructure, not a runnable suite (no MTP entry point). Exported
+ * so `scripts/ci/test-affected.mjs` (WS18) applies the same exclusion when
+ * it classifies a reverse-ProjectReference closure into unit/integration
+ * buckets — one list, not two that can drift. */
+export const INTEGRATION_EXCLUDE = new Set(['Comuki.Host.Testing']);
 
 const USAGE = `Usage: node scripts/ci/dotnet-test.mjs --tier=<unit|integration> [options]
 
@@ -394,8 +397,14 @@ function buildSolution() {
  * Run one project via `dotnet run --project <csproj> -c Debug --no-build`,
  * asking MTP for a CTRF report. Returns the per-project result used to
  * build the aggregate envelope.
+ *
+ * Exported so `scripts/ci/test-affected.mjs` (WS18) can execute an exact,
+ * dependency-graph-derived project list through the same spawn+CTRF-parse
+ * path instead of re-implementing it — the only thing that differs is how
+ * the project list is discovered (full tier glob here, reverse
+ * ProjectReference closure there).
  */
-function runProject(project, reportDir) {
+export function runProject(project, reportDir) {
   const artifactsDir = path.join(reportDir, 'projects', project.name);
   mkdirSync(artifactsDir, { recursive: true });
   const ctrfFilename = 'ctrf.json';

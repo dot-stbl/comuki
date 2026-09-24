@@ -11,8 +11,11 @@ namespace Comuki.TestFakePi;
 /// When <c>ANTHROPIC_AUTH_TOKEN</c> is set in its environment (the
 /// Translator stamps it per execution — issue #122), also writes
 /// <c>fake-pi-env.json</c> into the working directory reporting the
-/// model-gateway env it received, so tests can assert the stamp reached
-/// the child process without polluting the streamed/journaled output.
+/// model-gateway env it received and, when
+/// <c>PI_CODING_AGENT_DIR</c> is set, the contents of
+/// <c>$PI_CODING_AGENT_DIR/models.json</c> (issue #150), so tests can
+/// assert the stamp and the per-execution models.json reached the child
+/// process without polluting the streamed/journaled output.
 /// </summary>
 public static class Program
 {
@@ -44,7 +47,10 @@ public static class Program
     /// <summary>
     /// Dumps the env only when the minted-token stamp is present, so
     /// suites that never stamp see no file. Values are test-controlled
-    /// (base URL + base64url token) — no JSON escaping needed.
+    /// (base URL + base64url token) — no JSON escaping needed. Also
+    /// snapshots <c>PI_CODING_AGENT_DIR</c> + the contents of its
+    /// <c>models.json</c> when present, so tests can prove the
+    /// per-execution proxy routing (issue #150) reached the child.
     /// </summary>
     private static void DumpModelGatewayEnvironment()
     {
@@ -55,9 +61,29 @@ public static class Program
 
         var baseUrl = Environment.GetEnvironmentVariable("ANTHROPIC_BASE_URL");
         var token = Environment.GetEnvironmentVariable("ANTHROPIC_AUTH_TOKEN");
+        var piCodingAgentDir = Environment.GetEnvironmentVariable("PI_CODING_AGENT_DIR");
+        var modelsJsonContent = "<unset>";
+        if (!string.IsNullOrEmpty(piCodingAgentDir))
+        {
+            var modelsJsonPath = Path.Combine(piCodingAgentDir, "models.json");
+            modelsJsonContent = File.Exists(modelsJsonPath)
+                ? File.ReadAllText(modelsJsonPath)
+                : "<missing>";
+        }
+
+        // Serialized via JsonSerializer rather than raw string interpolation:
+        // piCodingAgentDir is a Windows path with single backslashes (e.g.
+        // "...\Users\..."), and naive "{{value}}" interpolation produced
+        // invalid JSON (`\U` read as an escape sequence) on this OS.
         File.WriteAllText(
             Path.Combine(Directory.GetCurrentDirectory(), "fake-pi-env.json"),
-            $$"""{"anthropicBaseUrl":"{{(string.IsNullOrEmpty(baseUrl) ? "<unset>" : baseUrl)}}","anthropicAuthToken":"{{(string.IsNullOrEmpty(token) ? "<unset>" : token)}}"}""");
+            System.Text.Json.JsonSerializer.Serialize(new
+            {
+                anthropicBaseUrl = string.IsNullOrEmpty(baseUrl) ? "<unset>" : baseUrl,
+                anthropicAuthToken = string.IsNullOrEmpty(token) ? "<unset>" : token,
+                piCodingAgentDir = string.IsNullOrEmpty(piCodingAgentDir) ? "<unset>" : piCodingAgentDir,
+                modelsJson = modelsJsonContent,
+            }));
     }
 
     private static string? ExtractOption(string[] args, string prefix)

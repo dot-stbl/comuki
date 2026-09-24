@@ -1,0 +1,53 @@
+{
+  "scenarioName": "new-helper-file",
+  "entries": [
+    {
+      "match": { "hasToolResult": false },
+      "response": {
+        "stopReason": "tool_use",
+        "content": [
+          { "type": "text", "text": "Creating the new OrderDiscount helper file and wiring Calculate to use it." },
+          {
+            "type": "tool_use",
+            "name": "write",
+            "input": {
+              "path": "src/OrderDiscount.cs",
+              "content": "namespace SmallRepo;\n\npublic static class OrderDiscount\n{\n    public static decimal Apply(IEnumerable<Order> orders, decimal rate)\n    {\n        decimal total = 0m;\n        foreach (var order in orders)\n        {\n            total += order.Amount * (1m - rate);\n        }\n        return total;\n    }\n}\n"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "match": { "hasToolResult": true },
+      "response": {
+        "stopReason": "tool_use",
+        "content": [
+          { "type": "text", "text": "Now wiring Calculate to delegate." },
+          {
+            "type": "tool_use",
+            "name": "edit",
+            "input": {
+              "path": "src/OrderTotal.cs",
+              "edits": [
+                {
+                  "oldText": "            decimal total = 0;\n            foreach (var order in orders!)\n            {\n                total += order.Amount;\n            }\n\n            return total;",
+                  "newText": "            return OrderDiscount.Apply(orders!, 0m);"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "match": { "hasToolResult": true },
+      "response": {
+        "stopReason": "end_turn",
+        "content": [
+          { "type": "text", "text": "OrderTotal.Calculate now delegates to OrderDiscount.Apply. Net behavior is unchanged for a zero rate." }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "scenarioName": "ambiguous-symptom",
+  "entries": [
+    {
+      "match": { "hasToolResult": false },
+      "response": {
+        "stopReason": "tool_use",
+        "content": [
+          { "type": "text", "text": "Reading OrderTotal.cs to find the bug." },
+          {
+            "type": "tool_use",
+            "name": "read",
+            "input": {
+              "path": "src/OrderTotal.cs"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "match": { "hasToolResult": true },
+      "response": {
+        "stopReason": "tool_use",
+        "content": [
+          { "type": "text", "text": "Found it: the `orders!` null-forgiving operator will NRE if a null is passed. Adding a guard." },
+          {
+            "type": "tool_use",
+            "name": "edit",
+            "input": {
+              "path": "src/OrderTotal.cs",
+              "edits": [
+                {
+                  "oldText": "        public static decimal Calculate(IEnumerable<Order>? orders)\n        {\n            decimal total = 0;",
+                  "newText": "        public static decimal Calculate(IEnumerable<Order>? orders)\n        {\n            if (orders is null)\n            {\n                throw new ArgumentNullException(nameof(orders));\n            }\n\n            decimal total = 0;"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "match": { "hasToolResult": true },
+      "response": {
+        "stopReason": "end_turn",
+        "content": [
+          { "type": "text", "text": "Fix applied. Calculate now throws ArgumentNullException on a null orders parameter; the rest of the loop is unchanged." }
+        ]
+      }
+    }
+  ]
+}

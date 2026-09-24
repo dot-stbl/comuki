@@ -1,0 +1,54 @@
+# WS10 golden-task corpus entry #5 — hard/calibration.
+# small-repo fixture has no test project, so the "tests pass" judge
+# reports n/a here; that's expected, not a bug.
+# This entry is the worked example of the LLM-judge rubric format
+# (open question from design.md). Its fakeScript produces a PARTIAL fix
+# on purpose — the deterministic judges will still fail diff-applies
+# (the script only edits a subset), and the judge scores will reflect
+# that imperfection once a real judge model is wired. With no live env
+# the judge outcome is Skipped, which is correct: deterministic failures
+# alone fail the entry, deterministic passes alone pass it.
+schemaVersion: 1
+name: ambiguous-symptom
+description: >
+  Calibration entry: the ticket describes a SYMPTOM (the agent has to
+  figure out where to fix), not an exact diff. The fakeScript produces
+  a partial/imperfect fix on purpose, so this entry is expected to
+  fail diff-applies against the pristine baseline unless a real judge
+  scores the rubric to override it.
+ticket:
+  source: github
+  title: "OrderTotal misbehaves on certain inputs"
+  body: |
+    A customer report says OrderTotal.Calculate returns the wrong value
+    in some cases. We don't know which cases. Investigate, identify the
+    bug, and fix it minimally. Preserve the public signature.
+  labels: [bug, comuki]
+  targetRepo:
+    fixture: small-repo
+    ref: main
+worker:
+  image: comuki-agent-test-worker:ws6
+  profileKey: implement
+  profilesRef: test
+model:
+  mode: fake
+  fakeScript: scripts/ambiguous-symptom.fake.json
+eval:
+  difficulty: hard
+  expectedOutcome: The agent identifies the bug (null dereference on orders!), fixes it, and leaves the public signature intact. A judge scoring the rubric should reward diagnosis + minimal fix and penalize unrelated edits.
+  allowedFiles:
+    - src/OrderTotal.cs
+  maxToolCalls: 6
+  rubric:
+    criteria:
+      - id: diagnosis
+        description: The agent correctly identifies the null-dereference on the orders parameter as the root cause.
+        weight: 2
+      - id: minimal-fix
+        description: The fix adds a guard without changing the public signature or removing unrelated logic.
+        weight: 1
+      - id: code-style
+        description: The fix matches the existing file's style (brace placement, naming, no unrelated edits).
+        weight: 1
+    minScore: 0.6

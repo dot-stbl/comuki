@@ -1,0 +1,35 @@
+# WS10 golden-task corpus entry #2 — easy.
+# small-repo fixture has no test project, so the "tests pass" judge
+# reports n/a here; that's expected, not a bug.
+schemaVersion: 1
+name: extract-magic-number
+description: >
+  Easy rename + extract a magic literal in OrderTotal.cs. The literal 0
+  currently used as the accumulator's initial value should become a
+  named constant. Calibrates the lower-middle end of difficulty.
+ticket:
+  source: github
+  title: "Replace magic 0 in OrderTotal.Calculate with a named constant"
+  body: |
+    The accumulator in OrderTotal.Calculate is initialised with a bare 0.
+    Replace it with a named constant called InitialAccumulator (or any
+    equally-named local constant of your choice) and have the loop use it.
+    No behavior change expected; the result of Calculate on a non-empty
+    sequence must remain identical.
+  labels: [cleanup, comuki]
+  targetRepo:
+    fixture: small-repo
+    ref: main
+worker:
+  image: comuki-agent-test-worker:ws6
+  profileKey: implement
+  profilesRef: test
+model:
+  mode: fake
+  fakeScript: scripts/extract-magic-number.fake.json
+eval:
+  difficulty: easy
+  expectedOutcome: A named constant replaces the literal 0 in OrderTotal.Calculate, no behavior change.
+  allowedFiles:
+    - src/OrderTotal.cs
+  maxToolCalls: 4

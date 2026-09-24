@@ -1,0 +1,32 @@
+# WS10 golden-task corpus entry #1 — trivial.
+# small-repo fixture has no test project, so the "tests pass" judge
+# reports n/a here; that's expected, not a bug.
+schemaVersion: 1
+name: null-guard-simple
+description: >
+  Trivial null-guard-shaped fix on OrderTotal.Calculate, in the existing
+  small-repo target fixture. Calibrates the lowest end of difficulty.
+ticket:
+  source: github
+  title: "OrderTotal.Calculate throws NullReferenceException on null orders"
+  body: |
+    Calculate() crashes when called with a null IEnumerable<Order>.
+    Add a guard at the top that throws ArgumentNullException(nameof(orders))
+    and otherwise leaves the loop logic unchanged.
+  labels: [bug, comuki]
+  targetRepo:
+    fixture: small-repo
+    ref: main
+worker:
+  image: comuki-agent-test-worker:ws6
+  profileKey: implement
+  profilesRef: test
+model:
+  mode: fake
+  fakeScript: scripts/null-guard-simple.fake.json
+eval:
+  difficulty: trivial
+  expectedOutcome: OrderTotal.Calculate throws ArgumentNullException for a null orders argument; the rest of the loop is untouched.
+  allowedFiles:
+    - src/OrderTotal.cs
+  maxToolCalls: 3

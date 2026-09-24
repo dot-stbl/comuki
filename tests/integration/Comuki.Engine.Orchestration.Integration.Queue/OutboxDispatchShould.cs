@@ -42,7 +42,6 @@ public sealed class OutboxDispatchShould(PostgresCollectionFixture postgres)
         int batchSize = 25,
         int maxAttempts = 5)
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
         await postgres.ResetDatabaseAsync();
 
         var clock = new FakeTimeProvider(baseTime);
@@ -62,7 +61,7 @@ public sealed class OutboxDispatchShould(PostgresCollectionFixture postgres)
         // AFTER AddOrchestrationQueue: the Noop installed by the
         // extension's TryAddScoped is replaced here (last registration
         // wins for the singular resolution the dispatcher does).
-        services.AddSingleton<IOutboxPublisher>(publisher);
+        services.AddSingleton(publisher);
 
         return (clock, services.BuildServiceProvider());
     }
@@ -183,9 +182,9 @@ public sealed class OutboxDispatchShould(PostgresCollectionFixture postgres)
             // Sweep 3: the dead-lettered row is excluded from the claim's
             // WHERE ... dead_lettered_at IS NULL filter — the dispatcher
             // hits zero pending rows, so the publisher is never invoked.
-            var sweep3 = await dispatcher.DispatchAsync(cancellationToken);
-            sweep3.Dispatched.ShouldBe(0);
-            sweep3.DeadLettered.ShouldBe(0);
+            var (dispatched, deadLettered) = await dispatcher.DispatchAsync(cancellationToken);
+            dispatched.ShouldBe(0);
+            deadLettered.ShouldBe(0);
             throwingPublisher.InvocationCount.ShouldBe(2);
 
             // The dead-lettered row is still present — never silently dropped.

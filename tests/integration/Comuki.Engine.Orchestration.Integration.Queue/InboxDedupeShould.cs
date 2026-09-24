@@ -28,7 +28,6 @@ public sealed class InboxDedupeShould(PostgresCollectionFixture postgres)
     /// <summary>Builds a self-contained provider; the inbox has no per-test transport to swap, so the defaults are constant.</summary>
     private async Task<ServiceProvider> BuildProviderAsync()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
         await postgres.ResetDatabaseAsync();
 
         var clock = new FakeTimeProvider(baseTime);

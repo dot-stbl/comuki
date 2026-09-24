@@ -55,6 +55,14 @@ public sealed class OrchestrationDbContext(
     public DbSet<MergeQueueEntry> MergeQueue => Set<MergeQueueEntry>();
 
     /// <summary>
+    /// Merge-batch aggregate (issue #11) — coordinated group of merge-queue
+    /// entries that share a release window. Batches carry no project
+    /// scope, so no query filter applies — every subject sees every batch
+    /// (mirrors the merge_queue null-project row convention).
+    /// </summary>
+    public DbSet<MergeBatch> MergeBatches => Set<MergeBatch>();
+
+    /// <summary>
     /// Left disjunct of the scope filter: true when the current subject
     /// sees every project (a platform-scope role, a system consumer, or a
     /// directly-constructed system context).
@@ -96,7 +104,8 @@ public sealed class OrchestrationDbContext(
             .ApplyConfiguration(new WorkItemConfiguration())
             .ApplyConfiguration(new WorkItemDependencyConfiguration())
             .ApplyConfiguration(new RunEventConfiguration())
-            .ApplyConfiguration(new MergeQueueConfiguration());
+            .ApplyConfiguration(new MergeQueueConfiguration())
+            .ApplyConfiguration(new MergeBatchConfiguration());
 
         // The object axis, as row-level filters: a run is visible when its
         // project is in the subject's scope; a work item (no project column

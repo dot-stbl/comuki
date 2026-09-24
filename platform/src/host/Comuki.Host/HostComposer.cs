@@ -291,18 +291,20 @@ internal static class HostComposer
         builder.Services.AddKnowledgeInfrastructure(builder.Configuration);
 
         // MCP server (S10 #9): JSON-RPC 2.0 over /api/v1/mcp. The
-        // dispatcher is a singleton — it carries no per-call state and
-        // the underlying handlers (IKnowledgeIngestor, IKnowledgeSearcher,
-        // IMemoryStore, RunsListHandler) are resolved per-call by the DI
-        // container. The worker-caller surface: the project resolver maps
-        // a worker token to its leased work item's project (scoped — reads
-        // the orchestration DbContext), the note limiter caps memory.note
-        // writes per worker (singleton, in-memory window).
+        // dispatcher and its tool handlers are Scoped — resolved once
+        // per HTTP request via the `McpServer server` parameter binding
+        // in McpModuleEndpoints.DispatchAsync, which ASP.NET Core pulls
+        // from `context.RequestServices`. Scoped is required because
+        // McpToolHandlers constructor-injects Scoped `RunsListHandler`;
+        // a Singleton would be a captive-dependency violation that
+        // ValidateOnBuild refuses to boot. The rate limiters stay
+        // Singleton — they hold in-memory windows keyed by worker id,
+        // not per-request state.
         builder.Services.AddScoped<IWorkerProjectResolver, OrchestrationWorkerProjectResolver>();
         builder.Services.AddSingleton<WorkerNoteRateLimiter>();
         builder.Services.AddSingleton<WorkerSuggestRateLimiter>();
-        builder.Services.AddSingleton<McpToolHandlers>();
-        builder.Services.AddSingleton<McpServer>();
+        builder.Services.AddScoped<McpToolHandlers>();
+        builder.Services.AddScoped<McpServer>();
 
         // Scheduler module (S15): per-project cron / one-shot admission
         // source. The application façade + dispatcher worker live in
@@ -534,8 +536,12 @@ internal static class HostComposer
         // transactional and idempotent, so an up-to-date database is a
         // fast no-op. Skipped under build-time OpenAPI generation, which
         // boots on a dummy connection string by contract (zero side
-        // effects, no DB).
-        if (!OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration)
+        // effects, no DB), and under the DI-composition unit test
+        // (Host:Testing:SkipBootMigrations=true), which builds the
+        // service graph against a probe connection string to prove
+        // ValidateOnBuild/ValidateScopes stay clean — never production.
+        var skipBootMigrations = builder.Configuration.GetValue<bool>("Host:Testing:SkipBootMigrations");
+        if (!OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration && !skipBootMigrations)
         {
             var migrationSummary = await ComukiDatabaseMigrator.EnsureAllAsync(database.ConnectionString, CancellationToken.None);
 

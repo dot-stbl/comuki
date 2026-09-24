@@ -66,6 +66,7 @@ public static class OrchestrationInfrastructureExtensions
         services.AddScoped<IWorkItemQueue, WorkItemQueueEf>();
         services.AddScoped<IRunJournal, RunJournalEf>();
         services.AddScoped<IMergeQueueStore, MergeQueueStoreEf>();
+        services.AddScoped<IMergeBatchStore, MergeBatchStoreEf>();
         services.AddScoped<LeaseReaper>();
         services.AddSingleton<IComukiWorker, LeaseReaperComukiWorker>();
         services.AddScoped<EscalationTimeoutSweeper>();

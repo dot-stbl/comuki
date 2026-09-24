@@ -1,0 +1,269 @@
+# Comuki T3 hermetic end-to-end compose stack (WS13, openspec add-agentic-test-contour).
+#
+# Boots Postgres+pgvector + MinIO + the Comuki host (the same image as
+# deploy/compose/docker-compose.yml's comuki-host, built from the repo root)
+# + a TestFakeModel reference container + a TestFakePi-based worker image —
+# wired so the host's Docker compute provider can spawn worker containers on
+# THIS compose's network (the TestFakePi image is the worker; no `pi` binary
+# or live model call is involved). Zero paid-model credentials anywhere.
+#
+# This file is the open-source counterpart of the closed-source
+# deploy/hybrid/** GitLab-only path. WS13's three scripts (e2e-up.mjs,
+# e2e-down.mjs, e2e-smoke.mjs) drive it: up, login as bootstrap admin,
+# stamp an API key, run one webhook→run scenario, tear down.
+#
+# Quick start (Podman, this repo's documented runtime):
+#   cd <repo-root>
+#   node scripts/ci/e2e-up.mjs             # builds comuki-test-fake-model:e2e
+#                                          # then compose build + up --wait
+#   node scripts/ci/e2e-smoke.mjs          # creates project + connection,
+#                                          # posts the issue-opened webhook,
+#                                          # polls the run, writes report.json/.md
+#   node scripts/ci/e2e-down.mjs           # compose down -v, removes bootstrap.json
+#
+# Override the host socket path for non-default runtimes (Podman rootless
+# socket, Colima, etc.):
+#   COMUKI_E2E_DOCKER_SOCKET=/run/user/1000/podman/podman.sock \
+#   COMUKI_E2E_DOCKER_SOCKET_GID=1000 \
+#     node scripts/ci/e2e-up.mjs
+#
+# See .agents/rules/process/local-test-runtime.md §Docker/Podman socket for
+# the T3 tier (this stack) — the WS11/Testcontainers section above documents
+# the same Docker client-builder gap (issue #153) the DOCKER_HOST env var
+# cannot paper over.
+#
+# NOTE on the testfakemodel service: it has NO `build:` block. Its Dockerfile
+# requires a non-default .containerignore (the repo root's .dockerignore
+# excludes tests/* wholesale — see tests/tools/Comuki.TestFakeModel/Dockerfile
+# header), and `docker compose build` has no YAML key to pass a custom
+# ignorefile. e2e-up.mjs builds it via raw `podman build --ignorefile` BEFORE
+# compose ever runs. Compose references the pre-built tag `image:
+# comuki-test-fake-model:e2e` and never tries to build it.
+
+name: comuki-e2e
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: comuki-e2e-postgres
+    restart: "no"
+    environment:
+      POSTGRES_USER: ${COMUKI_E2E_POSTGRES_USER:-comuki}
+      POSTGRES_PASSWORD: ${COMUKI_E2E_POSTGRES_PASSWORD:-comuki_e2e_dev}
+      POSTGRES_DB: ${COMUKI_E2E_POSTGRES_DB:-comuki_e2e}
+    ports:
+      - "${COMUKI_E2E_POSTGRES_PORT:-17181}:5432"
+    volumes:
+      - postgres-e2e-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${COMUKI_E2E_POSTGRES_USER:-comuki} -d ${COMUKI_E2E_POSTGRES_DB:-comuki_e2e}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks:
+      - comuki-e2e-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: comuki-e2e-minio
+    restart: "no"
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${COMUKI_E2E_MINIO_ROOT_USER:-comuki}
+      MINIO_ROOT_PASSWORD: ${COMUKI_E2E_MINIO_ROOT_PASSWORD:-comuki_e2e_dev}
+    ports:
+      - "${COMUKI_E2E_MINIO_PORT:-17182}:9000"
+      - "${COMUKI_E2E_MINIO_CONSOLE_PORT:-17183}:9001"
+    volumes:
+      - minio-e2e-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local 2>/dev/null || curl -fsS http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      - comuki-e2e-net
+
+  comuki-e2e-migrator:
+    # One-shot EF Core migrator, same image as the host (compose builds it
+    # once and reuses the image for the host — mirrors how dev compose's
+    # comuki-migrator and comuki-host both reference the same build block).
+    image: ${COMUKI_E2E_IMAGE_TAG:-comuki-e2e:local}
+    build:
+      context: ..
+      dockerfile: deploy/compose/docker/host.Dockerfile
+      tags:
+        - comuki-e2e:local
+    container_name: comuki-e2e-migrator
+    restart: "no"
+    command: ["/app/migrator/comuki-migrator"]
+    environment:
+      COMUKI_ENV: ${COMUKI_E2E_ENV:-Development}
+      COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_E2E_POSTGRES_DB:-comuki_e2e};Username=${COMUKI_E2E_POSTGRES_USER:-comuki};Password=${COMUKI_E2E_POSTGRES_PASSWORD:-comuki_e2e_dev}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - comuki-e2e-net
+
+  comuki-e2e-host:
+    # The orchestrator: REST API + intake + workers + scheduler + artifacts.
+    # Spawns TestFakePi-based workers through the Docker socket — those
+    # workers run TestFakePi (no model call, see tests/tools/Comuki.TestFakePi/
+    # worker-test.Dockerfile header).
+    image: ${COMUKI_E2E_IMAGE_TAG:-comuki-e2e:local}
+    build:
+      context: ..
+      dockerfile: deploy/compose/docker/host.Dockerfile
+      tags:
+        - comuki-e2e:local
+    container_name: comuki-e2e-host
+    restart: "no"
+    command: ["/app/host/comuki"]
+    environment:
+      COMUKI_ENV: ${COMUKI_E2E_ENV:-Development}
+      COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_E2E_POSTGRES_DB:-comuki_e2e};Username=${COMUKI_E2E_POSTGRES_USER:-comuki};Password=${COMUKI_E2E_POSTGRES_PASSWORD:-comuki_e2e_dev}
+      COMUKI_IDENTITY_APIKEY_PEPPER: ${COMUKI_E2E_IDENTITY_APIKEY_PEPPER:-comuki-e2e-apikey-pepper}
+      COMUKI_TOKEN_PEPPER: ${COMUKI_E2E_TOKEN_PEPPER:-comuki-e2e-token-pepper}
+      COMUKI_BOOTSTRAP_ADMIN_EMAIL: ${COMUKI_E2E_BOOTSTRAP_ADMIN_EMAIL:-e2e-admin@comuki.local}
+      COMUKI_BOOTSTRAP_ADMIN_PASSWORD: ${COMUKI_E2E_BOOTSTRAP_ADMIN_PASSWORD:-comuki-e2e-dev-only}
+      COMUKI_PUBLIC_HOST_URL: ${COMUKI_E2E_PUBLIC_HOST_URL:-http://localhost:17180}
+      COMUKI_HOST_CORS_ALLOWEDORIGINS_0: ${COMUKI_E2E_CORS_ORIGIN:-http://localhost:17180}
+      # MinIO / artifacts
+      COMUKI_ARTIFACTS_ENDPOINT: minio:9000
+      COMUKI_ARTIFACTS_ACCESSKEY: ${COMUKI_E2E_MINIO_ROOT_USER:-comuki}
+      COMUKI_ARTIFACTS_SECRETKEY: ${COMUKI_E2E_MINIO_ROOT_PASSWORD:-comuki_e2e_dev}
+      COMUKI_ARTIFACTS_BUCKET: ${COMUKI_E2E_ARTIFACTS_BUCKET:-comuki-e2e-run-bundles}
+      COMUKI_ARTIFACTS_USESSL: "false"
+      COMUKI_ARTIFACTS_AUTOCREATEBUCKET: "true"
+      # Compute: Docker provider, network split exactly like dev compose —
+      # NetworkMode = the default net (workers join it by default), fenced
+      # net = the internal worker-egress fence (workers reach ONLY the host
+      # by service DNS, never the internet).
+      COMUKI_COMPUTE_PROVIDER: docker
+      COMUKI_COMPUTE_DOCKER_NETWORKMODE: comuki-e2e-net
+      COMUKI_COMPUTE_DOCKER_FENCEDNETWORK: comuki-e2e-worker-net
+      # All three worker-image envs point at the same TestFakePi-based
+      # build-only image e2e-up.mjs produced (see `worker-image` below).
+      COMUKI_COMPUTE_SCALE_WORKERIMAGE: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
+      COMUKI_CHAT_WORKER_IMAGE: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
+      COMUKI_SCHEDULER_WORKER_IMAGE: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
+      # The orchestrator gRPC URL workers dial into — must be the in-network
+      # service DNS (comuki-e2e-host), NOT a published port; the worker
+      # container joins the fence net and reaches the host there.
+      COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-e2e-host:8080
+      # HMAC secret for the GitHub webhook signature. The smoke script
+      # posts the webhook with `secretEnvRef: "COMUKI_E2E_GH_HOOK_SECRET"`
+      # and signs the body with the same value (the literal string
+      # "e2e-smoke-hook-secret" by default). MUST live on the host
+      # container, not just the smoke script — the host resolves the env
+      # var by name at signature-verification time
+      # (platform/src/modules/Intake/Comuki.Modules.Intake.Domain/Connections/SourceConnection.cs).
+      COMUKI_E2E_GH_HOOK_SECRET: ${COMUKI_E2E_GH_HOOK_SECRET:-e2e-smoke-hook-secret}
+      # RunAsUser matches the worker-test image's USER 1000:1000 directive
+      # (tests/tools/Comuki.TestFakePi/worker-test.Dockerfile). The Docker
+      # compute provider's RunAsUser option, when set, stamps
+      # `docker run --user <value>` on every worker it starts — without it,
+      # containers run as root inside the worker image's own USER line,
+      # which the image's USER 1000:1000 already overrides.
+      COMUKI_COMPUTE_DOCKER_RUNASUSER: "1000"
+    ports:
+      - "${COMUKI_E2E_HOST_PORT:-17180}:8080"
+    volumes:
+      # The Docker compute provider needs to start worker containers, so
+      # the host must reach the docker/podman daemon. Docker.DotNet
+      # (issue #153) does NOT read DOCKER_HOST — it falls back to
+      # /var/run/docker.sock inside the Linux container. Mount the
+      # platform's real socket there. The default socket path is
+      # /var/run/docker.sock on Docker Desktop / Podman machine (verified
+      # empirically 2026-09-24, see .agents/rules/process/local-test-runtime.md
+      # §Docker/Podman socket). Override via COMUKI_E2E_DOCKER_SOCKET for
+      # rootless Podman ($XDG_RUNTIME_DIR/podman/podman.sock) etc.
+      - ${COMUKI_E2E_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    group_add:
+      # Empirically verified (2026-09-24, podman-machine-default WSL2):
+      # /var/run/docker.sock is root:root mode 777; a non-root container
+      # user can only reach it by joining group GID 0 (root group). The
+      # 999/DOCKER_GID convention dev compose uses is for a native Linux
+      # `docker` group and does NOT apply here. Override via
+      # COMUKI_E2E_DOCKER_SOCKET_GID for runtimes where the socket is
+      # owned by a different gid (rootless Podman: 1000, etc.).
+      - "${COMUKI_E2E_DOCKER_SOCKET_GID:-0}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      comuki-e2e-migrator:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/api/v1/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks:
+      - comuki-e2e-net
+      - comuki-e2e-worker-net
+
+  comuki-e2e-testfakemodel:
+    # Standalone fake model server — exactly the image the worker would
+    # call if this stack ever used a real model. TestFakePi makes no model
+    # call (see tests/tools/Comuki.TestFakePi/worker-test.Dockerfile), so
+    # nothing in this stack actually talks to this service today. It is
+    # present because the design.md T3 architecture diagram names it and
+    # because wiring the volume mount here keeps the future "worker that
+    # actually calls a model" path one env-var flip away.
+    #
+    # Pre-built by e2e-up.mjs via `podman build --ignorefile` (see header
+    # comment on this file). NO `build:` block here — the Dockerfile needs
+    # a custom .containerignore that compose cannot pass.
+    image: comuki-test-fake-model:e2e
+    container_name: comuki-e2e-testfakemodel
+    restart: "no"
+    command: ["--mode", "fake", "--script", "/scripts/add-null-check.fake.json"]
+    environment:
+      COMUKI_TESTFAKEMODEL_MODE: fake
+      COMUKI_TESTFAKEMODEL_PORT: "17190"
+      COMUKI_TESTFAKEMODEL_SCRIPT: /scripts/add-null-check.fake.json
+    volumes:
+      - ../tests/fixtures/scenarios/small-repo/scripts/add-null-check.fake.json:/scripts/add-null-check.fake.json:ro
+    ports:
+      - "${COMUKI_E2E_TESTFAKEMODEL_PORT:-17190}:17190"
+    # Base image (mcr.microsoft.com/dotnet/aspnet:10.0) has no curl and
+    # this Dockerfile is intentionally not ours to change — no healthcheck.
+    # Other services don't depends_on it (nothing actually calls it).
+    networks:
+      - comuki-e2e-net
+
+  worker-image:
+    # Build-only service: produces the TestFakePi-based worker image the
+    # host spawns per work item. Exits immediately — its only job is to
+    # have `comuki-agent-test-worker:e2e` present locally. Mirrors dev
+    # compose's `worker-image` service exactly.
+    image: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
+    build:
+      context: ..
+      dockerfile: tests/tools/Comuki.TestFakePi/worker-test.Dockerfile
+    container_name: comuki-e2e-worker-image
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c", "exit 0"]
+    networks:
+      - comuki-e2e-net
+
+networks:
+  comuki-e2e-net:
+    name: comuki-e2e-net
+    driver: bridge
+  comuki-e2e-worker-net:
+    # Worker egress fence — internal, no default route to the internet.
+    # The Docker compute provider verifies this network exists and is
+    # internal before every worker start (DockerEgressFence), and refuses
+    # unfenced starts unless COMUKI_COMPUTE_ALLOWUNFENCEDEGRESS=true.
+    name: comuki-e2e-worker-net
+    driver: bridge
+    internal: true
+
+volumes:
+  postgres-e2e-data:
+  minio-e2e-data:

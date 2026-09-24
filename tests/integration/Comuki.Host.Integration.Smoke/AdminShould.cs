@@ -17,7 +17,8 @@ namespace Comuki.Host.Integration.Smoke;
 ///     <c>code = permission.denied</c>.</item>
 /// </list>
 /// </summary>
-public sealed class AdminShould(SmokeHostServer server) : IClassFixture<SmokeHostServer>
+[Collection(nameof(SmokeIntegrationCollection))]
+public sealed class AdminShould(SmokeHostServer server)
 {
     private readonly SmokeHostServer server = server;
 

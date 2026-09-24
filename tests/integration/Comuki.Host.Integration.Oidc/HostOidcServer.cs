@@ -1,18 +1,19 @@
 using Comuki.Host.Testing;
+using Comuki.Host.Testing.Fixtures;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Oidc;
 
 /// <summary>
-/// Boots the real host composition (<see cref="HostComposer"/>) against a
-/// migrated Testcontainers Postgres (every module context, via
-/// <see cref="HostDatabaseMigrator"/>), with a real Keycloak (realm
-/// <c>comuki</c> imported from the same
+/// Boots the real host composition (<see cref="HostComposer"/>) against
+/// one shared, migrated Postgres (owned by this type's own
+/// <see cref="PostgresCollectionFixture"/>
+/// — one container for the whole collection, not one per test class),
+/// with a real Keycloak (realm <c>comuki</c> imported from the same
 /// <c>deploy/keycloak/comuki-realm.json</c> the compose profile uses) as
 /// the configured OIDC provider.
 /// <para>
@@ -36,8 +37,7 @@ public sealed class HostOidcServer : IAsyncLifetime
     public const string TestPassword = "test-pass-123";
     public const string TestEmail = "test-user@comuki.test";
 
-    private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("pgvector/pgvector:pg16")
-        .Build();
+    private readonly PostgresCollectionFixture postgres = new();
     [Obsolete]
     private readonly IContainer keycloak = new ContainerBuilder()
         .WithImage("quay.io/keycloak/keycloak:26.2.5")
@@ -103,13 +103,11 @@ public sealed class HostOidcServer : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await postgres.StartAsync(cancellationToken);
-        await keycloak.StartAsync(cancellationToken);
+        await Task.WhenAll(postgres.InitializeAsync().AsTask(), keycloak.StartAsync(cancellationToken));
 
         Authority = $"http://localhost:{keycloak.GetMappedPublicPort(8080)}/realms/comuki";
 
-        var connectionString = postgres.GetConnectionString();
-        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
+        var connectionString = postgres.ConnectionString;
 
         Environment.SetEnvironmentVariable(ClientSecretEnv, "test-client-secret");
 

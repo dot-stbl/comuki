@@ -7,6 +7,7 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Host.Translator.Api.Registration;
 using Comuki.Host.Translator.Execution.Loop;
 using Comuki.Host.Translator.Grpc;
@@ -22,27 +23,27 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Translator.Integration.PiCli;
 
 /// <summary>
 /// The crown test (T3.5): one work item through the whole runtime — the
-/// real EF queue on Testcontainers Postgres, the real worker REST + gRPC
-/// host in-process, and the real translator loop spawning
-/// <c>TestFakePi</c>. Proves: claim → gRPC stream → fake pi streams →
-/// journal gets stage events → StageReport lands → item completes → lease
-/// released. The failure twin proves a non-zero pi exit fails the item and
-/// still releases the lease.
+/// real EF queue on the collection's shared, migrated Postgres
+/// (<see cref="PostgresCollectionFixture"/>, reset to empty before every
+/// test), the real worker REST + gRPC host in-process, and the real
+/// translator loop spawning <c>TestFakePi</c>. Proves: claim → gRPC stream
+/// → fake pi streams → journal gets stage events → StageReport lands →
+/// item completes → lease released. The failure twin proves a non-zero pi
+/// exit fails the item and still releases the lease.
 /// </summary>
-public sealed class TranslatorE2EShould : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres (<see cref="PiCliIntegrationCollection"/>) — reset to empty for every test, migrated once for the whole run.</param>
+[Collection(nameof(PiCliIntegrationCollection))]
+public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
     private const string Image = "ghcr.io/comuki/worker:s3";
     private const string ProfilesRef = "refs/heads/main";
     private const string ProfileKey = "implement";
-
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine").Build();
 
     private TestWorkerHost host = null!;
 
@@ -53,8 +54,13 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
-        await container.StartAsync(TestContext.Current.CancellationToken);
-        await MigrateAsync(container.GetConnectionString());
+        // The orchestration schema is already migrated once by
+        // PostgresCollectionFixture (HostDatabaseMigrator.MigrateAllAsync
+        // covers it) — this class used to spin its own container and
+        // hand-migrate via MigrateAsync below, both now superseded. Reset
+        // gives every test the same empty-tables starting point the old
+        // per-test container gave it.
+        await postgres.ResetDatabaseAsync();
 
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -86,7 +92,7 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
         {
             services.AddSingleton(TimeProvider.System);
             services
-                .AddOrchestrationPersistence(container.GetConnectionString())
+                .AddOrchestrationPersistence(postgres.ConnectionString)
                 .AddOrchestrationQueue(configuration)
                 .AddOrchestrationApplication()
                 .AddWorkerRuntime(configuration);
@@ -110,7 +116,6 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
     {
         await translatorProvider.DisposeAsync();
         await host.DisposeAsync();
-        await container.DisposeAsync();
     }
 
     [Fact]
@@ -263,18 +268,6 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
         services.AddWorkerGrpcClient();
 
         return services.BuildServiceProvider();
-    }
-
-    private static async Task MigrateAsync(string connectionString)
-    {
-        // A standalone provider (not the test host): hosted services never
-        // run in a bare BuildServiceProvider, so the reaper cannot race the
-        // migrations it depends on.
-        var services = new ServiceCollection();
-        services.AddOrchestrationPersistence(connectionString);
-        await using var provider = services.BuildServiceProvider();
-        var db = provider.GetRequiredService<OrchestrationDbContext>();
-        await db.Database.MigrateAsync(TestContext.Current.CancellationToken);
     }
 
     private async Task<(Guid RunId, Guid WorkItemId)> SeedQueuedItemAsync(string brief)

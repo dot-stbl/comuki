@@ -167,14 +167,16 @@ public static class EvalRun
             UsdMicros = (long)decimal.Round(transcript.CostUsd * 1_000_000m, MidpointRounding.AwayFromZero),
         };
 
-        return new EvalEntryResult(
-            ScenarioName: corpusEntry.Scenario.Name,
-            Difficulty: corpusEntry.Eval.Difficulty,
-            Passed: score.Passed,
-            Score: score,
-            Cost: cost,
-            DurationMs: transcript.DurationMs,
-            ArtifactPaths: [workingDirectory]);
+        return new EvalEntryResult
+        {
+            ScenarioName = corpusEntry.Scenario.Name,
+            Difficulty = corpusEntry.Eval.Difficulty,
+            Passed = score.Passed,
+            Score = score,
+            Cost = cost,
+            DurationMs = transcript.DurationMs,
+            ArtifactPaths = [workingDirectory],
+        };
     }
 
     private static EvalEntryResult BuildFailureEntry(
@@ -194,14 +196,16 @@ public static class EvalRun
         };
 
         var score = EvalScorer.Score(corpusEntry, deterministic, JudgeOutcome.Error(failureMessage));
-        return new EvalEntryResult(
-            ScenarioName: corpusEntry.Scenario.Name,
-            Difficulty: corpusEntry.Eval.Difficulty,
-            Passed: score.Passed,
-            Score: score,
-            Cost: new Comuki.AgentTest.Runner.Reporting.Report.RunCost(),
-            DurationMs: transcript.DurationMs,
-            ArtifactPaths: []);
+        return new EvalEntryResult
+        {
+            ScenarioName = corpusEntry.Scenario.Name,
+            Difficulty = corpusEntry.Eval.Difficulty,
+            Passed = score.Passed,
+            Score = score,
+            Cost = new Comuki.AgentTest.Runner.Reporting.Report.RunCost(),
+            DurationMs = transcript.DurationMs,
+            ArtifactPaths = [],
+        };
     }
 
     private static string BuildTranscriptSummary(RunTranscript transcript)

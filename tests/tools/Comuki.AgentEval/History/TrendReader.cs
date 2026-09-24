@@ -7,25 +7,40 @@ namespace Comuki.AgentEval.History;
 /// <summary>
 /// One line of <see cref="HistoryAppender"/>'s flat history file.
 /// </summary>
-/// <param name="Timestamp">UTC wall-clock start of the run.</param>
-/// <param name="Mode">Execution mode — fake | replay | live.</param>
-/// <param name="Corpus">The corpus directory the run loaded entries from.</param>
-/// <param name="Total">Total scenarios the run executed.</param>
-/// <param name="Passed">Scenarios that passed every assertion.</param>
-/// <param name="Failed">Scenarios that failed at least one assertion.</param>
-/// <param name="Skipped">Scenarios skipped (zero in WS10 today — the runner does not have a "skipped" code path).</param>
-/// <param name="AverageQualityScore">Mean of per-entry quality scores in [0, 1].</param>
-/// <param name="CostUsdMicros">Aggregate cost across the run in micro-USD.</param>
-public sealed record HistoryEntry(
-    DateTimeOffset Timestamp,
-    string Mode,
-    string Corpus,
-    int Total,
-    int Passed,
-    int Failed,
-    int Skipped,
-    double AverageQualityScore,
-    long CostUsdMicros);
+/// <remarks>
+/// Init-only properties (no positional primary constructor) so
+/// <c>System.Text.Json</c>'s default reflection-based deserializer
+/// can materialize this type via its parameterless constructor.
+/// </remarks>
+public sealed class HistoryEntry
+{
+    /// <summary>UTC wall-clock start of the run.</summary>
+    public DateTimeOffset Timestamp { get; init; }
+
+    /// <summary>Execution mode — fake | replay | live.</summary>
+    public required string Mode { get; init; }
+
+    /// <summary>The corpus directory the run loaded entries from.</summary>
+    public required string Corpus { get; init; }
+
+    /// <summary>Total scenarios the run executed.</summary>
+    public int Total { get; init; }
+
+    /// <summary>Scenarios that passed every assertion.</summary>
+    public int Passed { get; init; }
+
+    /// <summary>Scenarios that failed at least one assertion.</summary>
+    public int Failed { get; init; }
+
+    /// <summary>Scenarios skipped (zero in WS10 today — the runner does not have a "skipped" code path).</summary>
+    public int Skipped { get; init; }
+
+    /// <summary>Mean of per-entry quality scores in [0, 1].</summary>
+    public double AverageQualityScore { get; init; }
+
+    /// <summary>Aggregate cost across the run in micro-USD.</summary>
+    public long CostUsdMicros { get; init; }
+}
 
 /// <summary>
 /// Reads <see cref="HistoryAppender"/>'s JSONL history file into

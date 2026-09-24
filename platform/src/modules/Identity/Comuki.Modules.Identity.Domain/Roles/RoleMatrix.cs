@@ -90,7 +90,7 @@ public static class RoleMatrix
                 KnowledgeRead,
                 VerifyRead,
                 ProjectRead,
-                SchedulerRead, SchedulerWrite,
+                SchedulerRead,
             ],
             [Role.Viewer] =
             [

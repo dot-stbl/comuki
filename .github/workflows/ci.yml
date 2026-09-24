@@ -4,7 +4,11 @@
 # - Build gate  = `dotnet build comuki.slnx -c Debug` (warnings-as-errors,
 #   analyzers, format gate — all enforced by Directory.Build.props, no extra flags).
 # - Tests       = xUnit v3 on Microsoft Testing Platform: `dotnet run --project <csproj>`.
-#   `dotnet test` cannot discover xUnit v3 — do not switch to it.
+#   `dotnet test` cannot discover xUnit v3 — do not switch to it. Discovery +
+#   run + CTRF-report parsing + report.json/report.md go through
+#   `scripts/ci/dotnet-test.mjs` (see openspec/changes/add-agentic-test-contour/design.md),
+#   the same script GitLab's deploy/hybrid/ci.yml calls, so both pipelines
+#   agree on pass/fail for a given commit.
 # - No docker image build here yet — the worker image arrives with S3.
 name: ci
 
@@ -46,17 +50,19 @@ jobs:
       - name: Build
         run: dotnet build comuki.slnx -c Debug --no-restore
 
+  # Full unit matrix (tests/unit/*/ + tests/Comuki.Architecture.Tests),
+  # discovered and run by scripts/ci/dotnet-test.mjs — replaces the old
+  # hand-picked 2-project matrix. One job (not a per-project matrix): the
+  # script builds the solution once, then runs every project with
+  # --no-build, which is cheaper than N runners each restoring + building
+  # the project graph from scratch. GitLab's test:unit (deploy/hybrid/ci.yml)
+  # calls the same script with the same flags, so both pipelines agree on
+  # pass/fail for a given commit.
   test-be:
-    name: test backend (${{ matrix.project }})
+    name: test backend (unit, full matrix)
     needs: build-be
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - tests/Comuki.Architecture.Tests
-          - tests/unit/Comuki.Host.Translator.Unit.StreamJson
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -72,11 +78,28 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      # xUnit v3 = Microsoft Testing Platform: run the test project directly.
-      # Fresh runner (build-be artifacts do not carry over) -> plain `dotnet run`
-      # restores + builds the project graph, then runs.
-      - name: Run tests
-        run: dotnet run --project ${{ matrix.project }} -c Debug
+      # Fresh runner (build-be artifacts do not carry over) -> explicit
+      # restore + build, then the script runs every project with --no-build.
+      - name: Restore
+        run: dotnet restore comuki.slnx
+
+      - name: Build
+        run: dotnet build comuki.slnx -c Debug --no-restore
+
+      # xUnit v3 = Microsoft Testing Platform: `dotnet test` cannot discover
+      # it, every project runs via `dotnet run --project`. The script parses
+      # each project's CTRF report (locale-independent, unlike grepping the
+      # human-readable summary lines) and writes report.json/report.md in
+      # the shape design.md's "Report format for agents" documents.
+      - name: Run unit tests (full matrix)
+        run: node scripts/ci/dotnet-test.mjs --tier=unit --full --report-dir artifacts/test-reports/unit
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: artifacts/test-reports/unit
 
   # Integration suites boot a real Postgres through Testcontainers. They had
   # never run in CI, and that is how a broken anonymous-webhook path and a
@@ -106,44 +129,26 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
-      # Comuki.Host.Testing is the shared harness library, not a suite — it has
-      # no entry point and is skipped by the glob below on purpose.
-      # The step reads the run summary to tell a skipped suite from a broken
-      # one, so the summary has to say the same words everywhere. Without
-      # this the parse is silently locale-dependent: a developer with a
-      # localised SDK gets a different answer from the runner.
+      - name: Restore
+        run: dotnet restore comuki.slnx
+
+      - name: Build
+        run: dotnet build comuki.slnx -c Debug --no-restore
+
+      # Comuki.Host.Testing is the shared harness library, not a suite — it
+      # has no entry point; scripts/ci/dotnet-test.mjs excludes it by name.
+      # The script parses each project's CTRF report to tell a fully-skipped
+      # suite (0 failed, N total) apart from a broken one (0 tests
+      # discovered at all) — no more grepping localized summary lines.
       - name: Run integration suites
-        env:
-          DOTNET_CLI_UI_LANGUAGE: en
-        run: |
-          set -uo pipefail
-          status=0
-          log=$(mktemp)
-          for project in tests/integration/*/; do
-            name=$(basename "$project")
-            if [ "$name" = "Comuki.Host.Testing" ]; then
-              continue
-            fi
-            echo "::group::$name"
-            if dotnet run --project "$project" -c Debug > "$log" 2>&1; then
-              cat "$log"
-            else
-              code=$?
-              cat "$log"
-              # Exit 8 is the testing platform saying "zero tests ran". A suite
-              # whose cases are all deliberately skipped reports that too, and a
-              # recorded decision to skip is not a failure. Tell them apart by
-              # what the run actually found: a broken discovery reports no tests
-              # at all, a fully skipped suite still counts them.
-              if [ "$code" -eq 8 ] && grep -qE "total: [1-9]" "$log" && grep -qE "failed: 0" "$log"; then
-                echo "::warning title=$name::every test in this suite is skipped"
-              else
-                status=1
-              fi
-            fi
-            echo "::endgroup::"
-          done
-          exit "$status"
+        run: node scripts/ci/dotnet-test.mjs --tier=integration --report-dir artifacts/test-reports/integration
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-report
+          path: artifacts/test-reports/integration
 
   build-fe:
     name: build frontend (dashboard)

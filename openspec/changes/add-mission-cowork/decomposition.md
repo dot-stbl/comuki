@@ -218,3 +218,11 @@ can address Mission-scoped evidence).
 `openspec validate add-mission-cowork` passes today (before and after this
 file was added — this document is index-only prose, not a spec delta, so it
 does not change the change's validity).
+
+## Decisions (user, 2026-09-24)
+
+1. **Knowledge** — write a Knowledge capability spec first, as its own change **add-knowledge-spec** (https://github.com/dot-stbl/comuki/issues/160), landing before `add-context-fabric` (#96). #96 depends on it.
+2. **§13 Crown verification** — becomes a 19th change **add-mission-cowork-verification** (https://github.com/dot-stbl/comuki/issues/161), after #104; built on the agentic test contour (#128).
+3. **Spec splits** — accepted as proposed above (missions: #93/#94/#99; identity: #93/#90/#95). The tightened wave plan **supersedes** the dependency lists declared in the GitHub issues.
+4. **Worker pools (#100)** — single-slot **compatibility mode** through the WorkerPoolState → WorkerHostId+slots transition (existing tests keep passing until the cutover change removes them explicitly).
+5. **CLI** — Mission TUI and non-interactive commands (tasks 12.3/12.4) move to **rewrite-cli-for-shared-contracts (#105)**; #104 is dashboard-only.

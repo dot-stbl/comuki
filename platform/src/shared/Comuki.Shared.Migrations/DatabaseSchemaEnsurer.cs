@@ -8,6 +8,7 @@ using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Modules.Scheduler.Infrastructure.Persistence;
+using Comuki.Modules.Verify.Infrastructure.Persistence;
 using Npgsql;
 
 namespace Comuki.Shared.Migrations;
@@ -53,15 +54,16 @@ public static class DatabaseSchemaEnsurer
             KnowledgeDatabase.Schema => CreateKnowledgeSchemaDdl,
             ArtifactsDatabase.Schema => CreateArtifactsSchemaDdl,
             SchedulerDatabase.Schema => CreateSchedulerSchemaDdl,
+            VerifyDatabase.Schema => CreateVerifySchemaDdl,
             _ => throw new ArgumentException($"unknown schema: {schema}", nameof(schema)),
         };
-#pragma warning restore CA2100
 
         await using var conn = new NpgsqlConnection(connectionString);
         await conn.OpenAsync(cancellationToken);
 
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = ddl;
+#pragma warning restore CA2100
         await cmd.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -75,4 +77,5 @@ public static class DatabaseSchemaEnsurer
     private const string CreateKnowledgeSchemaDdl = "CREATE SCHEMA IF NOT EXISTS knowledge";
     private const string CreateArtifactsSchemaDdl = "CREATE SCHEMA IF NOT EXISTS artifacts";
     private const string CreateSchedulerSchemaDdl = "CREATE SCHEMA IF NOT EXISTS scheduler";
+    private const string CreateVerifySchemaDdl = "CREATE SCHEMA IF NOT EXISTS verify";
 }

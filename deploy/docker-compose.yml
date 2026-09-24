@@ -253,6 +253,28 @@ services:
     networks:
       - comuki-net
 
+  redis:
+    # OPTIONAL (profile `redis`): distributed cache backend for
+    # Comuki.Shared.Redis (issue #11 — multi-replica Host cache). Opt in
+    # with `podman compose --profile redis up -d`. Disabled by default so
+    # single-replica dev keeps using the in-process memory-cache fallback
+    # (Projects settings snapshot cache). RDB + AOF are turned off — this
+    # is a pure cache, not a durable store. Host port :17028 (port pool).
+    profiles: ["redis"]
+    image: redis:7-alpine
+    container_name: comuki-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "17028:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    networks:
+      - comuki-net
+
 networks:
   comuki-net:
     driver: bridge

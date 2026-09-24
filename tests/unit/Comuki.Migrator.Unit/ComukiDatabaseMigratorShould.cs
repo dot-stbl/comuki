@@ -40,8 +40,8 @@ public sealed class ComukiDatabaseMigratorShould : IAsyncLifetime
             await container.StartAsync(TestContext.Current.CancellationToken);
             ContainerStarted = true;
         }
-        catch (Exception exception) when (exception.Message.Contains("Docker endpoint", StringComparison.Ordinal)
-            || exception is AggregateException)
+        catch (Exception exception) when (exception.Message.Contains("Docker", StringComparison.Ordinal)
+            || exception.InnerException?.Message.Contains("Docker", StringComparison.Ordinal) == true)
         {
             ContainerStarted = false;
         }

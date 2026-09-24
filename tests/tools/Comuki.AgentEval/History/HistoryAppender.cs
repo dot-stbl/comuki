@@ -37,14 +37,16 @@ public static class HistoryAppender
     }
 
     private static HistoryEntry ToHistoryEntry(EvalReport report) =>
-        new(
-            report.StartedAt,
-            report.Mode,
-            report.CorpusDirectory,
-            report.SummaryValue.Total,
-            report.SummaryValue.Passed,
-            report.SummaryValue.Failed,
-            report.SummaryValue.Skipped,
-            report.AverageQualityScore,
-            report.CostValue.UsdMicros);
+        new()
+        {
+            Timestamp = report.StartedAt,
+            Mode = report.Mode,
+            Corpus = report.CorpusDirectory,
+            Total = report.SummaryValue.Total,
+            Passed = report.SummaryValue.Passed,
+            Failed = report.SummaryValue.Failed,
+            Skipped = report.SummaryValue.Skipped,
+            AverageQualityScore = report.AverageQualityScore,
+            CostUsdMicros = report.CostValue.UsdMicros,
+        };
 }

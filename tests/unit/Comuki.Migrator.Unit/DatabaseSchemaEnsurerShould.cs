@@ -13,28 +13,47 @@ namespace Comuki.Migrator.Unit;
 /// second runs are no-ops, unknown names fail fast with <c>ArgumentException</c>,
 /// and bad connection strings surface through the <see cref="NpgsqlException"/>
 /// hierarchy. Each test reuses a single Testcontainers-managed Postgres
-/// instance bootstrapped in <see cref="InitializeAsync"/>.
+/// instance bootstrapped in <see cref="InitializeAsync"/>; container-backed
+/// tests skip when no Docker endpoint is reachable (docker-less CI runners).
 /// </summary>
 public sealed class DatabaseSchemaEnsurerShould : IAsyncLifetime
 {
     private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
         .Build();
 
+    /// <summary>Docker availability as observed at container start — see
+    /// the twin gate in <see cref="ComukiDatabaseMigratorShould"/>.</summary>
+    private bool ContainerStarted { get; set; }
+
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
-        await container.StartAsync(TestContext.Current.CancellationToken);
+        try
+        {
+            await container.StartAsync(TestContext.Current.CancellationToken);
+            ContainerStarted = true;
+        }
+        catch (Exception exception) when (exception.Message.Contains("Docker", StringComparison.Ordinal)
+            || exception.InnerException?.Message.Contains("Docker", StringComparison.Ordinal) == true)
+        {
+            ContainerStarted = false;
+        }
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        await container.DisposeAsync();
+        if (ContainerStarted)
+        {
+            await container.DisposeAsync();
+        }
     }
 
     [Fact(DisplayName = "Given a schema name outside the eight-module whitelist, when EnsureAsync runs, then throws ArgumentException without touching the connection")]
     public async Task RejectsUnknownSchemaAsync()
     {
+        Assert.SkipUnless(ContainerStarted, "Ensurer test requires Docker (Testcontainers); this runner has no Docker endpoint.");
+
         var cancellationToken = TestContext.Current.CancellationToken;
 
         await Should.ThrowAsync<ArgumentException>(
@@ -62,6 +81,8 @@ public sealed class DatabaseSchemaEnsurerShould : IAsyncLifetime
     [MemberData(nameof(PostgresHelpers.KnownSchemas), MemberType = typeof(PostgresHelpers))]
     public async Task EnsureIsIdempotentAsync(string schema)
     {
+        Assert.SkipUnless(ContainerStarted, "Ensurer test requires Docker (Testcontainers); this runner has no Docker endpoint.");
+
         var cancellationToken = TestContext.Current.CancellationToken;
         var connectionString = container.GetConnectionString();
 
@@ -75,6 +96,8 @@ public sealed class DatabaseSchemaEnsurerShould : IAsyncLifetime
     [Fact(DisplayName = "Given all ten module schemas in sequence, when EnsureAsync runs once each, then every schema is present in information_schema.schemata")]
     public async Task CreatesAllTenSchemasAsync()
     {
+        Assert.SkipUnless(ContainerStarted, "Ensurer test requires Docker (Testcontainers); this runner has no Docker endpoint.");
+
         var cancellationToken = TestContext.Current.CancellationToken;
         var connectionString = container.GetConnectionString();
 

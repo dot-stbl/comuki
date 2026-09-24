@@ -151,8 +151,8 @@ back to `Queued`; bounded WorkItem-level lease retries (the reaper's
 separate mechanism and are unaffected by this change.
 
 #### Scenario: Retry a failed run
-- **WHEN** a run in `Failed` transitions
-- **THEN** `Queued` is accepted and every other target is rejected
+- **WHEN** retry is requested for a Task whose latest Run is Failed
+- **THEN** the failed Run stays terminal and a new Run attempt is created
 
 #### Scenario: Terminal run is frozen
 - **WHEN** a run in `Succeeded`, `Failed`, or `Cancelled` is asked to

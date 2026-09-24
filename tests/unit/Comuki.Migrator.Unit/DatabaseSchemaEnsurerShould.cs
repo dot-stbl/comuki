@@ -18,8 +18,11 @@ namespace Comuki.Migrator.Unit;
 /// </summary>
 public sealed class DatabaseSchemaEnsurerShould : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
+    /// <summary>Container built lazily inside <see cref="InitializeAsync"/> —
+    /// Testcontainers resolves (and rejects) the Docker endpoint at
+    /// <c>Build()</c> time, so a field initializer throws before any
+    /// try/catch can gate it on docker-less runners.</summary>
+    private PostgreSqlContainer? container;
 
     /// <summary>Docker availability as observed at container start — see
     /// the twin gate in <see cref="ComukiDatabaseMigratorShould"/>.</summary>
@@ -30,6 +33,7 @@ public sealed class DatabaseSchemaEnsurerShould : IAsyncLifetime
     {
         try
         {
+            container = new PostgreSqlBuilder("postgres:16-alpine").Build();
             await container.StartAsync(TestContext.Current.CancellationToken);
             ContainerStarted = true;
         }
@@ -43,9 +47,9 @@ public sealed class DatabaseSchemaEnsurerShould : IAsyncLifetime
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        if (ContainerStarted)
+        if (container is { } started)
         {
-            await container.DisposeAsync();
+            await started.DisposeAsync();
         }
     }
 
@@ -58,7 +62,7 @@ public sealed class DatabaseSchemaEnsurerShould : IAsyncLifetime
 
         await Should.ThrowAsync<ArgumentException>(
             async () => await DatabaseSchemaEnsurer.EnsureAsync(
-                container.GetConnectionString(),
+                container.ShouldNotBeNull().GetConnectionString(),
                 "not-a-real-schema",
                 cancellationToken));
     }
@@ -84,7 +88,7 @@ public sealed class DatabaseSchemaEnsurerShould : IAsyncLifetime
         Assert.SkipUnless(ContainerStarted, "Ensurer test requires Docker (Testcontainers); this runner has no Docker endpoint.");
 
         var cancellationToken = TestContext.Current.CancellationToken;
-        var connectionString = container.GetConnectionString();
+        var connectionString = container.ShouldNotBeNull().GetConnectionString();
 
         await DatabaseSchemaEnsurer.EnsureAsync(connectionString, schema, cancellationToken);
         await DatabaseSchemaEnsurer.EnsureAsync(connectionString, schema, cancellationToken);
@@ -99,7 +103,7 @@ public sealed class DatabaseSchemaEnsurerShould : IAsyncLifetime
         Assert.SkipUnless(ContainerStarted, "Ensurer test requires Docker (Testcontainers); this runner has no Docker endpoint.");
 
         var cancellationToken = TestContext.Current.CancellationToken;
-        var connectionString = container.GetConnectionString();
+        var connectionString = container.ShouldNotBeNull().GetConnectionString();
 
         foreach (var schema in PostgresHelpers.AllSchemas())
         {

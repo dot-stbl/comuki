@@ -21,15 +21,16 @@ namespace Comuki.Migrator.Unit;
 /// </summary>
 public sealed class ComukiDatabaseMigratorShould : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
+    /// <summary>Container built lazily inside <see cref="InitializeAsync"/> —
+    /// Testcontainers resolves (and rejects) the Docker endpoint at
+    /// <c>Build()</c> time, so a field initializer throws before any
+    /// try/catch can gate it on docker-less runners.</summary>
+    private PostgreSqlContainer? container;
 
-    /// <summary>
-    /// Docker availability as observed at container start: Testcontainers
+    /// <summary>Docker availability as observed at container start: Testcontainers
     /// surfaces a missing endpoint as <c>DockerUnavailableException</c>
     /// (sometimes wrapped in an <see cref="AggregateException"/>); any
-    /// such failure means the suite skips, not fails.
-    /// </summary>
+    /// such failure means the suite skips, not fails.</summary>
     private bool ContainerStarted { get; set; }
 
     /// <inheritdoc />
@@ -37,6 +38,7 @@ public sealed class ComukiDatabaseMigratorShould : IAsyncLifetime
     {
         try
         {
+            container = new PostgreSqlBuilder("postgres:16-alpine").Build();
             await container.StartAsync(TestContext.Current.CancellationToken);
             ContainerStarted = true;
         }
@@ -50,9 +52,9 @@ public sealed class ComukiDatabaseMigratorShould : IAsyncLifetime
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        if (ContainerStarted)
+        if (container is { } started)
         {
-            await container.DisposeAsync();
+            await started.DisposeAsync();
         }
     }
 
@@ -62,7 +64,7 @@ public sealed class ComukiDatabaseMigratorShould : IAsyncLifetime
         Assert.SkipUnless(ContainerStarted, "Migrator test requires Docker (Testcontainers); this runner has no Docker endpoint.");
 
         var cancellationToken = TestContext.Current.CancellationToken;
-        var connectionString = container.GetConnectionString();
+        var connectionString = container.ShouldNotBeNull().GetConnectionString();
 
         var summary = await ComukiDatabaseMigrator.EnsureAllAsync(connectionString, cancellationToken);
 
@@ -83,7 +85,7 @@ public sealed class ComukiDatabaseMigratorShould : IAsyncLifetime
         Assert.SkipUnless(ContainerStarted, "Migrator test requires Docker (Testcontainers); this runner has no Docker endpoint.");
 
         var cancellationToken = TestContext.Current.CancellationToken;
-        var connectionString = container.GetConnectionString();
+        var connectionString = container.ShouldNotBeNull().GetConnectionString();
 
         await ComukiDatabaseMigrator.EnsureAllAsync(connectionString, cancellationToken);
         var second = await ComukiDatabaseMigrator.EnsureAllAsync(connectionString, cancellationToken);
@@ -98,7 +100,7 @@ public sealed class ComukiDatabaseMigratorShould : IAsyncLifetime
         Assert.SkipUnless(ContainerStarted, "Migrator test requires Docker (Testcontainers); this runner has no Docker endpoint.");
 
         var cancellationToken = TestContext.Current.CancellationToken;
-        var connectionString = container.GetConnectionString();
+        var connectionString = container.ShouldNotBeNull().GetConnectionString();
 
         await ComukiDatabaseMigrator.EnsureAllAsync(connectionString, cancellationToken);
 

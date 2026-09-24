@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Comuki.Engine.Orchestration.Domain.Journal;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +13,9 @@ namespace Comuki.Engine.Orchestration.Integration.Queue;
 /// <see cref="IRunJournal"/> against real Postgres: appends round-trip, the
 /// timeline pages oldest-first, and paging arguments are guarded.
 /// </summary>
-public sealed class RunJournalShould : QueueDatabase
+/// <param name="postgres">The collection's shared Postgres (<see cref="QueueIntegrationCollection"/>) — reset to empty for every test, migrated once for the whole run.</param>
+[Collection(nameof(QueueIntegrationCollection))]
+public sealed class RunJournalShould(PostgresCollectionFixture postgres) : QueueDatabase(postgres)
 {
     private static readonly DateTimeOffset baseTime = new(2026, 8, 31, 12, 0, 0, TimeSpan.Zero);
 

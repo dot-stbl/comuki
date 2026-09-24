@@ -21,6 +21,8 @@
     <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host\Comuki.Host.csproj" />
     <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host.Translator\Comuki.Host.Translator.csproj" />
     <ProjectReference Include="..\..\tools\Comuki.TestFakePi\Comuki.TestFakePi.csproj" />
+    <!-- WS2 follow-up: shared PostgresCollectionFixture (was a per-test container in TranslatorE2EShould). -->
+    <ProjectReference Include="..\Comuki.Host.Testing\Comuki.Host.Testing.csproj" />
   </ItemGroup>
 
 </Project>

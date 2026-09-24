@@ -1,13 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
 using Comuki.Host.Testing;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Modules.Identity.Application.Users;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Testcontainers.Minio;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Smoke;
@@ -36,8 +36,7 @@ public sealed class SmokeHostServer : IAsyncLifetime
     public const string BootstrapEmail = TestBootstrapAdmin.Email;
     public const string BootstrapPassword = TestBootstrapAdmin.Password;
 
-    private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("pgvector/pgvector:pg16")
-        .Build();
+    private readonly PostgresCollectionFixture postgres = new();
 
 #pragma warning disable CS0612
     private readonly MinioContainer minio = new MinioBuilder(MinioImage.Reference)
@@ -53,13 +52,11 @@ public sealed class SmokeHostServer : IAsyncLifetime
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await Task.WhenAll(
-            postgres.StartAsync(cancellationToken),
+            postgres.InitializeAsync().AsTask(),
             minio.StartAsync(cancellationToken));
 
-        var connectionString = postgres.GetConnectionString();
+        var connectionString = postgres.ConnectionString;
         var minioEndpoint = minio.GetConnectionString();
-
-        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
 
         var builder = TestHostBuilder.Create(connectionString);
         builder.Logging.AddSimpleConsole(static options => options.IncludeScopes = true);

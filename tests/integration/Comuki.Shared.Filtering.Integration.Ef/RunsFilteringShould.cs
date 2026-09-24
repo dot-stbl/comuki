@@ -1,12 +1,12 @@
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Filtering.Parser;
 using Comuki.Shared.Filtering.Ports;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Shared.Filtering.Integration.Ef;
@@ -19,11 +19,10 @@ namespace Comuki.Shared.Filtering.Integration.Ef;
 /// (GET /api/v1/runs) — covering filter (eq/in/range/contains/logic/parens/
 /// now()), sort, and the FilterParseException paths.
 /// </summary>
-public sealed class RunsFilteringShould : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres (<see cref="FilteringEfIntegrationCollection"/>) — reset to empty before every test (this suite seeds 5 fresh rows per fact and asserts on exact counts/order).</param>
+[Collection(nameof(FilteringEfIntegrationCollection))]
+public sealed class RunsFilteringShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
-
     /// <summary>
     /// boundary: initialised in InitializeAsync before any test runs
     /// </summary>
@@ -33,12 +32,16 @@ public sealed class RunsFilteringShould : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await container.StartAsync(cancellationToken);
+        // The orchestration schema is already migrated once by
+        // PostgresCollectionFixture (HostDatabaseMigrator.MigrateAllAsync
+        // covers it). Reset gives this test the same empty-orchestration
+        // starting point the old per-test container used to give it — every
+        // fact below seeds 5 fresh rows and asserts on exact counts.
+        await postgres.ResetDatabaseAsync();
 
         var options = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(options, container.GetConnectionString());
+        OrchestrationDbContext.ApplyOptions(options, postgres.ConnectionString);
         db = new OrchestrationDbContext(options.Options);
-        await db.Database.MigrateAsync(cancellationToken);
 
         var now = DateTimeOffset.UtcNow;
 
@@ -79,7 +82,6 @@ public sealed class RunsFilteringShould : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await db.DisposeAsync();
-        await container.DisposeAsync();
     }
 
     private async Task<List<string>> SelectStatusesAsync(string? filter)

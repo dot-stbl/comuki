@@ -18,6 +18,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
     <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Filtering\Comuki.Shared.Filtering.csproj" />
+    <!-- WS2 follow-up: shared PostgresCollectionFixture (was a per-test container here). -->
+    <ProjectReference Include="..\Comuki.Host.Testing\Comuki.Host.Testing.csproj" />
   </ItemGroup>
 
 </Project>

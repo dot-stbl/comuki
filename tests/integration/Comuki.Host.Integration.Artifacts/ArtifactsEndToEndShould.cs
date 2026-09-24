@@ -9,10 +9,8 @@ using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Artifacts;
 using Comuki.Host.Testing;
-using Comuki.Modules.Artifacts.Infrastructure.Persistence;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Modules.Artifacts.Infrastructure.Store;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -22,19 +20,21 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Testcontainers.Minio;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Artifacts;
 
 /// <summary>
-/// Boots the real host composition on a random loopback port against
-/// one migrated Testcontainers Postgres (all module schemas) plus a
-/// Testcontainers MinIO with <see cref="ArtifactsOptions.AutoCreateBucket"/>
-/// on, drives the artifact packager to terminal a seeded run and
-/// asserts the API surfaces the bundle pointers.
+/// Boots the real host composition on a random loopback port against the
+/// collection's shared, migrated Postgres (<see cref="PostgresCollectionFixture"/>,
+/// reset to empty for every test) plus a per-test Testcontainers MinIO with
+/// <see cref="ArtifactsOptions.AutoCreateBucket"/>
+/// on, drives the artifact packager to terminal a seeded run and asserts
+/// the API surfaces the bundle pointers.
 /// </summary>
-public sealed class ArtifactsEndToEndShould : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres (<see cref="ArtifactsIntegrationCollection"/>) — reset to empty for every test, migrated once for the whole run.</param>
+[Collection(nameof(ArtifactsIntegrationCollection))]
+public sealed class ArtifactsEndToEndShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
     private const string BootstrapEmail = "bootstrap@comuki.test";
     private const string BootstrapPassword = "bootstrap-pass-1";
@@ -43,9 +43,6 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     private const string MinioUser = "test-access-key";
     private const string MinioPassword = "test-secret-key-with-enough-entropy";
     private const string TestBucket = "comuki-test-bundles";
-
-    private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
 
 #pragma warning disable CS0612
     private readonly MinioContainer minio = new MinioBuilder(MinioImage.Reference)
@@ -57,7 +54,6 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     /// <summary>boundary: initialised in InitializeAsync before any test runs</summary>
     private WebApplication application = null!;
     private Uri baseAddress = null!;
-    private string connectionString = string.Empty;
     private string hostConnectionString = string.Empty;
     private string seedConnectionString = string.Empty;
     private string minioEndpoint = string.Empty;
@@ -66,28 +62,27 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await Task.WhenAll(
-            postgres.StartAsync(cancellationToken),
-            minio.StartAsync(cancellationToken));
+        // Every module's schema (Orchestration/Identity/Projects/Artifacts
+        // included) is already migrated once by PostgresCollectionFixture —
+        // this class used to hand-migrate only those four contexts itself,
+        // which HostDatabaseMigrator.MigrateAllAsync now supersedes. Reset
+        // gets this test the same empty-tables starting point the old
+        // per-test container used to give it, without paying for a new
+        // container.
+        await postgres.ResetDatabaseAsync();
+        await minio.StartAsync(cancellationToken);
 
-        connectionString = postgres.GetConnectionString() + ";Application Name=host;Pooling=false";
-        hostConnectionString = connectionString;
+        // Application Name=host isolates this host's pool from the seed
+        // path's; Pooling=false keeps seed transactions from racing the
+        // host's startup under the shared collection fixture. Both stay
+        // because the per-phase/per-candidate scope in
+        // RunArtifactPackagerService assumes them.
+        hostConnectionString = postgres.ConnectionString + ";Application Name=host;Pooling=false";
         // Seed writes into the host's database; isolation relies on
         // Pooling=false and the per-phase/per-candidate scope in
         // RunArtifactPackagerService.
         seedConnectionString = hostConnectionString;
         minioEndpoint = minio.GetConnectionString();
-
-        // Migrate every module context the host composes.
-        await MigrateAsync<OrchestrationDbContext>(OrchestrationDbContext.ApplyOptions, connectionString, cancellationToken);
-        await MigrateAsync<IdentityDbContext>(IdentityDbContext.ApplyOptions, connectionString, cancellationToken);
-        await MigrateAsync<ProjectsDbContext>(ProjectsDbContext.ApplyOptions, connectionString, cancellationToken);
-        await MigrateAsync<ArtifactsDbContext>(ArtifactsDbContext.ApplyOptions, connectionString, cancellationToken);
-
-        await MigrateAsync<OrchestrationDbContext>(OrchestrationDbContext.ApplyOptions, seedConnectionString, cancellationToken);
-        await MigrateAsync<IdentityDbContext>(IdentityDbContext.ApplyOptions, seedConnectionString, cancellationToken);
-        await MigrateAsync<ProjectsDbContext>(ProjectsDbContext.ApplyOptions, seedConnectionString, cancellationToken);
-        await MigrateAsync<ArtifactsDbContext>(ArtifactsDbContext.ApplyOptions, seedConnectionString, cancellationToken);
 
         var builder = WebApplication.CreateBuilder(
             new WebApplicationOptions
@@ -179,7 +174,7 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await application.DisposeAsync();
-        await Task.WhenAll(postgres.DisposeAsync().AsTask(), minio.DisposeAsync().AsTask());
+        await minio.DisposeAsync().AsTask();
     }
 
     [Fact(DisplayName = "Given a terminal run, when the packager polls, then the bundle appears in MinIO and the API returns the pointers")]
@@ -344,28 +339,6 @@ public sealed class ArtifactsEndToEndShould : IAsyncLifetime
             BaseAddress = baseAddress,
         };
         return await client.LoginAsBootstrapAdminAsync(TestContext.Current.CancellationToken);
-    }
-
-    private static async Task MigrateAsync<TContext>(
-        Action<DbContextOptionsBuilder, string> applyOptions,
-        string targetConnectionString,
-        CancellationToken cancellationToken)
-        where TContext : DbContext
-    {
-        var options = new DbContextOptionsBuilder<TContext>();
-        applyOptions(options, targetConnectionString);
-        var constructor = typeof(TContext).GetConstructors().OrderByDescending(static ctor => ctor.GetParameters().Length).First();
-        object?[] arguments = constructor.GetParameters().Length switch
-        {
-            1 => [options.Options],
-            2 => [options.Options, null],
-            _ => throw new InvalidOperationException("unexpected ctor arity on " + typeof(TContext).Name),
-        };
-        var context = (TContext)constructor.Invoke(arguments);
-        await using (context)
-        {
-            await context.Database.MigrateAsync(cancellationToken);
-        }
     }
 
     private static (string Host, int Port) SplitEndpoint(string endpoint)

@@ -8,10 +8,9 @@ using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Host.Workers;
 using Comuki.Modules.Artifacts.Infrastructure.Persistence;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -21,7 +20,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Testcontainers.Minio;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Artifacts;
@@ -35,21 +33,20 @@ namespace Comuki.Host.Integration.Artifacts;
 ///   <item>HTML response carries the strict CSP + <c>nosniff</c>.</item>
 /// </list>
 /// Boots the real host composition on a random loopback port against
-/// one migrated Testcontainers Postgres (every module schema) plus a
-/// Testcontainers MinIO with
+/// the collection's shared, migrated Postgres (<see cref="PostgresCollectionFixture"/>,
+/// reset to empty for every test) plus a per-test Testcontainers MinIO with
 /// <see cref="Modules.Artifacts.Infrastructure.Store.ArtifactsOptions.AutoCreateBucket"/>
 /// on, then drives the worker upload flow against a seeded run.
 /// </summary>
-public sealed class WorkerUploadArtifactShould : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres (<see cref="ArtifactsIntegrationCollection"/>) — reset to empty for every test, migrated once for the whole run.</param>
+[Collection(nameof(ArtifactsIntegrationCollection))]
+public sealed class WorkerUploadArtifactShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
     private const string BootstrapEmail = "bootstrap@comuki.test";
     private const string BootstrapPassword = "bootstrap-pass-1";
     private const string MinioUser = "test-access-key";
     private const string MinioPassword = "test-secret-key-with-enough-entropy";
     private const string TestBucket = "comuki-test-bundles";
-
-    private readonly PostgreSqlContainer postgres = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
 
 #pragma warning disable CS0612
     private readonly MinioContainer minio = new MinioBuilder(MinioImage.Reference)
@@ -67,23 +64,20 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await Task.WhenAll(
-            postgres.StartAsync(cancellationToken),
-            minio.StartAsync(cancellationToken));
+        // Every module's schema is already migrated once by
+        // PostgresCollectionFixture — this class used to hand-migrate
+        // Orchestration/Identity/Projects/Artifacts itself, which
+        // HostDatabaseMigrator.MigrateAllAsync now supersedes. Reset gets
+        // this test the same empty-tables starting point the old per-test
+        // container used to give it, without paying for a new container.
+        await postgres.ResetDatabaseAsync();
+        await minio.StartAsync(cancellationToken);
 
-        var connectionString = postgres.GetConnectionString() + ";Application Name=host;Pooling=false";
+        // Application Name=host + Pooling=false stay — see the matching
+        // comment in ArtifactsEndToEndShould.
+        var connectionString = postgres.ConnectionString + ";Application Name=host;Pooling=false";
         seedConnectionString = connectionString;
         minioEndpoint = minio.GetConnectionString();
-
-        await MigrateAsync<OrchestrationDbContext>(OrchestrationDbContext.ApplyOptions, connectionString, cancellationToken);
-        await MigrateAsync<IdentityDbContext>(IdentityDbContext.ApplyOptions, connectionString, cancellationToken);
-        await MigrateAsync<ProjectsDbContext>(ProjectsDbContext.ApplyOptions, connectionString, cancellationToken);
-        await MigrateAsync<ArtifactsDbContext>(ArtifactsDbContext.ApplyOptions, connectionString, cancellationToken);
-
-        await MigrateAsync<OrchestrationDbContext>(OrchestrationDbContext.ApplyOptions, seedConnectionString, cancellationToken);
-        await MigrateAsync<IdentityDbContext>(IdentityDbContext.ApplyOptions, seedConnectionString, cancellationToken);
-        await MigrateAsync<ProjectsDbContext>(ProjectsDbContext.ApplyOptions, seedConnectionString, cancellationToken);
-        await MigrateAsync<ArtifactsDbContext>(ArtifactsDbContext.ApplyOptions, seedConnectionString, cancellationToken);
 
         var builder = WebApplication.CreateBuilder(
             new WebApplicationOptions
@@ -171,7 +165,7 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await application.DisposeAsync();
-        await Task.WhenAll(postgres.DisposeAsync().AsTask(), minio.DisposeAsync().AsTask());
+        await minio.DisposeAsync().AsTask();
     }
 
     [Fact(DisplayName = "Given a leased work item, when the worker uploads a png, then the host returns 204 and the artifact is in MinIO")]
@@ -430,28 +424,6 @@ public sealed class WorkerUploadArtifactShould : IAsyncLifetime
             BaseAddress = baseAddress,
         };
         return await client.LoginAsBootstrapAdminAsync(cancellationToken);
-    }
-
-    private static async Task MigrateAsync<TContext>(
-        Action<DbContextOptionsBuilder, string> applyOptions,
-        string targetConnectionString,
-        CancellationToken cancellationToken)
-        where TContext : DbContext
-    {
-        var options = new DbContextOptionsBuilder<TContext>();
-        applyOptions(options, targetConnectionString);
-        var constructor = typeof(TContext).GetConstructors().OrderByDescending(static ctor => ctor.GetParameters().Length).First();
-        object?[] arguments = constructor.GetParameters().Length switch
-        {
-            1 => [options.Options],
-            2 => [options.Options, null],
-            _ => throw new InvalidOperationException("unexpected ctor arity on " + typeof(TContext).Name),
-        };
-        var context = (TContext)constructor.Invoke(arguments);
-        await using (context)
-        {
-            await context.Database.MigrateAsync(cancellationToken);
-        }
     }
 
     private static (string Host, int Port) SplitEndpoint(string endpoint)

@@ -11,11 +11,47 @@ namespace Comuki.Host.Testing.Fixtures;
 /// One <c>pgvector/pgvector:pg16</c> Postgres container, migrated with
 /// every module's schema exactly once per test-run process
 /// (<see cref="HostDatabaseMigrator.MigrateAllAsync"/>), shared by every
-/// test class in a project's xUnit collection. Register it alongside a
-/// project-specific host fixture on the same <c>[CollectionDefinition]</c>
-/// — xUnit constructs collection fixtures in dependency order, so a host
-/// fixture's constructor can take this one as a parameter (see
-/// <c>Comuki.Host.Integration.Auth.HostAuthServer</c> for the pattern).
+/// test class in a project's xUnit collection. Two integration shapes
+/// are supported; the project's collection shape picks which one to use.
+/// <list type="number">
+/// <item>
+/// <b>Direct — the test class takes the fixture.</b> Test classes that
+/// touch Postgres take <see cref="PostgresCollectionFixture"/> as a
+/// primary-constructor parameter; the project's
+/// <c>[CollectionDefinition]</c> declares
+/// <c>ICollectionFixture&lt;PostgresCollectionFixture&gt;</c>. xUnit v3
+/// injects the collection fixture into the test class's own constructor
+/// directly. See
+/// <c>Comuki.Host.Integration.Costs.CostsIntegrationCollection</c>
+/// (used by <c>OrchestrationBudgetGateShould</c> and
+/// <c>PlatformCostsEndpointShould</c>) and
+/// <c>Comuki.Engine.Orchestration.Integration.Queue.QueueIntegrationCollection</c>
+/// (used by <c>QueueDatabase</c>) for the pattern.
+/// </item>
+/// <item>
+/// <b>Containment — a host-server fixture owns the fixture.</b> When a
+/// project also needs a project-specific host server (e.g.
+/// <c>Comuki.Host.Integration.Auth.HostAuthServer</c>,
+/// <c>Comuki.Host.Integration.Oidc.HostOidcServer</c>,
+/// <c>Comuki.Host.Integration.Smoke.SmokeHostServer</c>) and that host
+/// server is itself the thing shared via
+/// <c>ICollectionFixture&lt;THostServer&gt;</c>, the host-server class
+/// owns a <see cref="PostgresCollectionFixture"/> as a plain field and
+/// calls its <see cref="InitializeAsync"/> / <see cref="DisposeAsync"/>
+/// itself. Declaring
+/// <c>ICollectionFixture&lt;PostgresCollectionFixture&gt;</c> as a
+/// SECOND entry on the same <c>[CollectionDefinition]</c> does NOT work:
+/// xUnit v3's collection-fixture resolver does not inject one declared
+/// <c>ICollectionFixture&lt;T&gt;</c> into another declared collection
+/// fixture's constructor (verified empirically — every test fails with
+/// "unresolved constructor arguments" at run time when this is tried).
+/// Containment is the supported escape. See
+/// <c>Comuki.Host.Integration.Auth.AuthIntegrationCollection</c>,
+/// <c>Comuki.Host.Integration.Oidc.OidcIntegrationCollection</c>, and
+/// <c>Comuki.Host.Integration.Smoke.SmokeIntegrationCollection</c> for
+/// the pattern.
+/// </item>
+/// </list>
 /// </summary>
 /// <remarks>
 /// <para>

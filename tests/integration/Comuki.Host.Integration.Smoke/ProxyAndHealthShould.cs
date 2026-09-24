@@ -15,7 +15,8 @@ namespace Comuki.Host.Integration.Smoke;
 ///     200 with <c>{ \"status\": \"ok\" }</c>.</item>
 /// </list>
 /// </summary>
-public sealed class ProxyAndHealthShould(SmokeHostServer server) : IClassFixture<SmokeHostServer>
+[Collection(nameof(SmokeIntegrationCollection))]
+public sealed class ProxyAndHealthShould(SmokeHostServer server)
 {
     private readonly SmokeHostServer server = server;
 

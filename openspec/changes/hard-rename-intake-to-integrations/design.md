@@ -379,3 +379,6 @@ Ordered restated summary (mirrors tasks.md workstream order):
 
 There are no Open Questions — every naming call above is a decision,
 not a question.
+## Decision: dev/stage data reset (user, 2026-09-25)
+
+Confirmed by the user: dev (GitLab hybrid overlay → ArgoCD dev) and stage data may be reset — **all of it, not only the `intake` schema**. The rollout therefore uses the fresh squashed `InitialIntegrationsSchema` baseline with no data migration. The implementation MR must include an explicit, documented reset step for the dev environment (drop/recreate the database or the affected schemas before `migrate:dev`), executed in the same coordinated deploy.

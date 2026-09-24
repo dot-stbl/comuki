@@ -55,30 +55,40 @@ jump to an incompatible major.
 
 `test:storybook` runs the stories tagged `ws16-batch1` in their `meta.tags`
 (currently: `Runs/Run graph`, `Runs/Profile river`, `Runs/Work item inspector`,
-`Chat/ChatMessage` — WS16 tasks.md's "runs, chat domains" first batch). This
-keeps the one-shot run bounded while the harness rolls out to the rest of the
-~93 stories incrementally (tasks.md 16.4 tracks the remaining domains as
-follow-up work, not silently dropped).
+`Chat/ChatMessage`, `Domains/Chat/ChatDock` — WS16 tasks.md's "runs, chat
+domains" first batch). This keeps the one-shot run bounded while the harness
+rolls out to the rest of the ~93 stories incrementally (tasks.md 16.4 tracks
+the remaining domains as follow-up work, not silently dropped).
 
 To widen the run without touching `.storybook/test-runner.ts`, pass
 `STORYBOOK_TEST_INCLUDE_TAGS=ws16-batch1,ws16-batch2` (comma-separated) when
 a future batch adds its own tag to its stories' `meta.tags`.
 
-## Known limitation: `#storybook-root`-emptiness hang on portal-based stories
+## Portal-based stories
 
-`src/domains/chat/ui/chat-dock.stories.tsx` has working play functions
-(`PanelDepth`, `SeededFromARun`) but is **not** tagged `ws16-batch1` — see
-the docblock at the top of that file for the full diagnosis. Short version:
-`BottomSheet` (and every kit primitive built on react-aria-components'
-`Modal`/`Dialog` — `ConfirmDialog`, `FormDialog`, `Dialog` itself) portals
-its content into `document.body`, so Storybook's own `#storybook-root` never
-gains children. The stories render correctly (verified with a direct
-Playwright visit outside test-runner), but `@storybook/test-runner@0.23.0`'s
-readiness check — whatever it watches on `#storybook-root` — never resolves,
-and every story in that file times out at Jest's default 15s, including one
-with no play function at all. This will block any future batch that touches
-a `Modal`/`Dialog`-based component, not just chat-dock; tracked as a WS16.4
-follow-up rather than worked around here.
+`src/domains/chat/ui/chat-dock.stories.tsx` (`PanelDepth`, `FillingTheWindow`,
+`SeededFromARun`) renders through `BottomSheet` — and every kit primitive
+built on react-aria-components' `Modal`/`Dialog` (`ConfirmDialog`,
+`FormDialog`, `Dialog` itself) is the same shape — which portals its content
+into `document.body`, so Storybook's own `#storybook-root` never gains
+children. The stories render correctly (verified with a direct Playwright
+visit outside test-runner, and with WS17's `ui:probe`), but
+`@storybook/test-runner@0.23.0`'s own per-story transition — asking an
+already-loaded preview to switch story via `channel.emit("setCurrentStory",
+...)`, then waiting on a `storyFinished`/`storyRendered` channel event with no
+timeout of its own — never resolved for them, and every story in that file
+timed out at Jest's default 15s, including one with no play function at all.
+
+WS16.4 works around it rather than dropping the file from the batch: a story
+tagged `"ws16-portal"` in its `meta.tags` is pre-rendered by
+`.storybook/test-runner.ts`'s `preVisit` via a direct navigation to its own
+`iframe.html?id=...` URL — the exact mechanism WS17's `ui:probe` already
+validated against this component — and `postVisit`'s a11y/visual capture
+scopes to `document.body` instead of `#storybook-root` for those stories, so
+it actually sees the portaled content. See `.storybook/test-runner.ts`'s
+`PORTAL_TAG` docblock and `scripts/lib/storybook-ready-signal.ts` (shared
+with `ui:probe`) for the full mechanism. Any future story built on
+`Modal`/`Dialog` picks this up the same way: add both tags.
 
 ## Visual baselines are not committed
 
@@ -148,6 +158,24 @@ altogether:
   bug — still fails, exactly like before. The allowlist can only shrink
   responsibly (fix the CSS, delete the line) or grow deliberately (a new
   story's story-specific entry with a reason in the PR), never silently.
+
+WS16.4 (re-enabling `chat-dock`, see "Portal-based stories" above) added 25
+more entries the same way: `aria-allowed-role` and `listitem` on the shared
+message-log markup (`ChatConsole`'s `<ol role="log">`/`<li data-test="chat-
+message">`, already known from `chat-message`'s own entries above),
+`scrollable-region-focusable` on the console's `<aside>` side panel (already
+known from `chat-message`'s `--long-thread` and `run-graph`'s `--large-run`),
+`color-contrast` on the chat-session list's age label (`_rowAge_` against
+`_rowCurrent_`'s highlighted background — the same systemic muted-text
+pattern as every other `color-contrast` entry here), and one new rule,
+`region`, on `BottomSheet`'s own `SplitSeparator` resize handle
+(`role="separator"` sitting outside any landmark) — the first three
+categories are debt in components `chat-dock`'s stories happen to also
+render; `region` is `BottomSheet`/`SplitPane`'s own, previously unobserved
+because no portal-based story ran through this check before WS16.4. All are
+already-shipped component behaviour, not something these test-runner or
+story-file changes introduced — confirmed by cross-checking axe's reported
+target selectors against a `ui:probe` capture of the same story.
 
 `color-contrast` alone accounts for the overwhelming majority of entries and
 repeats across four unrelated components — worth investigating as one or two

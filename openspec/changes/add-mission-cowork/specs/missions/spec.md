@@ -5,11 +5,22 @@ Defines private project-scoped Missions where any number of participants and the
 ## ADDED Requirements
 
 ### Requirement: Mission lifecycle
-A Mission SHALL belong to exactly one Project and follow `Draft → Active → Review → Completed`, with `Cancelled` terminal from any non-terminal state. Completed SHALL reopen only through an approved new revision and reopen Decision. Progress is derived from linked Tasks, while Mission status records the lifecycle of the shared goal.
+A Mission SHALL belong to exactly one home Project and MAY list additional participating Projects (see "Home project and participating projects" below), and SHALL follow `Draft → Active → Review → Completed`, with `Cancelled` terminal from any non-terminal state. Completed SHALL reopen only through an approved new revision and reopen Decision. Progress is derived from linked Tasks, while Mission status records the lifecycle of the shared goal.
 
 #### Scenario: Reopen completed goal
 - **WHEN** an authorized proposal adds a new goal revision to a Completed Mission
 - **THEN** approval creates a new evidence generation and returns the Mission to Active without erasing the prior completion
+
+### Requirement: Home project and participating projects
+A Mission SHALL have exactly one home Project, the default budget and memory owner. A Mission MAY additionally list participating Projects; the list SHALL default empty, in which case every existing Mission behavior is exactly the single-Project case unchanged. A participating Project SHALL be added only through an approved capability-broker invitation initiated by the home Project's Brain when work needs a repository the home Project has no write access to (full invitation/approval/budget mechanics are specified by the `repositories` capability's Mission-participation routing, added in `add-multi-repo-projects`). Work on a given repository SHALL resolve through whichever Project — home or participating — holds a write attachment to it; absent one, the work is external-blocked rather than proceeding under any Project's authority.
+
+#### Scenario: Default Mission has no participants
+- **WHEN** a Mission is created without inviting any participating Project
+- **THEN** it behaves exactly as a single-Project Mission — every prior scenario in this capability holds unchanged
+
+#### Scenario: Home project without write access invites a participant
+- **WHEN** a Mission's home Project has no write attachment to a repository the work targets, and a participating Project does
+- **THEN** the home Project's Brain invites the participating Project through the capability broker, and the participating Project's approval is required before its budget is used
 
 ### Requirement: Arbitrary participant membership
 A Mission SHALL support any number of human and service-account participants. Room roles are configurable capability bundles initialized with owner/editor/commenter defaults. Every non-terminal Mission SHALL have at least one active human with owner capability; service accounts are a distinct actor kind and SHALL NOT count as owners or human approvals. No product contract may assume exactly two participants.

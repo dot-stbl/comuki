@@ -57,6 +57,13 @@
   ли это (writer в argv, например `comuki archive save <session>` /
   удалить argv-команду / оставить read-only как есть) — предстоит
   решить отдельно.
+- **Решение 2026-09-24 (issue #154):** вариант с argv writer'ом
+  принят — добавлена `comuki archive save <sessionId>` (и
+  `archive save --current` для активной вкладки); живёт в
+  `cli/src/commands/archive.ts` + `cli/src/lib/archive.ts`, рендерит
+  транскрипт через существующие `exportMarkdown` и
+  `archiveFileName`/`archiveFilePath` без изменений. Открытый вопрос
+  закрыт.
 
 ## Контекст
 

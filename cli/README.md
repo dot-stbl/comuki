@@ -61,6 +61,7 @@ cd cli && bun run build   # → ./comuki.exe (Windows) / comuki
 | `comuki runs [list]` | таблица ранов; `--page`, `--pageSize`, `--filter status==queued` |
 | `comuki login` | email+пароль → session cookie в `~/.config/comuki/config.json` |
 | `comuki whoami` | текущий субъект, роли, разрешения |
+| `comuki archive [list\|save]` | список архивов (`~/.config/comuki/archive/`); `archive save <sessionId>` или `archive save --current` пишет транскрипт сессии на диск и печатает путь |
 
 Глобальные опции: `--url`, `--api-key`, `--project` (id, слаг или имя),
 `--theme <name>-<dark|light>` (по умолчанию `dichromat-dark` — все семь

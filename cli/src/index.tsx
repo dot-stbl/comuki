@@ -1,8 +1,9 @@
 /**
  * Entry + command routing: `comuki` (default = the multi-session chat
  * REPL), `status`, `runs list`, `login`, `whoami`, `config [show]`,
- * `setup`, `completion`, `doctor`, `archive`. `-m` / piped stdin skip
- * the REPL. Plain-console: config show, completion, doctor, archive, oneshot, --json.
+ * `setup`, `completion`, `doctor`, `archive [list|save]`. `-m` / piped
+ * stdin skip the REPL. Plain-console: config show, completion, doctor,
+ * `archive [list]`, `archive save`, oneshot, --json.
  *
  * Issue #79 — `--mode`, `--reduced-motion`, `--high-contrast`,
  * `--no-color`, `--ascii`, `--no-mouse`, `--unicode-narrow`,
@@ -31,7 +32,7 @@ import { printConfigShow } from "./commands/config"
 import { printCompletion } from "./commands/completion"
 import { printDoctor } from "./commands/doctor"
 import { SetupApp } from "./commands/setup"
-import { printArchiveList } from "./commands/archive"
+import { printArchiveList, runArchiveSave } from "./commands/archive"
 import {
   ONESHOT_TIMEOUT_MS,
   readStdinText,
@@ -52,7 +53,7 @@ import {
   resolveConfig,
   type ResolvedConfig,
 } from "./lib/config"
-import { resolveCommand } from "./lib/commands"
+import { resolveArchiveAction, resolveCommand } from "./lib/commands"
 import { CLI_VERSION } from "./components/StatusLine"
 import { formatWhoamiLines, whoAmI, whoFromError, whoFromMe } from "./lib/auth"
 import { mapWhoamiJson } from "./lib/jsonout"
@@ -296,7 +297,27 @@ async function main(): Promise<void> {
         })
     )
     .command("doctor", "check host, auth, config and theme")
-    .command("archive", "list archived session transcripts")
+    .command(
+      "archive [action] [session]",
+      "list or save archived session transcripts",
+      (y) =>
+        y
+          .positional("action", {
+            type: "string",
+            default: "list",
+            describe: "list|save",
+          })
+          .positional("session", {
+            type: "string",
+            describe: "session id (with `save`)",
+          })
+          .option("current", {
+            type: "boolean",
+            default: false,
+            describe:
+              "save the active session (with `save`; wins over a session id if both are given)",
+          })
+    )
     .demandCommand(0, 0) // no command → the REPL
     .strict()
     .parse()
@@ -339,7 +360,25 @@ async function main(): Promise<void> {
     return
   }
   if (command === "archive") {
-    await printArchiveList()
+    const archiveAction = resolveArchiveAction(
+      argv._,
+      argv.current === true
+    )
+    if (archiveAction.kind === "list") {
+      await printArchiveList()
+      return
+    }
+    if (archiveAction.kind === "unknown") {
+      process.stderr.write(
+        `comuki: unknown archive action '${archiveAction.action}' (expected list or save)\n`
+      )
+      process.exitCode = 2
+      return
+    }
+    process.exitCode = await runArchiveSave(await loadConfig(overrides), {
+      sessionId: archiveAction.sessionId,
+      current: archiveAction.current,
+    })
     return
   }
 

@@ -1,4 +1,5 @@
 using Comuki.Host.Testing.Clocks;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Modules.Identity.Domain.ApiKeys;
 using Comuki.Modules.Identity.Domain.Assignments;
 using Comuki.Modules.Identity.Domain.Oidc;
@@ -11,23 +12,22 @@ using Comuki.Modules.Identity.Infrastructure.Persistence.Stores;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Modules.Identity.Integration.Stores;
 
 /// <summary>
-/// Identity EF stores over a real Testcontainers Postgres: exercises the
-/// truth-table branches the unit suite cannot reach — the
+/// Identity EF stores over the collection's shared, migrated Postgres
+/// (<see cref="PostgresCollectionFixture"/>, reset to empty before every test):
+/// exercises the truth-table branches the unit suite cannot reach — the
 /// detached-vs-tracked SaveAsync paths, the active-only filter and the
 /// subject/scope filter composition of <see cref="RoleAssignmentStore"/>,
 /// plus the prefix lookup and SaveAsync paths of <see cref="ApiKeyStore"/>.
 /// </summary>
-public sealed class IdentityStoresShould : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres (<see cref="IdentityStoresIntegrationCollection"/>) — reset to empty before every test (this class also keeps its own per-test <c>ResetAsync()</c> as belt-and-braces; not removed here).</param>
+[Collection(nameof(IdentityStoresIntegrationCollection))]
+public sealed class IdentityStoresShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
-
     private IdentityDbContext db = null!;
     private RoleAssignmentStore assignmentStore = null!;
     private ApiKeyStore apiKeyStore = null!;
@@ -38,16 +38,18 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-
-        await container.StartAsync(cancellationToken);
-        var connectionString = container.GetConnectionString();
+        // The identity schema is already migrated once by
+        // PostgresCollectionFixture (HostDatabaseMigrator.MigrateAllAsync
+        // covers it). Reset gives this test the same empty-tables
+        // starting point the old per-test container used to give it.
+        // The per-test ResetAsync() below is now belt-and-braces
+        // redundant with this reset — kept untouched per the brief.
+        await postgres.ResetDatabaseAsync();
 
         var optionsBuilder = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(optionsBuilder, connectionString);
+        IdentityDbContext.ApplyOptions(optionsBuilder, postgres.ConnectionString);
 
         db = new IdentityDbContext(optionsBuilder.Options);
-        await db.Database.MigrateAsync(cancellationToken);
 
         var clock = new FakeTimeProvider(now);
 
@@ -60,7 +62,6 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await db.DisposeAsync();
-        await container.DisposeAsync();
     }
 
     /// <summary>Wipes the data between tests so each one starts from a clean slate.</summary>

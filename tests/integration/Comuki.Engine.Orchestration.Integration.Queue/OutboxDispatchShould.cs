@@ -207,11 +207,6 @@ public sealed class OutboxDispatchShould(PostgresCollectionFixture postgres)
             var seededIds = await SeedOutboxAsync(provider, new FakeTimeProvider(baseTime), 1);
             var messageId = seededIds.ShouldHaveSingleItem();
 
-            using (var crashScope = provider.CreateScope())
-            {
-                _ = crashScope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
-            }
-
             countingPublisher.InvocationCount.ShouldBe(0);
 
             // In a brand-new scope (mimicking process restart + a later

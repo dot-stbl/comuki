@@ -1,0 +1,37 @@
+# WS10 golden-task corpus entry #3 — medium.
+# small-repo fixture has no test project, so the "tests pass" judge
+# reports n/a here; that's expected, not a bug.
+schemaVersion: 1
+name: add-validation
+description: >
+  Medium: add a small validation helper to OrderTotal and call it from
+  Calculate before the loop runs. Helper checks that every order's
+  Amount is non-negative; an invalid order throws ArgumentOutOfRangeException.
+  Two logical changes, one file: a new helper + the new call site.
+ticket:
+  source: github
+  title: "OrderTotal.Calculate should reject orders with negative Amount"
+  body: |
+    Today OrderTotal.Calculate happily sums orders whose Amount is
+    negative, which is wrong for an invoice total. Add a static helper
+    ValidateAmounts(IEnumerable<Order>) that throws
+    ArgumentOutOfRangeException(nameof(orders)) on the first negative
+    amount, and call it at the top of Calculate before the existing
+    null check.
+  labels: [bug, comuki]
+  targetRepo:
+    fixture: small-repo
+    ref: main
+worker:
+  image: comuki-agent-test-worker:ws6
+  profileKey: implement
+  profilesRef: test
+model:
+  mode: fake
+  fakeScript: scripts/add-validation.fake.json
+eval:
+  difficulty: medium
+  expectedOutcome: A static ValidateAmounts helper throws on the first negative Amount, and Calculate calls it before any other work.
+  allowedFiles:
+    - src/OrderTotal.cs
+  maxToolCalls: 6

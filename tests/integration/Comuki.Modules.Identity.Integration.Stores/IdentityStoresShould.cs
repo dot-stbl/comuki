@@ -1,3 +1,4 @@
+using Comuki.Host.Testing.Clocks;
 using Comuki.Modules.Identity.Domain.ApiKeys;
 using Comuki.Modules.Identity.Domain.Assignments;
 using Comuki.Modules.Identity.Domain.Oidc;
@@ -283,21 +284,5 @@ public sealed class IdentityStoresShould : IAsyncLifetime
         var consumed = await oidcStateStore.ConsumeAsync(expired.Id, TestContext.Current.CancellationToken);
 
         consumed.ShouldBeNull();
-    }
-}
-
-/// <summary>
-/// Deterministic clock for expiry tests — the store reads time exclusively
-/// through the injected <see cref="TimeProvider" />.
-/// </summary>
-/// <param name="initial">The fixed reading returned by <see cref="GetUtcNow" />.</param>
-internal sealed class FakeTimeProvider(DateTimeOffset initial) : TimeProvider
-{
-    private readonly DateTimeOffset utcNow = initial;
-
-    /// <inheritdoc />
-    public override DateTimeOffset GetUtcNow()
-    {
-        return utcNow;
     }
 }

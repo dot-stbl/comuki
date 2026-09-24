@@ -6,8 +6,7 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -16,24 +15,24 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Runs;
 
 /// <summary>
 /// Boots the real host composition on a random loopback port against one
-/// migrated Testcontainers Postgres (same contract as the chat fixture) and
-/// exercises <c>GET /api/v1/runs</c>: filter DSL, sort, paging envelope,
-/// permission gate (anonymous 401) and the 400 path for an illegal filter.
+/// shared, migrated Postgres (owned by this collection's
+/// <see cref="PostgresCollectionFixture"/>, reset to empty before every
+/// test — see <see cref="RunsIntegrationCollection"/>) and exercises
+/// <c>GET /api/v1/runs</c>: filter DSL, sort, paging envelope, permission
+/// gate (anonymous 401) and the 400 path for an illegal filter.
 /// </summary>
-public sealed class RunsEndpointShould : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres — one container for the whole Runs suite, not one per test.</param>
+[Collection(nameof(RunsIntegrationCollection))]
+public sealed class RunsEndpointShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
     private const string BootstrapEmail = "bootstrap@comuki.test";
     private const string BootstrapPassword = "bootstrap-pass-1";
-
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
 
     /// <summary>
     /// boundary: initialised in InitializeAsync before any test runs
@@ -46,16 +45,17 @@ public sealed class RunsEndpointShould : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await container.StartAsync(cancellationToken);
+        await postgres.ResetDatabaseAsync();
 
-        var connectionString = container.GetConnectionString();
+        var connectionString = postgres.ConnectionString;
 
         var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
         OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
         await using (var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options))
         {
-            await orchestrationDb.Database.MigrateAsync(cancellationToken);
-
+            // Every module's schema, including this one, is already
+            // migrated once by PostgresCollectionFixture — no per-context
+            // MigrateAsync needed here anymore.
             var now = DateTimeOffset.UtcNow;
 
             foreach (var (status, age) in new[]
@@ -77,20 +77,6 @@ public sealed class RunsEndpointShould : IAsyncLifetime
             }
 
             await orchestrationDb.SaveChangesAsync(cancellationToken);
-        }
-
-        var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-        await using (var identityDb = new IdentityDbContext(identityOptions.Options))
-        {
-            await identityDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-        await using (var projectsDb = new ProjectsDbContext(projectsOptions.Options))
-        {
-            await projectsDb.Database.MigrateAsync(cancellationToken);
         }
 
         var builder = WebApplication.CreateBuilder(
@@ -142,7 +128,6 @@ public sealed class RunsEndpointShould : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await application.DisposeAsync();
-        await container.DisposeAsync();
     }
 
     private async Task<HttpClient> CreateAdminClientAsync()
@@ -250,3 +235,21 @@ public sealed class RunsEndpointShould : IAsyncLifetime
         return port;
     }
 }
+
+/// <summary>
+/// One shared Postgres for the whole Runs suite (WS2). Before this
+/// collection existed, none of the three Runs test classes carried a
+/// <c>[Collection]</c> attribute at all, so xUnit ran them in three
+/// separate implicit collections — in parallel, by default, three
+/// full-host Testcontainers instances at once. That is a real, observed
+/// flake source (verified against master: repeated baseline runs showed a
+/// different one of the three classes' tests failing each time — an
+/// "ageSeconds" timing assertion in <c>EscalationTimeoutSweeperShould</c>
+/// once, a seeded-runs-filtered-by-status 400 in this class another time),
+/// not a hypothetical one. <c>DisableParallelization = true</c> here fixes
+/// that as a side effect of the shared-fixture conversion, the same
+/// contract <c>CostsIntegrationCollection</c> and
+/// <c>WorkersIntegrationCollection</c> already document.
+/// </summary>
+[CollectionDefinition(nameof(RunsIntegrationCollection), DisableParallelization = true)]
+public sealed class RunsIntegrationCollection : ICollectionFixture<PostgresCollectionFixture>;

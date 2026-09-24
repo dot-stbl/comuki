@@ -1,31 +1,29 @@
 using System.Net;
 using System.Net.Http.Json;
 using Comuki.Host.Testing;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Modules.Costs.Domain.Events;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Costs;
 
 /// <summary>
 /// Boots the real host composition on a random loopback port against one
-/// migrated Testcontainers Postgres (every module context, via
-/// <see cref="HostDatabaseMigrator"/>) and exercises
-/// <c>GET /api/v1/costs</c>: the platform-wide rollup over a seeded
-/// usage-events table (per-project slices, per-day series, window and
-/// all-time totals) and the permission gate (anonymous 401).
+/// shared, migrated Postgres (owned by this type's own
+/// <see cref="PostgresCollectionFixture"/>, reset to empty before every
+/// test) and exercises <c>GET /api/v1/costs</c>: the platform-wide rollup
+/// over a seeded usage-events table (per-project slices, per-day series,
+/// window and all-time totals) and the permission gate (anonymous 401).
 /// </summary>
+/// <param name="postgres">The collection's shared Postgres (<see cref="CostsIntegrationCollection"/>) — reset to empty for every test, migrated once for the whole run.</param>
 [Collection(nameof(CostsIntegrationCollection))]
-public sealed class PlatformCostsEndpointShould : IAsyncLifetime
+public sealed class PlatformCostsEndpointShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
-
     /// <summary>
     /// boundary: initialised in InitializeAsync before any test runs
     /// </summary>
@@ -42,10 +40,8 @@ public sealed class PlatformCostsEndpointShould : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await container.StartAsync(cancellationToken);
-
-        var connectionString = container.GetConnectionString();
-        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
+        await postgres.ResetDatabaseAsync();
+        var connectionString = postgres.ConnectionString;
 
         var now = DateTimeOffset.UtcNow;
 
@@ -89,7 +85,6 @@ public sealed class PlatformCostsEndpointShould : IAsyncLifetime
     {
         await application.DisposeAsync();
         controlPlane.Dispose();
-        await container.DisposeAsync();
     }
 
     private Task<HttpClient> CreateAdminClientAsync()
@@ -155,9 +150,12 @@ public sealed class PlatformCostsEndpointShould : IAsyncLifetime
 }
 
 /// <summary>
-/// One container per class, never in parallel: two Testcontainers hosts on
-/// the same Docker daemon starve the bootstrap-admin seed long enough for
-/// the faster class to win and the slower boot to get canceled mid-start.
+/// One shared Postgres for the whole Costs suite (WS2), never in parallel:
+/// two Testcontainers hosts on the same Docker daemon starve the
+/// bootstrap-admin seed long enough for the faster class to win and the
+/// slower boot to get canceled mid-start — <see cref="PostgresCollectionFixture.ResetDatabaseAsync"/>
+/// gives each test its own empty tables without paying for a second
+/// container.
 /// </summary>
 [CollectionDefinition(nameof(CostsIntegrationCollection), DisableParallelization = true)]
-public sealed class CostsIntegrationCollection;
+public sealed class CostsIntegrationCollection : ICollectionFixture<PostgresCollectionFixture>;

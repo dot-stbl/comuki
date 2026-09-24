@@ -18,6 +18,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\platform\src\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
+    <!-- WS2 task 2.4: shared FakeTimeProvider, was a per-project duplicate. -->
+    <ProjectReference Include="..\Comuki.Host.Testing\Comuki.Host.Testing.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using Comuki.Host.Testing.Fixtures;
 using Shouldly;
 using Xunit;
 
@@ -18,8 +19,9 @@ namespace Comuki.Host.Integration.Proxy;
 /// v1 ships auth + passthrough only; the unit suite covers the meter
 /// path end-to-end.
 /// </summary>
+/// <param name="postgres">The collection's shared Postgres (<see cref="ProxyIntegrationCollection"/>) — one container for the whole Proxy suite, reset to empty before this class's <see cref="HostProxyServer"/> boots.</param>
 [Collection(nameof(ProxyIntegrationCollection))]
-public sealed class ProxyPassthroughShould : IAsyncLifetime
+public sealed class ProxyPassthroughShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
     private const string VirtualKey = "vkey_test_alpha";
     private const string RequestBody = /*lang=json,strict*/ """{"model":"gpt-4o-mini","messages":[{"role":"user","content":"hi"}]}""";
@@ -29,7 +31,7 @@ public sealed class ProxyPassthroughShould : IAsyncLifetime
     /// <inheritdoc />
     public ValueTask InitializeAsync()
     {
-        server = new HostProxyServer();
+        server = new HostProxyServer(postgres);
         return server.InitializeAsync();
     }
 

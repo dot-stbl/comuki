@@ -7,8 +7,7 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.EscalationTimeout;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
-using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.AspNetCore.Builder;
@@ -18,28 +17,28 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Runs;
 
 /// <summary>
-/// Boots the host composition on a random loopback port against a
-/// migrated Testcontainers Postgres and exercises the passive autonomy
-/// ratchet on the <see cref="RunStatus.Escalated"/> state: the
-/// <see cref="EscalationTimeoutSweeper"/> should archive stale escalated
-/// runs to <see cref="RunStatus.Cancelled"/> and journal one
-/// <see cref="RunEventTypes.RunEscalationTimeout"/> event per row.
-/// Fresh Escalated runs and non-Escalated runs are left alone.
+/// Boots the host composition on a random loopback port against one
+/// shared, migrated Postgres (owned by this collection's
+/// <see cref="PostgresCollectionFixture"/>, reset to empty before every
+/// test — see <see cref="RunsIntegrationCollection"/>) and exercises the
+/// passive autonomy ratchet on the <see cref="RunStatus.Escalated"/>
+/// state: the <see cref="EscalationTimeoutSweeper"/> should archive stale
+/// escalated runs to <see cref="RunStatus.Cancelled"/> and journal one
+/// <see cref="RunEventTypes.RunEscalationTimeout"/> event per row. Fresh
+/// Escalated runs and non-Escalated runs are left alone.
 /// </summary>
-public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres — one container for the whole Runs suite, not one per test.</param>
+[Collection(nameof(RunsIntegrationCollection))]
+public sealed class EscalationTimeoutSweeperShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
     private const string BootstrapEmail = "bootstrap@comuki.test";
     private const string BootstrapPassword = "bootstrap-pass-1";
     private static readonly TimeSpan shortTimeout = TimeSpan.FromMinutes(5);
-
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
 
     /// <summary>boundary: initialised in InitializeAsync before any test runs</summary>
     private WebApplication application = null!;
@@ -48,30 +47,9 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await container.StartAsync(cancellationToken);
+        await postgres.ResetDatabaseAsync();
 
-        var connectionString = container.GetConnectionString();
-
-        var orchestrationOptions = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(orchestrationOptions, connectionString);
-        await using (var orchestrationDb = new OrchestrationDbContext(orchestrationOptions.Options))
-        {
-            await orchestrationDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var identityOptions = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(identityOptions, connectionString);
-        await using (var identityDb = new IdentityDbContext(identityOptions.Options))
-        {
-            await identityDb.Database.MigrateAsync(cancellationToken);
-        }
-
-        var projectsOptions = new DbContextOptionsBuilder<ProjectsDbContext>();
-        ProjectsDbContext.ApplyOptions(projectsOptions, connectionString);
-        await using (var projectsDb = new ProjectsDbContext(projectsOptions.Options))
-        {
-            await projectsDb.Database.MigrateAsync(cancellationToken);
-        }
+        var connectionString = postgres.ConnectionString;
 
         var builder = WebApplication.CreateBuilder(
             new WebApplicationOptions
@@ -112,7 +90,6 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await application.DisposeAsync();
-        await container.DisposeAsync();
     }
 
     [Fact(DisplayName = "Given an escalated run older than the timeout, when the sweeper runs, then it transitions to cancelled and journals one run.escalation_timeout event")]
@@ -176,7 +153,7 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
     private async Task<RunId> SeedEscalatedAsync(TimeSpan age, CancellationToken cancellationToken)
     {
         var optionsBuilder = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(optionsBuilder, container.GetConnectionString());
+        OrchestrationDbContext.ApplyOptions(optionsBuilder, postgres.ConnectionString);
         await using var db = new OrchestrationDbContext(optionsBuilder.Options);
 
         var now = DateTimeOffset.UtcNow;
@@ -192,7 +169,7 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
     private async Task<RunId> SeedRunningRunAsync(CancellationToken cancellationToken)
     {
         var optionsBuilder = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(optionsBuilder, container.GetConnectionString());
+        OrchestrationDbContext.ApplyOptions(optionsBuilder, postgres.ConnectionString);
         await using var db = new OrchestrationDbContext(optionsBuilder.Options);
 
         var now = DateTimeOffset.UtcNow;
@@ -221,7 +198,7 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
         CancellationToken cancellationToken)
     {
         var optionsBuilder = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(optionsBuilder, container.GetConnectionString());
+        OrchestrationDbContext.ApplyOptions(optionsBuilder, postgres.ConnectionString);
         await using var db = new OrchestrationDbContext(optionsBuilder.Options);
 
         var run = await db.Runs.AsNoTracking().FirstAsync(r => r.Id == runId, cancellationToken);
@@ -248,7 +225,7 @@ public sealed class EscalationTimeoutSweeperShould : IAsyncLifetime
         var staleId = await SeedEscalatedAsync(shortTimeout + TimeSpan.FromHours(2), cancellationToken);
 
         var optionsBuilder = new DbContextOptionsBuilder<OrchestrationDbContext>();
-        OrchestrationDbContext.ApplyOptions(optionsBuilder, container.GetConnectionString());
+        OrchestrationDbContext.ApplyOptions(optionsBuilder, postgres.ConnectionString);
         await using (var flipDb = new OrchestrationDbContext(optionsBuilder.Options))
         {
             var run = await flipDb.Runs.FirstAsync(r => r.Id == staleId, cancellationToken);

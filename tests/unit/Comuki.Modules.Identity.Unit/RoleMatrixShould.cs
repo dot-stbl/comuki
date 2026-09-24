@@ -72,4 +72,26 @@ public sealed class RoleMatrixShould
         granted.ShouldContain(Permissions.IdentityWrite);
         granted.ShouldContain(Permissions.KnowledgeAdmin);
     }
+
+    [Fact(DisplayName = "Given the scheduler permissions, when roles are inspected, then write is project-admin and above only (add-scheduled-jobs design decision #8)")]
+    public void RestrictSchedulerWriteToProjectAdminAndAbove()
+    {
+        Role[] writers = [Role.PlatformAdmin, Role.Operator, Role.ProjectAdmin];
+        Role[] nonWriters = [Role.Approver, Role.Member, Role.Viewer];
+
+        foreach (var role in writers)
+        {
+            RoleMatrix.PermissionsOf(role).ShouldContain(Permissions.SchedulerWrite, $"{role} should hold scheduler:write");
+        }
+
+        foreach (var role in nonWriters)
+        {
+            RoleMatrix.PermissionsOf(role).ShouldNotContain(Permissions.SchedulerWrite, $"{role} should not hold scheduler:write");
+        }
+
+        foreach (var role in Enum.GetValues<Role>())
+        {
+            RoleMatrix.PermissionsOf(role).ShouldContain(Permissions.SchedulerRead, $"{role} should hold scheduler:read");
+        }
+    }
 }

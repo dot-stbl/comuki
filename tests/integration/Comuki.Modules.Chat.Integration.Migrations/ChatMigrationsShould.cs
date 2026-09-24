@@ -24,7 +24,7 @@ public sealed class ChatMigrationsShould : IAsyncLifetime
     private const string PreviousMigrationId = "20260903085537_UseSchemas";
     private const string PartsMigrationId = "20260911020202_ChatMessageParts";
 
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("pgvector/pgvector:pg16")
+    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
         .Build();
 
     /// <summary>boundary: initialised in InitializeAsync before any test runs</summary>
@@ -36,6 +36,7 @@ public sealed class ChatMigrationsShould : IAsyncLifetime
         var cancellationToken = TestContext.Current.CancellationToken;
         await container.StartAsync(cancellationToken);
 
+        // Direct construction only — AddChatPersistence also compiles the Voluta chat graph and pulls in AddChatApplication's ports, none of which this test needs (schema + IMigrator is enough).
         var options = new DbContextOptionsBuilder<ChatDbContext>();
         ChatDbContext.ApplyOptions(options, container.GetConnectionString());
         db = new ChatDbContext(options.Options);

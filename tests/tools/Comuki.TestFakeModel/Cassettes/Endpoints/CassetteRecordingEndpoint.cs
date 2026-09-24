@@ -1,3 +1,6 @@
+using System.Text.Json;
+using Comuki.TestFakeModel.Anthropic.Errors;
+using Comuki.TestFakeModel.Cassettes.Hosting;
 using Comuki.TestFakeModel.Cassettes.Matching;
 using Comuki.TestFakeModel.Cassettes.Recording;
 
@@ -38,6 +41,21 @@ public static class CassetteRecordingEndpoint
 
         using var disposableDocument = document;
 
+        // WS9 pre-forward budget gate: refuses to call the real upstream (and
+        // refuses to append that refused attempt to the cassette) once the
+        // BudgetTracker is already over cap. Design choice — there is no
+        // external polling point mid-run the way T2a's container harness has,
+        // so the only practical enforcement seam for a single-blocking-call
+        // harness is the next inbound POST. Returning an Anthropic-shaped
+        // api_error matches the cassette-error envelope the existing
+        // Forwarder / Response paths already speak — keeps the cassette
+        // redaction happy if a downstream re-record ever scrapes this refusal.
+        if (state.Tracker is { IsOverBudget: true } tracker)
+        {
+            await WriteBudgetExceededAsync(context, path, tracker, cancellationToken);
+            return;
+        }
+
         // RecordAsync both writes the real (unredacted) upstream response onto
         // `context` and persists a redacted copy to the cassette; a refusal
         // here (Redaction.CassetteRedactionRefusedException) surfaces as an
@@ -46,5 +64,16 @@ public static class CassetteRecordingEndpoint
         // (design.md: refuse to write, not "probably fine"), not swallow the
         // refusal and leave a caller believing the cassette is complete.
         await state.RecordAsync(context, context.Request.Method, path, rawBody, CassetteRequestParser.Parse(path, document.RootElement), cancellationToken);
+    }
+
+    private static async Task WriteBudgetExceededAsync(HttpContext context, string path, BudgetTracker tracker, CancellationToken cancellationToken)
+    {
+        var cap = tracker.Cap.UsdMicros ?? 0L;
+        var observed = tracker.UsdMicros;
+        var detail = $"recording refused: spent {observed} micro-USD exceeds the {cap} micro-USD cap.";
+        var body = AnthropicErrors.ScriptFailure(detail);
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(JsonSerializer.Serialize(body, JsonSerializerOptions.Web), cancellationToken);
     }
 }

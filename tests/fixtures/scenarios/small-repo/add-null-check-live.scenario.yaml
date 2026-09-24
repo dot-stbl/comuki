@@ -1,0 +1,61 @@
+# WS9 live-mode worked example — same bug/ticket shape as
+# add-null-check-real-pi.scenario.yaml (WS7), but with `model.mode: live`
+# instead of `fake`. Only activate via COMUKI_LIVE_MODEL_BASE_URL pointing
+# at a FakeModelServer / stub listener (never a paid API).
+schemaVersion: 1
+name: add-null-check-live
+description: >
+  Ticket asks for the same null-guard fix as WS7's
+  add-null-check-real-pi.scenario.yaml. WS9: real pi is pointed at a
+  recording CassetteModelServer wrapping a (loopback) FakeModelServer that
+  scripts the same edit trajectory. Read by LiveModeScenarioShould, which
+  skips the fact entirely unless COMUKI_LIVE_MODEL_BASE_URL is set, then
+  runs end-to-end against whatever the caller pointed it at — using the
+  same RealPiFakeModelCollection as WS7/WS8 for ticket seeding and podman
+  isolation (no Podman needed for live mode either, live harness is
+  in-process like the WS7 harness).
+ticket:
+  source: github
+  title: "NullReferenceException in OrderTotal.Calculate (live)"
+  body: |
+    Calculate() throws when orders is null. Add a guard and a test.
+  labels: [bug, comuki, ws9-live]
+  targetRepo:
+    fixture: small-repo
+    ref: main
+worker:
+  # Same label as the WS7/WS8 harnesses — RealPiFakeModelHost's
+  # Intake:Worker:Image config matches a single label across the
+  # collection so the queue claim SQL finds the in-flight run regardless
+  # of which scenario-name harness served it.
+  image: comuki-agent-test-worker:ws7-real-pi
+  profileKey: implement
+  profilesRef: test
+model:
+  mode: live
+budget:
+  # Generous on purpose — this scenario is "does the wiring work end-to-
+  # end", not "does the cap fire". Live-mode cost-cap enforcement is
+  # exercised by the unit tests in Comuki.AgentTest.Runner.Unit; here we
+  # only prove the cassette-server-side pre-forward refusal would apply
+  # if a tighter cap were set.
+  maxUsd: 1.00
+expectedTrajectory:
+  # Same shape as the WS7 fixture: real pi invokes an `edit` tool_use
+  # that RealPiHarnessBase's ResolveWorkingDirectoryAsync exposes for the
+  # diff assertion to verify.
+  - stage: work-item
+    toolsUsed: [edit]
+    forbiddenTools: [WebFetch]
+assertions:
+  journal:
+    - condition: WorkspacePrepared
+      expected: true
+    - condition: AgentRunning
+      expected: true
+  run:
+    finalStatus: succeeded
+  diff:
+    filesChanged:
+      - path: "src/OrderTotal.cs"
+        mustContain: "ArgumentNullException"

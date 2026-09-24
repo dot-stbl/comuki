@@ -1,3 +1,4 @@
+using Comuki.TestFakeModel.Cassettes.Hosting;
 using Comuki.TestFakeModel.Cassettes.IO;
 using Comuki.TestFakeModel.Cassettes.Matching;
 using Comuki.TestFakeModel.Cassettes.Redaction;
@@ -20,9 +21,15 @@ internal sealed class CassetteRecordingState(
     string recordedAgainst,
     string scenario,
     TimeProvider clock,
-    CassetteUpstreamForwarder forwarder) : IDisposable
+    CassetteUpstreamForwarder forwarder,
+    BudgetTracker? tracker = null,
+    decimal usdPerMillionInputTokens = 3m,
+    decimal usdPerMillionOutputTokens = 15m) : IDisposable
 {
     private readonly SemaphoreSlim gate = new(1, 1);
+
+    /// <summary>The optional pre-forward budget tracker the recording endpoint checks before calling upstream. <c>null</c> = no enforcement.</summary>
+    public BudgetTracker? Tracker => tracker;
 
     /// <summary>Forwards, redacts, and appends one exchange; returns the redacted response actually served to the caller.</summary>
     public async Task<CassetteResponse> RecordAsync(
@@ -34,6 +41,14 @@ internal sealed class CassetteRecordingState(
         CancellationToken cancellationToken)
     {
         var captured = await forwarder.ForwardAsync(context, rawBody, cancellationToken);
+
+        if (tracker is not null)
+        {
+            var usage = AnthropicUsageExtractor.Extract(captured);
+            var spendMicros = ComputeUsdMicros(usage, usdPerMillionInputTokens, usdPerMillionOutputTokens);
+            tracker.Add(spendMicros, usage.InputTokens, usage.OutputTokens);
+        }
+
         var redacted = captured with
         {
             Body = captured.Body is { } body ? CassetteRedactor.Redact(body) : null,
@@ -53,6 +68,21 @@ internal sealed class CassetteRecordingState(
         }
 
         return redacted;
+    }
+
+    /// <summary>
+    /// Computes the micro-USD cost of one usage observation under the
+    /// configured pricing defaults. Same formula as
+    /// <c>Comuki.Modules.Proxy.Application.Metering.ProxyPricingCalculator.ComputeUsdMicros</c>
+    /// — duplicated here to keep this project dependency-free.
+    /// </summary>
+    private static long ComputeUsdMicros(AnthropicUsageExtractor.UsageCounts usage, decimal usdPerMillionIn, decimal usdPerMillionOut)
+    {
+        var inputUsd = usage.InputTokens / 1_000_000m * usdPerMillionIn;
+        var outputUsd = usage.OutputTokens / 1_000_000m * usdPerMillionOut;
+        var total = inputUsd + outputUsd;
+        var micros = total * 1_000_000m;
+        return (long)decimal.Round(micros, MidpointRounding.AwayFromZero);
     }
 
     /// <inheritdoc />

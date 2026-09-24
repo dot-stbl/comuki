@@ -1,0 +1,11 @@
+{
+  "scenarioName": "loader-demo",
+  "entries": [
+    {
+      "response": {
+        "content": [{ "type": "text", "text": "loaded from json" }],
+        "usage": { "inputTokens": 5, "outputTokens": 3 }
+      }
+    }
+  ]
+}

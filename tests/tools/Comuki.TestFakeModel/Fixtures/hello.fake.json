@@ -1,0 +1,29 @@
+{
+  "scenarioName": "hello",
+  "entries": [
+    {
+      "response": {
+        "content": [{ "type": "text", "text": "Hello from Comuki.TestFakeModel!" }],
+        "usage": { "inputTokens": 12, "outputTokens": 8 }
+      }
+    },
+    {
+      "response": {
+        "content": [{ "type": "text", "text": "Hello from Comuki.TestFakeModel! (turn 2)" }],
+        "usage": { "inputTokens": 12, "outputTokens": 8 }
+      }
+    },
+    {
+      "response": {
+        "content": [{ "type": "text", "text": "Hello from Comuki.TestFakeModel! (turn 3)" }],
+        "usage": { "inputTokens": 12, "outputTokens": 8 }
+      }
+    },
+    {
+      "response": {
+        "content": [{ "type": "text", "text": "Hello from Comuki.TestFakeModel! (turn 4)" }],
+        "usage": { "inputTokens": 12, "outputTokens": 8 }
+      }
+    }
+  ]
+}

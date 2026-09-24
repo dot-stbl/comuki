@@ -1,6 +1,5 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq.Expressions;
 
@@ -113,11 +112,14 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
     ///     Converts the raw string value(s) from the neutral node to the field's CLR type.
     ///     Handles function calls (now(-7d)), scalar values, and IN-lists.
     /// </summary>
-    /// <param name="cmp"></param>
-    /// <param name="field"></param>
-    /// <param name="valueKind"></param>
+    /// <param name="cmp">Comparison node carrying the raw wire value and any function-call tag.</param>
+    /// <param name="field">Field the value is destined for — owns the target <see cref="Type" /> and the operator.</param>
+    /// <param name="valueKind">How the parser read the value: <see cref="ValueKind.None" /> (nullary), <see cref="ValueKind.Scalar" /> (single value or function call), or <see cref="ValueKind.List" /> (IN/NotIn operands).</param>
     /// <param name="now">Anchor for <c>now(offset)</c> function calls.</param>
-    /// <exception cref="NotSupportedException"></exception>
+    /// <exception cref="NotSupportedException">
+    ///     Thrown when <paramref name="valueKind" /> is a value the parser never produces — a
+    ///     future <see cref="ValueKind" /> added without a corresponding switch arm.
+    /// </exception>
     private static object? ConvertValue(ComparisonNode cmp, FilterableField<TEntity> field, ValueKind valueKind, DateTimeOffset now)
     {
         return valueKind switch
@@ -179,26 +181,14 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
 
         try
         {
-            if (underlying == typeof(string))
-            {
-                return text;
-            }
-
-            if (underlying.IsEnum)
-            {
-                return Enum.Parse(underlying, text, true);
-            }
-
-            if (FilterOperatorRegistry.IsSmartType(underlying))
-            {
-                // Smart-type conversion goes through the type's own FromWire(string). Unknown
-                // wire values throw ArgumentOutOfRangeException, which the catch below maps
-                // to FilterParseException — no extra branch.
-                return SmartTypeConverters.GetOrAdd(underlying)(text);
-            }
-
             return underlying switch
             {
+                _ when underlying == typeof(string) => text,
+                _ when underlying.IsEnum => Enum.Parse(underlying, text, true),
+                // Smart-type: defer to the type's own FromWire(string). Unknown wire values
+                // throw ArgumentOutOfRangeException, which the catch below maps to
+                // FilterParseException — no extra branch.
+                _ when SmartTypeSupport.GetFactory(underlying) is { } factory => factory(text),
                 _ when underlying == typeof(DateTimeOffset) => DateTimeOffset.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal),
                 _ when underlying == typeof(DateTime) => DateTime.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal),
                 _ when underlying == typeof(Guid) => Guid.Parse(text),
@@ -210,50 +200,5 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
         {
             throw new FilterParseException($"Cannot convert '{text}' to {underlying.Name}", 0, exception);
         }
-    }
-}
-
-/// <summary>
-///     One resolved <c>string → object</c> factory per smart-type, keyed by the smart-type
-///     itself. Built once via <see cref="CreateFactory" /> on first use, then served from
-///     cache so the per-request hot path in <see cref="EfFilterTranslator{TEntity}" /> does
-///     no reflection.
-/// </summary>
-file static class SmartTypeConverters
-{
-    private static readonly ConcurrentDictionary<Type, Func<string, object>> cache = new();
-
-    /// <summary>Returns the cached factory for <paramref name="type" />, building it on first use.</summary>
-    /// <exception cref="InvalidOperationException">
-    ///     Thrown when the type was registered as a smart-type (passed <see cref="FilterOperatorRegistry.IsSmartType" />)
-    ///     but no public static <c>FromWire(string)</c> method can be located at runtime — a defensive tripwire
-    ///     against a registry cache that has fallen out of sync with the type's actual shape.
-    /// </exception>
-    public static Func<string, object> GetOrAdd(Type type)
-    {
-        return cache.GetOrAdd(type, static t => CreateFactory(t));
-    }
-
-    private static Func<string, object> CreateFactory(Type type)
-    {
-        var fromWire = type.GetMethod(
-            "FromWire",
-            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
-            binder: null,
-            types: [typeof(string)],
-            modifiers: null)
-            ?? throw new InvalidOperationException(
-                $"Type '{type.FullName}' was classified as a smart-type but has no public static FromWire(string) method.");
-
-        // Delegate.CreateDelegate(typeof(Func<string, object>), fromWire) fails here:
-        // every smart-type is a value type (readonly record struct), and CreateDelegate's
-        // signature match does not box a value-type return into `object` the way a normal
-        // method-group conversion does. Build the boxing conversion explicitly instead —
-        // compiled once per type, cached, so the per-request path pays no reflection cost.
-        var wireParameter = Expression.Parameter(typeof(string), "wire");
-
-        return Expression.Lambda<Func<string, object>>(
-            Expression.Convert(Expression.Call(fromWire, wireParameter), typeof(object)),
-            wireParameter).Compile();
     }
 }

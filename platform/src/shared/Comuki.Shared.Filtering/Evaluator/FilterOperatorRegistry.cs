@@ -1,8 +1,6 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Linq.Expressions;
-using System.Reflection;
 
 using Comuki.Shared.Filtering.Ast;
 using Comuki.Shared.Filtering.Parser;
@@ -237,49 +235,7 @@ public static class FilterOperatorRegistry
         return type.IsEnum
                || type == typeof(Guid)
                || IsNumericTypeCode(Type.GetTypeCode(type))
-               || IsSmartType(type);
-    }
-
-    /// <summary>
-    ///     Per-type result cache for <see cref="IsSmartType" />. <c>FilterableFieldSetBuilder</c>
-    ///     calls the registry once per property of every filtered entity, and reflection is run
-    ///     on every property type — caching avoids re-walking the same closed-set smart-type
-    ///     twice per entity. Keyed by <see cref="Type" />; values are immutable for the
-    ///     process lifetime.
-    /// </summary>
-    private static readonly ConcurrentDictionary<Type, bool> smartTypeCache = new();
-
-    /// <summary>
-    ///     Detects the engine's "smart-type" shape: a closed-set value type that
-    ///     replaces a plain <c>enum</c> per <c>smart-types.md</c> — a <c>readonly record struct</c>
-    ///     with a private constructor, a public <c>static T FromWire(string)</c>, and a public
-    ///     <c>string Value</c>. Same enumerable operator set as a real <c>enum</c>
-    ///     (<see cref="FilterOperator.Eq" /> / <see cref="FilterOperator.NotEq" /> /
-    ///     <see cref="FilterOperator.In" /> / <see cref="FilterOperator.NotIn" />): equality and
-    ///     membership only, no range (<see cref="IsOrdered" />) and no string ops
-    ///     (<see cref="IsString" />). Detection is structural — no marker interface — so the
-    ///     shared Filtering library stays decoupled from any specific domain module.
-    /// </summary>
-    /// <remarks>
-    ///     Guarded against false positives: <see cref="string" />, primitive value types, and real
-    ///     <c>enum</c>s are skipped up front — they are already handled by their own arms — before
-    ///     the reflection lookup runs, so an unrelated struct with a coincidentally-named
-    ///     <c>FromWire(string)</c> method does not get treated as a smart-type.
-    /// </remarks>
-    internal static bool IsSmartType(Type type)
-    {
-        return type.IsValueType && !type.IsEnum && !type.IsPrimitive && smartTypeCache.GetOrAdd(type, static t =>
-        {
-            var fromWire = t.GetMethod(
-                "FromWire",
-                BindingFlags.Public | BindingFlags.Static,
-                binder: null,
-                types: [typeof(string)],
-                modifiers: null);
-
-            return fromWire is not null
-                   && fromWire.ReturnType == t;
-        });
+               || SmartTypeSupport.IsSmartType(type);
     }
 
     private static bool IsOrdered(Type type)
@@ -309,17 +265,17 @@ public static class FilterOperatorRegistry
 
     private static MethodCallExpression StringCall(Expression field, object? value, string methodName)
     {
-        var method = typeof(string).GetMethod(methodName, [typeof(string)])!;
-        return Expression.Call(field, method, Constant(value, typeof(string)));
+        return Expression.Call(field, typeof(string).GetMethod(methodName, [typeof(string)])!, Constant(value, typeof(string)));
     }
 
     private static MethodCallExpression IStringCall(Expression field, object? value, string methodName)
     {
         var toLower = typeof(string).GetMethod(nameof(string.ToLower), Type.EmptyTypes)!;
-        var method = typeof(string).GetMethod(methodName, [typeof(string)])!;
-        var loweredField = Expression.Call(field, toLower);
-        var loweredValue = Expression.Call(Constant(value, typeof(string)), toLower);
-        return Expression.Call(loweredField, method, loweredValue);
+
+        return Expression.Call(
+            Expression.Call(field, toLower),
+            typeof(string).GetMethod(methodName, [typeof(string)])!,
+            Expression.Call(Constant(value, typeof(string)), toLower));
     }
 
     private static Expression BuildIn(Type valueType, Expression field, IList? values)

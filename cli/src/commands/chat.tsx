@@ -46,7 +46,6 @@ import {
 } from "../lib/transcript"
 import type { ResolvedConfig } from "../lib/config"
 import { readConfigFile, sessionsFilePath, writeConfigFile } from "../lib/config"
-import { archiveFilePath } from "../lib/archive"
 import { exportFileName, exportMarkdown } from "../lib/export"
 import { terminalTitle, turnDoneSequences, writeTerminal } from "../lib/term"
 import {
@@ -142,11 +141,6 @@ import {
   resolveHarnessLayout,
 } from "../lib/harness-layout"
 import {
-  profileListingLines,
-  profileStoredLine,
-  resolveProfile,
-} from "../lib/profiles"
-import {
   getSnippet,
   isValidSnippetName,
   readSnippetsFile,
@@ -180,11 +174,8 @@ import {
 import {
   DASHBOARD_CHAT_PATH,
   dashboardOpenUrl,
-  noteUnavailableLines,
-  noteUsageLines,
   openDashboardUrl,
   openPanelLines,
-  toolsUnavailableLines,
 } from "../lib/ops"
 import { fetchStatusSnapshot, renderStatusPanel } from "../lib/status"
 import { type HubConnectionState } from "../lib/signalr"
@@ -254,8 +245,6 @@ const SNIP_USAGE = `${colors.faint}  usage: /snip [name|save <name>|rm <name>] �
 
 const ALIAS_USAGE = `${colors.faint}  usage: /alias [set <name> <text>|rm <name>] — names are [a-z][a-z0-9-]*${colors.reset}`
 
-const PROFILE_USAGE = `${colors.faint}  usage: /profile [name] — stored locally; createSession has no profile field${colors.reset}`
-
 export interface ChatCommandProps {
   readonly config: ResolvedConfig
   /** Project id, slug or name; falls back to config.defaultProject. */
@@ -295,12 +284,11 @@ export function ChatApp({ config, project }: ChatCommandProps) {
    */
   const [bellEnabled, setBellEnabled] = useState(config.bell)
   /**
-   * Preferred worker-profile key from config.json. Local only —
-   * createSession has no profile field, so this never rides a turn.
+   * Preferred worker-profile key from config.json, shown in `/status`.
+   * Read-only here — createSession has no profile field, so it never
+   * rides a turn and the CLI has no in-session way to change it.
    */
-  const [preferredProfile, setPreferredProfile] = useState<string | undefined>(
-    config.preferredProfile
-  )
+  const preferredProfile = config.preferredProfile
   /** Mirror for callbacks — `describeTurn` reads the live value. */
   const bellRef = useRef(config.bell)
   /** Overlay over the default chords — `/keys` and the shell useInput. */
@@ -1349,63 +1337,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     [projectLabel, pushLines, tabs]
   )
 
-  // -- /profile ---------------------------------------------------------------
-
-  /**
-   * Lists the host catalog (`GET /profiles`) or well-known stems, and
-   * stores a local preference in config.json. Honest: createSession
-   * has no profile field, so the preference never rides a turn.
-   */
-  const switchProfile = useCallback(
-    async (query: string) => {
-      const client = clientRef.current
-      const emit = (lines: readonly string[]) => {
-        const target = tabs.sessions[tabs.activeIndex]
-        if (target) {
-          pushLines(target.id, lines)
-        } else {
-          setNoticeLines(lines)
-        }
-      }
-      let fromHost = false
-      let catalog: Awaited<ReturnType<ComukiClient["profiles"]>> = []
-      if (client) {
-        try {
-          catalog = await client.profiles()
-          fromHost = true
-        } catch {
-          fromHost = false
-        }
-      }
-      if (query.length === 0) {
-        emit(
-          profileListingLines(preferredProfile ?? null, catalog, { fromHost })
-        )
-        return
-      }
-      const match = resolveProfile(query, catalog)
-      if (!match) {
-        emit([
-          `${colors.faint}  unknown profile '${query}'${colors.reset}`,
-          PROFILE_USAGE,
-          ...profileListingLines(preferredProfile ?? null, catalog, {
-            fromHost,
-          }),
-        ])
-        return
-      }
-      setPreferredProfile(match)
-      try {
-        const contents = await readConfigFile()
-        await writeConfigFile({ ...contents, preferredProfile: match })
-      } catch {
-        // Best-effort persistence; this session's preference already applies.
-      }
-      emit([profileStoredLine(match)])
-    },
-    [preferredProfile, pushLines, tabs]
-  )
-
   // -- session power pack: /branch -------------------------------------------
 
   /**
@@ -1811,42 +1742,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           })()
           return
         }
-        case "archive": {
-          if (!target) {
-            setNoticeLines([
-              `${colors.faint}  no active session to archive${colors.reset}`,
-            ])
-            return
-          }
-          const markdown = exportMarkdown(target.blocks)
-          if (markdown.length === 0) {
-            pushLines(target.id, [
-              `${colors.faint}  nothing to archive — the transcript is empty${colors.reset}`,
-            ])
-            return
-          }
-          const path = archiveFilePath(target.id, target.name)
-          const closingId = target.id
-          void (async () => {
-            try {
-              await Bun.write(path, markdown, { createPath: true })
-              const index = sessionsRef.current.findIndex(
-                (session) => session.id === closingId
-              )
-              if (index >= 0) {
-                closeSession(index)
-              }
-              setNoticeLines([
-                `${colors.faint}  archived ${path}${colors.reset}`,
-              ])
-            } catch (error) {
-              pushLines(closingId, [
-                `${colors.error}${symbols.cross} archive failed: ${describeError(error)}${colors.reset}`,
-              ])
-            }
-          })()
-          return
-        }
         case "bell": {
           if (action.enabled === undefined) {
             const state = bellEnabled ? "on" : "off"
@@ -2209,27 +2104,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
           }
           return
         }
-        case "tools": {
-          const lines = toolsUnavailableLines()
-          setInspector({ title: "tools", lines })
-          return
-        }
-        case "note": {
-          const lines =
-            action.text.length === 0
-              ? noteUsageLines()
-              : noteUnavailableLines()
-          if (target) {
-            pushLines(target.id, lines)
-          } else {
-            setNoticeLines(lines)
-          }
-          return
-        }
-        case "profile": {
-          void switchProfile(action.name)
-          return
-        }
         case "alias": {
           void (async () => {
             const lines = aliasListingLines(await readAliasesFile())
@@ -2326,7 +2200,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
     },
     [
       bellEnabled,
-      closeSession,
       config.url,
       copyLastCode,
       exit,
@@ -2342,7 +2215,6 @@ export function ChatApp({ config, project }: ChatCommandProps) {
       runKb,
       sendMessage,
       stopTurn,
-      switchProfile,
       switchProject,
       tabs,
     ]

@@ -215,4 +215,13 @@
   <ItemGroup>
     <PackageVersion Include="VaultSharp" Version="1.17.5.1" />
   </ItemGroup>
+
+  <!-- add-agentic-test-contour WS4: Comuki.TestFakeModel's fakeScript loader
+       accepts JSON or YAML on disk (design.md "Fake-model design" /
+       tasks.md WS4 4.1). YamlDotNet (MIT) is the de facto standard .NET
+       YAML library and the same one WS6's scenario-format loader will need
+       for scenario/*.yaml — introduced here rather than duplicated later. -->
+  <ItemGroup>
+    <PackageVersion Include="YamlDotNet" Version="18.1.0" />
+  </ItemGroup>
 </Project>

@@ -234,7 +234,8 @@ public static class FilterOperatorRegistry
     {
         return type.IsEnum
                || type == typeof(Guid)
-               || IsNumericTypeCode(Type.GetTypeCode(type));
+               || IsNumericTypeCode(Type.GetTypeCode(type))
+               || SmartTypeSupport.IsSmartType(type);
     }
 
     private static bool IsOrdered(Type type)
@@ -264,17 +265,17 @@ public static class FilterOperatorRegistry
 
     private static MethodCallExpression StringCall(Expression field, object? value, string methodName)
     {
-        var method = typeof(string).GetMethod(methodName, [typeof(string)])!;
-        return Expression.Call(field, method, Constant(value, typeof(string)));
+        return Expression.Call(field, typeof(string).GetMethod(methodName, [typeof(string)])!, Constant(value, typeof(string)));
     }
 
     private static MethodCallExpression IStringCall(Expression field, object? value, string methodName)
     {
         var toLower = typeof(string).GetMethod(nameof(string.ToLower), Type.EmptyTypes)!;
-        var method = typeof(string).GetMethod(methodName, [typeof(string)])!;
-        var loweredField = Expression.Call(field, toLower);
-        var loweredValue = Expression.Call(Constant(value, typeof(string)), toLower);
-        return Expression.Call(loweredField, method, loweredValue);
+
+        return Expression.Call(
+            Expression.Call(field, toLower),
+            typeof(string).GetMethod(methodName, [typeof(string)])!,
+            Expression.Call(Constant(value, typeof(string)), toLower));
     }
 
     private static Expression BuildIn(Type valueType, Expression field, IList? values)

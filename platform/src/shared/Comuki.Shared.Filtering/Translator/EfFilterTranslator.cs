@@ -112,11 +112,14 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
     ///     Converts the raw string value(s) from the neutral node to the field's CLR type.
     ///     Handles function calls (now(-7d)), scalar values, and IN-lists.
     /// </summary>
-    /// <param name="cmp"></param>
-    /// <param name="field"></param>
-    /// <param name="valueKind"></param>
+    /// <param name="cmp">Comparison node carrying the raw wire value and any function-call tag.</param>
+    /// <param name="field">Field the value is destined for — owns the target <see cref="Type" /> and the operator.</param>
+    /// <param name="valueKind">How the parser read the value: <see cref="ValueKind.None" /> (nullary), <see cref="ValueKind.Scalar" /> (single value or function call), or <see cref="ValueKind.List" /> (IN/NotIn operands).</param>
     /// <param name="now">Anchor for <c>now(offset)</c> function calls.</param>
-    /// <exception cref="NotSupportedException"></exception>
+    /// <exception cref="NotSupportedException">
+    ///     Thrown when <paramref name="valueKind" /> is a value the parser never produces — a
+    ///     future <see cref="ValueKind" /> added without a corresponding switch arm.
+    /// </exception>
     private static object? ConvertValue(ComparisonNode cmp, FilterableField<TEntity> field, ValueKind valueKind, DateTimeOffset now)
     {
         return valueKind switch
@@ -182,6 +185,10 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
             {
                 _ when underlying == typeof(string) => text,
                 _ when underlying.IsEnum => Enum.Parse(underlying, text, true),
+                // Smart-type: defer to the type's own FromWire(string). Unknown wire values
+                // throw ArgumentOutOfRangeException, which the catch below maps to
+                // FilterParseException — no extra branch.
+                _ when SmartTypeSupport.GetFactory(underlying) is { } factory => factory(text),
                 _ when underlying == typeof(DateTimeOffset) => DateTimeOffset.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal),
                 _ when underlying == typeof(DateTime) => DateTime.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal),
                 _ when underlying == typeof(Guid) => Guid.Parse(text),

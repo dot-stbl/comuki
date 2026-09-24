@@ -50,13 +50,15 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
 
     private string workerToken = null!;
 
+    private IConfiguration configuration = null!;
+
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
         await container.StartAsync(TestContext.Current.CancellationToken);
         await MigrateAsync(container.GetConnectionString());
 
-        var configuration = new ConfigurationBuilder()
+        configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Orchestration:Lease:LeaseTtl"] = "00:02:00",
@@ -99,6 +101,15 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
             // The lease reaper registers as an IComukiWorker — this
             // registry is what runs it in this fixture.
             services.AddComukiWorkers();
+            // Fixture-local stand-in for IWorkerPoolState — a very recent,
+            // unrelated master commit (1baaa72d) wired claim/heartbeat/
+            // complete/fail through it. This fixture composes the worker
+            // runtime by hand instead of the full
+            // Comuki.Engine.Compute.Installers.ComputeInstaller (which
+            // needs a real Docker/Kubernetes client), so it needs its own
+            // no-op, same as it already does for other engine-only
+            // concerns above.
+            services.AddSingleton<Engine.Compute.Ports.IWorkerPoolState>(new FakeWorkerPoolState());
         });
 
         workerToken = host.GetService<WorkerTokenIssuer>().Issue(WorkerId.New());
@@ -116,6 +127,13 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
     [Fact]
     public async Task RunOneWorkItemThroughFakePiEndToEndAsync()
     {
+        // The crown test (T3.5) and the fast-completing-worker regression
+        // proof for issue #152. Now that TestWorkerHost.StartAsync mirrors
+        // production's Http1AndHttp2-REST + dedicated-Http2-gRPC topology,
+        // TestFakePi's single-digit-ms run lands the FULL event set
+        // (StageStart, text + tool activity, StageReport) via the worker
+        // gRPC bidi stream before REST /complete closes the lease — every
+        // worker.reported entry proves the stream actually negotiated.
         var (runId, workItemId) = await SeedQueuedItemAsync(/*lang=json,strict*/ """{"goal":"do the thing"}""");
 
         var loop = translatorProvider.GetRequiredService<TranslatorLoop>();
@@ -136,6 +154,53 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
         timeline.ShouldContain(static entry => entry.Type == "worker.reported" && entry.PayloadJson.Contains("Bash", StringComparison.Ordinal), "tool activity is journaled");
         timeline.ShouldContain(static entry => entry.Type == "worker.reported" && entry.PayloadJson.Contains("(fake pi done)", StringComparison.Ordinal), "StageReport with the authoritative result is journaled");
         timeline.ShouldContain(static entry => entry.Type == "work_item.status_changed" && entry.PayloadJson.Contains("Succeeded", StringComparison.Ordinal), "completion is journaled");
+    }
+
+    [Fact]
+    public async Task LoseStreamedEventsWhenTheGrpcListenerIsSharedWithRestAsync()
+    {
+        var (runId, workItemId) = await SeedQueuedItemAsync(/*lang=json,strict*/ """{"goal":"characterize the shared-listener bug"}""");
+
+        // Characterizes issue #152's exact root cause (see
+        // TestWorkerHost.StartWithSharedListenerAsync's remarks): a single
+        // shared Http1AndHttp2 listener never negotiates HTTP/2 for the
+        // worker gRPC bidi stream, so no worker.reported entry lands at
+        // all — only the REST-driven work_item.status_changed does. This
+        // guards against ever silently reintroducing a shared listener.
+        await using var sharedListenerHost = await TestWorkerHost.StartWithSharedListenerAsync(services =>
+        {
+            services.AddSingleton(TimeProvider.System);
+            services
+                .AddOrchestrationPersistence(container.GetConnectionString())
+                .AddOrchestrationQueue(configuration)
+                .AddOrchestrationApplication()
+                .AddWorkerRuntime(configuration);
+            services.AddSingleton<Shared.Kernel.Secrets.ISecretResolver>(
+                new Shared.Kernel.Secrets.CompositeSecretResolver(
+                    [new Shared.Kernel.Secrets.EnvSecretProvider()]));
+            services.AddProxyApplication(configuration);
+            services.AddComukiWorkers();
+            services.AddSingleton<Engine.Compute.Ports.IWorkerPoolState>(new FakeWorkerPoolState());
+        });
+        var sharedToken = sharedListenerHost.GetService<WorkerTokenIssuer>().Issue(WorkerId.New());
+
+        await using var provider = BuildTranslatorProvider(
+            ResolveTestFakePiPath(), sharedListenerHost.BaseAddress, sharedListenerHost.GrpcAddress, sharedToken);
+        var loop = provider.GetRequiredService<TranslatorLoop>();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        var ran = await loop.TryRunOnceAsync(timeout.Token);
+
+        ran.ShouldBeTrue("the seeded item should have been claimed");
+
+        var item = await LoadItemAsync(workItemId);
+        item.Status.ShouldBe(WorkItemStatus.Succeeded, "REST /complete still lands over its own connection even though the shared listener drops gRPC");
+
+        var timeline = await ReadTimelineAsync(runId);
+        timeline.ShouldContain(
+            static entry => entry.Type == "work_item.status_changed" && entry.PayloadJson.Contains("Succeeded", StringComparison.Ordinal));
+        timeline.ShouldNotContain(
+            static entry => entry.Type == "worker.reported",
+            "a shared Http1AndHttp2 listener never negotiates HTTP/2 for the worker gRPC stream — this is issue #152's exact mechanism");
     }
 
     [Fact]
@@ -236,11 +301,16 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
 
     private ServiceProvider BuildTranslatorProvider(string piExecutable)
     {
+        return BuildTranslatorProvider(piExecutable, host.BaseAddress, host.GrpcAddress, workerToken);
+    }
+
+    private static ServiceProvider BuildTranslatorProvider(string piExecutable, Uri baseAddress, Uri grpcAddress, string token)
+    {
         var options = new TranslatorOptions
         {
-            OrchestratorBaseUrl = host.BaseAddress,
-            OrchestratorGrpcUrl = host.GrpcAddress,
-            WorkerToken = workerToken,
+            OrchestratorBaseUrl = baseAddress,
+            OrchestratorGrpcUrl = grpcAddress,
+            WorkerToken = token,
             ProfileKey = ProfileKey,
             ProfilesRef = ProfilesRef,
             WorkerImage = Image,
@@ -322,5 +392,18 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
             ?? throw new InvalidOperationException("could not resolve TestFakePi directory");
         var executableName = OperatingSystem.IsWindows() ? "Comuki.TestFakePi.exe" : "Comuki.TestFakePi";
         return Path.Combine(directory, executableName);
+    }
+
+    /// <summary>No-op IWorkerPoolState — see the InitializeAsync comment.</summary>
+    private sealed class FakeWorkerPoolState : Engine.Compute.Ports.IWorkerPoolState
+    {
+        public IReadOnlyList<Engine.Compute.Pool.PoolWorker> List(ProjectId projectId)
+        {
+            return [];
+        }
+
+        public void MarkBusy(WorkerId workerId) { }
+        public void MarkIdle(WorkerId workerId) { }
+        public void Touch(WorkerId workerId) { }
     }
 }

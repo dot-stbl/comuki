@@ -27,7 +27,8 @@ namespace Comuki.Host.Integration.Smoke;
 ///     (malformed JSON body) returns 400.</item>
 /// </list>
 /// </summary>
-public sealed class McpShould(SmokeHostServer server) : IClassFixture<SmokeHostServer>
+[Collection(nameof(SmokeIntegrationCollection))]
+public sealed class McpShould(SmokeHostServer server)
 {
     private readonly SmokeHostServer server = server;
 

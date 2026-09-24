@@ -17,7 +17,8 @@ namespace Comuki.Host.Integration.Smoke;
 ///     validates the full host composition — pgvector + MinIO — is wired).</item>
 /// </list>
 /// </summary>
-public sealed class KnowledgeShould(SmokeHostServer server) : IClassFixture<SmokeHostServer>
+[Collection(nameof(SmokeIntegrationCollection))]
+public sealed class KnowledgeShould(SmokeHostServer server)
 {
     private readonly SmokeHostServer server = server;
 

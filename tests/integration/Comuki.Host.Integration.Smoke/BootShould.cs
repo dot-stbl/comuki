@@ -15,7 +15,8 @@ namespace Comuki.Host.Integration.Smoke;
 /// <c>HostComposer.ComposeAsync</c>. These tests assert the effects
 /// directly (DB row + status endpoint), not just a green boot.
 /// </summary>
-public sealed class BootShould(SmokeHostServer server) : IClassFixture<SmokeHostServer>
+[Collection(nameof(SmokeIntegrationCollection))]
+public sealed class BootShould(SmokeHostServer server)
 {
     private readonly SmokeHostServer server = server;
 

@@ -104,10 +104,20 @@ public sealed class RealPiFakeModelHost : IAsyncLifetime
         TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
         builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
 
-        // Claim labels the one scenario this host serves
-        // (add-null-check-real-pi.scenario.yaml) uses — fixed at host boot,
-        // same reasoning as AgentLoopHost's own copy of this comment.
-        builder.Configuration["Intake:Worker:Image"] = RealPiFakeModelHarness.WorkerImageLabel;
+        // Claim labels the three scenarios this host serves
+        // (add-null-check-real-pi.scenario.yaml — WS7 fake — and
+        // add-null-check-replay.scenario.yaml — WS8 replay, plus the
+        // CassetteGeneratorShould's generated-scenario twin) use — fixed at
+        // host boot, same reasoning as AgentLoopHost's own copy of this
+        // comment. A single worker image label across the three is the
+        // shared-collection trade-off documented on
+        // RealPiHarnessBase.WorkerImageLabel — the queue claim SQL's
+        // `image = @image` filter is an exact match, but the
+        // collection's DisableParallelization means each scenario's
+        // translator loop runs alone against the queue, so the only
+        // Queued item at run time is the one the in-flight fact just
+        // seeded.
+        builder.Configuration["Intake:Worker:Image"] = RealPiHarnessBase.WorkerImageLabel;
         builder.Configuration["Intake:Worker:ProfilesRef"] = "test";
         builder.Configuration["Intake:Worker:IssueDefaultProfileKey"] = "implement";
         builder.Configuration["Intake:BridgeInterval"] = "00:00:01";

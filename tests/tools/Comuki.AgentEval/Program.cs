@@ -134,7 +134,7 @@ public static class Program
         string? liveUpstreamToken = null;
         if (mode == ScenarioModelMode.Live)
         {
-            var baseUrlRaw = Environment.GetEnvironmentVariable(EnvLiveModelBaseUrl)!;
+            var baseUrlRaw = Environment.GetEnvironmentVariable(EnvLiveModelBaseUrl);
             if (!Uri.TryCreate(baseUrlRaw, UriKind.Absolute, out liveUpstreamBaseUrl))
             {
                 await Console.Error.WriteLineAsync($"{EnvLiveModelBaseUrl}='{baseUrlRaw}' is not a valid absolute URL");
@@ -149,8 +149,14 @@ public static class Program
         {
             try
             {
+                // Guarded by the enclosing `!string.IsNullOrWhiteSpace(...)` check
+                // above — IsNullOrWhiteSpace narrows the argument to non-null
+                // when it returns false, so this read is a fresh, still-non-null
+                // fetch of the same env var (no `!` needed).
+                var judgeBaseUrlRaw = Environment.GetEnvironmentVariable(EnvLiveModelBaseUrl)
+                    ?? throw new InvalidOperationException($"{EnvLiveModelBaseUrl} became unset between the two reads above.");
                 judgeClient = new HapyLlmJudgeClient(
-                    new Uri(Environment.GetEnvironmentVariable(EnvLiveModelBaseUrl)!),
+                    new Uri(judgeBaseUrlRaw),
                     Environment.GetEnvironmentVariable(EnvLiveModelToken));
             }
             catch (Exception exception)

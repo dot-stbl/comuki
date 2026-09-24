@@ -63,7 +63,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
     /// <param name="liveUpstreamToken">Optional bearer/API key stamped into <c>ANTHROPIC_AUTH_TOKEN</c> for live mode.</param>
     /// <param name="budgetTracker">Optional per-run budget tracker the recording path consults in live mode. Null for fake/replay.</param>
     /// <param name="timeout">Overall wall-clock cap; on timeout the runner returns a non-cleanly-exited transcript rather than throwing.</param>
-    /// <param name="ct">Cancellation forwarded to the runner and to the pi process's WaitForExit.</param>
+    /// <param name="cancellationToken">Cancellation forwarded to the runner and to the pi process's WaitForExit.</param>
     public async Task<(RunTranscript transcript, string workingDirectory, string pristineFixtureDirectory)> RunAsync(
         CorpusEntry entry,
         string piExecutablePath,
@@ -72,7 +72,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
         string? liveUpstreamToken,
         BudgetTracker? budgetTracker,
         TimeSpan timeout,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(piExecutablePath);
@@ -91,17 +91,17 @@ public sealed class PiEvalRunner(string repositoryRoot)
             switch (mode)
             {
                 case ScenarioModelMode.Fake:
-                    fakeServer = await StartFakeServerAsync(entry, ct);
+                    fakeServer = await StartFakeServerAsync(entry, cancellationToken);
                     modelBaseAddress = fakeServer.BaseAddress;
                     break;
 
                 case ScenarioModelMode.Replay:
-                    cassetteServer = await StartReplayServerAsync(entry, ct);
+                    cassetteServer = await StartReplayServerAsync(entry, cancellationToken);
                     modelBaseAddress = cassetteServer.BaseAddress;
                     break;
 
                 case ScenarioModelMode.Live:
-                    cassetteServer = await StartRecordingServerAsync(entry, liveUpstreamBaseUrl, budgetTracker, ct);
+                    cassetteServer = await StartRecordingServerAsync(entry, liveUpstreamBaseUrl, budgetTracker, cancellationToken);
                     modelBaseAddress = cassetteServer.BaseAddress;
                     break;
 
@@ -116,7 +116,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
             // pi at a closed port for the entire run (verified: this made
             // every request pi issued fail to connect, and pi does not fail
             // fast on that — it hangs well past any single-entry timeout).
-            await WriteModelsJsonAsync(agentDirectory, modelBaseAddress, ct);
+            await WriteModelsJsonAsync(agentDirectory, modelBaseAddress, cancellationToken);
 
             var brief = ComposeBrief(entry);
             var (events, exitedCleanly, durationMs) = await SpawnPiAsync(
@@ -126,7 +126,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
                 brief,
                 liveUpstreamToken,
                 timeout,
-                ct);
+                cancellationToken);
 
             var transcript = SummarizeTranscript(events, durationMs, exitedCleanly);
             return (transcript, workingDirectory, pristineFixtureDirectory);
@@ -174,7 +174,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
         return directory;
     }
 
-    private static async Task<FakeModelServer> StartFakeServerAsync(CorpusEntry entry, CancellationToken ct)
+    private static async Task<FakeModelServer> StartFakeServerAsync(CorpusEntry entry, CancellationToken cancellationToken)
     {
         var model = entry.Scenario.Model ?? throw new InvalidOperationException(
             $"corpus entry '{entry.Scenario.Name}' declares model.mode: fake but has no model block");
@@ -189,11 +189,11 @@ public sealed class PiEvalRunner(string repositoryRoot)
             Port = null,
             BindAddress = "127.0.0.1",
         });
-        await server.StartAsync(ct);
+        await server.StartAsync(cancellationToken);
         return server;
     }
 
-    private static async Task<CassetteModelServer> StartReplayServerAsync(CorpusEntry entry, CancellationToken ct)
+    private static async Task<CassetteModelServer> StartReplayServerAsync(CorpusEntry entry, CancellationToken cancellationToken)
     {
         var model = entry.Scenario.Model ?? throw new InvalidOperationException(
             $"corpus entry '{entry.Scenario.Name}' declares model.mode: replay but has no model block");
@@ -219,7 +219,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
             Port = null,
             BindAddress = "127.0.0.1",
         });
-        await server.StartAsync(ct);
+        await server.StartAsync(cancellationToken);
         return server;
     }
 
@@ -227,7 +227,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
         CorpusEntry entry,
         Uri? liveUpstreamBaseUrl,
         BudgetTracker? budgetTracker,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         if (liveUpstreamBaseUrl is null)
         {
@@ -250,7 +250,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
             BindAddress = "127.0.0.1",
             BudgetTracker = TranslateToRecorderTracker(budgetTracker),
         });
-        await server.StartAsync(ct);
+        await server.StartAsync(cancellationToken);
         return server;
     }
 
@@ -261,7 +261,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
     /// with the model server's ACTUAL <paramref name="modelBaseAddress"/> —
     /// after that server has started, never before.
     /// </summary>
-    private static async Task WriteModelsJsonAsync(string agentDirectory, Uri modelBaseAddress, CancellationToken ct)
+    private static async Task WriteModelsJsonAsync(string agentDirectory, Uri modelBaseAddress, CancellationToken cancellationToken)
     {
         var json = $$"""
             {
@@ -272,7 +272,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
               }
             }
             """;
-        await File.WriteAllTextAsync(Path.Combine(agentDirectory, "models.json"), json, ct);
+        await File.WriteAllTextAsync(Path.Combine(agentDirectory, "models.json"), json, cancellationToken);
     }
 
     private static string ComposeBrief(CorpusEntry entry)
@@ -288,7 +288,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
         string brief,
         string? liveToken,
         TimeSpan timeout,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         var startInfo = new ProcessStartInfo(piExecutablePath)
         {
@@ -329,17 +329,33 @@ public sealed class PiEvalRunner(string repositoryRoot)
         {
             using var reader = process.StandardOutput;
             string? line;
-            while ((line = await reader.ReadLineAsync(ct)) is not null)
+            while ((line = await reader.ReadLineAsync(cancellationToken)) is not null)
             {
                 foreach (var piEvent in StreamJsonParser.ParseLine(line))
                 {
                     events.Add(piEvent);
                 }
             }
-        }, ct);
+        }, cancellationToken);
+
+        // stderr is redirected above but was never drained by an earlier
+        // revision — an unread, filled stderr pipe can block a process that
+        // writes enough to it (the same pipe-buffer hang class the stdin
+        // fix above addresses), mirroring RealPiInstaller's concurrent
+        // stdout+stderr drain for `bun add`. Content isn't parsed as
+        // PiEvent — pi's structured output is stdout-only — so this task
+        // only exists to keep the pipe empty.
+        var stderrTask = Task.Run(async () =>
+        {
+            using var reader = process.StandardError;
+            while (await reader.ReadLineAsync(cancellationToken) is not null)
+            {
+                // Drain only — see remark above.
+            }
+        }, cancellationToken);
 
         using var timeoutCancellation = new CancellationTokenSource(timeout);
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCancellation.Token);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellation.Token);
 
         try
         {
@@ -352,8 +368,23 @@ public sealed class PiEvalRunner(string repositoryRoot)
         }
         finally
         {
-            try { await stdoutTask; }
-            catch { /* ignore drain errors on cancellation */ }
+            try
+            {
+                await stdoutTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected on cancellation/timeout — the process was just killed above.
+            }
+
+            try
+            {
+                await stderrTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Same tolerance as stdoutTask.
+            }
         }
 
         stopwatch.Stop();

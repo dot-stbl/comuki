@@ -57,7 +57,7 @@ public static class EvalRun
     public static TimeSpan PerEntryTimeout { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>Runs the corpus end-to-end and returns the final report.</summary>
-    public static async Task<EvalReport> RunAsync(EvalRunOptions options, CancellationToken ct)
+    public static async Task<EvalReport> RunAsync(EvalRunOptions options, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -72,19 +72,37 @@ public static class EvalRun
         var entries = new List<EvalEntryResult>(corpus.Count);
         foreach (var corpusEntry in corpus)
         {
-            ct.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             var entryResult = await RunSingleEntryAsync(
                 corpusEntry,
                 piRunner,
                 options,
                 budgetTracker,
-                ct);
+                cancellationToken);
 
             entries.Add(entryResult);
 
-            try { Directory.Delete(entryResult.ArtifactPaths[0], recursive: true); }
-            catch { /* best-effort cleanup; report keeps the path even if rm fails */ }
+            // A failed entry (BuildFailureEntry) reports an empty ArtifactPaths —
+            // nothing to clean up. Guarding here (rather than relying on a
+            // bare catch to swallow the resulting IndexOutOfRangeException)
+            // keeps this narrow catch honestly scoped to real filesystem
+            // cleanup failures, not exception-as-control-flow.
+            if (entryResult.ArtifactPaths.Count > 0)
+            {
+                try
+                {
+                    Directory.Delete(entryResult.ArtifactPaths[0], recursive: true);
+                }
+                catch (IOException)
+                {
+                    // Best-effort cleanup — a lingering handle must not fail the run.
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // Same tolerance.
+                }
+            }
         }
 
         stopwatch.Stop();
@@ -95,9 +113,9 @@ public static class EvalRun
             stopwatch.Elapsed,
             entries);
 
-        await EvalReportWriter.WriteAsync(report, options.OutputBasePath, ct);
+        await EvalReportWriter.WriteAsync(report, options.OutputBasePath, cancellationToken);
         var historyPath = Path.Combine(repositoryRoot, "artifacts", "agent-eval", "history.jsonl");
-        await HistoryAppender.AppendAsync(historyPath, report, ct);
+        await HistoryAppender.AppendAsync(historyPath, report, cancellationToken);
 
         return report;
     }
@@ -107,7 +125,7 @@ public static class EvalRun
         PiEvalRunner piRunner,
         EvalRunOptions options,
         BudgetTracker budgetTracker,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         RunTranscript transcript;
         string workingDirectory;
@@ -122,7 +140,7 @@ public static class EvalRun
                 options.LiveUpstreamToken,
                 budgetTracker,
                 PerEntryTimeout,
-                ct);
+                cancellationToken);
         }
         catch (Exception exception)
         {
@@ -136,7 +154,7 @@ public static class EvalRun
                 workingDirectory,
                 pristineFixtureDirectory,
                 corpusEntry.Scenario.Assertions.Diff,
-                ct),
+                cancellationToken),
 
             DeterministicJudges.EvaluateFilesTouchedWithinAllowedSet(
                 transcript.TouchedFilePaths,
@@ -152,7 +170,7 @@ public static class EvalRun
                 corpusEntry.Eval.ResolvedTestCommand,
                 workingDirectory,
                 PerEntryTimeout,
-                ct),
+                cancellationToken),
         };
 
         var transcriptSummary = BuildTranscriptSummary(transcript);
@@ -160,7 +178,7 @@ public static class EvalRun
             options.JudgeClient,
             corpusEntry,
             transcriptSummary,
-            ct);
+            cancellationToken);
 
         var score = EvalScorer.Score(corpusEntry, deterministic, judge);
         var cost = new RunCost

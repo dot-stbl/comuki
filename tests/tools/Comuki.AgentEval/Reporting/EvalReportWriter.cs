@@ -17,11 +17,6 @@ namespace Comuki.AgentEval.Reporting;
 /// </summary>
 public static class EvalReportWriter
 {
-    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerOptions.Web)
-    {
-        WriteIndented = true,
-    };
-
     /// <summary>
     /// Writes both report files next to <paramref name="basePath"/>
     /// (a path with no extension — <c>.json</c>/<c>.md</c> are
@@ -42,7 +37,8 @@ public static class EvalReportWriter
         var jsonPath = basePath + ".json";
         var markdownPath = basePath + ".md";
 
-        await File.WriteAllTextAsync(jsonPath, JsonSerializer.Serialize(report, jsonOptions), cancellationToken);
+        var indentedOptions = new JsonSerializerOptions(JsonSerializerOptions.Web) { WriteIndented = true };
+        await File.WriteAllTextAsync(jsonPath, JsonSerializer.Serialize(report, indentedOptions), cancellationToken);
         await File.WriteAllTextAsync(markdownPath, RenderMarkdown(report, Path.GetFileName(markdownPath)), cancellationToken);
 
         return Verdict(report, markdownPath);

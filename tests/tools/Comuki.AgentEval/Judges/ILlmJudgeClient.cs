@@ -16,6 +16,6 @@ public interface ILlmJudgeClient : IAsyncDisposable
     /// </summary>
     /// <param name="systemPrompt">The system's role/context — stays fixed across all calls of one rubric evaluation.</param>
     /// <param name="userPrompt">The per-entry user message containing the ticket, expected outcome, and transcript summary.</param>
-    /// <param name="ct">Cancellation forwarded from the caller's scope.</param>
-    public Task<string> CompleteAsync(string systemPrompt, string userPrompt, CancellationToken ct);
+    /// <param name="cancellationToken">Cancellation forwarded from the caller's scope.</param>
+    public Task<string> CompleteAsync(string systemPrompt, string userPrompt, CancellationToken cancellationToken);
 }

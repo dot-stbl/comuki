@@ -1,42 +1,36 @@
 ## Why
 
-Every git commit and pull request a Comuki worker produces today carries the
-agent's own author identity and an arbitrary commit message, with no
-provenance back to the run, the mission, or the human that requested it.
-A reviewer's `git log` cannot tell Comuki commits from a developer's
-local ones, and a `git log --author` audit cannot answer "what did the
-platform change last Tuesday and who asked for it." Issue #165 binds the
-fix: Comuki workers must commit and PR as the repository's bot identity
-(R4) with `Generated-by: Comuki vX.Y.Z`, `Comuki-Run`, `Comuki-Mission`,
-and `Requested-by` trailers, and a PR-description footer linking back to
-the run — coexisting with this repo's no-AI-attribution gate (Comuki
-trailers are allowlisted by being naturally distinct from the AI-vendor
-patterns the gate trips on).
+Every commit/PR a Comuki worker produces today carries the agent's own
+author identity and an arbitrary message, with no provenance back to the
+run, mission, or requesting human — `git log --author` cannot answer
+"what did the platform change and who asked for it." Issue #165 binds the
+fix: workers commit/PR as the repository's bot identity (R4) with
+`Generated-by: Comuki vX.Y.Z`, `Comuki-Run`, `Comuki-Mission`,
+`Requested-by` trailers and a PR-footer run link — coexisting with this
+repo's no-AI-attribution gate (Comuki trailers are naturally distinct
+from the AI-vendor patterns the gate trips on).
 
 ## What Changes
 
-- Specify a new `commit-attribution` capability that fixes commit author
-  + committer to the repository's bot identity (R4, once it lands),
-  enforces four trailers on every commit a worker produces, and stamps
-  a run-link footer on every PR the merge queue ingests.
-- Specify the attribution contract as **two deterministic layers**
-  Translator owns around the agent's run: pre-spawn workspace
-  preparation (env-var identity + `prepare-commit-msg` hook), and a
-  pre-completion verify/fixup pass that amends any non-conforming
-  commit. The hook is defense-in-depth; the verify/fixup pass is the
-  guarantee, matching the "LLM proposes — system disposes" line in
-  `openspec/config.yaml`.
-- Specify a `Requested-by` resolution table that covers intake-, chat-,
-  dashboard-, and scheduled-originated runs (no single Run field exists
-  today — flag as a task item to thread `RequestedBy` through to
-  `StageStart`).
-- Specify `Comuki-Mission` as conditional: emitted only when the
-  Mission epic has landed; never emitted blank.
-- Specify a white-label toggle on the repository policy: "hide /
-  customize attribution" is gated by `editions` (sibling change
-  `add-editions-and-licensing`); community edition has no toggle at all.
-- Extend `worker-runtime` with the two hook points as additive
-  requirements (no removal of existing Translator loop steps).
+- New `commit-attribution` capability: fixes commit author+committer to
+  the repository's bot identity (R4, once it lands), enforces four
+  trailers on every worker commit, stamps a run-link footer on every PR
+  the merge queue ingests.
+- The contract is **two deterministic layers** Translator owns around
+  the agent's run: pre-spawn workspace prep (env-var identity +
+  `prepare-commit-msg` hook, defense-in-depth) and a pre-completion
+  verify/fixup pass that amends any non-conforming commit (the actual
+  guarantee — matches "LLM proposes, system disposes").
+- A `Requested-by` resolution table covering intake/chat/dashboard/
+  scheduled-originated runs (no single `Run` field exists today —
+  flagged as a task item to thread `RequestedBy` to `StageStart`).
+- `Comuki-Mission` is conditional: emitted only once the Mission epic
+  lands; never emitted blank.
+- A white-label toggle on repository policy ("hide/customize
+  attribution") gated by `editions` (sibling `add-editions-and-
+  licensing`); Community has no toggle at all.
+- `worker-runtime` gets the two hook points as additive requirements
+  (no removal of existing Translator loop steps).
 
 ## Capabilities
 
@@ -54,26 +48,20 @@ patterns the gate trips on).
 ## Impact
 
 Two forward dependencies, named explicitly because this change does not
-unblock them:
+unblock them: (1) the product-source clone concept
+(`feature/source-workspace-clone` #125 / `add-multi-repo-projects` #163's
+`Repository`/`RepositoryCredentialRef`, R4) has not landed on `master` —
+verified by grep; Layer 1/2 are specified **against that future shape**,
+with an interim bot-identity resolver (`design.md` Open Question 1) until
+R4 replaces it. (2) `add-editions-and-licensing` (#164, sibling authored
+in parallel) is the producer of `Features.CommitAttributionWhiteLabel`
+and the gate this change consumes.
 
-1. The product-source clone concept (`feature/source-workspace-clone`,
-   #125 / `add-multi-repo-projects` #163's `Repository` + attachment +
-   `RepositoryCredentialRef`, R4) has not landed on `master` as of this
-   branch — verified by grep. This change specifies Layer 1 / Layer 2
-   **against that future shape**; the today-attempted bot identity is
-   an interim resolver (named, see `design.md` Open Question 1) until
-   R4 lands and replaces it.
-2. `add-editions-and-licensing` (#164, sibling authored in parallel this
-   session) is the producer of `Features.CommitAttributionWhiteLabel`
-   and the `[RequiresFeature]`/`IEdition` gate this change consumes; the
-   white-label toggle's spec section is conditional on that change
-   landing.
-
-The Translator loop's existing `ProfilesProvider` is extended, not
-rewritten, with a sibling preparer. The merge queue's existing
-`PullRequestUrls` ingestion is extended, not rewritten, with a Host-side
-`IPullRequestAnnotator`. New tests include a pinned regression in
-`scripts/commit-lint.test.mjs` for the AI-vendor non-collision guarantee.
+The existing `ProfilesProvider` is extended, not rewritten, with a
+sibling preparer; the merge queue's existing `PullRequestUrls` ingestion
+is extended with a Host-side `IPullRequestAnnotator`. New tests include a
+pinned regression in `scripts/commit-lint.test.mjs` for the AI-vendor
+non-collision guarantee.
 
 ## Non-goals
 

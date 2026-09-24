@@ -14,8 +14,8 @@
               "path": "src/OrderTotal.cs",
               "edits": [
                 {
-                  "oldText": "            decimal total = 0;\n            foreach (var order in orders)",
-                  "newText": "            const decimal InitialAccumulator = 0m;\n            decimal total = InitialAccumulator;\n            foreach (var order in orders)"
+                  "oldText": "        decimal total = 0;\n        foreach (var order in orders!)",
+                  "newText": "        const decimal InitialAccumulator = 0m;\n        decimal total = InitialAccumulator;\n        foreach (var order in orders!)"
                 }
               ]
             }

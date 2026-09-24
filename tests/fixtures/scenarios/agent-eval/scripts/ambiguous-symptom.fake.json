@@ -30,8 +30,8 @@
               "path": "src/OrderTotal.cs",
               "edits": [
                 {
-                  "oldText": "        public static decimal Calculate(IEnumerable<Order>? orders)\n        {\n            decimal total = 0;",
-                  "newText": "        public static decimal Calculate(IEnumerable<Order>? orders)\n        {\n            if (orders is null)\n            {\n                throw new ArgumentNullException(nameof(orders));\n            }\n\n            decimal total = 0;"
+                  "oldText": "    public static decimal Calculate(IEnumerable<Order>? orders)\n    {\n        decimal total = 0;",
+                  "newText": "    public static decimal Calculate(IEnumerable<Order>? orders)\n    {\n        if (orders is null)\n        {\n            throw new ArgumentNullException(nameof(orders));\n        }\n\n        decimal total = 0;"
                 }
               ]
             }

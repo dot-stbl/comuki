@@ -99,6 +99,7 @@
     <Project Path="tests/unit/Comuki.Shared.Contracts.Unit.Realtime/Comuki.Shared.Contracts.Unit.Realtime.csproj" />
     <Project Path="tests/unit/Comuki.Migrator.Unit/Comuki.Migrator.Unit.csproj" />
     <Project Path="tests/unit/Comuki.TestFakeModel.Unit/Comuki.TestFakeModel.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.AgentTest.Runner.Unit/Comuki.AgentTest.Runner.Unit.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/Comuki.Host.Testing/Comuki.Host.Testing.csproj" />
@@ -128,10 +129,12 @@
     <Project Path="tests/integration/Comuki.Modules.Knowledge.Integration/Comuki.Modules.Knowledge.Integration.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Compute/Comuki.Host.Integration.Compute.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Settings/Comuki.Host.Integration.Settings.csproj" />
+    <Project Path="tests/integration/Comuki.EndToEnd.AgentLoop/Comuki.EndToEnd.AgentLoop.csproj" />
   </Folder>
   <Folder Name="/tests/tools/">
     <Project Path="tests/tools/Comuki.TestFakeModel/Comuki.TestFakeModel.csproj" />
     <Project Path="tests/tools/Comuki.TestFakePi/Comuki.TestFakePi.csproj" />
+    <Project Path="tests/tools/Comuki.AgentTest.Runner/Comuki.AgentTest.Runner.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Comuki.Codegen.Realtime/Comuki.Codegen.Realtime.csproj" />

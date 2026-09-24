@@ -1,5 +1,6 @@
 // Ported from Hybrid.Sdk.Shared.Filtering (console.x.sdk) — fidelity over house style.
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq.Expressions;
 
@@ -178,10 +179,26 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
 
         try
         {
+            if (underlying == typeof(string))
+            {
+                return text;
+            }
+
+            if (underlying.IsEnum)
+            {
+                return Enum.Parse(underlying, text, true);
+            }
+
+            if (FilterOperatorRegistry.IsSmartType(underlying))
+            {
+                // Smart-type conversion goes through the type's own FromWire(string). Unknown
+                // wire values throw ArgumentOutOfRangeException, which the catch below maps
+                // to FilterParseException — no extra branch.
+                return SmartTypeConverters.GetOrAdd(underlying)(text);
+            }
+
             return underlying switch
             {
-                _ when underlying == typeof(string) => text,
-                _ when underlying.IsEnum => Enum.Parse(underlying, text, true),
                 _ when underlying == typeof(DateTimeOffset) => DateTimeOffset.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal),
                 _ when underlying == typeof(DateTime) => DateTime.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal),
                 _ when underlying == typeof(Guid) => Guid.Parse(text),
@@ -193,5 +210,50 @@ internal sealed class EfFilterTranslator<TEntity>(FilterableFieldSet<TEntity> fi
         {
             throw new FilterParseException($"Cannot convert '{text}' to {underlying.Name}", 0, exception);
         }
+    }
+}
+
+/// <summary>
+///     One resolved <c>string → object</c> factory per smart-type, keyed by the smart-type
+///     itself. Built once via <see cref="CreateFactory" /> on first use, then served from
+///     cache so the per-request hot path in <see cref="EfFilterTranslator{TEntity}" /> does
+///     no reflection.
+/// </summary>
+file static class SmartTypeConverters
+{
+    private static readonly ConcurrentDictionary<Type, Func<string, object>> cache = new();
+
+    /// <summary>Returns the cached factory for <paramref name="type" />, building it on first use.</summary>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the type was registered as a smart-type (passed <see cref="FilterOperatorRegistry.IsSmartType" />)
+    ///     but no public static <c>FromWire(string)</c> method can be located at runtime — a defensive tripwire
+    ///     against a registry cache that has fallen out of sync with the type's actual shape.
+    /// </exception>
+    public static Func<string, object> GetOrAdd(Type type)
+    {
+        return cache.GetOrAdd(type, static t => CreateFactory(t));
+    }
+
+    private static Func<string, object> CreateFactory(Type type)
+    {
+        var fromWire = type.GetMethod(
+            "FromWire",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
+            binder: null,
+            types: [typeof(string)],
+            modifiers: null)
+            ?? throw new InvalidOperationException(
+                $"Type '{type.FullName}' was classified as a smart-type but has no public static FromWire(string) method.");
+
+        // Delegate.CreateDelegate(typeof(Func<string, object>), fromWire) fails here:
+        // every smart-type is a value type (readonly record struct), and CreateDelegate's
+        // signature match does not box a value-type return into `object` the way a normal
+        // method-group conversion does. Build the boxing conversion explicitly instead —
+        // compiled once per type, cached, so the per-request path pays no reflection cost.
+        var wireParameter = Expression.Parameter(typeof(string), "wire");
+
+        return Expression.Lambda<Func<string, object>>(
+            Expression.Convert(Expression.Call(fromWire, wireParameter), typeof(object)),
+            wireParameter).Compile();
     }
 }

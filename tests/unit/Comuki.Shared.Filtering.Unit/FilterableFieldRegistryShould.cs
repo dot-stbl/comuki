@@ -151,6 +151,56 @@ public sealed class FilterableFieldRegistryShould
         status.Operators.ShouldBe(FilterOperator.Eq | FilterOperator.NotEq | FilterOperator.In | FilterOperator.NotIn);
     }
 
+    /// <summary>
+    ///     Smart-type fields (<c>readonly record struct</c> with public static
+    ///     <c>FromWire(string)</c>) are detected structurally and given the same
+    ///     operator set as a real <c>enum</c> — Eq, NotEq, In, NotIn — and no
+    ///     range/string ops, matching the engine's <c>RunStatus</c> /
+    ///     <c>RunTrustClass</c>, which the host surfaces through
+    ///     the <c>/api/v1/runs</c> endpoint.
+    /// </summary>
+    [Fact(DisplayName = "When infer Smart Type Operators For Smart Type Properties, then test passes")]
+    public void InferSmartTypeOperatorsForSmartTypeProperties()
+    {
+        var fields = FilterableFieldRegistry.For<SampleEntity>();
+        var smart = fields.Find("SmartField").ShouldNotBeNull();
+
+        smart.Operators.ShouldBe(FilterOperator.Eq | FilterOperator.NotEq | FilterOperator.In | FilterOperator.NotIn);
+    }
+
+    /// <summary>
+    ///     Smart-type fields are not classified as string-typed — Contains /
+    ///     StartsWith / EndsWith never attach. The structural detector rejects
+    ///     <see cref="string" /> outright and matches only the closed-set
+    ///     <c>FromWire(string)</c> shape, so a smart-type with an internal
+    ///     <c>string Value</c> property still gets the enumerable set, not
+    ///     the string set.
+    /// </summary>
+    [Fact(DisplayName = "When do Not Infer String Operators For Smart Type Properties, then test passes")]
+    public void DoNotInferStringOperatorsForSmartTypeProperties()
+    {
+        var fields = FilterableFieldRegistry.For<SampleEntity>();
+        var smart = fields.Find("SmartField").ShouldNotBeNull();
+
+        smart.Operators.ShouldNotBe(smart.Operators & (FilterOperator.Contains | FilterOperator.StartsWith | FilterOperator.EndsWith
+                                                          | FilterOperator.IContains | FilterOperator.IStartsWith | FilterOperator.IEndsWith));
+    }
+
+    /// <summary>
+    ///     Smart-type fields are not classified as ordered — Gt / Gte / Lt /
+    ///     Lte never attach. Closed-set smart-types have no meaningful ordering
+    ///     and EF Core would reject a range predicate translated through the
+    ///     string column.
+    /// </summary>
+    [Fact(DisplayName = "When do Not Infer Range Operators For Smart Type Properties, then test passes")]
+    public void DoNotInferRangeOperatorsForSmartTypeProperties()
+    {
+        var fields = FilterableFieldRegistry.For<SampleEntity>();
+        var smart = fields.Find("SmartField").ShouldNotBeNull();
+
+        smart.Operators.ShouldNotBe(smart.Operators & (FilterOperator.Gt | FilterOperator.Gte | FilterOperator.Lt | FilterOperator.Lte));
+    }
+
     /// <summary>Numbers get Eq, NotEq, range (Gt/Gte/Lt/Lte), In.</summary>
     [Theory]
     [InlineData("Age", typeof(int))]

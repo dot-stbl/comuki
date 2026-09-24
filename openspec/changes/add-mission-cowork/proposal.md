@@ -47,6 +47,6 @@ This is a post-v1 platform evolution touching orchestration, intake, identity, m
 ## Non-goals
 
 - Replacing personal chat with Missions.
-- Cross-project Missions or Tasks belonging to multiple Missions.
+- Tasks belonging to multiple Missions. (Cross-project Missions are IN scope since 2026-09-25: a Mission has a home Project plus participating Projects — see add-multi-repo-projects, decisions R7/R15.)
 - Giving models credentials, raw system authority, runtime/bootstrap protocols, or plaintext secret reveal.
 - Treating the model context window as storage, or persisting hidden chain-of-thought outside deployment-only diagnostics.

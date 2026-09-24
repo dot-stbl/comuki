@@ -20,6 +20,13 @@
 // WS16 tasks.md 16.1/16.4) so `test:storybook` stays a one-shot, bounded run
 // while the remaining ~88 stories are picked up incrementally — see
 // storybook-tests/README.md for how a future batch adds its tag here.
+//
+// `preVisit` carries a second job (WS16.4): a workaround for a portal-based
+// story (react-aria-components' `Modal`/`Dialog` — `BottomSheet`,
+// `ConfirmDialog`, `FormDialog`, `Dialog` itself — portals its content into
+// `document.body`, not `#storybook-root`). See "Portal-based stories" in
+// storybook-tests/README.md for the diagnosis and `PORTAL_TAG` below for the
+// mechanism.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
@@ -31,6 +38,12 @@ import pixelmatch from "pixelmatch"
 import { z } from "zod"
 
 import type { TestHook, TestRunnerConfig } from "@storybook/test-runner"
+
+import {
+  installStoryReadySignal,
+  installTestBridge,
+  waitForStoryReady,
+} from "../scripts/lib/storybook-ready-signal"
 
 type Theme = "dark" | "light"
 type Stage = "a11y" | "visual"
@@ -68,6 +81,92 @@ const INCLUDE_TAGS = (process.env.STORYBOOK_TEST_INCLUDE_TAGS ?? "ws16-batch1")
   .split(",")
   .map((tag) => tag.trim())
   .filter((tag) => tag.length > 0)
+
+/**
+ * Marker tag (not an include/exclude filter — see `INCLUDE_TAGS` above) a
+ * story's `meta.tags` opts into when its content portals into
+ * `document.body` (react-aria-components' `Modal`/`Dialog` — `BottomSheet`,
+ * `ConfirmDialog`, `FormDialog`, `Dialog` itself).
+ *
+ * Why a workaround is needed at all: `@storybook/test-runner@0.23.0`'s
+ * per-story test body (`__test`, injected once per file by `setupPage`) asks
+ * the already-loaded preview to switch to the next story via
+ * `channel.emit("setCurrentStory", ...)`, then waits (with no timeout of its
+ * own) for a `storyFinished`/`storyRendered` channel event. Empirically
+ * (this workstream's own diagnostic run — see storybook-tests/README.md
+ * "Portal-based stories") that event never arrives for `ChatDock`'s stories
+ * over that particular transition, even for a story with no play function
+ * at all — every one of them hangs to Jest's default 15s test timeout. A
+ * *fresh* navigation straight to the story's own `iframe.html?id=...` URL
+ * (exactly what `ui:probe`, WS17, already does and has validated against
+ * this same component) does not hit this: Storybook's initial-load
+ * bootstrap renders and (with `autoplay`, the default) plays the story on
+ * its own, and does reliably emit the finished event this way.
+ *
+ * So `preVisit`, for a tagged story only, pre-renders it via that direct
+ * navigation and waits on `storyFinished` itself (reusing
+ * `scripts/lib/storybook-ready-signal.ts`, WS17's own mechanism). A full
+ * navigation wipes everything `setupPage` injected onto `window` (`__test`
+ * included), so `preVisit` also reinstalls a working `__test` afterward
+ * (`installTestBridge`) — not a stub: it drives the same
+ * `setCurrentStory` + wait, so a later story in the same file that does
+ * *not* navigate still gets a real render through it. For the exact story
+ * `preVisit` just pre-rendered, Storybook's own preview core recognises the
+ * repeat `setCurrentStory` as a no-op selection and answers with
+ * `storyUnchanged` rather than rendering again (verified against
+ * `@storybook/core`'s own source — see `installTestBridge`'s docblock) — so
+ * this resolves immediately rather than hanging a second time.
+ *
+ * Detected from the static build's own `index.json` (`PORTAL_STORY_IDS`
+ * below), not via a live `getStoryContext` page round-trip: cheaper (one
+ * file read, no per-story evaluate), and it does not depend on anything
+ * that survives navigations the way an in-page lookup would have to.
+ */
+const PORTAL_TAG = "ws16-portal"
+
+// Generous relative to a typical story (a fresh page load + React mount +
+// play function, all inside a `preVisit` that is itself inside a single
+// Jest test's ~15s budget alongside `__test()` and `postVisit`'s own
+// axe/visual work) — bounded, not a second indefinite wait.
+const PORTAL_READY_TIMEOUT_MS = numberEnv(process.env.STORYBOOK_TEST_PORTAL_TIMEOUT_MS, 10_000)
+
+const storyIndexEntrySchema = z.object({
+  id: z.string(),
+  tags: z.array(z.string()).default([]),
+})
+const storyIndexSchema = z.object({
+  entries: z.record(z.string(), storyIndexEntrySchema),
+})
+
+/** Every story id tagged `PORTAL_TAG`, read once from the static build's own
+ *  `index.json` (`bun run build-storybook`'s output — the same file
+ *  `@storybook/test-runner`'s own `--index-json` mode fetches to enumerate
+ *  stories). Empty (with a warning, not a crash) if the file is missing —
+ *  falls back to every story going through the harness's normal path. */
+function loadPortalStoryIds(): ReadonlySet<string> {
+  const indexPath = resolve(process.cwd(), "storybook-static/index.json")
+  if (!existsSync(indexPath)) {
+    console.warn(`[test:storybook] no ${indexPath} — portal-story detection disabled for this run`)
+    return new Set()
+  }
+  const index = storyIndexSchema.parse(JSON.parse(readFileSync(indexPath, "utf8")))
+  const ids = Object.values(index.entries)
+    .filter((entry) => entry.tags.includes(PORTAL_TAG))
+    .map((entry) => entry.id)
+  return new Set(ids)
+}
+
+const PORTAL_STORY_IDS = loadPortalStoryIds()
+
+/** `context.id` -> whether this story is a portal story — read by
+ *  `postVisit` so the a11y/visual capture below scopes to `document.body`
+ *  instead of `#storybook-root` for exactly those stories (see
+ *  `checkAccessibility` / `checkVisual`). A thin alias over
+ *  `PORTAL_STORY_IDS` kept as its own name so `postVisit` doesn't need to
+ *  know the detection mechanism. */
+function isPortalStory(storyId: string): boolean {
+  return PORTAL_STORY_IDS.has(storyId)
+}
 
 /**
  * Pre-existing a11y debt this WS16 harness *found* but is not in scope to
@@ -139,9 +238,14 @@ async function setTheme(page: Page, theme: Theme): Promise<void> {
   }, theme)
 }
 
-async function checkAccessibility(page: Page, storyId: string, theme: Theme): Promise<string | null> {
+async function checkAccessibility(
+  page: Page,
+  storyId: string,
+  theme: Theme,
+  captureRoot: string
+): Promise<string | null> {
   await injectAxe(page)
-  const violations = await getViolations(page, "#storybook-root")
+  const violations = await getViolations(page, captureRoot)
   if (violations.length === 0) {
     return null
   }
@@ -164,8 +268,13 @@ async function checkAccessibility(page: Page, storyId: string, theme: Theme): Pr
   return lines.join("\n")
 }
 
-async function checkVisual(page: Page, storySlug: string, theme: Theme): Promise<string | null> {
-  const root = page.locator("#storybook-root")
+async function checkVisual(
+  page: Page,
+  storySlug: string,
+  theme: Theme,
+  captureRoot: string
+): Promise<string | null> {
+  const root = page.locator(captureRoot)
   const buffer = await root.screenshot({ animations: "disabled" })
   const baselinePath = join(BASELINE_DIR, `${storySlug}--${theme}.png`)
 
@@ -212,8 +321,45 @@ async function checkVisual(page: Page, storySlug: string, theme: Theme): Promise
   return `${(ratio * 100).toFixed(2)}% of pixels differ (threshold ${(VISUAL_DIFF_RATIO * 100).toFixed(2)}%) — diff image at ${diffPath}`
 }
 
-export const preVisit: TestHook = async (page) => {
+/**
+ * Builds the same `iframe.html?id=...&viewMode=story` URL `ui:probe` (WS17)
+ * navigates to for a single-story render — see `PORTAL_TAG`'s docblock for
+ * why a portal story needs this instead of the harness's own
+ * `setCurrentStory` transition.
+ */
+function iframeUrlFor(targetUrl: string, storyId: string): string {
+  const url = new URL("iframe.html", targetUrl)
+  url.searchParams.set("id", storyId)
+  url.searchParams.set("viewMode", "story")
+  return url.toString()
+}
+
+export const preVisit: TestHook = async (page, context) => {
   await page.setViewportSize(VIEWPORT)
+
+  if (!isPortalStory(context.id)) {
+    return
+  }
+
+  const targetUrl = process.env.TARGET_URL
+  if (!targetUrl) {
+    throw new Error(`[portal] ${context.id}: TARGET_URL is not set — cannot pre-render a portal story`)
+  }
+
+  await installStoryReadySignal(page)
+  await page.goto(iframeUrlFor(targetUrl, context.id), {
+    waitUntil: "domcontentloaded",
+    timeout: PORTAL_READY_TIMEOUT_MS,
+  })
+  const ready = await waitForStoryReady(page, PORTAL_READY_TIMEOUT_MS)
+  // Reinstall `__test` (and everything else `setupPage` injected onto
+  // `window`) that the navigation above just wiped — see `PORTAL_TAG`'s
+  // docblock and `installTestBridge`'s own for why this must be a real
+  // implementation, not a stub.
+  await installTestBridge(page)
+  if (ready.error !== null) {
+    throw new Error(`[portal] ${context.id}: ${ready.error}`)
+  }
 }
 
 export const postVisit: TestHook = async (page, context) => {
@@ -225,16 +371,22 @@ export const postVisit: TestHook = async (page, context) => {
 
   const storySlug = slugify(context.id)
   const failures: StorybookCheckError[] = []
+  // A portal story's content (BottomSheet, ConfirmDialog, FormDialog,
+  // Dialog) lives in `document.body`, outside `#storybook-root` entirely —
+  // scope the capture to where the content actually is (`PORTAL_TAG`'s
+  // docblock has the full account). Every other story keeps the original,
+  // tighter scope.
+  const captureRoot = isPortalStory(context.id) ? "body" : "#storybook-root"
 
   for (const theme of THEMES) {
     await setTheme(page, theme)
 
-    const a11yDetail = await checkAccessibility(page, context.id, theme)
+    const a11yDetail = await checkAccessibility(page, context.id, theme, captureRoot)
     if (a11yDetail !== null) {
       failures.push(new StorybookCheckError("a11y", theme, `${context.id} — ${a11yDetail}`))
     }
 
-    const visualDetail = await checkVisual(page, storySlug, theme)
+    const visualDetail = await checkVisual(page, storySlug, theme, captureRoot)
     if (visualDetail !== null) {
       failures.push(new StorybookCheckError("visual", theme, `${context.id} — ${visualDetail}`))
     }

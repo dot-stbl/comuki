@@ -58,9 +58,12 @@ export function formatArchiveList(
     ...listings.map((item) => formatBytes(item.size).length)
   )
   const header = `${"name".padEnd(nameWidth)}  ${"size".padStart(sizeWidth)}  mtime`
-  const rows = listings.map((item) => {
-    const size = formatBytes(item.size).padStart(sizeWidth)
-    return `${item.name.padEnd(nameWidth)}  ${size}  ${formatMtime(item.mtimeMs)}`
-  })
-  return [header, ...rows, ""].join("\n")
+  return [
+    header,
+    ...listings.map((item) => {
+      const size = formatBytes(item.size).padStart(sizeWidth)
+      return `${item.name.padEnd(nameWidth)}  ${size}  ${formatMtime(item.mtimeMs)}`
+    }),
+    "",
+  ].join("\n")
 }

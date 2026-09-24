@@ -1,0 +1,372 @@
+{
+  "schemaVersion": 1,
+  "scenario": "add-null-check",
+  "recordedAt": "2026-09-24T07:02:33.6905121+05:00",
+  "recordedAgainst": "fake-script-via-recording-proxy",
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "path": "/v1/messages",
+        "matchOn": {
+          "lastUserMessageHash": "sha256:32695f3a38a7105c3fe7c51c6477a6df22fa75794110e536bb3d6993904a2c17",
+          "toolResultPresent": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "streamed": true,
+        "body": null,
+        "events": [
+          {
+            "type": "message_start",
+            "data": {
+              "type": "message_start",
+              "message": {
+                "id": "msg_add-null-check_1",
+                "type": "message",
+                "role": "assistant",
+                "model": "claude-opus-4-8",
+                "content": [],
+                "stop_reason": null,
+                "stop_sequence": null,
+                "usage": {
+                  "input_tokens": 50,
+                  "output_tokens": 0
+                }
+              }
+            }
+          },
+          {
+            "type": "content_block_start",
+            "data": {
+              "type": "content_block_start",
+              "index": 0,
+              "content_block": {
+                "type": "text",
+                "text": ""
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 0,
+              "delta": {
+                "type": "text_delta",
+                "text": "I'll add a null guard to"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 0,
+              "delta": {
+                "type": "text_delta",
+                "text": " OrderTotal.Calculate."
+              }
+            }
+          },
+          {
+            "type": "content_block_stop",
+            "data": {
+              "type": "content_block_stop",
+              "index": 0
+            }
+          },
+          {
+            "type": "content_block_start",
+            "data": {
+              "type": "content_block_start",
+              "index": 1,
+              "content_block": {
+                "type": "tool_use",
+                "id": "toolu_add-null-check_1_1",
+                "name": "edit",
+                "input": {}
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": "{\"path\":\"src/OrderTotal."
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": "cs\",\"edits\":[{\"oldText\":"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": "\"        foreach (var or"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": "der in orders!)\\n       "
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": " {\",\"newText\":\"        i"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": "f (orders is null)\\n    "
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": "    {\\n            throw"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": " new ArgumentNullExcepti"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": "on(nameof(orders));\\n   "
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": "     }\\n\\n        foreac"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": "h (var order in orders)\\"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 1,
+              "delta": {
+                "type": "input_json_delta",
+                "partial_json": "n        {\"}]}"
+              }
+            }
+          },
+          {
+            "type": "content_block_stop",
+            "data": {
+              "type": "content_block_stop",
+              "index": 1
+            }
+          },
+          {
+            "type": "message_delta",
+            "data": {
+              "type": "message_delta",
+              "delta": {
+                "stop_reason": "tool_use",
+                "stop_sequence": null
+              },
+              "usage": {
+                "output_tokens": 20
+              }
+            }
+          },
+          {
+            "type": "message_stop",
+            "data": {
+              "type": "message_stop"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/v1/messages",
+        "matchOn": {
+          "lastUserMessageHash": null,
+          "toolResultPresent": true
+        }
+      },
+      "response": {
+        "status": 200,
+        "streamed": true,
+        "body": null,
+        "events": [
+          {
+            "type": "message_start",
+            "data": {
+              "type": "message_start",
+              "message": {
+                "id": "msg_add-null-check_2",
+                "type": "message",
+                "role": "assistant",
+                "model": "claude-opus-4-8",
+                "content": [],
+                "stop_reason": null,
+                "stop_sequence": null,
+                "usage": {
+                  "input_tokens": 50,
+                  "output_tokens": 0
+                }
+              }
+            }
+          },
+          {
+            "type": "content_block_start",
+            "data": {
+              "type": "content_block_start",
+              "index": 0,
+              "content_block": {
+                "type": "text",
+                "text": ""
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 0,
+              "delta": {
+                "type": "text_delta",
+                "text": "Added a null guard; Calc"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 0,
+              "delta": {
+                "type": "text_delta",
+                "text": "ulate now throws Argumen"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 0,
+              "delta": {
+                "type": "text_delta",
+                "text": "tNullException for a nul"
+              }
+            }
+          },
+          {
+            "type": "content_block_delta",
+            "data": {
+              "type": "content_block_delta",
+              "index": 0,
+              "delta": {
+                "type": "text_delta",
+                "text": "l orders sequence."
+              }
+            }
+          },
+          {
+            "type": "content_block_stop",
+            "data": {
+              "type": "content_block_stop",
+              "index": 0
+            }
+          },
+          {
+            "type": "message_delta",
+            "data": {
+              "type": "message_delta",
+              "delta": {
+                "stop_reason": "end_turn",
+                "stop_sequence": null
+              },
+              "usage": {
+                "output_tokens": 20
+              }
+            }
+          },
+          {
+            "type": "message_stop",
+            "data": {
+              "type": "message_stop"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

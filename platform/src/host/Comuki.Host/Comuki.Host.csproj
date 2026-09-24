@@ -83,6 +83,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Testing" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Auth" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Chat" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Compute" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Costs" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Errors" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Intake" />
@@ -94,6 +95,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Proxy" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Knowledge" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Secrets" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Settings" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Smoke" />
   </ItemGroup>
 

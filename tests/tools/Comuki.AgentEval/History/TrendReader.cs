@@ -51,7 +51,7 @@ public sealed class HistoryEntry
 /// </summary>
 public static class TrendReader
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web);
 
     /// <summary>Reads <paramref name="historyPath"/> line-by-line, skipping lines that fail to parse.</summary>
     public static IReadOnlyList<HistoryEntry> ReadTrend(string historyPath)
@@ -72,7 +72,7 @@ public static class TrendReader
             HistoryEntry? entry;
             try
             {
-                entry = JsonSerializer.Deserialize<HistoryEntry>(line, JsonOptions);
+                entry = JsonSerializer.Deserialize<HistoryEntry>(line, jsonOptions);
             }
             catch (JsonException)
             {

@@ -3,15 +3,13 @@ using System.Text;
 using System.Text.Json;
 using Comuki.AgentEval.Judges;
 using Comuki.AgentTest.Runner.Reporting;
-using Comuki.AgentTest.Runner.Scenarios;
 
 namespace Comuki.AgentEval.Reporting;
 
 /// <summary>
 /// Writes an <see cref="EvalReport"/> to <c>basePath.json</c> and
 /// <c>basePath.md</c> from the same object (no drift between the
-/// JSON and the markdown). Mirrors
-/// <see cref="Comuki.AgentTest.Runner.Reporting.ReportWriter"/>'s
+/// JSON and the markdown). Mirrors <see cref="ReportWriter"/>'s
 /// table style and adds the WS10-specific per-entry section that
 /// lists each deterministic verdict (name, PASS/FAIL/n-a, message)
 /// and, when a judge ran, the per-criterion scores and overall score
@@ -19,7 +17,7 @@ namespace Comuki.AgentEval.Reporting;
 /// </summary>
 public static class EvalReportWriter
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerOptions.Web)
+    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerOptions.Web)
     {
         WriteIndented = true,
     };
@@ -44,8 +42,8 @@ public static class EvalReportWriter
         var jsonPath = basePath + ".json";
         var markdownPath = basePath + ".md";
 
-        await File.WriteAllTextAsync(jsonPath, JsonSerializer.Serialize(report, JsonOptions), cancellationToken).ConfigureAwait(false);
-        await File.WriteAllTextAsync(markdownPath, RenderMarkdown(report, Path.GetFileName(markdownPath)), cancellationToken).ConfigureAwait(false);
+        await File.WriteAllTextAsync(jsonPath, JsonSerializer.Serialize(report, jsonOptions), cancellationToken);
+        await File.WriteAllTextAsync(markdownPath, RenderMarkdown(report, Path.GetFileName(markdownPath)), cancellationToken);
 
         return Verdict(report, markdownPath);
     }
@@ -198,8 +196,10 @@ public static class EvalReportWriter
     }
 
     /// <summary>The one-line stdout verdict for an entry — exposed so callers can print incremental progress.</summary>
-    public static string EntryVerdict(EvalEntryResult entry) =>
-        entry.Passed
+    public static string EntryVerdict(EvalEntryResult entry)
+    {
+        return entry.Passed
             ? string.Format(CultureInfo.InvariantCulture, "PASS {0}", entry.ScenarioName)
             : string.Format(CultureInfo.InvariantCulture, "FAIL {0}", entry.ScenarioName);
+    }
 }

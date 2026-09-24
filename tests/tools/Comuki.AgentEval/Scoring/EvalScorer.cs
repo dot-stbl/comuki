@@ -12,7 +12,7 @@ namespace Comuki.AgentEval.Scoring;
 /// The <c>Passed</c> rules, in order:
 /// <list type="number">
 ///   <item>Deterministic gate — <c>DeterministicPass = false</c> forces <c>Passed = false</c> regardless of judge outcome.</item>
-///   <item>Deterministic pass + judge scored → passed iff rubric-scored <see cref="Judges.JudgeVerdict.OverallScore"/> &gt;= <see cref="EvalRubric.MinScore"/>.</item>
+///   <item>Deterministic pass + judge scored → passed iff rubric-scored <see cref="JudgeVerdict.OverallScore"/> &gt;= <see cref="EvalRubric.MinScore"/>.</item>
 ///   <item>Deterministic pass + judge error with declared rubric → <c>Passed = false</c>: a mandatory rubric that the judge couldn't evaluate is a failure, not a free pass.</item>
 ///   <item>Deterministic pass + judge skipped with declared rubric → <c>Passed = DeterministicPass</c>: missing live env is "skip", not "fail" (matches every other tier's "no live env = skip, not fail" rule). The markdown report must visibly note this case so a human reading it knows quality was not fully checked.</item>
 ///   <item>Deterministic pass + no rubric declared → <c>Passed = DeterministicPass</c> unconditionally.</item>
@@ -37,7 +37,7 @@ public static class EvalScorer
         IReadOnlyList<DeterministicVerdict> deterministic,
         JudgeOutcome judge)
     {
-        var deterministicPass = deterministic.All(verdict => verdict.Passed is null or true);
+        var deterministicPass = deterministic.All(static verdict => verdict.Passed is null or true);
 
         var qualityScore = ComputeQualityScore(deterministicPass, judge);
         var passed = ComputePassed(entry, deterministicPass, judge);
@@ -50,24 +50,25 @@ public static class EvalScorer
             Passed: passed);
     }
 
-    private static double ComputeQualityScore(bool deterministicPass, JudgeOutcome judge) => judge.Kind switch
+    private static double ComputeQualityScore(bool deterministicPass, JudgeOutcome judge)
     {
-        JudgeOutcomeKind.Scored when judge.Verdict is not null =>
-            (deterministicPass ? 1.0 : 0.0) * 0.5 + judge.Verdict.OverallScore * 0.5,
-        _ => deterministicPass ? 1.0 : 0.0,
-    };
+        return judge.Kind switch
+        {
+            JudgeOutcomeKind.Scored when judge.Verdict is not null =>
+                (deterministicPass ? 1.0 : 0.0) * 0.5 + judge.Verdict.OverallScore * 0.5,
+            _ => deterministicPass ? 1.0 : 0.0,
+        };
+    }
 
-    private static bool ComputePassed(CorpusEntry entry, bool deterministicPass, JudgeOutcome judge) =>
-        !deterministicPass
-            ? false
-            : entry.Eval.Rubric is null
-                ? true
-                : judge.Kind switch
-                {
-                    JudgeOutcomeKind.Scored when judge.Verdict is not null =>
-                        judge.Verdict.OverallScore >= entry.Eval.Rubric.MinScore,
-                    JudgeOutcomeKind.Error => false,
-                    JudgeOutcomeKind.Skipped => true,
-                    _ => true,
-                };
+    private static bool ComputePassed(CorpusEntry entry, bool deterministicPass, JudgeOutcome judge)
+    {
+        return deterministicPass && (entry.Eval.Rubric is null || judge.Kind switch
+        {
+            JudgeOutcomeKind.Scored when judge.Verdict is not null =>
+                judge.Verdict.OverallScore >= entry.Eval.Rubric.MinScore,
+            JudgeOutcomeKind.Error => false,
+            JudgeOutcomeKind.Skipped => true,
+            _ => true,
+        });
+    }
 }

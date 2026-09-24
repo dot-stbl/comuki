@@ -70,7 +70,7 @@ public static class RealPiInstaller
             await File.WriteAllTextAsync(
                 Path.Combine(installDir, "package.json"),
                 /*lang=json,strict*/ """{"name":"comuki-agent-eval-install","private":true,"version":"0.0.0"}""",
-                ct).ConfigureAwait(false);
+                ct);
         }
         catch (Exception exception)
         {
@@ -79,7 +79,7 @@ public static class RealPiInstaller
 
         try
         {
-            await RunBunAddAsync(bunExe, installDir, tgzPath, ct).ConfigureAwait(false);
+            await RunBunAddAsync(bunExe, installDir, tgzPath, ct);
         }
         catch (Exception exception)
         {
@@ -115,7 +115,7 @@ public static class RealPiInstaller
 
         try
         {
-            await process.WaitForExitAsync(linked.Token).ConfigureAwait(false);
+            await process.WaitForExitAsync(linked.Token);
         }
         catch (OperationCanceledException)
         {
@@ -126,7 +126,7 @@ public static class RealPiInstaller
         if (process.ExitCode != 0)
         {
             throw new InvalidOperationException(
-                $"'{bunExecutable} add {tgzPath}' exited {process.ExitCode}.\nstdout: {await stdoutTask.ConfigureAwait(false)}\nstderr: {await stderrTask.ConfigureAwait(false)}");
+                $"'{bunExecutable} add {tgzPath}' exited {process.ExitCode}.\nstdout: {await stdoutTask}\nstderr: {await stderrTask}");
         }
     }
 

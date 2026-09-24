@@ -22,7 +22,7 @@ namespace Comuki.AgentEval.Judges;
 /// </remarks>
 public sealed class HapyLlmJudgeClient : ILlmJudgeClient, IAsyncDisposable
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly HttpClient httpClient;
     private readonly Uri endpoint;
@@ -55,7 +55,7 @@ public sealed class HapyLlmJudgeClient : ILlmJudgeClient, IAsyncDisposable
 
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
-            Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json"),
+            Content = new StringContent(JsonSerializer.Serialize(payload, jsonOptions), Encoding.UTF8, "application/json"),
         };
 
         if (token is not null)
@@ -64,8 +64,8 @@ public sealed class HapyLlmJudgeClient : ILlmJudgeClient, IAsyncDisposable
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
 
-        using var response = await httpClient.SendAsync(request, ct).ConfigureAwait(false);
-        var rawBody = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        using var response = await httpClient.SendAsync(request, ct);
+        var rawBody = await response.Content.ReadAsStringAsync(ct);
 
         if (!response.IsSuccessStatusCode)
         {

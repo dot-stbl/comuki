@@ -42,7 +42,7 @@ namespace Comuki.AgentEval.Corpus;
 /// </remarks>
 public static class CorpusLoader
 {
-    private static readonly IDeserializer EvalDeserializer = new DeserializerBuilder()
+    private static readonly IDeserializer evalDeserializer = new DeserializerBuilder()
         .WithNamingConvention(CamelCaseNamingConvention.Instance)
         .IgnoreUnmatchedProperties()
         .Build();
@@ -114,12 +114,12 @@ public static class CorpusLoader
     {
         var relative = Path.GetRelativePath(corpusRoot, filePath);
         var segments = relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        return segments.Any(segment => segment is "scripts" or "cassettes" or "anonymized-real");
+        return segments.Any(static segment => segment is "scripts" or "cassettes" or "anonymized-real");
     }
 
     private static EvalExtension ParseEvalBlock(string scenarioPath)
     {
-        var wrapper = EvalDeserializer.Deserialize<EvalYamlDocument>(File.ReadAllText(scenarioPath));
+        var wrapper = evalDeserializer.Deserialize<EvalYamlDocument>(File.ReadAllText(scenarioPath));
         return wrapper?.Eval ?? new EvalExtension();
     }
 

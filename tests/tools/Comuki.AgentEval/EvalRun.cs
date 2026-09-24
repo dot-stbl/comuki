@@ -5,6 +5,7 @@ using Comuki.AgentEval.Pi;
 using Comuki.AgentEval.Reporting;
 using Comuki.AgentEval.Scoring;
 using Comuki.AgentTest.Runner.Execution.Budget;
+using Comuki.AgentTest.Runner.Reporting.Report;
 using Comuki.AgentTest.Runner.Scenarios;
 
 namespace Comuki.AgentEval;
@@ -24,6 +25,7 @@ namespace Comuki.AgentEval;
 /// <param name="PiExecutablePath">Absolute path to the installed real-pi binary. Empty when fake/replay mode runs without a real pi (see <see cref="EvalRun.RunAsync"/> for the gate).</param>
 /// <param name="OutputBasePath">Base path (no extension) the JSON+markdown report is written to.</param>
 /// <param name="JudgeClient">Optional LLM-as-judge client. Null when no live env is configured.</param>
+/// <param name="FilterName">Optional exact-match filter on corpus entry name (<c>--filter</c>). Null runs the whole corpus.</param>
 public sealed record EvalRunOptions(
     string CorpusDirectory,
     ScenarioModelMode Mode,
@@ -32,7 +34,8 @@ public sealed record EvalRunOptions(
     string? LiveUpstreamToken,
     string PiExecutablePath,
     string OutputBasePath,
-    ILlmJudgeClient? JudgeClient);
+    ILlmJudgeClient? JudgeClient,
+    string? FilterName = null);
 
 /// <summary>
 /// The orchestration glue <see cref="Program"/> calls into. Loads
@@ -61,7 +64,7 @@ public static class EvalRun
         var startedAt = DateTimeOffset.UtcNow;
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        var corpus = CorpusLoader.LoadDirectory(options.CorpusDirectory);
+        var corpus = CorpusLoader.LoadDirectory(options.CorpusDirectory, options.FilterName);
         var repositoryRoot = LocateRepoRoot();
         var piRunner = new PiEvalRunner(repositoryRoot);
         var budgetTracker = new BudgetTracker(options.BudgetCap);
@@ -76,7 +79,7 @@ public static class EvalRun
                 piRunner,
                 options,
                 budgetTracker,
-                ct).ConfigureAwait(false);
+                ct);
 
             entries.Add(entryResult);
 
@@ -92,9 +95,9 @@ public static class EvalRun
             stopwatch.Elapsed,
             entries);
 
-        await EvalReportWriter.WriteAsync(report, options.OutputBasePath, ct).ConfigureAwait(false);
+        await EvalReportWriter.WriteAsync(report, options.OutputBasePath, ct);
         var historyPath = Path.Combine(repositoryRoot, "artifacts", "agent-eval", "history.jsonl");
-        await HistoryAppender.AppendAsync(historyPath, report, ct).ConfigureAwait(false);
+        await HistoryAppender.AppendAsync(historyPath, report, ct);
 
         return report;
     }
@@ -119,13 +122,11 @@ public static class EvalRun
                 options.LiveUpstreamToken,
                 budgetTracker,
                 PerEntryTimeout,
-                ct).ConfigureAwait(false);
+                ct);
         }
         catch (Exception exception)
         {
             transcript = new RunTranscript([], [], [], 0m, 0L, ExitedCleanly: false);
-            workingDirectory = string.Empty;
-            pristineFixtureDirectory = string.Empty;
             return BuildFailureEntry(corpusEntry, transcript, options, exception.Message);
         }
 
@@ -135,7 +136,7 @@ public static class EvalRun
                 workingDirectory,
                 pristineFixtureDirectory,
                 corpusEntry.Scenario.Assertions.Diff,
-                ct).ConfigureAwait(false),
+                ct),
 
             DeterministicJudges.EvaluateFilesTouchedWithinAllowedSet(
                 transcript.TouchedFilePaths,
@@ -151,7 +152,7 @@ public static class EvalRun
                 corpusEntry.Eval.ResolvedTestCommand,
                 workingDirectory,
                 PerEntryTimeout,
-                ct).ConfigureAwait(false),
+                ct),
         };
 
         var transcriptSummary = BuildTranscriptSummary(transcript);
@@ -159,10 +160,10 @@ public static class EvalRun
             options.JudgeClient,
             corpusEntry,
             transcriptSummary,
-            ct).ConfigureAwait(false);
+            ct);
 
         var score = EvalScorer.Score(corpusEntry, deterministic, judge);
-        var cost = new Comuki.AgentTest.Runner.Reporting.Report.RunCost
+        var cost = new RunCost
         {
             UsdMicros = (long)decimal.Round(transcript.CostUsd * 1_000_000m, MidpointRounding.AwayFromZero),
         };
@@ -202,7 +203,7 @@ public static class EvalRun
             Difficulty = corpusEntry.Eval.Difficulty,
             Passed = score.Passed,
             Score = score,
-            Cost = new Comuki.AgentTest.Runner.Reporting.Report.RunCost(),
+            Cost = new RunCost(),
             DurationMs = transcript.DurationMs,
             ArtifactPaths = [],
         };

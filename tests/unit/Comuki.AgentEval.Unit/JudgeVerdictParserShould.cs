@@ -27,6 +27,7 @@ public sealed class JudgeVerdictParserShould
             MinScore = 0.5,
         };
         var json =
+            /*lang=json,strict*/
             """
             {
               "scores": [
@@ -58,6 +59,7 @@ public sealed class JudgeVerdictParserShould
             MinScore = 0.5,
         };
         var json =
+            /*lang=json,strict*/
             """
             {
               "scores": [
@@ -69,7 +71,7 @@ public sealed class JudgeVerdictParserShould
             }
             """;
 
-        var ok = JudgeVerdictParser.TryParse(json, rubric, out var verdict, out var error);
+        var ok = JudgeVerdictParser.TryParse(json, rubric, out var verdict, out _);
 
         ok.ShouldBeTrue();
         verdict!.OverallScore.ShouldBe(1d);
@@ -84,6 +86,7 @@ public sealed class JudgeVerdictParserShould
             MinScore = 0.5,
         };
         var json =
+            /*lang=json,strict*/
             """
             {
               "scores": [
@@ -116,6 +119,7 @@ public sealed class JudgeVerdictParserShould
             MinScore = 0.5,
         };
         var json =
+            /*lang=json,strict*/
             """
             {
               "scores": [
@@ -139,6 +143,7 @@ public sealed class JudgeVerdictParserShould
     {
         var rubric = MakeRubric(0.5);
         var json =
+            /*lang=json,strict*/
             """
             {
               "scores": [
@@ -180,10 +185,12 @@ public sealed class JudgeVerdictParserShould
         error.ShouldNotBeNull();
     }
 
-    private static EvalRubric MakeRubric(double minScore) =>
-        new()
+    private static EvalRubric MakeRubric(double minScore)
+    {
+        return new EvalRubric
         {
             Criteria = [new EvalRubricCriterion { Id = "only", Description = "The only criterion.", Weight = 1.0 }],
             MinScore = minScore,
         };
+    }
 }

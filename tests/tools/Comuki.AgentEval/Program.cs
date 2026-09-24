@@ -1,13 +1,10 @@
-using Comuki.AgentEval;
-using Comuki.AgentEval.Corpus;
 using Comuki.AgentEval.History;
 using Comuki.AgentEval.Judges;
 using Comuki.AgentEval.Pi;
 using Comuki.AgentEval.Reporting;
-using Comuki.AgentEval.Scoring;
+using Comuki.AgentTest.Runner.Execution;
 using Comuki.AgentTest.Runner.Execution.Budget;
 using Comuki.AgentTest.Runner.Scenarios;
-using Comuki.Host.Translator.Parsing;
 
 namespace Comuki.AgentEval;
 
@@ -24,7 +21,7 @@ namespace Comuki.AgentEval;
 ///   <item><c>--corpus</c> — <c>tests/fixtures/scenarios/agent-eval</c>, resolved relative to the repo root (found by walking up for the <c>comuki.slnx</c> marker file).</item>
 ///   <item><c>--out</c> — <c>artifacts/agent-eval/[UTC-yyyyMMddTHHmmssZ]-report</c>.</item>
 ///   <item><c>--history</c> — <c>artifacts/agent-eval/history.jsonl</c>.</item>
-///   <item><c>--budget-usd</c> unset — <see cref="BudgetCap.Unlimited"/> via <see cref="BudgetCap.Resolve"/>(null, <see cref="Comuki.AgentTest.Runner.Execution.ScenarioRunner.GlobalBudgetEnvVar"/>).</item>
+///   <item><c>--budget-usd</c> unset — <see cref="BudgetCap.Unlimited"/> via <see cref="BudgetCap.Resolve"/>(null, <see cref="ScenarioRunner.GlobalBudgetEnvVar"/>).</item>
 /// </list>
 /// </para>
 /// <para>
@@ -82,7 +79,7 @@ public static class Program
     {
         if (args.Contains("--help") || args.Contains("-h"))
         {
-            await Console.Out.WriteLineAsync(UsageText).ConfigureAwait(false);
+            await Console.Out.WriteLineAsync(UsageText);
             return 0;
         }
 
@@ -98,7 +95,7 @@ public static class Program
         if (repoRoot is null)
         {
             await Console.Error.WriteLineAsync(
-                "could not locate the repo root (comuki.slnx) from " + AppContext.BaseDirectory).ConfigureAwait(false);
+                "could not locate the repo root (comuki.slnx) from " + AppContext.BaseDirectory);
             return 1;
         }
 
@@ -106,27 +103,27 @@ public static class Program
         {
             var historyPath = ResolveRepoRelativePath(historyRaw, repoRoot, DefaultHistoryRelativePath);
             var entries = TrendReader.ReadTrend(historyPath);
-            await Console.Out.WriteLineAsync(TrendReader.RenderTrendTable(entries)).ConfigureAwait(false);
+            await Console.Out.WriteLineAsync(TrendReader.RenderTrendTable(entries));
             return 0;
         }
 
         if (modeRaw is null)
         {
-            await Console.Error.WriteLineAsync("--mode=<fake|replay|live> is required (or pass --trend alone).").ConfigureAwait(false);
-            await Console.Error.WriteLineAsync(UsageText).ConfigureAwait(false);
+            await Console.Error.WriteLineAsync("--mode=<fake|replay|live> is required (or pass --trend alone).");
+            await Console.Error.WriteLineAsync(UsageText);
             return 1;
         }
 
         if (!TryParseMode(modeRaw, out var mode))
         {
-            await Console.Error.WriteLineAsync($"--mode='{modeRaw}' is not one of fake|replay|live").ConfigureAwait(false);
+            await Console.Error.WriteLineAsync($"--mode='{modeRaw}' is not one of fake|replay|live");
             return 1;
         }
 
         if (mode == ScenarioModelMode.Live && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(EnvLiveModelBaseUrl)))
         {
             await Console.Out.WriteLineAsync(
-                $"agent-eval: skipped — {EnvLiveModelBaseUrl} is not set (--mode=live requires it).").ConfigureAwait(false);
+                $"agent-eval: skipped — {EnvLiveModelBaseUrl} is not set (--mode=live requires it).");
             return 0;
         }
 
@@ -140,7 +137,7 @@ public static class Program
             var baseUrlRaw = Environment.GetEnvironmentVariable(EnvLiveModelBaseUrl)!;
             if (!Uri.TryCreate(baseUrlRaw, UriKind.Absolute, out liveUpstreamBaseUrl))
             {
-                await Console.Error.WriteLineAsync($"{EnvLiveModelBaseUrl}='{baseUrlRaw}' is not a valid absolute URL").ConfigureAwait(false);
+                await Console.Error.WriteLineAsync($"{EnvLiveModelBaseUrl}='{baseUrlRaw}' is not a valid absolute URL");
                 return 1;
             }
 
@@ -158,15 +155,15 @@ public static class Program
             }
             catch (Exception exception)
             {
-                await Console.Error.WriteLineAsync($"failed to build HapyLlmJudgeClient: {exception.Message}").ConfigureAwait(false);
+                await Console.Error.WriteLineAsync($"failed to build HapyLlmJudgeClient: {exception.Message}");
                 return 1;
             }
         }
 
-        var piInstall = await RealPiInstaller.InstallAsync(CancellationToken.None).ConfigureAwait(false);
+        var piInstall = await RealPiInstaller.InstallAsync(CancellationToken.None);
         if (!piInstall.Succeeded)
         {
-            await Console.Error.WriteLineAsync($"agent-eval: failed to install real pi: {piInstall.Reason}").ConfigureAwait(false);
+            await Console.Error.WriteLineAsync($"agent-eval: failed to install real pi: {piInstall.Reason}");
             return 1;
         }
 
@@ -184,20 +181,21 @@ public static class Program
             LiveUpstreamToken: liveUpstreamToken,
             PiExecutablePath: piInstall.ExecutablePath,
             OutputBasePath: outputBasePath,
-            JudgeClient: judgeClient);
+            JudgeClient: judgeClient,
+            FilterName: filterRaw);
 
         try
         {
-            var report = await EvalRun.RunAsync(options, CancellationToken.None).ConfigureAwait(false);
+            var report = await EvalRun.RunAsync(options, CancellationToken.None);
             var verdict = EvalReportWriter.Verdict(report, outputBasePath + ".md");
-            await Console.Out.WriteLineAsync(verdict).ConfigureAwait(false);
+            await Console.Out.WriteLineAsync(verdict);
             return 0;
         }
         finally
         {
             if (judgeClient is not null)
             {
-                await judgeClient.DisposeAsync().ConfigureAwait(false);
+                await judgeClient.DisposeAsync();
             }
         }
     }
@@ -234,12 +232,14 @@ public static class Program
         }
     }
 
-    private static BudgetCap ResolveBudgetCap(string? budgetRaw) =>
-        BudgetCap.Resolve(
+    private static BudgetCap ResolveBudgetCap(string? budgetRaw)
+    {
+        return BudgetCap.Resolve(
             decimal.TryParse(budgetRaw, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
                 ? parsed
                 : null,
-            Comuki.AgentTest.Runner.Execution.ScenarioRunner.GlobalBudgetEnvVar);
+            ScenarioRunner.GlobalBudgetEnvVar);
+    }
 
     /// <summary>
     /// Resolves a user-supplied path (<c>--corpus</c>/<c>--out</c>/<c>--history</c>)

@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Comuki.AgentEval.Corpus;
-using Comuki.AgentEval.Judges;
-using Comuki.AgentTest.Runner.Execution.Budget;
 using Comuki.AgentTest.Runner.Scenarios;
 using Comuki.Host.Translator.Parsing;
 using Comuki.TestFakeModel.Cassettes.Hosting;
@@ -13,7 +11,6 @@ using Comuki.TestFakeModel.Scripting.Loading;
 // type on the public PiEvalRunner API (matches the rest of the
 // runner's vocabulary) and translate to the recorder-side type inside
 // StartRecordingServerAsync.
-using BudgetCap = Comuki.AgentTest.Runner.Execution.Budget.BudgetCap;
 using BudgetTracker = Comuki.AgentTest.Runner.Execution.Budget.BudgetTracker;
 using CassetteBudgetCap = Comuki.TestFakeModel.Cassettes.Hosting.BudgetCap;
 using CassetteBudgetTracker = Comuki.TestFakeModel.Cassettes.Hosting.BudgetTracker;
@@ -87,24 +84,24 @@ public sealed class PiEvalRunner(string repositoryRoot)
 
         FakeModelServer? fakeServer = null;
         CassetteModelServer? cassetteServer = null;
-        Uri? modelBaseAddress = null;
+        Uri? modelBaseAddress;
 
         try
         {
             switch (mode)
             {
                 case ScenarioModelMode.Fake:
-                    fakeServer = await StartFakeServerAsync(entry, ct).ConfigureAwait(false);
+                    fakeServer = await StartFakeServerAsync(entry, ct);
                     modelBaseAddress = fakeServer.BaseAddress;
                     break;
 
                 case ScenarioModelMode.Replay:
-                    cassetteServer = await StartReplayServerAsync(entry, ct).ConfigureAwait(false);
+                    cassetteServer = await StartReplayServerAsync(entry, ct);
                     modelBaseAddress = cassetteServer.BaseAddress;
                     break;
 
                 case ScenarioModelMode.Live:
-                    cassetteServer = await StartRecordingServerAsync(entry, liveUpstreamBaseUrl, budgetTracker, ct).ConfigureAwait(false);
+                    cassetteServer = await StartRecordingServerAsync(entry, liveUpstreamBaseUrl, budgetTracker, ct);
                     modelBaseAddress = cassetteServer.BaseAddress;
                     break;
 
@@ -119,7 +116,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
             // pi at a closed port for the entire run (verified: this made
             // every request pi issued fail to connect, and pi does not fail
             // fast on that — it hangs well past any single-entry timeout).
-            await WriteModelsJsonAsync(agentDirectory, modelBaseAddress!, ct).ConfigureAwait(false);
+            await WriteModelsJsonAsync(agentDirectory, modelBaseAddress, ct);
 
             var brief = ComposeBrief(entry);
             var (events, exitedCleanly, durationMs) = await SpawnPiAsync(
@@ -129,15 +126,15 @@ public sealed class PiEvalRunner(string repositoryRoot)
                 brief,
                 liveUpstreamToken,
                 timeout,
-                ct).ConfigureAwait(false);
+                ct);
 
             var transcript = SummarizeTranscript(events, durationMs, exitedCleanly);
             return (transcript, workingDirectory, pristineFixtureDirectory);
         }
         finally
         {
-            await DisposeQuietlyAsync(fakeServer).ConfigureAwait(false);
-            await DisposeQuietlyAsync(cassetteServer).ConfigureAwait(false);
+            await DisposeQuietlyAsync(fakeServer);
+            await DisposeQuietlyAsync(cassetteServer);
             RestoreEnvironment();
         }
     }
@@ -192,7 +189,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
             Port = null,
             BindAddress = "127.0.0.1",
         });
-        await server.StartAsync(ct).ConfigureAwait(false);
+        await server.StartAsync(ct);
         return server;
     }
 
@@ -222,7 +219,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
             Port = null,
             BindAddress = "127.0.0.1",
         });
-        await server.StartAsync(ct).ConfigureAwait(false);
+        await server.StartAsync(ct);
         return server;
     }
 
@@ -253,7 +250,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
             BindAddress = "127.0.0.1",
             BudgetTracker = TranslateToRecorderTracker(budgetTracker),
         });
-        await server.StartAsync(ct).ConfigureAwait(false);
+        await server.StartAsync(ct);
         return server;
     }
 
@@ -275,7 +272,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
               }
             }
             """;
-        await File.WriteAllTextAsync(Path.Combine(agentDirectory, "models.json"), json, ct).ConfigureAwait(false);
+        await File.WriteAllTextAsync(Path.Combine(agentDirectory, "models.json"), json, ct);
     }
 
     private static string ComposeBrief(CorpusEntry entry)
@@ -313,11 +310,8 @@ public sealed class PiEvalRunner(string repositoryRoot)
             ? "real-pi-test-token"
             : liveToken;
 
-        using var process = Process.Start(startInfo);
-        if (process is null)
-        {
-            throw new InvalidOperationException($"failed to start '{piExecutablePath}' — process is null");
-        }
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException($"failed to start '{piExecutablePath}' — process is null");
 
         // pi's stdin is redirected above but this runner never writes to it —
         // an unclosed redirected stdin pipe can leave a headless Node/Bun CLI
@@ -335,7 +329,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
         {
             using var reader = process.StandardOutput;
             string? line;
-            while ((line = await reader.ReadLineAsync(ct).ConfigureAwait(false)) is not null)
+            while ((line = await reader.ReadLineAsync(ct)) is not null)
             {
                 foreach (var piEvent in StreamJsonParser.ParseLine(line))
                 {
@@ -349,7 +343,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
 
         try
         {
-            await process.WaitForExitAsync(linked.Token).ConfigureAwait(false);
+            await process.WaitForExitAsync(linked.Token);
             exitedCleanly = true;
         }
         catch (OperationCanceledException)
@@ -358,7 +352,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
         }
         finally
         {
-            try { await stdoutTask.ConfigureAwait(false); }
+            try { await stdoutTask; }
             catch { /* ignore drain errors on cancellation */ }
         }
 
@@ -447,13 +441,15 @@ public sealed class PiEvalRunner(string repositoryRoot)
         }
     }
 
-    private static CassetteBudgetTracker? TranslateToRecorderTracker(BudgetTracker? runnerTracker) =>
-        runnerTracker is null
+    private static CassetteBudgetTracker? TranslateToRecorderTracker(BudgetTracker? runnerTracker)
+    {
+        return runnerTracker is null
             ? null
             : new CassetteBudgetTracker(
                 runnerTracker.Cap.UsdMicros is { } micros
                     ? new CassetteBudgetCap(micros)
                     : CassetteBudgetCap.Unlimited);
+    }
 
     private static async Task DisposeQuietlyAsync(IAsyncDisposable? disposable)
     {
@@ -464,7 +460,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
 
         try
         {
-            await disposable.DisposeAsync().ConfigureAwait(false);
+            await disposable.DisposeAsync();
         }
         catch
         {

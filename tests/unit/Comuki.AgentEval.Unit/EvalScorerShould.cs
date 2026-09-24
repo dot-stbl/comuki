@@ -106,8 +106,8 @@ public sealed class EvalScorerShould
     public void RecomputedOverallScoreWins()
     {
         var rubric = MakeRubric(minScore: 0.5);
-        var verdicts = new[] { MakeVerdict("diff-applies", true) };
         var rawJson =
+            /*lang=json,strict*/
             """
             {
               "scores": [
@@ -118,13 +118,14 @@ public sealed class EvalScorerShould
               "notes": ""
             }
             """;
-        var ok = JudgeVerdictParser.TryParse(rawJson, rubric, out var verdict, out var error);
+        var ok = JudgeVerdictParser.TryParse(rawJson, rubric, out var verdict, out _);
         ok.ShouldBeTrue();
         verdict!.OverallScore.ShouldBe(1d);
     }
 
-    private static CorpusEntry MakeEntry(EvalRubric? rubric) =>
-        new(
+    private static CorpusEntry MakeEntry(EvalRubric? rubric)
+    {
+        return new CorpusEntry(
             new ScenarioDefinition
             {
                 SchemaVersion = 1,
@@ -135,21 +136,28 @@ public sealed class EvalScorerShould
             },
             new EvalExtension { Rubric = rubric },
             "/tmp/test.scenario.yaml");
+    }
 
-    private static EvalRubric MakeRubric(double minScore) =>
-        new()
+    private static EvalRubric MakeRubric(double minScore)
+    {
+        return new EvalRubric
         {
             Criteria = [new EvalRubricCriterion { Id = "only", Description = "The only criterion.", Weight = 1.0 }],
             MinScore = minScore,
         };
+    }
 
-    private static DeterministicVerdict MakeVerdict(string name, bool? passed) =>
-        new() { JudgeName = name, Passed = passed, Message = $"message for {name}" };
+    private static DeterministicVerdict MakeVerdict(string name, bool? passed)
+    {
+        return new DeterministicVerdict { JudgeName = name, Passed = passed, Message = $"message for {name}" };
+    }
 
-    private static JudgeVerdict MakeJudgeVerdict(double overallScore) =>
-        new(
+    private static JudgeVerdict MakeJudgeVerdict(double overallScore)
+    {
+        return new JudgeVerdict(
             [new JudgeCriterionScore("only", 1.0, "perfect")],
             overallScore,
             "pass",
             string.Empty);
+    }
 }

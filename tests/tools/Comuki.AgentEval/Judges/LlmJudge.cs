@@ -26,13 +26,22 @@ public enum JudgeOutcomeKind
 public sealed record JudgeOutcome(JudgeOutcomeKind Kind, JudgeVerdict? Verdict, string? Message)
 {
     /// <summary>Constructs a <see cref="JudgeOutcomeKind.Skipped"/> outcome.</summary>
-    public static JudgeOutcome Skipped(string reason) => new(JudgeOutcomeKind.Skipped, null, reason);
+    public static JudgeOutcome Skipped(string reason)
+    {
+        return new JudgeOutcome(JudgeOutcomeKind.Skipped, null, reason);
+    }
 
     /// <summary>Constructs a <see cref="JudgeOutcomeKind.Scored"/> outcome.</summary>
-    public static JudgeOutcome Scored(JudgeVerdict verdict) => new(JudgeOutcomeKind.Scored, verdict, null);
+    public static JudgeOutcome Scored(JudgeVerdict verdict)
+    {
+        return new JudgeOutcome(JudgeOutcomeKind.Scored, verdict, null);
+    }
 
     /// <summary>Constructs a <see cref="JudgeOutcomeKind.Error"/> outcome.</summary>
-    public static JudgeOutcome Error(string message) => new(JudgeOutcomeKind.Error, null, message);
+    public static JudgeOutcome Error(string message)
+    {
+        return new JudgeOutcome(JudgeOutcomeKind.Error, null, message);
+    }
 }
 
 /// <summary>
@@ -92,7 +101,7 @@ public static class LlmJudge
             ? "(no rubric)"
             : string.Join(
                 "\n",
-                rubric.Criteria.Select(criterion =>
+                rubric.Criteria.Select(static criterion =>
                     $"- id={criterion.Id} weight={criterion.Weight:0.###} description=\"{criterion.Description}\""));
 
         return $$"""
@@ -144,7 +153,7 @@ public static class LlmJudge
         string rawResponse;
         try
         {
-            rawResponse = await client.CompleteAsync(systemPrompt, userPrompt, ct).ConfigureAwait(false);
+            rawResponse = await client.CompleteAsync(systemPrompt, userPrompt, ct);
         }
         catch (OperationCanceledException)
         {

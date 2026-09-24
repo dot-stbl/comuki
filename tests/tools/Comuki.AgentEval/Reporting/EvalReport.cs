@@ -1,3 +1,4 @@
+using Comuki.AgentTest.Runner.Reporting;
 using Comuki.AgentTest.Runner.Reporting.Report;
 
 namespace Comuki.AgentEval.Reporting;
@@ -39,7 +40,7 @@ public sealed record EvalReport(
     public IReadOnlyList<EvalEntryResult> EntriesValue => Entries ?? [];
     /// <summary>
     /// Builds an <see cref="EvalReport"/> from a set of per-entry
-    /// results. Mirrors <see cref="Comuki.AgentTest.Runner.Reporting.RunReport.FromResults"/>'s
+    /// results. Mirrors <see cref="RunReport.FromResults"/>'s
     /// shape closely — same <see cref="RunSummary"/> reuse, same
     /// aggregate-cost summation, plus a corpus-specific
     /// <see cref="AverageQualityScore"/> summary field.

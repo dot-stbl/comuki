@@ -104,7 +104,7 @@ public static class Program
 
         if (trendFlag && modeRaw is null)
         {
-            var historyPath = Path.GetFullPath(historyRaw ?? Path.Combine(repoRoot, DefaultHistoryRelativePath));
+            var historyPath = ResolveRepoRelativePath(historyRaw, repoRoot, DefaultHistoryRelativePath);
             var entries = TrendReader.ReadTrend(historyPath);
             await Console.Out.WriteLineAsync(TrendReader.RenderTrendTable(entries)).ConfigureAwait(false);
             return 0;
@@ -130,7 +130,7 @@ public static class Program
             return 0;
         }
 
-        var corpusDirectory = Path.GetFullPath(corpusRaw ?? Path.Combine(repoRoot, DefaultCorpusRelativePath));
+        var corpusDirectory = ResolveRepoRelativePath(corpusRaw, repoRoot, DefaultCorpusRelativePath);
         var budgetCap = ResolveBudgetCap(budgetRaw);
 
         Uri? liveUpstreamBaseUrl = null;
@@ -171,8 +171,10 @@ public static class Program
         }
 
         var startedAtUtc = DateTimeOffset.UtcNow;
-        var outputBasePath = Path.GetFullPath(outRaw
-            ?? Path.Combine(repoRoot, "artifacts", "agent-eval", $"{startedAtUtc:yyyyMMddTHHmmssZ}-report"));
+        var outputBasePath = ResolveRepoRelativePath(
+            outRaw,
+            repoRoot,
+            Path.Combine("artifacts", "agent-eval", $"{startedAtUtc:yyyyMMddTHHmmssZ}-report"));
 
         var options = new EvalRunOptions(
             CorpusDirectory: corpusDirectory,
@@ -238,6 +240,26 @@ public static class Program
                 ? parsed
                 : null,
             Comuki.AgentTest.Runner.Execution.ScenarioRunner.GlobalBudgetEnvVar);
+
+    /// <summary>
+    /// Resolves a user-supplied path (<c>--corpus</c>/<c>--out</c>/<c>--history</c>)
+    /// against <paramref name="repoRoot"/> when it's relative — NOT against
+    /// <see cref="Environment.CurrentDirectory"/>, which <c>dotnet run</c>
+    /// sets to the project directory rather than the caller's shell CWD
+    /// (verified: a bare <c>Path.GetFullPath(raw)</c> here silently nested
+    /// a relative <c>--corpus</c> value under
+    /// <c>tests/tools/Comuki.AgentEval/</c> instead of the repo root, the
+    /// exact bug <c>scripts/ci/agent-eval.mjs</c>'s smoke test caught).
+    /// An absolute <paramref name="raw"/> value is used as-is. <paramref name="raw"/>
+    /// null falls back to <paramref name="defaultRelativePath"/> under <paramref name="repoRoot"/>.
+    /// </summary>
+    private static string ResolveRepoRelativePath(string? raw, string repoRoot, string defaultRelativePath)
+    {
+        var candidate = raw is null
+            ? Path.Combine(repoRoot, defaultRelativePath)
+            : Path.IsPathRooted(raw) ? raw : Path.Combine(repoRoot, raw);
+        return Path.GetFullPath(candidate);
+    }
 
     private static string? LocateRepoRoot()
     {

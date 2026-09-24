@@ -2,20 +2,24 @@
 # small-repo fixture has no test project, so the "tests pass" judge
 # reports n/a here; that's expected, not a bug.
 # This entry is the worked example of the LLM-judge rubric format
-# (open question from design.md). Its fakeScript produces a PARTIAL fix
-# on purpose — the deterministic judges will still fail diff-applies
-# (the script only edits a subset), and the judge scores will reflect
-# that imperfection once a real judge model is wired. With no live env
-# the judge outcome is Skipped, which is correct: deterministic failures
-# alone fail the entry, deterministic passes alone pass it.
+# (open question from design.md). The ticket only describes a SYMPTOM,
+# not a diagnosis, so the agent must locate the root cause itself before
+# fixing it — that's what makes it "hard" relative to the other four
+# entries, which name the bug directly. Its fakeScript demonstrates a
+# complete, correct fix (identifies the null-forgiving `orders!` as the
+# root cause, adds a guard, leaves the rest untouched) so the
+# deterministic judges pass on their own; the rubric is a genuine
+# quality-scoring worked example (diagnosis/minimal-fix/code-style,
+# weighted, minScore 0.6), not a rigged-to-fail entry — with no live
+# judge env configured the judge outcome is Skipped, which correctly
+# never fails an entry whose deterministic judges already passed.
 schemaVersion: 1
 name: ambiguous-symptom
 description: >
   Calibration entry: the ticket describes a SYMPTOM (the agent has to
-  figure out where to fix), not an exact diff. The fakeScript produces
-  a partial/imperfect fix on purpose, so this entry is expected to
-  fail diff-applies against the pristine baseline unless a real judge
-  scores the rubric to override it.
+  figure out where to fix), not an exact diff. The fakeScript's fix is
+  complete and correct — this entry exercises diagnosis-under-ambiguity
+  plus the weighted-rubric judge format, not a deliberately-broken diff.
 ticket:
   source: github
   title: "OrderTotal misbehaves on certain inputs"

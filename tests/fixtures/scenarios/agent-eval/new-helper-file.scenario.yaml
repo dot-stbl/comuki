@@ -1,0 +1,38 @@
+# WS10 golden-task corpus entry #4 — hard.
+# small-repo fixture has no test project, so the "tests pass" judge
+# reports n/a here; that's expected, not a bug.
+schemaVersion: 1
+name: new-helper-file
+description: >
+  Hard: introduce a new file src/OrderDiscount.cs that owns an
+  Apply(IEnumerable<Order>, decimal rate) helper returning the discounted
+  total, and have OrderTotal.Calculate delegate to it. Two logical
+  changes spread across two files (the new helper file + the existing
+  OrderTotal.cs that calls into it).
+ticket:
+  source: github
+  title: "Extract OrderTotal.Calculate's summation into a new OrderDiscount helper"
+  body: |
+    Today OrderTotal.Calculate sums amounts directly. Extract that
+    summation into a new file src/OrderDiscount.cs as a static helper
+    OrderDiscount.Apply(IEnumerable<Order>, decimal rate) that returns
+    the discounted total. Wire OrderTotal.Calculate to delegate to
+    OrderDiscount.Apply, passing a rate of 0 (no discount yet).
+  labels: [refactor, comuki]
+  targetRepo:
+    fixture: small-repo
+    ref: main
+worker:
+  image: comuki-agent-test-worker:ws6
+  profileKey: implement
+  profilesRef: test
+model:
+  mode: fake
+  fakeScript: scripts/new-helper-file.fake.json
+eval:
+  difficulty: hard
+  expectedOutcome: A new src/OrderDiscount.cs owns the Apply helper; OrderTotal.Calculate now delegates to it instead of summing inline.
+  allowedFiles:
+    - src/OrderTotal.cs
+    - src/OrderDiscount.cs
+  maxToolCalls: 8

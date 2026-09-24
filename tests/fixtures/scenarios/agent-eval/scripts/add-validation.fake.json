@@ -1,0 +1,40 @@
+{
+  "scenarioName": "add-validation",
+  "entries": [
+    {
+      "match": { "hasToolResult": false },
+      "response": {
+        "stopReason": "tool_use",
+        "content": [
+          { "type": "text", "text": "Adding a ValidateAmounts helper and wiring it into Calculate." },
+          {
+            "type": "tool_use",
+            "name": "edit",
+            "input": {
+              "path": "src/OrderTotal.cs",
+              "edits": [
+                {
+                  "oldText": "        public static decimal Calculate(IEnumerable<Order>? orders)\n        {\n            decimal total = 0;",
+                  "newText": "        public static decimal Calculate(IEnumerable<Order>? orders)\n        {\n            ValidateAmounts(orders);\n            decimal total = 0;"
+                },
+                {
+                  "oldText": "            return total;\n        }\n    }\n}",
+                  "newText": "            return total;\n        }\n\n        public static void ValidateAmounts(IEnumerable<Order>? orders)\n        {\n            if (orders is null)\n            {\n                return;\n            }\n\n            foreach (var order in orders)\n            {\n                if (order.Amount < 0)\n                {\n                    throw new ArgumentOutOfRangeException(nameof(orders));\n                }\n            }\n        }\n    }\n}"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "match": { "hasToolResult": true },
+      "response": {
+        "stopReason": "end_turn",
+        "content": [
+          { "type": "text", "text": "Added ValidateAmounts and wired it into Calculate." }
+        ]
+      }
+    }
+  ]
+}

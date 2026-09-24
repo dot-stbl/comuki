@@ -84,7 +84,6 @@ public sealed class PiEvalRunner(string repositoryRoot)
         var workingDirectory = CopyFixtureRepoToScratch(entry.Scenario.Ticket.TargetRepo.Fixture);
 
         var agentDirectory = CreateScratchDirectory("agent-dir");
-        await WriteModelsJsonAsync(agentDirectory, mode, liveUpstreamBaseUrl, ct).ConfigureAwait(false);
 
         FakeModelServer? fakeServer = null;
         CassetteModelServer? cassetteServer = null;
@@ -112,6 +111,15 @@ public sealed class PiEvalRunner(string repositoryRoot)
                 default:
                     throw new InvalidOperationException($"unsupported model mode '{mode}'");
             }
+
+            // Must happen AFTER the model server above has actually started —
+            // only then is its real, dynamically-bound BaseAddress known. An
+            // earlier revision wrote a placeholder URI here before any server
+            // existed and never came back to overwrite it, which pointed real
+            // pi at a closed port for the entire run (verified: this made
+            // every request pi issued fail to connect, and pi does not fail
+            // fast on that — it hangs well past any single-entry timeout).
+            await WriteModelsJsonAsync(agentDirectory, modelBaseAddress!, ct).ConfigureAwait(false);
 
             var brief = ComposeBrief(entry);
             var (events, exitedCleanly, durationMs) = await SpawnPiAsync(
@@ -249,24 +257,20 @@ public sealed class PiEvalRunner(string repositoryRoot)
         return server;
     }
 
-    private static async Task WriteModelsJsonAsync(string agentDirectory, ScenarioModelMode mode, Uri? liveUpstreamBaseUrl, CancellationToken ct)
+    /// <summary>
+    /// Writes the <c>providers.anthropic.baseUrl</c> override real pi reads
+    /// from <c>PI_CODING_AGENT_DIR</c> (issue #150 — <c>ANTHROPIC_BASE_URL</c>
+    /// alone does not redirect a cataloged Anthropic model). Must be called
+    /// with the model server's ACTUAL <paramref name="modelBaseAddress"/> —
+    /// after that server has started, never before.
+    /// </summary>
+    private static async Task WriteModelsJsonAsync(string agentDirectory, Uri modelBaseAddress, CancellationToken ct)
     {
-        // live mode points at the recorder (CassetteModelServer in Record mode);
-        // fake / replay point at their own server's BaseAddress — which we
-        // don't yet know at write-time, so we stamp the placeholder URL and
-        // overwrite with the real BaseAddress right before spawning pi.
-        // For simplicity here, we use a sentinel URI; PiEvalRunner's caller
-        // is expected to overwrite models.json right after the model server
-        // starts. The integration suite uses the same trick.
-        var placeholderUri = mode == ScenarioModelMode.Live
-            ? (liveUpstreamBaseUrl ?? new Uri("http://127.0.0.1:0"))
-            : new Uri("http://127.0.0.1:1");
-
         var json = $$"""
             {
               "providers": {
                 "anthropic": {
-                  "baseUrl": "{{placeholderUri}}"
+                  "baseUrl": "{{modelBaseAddress}}"
                 }
               }
             }
@@ -314,6 +318,14 @@ public sealed class PiEvalRunner(string repositoryRoot)
         {
             throw new InvalidOperationException($"failed to start '{piExecutablePath}' — process is null");
         }
+
+        // pi's stdin is redirected above but this runner never writes to it —
+        // an unclosed redirected stdin pipe can leave a headless Node/Bun CLI
+        // blocked waiting on input that will never arrive (the same class of
+        // hang the opencode CLI is documented to hit without `< /dev/null`).
+        // Closing it immediately signals EOF, matching production PiRunner's
+        // behavior of never redirecting stdin at all.
+        process.StandardInput.Close();
 
         var stopwatch = Stopwatch.StartNew();
         var events = new List<PiEvent>();

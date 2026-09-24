@@ -1,0 +1,36 @@
+{
+  "scenarioName": "extract-magic-number",
+  "entries": [
+    {
+      "match": { "hasToolResult": false },
+      "response": {
+        "stopReason": "tool_use",
+        "content": [
+          { "type": "text", "text": "I'll extract the literal 0 into a named constant." },
+          {
+            "type": "tool_use",
+            "name": "edit",
+            "input": {
+              "path": "src/OrderTotal.cs",
+              "edits": [
+                {
+                  "oldText": "            decimal total = 0;\n            foreach (var order in orders)",
+                  "newText": "            const decimal InitialAccumulator = 0m;\n            decimal total = InitialAccumulator;\n            foreach (var order in orders)"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "match": { "hasToolResult": true },
+      "response": {
+        "stopReason": "end_turn",
+        "content": [
+          { "type": "text", "text": "Replaced the literal 0 with a named InitialAccumulator constant." }
+        ]
+      }
+    }
+  ]
+}

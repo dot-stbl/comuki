@@ -14,7 +14,6 @@ public sealed class FakeLlmJudgeClient : ILlmJudgeClient
 {
     private readonly string? cannedResponse;
     private readonly Exception? throwException;
-    private int callCount;
 
     /// <summary>Builds a fake that always returns <paramref name="response"/>.</summary>
     public FakeLlmJudgeClient(string response)
@@ -31,12 +30,12 @@ public sealed class FakeLlmJudgeClient : ILlmJudgeClient
     }
 
     /// <summary>Number of times <see cref="CompleteAsync"/> has been invoked (read-only).</summary>
-    public int CallCount => callCount;
+    public int CallCount { get; private set; }
 
     /// <inheritdoc />
     public Task<string> CompleteAsync(string systemPrompt, string userPrompt, CancellationToken ct)
     {
-        callCount++;
+        CallCount++;
 
         return throwException is not null
             ? throw throwException
@@ -44,5 +43,8 @@ public sealed class FakeLlmJudgeClient : ILlmJudgeClient
     }
 
     /// <inheritdoc />
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
 }

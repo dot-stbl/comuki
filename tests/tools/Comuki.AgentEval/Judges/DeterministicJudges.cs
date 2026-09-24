@@ -62,7 +62,7 @@ public static class DeterministicJudges
         {
             var substringFailure = await DiffAssertionEvaluator
                 .EvaluateAsync(baseDiffAssertion, workingDirectory, cancellationToken)
-                .ConfigureAwait(false);
+                ;
             if (substringFailure is not null)
             {
                 return new DeterministicVerdict
@@ -239,7 +239,7 @@ public static class DeterministicJudges
 
             try
             {
-                await process.WaitForExitAsync(linked.Token).ConfigureAwait(false);
+                await process.WaitForExitAsync(linked.Token);
             }
             catch (OperationCanceledException)
             {
@@ -252,8 +252,8 @@ public static class DeterministicJudges
                 };
             }
 
-            var stdout = await stdoutTask.ConfigureAwait(false);
-            var stderr = await stderrTask.ConfigureAwait(false);
+            var stdout = await stdoutTask;
+            var stderr = await stderrTask;
 
             if (process.ExitCode == 0)
             {
@@ -284,10 +284,7 @@ public static class DeterministicJudges
         }
         finally
         {
-            if (process is not null)
-            {
-                process.Dispose();
-            }
+            process?.Dispose();
         }
     }
 
@@ -317,13 +314,15 @@ public static class DeterministicJudges
     }
 
     /// <summary>Constructs a not-applicable verdict — null passed + a short reason message.</summary>
-    private static DeterministicVerdict NotApplicable(string judgeName, string reason) =>
-        new()
+    private static DeterministicVerdict NotApplicable(string judgeName, string reason)
+    {
+        return new DeterministicVerdict
         {
             JudgeName = judgeName,
             Passed = null,
             Message = reason + " — not applicable",
         };
+    }
 
     private static void KillProcessTree(Process process)
     {

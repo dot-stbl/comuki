@@ -46,6 +46,7 @@ public sealed class LlmJudgeShould
     {
         var rubric = MakeRubric(minScore: 0.5);
         var client = new FakeLlmJudgeClient(
+            /*lang=json,strict*/
             """
             {
               "scores": [
@@ -97,6 +98,7 @@ public sealed class LlmJudgeShould
     public async Task ErrorOnMissingCriterionIdAsync()
     {
         var client = new FakeLlmJudgeClient(
+            /*lang=json,strict*/
             """
             {
               "scores": [
@@ -115,8 +117,9 @@ public sealed class LlmJudgeShould
         (outcome.Message ?? "").ShouldContain("different");
     }
 
-    private static CorpusEntry MakeEntry(EvalRubric? rubric) =>
-        new(
+    private static CorpusEntry MakeEntry(EvalRubric? rubric)
+    {
+        return new CorpusEntry(
             new ScenarioDefinition
             {
                 SchemaVersion = 1,
@@ -127,11 +130,14 @@ public sealed class LlmJudgeShould
             },
             new EvalExtension { Rubric = rubric },
             "/tmp/test.scenario.yaml");
+    }
 
-    private static EvalRubric MakeRubric(double minScore) =>
-        new()
+    private static EvalRubric MakeRubric(double minScore)
+    {
+        return new EvalRubric
         {
             Criteria = [new EvalRubricCriterion { Id = "only", Description = "The only criterion.", Weight = 1.0 }],
             MinScore = minScore,
         };
+    }
 }

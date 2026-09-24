@@ -12,7 +12,7 @@ namespace Comuki.AgentEval.History;
 /// </summary>
 public static class HistoryAppender
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = false,
     };
@@ -32,12 +32,13 @@ public static class HistoryAppender
             Directory.CreateDirectory(directory);
         }
 
-        var line = JsonSerializer.Serialize(ToHistoryEntry(report), JsonOptions);
-        await File.AppendAllTextAsync(historyPath, line + Environment.NewLine, cancellationToken).ConfigureAwait(false);
+        var line = JsonSerializer.Serialize(ToHistoryEntry(report), jsonOptions);
+        await File.AppendAllTextAsync(historyPath, line + Environment.NewLine, cancellationToken);
     }
 
-    private static HistoryEntry ToHistoryEntry(EvalReport report) =>
-        new()
+    private static HistoryEntry ToHistoryEntry(EvalReport report)
+    {
+        return new HistoryEntry
         {
             Timestamp = report.StartedAt,
             Mode = report.Mode,
@@ -49,4 +50,5 @@ public static class HistoryAppender
             AverageQualityScore = report.AverageQualityScore,
             CostUsdMicros = report.CostValue.UsdMicros,
         };
+    }
 }

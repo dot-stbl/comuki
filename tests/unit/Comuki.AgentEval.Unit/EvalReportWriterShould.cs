@@ -1,10 +1,8 @@
 using System.Text.Json;
-using Comuki.AgentEval.Corpus;
 using Comuki.AgentEval.Judges;
 using Comuki.AgentEval.Reporting;
 using Comuki.AgentEval.Scoring;
 using Comuki.AgentTest.Runner.Reporting.Report;
-using Comuki.AgentTest.Runner.Scenarios;
 using Shouldly;
 using Xunit;
 

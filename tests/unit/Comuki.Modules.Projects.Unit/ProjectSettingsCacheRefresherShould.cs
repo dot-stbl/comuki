@@ -1,4 +1,4 @@
-using Comuki.Modules.Projects.Application.Settings;
+using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
 using Comuki.Shared.Bootstrap.Workers;

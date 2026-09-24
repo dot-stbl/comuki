@@ -1,10 +1,11 @@
 using System.Collections.Concurrent;
+using Comuki.Modules.Projects.Application.Settings.DistributedCache;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
 
-namespace Comuki.Modules.Projects.Application.Settings;
+namespace Comuki.Modules.Projects.Application.Settings.Cache;
 
 /// <summary>
 /// In-process snapshot cache of per-project settings (singleton — the
@@ -13,19 +14,20 @@ namespace Comuki.Modules.Projects.Application.Settings;
 /// values forever; <see cref="Refresh"/> replaces the entry AND fires the
 /// per-project change token, <see cref="Warm"/> only fills the entry
 /// (read-path fills must not look like changes). Pure memory — the
-/// infrastructure decides what to warm and refresh.
+/// infrastructure decides what to warm and refresh. Used in single-replica
+/// deployments and tests; a multi-replica deployment with <c>Redis:Enabled</c>
+/// set swaps to <see cref="DistributedProjectSettingsCache"/> instead (same
+/// <see cref="IProjectSettingsSnapshotCache"/> contract).
 /// </summary>
-/// <param name="cache"></param>
-public sealed class ProjectSettingsCache(IMemoryCache cache)
+/// <param name="cache">Backing in-process cache (framework-managed eviction, no persistence).</param>
+public sealed class ProjectSettingsCache(IMemoryCache cache) : IProjectSettingsSnapshotCache
 {
     /// <summary>Upper bound on snapshot staleness; the refresher re-arms entries roughly twice per TTL.</summary>
     public static readonly TimeSpan EntryTtl = TimeSpan.FromSeconds(30);
 
     private readonly ConcurrentDictionary<ProjectId, CancellationTokenSource> changeTokens = new();
 
-    /// <summary>Reads the cached snapshot; null when absent or expired.</summary>
-    /// <param name="projectId"></param>
-    /// <returns></returns>
+    /// <inheritdoc />
     public ProjectSettings? Get(ProjectId projectId)
     {
         return cache.TryGetValue<ProjectSettings>(SettingsCacheKeys.Key(projectId), out var settings)
@@ -33,24 +35,20 @@ public sealed class ProjectSettingsCache(IMemoryCache cache)
             : null;
     }
 
-    /// <summary>Fills the cache entry without announcing a change (read-path fill).</summary>
-    /// <param name="settings"></param>
+    /// <inheritdoc />
     public void Warm(ProjectSettings settings)
     {
         cache.Set(SettingsCacheKeys.Key(settings.ProjectId), settings, EntryTtl);
     }
 
-    /// <summary>Replaces the cache entry and fires the project's change token (write path).</summary>
-    /// <param name="settings"></param>
+    /// <inheritdoc />
     public void Refresh(ProjectSettings settings)
     {
         cache.Set(SettingsCacheKeys.Key(settings.ProjectId), settings, EntryTtl);
         NotifyChanged(settings.ProjectId);
     }
 
-    /// <summary>Token that fires on the next <see cref="Refresh"/> of the project.</summary>
-    /// <param name="projectId"></param>
-    /// <returns></returns>
+    /// <inheritdoc />
     public IChangeToken GetChangeToken(ProjectId projectId)
     {
         return new CancellationChangeToken(
@@ -62,21 +60,12 @@ public sealed class ProjectSettingsCache(IMemoryCache cache)
     /// source is dropped rather than disposed — disposing a source while its
     /// callbacks run is racy, and an unregistered source holds no timers.
     /// </summary>
-    /// <param name="projectId"></param>
+    /// <param name="projectId">Project whose pending change token should fire.</param>
     public void NotifyChanged(ProjectId projectId)
     {
         if (changeTokens.TryRemove(projectId, out var source))
         {
             source.Cancel();
         }
-    }
-}
-
-/// <summary>Cache key scheme — one place, no format literals scattered.</summary>
-file static class SettingsCacheKeys
-{
-    public static string Key(ProjectId projectId)
-    {
-        return $"projects:settings:{projectId.Value}";
     }
 }

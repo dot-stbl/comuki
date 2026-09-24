@@ -4,7 +4,7 @@
  * scripts/commit-lint.test.mjs, scripts/ci/dotnet-test.test.mjs,
  * scripts/ci/test-affected.test.mjs).
  *
- * What this gate is for — six scenarios the spec must cover, no more, no
+ * What this gate is for — seven scenarios the spec must cover, no more, no
  * fewer:
  *
  *   1. patterns   — every token in AI_VENDORS and every domain in
@@ -20,6 +20,11 @@
  *                             trailers are exempt, and the exemption does
  *                             NOT swallow a real vendor byline riding
  *                             alongside Comuki trailers in the same body.
+ *   7. Generated-by trailer — the colon-keyed "generated-by:" shape isn't
+ *                             recognised by commit-lint.mjs's
+ *                             stripAttribution at all, so a non-Comuki
+ *                             `Generated-by: <vendor>` is checked
+ *                             independently (findVendorGeneratedByLines).
  *
  * Plus: parseCommitRecord round-trip and a parseArgs battery covering
  * defaults, --range value / =value forms, missing --range as a parse
@@ -40,6 +45,7 @@ import {
   checkVendorIdentity,
   evaluateCommit,
   evaluateText,
+  findVendorGeneratedByLines,
   isComukiIdentity,
   isComukiTrailerLine,
   parseArgs,
@@ -347,6 +353,58 @@ describe('Comuki allowlist', () => {
   it('evaluateText passes a description whose only byline is a Comuki-namespaced Generated-by trailer', () => {
     const verdict = evaluateText('Generated-by: Comuki v2.0.0\n', 'description');
     assert.deepEqual(verdict.reasons, []);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// findVendorGeneratedByLines — the colon-keyed "generated-by:" trailer shape
+// is NOT recognised by commit-lint.mjs's stripAttribution at all (it only
+// knows the prose verbs and the literal "generated with" phrase), but this
+// script introduced that exact shape as Comuki's own trailer convention —
+// so a non-Comuki "Generated-by: <vendor>" must still be caught, checked
+// independently of stripAttribution's `removed` set.
+// ---------------------------------------------------------------------------
+
+describe('findVendorGeneratedByLines', () => {
+  it('catches a non-Comuki vendor named in a Generated-by trailer', () => {
+    const hits = findVendorGeneratedByLines('subject\n\nGenerated-by: Claude Code\n');
+    assert.deepEqual(hits, ['Generated-by: Claude Code']);
+  });
+
+  it('leaves the Comuki-namespaced form alone (isComukiTrailerLine already allows it)', () => {
+    assert.deepEqual(findVendorGeneratedByLines('Generated-by: Comuki v1.0.0\n'), []);
+  });
+
+  it('leaves a Generated-by trailer with no vendor token alone', () => {
+    assert.deepEqual(findVendorGeneratedByLines('Generated-by: a human, by hand\n'), []);
+  });
+
+  it('ignores lines that are not the generated-by shape at all', () => {
+    assert.deepEqual(findVendorGeneratedByLines('Comuki-Run: run-42\nSome prose.\n'), []);
+  });
+
+  it('evaluateCommit catches a non-Comuki Generated-by trailer that stripAttribution alone would miss', () => {
+    const record = {
+      hash: '0123456789abcdef0123456789abcdef01234567',
+      authorName: 'Jane Doe',
+      authorEmail: 'jane@hybrid.ai',
+      committerName: 'Jane Doe',
+      committerEmail: 'jane@hybrid.ai',
+      body: '[.stbl](feat/x): do the thing\n\nBody prose.\n\nGenerated-by: OpenAI Codex\n',
+    };
+    const verdict = evaluateCommit(record);
+    assert.ok(
+      verdict.reasons.some((reason) => reason.includes('Generated-by: OpenAI Codex')),
+      `expected a reason for the Generated-by trailer, got ${JSON.stringify(verdict.reasons)}`,
+    );
+  });
+
+  it('evaluateText catches a non-Comuki Generated-by trailer in a description', () => {
+    const verdict = evaluateText('Generated-by: Claude\n', 'description');
+    assert.ok(
+      verdict.reasons.some((reason) => reason.includes('Generated-by: Claude')),
+      `expected a reason for the Generated-by trailer, got ${JSON.stringify(verdict.reasons)}`,
+    );
   });
 });
 

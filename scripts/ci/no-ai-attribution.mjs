@@ -26,6 +26,9 @@
  * case and `isComukiTrailerLine` for the provenance-trailer case. The
  * exemption survives the vendor list growing later: the carve-out is a
  * deliberate decision a reviewer can see, not a coincidental string miss.
+ * The `Generated-by:` trailer shape it introduced isn't recognised by
+ * commit-lint.mjs's `stripAttribution` at all (see `findVendorGeneratedByLines`),
+ * so a non-Comuki `Generated-by: <vendor>` is checked independently here.
  *
  * The one check this script adds on top of the commit-msg hook is **commit
  * identity**: a co-author trailer the hook can strip is invisible to `git
@@ -262,6 +265,49 @@ export function isComukiTrailerLine(line) {
 }
 
 /**
+ * `Generated-by: <vendor>` trailers are NOT covered by
+ * `scripts/commit-lint.mjs`'s `stripAttribution` — its WHOLE_LINE_PATTERNS
+ * only recognise the prose verbs authored/written/designed/created/
+ * built/made plus the literal phrase "generated with" (the shape the real
+ * `🤖 Generated with [Claude Code](...)` footer uses); a colon-keyed
+ * "generated-by:" trailer matches none of those, so `removed` never
+ * contains one. That gap is harmless for commit-lint.mjs itself (no vendor
+ * is known to emit that exact shape), but this script *introduced* the
+ * shape as Comuki's own trailer convention (`Generated-by: Comuki
+ * vX.Y.Z`) and allowlists it via {@link isComukiTrailerLine} — so a
+ * `Generated-by: <real vendor>` trailer must still be caught here, on
+ * purpose, independently of commit-lint.mjs (which stays export-only;
+ * widening its patterns is out of this script's scope and would change
+ * the local hook's behaviour for every commit in the repo, not just this
+ * gate's).
+ *
+ * Reuses {@link VENDOR_NAME_PATTERN} — the same vendor-token regex
+ * {@link checkVendorIdentity} already builds from commit-lint.mjs's
+ * exports — rather than a second one.
+ *
+ * @param {string} text
+ * @returns {string[]} the raw offending lines (trimmed), empty if none.
+ */
+export function findVendorGeneratedByLines(text) {
+  const lines = (text ?? '').split(/\r?\n/);
+  const hits = [];
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
+    const match = /^generated-by:\s*(.*)$/i.exec(trimmed);
+    if (match === null) {
+      continue;
+    }
+    if (isComukiTrailerLine(trimmed)) {
+      continue;
+    }
+    if (VENDOR_NAME_PATTERN.test(match[1])) {
+      hits.push(trimmed);
+    }
+  }
+  return hits;
+}
+
+/**
  * Check one name + email pair against the shared vendor patterns. Push a
  * short, human-readable reason per hit so a `{ reasons }` string list reads
  * naturally in report.md's failures table.
@@ -358,6 +404,13 @@ export function evaluateCommit({ hash, authorName, authorEmail, committerName, c
     if (isComukiTrailerLine(line)) continue;
     reasons.push(`message: ${line}`);
   }
+  // stripAttribution doesn't recognise the colon-keyed "generated-by:"
+  // shape at all (see findVendorGeneratedByLines's doc comment) — checked
+  // independently so a non-Comuki "Generated-by: <vendor>" trailer is
+  // still caught.
+  for (const line of findVendorGeneratedByLines(body ?? '')) {
+    reasons.push(`message: ${line}`);
+  }
   for (const r of checkVendorIdentity(authorName, authorEmail)) {
     reasons.push(`author ${r}`);
   }
@@ -383,12 +436,15 @@ export function evaluateText(text, label) {
   const { removed } = stripAttribution(text ?? '');
   // Comuki's own provenance trailers are exempt from the message scan —
   // see isComukiTrailerLine's doc comment for the carve-out scope.
-  return {
-    label,
-    reasons: removed
-      .filter((line) => !isComukiTrailerLine(line))
-      .map((line) => `${label}: ${line}`),
-  };
+  const reasons = removed
+    .filter((line) => !isComukiTrailerLine(line))
+    .map((line) => `${label}: ${line}`);
+  // Independent "generated-by:" check — see findVendorGeneratedByLines's
+  // doc comment for why stripAttribution alone doesn't cover this shape.
+  for (const line of findVendorGeneratedByLines(text ?? '')) {
+    reasons.push(`${label}: ${line}`);
+  }
+  return { label, reasons };
 }
 
 // ---------------------------------------------------------------------------

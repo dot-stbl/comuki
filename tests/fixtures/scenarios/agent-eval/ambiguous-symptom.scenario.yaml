@@ -1,0 +1,58 @@
+# WS10 golden-task corpus entry #5 — hard/calibration.
+# small-repo fixture has no test project, so the "tests pass" judge
+# reports n/a here; that's expected, not a bug.
+# This entry is the worked example of the LLM-judge rubric format
+# (open question from design.md). The ticket only describes a SYMPTOM,
+# not a diagnosis, so the agent must locate the root cause itself before
+# fixing it — that's what makes it "hard" relative to the other four
+# entries, which name the bug directly. Its fakeScript demonstrates a
+# complete, correct fix (identifies the null-forgiving `orders!` as the
+# root cause, adds a guard, leaves the rest untouched) so the
+# deterministic judges pass on their own; the rubric is a genuine
+# quality-scoring worked example (diagnosis/minimal-fix/code-style,
+# weighted, minScore 0.6), not a rigged-to-fail entry — with no live
+# judge env configured the judge outcome is Skipped, which correctly
+# never fails an entry whose deterministic judges already passed.
+schemaVersion: 1
+name: ambiguous-symptom
+description: >
+  Calibration entry: the ticket describes a SYMPTOM (the agent has to
+  figure out where to fix), not an exact diff. The fakeScript's fix is
+  complete and correct — this entry exercises diagnosis-under-ambiguity
+  plus the weighted-rubric judge format, not a deliberately-broken diff.
+ticket:
+  source: github
+  title: "OrderTotal misbehaves on certain inputs"
+  body: |
+    A customer report says OrderTotal.Calculate returns the wrong value
+    in some cases. We don't know which cases. Investigate, identify the
+    bug, and fix it minimally. Preserve the public signature.
+  labels: [bug, comuki]
+  targetRepo:
+    fixture: small-repo
+    ref: main
+worker:
+  image: comuki-agent-test-worker:ws6
+  profileKey: implement
+  profilesRef: test
+model:
+  mode: fake
+  fakeScript: scripts/ambiguous-symptom.fake.json
+eval:
+  difficulty: hard
+  expectedOutcome: The agent identifies the bug (null dereference on orders!), fixes it, and leaves the public signature intact. A judge scoring the rubric should reward diagnosis + minimal fix and penalize unrelated edits.
+  allowedFiles:
+    - src/OrderTotal.cs
+  maxToolCalls: 6
+  rubric:
+    criteria:
+      - id: diagnosis
+        description: The agent correctly identifies the null-dereference on the orders parameter as the root cause.
+        weight: 2
+      - id: minimal-fix
+        description: The fix adds a guard without changing the public signature or removing unrelated logic.
+        weight: 1
+      - id: code-style
+        description: The fix matches the existing file's style (brace placement, naming, no unrelated edits).
+        weight: 1
+    minScore: 0.6

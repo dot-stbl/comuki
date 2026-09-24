@@ -106,6 +106,7 @@
     <Project Path="tests/unit/Comuki.Migrator.Unit/Comuki.Migrator.Unit.csproj" />
     <Project Path="tests/unit/Comuki.TestFakeModel.Unit/Comuki.TestFakeModel.Unit.csproj" />
     <Project Path="tests/unit/Comuki.AgentTest.Runner.Unit/Comuki.AgentTest.Runner.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.AgentEval.Unit/Comuki.AgentEval.Unit.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/Comuki.Host.Testing/Comuki.Host.Testing.csproj" />
@@ -144,6 +145,7 @@
     <Project Path="tests/tools/Comuki.TestFakeModel/Comuki.TestFakeModel.csproj" />
     <Project Path="tests/tools/Comuki.TestFakePi/Comuki.TestFakePi.csproj" />
     <Project Path="tests/tools/Comuki.AgentTest.Runner/Comuki.AgentTest.Runner.csproj" />
+    <Project Path="tests/tools/Comuki.AgentEval/Comuki.AgentEval.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Comuki.Codegen.Realtime/Comuki.Codegen.Realtime.csproj" />

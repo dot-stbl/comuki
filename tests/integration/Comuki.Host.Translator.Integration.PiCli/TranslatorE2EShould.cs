@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
+using Comuki.Engine.Compute.Pool;
+using Comuki.Engine.Compute.Ports;
 using Comuki.Engine.Compute.Security;
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Domain;
@@ -105,6 +107,14 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
             // The lease reaper registers as an IComukiWorker — this
             // registry is what runs it in this fixture.
             services.AddComukiWorkers();
+            // WorkerEndpoints.ClaimAsync/HeartbeatAsync/CompleteAsync/
+            // FailAsync bind IWorkerPoolState for busy/idle bookkeeping
+            // (AddComukiCompute registers the real thing on the full host,
+            // backed by a Docker/Kubernetes IComputeProvider). This fixture
+            // never exercises the scale supervisor, so a no-op stub is
+            // enough to satisfy DI without pulling in a container runtime
+            // client.
+            services.AddSingleton<IWorkerPoolState, NoopWorkerPoolState>();
         });
 
         workerToken = host.GetService<WorkerTokenIssuer>().Issue(WorkerId.New());
@@ -315,5 +325,32 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
             ?? throw new InvalidOperationException("could not resolve TestFakePi directory");
         var executableName = OperatingSystem.IsWindows() ? "Comuki.TestFakePi.exe" : "Comuki.TestFakePi";
         return Path.Combine(directory, executableName);
+    }
+
+    /// <summary>
+    /// Stands in for the scale supervisor's <see cref="WorkerPoolState"/>:
+    /// this fixture asserts the claim/heartbeat/complete/fail REST flow, not
+    /// pool bookkeeping, so every call is a no-op rather than wiring a real
+    /// <c>IComputeProvider</c> (Docker/Kubernetes) into an E2E test that
+    /// never starts or lists containers.
+    /// </summary>
+    private sealed class NoopWorkerPoolState : IWorkerPoolState
+    {
+        public IReadOnlyList<PoolWorker> List(ProjectId projectId)
+        {
+            return [];
+        }
+
+        public void MarkBusy(WorkerId workerId)
+        {
+        }
+
+        public void MarkIdle(WorkerId workerId)
+        {
+        }
+
+        public void Touch(WorkerId workerId)
+        {
+        }
     }
 }

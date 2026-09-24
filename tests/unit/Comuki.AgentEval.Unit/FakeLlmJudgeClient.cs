@@ -33,7 +33,7 @@ public sealed class FakeLlmJudgeClient : ILlmJudgeClient
     public int CallCount { get; private set; }
 
     /// <inheritdoc />
-    public Task<string> CompleteAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+    public Task<string> CompleteAsync(string systemPrompt, string userPrompt, CancellationToken cancellationToken)
     {
         CallCount++;
 

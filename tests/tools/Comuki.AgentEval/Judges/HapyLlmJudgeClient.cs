@@ -22,8 +22,6 @@ namespace Comuki.AgentEval.Judges;
 /// </remarks>
 public sealed class HapyLlmJudgeClient : ILlmJudgeClient, IAsyncDisposable
 {
-    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web);
-
     private readonly HttpClient httpClient;
     private readonly Uri endpoint;
     private readonly string? token;
@@ -39,7 +37,7 @@ public sealed class HapyLlmJudgeClient : ILlmJudgeClient, IAsyncDisposable
     }
 
     /// <inheritdoc />
-    public async Task<string> CompleteAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+    public async Task<string> CompleteAsync(string systemPrompt, string userPrompt, CancellationToken cancellationToken)
     {
         var payload = new
         {
@@ -55,7 +53,7 @@ public sealed class HapyLlmJudgeClient : ILlmJudgeClient, IAsyncDisposable
 
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
-            Content = new StringContent(JsonSerializer.Serialize(payload, jsonOptions), Encoding.UTF8, "application/json"),
+            Content = new StringContent(JsonSerializer.Serialize(payload, JsonSerializerOptions.Web), Encoding.UTF8, "application/json"),
         };
 
         if (token is not null)
@@ -64,8 +62,8 @@ public sealed class HapyLlmJudgeClient : ILlmJudgeClient, IAsyncDisposable
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
 
-        using var response = await httpClient.SendAsync(request, ct);
-        var rawBody = await response.Content.ReadAsStringAsync(ct);
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        var rawBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {

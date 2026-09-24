@@ -21,8 +21,8 @@ public sealed class HistoryAppenderShould
         var tempPath = Path.Combine(Path.GetTempPath(), $"comuki-agent-eval-history-{Guid.NewGuid():N}.jsonl");
         try
         {
-            var firstReport = MakeReport("first", "fake", Total: 3, Passed: 3, Failed: 0);
-            var secondReport = MakeReport("second", "fake", Total: 5, Passed: 4, Failed: 1);
+            var firstReport = MakeReport("first", "fake", total: 3, passed: 3, failed: 0);
+            var secondReport = MakeReport("second", "fake", total: 5, passed: 4, failed: 1);
 
             await HistoryAppender.AppendAsync(tempPath, firstReport, TestContext.Current.CancellationToken);
             await HistoryAppender.AppendAsync(tempPath, secondReport, TestContext.Current.CancellationToken);
@@ -60,8 +60,8 @@ public sealed class HistoryAppenderShould
         var tempPath = Path.Combine(Path.GetTempPath(), $"comuki-agent-eval-history-{Guid.NewGuid():N}.jsonl");
         try
         {
-            var firstReport = MakeReport("first", "fake", Total: 2, Passed: 2, Failed: 0);
-            var secondReport = MakeReport("second", "replay", Total: 4, Passed: 3, Failed: 1);
+            var firstReport = MakeReport("first", "fake", total: 2, passed: 2, failed: 0);
+            var secondReport = MakeReport("second", "replay", total: 4, passed: 3, failed: 1);
 
             await HistoryAppender.AppendAsync(tempPath, firstReport, TestContext.Current.CancellationToken);
             var firstLineBefore = File.ReadAllLines(tempPath)[0];
@@ -91,7 +91,7 @@ public sealed class HistoryAppenderShould
             "history.jsonl");
         try
         {
-            var report = MakeReport("nested", "fake", Total: 1, Passed: 1, Failed: 0);
+            var report = MakeReport("nested", "fake", total: 1, passed: 1, failed: 0);
 
             await HistoryAppender.AppendAsync(nestedPath, report, TestContext.Current.CancellationToken);
 
@@ -111,14 +111,14 @@ public sealed class HistoryAppenderShould
         }
     }
 
-    private static EvalReport MakeReport(string corpus, string mode, int Total, int Passed, int Failed)
+    private static EvalReport MakeReport(string corpus, string mode, int total, int passed, int failed)
     {
         var startedAt = DateTimeOffset.UtcNow;
         var summary = new RunSummary
         {
-            Total = Total,
-            Passed = Passed,
-            Failed = Failed,
+            Total = total,
+            Passed = passed,
+            Failed = failed,
             Skipped = 0,
         };
         return new EvalReport
@@ -129,7 +129,7 @@ public sealed class HistoryAppenderShould
             StartedAt = startedAt,
             DurationMs = 1000L,
             Summary = summary,
-            AverageQualityScore = Passed / (double)Math.Max(Total, 1),
+            AverageQualityScore = passed / (double)Math.Max(total, 1),
             Cost = new RunCost(),
             Entries = [],
         };

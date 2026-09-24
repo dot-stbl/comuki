@@ -135,7 +135,7 @@ public static class LlmJudge
         ILlmJudgeClient? client,
         CorpusEntry entry,
         string transcriptSummary,
-        CancellationToken ct)
+        CancellationToken cancellationToken)
     {
         if (client is null)
         {
@@ -153,7 +153,7 @@ public static class LlmJudge
         string rawResponse;
         try
         {
-            rawResponse = await client.CompleteAsync(systemPrompt, userPrompt, ct);
+            rawResponse = await client.CompleteAsync(systemPrompt, userPrompt, cancellationToken);
         }
         catch (OperationCanceledException)
         {

@@ -46,15 +46,18 @@ const DEFAULT_PROJECT_PATH = resolve(
 /** Env var this script reads (never writes) — the live upstream's base URL. Absence means "skip" for --mode=live only. */
 const LIVE_BASE_URL_ENV_VAR = 'COMUKI_LIVE_MODEL_BASE_URL';
 
+/** The only accepted `--mode` values — single source of truth, referenced by both the validator and the usage text. */
+const VALID_MODES = ['fake', 'replay', 'live'];
+
 const USAGE = `agent-eval — WS10 MANUAL entry point for the golden-task eval harness (Comuki.AgentEval)
 
 Usage:
-  node scripts/ci/agent-eval.mjs --mode=fake|replay|live [--corpus=<dir>] [--budget-usd=<n>]
+  node scripts/ci/agent-eval.mjs --mode=${VALID_MODES.join('|')} [--corpus=<dir>] [--budget-usd=<n>]
   node scripts/ci/agent-eval.mjs --trend
   node scripts/ci/agent-eval.mjs --help
 
 Arguments:
-  --mode=<m>         fake | replay | live — required unless --trend is the only flag.
+  --mode=<m>         ${VALID_MODES.join(' | ')} — required unless --trend is the only flag.
   --corpus=<dir>     repo-relative or absolute corpus directory. Defaults to the
                       .NET CLI's own default (tests/fixtures/scenarios/agent-eval).
   --budget-usd=<n>   process-wide USD ceiling. Defaults to 0 (= unlimited; combines
@@ -115,8 +118,8 @@ export function parseArgs(argv) {
     return { kind: 'error', message: '--mode=<fake|replay|live> is required (or pass --trend alone).' };
   }
 
-  if (mode !== null && !['fake', 'replay', 'live'].includes(mode)) {
-    return { kind: 'error', message: `--mode='${mode}' is not one of fake|replay|live` };
+  if (mode !== null && !VALID_MODES.includes(mode)) {
+    return { kind: 'error', message: `--mode='${mode}' is not one of ${VALID_MODES.join('|')}` };
   }
 
   let budgetUsd = '0';
@@ -175,8 +178,6 @@ export function resolveActivation(env, mode) {
  * @returns {RunAgentEvalResult}
  */
 export function runAgentEval(input) {
-  const runDotnet = input.runDotnet ?? defaultRunDotnet;
-
   const args = ['run', '--project', input.projectPath, '--no-build', '--'];
   if (input.mode !== null) {
     args.push(`--mode=${input.mode}`);
@@ -189,7 +190,7 @@ export function runAgentEval(input) {
     args.push('--trend');
   }
 
-  return runDotnet(args, input.env);
+  return (input.runDotnet ?? defaultRunDotnet)(args, input.env);
 }
 
 /**
@@ -244,8 +245,6 @@ export function defaultRunDotnet(args, env) {
 export function main(argv, deps = {}) {
   const stdout = deps.stdout ?? process.stdout;
   const stderr = deps.stderr ?? process.stderr;
-  const runDotnet = deps.runDotnet;
-  const projectPath = deps.projectPath ?? DEFAULT_PROJECT_PATH;
   const env = deps.env ?? process.env;
 
   const parsed = parseArgs(argv);
@@ -275,7 +274,15 @@ export function main(argv, deps = {}) {
     stdout.write('agent-eval: --trend only — reading history, no run\n');
   }
 
-  const result = runAgentEval({ mode, corpusPath, budgetUsd, trend, projectPath, env, runDotnet });
+  const result = runAgentEval({
+    mode,
+    corpusPath,
+    budgetUsd,
+    trend,
+    projectPath: deps.projectPath ?? DEFAULT_PROJECT_PATH,
+    env,
+    runDotnet: deps.runDotnet,
+  });
 
   if (result.error !== null) {
     stderr.write(`agent-eval: failed to spawn dotnet: ${result.error.message}\n`);

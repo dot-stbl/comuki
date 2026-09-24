@@ -12,11 +12,6 @@ namespace Comuki.AgentEval.History;
 /// </summary>
 public static class HistoryAppender
 {
-    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = false,
-    };
-
     /// <summary>
     /// Appends <paramref name="report"/> as one JSONL line to
     /// <paramref name="historyPath"/>. Creates the parent directory
@@ -32,7 +27,7 @@ public static class HistoryAppender
             Directory.CreateDirectory(directory);
         }
 
-        var line = JsonSerializer.Serialize(ToHistoryEntry(report), jsonOptions);
+        var line = JsonSerializer.Serialize(ToHistoryEntry(report), JsonSerializerOptions.Web);
         await File.AppendAllTextAsync(historyPath, line + Environment.NewLine, cancellationToken);
     }
 

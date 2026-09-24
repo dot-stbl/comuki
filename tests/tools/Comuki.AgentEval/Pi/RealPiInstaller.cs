@@ -41,8 +41,8 @@ public static class RealPiInstaller
     /// Installs the vendored <c>pi</c> tgz into a fresh scratch temp dir
     /// and resolves <c>node_modules/.bin/pi.exe</c> / <c>pi</c>.
     /// </summary>
-    /// <param name="ct">Cancellation forwarded to the underlying <c>bun add</c> child process.</param>
-    public static async Task<PiInstallResult> InstallAsync(CancellationToken ct)
+    /// <param name="cancellationToken">Cancellation forwarded to the underlying <c>bun add</c> child process.</param>
+    public static async Task<PiInstallResult> InstallAsync(CancellationToken cancellationToken)
     {
         var bunExe = LocateOnPath("bun");
         if (bunExe is null)
@@ -70,7 +70,7 @@ public static class RealPiInstaller
             await File.WriteAllTextAsync(
                 Path.Combine(installDir, "package.json"),
                 /*lang=json,strict*/ """{"name":"comuki-agent-eval-install","private":true,"version":"0.0.0"}""",
-                ct);
+                cancellationToken);
         }
         catch (Exception exception)
         {
@@ -79,7 +79,7 @@ public static class RealPiInstaller
 
         try
         {
-            await RunBunAddAsync(bunExe, installDir, tgzPath, ct);
+            await RunBunAddAsync(bunExe, installDir, tgzPath, cancellationToken);
         }
         catch (Exception exception)
         {

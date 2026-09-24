@@ -117,7 +117,7 @@ public sealed class RealPiFakeModelHost : IAsyncLifetime
         // translator loop runs alone against the queue, so the only
         // Queued item at run time is the one the in-flight fact just
         // seeded.
-        builder.Configuration["Intake:Worker:Image"] = RealPiFakeModelHarness.WorkerImageLabel;
+        builder.Configuration["Intake:Worker:Image"] = RealPiHarnessBase.WorkerImageLabel;
         builder.Configuration["Intake:Worker:ProfilesRef"] = "test";
         builder.Configuration["Intake:Worker:IssueDefaultProfileKey"] = "implement";
         builder.Configuration["Intake:BridgeInterval"] = "00:00:01";

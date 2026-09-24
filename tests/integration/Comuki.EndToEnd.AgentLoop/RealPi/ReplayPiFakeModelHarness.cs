@@ -26,15 +26,10 @@ namespace Comuki.EndToEnd.AgentLoop.RealPi;
 /// in <see cref="RealPiHarnessBase"/>; only <see cref="StartModelServerAsync"/>
 /// varies.
 /// </remarks>
-public sealed class ReplayPiFakeModelHarness : RealPiHarnessBase
+/// <inheritdoc />
+public sealed class ReplayPiFakeModelHarness(RealPiInstallation realPi, RealPiFakeModelHost host) : RealPiHarnessBase(realPi, host)
 {
     private CassetteModelServer? cassetteServer;
-
-    /// <inheritdoc />
-    public ReplayPiFakeModelHarness(RealPiInstallation realPi, RealPiFakeModelHost host)
-        : base(realPi, host)
-    {
-    }
 
     /// <inheritdoc />
     protected override async Task<Uri> StartModelServerAsync(ScenarioDefinition scenario, CancellationToken cancellationToken)

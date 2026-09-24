@@ -8,8 +8,8 @@ namespace Comuki.EndToEnd.AgentLoop.RealPi;
 
 /// <summary>
 /// WS8 worked example: the real, vendored <c>pi</c> binary drives the
-/// fixture repo's edit through a <see cref="Comuki.TestFakeModel.Cassettes.Hosting.CassetteModelServer"/>
-/// in <see cref="Comuki.TestFakeModel.Cassettes.Hosting.CassetteModelMode.Replay"/>
+/// fixture repo's edit through a <see cref="TestFakeModel.Cassettes.Hosting.CassetteModelServer"/>
+/// in <see cref="TestFakeModel.Cassettes.Hosting.CassetteModelMode.Replay"/>
 /// mode — every model call real pi emits hits the cassette, not a live
 /// upstream, not a scripted fake. Reuses <see cref="RealPiFakeModelHost"/>'s
 /// already-running webhook + REST + gRPC surface (same
@@ -19,7 +19,7 @@ namespace Comuki.EndToEnd.AgentLoop.RealPi;
 /// <remarks>
 /// Network acceptance (WS8 task 8.1): the replay server never makes an
 /// outbound network call — replay mode is read-only against the loaded
-/// cassette (<see cref="Comuki.TestFakeModel.Cassettes.Replay.CassettePlaybackState"/>'s
+/// cassette (<see cref="TestFakeModel.Cassettes.Replay.CassettePlaybackState"/>'s
 /// only operations are <c>NextRequestIndex</c>/<c>Resolve</c>), so this
 /// test runs with no network access (the upstream-via-host claim labels
 /// and the gRPC stream stay loopback-only the same way WS7's fact does).

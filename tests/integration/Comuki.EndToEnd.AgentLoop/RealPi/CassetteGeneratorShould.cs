@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Comuki.AgentTest.Runner.Execution;
 using Comuki.AgentTest.Runner.Scenarios;
 using Comuki.TestFakeModel.Cassettes;

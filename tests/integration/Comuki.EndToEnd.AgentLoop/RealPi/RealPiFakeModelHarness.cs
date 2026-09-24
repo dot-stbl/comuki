@@ -35,18 +35,13 @@ namespace Comuki.EndToEnd.AgentLoop.RealPi;
 /// in for the still-missing production fix — see the WS7 report for the
 /// exact production change this proves is needed.
 /// </remarks>
-public sealed class RealPiFakeModelHarness : RealPiHarnessBase
+/// <inheritdoc />
+public sealed class RealPiFakeModelHarness(RealPiInstallation realPi, RealPiFakeModelHost host) : RealPiHarnessBase(realPi, host)
 {
     private FakeModelServer? fakeModelServer;
 
     /// <summary>The fake model's own observed-request log for the one scenario this harness ran — asserted against directly by the test (WS7's "prove requests reach the fake model").</summary>
     public IReadOnlyList<RecordedRequest> FakeModelRequests => fakeModelServer?.Requests ?? [];
-
-    /// <inheritdoc />
-    public RealPiFakeModelHarness(RealPiInstallation realPi, RealPiFakeModelHost host)
-        : base(realPi, host)
-    {
-    }
 
     /// <inheritdoc />
     protected override async Task<Uri> StartModelServerAsync(ScenarioDefinition scenario, CancellationToken cancellationToken)

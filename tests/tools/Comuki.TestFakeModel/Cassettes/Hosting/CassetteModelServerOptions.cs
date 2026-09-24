@@ -31,4 +31,29 @@ public sealed class CassetteModelServerOptions
 
     /// <summary>The clock <see cref="CassetteModelMode.Record"/> stamps each newly-appended exchange's cassette header with.</summary>
     public TimeProvider Clock { get; init; } = TimeProvider.System;
+
+    /// <summary>
+    /// Optional <see cref="BudgetTracker"/> the recording path checks before
+    /// forwarding each upstream request. WS9 only — every existing caller
+    /// (WS5/WS7/WS8) leaves this null, so behaviour is unchanged. When set
+    /// and the tracker is already over budget, the recording path returns
+    /// a typed <c>Anthropic.Errors.AnthropicErrors.ScriptFailure</c>
+    /// <c>api_error</c> 500 to the caller and does NOT append that refused
+    /// attempt to the cassette.
+    /// </summary>
+    public BudgetTracker? BudgetTracker { get; init; }
+
+    /// <summary>
+    /// USD per million input tokens — local placeholder for live-mode cost
+    /// estimation (design.md's "defense in depth" alongside the target
+    /// project's own budget gate). Deliberately <em>not</em> imported from
+    /// <c>Comuki.Modules.Proxy.Application.Metering.ProxyPricingCalculator</c>
+    /// to keep this test tool dependency-free; see the live harness's own
+    /// doc comment for why. Default mirrors that production calculator's
+    /// own <c>PricingTier</c> default so the WS9 acceptance numbers line up.
+    /// </summary>
+    public decimal UsdPerMillionInputTokens { get; init; } = 3m;
+
+    /// <summary>USD per million output tokens — paired placeholder with <see cref="UsdPerMillionInputTokens"/>.</summary>
+    public decimal UsdPerMillionOutputTokens { get; init; } = 15m;
 }

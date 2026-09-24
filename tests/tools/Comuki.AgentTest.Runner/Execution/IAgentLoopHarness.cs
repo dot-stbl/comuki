@@ -1,3 +1,4 @@
+using Comuki.AgentTest.Runner.Reporting.Report;
 using Comuki.AgentTest.Runner.Scenarios;
 using Comuki.Shared.Contracts.Compute;
 using Comuki.Shared.Contracts.Journal;
@@ -66,5 +67,21 @@ public interface IAgentLoopHarness
     public Task<string?> ResolveWorkingDirectoryAsync(Guid workItemId, CancellationToken cancellationToken = default)
     {
         return Task.FromResult<string?>(null);
+    }
+
+    /// <summary>
+    /// Reads the run's accumulated <see cref="RunCost"/> (USD-micros + token
+    /// counts) for harness-managed post-run assertion and budget enforcement
+    /// — WS9 only. Defaulted to <see cref="RunCost"/> with zero fields so this
+    /// addition does not break any existing implementer (T2a's container
+    /// harness, T2b's replay harness, the WS8 record-cassette harness); a
+    /// harness that actually meters live tokens overrides this to surface the
+    /// real numbers.
+    /// </summary>
+    /// <param name="workItemId"></param>
+    /// <param name="cancellationToken"></param>
+    public Task<RunCost> ReadCostAsync(Guid workItemId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new RunCost());
     }
 }

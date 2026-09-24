@@ -98,8 +98,36 @@ services:
     restart: "no"
     command: ["/app/migrator/comuki-migrator"]
     environment:
+      # The migrator entrypoint shares Comuki.Host's Program.cs/HostComposer
+      # composition with the host process (same StartupValidator pass over
+      # every ValidateOnStart()'d Options type), so it needs the identical
+      # env surface as comuki-e2e-host below even though most of it (public
+      # URL, compute/worker wiring, ...) is never exercised by a migration
+      # run — mirror the host block verbatim rather than chase each newly
+      # surfaced [Required] option one at a time.
       COMUKI_ENV: ${COMUKI_E2E_ENV:-Development}
       COMUKI_DB: Host=postgres;Port=5432;Database=${COMUKI_E2E_POSTGRES_DB:-comuki_e2e};Username=${COMUKI_E2E_POSTGRES_USER:-comuki};Password=${COMUKI_E2E_POSTGRES_PASSWORD:-comuki_e2e_dev}
+      COMUKI_IDENTITY_APIKEY_PEPPER: ${COMUKI_E2E_IDENTITY_APIKEY_PEPPER:-comuki-e2e-apikey-pepper}
+      COMUKI_TOKEN_PEPPER: ${COMUKI_E2E_TOKEN_PEPPER:-comuki-e2e-token-pepper}
+      COMUKI_BOOTSTRAP_ADMIN_EMAIL: ${COMUKI_E2E_BOOTSTRAP_ADMIN_EMAIL:-e2e-admin@comuki.local}
+      COMUKI_BOOTSTRAP_ADMIN_PASSWORD: ${COMUKI_E2E_BOOTSTRAP_ADMIN_PASSWORD:-comuki-e2e-dev-only}
+      COMUKI_PUBLIC_HOST_URL: ${COMUKI_E2E_PUBLIC_HOST_URL:-http://localhost:17180}
+      COMUKI_HOST_CORS_ALLOWEDORIGINS_0: ${COMUKI_E2E_CORS_ORIGIN:-http://localhost:17180}
+      COMUKI_ARTIFACTS_ENDPOINT: minio:9000
+      COMUKI_ARTIFACTS_ACCESSKEY: ${COMUKI_E2E_MINIO_ROOT_USER:-comuki}
+      COMUKI_ARTIFACTS_SECRETKEY: ${COMUKI_E2E_MINIO_ROOT_PASSWORD:-comuki_e2e_dev}
+      COMUKI_ARTIFACTS_BUCKET: ${COMUKI_E2E_ARTIFACTS_BUCKET:-comuki-e2e-run-bundles}
+      COMUKI_ARTIFACTS_USESSL: "false"
+      COMUKI_ARTIFACTS_AUTOCREATEBUCKET: "true"
+      COMUKI_COMPUTE_PROVIDER: docker
+      COMUKI_COMPUTE_DOCKER_NETWORKMODE: comuki-e2e-net
+      COMUKI_COMPUTE_DOCKER_FENCEDNETWORK: comuki-e2e-worker-net
+      COMUKI_COMPUTE_SCALE_WORKERIMAGE: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
+      COMUKI_CHAT_WORKER_IMAGE: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
+      COMUKI_SCHEDULER_WORKER_IMAGE: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
+      COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-e2e-host:8080
+      COMUKI_E2E_GH_HOOK_SECRET: ${COMUKI_E2E_GH_HOOK_SECRET:-e2e-smoke-hook-secret}
+      COMUKI_COMPUTE_DOCKER_RUNASUSER: "1000"
     depends_on:
       postgres:
         condition: service_healthy

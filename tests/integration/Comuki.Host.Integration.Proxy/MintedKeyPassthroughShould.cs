@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Modules.Proxy.Application.Options;
 using Comuki.Modules.Proxy.Application.Ports;
 using Comuki.Shared.Kernel.Ids;
@@ -19,8 +20,9 @@ namespace Comuki.Host.Integration.Proxy;
 /// hop — the mint is a capability, never an upstream secret. An expired
 /// mint is rejected.
 /// </summary>
+/// <param name="postgres">The collection's shared Postgres (<see cref="ProxyIntegrationCollection"/>) — one container for the whole Proxy suite, reset to empty before this class's <see cref="HostProxyServer"/> boots.</param>
 [Collection(nameof(ProxyIntegrationCollection))]
-public sealed class MintedKeyPassthroughShould : IAsyncLifetime
+public sealed class MintedKeyPassthroughShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
     private const string RequestBody = /*lang=json,strict*/ """{"model":"gpt-4o-mini","messages":[{"role":"user","content":"hi"}]}""";
 
@@ -29,7 +31,7 @@ public sealed class MintedKeyPassthroughShould : IAsyncLifetime
     /// <inheritdoc />
     public ValueTask InitializeAsync()
     {
-        server = new HostProxyServer();
+        server = new HostProxyServer(postgres);
         return server.InitializeAsync();
     }
 
@@ -121,9 +123,9 @@ public sealed class MintedKeyPassthroughShould : IAsyncLifetime
 }
 
 /// <summary>
-/// Serialises the proxy suites on one container at a time — two full-host
-/// Testcontainers booting concurrently starve each other (the same contract
-/// <c>WorkersIntegrationCollection</c> documents).
+/// One shared Postgres for the whole Proxy suite (WS2), never in parallel:
+/// two full-host Testcontainers booting concurrently starve each other —
+/// the same contract <c>WorkersIntegrationCollection</c> documents.
 /// </summary>
 [CollectionDefinition(nameof(ProxyIntegrationCollection), DisableParallelization = true)]
-public sealed class ProxyIntegrationCollection;
+public sealed class ProxyIntegrationCollection : ICollectionFixture<PostgresCollectionFixture>;

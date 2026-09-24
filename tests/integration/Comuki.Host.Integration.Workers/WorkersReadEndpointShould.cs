@@ -6,29 +6,27 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Workers;
 
 /// <summary>
 /// Boots the real host composition on a random loopback port against one
-/// migrated Testcontainers Postgres (every module context, via
-/// <see cref="HostDatabaseMigrator"/> — same contract as the runs fixture)
-/// and exercises the derived workers read surface: page envelope with a busy
-/// row, per-worker detail, the honest 404 / 501 paths and the permission
-/// gate (anonymous 401).
+/// shared, migrated Postgres (owned by this type's own
+/// <see cref="PostgresCollectionFixture"/>, reset to empty before every
+/// test) and exercises the derived workers read surface: page envelope
+/// with a busy row, per-worker detail, the honest 404 / 501 paths and the
+/// permission gate (anonymous 401).
 /// </summary>
+/// <param name="postgres">The collection's shared Postgres (<see cref="WorkersIntegrationCollection"/>) — reset to empty for every test, migrated once for the whole run.</param>
 [Collection(nameof(WorkersIntegrationCollection))]
-public sealed class WorkersReadEndpointShould : IAsyncLifetime
+public sealed class WorkersReadEndpointShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
-
     /// <summary>
     /// boundary: initialised in InitializeAsync before any test runs
     /// </summary>
@@ -47,10 +45,8 @@ public sealed class WorkersReadEndpointShould : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await container.StartAsync(cancellationToken);
-
-        var connectionString = container.GetConnectionString();
-        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
+        await postgres.ResetDatabaseAsync();
+        var connectionString = postgres.ConnectionString;
 
         // Relative to the real clock: the derivation runs against the
         // host's TimeProvider at request time, so a fixed past instant
@@ -105,7 +101,6 @@ public sealed class WorkersReadEndpointShould : IAsyncLifetime
     {
         await application.DisposeAsync();
         controlPlane.Dispose();
-        await container.DisposeAsync();
     }
 
     private Task<HttpClient> CreateAdminClientAsync()
@@ -207,10 +202,11 @@ public sealed class WorkersReadEndpointShould : IAsyncLifetime
 }
 
 /// <summary>
-/// One container per class, never in parallel: two Testcontainers hosts on
-/// the same Docker daemon starve the bootstrap-admin seed long enough for
-/// the faster class to win and the slower boot to get canceled mid-start —
-/// the same contract <c>CostsIntegrationCollection</c> documents.
+/// One shared Postgres for the whole Workers suite (WS2), never in
+/// parallel: two Testcontainers hosts on the same Docker daemon starve the
+/// bootstrap-admin seed long enough for the faster class to win and the
+/// slower boot to get canceled mid-start — the same contract
+/// <c>CostsIntegrationCollection</c> documents.
 /// </summary>
 [CollectionDefinition(nameof(WorkersIntegrationCollection), DisableParallelization = true)]
-public sealed class WorkersIntegrationCollection;
+public sealed class WorkersIntegrationCollection : ICollectionFixture<PostgresCollectionFixture>;

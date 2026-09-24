@@ -40,13 +40,13 @@ Cross-references — do not duplicate, coordinate instead:
 `.../Domain/WorkItems/WorkItemDependency.cs`,
 `tests/integration/Comuki.Engine.Orchestration.Integration.Queue/WorkItemQueueShould.cs` (extend).
 
-- [ ] 1.1 Add a readiness predicate to the claim path: a `Blocked`
+- [x] 1.1 Add a readiness predicate to the claim path: a `Blocked`
       WorkItem is claimable only after every `work_item_dependencies`
       prerequisite reaches `Succeeded` (epic task 2.1).
-- [ ] 1.2 Unblock `Blocked` → `Queued` in the same transaction that
+- [x] 1.2 Unblock `Blocked` → `Queued` in the same transaction that
       finalizes a prerequisite's terminal status — no separate polling
       sweep.
-- [ ] 1.3 A prerequisite reaching `Failed`/`Cancelled` does NOT
+- [x] 1.3 A prerequisite reaching `Failed`/`Cancelled` does NOT
       auto-unblock its dependent; it stays `Blocked` for plan-level
       failure policy to resolve.
 

@@ -174,6 +174,15 @@ file static class WorkItemOwnedTransition
             WorkItemEventPayloads.StatusChangedWithDetail(workItemId, nameof(WorkItemStatus.Running), to, detail),
             now));
 
+        // A succeeded item may unblock dependents whose full prerequisite set
+        // has now reached Succeeded; a failed completion must not (WS1
+        // acceptance: prerequisite failure does not auto-unblock — see
+        // UnblockDependentsSql's doc comment).
+        if (completing)
+        {
+            await RunProgression.UnblockDependentsAsync(transaction, workItemId, now, cancellationToken);
+        }
+
         // A terminal item may have been the run's last open one — finalize
         // the run (Succeeded when nothing failed, Failed otherwise).
         await RunProgression.FinalizeAsync(db, transaction, owner, now, cancellationToken);
@@ -209,6 +218,22 @@ file static class RunProgression
                 RunStatusPayload(nameof(RunStatus.Queued), reader.GetString(0), "worker"),
                 now));
         }
+    }
+
+    /// <summary>Unblocks every Blocked dependent of <paramref name="workItemId"/>
+    /// whose full prerequisite set has now reached Succeeded, in the caller's
+    /// transaction — this is what makes a Blocked item Queued in the first
+    /// place (the claim path itself never re-checks readiness; it only ever
+    /// matches Queued). Only ever called after a successful completion, see
+    /// the call site in WorkItemOwnedTransition.ApplyAsync.</summary>
+    public static async Task UnblockDependentsAsync(
+        IDbContextTransaction transaction,
+        Guid workItemId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await using var command = WorkItemQueueSql.CreateUnblockDependentsCommand(transaction.GetDbTransaction(), workItemId, now);
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public static async Task FinalizeAsync(

@@ -86,6 +86,33 @@ internal static class WorkItemQueueSql
         + "WHERE id = @workItemId AND leased_by = @workerId AND status = '" + Running + "' "
         + "RETURNING run_id";
 
+    /// <summary>Unblock: every Blocked dependent of a just-succeeded item whose
+    /// full prerequisite set has now reached Succeeded moves to Queued, in the
+    /// same transaction that completed the prerequisite. Only ever selects
+    /// dependents of <c>@workItemId</c>, so the caller runs it once per
+    /// completion instead of a polling sweep over the whole table. Callers
+    /// only invoke this after a successful completion — a Failed/Cancelled
+    /// prerequisite must not auto-unblock its dependents (see
+    /// WorkItemOwnedTransition.ApplyAsync in WorkItemQueueEf.cs).</summary>
+    public const string UnblockDependentsSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "SET status = '" + Queued + "', updated_at = @now "
+        + "WHERE status = '" + Blocked + "' "
+        + "  AND id IN ( "
+        + "      SELECT dependency.work_item_id "
+        + "      FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItemDependencies + " dependency "
+        + "      WHERE dependency.depends_on_work_item_id = @workItemId "
+        + "  ) "
+        + "  AND NOT EXISTS ( "
+        + "      SELECT 1 "
+        + "      FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItemDependencies + " remaining "
+        + "      JOIN " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " prerequisite "
+        + "        ON prerequisite.id = remaining.depends_on_work_item_id "
+        + "      WHERE remaining.work_item_id = " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + ".id "
+        + "        AND prerequisite.status <> '" + Succeeded + "' "
+        + "  ) "
+        + "RETURNING id";
+
     /// <summary>Reap requeue: expired running lease with retries left -> back to queued.</summary>
     public const string ReapRequeueSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
@@ -203,6 +230,20 @@ internal static class WorkItemQueueSql
         command.CommandText = FailSql;
         AddParameter(command, "@workItemId", workItemId);
         AddParameter(command, "@workerId", workerId.Value);
+        AddParameter(command, "@now", now);
+        return command;
+    }
+
+    /// <summary>Creates a prepared unblock-dependents command on the transaction's connection.</summary>
+    /// <param name="transaction"></param>
+    /// <param name="workItemId"></param>
+    /// <param name="now"></param>
+    public static DbCommand CreateUnblockDependentsCommand(DbTransaction transaction, Guid workItemId, DateTimeOffset now)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = UnblockDependentsSql;
+        AddParameter(command, "@workItemId", workItemId);
         AddParameter(command, "@now", now);
         return command;
     }

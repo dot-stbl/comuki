@@ -11,7 +11,8 @@
 
 ## 3. Identity
 
-- [ ] 3.1 Add `schedule:read` / `schedule:write` to `Permissions` and `RoleMatrix` (read: viewer+; write: project-admin+); verify `RoleMatrixShould` catalog-count and “every key held by a role” tests pass
+- [x] 3.1 Add `schedule:read` / `schedule:write` to `Permissions` and `RoleMatrix` (read: viewer+; write: project-admin+); verify `RoleMatrixShould` catalog-count and “every key held by a role” tests pass
+  - Note: keys landed in code as `scheduler:read` / `scheduler:write` (see `Permissions.cs`). `RoleMatrix` granted `Role.Member` both; fixed on `fix/scheduler-write-admin-only` so write is project-admin+ only (`PlatformAdmin`, `Operator`, `ProjectAdmin`) and read stays viewer+ (every role). Pinned by `RoleMatrixShould.RestrictSchedulerWriteToProjectAdminAndAbove`.
 
 ## 4. Launch seam
 

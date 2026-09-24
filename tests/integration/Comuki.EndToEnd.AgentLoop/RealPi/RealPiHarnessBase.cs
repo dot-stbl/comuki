@@ -201,7 +201,10 @@ public abstract class RealPiHarnessBase(RealPiInstallation realPi, RealPiFakeMod
     /// (called from <see cref="DisposeAsync"/> after the translator
     /// provider is disposed).
     /// </summary>
-    protected virtual ValueTask DisposeModelServerAsync() => ValueTask.CompletedTask;
+    protected virtual ValueTask DisposeModelServerAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
 
     private string CreateScratchDirectory(string suffix)
     {

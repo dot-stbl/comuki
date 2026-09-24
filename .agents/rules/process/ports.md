@@ -28,9 +28,13 @@ always: true
 | 17026 | Keycloak (compose profile `keycloak`) | `deploy/docker-compose.yml` → keycloak service |
 | 17027 | Grafana (compose profile `grafana`) | `deploy/docker-compose.yml` → grafana service |
 | 17028 | Redis (compose profile `redis`) | `deploy/docker-compose.yml` / `deploy/compose/docker-compose.yml` → redis service |
-| 17172 | host HTTP (compose host-mapping) | `deploy/compose/docker-compose.yml` → host service published port |
 | 17171 | host HTTPS (compose host-mapping, optional TLS) | `deploy/compose/docker-compose.yml` → `COMUKI_TLS_HOST_PORT` |
-| 17190 | Comuki.TestFakeModel (standalone / container) | `tests/tools/Comuki.TestFakeModel` → `--port` / `COMUKI_TESTFAKEMODEL_PORT` |
+| 17172 | host HTTP (compose host-mapping) | `deploy/compose/docker-compose.yml` → host service published port |
+| 17180 | comuki-e2e-host HTTP (compose host-mapping) | `deploy/compose.e2e.yml` → `comuki-e2e-host` published port (WS13) |
+| 17181 | comuki-e2e postgres (host-mapped) | `deploy/compose.e2e.yml` → `postgres` service (WS13) |
+| 17182 | comuki-e2e MinIO API | `deploy/compose.e2e.yml` → `minio` service S3 API (WS13) |
+| 17183 | comuki-e2e MinIO console | `deploy/compose.e2e.yml` → `minio` service web console (WS13) |
+| 17190 | Comuki.TestFakeModel (standalone / container) | `tests/tools/Comuki.TestFakeModel` → `--port` / `COMUKI_TESTFAKEMODEL_PORT`; reused as the WS13 `comuki-e2e-testfakemodel` published port |
 
 Свободный диапазон для ad-hoc / экспериментов: **17180–17200**.
 Новый постоянный сервис — **добавь строку в эту таблицу** в том же PR,

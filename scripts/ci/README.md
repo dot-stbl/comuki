@@ -59,3 +59,40 @@ CTRF parse) for the exact, dependency-graph-derived project list it computes,
 instead of re-implementing that path.
 
 Unit tests: `node --test scripts/ci/dotnet-test.test.mjs`.
+
+## `e2e-up.mjs` / `e2e-down.mjs` / `e2e-smoke.mjs` — WS13 hermetic compose stack
+
+```bash
+node scripts/ci/e2e-up.mjs                 # build comuki-test-fake-model:e2e
+                                          # + compose build/up --wait
+node scripts/ci/e2e-smoke.mjs              # login as bootstrap admin, create
+                                          # project/connection/rule, POST signed
+                                          # webhook, poll run, write report.json/.md
+node scripts/ci/e2e-down.mjs               # compose down -v + remove bootstrap.json
+```
+
+Drives the **T3** hermetic end-to-end stack declared in
+[`deploy/compose.e2e.yml`](../../deploy/compose.e2e.yml): Postgres + MinIO +
+the Comuki host (built from the repo root) + a TestFakeModel reference
+container + a TestFakePi-based worker image. Zero paid-model credentials
+anywhere — TestFakePi replaces `pi` entirely
+(`tests/tools/Comuki.TestFakePi/worker-test.Dockerfile`), so workers run
+the whole webhook→run flow without ever calling a model.
+
+The script reuses `buildEnvelope`, `formatVerdict`, `renderMarkdown` from
+`scripts/ci/dotnet-test.mjs` for its report shape (tier `e2e-smoke`, mode
+`fake`, one scenario entry `e2e-smoke`). `e2e-smoke.mjs` defaults to
+`--assert-through=terminal`; the orchestrator may revise that default
+during live validation per the WS13 brief.
+
+Always wrap the three in a `try/finally` at the call site — `e2e-up.mjs`
+intentionally does NOT auto-teardown on failure (it leaves the stack up
+for post-mortem and prints every service's log tail).
+
+The stack needs the host docker/podman socket bind-mounted into the
+`comuki-e2e-host` container — see
+[`.agents/rules/process/local-test-runtime.md` §Docker/Podman socket](../../.agents/rules/process/local-test-runtime.md)
+and issue #153 (the `ComputeInstaller.cs` `DockerClientBuilder()` gap
+that makes `DOCKER_HOST` an env-var trap).
+
+Unit tests: `node --test scripts/ci/e2e-up.test.mjs scripts/ci/e2e-down.test.mjs scripts/ci/e2e-smoke.test.mjs`.

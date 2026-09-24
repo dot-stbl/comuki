@@ -52,4 +52,19 @@ public interface IAgentLoopHarness
     /// <param name="handle"></param>
     /// <param name="cancellationToken"></param>
     public Task StopWorkerAsync(WorkerHandle handle, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resolves the host-visible working directory pi/TestFakePi ran in for
+    /// <paramref name="workItemId"/>, for <see cref="ScenarioAssertions.Diff"/>
+    /// evaluation (WS7 task 7.3) — or <c>null</c> when the harness has no
+    /// such path to offer (T2a's container harness: the workspace lives
+    /// inside the container, not on the test host). Defaulted to <c>null</c>
+    /// so this addition does not break any existing implementer.
+    /// </summary>
+    /// <param name="workItemId"></param>
+    /// <param name="cancellationToken"></param>
+    public Task<string?> ResolveWorkingDirectoryAsync(Guid workItemId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<string?>(null);
+    }
 }

@@ -12,12 +12,13 @@ namespace Comuki.AgentTest.Runner.Execution;
 /// Drives one <see cref="ScenarioDefinition"/> through an
 /// <see cref="IAgentLoopHarness"/>: seed the ticket, provision the worker,
 /// wait for a terminal status, then check every declared assertion —
-/// journal conditions and the final run/work-item status for T2a (WS6);
-/// <see cref="ScenarioDefinition.ExpectedTrajectory"/>/<see cref="ScenarioAssertions.Diff"/>/
+/// journal conditions and the final run/work-item status (T2a, WS6), plus
+/// <see cref="ScenarioDefinition.ExpectedTrajectory"/> and
+/// <see cref="ScenarioAssertions.Diff"/> (T2b, WS7 tasks 7.2/7.3).
 /// <see cref="ScenarioAssertions.Cost"/>/<see cref="ScenarioAssertions.Judge"/>
-/// are parsed and carried but not yet evaluated — WS7 (trajectory/diff),
-/// WS8/WS9 (cost/budget) and WS10 (judge) extend this same class rather
-/// than rewriting it, per the WS6 brief's "mode seams ready without
+/// are still parsed and carried but not yet evaluated — WS8/WS9
+/// (cost/budget) and WS10 (judge) extend this same class rather than
+/// rewriting it, per the WS6 brief's "mode seams ready without
 /// implementing them."
 /// </summary>
 /// <param name="harness">The concrete seam to the real orchestrator/compute for this tier.</param>
@@ -107,6 +108,21 @@ public sealed class ScenarioRunner(IAgentLoopHarness harness)
                         $"condition '{journalAssertion.Condition}' evaluated to {actual}, expected {journalAssertion.Expected}",
                         stopwatch.Elapsed,
                         artifactPaths);
+                }
+            }
+
+            if (TrajectoryAssertionEvaluator.Evaluate(scenario.ExpectedTrajectory, timeline) is { } trajectoryFailure)
+            {
+                return ScenarioResult.Failure(scenario.Name, "expectedTrajectory", trajectoryFailure, stopwatch.Elapsed, artifactPaths);
+            }
+
+            if (scenario.Assertions.Diff is { } diffAssertion)
+            {
+                var workingDirectory = await harness.ResolveWorkingDirectoryAsync(seeded.WorkItemId, cancellationToken);
+                if (workingDirectory is not null
+                    && await DiffAssertionEvaluator.EvaluateAsync(diffAssertion, workingDirectory, cancellationToken) is { } diffFailure)
+                {
+                    return ScenarioResult.Failure(scenario.Name, "assertions.diff", diffFailure, stopwatch.Elapsed, artifactPaths);
                 }
             }
 

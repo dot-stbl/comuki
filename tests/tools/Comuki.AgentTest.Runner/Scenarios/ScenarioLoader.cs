@@ -54,7 +54,7 @@ public static class ScenarioLoader
         }
 
         Validate(scenario, scenarioPath);
-        return scenario;
+        return scenario with { SourcePath = Path.GetFullPath(scenarioPath) };
     }
 
     /// <summary>

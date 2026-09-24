@@ -42,4 +42,17 @@ public sealed record ScenarioDefinition
 
     /// <summary>Live/replay-record budget ceiling — reserved for T4/WS8/WS9; ignored in T2a.</summary>
     public ScenarioBudget? Budget { get; init; }
+
+    /// <summary>
+    /// Absolute path of the <c>.scenario.yaml</c>/<c>.json</c> file this was
+    /// loaded from — set by <see cref="ScenarioLoader.Load"/>, empty for a
+    /// definition built any other way (e.g. a unit test's in-code fixture).
+    /// A harness that needs to resolve one of this scenario's own
+    /// scenario-relative paths (<see cref="ScenarioModel.FakeScript"/>,
+    /// <see cref="ScenarioModel.Cassette"/>) at run time — <c>T2b</c>'s
+    /// <c>RealPiFakeModelHarness</c> does, to load the fakeScript a real pi
+    /// process is pointed at — calls
+    /// <see cref="ScenarioLoader.ResolveRelativeToScenario"/> against this.
+    /// </summary>
+    public string SourcePath { get; init; } = string.Empty;
 }

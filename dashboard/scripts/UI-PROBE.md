@@ -86,17 +86,20 @@ lives elsewhere in `document.body`.
 Storybook's own `storyFinished` channel event (`@storybook/core`'s
 `PreparedStory.render` emits it after loading, rendering *and* any play
 function complete, on both the success and the error path — see the
-docblock on `installStorybookReadySignal` in `ui-probe.ts`), installed via
-`page.addInitScript` before Storybook's preview bundle runs. That signal is
-driven by Storybook's render lifecycle, not by where in the DOM the story
-happened to mount its content, so it resolves correctly for a portal-based
-story. The screenshot itself (`page.screenshot({ fullPage: true })`) and the
-DOM snapshot (`document.body.outerHTML`) are unaffected by portals either
-way — a full-page screenshot is pixels, not a DOM subtree, and `document.body`
-already contains whatever portaled in.
+docblock on `installStoryReadySignal` in `scripts/lib/storybook-ready-signal.ts`),
+installed via `page.addInitScript` before Storybook's preview bundle runs.
+That signal is driven by Storybook's render lifecycle, not by where in the
+DOM the story happened to mount its content, so it resolves correctly for a
+portal-based story. The screenshot itself (`page.screenshot({ fullPage: true })`)
+and the DOM snapshot (`document.body.outerHTML`) are unaffected by portals
+either way — a full-page screenshot is pixels, not a DOM subtree, and
+`document.body` already contains whatever portaled in.
 
-Validated against `chat-dock--panel-depth` (one of the two portal stories
-`storybook-tests/README.md` calls out as blocked for WS16's own harness).
+Validated against `chat-dock--panel-depth` (one of the portal stories
+`storybook-tests/README.md` used to call out as blocked for WS16's own
+harness — WS16.4 ports this same technique into `.storybook/test-runner.ts`'s
+`preVisit`, so `test:storybook` now covers it too, see that README's "Portal-
+based stories" section).
 
 ## Output
 

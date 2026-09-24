@@ -33,7 +33,10 @@ public sealed class ComukiConfigFileShould
             static name => name == ComukiConfigFile.PathEnvironmentVariable ? " " : null,
             static () => @"C:\somewhere\app",
             static () => false,
-            static path => path == @"C:\somewhere\app\config.toml");
+            // Find builds the cwd candidate with Path.Combine — on Linux
+            // that joins with '/', so the probe must match the same
+            // platform-composed path, not a hard-coded backslash one.
+            static path => path == Path.Combine(@"C:\somewhere\app", "config.toml"));
 
         found.ShouldBe(Path.Combine(workingDirectory, "config.toml"));
     }

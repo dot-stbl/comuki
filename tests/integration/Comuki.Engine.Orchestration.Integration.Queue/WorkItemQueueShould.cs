@@ -3,6 +3,7 @@ using Comuki.Engine.Orchestration.Application.Handlers;
 using Comuki.Engine.Orchestration.Application.Models;
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Infrastructure.Leases;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
@@ -18,7 +19,9 @@ namespace Comuki.Engine.Orchestration.Integration.Queue;
 /// owner-guarded heartbeat/complete/fail, the reaper requeue/fail policy and
 /// the journal events emitted in the same transactions.
 /// </summary>
-public sealed class WorkItemQueueShould : QueueDatabase
+/// <param name="postgres">The collection's shared Postgres (<see cref="QueueIntegrationCollection"/>) — reset to empty for every test, migrated once for the whole run.</param>
+[Collection(nameof(QueueIntegrationCollection))]
+public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : QueueDatabase(postgres)
 {
     private static readonly DateTimeOffset claimAt = new(2026, 8, 31, 12, 0, 0, TimeSpan.Zero);
 

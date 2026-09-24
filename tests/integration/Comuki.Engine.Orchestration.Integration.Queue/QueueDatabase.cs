@@ -6,23 +6,24 @@ using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing.Clocks;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Engine.Orchestration.Integration.Queue;
 
 /// <summary>
-/// Real-Postgres base for the queue suite: one container per test (fresh
-/// schema, no cross-test rows), the real installers on an in-memory
-/// configuration, and a deterministic clock so leases expire by advancing
-/// time instead of sleeping.
+/// Real-Postgres base for the queue suite: one shared, migrated Postgres
+/// (<see cref="PostgresCollectionFixture"/>, reset to empty before every
+/// test) with the real installers on an in-memory configuration and a
+/// deterministic clock so leases expire by advancing time instead of sleeping.
 /// </summary>
-public abstract class QueueDatabase : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres (<see cref="QueueIntegrationCollection"/>) — reset to empty before every test, migrated once for the whole run.</param>
+public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
     protected const string Image = "ghcr.io/comuki/worker@sha256:9f86d0";
     protected const string ProfilesRef = "refs/heads/main";
@@ -35,9 +36,6 @@ public abstract class QueueDatabase : IAsyncLifetime
     /// </summary>
     protected readonly FakeTimeProvider clock = new();
 
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
-
     /// <summary>
     /// boundary: initialised in InitializeAsync before any test runs
     /// </summary>
@@ -46,7 +44,14 @@ public abstract class QueueDatabase : IAsyncLifetime
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
-        await container.StartAsync(TestContext.Current.CancellationToken);
+        // The orchestration schema is already migrated once by
+        // PostgresCollectionFixture (HostDatabaseMigrator.MigrateAllAsync
+        // covers it). Reset gives every test the same empty-tables
+        // starting point the old per-test container used to give it —
+        // every fact below seeds fresh runs/items and asserts on exact
+        // claim/queue behavior, so cross-test rows would silently break
+        // ordering and count assertions.
+        await postgres.ResetDatabaseAsync();
 
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -60,21 +65,16 @@ public abstract class QueueDatabase : IAsyncLifetime
 
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(clock);
-        services.AddOrchestrationPersistence(container.GetConnectionString());
+        services.AddOrchestrationPersistence(postgres.ConnectionString);
         services.AddOrchestrationQueue(configuration);
         services.AddOrchestrationApplication();
         provider = services.BuildServiceProvider();
-
-        using var scope = provider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
-        await db.Database.MigrateAsync(TestContext.Current.CancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         await provider.DisposeAsync();
-        await container.DisposeAsync();
     }
 
     /// <summary>A fresh DI scope — one scope = one DbContext, the unit of concurrency tests.</summary>

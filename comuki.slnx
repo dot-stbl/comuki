@@ -119,6 +119,7 @@
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.RedisCache/Comuki.Modules.Projects.Integration.RedisCache.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Intake.Integration.Migrations/Comuki.Modules.Intake.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Verify.Integration.Migrations/Comuki.Modules.Verify.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Chat.Integration.Migrations/Comuki.Modules.Chat.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Chat/Comuki.Host.Integration.Chat.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Errors/Comuki.Host.Integration.Errors.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Intake/Comuki.Host.Integration.Intake.csproj" />

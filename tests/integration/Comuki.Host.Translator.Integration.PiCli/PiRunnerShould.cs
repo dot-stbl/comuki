@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json.Nodes;
 using Comuki.Host.Translator.Parsing;
 using Comuki.Host.Translator.Runtime;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -94,6 +95,60 @@ public sealed class PiRunnerShould
         var dump = await File.ReadAllTextAsync(dumpPath, TestContext.Current.CancellationToken);
         dump.ShouldContain("http://comuki-proxy:17080");
         dump.ShouldContain("minted_runner_token");
+    }
+
+    [Fact]
+    public async Task StampPiCodingAgentDirWithModelsJsonOntoTheChildProcessAsync()
+    {
+        var proxyBaseUrl = "http://comuki-proxy:17080";
+        var workingDirectory = Directory.CreateTempSubdirectory("comuki-pirunner-env-");
+        var agentDirectory = Directory.CreateTempSubdirectory("comuki-pirunner-agent-");
+        try
+        {
+            // Pre-populate the agent dir with a models.json that already has an unrelated
+            // openai provider + theme — the runner under test doesn't merge, but the
+            // assertion confirms that whatever models.json the runner stamped with the
+            // additional PI_CODING_AGENT_DIR key reached the child intact.
+            await File.WriteAllTextAsync(
+                Path.Combine(agentDirectory.FullName, "models.json"),
+                $$"""
+                {
+                  "theme": "dark",
+                  "providers": {
+                    "openai": { "baseUrl": "https://api.openai.com/v1" },
+                    "anthropic": { "baseUrl": "{{proxyBaseUrl}}" }
+                  }
+                }
+                """,
+                TestContext.Current.CancellationToken);
+
+            var runner = NewRunner(workingDirectory.FullName);
+            var environment = new Dictionary<string, string>
+            {
+                ["ANTHROPIC_BASE_URL"] = proxyBaseUrl,
+                ["ANTHROPIC_AUTH_TOKEN"] = "minted_runner_token",
+                ["PI_CODING_AGENT_DIR"] = agentDirectory.FullName,
+            };
+
+            await foreach (var _ in runner.RunAsync(
+                 "ignored prompt",
+                 environment,
+                 TestContext.Current.CancellationToken))
+            {
+            }
+
+            environment.ShouldContainKey("PI_CODING_AGENT_DIR");
+
+            var dumpPath = Path.Combine(workingDirectory.FullName, "fake-pi-env.json");
+            File.Exists(dumpPath).ShouldBeTrue();
+            var dump = JsonNode.Parse(await File.ReadAllTextAsync(dumpPath, TestContext.Current.CancellationToken))!.AsObject();
+            dump["piCodingAgentDir"]!.GetValue<string>().ShouldBe(agentDirectory.FullName);
+            dump["modelsJson"]!.GetValue<string>().ShouldContain(proxyBaseUrl);
+        }
+        finally
+        {
+            agentDirectory.Delete(recursive: true);
+        }
     }
 
     [Fact]

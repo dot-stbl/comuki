@@ -31,11 +31,14 @@ public static class PiPump
         TimeProvider clock,
         ILogger logger)
     {
+        await using var piEnvironment = await PiExecutionEnvironment.PrepareAsync(
+            run.Claimed, Path.GetTempPath(), run.RunCancellation.Token);
+
         try
         {
             await foreach (var line in runner.RunAsync(
                  run.Claimed.Brief,
-                 PiEnvironment.FromClaim(run.Claimed),
+                 piEnvironment.Environment,
                  run.RunCancellation.Token))
             {
                 foreach (var piEvent in StreamJsonParser.ParseLine(line))

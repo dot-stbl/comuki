@@ -322,6 +322,7 @@ describe('runRecord — child-process boundary', () => {
     assert.equal(calls.length, 1);
     assert.deepEqual(calls[0].args, [
       'run', '--project', '/tmp/Comuki.EndToEnd.AgentLoop.csproj', '--no-build',
+      '--', '--filter-class', 'Comuki.EndToEnd.AgentLoop.RealPi.RecordCassetteShould',
     ]);
     assert.equal(calls[0].env.COMUKI_RECORD_SCENARIO, '/tmp/foo.scenario.yaml');
     assert.equal(calls[0].env.COMUKI_RECORD_UPSTREAM, 'http://127.0.0.1:17190');

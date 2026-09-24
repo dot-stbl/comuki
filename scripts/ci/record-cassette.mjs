@@ -42,6 +42,21 @@ const DEFAULT_PROJECT_PATH = resolve(
   '..', '..', 'tests', 'integration', 'Comuki.EndToEnd.AgentLoop', 'Comuki.EndToEnd.AgentLoop.csproj',
 );
 
+/**
+ * The .NET test class `runRecord` filters the run down to via Microsoft
+ * Testing Platform's `--filter-class`. Verified empirically: running the
+ * whole `Comuki.EndToEnd.AgentLoop` suite unfiltered puts more than one
+ * real-pi fact through the same shared `RealPiFakeModelCollection` process
+ * in one run, and a second/third real-pi invocation in that same process
+ * reproducibly fails (the shared upstream/fixture state does not reset
+ * cleanly between real-pi cycles — a pre-existing cross-fact interaction,
+ * not a defect in the recording path itself: `RecordCassetteShould` passes
+ * cleanly every time when it is the only fact MTP runs). Filtering to just
+ * this one class is both the fix and a speed win — no need to also run
+ * T2a/T2b/replay facts on every re-record.
+ */
+const RECORD_FACT_FILTER = 'Comuki.EndToEnd.AgentLoop.RealPi.RecordCassetteShould';
+
 const USAGE = `record-cassette — WS8 re-record command for agent-loop cassettes
 
 Usage:
@@ -292,7 +307,7 @@ export function runRecord(input) {
     env.COMUKI_RECORD_BUDGET_USD = input.budgetUsd;
   }
 
-  const args = ['run', '--project', input.projectPath, '--no-build'];
+  const args = ['run', '--project', input.projectPath, '--no-build', '--', '--filter-class', RECORD_FACT_FILTER];
   return runDotnet(args, env);
 }
 

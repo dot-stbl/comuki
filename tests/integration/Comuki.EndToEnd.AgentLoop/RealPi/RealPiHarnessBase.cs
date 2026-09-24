@@ -44,8 +44,21 @@ namespace Comuki.EndToEnd.AgentLoop.RealPi;
 /// </remarks>
 public abstract class RealPiHarnessBase(RealPiInstallation realPi, RealPiFakeModelHost host) : IAgentLoopHarness, IAsyncDisposable
 {
-    /// <summary>Stable seed ticket number used by every real-pi scenario this base serves.</summary>
-    protected const int IssueNumber = 9101;
+    /// <summary>
+    /// Base seed-ticket number every real-pi harness offsets from. A single
+    /// fixed number collided once more than one harness actually called
+    /// <see cref="SeedTicketAsync"/> in the same suite process (observed:
+    /// WS8's <c>RecordCassetteShould</c> running alongside
+    /// <see cref="RealPiFakeModelHarness"/>'s own fact) — the webhook
+    /// admission layer dedupes on ticket identity (repo + issue number), so
+    /// a second webhook for the same number is rejected as <c>"duplicate"</c>,
+    /// not admitted as a new ticket. <see cref="NextIssueNumber"/> draws a
+    /// random per-call offset instead, so every call's issue number is
+    /// effectively unique within one process run without each harness
+    /// needing its own hand-picked constant (WS9's live harness reuses this
+    /// same base and would otherwise hit the identical collision).
+    /// </summary>
+    private const int IssueNumberBase = 9100;
 
     /// <summary>
     /// The shared worker-image label every scenario this base serves declares
@@ -81,9 +94,23 @@ public abstract class RealPiHarnessBase(RealPiInstallation realPi, RealPiFakeMod
     /// <inheritdoc />
     public async Task<SeededWorkItem> SeedTicketAsync(ScenarioDefinition scenario, CancellationToken cancellationToken = default)
     {
-        var seeded = await host.SeedTicketAsync(scenario.Ticket.Title, scenario.Ticket.Body, scenario.Ticket.Labels, IssueNumber, cancellationToken);
+        var seeded = await host.SeedTicketAsync(scenario.Ticket.Title, scenario.Ticket.Body, scenario.Ticket.Labels, NextIssueNumber(), cancellationToken);
         seededWorkItemId = seeded.WorkItemId;
         return seeded;
+    }
+
+    /// <summary>
+    /// Draws a random issue number offset from <see cref="IssueNumberBase"/>
+    /// — see that constant's remarks for why this isn't a fixed value. Uses
+    /// <see cref="System.Security.Cryptography.RandomNumberGenerator"/>
+    /// rather than <see cref="Random"/> only because CA5394 flags the
+    /// latter repo-wide as warnings-as-errors — there is no actual security
+    /// property riding on this number, it only needs to not collide with
+    /// another call in the same process.
+    /// </summary>
+    private static int NextIssueNumber()
+    {
+        return IssueNumberBase + System.Security.Cryptography.RandomNumberGenerator.GetInt32(1, 90000);
     }
 
     /// <inheritdoc />

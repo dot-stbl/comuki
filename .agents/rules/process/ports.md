@@ -29,6 +29,7 @@ always: true
 | 17027 | Grafana (compose profile `grafana`) | `deploy/docker-compose.yml` → grafana service |
 | 17172 | host HTTP (compose host-mapping) | `deploy/compose/docker-compose.yml` → host service published port |
 | 17171 | host HTTPS (compose host-mapping, optional TLS) | `deploy/compose/docker-compose.yml` → `COMUKI_TLS_HOST_PORT` |
+| 17190 | Comuki.TestFakeModel (standalone / container) | `tests/tools/Comuki.TestFakeModel` → `--port` / `COMUKI_TESTFAKEMODEL_PORT` |
 
 Свободный диапазон для ad-hoc / экспериментов: **17180–17200**.
 Новый постоянный сервис — **добавь строку в эту таблицу** в том же PR,

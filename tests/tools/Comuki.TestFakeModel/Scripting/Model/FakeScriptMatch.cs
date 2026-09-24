@@ -1,5 +1,3 @@
-using Comuki.TestFakeModel.Anthropic;
-
 namespace Comuki.TestFakeModel.Scripting.Model;
 
 /// <summary>

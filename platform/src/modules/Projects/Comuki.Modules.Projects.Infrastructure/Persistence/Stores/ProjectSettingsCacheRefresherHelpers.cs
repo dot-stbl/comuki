@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
-using Comuki.Modules.Projects.Application.Settings;
+using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Telemetry;
@@ -31,7 +31,7 @@ internal static class ProjectSettingsCacheRefresherHelpers
     /// <param name="logger">Structured logger.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     public static Task FallbackAsync(
-        ProjectSettingsCache cache,
+        IProjectSettingsSnapshotCache cache,
         ConcurrentDictionary<ProjectId, FallbackSnapshotEntry> fallbackSnapshots,
         TimeSpan fallbackTtl,
         DateTimeOffset now,

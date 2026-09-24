@@ -110,6 +110,19 @@
     <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.11" />
   </ItemGroup>
 
+  <!-- Redis-backed distributed cache for multi-replica Host (issue #11,
+       "Redis cache при multi-replica Host"): Microsoft.Extensions.Caching.StackExchangeRedis
+       binds IDistributedCache over StackExchange.Redis, the wire-protocol
+       client it wraps — pinned here so both the shared installer project
+       and the integration test project (which connects a second
+       IConnectionMultiplexer directly to assert cross-replica reads) get a
+       deterministic client version. 10.0.11 aligns with the rest of
+       Microsoft.Extensions.* in this solution. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.11" />
+    <PackageVersion Include="StackExchange.Redis" Version="2.8.47" />
+  </ItemGroup>
+
   <!-- Integration testing -->
   <ItemGroup>
     <!-- 4.14.0 (not 4.12.0): 4.12.0 pulls vulnerable SSH.NET 2025.1.0
@@ -123,6 +136,12 @@
          package is the same line as the specialized PostgreSql / Minio
          modules above. -->
     <PackageVersion Include="Testcontainers" Version="4.14.0" />
+    <!-- Testcontainers fixture for the Redis-backed distributed settings cache
+         integration suite (issue #11, "Redis cache при multi-replica Host").
+         Pinned to the same 4.14.0 line as Testcontainers.PostgreSql above —
+         a mixed DotNet.Testcontainers core version across modules is asking
+         for a version-conflict warning. -->
+    <PackageVersion Include="Testcontainers.Redis" Version="4.14.0" />
     <!-- Realtime (issue #7): .NET client the integration suite connects
          to the runs hub with. -->
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.11" />

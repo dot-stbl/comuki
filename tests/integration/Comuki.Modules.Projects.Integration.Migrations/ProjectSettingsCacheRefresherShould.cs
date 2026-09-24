@@ -1,4 +1,4 @@
-using Comuki.Modules.Projects.Application.Settings;
+using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
@@ -50,6 +50,7 @@ public sealed class ProjectSettingsCacheRefresherShould : IAsyncLifetime
             .AddSingleton<ISubjectScopeAccessor, AsyncLocalSubjectScopeAccessor>()
             .AddDbContextFactory<ProjectsDbContext>(builder => ProjectsDbContext.ApplyOptions(builder, connectionString))
             .AddSingleton<ProjectSettingsCache>()
+            .AddSingleton<IProjectSettingsSnapshotCache>(static serviceProvider => serviceProvider.GetRequiredService<ProjectSettingsCache>())
             .AddSingleton<ProjectSettingsCacheRefresherComukiWorker>()
             .BuildServiceProvider();
 

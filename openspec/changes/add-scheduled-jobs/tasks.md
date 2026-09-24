@@ -32,7 +32,7 @@
 ## 7. REST + host composition
 
 - [ ] 7.1 Controllers under `/api/v1/projects/{projectId}/schedules` (list/create/get/patch/archive/fire) with FV validators, `RequiresPermission`, secret names not values; verify 201 create, 409 duplicate slug, 409 fire overlap, 400 bad cron, 403 member write
-- [ ] 7.2 Wire module + dispatcher + launcher + controllers in `HostComposer`; strip the dispatcher in OpenAPI build-time like other hosted services; verify Debug build emits `artifacts/openapi.json` containing the new paths
+- [x] 7.2 Wire module + dispatcher + launcher + controllers in `HostComposer`; strip the dispatcher in OpenAPI build-time like other hosted services; verify Debug build emits `artifacts/openapi.json` containing the new paths
 
 ## 8. Control plane
 
@@ -40,6 +40,6 @@
 
 ## 9. Tests + docs
 
-- [ ] 9.1 Architecture test: ScheduledJobs projects do not reference Engine or Host; verify `Comuki.Architecture.Tests` still green
+- [x] 9.1 Architecture test: ScheduledJobs projects do not reference Engine or Host; verify `Comuki.Architecture.Tests` still green
 - [ ] 9.2 Document operator setup (env secrets, `Host:Schedule:*`, overlap/alert behavior) under `.agents/docs/operations/` and mention the slice in STATE/ROADMAP as post-v1; verify links from the GitHub issue
-- [ ] 9.3 `dotnet build comuki.slnx -c Debug` and the new unit/integration projects via `dotnet run --project` all exit 0
+- [x] 9.3 `dotnet build comuki.slnx -c Debug` and the new unit/integration projects via `dotnet run --project` all exit 0

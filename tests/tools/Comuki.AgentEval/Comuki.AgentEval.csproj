@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.AgentEval</RootNamespace>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <!-- Not a test project: no [Fact]/[Theory] live here (runner, judge,
+         corpus loader, report writer), so IsTestProject and
+         UseMicrosoftTestingPlatformRunner stay unset, matching
+         Comuki.TestFakeModel / Comuki.AgentTest.Runner's own csproj
+         shape — CI builds this project but never runs it. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- AgentTest.Runner: ScenarioDefinition / ScenarioLoader /
+         BudgetCap / BudgetTracker / DiffAssertionEvaluator / RunSummary /
+         RunCost / ReportWriter shape. Reused as-is, never modified.
+         TestFakeModel: FakeModelServer (fake mode) /
+         CassetteModelServer (replay/record mode); both wrap the same
+         Anthropic / OpenAI wire shape real pi talks to. Reused as-is.
+         Host.Translator: StreamJsonParser / PiEvent, a pure, stateless
+         parser for pi's stream-json stdout (tolerant of malformed /
+         unknown lines; same caller contract the T2b harness uses). -->
+    <ProjectReference Include="..\Comuki.AgentTest.Runner\Comuki.AgentTest.Runner.csproj" />
+    <ProjectReference Include="..\Comuki.TestFakeModel\Comuki.TestFakeModel.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host.Translator\Comuki.Host.Translator.csproj" />
+  </ItemGroup>
+
+</Project>

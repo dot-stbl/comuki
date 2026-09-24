@@ -44,6 +44,6 @@
 
 - [x] `dotnet build comuki.slnx -c Debug` — 0 warnings, 0 errors
 - [x] `dotnet run --project tests/unit/Comuki.Modules.Chat.Unit` — green
-- [ ] Integration suite (Testcontainers) — migration apply/rollback on a
+- [x] Integration suite (Testcontainers) — migration apply/rollback on a
       real Postgres
-- [ ] Sync the delta into `openspec/specs/chat/spec.md` and archive
+- [x] Sync the delta into `openspec/specs/chat/spec.md` and archive

@@ -353,6 +353,20 @@ grpcPort = 17004
 # unset = no OTel SDK.
 # otlpEndpoint = "http://victoriametrics:8431"
 
+[verify.verifier]
+# Generic-command verifier (issue #11 sub-slice; GH #47 tracks the
+# follow-up container-isolated runner). The worker polls
+# verify.generic_command_runs and launches the configured executable
+# via Process.Start INSIDE the orchestrator host process — no
+# container/sandbox boundary yet. Disabled by default; enable only in
+# an environment that already trusts every executable a verify run can
+# name.
+# enabled = false
+# pollInterval = "00:00:30"
+# batchSize = 10
+# runTimeout = "00:02:00"
+# outputLogCharCap = 65536
+
 [connectionStrings]
 # Fallback for the migrator when COMUKI_DB / COMUKI_DATABASE are unset.
 # Blank Password= is filled from COMUKI_MIGRATOR_DB_PASSWORD.

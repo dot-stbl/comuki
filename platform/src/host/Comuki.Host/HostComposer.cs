@@ -58,6 +58,9 @@ using Comuki.Modules.Scheduler.Application;
 using Comuki.Modules.Scheduler.Application.Options;
 using Comuki.Modules.Scheduler.Application.Ports;
 using Comuki.Modules.Scheduler.Infrastructure;
+using Comuki.Modules.Verify.Application;
+using Comuki.Modules.Verify.Application.Options;
+using Comuki.Modules.Verify.Infrastructure;
 using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Bootstrap.Workers;
@@ -307,6 +310,25 @@ internal static class HostComposer
             .ValidateOnStart();
         builder.Services.AddOptions<SchedulerWorkerDefaults>()
             .Bind(builder.Configuration.GetSection(SchedulerWorkerDefaults.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // Verify module (issue #11 sub-slice, rescued from ec3ce24 —
+        // GH issue #47 tracks the follow-up runner-container isolation):
+        // generic-command verifier. Poll worker claims Pending
+        // generic_command_runs, launches through IGenericCommandRunner
+        // (in-process Process.Start — no container isolation yet), stamps
+        // Green/Red from the exit code. The worker is a IComukiWorker
+        // behind AddComukiWorkers() below. Disabled by default
+        // (Verify:Verifier:Enabled=false) — see the isolation warning on
+        // VerifyOptions; only enable in an environment that already
+        // trusts every executable a verify run can name. Bound with
+        // ValidateDataAnnotations + ValidateOnStart so a missing or
+        // invalid setting fails the boot, not the first poll cycle.
+        builder.Services.AddVerifyApplication();
+        builder.Services.AddVerifyPersistence(database.ConnectionString);
+        builder.Services.AddOptions<VerifyOptions>()
+            .Bind(builder.Configuration.GetSection(VerifyOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

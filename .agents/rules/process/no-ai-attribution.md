@@ -43,6 +43,20 @@ always: true
 | Комментарии в коде | Вручную. `// написано Claude` — мусор, удалять |
 | Документация | Вручную. Не подписывать `.agents/**`, `README.md` и прочее моделью |
 | Существующие коммиты | `node scripts/commit-lint.mjs --range <A..B>` — ручной аудит. Здесь байлайн это **ошибка**, а не автофикс: чужой запушенный коммит не переписывают |
+| CI (сервер, автоматически) | `scripts/ci/no-ai-attribution.mjs --range <base>..<head>` — джоба в `.github/workflows/ci.yml` / GitLab. Байлайн здесь — **жёсткая ошибка** (exit 1), не автофикс, и не обходится `--no-verify` |
+
+## Слои защиты
+
+Правило применяется на двух независимых слоях — локальный обходится, серверный нет.
+
+| Слой | Где | Что проверяет | Обходимо? |
+|------|-----|---------------|-----------|
+| 1 — commit-msg (локально) | `scripts/commit-lint.mjs --file` через `scripts/hooks/commit-msg` | Текст сообщения коммита — вырезает трейлер/фрагмент и предупреждает в stderr, коммит не блокируется | Да — `git commit --no-verify` |
+| 2 — CI (сервер) | `scripts/ci/no-ai-attribution.mjs --range <base>..<head>` | Каждый коммит в диапазоне — subject/body/trailers + имя и почта author/committer (вендорские токены); опционально `--text-file` для описания PR/MR | Нет — джоба падает, `--no-verify` тут не действует |
+
+GitHub: `.github/workflows/ci.yml`, job на `pull_request` (`base.sha..head.sha` плюс описание PR) и на `push` (`before..after`). GitLab: `deploy/hybrid/**` — отдельный оверлей; точный job-сниппет лежит в `scripts/ci/README.md`, координатор вставляет его туда руками.
+
+Один источник правды на паттерны — `scripts/commit-lint.mjs` экспортирует `AI_VENDORS`, `AI_EMAIL_DOMAINS`, `alternation`, `stripAttribution`; `scripts/ci/no-ai-attribution.mjs` импортирует их, а не дублирует.
 
 ## Отключить на источнике
 
@@ -101,3 +115,4 @@ git commit --no-verify
 - `scripts/commit-lint.test.mjs` — `node --test`, покрывает каждый паттерн
 - `scripts/hooks/commit-msg` — сам хук
 - `.claude/settings.json` — `includeCoAuthoredBy: false`
+- `scripts/ci/no-ai-attribution.mjs` — server-side layer, reuses this file's patterns via commit-lint.mjs's exports

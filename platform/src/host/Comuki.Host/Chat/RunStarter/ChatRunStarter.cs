@@ -46,15 +46,28 @@ public sealed class ChatRunStarter(
         // see WorkerImagePinning).
         var image = WorkerImagePinning.Resolve(defaults.Value.Image, buildInformation);
 
+        // Nodes that appear as a `To` in the DAG have >=1 prerequisite and
+        // must start Blocked; nodes that never appear as a `To` have zero
+        // prerequisites and start Queued. Matching the id comparer used by
+        // `itemsById` keeps the lookup and the membership check coherent.
+        var blockedNodeIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var edge in plan.Edges)
+        {
+            blockedNodeIds.Add(edge.To);
+        }
+
         foreach (var node in plan.Nodes)
         {
+            var initialStatus = blockedNodeIds.Contains(node.Id)
+                ? WorkItemStatus.Blocked
+                : WorkItemStatus.Queued;
             var workItem = WorkItem.Create(
                 run.Id,
                 node.ProfileKey,
                 image,
                 defaults.Value.ProfilesRef,
                 ChatItemBrief.ToJson(node.Brief),
-                WorkItemStatus.Queued,
+                initialStatus,
                 now);
             itemsById[node.Id] = workItem;
             db.WorkItems.Add(workItem);

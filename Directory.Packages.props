@@ -135,6 +135,15 @@
     <PackageVersion Include="Respawn" Version="7.0.0" />
   </ItemGroup>
 
+  <!-- add-agentic-test-contour WS6 (Comuki.AgentTest.Runner): scenario files
+       are YAML on disk (JSON accepted too, same schema — design.md
+       "Scenario format"). YamlDotNet is the standard MIT-licensed .NET YAML
+       library; 18.1.0 is the latest line available in this environment's
+       package cache. -->
+  <ItemGroup>
+    <PackageVersion Include="YamlDotNet" Version="18.1.0" />
+  </ItemGroup>
+
   <!-- Identity module -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.11" />

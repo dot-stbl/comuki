@@ -10,7 +10,17 @@
 .claude
 .opencode
 audit-data
-tests
+# tests/ is excluded wholesale for every repo-root-context Dockerfile
+# EXCEPT tests/tools/Comuki.TestFakePi/ (add-agentic-test-contour WS6's
+# worker-test.Dockerfile COPYs it to build the TestFakePi-based test
+# worker image). A bare "tests" exclusion is terminal for buildah/Docker's
+# ignore matcher — it never descends into an excluded directory to honor a
+# later negation — so un-excluding one subtree needs the walk-down form
+# below instead of a single "!tests/tools/Comuki.TestFakePi/**" line.
+tests/*
+!tests/tools
+tests/tools/*
+!tests/tools/Comuki.TestFakePi
 openspec
 **/bin
 **/obj

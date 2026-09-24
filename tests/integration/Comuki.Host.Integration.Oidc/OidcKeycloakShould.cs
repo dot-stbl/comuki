@@ -19,7 +19,8 @@ namespace Comuki.Host.Integration.Oidc;
 /// Testcontainers Postgres + Keycloak actually come up here. Previously
 /// skipped (2026-09-08) for lack of a reachable Docker daemon.
 /// </summary>
-public sealed class OidcKeycloakShould(HostOidcServer server) : IClassFixture<HostOidcServer>
+[Collection(nameof(OidcIntegrationCollection))]
+public sealed class OidcKeycloakShould(HostOidcServer server)
 {
     private async Task<JsonElement> GetUserClaimsAsync(string accessToken)
     {

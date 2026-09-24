@@ -24,7 +24,8 @@ namespace Comuki.Host.Integration.Oidc;
 /// Testcontainers Postgres + Keycloak actually come up here. Previously
 /// skipped (2026-09-08) for lack of a reachable Docker daemon.
 /// </summary>
-public sealed class OidcStateSweeperShould(HostOidcServer server) : IClassFixture<HostOidcServer>
+[Collection(nameof(OidcIntegrationCollection))]
+public sealed class OidcStateSweeperShould(HostOidcServer server)
 {
     [Fact(DisplayName = "Given an expired state row and a fresh one, when the host's sweeper runs one cycle, then only the fresh row remains")]
     public async Task SweepDeletesExpiredKeepsFreshAsync()

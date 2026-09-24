@@ -117,7 +117,7 @@ auto-resolve on next attempt success (exhaustion must produce an explicit
 Decision); encoding "waived" / "replaced" as ad hoc booleans on
 `WorkTask`.
 
-### 3. Work ↔ Orchestration via durable outbox/inbox, never dual writes
+### 2. Work ↔ Orchestration via durable outbox/inbox, never dual writes
 
 Adapted from `add-mission-cowork/design.md` Decision 3, narrowed to Work:
 
@@ -158,7 +158,7 @@ pseudo-transaction; using `run_events` or the SignalR interceptor as the
 outbox; ambient distributed PostgreSQL transaction across Work and
 Orchestration DbContexts.
 
-### 4. Backfill behaviour follows the umbrella cutover matrix
+### 3. Backfill behaviour follows the umbrella cutover matrix
 
 The umbrella `add-mission-cowork/design.md` §"Existing-state cutover
 matrix" is normative for this change's backfill. Every row maps to a
@@ -186,7 +186,7 @@ telemetry shows no legacy consumers (see `add-mission-cowork/design.md`
 (privacy + identity hazard); making the cutover a one-shot irreversible
 delete without rollback version (rolls back per Epoch).
 
-### 5. Compatibility projection: existing Run reads remain Run-shaped
+### 4. Compatibility projection: existing Run reads remain Run-shaped
 
 Existing API/dashboard/CLI consumers reason about Runs. Replacing every
 such consumer at once would block the rollout of Tasks. The compatibility
@@ -205,7 +205,7 @@ contracts (would require coordinated client rollout); serving Run reads
 from Orchestration's `runs` table alone (becomes stale the moment
 attempts are replaced).
 
-### 6. Completion policy is predeclared, reviewer separation enforced
+### 5. Completion policy is predeclared, reviewer separation enforced
 
 A WorkTask carries a `CompletionPolicy` declared at creation:
 `Deterministic` (rule-based reviewer), `BrainAssisted` (Brain review with
@@ -232,7 +232,7 @@ resolution.
 
 - **[Risk] Outbox backlog makes Work views stale** → dispatchers expose
   lag/watermarks; dead letters visible; reconciliation per
-  architecture.md Decision 12.
+  `add-mission-cowork/design.md` Decision 12.
 - **[Risk] Backfill migration races with concurrent in-flight
   admissions** → backfill is keyed by inbound id and idempotent;
   in-flight admissions either see the Task already created (and find
@@ -267,8 +267,8 @@ Epoch 1 ("standalone Tasks"), each behind the
 land. No existing code path changes; no backfill runs; new admissions
 that pre-create a Task before first Run are gated by
 `work.management.admission.enabled` (off in prod). The T2 agent-loop
-scenario (`add-agentic-test-contour` §10.9) exercises this end to end
-against a fake model.
+scenario tier (per `add-agentic-test-contour/specs/agentic-testing/spec.md`)
+exercises this end to end against a fake model.
 
 **Phase B — backfill + compatibility projections.** The
 `Comuki.Migrator` backfill jobs run once per environment (dev, staging,

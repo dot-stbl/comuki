@@ -15,6 +15,40 @@
   (принят, Core path); этот ADR поверх — про ownership
   executable/package + command surface, не про renderer.
 
+## Status update 2026-09-24
+
+Этот блок — единственная актуализация поверх принятого текста ниже;
+остальной документ не переписан, он остаётся историческим снимком на
+момент 2026-09-19.
+
+- **§5 "Wire-type source of truth" и §"Плюсы и минусы" (пункт
+  "Минусы") устарели.** Они утверждали, что codegen для wire-типов "не
+  начат" и что ручное зеркало (`cli/src/lib/client.ts`) — текущий
+  source of truth. Это больше не так: kubb генерирует HTTP-контракты
+  из C# в `cli/src/contracts/_generated/`, `tools/Comuki.Codegen.Realtime`
+  генерирует `_generated/realtime.ts`; оба дерева импортируются
+  исключительно из `cli/src/contracts/codecs.ts` (чистые codec'и
+  wire → kernel, направление импорта строго `contracts → _generated`).
+  Drift между закоммиченным сгенерированным деревом и текущим
+  серверным контрактом ловится gate'ом `bun run test:contracts`
+  (`cli/scripts/contracts-drift.ts`: перегенерирует всё, затем
+  `git diff --exit-code -- src/contracts/_generated`).
+- **Re-open trigger #1 (§Re-open triggers) сработал.** "Codegen
+  pipeline для wire-types начинает выдавать TypeScript-контракт из
+  C#" — уже так. Пересмотр ownership wire-типов (кандидат ADR-0004,
+  упомянутый в §5 как "предложенный") остаётся открытым — этот апдейт
+  только фиксирует факт срабатывания триггера, не закрывает его.
+- **Slash-команды `/tools`, `/note`, `/profile` и `/archive`
+  (§2 "Slash-команды — детальные решения") удалены** из
+  `cli/src/lib/slash.ts` вместе с их handler'ами в
+  `cli/src/commands/chat.tsx`, honest-notice хелперами в
+  `cli/src/lib/ops.ts` и `cli/src/lib/profiles.ts` (последний файл
+  удалён целиком — его единственный потребитель был `/profile`), и
+  соответствующими тестами. `comuki archive` (argv-команда, листинг
+  `~/.config/comuki/archive/`) остаётся без изменений — удалена только
+  slash-форма `/archive`, которая писала транскрипт на диск и закрывала
+  вкладку.
+
 ## Контекст
 
 В монорепо `comuki.orchestrator` два бинаря делят имя `comuki`:

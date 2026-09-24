@@ -74,6 +74,7 @@
     <Project Path="tests/unit/Comuki.Host.Unit.Auth/Comuki.Host.Unit.Auth.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Cli/Comuki.Host.Unit.Cli.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Cors/Comuki.Host.Unit.Cors.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.DiComposition/Comuki.Host.Unit.DiComposition.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Mcp/Comuki.Host.Unit.Mcp.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.OidcSweeper/Comuki.Host.Unit.OidcSweeper.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Costs/Comuki.Host.Unit.Costs.csproj" />

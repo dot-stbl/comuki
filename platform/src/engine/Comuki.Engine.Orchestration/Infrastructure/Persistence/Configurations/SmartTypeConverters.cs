@@ -37,6 +37,12 @@ internal static class SmartTypeConverters
             static mergeQueueStatus => mergeQueueStatus.Value,
             static wire => MergeQueueStatus.FromWire(wire));
 
+    /// <summary>Bidirectional converter for <see cref="MergeBatchStatus"/>.</summary>
+    public static readonly ValueConverter<MergeBatchStatus, string> MergeBatchStatusToString =
+        new(
+            static mergeBatchStatus => mergeBatchStatus.Value,
+            static wire => MergeBatchStatus.FromWire(wire));
+
     /// <summary>Bidirectional converter for <see cref="ConflictResolution"/>.</summary>
     public static readonly ValueConverter<ConflictResolution, string> ConflictResolutionToString =
         new(

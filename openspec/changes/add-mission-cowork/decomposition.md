@@ -35,6 +35,7 @@ re-deriving the whole epic.
 | # | Issue | Epic task ids | Spec deltas (ADD / MODIFY) | Depends on (issue-declared) | Exists today | Conflicts / overlaps | Size | Wave | Test tier(s) |
 |---|---|---|---|---|---|---|---|---|---|
 | **execution-spine-orchestration** | #87 | §2 (2.1–2.7) | MODIFY `runs` (status set, transition table, atomic journal, cancellation endpoint), MODIFY `worker-runtime` (partial — see #100) | none (DAG root) | `WorkItem`/`WorkItemDependency` exist but dependency edges **not enforced at claim** (`WorkItemQueueSql.cs`/`WorkItemQueueEf.cs`). `a6e9df17` just landed a first slice of run-status-from-work-item-transitions (activation-on-first-claim, finalize-on-last-terminal-item) — not the full outbox/fencing story. No `Generation`/fencing concept anywhere. No `outbox_messages`/`IOutbox` anywhere in `platform/src` — fully greenfield. | Gate B in design.md — everything Work/Mission-shaped is declared to wait on this; it's the connective-tissue safety gate, not just a file dependency | L | 1 | T0 unit (status machine, fencing) + T1 integration (Testcontainers: `FOR UPDATE SKIP LOCKED` outbox, concurrent claim/terminate races) + extend `tests/integration/Comuki.Host.Translator.Integration.PiCli/TranslatorE2EShould.cs` and `tests/integration/Comuki.EndToEnd.AgentLoop/` for the crown path (task 2.7) |
+| **add-multi-repo-projects** | #163 | n/a — issue #163 postdates `tasks.md`'s 19-phase/131-task decomposition; scoped by its own `tasks.md` | ADD `repositories`; MODIFY `projects` (attachments), `worker-runtime` (multi-repo workspace) | #87 (Wave-slot decision); mission-participation routing additionally needs #90, #93 | No `Repository`/attachment/link/artifact-adapter entity anywhere in `platform/src` — fully greenfield module. `Project.ProfilesGitUrl`/`ProfilesGitRef` exist today (worker-profiles overlay); `Project.SourceGitUrl`/`SourceGitRef` (product-repo clone, single repo) land separately via `feature/source-workspace-clone` (#125) and are migrated into the primary attachment once both exist. `MergeQueueEntry.ProjectId` is already nullable ("release train" scenario per its own doc comment) and `MergeBatch.PullRequestUrls` is a flat unordered list — confirms #50 is subsumed rather than needing dependency-graph structure inside `MergeBatch`. | Migrates `feature/source-workspace-clone`'s scalar source fields into the primary `ProjectRepositoryAttachment`; subsumes issue #50 (dependency-ordered merge batches) via per-repository merge queues + the cross-repo DAG; extends `missions/spec.md`'s home/participating-Project split (this file's own amendment, alongside `#93`/`#94`/`#99`) with the full participation-routing mechanics — see Decisions below | XL | 2 (parallel with #88 — its foundation needs only #87; only its Mission-participation routing task additionally waits on #90 and #93, see wave-plan note below) | T1 integration (Testcontainers: attachment CRUD, link discovery, artifact-source adapter polling) + T2 scenario (two fake repos + fake model: cross-repo DAG with artifact wait, external block) + T3 `compose.e2e` (two real git fixture repos: upstream package + downstream consumer, submodule pointer bump) |
 | **hard-rename-intake-to-integrations** | #88 | §3.0 | MODIFY `intake` → becomes the `integrations` capability (the delta file is still named `intake/spec.md` in the epic — rename it when this change is authored) | #87 | `Comuki.Modules.Intake.{Domain,Application,Infrastructure}` fully present, `IncomingTicket` entity, `IntakeDbContext`/`intake` schema, 5+ migrations. Pre-release hard reset — no compat aliases, dev/stage data reset. | None in code (clean rename target); the *decision* to reset dev/stage data rather than dual-write is already made in architecture.md — nothing left to negotiate | M | 2 | T0 unit (renamed handlers) + T1 integration (fresh migration baseline via Testcontainers, verify no stale generated client references) |
 | **add-work-management** | #89 | §3.1–3.7 + §19.1,19.2,19.3,19.5 (extension) | ADD `work-management` | #87, #88 | No `Task`/`WorkTask` aggregate anywhere (`class Task\b` = 0 hits) — `Run` and `IncomingTicket` are still the only durable goal-shaped entities. Fully greenfield. | `work-management` spec is the sole owner of "Primary and related sources" / "Task relations" / "Cross-Mission dependencies" (§19) — don't let `add-minimal-missions` re-litigate cross-Mission blocking edges | XL | 3 | T0 unit (legal/illegal Task transitions) + T1 integration (outbox/inbox dispatch, backfill migration per task 3.6 against Testcontainers fixtures for *every* existing state) + T2 scenario (`tests/tools/Comuki.AgentTest.Runner` + fake model: admission → Task → Run-attempt loop end to end) |
 | **add-capability-broker** | #90 | §5.1–5.8 | ADD `capability-broker` | #88, #89 | No generic command/query broker or `*Broker` type anywhere. `Comuki.Host/Mcp` and `Comuki.Host.Brain/Brain/Tools` are exactly the "two competing private catalogs" design.md calls out as the problem. Fully greenfield. | Exposure-class hard-deny and distinct-human-approval logic is *also* listed under the `identity` spec delta — see Open Question 4 | XL | 4 (parallel with worker-pools) | T0 unit (policy/autonomy/idempotency ledger) + T1 integration (durable operation lifecycle, Postgres) + T2 scenario (same capability — e.g. Task creation — invoked via HTTP/CLI-JSON/MCP/Brain proposal, assert identical effect+authorization) |
@@ -78,8 +79,9 @@ flowchart TD
     subgraph W1["Wave 1 — spine (solo, safety gate)"]
         I87["#87 execution-spine-orchestration"]
     end
-    subgraph W2["Wave 2 — rename (solo)"]
+    subgraph W2["Wave 2 — rename + repositories (parallel)"]
         I88["#88 hard-rename-intake-to-integrations"]
+        I163["#163 add-multi-repo-projects"]
     end
     subgraph W3["Wave 3 — Work (solo)"]
         I89["#89 add-work-management"]
@@ -117,6 +119,7 @@ flowchart TD
     end
 
     I87 --> I88 --> I89
+    I87 --> I163
     I89 --> I90
     I89 --> I100
     I90 --> I93
@@ -150,6 +153,18 @@ are solo because they sit on the critical path or because design.md itself
 declares them a sequencing/safety gate (execution-spine before any
 Work/Mission automation; the room before context-fabric/completion/brain
 can address Mission-scoped evidence).
+
+`add-multi-repo-projects` (#163) is the one exception to "wave = latest
+dependency": its foundation (Repository registration, attachments, link
+discovery, the cross-repo DAG, artifact-source adapters, the external-block
+path, repository-layer memory, Brain graph-neighbour visibility) depends
+only on #87 and is deliberately pulled forward into Wave 2 by user decision
+(not derived from file/module overlap like the other waves). Only its
+Mission-participation routing task — the part that lets a Mission's Brain
+invite a participating Project through the capability broker — additionally
+needs #90 (Wave 4) and #93's `HomeProject`/`MissionParticipation` structure
+(Wave 5); that one task ships after both land, independent of the rest of
+#163's Wave 2 placement.
 
 ## Open questions for the user
 
@@ -226,3 +241,14 @@ does not change the change's validity).
 3. **Spec splits** — accepted as proposed above (missions: #93/#94/#99; identity: #93/#90/#95). The tightened wave plan **supersedes** the dependency lists declared in the GitHub issues.
 4. **Worker pools (#100)** — single-slot **compatibility mode** through the WorkerPoolState → WorkerHostId+slots transition (existing tests keep passing until the cutover change removes them explicitly).
 5. **CLI** — Mission TUI and non-interactive commands (tasks 12.3/12.4) move to **rewrite-cli-for-shared-contracts (#105)**; #104 is dashboard-only.
+
+## Decisions (user, 2026-09-25)
+
+Full rationale recorded verbatim in
+[`add-multi-repo-projects/decisions.md`](../add-multi-repo-projects/decisions.md)
+(R1–R16, from the grilling transcript).
+
+1. **Multi-repo / cross-product model (issue #163)** — Repository becomes a standalone registered unit; Projects attach repositories many-to-many with a per-attachment role and access level, effective access `min(attachment, credential)` (R1/R4). Repository rules, credentials, and its one merge queue stay repo-owned; the project only initiates work, pays budget, and supplies memory/context (R3). A repo-to-repo link graph (package/pin, submodule, api-contract, deploy/GitOps, codegen-consumer, read-context, fork/upstream) replaces any notion of a project-to-project link (R6); auto-discovery seeds `suggested` links, only human-confirmed links drive planning (R10). Cross-repo changes execute as a DAG of one-target-repo-plus-read-only-neighbours tasks gated by artifact-source-adapter readiness (R8/R9); a repo where Comuki has no write access blocks external with a brain-authored request to the repo's own channel (R2/R5). Memory gains a repository layer alongside project/global, fed only by facts and incidents intrinsic to the repo, promoted from project memory only through redaction + provenance (R11/R12). Brain sees attached repos fully and graph-neighbour metadata always, neighbour code/memory only with read access (R16). This subsumes issue #50 (dependency-ordered merge batches) via the per-repo merge queue plus the cross-repo DAG — confirmed against code: `MergeBatch.PullRequestUrls` is a flat, unordered list today, and `MergeQueueEntry.ProjectId` is already nullable.
+2. **Epic amendment (missions/spec.md, this file's #93/#94/#99 rows)** — the "Mission belongs to exactly one Project" invariant becomes home Project + participating Projects (R7). `add-minimal-missions` (#93) introduces the `HomeProject`/`MissionParticipation` structure now, with an empty participant list behaving exactly as the prior single-Project Mission (no behavior change to any existing scenario); `add-multi-repo-projects` (#163) later fills in the full invitation/approval/budget participation mechanics via the capability broker. `feature/source-workspace-clone`'s scalar `Project.SourceGitUrl`/`SourceGitRef` lands as-is (#125) and is migrated into the primary `ProjectRepositoryAttachment` once both changes exist.
+3. **Wave slot** — `add-multi-repo-projects` (#163) lands in Wave 2, parallel with `#88`: its foundation depends only on `#87`'s execution spine. Only its Mission-participation routing task additionally waits on `#90` (capability broker, Wave 4) and `#93` (`HomeProject`/`MissionParticipation`, Wave 5) — see the wave-plan note above the diagram.
+4. **Non-goals tension (flag for `proposal.md`, not fixed here)** — the epic's `proposal.md` currently lists "Cross-project Missions or Tasks belonging to multiple Missions" as a Non-goal; R7/R15 supersede that for Mission *participation* (a Task still belongs to exactly one Mission — only the Mission's Project scope widens to home + participating). `proposal.md` is outside this amendment's edit set; its Non-goals bullet needs a follow-up edit by whoever next touches that file.

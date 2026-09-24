@@ -1,4 +1,5 @@
 // Ported from Hybrid.Sdk.Shared.Filtering.Unit (console.x.sdk) — fidelity over house style.
+using Comuki.Shared.Filtering.Parser;
 using Comuki.Shared.Filtering.Translator;
 using Comuki.Shared.Filtering.Unit.TestEntities;
 using Shouldly;
@@ -658,5 +659,82 @@ public sealed class FilterOperatorsShould
 
         result.Count.ShouldBe(1);
         result[0].Age.ShouldBe(20);
+    }
+
+    // ---------------------------------------------------------------------
+    // Smart-type operators — closed-set smart-types get the same enumerable set as enums.
+    // ---------------------------------------------------------------------
+
+    /// <summary>Eq on a smart-type field picks the single matching row.</summary>
+    [Fact(DisplayName = "When smart Type Eq Matches Wire Value, then test passes")]
+    public void SmartTypeEqMatchesWireValue()
+    {
+        var data = new List<SampleEntity>
+        {
+            new() { Name = "alice", SmartField = SampleSmartField.Wire1 },
+            new() { Name = "Bob", SmartField = SampleSmartField.Wire2 },
+            new() { Name = "Carol", SmartField = SampleSmartField.Wire3 }
+        }.AsQueryable();
+
+        var predicate = FilterExpression.ParseFor<SampleEntity>("SmartField==Wire1")!;
+        var result = data.Where(predicate).ToList();
+
+        result.Count.ShouldBe(1);
+        result[0].Name.ShouldBe("alice");
+    }
+
+    /// <summary>NotEq on a smart-type field excludes the matching row, returns the rest.</summary>
+    [Fact(DisplayName = "When smart Type Not Eq Excludes Wire Value, then test passes")]
+    public void SmartTypeNotEqExcludesWireValue()
+    {
+        var data = new List<SampleEntity>
+        {
+            new() { Name = "alice", SmartField = SampleSmartField.Wire1 },
+            new() { Name = "Bob", SmartField = SampleSmartField.Wire2 },
+            new() { Name = "Carol", SmartField = SampleSmartField.Wire3 }
+        }.AsQueryable();
+
+        var predicate = FilterExpression.ParseFor<SampleEntity>("SmartField!=Wire2")!;
+        var result = data.Where(predicate).ToList();
+
+        result.Count.ShouldBe(2);
+        result.ShouldNotContain(static e => e.Name == "Bob");
+    }
+
+    /// <summary>In on a smart-type field returns rows that match any listed value.</summary>
+    [Fact(DisplayName = "When smart Type In Matches Any Listed Value, then test passes")]
+    public void SmartTypeInMatchesAnyListedValue()
+    {
+        var data = new List<SampleEntity>
+        {
+            new() { Name = "alice", SmartField = SampleSmartField.Wire1 },
+            new() { Name = "Bob", SmartField = SampleSmartField.Wire2 },
+            new() { Name = "Carol", SmartField = SampleSmartField.Wire3 }
+        }.AsQueryable();
+
+        var predicate = FilterExpression.ParseFor<SampleEntity>("SmartField[]=Wire1,Wire3")!;
+        var result = data.Where(predicate).ToList();
+
+        result.Count.ShouldBe(2);
+        result.ShouldContain(static e => e.Name == "alice");
+        result.ShouldContain(static e => e.Name == "Carol");
+    }
+
+    /// <summary>
+    ///     A wire value the smart-type does not recognise (<c>SampleSmartField.FromWire</c>
+    ///     throws <see cref="ArgumentOutOfRangeException" />, which derives from
+    ///     <see cref="ArgumentException" />) is caught by the existing
+    ///     <see cref="FilterParseException" /> path — not a 500, not a silent skip.
+    /// </summary>
+    [Fact(DisplayName = "When smart Type Eq With Unknown Wire Value Throws Filter Parse Exception, then test passes")]
+    public void SmartTypeEqWithUnknownWireValueThrowsFilterParseException()
+    {
+        var data = new List<SampleEntity>
+        {
+            new() { Name = "alice", SmartField = SampleSmartField.Wire1 }
+        }.AsQueryable();
+
+        Should.Throw<FilterParseException>(
+            () => data.Where(FilterExpression.ParseFor<SampleEntity>("SmartField==NotARealValue")!).ToList());
     }
 }

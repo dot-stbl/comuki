@@ -26,6 +26,13 @@ public sealed class SampleEntity
     /// <summary>Enum field — Eq, NotEq, In.</summary>
     public SampleStatus Status { get; set; }
 
+    /// <summary>
+    ///     Smart-type field — Eq, NotEq, In. Mirrors the real domain smart-types
+    ///     (e.g. <c>Comuki.Engine.Orchestration.Domain.RunStatus</c>) — same
+    ///     <c>readonly record struct</c> + <c>static T FromWire(string)</c> shape.
+    /// </summary>
+    public SampleSmartField SmartField { get; set; }
+
     /// <summary>Int field — range + In.</summary>
     public int Age { get; set; }
 

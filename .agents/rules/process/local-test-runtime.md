@@ -257,3 +257,134 @@ TESTCONTAINERS_RYUK_DISABLED=true
   commands», «CI job layout» (ветка `feat/agentic-test-contour-spec`)
 - `tests/integration/Comuki.Host.Integration.Oidc/OidcKeycloakShould.cs` —
   история skip/re-enable по WSL2-DNS, упомянутая выше
+
+## Docker/Podman socket — T3 compose stack (`deploy/compose.e2e.yml`, WS13)
+
+Эта секция — про T3 (end-to-end compose stack), не про T1 (Testcontainers).
+T3-хост стартует **сам через Docker compute provider** worker-контейнеры,
+поэтому ему нужен bind-mounted сокет daemon-а внутрь контейнера.
+
+**Контекст — почему `DOCKER_HOST` env var не помогает.**
+
+`platform/src/engine/Comuki.Engine.Compute/Installers/ComputeInstaller.cs`
+конструирует Docker-клиент как `new DockerClientBuilder().Build()` (строка
+~86) — **без** `.WithEndpoint(...)`. `Docker.DotNet` не читает переменную
+`DOCKER_HOST` (подтверждено эмпирически; см. doc-комментарий на
+`tests/tools/Comuki.AgentTest.Runner/Compute/DockerComputeProviderFactory.cs`).
+Внутри Linux-контейнера клиент всегда падает обратно на OS-default endpoint,
+а это `unix:///var/run/docker.sock`. **Следствие: единственная переменная,
+которая что-то меняет, это путь к сокету при mount, не env внутри
+контейнера.** Issue #153 — это та самая дыра; обойти её на стороне
+`ComputeInstaller` не предполагается, поэтому `compose.e2e.yml` конфигурит
+сокет при mount, а не через env.
+
+`deploy/compose.e2e.yml` монтирует сокет так:
+
+```yaml
+volumes:
+  - ${COMUKI_E2E_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+group_add:
+  - "${COMUKI_E2E_DOCKER_SOCKET_GID:-0}"
+```
+
+Два override-переменных — `COMUKI_E2E_DOCKER_SOCKET` (путь на хосте) и
+`COMUKI_E2E_DOCKER_SOCKET_GID` (gid, дающий доступ на чтение). Дефолты
+подобраны под проверенный сетап; см. ниже.
+
+### Windows/WSL — Podman machine (проверено 2026-09-24)
+
+Сетап: Podman 5.8.2, `podman-machine-default` (WSL2 backend, rootless).
+Команда проверки и её фактический вывод в этой песочнице:
+
+```bash
+$ wsl -d podman-machine-default -- stat -c '%U:%G %a' /var/run/docker.sock
+root:root 777
+
+$ wsl -d podman-machine-default -- curl -s --unix-socket /var/run/docker.sock http://localhost/v1.44/version | head -1
+{"Platform":{"Name":"linux/amd64/fedora-44"},"Components":[{"Name":"Podman Engine","Version":"5.8.6",...},...],"ApiVersion":"1.44",...}
+
+# С non-root uid 1000 и group_add=0 — работает:
+$ wsl -d podman-machine-default -- podman run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro \
+    --user 1000:1000 --group-add 0 docker.io/curlimages/curl:8.10.1 \
+    -s --unix-socket /var/run/docker.sock http://localhost/v1.44/version | head -c 60
+{"Platform":{"Name":"linux/amd64/fedora-44"},"Components":[{"Name":"Podman Engi
+
+# Без --group-add 0 — silent failure (curl зависает / 0 байт):
+$ wsl -d podman-machine-default -- podman run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro \
+    --user 1000:1000 docker.io/curlimages/curl:8.10.1 \
+    -s --unix-socket /var/run/docker.sock http://localhost/v1.44/version
+(no output)
+```
+
+**Из проверенного:**
+
+- Сокет существует **внутри WSL-VM** как `root:root 777` — Podman machine
+  сама пробрасывает Docker-API forwarding на этот путь (никакой
+  ручной настройки не нужно).
+- API отвечает: `Podman Engine 5.8.6`, `ApiVersion: 1.44`,
+  `Libpod-Api-Version: 5.8.6` — Docker-API-совместим, как и для
+  Testcontainers (см. выше §"Почему Podman, а не Docker").
+- Container user `1000:1000` (тот же, что в `worker-test.Dockerfile`'s
+  `USER 1000:1000`) **без** `group_add` не достучится — пустой ответ, без
+  ошибки. С `group_add: ["0"]` — работает.
+
+**Отсюда дефолты в `compose.e2e.yml`:**
+
+- `COMUKI_E2E_DOCKER_SOCKET=/var/run/docker.sock` — путь, который Podman
+  machine всегда кладёт внутрь VM.
+- `COMUKI_E2E_DOCKER_SOCKET_GID=0` — group `root` (GID 0). Это **не** тот
+  `DOCKER_GID:-999` конвеншн, который `deploy/compose/.env.example`
+  использует для нативного Linux dockerd — `999` тут не сработает,
+  потому что на этой VM gid `docker` не существует.
+
+Если сетап отличается (например, нативный Linux rootless Podman — см.
+ниже) — переопредели оба через env var. Сам файл `compose.e2e.yml`
+трогать не нужно.
+
+### Native Linux rootless Podman — documented, not verified here
+
+Не проверено в этой Windows-песочнице. Из документации Podman:
+
+- **Native Linux, rootless Podman**: реальный сокет —
+  `$XDG_RUNTIME_DIR/podman/podman.sock` (типично
+  `/run/user/<uid>/podman/podman.sock`), владелец — сам пользователь. Не
+  присутствует на `/var/run/docker.sock` пока не включишь
+  `systemctl --user enable --now podman.socket`. Override для
+  `compose.e2e.yml`:
+
+  ```bash
+  COMUKI_E2E_DOCKER_SOCKET=/run/user/1000/podman/podman.sock \
+  COMUKI_E2E_DOCKER_SOCKET_GID=1000 \
+    node scripts/ci/e2e-up.mjs
+  ```
+
+- **Нативный Linux с `dockerd` (rootful)**: сокет `/var/run/docker.sock`,
+  группа `docker` (типично GID 999; проверь
+  `stat -c '%g' /var/run/docker.sock`). Ближе к `deploy/compose/.env.example`'s
+  `DOCKER_GID` конвеншну; override `COMUKI_E2E_DOCKER_SOCKET_GID=999`.
+
+### Почему оба override, а не один env var
+
+WSL2 Podman machine и нативный Linux rootless Podman отличаются в двух
+измерениях сразу (путь **и** gid). Один env var типа `DOCKER_GID` покрыл бы
+только второе; первый override закрывает первую развилку. Оба дефолта
+`${VAR:-...}` в compose-файле подобраны под проверенный сетап; переопредели
+**оба** на любой runtime, отличный от Windows/WSL Podman machine.
+
+### Troubleshooting
+
+| Симптом | Причина | Фикс |
+|---|---|---|
+| Хост стартует, но worker'ы не появляются; в логах `permission denied` или `dial unix /var/run/docker.sock: connect: permission denied` | Неверный GID в `group_add` | Проверь `stat -c '%g' /var/run/docker.sock` (или эквивалент) на хосте; override `COMUKI_E2E_DOCKER_SOCKET_GID` |
+| Всё висит, никаких ошибок; `podman logs comuki-e2e-host` показывает `DockerClient...` timeout'ы | Сокет смонтирован не туда (или вообще не смонтирован) | Проверь `podman exec comuki-e2e-host ls -l /var/run/docker.sock`; override `COMUKI_E2E_DOCKER_SOCKET` если путь на хосте отличается |
+| Worker-контейнеры появляются, но сразу падают с `permission denied` на запись в `/work` | `RunAsUser` конфликтует с image `USER` (worker-test.Dockerfile уже задаёт 1000:1000) | Убери `COMUKI_COMPUTE_DOCKER_RUNASUSER` или поставь в `"1000"` |
+
+## Связанные правила (T3-specific)
+
+- `deploy/compose.e2e.yml` — сам стек и его `group_add`/`volumes`
+- `scripts/ci/e2e-up.mjs`, `scripts/ci/e2e-down.mjs`, `scripts/ci/e2e-smoke.mjs`
+  — драйверы стека
+- `platform/src/engine/Comuki.Engine.Compute/Installers/ComputeInstaller.cs`
+  — где конструируется `DockerClientBuilder()` (issue #153)
+- `openspec/changes/add-agentic-test-contour/design.md` — «Tier table»,
+  T3 — этот стек

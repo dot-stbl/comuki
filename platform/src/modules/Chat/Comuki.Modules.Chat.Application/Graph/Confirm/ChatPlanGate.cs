@@ -27,6 +27,15 @@ public static class ChatPlanGate
             return new ChatPlanGateOutcome(plan, PlanJson.Serialize(plan), string.Empty);
         }
 
+        // The brain occasionally prefixes the JSON with prose (a trailing
+        // _thinking_ fragment or a one-line preamble) — extract the outermost
+        // JSON object and parse that before declaring the payload invalid.
+        var extracted = ExtractJsonObject(finalJson);
+        if (extracted is not null && PlanJson.TryParse(extracted, out plan, out _))
+        {
+            return new ChatPlanGateOutcome(plan, PlanJson.Serialize(plan), string.Empty);
+        }
+
         // A payload that is not JSON at all is the brain's own explanation
         // (the invalid-plan fallback the brain host streams instead of
         // faulting) — the turn shows it to the user verbatim rather than
@@ -34,6 +43,18 @@ public static class ChatPlanGate
         return BrainPlanExplanation.IsExplanation(finalJson)
             ? new ChatPlanGateOutcome(null, string.Empty, finalJson)
             : new ChatPlanGateOutcome(null, string.Empty, string.Empty);
+    }
+
+    /// <summary>The outermost <c>{ ... }</c> substring of the payload, or
+    /// <c>null</c> when the payload carries no JSON object at all.</summary>
+    /// <param name="payload">Raw brain final payload.</param>
+    internal static string? ExtractJsonObject(string payload)
+    {
+        var start = payload.IndexOf('{');
+        var end = payload.LastIndexOf('}');
+        return start >= 0 && end > start
+            ? payload[start..(end + 1)]
+            : null;
     }
 }
 

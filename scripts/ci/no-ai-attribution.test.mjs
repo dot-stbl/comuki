@@ -4,7 +4,7 @@
  * scripts/commit-lint.test.mjs, scripts/ci/dotnet-test.test.mjs,
  * scripts/ci/test-affected.test.mjs).
  *
- * What this gate is for — five scenarios the spec must cover, no more, no
+ * What this gate is for — six scenarios the spec must cover, no more, no
  * fewer:
  *
  *   1. patterns   — every token in AI_VENDORS and every domain in
@@ -16,6 +16,10 @@
  *                          stays human.
  *   5. description scan     — PR-description byline flagged, clean
  *                             multi-paragraph description silent.
+ *   6. Comuki allowlist     — Comuki's own bot identity and provenance
+ *                             trailers are exempt, and the exemption does
+ *                             NOT swallow a real vendor byline riding
+ *                             alongside Comuki trailers in the same body.
  *
  * Plus: parseCommitRecord round-trip and a parseArgs battery covering
  * defaults, --range value / =value forms, missing --range as a parse
@@ -36,6 +40,8 @@ import {
   checkVendorIdentity,
   evaluateCommit,
   evaluateText,
+  isComukiIdentity,
+  isComukiTrailerLine,
   parseArgs,
   parseCommitRecord,
 } from './no-ai-attribution.mjs';
@@ -245,6 +251,102 @@ describe('evaluateText — description scan', () => {
     );
     assert.equal(verdict.label, 'mr-description');
     assert.ok(verdict.reasons.every((reason) => reason.startsWith('mr-description:')));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. Comuki allowlist — Comuki's own bot identity and provenance trailers
+//    are exempt, but the exemption must NOT swallow a real vendor byline
+//    riding alongside Comuki trailers in the same commit
+// ---------------------------------------------------------------------------
+
+describe('Comuki allowlist', () => {
+  it('isComukiIdentity accepts Comuki-name strings and rejects humans / empty / undefined', () => {
+    assert.equal(isComukiIdentity('Comuki'), true);
+    assert.equal(isComukiIdentity('comuki[bot]'), true);
+    assert.equal(isComukiIdentity('Comuki Bot'), true);
+    assert.equal(isComukiIdentity('Jane Doe'), false);
+    assert.equal(isComukiIdentity('Claude Code'), false);
+    assert.equal(isComukiIdentity(undefined), false);
+    assert.equal(isComukiIdentity(''), false);
+    assert.equal(isComukiIdentity('   '), false);
+  });
+
+  it('isComukiTrailerLine accepts Comuki-namespaced trailers and Generated-by-whose-value-names-Comuki, rejects everything else', () => {
+    assert.equal(isComukiTrailerLine('Generated-by: Comuki v1.2.3'), true);
+    // The precision case — key alone is not enough; the value must name Comuki.
+    assert.equal(isComukiTrailerLine('Generated-by: Claude'), false);
+    assert.equal(isComukiTrailerLine('Comuki-Run: abc123'), true);
+    assert.equal(isComukiTrailerLine('Comuki-Mission: xyz789'), true);
+    assert.equal(isComukiTrailerLine('Requested-by: Jane Doe'), true);
+    assert.equal(
+      isComukiTrailerLine('Co-Authored-By: Claude <noreply@anthropic.com>'),
+      false,
+    );
+    assert.equal(isComukiTrailerLine('not a trailer at all'), false);
+  });
+
+  it('checkVendorIdentity short-circuits to [] for Comuki-name identities, even with vendor-shaped emails', () => {
+    assert.deepEqual(checkVendorIdentity('Comuki', 'bot@hybrid.ai'), []);
+    assert.deepEqual(
+      checkVendorIdentity(
+        'comuki[bot]',
+        '41898282+comuki[bot]@users.noreply.github.com',
+      ),
+      [],
+    );
+  });
+
+  it('evaluateCommit passes a synthetic Comuki-authored record whose body carries all four provenance trailers', () => {
+    const record = {
+      hash: '0123456789abcdef0123456789abcdef01234567',
+      authorName: 'comuki[bot]',
+      authorEmail: '41898282+comuki[bot]@users.noreply.github.com',
+      committerName: 'comuki[bot]',
+      committerEmail: '41898282+comuki[bot]@users.noreply.github.com',
+      body:
+        '[.stbl](feat/meta/ci): a change with Comuki provenance\n\n' +
+        'Ordinary change-log prose describing what the patch does.\n\n' +
+        'Generated-by: Comuki v1.0.0\n' +
+        'Comuki-Run: run-42\n' +
+        'Comuki-Mission: mission-7\n' +
+        'Requested-by: Jane Doe\n',
+    };
+    const verdict = evaluateCommit(record);
+    assert.deepEqual(verdict.reasons, []);
+  });
+
+  it('evaluateCommit does NOT swallow a real vendor byline riding alongside Comuki trailers — the Claude byline still fires', () => {
+    const record = {
+      hash: '0123456789abcdef0123456789abcdef01234567',
+      authorName: 'Jane Doe',
+      authorEmail: 'jane@hybrid.ai',
+      committerName: 'Jane Doe',
+      committerEmail: 'jane@hybrid.ai',
+      body:
+        '[.stbl](feat/x): do the thing\n\n' +
+        'Body prose.\n\n' +
+        'Comuki-Run: run-42\n' +
+        'Co-Authored-By: Claude <noreply@anthropic.com>\n',
+    };
+    const verdict = evaluateCommit(record);
+    assert.ok(
+      verdict.reasons.length > 0,
+      `expected reasons > 0 when a Claude byline rides with a Comuki trailer, got ${JSON.stringify(verdict.reasons)}`,
+    );
+    assert.ok(
+      verdict.reasons.some((reason) => reason.includes('Claude')),
+      `expected at least one reason mentioning Claude, got ${JSON.stringify(verdict.reasons)}`,
+    );
+    assert.ok(
+      !verdict.reasons.some((reason) => reason.includes('Comuki-Run')),
+      `expected no reason to mention the Comuki trailer (it should stay silent), got ${JSON.stringify(verdict.reasons)}`,
+    );
+  });
+
+  it('evaluateText passes a description whose only byline is a Comuki-namespaced Generated-by trailer', () => {
+    const verdict = evaluateText('Generated-by: Comuki v2.0.0\n', 'description');
+    assert.deepEqual(verdict.reasons, []);
   });
 });
 

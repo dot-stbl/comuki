@@ -21,6 +21,12 @@
  * the existing `stripAttribution`). Anything new added there is picked up
  * here automatically — no second list to drift.
  *
+ * Comuki's own product attribution is **explicitly allowlisted**, not merely
+ * absent from the vendor list — see `isComukiIdentity` for the bot-author
+ * case and `isComukiTrailerLine` for the provenance-trailer case. The
+ * exemption survives the vendor list growing later: the carve-out is a
+ * deliberate decision a reviewer can see, not a coincidental string miss.
+ *
  * The one check this script adds on top of the commit-msg hook is **commit
  * identity**: a co-author trailer the hook can strip is invisible to `git
  * log --format=%an:%ae`, but a `Co-Authored-By:` who is actually the commit's
@@ -200,6 +206,62 @@ export function parseArgs(argv) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Comuki's own product attribution is desired, never flagged — a commit
+ * made by a Comuki worker carries a bot author identity (e.g. a GitHub
+ * App "comuki[bot]") and trailers that record which Comuki run produced
+ * it and who asked for it, not a third-party model byline. The exemption
+ * below is explicit rather than relying on "comuki" happening not to
+ * overlap AI_VENDORS today — a reviewer can see the carve-out is a
+ * deliberate decision, and it survives the vendor list growing later.
+ *
+ * `generated-by:` is exempt only when its *value* names Comuki — the key
+ * alone is not Comuki-namespaced (a hypothetical `Generated-by: <some
+ * other vendor>` trailer must still be caught). `comuki-run:` /
+ * `comuki-mission:` are exempt unconditionally — the key itself is
+ * Comuki-namespaced. `requested-by:` records the human who asked for the
+ * run (Comuki's own trailer convention, not a vendor claim) — exempt
+ * unconditionally.
+ */
+export const COMUKI_NAMESPACED_TRAILER_KEYS = Object.freeze(['comuki-run', 'comuki-mission', 'requested-by']);
+
+const COMUKI_NAME_PATTERN = /\bcomuki\b/i;
+
+/**
+ * True when a commit author/committer *name* is Comuki's own bot identity
+ * (e.g. "Comuki", "Comuki Bot", the GitHub App form "comuki[bot]").
+ * @param {string | null | undefined} name
+ * @returns {boolean}
+ */
+export function isComukiIdentity(name) {
+  return COMUKI_NAME_PATTERN.test((name ?? '').trim());
+}
+
+/**
+ * True when a stripped message line is one of Comuki's own provenance
+ * trailers — never a third-party vendor byline. See the doc comment above
+ * {@link COMUKI_NAMESPACED_TRAILER_KEYS} for the `generated-by:` value-check
+ * nuance.
+ * @param {string} line
+ * @returns {boolean}
+ */
+export function isComukiTrailerLine(line) {
+  const trimmed = (line ?? '').trim();
+  const colon = trimmed.indexOf(':');
+  if (colon === -1) {
+    return false;
+  }
+  const key = trimmed.slice(0, colon).trim().toLowerCase();
+  const value = trimmed.slice(colon + 1).trim();
+  if (COMUKI_NAMESPACED_TRAILER_KEYS.includes(key)) {
+    return true;
+  }
+  if (key === 'generated-by') {
+    return COMUKI_NAME_PATTERN.test(value);
+  }
+  return false;
+}
+
+/**
  * Check one name + email pair against the shared vendor patterns. Push a
  * short, human-readable reason per hit so a `{ reasons }` string list reads
  * naturally in report.md's failures table.
@@ -216,6 +278,11 @@ export function checkVendorIdentity(name, email) {
   const reasons = [];
   const trimmedName = (name ?? '').trim();
   const trimmedEmail = (email ?? '').trim();
+  // Comuki's own bot identity short-circuits both name and email vendor
+  // checks — see isComukiIdentity's doc comment.
+  if (isComukiIdentity(trimmedName)) {
+    return reasons;
+  }
   if (trimmedName && VENDOR_NAME_PATTERN.test(trimmedName)) {
     reasons.push(`vendor token in name "${trimmedName}"`);
   }
@@ -285,7 +352,10 @@ export function parseCommitRecord(record) {
 export function evaluateCommit({ hash, authorName, authorEmail, committerName, committerEmail, body }) {
   const reasons = [];
   const { removed } = stripAttribution(body ?? '');
+  // Comuki's own provenance trailers are exempt from the message scan —
+  // see isComukiTrailerLine's doc comment for the carve-out scope.
   for (const line of removed) {
+    if (isComukiTrailerLine(line)) continue;
     reasons.push(`message: ${line}`);
   }
   for (const r of checkVendorIdentity(authorName, authorEmail)) {
@@ -311,7 +381,14 @@ export function evaluateCommit({ hash, authorName, authorEmail, committerName, c
  */
 export function evaluateText(text, label) {
   const { removed } = stripAttribution(text ?? '');
-  return { label, reasons: removed.map((line) => `${label}: ${line}`) };
+  // Comuki's own provenance trailers are exempt from the message scan —
+  // see isComukiTrailerLine's doc comment for the carve-out scope.
+  return {
+    label,
+    reasons: removed
+      .filter((line) => !isComukiTrailerLine(line))
+      .map((line) => `${label}: ${line}`),
+  };
 }
 
 // ---------------------------------------------------------------------------

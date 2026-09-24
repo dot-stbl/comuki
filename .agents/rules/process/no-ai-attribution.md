@@ -58,6 +58,20 @@ GitHub: `.github/workflows/ci.yml`, job на `pull_request` (`base.sha..head.sha
 
 Один источник правды на паттерны — `scripts/commit-lint.mjs` экспортирует `AI_VENDORS`, `AI_EMAIL_DOMAINS`, `alternation`, `stripAttribution`; `scripts/ci/no-ai-attribution.mjs` импортирует их, а не дублирует.
 
+## Атрибуция Comuki — не байлайн модели
+
+Comuki оркестрирует, а не генерирует контент как модель — коммит от воркера несёт провенанс запуска, а не заявление об авторстве.
+
+| Что | Пример |
+|-----|--------|
+| Бот-автор коммита | `Comuki <...>` или GitHub App `comuki[bot]` |
+| Трейлер версии | `Generated-by: Comuki vX.Y.Z` |
+| Трейлер запуска | `Comuki-Run: <id>` |
+| Трейлер миссии | `Comuki-Mission: <id>` |
+| Трейлер заказчика | `Requested-by: <human>` |
+
+`scripts/ci/no-ai-attribution.mjs` аллоулистит это явно (`isComukiIdentity`, `isComukiTrailerLine`, `COMUKI_NAMESPACED_TRAILER_KEYS`) — осознанное решение, а не совпадение с текущим списком вендоров, переживающее его расширение. `generated-by:` аллоулистится только когда значение называет Comuki — сам ключ не namespaced, поэтому `Generated-by: <другой вендор>` по-прежнему ловится.
+
 ## Отключить на источнике
 
 Лучше не вырезать, а не порождать. Claude Code умеет не добавлять байлайн сам:
@@ -116,3 +130,4 @@ git commit --no-verify
 - `scripts/hooks/commit-msg` — сам хук
 - `.claude/settings.json` — `includeCoAuthoredBy: false`
 - `scripts/ci/no-ai-attribution.mjs` — server-side layer, reuses this file's patterns via commit-lint.mjs's exports
+- `scripts/ci/no-ai-attribution.test.mjs` — покрывает Comuki allowlist отдельным describe-блоком

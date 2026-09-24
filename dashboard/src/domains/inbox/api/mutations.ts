@@ -45,14 +45,6 @@ function wait(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, LATENCY))
 }
 
-function requireMock(act: string): void {
-  if (!env.useMock) {
-    throw new Error(
-      `${act} not implemented — set VITE_USE_MOCK=true, or wire the kubb-generated client.`
-    )
-  }
-}
-
 /**
  * Claim a pending ticket into a run.
  *
@@ -68,7 +60,6 @@ export function useClaimTicketMutation() {
   return useMutation<Ticket, Error, ClaimTicketInput>({
     mutationFn: async (input) => {
       if (env.useMock) {
-        requireMock("claim ticket")
         await wait()
         const seed = createSeedNativeTicket({
           projectId: "",
@@ -117,7 +108,6 @@ export function useCreateNativeTicketMutation() {
   return useMutation<Ticket, Error, CreateNativeTicketInput>({
     mutationFn: async (input) => {
       if (env.useMock) {
-        requireMock("create native ticket")
         await wait()
         const seed = createSeedNativeTicket({
           projectId: input.projectId,
@@ -169,7 +159,6 @@ export function usePostWebhookMutation() {
   return useMutation<WebhookAcceptedResponse, Error, WebhookInput>({
     mutationFn: async ({ provider, key, payload }) => {
       if (env.useMock) {
-        requireMock("post webhook")
         await wait()
         return { outcome: "admitted", detail: null }
       }

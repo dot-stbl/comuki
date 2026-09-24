@@ -6,8 +6,10 @@
  *   - consistent-type-imports (use `import type` for type-only imports)
  *   - no-unused-vars (allow `_` prefix for intentional discards)
  *
- * Scoped to cli/ source; the throwaway spike under spikes/opentui keeps
- * its own config and dies with the spike.
+ * Scoped to cli/ source. The throwaway OpenTUI spike (spikes/opentui)
+ * that this config used to exclude was deleted once ADR-0002 was
+ * accepted and the production OpenTUI host landed in src/ (see
+ * ADR-0002 §9/§10) — nothing here references it anymore.
  */
 import tseslint from "typescript-eslint"
 
@@ -16,7 +18,6 @@ export default tseslint.config(
     ignores: [
       "node_modules/**",
       "bin/**",
-      "spikes/**",
       "scripts/build.ts",
       // Generated contract artifacts (kubb http/ + Comuki.Codegen.Realtime
       // realtime.ts) — machine-written, read-only; typecheck still covers

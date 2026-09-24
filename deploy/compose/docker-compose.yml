@@ -130,6 +130,12 @@ services:
       COMUKI_HOST_TLS_REDIRECTHTTP: ${COMUKI_TLS_REDIRECT_HTTP:-true}
       COMUKI_HOST_TLS_CERTIFICATEPATH: ${COMUKI_TLS_CERT_PATH:-}
       COMUKI_HOST_TLS_CERTIFICATEKEYPATH: ${COMUKI_TLS_KEY_PATH:-}
+      # Optional distributed cache (profile `redis`). Defaults keep the host
+      # bootable without the redis container; flip COMUKI_REDIS_ENABLED=true
+      # AND start the profile to activate Comuki.Shared.Redis.
+      COMUKI_REDIS_ENABLED: ${COMUKI_REDIS_ENABLED:-false}
+      COMUKI_REDIS_CONNECTIONSTRING: ${COMUKI_REDIS_CONNECTIONSTRING:-redis:6379}
+      COMUKI_REDIS_INSTANCENAME: ${COMUKI_REDIS_INSTANCENAME:-comuki:}
     ports:
       - "${COMUKI_HOST_PORT:-17172}:8080"
       # HTTPS listener (container :8081). Published unconditionally —
@@ -205,6 +211,28 @@ services:
         condition: service_healthy
       comuki-migrator:
         condition: service_completed_successfully
+    networks:
+      - comuki-net
+
+  redis:
+    # OPTIONAL (profile `redis`): distributed cache backend for
+    # Comuki.Shared.Redis (issue #11 — multi-replica Host cache). Opt in
+    # with `podman compose --profile redis up -d`. Disabled by default so
+    # single-replica dev keeps using the in-process memory-cache fallback
+    # (Projects settings snapshot cache). RDB + AOF are turned off — this
+    # is a pure cache, not a durable store. Host port :17028 (port pool).
+    profiles: ["redis"]
+    image: redis:7-alpine
+    container_name: comuki-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "17028:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
     networks:
       - comuki-net
 

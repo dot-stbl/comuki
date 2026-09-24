@@ -27,6 +27,7 @@ always: true
 | 17025 | Nexus                           | reserved |
 | 17026 | Keycloak (compose profile `keycloak`) | `deploy/docker-compose.yml` → keycloak service |
 | 17027 | Grafana (compose profile `grafana`) | `deploy/docker-compose.yml` → grafana service |
+| 17028 | Redis (compose profile `redis`) | `deploy/docker-compose.yml` / `deploy/compose/docker-compose.yml` → redis service |
 | 17172 | host HTTP (compose host-mapping) | `deploy/compose/docker-compose.yml` → host service published port |
 | 17171 | host HTTPS (compose host-mapping, optional TLS) | `deploy/compose/docker-compose.yml` → `COMUKI_TLS_HOST_PORT` |
 

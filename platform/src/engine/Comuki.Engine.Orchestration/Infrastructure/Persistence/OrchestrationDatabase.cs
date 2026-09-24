@@ -28,4 +28,7 @@ public static class OrchestrationDatabase
 
     /// <summary>Merge-queue entries (issue #11).</summary>
     public const string MergeQueue = "merge_queue";
+
+    /// <summary>Merge-batch aggregate (issue #11) — coordinated group of merge-queue entries that share a release window.</summary>
+    public const string MergeBatches = "merge_batches";
 }

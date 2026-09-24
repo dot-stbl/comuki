@@ -28,6 +28,7 @@
     "storybook": "storybook dev -p 17010 --no-open",
     "build-storybook": "storybook build",
     "test:storybook": "bun run scripts/storybook-test.ts",
+    "ui:probe": "bun run scripts/ui-probe.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

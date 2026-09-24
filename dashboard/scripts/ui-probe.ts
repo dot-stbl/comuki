@@ -50,6 +50,7 @@ import {
   type RenderResult,
 } from "./lib/ui-probe-report"
 import { startStaticServer, StaticServerBindError, type StaticServerHandle } from "./lib/static-server"
+import { installStoryReadySignal, waitForStoryReady } from "./lib/storybook-ready-signal"
 
 const ROOT = process.cwd()
 const STORYBOOK_STATIC_DIR = resolve(ROOT, "storybook-static")
@@ -155,14 +156,6 @@ function ensureDir(path: string): void {
   mkdirSync(path, { recursive: true })
 }
 
-/** What `__STORYBOOK_ADDONS_CHANNEL__` looks like from the page side — just
- *  enough of its shape for `.on()`, never imported at runtime (this type
- *  only exists inside a function Playwright serializes and evaluates in the
- *  browser; TS type annotations are erased before that happens). */
-interface StorybookChannel {
-  on(event: string, listener: (...args: never[]) => void): void
-}
-
 interface ConsoleEntry {
   readonly type: string
   readonly text: string
@@ -172,83 +165,6 @@ interface ConsoleEntry {
 interface PageErrorEntry {
   readonly message: string
   readonly stack: string | null
-}
-
-/**
- * Installed via `addInitScript` so it runs before Storybook's own preview
- * bundle on every navigation, and records channel events into a global the
- * Node side polls for with `waitForFunction`. `storyFinished` is Storybook's
- * own terminal event for a render — emitted after loading, rendering *and*
- * any play function complete, on both the success and the error path (see
- * `@storybook/core`'s `PreparedStory.render`, which wraps the whole render
- * body in try/catch and always emits it in `finally`-equivalent fashion) —
- * so waiting on it is not tied to `#storybook-root` gaining children at all.
- * That is what makes this work for a story whose content portals into
- * `document.body` (BottomSheet, Dialog, ConfirmDialog, FormDialog and
- * anything built on react-aria-components' Modal) — see
- * scripts/UI-PROBE.md "The portal case", and
- * storybook-tests/README.md's account of `@storybook/test-runner`'s own
- * `#storybook-root`-based readiness check hanging on exactly these stories.
- */
-function installStorybookReadySignal(page: Page): Promise<void> {
-  return page.addInitScript(() => {
-    const state = { finished: false, error: null as string | null }
-    ;(window as unknown as { __uiProbe: typeof state }).__uiProbe = state
-
-    const install = (): void => {
-      const channel = (window as unknown as { __STORYBOOK_ADDONS_CHANNEL__?: StorybookChannel })
-        .__STORYBOOK_ADDONS_CHANNEL__
-      if (!channel) {
-        setTimeout(install, 10)
-        return
-      }
-      channel.on("storyFinished", (data: { status?: string }) => {
-        state.finished = true
-        if (data?.status === "error" && state.error === null) {
-          state.error = "story finished with an error (see console.json / interactions panel)"
-        }
-      })
-      channel.on("storyMissing", (id: unknown) => {
-        state.finished = true
-        state.error = `story not found: ${String(id)}`
-      })
-      // These fire before `storyFinished` on the error path and carry the
-      // actual message — `storyFinished` only carries a status flag.
-      channel.on("storyErrored", (payload: { description?: string }) => {
-        state.error = payload?.description ?? "storyErrored"
-      })
-      channel.on("storyThrewException", (error: { message?: string }) => {
-        state.error = error?.message ?? "storyThrewException"
-      })
-      channel.on("playFunctionThrewException", (error: { message?: string }) => {
-        state.error = error?.message ?? "playFunctionThrewException"
-      })
-      channel.on("unhandledErrorsWhilePlaying", (errors: { message?: string }[]) => {
-        state.error = errors?.[0]?.message ?? "unhandledErrorsWhilePlaying"
-      })
-    }
-    install()
-  })
-}
-
-interface ProbeState {
-  finished: boolean
-  error: string | null
-}
-
-async function waitForStoryReady(page: Page): Promise<{ error: string | null }> {
-  try {
-    await page.waitForFunction(
-      () => (window as unknown as { __uiProbe?: ProbeState }).__uiProbe?.finished === true,
-      undefined,
-      { timeout: RENDER_READY_TIMEOUT_MS }
-    )
-  } catch {
-    return { error: `timed out waiting for storyFinished after ${RENDER_READY_TIMEOUT_MS}ms` }
-  }
-
-  const state = await page.evaluate(() => (window as unknown as { __uiProbe: ProbeState }).__uiProbe)
-  return { error: state.error }
 }
 
 async function setStorybookTheme(page: Page, theme: Theme): Promise<void> {
@@ -323,10 +239,10 @@ async function captureRender(
 
   try {
     if (options.mode === "story") {
-      await installStorybookReadySignal(page)
+      await installStoryReadySignal(page)
       const url = `${serverUrl}/iframe.html?id=${encodeURIComponent(options.target)}&viewMode=story`
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: RENDER_READY_TIMEOUT_MS })
-      const ready = await waitForStoryReady(page)
+      const ready = await waitForStoryReady(page, RENDER_READY_TIMEOUT_MS)
       renderError = ready.error
       if (renderError === null) {
         await setStorybookTheme(page, theme)

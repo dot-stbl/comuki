@@ -26,27 +26,28 @@ import { ChatConsole } from "./chat-console"
  * need `VITE_USE_MOCK=true`, which `.env.example` documents and this
  * worktree's `.env.local` provides.
  *
- * ## Known limitation — excluded from `test:storybook`'s "ws16-batch1"
+ * ## Portal content — tagged "ws16-portal", included in "ws16-batch1"
  *
  * `BottomSheet` renders through react-aria-components' `ModalOverlay`/
  * `Modal`, which portals its children into `document.body` rather than
- * Storybook's own `#storybook-root`. The play functions below are correct
- * (verified manually: a direct Playwright visit renders the composer/seed
- * chip and both play functions pass), but `@storybook/test-runner@0.23.0`'s
- * own "has this story rendered" readiness check hangs indefinitely for a
- * story whose root element never gains children — even the plain
- * `FillingTheWindow` story, which has no play function at all, times out at
- * Jest's default 15s. This is a `#storybook-root`-emptiness problem in the
- * test-runner harness, not a bug in these stories or in `BottomSheet`.
+ * Storybook's own `#storybook-root`. That used to keep these stories out of
+ * `test:storybook`'s "ws16-batch1" entirely: `@storybook/test-runner@0.23.0`'s
+ * own per-story transition (`channel.emit("setCurrentStory", ...)` on an
+ * already-loaded preview) never signalled ready for them — even the plain
+ * `FillingTheWindow` story, which has no play function at all, timed out at
+ * Jest's default 15s.
  *
- * Every kit primitive built on `Modal`/`Dialog` (`ConfirmDialog`,
- * `FormDialog`, `Dialog` itself, `BottomSheet`) will hit the same wall.
- * Tracked as a WS16.4 follow-up — options to investigate: a newer
- * test-runner major (blocked on the SB10 migration this repo has
- * deliberately deferred, see `.storybook/main.ts`'s TODO(phase-7)), or a
- * custom `prepare`/readiness override in `.storybook/test-runner.ts` that
- * watches the Storybook channel's `STORY_RENDERED` event instead of DOM
- * mutations on `#storybook-root`.
+ * WS16.4 (`.storybook/test-runner.ts`'s `PORTAL_TAG`/`preVisit`) works around
+ * it: a story tagged `"ws16-portal"` gets pre-rendered via a direct
+ * navigation to its own `iframe.html?id=...` URL instead — the same
+ * technique WS17's `ui:probe` already used successfully against this exact
+ * component (`bun run ui:probe -- --story domains-chat-chatdock--panel-depth`).
+ * `postVisit`'s a11y/visual capture also scopes to `document.body` instead
+ * of `#storybook-root` for a tagged story, so it actually sees the portaled
+ * composer/seed chip. See `storybook-tests/README.md` "Portal-based
+ * stories" for the full account; every other kit primitive built on
+ * `Modal`/`Dialog` (`ConfirmDialog`, `FormDialog`, `Dialog` itself) can use
+ * the same tag once it needs this harness.
  */
 
 /** This repo's components key on `data-test`, not testing-library's default
@@ -150,9 +151,11 @@ const meta = {
   title: "Domains/Chat/ChatDock",
   component: SheetStory,
   parameters: { layout: "fullscreen" },
-  // NOT tagged "ws16-batch1" (yet) — see the docblock below and
-  // storybook-tests/README.md's "Known limitation" section.
-  tags: [],
+  // "ws16-batch1": test:storybook's first interaction/visual/a11y batch —
+  // see storybook-tests/README.md. "ws16-portal": this story's content
+  // portals into `document.body` (BottomSheet/Modal) — see the docblock
+  // above and .storybook/test-runner.ts's `PORTAL_TAG`.
+  tags: ["ws16-batch1", "ws16-portal"],
 } satisfies Meta<typeof SheetStory>
 
 export default meta

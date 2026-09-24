@@ -47,7 +47,6 @@ namespace Comuki.EndToEnd.AgentLoop.RealPi;
 public sealed class LiveModeScenarioShould(RealPiInstallation realPi, RealPiFakeModelHost host)
 {
     private const string LiveModelBaseUrlEnvVar = "COMUKI_LIVE_MODEL_BASE_URL";
-    private const string LiveModelTokenEnvVar = "COMUKI_LIVE_MODEL_TOKEN";
     private const string LiveBudgetEnvVar = "COMUKI_LIVE_BUDGET_MAX_USD";
     private const string LiveCassettePathEnvVar = "COMUKI_LIVE_CASSETTE_PATH";
 
@@ -65,7 +64,6 @@ public sealed class LiveModeScenarioShould(RealPiInstallation realPi, RealPiFake
     public async Task LiveRunReachesTerminalSucceededAgainstPointedUpstreamAsync()
     {
         var baseUrlRaw = Environment.GetEnvironmentVariable(LiveModelBaseUrlEnvVar);
-        _ = Environment.GetEnvironmentVariable(LiveModelTokenEnvVar);
         var budgetRaw = Environment.GetEnvironmentVariable(LiveBudgetEnvVar);
         var cassettePathRaw = Environment.GetEnvironmentVariable(LiveCassettePathEnvVar);
         var reportPathRaw = Environment.GetEnvironmentVariable(LiveReportPathEnvVar);
@@ -82,9 +80,8 @@ public sealed class LiveModeScenarioShould(RealPiInstallation realPi, RealPiFake
             ? Path.GetFullPath(cassettePathRaw)
             : Path.Combine(Path.GetTempPath(), $"comuki-live-{scenario.Name}-{Guid.NewGuid():N}.json");
 
-        var globalBudgetRaw = budgetRaw;
         var scenarioBudgetMaxUsd = scenario.Budget?.MaxUsd;
-        var cap = LiveModePiFakeModelHarness.BuildCap(scenarioBudgetMaxUsd, globalBudgetRaw);
+        var cap = LiveModePiFakeModelHarness.BuildCap(scenarioBudgetMaxUsd, budgetRaw);
 
         var harness = new LiveModePiFakeModelHarness(realPi, host, cap, cassettePath);
         await using (harness)

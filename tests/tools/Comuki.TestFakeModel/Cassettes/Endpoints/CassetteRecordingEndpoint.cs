@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Comuki.TestFakeModel.Anthropic.Errors;
-using Comuki.TestFakeModel.Cassettes.Hosting;
 using Comuki.TestFakeModel.Cassettes.Matching;
 using Comuki.TestFakeModel.Cassettes.Recording;
 
@@ -52,7 +51,13 @@ public static class CassetteRecordingEndpoint
         // redaction happy if a downstream re-record ever scrapes this refusal.
         if (state.Tracker is { IsOverBudget: true } tracker)
         {
-            await WriteBudgetExceededAsync(context, path, tracker, cancellationToken);
+            var cap = tracker.Cap.UsdMicros ?? 0L;
+            var observed = tracker.UsdMicros;
+            var detail = $"recording refused: spent {observed} micro-USD exceeds the {cap} micro-USD cap.";
+            var body = AnthropicErrors.ScriptFailure(detail);
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(body, JsonSerializerOptions.Web), cancellationToken);
             return;
         }
 
@@ -64,16 +69,5 @@ public static class CassetteRecordingEndpoint
         // (design.md: refuse to write, not "probably fine"), not swallow the
         // refusal and leave a caller believing the cassette is complete.
         await state.RecordAsync(context, context.Request.Method, path, rawBody, CassetteRequestParser.Parse(path, document.RootElement), cancellationToken);
-    }
-
-    private static async Task WriteBudgetExceededAsync(HttpContext context, string path, BudgetTracker tracker, CancellationToken cancellationToken)
-    {
-        var cap = tracker.Cap.UsdMicros ?? 0L;
-        var observed = tracker.UsdMicros;
-        var detail = $"recording refused: spent {observed} micro-USD exceeds the {cap} micro-USD cap.";
-        var body = AnthropicErrors.ScriptFailure(detail);
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsync(JsonSerializer.Serialize(body, JsonSerializerOptions.Web), cancellationToken);
     }
 }

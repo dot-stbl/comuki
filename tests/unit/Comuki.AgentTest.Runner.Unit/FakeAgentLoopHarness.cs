@@ -23,7 +23,6 @@ namespace Comuki.AgentTest.Runner.Unit;
 internal sealed class FakeAgentLoopHarness(string workItemStatus = "Succeeded", params RunEventEntry[] entries) : IAgentLoopHarness
 {
     private readonly List<RunEventEntry> timeline = [.. entries];
-    private readonly string workItemStatus = workItemStatus;
 
     /// <summary>The cost <see cref="ReadCostAsync"/> will report for the seeded work item.</summary>
     public RunCost CostToReturn { get; set; } = new();

@@ -30,15 +30,22 @@ describe("encodeTarGz", () => {
       { name: "diagnostics.log", data: Buffer.from("hello\n", "utf8") },
     ]
     const tar = encodeTarGz(entries)
-    await Bun.write("/tmp/test-tar.tar.gz", tar)
-    const proc = Bun.spawn({
-      cmd: ["tar", "-tzf", "/tmp/test-tar.tar.gz"],
-      stdout: "pipe",
-    })
-    const out = await new Response(proc.stdout).text()
-    await proc.exited
-    expect(out).toContain("manifest.json")
-    expect(out).toContain("diagnostics.log")
+    const tarPath = join(tmpdir(), `comuki-export-bundle-${Date.now()}-${Math.floor(Math.random() * 1e6)}.tar.gz`)
+    await Bun.write(tarPath, tar)
+    try {
+      const proc = Bun.spawn({
+        // `--force-local` keeps GNU tar from treating a Windows drive
+        // letter (`C:\...`) as a `host:path` remote-shell target.
+        cmd: ["tar", "--force-local", "-tzf", tarPath],
+        stdout: "pipe",
+      })
+      const out = await new Response(proc.stdout).text()
+      await proc.exited
+      expect(out).toContain("manifest.json")
+      expect(out).toContain("diagnostics.log")
+    } finally {
+      await rm(tarPath, { force: true })
+    }
   })
 
   test("round-trips file bodies through `tar -xzOf`", async () => {
@@ -47,14 +54,19 @@ describe("encodeTarGz", () => {
       { name: "data.txt", data: Buffer.from("payload", "utf8") },
     ]
     const tar = encodeTarGz(entries)
-    await Bun.write("/tmp/test-tar.tar.gz", tar)
-    const proc = Bun.spawn({
-      cmd: ["tar", "-xzOf", "/tmp/test-tar.tar.gz", "data.txt"],
-      stdout: "pipe",
-    })
-    const out = await new Response(proc.stdout).text()
-    await proc.exited
-    expect(out.trim()).toBe("payload")
+    const tarPath = join(tmpdir(), `comuki-export-bundle-${Date.now()}-${Math.floor(Math.random() * 1e6)}.tar.gz`)
+    await Bun.write(tarPath, tar)
+    try {
+      const proc = Bun.spawn({
+        cmd: ["tar", "--force-local", "-xzOf", tarPath, "data.txt"],
+        stdout: "pipe",
+      })
+      const out = await new Response(proc.stdout).text()
+      await proc.exited
+      expect(out.trim()).toBe("payload")
+    } finally {
+      await rm(tarPath, { force: true })
+    }
   })
 })
 
@@ -128,8 +140,10 @@ describe("exportBundle — script behaviour", () => {
     expect(report.entries).toBeGreaterThanOrEqual(4)
 
     // Use tar -tzf to list — fails fast if the encoding is broken.
+    // `--force-local` keeps GNU tar from treating a Windows drive letter
+    // (`C:\...`) as a `host:path` remote-shell target.
     const proc = Bun.spawn({
-      cmd: ["tar", "-tzf", destination],
+      cmd: ["tar", "--force-local", "-tzf", destination],
       stdout: "pipe",
     })
     const list = await new Response(proc.stdout).text()
@@ -176,8 +190,13 @@ describe("exportBundle — script behaviour", () => {
 
     const extractDir = join(tempDir, "extracted")
     await mkdir(extractDir, { recursive: true })
+    // Extract via `cwd` rather than `-C <dir>` — on Windows, passing an
+    // absolute `C:\...` path as tar's `-C` argument gets mangled by the
+    // MSYS/Git-Bash tar build even with `--force-local` (which only
+    // covers the archive path itself).
     const proc = Bun.spawn({
-      cmd: ["tar", "-xzf", destination, "-C", extractDir],
+      cmd: ["tar", "--force-local", "-xzf", destination],
+      cwd: extractDir,
       stdout: "pipe",
     })
     await new Response(proc.stdout).text()

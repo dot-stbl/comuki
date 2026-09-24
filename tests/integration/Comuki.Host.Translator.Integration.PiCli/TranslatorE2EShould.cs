@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
+using Comuki.Engine.Compute.Pool;
+using Comuki.Engine.Compute.Ports;
 using Comuki.Engine.Compute.Security;
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Domain;
@@ -7,6 +9,7 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Host.Translator.Api.Registration;
 using Comuki.Host.Translator.Execution.Loop;
 using Comuki.Host.Translator.Grpc;
@@ -22,27 +25,27 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Translator.Integration.PiCli;
 
 /// <summary>
 /// The crown test (T3.5): one work item through the whole runtime — the
-/// real EF queue on Testcontainers Postgres, the real worker REST + gRPC
-/// host in-process, and the real translator loop spawning
-/// <c>TestFakePi</c>. Proves: claim → gRPC stream → fake pi streams →
-/// journal gets stage events → StageReport lands → item completes → lease
-/// released. The failure twin proves a non-zero pi exit fails the item and
-/// still releases the lease.
+/// real EF queue on the collection's shared, migrated Postgres
+/// (<see cref="PostgresCollectionFixture"/>, reset to empty before every
+/// test), the real worker REST + gRPC host in-process, and the real
+/// translator loop spawning <c>TestFakePi</c>. Proves: claim → gRPC stream
+/// → fake pi streams → journal gets stage events → StageReport lands →
+/// item completes → lease released. The failure twin proves a non-zero pi
+/// exit fails the item and still releases the lease.
 /// </summary>
-public sealed class TranslatorE2EShould : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres (<see cref="PiCliIntegrationCollection"/>) — reset to empty for every test, migrated once for the whole run.</param>
+[Collection(nameof(PiCliIntegrationCollection))]
+public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
     private const string Image = "ghcr.io/comuki/worker:s3";
     private const string ProfilesRef = "refs/heads/main";
     private const string ProfileKey = "implement";
-
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine").Build();
 
     private TestWorkerHost host = null!;
 
@@ -55,8 +58,13 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
-        await container.StartAsync(TestContext.Current.CancellationToken);
-        await MigrateAsync(container.GetConnectionString());
+        // The orchestration schema is already migrated once by
+        // PostgresCollectionFixture (HostDatabaseMigrator.MigrateAllAsync
+        // covers it) — this class used to spin its own container and
+        // hand-migrate via MigrateAsync below, both now superseded. Reset
+        // gives every test the same empty-tables starting point the old
+        // per-test container gave it.
+        await postgres.ResetDatabaseAsync();
 
         configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -88,7 +96,7 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
         {
             services.AddSingleton(TimeProvider.System);
             services
-                .AddOrchestrationPersistence(container.GetConnectionString())
+                .AddOrchestrationPersistence(postgres.ConnectionString)
                 .AddOrchestrationQueue(configuration)
                 .AddOrchestrationApplication()
                 .AddWorkerRuntime(configuration);
@@ -101,15 +109,14 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
             // The lease reaper registers as an IComukiWorker — this
             // registry is what runs it in this fixture.
             services.AddComukiWorkers();
-            // Fixture-local stand-in for IWorkerPoolState — a very recent,
-            // unrelated master commit (1baaa72d) wired claim/heartbeat/
-            // complete/fail through it. This fixture composes the worker
-            // runtime by hand instead of the full
-            // Comuki.Engine.Compute.Installers.ComputeInstaller (which
-            // needs a real Docker/Kubernetes client), so it needs its own
-            // no-op, same as it already does for other engine-only
-            // concerns above.
-            services.AddSingleton<Engine.Compute.Ports.IWorkerPoolState>(new FakeWorkerPoolState());
+            // WorkerEndpoints.ClaimAsync/HeartbeatAsync/CompleteAsync/
+            // FailAsync bind IWorkerPoolState for busy/idle bookkeeping
+            // (AddComukiCompute registers the real thing on the full host,
+            // backed by a Docker/Kubernetes IComputeProvider). This fixture
+            // never exercises the scale supervisor, so a no-op stub is
+            // enough to satisfy DI without pulling in a container runtime
+            // client.
+            services.AddSingleton<IWorkerPoolState, NoopWorkerPoolState>();
         });
 
         workerToken = host.GetService<WorkerTokenIssuer>().Issue(WorkerId.New());
@@ -121,7 +128,6 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
     {
         await translatorProvider.DisposeAsync();
         await host.DisposeAsync();
-        await container.DisposeAsync();
     }
 
     [Fact]
@@ -171,7 +177,7 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
         {
             services.AddSingleton(TimeProvider.System);
             services
-                .AddOrchestrationPersistence(container.GetConnectionString())
+                .AddOrchestrationPersistence(postgres.ConnectionString)
                 .AddOrchestrationQueue(configuration)
                 .AddOrchestrationApplication()
                 .AddWorkerRuntime(configuration);
@@ -180,7 +186,7 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
                     [new Shared.Kernel.Secrets.EnvSecretProvider()]));
             services.AddProxyApplication(configuration);
             services.AddComukiWorkers();
-            services.AddSingleton<Engine.Compute.Ports.IWorkerPoolState>(new FakeWorkerPoolState());
+            services.AddSingleton<IWorkerPoolState, NoopWorkerPoolState>();
         });
         var sharedToken = sharedListenerHost.GetService<WorkerTokenIssuer>().Issue(WorkerId.New());
 
@@ -335,18 +341,6 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
         return services.BuildServiceProvider();
     }
 
-    private static async Task MigrateAsync(string connectionString)
-    {
-        // A standalone provider (not the test host): hosted services never
-        // run in a bare BuildServiceProvider, so the reaper cannot race the
-        // migrations it depends on.
-        var services = new ServiceCollection();
-        services.AddOrchestrationPersistence(connectionString);
-        await using var provider = services.BuildServiceProvider();
-        var db = provider.GetRequiredService<OrchestrationDbContext>();
-        await db.Database.MigrateAsync(TestContext.Current.CancellationToken);
-    }
-
     private async Task<(Guid RunId, Guid WorkItemId)> SeedQueuedItemAsync(string brief)
     {
         // The fixture is a system consumer: it seeds and verifies rows the
@@ -394,16 +388,30 @@ public sealed class TranslatorE2EShould : IAsyncLifetime
         return Path.Combine(directory, executableName);
     }
 
-    /// <summary>No-op IWorkerPoolState — see the InitializeAsync comment.</summary>
-    private sealed class FakeWorkerPoolState : Engine.Compute.Ports.IWorkerPoolState
+    /// <summary>
+    /// Stands in for the scale supervisor's <see cref="WorkerPoolState"/>:
+    /// this fixture asserts the claim/heartbeat/complete/fail REST flow, not
+    /// pool bookkeeping, so every call is a no-op rather than wiring a real
+    /// <c>IComputeProvider</c> (Docker/Kubernetes) into an E2E test that
+    /// never starts or lists containers.
+    /// </summary>
+    private sealed class NoopWorkerPoolState : IWorkerPoolState
     {
-        public IReadOnlyList<Engine.Compute.Pool.PoolWorker> List(ProjectId projectId)
+        public IReadOnlyList<PoolWorker> List(ProjectId projectId)
         {
             return [];
         }
 
-        public void MarkBusy(WorkerId workerId) { }
-        public void MarkIdle(WorkerId workerId) { }
-        public void Touch(WorkerId workerId) { }
+        public void MarkBusy(WorkerId workerId)
+        {
+        }
+
+        public void MarkIdle(WorkerId workerId)
+        {
+        }
+
+        public void Touch(WorkerId workerId)
+        {
+        }
     }
 }

@@ -65,17 +65,21 @@
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Infrastructure\Comuki.Modules.Projects.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Scheduler\Comuki.Modules.Scheduler.Application\Comuki.Modules.Scheduler.Application.csproj" />
     <ProjectReference Include="..\..\modules\Scheduler\Comuki.Modules.Scheduler.Infrastructure\Comuki.Modules.Scheduler.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Verify\Comuki.Modules.Verify.Application\Comuki.Modules.Verify.Application.csproj" />
+    <ProjectReference Include="..\..\modules\Verify\Comuki.Modules.Verify.Infrastructure\Comuki.Modules.Verify.Infrastructure.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Bootstrap\Comuki.Shared.Bootstrap.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Migrations\Comuki.Shared.Migrations.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Filtering\Comuki.Shared.Filtering.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
+    <ProjectReference Include="..\..\shared\Comuki.Shared.Redis\Comuki.Shared.Redis.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Telemetry\Comuki.Shared.Telemetry.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Comuki.Host.Unit.Auth" />
     <InternalsVisibleTo Include="Comuki.Host.Unit.Cli" />
+    <InternalsVisibleTo Include="Comuki.Host.Unit.DiComposition" />
     <InternalsVisibleTo Include="Comuki.Host.Unit.Mcp" />
     <InternalsVisibleTo Include="Comuki.Host.Unit.OidcSweeper" />
     <InternalsVisibleTo Include="Comuki.Host.Unit.WorkerRuntime" />
@@ -83,6 +87,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Testing" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Auth" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Chat" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Compute" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Costs" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Errors" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Intake" />
@@ -94,7 +99,16 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Proxy" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Knowledge" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Secrets" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Settings" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Smoke" />
+    <!-- add-agentic-test-contour WS6 (T2a): Comuki.EndToEnd.AgentLoop boots
+         the real HostComposer.ComposeAsync composition (same pattern as
+         every grant above) so a real Comuki.Engine.Compute.Docker container
+         claims against it — see the WS6 report for why this one line was
+         added outside that workstream's stated new-files-only scope
+         (purely additive, identical shape to the ~19 grants above, no
+         Compute/Proxy/Translator logic touched). -->
+    <InternalsVisibleTo Include="Comuki.EndToEnd.AgentLoop" />
   </ItemGroup>
 
   <!--

@@ -1,25 +1,24 @@
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Host.Testing;
+using Comuki.Host.Testing.Fixtures;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Host.Integration.Proxy;
 
 /// <summary>
 /// Boots the full host composition (including the YARP proxy module
-/// from issue #8) on a loopback port against one migrated Testcontainers
-/// Postgres — every module context, via <see cref="HostDatabaseMigrator"/>.
-/// The proxy upstreams are pointed at an in-process fake HTTP listener so
-/// the suite never reaches the real OpenAI / Anthropic endpoints.
+/// from issue #8) on a loopback port against <paramref name="postgres"/>'s
+/// shared, already-migrated Postgres — reset to empty before this call
+/// (see <see cref="ProxyIntegrationCollection"/>). The proxy upstreams are
+/// pointed at an in-process fake HTTP listener so the suite never reaches
+/// the real OpenAI / Anthropic endpoints.
 /// </summary>
-public sealed class HostProxyServer : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres — one container for the whole Proxy suite, not one per test.</param>
+public sealed class HostProxyServer(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("pgvector/pgvector:pg16")
-        .Build();
-
     internal WebApplication Application { get; private set; } = null!;
     internal FakeUpstreamServer FakeUpstream { get; private set; } = null!;
 
@@ -27,10 +26,8 @@ public sealed class HostProxyServer : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await container.StartAsync(cancellationToken);
-        var connectionString = container.GetConnectionString();
-
-        await HostDatabaseMigrator.MigrateAllAsync(connectionString, cancellationToken);
+        await postgres.ResetDatabaseAsync();
+        var connectionString = postgres.ConnectionString;
 
         FakeUpstream = new FakeUpstreamServer();
         await FakeUpstream.StartAsync();
@@ -83,8 +80,6 @@ public sealed class HostProxyServer : IAsyncLifetime
         {
             await FakeUpstream.DisposeAsync();
         }
-
-        await container.DisposeAsync();
     }
 
     /// <summary>Base address the host listens on (where requests go).</summary>

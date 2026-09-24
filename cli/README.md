@@ -26,6 +26,12 @@ you  › approve
   ●1 identity-refactor ●2 readme-fix   esc · tab · pgup/pgdn · ctrl+n
 ```
 
+> Мокап выше показывает многотабовый легаси Ink-хост (`--tui ink`,
+> см. «Сессии — табы» ниже). Хост по умолчанию — OpenTUI Core (см.
+> «OpenTUI-хост» ниже) — рендерит один активный фокус-режим вместо
+> одновременного таб-бара; переключение между сессиями там идёт через
+> командную палитру (`ctrl+p` → resume).
+
 Пустой старт — центрированный welcome (вордмарк, статистика платформы);
 после первого сообщения он не возвращается до перезапуска.
 
@@ -55,30 +61,41 @@ cd cli && bun run build   # → ./comuki.exe (Windows) / comuki
 | `comuki runs [list]` | таблица ранов; `--page`, `--pageSize`, `--filter status==queued` |
 | `comuki login` | email+пароль → session cookie в `~/.config/comuki/config.json` |
 | `comuki whoami` | текущий субъект, роли, разрешения |
+| `comuki archive [list\|save]` | список архивов (`~/.config/comuki/archive/`); `archive save <sessionId>` или `archive save --current` пишет транскрипт сессии на диск и печатает путь |
 
-Глобальные опции: `--url`, `--api-key`, `--project` (id, slug или имя),
+Глобальные опции: `--url`, `--api-key`, `--project` (id, слаг или имя),
 `--theme <name>-<dark|light>` (по умолчанию `dichromat-dark` — все семь
 тем дашборда: dichromat, graphite, dockside, blueprint, bureau,
 aperture, dispatcher; выбор сохраняется в `config.json` → `theme`),
-`--tui opentui` (REPL на OpenTUI Core — см. ниже).
+`--tui opentui|ink` (выбор REPL-хоста — см. ниже; по умолчанию `opentui`).
 Субкоманды `chat` больше нет — голый `comuki` и есть чат.
 
-## OpenTUI-хост (`--tui opentui`)
+## OpenTUI-хост (по умолчанию)
 
-Опциональный focus-mode REPL на `@opentui/core` + `@opentui/keymap`
-(ADR-0002; Ink остаётся хостом по умолчанию и не тронут):
+Focus-mode REPL на `@opentui/core` + `@opentui/keymap` (ADR-0002) — хост
+по умолчанию с флипа `--tui` на `opentui` (epic #71 finale). Легаси
+React/Ink-хост никуда не делся, он доступен через `--tui ink`:
 
 ```bash
-comuki --tui opentui     # тот же config/ auth/ sessions.json, новый рендер-стек
-COMUKI_LANG=ru comuki --tui opentui   # ru-локаль chrome/карточки (по умолчанию en)
+comuki                  # OpenTUI Core (по умолчанию), тот же config/auth/sessions.json
+comuki --tui ink        # легаси React/Ink-хост
+COMUKI_LANG=ru comuki   # ru-локаль chrome/карточки (по умолчанию en)
 ```
 
-Что работает в этом срезе: alternate-screen, compact-раскладка на узких
-терминалах (48x16), транскрипт прямо из снапшотов ClientKernel (эхо,
-живой текст стрима, финальный ответ, строка ошибки), инлайн-карточка
-одобрения (intent/scope/risk/plan-steps/diff, реальные опции
-approve/reject), named-command keymap, чистый выход
-(kernel.stop → whenIdle → renderer.destroy, терминал восстановлен).
+Что работает: alternate-screen, compact-раскладка на узких терминалах
+(48x16), транскрипт прямо из снапшотов ClientKernel (эхо, живой текст
+стрима, финальный ответ, строка ошибки), инлайн-карточка одобрения
+(intent/scope/risk/plan-steps/diff, реальные опции approve/reject),
+`/`-меню слэш-команд и fuzzy-палитра команд (`ctrl+p`) на одном
+named-command keymap, очередь follow-up сообщений пока ход думает,
+редактирование черновика во внешнем `$VISUAL`/`$EDITOR` (`ctrl+e`),
+сворачивание/разворачивание деталей транскрипта (`ctrl+o` — последняя
+запись, `ctrl+shift+o` — все), палитра-driven управление сессиями
+(list/resume/rename/archive/fork по id — таб-бара всё ещё нет, сессии
+открываются по одной через resume), просмотр approval-ledger сессии
+(`show-receipt`), swarm-канвас со сводкой attention-элементов
+(`ctrl+shift+a`), чистый выход (kernel.stop → whenIdle →
+renderer.destroy, терминал восстановлен).
 
 | Клавиша | Действие |
 |---|---|
@@ -87,15 +104,25 @@ approve/reject), named-command keymap, чистый выход
 | `y` / `n` | одобрить / отклонить план (только пока карточка на экране) |
 | `ctrl+n` | новая сессия |
 | `ctrl+w` | закрыть таб (задача продолжает работать на сервере) |
+| `ctrl+e` | редактировать черновик в `$VISUAL`/`$EDITOR` |
+| `ctrl+p` | командная палитра |
+| `ctrl+o` / `ctrl+shift+o` | развернуть детали последней / всех записей транскрипта |
+| `ctrl+shift+a` | показать/скрыть swarm-канвас |
 | `ctrl+c` | выход |
 
-Чего пока нет: палитра команд, slash-команды, очередь follow-up,
-переключение табов (одна активная сессия), $EDITOR через lifecycle-seam
-(seam встроен и тестируется, редактор не подключён). Хост использует
-собственную тёмную палитру и в этом срезе игнорирует `--theme`
-(theming-интеграция — следующий срез).
+Чего пока нет: одновременный таб-бар (несколько сессий на экране сразу
+— переключение только по одной, через палитру), интеграция с `--theme`
+(хост использует собственную тёмную палитру и в этом срезе игнорирует
+выбор темы).
 
-## Сессии — табы
+## Сессии — табы (легаси Ink-хост, `--tui ink`)
+
+Этот раздел описывает многотабовый REPL легаси React/Ink-хоста
+(`--tui ink`) — он остаётся доступен, но больше не хост по умолчанию
+(см. «OpenTUI-хост» выше). Табы (несколько параллельных сессий на
+экране одновременно), полный `/`-реестр из 31 slash-команды и history
+navigation ниже — фичи именно этого хоста; OpenTUI-хост своё
+эквивалентное подмножество реализует иначе (см. выше).
 
 N параллельных задач, каждая крутится на сервере; переключение — как
 табы в браузере, ноутбук остаётся холодным.

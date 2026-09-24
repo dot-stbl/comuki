@@ -1,0 +1,36 @@
+{
+  "scenarioName": "add-null-check",
+  "entries": [
+    {
+      "match": { "hasToolResult": false },
+      "response": {
+        "stopReason": "tool_use",
+        "content": [
+          { "type": "text", "text": "I'll add a null guard to OrderTotal.Calculate." },
+          {
+            "type": "tool_use",
+            "name": "edit",
+            "input": {
+              "path": "src/OrderTotal.cs",
+              "edits": [
+                {
+                  "oldText": "        foreach (var order in orders!)\n        {",
+                  "newText": "        if (orders is null)\n        {\n            throw new ArgumentNullException(nameof(orders));\n        }\n\n        foreach (var order in orders)\n        {"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "match": { "hasToolResult": true },
+      "response": {
+        "stopReason": "end_turn",
+        "content": [
+          { "type": "text", "text": "Added a null guard; Calculate now throws ArgumentNullException for a null orders sequence." }
+        ]
+      }
+    }
+  ]
+}

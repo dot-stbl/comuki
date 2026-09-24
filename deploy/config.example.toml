@@ -12,7 +12,14 @@
 # NEVER put secrets in this file — credentials go through env vars:
 #   COMUKI_DB, COMUKI_IDENTITY_APIKEY_PEPPER, COMUKI_TOKEN_PEPPER,
 #   COMUKI_BOOTSTRAP_ADMIN_PASSWORD, COMUKI_ARTIFACTS_ACCESSKEY /
-#   _SECRETKEY, COMUKI_BRAIN_MODEL_API_KEY.
+#   _SECRETKEY, COMUKI_BRAIN_MODEL_API_KEY, COMUKI_PUBLIC_HOST_URL,
+#   COMUKI_VAULT_TOKEN, and any *EnvRef-named var below.
+#
+# This file is not exhaustive by construction: every Options class binds
+# with ValidateDataAnnotations().ValidateOnStart() and carries in-code
+# defaults, so most sections below are optional. Sections are grouped
+# roughly by the process that reads them (Comuki.Host is the default
+# reader unless noted); every section is still one shared search order.
 
 [server]
 # HTTP listener of the orchestrator host. Commented out = the default
@@ -26,6 +33,44 @@
 # COMUKI_LOG_FORMAT=json switches the console renderer to one JSON
 # object per line (env-only; OTLP output is unaffected).
 # level = "info"
+
+# --- auth --------------------------------------------------------------
+
+[auth.publicHost]
+# Absolute public URL (scheme + host, no trailing path) the host
+# advertises to OIDC IdPs — the redirect_uri is built from THIS value,
+# never from the inbound Host: header (a poisoned reverse-proxy could
+# otherwise redirect the IdP's code to an arbitrary origin). Required
+# once any OIDC provider is configured. Env override: COMUKI_PUBLIC_HOST_URL.
+# publicUrl = "https://comuki.example.com"
+
+[auth.bootstrap]
+# First-operator bootstrap: created and granted admin once at startup.
+# Unset = no bootstrap. A half-set pair (only one of the two) fails
+# startup loudly. Prefer the env fallbacks in production:
+# COMUKI_BOOTSTRAP_ADMIN_EMAIL / COMUKI_BOOTSTRAP_ADMIN_PASSWORD.
+# adminEmail = "admin@example.com"
+# adminPassword = ""
+
+[auth.cookie]
+# Session cookie. Sliding expiration = "stay logged in while active";
+# the tokens_version security stamp is the kill switch on top of it.
+# name = "comuki.auth"
+# expireTimeSpan = "7.00:00:00"
+# slidingExpiration = true
+
+[auth.oidc]
+# Configured OIDC providers; empty (the default) = local login only,
+# no IdP. Add one [[auth.oidc.providers]] table per provider — the
+# client secret is NEVER here, only the name of the env var that holds
+# it (ClientSecretEnv). requireHttps defaults to true; set false only
+# for a dev/compose authority served over http://.
+# [[auth.oidc.providers]]
+# name = "keycloak"
+# authority = "https://keycloak.example.com/realms/comuki"
+# clientId = "comuki"
+# clientSecretEnv = "COMUKI_OIDC_KEYCLOAK_CLIENT_SECRET"
+# requireHttps = true
 
 [brain]
 # Standalone brain host (comuki-brain): gRPC listener port from the
@@ -43,6 +88,15 @@ grpcPort = 17004
 # Browser origins allowed on the API.
 # allowedOrigins = ["http://localhost:17173"]
 
+[host.rateLimit]
+# Per-endpoint budgets, permits per minute; 0 disables that named
+# limiter (ops escape hatch under attack-investigation pressure —
+# no redeploy needed, just a config/env change).
+# loginPermitsPerMinute = 10
+# oidcStartPermitsPerMinute = 30
+# runDecisionPermitsPerMinute = 60
+# apiPermitsPerMinute = 600
+
 [host.tls]
 # HTTPS listener next to the plain-HTTP one ([server] port / 8080).
 # Disabled by default — plain HTTP only, exactly as before. When
@@ -59,6 +113,25 @@ grpcPort = 17004
 # Env overrides: COMUKI_HOST_TLS_ENABLED / _HTTPSPORT / _REDIRECTHTTP /
 # _CERTIFICATEPATH / _CERTIFICATEKEYPATH.
 
+[host.oidcSweep]
+# Deletes expired identity.oidc_states rows on a fixed interval.
+# enabled = true
+# interval = "00:05:00"
+# stateTtl = "00:05:00"
+
+# --- security ------------------------------------------------------------
+
+[security.apiKey]
+# ck_-prefixed API key hashing. The pepper defaults to a dev-only value;
+# production MUST set COMUKI_IDENTITY_APIKEY_PEPPER instead of putting
+# it here — rotating the pepper invalidates every stored key HMAC.
+# lastUsedRefreshInterval = "00:05:00"
+
+[security.workerToken]
+# Opaque worker-token HMAC. Same pepper story as above — set
+# COMUKI_TOKEN_PEPPER in production, never a pepper value here.
+# tokenTtl = "00:15:00"
+
 [artifacts]
 # S3-compatible store for run bundles (MinIO). Keys via env:
 # COMUKI_ARTIFACTS_ACCESSKEY / COMUKI_ARTIFACTS_SECRETKEY.
@@ -67,21 +140,244 @@ grpcPort = 17004
 # useSSL = false
 # autoCreateBucket = true
 
+# --- orchestration engine ------------------------------------------------
+
+[orchestration.lease]
+# Claim/lease policy for work-item queue consumers.
+# leaseTtl = "00:02:00"
+# reapInterval = "00:00:30"
+# reapGrace = "00:00:30"
+# maxAttempts = 3
+
+[orchestration.escalationTimeout]
+# Passive autonomy ratchet: how long a run may sit Escalated before the
+# sweeper auto-archives it to Cancelled. enabled = false is the ops
+# kill-switch (worker still registers, returns immediately on start).
+# escalationTimeout = "01:00:00"
+# sweepInterval = "00:00:15"
+# enabled = true
+
 [compute]
 # "docker" (default) or "kubernetes" — how worker containers spawn.
 # provider = "docker"
+# Dev-only override: allow worker starts without a verified egress
+# fence. Never true in production — the fenced network (or Kubernetes
+# NetworkPolicy) is what makes worker egress default-deny.
+# allowUnfencedEgress = false
+# Deployment-default egress hosts (model proxy, package registry, git
+# host) every project/profile allowlist may only narrow. Empty = no
+# default egress reachable from a worker.
+# egressDefaultHosts = []
 
 [compute.docker]
 # networkMode = "comuki-net"
+# Internal Docker network used as the worker egress fence (compose
+# defines comuki-worker-net). Missing/non-internal network aborts the
+# start (fail-closed) unless compute.allowUnfencedEgress = true.
+# fencedNetwork = "comuki-worker-net"
+# maxWorkers = 8
+# waitBeforeKillSeconds = 10
+# memoryBytes = 2147483648
+# nanoCpus = 1000000000
+# Non-root uid (or uid:gid) baked into the worker image.
+# runAsUser = "1000"
+
+[compute.kubernetes]
+# namespace = "comuki"
+# serviceAccount = "comuki-worker"
+# ttlSecondsAfterFinished = 600
+# terminationGraceSeconds = 10
+# cpuRequestMillis = 500
+# memoryRequestMiB = 1024
+# cpuLimitMillis = 1000
+# memoryLimitMiB = 2048
+# nodeSelector = {}
+# Path to an external kubeconfig; empty = in-cluster ServiceAccount.
+# kubeconfigPath = ""
+# Skip in-cluster client init entirely (composition-only hosts that
+# never call the Kubernetes provider at runtime).
+# skipKubernetesConfig = false
+
+[compute.kubernetes.egress]
+# CIDRs a worker may reach besides cluster DNS. Empty = DNS-only
+# egress, everything else denied by the per-worker NetworkPolicy.
+# allowedCidrs = []
 
 [compute.scale]
 # workerImage = "comuki-worker:local"
 # orchestratorGrpcUrl = "http://comuki-host:8080"
+# profilesGitRef = "main"
+# pollInterval = "00:00:15"
+# minIdle = 0
+# maxConcurrent = 4
+# idleTtl = "00:10:00"
+# Project ids the supervisor manages; empty = supervisor pass is a no-op.
+# projects = []
+# profileKeys = []
+
+[translator]
+# Comuki.Host.Translator (worker-image CMD) config. In practice every
+# field below is stamped as COMUKI_* env by the compute provider per
+# claimed worker, not hand-written in a shared config.toml — listed
+# here for completeness, not as an expected operator edit.
+# orchestratorBaseUrl = "http://comuki-host:8080"
+# orchestratorGrpcUrl = "http://comuki-host:8080"
+# workerToken = ""
+# profileKey = "general"
+# profilesRef = "main"
+# workerImage = "ghcr.io/dot-stbl/comuki-worker:local"
+# piExecutable = "pi"
+# claimPollInterval = "00:00:10"
+# heartbeatInterval = "00:00:30"
+
+# --- module-level worker launch defaults ---------------------------------
+
+[chat.worker]
+# Claim labels chat-created work items launch with (profiles carry no
+# image metadata yet — per-profile resolution is a documented follow-up).
+# image = "ghcr.io/comuki/worker:dev"
+# profilesRef = "refs/heads/main"
+
+[controlPlane]
+# Explicit control-plane content root (compose: a mounted path). Unset
+# = probe upward from the app base directory for a `control-plane/` dir.
+# root = "/app/control-plane"
+
+[intake]
+# publicBaseUrl = "http://localhost:17170"
+# bridgeInterval = "00:00:15"
+# syncMaxAttempts = 5
+# syncBackoff = "00:00:30"
+# bridgeBatchSize = 100
+# catalogPageSize = 25
+# inboxListLimit = 50
+
+[intake.worker]
+# issueDefaultProfileKey = "general"
+# image = "ghcr.io/comuki/worker:dev"
+# profilesRef = "refs/heads/main"
+
+[scheduler]
+# pollInterval = "00:00:30"
+# batchSize = 50
+
+[scheduler.sentry]
+# Sentry DSN for the dispatcher's fire events; unset = SentrySdk.Init
+# is skipped entirely (no wire egress, no SDK footprint).
+# dsn = ""
+# environment = "production"
+
+[scheduler.worker]
+# image = "ghcr.io/comuki/worker:dev"
+# profilesRef = "refs/heads/main"
+
+[knowledge.embedding]
+# Provider kind: openai | voyage | noop. noop (default) returns
+# deterministic random vectors — no API key, no network, dev/test only.
+# provider = "noop"
+# apiKeyEnvRef = "COMUKI_KNOWLEDGE_EMBEDDING_API_KEY"
+# model = "text-embedding-3-small"
+# dimensions = 1536
+# batchSize = 32
+
+[knowledge.ingest]
+# chunkTokenTarget = 500
+# pollIntervalSeconds = 60
+
+[memory.consolidation]
+# How many reads before an ephemeral fact promotes to standing, and how
+# many days of silence before a standing fact decays back.
+# promoteReadThreshold = 3
+# decayDays = 90
+# interval = "06:00:00"
+
+[proxy]
+# Optional OpenAI/Anthropic-compatible passthrough. Disabled (and the
+# module registers no routes) unless enabled = true.
+# enabled = false
+# Worker-facing base URL of this proxy; when set, a worker claim mints
+# a short-lived virtual key and stamps it + this URL into the pi process.
+# workerBaseUrl = "http://comuki-proxy:8080"
+# knownModels = []
+
+[proxy.defaultPricing]
+# Fallback USD-per-million-token pricing when a model id has no entry
+# in [proxy.pricing.<modelId>] below.
+# inputUsdPerMillion = 3
+# outputUsdPerMillion = 15
+
+# [proxy.pricing.gpt-4o]
+# inputUsdPerMillion = 2.5
+# outputUsdPerMillion = 10
+
+# One [[proxy.virtualKeys]] table per issued key. Order does not
+# matter; tokens must be unique. Postgres-backed key storage (no host
+# restart to rotate) is a documented v2 follow-up.
+# [[proxy.virtualKeys]]
+# token = ""
+# projectId = "00000000-0000-0000-0000-000000000000"
+# provider = "openai"
+# baseUrl = "https://api.openai.com"
+# apiKeyEnvRef = "COMUKI_PROXY_OPENAI_API_KEY"
+# defaultModel = "gpt-4o-mini"
+# budgetUsd = 50
+# expiresAt = "2027-01-01T00:00:00Z"
+# allowedModels = []
+# maxInputTokens = 200000
+# maxOutputTokens = 16000
+
+[secrets]
+# Root of the secret-resolution subsystem (issue #52). Opt-in — every
+# per-provider sub-section below defaults to enabled = false, so a
+# deployment that ships only env-var references registers no remote
+# provider and pays zero bootstrap cost.
+
+[secrets.file]
+# file:/... reference resolution.
+# enabled = false
+# Optional allowlist root; a reference outside it fails closed. Empty
+# (default) = any path on the host.
+# rootPath = ""
+
+[secrets.vault]
+# vault:... reference resolution (HashiCorp Vault, KV v2).
+# enabled = false
+# address = "https://vault.example.com:8200"
+# Env-var NAME (not value) holding the bootstrap Vault token.
+# tokenEnvRef = "COMUKI_VAULT_TOKEN"
+# kvMount = "secret"
+# cacheTtl = "00:01:00"
 
 [telemetry]
 # OTLP gRPC endpoint (VictoriaMetrics :8431 in the compose stack);
 # unset = no OTel SDK.
 # otlpEndpoint = "http://victoriametrics:8431"
+
+[verify.verifier]
+# Generic-command verifier (issue #11 sub-slice; GH #47 tracks the
+# follow-up container-isolated runner). The worker polls
+# verify.generic_command_runs and launches the configured executable
+# via Process.Start INSIDE the orchestrator host process — no
+# container/sandbox boundary yet. Disabled by default; enable only in
+# an environment that already trusts every executable a verify run can
+# name.
+# enabled = false
+# pollInterval = "00:00:30"
+# batchSize = 10
+# runTimeout = "00:02:00"
+# outputLogCharCap = 65536
+
+[redis]
+# Distributed cache for multi-replica Host (issue #11, "Redis cache при
+# multi-replica Host"): when enabled, the Projects settings snapshot
+# cache swaps from in-process memory to Redis-backed storage, so every
+# replica sees a settings write immediately instead of waiting for its
+# own refresher poll. Disabled by default — a single replica keeps
+# using in-process memory, no [redis] section required.
+# enabled = true
+# connectionString = "redis:6379"
+# instanceName = "comuki:"
+# Env overrides: COMUKI_REDIS_ENABLED / _CONNECTIONSTRING / _INSTANCENAME.
 
 [connectionStrings]
 # Fallback for the migrator when COMUKI_DB / COMUKI_DATABASE are unset.

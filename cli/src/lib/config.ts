@@ -187,7 +187,7 @@ export function sessionsFilePath(): string {
   return join(configDir(), "sessions.json")
 }
 
-/** `~/.config/comuki/archive/` — `/archive` transcripts. */
+/** `~/.config/comuki/archive/` — archived session transcripts. */
 export function archiveDir(
   xdgConfigHome: string | undefined = process.env.XDG_CONFIG_HOME
 ): string {

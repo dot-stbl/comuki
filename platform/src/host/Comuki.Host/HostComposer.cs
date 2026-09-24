@@ -58,6 +58,9 @@ using Comuki.Modules.Scheduler.Application;
 using Comuki.Modules.Scheduler.Application.Options;
 using Comuki.Modules.Scheduler.Application.Ports;
 using Comuki.Modules.Scheduler.Infrastructure;
+using Comuki.Modules.Verify.Application;
+using Comuki.Modules.Verify.Application.Options;
+using Comuki.Modules.Verify.Infrastructure;
 using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Bootstrap.Workers;
@@ -67,6 +70,7 @@ using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Secrets;
 using Comuki.Shared.Migrations;
+using Comuki.Shared.Redis;
 using Comuki.Shared.Telemetry.Installers;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
@@ -180,6 +184,16 @@ internal static class HostComposer
             .AddIdentityPersistence(database.ConnectionString)
             .AddIdentityAuth(builder.Configuration, typeof(HostComposer).Assembly);
 
+        // Redis distributed cache (issue #11, "Redis cache при
+        // multi-replica Host"): registers IDistributedCache when
+        // Redis:Enabled=true. Registration order relative to
+        // AddProjectsApplication below does not matter — DI resolves
+        // lazily from the fully-built container, not incrementally as
+        // Add* calls run — but keeping it here documents the dependency
+        // for the reader. Disabled (the default) is a no-op and every
+        // replica keeps the in-process ProjectSettingsCache.
+        builder.Services.AddComukiRedisCache(builder.Configuration);
+
         builder.Services.AddProjectsApplication();
         builder.Services.AddProjectsPersistence(database.ConnectionString);
 
@@ -277,18 +291,20 @@ internal static class HostComposer
         builder.Services.AddKnowledgeInfrastructure(builder.Configuration);
 
         // MCP server (S10 #9): JSON-RPC 2.0 over /api/v1/mcp. The
-        // dispatcher is a singleton — it carries no per-call state and
-        // the underlying handlers (IKnowledgeIngestor, IKnowledgeSearcher,
-        // IMemoryStore, RunsListHandler) are resolved per-call by the DI
-        // container. The worker-caller surface: the project resolver maps
-        // a worker token to its leased work item's project (scoped — reads
-        // the orchestration DbContext), the note limiter caps memory.note
-        // writes per worker (singleton, in-memory window).
+        // dispatcher and its tool handlers are Scoped — resolved once
+        // per HTTP request via the `McpServer server` parameter binding
+        // in McpModuleEndpoints.DispatchAsync, which ASP.NET Core pulls
+        // from `context.RequestServices`. Scoped is required because
+        // McpToolHandlers constructor-injects Scoped `RunsListHandler`;
+        // a Singleton would be a captive-dependency violation that
+        // ValidateOnBuild refuses to boot. The rate limiters stay
+        // Singleton — they hold in-memory windows keyed by worker id,
+        // not per-request state.
         builder.Services.AddScoped<IWorkerProjectResolver, OrchestrationWorkerProjectResolver>();
         builder.Services.AddSingleton<WorkerNoteRateLimiter>();
         builder.Services.AddSingleton<WorkerSuggestRateLimiter>();
-        builder.Services.AddSingleton<McpToolHandlers>();
-        builder.Services.AddSingleton<McpServer>();
+        builder.Services.AddScoped<McpToolHandlers>();
+        builder.Services.AddScoped<McpServer>();
 
         // Scheduler module (S15): per-project cron / one-shot admission
         // source. The application façade + dispatcher worker live in
@@ -307,6 +323,25 @@ internal static class HostComposer
             .ValidateOnStart();
         builder.Services.AddOptions<SchedulerWorkerDefaults>()
             .Bind(builder.Configuration.GetSection(SchedulerWorkerDefaults.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // Verify module (issue #11 sub-slice, rescued from ec3ce24 —
+        // GH issue #47 tracks the follow-up runner-container isolation):
+        // generic-command verifier. Poll worker claims Pending
+        // generic_command_runs, launches through IGenericCommandRunner
+        // (in-process Process.Start — no container isolation yet), stamps
+        // Green/Red from the exit code. The worker is a IComukiWorker
+        // behind AddComukiWorkers() below. Disabled by default
+        // (Verify:Verifier:Enabled=false) — see the isolation warning on
+        // VerifyOptions; only enable in an environment that already
+        // trusts every executable a verify run can name. Bound with
+        // ValidateDataAnnotations + ValidateOnStart so a missing or
+        // invalid setting fails the boot, not the first poll cycle.
+        builder.Services.AddVerifyApplication();
+        builder.Services.AddVerifyPersistence(database.ConnectionString);
+        builder.Services.AddOptions<VerifyOptions>()
+            .Bind(builder.Configuration.GetSection(VerifyOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
@@ -501,8 +536,12 @@ internal static class HostComposer
         // transactional and idempotent, so an up-to-date database is a
         // fast no-op. Skipped under build-time OpenAPI generation, which
         // boots on a dummy connection string by contract (zero side
-        // effects, no DB).
-        if (!OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration)
+        // effects, no DB), and under the DI-composition unit test
+        // (Host:Testing:SkipBootMigrations=true), which builds the
+        // service graph against a probe connection string to prove
+        // ValidateOnBuild/ValidateScopes stay clean — never production.
+        var skipBootMigrations = builder.Configuration.GetValue<bool>("Host:Testing:SkipBootMigrations");
+        if (!OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration && !skipBootMigrations)
         {
             var migrationSummary = await ComukiDatabaseMigrator.EnsureAllAsync(database.ConnectionString, CancellationToken.None);
 

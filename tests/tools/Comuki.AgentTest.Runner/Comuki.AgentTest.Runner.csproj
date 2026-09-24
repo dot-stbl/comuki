@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.AgentTest.Runner</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <!-- Not a test project: no [Fact]/[Theory] live here (scenario model +
+         loader + runner engine + report writer), so IsTestProject and
+         UseMicrosoftTestingPlatformRunner stay unset, matching
+         Comuki.Host.Testing / Comuki.TestFakePi — CI builds this project but
+         never runs it. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" />
+    <PackageReference Include="Docker.DotNet.Enhanced" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared.Contracts: RunEventEntry/IRunJournal (journal condition
+         evaluation), ComputeStartRequest/IComputeProvider shapes.
+         Shared.Kernel: WorkerId/ProjectId/RunId ids these types carry.
+         Engine.Orchestration: RunEventTypes — the real journal event-type
+         constants, so the condition vocabulary never invents its own
+         strings that drift from what the platform actually emits.
+         Engine.Compute: DockerComputeProvider/DockerEgressFence/Options —
+         the real Docker compute provider this runner wires directly
+         (see Compute/DockerComputeProviderFactory.cs). -->
+    <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Compute\Comuki.Engine.Compute.csproj" />
+  </ItemGroup>
+
+</Project>

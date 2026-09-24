@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test"
-import { resolveCommand } from "./commands"
+import { resolveArchiveAction, resolveCommand } from "./commands"
 
 describe("resolveCommand", () => {
   it("routes bare comuki to the repl", () => {
@@ -27,5 +27,40 @@ describe("resolveCommand", () => {
 
   it("flags anything else unknown", () => {
     expect(resolveCommand(["bogus"])).toBe("unknown")
+  })
+})
+
+describe("resolveArchiveAction", () => {
+  it("bare [archive] is list", () => {
+    expect(resolveArchiveAction(["archive"], false)).toEqual({ kind: "list" })
+  })
+
+  it("explicit `list` is list", () => {
+    expect(resolveArchiveAction(["archive", "list"], false)).toEqual({
+      kind: "list",
+    })
+  })
+
+  it("`save <session>` with current=false keeps the explicit id", () => {
+    expect(resolveArchiveAction(["archive", "save", "s1"], false)).toEqual({
+      kind: "save",
+      sessionId: "s1",
+      current: false,
+    })
+  })
+
+  it("`save` with current=true leaves sessionId undefined", () => {
+    expect(resolveArchiveAction(["archive", "save"], true)).toEqual({
+      kind: "save",
+      sessionId: undefined,
+      current: true,
+    })
+  })
+
+  it("unknown action surfaces its name", () => {
+    expect(resolveArchiveAction(["archive", "bogus"], false)).toEqual({
+      kind: "unknown",
+      action: "bogus",
+    })
   })
 })

@@ -182,34 +182,10 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: "open this session in the dashboard",
   },
   {
-    name: "tools",
-    aliases: [],
-    usage: "/tools",
-    description: "brain / MCP tool catalogue",
-  },
-  {
-    name: "note",
-    aliases: [],
-    usage: "/note <text>",
-    description: "write a memory note",
-  },
-  {
-    name: "profile",
-    aliases: [],
-    usage: "/profile [name]",
-    description: "list or prefer a worker profile",
-  },
-  {
     name: "alias",
     aliases: [],
     usage: "/alias [set <name> <text>|rm <name>]",
     description: "prompt aliases — expand before send",
-  },
-  {
-    name: "archive",
-    aliases: [],
-    usage: "/archive",
-    description: "save transcript and close the tab",
   },
 ]
 
@@ -258,14 +234,9 @@ export type SlashAction =
   | { readonly kind: "keys" }
   | { readonly kind: "status" }
   | { readonly kind: "open" }
-  | { readonly kind: "tools" }
-  | { readonly kind: "note"; readonly text: string }
-  /** Bare `/profile` lists; `/profile implement` stores a local preference. */
-  | { readonly kind: "profile"; readonly name: string }
   | { readonly kind: "alias" }
   | { readonly kind: "alias-set"; readonly name: string; readonly text: string }
   | { readonly kind: "alias-rm"; readonly name: string }
-  | { readonly kind: "archive" }
   /** Not a command — the input goes to the brain as a chat message. */
   | { readonly kind: "message" }
 
@@ -275,8 +246,7 @@ export type SlashAction =
  * caller, so the full command grammar is testable without Ink.
  */
 export function resolveSlashAction(raw: string): SlashAction {
-  const bare = raw.replace(/^\//, "").trim()
-  const [head, ...rest] = bare.split(/\s+/)
+  const [head, ...rest] = raw.replace(/^\//, "").trim().split(/\s+/)
   const name = (head ?? "").toLowerCase()
   const args = rest.join(" ").trim()
 
@@ -390,15 +360,6 @@ export function resolveSlashAction(raw: string): SlashAction {
   if (matches("open", name)) {
     return { kind: "open" }
   }
-  if (matches("tools", name)) {
-    return { kind: "tools" }
-  }
-  if (matches("note", name)) {
-    return { kind: "note", text: args }
-  }
-  if (matches("profile", name)) {
-    return { kind: "profile", name: args }
-  }
   if (matches("alias", name)) {
     const [sub, ...restTokens] = args.split(/\s+/).filter((token) => token.length > 0)
     if (args.length === 0 || sub === "list") {
@@ -416,9 +377,6 @@ export function resolveSlashAction(raw: string): SlashAction {
       return { kind: "alias-rm", name: restTokens.join(" ").trim() }
     }
     return { kind: "alias" }
-  }
-  if (matches("archive", name)) {
-    return { kind: "archive" }
   }
   return { kind: "message" }
 }

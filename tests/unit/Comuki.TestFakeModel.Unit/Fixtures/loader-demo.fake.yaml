@@ -1,0 +1,21 @@
+scenarioName: loader-demo-yaml
+entries:
+  - response:
+      content:
+        - type: text
+          text: loaded from yaml
+      usage:
+        inputTokens: 5
+        outputTokens: 3
+  - response:
+      content:
+        - type: tool_use
+          name: Edit
+          input:
+            file_path: src/Example.cs
+            replacements:
+              - from: foo
+                to: bar
+      usage:
+        inputTokens: 7
+        outputTokens: 9

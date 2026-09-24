@@ -1,0 +1,87 @@
+using Comuki.AgentTest.Runner.Reporting.Report;
+using Comuki.AgentTest.Runner.Scenarios;
+using Comuki.Shared.Contracts.Compute;
+using Comuki.Shared.Contracts.Journal;
+
+namespace Comuki.AgentTest.Runner.Execution;
+
+/// <summary>
+/// The seam <see cref="ScenarioRunner"/> drives a scenario through — "seeds
+/// via REST", "provisions compute", "asserts" in design.md's architecture
+/// diagram. <c>Comuki.EndToEnd.AgentLoop</c> (a separate test project)
+/// implements this against the real <c>HostComposer.ComposeAsync</c>
+/// composition + the real
+/// <see cref="Engine.Compute.Providers.DockerComputeProvider"/> for
+/// T2a; a future T2b/WS7 harness implements the same interface with a real
+/// <c>pi</c> pointed at the fake-model server instead of TestFakePi —
+/// <see cref="ScenarioRunner"/> itself does not change.
+/// </summary>
+public interface IAgentLoopHarness
+{
+    /// <summary>
+    /// Seeds the scenario's ticket through the real intake webhook endpoint
+    /// (admission rule + source connection already provisioned by the
+    /// harness's own setup) and returns the run/work-item the real
+    /// <c>IntakeRunLauncher</c> created.
+    /// </summary>
+    /// <param name="scenario"></param>
+    /// <param name="cancellationToken"></param>
+    public Task<SeededWorkItem> SeedTicketAsync(ScenarioDefinition scenario, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Provisions the real worker container for <paramref name="scenario"/>'s
+    /// claim labels. Throws (uncaught by this method — <see cref="ScenarioRunner"/>
+    /// converts it into a named <c>compute.start</c> failure) when the
+    /// compute provider itself cannot start the container (e.g. an image tag
+    /// that was never built).
+    /// </summary>
+    /// <param name="scenario"></param>
+    /// <param name="cancellationToken"></param>
+    public Task<WorkerHandle> StartWorkerAsync(ScenarioDefinition scenario, CancellationToken cancellationToken = default);
+
+    /// <summary>Reads the run's timeline, oldest first — the same read <see cref="Journal.JournalConditionEvaluator"/> evaluates conditions against.</summary>
+    /// <param name="runId"></param>
+    /// <param name="cancellationToken"></param>
+    public Task<IReadOnlyList<RunEventEntry>> ReadTimelineAsync(Guid runId, CancellationToken cancellationToken = default);
+
+    /// <summary>Reads the work item's current status string (matches <c>WorkItemStatus</c>'s member names — Queued/Running/Succeeded/Failed).</summary>
+    /// <param name="workItemId"></param>
+    /// <param name="cancellationToken"></param>
+    public Task<string> ReadWorkItemStatusAsync(Guid workItemId, CancellationToken cancellationToken = default);
+
+    /// <summary>Stops and removes the worker container. Called from the runner's own cleanup — must not throw on an already-stopped/never-started handle.</summary>
+    /// <param name="handle"></param>
+    /// <param name="cancellationToken"></param>
+    public Task StopWorkerAsync(WorkerHandle handle, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resolves the host-visible working directory pi/TestFakePi ran in for
+    /// <paramref name="workItemId"/>, for <see cref="ScenarioAssertions.Diff"/>
+    /// evaluation (WS7 task 7.3) — or <c>null</c> when the harness has no
+    /// such path to offer (T2a's container harness: the workspace lives
+    /// inside the container, not on the test host). Defaulted to <c>null</c>
+    /// so this addition does not break any existing implementer.
+    /// </summary>
+    /// <param name="workItemId"></param>
+    /// <param name="cancellationToken"></param>
+    public Task<string?> ResolveWorkingDirectoryAsync(Guid workItemId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<string?>(null);
+    }
+
+    /// <summary>
+    /// Reads the run's accumulated <see cref="RunCost"/> (USD-micros + token
+    /// counts) for harness-managed post-run assertion and budget enforcement
+    /// — WS9 only. Defaulted to <see cref="RunCost"/> with zero fields so this
+    /// addition does not break any existing implementer (T2a's container
+    /// harness, T2b's replay harness, the WS8 record-cassette harness); a
+    /// harness that actually meters live tokens overrides this to surface the
+    /// real numbers.
+    /// </summary>
+    /// <param name="workItemId"></param>
+    /// <param name="cancellationToken"></param>
+    public Task<RunCost> ReadCostAsync(Guid workItemId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(new RunCost());
+    }
+}

@@ -26,3 +26,21 @@ dist-ssr
 # Kubb debug state — generated alongside src/api, not source of truth
 src/api/.kubb/
 
+# Storybook static build (test:storybook's SUT, already eslint-ignored)
+storybook-static
+
+# test:storybook run artifacts — baselines are CI-generated, never committed
+# from a dev machine or an agent session (WS16, see storybook-tests/README.md
+# and .agents/rules/process/agent-runtime-safety.md). report.json/.md are
+# per-run output, not source.
+storybook-tests/visual-baselines
+storybook-tests/diffs
+storybook-tests/artifacts
+storybook-tests/report.json
+storybook-tests/report.md
+
+# ui:probe run artifacts (WS17) — screenshots/DOM/aria/axe/console + summary,
+# per-run output, not source. Same reasoning as the storybook-tests entries
+# above.
+artifacts/ui-probe
+

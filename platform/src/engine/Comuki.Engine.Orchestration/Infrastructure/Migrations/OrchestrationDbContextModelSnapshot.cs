@@ -56,6 +56,55 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                     b.ToTable("run_events", "orchestration");
                 });
 
+            modelBuilder.Entity("Comuki.Engine.Orchestration.Domain.MergeQueue.MergeBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("AbandonedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("abandoned_at");
+
+                    b.Property<string>("AbandonedReason")
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)")
+                        .HasColumnName("abandoned_reason");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("MergedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("merged_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PullRequestUrls")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("pull_request_urls");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_merge_batches");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_merge_batches_status_created_at");
+
+                    b.ToTable("merge_batches", "orchestration");
+                });
+
             modelBuilder.Entity("Comuki.Engine.Orchestration.Domain.MergeQueue.MergeQueueEntry", b =>
                 {
                     b.Property<Guid>("Id")

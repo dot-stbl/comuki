@@ -3,6 +3,7 @@ using Comuki.Engine.Orchestration.Application.Handlers;
 using Comuki.Engine.Orchestration.Application.Models;
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Infrastructure.Leases;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
@@ -18,7 +19,9 @@ namespace Comuki.Engine.Orchestration.Integration.Queue;
 /// owner-guarded heartbeat/complete/fail, the reaper requeue/fail policy and
 /// the journal events emitted in the same transactions.
 /// </summary>
-public sealed class WorkItemQueueShould : QueueDatabase
+/// <param name="postgres">The collection's shared Postgres (<see cref="QueueIntegrationCollection"/>) — reset to empty for every test, migrated once for the whole run.</param>
+[Collection(nameof(QueueIntegrationCollection))]
+public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : QueueDatabase(postgres)
 {
     private static readonly DateTimeOffset claimAt = new(2026, 8, 31, 12, 0, 0, TimeSpan.Zero);
 
@@ -241,7 +244,10 @@ public sealed class WorkItemQueueShould : QueueDatabase
 
         var events = await LoadEventsAsync(seeded.RunId);
         events.ShouldContain(static runEvent => runEvent.Type == "work_item.status_changed" && runEvent.OccurredAt == claimAt.AddMinutes(1));
-        var transition = events.Single(static runEvent => runEvent.OccurredAt == claimAt.AddMinutes(1));
+        // The completed item was also the run's last open one, so the same
+        // instant carries a sibling run.status_changed — filter by type to
+        // pick the work-item transition specifically.
+        var transition = events.Single(static runEvent => runEvent.Type == "work_item.status_changed" && runEvent.OccurredAt == claimAt.AddMinutes(1));
         using var payload = JsonDocument.Parse(transition.Payload);
         payload.RootElement.GetProperty("to").GetString().ShouldBe("Succeeded", transition.Payload);
         // the worker result JSON is embedded as the detail value itself
@@ -266,7 +272,10 @@ public sealed class WorkItemQueueShould : QueueDatabase
 
         var events = await LoadEventsAsync(seeded.RunId);
         events.ShouldContain(static runEvent => runEvent.Type == "work_item.status_changed" && runEvent.OccurredAt == claimAt.AddSeconds(30));
-        var transition = events.Single(static runEvent => runEvent.OccurredAt == claimAt.AddSeconds(30));
+        // The failed item was also the run's last open one, so the same
+        // instant carries a sibling run.status_changed — filter by type to
+        // pick the work-item transition specifically.
+        var transition = events.Single(static runEvent => runEvent.Type == "work_item.status_changed" && runEvent.OccurredAt == claimAt.AddSeconds(30));
         using var payload = JsonDocument.Parse(transition.Payload);
         payload.RootElement.GetProperty("to").GetString().ShouldBe("Failed");
         payload.RootElement.GetProperty("detail").GetString().ShouldBe("OOM killed");
@@ -326,8 +335,10 @@ public sealed class WorkItemQueueShould : QueueDatabase
 
         var timeline = await journal.ReadTimelineAsync(seeded.RunId, page: 1, pageSize: 10, cancellationToken);
 
-        var entry = timeline.ShouldHaveSingleItem();
-        entry.Type.ShouldBe("work_item.status_changed");
+        // The claim is also the run's first activation, so the timeline
+        // carries a sibling run.status_changed at the same instant — filter
+        // by type to isolate the work-item transition under test.
+        var entry = timeline.Single(static runEvent => runEvent.Type == "work_item.status_changed");
         entry.RunId.ShouldBe(seeded.RunId);
     }
 }

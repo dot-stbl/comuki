@@ -12,6 +12,7 @@
     <Project Path="platform/src/shared/Comuki.Shared.Telemetry/Comuki.Shared.Telemetry.csproj" />
     <Project Path="platform/src/shared/Comuki.Shared.Bootstrap/Comuki.Shared.Bootstrap.csproj" />
     <Project Path="platform/src/shared/Comuki.Shared.Migrations/Comuki.Shared.Migrations.csproj" />
+    <Project Path="platform/src/shared/Comuki.Shared.Redis/Comuki.Shared.Redis.csproj" />
   </Folder>
   <Folder Name="/platform/src/modules/">
     <Project Path="platform/src/modules/Identity/Comuki.Modules.Identity.Domain/Comuki.Modules.Identity.Domain.csproj" />
@@ -43,6 +44,9 @@
     <Project Path="platform/src/modules/Knowledge/Comuki.Modules.Knowledge.Domain/Comuki.Modules.Knowledge.Domain.csproj" />
     <Project Path="platform/src/modules/Knowledge/Comuki.Modules.Knowledge.Application/Comuki.Modules.Knowledge.Application.csproj" />
     <Project Path="platform/src/modules/Knowledge/Comuki.Modules.Knowledge.Infrastructure/Comuki.Modules.Knowledge.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Verify/Comuki.Modules.Verify.Domain/Comuki.Modules.Verify.Domain.csproj" />
+    <Project Path="platform/src/modules/Verify/Comuki.Modules.Verify.Application/Comuki.Modules.Verify.Application.csproj" />
+    <Project Path="platform/src/modules/Verify/Comuki.Modules.Verify.Infrastructure/Comuki.Modules.Verify.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/platform/src/" />
   <Folder Name="/platform/src/engine/">
@@ -70,6 +74,7 @@
     <Project Path="tests/unit/Comuki.Host.Unit.Auth/Comuki.Host.Unit.Auth.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Cli/Comuki.Host.Unit.Cli.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Cors/Comuki.Host.Unit.Cors.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.DiComposition/Comuki.Host.Unit.DiComposition.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Mcp/Comuki.Host.Unit.Mcp.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.OidcSweeper/Comuki.Host.Unit.OidcSweeper.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Costs/Comuki.Host.Unit.Costs.csproj" />
@@ -89,6 +94,7 @@
     <Project Path="tests/unit/Comuki.Modules.Artifacts.Unit/Comuki.Modules.Artifacts.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Realtime/Comuki.Host.Unit.Realtime.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Scheduler.Unit/Comuki.Modules.Scheduler.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Verify.Unit/Comuki.Modules.Verify.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Knowledge.Unit/Comuki.Modules.Knowledge.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Knowledge.DomainLayerTests/Comuki.Modules.Knowledge.DomainLayerTests.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Proxy.DomainLayerTests/Comuki.Modules.Proxy.DomainLayerTests.csproj" />
@@ -98,6 +104,9 @@
     <Project Path="tests/unit/Comuki.Shared.Kernel.Tests/Comuki.Shared.Kernel.Tests.csproj" />
     <Project Path="tests/unit/Comuki.Shared.Contracts.Unit.Realtime/Comuki.Shared.Contracts.Unit.Realtime.csproj" />
     <Project Path="tests/unit/Comuki.Migrator.Unit/Comuki.Migrator.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.TestFakeModel.Unit/Comuki.TestFakeModel.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.AgentTest.Runner.Unit/Comuki.AgentTest.Runner.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.AgentEval.Unit/Comuki.AgentEval.Unit.csproj" />
   </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/Comuki.Host.Testing/Comuki.Host.Testing.csproj" />
@@ -109,7 +118,10 @@
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Migrations/Comuki.Modules.Identity.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Memory.Integration.Migrations/Comuki.Modules.Memory.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.Migrations/Comuki.Modules.Projects.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Projects.Integration.RedisCache/Comuki.Modules.Projects.Integration.RedisCache.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Intake.Integration.Migrations/Comuki.Modules.Intake.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Verify.Integration.Migrations/Comuki.Modules.Verify.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Chat.Integration.Migrations/Comuki.Modules.Chat.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Chat/Comuki.Host.Integration.Chat.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Errors/Comuki.Host.Integration.Errors.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Intake/Comuki.Host.Integration.Intake.csproj" />
@@ -124,9 +136,16 @@
     <Project Path="tests/integration/Comuki.Host.Integration.Secrets/Comuki.Host.Integration.Secrets.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Stores/Comuki.Modules.Identity.Integration.Stores.csproj" />
     <Project Path="tests/integration/Comuki.Shared.Filtering.Integration.Ef/Comuki.Shared.Filtering.Integration.Ef.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Knowledge.Integration/Comuki.Modules.Knowledge.Integration.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Compute/Comuki.Host.Integration.Compute.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Settings/Comuki.Host.Integration.Settings.csproj" />
+    <Project Path="tests/integration/Comuki.EndToEnd.AgentLoop/Comuki.EndToEnd.AgentLoop.csproj" />
   </Folder>
   <Folder Name="/tests/tools/">
+    <Project Path="tests/tools/Comuki.TestFakeModel/Comuki.TestFakeModel.csproj" />
     <Project Path="tests/tools/Comuki.TestFakePi/Comuki.TestFakePi.csproj" />
+    <Project Path="tests/tools/Comuki.AgentTest.Runner/Comuki.AgentTest.Runner.csproj" />
+    <Project Path="tests/tools/Comuki.AgentEval/Comuki.AgentEval.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Comuki.Codegen.Realtime/Comuki.Codegen.Realtime.csproj" />

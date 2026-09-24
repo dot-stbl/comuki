@@ -1,0 +1,527 @@
+[
+  {
+    "storyId": "chat-chatmessage--all-parts",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--all-parts",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--answered-with-metrics",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--answered-with-metrics",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--code",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--code",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--decided",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--decided",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--diagram",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--empty-turn",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--errored",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--long-thread",
+    "theme": "dark",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "chat-chatmessage--long-thread",
+    "theme": "dark",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "chat-chatmessage--long-thread",
+    "theme": "dark",
+    "ruleId": "scrollable-region-focusable"
+  },
+  {
+    "storyId": "chat-chatmessage--long-thread",
+    "theme": "light",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "chat-chatmessage--long-thread",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--long-thread",
+    "theme": "light",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "chat-chatmessage--long-thread",
+    "theme": "light",
+    "ruleId": "scrollable-region-focusable"
+  },
+  {
+    "storyId": "chat-chatmessage--markdown",
+    "theme": "dark",
+    "ruleId": "label"
+  },
+  {
+    "storyId": "chat-chatmessage--markdown",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--markdown",
+    "theme": "light",
+    "ruleId": "label"
+  },
+  {
+    "storyId": "chat-chatmessage--memory-digest",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--permission-denied",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--permission-denied",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--plan",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--proposal",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--proposal",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--references-and-handoff",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--streaming",
+    "theme": "dark",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "chat-chatmessage--streaming",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--streaming",
+    "theme": "dark",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "chat-chatmessage--streaming",
+    "theme": "light",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "chat-chatmessage--streaming",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--streaming",
+    "theme": "light",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "chat-chatmessage--thinking",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--thinking-in-flight",
+    "theme": "dark",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "chat-chatmessage--thinking-in-flight",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--thinking-in-flight",
+    "theme": "dark",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "chat-chatmessage--thinking-in-flight",
+    "theme": "light",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "chat-chatmessage--thinking-in-flight",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--thinking-in-flight",
+    "theme": "light",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "chat-chatmessage--tool-calls",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--tool-calls",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--tool-part-with-duration",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--tool-part-with-duration",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--typing-pause",
+    "theme": "dark",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "chat-chatmessage--typing-pause",
+    "theme": "dark",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "chat-chatmessage--typing-pause",
+    "theme": "light",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "chat-chatmessage--typing-pause",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--typing-pause",
+    "theme": "light",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "domains-chat-chatdock--panel-depth",
+    "theme": "dark",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "domains-chat-chatdock--panel-depth",
+    "theme": "dark",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "domains-chat-chatdock--panel-depth",
+    "theme": "dark",
+    "ruleId": "region"
+  },
+  {
+    "storyId": "domains-chat-chatdock--panel-depth",
+    "theme": "dark",
+    "ruleId": "scrollable-region-focusable"
+  },
+  {
+    "storyId": "domains-chat-chatdock--panel-depth",
+    "theme": "light",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "domains-chat-chatdock--panel-depth",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "domains-chat-chatdock--panel-depth",
+    "theme": "light",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "domains-chat-chatdock--panel-depth",
+    "theme": "light",
+    "ruleId": "region"
+  },
+  {
+    "storyId": "domains-chat-chatdock--panel-depth",
+    "theme": "light",
+    "ruleId": "scrollable-region-focusable"
+  },
+  {
+    "storyId": "domains-chat-chatdock--filling-the-window",
+    "theme": "dark",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "domains-chat-chatdock--filling-the-window",
+    "theme": "dark",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "domains-chat-chatdock--filling-the-window",
+    "theme": "dark",
+    "ruleId": "region"
+  },
+  {
+    "storyId": "domains-chat-chatdock--filling-the-window",
+    "theme": "light",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "domains-chat-chatdock--filling-the-window",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "domains-chat-chatdock--filling-the-window",
+    "theme": "light",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "domains-chat-chatdock--filling-the-window",
+    "theme": "light",
+    "ruleId": "region"
+  },
+  {
+    "storyId": "domains-chat-chatdock--seeded-from-a-run",
+    "theme": "dark",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "domains-chat-chatdock--seeded-from-a-run",
+    "theme": "dark",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "domains-chat-chatdock--seeded-from-a-run",
+    "theme": "dark",
+    "ruleId": "region"
+  },
+  {
+    "storyId": "domains-chat-chatdock--seeded-from-a-run",
+    "theme": "dark",
+    "ruleId": "scrollable-region-focusable"
+  },
+  {
+    "storyId": "domains-chat-chatdock--seeded-from-a-run",
+    "theme": "light",
+    "ruleId": "aria-allowed-role"
+  },
+  {
+    "storyId": "domains-chat-chatdock--seeded-from-a-run",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "domains-chat-chatdock--seeded-from-a-run",
+    "theme": "light",
+    "ruleId": "listitem"
+  },
+  {
+    "storyId": "domains-chat-chatdock--seeded-from-a-run",
+    "theme": "light",
+    "ruleId": "region"
+  },
+  {
+    "storyId": "domains-chat-chatdock--seeded-from-a-run",
+    "theme": "light",
+    "ruleId": "scrollable-region-focusable"
+  },
+  {
+    "storyId": "runs-profile-river--full-swarm",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-profile-river--full-swarm",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-profile-river--profile-selected",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-profile-river--small-swarm",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-profile-river--with-cancelled",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--branching",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--branching",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--cancelled",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--cancelled",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--failed-and-blocked",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--failed-and-blocked",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--large-run",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--large-run",
+    "theme": "dark",
+    "ruleId": "scrollable-region-focusable"
+  },
+  {
+    "storyId": "runs-run-graph--large-run",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--large-run",
+    "theme": "light",
+    "ruleId": "scrollable-region-focusable"
+  },
+  {
+    "storyId": "runs-run-graph--long-dependency",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--long-dependency",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--no-plan",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--single-chain",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--single-chain",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--static-preview",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--static-preview",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--waiting-on-a-human",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--waiting-on-a-human",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-work-item-inspector--implementing",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-work-item-inspector--implementing",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-work-item-inspector--joining-two-lanes",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-work-item-inspector--joining-two-lanes",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-work-item-inspector--not-started",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-work-item-inspector--not-started",
+    "theme": "light",
+    "ruleId": "color-contrast"
+  }
+]

@@ -8,6 +8,7 @@ using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Modules.Scheduler.Infrastructure.Persistence;
+using Comuki.Modules.Verify.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Comuki.Shared.Migrations.Targets;
@@ -85,6 +86,12 @@ public static class MigrationTargets
             var builder = new DbContextOptionsBuilder<SchedulerDbContext>();
             SchedulerDbContext.ApplyOptions(builder, connectionString);
             return new SchedulerDbContext(builder.Options);
+        }),
+        new("verify", VerifyDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<VerifyDbContext>();
+            VerifyDbContext.ApplyOptions(builder, connectionString);
+            return new VerifyDbContext(builder.Options);
         }),
     ];
 }

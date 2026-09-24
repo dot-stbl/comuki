@@ -1,5 +1,6 @@
 import { useState } from "react"
 import type { Meta, StoryObj } from "@storybook/react"
+import { expect, userEvent } from "@storybook/test"
 
 import type { RunStatus, WorkItem } from "@/domains/runs/model/types"
 import { orderedItems } from "@/domains/runs/model/work-items"
@@ -86,11 +87,23 @@ const cancelled: WorkItem[] = orderedItems([
   work("w6", "tester", "прогнать смоук", "queued", ["w5"]),
 ])
 
+/** This repo's components key on `data-test`, not testing-library's default
+ *  `data-testid` — see `chat-message.test.tsx`'s `at()` helper. */
+function byTest(root: HTMLElement, name: string): HTMLElement {
+  const found = root.querySelector<HTMLElement>(`[data-test="${name}"]`)
+  if (!found) {
+    throw new Error(`[data-test="${name}"] not found in story canvas`)
+  }
+  return found
+}
+
 const meta: Meta<typeof RunGraph> = {
   title: "Runs/Run graph",
   component: RunGraph,
   parameters: { layout: "fullscreen" },
-  tags: ["autodocs"],
+  // "ws16-batch1": test:storybook's first interaction/visual/a11y batch —
+  // see storybook-tests/README.md.
+  tags: ["autodocs", "ws16-batch1"],
 }
 
 export default meta
@@ -99,6 +112,14 @@ type Story = StoryObj<typeof RunGraph>
 /** A plan the brain closed in three items: one lane, no branch, no marks. */
 export const SingleChain: Story = {
   render: () => <Board items={chain.workItems} current={chain.current} />,
+  play: async ({ canvasElement }) => {
+    // `Board`'s `onSelect` is `setSelected` directly (no toggle-off), so the
+    // one assertion that holds regardless of which item the run is
+    // "current" on is: clicking a node selects it.
+    const node = byTest(canvasElement, "work-item-node")
+    await userEvent.click(node)
+    await expect(node).toHaveAttribute("aria-pressed", "true")
+  },
 }
 
 /** Four implementers off one plan. The branching column names its own width. */

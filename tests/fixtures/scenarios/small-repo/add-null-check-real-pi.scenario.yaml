@@ -1,0 +1,62 @@
+# WS7 T2b worked example (openspec/changes/add-agentic-test-contour,
+# design.md D3 / tasks.md WS7). Same bug/ticket as add-null-check.scenario.yaml
+# (T2a) — a separate file because T2a's TestFakePi fixture stream (Bash)
+# and T2b's real-pi fakeScript (edit) cannot share one expectedTrajectory
+# block. Runner: tests/tools/Comuki.AgentTest.Runner. Consuming suite:
+# tests/integration/Comuki.EndToEnd.AgentLoop/RealPi
+# (RealPiFakeModelScenarioShould) — the real vendored pi binary
+# (deploy/hybrid/vendor/earendil-works-pi-coding-agent-0.85.1.tgz),
+# installed into a temp dir via `bun add`, pointed at
+# Comuki.TestFakeModel's FakeModelServer through a
+# PI_CODING_AGENT_DIR/models.json providers.anthropic.baseUrl override
+# (issue #150 — ANTHROPIC_BASE_URL alone does not redirect real pi for a
+# cataloged Anthropic model).
+schemaVersion: 1
+name: add-null-check
+description: >
+  Ticket asks for a null guard on OrderTotal.Calculate in the small-repo
+  fixture target repo. Difficulty: trivial. T2b: the real pi binary runs
+  against Comuki.TestFakeModel, scripted to edit the fixture file — the
+  first test that observes agents/comuki-worker-sdk hooks in situ with a
+  real pi process (design.md D3).
+ticket:
+  source: github
+  title: "NullReferenceException in OrderTotal.Calculate"
+  body: |
+    Calculate() throws when orders is null. Add a guard and a test.
+  labels: [bug, comuki]
+  targetRepo:
+    fixture: small-repo
+    ref: main
+worker:
+  # Not built/pulled for T2b — RealPiFakeModelHarness runs everything
+  # in-process (no container, no Podman/Docker dependency at all). This
+  # is only the claim label RealPiFakeModelHost's Intake:Worker:Image
+  # config must match — see RealPiFakeModelHarness for why an actual image
+  # is unnecessary here.
+  image: comuki-agent-test-worker:ws7-real-pi
+  profileKey: implement
+  profilesRef: test
+model:
+  mode: fake
+  fakeScript: scripts/add-null-check.fake.json
+expectedTrajectory:
+  # The fakeScript's first turn scripts an "edit" tool_use block; real pi
+  # actually executes it against the copied fixture file (WS7 task 7.2).
+  - stage: work-item
+    toolsUsed: [edit]
+    forbiddenTools: [WebFetch]
+assertions:
+  journal:
+    - condition: WorkspacePrepared
+      expected: true
+    - condition: AgentRunning
+      expected: true
+  run:
+    finalStatus: succeeded
+  # RealPiFakeModelHarness.ResolveWorkingDirectoryAsync exposes the copied
+  # fixture directory pi actually ran in — WS7 task 7.3.
+  diff:
+    filesChanged:
+      - path: "src/OrderTotal.cs"
+        mustContain: "ArgumentNullException"

@@ -1,3 +1,5 @@
+using Comuki.Host.Testing.Clocks;
+using Comuki.Host.Testing.Fixtures;
 using Comuki.Modules.Identity.Domain.ApiKeys;
 using Comuki.Modules.Identity.Domain.Assignments;
 using Comuki.Modules.Identity.Domain.Oidc;
@@ -10,23 +12,22 @@ using Comuki.Modules.Identity.Infrastructure.Persistence.Stores;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Comuki.Modules.Identity.Integration.Stores;
 
 /// <summary>
-/// Identity EF stores over a real Testcontainers Postgres: exercises the
-/// truth-table branches the unit suite cannot reach — the
+/// Identity EF stores over the collection's shared, migrated Postgres
+/// (<see cref="PostgresCollectionFixture"/>, reset to empty before every test):
+/// exercises the truth-table branches the unit suite cannot reach — the
 /// detached-vs-tracked SaveAsync paths, the active-only filter and the
 /// subject/scope filter composition of <see cref="RoleAssignmentStore"/>,
 /// plus the prefix lookup and SaveAsync paths of <see cref="ApiKeyStore"/>.
 /// </summary>
-public sealed class IdentityStoresShould : IAsyncLifetime
+/// <param name="postgres">The collection's shared Postgres (<see cref="IdentityStoresIntegrationCollection"/>) — reset to empty before every test.</param>
+[Collection(nameof(IdentityStoresIntegrationCollection))]
+public sealed class IdentityStoresShould(PostgresCollectionFixture postgres) : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
-
     private IdentityDbContext db = null!;
     private RoleAssignmentStore assignmentStore = null!;
     private ApiKeyStore apiKeyStore = null!;
@@ -37,16 +38,16 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-
-        await container.StartAsync(cancellationToken);
-        var connectionString = container.GetConnectionString();
+        // The identity schema is already migrated once by
+        // PostgresCollectionFixture (HostDatabaseMigrator.MigrateAllAsync
+        // covers it). Reset gives this test the same empty-tables
+        // starting point the old per-test container used to give it.
+        await postgres.ResetDatabaseAsync();
 
         var optionsBuilder = new DbContextOptionsBuilder<IdentityDbContext>();
-        IdentityDbContext.ApplyOptions(optionsBuilder, connectionString);
+        IdentityDbContext.ApplyOptions(optionsBuilder, postgres.ConnectionString);
 
         db = new IdentityDbContext(optionsBuilder.Options);
-        await db.Database.MigrateAsync(cancellationToken);
 
         var clock = new FakeTimeProvider(now);
 
@@ -59,32 +60,20 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await db.DisposeAsync();
-        await container.DisposeAsync();
     }
 
-    /// <summary>Wipes the data between tests so each one starts from a clean slate.</summary>
-    private async Task ResetAsync()
-    {
-        await db.RoleAssignments.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
-        await db.ApiKeys.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
-        await db.OidcLinks.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
-        await db.OidcStates.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
-        await db.Users.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
-    }
-
-    private static User NewUser()
+    private User NewUser()
     {
         return User.Create(
             $"u-{Guid.NewGuid():N}@example.test",
             "ada",
             "secret-12345",
-            DateTimeOffset.UtcNow);
+            now);
     }
 
     [Fact(DisplayName = "Given assignments of one subject, when ListActiveAsync runs, then only active rows return and revoked ones are filtered out")]
     public async Task ListActiveFiltersRevokedAsync()
     {
-        await ResetAsync();
         var subject = new RoleSubject(SubjectType.User, Guid.NewGuid());
         var active = RoleAssignment.Create(subject, Role.Member, AssignmentScope.Platform(), null, now);
         var revoked = RoleAssignment.Create(subject, Role.Member, AssignmentScope.Platform(), null, now);
@@ -102,7 +91,6 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     [Fact(DisplayName = "Given a revoked assignment, when FindActiveAsync is queried by id, then null is returned")]
     public async Task FindActiveByIdSkipsRevokedAsync()
     {
-        await ResetAsync();
         var assignment = RoleAssignment.Create(
             new RoleSubject(SubjectType.User, Guid.NewGuid()),
             Role.Member,
@@ -120,7 +108,6 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     [Fact(DisplayName = "Given assignments of different scopes, when FindActiveAsync runs by subject+role+scope, then only the matching one is returned")]
     public async Task FindActiveBySubjectRoleScopeAsync()
     {
-        await ResetAsync();
         var subject = new RoleSubject(SubjectType.User, Guid.NewGuid());
         var projectA = ProjectId.New();
         var projectB = ProjectId.New();
@@ -144,7 +131,6 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     [Fact(DisplayName = "Given a tracked assignment, when SaveAsync runs again, then no duplicate row is inserted")]
     public async Task SaveAsyncOnTrackedUpdatesExistingAsync()
     {
-        await ResetAsync();
         var assignment = RoleAssignment.Create(
             new RoleSubject(SubjectType.User, Guid.NewGuid()),
             Role.Member,
@@ -168,7 +154,6 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     [Fact(DisplayName = "Given a stored API key prefix, when FindByPrefixAsync runs, then the row is returned")]
     public async Task ApiKeyFindByPrefixAsync()
     {
-        await ResetAsync();
         var user = NewUser();
         await db.Users.AddAsync(user, TestContext.Current.CancellationToken);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -185,8 +170,6 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     [Fact(DisplayName = "Given an unknown prefix, when FindByPrefixAsync runs, then null is returned")]
     public async Task ApiKeyFindByPrefixMissesAsync()
     {
-        await ResetAsync();
-
         var found = await apiKeyStore.FindByPrefixAsync("ghost", TestContext.Current.CancellationToken);
 
         found.ShouldBeNull();
@@ -195,7 +178,6 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     [Fact(DisplayName = "Given a stored API key, when FindByIdAsync runs, then the row is returned")]
     public async Task ApiKeyFindByIdAsync()
     {
-        await ResetAsync();
         var user = NewUser();
         await db.Users.AddAsync(user, TestContext.Current.CancellationToken);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -212,7 +194,6 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     [Fact(DisplayName = "Given a tracked API key, when SaveAsync runs again, then no duplicate row is inserted")]
     public async Task ApiKeySaveAsyncOnTrackedUpdatesAsync()
     {
-        await ResetAsync();
         var user = NewUser();
         await db.Users.AddAsync(user, TestContext.Current.CancellationToken);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -232,8 +213,6 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     [Fact(DisplayName = "Given OIDC states of mixed ages, when DeleteExpiredAsync runs past the cutoff, then dead rows are purged and live rows survive")]
     public async Task OidcStateDeleteExpiredPurgesOnlyExpiredAsync()
     {
-        await ResetAsync();
-
         var stale = OidcState.Create(
             "keycloak",
             "stale-verifier",
@@ -266,8 +245,6 @@ public sealed class IdentityStoresShould : IAsyncLifetime
     [Fact(DisplayName = "Given a stored OIDC state whose ExpiresAt has passed, when ConsumeAsync runs, then null is returned even though the row exists")]
     public async Task OidcStateConsumeExpiredReturnsNullAsync()
     {
-        await ResetAsync();
-
         // Created 10 minutes before the fixture's "now" with a 5-minute TTL —
         // ExpiresAt = now-5min, which is already in the past at the fixture clock.
         var expired = OidcState.Create(
@@ -283,21 +260,5 @@ public sealed class IdentityStoresShould : IAsyncLifetime
         var consumed = await oidcStateStore.ConsumeAsync(expired.Id, TestContext.Current.CancellationToken);
 
         consumed.ShouldBeNull();
-    }
-}
-
-/// <summary>
-/// Deterministic clock for expiry tests — the store reads time exclusively
-/// through the injected <see cref="TimeProvider" />.
-/// </summary>
-/// <param name="initial">The fixed reading returned by <see cref="GetUtcNow" />.</param>
-internal sealed class FakeTimeProvider(DateTimeOffset initial) : TimeProvider
-{
-    private readonly DateTimeOffset utcNow = initial;
-
-    /// <inheritdoc />
-    public override DateTimeOffset GetUtcNow()
-    {
-        return utcNow;
     }
 }

@@ -47,39 +47,55 @@ platform/
 │     (сейчас часть в корне репо — оставить единый DB.props в корне OK)
 │
 ├── shared/
-│   ├── Comuki.Shared.Kernel           # примитивы, ids, results — 0 I/O
-│   ├── Comuki.Shared.Contracts        # порты: IComputeProvider, IChatGateway…
-│   ├── Comuki.Shared.Persistence      # EF base, naming, shared helpers
-│   ├── Comuki.Shared.Configuration    # YAML + env binder
-│   └── Comuki.Shared.Telemetry        # OTel → Victoria
+│   ├── Comuki.Shared.Kernel            # примитивы, ids, results, secrets abstraction — 0 I/O
+│   ├── Comuki.Shared.Contracts         # порты/DTO между модулями: Brain, Chat, Compute,
+│   │                                    #   Costs, ControlPlane, Grpc, Journal, Memory, Plans,
+│   │                                    #   Queue, Realtime, Runs, Usage
+│   ├── Comuki.Shared.Filtering         # generic filter DSL (lexer/parser/AST) + EF translator
+│   ├── Comuki.Shared.Telemetry         # OTel → VictoriaMetrics
+│   ├── Comuki.Shared.Bootstrap         # host composition helpers: CLI, config, correlation,
+│   │                                    #   logging, versioning, background-worker registry
+│   └── Comuki.Shared.Migrations        # cross-module migrated-DbContext list для Migrator
 │
-├── modules/                           # Domain | Application | Infrastructure
-│   ├── Identity/
+├── modules/                            # Domain | Application | Infrastructure
+│   ├── Identity/                       # users, API keys, roles, OIDC, authorization
 │   │   ├── Comuki.Modules.Identity.Domain
 │   │   ├── Comuki.Modules.Identity.Application
 │   │   └── Comuki.Modules.Identity.Infrastructure   # EF + migrations
-│   ├── Intake/                        # GH/GL/YT/Jira/Native providers + admission
-│   ├── Chat/                          # sessions, slash catalog, memory ports
-│   ├── Brain/                         # agent-loop tools, plan emit (no git files)
-│   ├── Knowledge/                     # OPT-IN — MCP + retrieval
-│   └── Verify/                        # OPT-IN — generic-command gate
+│   ├── Intake/                         # GH/GL/YT/Jira/Native источники + admission
+│   ├── Chat/                           # sessions, slash catalog, agent graph (→ IBrainClient)
+│   ├── Memory/                         # digest/consolidation, learning rules, memory sweep
+│   ├── Projects/                       # project CRUD, admission, settings, project cache
+│   ├── Scheduler/                      # scheduled jobs, sentry, dispatch worker
+│   ├── Costs/                          # usage aggregation, budgets, recording, queries
+│   ├── Artifacts/                      # run-bundle packaging, visual artifacts (S3/MinIO)
+│   ├── Proxy/                          # OpenAI/Anthropic-compatible virtual-key gateway (YARP)
+│   └── Knowledge/                      # OPT-IN — MCP + retrieval, doc-ingest worker
 │
-├── engine/                            # runtime spine — не «фича продукта»
-│   ├── Comuki.Engine.Orchestration    # runs, work-item queue, plan apply, journal
-│   ├── Comuki.Engine.Compute          # providers Docker/k8s/containerd + pool/scale
-│   └── Comuki.Engine.Routing          # OPT — virtual keys / budget (с Proxy host)
+├── engine/                             # runtime spine — не «фича продукта»
+│   ├── Comuki.Engine.Orchestration     # runs, work-item queue, plan apply, journal
+│   └── Comuki.Engine.Compute           # providers Docker/k8s + pool/scale/egress fence
 │
-├── host/                              # composition roots / deployables
-│   ├── Comuki.Host                    # REST + SignalR + Voluta chat + webhooks/hooks
-│   ├── Comuki.Host.Brain              # отдельный процесс: brain agent-loop (gRPC server)
-│   ├── Comuki.Host.Proxy              # OPT thin YARP (OpenAI+Anthropic compatible)
-│   ├── Comuki.Host.Translator         # CMD образа воркера: claim+fetch+pi+gRPC client
-│   └── Comuki.Migrator                # one-shot EF migrations + seed
+├── host/                               # composition roots / deployables
+│   ├── Comuki.Host                     # REST + SignalR + Voluta chat + webhooks/hooks;
+│   │                                    #   также хостит Proxy (YARP, in-process) и
+│   │                                    #   Compute-snapshot endpoints — см. §7
+│   ├── Comuki.Host.Brain               # отдельный процесс: brain agent-loop (gRPC server)
+│   ├── Comuki.Host.Translator          # CMD образа воркера: claim+fetch+pi+gRPC client
+│   └── Comuki.Migrator                 # one-shot EF migrations + seed
 │
-└── api/                               # OPTIONAL как в console.x
-    └── Comuki.Api.*                   # controllers+DTO по bounded context
-        # Альтернатива v0: контроллеры живут в Host до разрастания поверхности
+└── api/                                # OPTIONAL как в console.x — не создан
+    └── Comuki.Api.*                    # controllers+DTO по bounded context
+        # Альтернатива v0 (текущая): контроллеры живут в Host
 ```
+
+> **Drift-примечание (2026-09-23).** `Brain` — не модуль, а host-процесс
+> (`Comuki.Host.Brain`); `Verify` нигде в дереве не существует (ни модуля,
+> ни капабилити). `Comuki.Engine.Routing` из более ранней версии этого
+> документа на диске тоже не создан — опция осталась нереализованной,
+> её функцию сегодня закрывает модуль `Proxy` + `Comuki.Host` (§7).
+> Модулей на диске и в `comuki.slnx` — 10 (см. список выше), 1:1 с этим
+> документом.
 
 ### Правила зависимостей
 
@@ -104,12 +120,12 @@ Api.* → Application   (не в Domain)
 
 ### Database
 
-Отдельных `Database.*` проектов **нет** (уход от старой схемы).  
-Миграции — в `*.Infrastructure/Migrations/` соответствующего модуля/engine.  
+Отдельных `Database.*` проектов **нет** (уход от старой схемы) — миграция
+уже завершена, включая переходный `Comuki.Platform.Database.Runs`, которого
+в дереве больше нет.  
+Миграции — в `*.Infrastructure/Migrations/` соответствующего модуля/engine
+(10 схем, по одной на `DbContext` — см. `.agents/docs/operations/database-schemas.md`).  
 Применяет `Comuki.Migrator`.
-
-Исключение на переходный период: `Comuki.Platform.Database.Runs` живёт до
-переноса в `Engine.Orchestration.Infrastructure`.
 
 ### Translator host
 
@@ -195,11 +211,18 @@ deploy/
 
 | Host | Зачем |
 |------|--------|
-| `Comuki.Host` | REST (dashboard, claim, `/api/hooks/*`) + SignalR + **Voluta chat** + composition |
+| `Comuki.Host` | REST (dashboard, claim, `/api/hooks/*`) + SignalR + **Voluta chat** + composition; хостит **в процессе** Proxy (YARP passthrough, virtual keys / budget) и Compute-snapshot endpoints |
 | `Comuki.Host.Brain` | Brain agent-loop; **gRPC server**; вызывается из Host |
-| `Comuki.Host.Proxy` | optional model gateway (virtual keys / budget) |
 | `Comuki.Host.Translator` | container CMD; **gRPC client** → Host (Orchestration) |
 | `Comuki.Migrator` | schema + seed |
+
+> **Drift-примечание.** Раньше здесь стояла отдельная строка
+> `Comuki.Host.Proxy` — такого проекта на диске нет и не было в этой
+> версии дерева. Proxy/YARP собран in-process внутри `Comuki.Host`
+> (`Comuki.Host/Proxy/ProxyModuleEndpoints.cs`,
+> `ProxyKeyAdminEndpoints.cs`); пакет `Yarp.ReverseProxy` живёт в
+> `Comuki.Modules.Proxy.Infrastructure` и подтягивается в Host транзитивно.
+> Хостов-процессов реально **4**, не 5.
 
 Внутренние швы service↔service: **gRPC** (Translator, Brain).  
 Наружу к dashboard: **OpenAPI + SignalR** (Kubb/Refit на клиентах).
@@ -276,4 +299,5 @@ arch tests ослабить на переход или писать под фа�
 
 ---
 
-*Обновлено под scope 2026-08-30 · каркас shared/modules/engine/host.*
+*Каркас shared/modules/engine/host зафиксирован 2026-08-30 · §2/§7 сверены
+с деревом на диске 2026-09-23 (10 модулей, 4 host-процесса).*

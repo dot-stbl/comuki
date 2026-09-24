@@ -393,6 +393,45 @@ errors.
 
 ### Requirement: Operator runbook and backup procedure
 
+The repository SHALL maintain an operator runbook
+(`.agents/docs/operations/runbook.md`) covering quick start, bootstrap
+admin, OIDC setup, backup, restore, upgrade, troubleshooting, and
+performance, plus a companion backup/restore procedure
+(`.agents/docs/operations/backup.md`) with per-store commands for
+every stateful component the host depends on: Postgres (`pg_dump` /
+`pg_restore` across all per-DbContext schemas) and MinIO (`mc mirror`
+of the `comuki-run-bundles` bucket). The bootstrap admin password and
+OIDC client secrets are explicitly out of scope for the backup — they
+are expected to live in the deployment's own secret store (Kubernetes
+Secret, Vault, Secrets Manager) and are documented as such.
+
+The restore procedure SHALL cover both full loss and the two partial-loss
+cases (Postgres intact/MinIO lost, MinIO intact/Postgres lost) without
+data loss: the `artifacts.run_bundles` table keeps the canonical
+pointer list so a MinIO-only loss recovers as the packager repopulates
+the bucket on the next terminal-run pass, and a Postgres-only loss
+recovers by restoring the dump and applying pending migrations via
+`Comuki.Migrator` before the bucket's existing keys are read again.
+
+#### Scenario: Postgres restored, MinIO intact
+- **WHEN** an operator restores the orchestrator database from a
+  `pg_dump` backup and runs `Comuki.Migrator` to bring the schema
+  forward, while the `comuki-run-bundles` MinIO bucket was never lost
+- **THEN** the host boots against the restored database, and
+  `GET /api/v1/projects/{id}/runs/{id}/artifacts` returns the same
+  pointer list as before the loss because the bucket's object keys
+  (`{projectId}/{runId}/...`) still match the restored
+  `artifacts.run_bundles` rows
+
+#### Scenario: MinIO restored, Postgres intact
+- **WHEN** an operator mirrors the `comuki-run-bundles` bucket back
+  from an `mc mirror` backup into a fresh MinIO instance with the same
+  access/secret keys, while Postgres was never lost
+- **THEN** the host's artifact reads resume returning the pre-loss
+  pointer list immediately, and any run that terminates after the
+  restore has its bundle repopulated by the `RunArtifactPackager` on
+  its next terminal pass with no manual intervention
+
 ### Requirement: Optional OpenAI / Anthropic proxy
 
 The host SHALL expose an optional YARP-backed proxy that forwards

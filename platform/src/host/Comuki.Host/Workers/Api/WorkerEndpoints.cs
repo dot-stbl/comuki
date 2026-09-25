@@ -94,7 +94,7 @@ public static class WorkerEndpoints
 
     private static async Task<IResult> HeartbeatAsync(
         Guid workItemId,
-        HeartbeatWorkItemRequest request,
+        HeartbeatWorkItemRequest? request,
         HttpContext httpContext,
         WorkerTokenAuthenticator authenticator,
         ISubjectScopeAccessor scopeAccessor,
@@ -111,8 +111,14 @@ public static class WorkerEndpoints
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var now = clock.GetUtcNow();
+        // A pre-WS4/WS5 Translator sends no body at all — request binds to
+        // null rather than a 400. 0 never matches a real claimed generation
+        // (WorkItemQueueSql's ClaimSql always stamps the item from the
+        // owning run's generation, which starts at 1), so the guarded SQL
+        // rejects it as an ownership miss like any other stale generation.
+        var generation = request?.Generation ?? 0;
         var extended = await queue.HeartbeatAsync(
-            workItemId, workerId, request.Generation, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
+            workItemId, workerId, generation, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
         if (extended)
         {
             pool.Touch(workerId);

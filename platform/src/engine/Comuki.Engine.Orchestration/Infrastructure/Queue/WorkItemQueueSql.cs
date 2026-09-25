@@ -46,7 +46,16 @@ internal static class WorkItemQueueSql
     /// <summary>Compiler-checked run status literal.</summary>
     private const string RunFailed = nameof(RunStatus.Failed);
 
-    /// <summary>Claim: oldest queued item matching the labels, row-locked for the update.</summary>
+    /// <summary>Compiler-checked run status literal — defense-in-depth guard on <see cref="ClaimSql"/>
+    /// (a cancelled run's items are transitioned to Cancelled by the host's cancel path in the same
+    /// transaction as the run itself, so this predicate is normally never the reason a claim misses —
+    /// see <c>HostCancelRunAdapter</c>'s <c>RunCancelSql</c>).</summary>
+    private const string RunCancelled = nameof(RunStatus.Cancelled);
+
+    /// <summary>Claim: oldest queued item matching the labels, row-locked for the update. Excludes
+    /// items whose run has already gone terminal — defense-in-depth alongside the host cancel path's
+    /// own item transitions (see <see cref="RunCancelled"/> remarks): a claim racing a not-yet-committed
+    /// cancel must never hand out an item whose run it will never belong to again.</summary>
     public const string ClaimSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET status = '" + Running + "', leased_by = @workerId, lease_until = @leaseUntil, "
@@ -58,6 +67,11 @@ internal static class WorkItemQueueSql
         + "      AND profile_key = @profileKey "
         + "      AND image = @image "
         + "      AND profiles_ref = @profilesRef "
+        + "      AND EXISTS ( "
+        + "          SELECT 1 FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " r "
+        + "          WHERE r.id = " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + ".run_id "
+        + "            AND r.status NOT IN ('" + RunCancelled + "', '" + RunFailed + "', '" + RunSucceeded + "') "
+        + "      ) "
         + "    ORDER BY created_at "
         + "    LIMIT 1 "
         + "    FOR UPDATE SKIP LOCKED "

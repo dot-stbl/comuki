@@ -155,6 +155,16 @@ WorkItem execution, then has the worker attempt heartbeat/complete at
 its pre-cancel generation — the mutation is rejected and the Run/Task
 outcome is unaffected by the late call.
 
+**Follow-up (LOW, coordinator W1 batch review, not fixed here):** the
+generation fence covers the worker REST claim/heartbeat/complete/fail
+surface only — artifact uploads (`platform/src/host/Comuki.Host/Artifacts`)
+and the worker gRPC stream (`Comuki.Host.Workers.Grpc.WorkerGrpcService`)
+do not check a caller-presented generation, so a stale-generation worker
+can still upload artifacts or hold its gRPC stream open after cancel.
+Both are lower-value targets than the REST surface (no state mutation on
+the Run/WorkItem aggregates flows through them) but should get the same
+guard eventually — out of scope for this change's WS4/WS5.
+
 ---
 
 ## WS6 — Durable outbox/inbox infrastructure

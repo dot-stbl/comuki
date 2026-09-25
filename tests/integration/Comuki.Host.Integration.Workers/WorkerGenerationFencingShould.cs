@@ -137,4 +137,24 @@ public sealed class WorkerGenerationFencingShould(PostgresCollectionFixture post
             cancellationToken);
         currentHeartbeat.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
+
+    [Fact(DisplayName = "Given a claimed item, when heartbeated with no request body (a pre-WS4/WS5 Translator), then 409 not-owner, not 400")]
+    public async Task RejectMissingBodyOnHeartbeatAsGenerationMissAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedQueuedItemAsync(cancellationToken);
+        using var client = CreateWorkerClient();
+
+        var claimResponse = await client.PostAsJsonAsync("/workers/claim", new ClaimWorkItemRequest(Image, ProfilesRef, ProfileKey), cancellationToken);
+        var claimed = (await claimResponse.Content.ReadFromJsonAsync<ClaimedWorkItemResponse>(cancellationToken)).ShouldNotBeNull();
+
+        // No body at all — a pre-WS4/WS5 Translator's exact shape. Must bind
+        // to a null request (generation defaults to 0, never a real claimed
+        // generation) and 409, not fail model binding with a 400.
+        var bodylessHeartbeat = await client.PostAsync($"/workers/{claimed.WorkItemId}/heartbeat", content: null, cancellationToken);
+
+        bodylessHeartbeat.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        var body = await bodylessHeartbeat.Content.ReadAsStringAsync(cancellationToken);
+        body.ShouldContain("work-item.not-owner");
+    }
 }

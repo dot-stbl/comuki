@@ -8,6 +8,8 @@ using Comuki.Engine.Orchestration.Domain.Outbox;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Host;
+using Comuki.Host.Chat.RunStarter;
+using Comuki.Shared.Contracts.Plans;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
@@ -39,45 +41,38 @@ namespace Comuki.EndToEnd.AgentLoop;
 /// suite already use.
 /// </para>
 /// <para>
-/// Fact 1 covers WS9, WS1, WS2/WS7 and WS3 on a single run. Fact 2
-/// covers WS4/WS5 (cancel fences stale-worker complete) on a second,
-/// independent run. The two facts share no state beyond the host.
+/// Fact 1 covers WS9 (its own Run, via the real webhook path) and WS1/
+/// WS2/WS7/WS3 (a second Run, via the real <see cref="ChatRunStarter"/>
+/// plan materialization — the coordinator's crown review asked for this
+/// instead of a raw EF-seeded dependent plan, so the DAG-to-Blocked-item
+/// path under test is the actual production code, not a test double of
+/// it). Fact 2 covers WS4/WS5 (cancel fences stale-worker complete) on a
+/// third, independent run (its own Run, via the webhook path). No two
+/// facts, and no two Runs within Fact 1, share state.
 /// </para>
 /// </remarks>
 [Collection(nameof(CrownScenarioCollection))]
-public sealed class CrownScenarioShould(CrownScenarioHost host) : IAsyncLifetime
+public sealed class CrownScenarioShould(CrownScenarioHost host)
 {
-    /// <inheritdoc />
-    public async ValueTask InitializeAsync()
-    {
-        // Hold the boot-time migration + intake-bridge idle sweep from
-        // racing into Fact 1's first webhook POST (both TargetInvocation
-        // windows open for the very first claim) — the WebhooksShould
-        // suite calls no equivalent, but it doesn't have a webhook
-        // backed by a watch rule + on-the-fly bridge worker either; a
-        // 1-second sleep is the cheap, conservative settlement.
-        await Task.Delay(TimeSpan.FromMilliseconds(250), TestContext.Current.CancellationToken);
-    }
-
-    /// <inheritdoc />
-    public ValueTask DisposeAsync()
-    {
-        return ValueTask.CompletedTask;
-    }
-
-    [Fact(DisplayName = "Given an admission webhook delivered twice, a dependent plan, and a concurrent terminal race, then WS9/WS1/WS2/WS7/WS3 all hold on one Run")]
+    [Fact(DisplayName = "Given an admission webhook delivered twice, a dependent plan, and a concurrent terminal race, then WS9/WS1/WS2/WS7/WS3 all hold")]
     public async Task ProvesAdmissionDependencyAndExactlyOnceFinalizationAsync()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var projectId = ProjectId.New().Value;
+
+        // WS9: same payload bytes + same deliveryId twice, through the real
+        // webhook endpoint, yields exactly one Run. Both the webhook's own
+        // admission and (below) ChatRunStarter's plan apply are synchronous
+        // DB writes awaited fully before the next line runs — no eventual
+        // consistency here, so no settle delay/condition wait is needed
+        // anywhere in this fact.
+        var admissionProjectId = ProjectId.New().Value;
         using var browser = await host.CreateBrowserClientAsync();
         using var anonymous = host.CreateAnonymousClient();
-        var webhookPath = await CrownScenarioHost.ProvisionWebhookAsync(browser, projectId, "comuki");
+        var webhookPath = await CrownScenarioHost.ProvisionWebhookAsync(browser, admissionProjectId, "comuki");
 
-        // WS9: same payload bytes + same deliveryId twice yields exactly one Run.
         var payload = CrownScenarioHost.BuildGithubIssuePayload(
-            title: "ws10 crown: dependency + terminal race",
-            body: "drives WS1 unblock + WS2/WS7 exactly-once finalization + WS3 no-retry edge on one Run",
+            title: "ws10 crown: admission idempotency",
+            body: "drives WS9 — an admission retry must not double-launch",
             labels: ["comuki"],
             issueNumber: 1042,
             repoFullName: "comuki/crown-scenario");
@@ -98,34 +93,49 @@ public sealed class CrownScenarioShould(CrownScenarioHost host) : IAsyncLifetime
             replayDoc.RootElement.GetProperty("outcome").GetString().ShouldBe("replay");
         }
 
-        // Exactly one run for this project.
-        var runs = await LoadRunsForProjectAsync(projectId);
-        runs.Count.ShouldBe(1);
-        var run = runs[0];
-        run.Id.Value.ShouldNotBe(Guid.Empty);
+        var admissionRun = (await LoadRunsForProjectAsync(admissionProjectId)).ShouldHaveSingleItem("WS9: a replayed admission delivery must not double-launch a run");
 
-        // WS1: the single intake-created item is the prerequisite; seed two
-        // dependents on the SAME run that point at it (DAG edge + DAG edge),
-        // both initially Blocked, with claim labels matching CrownScenarioHost.EntryLabels
-        // so one ClaimAsync covers the prerequisite AND both dependents after
-        // they unblock.
-        var items = await LoadWorkItemsForRunAsync(run.Id.Value);
-        items.Count.ShouldBe(1);
-        var entryItem = items[0];
+        // Retire the webhook-created item immediately — it plays no further
+        // role in this fact, and ClaimSql's FIFO has no run-id scoping (only
+        // label + status matching), so leaving it Queued would let a later
+        // ClaimAsync call below (or Fact 2's) pick it up ahead of — or
+        // instead of — the item that call actually means to claim.
+        var admissionItem = (await LoadWorkItemsForRunAsync(admissionRun.Id.Value)).ShouldHaveSingleItem();
+        var admissionWorker = WorkerId.New();
+        var admissionClaim = await ClaimAsync(admissionWorker, CrownScenarioHost.EntryLabels);
+        admissionClaim.ShouldNotBeNull();
+        admissionClaim.WorkItemId.ShouldBe(admissionItem.Id);
+        (await CompleteAsync(admissionItem.Id, admissionWorker, admissionClaim.Generation, summary: "admission fixture retired")).ShouldBeTrue();
+
+        // WS1: a real ChatRunStarter plan apply — prereq has no incoming
+        // edge (starts Queued); dep-a/dep-b each depend on prereq (start
+        // Blocked). This is the exact DAG-to-item materialization
+        // ChatRunStarter.StartAsync does in production (fix #166), not a
+        // raw EF seed of the same shape.
+        var planProjectId = ProjectId.New();
+        var plan = new Plan(
+            Summary: "crown dependency plan",
+            Nodes:
+            [
+                new PlanNode("prereq", "Prerequisite", "implement", "crown prerequisite brief"),
+                new PlanNode("dep-a", "Dependent A", "implement", "crown dependent-a brief"),
+                new PlanNode("dep-b", "Dependent B", "implement", "crown dependent-b brief"),
+            ],
+            Edges:
+            [
+                new PlanEdge("prereq", "dep-a"),
+                new PlanEdge("prereq", "dep-b"),
+            ]);
+        var planRunId = await StartChatPlanAsync(planProjectId, plan);
+
+        var items = await LoadWorkItemsForRunAsync(planRunId.Value);
+        items.Count.ShouldBe(3);
+        var entryItem = items.Single(item => item.Brief.Contains("crown prerequisite brief", StringComparison.Ordinal));
+        var dependentA = items.Single(item => item.Brief.Contains("crown dependent-a brief", StringComparison.Ordinal));
+        var dependentB = items.Single(item => item.Brief.Contains("crown dependent-b brief", StringComparison.Ordinal));
         entryItem.Status.ShouldBe(WorkItemStatus.Queued);
-
-        var seeded = await SeedBlockedDependentsAsync(
-            runId: run.Id.Value,
-            count: 2,
-            dependsOnWorkItemId: entryItem.Id);
-        var dependentA = seeded[0];
-        var dependentB = seeded[1];
-
-        var reloadedDependents = await LoadWorkItemsForRunAsync(run.Id.Value);
-        reloadedDependents.Count(item => item.Id == dependentA.Id).ShouldBe(1);
-        reloadedDependents.Count(item => item.Id == dependentB.Id).ShouldBe(1);
-        reloadedDependents.Single(item => item.Id == dependentA.Id).Status.ShouldBe(WorkItemStatus.Blocked);
-        reloadedDependents.Single(item => item.Id == dependentB.Id).Status.ShouldBe(WorkItemStatus.Blocked);
+        dependentA.Status.ShouldBe(WorkItemStatus.Blocked);
+        dependentB.Status.ShouldBe(WorkItemStatus.Blocked);
 
         // Drive the prerequisite to Succeeded — both dependents must unblock
         // in the same transaction (the SQL WS1 invariant the UnblockDependents
@@ -137,7 +147,7 @@ public sealed class CrownScenarioShould(CrownScenarioHost host) : IAsyncLifetime
         var entryCompleted = await CompleteAsync(entryItem.Id, entryWorker, entryClaim.Generation, summary: "entry done");
         entryCompleted.ShouldBeTrue();
 
-        var afterEntry = await LoadWorkItemsForRunAsync(run.Id.Value);
+        var afterEntry = await LoadWorkItemsForRunAsync(planRunId.Value);
         afterEntry.Single(item => item.Id == entryItem.Id).Status.ShouldBe(WorkItemStatus.Succeeded);
         var dependentAReloaded = afterEntry.Single(item => item.Id == dependentA.Id);
         var dependentBReloaded = afterEntry.Single(item => item.Id == dependentB.Id);
@@ -167,7 +177,7 @@ public sealed class CrownScenarioShould(CrownScenarioHost host) : IAsyncLifetime
         completeOneResult.ShouldBeTrue();
         failTwoResult.ShouldBeTrue();
 
-        var finalRun = (await LoadRunsForProjectAsync(projectId)).Single();
+        var finalRun = (await LoadRunsForProjectAsync(planProjectId.Value)).Single();
         finalRun.Status.ShouldBe(RunStatus.Failed);
 
         // Exactly one run.status_changed whose `to` is a terminal status
@@ -183,10 +193,21 @@ public sealed class CrownScenarioShould(CrownScenarioHost host) : IAsyncLifetime
         }).ToList();
         finalizations.ShouldHaveSingleItem("WS2/WS7: exactly one terminal run.status_changed event");
 
-        // Exactly one orchestration.run.terminated.v1 outbox row, status=Failed.
+        // Exactly one orchestration.run.terminated.v1 outbox row FOR THIS RUN.
+        // The retired WS9 admission item above finalizes its own,
+        // unrelated run and stages its own outbox row — LoadOutboxMessagesAsync
+        // reads the whole table, so this filters to planRunId to keep the
+        // assertion about the run this fact's WS2/WS7 race actually finalized.
         var outboxMessages = await LoadOutboxMessagesAsync();
-        var terminatedMessages = outboxMessages.Where(static message => message.Type == RunEventTypes.RunTerminatedV1).ToList();
-        terminatedMessages.ShouldHaveSingleItem("WS2/WS7: exactly one orchestration.run.terminated.v1 outbox row");
+        var terminatedMessages = outboxMessages
+            .Where(message => message.Type == RunEventTypes.RunTerminatedV1)
+            .Where(message =>
+            {
+                using var candidatePayload = JsonDocument.Parse(message.Payload);
+                return candidatePayload.RootElement.GetProperty("runId").GetGuid() == finalRun.Id.Value;
+            })
+            .ToList();
+        terminatedMessages.ShouldHaveSingleItem("WS2/WS7: exactly one orchestration.run.terminated.v1 outbox row for this run");
         using (var terminatedPayload = JsonDocument.Parse(terminatedMessages[0].Payload))
         {
             terminatedPayload.RootElement.GetProperty("runId").GetGuid().ShouldBe(finalRun.Id.Value);
@@ -303,35 +324,16 @@ public sealed class CrownScenarioShould(CrownScenarioHost host) : IAsyncLifetime
         return await db.OutboxMessages.AsNoTracking().ToListAsync(cancellationToken);
     }
 
-    /// <summary>Direct-seeds <paramref name="count"/> Blocked dependents on <paramref name="runId"/> that
-    /// all depend on <paramref name="dependsOnWorkItemId"/>. Mirrors the shape of
-    /// WorkItemQueueShould.SeedBlockedDependentAsync.</summary>
-    private async Task<List<WorkItem>> SeedBlockedDependentsAsync(
-        Guid runId,
-        int count,
-        Guid dependsOnWorkItemId)
+    /// <summary>Applies a plan through the real <see cref="ChatRunStarter"/> — the
+    /// production DAG-to-WorkItem materialization (dependents start Blocked,
+    /// see fix #166) — in its own scope, mirroring <see cref="ClaimAsync"/>'s shape.</summary>
+    private async Task<RunId> StartChatPlanAsync(ProjectId projectId, Plan plan)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        await using var db = host.CreateOrchestrationDb();
-        var now = DateTimeOffset.UtcNow;
-        var dependents = Enumerable.Range(0, count)
-            .Select(index => WorkItem.Create(
-                new RunId(runId),
-                profileKey: CrownScenarioHost.EntryLabels.ProfileKey,
-                image: CrownScenarioHost.EntryLabels.Image,
-                profilesRef: CrownScenarioHost.EntryLabels.ProfilesRef,
-                brief: /*lang=json,strict*/ $$"""{"goal":"crown-dependent-{{index}}"}""",
-                initialStatus: WorkItemStatus.Blocked,
-                now: now.AddMilliseconds(index)))
-            .ToList();
-        db.WorkItems.AddRange(dependents);
-        foreach (var dependent in dependents)
-        {
-            db.WorkItemDependencies.Add(WorkItemDependency.Create(dependent.Id, dependsOnWorkItemId));
-        }
-
-        await db.SaveChangesAsync(cancellationToken);
-        return dependents;
+        await using var scope = host.Services.CreateAsyncScope();
+        using var systemScope = scope.ServiceProvider.GetRequiredService<ISubjectScopeAccessor>().AsSystem("crown-scenario");
+        var starter = scope.ServiceProvider.GetRequiredService<ChatRunStarter>();
+        return await starter.StartAsync(projectId, plan, cancellationToken);
     }
 
     /// <summary>In-process worker claim — mirrors <see cref="AgentLoopHost"/>'s in-process-worker

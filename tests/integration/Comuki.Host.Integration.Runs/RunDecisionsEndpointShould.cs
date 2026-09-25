@@ -281,6 +281,108 @@ public sealed class RunDecisionsEndpointShould(PostgresCollectionFixture postgre
         }
     }
 
+    [Fact(DisplayName = "Given a Running run with Blocked, Queued and Running work items, when cancelled, then the Blocked and Queued items terminate Cancelled, the Running item is fenced, and nothing is claimable afterwards")]
+    public async Task CancelTerminatesNotStartedItemsAndFencesLiveItemAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var seed = await SeedRunningRunWithMixedItemsAsync();
+
+        using var client = await CreateAdminClientAsync();
+        var cancelResponse = await client.PostAsJsonAsync(
+            $"/api/v1/runs/{seed.RunId}/cancel",
+            new { reason = "cancel must stop Blocked/Queued items too" },
+            cancellationToken);
+
+        cancelResponse.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        await using var verifyDb = NewSystemDbContext();
+        var run = verifyDb.Runs.Single(r => r.Id == new RunId(seed.RunId));
+        run.Status.ShouldBe(RunStatus.Cancelled);
+
+        var runningItem = verifyDb.WorkItems.Single(i => i.Id == seed.RunningWorkItemId);
+        runningItem.Status.ShouldBe(WorkItemStatus.Running, "a live item is fenced, not cancelled outright — the worker still owns the lease");
+        runningItem.Generation.ShouldNotBe(seed.Generation);
+
+        var queuedItem = verifyDb.WorkItems.Single(i => i.Id == seed.QueuedWorkItemId);
+        queuedItem.Status.ShouldBe(WorkItemStatus.Cancelled);
+
+        var blockedItem = verifyDb.WorkItems.Single(i => i.Id == seed.BlockedWorkItemId);
+        blockedItem.Status.ShouldBe(WorkItemStatus.Cancelled);
+
+        // Defense-in-depth: ClaimSql itself excludes items whose run is
+        // terminal — nothing under this run is claimable after cancel,
+        // independent of the item-level transitions above.
+        var now = DateTimeOffset.UtcNow;
+        using var claimScope = application.Services.CreateScope();
+        var queue = claimScope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var claimed = await queue.ClaimAsync(
+            WorkerId.New(),
+            new WorkItemLabels(WorkItemImage, WorkItemProfilesRef, WorkItemProfileKey),
+            now.AddMinutes(2),
+            now,
+            cancellationToken);
+        claimed.ShouldBeNull();
+    }
+
+    /// <summary>Seeds a Run already in <see cref="RunStatus.Running"/> with three work
+    /// items covering every non-terminal status: one claimed (Running, via the
+    /// in-process <see cref="IWorkItemQueue"/>), one still Queued, and one Blocked
+    /// (depends on the Running item, so it can never unblock on its own during the
+    /// test). Distinct <c>CreatedAt</c> stamps make the claim below deterministic —
+    /// the Running item is seeded first so <c>ClaimSql</c>'s <c>ORDER BY created_at</c>
+    /// always picks it over the Queued one.</summary>
+    private async Task<MixedWorkItemSeed> SeedRunningRunWithMixedItemsAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var now = DateTimeOffset.UtcNow;
+
+        var run = Run.Create(ProjectId.New(), now);
+        run.TransitionTo(RunStatus.Running, now.AddSeconds(1));
+        var runningItem = WorkItem.Create(
+            run.Id, WorkItemProfileKey, WorkItemImage, WorkItemProfilesRef,
+            /*lang=json,strict*/ """{"goal":"live"}""", WorkItemStatus.Queued, now);
+        var queuedItem = WorkItem.Create(
+            run.Id, WorkItemProfileKey, WorkItemImage, WorkItemProfilesRef,
+            /*lang=json,strict*/ """{"goal":"queued"}""", WorkItemStatus.Queued, now.AddMilliseconds(1));
+        var blockedItem = WorkItem.Create(
+            run.Id, WorkItemProfileKey, WorkItemImage, WorkItemProfilesRef,
+            /*lang=json,strict*/ """{"goal":"blocked"}""", WorkItemStatus.Blocked, now.AddMilliseconds(2));
+
+        await using (var seedContext = NewSystemDbContext())
+        {
+            seedContext.Runs.Add(run);
+            seedContext.WorkItems.AddRange(runningItem, queuedItem, blockedItem);
+            seedContext.WorkItemDependencies.Add(WorkItemDependency.Create(blockedItem.Id, runningItem.Id));
+            await seedContext.SaveChangesAsync(cancellationToken);
+        }
+
+        var workerId = WorkerId.New();
+        ClaimedWorkItem? claimed;
+        using (var claimScope = application.Services.CreateScope())
+        {
+            var queue = claimScope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+            claimed = await queue.ClaimAsync(
+                workerId,
+                new WorkItemLabels(WorkItemImage, WorkItemProfilesRef, WorkItemProfileKey),
+                now.AddMinutes(2),
+                now,
+                cancellationToken);
+        }
+
+        claimed.ShouldNotBeNull();
+        claimed.WorkItemId.ShouldBe(runningItem.Id);
+
+        return new MixedWorkItemSeed(run.Id.Value, runningItem.Id, queuedItem.Id, blockedItem.Id, claimed.Generation);
+    }
+
+    /// <summary>Projection returned by <see cref="SeedRunningRunWithMixedItemsAsync"/>.</summary>
+    /// <param name="RunId"></param>
+    /// <param name="RunningWorkItemId"></param>
+    /// <param name="QueuedWorkItemId"></param>
+    /// <param name="BlockedWorkItemId"></param>
+    /// <param name="Generation">Generation the Running item was claimed under.</param>
+    private sealed record MixedWorkItemSeed(Guid RunId, Guid RunningWorkItemId, Guid QueuedWorkItemId, Guid BlockedWorkItemId, int Generation);
+
     /// <summary>WS5 seeding helper: seeds a Run already in <see cref="RunStatus.Running"/>,
     /// a Queued WorkItem under it, then claims via the in-process
     /// <see cref="IWorkItemQueue"/> so the run is exercised through the real claim

@@ -17,12 +17,16 @@ namespace Comuki.Host.Runs;
 /// <summary>
 /// Host-side <see cref="ICancelRunPort"/>: the operator-initiated cancel
 /// transitions any non-terminal run to <c>Cancelled</c>, bumps the run's
-/// own <see cref="Run.Generation"/>, fences every currently
-/// <see cref="WorkItemStatus.Running"/> work item under it (bumps each
-/// item's <see cref="WorkItem.Generation"/>), and appends the journal
-/// row in the same transaction. The fencing invalidates worker authority:
-/// a worker still holding a pre-cancel lease gets the existing WS4
-/// <c>work-item.not_owner</c> 409 on its next heartbeat / complete / fail
+/// own <see cref="Run.Generation"/>, and transitions every non-terminal
+/// work item under it in the same transaction: a <see cref="WorkItemStatus.Blocked"/>
+/// or <see cref="WorkItemStatus.Queued"/> item — nothing is executing it —
+/// moves straight to <see cref="WorkItemStatus.Cancelled"/> (a legal edge
+/// per <c>WorkItemTransitions</c>), so it can never be claimed after the
+/// run is gone; a <see cref="WorkItemStatus.Running"/> item is fenced by
+/// bumping its <see cref="WorkItem.Generation"/> (its status/lease are
+/// left intact, see below). The fencing invalidates worker authority: a
+/// worker still holding a pre-cancel lease gets the existing WS4
+/// <c>work-item.not-owner</c> 409 on its next heartbeat / complete / fail
 /// (no new response shape is introduced). The fenced item's lease fields
 /// (<c>leased_by</c> / <c>lease_until</c> / <c>heartbeat_at</c>) and its
 /// <c>status</c> are left intact — only <c>generation</c> and
@@ -75,12 +79,16 @@ public sealed class HostCancelRunAdapter(
 /// so a status rename fails the build instead of silently going stale. All
 /// SQL references the per-module
 /// <see cref="OrchestrationDatabase"/> constants so the queries find the
-/// tables regardless of <c>search_path</c>. The two UPDATEs run inside one
-/// transaction in **item-row-then-run-row** order — mirroring
-/// <c>WorkItemOwnedTransition.ApplyAsync</c>'s complete/finalize
-/// path so a concurrent cancel and a concurrent complete cannot deadlock
-/// (transaction A would not hold the run row wanting item rows while
-/// transaction B holds item rows wanting the run row).
+/// tables regardless of <c>search_path</c>. Every non-terminal item row is
+/// locked in **ascending id order** first (mirroring
+/// <c>WorkItemQueueSql.LockBlockedDependentsSql</c>'s remarks — the same
+/// deterministic-order requirement applies here: a cancel's bulk item
+/// touch and a concurrent complete's own item + dependent-unblock touch
+/// must acquire overlapping row locks in the same relative order or they
+/// can deadlock), then the item UPDATEs run, then the run row — mirroring
+/// <c>WorkItemOwnedTransition.ApplyAsync</c>'s complete/finalize path's
+/// item-row-then-run-row order so a concurrent cancel and a concurrent
+/// complete/finalize cannot deadlock over the run row itself.
 /// </summary>
 file static class RunCancelSql
 {
@@ -90,10 +98,40 @@ file static class RunCancelSql
     private const int MaxCancelAttempts = 5;
 
     /// <summary>Compiler-checked status name — see class remarks.</summary>
+    private const string Blocked = nameof(WorkItemStatus.Blocked);
+
+    /// <summary>Compiler-checked status name — see class remarks.</summary>
+    private const string Queued = nameof(WorkItemStatus.Queued);
+
+    /// <summary>Compiler-checked status name — see class remarks.</summary>
     private const string Running = nameof(WorkItemStatus.Running);
+
+    /// <summary>Compiler-checked status name — the terminal target for a not-yet-started item.</summary>
+    private const string ItemCancelled = nameof(WorkItemStatus.Cancelled);
 
     /// <summary>Compiler-checked run status literal.</summary>
     private const string RunCancelled = nameof(RunStatus.Cancelled);
+
+    /// <summary>Locks every non-terminal (Blocked/Queued/Running) item of @runId in
+    /// ascending id order — run first, before either item UPDATE below, so this
+    /// transaction's row-lock acquisition order matches
+    /// <c>WorkItemQueueSql.LockBlockedDependentsSql</c>'s (see class remarks).</summary>
+    public const string LockNonTerminalItemsSql =
+        "SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "WHERE run_id = @runId AND status IN ('" + Blocked + "', '" + Queued + "', '" + Running + "') "
+        + "ORDER BY id "
+        + "FOR UPDATE";
+
+    /// <summary>Cancels every Blocked/Queued item under @runId — nothing is executing
+    /// them, so they terminate outright (a legal Blocked/Queued -> Cancelled edge per
+    /// <c>WorkItemTransitions</c>) rather than being fenced; this is what makes them
+    /// unclaimable after cancel (<c>WorkItemQueueSql.ClaimSql</c> only ever matches
+    /// Queued rows in the first place — once Cancelled, never again). Safe to run
+    /// every time — a no-op when nothing is Blocked/Queued.</summary>
+    public const string CancelNotStartedItemsSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "SET status = '" + ItemCancelled + "', updated_at = @now "
+        + "WHERE run_id = @runId AND status IN ('" + Blocked + "', '" + Queued + "')";
 
     /// <summary>Fence every currently-Running work item under @runId by bumping its
     /// generation in place. Lease columns and status are untouched (so the existing
@@ -173,9 +211,24 @@ file static class RunCancelSql
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        // Item-row-then-run-row lock order mirrors WorkItemQueueEf's
-        // complete/finalize path — see the class remarks. Both UPDATEs run
-        // on the transaction's own connection so they share the txn.
+        // Lock every non-terminal item row in ascending id order FIRST — see
+        // the class remarks — then run the item UPDATEs, then the run row.
+        // All commands run on the transaction's own connection so they
+        // share the txn.
+        await using (var lockCommand = CreateLockNonTerminalItemsCommand(transaction.GetDbTransaction(), runId))
+        await using (var lockReader = await lockCommand.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await lockReader.ReadAsync(cancellationToken))
+            {
+                // draining the reader is what acquires each row's lock
+            }
+        }
+
+        await using (var cancelCommand = CreateCancelNotStartedItemsCommand(transaction.GetDbTransaction(), runId, now))
+        {
+            await cancelCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
         await using (var fenceCommand = CreateFenceLiveItemsCommand(transaction.GetDbTransaction(), runId, now))
         {
             await fenceCommand.ExecuteNonQueryAsync(cancellationToken);
@@ -195,17 +248,47 @@ file static class RunCancelSql
                 .FirstAsync(cancellationToken);
         }
 
-        var payload = JsonSerializer.Serialize(
-            new RunStatusChangedPayload(
-                fromStatus.ToString(),
-                RunStatus.Cancelled.ToString(),
-                Actor: "operator",
-                Reason: CancelRunReason.Normalize(reason)),
-            JsonSerializerOptions.Web);
-        db.RunEvents.Add(RunEvent.Create(runId, RunEventTypes.RunStatusChanged, payload, now));
+        db.RunEvents.Add(RunEvent.Create(
+            runId,
+            RunEventTypes.RunStatusChanged,
+            JsonSerializer.Serialize(
+                new RunStatusChangedPayload(
+                    fromStatus.ToString(),
+                    RunStatus.Cancelled.ToString(),
+                    Actor: "operator",
+                    Reason: CancelRunReason.Normalize(reason)),
+                JsonSerializerOptions.Web),
+            now));
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return null;
+    }
+
+    /// <summary>Creates a prepared lock-non-terminal-items command on the transaction's
+    /// connection — run first, before either item UPDATE below (see class remarks).</summary>
+    /// <param name="transaction"></param>
+    /// <param name="runId"></param>
+    public static DbCommand CreateLockNonTerminalItemsCommand(DbTransaction transaction, RunId runId)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = LockNonTerminalItemsSql;
+        AddParameter(command, "@runId", runId.Value);
+        return command;
+    }
+
+    /// <summary>Creates a prepared cancel-not-started-items command on the transaction's connection.</summary>
+    /// <param name="transaction"></param>
+    /// <param name="runId"></param>
+    /// <param name="now"></param>
+    public static DbCommand CreateCancelNotStartedItemsCommand(DbTransaction transaction, RunId runId, DateTimeOffset now)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = CancelNotStartedItemsSql;
+        AddParameter(command, "@runId", runId.Value);
+        AddParameter(command, "@now", now);
+        return command;
     }
 
     /// <summary>Creates a prepared fence-live-items command on the transaction's connection.</summary>

@@ -90,13 +90,18 @@ public sealed class CrownScenarioHost : IAsyncLifetime
         builder.Configuration["Intake:BridgeInterval"] = "00:00:01";
         builder.Configuration["Intake:SyncBackoff"] = "00:00:01";
         // Claim labels every WorkItem seeded by this suite uses — fixed at host
-        // boot (Intake:Worker:* binds once); the in-process worker caller in
-        // CrownScenarioShould only ever asks for these exact strings, so one
-        // ClaimAsync covers the intake-created item AND the directly-seeded
-        // dependents alike.
+        // boot (Intake:Worker:*/Chat:Worker:* each bind once); the in-process
+        // worker caller in CrownScenarioShould only ever asks for these exact
+        // strings, so one ClaimAsync covers the intake-created item AND the
+        // ChatRunStarter-materialized plan items alike. The image already
+        // carries a tag (":crown-test") so WorkerImagePinning.Resolve — which
+        // ChatRunStarter runs it through — returns it unchanged; see its
+        // remarks on HasTagOrDigest.
         builder.Configuration["Intake:Worker:Image"] = "ghcr.io/comuki/worker:crown-test";
         builder.Configuration["Intake:Worker:ProfilesRef"] = "crown-test";
         builder.Configuration["Intake:Worker:IssueDefaultProfileKey"] = "implement";
+        builder.Configuration["Chat:Worker:Image"] = "ghcr.io/comuki/worker:crown-test";
+        builder.Configuration["Chat:Worker:ProfilesRef"] = "crown-test";
 
         application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(ConnectionString));
         baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);

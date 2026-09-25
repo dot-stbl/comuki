@@ -32,7 +32,7 @@ internal static class RunProgression
             db.RunEvents.Add(RunEvent.Create(
                 runId,
                 RunEventTypes.RunStatusChanged,
-                RunStatusPayload(nameof(RunStatus.Queued), reader.GetString(0), "worker"),
+                RunProgressionPayloads.RunStatusPayload(nameof(RunStatus.Queued), reader.GetString(0), "worker"),
                 now));
         }
     }
@@ -90,7 +90,7 @@ internal static class RunProgression
             db.RunEvents.Add(RunEvent.Create(
                 runId,
                 RunEventTypes.RunStatusChanged,
-                RunStatusPayload(nameof(RunStatus.Running), status, "worker"),
+                RunProgressionPayloads.RunStatusPayload(nameof(RunStatus.Running), status, "worker"),
                 now));
 
             // WS7 (issue #87): this block only runs when THIS call performed the
@@ -100,14 +100,6 @@ internal static class RunProgression
             // per Run termination even under the WS2 concurrent-finalize races.
             outbox.Enqueue(RunEventTypes.RunTerminatedV1, RunTerminatedPayload(runId, projectId, status, now));
         }
-    }
-
-    /// <summary>Journal payload shape of a run transition — the same camelCase
-    /// record the host adapters journal (from/to/actor).</summary>
-    private static string RunStatusPayload(string from, string to, string actor)
-    {
-        return JsonSerializer.Serialize(
-            new { from, to, actor }, JsonSerializerOptions.Web);
     }
 
     /// <summary>Outbox contract payload for <see cref="RunEventTypes.RunTerminatedV1"/> —
@@ -120,5 +112,18 @@ internal static class RunProgression
         return JsonSerializer.Serialize(
             new { runId = runId.Value, projectId = projectId.Value, status, occurredAt },
             JsonSerializerOptions.Web);
+    }
+}
+
+/// <summary>Journal payload shape for run transitions — split out per
+/// <c>code-shape.md</c>'s no-private-methods convention (sibling
+/// <c>file</c> helper instead of a private method on <see cref="RunProgression"/>).</summary>
+file static class RunProgressionPayloads
+{
+    /// <summary>The same camelCase record shape the host adapters journal (from/to/actor).</summary>
+    public static string RunStatusPayload(string from, string to, string actor)
+    {
+        return JsonSerializer.Serialize(
+            new { from, to, actor }, JsonSerializerOptions.Web);
     }
 }

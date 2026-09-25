@@ -332,3 +332,13 @@ tests/unit/Comuki.Architecture.Tests`; the extended
 `tests/unit/Comuki.Host.Unit.DiComposition`; full
 `dotnet build comuki.slnx -c Debug` (warnings-as-errors + format
 gate, per `process/build-verification.md`).
+
+## Follow-ups (post-review G, 2026-09-25)
+
+- [ ] CompositionEdition.Load unit tests: needs in-memory IConfiguration
+      infra in the Editions test project (no-path / unresolvable-ref /
+      garbage-token -> Community paths). Fixed in code; untested at unit
+      level (embedded production key makes the happy path untestable by
+      design).
+- [ ] Advisory lock `limit:projects` is global today; re-scope per
+      workspace when the workspace concept lands (see usage-provider docs).

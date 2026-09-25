@@ -3,6 +3,7 @@ using Comuki.Shared.Editions.Gating;
 using Comuki.Shared.Editions.Installers;
 using Comuki.Shared.Editions.Licensing;
 using Comuki.Shared.Editions.Licensing.Ed25519;
+using Comuki.Shared.Editions.Licensing.Ed25519.Internal;
 using Comuki.Shared.Editions.Licensing.Status;
 using Comuki.Shared.Editions.Options;
 using Comuki.Shared.Editions.Tiers;
@@ -62,29 +63,43 @@ public static class CompositionEdition
         var logger = (loggerFactory ?? NullLoggerFactory.Instance)
             .CreateLogger("Comuki.Shared.Editions.Composition");
 
-        // Sync-over-async at composition time matches LicenseEdition's
-        // ComputeSnapshot shape: the resolver/verifier are async because
-        // secret reads and ED25519 verification can be expensive in
-        // future slices (Vault / Consul / remote KV); this composition
-        // call only runs once during host boot. VSTHRD102 / CA2007 do not
-        // apply — see cs/async-and-tasks.md §3.
-#pragma warning disable VSTHRD002
-#pragma warning disable VSTHRD102
-        var resolved = resolver.ResolveAsync(options.Path).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD102
-#pragma warning restore VSTHRD002
-
-        if (string.IsNullOrWhiteSpace(resolved))
-        {
-            return new CompositionEditionSnapshot(LicenseStatus.Absent, EditionTier.Community, license: null);
-        }
+        var clock = TimeProvider.System;
 
         try
         {
-            var licenseProvider = new Ed25519LicenseProvider(ProductionEd25519PublicKey.Value);
+            // Sync-over-async at composition time matches LicenseEdition's
+            // ComputeSnapshot shape: the resolver/verifier are async because
+            // secret reads and ED25519 verification can be expensive in
+            // future slices (Vault / Consul / remote KV); this composition
+            // call only runs once during host boot. VSTHRD102 / CA2007 do not
+            // apply — see cs/async-and-tasks.md §3.
+#pragma warning disable VSTHRD002
+#pragma warning disable VSTHRD102
+            var resolved = resolver.ResolveAsync(options.Path).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD102
+#pragma warning restore VSTHRD002
+
+            if (string.IsNullOrWhiteSpace(resolved))
+            {
+                return new CompositionEditionSnapshot(LicenseStatus.Absent, EditionTier.Community, license: null);
+            }
+
+            // Mirrors ComukiEditionsInstaller's provider wiring: the dev-overlay
+            // key participates only when DevPublicKey is configured, so a dev
+            // contour classifies identically here and at runtime.
+            var devKey = Ed25519PublicKeyParsing.TryDecode(options.DevPublicKey, out var decoded)
+                ? decoded ?? throw new InvalidOperationException("DevPublicKey decode returned null despite TryDecode success.")
+                : [];
+            var licenseProvider = new Ed25519LicenseProvider(ProductionEd25519PublicKey.Value, devKey, clock);
             var license = licenseProvider.Verify(resolved);
-            var classified = LicenseEvaluator.Classify(license, DateTimeOffset.UtcNow, options.GracePeriod);
-            return new CompositionEditionSnapshot(classified.Status, classified.Current, license);
+            var classified = LicenseEvaluator.Classify(license, clock.GetUtcNow(), options.GracePeriod);
+
+            // Absent (e.g. notBefore in the future) must not leak the license's
+            // grants — a future-dated token grants nothing today.
+            return new CompositionEditionSnapshot(
+                classified.Status,
+                classified.Current,
+                classified.Status == LicenseStatus.Absent ? null : license);
         }
         catch (Exception exception) when (exception is SecretRefUnsetException
                                             or SecretRefFormatException

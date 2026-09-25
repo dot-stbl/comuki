@@ -27,7 +27,10 @@ user decisions this design traces to, and `specs/editions/spec.md` /
   (Linux only); the provider always registers and is optional — no
   file means empty config, never an error at boot. License config
   follows the same rule (E5): absent = Community, present-but-broken
-  = loud boot failure.
+  = loud-but-not-fatal: a warning log entry followed by Community
+  behavior (hot-reload picks a corrected license back up). Only
+  structurally invalid settings (negative grace, malformed dev key)
+  fail startup validation loudly.
 - **Exception mapping is one place.** `ProviderExceptionHandler`
   (`platform/src/host/Comuki.Host/Errors/ProviderExceptionHandler.cs:15`)
   is the single `IExceptionHandler`; its `ExceptionMapping.Map` switch

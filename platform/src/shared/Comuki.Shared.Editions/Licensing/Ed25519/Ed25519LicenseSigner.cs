@@ -44,13 +44,13 @@ public static class Ed25519LicenseSigner
     /// <returns>The compact token: <c>base64url(payloadBytes).base64url(signatureBytes)</c>.</returns>
     public static string Sign(LicenseGrant grant, ReadOnlySpan<byte> privateKeySeed)
     {
-        // The audience field is emitted ONLY when the grant names Dev —
-        // a production grant (Audience == null, the default) keeps its
-        // payload bytes byte-identical to the pre-audience format so
-        // historical tokens continue to verify unchanged. Serializing a
-        // null Audience would still round-trip on the verifier (it maps
-        // missing-field to Production), but every extra field changes
-        // the signature and breaks installed license files on upgrade.
+        // The audience VALUE is written only when the grant names Dev;
+        // a production grant serializes `"audience": null` (Web defaults
+        // write nulls). That is NOT byte-identical to pre-audience
+        // builds, but it is verify-compatible both ways: the verifier
+        // maps a missing field and an explicit null to Production, so
+        // historical tokens keep verifying and new tokens verify on
+        // older builds that ignore the field.
         var payload = new LicensePayload
         {
             Org = grant.Org,

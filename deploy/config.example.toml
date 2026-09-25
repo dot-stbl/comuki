@@ -126,9 +126,11 @@ grpcPort = 17004
 # env:/file:/vault:/consul: shape as every other secret in this repo
 # (ISecretResolver) — never the license content itself, and never a bare
 # base64 blob inline here. A configured path that cannot be resolved
-# (missing file, unset env var) fails boot loudly; a path that resolves
-# to a cryptographically invalid or tampered license does NOT fail boot
-# — it logs a warning and runs as Community until fixed.
+# (missing file, unset env var) or that resolves to a cryptographically
+# invalid or tampered license does NOT fail boot — it logs a warning and
+# runs as Community until fixed (hot-reload picks a corrected license
+# back up without restart). Structurally invalid settings (negative
+# grace period, malformed dev key) DO fail startup validation.
 # path = "file:/etc/comuki/license.key"
 # How long after the license's expiry a paid tier keeps working with a
 # visible warning before the platform degrades to read-only for

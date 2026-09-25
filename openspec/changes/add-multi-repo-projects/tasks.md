@@ -7,14 +7,14 @@ test suites across workstreams before archiving this change.
 
 ## 1. Repositories module skeleton
 
-- [ ] 1.1 Create `Comuki.Modules.Repositories.{Domain,Application,Infrastructure}`
+- [x] 1.1 Create `Comuki.Modules.Repositories.{Domain,Application,Infrastructure}`
   projects under `platform/src/modules/Repositories/`, add to `comuki.slnx`
   by hand, wire ProjectReferences (Domain ← Application ← Infrastructure, no
   reference to Compute/Projects/Orchestration implementations — port
   interfaces only); verify `dotnet sln comuki.slnx list` shows all three and
   `Comuki.Architecture.Tests` (new suite entry) asserts no forbidden
   reference.
-- [ ] 1.2 Add `RepositoriesDbContext` (schema `repositories`, module-private
+- [x] 1.2 Add `RepositoriesDbContext` (schema `repositories`, module-private
   migrations history `__comuki_repositories`), installer
   `AddRepositoriesModule`, and a Migrator loop entry; verify a Debug build of
   the three projects succeeds and the migrator applies an empty schema.

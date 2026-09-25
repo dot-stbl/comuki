@@ -172,15 +172,15 @@ new `tests/integration/Comuki.Engine.Orchestration.Integration.Queue/OutboxDispa
 (or a new sibling `Comuki.Engine.Orchestration.Integration.Outbox` project if
 cohesion favors it — document the choice made in the PR description).
 
-- [ ] 6.1 `outbox_messages`/`inbox_receipts` tables, snake_case, under
+- [x] 6.1 `outbox_messages`/`inbox_receipts` tables, snake_case, under
       the orchestration schema, per `add-mission-cowork/architecture.md`
       decision #3 (epic task 2.4 infra half).
-- [ ] 6.2 `IOutbox` write-side port (enqueue in the same transaction as
+- [x] 6.2 `IOutbox` write-side port (enqueue in the same transaction as
       the caller's aggregate commit); `BackgroundService` dispatcher
       polling `FOR UPDATE SKIP LOCKED`, bounded retries, visible
       dead-letter state on exhausted retries — no Hangfire/Quartz.
-- [ ] 6.3 Inbox dedupe by message id (`inbox_receipts`) for consumers.
-- [ ] 6.4 Partial index on `outbox_messages` for undispatched rows
+- [x] 6.3 Inbox dedupe by message id (`inbox_receipts`) for consumers.
+- [x] 6.4 Partial index on `outbox_messages` for undispatched rows
       (`(dispatched_at, created_at)` filtered to `dispatched_at IS
       NULL`), matching the claim-path partial-index convention already
       used on `work_items`.
@@ -204,11 +204,11 @@ visible, not retried forever or silently dropped.
 — the realtime broadcast stays unchanged and runs in parallel with the
 new durable path.
 
-- [ ] 7.1 Enqueue an `orchestration.run.terminated.v1` (or `.started.v1`
+- [x] 7.1 Enqueue an `orchestration.run.terminated.v1` (or `.started.v1`
       / `.cancelled.v1` as applicable) outbox message in the same
       transaction as the Run's terminal-status commit (epic task 2.4
       wiring half).
-- [ ] 7.2 Confirm the existing `RunEvent` journal append is unchanged —
+- [x] 7.2 Confirm the existing `RunEvent` journal append is unchanged —
       the outbox row is additional, not a replacement.
 
 **Acceptance:** the WS2 concurrency test extended to also assert exactly
@@ -228,14 +228,30 @@ shapes elsewhere — check first), design.md's Migration Plan runbook
 text (verify only, no edit needed from this workstream unless a gap is
 found).
 
-- [ ] 8.1 Automated test asserting `orchestration.run.*.v1` payload
+- [x] 8.1 Automated test asserting `orchestration.run.*.v1` payload
       evolution stays additive-only (new optional fields; fails the
       build on a removed/retyped field) (epic task 2.4a).
-- [ ] 8.2 Dry-run the design.md breaking-deployment runbook steps
+- [x] 8.2 Dry-run the design.md breaking-deployment runbook steps
       against the WS6/WS7 implementation and confirm each step is
       actually executable with the tooling that exists (dispatcher
       pause/drain, dead-letter visibility) — file a follow-up if a step
       has no real lever yet, do not silently mark it done.
+      **Dry-run findings (2026-09-25):** runbook steps 2 and 3 have a
+      real lever today — step 2 (switch/dual-publish) is a one-line edit
+      to `RunProgression.FinalizeAsync`'s single `outbox.Enqueue(...)`
+      call; step 3 (drain/reconcile dead-letters) already has an
+      observable unit of work — `OutboxMessage.IsDeadLettered` /
+      `DeadLetteredAt`, asserted by `OutboxMessageShould` and exercised
+      concurrently by `OutboxDispatchShould`. Steps 1 and 4 have **no
+      real lever yet**: `NoopOutboxPublisher` is the only
+      `IOutboxPublisher` in the tree today (no real consumer is deployed
+      — `add-work-management` (#89) is still the first planned consumer
+      and has not landed), and no consumer-watermark concept exists
+      anywhere in the codebase to confirm against before retiring a
+      `.v1` type. Follow-up, not silently marked done: whichever change
+      wires the first real outbox consumer must also add a watermark /
+      ack mechanism before this runbook's step 4 is actually
+      executable.
 
 **Acceptance:** the contract test fails when a field is deliberately
 removed from a fixture payload (verify the negative case, not just the
@@ -254,15 +270,15 @@ its `IRunLauncher` port declaration (find under
 `tests/integration/Comuki.Host.Integration.Runs/` (extend if a
 cross-module assertion is cleaner there).
 
-- [ ] 9.1 Give the admission call a stable message id (the ticket's
+- [x] 9.1 Give the admission call a stable message id (the ticket's
       admission/claim identity) and an inbox dedupe check on the
       Orchestration side before `Run.Create`/`WorkItem.Create` run
       (epic task 2.5).
-- [ ] 9.2 Retried delivery of the same message id creates at most one
+- [x] 9.2 Retried delivery of the same message id creates at most one
       Run; concurrent delivery of the same message id resolves to one
       Run with the losing caller observing the same Run id, not an
       error.
-- [ ] 9.3 `intake`'s own capability spec/outcome-label set is
+- [x] 9.3 `intake`'s own capability spec/outcome-label set is
       unchanged — this is an Orchestration-side guarantee only.
 
 **Acceptance:** an integration test delivers the same admission message

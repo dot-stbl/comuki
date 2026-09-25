@@ -4,6 +4,7 @@ using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Leases;
+using Comuki.Engine.Orchestration.Infrastructure.OutboxDispatch;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Contracts.Journal;
@@ -157,6 +158,13 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
         }).ToList();
         // the actual exactly-once invariant: only one finalization event
         finalizations.ShouldHaveSingleItem();
+
+        var outboxMessages = await LoadOutboxMessagesAsync();
+        var terminatedMessage = outboxMessages.ShouldHaveSingleItem();
+        terminatedMessage.Type.ShouldBe(RunEventTypes.RunTerminatedV1);
+        using var outboxPayload = JsonDocument.Parse(terminatedMessage.Payload);
+        outboxPayload.RootElement.GetProperty("runId").GetGuid().ShouldBe(run.Id.Value);
+        outboxPayload.RootElement.GetProperty("status").GetString().ShouldBe(finalRun.Status.ToString());
     }
 
     [Fact(DisplayName = "Given a run's last two items, when one fails and the other succeeds concurrently, then the run finalizes to Failed exactly once")]
@@ -195,6 +203,13 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
         }).ToList();
         // the actual exactly-once invariant: only one finalization event
         finalizations.ShouldHaveSingleItem();
+
+        var outboxMessages = await LoadOutboxMessagesAsync();
+        var terminatedMessage = outboxMessages.ShouldHaveSingleItem();
+        terminatedMessage.Type.ShouldBe(RunEventTypes.RunTerminatedV1);
+        using var outboxPayload = JsonDocument.Parse(terminatedMessage.Payload);
+        outboxPayload.RootElement.GetProperty("runId").GetGuid().ShouldBe(run.Id.Value);
+        outboxPayload.RootElement.GetProperty("status").GetString().ShouldBe(finalRun.Status.ToString());
     }
 
     [Fact(DisplayName = "Given a run's last two items, when one is completed while the other's lease is reaped-to-failed concurrently, then the run finalizes to Failed exactly once")]
@@ -261,5 +276,48 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
         }).ToList();
         // the actual exactly-once invariant: only one finalization event
         finalizations.ShouldHaveSingleItem();
+
+        var outboxMessages = await LoadOutboxMessagesAsync();
+        var terminatedMessage = outboxMessages.ShouldHaveSingleItem();
+        terminatedMessage.Type.ShouldBe(RunEventTypes.RunTerminatedV1);
+        using var outboxPayload = JsonDocument.Parse(terminatedMessage.Payload);
+        outboxPayload.RootElement.GetProperty("runId").GetGuid().ShouldBe(run.Id.Value);
+        outboxPayload.RootElement.GetProperty("status").GetString().ShouldBe(finalRun.Status.ToString());
+    }
+
+    [Fact(DisplayName = "Given a run finalizes to a terminal status, when the process 'crashes' before any dispatch sweep, then a later dispatcher cycle still delivers the terminal outbox message")]
+    public async Task TerminalOutboxMessageSurvivesACrashBeforeDispatchAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SeedQueuedItemAsync();
+        using var scope = CreateScope();
+        var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var worker = WorkerId.New();
+        var claimed = await queue.ClaimAsync(worker, ImplementLabels, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
+        claimed.ShouldNotBeNull();
+
+        // Terminal transition commits (including the outbox row) — then the
+        // "process crashes" before any dispatcher cycle runs: nothing below
+        // calls DispatchAsync yet, mirroring a crash between commit and the
+        // best-effort realtime broadcast.
+        var completed = await queue.CompleteAsync(claimed.WorkItemId, worker, /*lang=json,strict*/ """{"summary":"done"}""", clock.GetUtcNow(), cancellationToken);
+        completed.ShouldBeTrue();
+
+        var beforeDispatch = await LoadOutboxMessagesAsync();
+        var pending = beforeDispatch.ShouldHaveSingleItem();
+        pending.Type.ShouldBe(RunEventTypes.RunTerminatedV1);
+        pending.IsDispatched.ShouldBeFalse();
+
+        // "Process restart": a fresh scope resolves a fresh OutboxDispatcher and
+        // runs one sweep — exercising the real FinalizeAsync-enqueued row (not a
+        // synthetically seeded one, which OutboxDispatchShould.cs already covers).
+        using var freshScope = CreateScope();
+        var dispatcher = freshScope.ServiceProvider.GetRequiredService<OutboxDispatcher>();
+        var (dispatched, deadLettered) = await dispatcher.DispatchAsync(cancellationToken);
+        dispatched.ShouldBe(1);
+        deadLettered.ShouldBe(0);
+
+        var afterDispatch = await LoadOutboxMessagesAsync();
+        afterDispatch.ShouldHaveSingleItem().IsDispatched.ShouldBeTrue();
     }
 }

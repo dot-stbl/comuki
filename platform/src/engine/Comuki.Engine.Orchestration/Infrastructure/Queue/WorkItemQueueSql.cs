@@ -156,7 +156,7 @@ internal static class WorkItemQueueSql
         + "WHERE id = @runId AND status = '" + RunActivated + "' "
         + "  AND NOT EXISTS (SELECT 1 FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " wi "
         + "        WHERE wi.run_id = @runId AND wi.status IN ('" + Blocked + "', '" + Queued + "', '" + Running + "')) "
-        + "RETURNING status";
+        + "RETURNING status, project_id";
 
     /// <summary>Locks the run row before the finalization guard evaluates
     /// <c>work_items</c> state via NOT EXISTS. Postgres only auto-serializes

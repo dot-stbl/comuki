@@ -462,4 +462,68 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         // Both prerequisites Succeeded now — dependent unblocks.
         (await LoadItemAsync(dependent.Id)).ShouldNotBeNull().Status.ShouldBe(WorkItemStatus.Queued);
     }
+
+    /// <summary>Seeds a run with two prerequisites and TWO dependents that
+    /// each depend on BOTH — a genuine two-row overlap between the two
+    /// prerequisites' unblock candidate sets, for the deadlock-race test
+    /// below (a single shared dependent can't itself deadlock; you need at
+    /// least two overlapping rows for a lock-order cycle to be possible).</summary>
+    private async Task<(WorkItem PrerequisiteA, WorkItem PrerequisiteB, WorkItem DependentOne, WorkItem DependentTwo)> SeedDiamondDependentsAsync(string profileKey)
+    {
+        using var scope = CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+        var now = clock.GetUtcNow();
+        var run = Run.Create(ProjectId.New(), now);
+        var prerequisiteA = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"a"}""", WorkItemStatus.Queued, now);
+        var prerequisiteB = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"b"}""", WorkItemStatus.Queued, now);
+        var dependentOne = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"diamond-1"}""", WorkItemStatus.Blocked, now);
+        var dependentTwo = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"diamond-2"}""", WorkItemStatus.Blocked, now);
+        db.Runs.Add(run);
+        db.WorkItems.AddRange(prerequisiteA, prerequisiteB, dependentOne, dependentTwo);
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependentOne.Id, prerequisiteA.Id));
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependentOne.Id, prerequisiteB.Id));
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependentTwo.Id, prerequisiteA.Id));
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependentTwo.Id, prerequisiteB.Id));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return (prerequisiteA, prerequisiteB, dependentOne, dependentTwo);
+    }
+
+    [Fact(DisplayName = "Given two dependents sharing both prerequisites, when both prerequisites complete concurrently across many trials, then both unblock exactly once with no deadlock")]
+    public async Task UnblockDiamondDependentsWithoutDeadlockUnderConcurrencyAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const int trials = 25;
+
+        for (var trial = 0; trial < trials; trial++)
+        {
+            var profileKey = $"diamond-{trial}";
+            var (prerequisiteA, prerequisiteB, dependentOne, dependentTwo) = await SeedDiamondDependentsAsync(profileKey);
+            var labels = new WorkItemLabels(Image, ProfilesRef, profileKey);
+            using var scopeA = CreateScope();
+            using var scopeB = CreateScope();
+            var queueA = scopeA.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+            var queueB = scopeB.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+            var workerA = WorkerId.New();
+            var workerB = WorkerId.New();
+            var claimedA = await queueA.ClaimAsync(workerA, labels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+            var claimedB = await queueB.ClaimAsync(workerB, labels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+            claimedA.ShouldNotBeNull();
+            claimedB.ShouldNotBeNull();
+
+            // fire both completions without awaiting either first — genuinely
+            // concurrent transactions on separate connections, so a real lock-
+            // order mismatch between the two UnblockDependentsSql candidate
+            // sets would surface as an actual Postgres 40P01 (uncaught — this
+            // fact fails loudly on it), not a theoretical one
+            var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, /*lang=json,strict*/ """{"summary":"a done"}""", claimAt.AddMinutes(1), cancellationToken);
+            var completeB = queueB.CompleteAsync(claimedB.WorkItemId, workerB, /*lang=json,strict*/ """{"summary":"b done"}""", claimAt.AddMinutes(1), cancellationToken);
+            var resultA = await completeA;
+            var resultB = await completeB;
+
+            resultA.ShouldBeTrue($"trial {trial}: prerequisite A completion was rejected");
+            resultB.ShouldBeTrue($"trial {trial}: prerequisite B completion was rejected");
+            (await LoadItemAsync(dependentOne.Id)).ShouldNotBeNull().Status.ShouldBe(WorkItemStatus.Queued, $"trial {trial}: dependent one did not unblock exactly once");
+            (await LoadItemAsync(dependentTwo.Id)).ShouldNotBeNull().Status.ShouldBe(WorkItemStatus.Queued, $"trial {trial}: dependent two did not unblock exactly once");
+        }
+    }
 }

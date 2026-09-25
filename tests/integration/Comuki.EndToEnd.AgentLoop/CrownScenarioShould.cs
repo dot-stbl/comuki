@@ -7,7 +7,7 @@ using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Domain.Outbox;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
-using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Host;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
@@ -22,7 +22,7 @@ namespace Comuki.EndToEnd.AgentLoop;
 /// The WS10 crown scenario proof — one suite that exercises, together, the
 /// five execution-spine invariants the <c>add-mission-cowork</c> epic
 /// promises (issue #87 sub-stabs WS1/WS2/WS4/WS5/WS7/WS9), driven through
-/// the REAL host composition (<see cref="Comuki.Host.HostComposer"/>)
+/// the REAL host composition (<see cref="HostComposer"/>)
 /// against the REAL Postgres (via <see cref="CrownScenarioHost"/>).
 /// </summary>
 /// <remarks>

@@ -1,9 +1,11 @@
 using Comuki.Shared.Editions.Licensing;
+using Comuki.Shared.Editions.Licensing.Audiences;
 using Comuki.Shared.Editions.Licensing.Ed25519;
 using Comuki.Shared.Editions.Licensing.Ed25519.Internal;
 using Comuki.Shared.Editions.Licensing.Grants;
 using Comuki.Shared.Editions.Licensing.Modes;
 using Comuki.Shared.Editions.Tiers;
+using Comuki.Shared.Editions.Unit.Fixtures;
 using Shouldly;
 using Xunit;
 
@@ -62,7 +64,13 @@ public sealed class Ed25519LicenseProviderShould
         var payloadEncoded = token[..separatorIndex];
         var signatureEncoded = token[(separatorIndex + 1)..];
         var payloadBytes = Base64Url.Decode(payloadEncoded);
-        payloadBytes[0] ^= 0x01;
+        // Flip the case of the first letter inside the org value — the
+        // payload stays well-formed JSON (a byte flip on a structural
+        // char would fail as "malformed payload" before the signature
+        // check, which the payload-order tests already cover), so the
+        // tamper is caught where this test aims: at the signature.
+        var orgIndex = Array.IndexOf(payloadBytes, (byte)'A');
+        payloadBytes[orgIndex] ^= 0x20;
         var tamperedToken = Base64Url.Encode(payloadBytes) + "." + signatureEncoded;
 
         var provider = new Ed25519LicenseProvider(signingPublic);
@@ -109,7 +117,7 @@ public sealed class Ed25519LicenseProviderShould
     [Fact(DisplayName = "Given a token with zero dots, when Verify runs, then malformed token shape is thrown")]
     public void ZeroDotsThrowsMalformedShape()
     {
-        var provider = new Ed25519LicenseProvider([]);
+        var provider = new Ed25519LicenseProvider(new byte[32]);
 
         var ex = Should.Throw<LicenseInvalidException>(() => provider.Verify("nodots"));
         ex.Message.ShouldContain("malformed token shape");
@@ -118,7 +126,7 @@ public sealed class Ed25519LicenseProviderShould
     [Fact(DisplayName = "Given a token with two dots, when Verify runs, then malformed token shape is thrown")]
     public void TwoDotsThrowsMalformedShape()
     {
-        var provider = new Ed25519LicenseProvider([]);
+        var provider = new Ed25519LicenseProvider(new byte[32]);
 
         var ex = Should.Throw<LicenseInvalidException>(() => provider.Verify("a.b.c"));
         ex.Message.ShouldContain("malformed token shape");
@@ -127,7 +135,7 @@ public sealed class Ed25519LicenseProviderShould
     [Fact(DisplayName = "Given a token with non-base64url halves, when Verify runs, then malformed token shape is thrown")]
     public void MalformedBase64ThrowsMalformedShape()
     {
-        var provider = new Ed25519LicenseProvider([]);
+        var provider = new Ed25519LicenseProvider(new byte[32]);
 
         var ex = Should.Throw<LicenseInvalidException>(
             () => provider.Verify("not-valid-base64!!!.also-not-valid!!!"));
@@ -160,7 +168,7 @@ public sealed class Ed25519LicenseProviderShould
     [Fact(DisplayName = "Given a non-base64url signature half on a well-shaped payload, when Verify runs, then malformed token shape is thrown")]
     public void MalformedSignatureHalfThrowsMalformedShape()
     {
-        var provider = new Ed25519LicenseProvider([]);
+        var provider = new Ed25519LicenseProvider(new byte[32]);
 
         var ex = Should.Throw<LicenseInvalidException>(
             () => provider.Verify("aGVsbG8.!!!not-base64!!!"));
@@ -189,5 +197,100 @@ public sealed class Ed25519LicenseProviderShould
         {
             return now;
         }
+    }
+
+    [Fact(DisplayName = "Given a valid dev-audience token signed by the dev key and a provider with both keys, when Verify runs, then Tier is Team, Audience is Dev, and VerifiedWith equals the dev key fingerprint")]
+    public void DevAudienceTokenVerifiesAgainstDevKey()
+    {
+        var (prodPublic, _) = Ed25519LicenseSigner.GenerateKeyPair();
+        var devPublic = TestLicense.DevPublicKey;
+        var token = TestLicense.WithDev(EditionTiers.Team);
+
+        var provider = new Ed25519LicenseProvider(prodPublic, devPublic, TimeProvider.System);
+        var key = provider.Verify(token);
+
+        key.Tier.Rank.ShouldBe(EditionTiers.Team.Rank);
+        key.Audience.ShouldBe(LicenseAudience.Dev);
+        key.VerifiedWith.ShouldBe(Ed25519PublicKeyFingerprint.Compute(devPublic));
+    }
+
+    [Fact(DisplayName = "Given a valid dev-audience token and a provider constructed WITHOUT a dev key, when Verify runs, then LicenseInvalidException is thrown")]
+    public void DevAudienceTokenRejectedWhenNoDevKeyConfigured()
+    {
+        var (prodPublic, _) = Ed25519LicenseSigner.GenerateKeyPair();
+        var token = TestLicense.WithDev(EditionTiers.Team);
+
+        var provider = new Ed25519LicenseProvider(prodPublic, TimeProvider.System);
+
+        var ex = Should.Throw<LicenseInvalidException>(() => provider.Verify(token));
+        ex.Message.ShouldContain("dev audience not trusted here");
+    }
+
+    [Fact(DisplayName = "Given a dev-audience token signed by the MAIN (production-position) keypair, when a provider with both keys verifies it, then LicenseInvalidException is thrown")]
+    public void DevAudienceTokenSignedByProdKeyIsRejected()
+    {
+        var (prodPublic, _) = Ed25519LicenseSigner.GenerateKeyPair();
+        var devPublic = TestLicense.DevPublicKey;
+
+        var bogusDevToken = TestLicense.With(
+            EditionTiers.Team,
+            audience: LicenseAudience.Dev);
+
+        var provider = new Ed25519LicenseProvider(prodPublic, devPublic, TimeProvider.System);
+
+        var ex = Should.Throw<LicenseInvalidException>(() => provider.Verify(bogusDevToken));
+        ex.Message.ShouldContain("signature mismatch");
+    }
+
+    [Fact(DisplayName = "Given a production (null-audience) token signed by the DEV keypair, when a provider with both keys verifies it, then LicenseInvalidException is thrown")]
+    public void ProductionAudienceTokenSignedByDevKeyIsRejected()
+    {
+        var (prodPublic, _) = Ed25519LicenseSigner.GenerateKeyPair();
+        var devPublic = TestLicense.DevPublicKey;
+
+        var grant = new LicenseGrant(
+            Org: "Rogue",
+            Tier: EditionTiers.Team,
+            Expiry: expiry,
+            Mode: LicenseMode.ImplicitByRank);
+        var token = Ed25519LicenseSigner.Sign(grant, TestLicense.DevPrivateKeySeed);
+
+        var provider = new Ed25519LicenseProvider(prodPublic, devPublic, TimeProvider.System);
+
+        var ex = Should.Throw<LicenseInvalidException>(() => provider.Verify(token));
+        ex.Message.ShouldContain("signature mismatch");
+    }
+
+    [Fact(DisplayName = "Given a token whose payload names an unknown audience string, when Verify runs, then LicenseInvalidException is thrown")]
+    public void UnknownAudienceStringIsRejected()
+    {
+        var (signingPublic, privateSeed) = Ed25519LicenseSigner.GenerateKeyPair();
+        var grant = SampleGrant();
+        var token = Ed25519LicenseSigner.Sign(grant, privateSeed);
+
+        // Tamper: rewrite the payload's audience field to an unknown
+        // string, then re-sign so the verifier accepts the bytes. We
+        // rebuild the payload directly to inject the field.
+        var payload = new LicensePayload
+        {
+            Org = grant.Org,
+            Edition = grant.Tier.Code,
+            Expiry = grant.Expiry,
+            Mode = grant.Mode.Value,
+            Audience = "qa",
+            Features = grant.Features,
+            Limits = grant.Limits,
+        };
+        var payloadBytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(payload, System.Text.Json.JsonSerializerOptions.Web);
+        var payloadEncoded = Base64Url.Encode(payloadBytes);
+        var signing = new Org.BouncyCastle.Crypto.Signers.Ed25519Signer();
+        signing.Init(forSigning: true, new Org.BouncyCastle.Crypto.Parameters.Ed25519PrivateKeyParameters(privateSeed, 0));
+        signing.BlockUpdate(payloadBytes, 0, payloadBytes.Length);
+        var tokenWithUnknownAudience = payloadEncoded + "." + Base64Url.Encode(signing.GenerateSignature());
+
+        var provider = new Ed25519LicenseProvider(signingPublic, signingPublic, TimeProvider.System);
+
+        var ex = Should.Throw<LicenseInvalidException>(() => provider.Verify(tokenWithUnknownAudience));
+        ex.Message.ShouldContain("unknown audience");
     }
 }

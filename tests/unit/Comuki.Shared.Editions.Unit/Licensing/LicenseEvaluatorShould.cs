@@ -1,4 +1,5 @@
 using Comuki.Shared.Editions.Licensing;
+using Comuki.Shared.Editions.Licensing.Audiences;
 using Comuki.Shared.Editions.Licensing.Modes;
 using Comuki.Shared.Editions.Licensing.Status;
 using Comuki.Shared.Editions.Tiers;
@@ -23,6 +24,7 @@ public sealed class LicenseEvaluatorShould
             NotBefore: notBefore,
             Expiry: new DateTimeOffset(2027, 1, 1, 0, 0, 0, TimeSpan.Zero),
             Mode: LicenseMode.ImplicitByRank,
+            Audience: LicenseAudience.Production,
             Features: [],
             Limits: new Dictionary<string, int>(),
             VerifiedAt: new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),

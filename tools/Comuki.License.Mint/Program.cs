@@ -1,4 +1,5 @@
 using System.Globalization;
+using Comuki.Shared.Editions.Licensing.Audiences;
 using Comuki.Shared.Editions.Licensing.Ed25519;
 using Comuki.Shared.Editions.Licensing.Grants;
 using Comuki.Shared.Editions.Licensing.Modes;
@@ -64,7 +65,7 @@ file static class ProgramHelpers
     private const string UsageBlock =
         "Usage:\n" +
         "  Comuki.License.Mint generate-key [--out-public <path>] [--out-private <path>]\n" +
-        "  Comuki.License.Mint sign --private-key-file <path> --org <name> --edition <code> --expiry <iso8601> --mode <implicit-by-rank|explicit-allowlist> [--not-before <iso8601>] [--seats <int>] [--features <a,b,c>] [--limits <k=v,k2=v2>] [--out <path>]\n";
+        "  Comuki.License.Mint sign --private-key-file <path> --org <name> --edition <code> --expiry <iso8601> --mode <implicit-by-rank|explicit-allowlist> [--audience <production|dev>] [--not-before <iso8601>] [--seats <int>] [--features <a,b,c>] [--limits <k=v,k2=v2>] [--out <path>]\n";
 
     /// <summary>Writes the two-line usage block to stdout.</summary>
     public static void PrintUsage()
@@ -194,6 +195,18 @@ file static class ProgramHelpers
             return 1;
         }
 
+        LicenseAudience? audience = null;
+        if (ParseValue(args, "--audience") is { } audienceRaw)
+        {
+            if (!LicenseAudience.TryParse(audienceRaw, out var parsedAudience))
+            {
+                Console.Error.WriteLine($"[Comuki.License.Mint] --audience '{audienceRaw}' is not recognised. Expected 'production' or 'dev'.");
+                return 1;
+            }
+
+            audience = parsedAudience;
+        }
+
         DateTimeOffset? notBefore = null;
         if (ParseValue(args, "--not-before") is { } notBeforeRaw)
         {
@@ -248,6 +261,7 @@ file static class ProgramHelpers
             Tier: tier,
             Expiry: expiry,
             Mode: mode,
+            Audience: audience,
             NotBefore: notBefore,
             Seats: seats,
             Features: features,

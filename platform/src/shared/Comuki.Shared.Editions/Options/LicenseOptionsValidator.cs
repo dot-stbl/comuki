@@ -1,3 +1,4 @@
+using Comuki.Shared.Editions.Licensing.Ed25519.Internal;
 using Comuki.Shared.Kernel.Secrets;
 using Microsoft.Extensions.Options;
 
@@ -43,6 +44,12 @@ public sealed class LicenseOptionsValidator(ISecretResolver secretResolver) : IV
         if (options.ReloadDelay <= TimeSpan.Zero)
         {
             failures.Add("Host:License:ReloadDelay must be positive.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.DevPublicKey)
+            && !Ed25519PublicKeyParsing.TryDecode(options.DevPublicKey, out _))
+        {
+            failures.Add("Host:License:DevPublicKey must be the base64 of a 32-byte Ed25519 public key.");
         }
 
         if (!string.IsNullOrWhiteSpace(options.Path))

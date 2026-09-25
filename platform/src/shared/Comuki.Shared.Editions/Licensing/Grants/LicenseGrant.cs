@@ -1,3 +1,4 @@
+using Comuki.Shared.Editions.Licensing.Audiences;
 using Comuki.Shared.Editions.Licensing.Modes;
 using Comuki.Shared.Editions.Tiers;
 
@@ -15,11 +16,20 @@ namespace Comuki.Shared.Editions.Licensing.Grants;
 /// to one. Callers always pass <see cref="LicenseMode.ImplicitByRank"/> or
 /// <see cref="LicenseMode.ExplicitAllowlist"/> explicitly.
 /// </para>
+/// <para>
+/// <see cref="Audience"/> defaults to <c>null</c> — a <c>null</c> grant
+/// emits a production-audience license (no <c>audience</c> field on the
+/// wire), keeping every existing caller's payload bytes byte-identical
+/// to today's. Setting it to <see cref="LicenseAudience.Dev"/> emits the
+/// <c>audience: "dev"</c> field that the verifier requires before it
+/// accepts the dev-overlay key.
+/// </para>
 /// </summary>
 /// <param name="Org">The licensed organisation name; emitted verbatim as the payload's <c>org</c>.</param>
 /// <param name="Tier">The edition tier the license names; <see cref="EditionTier.Code"/> is emitted as the payload's <c>edition</c>.</param>
 /// <param name="Expiry">The end of the validity window.</param>
 /// <param name="Mode">How downstream consumers match <see cref="Features"/> / <see cref="Limits"/> against the catalogs.</param>
+/// <param name="Audience">Optional contour claim; <c>null</c> emits a production-audience payload (no field).</param>
 /// <param name="NotBefore">Optional start-of-validity instant.</param>
 /// <param name="Seats">Optional informational seat count (not enforced in this change).</param>
 /// <param name="Features">Optional raw capability keys; <c>null</c> serialises as the JSON <c>null</c>.</param>
@@ -29,6 +39,7 @@ public sealed record LicenseGrant(
     EditionTier Tier,
     DateTimeOffset Expiry,
     LicenseMode Mode,
+    LicenseAudience? Audience = null,
     DateTimeOffset? NotBefore = null,
     int? Seats = null,
     IReadOnlyCollection<string>? Features = null,

@@ -138,7 +138,16 @@ grpcPort = 17004
 # Minimum interval between re-checks of the license file/secret; a
 # replaced license is picked up without a restart within this window.
 # reloadDelay = "00:00:05"
-# Env overrides: COMUKI_HOST_LICENSE_PATH / _GRACEPERIOD / _RELOADDELAY.
+# Base64 of a 32-byte Ed25519 verifying key trusted ONLY for licenses
+# whose payload carries audience=dev (the non-prod overlay license;
+# minted via tools/Comuki.License.Mint `sign --audience dev`). A dev
+# token verifies exclusively against this key — never against the
+# production key — and a production-audience token never verifies
+# against it. Leave unset on production contours: that is what keeps a
+# leaked dev license from unlocking production.
+# devPublicKey = "<base64 of the 32-byte dev-overlay verifying key>"
+# Env overrides: COMUKI_HOST_LICENSE_PATH / _GRACEPERIOD / _RELOADDELAY /
+# _DEVPUBLICKEY.
 
 # --- security ------------------------------------------------------------
 

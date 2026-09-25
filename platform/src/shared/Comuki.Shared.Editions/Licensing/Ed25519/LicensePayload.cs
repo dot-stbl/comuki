@@ -28,6 +28,15 @@ internal sealed record LicensePayload
     /// <summary>Wire form of <c>LicenseMode</c> — <c>"implicit-by-rank"</c> or <c>"explicit-allowlist"</c>.</summary>
     public string? Mode { get; init; }
 
+    /// <summary>
+    /// Wire form of <c>LicenseAudience</c>. Only emitted by the signer
+    /// when the grant names <c>Dev</c> — every pre-audience payload
+    /// bytes stays byte-identical so historical production tokens
+    /// continue to verify. The verifier maps a missing field to
+    /// <c>Production</c>.
+    /// </summary>
+    public string? Audience { get; init; }
+
     /// <summary>Optional capability keys (raw strings, not yet resolved against the catalog).</summary>
     public IReadOnlyCollection<string>? Features { get; init; }
 

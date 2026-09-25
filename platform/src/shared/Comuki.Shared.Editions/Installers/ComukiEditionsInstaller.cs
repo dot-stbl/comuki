@@ -1,6 +1,7 @@
 using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Editions.Licensing;
 using Comuki.Shared.Editions.Licensing.Ed25519;
+using Comuki.Shared.Editions.Licensing.Ed25519.Internal;
 using Comuki.Shared.Editions.Options;
 using Comuki.Shared.Editions.Registry;
 using Microsoft.Extensions.Configuration;
@@ -31,8 +32,10 @@ public static class ComukiEditionsInstaller
     /// <summary>
     /// Binds <see cref="LicenseOptions"/> from <c>Host:License</c>,
     /// registers the validator, the production
-    /// <see cref="Ed25519LicenseProvider"/>, <see cref="IEdition"/>,
-    /// and the in-memory <see cref="IEditionCapabilityRegistry"/>.
+    /// <see cref="Ed25519LicenseProvider"/> (with the optional
+    /// dev-overlay key when <see cref="LicenseOptions.DevPublicKey"/>
+    /// is configured), <see cref="IEdition"/>, and the in-memory
+    /// <see cref="IEditionCapabilityRegistry"/>.
     /// </summary>
     public static IServiceCollection AddComukiEditions(this IServiceCollection services, IConfiguration configuration)
     {
@@ -49,11 +52,24 @@ public static class ComukiEditionsInstaller
         // HostComposer.ComposeAsync, and that earlier registration wins.
         // The production private key was deliberately discarded per
         // ProductionEd25519PublicKey.cs's doc comment — nobody, including
-        // tests, can mint a token the production key accepts. Production
+        // tests, can mint a token the production key accepts.
+        //
+        // Dev key is resolved from IOptions<LicenseOptions> so the
+        // boot-time validator has already enforced its shape. An
+        // empty dev-key span means "no dev licenses trusted here"
+        // (Ed25519LicenseProvider.Verify throws "dev audience not
+        // trusted here" for any dev-audience token). Production
         // behaviour is unchanged because nothing else registers
-        // ILicenseProvider in production, so TryAdd behaves exactly like
-        // Add here.
-        services.TryAddSingleton<ILicenseProvider>(static _ => new Ed25519LicenseProvider(ProductionEd25519PublicKey.Value));
+        // ILicenseProvider in production, so TryAdd behaves exactly
+        // like Add here.
+        services.TryAddSingleton<ILicenseProvider>(static sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<LicenseOptions>>().Value;
+            var devKey = Ed25519PublicKeyParsing.TryDecode(options.DevPublicKey, out var decoded)
+                ? decoded ?? throw new InvalidOperationException("DevPublicKey decode returned null despite TryDecode success.")
+                : [];
+            return new Ed25519LicenseProvider(ProductionEd25519PublicKey.Value, devKey, TimeProvider.System);
+        });
         services.AddSingleton<IEdition, LicenseEdition>();
         services.AddSingleton<IEditionCapabilityRegistry, EditionCapabilityRegistry>();
 

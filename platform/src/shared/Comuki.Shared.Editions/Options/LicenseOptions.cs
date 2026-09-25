@@ -41,4 +41,16 @@ public sealed class LicenseOptions
     /// range-checks this here.
     /// </summary>
     public TimeSpan ReloadDelay { get; init; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// Base64 of a 32-byte Ed25519 verifying key trusted <em>only</em>
+    /// for dev-audience licenses. A dev-license token signed by a key
+    /// other than this one is rejected at verify time; a non-dev token
+    /// (production audience) is verified against the embedded
+    /// production key regardless of this value. Leave unset on
+    /// production contours — that's the rule that keeps a leaked dev
+    /// license from unlocking production. Env override:
+    /// <c>COMUKI_HOST_LICENSE_DEVPUBLICKEY</c>.
+    /// </summary>
+    public string? DevPublicKey { get; init; }
 }

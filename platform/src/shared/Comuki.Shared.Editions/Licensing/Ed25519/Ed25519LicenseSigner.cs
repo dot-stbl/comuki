@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Comuki.Shared.Editions.Licensing.Audiences;
 using Comuki.Shared.Editions.Licensing.Ed25519.Internal;
 using Comuki.Shared.Editions.Licensing.Grants;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -41,6 +42,13 @@ public static class Ed25519LicenseSigner
     /// <returns>The compact token: <c>base64url(payloadBytes).base64url(signatureBytes)</c>.</returns>
     public static string Sign(LicenseGrant grant, ReadOnlySpan<byte> privateKeySeed)
     {
+        // The audience field is emitted ONLY when the grant names Dev —
+        // a production grant (Audience == null, the default) keeps its
+        // payload bytes byte-identical to the pre-audience format so
+        // historical tokens continue to verify unchanged. Serializing a
+        // null Audience would still round-trip on the verifier (it maps
+        // missing-field to Production), but every extra field changes
+        // the signature and breaks installed license files on upgrade.
         var payload = new LicensePayload
         {
             Org = grant.Org,
@@ -49,6 +57,9 @@ public static class Ed25519LicenseSigner
             NotBefore = grant.NotBefore,
             Expiry = grant.Expiry,
             Mode = grant.Mode.Value,
+            Audience = grant.Audience is { } audience && audience == LicenseAudience.Dev
+                ? audience.Value
+                : null,
             Features = grant.Features,
             Limits = grant.Limits,
         };

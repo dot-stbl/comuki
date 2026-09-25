@@ -6,6 +6,7 @@ using Comuki.Shared.Editions.Licensing.Modes;
 using Comuki.Shared.Editions.Licensing.Status;
 using Comuki.Shared.Editions.Options;
 using Comuki.Shared.Editions.Tiers;
+using Comuki.Shared.Editions.Unit.Fixtures;
 using Comuki.Shared.Kernel.Secrets;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -285,5 +286,24 @@ public sealed class LicenseEditionShould
         {
             return null;
         }
+    }
+
+    [Fact(DisplayName = "Given a dev-overlay Team license and a provider constructed with both keys, when edition is read, then Current is Team")]
+    public void DevLicenseResolvesToTeamTier()
+    {
+        var (prodPublic, _) = Ed25519LicenseSigner.GenerateKeyPair();
+        var devPublic = TestLicense.DevPublicKey;
+        var clock = new MutableFakeTimeProvider(startNow);
+        var token = TestLicense.WithDev(EditionTiers.Team);
+
+        var resolver = Substitute.For<ISecretResolver>();
+        resolver.ResolveAsync("env:LICENSE", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<string?>(token));
+
+        var options = new LicenseOptions { Path = "env:LICENSE", ReloadDelay = TimeSpan.FromMilliseconds(1) };
+        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(prodPublic, devPublic, clock), clock);
+
+        edition.Current.ShouldBe(EditionTiers.Team);
+        edition.Status.ShouldBe(LicenseStatus.Valid);
     }
 }

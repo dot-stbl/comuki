@@ -144,6 +144,19 @@ env:
   # Workers go to the vega cluster (external kubeconfig, mounted secret)
   COMUKI_COMPUTE_KUBERNETES_KUBECONFIGPATH: /vega/kubeconfig
 
+  # Editions dev license (non-prod overlay): long-lived team-tier token
+  # that lifts the Community 1-project cap on dev. Signed by the
+  # dedicated "dev overlay" Ed25519 key — the payload carries
+  # audience=dev, so the token verifies ONLY against DevPublicKey below
+  # and never against the production key; production contours leave
+  # DevPublicKey unset, so a leaked copy of this token cannot unlock
+  # anything but dev/stage. Only the verifying (public) half of the key
+  # lives in this repo — the private half is owner-held (re-mint after
+  # the 2036 expiry via tools/Comuki.License.Mint `sign --audience dev`).
+  COMUKI_HOST_LICENSE_PATH: env:COMUKI_EDITION_LICENSE
+  COMUKI_EDITION_LICENSE: eyJvcmciOiJkZXYtb3ZlcmxheSIsImVkaXRpb24iOiJ0ZWFtIiwic2VhdHMiOm51bGwsIm5vdEJlZm9yZSI6bnVsbCwiZXhwaXJ5IjoiMjAzNi0wOS0yNVQwMDowMDowMCswMDowMCIsIm1vZGUiOiJpbXBsaWNpdC1ieS1yYW5rIiwiYXVkaWVuY2UiOiJkZXYiLCJmZWF0dXJlcyI6bnVsbCwibGltaXRzIjpudWxsfQ.qVBi3H-3Yxr-mBWNOSRBmKWwxRc2Zwf4FUF81ZlOp4Yzj_SSfHV1rCU46r1T1YeoGJqJq_O_rYsJn7S7mGm2Dw
+  COMUKI_HOST_LICENSE_DEVPUBLICKEY: VroK2oxeIXJWJG6lArhpMnRAkoyeTsdngT2jEdDEct4=
+
 # COMUKI_DB (full Npgsql DSN to pgvector.comuki.svc.cluster.local),
 # COMUKI_IDENTITY_APIKEY_PEPPER, COMUKI_TOKEN_PEPPER,
 # COMUKI_BOOTSTRAP_ADMIN_{EMAIL,PASSWORD}, COMUKI_ARTIFACTS_{ACCESS,SECRET}KEY,

@@ -125,4 +125,51 @@ public sealed class LicenseOptionsValidatorShould
         result.Failed.ShouldBeTrue();
         result.Failures.ShouldContain(static f => f.Contains("ReloadDelay"));
     }
+
+    [Fact(DisplayName = "Given a DevPublicKey that is not base64, when Validate runs, then fails with the DevPublicKey message")]
+    public void DevPublicKeyNotBase64Fails()
+    {
+        var resolver = Substitute.For<ISecretResolver>();
+
+        var result = Validate(new LicenseOptions
+        {
+            GracePeriod = TimeSpan.FromDays(7),
+            ReloadDelay = TimeSpan.FromSeconds(5),
+            DevPublicKey = "this is not base64 at all !!!",
+        }, resolver);
+
+        result.Failed.ShouldBeTrue();
+        result.Failures.ShouldContain(static f => f.Contains("DevPublicKey"));
+    }
+
+    [Fact(DisplayName = "Given a DevPublicKey that is base64 but decodes to 31 bytes, when Validate runs, then fails")]
+    public void DevPublicKeyWrongLengthFails()
+    {
+        var resolver = Substitute.For<ISecretResolver>();
+
+        var result = Validate(new LicenseOptions
+        {
+            GracePeriod = TimeSpan.FromDays(7),
+            ReloadDelay = TimeSpan.FromSeconds(5),
+            DevPublicKey = Convert.ToBase64String(new byte[31]),
+        }, resolver);
+
+        result.Failed.ShouldBeTrue();
+        result.Failures.ShouldContain(static f => f.Contains("DevPublicKey"));
+    }
+
+    [Fact(DisplayName = "Given a DevPublicKey that is base64 of a 32-byte key, when Validate runs, then succeeds")]
+    public void DevPublicKeyValidSucceeds()
+    {
+        var resolver = Substitute.For<ISecretResolver>();
+
+        var result = Validate(new LicenseOptions
+        {
+            GracePeriod = TimeSpan.FromDays(7),
+            ReloadDelay = TimeSpan.FromSeconds(5),
+            DevPublicKey = Convert.ToBase64String(new byte[32]),
+        }, resolver);
+
+        result.Succeeded.ShouldBeTrue();
+    }
 }

@@ -1,3 +1,4 @@
+using Comuki.Shared.Editions.Licensing.Audiences;
 using Comuki.Shared.Editions.Licensing.Modes;
 using Comuki.Shared.Editions.Tiers;
 
@@ -22,6 +23,7 @@ namespace Comuki.Shared.Editions.Licensing;
 /// <param name="NotBefore">Optional start-of-validity instant; <c>null</c> means the license is valid immediately on issuance.</param>
 /// <param name="Expiry">The end of the validity window; <see cref="Status.LicenseEvaluator"/> decides grace.</param>
 /// <param name="Mode">How downstream consumers match <see cref="Features"/> / <see cref="Limits"/> against the catalogs.</param>
+/// <param name="Audience">The contour the license was minted for; the verifier selected its verifying key from this claim.</param>
 /// <param name="Features">Raw capability keys from the payload; empty when absent.</param>
 /// <param name="Limits">Raw quota-key -> cap map from the payload; empty when absent.</param>
 /// <param name="VerifiedAt">The <see cref="TimeProvider"/> instant at the moment of successful verification.</param>
@@ -32,6 +34,7 @@ public sealed record LicenseKey(
     DateTimeOffset? NotBefore,
     DateTimeOffset Expiry,
     LicenseMode Mode,
+    LicenseAudience Audience,
     IReadOnlyCollection<string> Features,
     IReadOnlyDictionary<string, int> Limits,
     DateTimeOffset VerifiedAt,

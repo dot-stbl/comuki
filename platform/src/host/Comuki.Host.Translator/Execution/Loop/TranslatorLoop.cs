@@ -77,7 +77,7 @@ public sealed class TranslatorLoop(
             loggerFactory.CreateLogger<WorkerCommandHandler>())
             .ConsumeAsync(stoppingToken);
         var heartbeatTask = heartbeat.RunAsync(
-            claimed.WorkItemId, opts.HeartbeatInterval, run.RunCancellation.Token, stoppingToken);
+            claimed.WorkItemId, claimed.Generation, opts.HeartbeatInterval, run.RunCancellation.Token, stoppingToken);
 
         var summary = new WorkerRunSummary();
         var startedAt = clock.GetUtcNow();
@@ -114,7 +114,7 @@ public sealed class TranslatorLoop(
                 WorkerEventEnvelope.ToReportEvent(claimed.WorkItemId, outcome).Report,
                 JsonSerializerOptions.Web);
             var completed = await api.CompleteAsync(
-                claimed.WorkItemId, new CompleteWorkItemRequest(reportJson), stoppingToken);
+                claimed.WorkItemId, new CompleteWorkItemRequest(reportJson, claimed.Generation), stoppingToken);
             if (!completed.IsSuccessStatusCode)
             {
                 logger.LogWarning(
@@ -130,7 +130,7 @@ public sealed class TranslatorLoop(
             ? $"{outcome.Status}: {outcome.ErrorText}"
             : $"status {outcome.Status}";
         var failed = await api.FailAsync(
-            claimed.WorkItemId, new FailWorkItemRequest(failureReason), stoppingToken);
+            claimed.WorkItemId, new FailWorkItemRequest(failureReason, claimed.Generation), stoppingToken);
         if (!failed.IsSuccessStatusCode)
         {
             logger.LogWarning(

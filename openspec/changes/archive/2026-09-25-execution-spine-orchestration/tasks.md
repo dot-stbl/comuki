@@ -40,13 +40,13 @@ Cross-references — do not duplicate, coordinate instead:
 `.../Domain/WorkItems/WorkItemDependency.cs`,
 `tests/integration/Comuki.Engine.Orchestration.Integration.Queue/WorkItemQueueShould.cs` (extend).
 
-- [ ] 1.1 Add a readiness predicate to the claim path: a `Blocked`
+- [x] 1.1 Add a readiness predicate to the claim path: a `Blocked`
       WorkItem is claimable only after every `work_item_dependencies`
       prerequisite reaches `Succeeded` (epic task 2.1).
-- [ ] 1.2 Unblock `Blocked` → `Queued` in the same transaction that
+- [x] 1.2 Unblock `Blocked` → `Queued` in the same transaction that
       finalizes a prerequisite's terminal status — no separate polling
       sweep.
-- [ ] 1.3 A prerequisite reaching `Failed`/`Cancelled` does NOT
+- [x] 1.3 A prerequisite reaching `Failed`/`Cancelled` does NOT
       auto-unblock its dependent; it stays `Blocked` for plan-level
       failure policy to resolve.
 
@@ -65,12 +65,12 @@ conceptual dependency). **Size:** M.
 **Files:** same as WS1's queue files,
 `tests/integration/Comuki.Engine.Orchestration.Integration.Queue/RunJournalShould.cs` (extend).
 
-- [ ] 2.1 Prove the existing `a6e9df17` reconciliation slice
+- [x] 2.1 Prove the existing `a6e9df17` reconciliation slice
       (finalize-on-last-terminal-item) is exactly-once under
       concurrent completions — two WorkItems finishing terminal in the
       same instant must resolve to one Run-terminal transition (epic
       task 2.2).
-- [ ] 2.2 Confirm the guard stays a single `UPDATE ... WHERE status NOT
+- [x] 2.2 Confirm the guard stays a single `UPDATE ... WHERE status NOT
       IN (terminal set)` with no additional in-process lock.
 
 **Acceptance:** a Testcontainers integration test races two concurrent
@@ -87,12 +87,12 @@ for this workstream, assert the Run-status half only.
 **Files:** `platform/src/engine/Comuki.Engine.Orchestration/Domain/Runs/RunTransitions.cs`,
 `tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/RunStatusMachineShould.cs` (extend).
 
-- [ ] 3.1 Remove `[RunStatus.Failed] = [RunStatus.Queued]` from
+- [x] 3.1 Remove `[RunStatus.Failed] = [RunStatus.Queued]` from
       `RunTransitions.table`; `Failed` becomes terminal (`[]`) like
       `Succeeded`/`Cancelled` (epic task 2.6).
-- [ ] 3.2 Update the stale XML-doc comments on `RunTransitions` and
+- [x] 3.2 Update the stale XML-doc comments on `RunTransitions` and
       `RunStatus.Failed` that describe the old retry edge.
-- [ ] 3.3 Confirm `WorkItem`'s own `Failed → Queued` edge is untouched —
+- [x] 3.3 Confirm `WorkItem`'s own `Failed → Queued` edge is untouched —
       this change is scoped to `Run` only.
 
 **Acceptance:** `RunStatusMachineShould.cs` asserts `Failed` has no legal
@@ -116,14 +116,14 @@ new migration under `.../Infrastructure/Migrations/`,
 `tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/WorkItemLeaseShould.cs` (extend),
 `tests/integration/Comuki.Host.Integration.Workers/` (extend).
 
-- [ ] 4.1 Add an integer `Generation` column to `runs` (default 1) and a
+- [x] 4.1 Add an integer `Generation` column to `runs` (default 1) and a
       `generation` column to `work_items` (the generation it was
       claimed under); new EF migration (epic task 2.3).
-- [ ] 4.2 `heartbeat`/`complete`/`fail` SQL adds `AND generation =
+- [x] 4.2 `heartbeat`/`complete`/`fail` SQL adds `AND generation =
       @generation` to the existing owner+status guard; a mismatch
       answers the existing 409 `work-item.not-owner` code — not a new
       response shape.
-- [ ] 4.3 Claim response (`ClaimedWorkItemResponse`) surfaces the
+- [x] 4.3 Claim response (`ClaimedWorkItemResponse`) surfaces the
       claimed generation; heartbeat/complete/fail requests carry it back.
 
 **Acceptance:** a unit test proves the fencing decision (current vs.
@@ -140,20 +140,30 @@ current generation still succeeds exactly as before this change.
 `platform/src/host/Comuki.Host/Runs/Controllers/RunsController.cs` (verify only — response codes unchanged),
 `tests/integration/Comuki.Host.Integration.Runs/` (extend).
 
-- [ ] 5.1 Cancel bumps the Run's `Generation` and fences every currently
+- [x] 5.1 Cancel bumps the Run's `Generation` and fences every currently
       `Running` WorkItem under it, in the same transaction as the
       `Cancelled` status transition and journal append (epic task 2.3
       cancel half).
-- [ ] 5.2 A fenced WorkItem's lease is left intact for the reaper to
+- [x] 5.2 A fenced WorkItem's lease is left intact for the reaper to
       reclaim on the existing TTL/grace schedule — fencing invalidates
       authority, it does not forge a lease release.
-- [ ] 5.3 Verify `POST /api/v1/runs/{runId}/cancel`'s existing 409
+- [x] 5.3 Verify `POST /api/v1/runs/{runId}/cancel`'s existing 409
       (terminal run) / 404 (unknown/out-of-scope) behavior is unchanged.
 
 **Acceptance:** an integration test cancels a Running Run with a live
 WorkItem execution, then has the worker attempt heartbeat/complete at
 its pre-cancel generation — the mutation is rejected and the Run/Task
 outcome is unaffected by the late call.
+
+**Follow-up (LOW, coordinator W1 batch review, not fixed here):** the
+generation fence covers the worker REST claim/heartbeat/complete/fail
+surface only — artifact uploads (`platform/src/host/Comuki.Host/Artifacts`)
+and the worker gRPC stream (`Comuki.Host.Workers.Grpc.WorkerGrpcService`)
+do not check a caller-presented generation, so a stale-generation worker
+can still upload artifacts or hold its gRPC stream open after cancel.
+Both are lower-value targets than the REST surface (no state mutation on
+the Run/WorkItem aggregates flows through them) but should get the same
+guard eventually — out of scope for this change's WS4/WS5.
 
 ---
 
@@ -172,15 +182,15 @@ new `tests/integration/Comuki.Engine.Orchestration.Integration.Queue/OutboxDispa
 (or a new sibling `Comuki.Engine.Orchestration.Integration.Outbox` project if
 cohesion favors it — document the choice made in the PR description).
 
-- [ ] 6.1 `outbox_messages`/`inbox_receipts` tables, snake_case, under
+- [x] 6.1 `outbox_messages`/`inbox_receipts` tables, snake_case, under
       the orchestration schema, per `add-mission-cowork/architecture.md`
       decision #3 (epic task 2.4 infra half).
-- [ ] 6.2 `IOutbox` write-side port (enqueue in the same transaction as
+- [x] 6.2 `IOutbox` write-side port (enqueue in the same transaction as
       the caller's aggregate commit); `BackgroundService` dispatcher
       polling `FOR UPDATE SKIP LOCKED`, bounded retries, visible
       dead-letter state on exhausted retries — no Hangfire/Quartz.
-- [ ] 6.3 Inbox dedupe by message id (`inbox_receipts`) for consumers.
-- [ ] 6.4 Partial index on `outbox_messages` for undispatched rows
+- [x] 6.3 Inbox dedupe by message id (`inbox_receipts`) for consumers.
+- [x] 6.4 Partial index on `outbox_messages` for undispatched rows
       (`(dispatched_at, created_at)` filtered to `dispatched_at IS
       NULL`), matching the claim-path partial-index convention already
       used on `work_items`.
@@ -204,11 +214,11 @@ visible, not retried forever or silently dropped.
 — the realtime broadcast stays unchanged and runs in parallel with the
 new durable path.
 
-- [ ] 7.1 Enqueue an `orchestration.run.terminated.v1` (or `.started.v1`
+- [x] 7.1 Enqueue an `orchestration.run.terminated.v1` (or `.started.v1`
       / `.cancelled.v1` as applicable) outbox message in the same
       transaction as the Run's terminal-status commit (epic task 2.4
       wiring half).
-- [ ] 7.2 Confirm the existing `RunEvent` journal append is unchanged —
+- [x] 7.2 Confirm the existing `RunEvent` journal append is unchanged —
       the outbox row is additional, not a replacement.
 
 **Acceptance:** the WS2 concurrency test extended to also assert exactly
@@ -228,14 +238,30 @@ shapes elsewhere — check first), design.md's Migration Plan runbook
 text (verify only, no edit needed from this workstream unless a gap is
 found).
 
-- [ ] 8.1 Automated test asserting `orchestration.run.*.v1` payload
+- [x] 8.1 Automated test asserting `orchestration.run.*.v1` payload
       evolution stays additive-only (new optional fields; fails the
       build on a removed/retyped field) (epic task 2.4a).
-- [ ] 8.2 Dry-run the design.md breaking-deployment runbook steps
+- [x] 8.2 Dry-run the design.md breaking-deployment runbook steps
       against the WS6/WS7 implementation and confirm each step is
       actually executable with the tooling that exists (dispatcher
       pause/drain, dead-letter visibility) — file a follow-up if a step
       has no real lever yet, do not silently mark it done.
+      **Dry-run findings (2026-09-25):** runbook steps 2 and 3 have a
+      real lever today — step 2 (switch/dual-publish) is a one-line edit
+      to `RunProgression.FinalizeAsync`'s single `outbox.Enqueue(...)`
+      call; step 3 (drain/reconcile dead-letters) already has an
+      observable unit of work — `OutboxMessage.IsDeadLettered` /
+      `DeadLetteredAt`, asserted by `OutboxMessageShould` and exercised
+      concurrently by `OutboxDispatchShould`. Steps 1 and 4 have **no
+      real lever yet**: `NoopOutboxPublisher` is the only
+      `IOutboxPublisher` in the tree today (no real consumer is deployed
+      — `add-work-management` (#89) is still the first planned consumer
+      and has not landed), and no consumer-watermark concept exists
+      anywhere in the codebase to confirm against before retiring a
+      `.v1` type. Follow-up, not silently marked done: whichever change
+      wires the first real outbox consumer must also add a watermark /
+      ack mechanism before this runbook's step 4 is actually
+      executable.
 
 **Acceptance:** the contract test fails when a field is deliberately
 removed from a fixture payload (verify the negative case, not just the
@@ -254,15 +280,15 @@ its `IRunLauncher` port declaration (find under
 `tests/integration/Comuki.Host.Integration.Runs/` (extend if a
 cross-module assertion is cleaner there).
 
-- [ ] 9.1 Give the admission call a stable message id (the ticket's
+- [x] 9.1 Give the admission call a stable message id (the ticket's
       admission/claim identity) and an inbox dedupe check on the
       Orchestration side before `Run.Create`/`WorkItem.Create` run
       (epic task 2.5).
-- [ ] 9.2 Retried delivery of the same message id creates at most one
+- [x] 9.2 Retried delivery of the same message id creates at most one
       Run; concurrent delivery of the same message id resolves to one
       Run with the losing caller observing the same Run id, not an
       error.
-- [ ] 9.3 `intake`'s own capability spec/outcome-label set is
+- [x] 9.3 `intake`'s own capability spec/outcome-label set is
       unchanged — this is an Orchestration-side guarantee only.
 
 **Acceptance:** an integration test delivers the same admission message
@@ -281,7 +307,7 @@ optionally a new scenario fixture under
 `execution-spine-crown.scenario.yaml`) if the existing fixtures don't
 already cover a multi-WorkItem dependent plan.
 
-- [ ] 10.1 Extend `TranslatorE2EShould` and/or `AgentLoopScenarioShould`
+- [x] 10.1 Extend `TranslatorE2EShould` and/or `AgentLoopScenarioShould`
       (using `Comuki.AgentTest.Runner` + `Comuki.TestFakeModel`/
       `Comuki.TestFakePi`, per the landed agentic test contour) to prove,
       in one run: a dependent WorkItem waits for its prerequisite
@@ -289,7 +315,7 @@ already cover a multi-WorkItem dependent plan.
       cancelled/superseded Run's late worker result is rejected (WS4/
       WS5), a terminal outbox message is delivered (WS6/WS7), and an
       admission retry does not double-launch (WS9) (epic task 2.7).
-- [ ] 10.2 compose.e2e/Playwright/AgentEval tiers do not apply to this
+- [x] 10.2 compose.e2e/Playwright/AgentEval tiers do not apply to this
       change (no dashboard/CLI/HTTP-facing product surface changed) —
       do not add scenarios there; note this explicitly in the PR so a
       reviewer doesn't go looking for them.
@@ -297,3 +323,11 @@ already cover a multi-WorkItem dependent plan.
 **Acceptance:** the crown scenario passes and its assertions name each
 of the five invariants above individually (not one opaque green check) —
 a reviewer can see which invariant a future regression broke.
+
+**Note:** the crown proof lives in
+`tests/integration/Comuki.EndToEnd.AgentLoop/CrownScenarioShould.cs` (a
+new file, not the two files WS10 originally named) using in-process
+`IWorkItemQueue` calls instead of a real worker container, because the
+container compute path is blocked in this sandbox by issues #152 (gRPC
+h2c) and #153 (`DOCKER_HOST`) — see
+`.agents/rules/process/local-test-runtime.md`.

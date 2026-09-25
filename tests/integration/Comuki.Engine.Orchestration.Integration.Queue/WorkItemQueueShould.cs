@@ -2,7 +2,10 @@ using System.Text.Json;
 using Comuki.Engine.Orchestration.Application.Handlers;
 using Comuki.Engine.Orchestration.Application.Models;
 using Comuki.Engine.Orchestration.Domain;
+using Comuki.Engine.Orchestration.Domain.Runs;
+using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Leases;
+using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Contracts.Queue;
@@ -174,7 +177,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         claimed.ShouldNotBeNull();
 
         clock.Advance(TimeSpan.FromMinutes(1));
-        var extended = await queue.HeartbeatAsync(seeded.Id, workerId, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
+        var extended = await queue.HeartbeatAsync(seeded.Id, workerId, claimed.Generation, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
         extended.ShouldBeTrue();
 
         // past the ORIGINAL lease (t0+2m) but within the extended one (t0+3m)
@@ -195,9 +198,10 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
 
-        var stranger = await queue.HeartbeatAsync(seeded.Id, WorkerId.New(), claimAt.AddMinutes(4), claimAt.AddSeconds(30), cancellationToken);
+        var stranger = await queue.HeartbeatAsync(seeded.Id, WorkerId.New(), claimed.Generation, claimAt.AddMinutes(4), claimAt.AddSeconds(30), cancellationToken);
 
         stranger.ShouldBeFalse();
     }
@@ -210,10 +214,11 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
 
         clock.Advance(TimeSpan.FromMinutes(3));
-        var late = await queue.HeartbeatAsync(seeded.Id, workerId, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
+        var late = await queue.HeartbeatAsync(seeded.Id, workerId, claimed.Generation, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
 
         late.ShouldBeFalse();
     }
@@ -229,13 +234,13 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
         claimed.ShouldNotBeNull();
 
-        var stolen = await queue.CompleteAsync(seeded.Id, WorkerId.New(), /*lang=json,strict*/ """{"summary":"not mine"}""", claimAt.AddSeconds(30), cancellationToken);
+        var stolen = await queue.CompleteAsync(seeded.Id, WorkerId.New(), claimed.Generation, /*lang=json,strict*/ """{"summary":"not mine"}""", claimAt.AddSeconds(30), cancellationToken);
         stolen.ShouldBeFalse();
 
-        var completed = await queue.CompleteAsync(seeded.Id, workerId, /*lang=json,strict*/ """{"summary":"done","filesChanged":2}""", claimAt.AddMinutes(1), cancellationToken);
+        var completed = await queue.CompleteAsync(seeded.Id, workerId, claimed.Generation, /*lang=json,strict*/ """{"summary":"done","filesChanged":2}""", claimAt.AddMinutes(1), cancellationToken);
         completed.ShouldBeTrue();
 
-        var replayed = await queue.CompleteAsync(seeded.Id, workerId, /*lang=json,strict*/ """{"summary":"again"}""", claimAt.AddMinutes(1), cancellationToken);
+        var replayed = await queue.CompleteAsync(seeded.Id, workerId, claimed.Generation, /*lang=json,strict*/ """{"summary":"again"}""", claimAt.AddMinutes(1), cancellationToken);
         replayed.ShouldBeFalse();
 
         var item = (await LoadItemAsync(seeded.Id)).ShouldNotBeNull();
@@ -254,6 +259,27 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         payload.RootElement.GetProperty("detail").GetProperty("summary").GetString().ShouldBe("done", transition.Payload);
     }
 
+    [Fact(DisplayName = "Given a claimed item, when completed at a stale generation, then it is rejected while the current generation still succeeds")]
+    public async Task RejectStaleGenerationOnCompleteAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var seeded = await SeedQueuedItemAsync();
+        using var scope = CreateScope();
+        var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var workerId = WorkerId.New();
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
+
+        var stale = await queue.CompleteAsync(seeded.Id, workerId, claimed.Generation + 1, /*lang=json,strict*/ """{"summary":"stale"}""", claimAt.AddSeconds(30), cancellationToken);
+        stale.ShouldBeFalse();
+
+        var item = (await LoadItemAsync(seeded.Id)).ShouldNotBeNull();
+        item.Status.ShouldBe(WorkItemStatus.Running);
+
+        var current = await queue.CompleteAsync(seeded.Id, workerId, claimed.Generation, /*lang=json,strict*/ """{"summary":"done"}""", claimAt.AddSeconds(31), cancellationToken);
+        current.ShouldBeTrue();
+    }
+
     [Fact(DisplayName = "Given a failed item, when the owner reports the failure, then the reason lands in the journal")]
     public async Task RecordFailureReasonInJournalAsync()
     {
@@ -262,9 +288,10 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
 
-        var failed = await queue.FailAsync(seeded.Id, workerId, "OOM killed", claimAt.AddSeconds(30), cancellationToken);
+        var failed = await queue.FailAsync(seeded.Id, workerId, claimed.Generation, "OOM killed", claimAt.AddSeconds(30), cancellationToken);
 
         failed.ShouldBeTrue();
         var item = (await LoadItemAsync(seeded.Id)).ShouldNotBeNull();
@@ -340,5 +367,188 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         // by type to isolate the work-item transition under test.
         var entry = timeline.Single(static runEvent => runEvent.Type == "work_item.status_changed");
         entry.RunId.ShouldBe(seeded.RunId);
+    }
+
+    /// <summary>Seeds a run with one Queued prerequisite and one Blocked
+    /// dependent (single edge), for the dependency-gated claim tests.</summary>
+    private async Task<(WorkItem Prerequisite, WorkItem Dependent)> SeedBlockedDependentAsync()
+    {
+        using var scope = CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+        var now = clock.GetUtcNow();
+        var run = Run.Create(ProjectId.New(), now);
+        var prerequisite = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"prerequisite"}""", WorkItemStatus.Queued, now);
+        var dependent = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"dependent"}""", WorkItemStatus.Blocked, now);
+        db.Runs.Add(run);
+        db.WorkItems.AddRange(prerequisite, dependent);
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependent.Id, prerequisite.Id));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return (prerequisite, dependent);
+    }
+
+    [Fact(DisplayName = "Given a blocked item whose prerequisite has not succeeded, when claimed, then it is never returned")]
+    public async Task RefuseClaimOnBlockedDependentAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (prerequisite, dependent) = await SeedBlockedDependentAsync();
+        using var scope = CreateScope();
+        var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+
+        // Claim the prerequisite first so it is Running (leased), not Queued —
+        // isolates that the Blocked dependent specifically is excluded by
+        // status alone, not merely out-competed for the same row.
+        var first = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        first.ShouldNotBeNull();
+        first.WorkItemId.ShouldBe(prerequisite.Id);
+
+        var second = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+
+        second.ShouldBeNull();
+        var item = (await LoadItemAsync(dependent.Id)).ShouldNotBeNull();
+        item.Status.ShouldBe(WorkItemStatus.Blocked);
+    }
+
+    [Fact(DisplayName = "Given a dependent's only prerequisite succeeds, when completed, then the dependent unblocks in the same transaction and is claimable")]
+    public async Task UnblockDependentOnPrerequisiteSuccessAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (prerequisite, dependent) = await SeedBlockedDependentAsync();
+        using var scope = CreateScope();
+        var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var workerId = WorkerId.New();
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
+        claimed.WorkItemId.ShouldBe(prerequisite.Id);
+
+        var completed = await queue.CompleteAsync(prerequisite.Id, workerId, claimed.Generation, /*lang=json,strict*/ """{"summary":"done"}""", claimAt.AddMinutes(1), cancellationToken);
+
+        completed.ShouldBeTrue();
+        var unblocked = (await LoadItemAsync(dependent.Id)).ShouldNotBeNull();
+        unblocked.Status.ShouldBe(WorkItemStatus.Queued);
+
+        var second = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(3), claimAt.AddMinutes(1), cancellationToken);
+        second.ShouldNotBeNull();
+        second.WorkItemId.ShouldBe(dependent.Id);
+    }
+
+    [Fact(DisplayName = "Given a dependent's prerequisite fails, when failed, then the dependent stays blocked and is never claimed")]
+    public async Task PrerequisiteFailureDoesNotUnblockDependentAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (prerequisite, dependent) = await SeedBlockedDependentAsync();
+        using var scope = CreateScope();
+        var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var workerId = WorkerId.New();
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
+
+        var failed = await queue.FailAsync(prerequisite.Id, workerId, claimed.Generation, "boom", claimAt.AddMinutes(1), cancellationToken);
+
+        failed.ShouldBeTrue();
+        var stillBlocked = (await LoadItemAsync(dependent.Id)).ShouldNotBeNull();
+        stillBlocked.Status.ShouldBe(WorkItemStatus.Blocked);
+
+        var reclaimAttempt = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(3), claimAt.AddMinutes(1), cancellationToken);
+        reclaimAttempt.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Given a dependent with two prerequisites, when only one succeeds, then it stays blocked until the last one also succeeds")]
+    public async Task UnblockOnlyAfterEveryPrerequisiteSucceedsAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var scope = CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+        var now = clock.GetUtcNow();
+        var run = Run.Create(ProjectId.New(), now);
+        var prerequisiteA = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"a"}""", WorkItemStatus.Queued, now);
+        var prerequisiteB = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"b"}""", WorkItemStatus.Queued, now.AddMilliseconds(1));
+        var dependent = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"c"}""", WorkItemStatus.Blocked, now);
+        db.Runs.Add(run);
+        db.WorkItems.AddRange(prerequisiteA, prerequisiteB, dependent);
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependent.Id, prerequisiteA.Id));
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependent.Id, prerequisiteB.Id));
+        await db.SaveChangesAsync(cancellationToken);
+
+        var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var workerA = WorkerId.New();
+        var claimedA = await queue.ClaimAsync(workerA, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimedA.ShouldNotBeNull();
+        await queue.CompleteAsync(prerequisiteA.Id, workerA, claimedA.Generation, /*lang=json,strict*/ """{"summary":"a done"}""", claimAt.AddMinutes(1), cancellationToken);
+
+        // Only A succeeded so far — B is still Queued, dependent must stay Blocked.
+        (await LoadItemAsync(dependent.Id)).ShouldNotBeNull().Status.ShouldBe(WorkItemStatus.Blocked);
+
+        var workerB = WorkerId.New();
+        var claimedB = await queue.ClaimAsync(workerB, ImplementLabels, claimAt.AddMinutes(3), claimAt.AddMinutes(1), cancellationToken);
+        claimedB.ShouldNotBeNull();
+        claimedB.WorkItemId.ShouldBe(prerequisiteB.Id);
+        await queue.CompleteAsync(prerequisiteB.Id, workerB, claimedB.Generation, /*lang=json,strict*/ """{"summary":"b done"}""", claimAt.AddMinutes(2), cancellationToken);
+
+        // Both prerequisites Succeeded now — dependent unblocks.
+        (await LoadItemAsync(dependent.Id)).ShouldNotBeNull().Status.ShouldBe(WorkItemStatus.Queued);
+    }
+
+    /// <summary>Seeds a run with two prerequisites and TWO dependents that
+    /// each depend on BOTH — a genuine two-row overlap between the two
+    /// prerequisites' unblock candidate sets, for the deadlock-race test
+    /// below (a single shared dependent can't itself deadlock; you need at
+    /// least two overlapping rows for a lock-order cycle to be possible).</summary>
+    private async Task<(WorkItem PrerequisiteA, WorkItem PrerequisiteB, WorkItem DependentOne, WorkItem DependentTwo)> SeedDiamondDependentsAsync(string profileKey)
+    {
+        using var scope = CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+        var now = clock.GetUtcNow();
+        var run = Run.Create(ProjectId.New(), now);
+        var prerequisiteA = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"a"}""", WorkItemStatus.Queued, now);
+        var prerequisiteB = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"b"}""", WorkItemStatus.Queued, now);
+        var dependentOne = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"diamond-1"}""", WorkItemStatus.Blocked, now);
+        var dependentTwo = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"diamond-2"}""", WorkItemStatus.Blocked, now);
+        db.Runs.Add(run);
+        db.WorkItems.AddRange(prerequisiteA, prerequisiteB, dependentOne, dependentTwo);
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependentOne.Id, prerequisiteA.Id));
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependentOne.Id, prerequisiteB.Id));
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependentTwo.Id, prerequisiteA.Id));
+        db.WorkItemDependencies.Add(WorkItemDependency.Create(dependentTwo.Id, prerequisiteB.Id));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return (prerequisiteA, prerequisiteB, dependentOne, dependentTwo);
+    }
+
+    [Fact(DisplayName = "Given two dependents sharing both prerequisites, when both prerequisites complete concurrently across many trials, then both unblock exactly once with no deadlock")]
+    public async Task UnblockDiamondDependentsWithoutDeadlockUnderConcurrencyAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const int trials = 25;
+
+        for (var trial = 0; trial < trials; trial++)
+        {
+            var profileKey = $"diamond-{trial}";
+            var (_, _, dependentOne, dependentTwo) = await SeedDiamondDependentsAsync(profileKey);
+            var labels = new WorkItemLabels(Image, ProfilesRef, profileKey);
+            using var scopeA = CreateScope();
+            using var scopeB = CreateScope();
+            var queueA = scopeA.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+            var queueB = scopeB.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+            var workerA = WorkerId.New();
+            var workerB = WorkerId.New();
+            var claimedA = await queueA.ClaimAsync(workerA, labels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+            var claimedB = await queueB.ClaimAsync(workerB, labels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+            claimedA.ShouldNotBeNull();
+            claimedB.ShouldNotBeNull();
+
+            // fire both completions without awaiting either first — genuinely
+            // concurrent transactions on separate connections, so a real lock-
+            // order mismatch between the two UnblockDependentsSql candidate
+            // sets would surface as an actual Postgres 40P01 (uncaught — this
+            // fact fails loudly on it), not a theoretical one
+            var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, claimedA.Generation, /*lang=json,strict*/ """{"summary":"a done"}""", claimAt.AddMinutes(1), cancellationToken);
+            var completeB = queueB.CompleteAsync(claimedB.WorkItemId, workerB, claimedB.Generation, /*lang=json,strict*/ """{"summary":"b done"}""", claimAt.AddMinutes(1), cancellationToken);
+            var resultA = await completeA;
+            var resultB = await completeB;
+
+            resultA.ShouldBeTrue($"trial {trial}: prerequisite A completion was rejected");
+            resultB.ShouldBeTrue($"trial {trial}: prerequisite B completion was rejected");
+            (await LoadItemAsync(dependentOne.Id)).ShouldNotBeNull().Status.ShouldBe(WorkItemStatus.Queued, $"trial {trial}: dependent one did not unblock exactly once");
+            (await LoadItemAsync(dependentTwo.Id)).ShouldNotBeNull().Status.ShouldBe(WorkItemStatus.Queued, $"trial {trial}: dependent two did not unblock exactly once");
+        }
     }
 }

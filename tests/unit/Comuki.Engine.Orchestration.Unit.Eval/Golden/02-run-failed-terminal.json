@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "02-run-failed-terminal",
+  "name": "Run: Queued -> Running -> Failed (terminal, no retry edge)",
+  "kind": "Run",
+  "operations": [
+    { "action": "Create" },
+    { "action": "Transition", "status": "Running" },
+    { "action": "Transition", "status": "Failed" },
+    { "action": "TransitionExpectFailure", "status": "Queued" }
+  ],
+  "expected": {
+    "expectsFailure": true,
+    "expectedFailureMessage": "Failed"
+  }
+}

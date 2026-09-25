@@ -189,6 +189,12 @@ grpcPort = 17004
 # sweepInterval = "00:00:15"
 # enabled = true
 
+[orchestration.outbox]
+# Durable terminal-event outbox dispatch policy (issue #87 WS6).
+# dispatchInterval = "00:00:05"
+# batchSize = 50
+# maxAttempts = 5
+
 [compute]
 # "docker" (default) or "kubernetes" — how worker containers spawn.
 # provider = "docker"

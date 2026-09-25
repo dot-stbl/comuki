@@ -79,6 +79,7 @@ public static class WorkerEndpoints
                 claimed.Brief,
                 claimed.LeaseUntil.ToUnixTimeMilliseconds(),
                 claimed.Attempt,
+                claimed.Generation,
                 ProxyBaseUrl: minted?.ProxyBaseUrl,
                 VirtualKey: minted?.Token));
         }
@@ -93,6 +94,7 @@ public static class WorkerEndpoints
 
     private static async Task<IResult> HeartbeatAsync(
         Guid workItemId,
+        HeartbeatWorkItemRequest? request,
         HttpContext httpContext,
         WorkerTokenAuthenticator authenticator,
         ISubjectScopeAccessor scopeAccessor,
@@ -109,8 +111,14 @@ public static class WorkerEndpoints
 
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var now = clock.GetUtcNow();
+        // A pre-WS4/WS5 Translator sends no body at all — request binds to
+        // null rather than a 400. 0 never matches a real claimed generation
+        // (WorkItemQueueSql's ClaimSql always stamps the item from the
+        // owning run's generation, which starts at 1), so the guarded SQL
+        // rejects it as an ownership miss like any other stale generation.
+        var generation = request?.Generation ?? 0;
         var extended = await queue.HeartbeatAsync(
-            workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
+            workItemId, workerId, generation, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
         if (extended)
         {
             pool.Touch(workerId);
@@ -140,7 +148,7 @@ public static class WorkerEndpoints
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         await virtualKeys.RevokeAsync(workItemId, cancellationToken);
         var completed = await queue.CompleteAsync(
-            workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken);
+            workItemId, workerId, request.Generation, request.ResultJson, clock.GetUtcNow(), cancellationToken);
         if (completed)
         {
             pool.MarkIdle(workerId);
@@ -170,7 +178,7 @@ public static class WorkerEndpoints
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         await virtualKeys.RevokeAsync(workItemId, cancellationToken);
         var failed = await queue.FailAsync(
-            workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken);
+            workItemId, workerId, request.Generation, request.Reason, clock.GetUtcNow(), cancellationToken);
         if (failed)
         {
             pool.MarkIdle(workerId);

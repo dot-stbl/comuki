@@ -1,4 +1,5 @@
 using Comuki.Host.Translator.Api.Contracts;
+using Comuki.Host.Translator.Api.Models.Requests;
 
 namespace Comuki.Host.Translator.Execution.Loop;
 
@@ -15,10 +16,11 @@ public sealed class HeartbeatMonitor(IOrchestratorApi api)
     /// lease held, false when the orchestrator rejected a heartbeat.
     /// </summary>
     /// <param name="workItemId"></param>
+    /// <param name="generation">The generation the run claimed this item under — echo on every heartbeat so the host can reject a stale generation as an ownership miss.</param>
     /// <param name="interval"></param>
     /// <param name="runToken"></param>
     /// <param name="stoppingToken"></param>
-    public async Task<bool> RunAsync(Guid workItemId, TimeSpan interval, CancellationToken runToken, CancellationToken stoppingToken)
+    public async Task<bool> RunAsync(Guid workItemId, int generation, TimeSpan interval, CancellationToken runToken, CancellationToken stoppingToken)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(runToken, stoppingToken);
         while (!linked.Token.IsCancellationRequested)
@@ -32,7 +34,7 @@ public sealed class HeartbeatMonitor(IOrchestratorApi api)
                 return true;
             }
 
-            var response = await api.HeartbeatAsync(workItemId, stoppingToken);
+            var response = await api.HeartbeatAsync(workItemId, new HeartbeatWorkItemRequest(generation), stoppingToken);
             if (response.IsSuccessStatusCode)
             {
                 continue;

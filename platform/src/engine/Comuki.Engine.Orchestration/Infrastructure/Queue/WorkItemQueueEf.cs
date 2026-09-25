@@ -2,6 +2,7 @@ using System.Text.Json;
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Journal;
+using Comuki.Engine.Orchestration.Infrastructure.Outbox;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
@@ -16,8 +17,9 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Queue;
 /// <c>UPDATE ... FOR UPDATE SKIP LOCKED ... RETURNING</c>, every mutation
 /// carries its journal event in the same transaction. Misses are values.
 /// </summary>
-/// <param name="db"></param>
-public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
+/// <param name="db">Orchestration EF context — the unit-of-work carrier for the queue's transactions.</param>
+/// <param name="outbox">Outbox staging surface — terminal complete/fail transitions also stage an <c>orchestration.run.terminated.v1</c> message on the caller's scope (WS7, issue #87).</param>
+public sealed class WorkItemQueueEf(OrchestrationDbContext db, IOutbox outbox) : IWorkItemQueue
 {
     /// <inheritdoc />
     public async Task<ClaimedWorkItem?> ClaimAsync(
@@ -68,15 +70,15 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
     public async Task<bool> HeartbeatAsync(
         Guid workItemId,
         WorkerId workerId,
+        int generation,
         DateTimeOffset leaseUntil,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        await using var command = WorkItemQueueSql.CreateHeartbeatCommand(transaction.GetDbTransaction(), workItemId, workerId, leaseUntil, now);
+        await using var command = WorkItemQueueSql.CreateHeartbeatCommand(transaction.GetDbTransaction(), workItemId, workerId, generation, leaseUntil, now);
 
-        var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
-        if (rowsAffected == 0)
+        if (await command.ExecuteNonQueryAsync(cancellationToken) == 0)
         {
             await transaction.RollbackAsync(cancellationToken);
             return false;
@@ -90,6 +92,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
     public async Task<bool> CompleteAsync(
         Guid workItemId,
         WorkerId workerId,
+        int generation,
         string resultJson,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
@@ -101,7 +104,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
 
         // result is worker-produced JSON — embedded as a structured value, not a string
         return await WorkItemOwnedTransition.ApplyAsync(
-            db, completing: true, workItemId, workerId,
+            db, outbox, completing: true, workItemId, workerId, generation,
             JsonDocument.Parse(resultJson).RootElement.Clone(), now, cancellationToken);
     }
 
@@ -109,6 +112,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
     public async Task<bool> FailAsync(
         Guid workItemId,
         WorkerId workerId,
+        int generation,
         string reason,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
@@ -120,7 +124,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
 
         // reason is human text — embedded as a JSON string
         return await WorkItemOwnedTransition.ApplyAsync(
-            db, completing: false, workItemId, workerId, reason, now, cancellationToken);
+            db, outbox, completing: false, workItemId, workerId, generation, reason, now, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -140,17 +144,19 @@ file static class WorkItemOwnedTransition
 {
     public static async Task<bool> ApplyAsync(
         OrchestrationDbContext db,
+        IOutbox outbox,
         bool completing,
         Guid workItemId,
         WorkerId workerId,
+        int generation,
         object detail,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await using var command = completing
-            ? WorkItemQueueSql.CreateCompleteCommand(transaction.GetDbTransaction(), workItemId, workerId, now)
-            : WorkItemQueueSql.CreateFailCommand(transaction.GetDbTransaction(), workItemId, workerId, now);
+            ? WorkItemQueueSql.CreateCompleteCommand(transaction.GetDbTransaction(), workItemId, workerId, generation, now)
+            : WorkItemQueueSql.CreateFailCommand(transaction.GetDbTransaction(), workItemId, workerId, generation, now);
 
         RunId? runId = null;
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -167,74 +173,30 @@ file static class WorkItemOwnedTransition
             return false;
         }
 
-        var to = completing ? nameof(WorkItemStatus.Succeeded) : nameof(WorkItemStatus.Failed);
         db.RunEvents.Add(RunEvent.Create(
             owner,
             RunEventTypes.WorkItemStatusChanged,
-            WorkItemEventPayloads.StatusChangedWithDetail(workItemId, nameof(WorkItemStatus.Running), to, detail),
+            WorkItemEventPayloads.StatusChangedWithDetail(
+                workItemId,
+                nameof(WorkItemStatus.Running),
+                completing ? nameof(WorkItemStatus.Succeeded) : nameof(WorkItemStatus.Failed),
+                detail),
             now));
+
+        // A succeeded item may unblock dependents whose full prerequisite set
+        // has now reached Succeeded; a failed completion must not (WS1
+        // acceptance: prerequisite failure does not auto-unblock — see
+        // UnblockDependentsSql's doc comment).
+        if (completing)
+        {
+            await RunProgression.UnblockDependentsAsync(transaction, workItemId, now, cancellationToken);
+        }
 
         // A terminal item may have been the run's last open one — finalize
         // the run (Succeeded when nothing failed, Failed otherwise).
-        await RunProgression.FinalizeAsync(db, transaction, owner, now, cancellationToken);
+        await RunProgression.FinalizeAsync(db, outbox, transaction, owner, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return true;
-    }
-}
-
-/// <summary>
-/// Run-status progression driven by work-item transitions: activation on the
-/// first claim, finalization when the last item lands terminal. Both run as
-/// guarded <c>UPDATE ... RETURNING</c> statements inside the caller's item
-/// transaction — status guards make them no-ops under concurrency, and a
-/// returned row journals a <c>run.status_changed</c> event.
-/// </summary>
-file static class RunProgression
-{
-    public static async Task ActivateAsync(
-        OrchestrationDbContext db,
-        IDbContextTransaction transaction,
-        RunId runId,
-        DateTimeOffset now,
-        CancellationToken cancellationToken)
-    {
-        await using var command = WorkItemQueueSql.CreateRunActivationCommand(transaction.GetDbTransaction(), runId, now);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (await reader.ReadAsync(cancellationToken))
-        {
-            db.RunEvents.Add(RunEvent.Create(
-                runId,
-                RunEventTypes.RunStatusChanged,
-                RunStatusPayload(nameof(RunStatus.Queued), reader.GetString(0), "worker"),
-                now));
-        }
-    }
-
-    public static async Task FinalizeAsync(
-        OrchestrationDbContext db,
-        IDbContextTransaction transaction,
-        RunId runId,
-        DateTimeOffset now,
-        CancellationToken cancellationToken)
-    {
-        await using var command = WorkItemQueueSql.CreateRunFinalizationCommand(transaction.GetDbTransaction(), runId, now);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (await reader.ReadAsync(cancellationToken))
-        {
-            db.RunEvents.Add(RunEvent.Create(
-                runId,
-                RunEventTypes.RunStatusChanged,
-                RunStatusPayload(nameof(RunStatus.Running), reader.GetString(0), "worker"),
-                now));
-        }
-    }
-
-    /// <summary>Journal payload shape of a run transition — the same camelCase
-    /// record the host adapters journal (from/to/actor).</summary>
-    private static string RunStatusPayload(string from, string to, string actor)
-    {
-        return JsonSerializer.Serialize(
-            new { from, to, actor }, JsonSerializerOptions.Web);
     }
 }

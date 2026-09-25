@@ -46,6 +46,7 @@ public sealed class ClaimedWorkItemResponseShould
             "do it",
             DateTimeOffset.UtcNow.AddMinutes(2).ToUnixTimeMilliseconds(),
             1,
+            1,
             ProxyBaseUrl,
             VirtualKey);
     }

@@ -4,11 +4,16 @@
  */
 
 /**
- * @description Completion body: the worker-produced result JSON (must be valid, non-empty JSON).
+ * @description Completion body: the worker-produced result JSON (must be valid, non-empty JSON) plus the claimed generation.
  */
 export type CompleteWorkItemRequest = {
   /**
    * @type string
    */
   resultJson: string
+  /**
+   * @description The generation the caller claimed this item under — a mismatch (the owning Run has since been cancelled/superseded) is treated as an ownership miss.
+   * @type integer,string, int32
+   */
+  generation: number | string
 }

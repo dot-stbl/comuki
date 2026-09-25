@@ -10,6 +10,7 @@ import type {
   ResponseErrorConfig,
 } from "@/shared/api/kubb-client"
 import type {
+  PostWorkersWorkitemidHeartbeatMutationRequest,
   PostWorkersWorkitemidHeartbeatMutationResponse,
   PostWorkersWorkitemidHeartbeatPathParams,
 } from "../types/PostWorkersWorkitemidHeartbeat"
@@ -29,17 +30,23 @@ function getPostWorkersWorkitemidHeartbeatUrl(
  */
 export async function postWorkersWorkitemidHeartbeat(
   workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"],
-  config: Partial<RequestConfig> & { client?: Client } = {}
+  data?: PostWorkersWorkitemidHeartbeatMutationRequest,
+  config: Partial<
+    RequestConfig<PostWorkersWorkitemidHeartbeatMutationRequest>
+  > & { client?: Client } = {}
 ) {
   const { client: request = fetch, ...requestConfig } = config
+
+  const requestData = data
 
   const res = await request<
     PostWorkersWorkitemidHeartbeatMutationResponse,
     ResponseErrorConfig<Error>,
-    unknown
+    PostWorkersWorkitemidHeartbeatMutationRequest
   >({
     method: "POST",
     url: getPostWorkersWorkitemidHeartbeatUrl(workItemId).url.toString(),
+    data: requestData,
     ...requestConfig,
   })
   return res.data

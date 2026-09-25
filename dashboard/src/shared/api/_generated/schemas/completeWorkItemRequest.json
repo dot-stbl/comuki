@@ -1,7 +1,15 @@
 {
-  "required": ["resultJson"],
+  "required": ["resultJson", "generation"],
   "type": "object",
-  "properties": { "resultJson": { "type": "string" } },
-  "description": "Completion body: the worker-produced result JSON (must be valid, non-empty JSON).",
+  "properties": {
+    "resultJson": { "type": "string" },
+    "generation": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "The generation the caller claimed this item under — a mismatch (the owning Run has since been cancelled/superseded) is treated as an ownership miss.",
+      "format": "int32"
+    }
+  },
+  "description": "Completion body: the worker-produced result JSON (must be valid, non-empty JSON) plus the claimed generation.",
   "x-readme-ref-name": "CompleteWorkItemRequest"
 }

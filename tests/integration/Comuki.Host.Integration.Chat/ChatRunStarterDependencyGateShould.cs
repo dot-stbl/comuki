@@ -90,6 +90,7 @@ public sealed class ChatRunStarterDependencyGateShould(HostChatServer server) : 
             completed = await queue.CompleteAsync(
                 firstClaim.WorkItemId,
                 prerequisiteWorker,
+                firstClaim.Generation,
                 /*lang=json,strict*/ """{"summary":"prereq done"}""",
                 DateTimeOffset.UtcNow,
                 cancellationToken);

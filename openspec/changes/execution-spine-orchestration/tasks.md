@@ -140,14 +140,14 @@ current generation still succeeds exactly as before this change.
 `platform/src/host/Comuki.Host/Runs/Controllers/RunsController.cs` (verify only — response codes unchanged),
 `tests/integration/Comuki.Host.Integration.Runs/` (extend).
 
-- [ ] 5.1 Cancel bumps the Run's `Generation` and fences every currently
+- [x] 5.1 Cancel bumps the Run's `Generation` and fences every currently
       `Running` WorkItem under it, in the same transaction as the
       `Cancelled` status transition and journal append (epic task 2.3
       cancel half).
-- [ ] 5.2 A fenced WorkItem's lease is left intact for the reaper to
+- [x] 5.2 A fenced WorkItem's lease is left intact for the reaper to
       reclaim on the existing TTL/grace schedule — fencing invalidates
       authority, it does not forge a lease release.
-- [ ] 5.3 Verify `POST /api/v1/runs/{runId}/cancel`'s existing 409
+- [x] 5.3 Verify `POST /api/v1/runs/{runId}/cancel`'s existing 409
       (terminal run) / 404 (unknown/out-of-scope) behavior is unchanged.
 
 **Acceptance:** an integration test cancels a Running Run with a live

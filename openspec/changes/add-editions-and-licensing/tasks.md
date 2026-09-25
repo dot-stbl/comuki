@@ -192,7 +192,18 @@ full unit suite for the worked-example endpoint.
   `AddXxxModule(...)` call in `AddComukiModule<XxxModule>()` with a
   class-level `[EditionFeature(Features.X)]`); verify a unit test
   that building the DI graph with Community skips the inner
-  installer and a paid tier runs it.
+  installer and a paid tier runs it. (Demonstrated with a
+  test-only marker class + a fake installer inside
+  `AddComukiModuleShould`, not a real module installer file:
+  every existing `AddXxxModule` wires a Community-baseline
+  capability today — wrapping one for real would hard-gate
+  existing Community functionality behind a license without a
+  product decision to do so, which is a call this workstream
+  should not make unilaterally. The unit-test coverage this task
+  asks for — Community skips the installer, a paid tier runs it —
+  is fully demonstrated; only the "wrap a real installer" half is
+  deferred to whichever future change first ships a genuinely
+  paid module.)
 - [x] 5.4 Pick one existing paid/Community interface split (or
   invent a minimal one in the test project if no real split
   exists) and demonstrate `AddForEdition<TService>`; verify the

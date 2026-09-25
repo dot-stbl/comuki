@@ -173,6 +173,28 @@ internal static class WorkItemQueueSql
         "SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " "
         + "WHERE id = @runId FOR UPDATE";
 
+    /// <summary>Locks this completing item's Blocked dependent candidates, in
+    /// deterministic ascending-id order, before the guarded unblock UPDATE
+    /// below. Two prerequisites of a shared (diamond) dependent completing
+    /// concurrently each run a multi-row UPDATE whose candidate sets can
+    /// overlap on the same dependent rows; without a canonical lock order
+    /// first, Postgres may lock those overlapping rows in planner-dependent
+    /// (not necessarily matching) order across the two transactions — a
+    /// classic multi-row-update deadlock (40P01). Locking the same
+    /// candidate ids in the same ascending-id order up front makes every
+    /// transaction acquire overlapping row locks in the same sequence, so
+    /// at most one waits — it never cycles.</summary>
+    public const string LockBlockedDependentsSql =
+        "SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "WHERE status = '" + Blocked + "' "
+        + "  AND id IN ( "
+        + "      SELECT dependency.work_item_id "
+        + "      FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItemDependencies + " dependency "
+        + "      WHERE dependency.depends_on_work_item_id = @workItemId "
+        + "  ) "
+        + "ORDER BY id "
+        + "FOR UPDATE";
+
     /// <summary>Creates a prepared claim command on the transaction's connection.</summary>
     /// <param name="transaction"></param>
     /// <param name="workerId"></param>
@@ -337,14 +359,25 @@ internal static class WorkItemQueueSql
     /// <summary>Creates a prepared run-lock command (run before
     /// <see cref="CreateRunFinalizationCommand"/> in the same transaction —
     /// see <see cref="LockRunForFinalizationSql"/> remarks).</summary>
-    /// <param name="transaction"></param>
-    /// <param name="runId"></param>
     public static DbCommand CreateLockRunForFinalizationCommand(DbTransaction transaction, RunId runId)
     {
         // boundary: ADO contract — Connection is always set on a live transaction
         var command = transaction.Connection!.CreateCommand();
         command.CommandText = LockRunForFinalizationSql;
         AddParameter(command, "@runId", runId.Value);
+        return command;
+    }
+
+    /// <summary>Creates a prepared lock command for this completing item's
+    /// Blocked dependent candidates — run before
+    /// <see cref="CreateUnblockDependentsCommand"/> in the same transaction;
+    /// see <see cref="LockBlockedDependentsSql"/> remarks.</summary>
+    public static DbCommand CreateLockBlockedDependentsCommand(DbTransaction transaction, Guid workItemId)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = LockBlockedDependentsSql;
+        AddParameter(command, "@workItemId", workItemId);
         return command;
     }
 

@@ -17,16 +17,12 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Leases;
 /// that same transaction. Guarded updates make the heartbeat/reaper race
 /// safe: whoever's guard matches first wins in the store.
 /// </summary>
-/// <param name="db"></param>
-/// <param name="clock"></param>
-/// <param name="leaseOptions"></param>
 public sealed class LeaseReaper(
     OrchestrationDbContext db,
     TimeProvider clock,
     IOptions<LeaseOptions> leaseOptions)
 {
     /// <summary>Runs one reap sweep; safe to call concurrently and repeatedly.</summary>
-    /// <param name="cancellationToken"></param>
     public async Task<IReadOnlyList<ReapedLease>> ReapAsync(CancellationToken cancellationToken = default)
     {
         var now = clock.GetUtcNow();

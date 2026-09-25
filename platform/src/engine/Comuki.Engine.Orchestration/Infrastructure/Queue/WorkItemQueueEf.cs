@@ -76,8 +76,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await using var command = WorkItemQueueSql.CreateHeartbeatCommand(transaction.GetDbTransaction(), workItemId, workerId, generation, leaseUntil, now);
 
-        var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
-        if (rowsAffected == 0)
+        if (await command.ExecuteNonQueryAsync(cancellationToken) == 0)
         {
             await transaction.RollbackAsync(cancellationToken);
             return false;
@@ -171,11 +170,14 @@ file static class WorkItemOwnedTransition
             return false;
         }
 
-        var to = completing ? nameof(WorkItemStatus.Succeeded) : nameof(WorkItemStatus.Failed);
         db.RunEvents.Add(RunEvent.Create(
             owner,
             RunEventTypes.WorkItemStatusChanged,
-            WorkItemEventPayloads.StatusChangedWithDetail(workItemId, nameof(WorkItemStatus.Running), to, detail),
+            WorkItemEventPayloads.StatusChangedWithDetail(
+                workItemId,
+                nameof(WorkItemStatus.Running),
+                completing ? nameof(WorkItemStatus.Succeeded) : nameof(WorkItemStatus.Failed),
+                detail),
             now));
 
         // A succeeded item may unblock dependents whose full prerequisite set
@@ -193,85 +195,5 @@ file static class WorkItemOwnedTransition
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return true;
-    }
-}
-
-/// <summary>
-/// Run-status progression driven by work-item transitions: activation on the
-/// first claim, finalization when the last item lands terminal. Both run as
-/// guarded <c>UPDATE ... RETURNING</c> statements inside the caller's item
-/// transaction — status guards make them no-ops under concurrency, and a
-/// returned row journals a <c>run.status_changed</c> event.
-/// </summary>
-internal static class RunProgression
-{
-    public static async Task ActivateAsync(
-        OrchestrationDbContext db,
-        IDbContextTransaction transaction,
-        RunId runId,
-        DateTimeOffset now,
-        CancellationToken cancellationToken)
-    {
-        await using var command = WorkItemQueueSql.CreateRunActivationCommand(transaction.GetDbTransaction(), runId, now);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (await reader.ReadAsync(cancellationToken))
-        {
-            db.RunEvents.Add(RunEvent.Create(
-                runId,
-                RunEventTypes.RunStatusChanged,
-                RunStatusPayload(nameof(RunStatus.Queued), reader.GetString(0), "worker"),
-                now));
-        }
-    }
-
-    /// <summary>Unblocks every Blocked dependent of <paramref name="workItemId"/>
-    /// whose full prerequisite set has now reached Succeeded, in the caller's
-    /// transaction — this is what makes a Blocked item Queued in the first
-    /// place (the claim path itself never re-checks readiness; it only ever
-    /// matches Queued). Only ever called after a successful completion, see
-    /// the call site in WorkItemOwnedTransition.ApplyAsync.</summary>
-    public static async Task UnblockDependentsAsync(
-        IDbContextTransaction transaction,
-        Guid workItemId,
-        DateTimeOffset now,
-        CancellationToken cancellationToken)
-    {
-        await using var command = WorkItemQueueSql.CreateUnblockDependentsCommand(transaction.GetDbTransaction(), workItemId, now);
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
-    public static async Task FinalizeAsync(
-        OrchestrationDbContext db,
-        IDbContextTransaction transaction,
-        RunId runId,
-        DateTimeOffset now,
-        CancellationToken cancellationToken)
-    {
-        // Serialize concurrent finalization attempts on this run row before
-        // evaluating the NOT EXISTS guard — see LockRunForFinalizationSql
-        // remarks in WorkItemQueueSql.cs.
-        await using (var lockCommand = WorkItemQueueSql.CreateLockRunForFinalizationCommand(transaction.GetDbTransaction(), runId))
-        {
-            await lockCommand.ExecuteScalarAsync(cancellationToken);
-        }
-
-        await using var command = WorkItemQueueSql.CreateRunFinalizationCommand(transaction.GetDbTransaction(), runId, now);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (await reader.ReadAsync(cancellationToken))
-        {
-            db.RunEvents.Add(RunEvent.Create(
-                runId,
-                RunEventTypes.RunStatusChanged,
-                RunStatusPayload(nameof(RunStatus.Running), reader.GetString(0), "worker"),
-                now));
-        }
-    }
-
-    /// <summary>Journal payload shape of a run transition — the same camelCase
-    /// record the host adapters journal (from/to/actor).</summary>
-    private static string RunStatusPayload(string from, string to, string actor)
-    {
-        return JsonSerializer.Serialize(
-            new { from, to, actor }, JsonSerializerOptions.Web);
     }
 }

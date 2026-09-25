@@ -300,7 +300,7 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
         // "process crashes" before any dispatcher cycle runs: nothing below
         // calls DispatchAsync yet, mirroring a crash between commit and the
         // best-effort realtime broadcast.
-        var completed = await queue.CompleteAsync(claimed.WorkItemId, worker, /*lang=json,strict*/ """{"summary":"done"}""", clock.GetUtcNow(), cancellationToken);
+        var completed = await queue.CompleteAsync(claimed.WorkItemId, worker, claimed.Generation, /*lang=json,strict*/ """{"summary":"done"}""", clock.GetUtcNow(), cancellationToken);
         completed.ShouldBeTrue();
 
         var beforeDispatch = await LoadOutboxMessagesAsync();

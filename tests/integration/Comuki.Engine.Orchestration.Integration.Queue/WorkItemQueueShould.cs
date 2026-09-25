@@ -497,7 +497,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         for (var trial = 0; trial < trials; trial++)
         {
             var profileKey = $"diamond-{trial}";
-            var (prerequisiteA, prerequisiteB, dependentOne, dependentTwo) = await SeedDiamondDependentsAsync(profileKey);
+            var (_, _, dependentOne, dependentTwo) = await SeedDiamondDependentsAsync(profileKey);
             var labels = new WorkItemLabels(Image, ProfilesRef, profileKey);
             using var scopeA = CreateScope();
             using var scopeB = CreateScope();

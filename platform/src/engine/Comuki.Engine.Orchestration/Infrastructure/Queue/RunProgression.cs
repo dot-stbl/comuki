@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Journal;
-using Comuki.Engine.Orchestration.Infrastructure.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore.Storage;

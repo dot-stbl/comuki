@@ -1,5 +1,4 @@
 using Comuki.Engine.Orchestration.Domain;
-using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Chat.RunStarter;
 using Comuki.Shared.Bootstrap.Versioning;
@@ -62,8 +61,8 @@ public sealed class ChatRunStarterShould
         var items = await db.WorkItems.ToListAsync(TestContext.Current.CancellationToken);
         items.Count.ShouldBe(2);
 
-        var first = items.Single(item => item.Brief.Contains("do the first thing"));
-        var second = items.Single(item => item.Brief.Contains("do the second thing"));
+        var first = items.Single(static item => item.Brief.Contains("do the first thing"));
+        var second = items.Single(static item => item.Brief.Contains("do the second thing"));
         first.Status.ShouldBe(WorkItemStatus.Queued);
         second.Status.ShouldBe(WorkItemStatus.Blocked);
 
@@ -97,9 +96,9 @@ public sealed class ChatRunStarterShould
         var items = await db.WorkItems.ToListAsync(TestContext.Current.CancellationToken);
         items.Count.ShouldBe(3);
 
-        var left = items.Single(item => item.Brief.Contains("do the left thing"));
-        var right = items.Single(item => item.Brief.Contains("do the right thing"));
-        var apex = items.Single(item => item.Brief.Contains("do the join thing"));
+        var left = items.Single(static item => item.Brief.Contains("do the left thing"));
+        var right = items.Single(static item => item.Brief.Contains("do the right thing"));
+        var apex = items.Single(static item => item.Brief.Contains("do the join thing"));
 
         left.Status.ShouldBe(WorkItemStatus.Queued);
         right.Status.ShouldBe(WorkItemStatus.Queued);
@@ -130,9 +129,9 @@ public sealed class ChatRunStarterShould
         var items = await db.WorkItems.ToListAsync(TestContext.Current.CancellationToken);
         items.Count.ShouldBe(3);
 
-        var root = items.Single(item => item.Brief.Contains("do the first thing"));
-        var middle = items.Single(item => item.Brief.Contains("do the second thing"));
-        var leaf = items.Single(item => item.Brief.Contains("do the third thing"));
+        var root = items.Single(static item => item.Brief.Contains("do the first thing"));
+        var middle = items.Single(static item => item.Brief.Contains("do the second thing"));
+        var leaf = items.Single(static item => item.Brief.Contains("do the third thing"));
 
         root.Status.ShouldBe(WorkItemStatus.Queued);
         middle.Status.ShouldBe(WorkItemStatus.Blocked);

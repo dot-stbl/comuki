@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Journal;
+using Comuki.Engine.Orchestration.Infrastructure.Outbox;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Engine.Orchestration.Infrastructure.Queue;
 using Comuki.Engine.Orchestration.Options;
@@ -19,6 +20,7 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Leases;
 /// </summary>
 public sealed class LeaseReaper(
     OrchestrationDbContext db,
+    IOutbox outbox,
     TimeProvider clock,
     IOptions<LeaseOptions> leaseOptions)
 {
@@ -66,7 +68,7 @@ public sealed class LeaseReaper(
         // to Queued, which is never terminal, so it cannot finalize a run.
         foreach (var runId in failed.Select(static lease => lease.RunId).Distinct())
         {
-            await RunProgression.FinalizeAsync(db, transaction, runId, now, cancellationToken);
+            await RunProgression.FinalizeAsync(db, outbox, transaction, runId, now, cancellationToken);
         }
 
         if (requeued.Count + failed.Count > 0)

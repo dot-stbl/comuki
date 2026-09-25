@@ -204,11 +204,11 @@ visible, not retried forever or silently dropped.
 — the realtime broadcast stays unchanged and runs in parallel with the
 new durable path.
 
-- [ ] 7.1 Enqueue an `orchestration.run.terminated.v1` (or `.started.v1`
+- [x] 7.1 Enqueue an `orchestration.run.terminated.v1` (or `.started.v1`
       / `.cancelled.v1` as applicable) outbox message in the same
       transaction as the Run's terminal-status commit (epic task 2.4
       wiring half).
-- [ ] 7.2 Confirm the existing `RunEvent` journal append is unchanged —
+- [x] 7.2 Confirm the existing `RunEvent` journal append is unchanged —
       the outbox row is additional, not a replacement.
 
 **Acceptance:** the WS2 concurrency test extended to also assert exactly

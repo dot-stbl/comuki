@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Shared.Editions</RootNamespace>
+  </PropertyGroup>
+
+  <!-- ASP.NET Core framework reference: the Gating/ primitives
+       (RequiresFeatureFilter : IAsyncResourceFilter, RequiresFeatureMiddleware,
+       IEndpointConventionBuilder extensions) live in this shared library and
+       need HTTP/MVC types from Microsoft.AspNetCore.App at compile time.
+       No runtime coupling is added beyond what a transitive consumer
+       (Comuki.Host, which is Microsoft.NET.Sdk.Web) already brings in. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Microsoft.Extensions.* abstractions below are now provided
+         transitively by the Microsoft.AspNetCore.App framework reference
+         added for the Gating/ primitives; listing them as direct
+         PackageReferences triggers NU1510 ("will not be trimmed —
+         consider removing") because the runtime copy is the one from
+         the framework. BouncyCastle stays: it isn't part of AspNetCore.App. -->
+    <PackageReference Include="BouncyCastle.Cryptography" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Comuki.Shared.Editions.Unit" />
+  </ItemGroup>
+
+</Project>

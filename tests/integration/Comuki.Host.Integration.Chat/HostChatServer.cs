@@ -29,6 +29,11 @@ public sealed class HostChatServer : IAsyncLifetime
     /// <summary>The database connection string (direct context access for asserts).</summary>
     public string ConnectionString { get; private set; } = string.Empty;
 
+    /// <summary>The composed host's DI container — resolve scoped services
+    /// (e.g. <c>ChatRunStarter</c>, <c>IWorkItemQueue</c>) through
+    /// <c>Services.CreateScope()</c>, one scope per logical unit of work.</summary>
+    public IServiceProvider Services => application.Services;
+
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {

@@ -7,6 +7,7 @@ using Comuki.Modules.Projects.Application.Projects.Queries;
 using Comuki.Modules.Projects.Application.Projects.Update;
 using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Application.Settings.Update;
+using Comuki.Shared.Editions.Gating;
 using Comuki.Shared.Kernel.Ids;
 using FluentValidation;
 
@@ -46,6 +47,7 @@ public static class ProjectsModuleEndpoints
     }
 
     [RequiresPermission("project:admin")]
+    [EnforceLimit("projects")]
     private static async Task<IResult> CreateAsync(
         CreateProjectRequest request,
         CreateProjectHandler handler,

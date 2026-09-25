@@ -1,5 +1,7 @@
+using Comuki.Engine.Orchestration.Domain.Inbox;
 using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Domain.MergeQueue;
+using Comuki.Engine.Orchestration.Domain.Outbox;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Configurations;
@@ -63,6 +65,24 @@ public sealed class OrchestrationDbContext(
     public DbSet<MergeBatch> MergeBatches => Set<MergeBatch>();
 
     /// <summary>
+    /// Durable terminal-event outbox (issue #87 WS6). Rows are staged in
+    /// the same transaction as the aggregate change they report; the
+    /// <c>OutboxDispatcherComukiWorker</c> sweep delivers them
+    /// independently of any realtime broadcast. Platform-level infra —
+    /// carries no project scope, so no query filter applies (mirrors the
+    /// <c>MergeBatches</c> convention).
+    /// </summary>
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
+    /// <summary>
+    /// Inbox dedupe receipts (issue #87 WS6). One row per already-seen
+    /// wire message id; the PK uniqueness constraint is what makes the
+    /// <c>INSERT ... ON CONFLICT</c> claim race-safe. Platform-level
+    /// infra — no query filter.
+    /// </summary>
+    public DbSet<InboxReceipt> InboxReceipts => Set<InboxReceipt>();
+
+    /// <summary>
     /// Left disjunct of the scope filter: true when the current subject
     /// sees every project (a platform-scope role, a system consumer, or a
     /// directly-constructed system context).
@@ -105,7 +125,9 @@ public sealed class OrchestrationDbContext(
             .ApplyConfiguration(new WorkItemDependencyConfiguration())
             .ApplyConfiguration(new RunEventConfiguration())
             .ApplyConfiguration(new MergeQueueConfiguration())
-            .ApplyConfiguration(new MergeBatchConfiguration());
+            .ApplyConfiguration(new MergeBatchConfiguration())
+            .ApplyConfiguration(new OutboxMessageConfiguration())
+            .ApplyConfiguration(new InboxReceiptConfiguration());
 
         // The object axis, as row-level filters: a run is visible when its
         // project is in the subject's scope; a work item (no project column

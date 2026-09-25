@@ -7,6 +7,8 @@ using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Testcontainers.PostgreSql;
@@ -175,6 +177,79 @@ public sealed class MigrationsShould : IAsyncLifetime
         var storedDependency = (await readDb.WorkItemDependencies.AsNoTracking().ToListAsync(cancellationToken)).ShouldHaveSingleItem();
         storedDependency.WorkItemId.ShouldBe(dependent.Id);
         storedDependency.DependsOnWorkItemId.ShouldBe(prerequisite.Id);
+    }
+
+    /// <summary>
+    /// Coordinator review finding (crown W1 batch): <c>AddExecutionGeneration</c>
+    /// defaults <c>work_items.generation</c> to 0 while <c>runs.generation</c>
+    /// defaults to 1 — a pre-existing (pre-migration) Running item would then
+    /// never again match its run's generation on heartbeat/complete/fail
+    /// (<c>WorkItemQueueSql</c>'s guarded SQL requires an exact match), 409ing
+    /// forever. Uses its own fresh container (not the class-level one, which
+    /// is already fully migrated by <see cref="InitializeAsync"/>) so it can
+    /// stop one migration short of the target, seed rows the old-fashioned
+    /// way, then apply <c>AddExecutionGeneration</c> and inspect the backfill.
+    /// </summary>
+    [Fact(DisplayName = "Given a work item that predates the generation column, when AddExecutionGeneration migrates, then its generation backfills to the owning run's")]
+    public async Task BackfillWorkItemGenerationFromOwningRunAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var preMigrationContainer = new PostgreSqlBuilder("postgres:16-alpine").Build();
+        await preMigrationContainer.StartAsync(cancellationToken);
+
+        await using var preMigrationServices = new ServiceCollection()
+            .AddOrchestrationPersistence(preMigrationContainer.GetConnectionString())
+            .BuildServiceProvider();
+        await using var preMigrationDb = preMigrationServices.GetRequiredService<OrchestrationDbContext>();
+
+        // Stop one migration short of AddExecutionGeneration — the schema as
+        // it existed the instant before this migration's own AddColumn calls.
+        var migrator = preMigrationDb.Database.GetService<IMigrator>();
+        await migrator.MigrateAsync("20260925000658_AddRunAdmissionMessageId", cancellationToken);
+
+        var runId = Guid.CreateVersion7();
+        var workItemId = Guid.CreateVersion7();
+        var now = DateTimeOffset.UtcNow;
+        await preMigrationDb.Database.OpenConnectionAsync(cancellationToken);
+        await using (var seedCommand = preMigrationDb.Database.GetDbConnection().CreateCommand())
+        {
+            // Neither table has a generation column at this point — that is
+            // exactly the pre-migration state under test. Every other column
+            // referenced here either has no default (must be supplied) or a
+            // default this insert deliberately leaves alone (trust_class,
+            // attempt) to keep the seed minimal.
+            seedCommand.CommandText =
+                "INSERT INTO orchestration.runs (id, project_id, status, created_at, updated_at) "
+                + "VALUES (@runId, @projectId, 'Running', @now, @now); "
+                + "INSERT INTO orchestration.work_items (id, run_id, status, profile_key, image, profiles_ref, brief, created_at, updated_at) "
+                + "VALUES (@workItemId, @runId, 'Running', 'implement', 'ghcr.io/comuki/worker:test', 'main', '{\"goal\":\"predates generation\"}', @now, @now);";
+            AddParameter(seedCommand, "@runId", runId);
+            AddParameter(seedCommand, "@projectId", Guid.CreateVersion7());
+            AddParameter(seedCommand, "@workItemId", workItemId);
+            AddParameter(seedCommand, "@now", now);
+            await seedCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        // Apply the migration under test — this is where the backfill runs.
+        await migrator.MigrateAsync("20260925003512_AddExecutionGeneration", cancellationToken);
+
+        await using var readCommand = preMigrationDb.Database.GetDbConnection().CreateCommand();
+        readCommand.CommandText = "SELECT generation FROM orchestration.work_items WHERE id = @workItemId";
+        AddParameter(readCommand, "@workItemId", workItemId);
+        var backfilled = (int)(await readCommand.ExecuteScalarAsync(cancellationToken))!;
+
+        // runs.generation's own AddColumn default is 1 — the backfill must
+        // carry that same value onto the pre-existing item, not leave it at
+        // work_items.generation's AddColumn default of 0.
+        backfilled.ShouldBe(1);
+    }
+
+    private static void AddParameter(System.Data.Common.DbCommand command, string name, object value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value;
+        command.Parameters.Add(parameter);
     }
 
     private async Task<List<string>> QuerySingleColumnAsync(string sql)

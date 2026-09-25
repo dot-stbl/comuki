@@ -22,7 +22,7 @@ public sealed class RunStatusMachineShould
             [RunStatus.Waiting] = [RunStatus.Running, RunStatus.Failed, RunStatus.Cancelled, RunStatus.Escalated],
             [RunStatus.Running] = [RunStatus.Succeeded, RunStatus.Failed, RunStatus.Cancelled, RunStatus.Escalated],
             [RunStatus.Escalated] = [RunStatus.Running, RunStatus.Failed, RunStatus.Cancelled],
-            [RunStatus.Failed] = [RunStatus.Queued],
+            [RunStatus.Failed] = [],
             [RunStatus.Succeeded] = [],
             [RunStatus.Cancelled] = [],
         };

@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Shouldly" />
+    <PackageReference Include="NSubstitute" />
     <PackageReference Include="coverlet.collector" />
   </ItemGroup>
 
@@ -18,6 +19,11 @@
     <!-- InternalsVisibleTo on Comuki.Shared.Bootstrap grants this test
          project access to the internal resolution cores. -->
     <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Bootstrap\Comuki.Shared.Bootstrap.csproj" />
+    <!-- Editions is already a transitive dependency of Bootstrap since
+         the worker gating landed; the direct reference here is for
+         direct type access (IEdition, IEditionCapabilityRegistry,
+         the catalog) in worker-gating tests. -->
+    <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Editions\Comuki.Shared.Editions.csproj" />
   </ItemGroup>
 
 </Project>

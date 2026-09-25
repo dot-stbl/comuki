@@ -8,9 +8,10 @@ namespace Comuki.Modules.Chat.Application.Graph.Catalog;
 /// </summary>
 public static class ChatIntent
 {
-    /// <summary>Window scanned for an imperative verb — «In the repo, edit
-    /// hello.txt» carries its verb on the fourth word.</summary>
-    public const int VerbWindow = 4;
+    /// <summary>Window scanned for an imperative verb — «In the repository
+    /// working directory, edit hello.txt» carries its verb on the fifth
+    /// word.</summary>
+    public const int VerbWindow = 6;
 
     /// <summary>Words that mark a message as a question/conversation even when a
     /// task verb appears later («what should we build next?» is chat, not a plan).</summary>

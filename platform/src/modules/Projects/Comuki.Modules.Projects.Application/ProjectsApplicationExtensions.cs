@@ -1,5 +1,6 @@
 using Comuki.Modules.Projects.Application.Admission;
 using Comuki.Modules.Projects.Application.DomainTypes;
+using Comuki.Modules.Projects.Application.Editions;
 using Comuki.Modules.Projects.Application.Projects.Archive;
 using Comuki.Modules.Projects.Application.Projects.Create;
 using Comuki.Modules.Projects.Application.Projects.Queries;
@@ -8,6 +9,7 @@ using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Application.Settings.DistributedCache;
 using Comuki.Modules.Projects.Application.Settings.Update;
+using Comuki.Shared.Editions.Gating;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
@@ -74,6 +76,12 @@ public static class ProjectsApplicationExtensions
         services.AddScoped<IValidator<CreateProjectCommand>, CreateProjectValidator>();
         services.AddScoped<IValidator<UpdateProjectCommand>, UpdateProjectValidator>();
         services.AddScoped<IValidator<UpdateSettingsCommand>, UpdateSettingsValidator>();
+
+        // Issue #164 worked example: the project-count quota provider that
+        // backs the [EnforceLimit("projects")] gate on the projects-create
+        // minimal-API endpoint. Scoped because it reads through IProjectStore
+        // (which itself is scoped over the module's DbContext).
+        services.AddScoped<ILimitUsageProvider, ProjectCountLimitUsageProvider>();
 
         return services;
     }

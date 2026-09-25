@@ -1,0 +1,77 @@
+/* The edition panel — the same hairline data-surface the platform-settings
+   panel uses. The reading is "what we know", not "what you can do", so
+   each row is a label / value pair without action affordances. The
+   feature list inside the FeatureGate renders every paid capability
+   alongside its gate mark (Check / Lock) so a Community reader can
+   see which capabilities are present (none paid) and which would
+   appear under a paid license; the gate wraps the whole list and
+   collapses it to the locked affordance when the gate closes. */
+
+.hint {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: var(--lh-body);
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding-block: var(--s2);
+  border-bottom: var(--hairline) solid var(--rule);
+}
+
+.row:last-of-type {
+  border-bottom: 0;
+}
+
+.label {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  text-transform: lowercase;
+}
+
+.value {
+  color: var(--text);
+  line-height: var(--lh-tight);
+}
+
+.features {
+  list-style: none;
+  margin: var(--s4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s2);
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-md);
+  border: var(--hairline) solid var(--rule);
+  background: var(--surface);
+}
+
+.featureKey {
+  font-family: var(--font-mono);
+  color: var(--text);
+  line-height: var(--lh-tight);
+}
+
+.featureMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.25em;
+  block-size: 1.25em;
+  color: var(--text-muted);
+}
+
+.featureMark[data-available="yes"] {
+  color: var(--st-success);
+}

@@ -95,7 +95,7 @@ const COMMENT_LINE = /^\s*#/;
 // ---------------------------------------------------------------------------
 
 /** Vendor tokens that turn an authorship line into a model byline. */
-const AI_VENDORS = Object.freeze([
+export const AI_VENDORS = Object.freeze([
   'claude',
   'anthropic',
   'chatgpt',
@@ -112,7 +112,7 @@ const AI_VENDORS = Object.freeze([
 ]);
 
 /** Domains that give a co-author away even when the display name looks human. */
-const AI_EMAIL_DOMAINS = Object.freeze([
+export const AI_EMAIL_DOMAINS = Object.freeze([
   'anthropic',
   'openai',
   'copilot',
@@ -120,11 +120,11 @@ const AI_EMAIL_DOMAINS = Object.freeze([
   'cursor.sh',
 ]);
 
-function escapeRegExp(literal) {
+export function escapeRegExp(literal) {
   return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function alternation(tokens) {
+export function alternation(tokens) {
   return `(?:${tokens.map(escapeRegExp).join('|')})`;
 }
 

@@ -13,29 +13,58 @@ namespace Comuki.Migrator.Unit;
 /// immediately following pass does not block. The pgvector-dependent
 /// migrations degrade gracefully on the plain postgres image, exactly as
 /// they do in the integration harnesses that run the same ten contexts.
+///
+/// Every test skips when no Docker endpoint is reachable — the full unit
+/// matrix runs on docker-less CI runners, and a container is this suite's
+/// only real dependency (the same skip contract as the Vault integration
+/// fixture).
 /// </summary>
 public sealed class ComukiDatabaseMigratorShould : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine")
-        .Build();
+    /// <summary>Container built lazily inside <see cref="InitializeAsync"/> —
+    /// Testcontainers resolves (and rejects) the Docker endpoint at
+    /// <c>Build()</c> time, so a field initializer throws before any
+    /// try/catch can gate it on docker-less runners.</summary>
+    private PostgreSqlContainer? container;
+
+    /// <summary>Docker availability as observed at container start: Testcontainers
+    /// surfaces a missing endpoint as <c>DockerUnavailableException</c>
+    /// (sometimes wrapped in an <see cref="AggregateException"/>); any
+    /// such failure means the suite skips, not fails.</summary>
+    private bool ContainerStarted { get; set; }
 
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
-        await container.StartAsync(TestContext.Current.CancellationToken);
+        try
+        {
+            container = new PostgreSqlBuilder("postgres:16-alpine").Build();
+            await container.StartAsync(TestContext.Current.CancellationToken);
+            ContainerStarted = true;
+        }
+        catch (Exception exception) when (exception.Message.Contains("Docker", StringComparison.Ordinal)
+            || exception.InnerException?.Message.Contains("Docker", StringComparison.Ordinal) == true)
+        {
+            ContainerStarted = false;
+        }
     }
 
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        await container.DisposeAsync();
+        if (container is { } started)
+        {
+            await started.DisposeAsync();
+        }
     }
 
     [Fact(DisplayName = "Given a fresh database, when EnsureAllAsync runs, then every module schema is migrated and the applied summary is non-empty")]
     public async Task MigratesEverySchemaOnFreshDatabaseAsync()
     {
+        Assert.SkipUnless(ContainerStarted, "Migrator test requires Docker (Testcontainers); this runner has no Docker endpoint.");
+
         var cancellationToken = TestContext.Current.CancellationToken;
-        var connectionString = container.GetConnectionString();
+        var connectionString = container.ShouldNotBeNull().GetConnectionString();
 
         var summary = await ComukiDatabaseMigrator.EnsureAllAsync(connectionString, cancellationToken);
 
@@ -53,8 +82,10 @@ public sealed class ComukiDatabaseMigratorShould : IAsyncLifetime
     [Fact(DisplayName = "Given an already-migrated database, when EnsureAllAsync runs again, then nothing is applied and the summary is empty")]
     public async Task SecondPassAppliesNothingAsync()
     {
+        Assert.SkipUnless(ContainerStarted, "Migrator test requires Docker (Testcontainers); this runner has no Docker endpoint.");
+
         var cancellationToken = TestContext.Current.CancellationToken;
-        var connectionString = container.GetConnectionString();
+        var connectionString = container.ShouldNotBeNull().GetConnectionString();
 
         await ComukiDatabaseMigrator.EnsureAllAsync(connectionString, cancellationToken);
         var second = await ComukiDatabaseMigrator.EnsureAllAsync(connectionString, cancellationToken);
@@ -66,8 +97,10 @@ public sealed class ComukiDatabaseMigratorShould : IAsyncLifetime
     [Fact(DisplayName = "Given a leftover session advisory lock is impossible, when EnsureAllAsync completes, then pg_locks holds no comuki advisory lock for the releasing session")]
     public async Task ReleasesAdvisoryLockAfterCompletionAsync()
     {
+        Assert.SkipUnless(ContainerStarted, "Migrator test requires Docker (Testcontainers); this runner has no Docker endpoint.");
+
         var cancellationToken = TestContext.Current.CancellationToken;
-        var connectionString = container.GetConnectionString();
+        var connectionString = container.ShouldNotBeNull().GetConnectionString();
 
         await ComukiDatabaseMigrator.EnsureAllAsync(connectionString, cancellationToken);
 

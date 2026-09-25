@@ -55,7 +55,8 @@ internal static class WorkerSessionTestHelpers
             ProfileKey: "test-profile",
             Brief: "test-brief",
             LeaseUntilUnixMs: 0,
-            Attempt: 1);
+            Attempt: 1,
+            Generation: 1);
         var session = WorkerSession.Open(service, "test-token");
         return new WorkerRun(claimed, session) { RunCancellation = runCancellation };
     }

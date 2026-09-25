@@ -1,0 +1,73 @@
+{
+  "required": ["tier", "status", "features", "limits", "version", "expiresAt"],
+  "type": "object",
+  "properties": {
+    "tier": {
+      "type": "string",
+      "description": "Lowercase tier code the license names, or `\"community\"` when absent."
+    },
+    "status": {
+      "type": "string",
+      "description": "One of `valid` / `grace` / `expired` / `absent`."
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "required": ["key", "available"],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The closed-vocabulary feature key (dot.case; the same string the gate attribute carries)."
+          },
+          "available": {
+            "type": "boolean",
+            "description": "True when the current bool IEdition.Has(Feature feature) covers this key."
+          }
+        },
+        "description": "One feature's availability at the current edition. The view is honest\r\nabout every entry — including paid keys under Community, where\r\n`available` is `false` — so the dashboard can render the\r\nright disabled/locked affordance without a second call to the catalog.",
+        "x-readme-ref-name": "FeatureAvailabilityView"
+      },
+      "description": "Every registered feature, with `available` reflecting the current edition."
+    },
+    "limits": {
+      "type": "array",
+      "items": {
+        "required": ["key", "current", "cap"],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The closed-vocabulary limit key (dot.case; the same string the gate attribute carries)."
+          },
+          "current": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": ["integer", "string"],
+            "description": "Currently-observed usage (best-effort from the matching provider, or 0).",
+            "format": "int32"
+          },
+          "cap": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": ["integer", "string"],
+            "description": "Effective numeric cap at the current tier.",
+            "format": "int32"
+          }
+        },
+        "description": "One limit's usage against its tier cap. The `current` value comes\r\nfrom the matching ILimitUsageProvider registered in DI;\r\nwhen no provider is registered the view reports `0` rather than\r\nrefusing to answer, because the gate is the source of truth for\r\nenforcement and the view is read-only.",
+        "x-readme-ref-name": "LimitUsageView"
+      },
+      "description": "Every registered limit, with `cap` from the tier and `current` from the matching `ILimitUsageProvider`."
+    },
+    "version": {
+      "type": "string",
+      "description": "Lowercase assembly version (`ComukiBuildInformation.Version`) the host boots from."
+    },
+    "expiresAt": {
+      "type": ["null", "string"],
+      "description": "ISO-8601 UTC expiry from the verified license; omitted when `Status` is `absent`.",
+      "format": "date-time"
+    }
+  },
+  "description": "Wire shape of `GET /api/v1/edition` — the dashboard and CLI's\r\nread-only projection of the current license state. Anonymous by design\r\n(the dashboard's first paint renders an upsell before sign-in), so the\r\nendpoint is intentionally absent any permission / feature / role gates.\r\nThe response carries the live tier code and the current license\r\nstatus (`valid` / `grace` / `expired` / `absent`);\r\nDateTimeOffset? EditionView.ExpiresAt is omitted from the JSON entirely (not null)\r\nwhen the license is absent, so a Community reader can branch on the\r\nproperty's presence rather than its value.",
+  "x-readme-ref-name": "EditionView"
+}

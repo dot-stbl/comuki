@@ -71,6 +71,7 @@
     <ProjectReference Include="..\..\shared\Comuki.Shared.Bootstrap\Comuki.Shared.Bootstrap.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Migrations\Comuki.Shared.Migrations.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Filtering\Comuki.Shared.Filtering.csproj" />
+    <ProjectReference Include="..\..\shared\Comuki.Shared.Editions\Comuki.Shared.Editions.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Redis\Comuki.Shared.Redis.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Telemetry\Comuki.Shared.Telemetry.csproj" />

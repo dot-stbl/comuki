@@ -15,7 +15,7 @@ public sealed class ChatIntentShould
     [InlineData("Implement this exactly: append the line")]
     [InlineData("write a readme for the project")]
     [InlineData("Fix the flaky heartbeat test")]
-    [InlineData("In the repository, edit hello.txt and append one line")]
+    [InlineData("In the repository working directory, edit hello.txt and append one line")]
     [InlineData("In the repo: update the token")]
     [InlineData("setup the ingress")]
     public void ReturnTrueForTaskShapedMessages(string message)

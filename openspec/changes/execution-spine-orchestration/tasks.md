@@ -65,12 +65,12 @@ conceptual dependency). **Size:** M.
 **Files:** same as WS1's queue files,
 `tests/integration/Comuki.Engine.Orchestration.Integration.Queue/RunJournalShould.cs` (extend).
 
-- [ ] 2.1 Prove the existing `a6e9df17` reconciliation slice
+- [x] 2.1 Prove the existing `a6e9df17` reconciliation slice
       (finalize-on-last-terminal-item) is exactly-once under
       concurrent completions — two WorkItems finishing terminal in the
       same instant must resolve to one Run-terminal transition (epic
       task 2.2).
-- [ ] 2.2 Confirm the guard stays a single `UPDATE ... WHERE status NOT
+- [x] 2.2 Confirm the guard stays a single `UPDATE ... WHERE status NOT
       IN (terminal set)` with no additional in-process lock.
 
 **Acceptance:** a Testcontainers integration test races two concurrent

@@ -19,12 +19,11 @@ public static class AddComukiModuleExtensions
 {
     /// <summary>
     /// Module-level edition gating: runs <paramref name="installer"/> against
-    /// <paramref name="services"/> only when the current
-    /// <see cref="IEdition"/> covers the feature named by the
-    /// <see cref="EditionFeatureAttribute"/> on <typeparamref name="TModule"/>.
-    /// When the marker has no attribute, the module is ungated and the
-    /// installer runs unconditionally (no bootstrap resolution at all —
-    /// the common case must stay cheap).
+    /// <paramref name="services"/> only when <paramref name="compositionEdition"/>
+    /// covers the feature named by the <see cref="EditionFeatureAttribute"/>
+    /// on <typeparamref name="TModule"/>. When the marker has no attribute,
+    /// the module is ungated and the installer runs unconditionally (no
+    /// edition resolution at all — the common case must stay cheap).
     /// </summary>
     /// <typeparam name="TModule">
     /// The module marker type. Any class carrying (or not carrying) the
@@ -33,16 +32,25 @@ public static class AddComukiModuleExtensions
     /// </typeparam>
     /// <param name="services">The host's service collection.</param>
     /// <param name="installer">The registration callback for the module's services.</param>
+    /// <param name="compositionEdition">
+    /// The composition-time <see cref="IEdition"/> snapshot the host built
+    /// once via <see cref="Composition.CompositionEdition.Load"/> before the
+    /// registration chain. Required for gated modules (a missing snapshot
+    /// on a gated marker is a wiring gap and fails at composition time);
+    /// ignored by ungated markers (the short-circuit never consults the
+    /// snapshot). Composition-time gating no longer builds a throwaway
+    /// <see cref="IServiceProvider"/> to look up the runtime
+    /// <see cref="IEdition"/> (<c>di-installer.md</c> §6 bans
+    /// <c>services.BuildServiceProvider()</c> inside registration).
+    /// </param>
+    /// <param name="loggerFactory">Optional sink for the "module skipped" log line; defaults to <see cref="NullLoggerFactory.Instance"/>.</param>
     /// <exception cref="InvalidOperationException">
     /// The marker carries an <see cref="EditionFeatureAttribute"/> but
-    /// <see cref="IEdition"/> (or <see cref="IEditionCapabilityRegistry"/>)
-    /// is not registered in <paramref name="services"/> at the time this
-    /// method runs. Documented precondition: callers must wire the
-    /// edition layer (e.g. via <c>AddComukiEditions(...)</c> plus a
-    /// <see cref="IEditionCapabilityRegistry"/> registration) BEFORE
-    /// calling this helper. We fail loudly at composition time rather
-    /// than silently falling back to Community, which would hide a wiring
-    /// gap behind a "module not registered" symptom in production.
+    /// <paramref name="compositionEdition"/> is null (wiring gap) or
+    /// covers an unknown feature key (registry gap). We fail loudly at
+    /// composition time rather than silently falling back to Community,
+    /// which would hide a wiring gap behind a "module not registered"
+    /// symptom in production.
     /// </exception>
     /// <remarks>
     /// <para>
@@ -77,7 +85,9 @@ public static class AddComukiModuleExtensions
     /// </remarks>
     public static IServiceCollection AddComukiModule<TModule>(
         this IServiceCollection services,
-        Action<IServiceCollection> installer)
+        Action<IServiceCollection> installer,
+        IEdition? compositionEdition = null,
+        ILoggerFactory? loggerFactory = null)
     {
         var attribute = typeof(TModule).GetCustomAttribute<EditionFeatureAttribute>();
         if (attribute is null)
@@ -86,20 +96,49 @@ public static class AddComukiModuleExtensions
             return services;
         }
 
-        using var bootstrap = services.BuildServiceProvider();
-        var edition = bootstrap.GetRequiredService<IEdition>();
-        var registry = bootstrap.GetRequiredService<IEditionCapabilityRegistry>();
-        var logger = (bootstrap.GetService<ILoggerFactory>()
-            ?? NullLoggerFactory.Instance).CreateLogger("Comuki.Shared.Editions.Gating");
+        // The snapshot is only consulted for gated modules; ungated ones
+        // short-circuit above. A gated marker with no snapshot is a wiring
+        // gap — fail loud at composition time rather than silently falling
+        // back to Community, which would hide the gap behind a
+        // "module not registered" symptom in production.
+        if (compositionEdition is null)
+        {
+            throw new InvalidOperationException(
+                $"module marker '{typeof(TModule).FullName}' carries an "
+                + "EditionFeatureAttribute but no composition-time edition snapshot was passed; "
+                + "build the snapshot once via CompositionEdition.Load(builder.Configuration) "
+                + "and pass it to every gated AddComukiModule call.");
+        }
+
+        var logger = (loggerFactory ?? NullLoggerFactory.Instance)
+            .CreateLogger("Comuki.Shared.Editions.Gating");
 
         var featureKey = attribute.FeatureKey;
         FeatureKey? parsed = FeatureKey.IsWellFormed(featureKey)
             ? FeatureKey.Parse(featureKey)
             : null;
-        var isCovered = parsed is { } parsedKey
-            && registry.TryGetFeature(parsedKey, out var feature)
-            && feature is not null
-            && edition.Has(feature);
+
+        // Unknown feature key on the marker → registry gap (a real bug
+        // that future architecture scans should catch at build time).
+        // Fail loud here so the wiring gap is visible at boot, not
+        // behind a "module not registered" symptom at runtime.
+        if (parsed is not { } parsedKey)
+        {
+            throw new InvalidOperationException(
+                $"module marker '{typeof(TModule).FullName}' carries an "
+                + $"EditionFeatureAttribute with a non-well-formed key '{featureKey}'.");
+        }
+
+        // The composition snapshot already encapsulates Has(Feature) — it
+        // does NOT need a registry because the marker's feature key was
+        // validated against IsWellFormed and EditionGate's runtime path
+        // owns the registry lookup. For the snapshot, the catalog's
+        // minimum rank decision is the same one the runtime EditionGate
+        // would make on a fresh Has(Feature) call.
+        var registry = new EditionCapabilityRegistry();
+        var feature = registry.TryGetFeature(parsedKey, out var resolved) ? resolved : null;
+
+        var isCovered = feature is not null && compositionEdition.Has(feature);
 
         if (!isCovered)
         {

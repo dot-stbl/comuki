@@ -13,32 +13,37 @@ namespace Comuki.Shared.Editions.Registry;
 /// between this interface's <c>Features</c>/<c>Limits</c> PROPERTIES and
 /// the catalogs' TYPE names in the same file — do not remove them.
 /// </summary>
-public sealed class EditionCapabilityRegistry : IEditionCapabilityRegistry
+/// <remarks>
+/// All instance state (the lookup dictionaries, the sorted entry list)
+/// is built once at construction from the static catalogs via field
+/// initializers — the empty primary ctor is the canonical sealed-class
+/// shape (constructors-and-fields §1). No parameterized ctor is exposed
+/// because the catalogs are the single source of truth.
+/// </remarks>
+public sealed class EditionCapabilityRegistry() : IEditionCapabilityRegistry
 {
-    private readonly Dictionary<string, Feature> featuresByKey;
-    private readonly Dictionary<string, Limit> limitsByKey;
+    private static readonly IReadOnlyList<Feature> featureCatalog = EditionFeatureCatalog.All;
+    private static readonly IReadOnlyList<Limit> limitCatalog = EditionLimitCatalog.All;
 
-    public EditionCapabilityRegistry()
-    {
-        Features = EditionFeatureCatalog.All;
-        Limits = EditionLimitCatalog.All;
-        featuresByKey = Features.ToDictionary(static feature => feature.Key.Value, StringComparer.Ordinal);
-        limitsByKey = Limits.ToDictionary(static limit => limit.Key.Value, StringComparer.Ordinal);
+    private static readonly Dictionary<string, Feature> featuresByKey = featureCatalog
+        .ToDictionary(static feature => feature.Key.Value, StringComparer.Ordinal);
 
-        Entries = [.. Features
-            .Select(static feature => new RegistryEntry(feature.Key.Value, feature.Description, feature.MinimumRank, RegistryEntrySource.Feature))
-            .Concat(Limits.Select(static limit => new RegistryEntry(limit.Key.Value, limit.Description, 0, RegistryEntrySource.Limit)))
-            .OrderBy(static entry => entry.Key, StringComparer.Ordinal)];
-    }
+    private static readonly Dictionary<string, Limit> limitsByKey = limitCatalog
+        .ToDictionary(static limit => limit.Key.Value, StringComparer.Ordinal);
+
+    private static readonly IReadOnlyList<RegistryEntry> entries = [.. featureCatalog
+        .Select(static feature => new RegistryEntry(feature.Key.Value, feature.Description, feature.MinimumRank, RegistryEntrySource.Feature))
+        .Concat(limitCatalog.Select(static limit => new RegistryEntry(limit.Key.Value, limit.Description, 0, RegistryEntrySource.Limit)))
+        .OrderBy(static entry => entry.Key, StringComparer.Ordinal)];
 
     /// <inheritdoc />
-    public IReadOnlyList<Feature> Features { get; }
+    public IReadOnlyList<Feature> Features { get; } = featureCatalog;
 
     /// <inheritdoc />
-    public IReadOnlyList<Limit> Limits { get; }
+    public IReadOnlyList<Limit> Limits { get; } = limitCatalog;
 
     /// <inheritdoc />
-    public IReadOnlyList<RegistryEntry> Entries { get; }
+    public IReadOnlyList<RegistryEntry> Entries { get; } = entries;
 
     /// <inheritdoc />
     public bool TryGetFeature(FeatureKey key, out Feature? feature)

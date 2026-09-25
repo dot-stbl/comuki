@@ -68,7 +68,7 @@ public sealed class AddComukiModuleShould
         {
             installerCalled = true;
             inner.AddSingleton<IGatedService, GatedService>();
-        });
+        }, compositionEdition: edition);
 
         installerCalled.ShouldBeTrue();
         using var provider = services.BuildServiceProvider();
@@ -93,7 +93,7 @@ public sealed class AddComukiModuleShould
         {
             installerCalled = true;
             inner.AddSingleton<IGatedService, GatedService>();
-        });
+        }, compositionEdition: edition, loggerFactory: loggerFactory);
 
         installerCalled.ShouldBeFalse();
         // NSubstitute's generic Log<TState> call is invoked here with
@@ -111,8 +111,8 @@ public sealed class AddComukiModuleShould
         state.ShouldContain("multi-repo");
     }
 
-    [Fact(DisplayName = "Given a marker with [EditionFeature] but no IEdition registered, when AddComukiModule runs, then it throws at composition time")]
-    public void MissingIEditionThrowsAtComposition()
+    [Fact(DisplayName = "Given a gated marker with no composition-time edition snapshot, when AddComukiModule runs, then it throws at composition time")]
+    public void MissingCompositionSnapshotThrowsAtComposition()
     {
         var services = new ServiceCollection();
         services.AddSingleton<IEditionCapabilityRegistry, EditionCapabilityRegistry>();
@@ -124,14 +124,14 @@ public sealed class AddComukiModuleShould
     [Fact(DisplayName = "Given a Community license token, when AddComukiModule runs for a multi-repo-gated marker, then the installer is skipped")]
     public void CommunityTokenSkipsGatedInstaller()
     {
-        var services = NewServicesBackedByTestLicense(TestLicense.Community);
+        var (services, edition) = NewServicesBackedByTestLicense(TestLicense.Community);
 
         var installerCalled = false;
         services.AddComukiModule<GatedMarker>(inner =>
         {
             installerCalled = true;
             inner.AddSingleton<IGatedService, GatedService>();
-        });
+        }, compositionEdition: edition);
 
         installerCalled.ShouldBeFalse();
     }
@@ -139,21 +139,21 @@ public sealed class AddComukiModuleShould
     [Fact(DisplayName = "Given a Team license token granting multi-repo, when AddComukiModule runs for a multi-repo-gated marker, then the installer runs")]
     public void PaidTokenRunsGatedInstaller()
     {
-        var services = NewServicesBackedByTestLicense(TestLicense.With(Features.MultiRepo));
+        var (services, edition) = NewServicesBackedByTestLicense(TestLicense.With(Features.MultiRepo));
 
         var installerCalled = false;
         services.AddComukiModule<GatedMarker>(inner =>
         {
             installerCalled = true;
             inner.AddSingleton<IGatedService, GatedService>();
-        });
+        }, compositionEdition: edition);
 
         installerCalled.ShouldBeTrue();
         using var provider = services.BuildServiceProvider();
         provider.GetRequiredService<IGatedService>().ShouldBeOfType<GatedService>();
     }
 
-    private static IServiceCollection NewServicesBackedByTestLicense(string token)
+    private static (IServiceCollection Services, IEdition Edition) NewServicesBackedByTestLicense(string token)
     {
         var clock = new MutableFakeTimeProvider(DateTimeOffset.UtcNow);
         var resolver = Substitute.For<ISecretResolver>();
@@ -175,7 +175,7 @@ public sealed class AddComukiModuleShould
         var services = new ServiceCollection();
         services.AddSingleton<IEdition>(edition);
         services.AddSingleton<IEditionCapabilityRegistry, EditionCapabilityRegistry>();
-        return services;
+        return (services, edition);
     }
 
     private static ILoggerFactory NullLoggerFactoryInstance()

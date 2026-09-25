@@ -13,18 +13,25 @@ namespace Comuki.Modules.Projects.Application.Editions;
 /// caps (see issue #164 design.md's wire-shape comment "Number of
 /// projects a workspace may create"; a future multi-workspace change
 /// would narrow this to a workspace-scoped count).
+/// <para>
+/// The count comes from <see cref="IProjectStore.CountAsync"/> — a
+/// scalar SQL <c>SELECT count(*)</c>, not a materialised list. This is
+/// the request-time filter fast-fail and is <strong>advisory only</strong>
+/// under concurrent writers; the authoritative check is the
+/// transactional one in <see cref="IProjectStore.TryInsertWithProjectLimitAsync"/>,
+/// which serialises competing writers via a <c>pg_advisory_xact_lock</c>
+/// on the same connection as the insert.
+/// </para>
 /// </summary>
-/// <param name="projects">The module's project-listing port.</param>
+/// <param name="projects">The module's project-store port.</param>
 public sealed class ProjectCountLimitUsageProvider(IProjectStore projects) : ILimitUsageProvider
 {
     /// <inheritdoc />
     public LimitKey LimitKey { get; } = LimitKey.Parse("projects");
 
     /// <inheritdoc />
-    public async Task<int> CurrentAsync(CancellationToken cancellationToken)
+    public Task<int> CurrentAsync(CancellationToken cancellationToken)
     {
-        var active = await projects.ListAsync(includeArchived: false, cancellationToken);
-
-        return active.Count;
+        return projects.CountAsync(includeArchived: false, cancellationToken);
     }
 }

@@ -47,7 +47,7 @@ public sealed class RequiresFeatureMiddlewareShould
         body.ShouldNotBeNullOrEmpty();
         var problem = JsonSerializer.Deserialize<ProblemDetails>(body, JsonSerializerOptions.Web)!;
         problem.Status.ShouldBe(StatusCodes.Status403Forbidden);
-        GetExtension(problem, "code").ShouldBe(RequiresFeatureFilter.FeatureUnavailableCode);
+        GetExtension(problem, "code").ShouldBe(EditionDenialBuilder.FeatureUnavailableCode);
         GetExtension(problem, "feature").ShouldBe("multi-repo");
     }
 
@@ -92,7 +92,7 @@ public sealed class RequiresFeatureMiddlewareShould
         context.Response.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
         var body = await ReadBodyAsync(context);
         var problem = JsonSerializer.Deserialize<ProblemDetails>(body, JsonSerializerOptions.Web)!;
-        GetExtension(problem, "code").ShouldBe(RequiresFeatureFilter.LimitExceededCode);
+        GetExtension(problem, "code").ShouldBe(EditionDenialBuilder.LimitExceededCode);
         GetExtension(problem, "limit").ShouldBe("projects");
         GetExtension(problem, "cap").ShouldBe("1");
         GetExtension(problem, "current").ShouldBe("1");
@@ -143,7 +143,7 @@ public sealed class RequiresFeatureMiddlewareShould
         context.Response.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
         var body = await ReadBodyAsync(context);
         var problem = JsonSerializer.Deserialize<ProblemDetails>(body, JsonSerializerOptions.Web)!;
-        GetExtension(problem, "code").ShouldBe(RequiresFeatureFilter.FeatureUnavailableCode);
+        GetExtension(problem, "code").ShouldBe(EditionDenialBuilder.FeatureUnavailableCode);
         await provider.DidNotReceive().CurrentAsync(Arg.Any<CancellationToken>());
     }
 

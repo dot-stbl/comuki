@@ -297,7 +297,7 @@ optionally a new scenario fixture under
 `execution-spine-crown.scenario.yaml`) if the existing fixtures don't
 already cover a multi-WorkItem dependent plan.
 
-- [ ] 10.1 Extend `TranslatorE2EShould` and/or `AgentLoopScenarioShould`
+- [x] 10.1 Extend `TranslatorE2EShould` and/or `AgentLoopScenarioShould`
       (using `Comuki.AgentTest.Runner` + `Comuki.TestFakeModel`/
       `Comuki.TestFakePi`, per the landed agentic test contour) to prove,
       in one run: a dependent WorkItem waits for its prerequisite
@@ -305,7 +305,7 @@ already cover a multi-WorkItem dependent plan.
       cancelled/superseded Run's late worker result is rejected (WS4/
       WS5), a terminal outbox message is delivered (WS6/WS7), and an
       admission retry does not double-launch (WS9) (epic task 2.7).
-- [ ] 10.2 compose.e2e/Playwright/AgentEval tiers do not apply to this
+- [x] 10.2 compose.e2e/Playwright/AgentEval tiers do not apply to this
       change (no dashboard/CLI/HTTP-facing product surface changed) —
       do not add scenarios there; note this explicitly in the PR so a
       reviewer doesn't go looking for them.
@@ -313,3 +313,11 @@ already cover a multi-WorkItem dependent plan.
 **Acceptance:** the crown scenario passes and its assertions name each
 of the five invariants above individually (not one opaque green check) —
 a reviewer can see which invariant a future regression broke.
+
+**Note:** the crown proof lives in
+`tests/integration/Comuki.EndToEnd.AgentLoop/CrownScenarioShould.cs` (a
+new file, not the two files WS10 originally named) using in-process
+`IWorkItemQueue` calls instead of a real worker container, because the
+container compute path is blocked in this sandbox by issues #152 (gRPC
+h2c) and #153 (`DOCKER_HOST`) — see
+`.agents/rules/process/local-test-runtime.md`.

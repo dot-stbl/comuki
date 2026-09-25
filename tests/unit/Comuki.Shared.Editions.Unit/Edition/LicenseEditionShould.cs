@@ -32,7 +32,7 @@ public sealed class LicenseEditionShould
     private static readonly DateTimeOffset FarFuture = new(2099, 12, 31, 0, 0, 0, TimeSpan.Zero);
 
     private static IOptionsMonitor<LicenseOptions> MonitorFor(LicenseOptions options) =>
-        new TestOptionsMonitor<LicenseOptions>(options);
+        new StaticOptionsMonitor<LicenseOptions>(options);
 
     private static LicenseEdition BuildEdition(
         LicenseOptions options,
@@ -265,10 +265,10 @@ public sealed class LicenseEditionShould
     /// property dance for test options that have no live-reload
     /// semantics to exercise.
     /// </summary>
-    private sealed class TestOptionsMonitor<T> : IOptionsMonitor<T>
+    private sealed class StaticOptionsMonitor<T> : IOptionsMonitor<T>
     {
         private readonly T value;
-        public TestOptionsMonitor(T value) { this.value = value; }
+        public StaticOptionsMonitor(T value) { this.value = value; }
         public T CurrentValue => value;
         public T Get(string? name) => value;
         public IDisposable? OnChange(Action<T, string?> listener) => null;

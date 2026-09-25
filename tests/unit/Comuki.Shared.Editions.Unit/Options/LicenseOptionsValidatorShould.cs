@@ -56,8 +56,8 @@ public sealed class LicenseOptionsValidatorShould
     public void UnsetPathFailsWithPathInMessage()
     {
         var resolver = Substitute.For<ISecretResolver>();
-        resolver.When(x => x.ResolveAsync("env:MISSING", Arg.Any<CancellationToken>()))
-            .Do(_ => throw new SecretRefUnsetException("env:MISSING"));
+        resolver.ResolveAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns<string?>(_ => throw new SecretRefUnsetException("env:MISSING"));
 
         var result = Validate(ValidOptions(path: "env:MISSING"), resolver);
 
@@ -69,8 +69,8 @@ public sealed class LicenseOptionsValidatorShould
     public void MalformedPathFailsWithPathInMessage()
     {
         var resolver = Substitute.For<ISecretResolver>();
-        resolver.When(x => x.ResolveAsync("bogus:ref", Arg.Any<CancellationToken>()))
-            .Do(_ => throw new SecretRefFormatException("scheme bogus is unsupported"));
+        resolver.ResolveAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns<string?>(_ => throw new SecretRefFormatException("scheme bogus is unsupported"));
 
         var result = Validate(ValidOptions(path: "bogus:ref"), resolver);
 

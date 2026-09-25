@@ -254,15 +254,15 @@ its `IRunLauncher` port declaration (find under
 `tests/integration/Comuki.Host.Integration.Runs/` (extend if a
 cross-module assertion is cleaner there).
 
-- [ ] 9.1 Give the admission call a stable message id (the ticket's
+- [x] 9.1 Give the admission call a stable message id (the ticket's
       admission/claim identity) and an inbox dedupe check on the
       Orchestration side before `Run.Create`/`WorkItem.Create` run
       (epic task 2.5).
-- [ ] 9.2 Retried delivery of the same message id creates at most one
+- [x] 9.2 Retried delivery of the same message id creates at most one
       Run; concurrent delivery of the same message id resolves to one
       Run with the losing caller observing the same Run id, not an
       error.
-- [ ] 9.3 `intake`'s own capability spec/outcome-label set is
+- [x] 9.3 `intake`'s own capability spec/outcome-label set is
       unchanged — this is an Orchestration-side guarantee only.
 
 **Acceptance:** an integration test delivers the same admission message

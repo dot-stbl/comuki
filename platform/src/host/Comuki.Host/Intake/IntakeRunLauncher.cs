@@ -2,11 +2,13 @@ using System.Text.Json;
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
+using Comuki.Engine.Orchestration.Infrastructure.Inbox;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Modules.Intake.Application.Ports.Admission;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
 using Comuki.Shared.Kernel.Ids;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 namespace Comuki.Host.Intake;
 
@@ -18,18 +20,37 @@ namespace Comuki.Host.Intake;
 /// Profile routing goes through <see cref="IIntakeProfileRouter"/>: a
 /// per-connection <c>profileKey</c> override wins, PR-kind tickets
 /// default to <c>pr-review</c>, issues to <c>defaults.ProfileKey</c>.
+/// <para>
+/// WS9 (issue #87) admission idempotency contract: this launcher is
+/// safe to call twice (sequentially or concurrently) on tickets
+/// carrying the same <see cref="IncomingTicket.Id"/> — at most one Run
+/// is created, and a losing / retried call observes the winner's Run
+/// id rather than throwing or duplicating. The mechanism is an inbox
+/// <c>INSERT ... ON CONFLICT DO NOTHING</c> claim whose winning insert,
+/// the new Run and the first WorkItem are committed in the same
+/// Postgres transaction so the loser's lookup never races a missing
+/// row. This is an Orchestration-side guarantee only — Intake's own
+/// delivery-id / active-ticket locks remain the upstream defence.
+/// </para>
 /// </summary>
 /// <param name="db">Orchestration context of the current scope.</param>
+/// <param name="inbox">WS6 dedupe ledger — guards the admission call.</param>
 /// <param name="profileRouter">Profile-key resolver (PRs vs, / issues).</param>
 /// <param name="defaults">Claim labels for intake-created items.</param>
 /// <param name="clock">Time source for domain stamps.</param>
 public sealed class IntakeRunLauncher(
     OrchestrationDbContext db,
+    IInbox inbox,
     IIntakeProfileRouter profileRouter,
     IOptions<IntakeWorkerDefaults> defaults,
     TimeProvider clock) : IRunLauncher
 {
-    /// <summary>Launches the run for a ticket; returns the created run id.</summary>
+    /// <summary>
+    /// Launches the run for a ticket; returns the run id (the new run's
+    /// id when this call wins the dedupe, the winner's existing run id
+    /// when another in-flight or already-committed claim is on the same
+    /// admission identity — never throws and never creates a duplicate).
+    /// </summary>
     /// <param name="projectId"></param>
     /// <param name="connection">The source connection the ticket arrived through.</param>
     /// <param name="ticket"></param>
@@ -41,7 +62,27 @@ public sealed class IntakeRunLauncher(
         CancellationToken cancellationToken = default)
     {
         var now = clock.GetUtcNow();
-        var run = Run.Create(projectId, now);
+        var messageId = $"admission-{ticket.Id.Value:D}";
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        if (!await inbox.TryClaimAsync(messageId, cancellationToken))
+        {
+            var existingRun = await db.Runs
+                .IgnoreQueryFilters()
+                .Where(run => run.AdmissionMessageId == messageId)
+                .Select(static run => new { run.Id })
+                .SingleOrDefaultAsync(cancellationToken);
+
+            await transaction.RollbackAsync(cancellationToken);
+
+            return existingRun is null
+                ? throw new InvalidOperationException(
+                    $"admission message id '{messageId}' was claimed but no run is bound to it")
+                : existingRun.Id;
+        }
+
+        var run = Run.Create(projectId, now, messageId);
         var workItem = WorkItem.Create(
             run.Id,
             profileRouter.ResolveProfileKey(connection, ticket),
@@ -54,6 +95,8 @@ public sealed class IntakeRunLauncher(
         db.Runs.Add(run);
         db.WorkItems.Add(workItem);
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
         return run.Id;
     }
 }

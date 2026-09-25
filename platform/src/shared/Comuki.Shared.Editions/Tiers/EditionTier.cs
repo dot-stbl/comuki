@@ -23,8 +23,17 @@ public readonly record struct EditionTier
     /// <summary>The default tier: rank 0, no license required.</summary>
     public static readonly EditionTier Community = new(0, "community");
 
-    /// <summary>Creates a tier. <paramref name="rank"/> must be non-negative; <paramref name="code"/> must be non-empty.</summary>
-    public EditionTier(int rank, string code)
+    /// <summary>
+    /// Creates a tier. <paramref name="rank"/> must be non-negative;
+    /// <paramref name="code"/> must be non-empty. Internal: minting a
+    /// tier is <see cref="EditionTiers"/>'s job alone — an external
+    /// assembly constructing an unregistered <see cref="EditionTier"/>
+    /// would defeat the closed catalog <see cref="EditionTiers.All"/>
+    /// is supposed to be the single source of truth for (smart-types.md
+    /// §2). Same-assembly callers (this catalog, its tests via
+    /// <c>InternalsVisibleTo</c>) still construct directly.
+    /// </summary>
+    internal EditionTier(int rank, string code)
     {
         if (rank < 0)
         {

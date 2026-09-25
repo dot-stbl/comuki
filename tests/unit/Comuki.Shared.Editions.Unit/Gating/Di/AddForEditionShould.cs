@@ -18,9 +18,9 @@ namespace Comuki.Shared.Editions.Unit.Gating.Di;
 /// at the DI-registration boundary. Exercises every documented branch:
 /// the Community resolution path, the paid resolution path, the
 /// type-assignability precondition failure (with no registration left
-/// behind when it trips), the default-Singleton lifetime, and the
-/// end-to-end path with a real <see cref="LicenseEdition"/> built from
-/// the <see cref="TestLicense"/>
+/// behind when it trips), the default-Singleton lifetime, the missing-
+/// snapshot failure, and the end-to-end path with a real
+/// <see cref="LicenseEdition"/> built from the <see cref="TestLicense"/>
 /// fixtures (Community vs Team-with-AgentEval).
 /// </summary>
 public sealed class AddForEditionShould
@@ -36,7 +36,8 @@ public sealed class AddForEditionShould
         services.AddForEdition<IForEditionService>(
             paid: Features.AgentEval,
             use: typeof(PaidForEditionService),
-            otherwise: typeof(CommunityForEditionService));
+            otherwise: typeof(CommunityForEditionService),
+            compositionEdition: edition);
 
         using var provider = services.BuildServiceProvider();
         provider.GetRequiredService<IForEditionService>()
@@ -54,7 +55,8 @@ public sealed class AddForEditionShould
         services.AddForEdition<IForEditionService>(
             paid: Features.AgentEval,
             use: typeof(PaidForEditionService),
-            otherwise: typeof(CommunityForEditionService));
+            otherwise: typeof(CommunityForEditionService),
+            compositionEdition: edition);
 
         using var provider = services.BuildServiceProvider();
         provider.GetRequiredService<IForEditionService>()
@@ -73,7 +75,8 @@ public sealed class AddForEditionShould
             services.AddForEdition<IForEditionService>(
                 paid: Features.AgentEval,
                 use: typeof(UnrelatedService),
-                otherwise: typeof(CommunityForEditionService)));
+                otherwise: typeof(CommunityForEditionService),
+                compositionEdition: edition));
 
         exception.ParamName.ShouldBe("use");
         services.Count.ShouldBe(initialCount);
@@ -94,7 +97,8 @@ public sealed class AddForEditionShould
             services.AddForEdition<IForEditionService>(
                 paid: Features.AgentEval,
                 use: typeof(PaidForEditionService),
-                otherwise: typeof(UnrelatedService)));
+                otherwise: typeof(UnrelatedService),
+                compositionEdition: edition));
 
         exception.ParamName.ShouldBe("otherwise");
         services.Count.ShouldBe(initialCount);
@@ -114,7 +118,8 @@ public sealed class AddForEditionShould
         services.AddForEdition<IForEditionService>(
             paid: Features.AgentEval,
             use: typeof(PaidForEditionService),
-            otherwise: typeof(CommunityForEditionService));
+            otherwise: typeof(CommunityForEditionService),
+            compositionEdition: edition);
 
         using var provider = services.BuildServiceProvider();
         var first = provider.GetRequiredService<IForEditionService>();
@@ -126,12 +131,13 @@ public sealed class AddForEditionShould
     [Fact(DisplayName = "Given a Community license token, when AddForEdition runs for an AgentEval-gated swap, then resolving TService returns the Community implementation")]
     public void CommunityTokenRegistersCommunityImplementation()
     {
-        var services = NewServicesBackedByTestLicense(TestLicense.Community);
+        var (services, edition) = NewServicesBackedByTestLicense(TestLicense.Community);
 
         services.AddForEdition<IForEditionService>(
             paid: Features.AgentEval,
             use: typeof(PaidForEditionService),
-            otherwise: typeof(CommunityForEditionService));
+            otherwise: typeof(CommunityForEditionService),
+            compositionEdition: edition);
 
         using var provider = services.BuildServiceProvider();
         provider.GetRequiredService<IForEditionService>()
@@ -141,19 +147,20 @@ public sealed class AddForEditionShould
     [Fact(DisplayName = "Given a Team license token granting AgentEval, when AddForEdition runs for an AgentEval-gated swap, then resolving TService returns the paid implementation")]
     public void PaidTokenRegistersPaidImplementation()
     {
-        var services = NewServicesBackedByTestLicense(TestLicense.With(Features.AgentEval));
+        var (services, edition) = NewServicesBackedByTestLicense(TestLicense.With(Features.AgentEval));
 
         services.AddForEdition<IForEditionService>(
             paid: Features.AgentEval,
             use: typeof(PaidForEditionService),
-            otherwise: typeof(CommunityForEditionService));
+            otherwise: typeof(CommunityForEditionService),
+            compositionEdition: edition);
 
         using var provider = services.BuildServiceProvider();
         provider.GetRequiredService<IForEditionService>()
             .ShouldBeOfType<PaidForEditionService>();
     }
 
-    private static IServiceCollection NewServicesBackedByTestLicense(string token)
+    private static (IServiceCollection Services, IEdition Edition) NewServicesBackedByTestLicense(string token)
     {
         var clock = new MutableFakeTimeProvider(DateTimeOffset.UtcNow);
         var resolver = Substitute.For<ISecretResolver>();
@@ -174,7 +181,7 @@ public sealed class AddForEditionShould
 
         var services = new ServiceCollection();
         services.AddSingleton<IEdition>(edition);
-        return services;
+        return (services, edition);
     }
 
     private interface IForEditionService;
@@ -210,6 +217,7 @@ public sealed class AddForEditionShould
     private sealed class StaticOptionsMonitor<T>(T value) : IOptionsMonitor<T>
     {
         public T CurrentValue { get; } = value;
+
         public T Get(string? name)
         {
             return CurrentValue;

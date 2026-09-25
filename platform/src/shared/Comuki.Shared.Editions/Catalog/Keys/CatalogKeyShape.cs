@@ -40,7 +40,15 @@ internal static class CatalogKeyShape
         return separator >= 1 && rest.IndexOf(':') is -1 && IsSegment(span[..separator]) && IsSegment(rest);
     }
 
-    private static bool IsSegment(ReadOnlySpan<char> segment)
+    /// <summary>
+    /// Validates a single <see cref="FeatureKey"/> / <see cref="LimitKey"/>
+    /// segment (one or two of them are joined by <c>:</c> for
+    /// <c>PermissionKey</c> shapes). Public so the well-formedness rule
+    /// has a single source — every gate / catalog call site goes through
+    /// this predicate instead of reimplementing character-class checks.
+    /// </summary>
+    /// <param name="segment">One side of an optional <c>resource:action</c> join.</param>
+    public static bool IsSegment(ReadOnlySpan<char> segment)
     {
         if (segment.Length is < 1 or > MaxSegmentLength || !char.IsAsciiLetterLower(segment[0]))
         {

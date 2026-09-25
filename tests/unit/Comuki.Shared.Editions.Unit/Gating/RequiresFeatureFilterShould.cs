@@ -40,7 +40,7 @@ public sealed class RequiresFeatureFilterShould
         denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
         denial.Problem.Status.ShouldBe(StatusCodes.Status403Forbidden);
         denial.Problem.Extensions.ShouldNotBeNull();
-        denial.Problem.Extensions!["code"].ShouldBe(RequiresFeatureFilter.FeatureUnavailableCode);
+        denial.Problem.Extensions!["code"].ShouldBe(EditionDenialBuilder.FeatureUnavailableCode);
         denial.Problem.Extensions["feature"].ShouldBe("multi-repo");
         denial.Problem.Extensions.ShouldContainKey("minimumTier");
         denial.Problem.Extensions["minimumTier"].ShouldBe("team");
@@ -68,7 +68,7 @@ public sealed class RequiresFeatureFilterShould
 
         denial.ShouldNotBeNull();
         denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
-        denial.Problem.Extensions!["code"].ShouldBe(RequiresFeatureFilter.FeatureUnavailableCode);
+        denial.Problem.Extensions!["code"].ShouldBe(EditionDenialBuilder.FeatureUnavailableCode);
         denial.Problem.Extensions["feature"].ShouldBe("BAD_KEY");
         // No minimumTier extension when the key is malformed: we cannot
         // point at a tier we never resolved.
@@ -85,7 +85,7 @@ public sealed class RequiresFeatureFilterShould
 
         denial.ShouldNotBeNull();
         denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
-        denial.Problem.Extensions!["code"].ShouldBe(RequiresFeatureFilter.FeatureUnavailableCode);
+        denial.Problem.Extensions!["code"].ShouldBe(EditionDenialBuilder.FeatureUnavailableCode);
         denial.Problem.Extensions["feature"].ShouldBe("does-not-exist");
         denial.Problem.Extensions.ShouldNotContainKey("minimumTier");
     }
@@ -129,7 +129,7 @@ public sealed class RequiresFeatureFilterShould
 
         denial.ShouldNotBeNull();
         denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
-        denial.Problem.Extensions!["code"].ShouldBe(RequiresFeatureFilter.LimitExceededCode);
+        denial.Problem.Extensions!["code"].ShouldBe(EditionDenialBuilder.LimitExceededCode);
         denial.Problem.Extensions["limit"].ShouldBe("projects");
         denial.Problem.Extensions["cap"].ShouldBe(10);
         denial.Problem.Extensions["current"].ShouldBe(10);
@@ -172,7 +172,7 @@ public sealed class RequiresFeatureFilterShould
 
         denial.ShouldNotBeNull();
         denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
-        denial.Problem.Extensions!["code"].ShouldBe(RequiresFeatureFilter.LimitExceededCode);
+        denial.Problem.Extensions!["code"].ShouldBe(EditionDenialBuilder.LimitExceededCode);
         // A missing-provider denial reports current == cap (i.e. effectively exhausted)
         // so callers can show "10/10" rather than a 0/0 oddity.
         denial.Problem.Extensions["cap"].ShouldBe(10);
@@ -194,7 +194,7 @@ public sealed class RequiresFeatureFilterShould
 
         denial.ShouldNotBeNull();
         denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
-        denial.Problem.Extensions!["code"].ShouldBe(RequiresFeatureFilter.LimitExceededCode);
+        denial.Problem.Extensions!["code"].ShouldBe(EditionDenialBuilder.LimitExceededCode);
         denial.Problem.Extensions["limit"].ShouldBe("BAD_KEY");
     }
 
@@ -340,7 +340,7 @@ public sealed class RequiresFeatureFilterShould
 
         context.Result.ShouldNotBeNull();
         var problem = context.Result.ShouldBeOfType<ObjectResult>().Value.ShouldBeOfType<ProblemDetails>();
-        problem.Extensions!["code"].ShouldBe(RequiresFeatureFilter.FeatureUnavailableCode);
+        problem.Extensions!["code"].ShouldBe(EditionDenialBuilder.FeatureUnavailableCode);
         // The limit provider must not have been queried — feature denial short-circuits.
         await provider.DidNotReceive().CurrentAsync(Arg.Any<CancellationToken>());
     }

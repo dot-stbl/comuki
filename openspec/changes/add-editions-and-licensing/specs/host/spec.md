@@ -14,16 +14,31 @@ The host SHALL expose `GET /api/v1/edition` as an anonymous endpoint (no `[Requi
 - **WHEN** an authenticated client calls `GET /api/v1/edition` under a paid license with `expiry` in the future
 - **THEN** the response is 200 with the paid tier code, `status: valid`, the covered feature set, and `expiresAt` carrying the ISO-8601 UTC expiry
 
-### Requirement: `edition.feature_unavailable` and `edition.limit_exceeded` are mapped in the host exception handler
+### Requirement: `edition.feature_unavailable` and `edition.limit_exceeded` map to 403 problem+json over two paths
 
-The host's `ProviderExceptionHandler` (`platform/src/host/Comuki.Host/Errors/ProviderExceptionHandler.cs:15`) is the single composition-root `IExceptionHandler`. The exception mapping table in `ExceptionMapping.Map` (`ProviderExceptionHandler.cs:72`) SHALL produce a 403 ProblemDetails body for any thrown `ProviderForbiddenException` whose `Code` is `edition.feature_unavailable` or `edition.limit_exceeded`, with the same body shape as the existing `permission.denied` arm (RFC 9457 problem+json, `code` extension carrying the dot.case code, `detail` naming the feature key and the minimum edition required, never leaking license internals such as the embedded public key fingerprint, the signature, or the full payload). The new mapping arms SHALL reuse the existing `ProviderForbiddenException` arm — no new typed exception is introduced — and SHALL preserve the existing 401 / 403 / 404 / 500 / 502 / 504 status-code map. The handler SHALL NOT hand-roll the body; the response SHALL be built with `TypedResults.Problem(...)`.
+The edition-gating axis has TWO independent decision sites, both of which must produce the same 403 `application/problem+json` wire shape with stable dot.case codes. The two paths are:
 
-#### Scenario: Gate-deny surfaces edition.feature_unavailable
+1. **Request-time filter path** — `RequiresFeatureFilter` (MVC resource filter) and `RequiresFeatureMiddleware` (minimal-API middleware) read `[RequiresFeature]` / `[EnforceLimit]` off the endpoint metadata, consult the live `IEdition` + `IEditionCapabilityRegistry` through `EditionGate`, and short-circuit the request with a 403 problem+json body. This mirrors the Identity module's `RequiresPermissionFilter` precedent (which already writes 401/403 problem+json directly without going through `ProviderExceptionHandler`) — the resource stage is the right place for an inline deny because it wraps model binding and result execution so the decision cannot be bypassed by an earlier short-circuit. The body SHALL carry the same extensions the RBAC arm carries (`code`, plus gate-specific extras for feature denials: `feature` key + `minimumTier`; for limit denials: `limit` key + `cap` + `current`).
 
-- **WHEN** a `[RequiresFeature(Features.X)]`-gated endpoint throws `ProviderForbiddenException("edition.feature_unavailable", "feature 'multi-repo' requires paid tier 'team'")` because the license does not cover the feature
-- **THEN** the host answers 403 `application/problem+json` with `code = edition.feature_unavailable`, `detail` naming the feature key and the minimum tier, and a UI-facing extension carrying the feature key + minimum tier sufficient for the dashboard to render an upsell without a second call
+2. **Authoritative transactional handler path** — the source of truth for count-quota enforcement under concurrent writers. `CreateProjectHandler` opens a database transaction, takes `pg_advisory_xact_lock(hashtext('limit:projects'))`, counts current non-archived projects inside the same transaction via a count-only `IProjectStore` port (no full list materialisation), compares against the current edition's `Limits.Projects` cap, and either inserts (committing) or refuses. The refusal path throws `ProviderForbiddenException("edition.limit_exceeded", "limit 'projects' is exhausted (current/cap)")` which the central `ProviderExceptionHandler` (`platform/src/host/Comuki.Host/Errors/ProviderExceptionHandler.cs:15`) maps to 403 problem+json via the existing `ProviderForbiddenException` arm (`ExceptionMapping.Map`). No new typed exception is introduced — the same `ProviderForbiddenException` arm serves the OIDC / Disabled / ban / edition-deny cases alike. The `code` extension carries the dot.case code; the `detail` field carries the limit key + current count + cap.
 
-#### Scenario: Limit-exceeded surfaces a sibling code on the same arm
+The two paths share the same wire shape: 403, `application/problem+json`, stable dot.case `code` (`edition.feature_unavailable` or `edition.limit_exceeded`), and RFC 9457 problem+json body. The filter path additionally carries UI-facing extensions (`feature`, `minimumTier`, `limit`, `cap`, `current`) in the body — the handler path carries them in `detail` only, because the central exception handler only stamps the `code` extension.
 
-- **WHEN** a `[EnforceLimit(Limits.Projects)]` gate throws `ProviderForbiddenException("edition.limit_exceeded", "limit 'projects' exceeded: 1 / 1")`
-- **THEN** the host answers 403 `application/problem+json` with `code = edition.limit_exceeded`, `detail` naming the limit key and the current count, and the extension carries the limit key + the cap
+The request-time filter path is **advisory** for count-quota gates: it fast-fails a caller that's already over the cap without burning a DB transaction. The handler path is the source of truth — a race that sneaks past the filter (two concurrent writers both reading `current < cap` simultaneously) loses by a 403 from the handler, never by a successful insert that breaks the cap.
+
+The `ProviderExceptionHandler` body SHALL continue to be built with `TypedResults.Problem(...)` (no hand-rolled JSON) and SHALL preserve the existing 401 / 403 / 404 / 500 / 502 / 504 status-code map.
+
+#### Scenario: Gate-deny on the request-time filter surfaces edition.feature_unavailable
+
+- **WHEN** a `[RequiresFeature(Features.X)]`-gated endpoint is reached and the current edition does not cover the feature
+- **THEN** the host answers 403 `application/problem+json` with `code = edition.feature_unavailable`, `detail` naming the feature key and the minimum tier, and extensions carrying the feature key + minimum tier sufficient for the dashboard to render an upsell without a second call
+
+#### Scenario: Limit-exceeded on the request-time filter surfaces edition.limit_exceeded
+
+- **WHEN** an `[EnforceLimit(Limits.Projects)]` gate's fast-fail sees a caller already at or above the cap
+- **THEN** the host answers 403 `application/problem+json` with `code = edition.limit_exceeded`, `detail` naming the limit key and the current count, and extensions carrying the limit key + cap + current
+
+#### Scenario: Limit-exceeded on the authoritative handler surfaces edition.limit_exceeded via ProviderExceptionHandler
+
+- **WHEN** a `[EnforceLimit(Limits.Projects)]` gate's filter passed (caller below cap at request time) but two concurrent writers race into `CreateProjectHandler` at cap=1
+- **THEN** the second writer's `pg_advisory_xact_lock` blocks until the first commits, the second's count sees the first's insert, the handler throws `ProviderForbiddenException("edition.limit_exceeded", "limit 'projects' is exhausted (1/1)")`, and the host answers 403 `application/problem+json` with `code = edition.limit_exceeded` and `detail` naming the limit key and the current count

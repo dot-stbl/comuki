@@ -13,6 +13,7 @@ using Comuki.Modules.Projects.Domain.Projects;
 using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Modules.Projects.Infrastructure;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,6 +66,11 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         var services = new ServiceCollection();
         services.AddProjectsPersistence(connectionString);
         services.AddProjectsApplication();
+
+        // CreateProjectHandler's authoritative quota check needs an
+        // IEdition; these suites exercise persistence/mapping, not the
+        // quota, so every limit reads as unlimited.
+        services.AddSingleton<IEdition>(static _ => new FixedCapEdition(int.MaxValue));
         provider = services.BuildServiceProvider();
 
         var db = provider.GetRequiredService<ProjectsDbContext>();

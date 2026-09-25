@@ -161,6 +161,22 @@ public sealed class ChatRunStarterShould
         items.ShouldAllBe(item => item.RunId == runId);
     }
 
+    [Fact(DisplayName = "Given a plan with an edge to an unknown node, when started, then it throws ChatPlanInvalidException instead of crashing on the missing key")]
+    public async Task InvalidPlanThrowsTypedExceptionAsync()
+    {
+        var db = NewDb();
+        var starter = NewStarter(db);
+        var plan = new Plan(
+            Summary: "broken",
+            Nodes: [new PlanNode("n1", "only step", "implement", "do the thing")],
+            Edges: [new PlanEdge("n1", "ghost")]);
+
+        var exception = await Should.ThrowAsync<ChatPlanInvalidException>(
+            () => starter.StartAsync(ProjectId.New(), plan, TestContext.Current.CancellationToken));
+
+        exception.Errors.ShouldContain("edge references unknown node 'ghost'");
+    }
+
     private static OrchestrationDbContext NewDb()
     {
         var options = new DbContextOptionsBuilder<OrchestrationDbContext>()

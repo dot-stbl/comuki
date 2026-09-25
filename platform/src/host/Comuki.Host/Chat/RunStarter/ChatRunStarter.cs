@@ -31,10 +31,17 @@ public sealed class ChatRunStarter(
 {
     /// <summary>Applies the plan; returns the created run id.</summary>
     /// <param name="projectId">Project scope of the run.</param>
-    /// <param name="plan">Validated plan.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="plan">Plan to apply — validated internally via <see cref="PlanValidator"/>.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <exception cref="ChatPlanInvalidException">The plan fails <see cref="PlanValidator.Validate"/>.</exception>
     public async Task<RunId> StartAsync(ProjectId projectId, Plan plan, CancellationToken cancellationToken = default)
     {
+        var validation = PlanValidator.Validate(plan);
+        if (!validation.IsValid)
+        {
+            throw new ChatPlanInvalidException(validation.Errors);
+        }
+
         var now = clock.GetUtcNow();
         var run = Run.Create(projectId, now);
         var itemsById = new Dictionary<string, WorkItem>(StringComparer.Ordinal);
@@ -58,16 +65,13 @@ public sealed class ChatRunStarter(
 
         foreach (var node in plan.Nodes)
         {
-            var initialStatus = blockedNodeIds.Contains(node.Id)
-                ? WorkItemStatus.Blocked
-                : WorkItemStatus.Queued;
             var workItem = WorkItem.Create(
                 run.Id,
                 node.ProfileKey,
                 image,
                 defaults.Value.ProfilesRef,
                 ChatItemBrief.ToJson(node.Brief),
-                initialStatus,
+                blockedNodeIds.Contains(node.Id) ? WorkItemStatus.Blocked : WorkItemStatus.Queued,
                 now);
             itemsById[node.Id] = workItem;
             db.WorkItems.Add(workItem);

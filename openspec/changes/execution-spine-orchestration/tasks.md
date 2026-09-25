@@ -228,14 +228,30 @@ shapes elsewhere — check first), design.md's Migration Plan runbook
 text (verify only, no edit needed from this workstream unless a gap is
 found).
 
-- [ ] 8.1 Automated test asserting `orchestration.run.*.v1` payload
+- [x] 8.1 Automated test asserting `orchestration.run.*.v1` payload
       evolution stays additive-only (new optional fields; fails the
       build on a removed/retyped field) (epic task 2.4a).
-- [ ] 8.2 Dry-run the design.md breaking-deployment runbook steps
+- [x] 8.2 Dry-run the design.md breaking-deployment runbook steps
       against the WS6/WS7 implementation and confirm each step is
       actually executable with the tooling that exists (dispatcher
       pause/drain, dead-letter visibility) — file a follow-up if a step
       has no real lever yet, do not silently mark it done.
+      **Dry-run findings (2026-09-25):** runbook steps 2 and 3 have a
+      real lever today — step 2 (switch/dual-publish) is a one-line edit
+      to `RunProgression.FinalizeAsync`'s single `outbox.Enqueue(...)`
+      call; step 3 (drain/reconcile dead-letters) already has an
+      observable unit of work — `OutboxMessage.IsDeadLettered` /
+      `DeadLetteredAt`, asserted by `OutboxMessageShould` and exercised
+      concurrently by `OutboxDispatchShould`. Steps 1 and 4 have **no
+      real lever yet**: `NoopOutboxPublisher` is the only
+      `IOutboxPublisher` in the tree today (no real consumer is deployed
+      — `add-work-management` (#89) is still the first planned consumer
+      and has not landed), and no consumer-watermark concept exists
+      anywhere in the codebase to confirm against before retiring a
+      `.v1` type. Follow-up, not silently marked done: whichever change
+      wires the first real outbox consumer must also add a watermark /
+      ack mechanism before this runbook's step 4 is actually
+      executable.
 
 **Acceptance:** the contract test fails when a field is deliberately
 removed from a fixture payload (verify the negative case, not just the

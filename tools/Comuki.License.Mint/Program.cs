@@ -99,9 +99,9 @@ file static class ProgramHelpers
             return 1;
         }
 
-        var (publicKey, privateKeySeed) = Ed25519LicenseSigner.GenerateKeyPair();
-        var publicEncoded = Convert.ToBase64String(publicKey);
-        var privateEncoded = Convert.ToBase64String(privateKeySeed);
+        var keyPair = Ed25519LicenseSigner.GenerateKeyPair();
+        var publicEncoded = Convert.ToBase64String(keyPair.PublicKey);
+        var privateEncoded = Convert.ToBase64String(keyPair.PrivateKeySeed);
 
         if (outPublic is not null && outPrivate is not null)
         {

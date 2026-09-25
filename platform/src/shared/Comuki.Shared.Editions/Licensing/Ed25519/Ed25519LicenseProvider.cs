@@ -94,7 +94,7 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
     {
         if (token.Count(static c => c == '.') != 1)
         {
-            throw new LicenseInvalidException("malformed token shape");
+            throw LicenseInvalidException.MalformedTokenShape();
         }
 
         var separatorIndex = token.IndexOf('.');
@@ -110,9 +110,10 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
         }
         catch (FormatException)
         {
-            throw new LicenseInvalidException("malformed token shape");
+            throw LicenseInvalidException.MalformedTokenShape();
         }
 
+<<<<<<< HEAD
         // Parse the payload FIRST, then select the verifying key from
         // the audience claim, THEN verify the signature with the
         // selected key. This is sound because the Ed25519 signature
@@ -125,13 +126,32 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
         // of the matching private key can mint a token whose signature
         // passes verification under the corresponding public key.
         var payload = Ed25519LicensePayloadParsing.TryParse(payloadBytes);
+=======
+        if (!Ed25519SignatureVerifier.Verify(publicKey, payloadBytes, signatureBytes))
+        {
+            throw LicenseInvalidException.BadSignature();
+        }
+
+        LicensePayload? payload;
+        try
+        {
+            // boundary: System.Text.Json surfaces a malformed payload as a raw JsonException;
+            // translate to LicenseInvalidException so the verifier's documented contract holds.
+            payload = JsonSerializer.Deserialize<LicensePayload>(payloadBytes, JsonSerializerOptions.Web);
+        }
+        catch (JsonException exception)
+        {
+            throw LicenseInvalidException.MalformedPayload(innerException: exception);
+        }
+
+>>>>>>> feature/editions-license
         if (payload is not { } p
             || string.IsNullOrWhiteSpace(p.Org)
             || string.IsNullOrWhiteSpace(p.Edition)
             || p.Expiry is null
             || string.IsNullOrWhiteSpace(p.Mode))
         {
-            throw new LicenseInvalidException("malformed payload");
+            throw LicenseInvalidException.MalformedPayload();
         }
 
         var audience = p.Audience is null
@@ -162,11 +182,11 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
 
         var mode = LicenseMode.TryParse(p.Mode, out var parsedMode)
             ? parsedMode
-            : throw new LicenseInvalidException("malformed payload");
+            : throw LicenseInvalidException.MalformedPayload();
 
         var tier = EditionTiers.TryGetByCode(p.Edition, out var resolvedTier)
             ? resolvedTier
-            : throw new LicenseInvalidException("unknown edition code");
+            : throw LicenseInvalidException.UnknownEditionCode();
 
         return new LicenseKey(
             Tier: tier,

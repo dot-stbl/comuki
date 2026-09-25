@@ -113,7 +113,6 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
             throw LicenseInvalidException.MalformedTokenShape();
         }
 
-<<<<<<< HEAD
         // Parse the payload FIRST, then select the verifying key from
         // the audience claim, THEN verify the signature with the
         // selected key. This is sound because the Ed25519 signature
@@ -126,25 +125,6 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
         // of the matching private key can mint a token whose signature
         // passes verification under the corresponding public key.
         var payload = Ed25519LicensePayloadParsing.TryParse(payloadBytes);
-=======
-        if (!Ed25519SignatureVerifier.Verify(publicKey, payloadBytes, signatureBytes))
-        {
-            throw LicenseInvalidException.BadSignature();
-        }
-
-        LicensePayload? payload;
-        try
-        {
-            // boundary: System.Text.Json surfaces a malformed payload as a raw JsonException;
-            // translate to LicenseInvalidException so the verifier's documented contract holds.
-            payload = JsonSerializer.Deserialize<LicensePayload>(payloadBytes, JsonSerializerOptions.Web);
-        }
-        catch (JsonException exception)
-        {
-            throw LicenseInvalidException.MalformedPayload(innerException: exception);
-        }
-
->>>>>>> feature/editions-license
         if (payload is not { } p
             || string.IsNullOrWhiteSpace(p.Org)
             || string.IsNullOrWhiteSpace(p.Edition)
@@ -158,14 +138,14 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
             ? LicenseAudience.Production
             : LicenseAudience.TryParse(p.Audience, out var parsedAudience)
                 ? parsedAudience
-                : throw new LicenseInvalidException("unknown audience");
+                : throw LicenseInvalidException.UnknownAudience();
 
         byte[] verifyingKey;
         if (audience == LicenseAudience.Dev)
         {
             if (devPublicKey is null)
             {
-                throw new LicenseInvalidException("dev audience not trusted here");
+                throw LicenseInvalidException.DevAudienceNotTrusted();
             }
 
             verifyingKey = devPublicKey;
@@ -177,7 +157,7 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
 
         if (!Ed25519SignatureVerifier.Verify(verifyingKey, payloadBytes, signatureBytes))
         {
-            throw new LicenseInvalidException("signature mismatch");
+            throw LicenseInvalidException.BadSignature();
         }
 
         var mode = LicenseMode.TryParse(p.Mode, out var parsedMode)
@@ -210,7 +190,12 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
 /// </summary>
 file static class Ed25519LicensePayloadParsing
 {
-    /// <summary>Deserializes the payload bytes; returns <c>null</c> when the bytes are not valid JSON for the shape.</summary>
+    /// <summary>
+    /// Deserializes the payload bytes; returns <c>null</c> when the bytes
+    /// deserialize to JSON <c>null</c>. A non-JSON payload rethrows as
+    /// <see cref="LicenseInvalidException.MalformedPayload"/> with the
+    /// underlying <c>JsonException</c> preserved as the inner exception.
+    /// </summary>
     /// <param name="payloadBytes">The raw (unverified) payload half of the token.</param>
     public static LicensePayload? TryParse(byte[] payloadBytes)
     {
@@ -218,9 +203,9 @@ file static class Ed25519LicensePayloadParsing
         {
             return JsonSerializer.Deserialize<LicensePayload>(payloadBytes, JsonSerializerOptions.Web);
         }
-        catch (JsonException)
+        catch (JsonException exception)
         {
-            return null;
+            throw LicenseInvalidException.MalformedPayload(innerException: exception);
         }
     }
 }

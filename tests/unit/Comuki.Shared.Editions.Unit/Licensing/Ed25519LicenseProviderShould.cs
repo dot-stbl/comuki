@@ -314,10 +314,10 @@ public sealed class Ed25519LicenseProviderShould
             Features = grant.Features,
             Limits = grant.Limits,
         };
-        var payloadBytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(payload, System.Text.Json.JsonSerializerOptions.Web);
+        var payloadBytes = JsonSerializer.SerializeToUtf8Bytes(payload, JsonSerializerOptions.Web);
         var payloadEncoded = Base64Url.Encode(payloadBytes);
-        var signing = new Org.BouncyCastle.Crypto.Signers.Ed25519Signer();
-        signing.Init(forSigning: true, new Org.BouncyCastle.Crypto.Parameters.Ed25519PrivateKeyParameters(privateSeed, 0));
+        var signing = new Ed25519Signer();
+        signing.Init(forSigning: true, new Ed25519PrivateKeyParameters(privateSeed, 0));
         signing.BlockUpdate(payloadBytes, 0, payloadBytes.Length);
         var tokenWithUnknownAudience = payloadEncoded + "." + Base64Url.Encode(signing.GenerateSignature());
 

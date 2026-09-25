@@ -21,4 +21,10 @@ public static class LicenseInvalidReason
 
     /// <summary>The payload's <c>edition</c> does not resolve via <c>EditionTiers.TryGetByCode</c>.</summary>
     public const string UnknownEditionCode = "unknown_edition_code";
+
+    /// <summary>The payload's <c>audience</c> is not a recognised <c>LicenseAudience</c> value.</summary>
+    public const string UnknownAudience = "unknown_audience";
+
+    /// <summary>The token's audience is <c>dev</c> but no dev verifying key is configured for this contour.</summary>
+    public const string DevAudienceNotTrusted = "dev_audience_not_trusted";
 }

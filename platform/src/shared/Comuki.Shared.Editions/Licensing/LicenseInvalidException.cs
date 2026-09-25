@@ -48,4 +48,16 @@ public sealed class LicenseInvalidException : Exception
     {
         return new(LicenseInvalidReason.UnknownEditionCode, "license token is invalid: unknown edition code");
     }
+
+    /// <summary>The payload's <c>audience</c> is not a recognised audience value.</summary>
+    public static LicenseInvalidException UnknownAudience()
+    {
+        return new(LicenseInvalidReason.UnknownAudience, "license token is invalid: unknown audience");
+    }
+
+    /// <summary>The token's audience is <c>dev</c> but this contour trusts no dev verifying key.</summary>
+    public static LicenseInvalidException DevAudienceNotTrusted()
+    {
+        return new(LicenseInvalidReason.DevAudienceNotTrusted, "license token is invalid: dev audience not trusted here");
+    }
 }

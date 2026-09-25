@@ -436,7 +436,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         var now = clock.GetUtcNow();
         var run = Run.Create(ProjectId.New(), now);
         var prerequisiteA = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"a"}""", WorkItemStatus.Queued, now);
-        var prerequisiteB = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"b"}""", WorkItemStatus.Queued, now);
+        var prerequisiteB = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"b"}""", WorkItemStatus.Queued, now.AddMilliseconds(1));
         var dependent = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"c"}""", WorkItemStatus.Blocked, now);
         db.Runs.Add(run);
         db.WorkItems.AddRange(prerequisiteA, prerequisiteB, dependent);

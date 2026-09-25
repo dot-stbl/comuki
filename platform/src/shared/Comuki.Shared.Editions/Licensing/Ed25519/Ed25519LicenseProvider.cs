@@ -39,7 +39,7 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
     {
         if (token.Count(static c => c == '.') != 1)
         {
-            throw new LicenseInvalidException("malformed token shape");
+            throw LicenseInvalidException.MalformedTokenShape();
         }
 
         var separatorIndex = token.IndexOf('.');
@@ -55,31 +55,42 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
         }
         catch (FormatException)
         {
-            throw new LicenseInvalidException("malformed token shape");
+            throw LicenseInvalidException.MalformedTokenShape();
         }
 
         if (!Ed25519SignatureVerifier.Verify(publicKey, payloadBytes, signatureBytes))
         {
-            throw new LicenseInvalidException("signature mismatch");
+            throw LicenseInvalidException.BadSignature();
         }
 
-        var payload = JsonSerializer.Deserialize<LicensePayload>(payloadBytes, JsonSerializerOptions.Web);
+        LicensePayload? payload;
+        try
+        {
+            // boundary: System.Text.Json surfaces a malformed payload as a raw JsonException;
+            // translate to LicenseInvalidException so the verifier's documented contract holds.
+            payload = JsonSerializer.Deserialize<LicensePayload>(payloadBytes, JsonSerializerOptions.Web);
+        }
+        catch (JsonException exception)
+        {
+            throw LicenseInvalidException.MalformedPayload(innerException: exception);
+        }
+
         if (payload is not { } p
             || string.IsNullOrWhiteSpace(p.Org)
             || string.IsNullOrWhiteSpace(p.Edition)
             || p.Expiry is null
             || string.IsNullOrWhiteSpace(p.Mode))
         {
-            throw new LicenseInvalidException("malformed payload");
+            throw LicenseInvalidException.MalformedPayload();
         }
 
         var mode = LicenseMode.TryParse(p.Mode, out var parsedMode)
             ? parsedMode
-            : throw new LicenseInvalidException("malformed payload");
+            : throw LicenseInvalidException.MalformedPayload();
 
         var tier = EditionTiers.TryGetByCode(p.Edition, out var resolvedTier)
             ? resolvedTier
-            : throw new LicenseInvalidException("unknown edition code");
+            : throw LicenseInvalidException.UnknownEditionCode();
 
         return new LicenseKey(
             Tier: tier,

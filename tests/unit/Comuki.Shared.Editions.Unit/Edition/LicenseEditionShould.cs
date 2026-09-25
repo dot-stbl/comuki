@@ -52,11 +52,11 @@ public sealed class LicenseEditionShould
     [Fact(DisplayName = "Given no Path configured, when edition members are read, then Current is Community, Status is Absent, Has(MultiRepo) is false, and Limit(Projects) is 1")]
     public void NoPathIsCommunityAbsent()
     {
-        var (publicKey, _) = Ed25519LicenseSigner.GenerateKeyPair();
+        var keyPair = Ed25519LicenseSigner.GenerateKeyPair();
         var clock = new MutableFakeTimeProvider(startNow);
 
         var resolver = Substitute.For<ISecretResolver>();
-        var edition = BuildEdition(new LicenseOptions(), resolver, new Ed25519LicenseProvider(publicKey, clock), clock);
+        var edition = BuildEdition(new LicenseOptions(), resolver, new Ed25519LicenseProvider(keyPair.PublicKey, clock), clock);
 
         edition.Current.ShouldBe(EditionTier.Community);
         edition.Status.ShouldBe(LicenseStatus.Absent);
@@ -68,20 +68,20 @@ public sealed class LicenseEditionShould
     [Fact(DisplayName = "Given a valid Team license in ImplicitByRank mode, when edition is read, then Current is Team, Status is Valid, and Has(MultiRepo) is true by rank")]
     public void TeamLicenseImplicitByRankCoversRankedFeature()
     {
-        var (publicKey, privateSeed) = Ed25519LicenseSigner.GenerateKeyPair();
+        var keyPair = Ed25519LicenseSigner.GenerateKeyPair();
         var clock = new MutableFakeTimeProvider(startNow);
         var token = Sign(new LicenseGrant(
             Org: "Acme Inc",
             Tier: EditionTiers.Team,
             Expiry: farFuture,
             Mode: LicenseMode.ImplicitByRank,
-            Features: ["multi-repo"]), privateSeed);
+            Features: ["multi-repo"]), keyPair.PrivateKeySeed);
         var resolver = Substitute.For<ISecretResolver>();
         resolver.ResolveAsync("env:LICENSE", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<string?>(token));
 
         var options = new LicenseOptions { Path = "env:LICENSE", ReloadDelay = TimeSpan.FromMilliseconds(1) };
-        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(publicKey, clock), clock);
+        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(keyPair.PublicKey, clock), clock);
 
         edition.Current.ShouldBe(EditionTiers.Team);
         edition.Status.ShouldBe(LicenseStatus.Valid);
@@ -92,20 +92,20 @@ public sealed class LicenseEditionShould
     [Fact(DisplayName = "Given a Team license in ExplicitAllowlist mode with Features=[], when Has(MultiRepo) is called, then it is false even though the rank would have covered it")]
     public void TeamLicenseExplicitAllowlistEmptyFeaturesDenies()
     {
-        var (publicKey, privateSeed) = Ed25519LicenseSigner.GenerateKeyPair();
+        var keyPair = Ed25519LicenseSigner.GenerateKeyPair();
         var clock = new MutableFakeTimeProvider(startNow);
         var token = Sign(new LicenseGrant(
             Org: "Acme Inc",
             Tier: EditionTiers.Team,
             Expiry: farFuture,
             Mode: LicenseMode.ExplicitAllowlist,
-            Features: []), privateSeed);
+            Features: []), keyPair.PrivateKeySeed);
         var resolver = Substitute.For<ISecretResolver>();
         resolver.ResolveAsync("env:LICENSE", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<string?>(token));
 
         var options = new LicenseOptions { Path = "env:LICENSE", ReloadDelay = TimeSpan.FromMilliseconds(1) };
-        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(publicKey, clock), clock);
+        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(keyPair.PublicKey, clock), clock);
 
         edition.Has(Features.MultiRepo).ShouldBeFalse();
     }
@@ -113,21 +113,21 @@ public sealed class LicenseEditionShould
     [Fact(DisplayName = "Given a token signed with keypair A but verified with keypair B's public key, when edition is read, then it falls back to Community/Absent")]
     public void BadSignatureFallsBackToCommunity()
     {
-        var (_, privateSeedA) = Ed25519LicenseSigner.GenerateKeyPair();
-        var (publicKeyB, _) = Ed25519LicenseSigner.GenerateKeyPair();
+        var keyPairA = Ed25519LicenseSigner.GenerateKeyPair();
+        var keyPairB = Ed25519LicenseSigner.GenerateKeyPair();
         var clock = new MutableFakeTimeProvider(startNow);
 
         var token = Sign(new LicenseGrant(
             Org: "Acme Inc",
             Tier: EditionTiers.Team,
             Expiry: farFuture,
-            Mode: LicenseMode.ImplicitByRank), privateSeedA);
+            Mode: LicenseMode.ImplicitByRank), keyPairA.PrivateKeySeed);
         var resolver = Substitute.For<ISecretResolver>();
         resolver.ResolveAsync("env:LICENSE", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<string?>(token));
 
         var options = new LicenseOptions { Path = "env:LICENSE", ReloadDelay = TimeSpan.FromMilliseconds(1) };
-        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(publicKeyB, clock), clock);
+        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(keyPairB.PublicKey, clock), clock);
 
         edition.Current.ShouldBe(EditionTier.Community);
         edition.Status.ShouldBe(LicenseStatus.Absent);
@@ -136,7 +136,7 @@ public sealed class LicenseEditionShould
     [Fact(DisplayName = "Given the resolver throws SecretRefUnsetException, when edition is read, then it falls back to Community/Absent without throwing")]
     public void ResolverUnsetFallsBack()
     {
-        var (publicKey, _) = Ed25519LicenseSigner.GenerateKeyPair();
+        var keyPair = Ed25519LicenseSigner.GenerateKeyPair();
         var clock = new MutableFakeTimeProvider(startNow);
 
         var resolver = Substitute.For<ISecretResolver>();
@@ -144,7 +144,7 @@ public sealed class LicenseEditionShould
             .Do(_ => throw new SecretRefUnsetException("env:MISSING"));
 
         var options = new LicenseOptions { Path = "env:MISSING", ReloadDelay = TimeSpan.FromMilliseconds(1) };
-        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(publicKey, clock), clock);
+        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(keyPair.PublicKey, clock), clock);
 
         edition.Current.ShouldBe(EditionTier.Community);
         edition.Status.ShouldBe(LicenseStatus.Absent);
@@ -155,20 +155,20 @@ public sealed class LicenseEditionShould
     [Fact(DisplayName = "Given a Team license with Limits override projects=25, when edition.Limit(Projects) is called, then 25 wins over the registry's Team default of 10")]
     public void LimitOverrideWinsOverRegistry()
     {
-        var (publicKey, privateSeed) = Ed25519LicenseSigner.GenerateKeyPair();
+        var keyPair = Ed25519LicenseSigner.GenerateKeyPair();
         var clock = new MutableFakeTimeProvider(startNow);
         var token = Sign(new LicenseGrant(
             Org: "Acme Inc",
             Tier: EditionTiers.Team,
             Expiry: farFuture,
             Mode: LicenseMode.ImplicitByRank,
-            Limits: new Dictionary<string, int> { ["projects"] = 25 }), privateSeed);
+            Limits: new Dictionary<string, int> { ["projects"] = 25 }), keyPair.PrivateKeySeed);
         var resolver = Substitute.For<ISecretResolver>();
         resolver.ResolveAsync("env:LICENSE", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<string?>(token));
 
         var options = new LicenseOptions { Path = "env:LICENSE", ReloadDelay = TimeSpan.FromMilliseconds(1) };
-        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(publicKey, clock), clock);
+        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(keyPair.PublicKey, clock), clock);
 
         edition.Limit(Limits.Projects).ShouldBe(25);
     }
@@ -176,7 +176,7 @@ public sealed class LicenseEditionShould
     [Fact(DisplayName = "Given a license expired past grace, when edition is read, then IsDegraded is true, Status is Expired, but Current still reports the licensed tier")]
     public void ExpiredPastGraceIsDegradedButKeepsTier()
     {
-        var (publicKey, privateSeed) = Ed25519LicenseSigner.GenerateKeyPair();
+        var keyPair = Ed25519LicenseSigner.GenerateKeyPair();
         var grace = TimeSpan.FromHours(1);
         var expiry = new DateTimeOffset(2026, 6, 15, 10, 0, 0, TimeSpan.Zero);
         var nowPastGrace = expiry + grace + TimeSpan.FromMinutes(1);
@@ -186,23 +186,48 @@ public sealed class LicenseEditionShould
             Org: "Acme Inc",
             Tier: EditionTiers.Team,
             Expiry: expiry,
-            Mode: LicenseMode.ImplicitByRank), privateSeed);
+            Mode: LicenseMode.ImplicitByRank), keyPair.PrivateKeySeed);
         var resolver = Substitute.For<ISecretResolver>();
         resolver.ResolveAsync("env:LICENSE", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<string?>(token));
 
         var options = new LicenseOptions { Path = "env:LICENSE", GracePeriod = grace, ReloadDelay = TimeSpan.FromMilliseconds(1) };
-        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(publicKey, clock), clock);
+        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(keyPair.PublicKey, clock), clock);
 
         edition.Status.ShouldBe(LicenseStatus.Expired);
         edition.IsDegraded.ShouldBeTrue();
         edition.Current.ShouldBe(EditionTiers.Team);
     }
 
+    [Fact(DisplayName = "Given a Team license with NotBefore one year in the future, when edition is read, then Status is Absent, Has(paid feature) is false, and Limit(Projects) is the Community default")]
+    public void FutureDatedLicenseDoesNotGrantFeaturesOrLimitsToday()
+    {
+        var keyPair = Ed25519LicenseSigner.GenerateKeyPair();
+        var clock = new MutableFakeTimeProvider(startNow);
+        var token = Sign(new LicenseGrant(
+            Org: "Acme Inc",
+            Tier: EditionTiers.Team,
+            Expiry: farFuture,
+            Mode: LicenseMode.ExplicitAllowlist,
+            Features: ["multi-repo"],
+            Limits: new Dictionary<string, int> { ["projects"] = 25 },
+            NotBefore: startNow.AddYears(1)), keyPair.PrivateKeySeed);
+        var resolver = Substitute.For<ISecretResolver>();
+        resolver.ResolveAsync("env:LICENSE", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<string?>(token));
+
+        var options = new LicenseOptions { Path = "env:LICENSE", ReloadDelay = TimeSpan.FromMilliseconds(1) };
+        var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(keyPair.PublicKey, clock), clock);
+
+        edition.Status.ShouldBe(LicenseStatus.Absent);
+        edition.Has(Features.MultiRepo).ShouldBeFalse();
+        edition.Limit(Limits.Projects).ShouldBe(1);
+    }
+
     [Fact(DisplayName = "Given a real file-backed resolver pointed at a license file, when the file is overwritten and the throttle elapses, then Limit(Projects) reflects the new license")]
     public void HotReloadPicksUpReplacedLicense()
     {
-        var (publicKey, privateSeed) = Ed25519LicenseSigner.GenerateKeyPair();
+        var keyPair = Ed25519LicenseSigner.GenerateKeyPair();
         var tempFile = Path.GetTempFileName();
         try
         {
@@ -211,7 +236,7 @@ public sealed class LicenseEditionShould
                 Tier: EditionTiers.Team,
                 Expiry: farFuture,
                 Mode: LicenseMode.ImplicitByRank,
-                Limits: new Dictionary<string, int> { ["projects"] = 10 }), privateSeed);
+                Limits: new Dictionary<string, int> { ["projects"] = 10 }), keyPair.PrivateKeySeed);
             File.WriteAllText(tempFile, licenseA);
 
             var fileProvider = new FileSecretProvider(
@@ -225,7 +250,7 @@ public sealed class LicenseEditionShould
                 ReloadDelay = TimeSpan.FromSeconds(5),
                 GracePeriod = TimeSpan.FromDays(7),
             };
-            var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(publicKey, clock), clock);
+            var edition = BuildEdition(options, resolver, new Ed25519LicenseProvider(keyPair.PublicKey, clock), clock);
 
             edition.Limit(Limits.Projects).ShouldBe(10);
 
@@ -234,7 +259,7 @@ public sealed class LicenseEditionShould
                 Tier: EditionTiers.Team,
                 Expiry: farFuture,
                 Mode: LicenseMode.ImplicitByRank,
-                Limits: new Dictionary<string, int> { ["projects"] = 50 }), privateSeed);
+                Limits: new Dictionary<string, int> { ["projects"] = 50 }), keyPair.PrivateKeySeed);
             File.WriteAllText(tempFile, licenseB);
 
             clock.SetUtcNow(startNow + options.ReloadDelay + TimeSpan.FromSeconds(1));

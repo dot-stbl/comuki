@@ -36,12 +36,6 @@ public sealed class LicenseEdition(
     TimeProvider clock,
     ILogger<LicenseEdition> logger) : IEdition
 {
-    private readonly IOptionsMonitor<LicenseOptions> optionsMonitor = optionsMonitor;
-    private readonly ISecretResolver secretResolver = secretResolver;
-    private readonly ILicenseProvider licenseProvider = licenseProvider;
-    private readonly TimeProvider clock = clock;
-    private readonly ILogger<LicenseEdition> logger = logger;
-
     private volatile Snapshot snapshot = Snapshot.ForceRefresh();
     private readonly Lock refreshLock = new();
 
@@ -142,7 +136,14 @@ public sealed class LicenseEdition(
         }
 
         var classified = LicenseEvaluator.Classify(license, now, optionsMonitor.CurrentValue.GracePeriod);
-        return new Snapshot(classified.Status, classified.Current, license, now);
+
+        // When the classifier reports Absent (no license at all, or a license whose NotBefore is still in the
+        // future), the verified LicenseKey must NOT travel into the snapshot. Has() and Limit() branch on
+        // `snapshot.License is { } license` to apply the licensed features/limits override, so a future-dated
+        // license would otherwise grant its capabilities today. A null License forces both paths to fall
+        // through to the tier's defaults (the Community row when Current=Community).
+        var snapshotLicense = classified.Status == LicenseStatus.Absent ? null : license;
+        return new Snapshot(classified.Status, classified.Current, snapshotLicense, now);
     }
 
     /// <summary>

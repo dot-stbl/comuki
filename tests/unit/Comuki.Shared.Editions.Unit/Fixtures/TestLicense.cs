@@ -18,7 +18,7 @@ namespace Comuki.Shared.Editions.Unit.Fixtures;
 /// </summary>
 public static class TestLicense
 {
-    private static readonly (byte[] PublicKey, byte[] PrivateKeySeed) keyPair = Ed25519LicenseSigner.GenerateKeyPair();
+    private static readonly Ed25519KeyPair keyPair = Ed25519LicenseSigner.GenerateKeyPair();
 
     /// <summary>The fixture keypair's public half — construct your own <see cref="Ed25519LicenseProvider"/> with this when you need a fresh instance (e.g. to pin a specific clock).</summary>
     public static byte[] PublicKey => keyPair.PublicKey;

@@ -27,12 +27,14 @@ namespace Comuki.Shared.Editions.Licensing.Ed25519;
 public static class Ed25519LicenseSigner
 {
     /// <summary>Generates a fresh Ed25519 keypair via BouncyCastle's secure-random-backed constructor.</summary>
-    /// <returns>The 32-byte public key and 32-byte private-key seed.</returns>
-    public static (byte[] PublicKey, byte[] PrivateKeySeed) GenerateKeyPair()
+    /// <returns>An <see cref="Ed25519KeyPair"/> holding the 32-byte public key and 32-byte private-key seed.</returns>
+    public static Ed25519KeyPair GenerateKeyPair()
     {
         var privateKey = new Ed25519PrivateKeyParameters(new SecureRandom());
 
-        return (privateKey.GeneratePublicKey().GetEncoded(), privateKey.GetEncoded());
+        return new Ed25519KeyPair(
+            PublicKey: privateKey.GeneratePublicKey().GetEncoded(),
+            PrivateKeySeed: privateKey.GetEncoded());
     }
 
     /// <summary>Signs <paramref name="grant"/> with <paramref name="privateKeySeed"/>, returning the two-part token string.</summary>

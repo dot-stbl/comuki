@@ -50,7 +50,8 @@ internal static class WorkItemQueueSql
     public const string ClaimSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET status = '" + Running + "', leased_by = @workerId, lease_until = @leaseUntil, "
-        + "    heartbeat_at = @now, attempt = attempt + 1, updated_at = @now "
+        + "    heartbeat_at = @now, attempt = attempt + 1, updated_at = @now, "
+        + "    generation = (SELECT r.generation FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " r WHERE r.id = work_items.run_id) "
         + "WHERE id IN ( "
         + "    SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "    WHERE status = '" + Queued + "' "
@@ -63,20 +64,22 @@ internal static class WorkItemQueueSql
         + ") "
         + "RETURNING id, run_id, "
         + "(SELECT r.project_id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " r WHERE r.id = work_items.run_id), "
-        + "profile_key, brief, lease_until, attempt";
+        + "profile_key, brief, lease_until, attempt, generation";
 
-    /// <summary>Heartbeat: extend the lease, guarded by owner, running status and an unexpired lease.</summary>
+    /// <summary>Heartbeat: extend the lease, guarded by owner, running status, an unexpired lease, and a matching generation.</summary>
     public const string HeartbeatSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET lease_until = @leaseUntil, heartbeat_at = @now, updated_at = @now "
         + "WHERE id = @workItemId AND leased_by = @workerId "
-        + "  AND status = '" + Running + "' AND lease_until > @now";
+        + "  AND status = '" + Running + "' AND lease_until > @now "
+        + "  AND generation = @generation";
 
     /// <summary>Complete: running item owned by the worker -> succeeded, lease cleared.</summary>
     public const string CompleteSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET status = '" + Succeeded + "', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
         + "WHERE id = @workItemId AND leased_by = @workerId AND status = '" + Running + "' "
+        + "  AND generation = @generation "
         + "RETURNING run_id";
 
     /// <summary>Fail: running item owned by the worker -> failed, lease cleared.</summary>
@@ -84,6 +87,7 @@ internal static class WorkItemQueueSql
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET status = '" + Failed + "', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
         + "WHERE id = @workItemId AND leased_by = @workerId AND status = '" + Running + "' "
+        + "  AND generation = @generation "
         + "RETURNING run_id";
 
     /// <summary>Unblock: every Blocked dependent of a just-succeeded item whose
@@ -198,12 +202,14 @@ internal static class WorkItemQueueSql
     /// <param name="transaction"></param>
     /// <param name="workItemId"></param>
     /// <param name="workerId"></param>
+    /// <param name="generation"></param>
     /// <param name="leaseUntil"></param>
     /// <param name="now"></param>
     public static DbCommand CreateHeartbeatCommand(
         DbTransaction transaction,
         Guid workItemId,
         WorkerId workerId,
+        int generation,
         DateTimeOffset leaseUntil,
         DateTimeOffset now)
     {
@@ -212,6 +218,7 @@ internal static class WorkItemQueueSql
         command.CommandText = HeartbeatSql;
         AddParameter(command, "@workItemId", workItemId);
         AddParameter(command, "@workerId", workerId.Value);
+        AddParameter(command, "@generation", generation);
         AddParameter(command, "@leaseUntil", leaseUntil);
         AddParameter(command, "@now", now);
         return command;
@@ -221,14 +228,16 @@ internal static class WorkItemQueueSql
     /// <param name="transaction"></param>
     /// <param name="workItemId"></param>
     /// <param name="workerId"></param>
+    /// <param name="generation"></param>
     /// <param name="now"></param>
-    public static DbCommand CreateCompleteCommand(DbTransaction transaction, Guid workItemId, WorkerId workerId, DateTimeOffset now)
+    public static DbCommand CreateCompleteCommand(DbTransaction transaction, Guid workItemId, WorkerId workerId, int generation, DateTimeOffset now)
     {
         // boundary: ADO contract — Connection is always set on a live transaction
         var command = transaction.Connection!.CreateCommand();
         command.CommandText = CompleteSql;
         AddParameter(command, "@workItemId", workItemId);
         AddParameter(command, "@workerId", workerId.Value);
+        AddParameter(command, "@generation", generation);
         AddParameter(command, "@now", now);
         return command;
     }
@@ -237,14 +246,16 @@ internal static class WorkItemQueueSql
     /// <param name="transaction"></param>
     /// <param name="workItemId"></param>
     /// <param name="workerId"></param>
+    /// <param name="generation"></param>
     /// <param name="now"></param>
-    public static DbCommand CreateFailCommand(DbTransaction transaction, Guid workItemId, WorkerId workerId, DateTimeOffset now)
+    public static DbCommand CreateFailCommand(DbTransaction transaction, Guid workItemId, WorkerId workerId, int generation, DateTimeOffset now)
     {
         // boundary: ADO contract — Connection is always set on a live transaction
         var command = transaction.Connection!.CreateCommand();
         command.CommandText = FailSql;
         AddParameter(command, "@workItemId", workItemId);
         AddParameter(command, "@workerId", workerId.Value);
+        AddParameter(command, "@generation", generation);
         AddParameter(command, "@now", now);
         return command;
     }
@@ -348,7 +359,8 @@ internal static class WorkItemQueueSql
             reader.GetString(3),
             reader.GetString(4),
             reader.GetFieldValue<DateTimeOffset>(5),
-            reader.GetInt32(6));
+            reader.GetInt32(6),
+            reader.GetInt32(7));
     }
 
     /// <summary>Adds one typed parameter (Npgsql infers uuid/timestamptz/text from the CLR value).</summary>

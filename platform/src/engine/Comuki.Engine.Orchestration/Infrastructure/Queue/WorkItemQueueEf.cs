@@ -68,12 +68,13 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
     public async Task<bool> HeartbeatAsync(
         Guid workItemId,
         WorkerId workerId,
+        int generation,
         DateTimeOffset leaseUntil,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        await using var command = WorkItemQueueSql.CreateHeartbeatCommand(transaction.GetDbTransaction(), workItemId, workerId, leaseUntil, now);
+        await using var command = WorkItemQueueSql.CreateHeartbeatCommand(transaction.GetDbTransaction(), workItemId, workerId, generation, leaseUntil, now);
 
         var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
         if (rowsAffected == 0)
@@ -90,6 +91,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
     public async Task<bool> CompleteAsync(
         Guid workItemId,
         WorkerId workerId,
+        int generation,
         string resultJson,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
@@ -101,7 +103,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
 
         // result is worker-produced JSON — embedded as a structured value, not a string
         return await WorkItemOwnedTransition.ApplyAsync(
-            db, completing: true, workItemId, workerId,
+            db, completing: true, workItemId, workerId, generation,
             JsonDocument.Parse(resultJson).RootElement.Clone(), now, cancellationToken);
     }
 
@@ -109,6 +111,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
     public async Task<bool> FailAsync(
         Guid workItemId,
         WorkerId workerId,
+        int generation,
         string reason,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
@@ -120,7 +123,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db) : IWorkItemQueue
 
         // reason is human text — embedded as a JSON string
         return await WorkItemOwnedTransition.ApplyAsync(
-            db, completing: false, workItemId, workerId, reason, now, cancellationToken);
+            db, completing: false, workItemId, workerId, generation, reason, now, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -143,14 +146,15 @@ file static class WorkItemOwnedTransition
         bool completing,
         Guid workItemId,
         WorkerId workerId,
+        int generation,
         object detail,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await using var command = completing
-            ? WorkItemQueueSql.CreateCompleteCommand(transaction.GetDbTransaction(), workItemId, workerId, now)
-            : WorkItemQueueSql.CreateFailCommand(transaction.GetDbTransaction(), workItemId, workerId, now);
+            ? WorkItemQueueSql.CreateCompleteCommand(transaction.GetDbTransaction(), workItemId, workerId, generation, now)
+            : WorkItemQueueSql.CreateFailCommand(transaction.GetDbTransaction(), workItemId, workerId, generation, now);
 
         RunId? runId = null;
         await using (var reader = await command.ExecuteReaderAsync(cancellationToken))

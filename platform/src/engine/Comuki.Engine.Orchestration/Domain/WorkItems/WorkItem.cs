@@ -51,6 +51,9 @@ public sealed class WorkItem
     /// <summary>How many times the item has been claimed (requeue retries included).</summary>
     public int Attempt { get; private set; }
 
+    /// <summary>Execution generation this item was leased under — stamped at claim time from the owning Run's generation. Compared against a caller-presented generation on every heartbeat/complete/fail; a mismatch means the owning Run was cancelled/superseded since claim (see WS5) and the guarded SQL (WorkItemQueueSql) rejects the call as an ownership miss, mirrored here as a pure, DB-free predicate.</summary>
+    public int Generation { get; private set; }
+
     /// <summary>When the plan applied this item.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -151,10 +154,11 @@ public sealed class WorkItem
     /// <see cref="Attempt"/>. Mirrors the guarded SQL the EF queue claim runs.
     /// </summary>
     /// <param name="workerId"></param>
+    /// <param name="generation"></param>
     /// <param name="leaseUntil"></param>
     /// <param name="now"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    public void AssignLease(WorkerId workerId, DateTimeOffset leaseUntil, DateTimeOffset now)
+    public void AssignLease(WorkerId workerId, int generation, DateTimeOffset leaseUntil, DateTimeOffset now)
     {
         if (Status != WorkItemStatus.Queued)
         {
@@ -162,11 +166,16 @@ public sealed class WorkItem
         }
 
         LeasedBy = workerId;
+        Generation = generation;
         LeaseUntil = leaseUntil;
         HeartbeatAt = now;
         Attempt += 1;
         TransitionTo(WorkItemStatus.Running, now);
     }
+
+    /// <summary>True when <paramref name="generation"/> — the value a heartbeat/complete/fail caller presents — still matches the generation this item was leased under.</summary>
+    /// <param name="generation"></param>
+    public bool MatchesGeneration(int generation) => Generation == generation;
 
     /// <summary>
     /// Extends the lease of a running, leased item. The owner check lives in the

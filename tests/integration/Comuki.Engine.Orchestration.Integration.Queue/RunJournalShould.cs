@@ -137,8 +137,8 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
 
         // fire both completions without awaiting either first — genuine
         // concurrent transactions on separate connections/scopes
-        var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, /*lang=json,strict*/ """{"summary":"a done"}""", baseTime.AddMinutes(1), cancellationToken);
-        var completeB = queueB.CompleteAsync(claimedB.WorkItemId, workerB, /*lang=json,strict*/ """{"summary":"b done"}""", baseTime.AddMinutes(1), cancellationToken);
+        var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, claimedA.Generation, /*lang=json,strict*/ """{"summary":"a done"}""", baseTime.AddMinutes(1), cancellationToken);
+        var completeB = queueB.CompleteAsync(claimedB.WorkItemId, workerB, claimedB.Generation, /*lang=json,strict*/ """{"summary":"b done"}""", baseTime.AddMinutes(1), cancellationToken);
         var resultA = await completeA;
         var resultB = await completeB;
 
@@ -175,8 +175,8 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
         claimedA.ShouldNotBeNull();
         claimedB.ShouldNotBeNull();
 
-        var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, /*lang=json,strict*/ """{"summary":"a done"}""", baseTime.AddMinutes(1), cancellationToken);
-        var failB = queueB.FailAsync(claimedB.WorkItemId, workerB, "boom", baseTime.AddMinutes(1), cancellationToken);
+        var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, claimedA.Generation, /*lang=json,strict*/ """{"summary":"a done"}""", baseTime.AddMinutes(1), cancellationToken);
+        var failB = queueB.FailAsync(claimedB.WorkItemId, workerB, claimedB.Generation, "boom", baseTime.AddMinutes(1), cancellationToken);
         var resultA = await completeA;
         var resultB = await failB;
 
@@ -238,7 +238,7 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
         clock.Advance(TimeSpan.FromSeconds(31).Add(TimeSpan.FromSeconds(31)));
 
         // Race: complete A and reap-fail B concurrently on separate scopes/connections.
-        var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, /*lang=json,strict*/ """{"summary":"a done"}""", clock.GetUtcNow(), cancellationToken);
+        var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, claimedA.Generation, /*lang=json,strict*/ """{"summary":"a done"}""", clock.GetUtcNow(), cancellationToken);
         var reapSweep = reaper.ReapAsync(cancellationToken);
         var resultA = await completeA;
         var reaped = await reapSweep;

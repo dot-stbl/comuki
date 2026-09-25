@@ -177,7 +177,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         claimed.ShouldNotBeNull();
 
         clock.Advance(TimeSpan.FromMinutes(1));
-        var extended = await queue.HeartbeatAsync(seeded.Id, workerId, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
+        var extended = await queue.HeartbeatAsync(seeded.Id, workerId, claimed.Generation, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
         extended.ShouldBeTrue();
 
         // past the ORIGINAL lease (t0+2m) but within the extended one (t0+3m)
@@ -198,9 +198,10 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
 
-        var stranger = await queue.HeartbeatAsync(seeded.Id, WorkerId.New(), claimAt.AddMinutes(4), claimAt.AddSeconds(30), cancellationToken);
+        var stranger = await queue.HeartbeatAsync(seeded.Id, WorkerId.New(), claimed.Generation, claimAt.AddMinutes(4), claimAt.AddSeconds(30), cancellationToken);
 
         stranger.ShouldBeFalse();
     }
@@ -213,10 +214,11 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
 
         clock.Advance(TimeSpan.FromMinutes(3));
-        var late = await queue.HeartbeatAsync(seeded.Id, workerId, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
+        var late = await queue.HeartbeatAsync(seeded.Id, workerId, claimed.Generation, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
 
         late.ShouldBeFalse();
     }
@@ -232,13 +234,13 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
         claimed.ShouldNotBeNull();
 
-        var stolen = await queue.CompleteAsync(seeded.Id, WorkerId.New(), /*lang=json,strict*/ """{"summary":"not mine"}""", claimAt.AddSeconds(30), cancellationToken);
+        var stolen = await queue.CompleteAsync(seeded.Id, WorkerId.New(), claimed.Generation, /*lang=json,strict*/ """{"summary":"not mine"}""", claimAt.AddSeconds(30), cancellationToken);
         stolen.ShouldBeFalse();
 
-        var completed = await queue.CompleteAsync(seeded.Id, workerId, /*lang=json,strict*/ """{"summary":"done","filesChanged":2}""", claimAt.AddMinutes(1), cancellationToken);
+        var completed = await queue.CompleteAsync(seeded.Id, workerId, claimed.Generation, /*lang=json,strict*/ """{"summary":"done","filesChanged":2}""", claimAt.AddMinutes(1), cancellationToken);
         completed.ShouldBeTrue();
 
-        var replayed = await queue.CompleteAsync(seeded.Id, workerId, /*lang=json,strict*/ """{"summary":"again"}""", claimAt.AddMinutes(1), cancellationToken);
+        var replayed = await queue.CompleteAsync(seeded.Id, workerId, claimed.Generation, /*lang=json,strict*/ """{"summary":"again"}""", claimAt.AddMinutes(1), cancellationToken);
         replayed.ShouldBeFalse();
 
         var item = (await LoadItemAsync(seeded.Id)).ShouldNotBeNull();
@@ -257,6 +259,27 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         payload.RootElement.GetProperty("detail").GetProperty("summary").GetString().ShouldBe("done", transition.Payload);
     }
 
+    [Fact(DisplayName = "Given a claimed item, when completed at a stale generation, then it is rejected while the current generation still succeeds")]
+    public async Task RejectStaleGenerationOnCompleteAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var seeded = await SeedQueuedItemAsync();
+        using var scope = CreateScope();
+        var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
+        var workerId = WorkerId.New();
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
+
+        var stale = await queue.CompleteAsync(seeded.Id, workerId, claimed.Generation + 1, /*lang=json,strict*/ """{"summary":"stale"}""", claimAt.AddSeconds(30), cancellationToken);
+        stale.ShouldBeFalse();
+
+        var item = (await LoadItemAsync(seeded.Id)).ShouldNotBeNull();
+        item.Status.ShouldBe(WorkItemStatus.Running);
+
+        var current = await queue.CompleteAsync(seeded.Id, workerId, claimed.Generation, /*lang=json,strict*/ """{"summary":"done"}""", claimAt.AddSeconds(31), cancellationToken);
+        current.ShouldBeTrue();
+    }
+
     [Fact(DisplayName = "Given a failed item, when the owner reports the failure, then the reason lands in the journal")]
     public async Task RecordFailureReasonInJournalAsync()
     {
@@ -265,9 +288,10 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
 
-        var failed = await queue.FailAsync(seeded.Id, workerId, "OOM killed", claimAt.AddSeconds(30), cancellationToken);
+        var failed = await queue.FailAsync(seeded.Id, workerId, claimed.Generation, "OOM killed", claimAt.AddSeconds(30), cancellationToken);
 
         failed.ShouldBeTrue();
         var item = (await LoadItemAsync(seeded.Id)).ShouldNotBeNull();
@@ -396,7 +420,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         claimed.ShouldNotBeNull();
         claimed.WorkItemId.ShouldBe(prerequisite.Id);
 
-        var completed = await queue.CompleteAsync(prerequisite.Id, workerId, /*lang=json,strict*/ """{"summary":"done"}""", claimAt.AddMinutes(1), cancellationToken);
+        var completed = await queue.CompleteAsync(prerequisite.Id, workerId, claimed.Generation, /*lang=json,strict*/ """{"summary":"done"}""", claimAt.AddMinutes(1), cancellationToken);
 
         completed.ShouldBeTrue();
         var unblocked = (await LoadItemAsync(dependent.Id)).ShouldNotBeNull();
@@ -415,9 +439,10 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
+        claimed.ShouldNotBeNull();
 
-        var failed = await queue.FailAsync(prerequisite.Id, workerId, "boom", claimAt.AddMinutes(1), cancellationToken);
+        var failed = await queue.FailAsync(prerequisite.Id, workerId, claimed.Generation, "boom", claimAt.AddMinutes(1), cancellationToken);
 
         failed.ShouldBeTrue();
         var stillBlocked = (await LoadItemAsync(dependent.Id)).ShouldNotBeNull();
@@ -448,7 +473,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         var workerA = WorkerId.New();
         var claimedA = await queue.ClaimAsync(workerA, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
         claimedA.ShouldNotBeNull();
-        await queue.CompleteAsync(prerequisiteA.Id, workerA, /*lang=json,strict*/ """{"summary":"a done"}""", claimAt.AddMinutes(1), cancellationToken);
+        await queue.CompleteAsync(prerequisiteA.Id, workerA, claimedA.Generation, /*lang=json,strict*/ """{"summary":"a done"}""", claimAt.AddMinutes(1), cancellationToken);
 
         // Only A succeeded so far — B is still Queued, dependent must stay Blocked.
         (await LoadItemAsync(dependent.Id)).ShouldNotBeNull().Status.ShouldBe(WorkItemStatus.Blocked);
@@ -457,7 +482,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         var claimedB = await queue.ClaimAsync(workerB, ImplementLabels, claimAt.AddMinutes(3), claimAt.AddMinutes(1), cancellationToken);
         claimedB.ShouldNotBeNull();
         claimedB.WorkItemId.ShouldBe(prerequisiteB.Id);
-        await queue.CompleteAsync(prerequisiteB.Id, workerB, /*lang=json,strict*/ """{"summary":"b done"}""", claimAt.AddMinutes(2), cancellationToken);
+        await queue.CompleteAsync(prerequisiteB.Id, workerB, claimedB.Generation, /*lang=json,strict*/ """{"summary":"b done"}""", claimAt.AddMinutes(2), cancellationToken);
 
         // Both prerequisites Succeeded now — dependent unblocks.
         (await LoadItemAsync(dependent.Id)).ShouldNotBeNull().Status.ShouldBe(WorkItemStatus.Queued);

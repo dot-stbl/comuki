@@ -35,6 +35,11 @@ public sealed class RunConfiguration : IEntityTypeConfiguration<Run>
             .IsRequired()
             .HasDefaultValue(RunTrustClass.Supervised);
 
+        builder.Property(static run => run.Generation)
+            .HasColumnName("generation")
+            .IsRequired()
+            .HasDefaultValue(1);
+
         builder.Property(static run => run.CreatedAt)
             .HasColumnName("created_at");
 

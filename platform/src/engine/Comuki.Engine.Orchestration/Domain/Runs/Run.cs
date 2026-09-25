@@ -38,6 +38,9 @@ public sealed class Run
     /// </summary>
     public RunTrustClass TrustClass { get; private set; }
 
+    /// <summary>Execution generation — starts at 1; a future change bumps this on cancel/supersede to fence live executions (see WS5). Not mutated by this change.</summary>
+    public int Generation { get; private set; }
+
     /// <summary>Creates a run in <see cref="RunStatus.Queued"/> — the only legal entry status.</summary>
     /// <param name="projectId"></param>
     /// <param name="now"></param>
@@ -49,6 +52,7 @@ public sealed class Run
             ProjectId = projectId,
             Status = RunStatus.Queued,
             TrustClass = RunTrustClass.Supervised,
+            Generation = 1,
             CreatedAt = now,
             UpdatedAt = now,
         };

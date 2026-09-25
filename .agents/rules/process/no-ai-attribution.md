@@ -43,6 +43,34 @@ always: true
 | Комментарии в коде | Вручную. `// написано Claude` — мусор, удалять |
 | Документация | Вручную. Не подписывать `.agents/**`, `README.md` и прочее моделью |
 | Существующие коммиты | `node scripts/commit-lint.mjs --range <A..B>` — ручной аудит. Здесь байлайн это **ошибка**, а не автофикс: чужой запушенный коммит не переписывают |
+| CI (сервер, автоматически) | `scripts/ci/no-ai-attribution.mjs --range <base>..<head>` — джоба в `.github/workflows/ci.yml` / GitLab. Байлайн здесь — **жёсткая ошибка** (exit 1), не автофикс, и не обходится `--no-verify` |
+
+## Слои защиты
+
+Правило применяется на двух независимых слоях — локальный обходится, серверный нет.
+
+| Слой | Где | Что проверяет | Обходимо? |
+|------|-----|---------------|-----------|
+| 1 — commit-msg (локально) | `scripts/commit-lint.mjs --file` через `scripts/hooks/commit-msg` | Текст сообщения коммита — вырезает трейлер/фрагмент и предупреждает в stderr, коммит не блокируется | Да — `git commit --no-verify` |
+| 2 — CI (сервер) | `scripts/ci/no-ai-attribution.mjs --range <base>..<head>` | Каждый коммит в диапазоне — subject/body/trailers + имя и почта author/committer (вендорские токены); опционально `--text-file` для описания PR/MR | Нет — джоба падает, `--no-verify` тут не действует |
+
+GitHub: `.github/workflows/ci.yml`, job на `pull_request` (`base.sha..head.sha` плюс описание PR) и на `push` (`before..after`). GitLab: `deploy/hybrid/**` — отдельный оверлей; точный job-сниппет лежит в `scripts/ci/README.md`, координатор вставляет его туда руками.
+
+Один источник правды на паттерны — `scripts/commit-lint.mjs` экспортирует `AI_VENDORS`, `AI_EMAIL_DOMAINS`, `alternation`, `stripAttribution`; `scripts/ci/no-ai-attribution.mjs` импортирует их, а не дублирует.
+
+## Атрибуция Comuki — не байлайн модели
+
+Comuki оркестрирует, а не генерирует контент как модель — коммит от воркера несёт провенанс запуска, а не заявление об авторстве.
+
+| Что | Пример |
+|-----|--------|
+| Бот-автор коммита | `Comuki <...>` или GitHub App `comuki[bot]` |
+| Трейлер версии | `Generated-by: Comuki vX.Y.Z` |
+| Трейлер запуска | `Comuki-Run: <id>` |
+| Трейлер миссии | `Comuki-Mission: <id>` |
+| Трейлер заказчика | `Requested-by: <human>` |
+
+`scripts/ci/no-ai-attribution.mjs` аллоулистит это явно (`isComukiIdentity`, `isComukiTrailerLine`, `COMUKI_NAMESPACED_TRAILER_KEYS`) — осознанное решение, а не совпадение с текущим списком вендоров, переживающее его расширение. `generated-by:` аллоулистится только когда значение называет Comuki — сам ключ не namespaced, поэтому `Generated-by: <другой вендор>` по-прежнему ловится.
 
 ## Отключить на источнике
 
@@ -101,3 +129,5 @@ git commit --no-verify
 - `scripts/commit-lint.test.mjs` — `node --test`, покрывает каждый паттерн
 - `scripts/hooks/commit-msg` — сам хук
 - `.claude/settings.json` — `includeCoAuthoredBy: false`
+- `scripts/ci/no-ai-attribution.mjs` — server-side layer, reuses this file's patterns via commit-lint.mjs's exports
+- `scripts/ci/no-ai-attribution.test.mjs` — покрывает Comuki allowlist отдельным describe-блоком

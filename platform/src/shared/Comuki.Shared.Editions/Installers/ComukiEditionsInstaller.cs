@@ -17,7 +17,7 @@ namespace Comuki.Shared.Editions.Installers;
 /// boot loudly via <see cref="LicenseOptionsValidator"/>;
 /// present-but-cryptographically-invalid license degrades to
 /// Community at runtime with a logged warning (see
-/// <see cref="Edition.LicenseEdition"/>) — neither bad path crashes
+/// <see cref="LicenseEdition"/>) — neither bad path crashes
 /// the host.
 /// <para>
 /// Deliberately NOT wired into <c>Comuki.Host</c>'s <c>HostComposer</c>
@@ -41,7 +41,7 @@ public static class ComukiEditionsInstaller
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<LicenseOptions>, LicenseOptionsValidator>();
         services.TryAddSingleton(TimeProvider.System);
-        services.AddSingleton<ILicenseProvider>(_ => new Ed25519LicenseProvider(ProductionEd25519PublicKey.Value));
+        services.AddSingleton<ILicenseProvider>(static _ => new Ed25519LicenseProvider(ProductionEd25519PublicKey.Value));
         services.AddSingleton<IEdition, LicenseEdition>();
 
         return services;

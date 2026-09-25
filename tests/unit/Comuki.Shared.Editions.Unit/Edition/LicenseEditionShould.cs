@@ -1,4 +1,3 @@
-using Comuki.Shared.Editions;
 using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Editions.Licensing;
 using Comuki.Shared.Editions.Licensing.Ed25519;
@@ -28,11 +27,13 @@ namespace Comuki.Shared.Editions.Unit.Edition;
 /// </summary>
 public sealed class LicenseEditionShould
 {
-    private static readonly DateTimeOffset StartNow = new(2026, 6, 15, 12, 0, 0, TimeSpan.Zero);
-    private static readonly DateTimeOffset FarFuture = new(2099, 12, 31, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset startNow = new(2026, 6, 15, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset farFuture = new(2099, 12, 31, 0, 0, 0, TimeSpan.Zero);
 
-    private static IOptionsMonitor<LicenseOptions> MonitorFor(LicenseOptions options) =>
-        new StaticOptionsMonitor<LicenseOptions>(options);
+    private static IOptionsMonitor<LicenseOptions> MonitorFor(LicenseOptions options)
+    {
+        return new StaticOptionsMonitor<LicenseOptions>(options);
+    }
 
     private static LicenseEdition BuildEdition(
         LicenseOptions options,
@@ -52,7 +53,7 @@ public sealed class LicenseEditionShould
     public void NoPathIsCommunityAbsent()
     {
         var (publicKey, _) = Ed25519LicenseSigner.GenerateKeyPair();
-        var clock = new MutableFakeTimeProvider(StartNow);
+        var clock = new MutableFakeTimeProvider(startNow);
 
         var resolver = Substitute.For<ISecretResolver>();
         var edition = BuildEdition(new LicenseOptions(), resolver, new Ed25519LicenseProvider(publicKey, clock), clock);
@@ -68,11 +69,11 @@ public sealed class LicenseEditionShould
     public void TeamLicenseImplicitByRankCoversRankedFeature()
     {
         var (publicKey, privateSeed) = Ed25519LicenseSigner.GenerateKeyPair();
-        var clock = new MutableFakeTimeProvider(StartNow);
+        var clock = new MutableFakeTimeProvider(startNow);
         var token = Sign(new LicenseGrant(
             Org: "Acme Inc",
             Tier: EditionTiers.Team,
-            Expiry: FarFuture,
+            Expiry: farFuture,
             Mode: LicenseMode.ImplicitByRank,
             Features: ["multi-repo"]), privateSeed);
         var resolver = Substitute.For<ISecretResolver>();
@@ -92,11 +93,11 @@ public sealed class LicenseEditionShould
     public void TeamLicenseExplicitAllowlistEmptyFeaturesDenies()
     {
         var (publicKey, privateSeed) = Ed25519LicenseSigner.GenerateKeyPair();
-        var clock = new MutableFakeTimeProvider(StartNow);
+        var clock = new MutableFakeTimeProvider(startNow);
         var token = Sign(new LicenseGrant(
             Org: "Acme Inc",
             Tier: EditionTiers.Team,
-            Expiry: FarFuture,
+            Expiry: farFuture,
             Mode: LicenseMode.ExplicitAllowlist,
             Features: []), privateSeed);
         var resolver = Substitute.For<ISecretResolver>();
@@ -114,12 +115,12 @@ public sealed class LicenseEditionShould
     {
         var (_, privateSeedA) = Ed25519LicenseSigner.GenerateKeyPair();
         var (publicKeyB, _) = Ed25519LicenseSigner.GenerateKeyPair();
-        var clock = new MutableFakeTimeProvider(StartNow);
+        var clock = new MutableFakeTimeProvider(startNow);
 
         var token = Sign(new LicenseGrant(
             Org: "Acme Inc",
             Tier: EditionTiers.Team,
-            Expiry: FarFuture,
+            Expiry: farFuture,
             Mode: LicenseMode.ImplicitByRank), privateSeedA);
         var resolver = Substitute.For<ISecretResolver>();
         resolver.ResolveAsync("env:LICENSE", Arg.Any<CancellationToken>())
@@ -136,7 +137,7 @@ public sealed class LicenseEditionShould
     public void ResolverUnsetFallsBack()
     {
         var (publicKey, _) = Ed25519LicenseSigner.GenerateKeyPair();
-        var clock = new MutableFakeTimeProvider(StartNow);
+        var clock = new MutableFakeTimeProvider(startNow);
 
         var resolver = Substitute.For<ISecretResolver>();
         resolver.When(x => x.ResolveAsync("env:MISSING", Arg.Any<CancellationToken>()))
@@ -155,11 +156,11 @@ public sealed class LicenseEditionShould
     public void LimitOverrideWinsOverRegistry()
     {
         var (publicKey, privateSeed) = Ed25519LicenseSigner.GenerateKeyPair();
-        var clock = new MutableFakeTimeProvider(StartNow);
+        var clock = new MutableFakeTimeProvider(startNow);
         var token = Sign(new LicenseGrant(
             Org: "Acme Inc",
             Tier: EditionTiers.Team,
-            Expiry: FarFuture,
+            Expiry: farFuture,
             Mode: LicenseMode.ImplicitByRank,
             Limits: new Dictionary<string, int> { ["projects"] = 25 }), privateSeed);
         var resolver = Substitute.For<ISecretResolver>();
@@ -208,7 +209,7 @@ public sealed class LicenseEditionShould
             var licenseA = Sign(new LicenseGrant(
                 Org: "Acme Inc",
                 Tier: EditionTiers.Team,
-                Expiry: FarFuture,
+                Expiry: farFuture,
                 Mode: LicenseMode.ImplicitByRank,
                 Limits: new Dictionary<string, int> { ["projects"] = 10 }), privateSeed);
             File.WriteAllText(tempFile, licenseA);
@@ -217,7 +218,7 @@ public sealed class LicenseEditionShould
                 Microsoft.Extensions.Options.Options.Create(new FileSecretOptions { Enabled = true }));
             var resolver = new CompositeSecretResolver([fileProvider]);
 
-            var clock = new MutableFakeTimeProvider(StartNow);
+            var clock = new MutableFakeTimeProvider(startNow);
             var options = new LicenseOptions
             {
                 Path = $"file:{tempFile}",
@@ -231,12 +232,12 @@ public sealed class LicenseEditionShould
             var licenseB = Sign(new LicenseGrant(
                 Org: "Acme Inc",
                 Tier: EditionTiers.Team,
-                Expiry: FarFuture,
+                Expiry: farFuture,
                 Mode: LicenseMode.ImplicitByRank,
                 Limits: new Dictionary<string, int> { ["projects"] = 50 }), privateSeed);
             File.WriteAllText(tempFile, licenseB);
 
-            clock.SetUtcNow(StartNow + options.ReloadDelay + TimeSpan.FromSeconds(1));
+            clock.SetUtcNow(startNow + options.ReloadDelay + TimeSpan.FromSeconds(1));
 
             edition.Limit(Limits.Projects).ShouldBe(50);
         }
@@ -250,12 +251,19 @@ public sealed class LicenseEditionShould
     }
 
     /// <summary>Mutable fake clock — distinct from the fixed-constructor one in <c>Ed25519LicenseProviderShould</c>.</summary>
-    private sealed class MutableFakeTimeProvider : TimeProvider
+    private sealed class MutableFakeTimeProvider(DateTimeOffset now) : TimeProvider
     {
-        private DateTimeOffset now;
-        public MutableFakeTimeProvider(DateTimeOffset now) { this.now = now; }
-        public override DateTimeOffset GetUtcNow() => now;
-        public void SetUtcNow(DateTimeOffset value) => now = value;
+        private DateTimeOffset now = now;
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            return now;
+        }
+
+        public void SetUtcNow(DateTimeOffset value)
+        {
+            now = value;
+        }
     }
 
     /// <summary>
@@ -265,12 +273,17 @@ public sealed class LicenseEditionShould
     /// property dance for test options that have no live-reload
     /// semantics to exercise.
     /// </summary>
-    private sealed class StaticOptionsMonitor<T> : IOptionsMonitor<T>
+    private sealed class StaticOptionsMonitor<T>(T value) : IOptionsMonitor<T>
     {
-        private readonly T value;
-        public StaticOptionsMonitor(T value) { this.value = value; }
-        public T CurrentValue => value;
-        public T Get(string? name) => value;
-        public IDisposable? OnChange(Action<T, string?> listener) => null;
+        public T CurrentValue { get; } = value;
+        public T Get(string? name)
+        {
+            return CurrentValue;
+        }
+
+        public IDisposable? OnChange(Action<T, string?> listener)
+        {
+            return null;
+        }
     }
 }

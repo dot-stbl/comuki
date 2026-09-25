@@ -58,7 +58,7 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
             throw new LicenseInvalidException("malformed token shape");
         }
 
-        if (!Ed25519SignatureVerifier.Verify(this.publicKey, payloadBytes, signatureBytes))
+        if (!Ed25519SignatureVerifier.Verify(publicKey, payloadBytes, signatureBytes))
         {
             throw new LicenseInvalidException("signature mismatch");
         }
@@ -87,9 +87,9 @@ public sealed class Ed25519LicenseProvider : ILicenseProvider
             NotBefore: p.NotBefore,
             Expiry: p.Expiry.Value,
             Mode: mode,
-            Features: p.Features ?? (IReadOnlyCollection<string>)Array.Empty<string>(),
-            Limits: p.Limits ?? (IReadOnlyDictionary<string, int>)new Dictionary<string, int>(),
-            VerifiedAt: this.clock.GetUtcNow(),
-            VerifiedWith: Ed25519PublicKeyFingerprint.Compute(this.publicKey));
+            Features: p.Features ?? [],
+            Limits: p.Limits ?? new Dictionary<string, int>(),
+            VerifiedAt: clock.GetUtcNow(),
+            VerifiedWith: Ed25519PublicKeyFingerprint.Compute(publicKey));
     }
 }

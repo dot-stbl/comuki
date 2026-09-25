@@ -13,10 +13,11 @@ namespace Comuki.Shared.Editions.Unit.Licensing;
 /// </summary>
 public sealed class LicenseEvaluatorShould
 {
-    private static readonly TimeSpan GracePeriod = TimeSpan.FromDays(7);
+    private static readonly TimeSpan gracePeriod = TimeSpan.FromDays(7);
 
-    private static LicenseKey SampleKey(DateTimeOffset? notBefore = null) =>
-        new(
+    private static LicenseKey SampleKey(DateTimeOffset? notBefore = null)
+    {
+        return new(
             Tier: EditionTiers.Team,
             Org: "Acme Inc",
             NotBefore: notBefore,
@@ -26,11 +27,12 @@ public sealed class LicenseEvaluatorShould
             Limits: new Dictionary<string, int>(),
             VerifiedAt: new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             VerifiedWith: "0123456789abcdef");
+    }
 
     [Fact(DisplayName = "Given a null license, when Classify runs, then it reports Absent / Community")]
     public void NullLicenseIsAbsentCommunity()
     {
-        var result = LicenseEvaluator.Classify(null, new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero), GracePeriod);
+        var result = LicenseEvaluator.Classify(null, new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero), gracePeriod);
 
         result.Status.ShouldBe(LicenseStatus.Absent);
         result.Current.ShouldBe(EditionTier.Community);
@@ -42,7 +44,7 @@ public sealed class LicenseEvaluatorShould
         var key = SampleKey(notBefore: new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var now = new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero);
 
-        var result = LicenseEvaluator.Classify(key, now, GracePeriod);
+        var result = LicenseEvaluator.Classify(key, now, gracePeriod);
 
         result.Status.ShouldBe(LicenseStatus.Absent);
         result.Current.ShouldBe(EditionTier.Community);
@@ -54,7 +56,7 @@ public sealed class LicenseEvaluatorShould
         var key = SampleKey();
         var now = new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero);
 
-        var result = LicenseEvaluator.Classify(key, now, GracePeriod);
+        var result = LicenseEvaluator.Classify(key, now, gracePeriod);
 
         result.Status.ShouldBe(LicenseStatus.Valid);
         result.Current.ShouldBe(EditionTiers.Team);
@@ -66,7 +68,7 @@ public sealed class LicenseEvaluatorShould
         var key = SampleKey();
         var now = new DateTimeOffset(2027, 1, 4, 0, 0, 0, TimeSpan.Zero);
 
-        var result = LicenseEvaluator.Classify(key, now, GracePeriod);
+        var result = LicenseEvaluator.Classify(key, now, gracePeriod);
 
         result.Status.ShouldBe(LicenseStatus.Grace);
         result.Current.ShouldBe(EditionTiers.Team);
@@ -78,7 +80,7 @@ public sealed class LicenseEvaluatorShould
         var key = SampleKey();
         var now = new DateTimeOffset(2027, 2, 1, 0, 0, 0, TimeSpan.Zero);
 
-        var result = LicenseEvaluator.Classify(key, now, GracePeriod);
+        var result = LicenseEvaluator.Classify(key, now, gracePeriod);
 
         result.Status.ShouldBe(LicenseStatus.Expired);
         result.Current.ShouldBe(EditionTiers.Team);

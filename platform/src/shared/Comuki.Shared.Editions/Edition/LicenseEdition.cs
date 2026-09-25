@@ -22,37 +22,28 @@ namespace Comuki.Shared.Editions.Edition;
 /// are logged at <c>Warning</c> and degrade to
 /// <see cref="LicenseStatus.Absent"/> /
 /// <see cref="EditionTier.Community"/> — they are not boot failures.
-/// Boot-time shape checks are <see cref="Options.LicenseOptionsValidator"/>'s
+/// Boot-time shape checks are <see cref="LicenseOptionsValidator"/>'s
 /// job; this type's job is graceful runtime degradation when the
 /// operator replaces a license, lets it expire, or has a typo in the
 /// path that the boot-time check missed.
 /// </para>
 /// </summary>
-public sealed class LicenseEdition : IEdition
+/// <remarks>DI constructor in dependencies-first order matching the rest of this repo's DI classes.</remarks>
+public sealed class LicenseEdition(
+    IOptionsMonitor<LicenseOptions> optionsMonitor,
+    ISecretResolver secretResolver,
+    ILicenseProvider licenseProvider,
+    TimeProvider clock,
+    ILogger<LicenseEdition> logger) : IEdition
 {
-    private readonly IOptionsMonitor<LicenseOptions> optionsMonitor;
-    private readonly ISecretResolver secretResolver;
-    private readonly ILicenseProvider licenseProvider;
-    private readonly TimeProvider clock;
-    private readonly ILogger<LicenseEdition> logger;
+    private readonly IOptionsMonitor<LicenseOptions> optionsMonitor = optionsMonitor;
+    private readonly ISecretResolver secretResolver = secretResolver;
+    private readonly ILicenseProvider licenseProvider = licenseProvider;
+    private readonly TimeProvider clock = clock;
+    private readonly ILogger<LicenseEdition> logger = logger;
 
     private volatile Snapshot snapshot = Snapshot.ForceRefresh();
     private readonly Lock refreshLock = new();
-
-    /// <summary>DI constructor in dependencies-first order matching the rest of this repo's DI classes.</summary>
-    public LicenseEdition(
-        IOptionsMonitor<LicenseOptions> optionsMonitor,
-        ISecretResolver secretResolver,
-        ILicenseProvider licenseProvider,
-        TimeProvider clock,
-        ILogger<LicenseEdition> logger)
-    {
-        this.optionsMonitor = optionsMonitor;
-        this.secretResolver = secretResolver;
-        this.licenseProvider = licenseProvider;
-        this.clock = clock;
-        this.logger = logger;
-    }
 
     /// <inheritdoc />
     public EditionTier Current => EnsureFresh().Current;
@@ -132,9 +123,15 @@ public sealed class LicenseEdition : IEdition
         {
             // intentional sync-over-async: IEdition has no async surface and
             // the consumer is a getter on every Has()/Limit() call. The same
-            // shape lives in the validator path above.
+            // shape lives in the validator path above. VSTHRD102 normally
+            // reserves blocking calls for public entry points; ComputeSnapshot
+            // is internal but IS the entry point for this exact concern (no
+            // async caller exists anywhere above it in this type), so the
+            // warning is suppressed rather than routed around.
 #pragma warning disable VSTHRD002
+#pragma warning disable VSTHRD102
             var resolved = secretResolver.ResolveAsync(path).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD102
 #pragma warning restore VSTHRD002
             license = licenseProvider.Verify(resolved!);
         }
@@ -164,6 +161,9 @@ public sealed class LicenseEdition : IEdition
     internal sealed record Snapshot(LicenseStatus Status, EditionTier Current, LicenseKey? License, DateTimeOffset CheckedAt)
     {
         /// <summary>An obviously-stale sentinel whose <see cref="CheckedAt"/> guarantees the first read always recomputes.</summary>
-        public static Snapshot ForceRefresh() => new(LicenseStatus.Absent, EditionTier.Community, null, DateTimeOffset.MinValue);
+        public static Snapshot ForceRefresh()
+        {
+            return new(LicenseStatus.Absent, EditionTier.Community, null, DateTimeOffset.MinValue);
+        }
     }
 }

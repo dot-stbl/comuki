@@ -17,12 +17,15 @@ namespace Comuki.Shared.Editions.Unit.Options;
 /// </summary>
 public sealed class LicenseOptionsValidatorShould
 {
-    private static LicenseOptions ValidOptions(string? path = null) => new()
+    private static LicenseOptions ValidOptions(string? path = null)
     {
-        Path = path,
-        GracePeriod = TimeSpan.FromDays(7),
-        ReloadDelay = TimeSpan.FromSeconds(5),
-    };
+        return new()
+        {
+            Path = path,
+            GracePeriod = TimeSpan.FromDays(7),
+            ReloadDelay = TimeSpan.FromSeconds(5),
+        };
+    }
 
     private static ValidateOptionsResult Validate(LicenseOptions options, ISecretResolver resolver)
     {
@@ -57,12 +60,12 @@ public sealed class LicenseOptionsValidatorShould
     {
         var resolver = Substitute.For<ISecretResolver>();
         resolver.ResolveAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
-            .Returns<string?>(_ => throw new SecretRefUnsetException("env:MISSING"));
+            .Returns<string?>(static _ => throw new SecretRefUnsetException("env:MISSING"));
 
         var result = Validate(ValidOptions(path: "env:MISSING"), resolver);
 
         result.Failed.ShouldBeTrue();
-        result.Failures.ShouldContain(f => f.Contains("env:MISSING"));
+        result.Failures.ShouldContain(static f => f.Contains("env:MISSING"));
     }
 
     [Fact(DisplayName = "Given a Path whose scheme the resolver rejects as malformed, when Validate runs, then fails and the failure message contains the path")]
@@ -70,12 +73,12 @@ public sealed class LicenseOptionsValidatorShould
     {
         var resolver = Substitute.For<ISecretResolver>();
         resolver.ResolveAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
-            .Returns<string?>(_ => throw new SecretRefFormatException("scheme bogus is unsupported"));
+            .Returns<string?>(static _ => throw new SecretRefFormatException("scheme bogus is unsupported"));
 
         var result = Validate(ValidOptions(path: "bogus:ref"), resolver);
 
         result.Failed.ShouldBeTrue();
-        result.Failures.ShouldContain(f => f.Contains("bogus:ref"));
+        result.Failures.ShouldContain(static f => f.Contains("bogus:ref"));
     }
 
     [Fact(DisplayName = "Given a negative GracePeriod, when Validate runs, then fails")]
@@ -90,7 +93,7 @@ public sealed class LicenseOptionsValidatorShould
         }, resolver);
 
         result.Failed.ShouldBeTrue();
-        result.Failures.ShouldContain(f => f.Contains("GracePeriod"));
+        result.Failures.ShouldContain(static f => f.Contains("GracePeriod"));
     }
 
     [Fact(DisplayName = "Given a zero ReloadDelay, when Validate runs, then fails")]
@@ -105,7 +108,7 @@ public sealed class LicenseOptionsValidatorShould
         }, resolver);
 
         result.Failed.ShouldBeTrue();
-        result.Failures.ShouldContain(f => f.Contains("ReloadDelay"));
+        result.Failures.ShouldContain(static f => f.Contains("ReloadDelay"));
     }
 
     [Fact(DisplayName = "Given a negative ReloadDelay, when Validate runs, then fails")]
@@ -120,6 +123,6 @@ public sealed class LicenseOptionsValidatorShould
         }, resolver);
 
         result.Failed.ShouldBeTrue();
-        result.Failures.ShouldContain(f => f.Contains("ReloadDelay"));
+        result.Failures.ShouldContain(static f => f.Contains("ReloadDelay"));
     }
 }

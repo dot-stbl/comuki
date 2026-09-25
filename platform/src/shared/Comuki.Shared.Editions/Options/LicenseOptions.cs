@@ -17,7 +17,7 @@ public sealed class LicenseOptions
     /// <summary>
     /// Operator-facing secret reference (e.g. <c>file:/etc/comuki/license.key</c>,
     /// <c>env:COMUKI_LICENSE</c>), same shape
-    /// <see cref="Comuki.Shared.Kernel.Secrets.ISecretResolver.ResolveAsync"/>
+    /// <see cref="Kernel.Secrets.ISecretResolver.ResolveAsync"/>
     /// accepts everywhere else. Null/absent means no license is configured
     /// — Community, not an error.
     /// </summary>

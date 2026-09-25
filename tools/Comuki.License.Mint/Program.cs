@@ -223,11 +223,10 @@ file static class ProgramHelpers
         IReadOnlyCollection<string>? features = null;
         if (ParseValue(args, "--features") is { } featuresRaw)
         {
-            features = ParseCsv(featuresRaw)
+            features = [.. ParseCsv(featuresRaw)
                 .Where(static segment => !string.IsNullOrWhiteSpace(segment))
                 .Select(static segment => segment.Trim())
-                .Where(static segment => segment.Length > 0)
-                .ToArray();
+                .Where(static segment => segment.Length > 0)];
         }
 
         IReadOnlyDictionary<string, int>? limits = null;

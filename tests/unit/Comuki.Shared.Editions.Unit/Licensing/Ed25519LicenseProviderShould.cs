@@ -17,16 +17,18 @@ namespace Comuki.Shared.Editions.Unit.Licensing;
 /// </summary>
 public sealed class Ed25519LicenseProviderShould
 {
-    private static readonly DateTimeOffset Expiry = new(2027, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset expiry = new(2027, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-    private static LicenseGrant SampleGrant(EditionTier? tier = null) =>
-        new(
+    private static LicenseGrant SampleGrant(EditionTier? tier = null)
+    {
+        return new(
             Org: "Acme Inc",
             Tier: tier ?? EditionTiers.Team,
-            Expiry: Expiry,
+            Expiry: expiry,
             Mode: LicenseMode.ImplicitByRank,
             Features: ["enterprise-sso", "multi-repo"],
             Limits: new Dictionary<string, int> { ["projects"] = 10 });
+    }
 
     [Fact(DisplayName = "Given a valid signed grant, when Verify runs, then every LicenseKey field round-trips from the grant")]
     public void ValidTokenRoundTripsFields()
@@ -41,9 +43,9 @@ public sealed class Ed25519LicenseProviderShould
         key.Tier.Rank.ShouldBe(EditionTiers.Team.Rank);
         key.Tier.Code.ShouldBe("team");
         key.Org.ShouldBe("Acme Inc");
-        key.Expiry.ShouldBe(Expiry);
+        key.Expiry.ShouldBe(expiry);
         key.Mode.ShouldBe(LicenseMode.ImplicitByRank);
-        key.Features.ShouldBe(new[] { "enterprise-sso", "multi-repo" });
+        key.Features.ShouldBe(["enterprise-sso", "multi-repo"]);
         key.Limits.ShouldBe(new Dictionary<string, int> { ["projects"] = 10 });
         key.NotBefore.ShouldBeNull();
         key.VerifiedWith.ShouldNotBeNullOrEmpty();
@@ -107,7 +109,7 @@ public sealed class Ed25519LicenseProviderShould
     [Fact(DisplayName = "Given a token with zero dots, when Verify runs, then malformed token shape is thrown")]
     public void ZeroDotsThrowsMalformedShape()
     {
-        var provider = new Ed25519LicenseProvider(ReadOnlySpan<byte>.Empty);
+        var provider = new Ed25519LicenseProvider([]);
 
         var ex = Should.Throw<LicenseInvalidException>(() => provider.Verify("nodots"));
         ex.Message.ShouldContain("malformed token shape");
@@ -116,7 +118,7 @@ public sealed class Ed25519LicenseProviderShould
     [Fact(DisplayName = "Given a token with two dots, when Verify runs, then malformed token shape is thrown")]
     public void TwoDotsThrowsMalformedShape()
     {
-        var provider = new Ed25519LicenseProvider(ReadOnlySpan<byte>.Empty);
+        var provider = new Ed25519LicenseProvider([]);
 
         var ex = Should.Throw<LicenseInvalidException>(() => provider.Verify("a.b.c"));
         ex.Message.ShouldContain("malformed token shape");
@@ -125,7 +127,7 @@ public sealed class Ed25519LicenseProviderShould
     [Fact(DisplayName = "Given a token with non-base64url halves, when Verify runs, then malformed token shape is thrown")]
     public void MalformedBase64ThrowsMalformedShape()
     {
-        var provider = new Ed25519LicenseProvider(ReadOnlySpan<byte>.Empty);
+        var provider = new Ed25519LicenseProvider([]);
 
         var ex = Should.Throw<LicenseInvalidException>(
             () => provider.Verify("not-valid-base64!!!.also-not-valid!!!"));
@@ -158,7 +160,7 @@ public sealed class Ed25519LicenseProviderShould
     [Fact(DisplayName = "Given a non-base64url signature half on a well-shaped payload, when Verify runs, then malformed token shape is thrown")]
     public void MalformedSignatureHalfThrowsMalformedShape()
     {
-        var provider = new Ed25519LicenseProvider(ReadOnlySpan<byte>.Empty);
+        var provider = new Ed25519LicenseProvider([]);
 
         var ex = Should.Throw<LicenseInvalidException>(
             () => provider.Verify("aGVsbG8.!!!not-base64!!!"));
@@ -183,6 +185,9 @@ public sealed class Ed25519LicenseProviderShould
 
     private sealed class FakeTimeProvider(DateTimeOffset now) : TimeProvider
     {
-        public override DateTimeOffset GetUtcNow() => now;
+        public override DateTimeOffset GetUtcNow()
+        {
+            return now;
+        }
     }
 }

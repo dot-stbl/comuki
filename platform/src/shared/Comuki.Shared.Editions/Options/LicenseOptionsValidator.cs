@@ -23,7 +23,7 @@ namespace Comuki.Shared.Editions.Options;
 /// <see cref="ISecretResolver.ResolveAsync"/> is intentional and safe
 /// here: <see cref="IValidateOptions{TOptions}"/> has no async overload,
 /// and the .NET generic host runs startup validation without a
-/// captured <see cref="System.Threading.SynchronizationContext"/>, so
+/// captured <see cref="SynchronizationContext"/>, so
 /// the usual async-over-sync deadlock does not apply.
 /// </para>
 /// </summary>

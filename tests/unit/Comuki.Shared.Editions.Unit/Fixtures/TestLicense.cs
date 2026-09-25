@@ -18,13 +18,13 @@ namespace Comuki.Shared.Editions.Unit.Fixtures;
 /// </summary>
 public static class TestLicense
 {
-    private static readonly (byte[] PublicKey, byte[] PrivateKeySeed) KeyPair = Ed25519LicenseSigner.GenerateKeyPair();
+    private static readonly (byte[] PublicKey, byte[] PrivateKeySeed) keyPair = Ed25519LicenseSigner.GenerateKeyPair();
 
     /// <summary>The fixture keypair's public half — construct your own <see cref="Ed25519LicenseProvider"/> with this when you need a fresh instance (e.g. to pin a specific clock).</summary>
-    public static byte[] PublicKey => KeyPair.PublicKey;
+    public static byte[] PublicKey => keyPair.PublicKey;
 
     /// <summary>A ready-made verifier already pointed at <see cref="PublicKey"/>, using <see cref="TimeProvider.System"/>.</summary>
-    public static ILicenseProvider Provider { get; } = new Ed25519LicenseProvider(KeyPair.PublicKey);
+    public static ILicenseProvider Provider { get; } = new Ed25519LicenseProvider(keyPair.PublicKey);
 
     /// <summary>A valid, far-future-expiry, Community-tier signed token — distinct from "no license configured at all" (which is the Absent path every other test already covers); this exercises an explicitly-issued rank-0 license.</summary>
     public static string Community { get; } = With(EditionTiers.Community);
@@ -59,7 +59,7 @@ public static class TestLicense
             Features: features,
             Limits: limits);
 
-        return Ed25519LicenseSigner.Sign(grant, KeyPair.PrivateKeySeed);
+        return Ed25519LicenseSigner.Sign(grant, keyPair.PrivateKeySeed);
     }
 
     /// <summary>
@@ -78,6 +78,6 @@ public static class TestLicense
                 .OrderBy(candidate => candidate.Rank)
                 .First();
 
-        return With(tier, mode: LicenseMode.ExplicitAllowlist, features: features.Select(feature => feature.Key.Value).ToArray());
+        return With(tier, mode: LicenseMode.ExplicitAllowlist, features: [.. features.Select(feature => feature.Key.Value)]);
     }
 }

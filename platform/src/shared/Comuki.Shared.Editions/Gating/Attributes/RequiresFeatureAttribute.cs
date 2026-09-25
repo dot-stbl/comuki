@@ -7,10 +7,14 @@ namespace Comuki.Shared.Editions.Gating;
 /// deliberate compromise (issue #164 / OQ1 (a)): C# attribute arguments
 /// must be compile-time constants, and a <see cref="Catalog.Feature"/>
 /// instance is built at runtime by <c>Feature.Define(...)</c>, so the
-/// attribute cannot carry one. The call site writes
-/// <c>[RequiresFeature(nameof(Features.MultiRepo))]</c>; a future
-/// source-generator step is the documented escape hatch when the
-/// <c>nameof</c> ceremony becomes unbearable.
+/// attribute cannot carry one. The call site writes the literal
+/// well-formed key, e.g. <c>[RequiresFeature("multi-repo")]</c> — NOT
+/// <c>nameof(Features.MultiRepo)</c>, which yields the PascalCase C#
+/// member name (<c>"MultiRepo"</c>), not the catalog's dash-case key
+/// (<c>"multi-repo"</c>); the two never coincide today, and a nameof
+/// call site fails <see cref="Catalog.Keys.FeatureKey.IsWellFormed"/> at
+/// runtime. A future source-generator step is the documented escape
+/// hatch when hand-writing the literal key becomes unbearable.
 /// </summary>
 /// <remarks>
 /// <para>

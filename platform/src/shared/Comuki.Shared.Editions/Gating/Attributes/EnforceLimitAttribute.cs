@@ -8,7 +8,11 @@ namespace Comuki.Shared.Editions.Gating;
 /// <see cref="RequiresFeatureAttribute"/>: C# attribute arguments must
 /// be compile-time constants and a <see cref="Catalog.Limit"/> instance
 /// is built at runtime, so the attribute cannot carry one. The call site
-/// writes <c>[EnforceLimit(nameof(Limits.Projects))]</c>.
+/// writes the literal well-formed key, e.g.
+/// <c>[EnforceLimit("projects")]</c> — NOT <c>nameof(Limits.Projects)</c>,
+/// which yields the PascalCase C# member name (<c>"Projects"</c>), not
+/// the catalog's lowercase key (<c>"projects"</c>); a nameof call site
+/// fails <see cref="Catalog.Keys.LimitKey.IsWellFormed"/> at runtime.
 /// </summary>
 /// <remarks>
 /// Last-wins ordering matches <see cref="RequiresFeatureAttribute"/>'s

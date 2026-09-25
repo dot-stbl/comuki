@@ -119,6 +119,27 @@ grpcPort = 17004
 # interval = "00:05:00"
 # stateTtl = "00:05:00"
 
+[host.license]
+# Offline, Ed25519-signed license file (issue #164). Absent section (the
+# default) means Community — no error, nothing to configure for the
+# open-core baseline. `path` is a secret reference in the same
+# env:/file:/vault:/consul: shape as every other secret in this repo
+# (ISecretResolver) — never the license content itself, and never a bare
+# base64 blob inline here. A configured path that cannot be resolved
+# (missing file, unset env var) fails boot loudly; a path that resolves
+# to a cryptographically invalid or tampered license does NOT fail boot
+# — it logs a warning and runs as Community until fixed.
+# path = "file:/etc/comuki/license.key"
+# How long after the license's expiry a paid tier keeps working with a
+# visible warning before the platform degrades to read-only for
+# paid-gated write paths (reads/exports of data you already own keep
+# working either way).
+# gracePeriod = "14.00:00:00"
+# Minimum interval between re-checks of the license file/secret; a
+# replaced license is picked up without a restart within this window.
+# reloadDelay = "00:00:05"
+# Env overrides: COMUKI_HOST_LICENSE_PATH / _GRACEPERIOD / _RELOADDELAY.
+
 # --- security ------------------------------------------------------------
 
 [security.apiKey]

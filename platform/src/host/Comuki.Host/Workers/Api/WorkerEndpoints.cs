@@ -79,6 +79,7 @@ public static class WorkerEndpoints
                 claimed.Brief,
                 claimed.LeaseUntil.ToUnixTimeMilliseconds(),
                 claimed.Attempt,
+                claimed.Generation,
                 ProxyBaseUrl: minted?.ProxyBaseUrl,
                 VirtualKey: minted?.Token));
         }
@@ -93,6 +94,7 @@ public static class WorkerEndpoints
 
     private static async Task<IResult> HeartbeatAsync(
         Guid workItemId,
+        HeartbeatWorkItemRequest request,
         HttpContext httpContext,
         WorkerTokenAuthenticator authenticator,
         ISubjectScopeAccessor scopeAccessor,
@@ -110,7 +112,7 @@ public static class WorkerEndpoints
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var now = clock.GetUtcNow();
         var extended = await queue.HeartbeatAsync(
-            workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
+            workItemId, workerId, request.Generation, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
         if (extended)
         {
             pool.Touch(workerId);
@@ -140,7 +142,7 @@ public static class WorkerEndpoints
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         await virtualKeys.RevokeAsync(workItemId, cancellationToken);
         var completed = await queue.CompleteAsync(
-            workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken);
+            workItemId, workerId, request.Generation, request.ResultJson, clock.GetUtcNow(), cancellationToken);
         if (completed)
         {
             pool.MarkIdle(workerId);
@@ -170,7 +172,7 @@ public static class WorkerEndpoints
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         await virtualKeys.RevokeAsync(workItemId, cancellationToken);
         var failed = await queue.FailAsync(
-            workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken);
+            workItemId, workerId, request.Generation, request.Reason, clock.GetUtcNow(), cancellationToken);
         if (failed)
         {
             pool.MarkIdle(workerId);

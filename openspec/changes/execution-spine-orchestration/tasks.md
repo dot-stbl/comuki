@@ -116,14 +116,14 @@ new migration under `.../Infrastructure/Migrations/`,
 `tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/WorkItemLeaseShould.cs` (extend),
 `tests/integration/Comuki.Host.Integration.Workers/` (extend).
 
-- [ ] 4.1 Add an integer `Generation` column to `runs` (default 1) and a
+- [x] 4.1 Add an integer `Generation` column to `runs` (default 1) and a
       `generation` column to `work_items` (the generation it was
       claimed under); new EF migration (epic task 2.3).
-- [ ] 4.2 `heartbeat`/`complete`/`fail` SQL adds `AND generation =
+- [x] 4.2 `heartbeat`/`complete`/`fail` SQL adds `AND generation =
       @generation` to the existing owner+status guard; a mismatch
       answers the existing 409 `work-item.not-owner` code — not a new
       response shape.
-- [ ] 4.3 Claim response (`ClaimedWorkItemResponse`) surfaces the
+- [x] 4.3 Claim response (`ClaimedWorkItemResponse`) surfaces the
       claimed generation; heartbeat/complete/fail requests carry it back.
 
 **Acceptance:** a unit test proves the fencing decision (current vs.

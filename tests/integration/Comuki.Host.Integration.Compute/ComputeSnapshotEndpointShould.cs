@@ -64,11 +64,11 @@ public sealed class ComputeSnapshotEndpointShould(PostgresCollectionFixture post
             var queuedOne = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "main", /*lang=json,strict*/ """{"step":"one"}""", WorkItemStatus.Queued, now);
             var queuedTwo = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "main", /*lang=json,strict*/ """{"step":"two"}""", WorkItemStatus.Queued, now);
             var running = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "main", /*lang=json,strict*/ """{"step":"three"}""", WorkItemStatus.Queued, now);
-            running.AssignLease(WorkerId.New(), now.AddMinutes(5), now);
+            running.AssignLease(WorkerId.New(), 1, now.AddMinutes(5), now);
 
             // A completed item — excluded from every count (neither Queued nor Running).
             var done = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "main", /*lang=json,strict*/ """{"step":"four"}""", WorkItemStatus.Queued, now);
-            done.AssignLease(WorkerId.New(), now.AddMinutes(5), now);
+            done.AssignLease(WorkerId.New(), 1, now.AddMinutes(5), now);
             done.TransitionTo(WorkItemStatus.Succeeded, now);
 
             // projectB / review: one queued.

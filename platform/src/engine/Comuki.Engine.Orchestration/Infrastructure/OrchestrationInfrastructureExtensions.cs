@@ -80,7 +80,7 @@ public static class OrchestrationInfrastructureExtensions
         services.AddScoped<IMergeBatchStore, MergeBatchStoreEf>();
         services.AddScoped<IOutbox, OutboxEf>();
         services.AddScoped<IInbox, InboxEf>();
-        services.TryAddScoped<IOutboxPublisher, NoopOutboxPublisher>();
+        services.TryAddSingleton<IOutboxPublisher, NoopOutboxPublisher>();
         services.AddScoped<OutboxDispatcher>();
         services.AddScoped<LeaseReaper>();
         services.AddSingleton<IComukiWorker, LeaseReaperComukiWorker>();

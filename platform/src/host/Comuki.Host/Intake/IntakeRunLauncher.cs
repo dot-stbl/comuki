@@ -10,6 +10,7 @@ using Comuki.Modules.Intake.Domain.Tickets;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Npgsql;
 namespace Comuki.Host.Intake;
 
 /// <summary>
@@ -68,18 +69,16 @@ public sealed class IntakeRunLauncher(
 
         if (!await inbox.TryClaimAsync(messageId, cancellationToken))
         {
-            var existingRun = await db.Runs
-                .IgnoreQueryFilters()
-                .Where(run => run.AdmissionMessageId == messageId)
-                .Select(static run => new { run.Id })
-                .SingleOrDefaultAsync(cancellationToken);
-
+            // IgnoreQueryFilters is deliberate: messageId is derived from
+            // the ticket's own id (above), never from user input, so this
+            // is an internal invariant lookup, not a subject-scoped read —
+            // the ambient request scope must not hide the winner's run from
+            // a legitimately losing/retried caller in the same scope.
+            var existingRunId = await AdmissionLookup.FindByMessageIdAsync(db, messageId, cancellationToken);
             await transaction.RollbackAsync(cancellationToken);
 
-            return existingRun is null
-                ? throw new InvalidOperationException(
-                    $"admission message id '{messageId}' was claimed but no run is bound to it")
-                : existingRun.Id;
+            return existingRunId ?? throw new InvalidOperationException(
+                $"admission message id '{messageId}' was claimed but no run is bound to it");
         }
 
         var run = Run.Create(projectId, now, messageId);
@@ -94,10 +93,47 @@ public sealed class IntakeRunLauncher(
 
         db.Runs.Add(run);
         db.WorkItems.Add(workItem);
-        await db.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
 
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: "23505" })
+        {
+            // Defense in depth for the "never throws" contract in the class
+            // doc above: the inbox claim already makes this branch
+            // unreachable in theory (the PK on message_id serializes
+            // concurrent claims to one winner before either transaction
+            // reaches this SaveChangesAsync), but if
+            // ux_runs_admission_message_id ever fires anyway, treat it
+            // exactly like a lost inbox race instead of surfacing a
+            // duplicate-key error to the caller.
+            db.Entry(run).State = EntityState.Detached;
+            db.Entry(workItem).State = EntityState.Detached;
+            var existingRunId = await AdmissionLookup.FindByMessageIdAsync(db, messageId, cancellationToken);
+            await transaction.RollbackAsync(cancellationToken);
+
+            return existingRunId ?? throw new InvalidOperationException(
+                $"admission message id '{messageId}' hit a unique-key race but no run is bound to it");
+        }
+
+        await transaction.CommitAsync(cancellationToken);
         return run.Id;
+    }
+}
+
+/// <summary>Looks up the run bound to an already-claimed admission message id (the dedupe race's winner).</summary>
+file static class AdmissionLookup
+{
+    public static async Task<RunId?> FindByMessageIdAsync(OrchestrationDbContext db, string messageId, CancellationToken cancellationToken)
+    {
+        var existingRun = await db.Runs
+            .IgnoreQueryFilters()
+            .Where(run => run.AdmissionMessageId == messageId)
+            .Select(static run => new { run.Id })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return existingRun?.Id;
     }
 }
 

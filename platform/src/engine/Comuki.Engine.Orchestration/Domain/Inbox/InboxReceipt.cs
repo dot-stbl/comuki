@@ -23,9 +23,9 @@ public sealed class InboxReceipt
     /// Stages a receipt for a newly-claimed message id. <paramref name="messageId"/>
     /// must be non-empty.
     /// </summary>
-    /// <param name="messageId"></param>
-    /// <param name="now"></param>
-    /// <exception cref="ArgumentException"></exception>
+    /// <param name="messageId">Free-form wire identity of the delivered message; must be non-empty.</param>
+    /// <param name="now">When this id was first claimed — becomes <see cref="ReceivedAt"/>.</param>
+    /// <exception cref="ArgumentException"><paramref name="messageId"/> is null, empty, or whitespace.</exception>
     public static InboxReceipt Create(string messageId, DateTimeOffset now)
     {
         return string.IsNullOrWhiteSpace(messageId)

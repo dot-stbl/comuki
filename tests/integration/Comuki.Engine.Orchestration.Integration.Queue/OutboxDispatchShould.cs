@@ -34,9 +34,9 @@ public sealed class OutboxDispatchShould(PostgresCollectionFixture postgres)
     private static readonly DateTimeOffset baseTime = new(2026, 9, 1, 9, 0, 0, TimeSpan.Zero);
 
     /// <summary>Builds a self-contained provider: the shared Postgres + the orchestration installers + the supplied publisher (last registration wins for IOutboxPublisher resolution).</summary>
-    /// <param name="publisher"></param>
-    /// <param name="batchSize"></param>
-    /// <param name="maxAttempts"></param>
+    /// <param name="publisher">The <see cref="IOutboxPublisher"/> this scenario wires — replaces the Noop default (last registration wins).</param>
+    /// <param name="batchSize">Bound to <c>Orchestration:Outbox:BatchSize</c> — the dispatcher's per-sweep claim limit.</param>
+    /// <param name="maxAttempts">Bound to <c>Orchestration:Outbox:MaxAttempts</c> — the bounded retry budget before dead-lettering.</param>
     private async Task<(FakeTimeProvider clock, ServiceProvider provider)> BuildProviderAsync(
         IOutboxPublisher publisher,
         int batchSize = 25,
@@ -67,9 +67,9 @@ public sealed class OutboxDispatchShould(PostgresCollectionFixture postgres)
     }
 
     /// <summary>Seeds the supplied number of distinct outbox rows.</summary>
-    /// <param name="provider"></param>
-    /// <param name="clock"></param>
-    /// <param name="count"></param>
+    /// <param name="provider">The DI container built by <see cref="BuildProviderAsync"/>.</param>
+    /// <param name="clock">Time source for each seeded row's commit-order timestamp.</param>
+    /// <param name="count">How many distinct outbox rows to seed.</param>
     private static async Task<List<Guid>> SeedOutboxAsync(IServiceProvider provider, TimeProvider clock, int count)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -92,8 +92,8 @@ public sealed class OutboxDispatchShould(PostgresCollectionFixture postgres)
     }
 
     /// <summary>Re-reads one outbox row from a fresh scope (no tracking).</summary>
-    /// <param name="provider"></param>
-    /// <param name="id"></param>
+    /// <param name="provider">The DI container built by <see cref="BuildProviderAsync"/>.</param>
+    /// <param name="id">The outbox row's id.</param>
     private static async Task<OutboxMessage?> LoadMessageAsync(IServiceProvider provider, Guid id)
     {
         var cancellationToken = TestContext.Current.CancellationToken;

@@ -50,10 +50,10 @@ public sealed class OutboxMessage
     /// payload must be non-empty; <paramref name="now"/> becomes both the
     /// enqueue timestamp and the row's commit-order key.
     /// </summary>
-    /// <param name="type"></param>
-    /// <param name="payloadJson"></param>
-    /// <param name="now"></param>
-    /// <exception cref="ArgumentException"></exception>
+    /// <param name="type">Contract name — a stable dot.case string like <c>orchestration.run.terminated.v1</c>; must be non-empty.</param>
+    /// <param name="payloadJson">Raw JSON payload (matches the <c>jsonb</c> column shape); must be non-empty.</param>
+    /// <param name="now">Enqueue timestamp — becomes both <see cref="CreatedAt"/> and the row's commit-order key.</param>
+    /// <exception cref="ArgumentException"><paramref name="type"/> or <paramref name="payloadJson"/> is null, empty, or whitespace.</exception>
     public static OutboxMessage Create(string type, string payloadJson, DateTimeOffset now)
     {
         if (string.IsNullOrWhiteSpace(type))
@@ -77,7 +77,7 @@ public sealed class OutboxMessage
     }
 
     /// <summary>Records a successful delivery; transitions the row to the dispatched state.</summary>
-    /// <param name="now"></param>
+    /// <param name="now">The delivery timestamp recorded as <see cref="DispatchedAt"/>.</param>
     public void MarkDispatched(DateTimeOffset now)
     {
         DispatchedAt = now;
@@ -88,10 +88,10 @@ public sealed class OutboxMessage
     /// stores the error text, and dead-letters the row once the bounded
     /// retry budget is exhausted.
     /// </summary>
-    /// <param name="error"></param>
-    /// <param name="now"></param>
-    /// <param name="maxAttempts"></param>
-    /// <exception cref="ArgumentException"></exception>
+    /// <param name="error">The delivery failure's text; must be non-empty, stored as <see cref="LastError"/>.</param>
+    /// <param name="now">The failure timestamp; recorded as <see cref="DeadLetteredAt"/> if this exhausts the retry budget.</param>
+    /// <param name="maxAttempts">Bounded retry budget — <see cref="Attempts"/> reaching this value dead-letters the row.</param>
+    /// <exception cref="ArgumentException"><paramref name="error"/> is null, empty, or whitespace.</exception>
     public void RecordFailure(string error, DateTimeOffset now, int maxAttempts)
     {
         if (string.IsNullOrWhiteSpace(error))

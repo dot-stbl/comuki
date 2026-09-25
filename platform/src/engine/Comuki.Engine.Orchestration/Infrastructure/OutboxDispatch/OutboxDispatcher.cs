@@ -21,7 +21,7 @@ namespace Comuki.Engine.Orchestration.Infrastructure.OutboxDispatch;
 /// </summary>
 /// <param name="db">EF context — the dispatcher transaction shares its connection.</param>
 /// <param name="publisher">Delivery transport; exceptions count as failures.</param>
-/// <param name="clock"></param>
+/// <param name="clock">Time source for dispatch/failure timestamps.</param>
 /// <param name="options">Bound from <c>Orchestration:Outbox</c>.</param>
 public sealed class OutboxDispatcher(
     OrchestrationDbContext db,
@@ -49,9 +49,13 @@ public sealed class OutboxDispatcher(
         var dispatchedCount = 0;
         var deadLetteredCount = 0;
 
+        var messages = await db.Set<OutboxMessage>()
+            .Where(m => ids.Contains(m.Id))
+            .ToDictionaryAsync(static m => m.Id, cancellationToken);
+
         foreach (var id in ids)
         {
-            var message = await db.Set<OutboxMessage>().SingleAsync(m => m.Id == id, cancellationToken);
+            var message = messages[id];
             try
             {
                 await publisher.PublishAsync(message.Type, message.Payload, cancellationToken);
@@ -60,6 +64,14 @@ public sealed class OutboxDispatcher(
             }
             // One poisoned message must not abort the whole batch — isolate
             // the failure on this row and let the rest dispatch.
+            //
+            // Design risk, not fixed here (flag for whichever workstream
+            // wires a real IOutboxPublisher): PublishAsync runs INSIDE this
+            // transaction while the claimed rows still hold their FOR UPDATE
+            // SKIP LOCKED row locks. NoopOutboxPublisher returns instantly so
+            // this is harmless today, but a real network publisher blocking
+            // on I/O here would hold those locks for the call's duration,
+            // extending contention with the lease reaper's own sweep.
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 message.RecordFailure(exception.Message, now, maxAttempts);

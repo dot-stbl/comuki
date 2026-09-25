@@ -48,7 +48,7 @@ public sealed class InboxDedupeShould(PostgresCollectionFixture postgres)
     }
 
     /// <summary>Re-reads every <c>inbox_receipts</c> row from a fresh scope (no tracking).</summary>
-    /// <param name="provider"></param>
+    /// <param name="provider">The DI container built by <see cref="BuildProviderAsync"/> — a fresh scope reads the row so no tracked entity leaks between assertions.</param>
     private static async Task<List<InboxReceipt>> LoadReceiptsAsync(IServiceProvider provider)
     {
         var cancellationToken = TestContext.Current.CancellationToken;

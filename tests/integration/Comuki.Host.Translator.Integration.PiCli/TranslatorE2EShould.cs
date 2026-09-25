@@ -254,6 +254,7 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         using var claimDocument = JsonDocument.Parse(await claim.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         var proxyBaseUrl = claimDocument.RootElement.GetProperty("proxyBaseUrl").GetString();
         var virtualKey = claimDocument.RootElement.GetProperty("virtualKey").GetString();
+        var generation = claimDocument.RootElement.GetProperty("generation").GetInt32();
         proxyBaseUrl.ShouldBe("http://127.0.0.1:9", "the configured WorkerBaseUrl, trailing slash trimmed");
         virtualKey.ShouldNotBeNullOrWhiteSpace();
 
@@ -265,9 +266,12 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         var claimedTimeline = await ReadTimelineAsync(runId);
         claimedTimeline.ShouldNotContain(entry => entry.PayloadJson.Contains(virtualKey!, StringComparison.Ordinal), "the raw minted token is never journaled");
 
+        // W1 generation fencing: complete echoes the claimed generation —
+        // a body without it binds to 0 and the guarded SQL rejects the
+        // call as an ownership miss (409 work-item.not-owner).
         using var complete = await client.PostAsync(
             $"/workers/{workItemId}/complete",
-            new StringContent(/*lang=json,strict*/ """{"resultJson":"{\"ok\":true}"}""", System.Text.Encoding.UTF8, "application/json"),
+            new StringContent(/*lang=json,strict*/ $$"""{"resultJson":"{\"ok\":true}","generation":{{generation}}}""", System.Text.Encoding.UTF8, "application/json"),
             TestContext.Current.CancellationToken);
         complete.StatusCode.ShouldBe(System.Net.HttpStatusCode.NoContent);
 

@@ -125,7 +125,7 @@ services:
       COMUKI_COMPUTE_SCALE_WORKERIMAGE: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
       COMUKI_CHAT_WORKER_IMAGE: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
       COMUKI_SCHEDULER_WORKER_IMAGE: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
-      COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-e2e-host:8080
+      COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-e2e-host:17185
       COMUKI_E2E_GH_HOOK_SECRET: ${COMUKI_E2E_GH_HOOK_SECRET:-e2e-smoke-hook-secret}
       COMUKI_COMPUTE_DOCKER_RUNASUSER: "1000"
     depends_on:
@@ -178,8 +178,11 @@ services:
       COMUKI_SCHEDULER_WORKER_IMAGE: ${COMUKI_E2E_WORKER_IMAGE:-comuki-agent-test-worker:e2e}
       # The orchestrator gRPC URL workers dial into — must be the in-network
       # service DNS (comuki-e2e-host), NOT a published port; the worker
-      # container joins the fence net and reaches the host there.
-      COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-e2e-host:8080
+      # container joins the fence net and reaches the host there. The
+      # dedicated cleartext HTTP/2-only listener Comuki.Host/Program.cs
+      # binds for the worker gRPC bidi stream (issue #152) — port pool
+      # default 17185, overridable via COMUKI_HOST_WORKERGRPCPORT.
+      COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-e2e-host:17185
       # HMAC secret for the GitHub webhook signature. The smoke script
       # posts the webhook with `secretEnvRef: "COMUKI_E2E_GH_HOOK_SECRET"`
       # and signs the body with the same value (the literal string

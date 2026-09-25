@@ -27,15 +27,10 @@ public sealed class OrchestrationRunEventContractGateShould
 {
     private static readonly DateTimeOffset occurredAt = new(2026, 9, 25, 10, 0, 0, TimeSpan.Zero);
 
-    private static string GoldenSchemaPath(string contractType)
-    {
-        return Path.Combine(AppContext.BaseDirectory, "EventContracts", $"{contractType}.schema.json");
-    }
-
     [Fact(DisplayName = "Given the committed v1 golden schema, when compared to the live RunTerminatedV1 payload, then every golden field is still present with the same JSON kind")]
     public void KeepEveryGoldenFieldOnTheLivePayload()
     {
-        var golden = EventContractSchema.LoadGolden(GoldenSchemaPath(RunEventTypes.RunTerminatedV1));
+        var golden = EventContractSchema.LoadGolden(EventContractSchema.GoldenSchemaPath(RunEventTypes.RunTerminatedV1));
 
         var livePayload = RunProgression.RunTerminatedPayload(RunId.New(), ProjectId.New(), "Succeeded", occurredAt);
         var live = EventContractSchema.ExtractFieldKinds(livePayload);
@@ -50,7 +45,7 @@ public sealed class OrchestrationRunEventContractGateShould
     [Fact(DisplayName = "Given the golden schema name, when read, then it matches the RunTerminatedV1 contract constant")]
     public void GoldenSchemaNamesTheV1Contract()
     {
-        var golden = EventContractSchema.LoadGolden(GoldenSchemaPath(RunEventTypes.RunTerminatedV1));
+        var golden = EventContractSchema.LoadGolden(EventContractSchema.GoldenSchemaPath(RunEventTypes.RunTerminatedV1));
 
         golden.Type.ShouldBe(RunEventTypes.RunTerminatedV1);
     }
@@ -153,6 +148,11 @@ file sealed record EventContractGoldenSchema(string Type, IReadOnlyDictionary<st
 /// </summary>
 file static class EventContractSchema
 {
+    public static string GoldenSchemaPath(string contractType)
+    {
+        return Path.Combine(AppContext.BaseDirectory, "EventContracts", $"{contractType}.schema.json");
+    }
+
     public static EventContractGoldenSchema LoadGolden(string path)
     {
         File.Exists(path).ShouldBeTrue($"golden event-contract schema should exist at {path}");

@@ -175,7 +175,10 @@ public sealed class WorkItem
 
     /// <summary>True when <paramref name="generation"/> — the value a heartbeat/complete/fail caller presents — still matches the generation this item was leased under.</summary>
     /// <param name="generation"></param>
-    public bool MatchesGeneration(int generation) => Generation == generation;
+    public bool MatchesGeneration(int generation)
+    {
+        return Generation == generation;
+    }
 
     /// <summary>
     /// Extends the lease of a running, leased item. The owner check lives in the

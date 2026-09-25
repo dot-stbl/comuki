@@ -448,8 +448,8 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         var stillBlocked = (await LoadItemAsync(dependent.Id)).ShouldNotBeNull();
         stillBlocked.Status.ShouldBe(WorkItemStatus.Blocked);
 
-        var claimed = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(3), claimAt.AddMinutes(1), cancellationToken);
-        claimed.ShouldBeNull();
+        var reclaimAttempt = await queue.ClaimAsync(WorkerId.New(), ImplementLabels, claimAt.AddMinutes(3), claimAt.AddMinutes(1), cancellationToken);
+        reclaimAttempt.ShouldBeNull();
     }
 
     [Fact(DisplayName = "Given a dependent with two prerequisites, when only one succeeds, then it stays blocked until the last one also succeeds")]

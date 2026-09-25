@@ -164,6 +164,138 @@ public sealed class EveryPaidRegistryEntryIsGatedShould
         return false;
     }
 
+    /// <summary>
+    /// Every Comuki.* assembly that <see cref="ScanForGateKeys"/> already
+    /// indexes. The new blind-spot guard enumerates every Comuki.*.dll on
+    /// disk and refuses any that carries one of the three gate attributes
+    /// outside this index — without this guard, a gate attribute living in
+    /// an unindexed assembly can silently satisfy <see cref="AllowlistIsNotRotting"/>
+    /// (the inverse assertion scans the same three assemblies and would
+    /// never observe the rogue key).
+    /// </summary>
+    private static readonly string[] indexedAssemblyNames =
+    [
+        typeof(ApiRoutes).Assembly.GetName().Name!,
+        typeof(Features).Assembly.GetName().Name!,
+        typeof(RunStatuses).Assembly.GetName().Name!,
+    ];
+
+    [Fact(DisplayName = "Given the Comuki.* assembly set on disk, when each one outside the three-assembly index is scanned for gate attributes, then no offending assembly carries one")]
+    public void NoGateAttributeLivesOutsideTheIndex()
+    {
+        var offenders = new List<string>();
+        var gateTypes = new HashSet<Type>([
+            typeof(RequiresFeatureAttribute),
+            typeof(EditionFeatureAttribute),
+            typeof(EnforceLimitAttribute),
+        ]);
+
+        var indexed = new HashSet<string>(indexedAssemblyNames, StringComparer.Ordinal);
+        var baseDirectory = AppContext.BaseDirectory;
+
+        foreach (var dllPath in Directory.EnumerateFiles(baseDirectory, "Comuki.*.dll"))
+        {
+            // Skip the test project's own DLL — it carries the typeof()
+            // references above by virtue of being a Comuki.* assembly with
+            // gate-attribute types reachable, but its presence as a
+            // "non-indexed Comuki.* assembly with gate attributes" would
+            // be the test reading itself, not a real violation.
+            var assemblyName = Path.GetFileNameWithoutExtension(dllPath);
+            if (assemblyName.StartsWith("Comuki.Architecture.Tests", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (indexed.Contains(assemblyName))
+            {
+                continue;
+            }
+
+            if (AssemblyContainsAnyGateAttribute(dllPath, gateTypes))
+            {
+                offenders.Add(assemblyName);
+            }
+        }
+
+        offenders.ShouldBeEmpty(
+            "Comuki.* assemblies outside the three-assembly index that carry a "
+            + "RequiresFeatureAttribute / EditionFeatureAttribute / EnforceLimitAttribute usage: "
+            + string.Join(", ", offenders)
+            + ". Either add the assembly to ScanForGateKeys's index, or move the "
+            + "gate attribute to one of the indexed assemblies.");
+    }
+
+    private static bool AssemblyContainsAnyGateAttribute(string assemblyPath, HashSet<Type> gateTypes)
+    {
+        Assembly assembly;
+        try
+        {
+            assembly = AssemblyLoadContextWrapper.LoadFromPath(assemblyPath);
+        }
+        catch
+        {
+            // Unloadable assembly — treat as "no offending attributes" so a
+            // missing native dep doesn't false-positive the build.
+            return false;
+        }
+
+        var gateNames = new HashSet<string>(
+            gateTypes.Select(static type => type.FullName ?? type.Name),
+            StringComparer.Ordinal);
+
+        var anyMatch = false;
+        foreach (var type in SafeTypes(assembly))
+        {
+            foreach (var attribute in type.GetCustomAttributesData())
+            {
+                if (gateNames.Contains(attribute.AttributeType.FullName ?? string.Empty))
+                {
+                    anyMatch = true;
+                    break;
+                }
+            }
+            if (anyMatch)
+            {
+                break;
+            }
+
+            foreach (var method in type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                foreach (var attribute in method.GetCustomAttributesData())
+                {
+                    if (gateNames.Contains(attribute.AttributeType.FullName ?? string.Empty))
+                    {
+                        anyMatch = true;
+                        break;
+                    }
+                }
+                if (anyMatch)
+                {
+                    break;
+                }
+            }
+            if (anyMatch)
+            {
+                break;
+            }
+        }
+
+        return anyMatch;
+    }
+
+    /// <summary>
+    /// Single-call wrapper around <see cref="System.Runtime.Loader.AssemblyLoadContext"/>
+    /// Default so the reflection-side scan can <c>LoadFromPath</c> without
+    /// re-implementing the loader plumbing in every arch test that needs it.
+    /// </summary>
+    private static class AssemblyLoadContextWrapper
+    {
+        public static Assembly LoadFromPath(string path)
+        {
+            return System.Runtime.Loader.AssemblyLoadContext.Default.LoadFromAssemblyPath(path);
+        }
+    }
+
     private static void TryReadKey(CustomAttributeData attribute, HashSet<string> keys)
     {
         if (!IsGateAttributeType(attribute.AttributeType))

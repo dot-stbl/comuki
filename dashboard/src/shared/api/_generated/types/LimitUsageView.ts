@@ -8,7 +8,7 @@
  */
 export type LimitUsageView = {
   /**
-   * @description The closed-vocabulary limit key (dot.case; the same string the gate attribute carries).
+   * @description The closed-vocabulary limit key (lowercase kebab-case slug; the same string the gate attribute carries).
    * @type string
    */
   key: string

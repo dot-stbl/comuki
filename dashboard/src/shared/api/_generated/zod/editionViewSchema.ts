@@ -8,7 +8,7 @@ import { limitUsageViewSchema } from "./limitUsageViewSchema"
 import { z } from "zod/v4"
 
 /**
- * @description Wire shape of `GET /api/v1/edition` — the dashboard and CLI\'s\r\nread-only projection of the current license state. Anonymous by design\r\n(the dashboard\'s first paint renders an upsell before sign-in), so the\r\nendpoint is intentionally absent any permission / feature / role gates.\r\nThe response carries the live tier code and the current license\r\nstatus (`valid` / `grace` / `expired` / `absent`);\r\nDateTimeOffset? EditionView.ExpiresAt is omitted from the JSON entirely (not null)\r\nwhen the license is absent, so a Community reader can branch on the\r\nproperty\'s presence rather than its value.
+ * @description Wire shape of `GET /api/v1/edition` — the dashboard and CLI\'s\r\nread-only projection of the current license state. Anonymous by design\r\n(the dashboard\'s first paint renders an upsell before sign-in), so the\r\nendpoint is intentionally absent any permission / feature / role gates.\r\nThe response carries the live tier code and the current license\r\nstatus (`valid` / `grace` / `expired` / `absent`);\r\nDateTimeOffset? EditionView.ExpiresAt is always present on the wire — null when the\r\nlicense is absent — so the property\'s contract (required+nullable)\r\nmatches what the OpenAPI document declares and generated zod on the\r\nFE expects. The page projects `null` to `undefined` at the\r\nwire→snapshot boundary and still branches on presence there.
  */
 export const editionViewSchema = z
   .object({
@@ -51,10 +51,10 @@ export const editionViewSchema = z
       z.iso
         .datetime({ offset: true })
         .describe(
-          "ISO-8601 UTC expiry from the verified license; omitted when `Status` is `absent`."
+          "ISO-8601 UTC expiry from the verified license; `null` when `Status` is `absent`. Always present on the wire."
         )
     ),
   })
   .describe(
-    "Wire shape of `GET /api/v1/edition` — the dashboard and CLI's\r\nread-only projection of the current license state. Anonymous by design\r\n(the dashboard's first paint renders an upsell before sign-in), so the\r\nendpoint is intentionally absent any permission / feature / role gates.\r\nThe response carries the live tier code and the current license\r\nstatus (`valid` / `grace` / `expired` / `absent`);\r\nDateTimeOffset? EditionView.ExpiresAt is omitted from the JSON entirely (not null)\r\nwhen the license is absent, so a Community reader can branch on the\r\nproperty's presence rather than its value."
+    "Wire shape of `GET /api/v1/edition` — the dashboard and CLI's\r\nread-only projection of the current license state. Anonymous by design\r\n(the dashboard's first paint renders an upsell before sign-in), so the\r\nendpoint is intentionally absent any permission / feature / role gates.\r\nThe response carries the live tier code and the current license\r\nstatus (`valid` / `grace` / `expired` / `absent`);\r\nDateTimeOffset? EditionView.ExpiresAt is always present on the wire — null when the\r\nlicense is absent — so the property's contract (required+nullable)\r\nmatches what the OpenAPI document declares and generated zod on the\r\nFE expects. The page projects `null` to `undefined` at the\r\nwire→snapshot boundary and still branches on presence there."
   )

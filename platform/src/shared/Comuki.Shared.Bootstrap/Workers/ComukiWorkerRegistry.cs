@@ -29,10 +29,16 @@ namespace Comuki.Shared.Bootstrap.Workers;
 /// </para>
 /// <para>
 /// **Hot reload** (only the unlock direction): when a deferred worker
-/// becomes covered, the supervisor promotes it into the running set
-/// under the same lock as <see cref="Snapshot"/>'s read path and starts
-/// its loop. The reverse (demotion on downgrade) is out of scope for
-/// this workstream — the worker keeps running until the host restarts.
+/// becomes covered, the supervisor promotes it into the running set.
+/// The shared <c>runtimes</c> dictionary is mutated under the same lock
+/// <see cref="Snapshot"/> reads; feature-coverage checks
+/// (<see cref="IEdition.Has"/>) run OUTSIDE that lock because the
+/// implementation of <c>Has</c> in this project
+/// (<c>LicenseEdition.EnsureFresh</c>) does sync-over-async IO + crypto
+/// and would otherwise stall every Snapshot() reader while a cycle
+/// recomputes the snapshot. The reverse (demotion on downgrade) is out
+/// of scope for this workstream — the worker keeps running until the
+/// host restarts.
 /// </para>
 /// </remarks>
 /// <param name="registeredWorkers">Every <see cref="IComukiWorker"/> registration; modules add theirs through their installers.</param>
@@ -140,19 +146,56 @@ public sealed class ComukiWorkerRegistry(
                 break;
             }
 
-            List<WorkerFeatureGate.DeferredWorker> promotions;
+            // Coverage checks (IEdition.Has → LicenseEdition.EnsureFresh →
+            // sync-over-async IO + crypto) run OUTSIDE the runtimes lock so
+            // a slow verifier cannot stall Snapshot() readers or block a
+            // future promotion. Snapshot() is the only other reader of
+            // runtimes; the supervisor is the only writer of deferred.
+            // We collect coverage decisions for a snapshot of the current
+            // deferred list, then re-take the lock to mutate state.
+            var snapshot = deferred.ToArray();
+
+            // Defensive copy of the decisions list; the loop below may also
+            // flip the result mid-iteration if the catalog/state changes
+            // between calls (not expected in practice but consistent with
+            // the "evaluate outside, mutate inside" split).
+            var promotions = new List<WorkerFeatureGate.DeferredWorker>();
+            if (edition is { } current)
+            {
+                foreach (var candidate in snapshot)
+                {
+                    if (current.Has(candidate.Feature))
+                    {
+                        promotions.Add(candidate);
+                    }
+                }
+            }
+
+            // Mutate runtimes + deferred under the lock. Capture the runtime
+            // we just created so the start below doesn't have to re-look-up
+            // runtimes (which is unsafe without the lock — Snapshot may
+            // have read it concurrently, but never writes).
+            var startArgs = new List<Promotion>(promotions.Count);
             lock (runtimes)
             {
-                promotions = [];
                 for (var index = deferred.Count - 1; index >= 0; index--)
                 {
-                    var candidate = deferred[index];
-                    if (edition is { } current && current.Has(candidate.Feature))
+                    if (promotions.Count == 0)
                     {
-                        runtimes[candidate.Worker.Name] = new WorkerRuntime(candidate.Worker);
-                        promotions.Add(candidate);
-                        deferred.RemoveAt(index);
+                        break;
                     }
+
+                    var candidate = deferred[index];
+                    var promotionIndex = promotions.IndexOf(candidate);
+                    if (promotionIndex < 0)
+                    {
+                        continue;
+                    }
+
+                    var runtime = new WorkerRuntime(candidate.Worker);
+                    runtimes[candidate.Worker.Name] = runtime;
+                    deferred.RemoveAt(index);
+                    startArgs.Add(new Promotion(candidate, runtime));
                 }
             }
 
@@ -161,14 +204,14 @@ public sealed class ComukiWorkerRegistry(
             // tasks are tracked in promotedLoops so ExecuteAsync awaits
             // them after the supervisor exits — a promoted worker's
             // in-flight cycle is never abandoned by shutdown.
-            foreach (var promoted in promotions)
+            foreach (var promotion in startArgs)
             {
                 logger.LogInformation(
                     "worker {WorkerName} feature {FeatureKey} now covered; starting",
-                    promoted.Worker.Name,
-                    promoted.FeatureKey);
+                    promotion.Deferred.Worker.Name,
+                    promotion.Deferred.FeatureKey);
 
-                promotedLoops.Add(RunWorkerAsync(runtimes[promoted.Worker.Name], stoppingToken));
+                promotedLoops.Add(RunWorkerAsync(promotion.Runtime, stoppingToken));
             }
         }
     }
@@ -297,6 +340,9 @@ public sealed class ComukiWorkerRegistry(
 
     /// <summary>Boot-time state bundle — both pieces come from one Partition call so the warning log lines are emitted exactly once per deferred worker.</summary>
     private sealed record InitialState(Dictionary<string, WorkerRuntime> Runtimes, List<WorkerFeatureGate.DeferredWorker> Deferred);
+
+    /// <summary>One promotion decided outside the <c>runtimes</c> lock and applied under it: the deferred entry and the runtime created for it.</summary>
+    private sealed record Promotion(WorkerFeatureGate.DeferredWorker Deferred, WorkerRuntime Runtime);
 
     /// <summary>Mutable per-worker state, guarded by <see cref="Sync"/>; mutated by the worker's loop, read by <see cref="Snapshot"/>.</summary>
     private sealed class WorkerRuntime(IComukiWorker worker)

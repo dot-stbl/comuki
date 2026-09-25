@@ -34,7 +34,7 @@ public sealed class RequiresFeatureFilterShould
         var registry = NewRegistry(out _, out _);
         edition.Has(Arg.Any<Feature>()).Returns(false);
 
-        var denial = EditionGate.EvaluateFeature(registry, edition, "multi-repo");
+        var denial = EditionGate.EvaluateFeature(registry, edition, "multi-repo", "GET");
 
         denial.ShouldNotBeNull();
         denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
@@ -53,7 +53,7 @@ public sealed class RequiresFeatureFilterShould
         var registry = NewRegistry(out _, out _);
         edition.Has(Arg.Any<Feature>()).Returns(true);
 
-        var denial = EditionGate.EvaluateFeature(registry, edition, "multi-repo");
+        var denial = EditionGate.EvaluateFeature(registry, edition, "multi-repo", "GET");
 
         denial.ShouldBeNull();
     }
@@ -64,7 +64,7 @@ public sealed class RequiresFeatureFilterShould
         var edition = Substitute.For<IEdition>();
         var registry = NewRegistry(out _, out _);
 
-        var denial = EditionGate.EvaluateFeature(registry, edition, "BAD_KEY");
+        var denial = EditionGate.EvaluateFeature(registry, edition, "BAD_KEY", "GET");
 
         denial.ShouldNotBeNull();
         denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
@@ -81,7 +81,7 @@ public sealed class RequiresFeatureFilterShould
         var edition = Substitute.For<IEdition>();
         var registry = NewRegistry(out _, out _);
 
-        var denial = EditionGate.EvaluateFeature(registry, edition, "does-not-exist");
+        var denial = EditionGate.EvaluateFeature(registry, edition, "does-not-exist", "GET");
 
         denial.ShouldNotBeNull();
         denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
@@ -343,6 +343,77 @@ public sealed class RequiresFeatureFilterShould
         problem.Extensions!["code"].ShouldBe(EditionDenialBuilder.FeatureUnavailableCode);
         // The limit provider must not have been queried — feature denial short-circuits.
         await provider.DidNotReceive().CurrentAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given a grace edition (Has=true, IsDegraded=false), when EvaluateFeature runs for GET and POST, then both return null (grace keeps the gate fully open for writes too)")]
+    public void EvaluateFeatureAllowsGraceEditionForReadsAndWrites()
+    {
+        var edition = Substitute.For<IEdition>();
+        var registry = NewRegistry(out _, out _);
+        edition.Has(Arg.Any<Feature>()).Returns(true);
+        edition.IsDegraded.Returns(false);
+
+        EditionGate.EvaluateFeature(registry, edition, "multi-repo", "GET").ShouldBeNull();
+        EditionGate.EvaluateFeature(registry, edition, "multi-repo", "POST").ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Given an expired edition (Has=true, IsDegraded=true), when EvaluateFeature runs for GET and HEAD, then both return null (reads/exports pass past grace)")]
+    public void EvaluateFeatureAllowsExpiredEditionForReads()
+    {
+        var edition = Substitute.For<IEdition>();
+        var registry = NewRegistry(out _, out _);
+        edition.Has(Arg.Any<Feature>()).Returns(true);
+        edition.IsDegraded.Returns(true);
+
+        EditionGate.EvaluateFeature(registry, edition, "multi-repo", "GET").ShouldBeNull();
+        EditionGate.EvaluateFeature(registry, edition, "multi-repo", "HEAD").ShouldBeNull();
+    }
+
+    [Theory(DisplayName = "Given an expired edition (Has=true, IsDegraded=true), when EvaluateFeature runs for a write method, then it returns a 403 denial with feature_unavailable code and licenseStatus=expired")]
+    [InlineData("POST")]
+    [InlineData("PUT")]
+    [InlineData("PATCH")]
+    [InlineData("DELETE")]
+    public void EvaluateFeatureDeniesExpiredEditionForWrites(string method)
+    {
+        var edition = Substitute.For<IEdition>();
+        var registry = NewRegistry(out _, out _);
+        edition.Has(Arg.Any<Feature>()).Returns(true);
+        edition.IsDegraded.Returns(true);
+
+        var denial = EditionGate.EvaluateFeature(registry, edition, "multi-repo", method);
+
+        denial.ShouldNotBeNull();
+        denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
+        denial.Problem.Extensions!["code"].ShouldBe(EditionDenialBuilder.FeatureUnavailableCode);
+        denial.Problem.Extensions["feature"].ShouldBe("multi-repo");
+        denial.Problem.Extensions.ShouldContainKey("licenseStatus");
+        denial.Problem.Extensions["licenseStatus"].ShouldBe(EditionDenialBuilder.DegradedLicenseStatus);
+        // Degrade never grants a feature the tier would not otherwise cover
+        // — the extensions never carry a minimumTier (that is the
+        // uncovered-feature shape, owned by ForFeature).
+        denial.Problem.Extensions.ShouldNotContainKey("minimumTier");
+    }
+
+    [Fact(DisplayName = "Given an expired edition that also does NOT cover the feature, when EvaluateFeature runs, then it returns the ordinary feature_unavailable denial regardless of method (degrade never grants uncovered features)")]
+    public void EvaluateFeatureExpiredAndNotCoveredReturnsOrdinaryDenial()
+    {
+        var edition = Substitute.For<IEdition>();
+        var registry = NewRegistry(out _, out _);
+        edition.Has(Arg.Any<Feature>()).Returns(false);
+        edition.IsDegraded.Returns(true);
+
+        var denial = EditionGate.EvaluateFeature(registry, edition, "multi-repo", "POST");
+
+        denial.ShouldNotBeNull();
+        denial.StatusCode.ShouldBe(StatusCodes.Status403Forbidden);
+        denial.Problem.Extensions!["code"].ShouldBe(EditionDenialBuilder.FeatureUnavailableCode);
+        denial.Problem.Extensions["feature"].ShouldBe("multi-repo");
+        // Ordinary feature-unavailable shape carries minimumTier, NOT
+        // licenseStatus — the discriminate lives on the extension.
+        denial.Problem.Extensions.ShouldContainKey("minimumTier");
+        denial.Problem.Extensions["minimumTier"].ShouldBe("team");
+        denial.Problem.Extensions.ShouldNotContainKey("licenseStatus");
     }
 
     private static IEditionCapabilityRegistry NewRegistry(out Feature multiRepo, out Limit projects)

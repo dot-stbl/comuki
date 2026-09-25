@@ -1,6 +1,7 @@
 using Comuki.Shared.Editions.Catalog.Keys;
 using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Editions.Registry;
+using Microsoft.AspNetCore.Http;
 
 namespace Comuki.Shared.Editions.Gating;
 
@@ -12,6 +13,7 @@ namespace Comuki.Shared.Editions.Gating;
 /// shape (Identity module).
 /// </summary>
 /// <remarks>
+/// <para>
 /// The limit branch (<see cref="EvaluateLimitAsync"/>) is advisory only:
 /// it serves the request-time filter short-circuit and may race with
 /// concurrent writers (a read-then-write TOCTOU window). The
@@ -22,6 +24,15 @@ namespace Comuki.Shared.Editions.Gating;
 /// a fast-fail so a caller already over the cap never burns a database
 /// transaction on the denied write — but the handler is the source of
 /// truth and a race there loses by a 403, never by a successful insert.
+/// </para>
+/// <para>
+/// The <c>httpMethod</c> argument exists to support read-only-degrade on
+/// a license past its grace window (<see cref="IEdition.IsDegraded"/>):
+/// covered features stay readable (GET/HEAD) but refuse writes
+/// (everything else) so a customer's data is never stranded by a
+/// license lapse. Grace (not yet degraded) changes nothing — the gate
+/// stays fully open.
+/// </para>
 /// </remarks>
 internal static class EditionGate
 {
@@ -29,10 +40,12 @@ internal static class EditionGate
     /// <param name="registry">Catalog registry.</param>
     /// <param name="edition">Runtime read-side of the current license.</param>
     /// <param name="featureKey">Demanded key.</param>
+    /// <param name="httpMethod">HTTP method of the incoming request — drives the read-only-degrade branch. GET/HEAD count as reads, everything else as writes.</param>
     public static EditionDenial? EvaluateFeature(
         IEditionCapabilityRegistry registry,
         IEdition edition,
-        string featureKey)
+        string featureKey,
+        string httpMethod)
     {
         // Unknown / malformed key => fail closed (deny). A real gap here is
         // caught at build time by the (future, out-of-scope) architecture
@@ -45,11 +58,24 @@ internal static class EditionGate
             ? resolved
             : null;
 
+        // The degrade branch only fires past grace: grace
+        // (IsDegraded == false) keeps the gate fully open, including for
+        // writes. Past grace, GET/HEAD pass (read / export path for data
+        // the customer already owns) and every other method is refused
+        // with the degraded-write shape so nothing is silently mutated.
+        // IsGet / IsHead are case-insensitive and null-safe; anything
+        // else counts as a write and fails closed.
+        var degradedWrite = edition.IsDegraded
+            && !HttpMethods.IsGet(httpMethod)
+            && !HttpMethods.IsHead(httpMethod);
+
         return feature is null
             ? EditionDenialBuilder.ForFeature(featureKey, minimumTier: null)
-            : edition.Has(feature)
-                ? null
-                : EditionDenialBuilder.ForFeature(feature.Key.Value, TierCodes.RankToCode(feature.MinimumRank));
+            : !edition.Has(feature)
+                ? EditionDenialBuilder.ForFeature(feature.Key.Value, TierCodes.RankToCode(feature.MinimumRank))
+                : degradedWrite
+                    ? EditionDenialBuilder.ForDegradedWrite(feature.Key.Value)
+                    : null;
     }
 
     /// <summary>Evaluates the limit demand against the edition; null = allowed.</summary>

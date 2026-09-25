@@ -140,6 +140,11 @@ A `Host:License:GracePeriod` `TimeSpan` (default 14 days) SHALL control how long
 - **WHEN** the license's `expiry` is past `Host:License:GracePeriod` of now and the tier's `MinimumRank` no longer covers a paid feature
 - **THEN** paid-gated *write* endpoints return `edition.feature_unavailable`; paid-gated *read / export* endpoints for data the customer already owns still answer normally; no customer data is deleted by the gate
 
+#### Scenario: Read/write split is decided by HTTP method
+
+- **WHEN** the edition is expired past grace and a `[RequiresFeature]` endpoint receives a request
+- **THEN** GET/HEAD requests (reads, exports) pass the gate, every other HTTP method is refused with `edition.feature_unavailable` and a `licenseStatus: "expired"` extension
+
 #### Scenario: Downgrade to Community does not strand existing projects
 
 - **WHEN** a customer used `multi-project` under a paid tier and downgrades to Community

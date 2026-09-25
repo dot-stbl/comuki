@@ -13,6 +13,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Editions reference added for worker feature gating
+         (ComukiWorkerRegistry reads IEdition; see Workers/WorkerFeatureGate.cs).
+         Acrylic: Editions depends on Kernel only; Bootstrap depending on Editions
+         keeps the dependency graph one-directional. -->
+    <ProjectReference Include="..\Comuki.Shared.Editions\Comuki.Shared.Editions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Comuki.Shared.Bootstrap.Unit" />
   </ItemGroup>
 

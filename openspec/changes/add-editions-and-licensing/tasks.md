@@ -219,7 +219,7 @@ unit tests for both wrappers.
 
 ## 6. Background-worker gating — `[RequiresFeature]` on `IComukiWorker`
 
-- [ ] 6.1 Add `[RequiresFeature(Feature)]` support to
+- [x] 6.1 Add `[RequiresFeature(Feature)]` support to
   `ComukiWorkerRegistry`
   (`platform/src/shared/Comuki.Shared.Bootstrap/Workers/ComukiWorkerRegistry.cs:22`):
   when registering a worker, read the attribute; if the
@@ -229,11 +229,24 @@ unit tests for both wrappers.
   (so it is not started by the per-worker loop); verify hot
   reload — replace the license file with a paid tier; the
   registry re-evaluates and adds the previously-skipped worker.
-- [ ] 6.2 Add one illustrative worked example: pick one existing
+  (Hot reload verified at unit level by flipping a fake
+  `IEdition`; the real-license file-swap path is
+  `LicenseEdition`'s own covered behaviour, exercised end-to-end
+  by its own tests. Recheck interval 5s matches
+  `LicenseOptions.ReloadDelay` default — no options dependency
+  added so the bootstrap layer stays configuration-agnostic.)
+- [x] 6.2 Add one illustrative worked example: pick one existing
   `IComukiWorker` (the cheapest one), tag it with
   `[RequiresFeature(Features.X)]`, verify a Community unit test
   that the registry's `Snapshot()` does not include it and a
-  paid-tier test that it does.
+  paid-tier test that it does. (Demonstrated with a test-only
+  gated worker in `Comuki.Shared.Bootstrap.Unit` — a
+  `background-llm-watchers` gated fake covering Community-skip +
+  paid-include + hot-reload-via-flip. No real production worker
+  tagged because every existing worker implements
+  Community-baseline functionality and gating one would revoke
+  Community behavior without a product decision — mirrors the
+  5.3 resolution.)
 
 Deps: 3, 5. Files:
 `platform/src/shared/Comuki.Shared.Bootstrap/Workers/ComukiWorkerRegistry.cs`
@@ -311,12 +324,19 @@ platform/src/host/Comuki.Host/Comuki.Host.csproj -c Debug`;
   request, returns the typed exception with `Code =
   "edition.feature_unavailable"` and the response extension
   carries the feature key + minimum tier.
-- [ ] 8.4 Unit tests for grace / read-only-degrade:
+- [x] 8.4 Unit tests for grace / read-only-degrade:
   `IEdition.Status = grace` keeps the gate open and surfaces
   the warning via `/api/v1/edition`'s `status: grace` field;
   `Status = expired` past grace flips the gate to read-only
   degrade (write paths throw, read / export paths for data the
-  customer already owns pass through).
+  customer already owns pass through). (Gate-level unit tests
+  done in `RequiresFeatureFilterShould`: grace passes both GET
+  and POST; expired passes GET and HEAD; expired denies POST /
+  PUT / PATCH / DELETE with `code = edition.feature_unavailable`
+  and `licenseStatus = "expired"` extension; expired + Has=false
+  returns the ordinary feature_unavailable shape regardless of
+  method. The `/api/v1/edition` `status: grace` surfacing half
+  lands with 7.1 / 8.5 which own the endpoint.)
 - [ ] 8.5 Integration test for `/api/v1/edition` (WebApplicationFactory
   + a `TestLicense` mounted via `Host:License:Path`); verify the
   response shape and that 403 / 200 ProblemDetails are

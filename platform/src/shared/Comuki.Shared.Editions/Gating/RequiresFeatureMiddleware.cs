@@ -44,9 +44,12 @@ public sealed class RequiresFeatureMiddleware(RequestDelegate next)
         // Feature demand evaluated first, matching the filter's order:
         // a missing feature is the louder failure mode and surfaces above
         // the softer limit-exhausted message when an endpoint carries
-        // both attributes.
+        // both attributes. The HTTP method is passed through so
+        // EditionGate can apply the read-only-degrade branch (GET/HEAD
+        // pass past grace, every other method is refused — see
+        // EditionGate.EvaluateFeature).
         if (featureDemand is not null
-            && EditionGate.EvaluateFeature(registry, edition, featureDemand.FeatureKey) is { } featureDenial)
+            && EditionGate.EvaluateFeature(registry, edition, featureDemand.FeatureKey, context.Request.Method) is { } featureDenial)
         {
             context.Response.StatusCode = featureDenial.StatusCode;
             // WriteAsJsonAsync's simple overload unconditionally resets

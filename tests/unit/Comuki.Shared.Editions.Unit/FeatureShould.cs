@@ -33,27 +33,27 @@ public sealed class FeatureShould
     public void EmptyDescriptionThrows()
     {
         Should.Throw<ArgumentException>(
-            static () => _ = Feature.Define("multi-repo", string.Empty, minimumRank: 1));
+            static () => Feature.Define("multi-repo", string.Empty, minimumRank: 1));
     }
 
     [Fact(DisplayName = "Given a whitespace description, when Define runs, then ArgumentException is thrown")]
     public void WhitespaceDescriptionThrows()
     {
         Should.Throw<ArgumentException>(
-            static () => _ = Feature.Define("multi-repo", "   ", minimumRank: 1));
+            static () => Feature.Define("multi-repo", "   ", minimumRank: 1));
     }
 
     [Fact(DisplayName = "Given a negative minimum rank, when Define runs, then ArgumentOutOfRangeException is thrown")]
     public void NegativeRankThrows()
     {
         Should.Throw<ArgumentOutOfRangeException>(
-            static () => _ = Feature.Define("multi-repo", "Multi-repo workspaces.", minimumRank: -1));
+            static () => Feature.Define("multi-repo", "Multi-repo workspaces.", minimumRank: -1));
     }
 
     [Fact(DisplayName = "Given a malformed key, when Define runs, then FormatException is thrown")]
     public void MalformedKeyThrows()
     {
         Should.Throw<FormatException>(
-            static () => _ = Feature.Define("BAD_KEY", "Anything non-empty.", minimumRank: 1));
+            static () => Feature.Define("BAD_KEY", "Anything non-empty.", minimumRank: 1));
     }
 }

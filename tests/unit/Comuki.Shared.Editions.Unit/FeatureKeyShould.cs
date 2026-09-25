@@ -45,6 +45,6 @@ public sealed class FeatureKeyShould
     public void ParseThrowsForMalformed()
     {
         Should.Throw<FormatException>(
-            static () => _ = FeatureKey.Parse("BAD_KEY"));
+            static () => FeatureKey.Parse("BAD_KEY"));
     }
 }

@@ -40,7 +40,7 @@ public sealed class LimitShould
     public void EmptyDescriptionThrows()
     {
         Should.Throw<ArgumentException>(
-            static () => _ = Limit.Define("projects", string.Empty, communityValue: 1));
+            static () => Limit.Define("projects", string.Empty, communityValue: 1));
     }
 
     [Fact(DisplayName = "Given a paidValues rank of 0, when Define runs, then ArgumentOutOfRangeException is thrown (rank 0 is CommunityValue)")]
@@ -49,7 +49,7 @@ public sealed class LimitShould
         var paid = new Dictionary<int, int> { [0] = 99 };
 
         Should.Throw<ArgumentOutOfRangeException>(
-            () => _ = Limit.Define("projects", "desc", communityValue: 1, paidValues: paid));
+            () => Limit.Define("projects", "desc", communityValue: 1, paidValues: paid));
     }
 
     [Fact(DisplayName = "Given a negative paidValues rank, when Define runs, then ArgumentOutOfRangeException is thrown")]
@@ -58,7 +58,7 @@ public sealed class LimitShould
         var paid = new Dictionary<int, int> { [-1] = 99 };
 
         Should.Throw<ArgumentOutOfRangeException>(
-            () => _ = Limit.Define("projects", "desc", communityValue: 1, paidValues: paid));
+            () => Limit.Define("projects", "desc", communityValue: 1, paidValues: paid));
     }
 
     [Fact(DisplayName = "Given a tier whose rank has no paid override, when ValueFor runs, then CommunityValue is returned")]

@@ -3,7 +3,7 @@ using Comuki.Shared.Editions.Catalog.Keys;
 namespace Comuki.Shared.Editions.Catalog;
 
 /// <summary>
-/// One entry in the <see cref="Editions.Features"/> registry: a paid
+/// One entry in the <see cref="Features"/> registry: a paid
 /// capability key and the smallest tier rank that unlocks it. Built only
 /// through <see cref="Define"/> — never a bare string constant (issue
 /// #164 E9).

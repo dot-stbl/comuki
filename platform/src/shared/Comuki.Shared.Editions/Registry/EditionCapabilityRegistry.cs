@@ -41,8 +41,14 @@ public sealed class EditionCapabilityRegistry : IEditionCapabilityRegistry
     public IReadOnlyList<RegistryEntry> Entries { get; }
 
     /// <inheritdoc />
-    public bool TryGetFeature(FeatureKey key, out Feature? feature) => featuresByKey.TryGetValue(key.Value, out feature);
+    public bool TryGetFeature(FeatureKey key, out Feature? feature)
+    {
+        return featuresByKey.TryGetValue(key.Value, out feature);
+    }
 
     /// <inheritdoc />
-    public bool TryGetLimit(LimitKey key, out Limit? limit) => limitsByKey.TryGetValue(key.Value, out limit);
+    public bool TryGetLimit(LimitKey key, out Limit? limit)
+    {
+        return limitsByKey.TryGetValue(key.Value, out limit);
+    }
 }

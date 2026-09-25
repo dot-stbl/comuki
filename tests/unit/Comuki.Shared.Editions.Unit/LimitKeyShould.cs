@@ -46,6 +46,6 @@ public sealed class LimitKeyShould
     public void ParseThrowsForMalformed()
     {
         Should.Throw<FormatException>(
-            static () => _ = LimitKey.Parse("BAD_KEY"));
+            static () => LimitKey.Parse("BAD_KEY"));
     }
 }

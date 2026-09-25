@@ -4,14 +4,14 @@ using Comuki.Shared.Editions.Tiers;
 namespace Comuki.Shared.Editions.Catalog;
 
 /// <summary>
-/// One entry in the <see cref="Editions.Limits"/> registry: a count-quota
+/// One entry in the <see cref="Limits"/> registry: a count-quota
 /// key with a Community cap and optional per-rank paid overrides. Unlike
 /// <see cref="Feature"/>, a limit always applies (Community included) —
 /// only its numeric cap changes by tier.
 /// </summary>
 public sealed record Limit
 {
-    private static readonly IReadOnlyDictionary<int, int> EmptyPaidValues = new Dictionary<int, int>();
+    private static readonly IReadOnlyDictionary<int, int> emptyPaidValues = new Dictionary<int, int>();
 
     /// <summary>Declares a registry entry. <paramref name="key"/> must be well-formed (<see cref="LimitKey.IsWellFormed"/>); every <paramref name="paidValues"/> rank must be positive (rank 0 is <paramref name="communityValue"/>).</summary>
     public static Limit Define(string key, string description, int communityValue, IReadOnlyDictionary<int, int>? paidValues = null)
@@ -21,7 +21,7 @@ public sealed record Limit
             throw new ArgumentException("Limit description cannot be empty.", nameof(description));
         }
 
-        foreach (var rank in (paidValues ?? EmptyPaidValues).Keys)
+        foreach (var rank in (paidValues ?? emptyPaidValues).Keys)
         {
             if (rank <= 0)
             {
@@ -29,7 +29,7 @@ public sealed record Limit
             }
         }
 
-        return new Limit(LimitKey.Parse(key), description, communityValue, paidValues ?? EmptyPaidValues);
+        return new Limit(LimitKey.Parse(key), description, communityValue, paidValues ?? emptyPaidValues);
     }
 
     private Limit(LimitKey key, string description, int communityValue, IReadOnlyDictionary<int, int> paidValues)

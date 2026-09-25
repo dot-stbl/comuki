@@ -21,21 +21,21 @@ public sealed class EditionTierShould
     public void NegativeRankThrows()
     {
         Should.Throw<ArgumentOutOfRangeException>(
-            static () => _ = new EditionTier(-1, "x"));
+            static () => new EditionTier(-1, "x"));
     }
 
     [Fact(DisplayName = "Given an empty code, when constructing a tier, then ArgumentException is thrown")]
     public void EmptyCodeThrows()
     {
         Should.Throw<ArgumentException>(
-            static () => _ = new EditionTier(0, ""));
+            static () => new EditionTier(0, ""));
     }
 
     [Fact(DisplayName = "Given a whitespace code, when constructing a tier, then ArgumentException is thrown")]
     public void WhitespaceCodeThrows()
     {
         Should.Throw<ArgumentException>(
-            static () => _ = new EditionTier(0, "   "));
+            static () => new EditionTier(0, "   "));
     }
 
     [Fact(DisplayName = "Given a non-negative rank and a non-empty code, when constructing a tier, then the rank and code round-trip")]

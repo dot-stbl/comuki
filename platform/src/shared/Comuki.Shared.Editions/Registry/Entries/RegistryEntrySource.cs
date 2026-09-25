@@ -16,15 +16,18 @@ public readonly record struct RegistryEntrySource
     /// </summary>
     public static RegistryEntrySource Unspecified { get; }
 
-    /// <summary>Built from <see cref="Editions.Features"/>.</summary>
+    /// <summary>Built from <see cref="Features"/>.</summary>
     public static RegistryEntrySource Feature { get; } = new("feature");
 
-    /// <summary>Built from <see cref="Editions.Limits"/>.</summary>
+    /// <summary>Built from <see cref="Limits"/>.</summary>
     public static RegistryEntrySource Limit { get; } = new("limit");
 
     private readonly string? value;
 
-    private RegistryEntrySource(string value) => this.value = value;
+    private RegistryEntrySource(string value)
+    {
+        this.value = value;
+    }
 
     /// <summary>Lowercase string form; <see cref="Unspecified"/> is <c>"unspecified"</c>.</summary>
     public string Value => value ?? "unspecified";

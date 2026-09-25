@@ -540,8 +540,8 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
             // order mismatch between the two UnblockDependentsSql candidate
             // sets would surface as an actual Postgres 40P01 (uncaught — this
             // fact fails loudly on it), not a theoretical one
-            var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, /*lang=json,strict*/ """{"summary":"a done"}""", claimAt.AddMinutes(1), cancellationToken);
-            var completeB = queueB.CompleteAsync(claimedB.WorkItemId, workerB, /*lang=json,strict*/ """{"summary":"b done"}""", claimAt.AddMinutes(1), cancellationToken);
+            var completeA = queueA.CompleteAsync(claimedA.WorkItemId, workerA, claimedA.Generation, /*lang=json,strict*/ """{"summary":"a done"}""", claimAt.AddMinutes(1), cancellationToken);
+            var completeB = queueB.CompleteAsync(claimedB.WorkItemId, workerB, claimedB.Generation, /*lang=json,strict*/ """{"summary":"b done"}""", claimAt.AddMinutes(1), cancellationToken);
             var resultA = await completeA;
             var resultB = await completeB;
 

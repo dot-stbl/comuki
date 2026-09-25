@@ -1,4 +1,3 @@
-using Comuki.Shared.Editions;
 using Comuki.Shared.Editions.Catalog;
 using Comuki.Shared.Editions.Catalog.Keys;
 using Comuki.Shared.Editions.Edition;
@@ -210,7 +209,7 @@ public sealed class RequiresFeatureFilterShould
             new RouteData(),
             new ActionDescriptor { EndpointMetadata = [new RequiresFeatureAttribute("multi-repo")] });
 
-        await filter.OnResourceExecutionAsync(context, () => throw new InvalidOperationException("next() must not be called when denied"));
+        await filter.OnResourceExecutionAsync(context, static () => throw new InvalidOperationException("next() must not be called when denied"));
 
         context.Result.ShouldNotBeNull();
         var result = context.Result.ShouldBeOfType<ObjectResult>();
@@ -232,7 +231,7 @@ public sealed class RequiresFeatureFilterShould
             new RouteData(),
             new ActionDescriptor { EndpointMetadata = [new EnforceLimitAttribute("projects")] });
 
-        await filter.OnResourceExecutionAsync(context, () => throw new InvalidOperationException("next() must not be called when denied"));
+        await filter.OnResourceExecutionAsync(context, static () => throw new InvalidOperationException("next() must not be called when denied"));
 
         context.Result.ShouldNotBeNull();
         var result = context.Result.ShouldBeOfType<ObjectResult>();
@@ -304,13 +303,13 @@ public sealed class RequiresFeatureFilterShould
                     new RequiresFeatureAttribute("agenteval"),
                 ],
             });
-        await filter.OnResourceExecutionAsync(context, () => Task.FromResult<ResourceExecutedContext>(null!));
+        await filter.OnResourceExecutionAsync(context, static () => Task.FromResult<ResourceExecutedContext>(null!));
 
         // Last wins: endpoint metadata is ordered least to most specific
         // (controller attributes before action attributes), so the filter
         // evaluates the LAST entry — agenteval, not multi-repo.
-        edition.DidNotReceive().Has(Arg.Is<Feature>(f => f.Key.Value == "multi-repo"));
-        edition.Received(1).Has(Arg.Is<Feature>(f => f.Key.Value == "agenteval"));
+        edition.DidNotReceive().Has(Arg.Is<Feature>(static f => f.Key.Value == "multi-repo"));
+        edition.Received(1).Has(Arg.Is<Feature>(static f => f.Key.Value == "agenteval"));
         context.Result.ShouldBeNull();
     }
 
@@ -337,7 +336,7 @@ public sealed class RequiresFeatureFilterShould
                 ],
             });
 
-        await filter.OnResourceExecutionAsync(context, () => throw new InvalidOperationException("next() must not be called when denied"));
+        await filter.OnResourceExecutionAsync(context, static () => throw new InvalidOperationException("next() must not be called when denied"));
 
         context.Result.ShouldNotBeNull();
         var problem = context.Result.ShouldBeOfType<ObjectResult>().Value.ShouldBeOfType<ProblemDetails>();

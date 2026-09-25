@@ -1,4 +1,3 @@
-using Comuki.Shared.Editions;
 using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Editions.Gating;
 using Comuki.Shared.Editions.Licensing.Ed25519;
@@ -21,7 +20,7 @@ namespace Comuki.Shared.Editions.Unit.Gating.Di;
 /// type-assignability precondition failure (with no registration left
 /// behind when it trips), the default-Singleton lifetime, and the
 /// end-to-end path with a real <see cref="LicenseEdition"/> built from
-/// the <see cref="Comuki.Shared.Editions.Unit.Fixtures.TestLicense"/>
+/// the <see cref="TestLicense"/>
 /// fixtures (Community vs Team-with-AgentEval).
 /// </summary>
 public sealed class AddForEditionShould
@@ -30,7 +29,7 @@ public sealed class AddForEditionShould
     public void CommunityEditionRegistersOtherwiseImplementation()
     {
         var edition = Substitute.For<IEdition>();
-        edition.Has(Arg.Any<Comuki.Shared.Editions.Catalog.Feature>()).Returns(false);
+        edition.Has(Arg.Any<Catalog.Feature>()).Returns(false);
         var services = new ServiceCollection();
         services.AddSingleton(edition);
 
@@ -48,7 +47,7 @@ public sealed class AddForEditionShould
     public void PaidEditionRegistersUseImplementation()
     {
         var edition = Substitute.For<IEdition>();
-        edition.Has(Arg.Any<Comuki.Shared.Editions.Catalog.Feature>()).Returns(true);
+        edition.Has(Arg.Any<Catalog.Feature>()).Returns(true);
         var services = new ServiceCollection();
         services.AddSingleton(edition);
 
@@ -80,7 +79,7 @@ public sealed class AddForEditionShould
         services.Count.ShouldBe(initialCount);
 
         using var provider = services.BuildServiceProvider();
-        Should.Throw<InvalidOperationException>(() => provider.GetRequiredService<IForEditionService>());
+        Should.Throw<InvalidOperationException>(provider.GetRequiredService<IForEditionService>);
     }
 
     [Fact(DisplayName = "Given an otherwise type that is not assignable to TService, when AddForEdition runs, then it throws ArgumentException naming the otherwise parameter, and no service is registered")]
@@ -101,14 +100,14 @@ public sealed class AddForEditionShould
         services.Count.ShouldBe(initialCount);
 
         using var provider = services.BuildServiceProvider();
-        Should.Throw<InvalidOperationException>(() => provider.GetRequiredService<IForEditionService>());
+        Should.Throw<InvalidOperationException>(provider.GetRequiredService<IForEditionService>);
     }
 
     [Fact(DisplayName = "Given the default lifetime, when AddForEdition registers and TService is resolved twice, then the same instance is returned")]
     public void DefaultLifetimeIsSingleton()
     {
         var edition = Substitute.For<IEdition>();
-        edition.Has(Arg.Any<Comuki.Shared.Editions.Catalog.Feature>()).Returns(true);
+        edition.Has(Arg.Any<Catalog.Feature>()).Returns(true);
         var services = new ServiceCollection();
         services.AddSingleton(edition);
 

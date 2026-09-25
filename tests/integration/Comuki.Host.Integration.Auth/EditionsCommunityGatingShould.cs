@@ -7,7 +7,6 @@ using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Editions.Gating;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
@@ -119,7 +118,7 @@ public sealed class CommunityEditionFixture : IAsyncLifetime
         // edition gate is exercised here.
         application.MapGet(
             SampleEndpointRoute,
-            [RequiresFeature("multi-repo")] () => Results.Ok(new { ok = true }));
+            [RequiresFeature("multi-repo")] static () => Results.Ok(new { ok = true }));
 
         baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
     }

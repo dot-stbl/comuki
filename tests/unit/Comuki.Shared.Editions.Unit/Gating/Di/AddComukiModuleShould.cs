@@ -1,8 +1,6 @@
-using Comuki.Shared.Editions;
 using Comuki.Shared.Editions.Catalog;
 using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Editions.Gating;
-using Comuki.Shared.Editions.Licensing;
 using Comuki.Shared.Editions.Licensing.Ed25519;
 using Comuki.Shared.Editions.Options;
 using Comuki.Shared.Editions.Registry;
@@ -26,7 +24,7 @@ namespace Comuki.Shared.Editions.Unit.Gating.Di;
 /// (installer skipped + warning logged), the missing-dependency
 /// precondition failure, and the end-to-end path with a real
 /// <see cref="LicenseEdition"/> built from the
-/// <see cref="Comuki.Shared.Editions.Unit.Fixtures.TestLicense"/>
+/// <see cref="TestLicense"/>
 /// fixtures (Community vs Team-with-MultiRepo).
 /// </summary>
 public sealed class AddComukiModuleShould
@@ -63,7 +61,7 @@ public sealed class AddComukiModuleShould
         var services = new ServiceCollection();
         services.AddSingleton(edition);
         services.AddSingleton<IEditionCapabilityRegistry, EditionCapabilityRegistry>();
-        services.AddSingleton<ILoggerFactory>(NullLoggerFactoryInstance());
+        services.AddSingleton(NullLoggerFactoryInstance());
         var installerCalled = false;
 
         services.AddComukiModule<GatedMarker>(inner =>

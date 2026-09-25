@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Comuki.Shared.Editions.Gating;
 
 /// <summary>
-/// <see cref="AddForEditionExtensions.AddForEdition{TService}"/> —
+/// <see cref="AddForEdition{TService}"/> —
 /// per-service edition gating at the DI-registration boundary. Reads
 /// the current <see cref="IEdition"/> once at composition time and
 /// registers either the paid implementation or the Community

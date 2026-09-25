@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Comuki.Shared.Editions;
 using Comuki.Shared.Editions.Catalog.Keys;
 using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Editions.Gating;
@@ -206,7 +205,7 @@ public sealed class RequiresFeatureMiddlewareShould
     }
 
     /// <summary>
-    /// Extension values round-trip through STJ as <see cref="System.Text.Json.JsonElement"/>;
+    /// Extension values round-trip through STJ as <see cref="JsonElement"/>;
     /// unwrap to a string for Shouldly equality assertions. The
     /// <see cref="ProblemDetails.Extensions"/> dictionary holds object
     /// values; STJ serialises string values as JSON strings and numeric
@@ -214,10 +213,10 @@ public sealed class RequiresFeatureMiddlewareShould
     /// </summary>
     private static string GetExtension(ProblemDetails problem, string key)
     {
-        return problem.Extensions![key] switch
+        return problem.Extensions[key] switch
         {
-            System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.String } element => element.GetString() ?? string.Empty,
-            System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.Number } element => element.GetRawText(),
+            JsonElement { ValueKind: JsonValueKind.String } element => element.GetString() ?? string.Empty,
+            JsonElement { ValueKind: JsonValueKind.Number } element => element.GetRawText(),
             string direct => direct,
             _ => problem.Extensions[key]?.ToString() ?? string.Empty,
         };

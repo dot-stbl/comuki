@@ -141,7 +141,7 @@ public sealed class PaidEditionFixture : IAsyncLifetime
 
         application.MapGet(
             SampleEndpointRoute,
-            [RequiresFeature("multi-repo")] () => Results.Ok(new { ok = true }));
+            [RequiresFeature("multi-repo")] static () => Results.Ok(new { ok = true }));
 
         baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
     }

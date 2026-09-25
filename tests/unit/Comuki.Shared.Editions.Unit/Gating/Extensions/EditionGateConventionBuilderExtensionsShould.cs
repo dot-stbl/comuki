@@ -1,5 +1,3 @@
-using System.Linq;
-using Comuki.Shared.Editions;
 using Comuki.Shared.Editions.Gating;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

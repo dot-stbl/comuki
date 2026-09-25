@@ -4,8 +4,9 @@ namespace Comuki.Engine.Orchestration.Domain.Runs;
 /// table-driven legal <see cref="RunStatus"/> transitions — single source of
 /// truth shared by the <see cref="Run"/> aggregate guard and the Application
 /// <c>RunStatusMachine</c>. Terminal statuses (<see cref="RunStatus.Succeeded"/>,
-/// <see cref="RunStatus.Cancelled"/>) have no outgoing edges; <see cref="RunStatus.Failed"/>
-/// can only be retried back to <see cref="RunStatus.Queued"/>.
+/// <see cref="RunStatus.Failed"/>, <see cref="RunStatus.Cancelled"/>) have
+/// no outgoing edges; a retry surfaces as a fresh Run attempt, not a
+/// transition on this Run.
 /// </summary>
 public static class RunTransitions
 {
@@ -17,7 +18,7 @@ public static class RunTransitions
             [RunStatus.Waiting] = [RunStatus.Running, RunStatus.Failed, RunStatus.Cancelled, RunStatus.Escalated],
             [RunStatus.Running] = [RunStatus.Succeeded, RunStatus.Failed, RunStatus.Cancelled, RunStatus.Escalated],
             [RunStatus.Escalated] = [RunStatus.Running, RunStatus.Failed, RunStatus.Cancelled],
-            [RunStatus.Failed] = [RunStatus.Queued],
+            [RunStatus.Failed] = [],
             [RunStatus.Succeeded] = [],
             [RunStatus.Cancelled] = [],
         };

@@ -87,12 +87,12 @@ for this workstream, assert the Run-status half only.
 **Files:** `platform/src/engine/Comuki.Engine.Orchestration/Domain/Runs/RunTransitions.cs`,
 `tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/RunStatusMachineShould.cs` (extend).
 
-- [ ] 3.1 Remove `[RunStatus.Failed] = [RunStatus.Queued]` from
+- [x] 3.1 Remove `[RunStatus.Failed] = [RunStatus.Queued]` from
       `RunTransitions.table`; `Failed` becomes terminal (`[]`) like
       `Succeeded`/`Cancelled` (epic task 2.6).
-- [ ] 3.2 Update the stale XML-doc comments on `RunTransitions` and
+- [x] 3.2 Update the stale XML-doc comments on `RunTransitions` and
       `RunStatus.Failed` that describe the old retry edge.
-- [ ] 3.3 Confirm `WorkItem`'s own `Failed → Queued` edge is untouched —
+- [x] 3.3 Confirm `WorkItem`'s own `Failed → Queued` edge is untouched —
       this change is scoped to `Run` only.
 
 **Acceptance:** `RunStatusMachineShould.cs` asserts `Failed` has no legal

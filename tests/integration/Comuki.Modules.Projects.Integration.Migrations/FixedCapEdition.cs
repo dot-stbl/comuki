@@ -33,4 +33,6 @@ internal sealed class FixedCapEdition(int cap) : IEdition
     {
         return cap;
     }
+
+    public DateTimeOffset? ExpiresAt => null;
 }

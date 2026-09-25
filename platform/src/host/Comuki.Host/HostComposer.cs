@@ -10,6 +10,7 @@ using Comuki.Host.Chat.Tools;
 using Comuki.Host.Compute;
 using Comuki.Host.ControlPlane;
 using Comuki.Host.Costs;
+using Comuki.Host.Editions;
 using Comuki.Host.Errors;
 using Comuki.Host.HealthChecks;
 using Comuki.Host.Intake;
@@ -655,6 +656,7 @@ internal static class HostComposer
         });
         app.MapControllers();
         app.MapProjectsEndpoints();
+        app.MapEditionsEndpoints();
         app.MapCostsEndpoints();
         app.MapKnowledgeEndpoints();
         app.MapMcpEndpoints();

@@ -1,0 +1,24 @@
+{
+  "required": ["key", "current", "cap"],
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "The closed-vocabulary limit key (dot.case; the same string the gate attribute carries)."
+    },
+    "current": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Currently-observed usage (best-effort from the matching provider, or 0).",
+      "format": "int32"
+    },
+    "cap": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "Effective numeric cap at the current tier.",
+      "format": "int32"
+    }
+  },
+  "description": "One limit's usage against its tier cap. The `current` value comes\r\nfrom the matching ILimitUsageProvider registered in DI;\r\nwhen no provider is registered the view reports `0` rather than\r\nrefusing to answer, because the gate is the source of truth for\r\nenforcement and the view is read-only.",
+  "x-readme-ref-name": "LimitUsageView"
+}

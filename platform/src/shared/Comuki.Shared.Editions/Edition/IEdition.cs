@@ -43,4 +43,14 @@ public interface IEdition
 
     /// <summary>The effective numeric cap for <paramref name="limit"/> at the current tier/license.</summary>
     public int Limit(Limit limit);
+
+    /// <summary>
+    /// ISO-8601 UTC instant the license expires, or <c>null</c> when no
+    /// license applies (Community / <see cref="Status"/><c> == </c><see cref="LicenseStatus.Absent"/>).
+    /// Deliberately NOT exposed as <see cref="Licensing.LicenseKey"/> — see the
+    /// port-level <c>name="IEdition"</c> doc for why the verified key never
+    /// escapes a read; the dashboard needs only the expiry instant, not the
+    /// organisation name or the signature blob.
+    /// </summary>
+    public DateTimeOffset? ExpiresAt { get; }
 }

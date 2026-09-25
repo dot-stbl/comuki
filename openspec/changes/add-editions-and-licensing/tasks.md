@@ -245,10 +245,12 @@ project).
 
 ## 7. `/api/v1/edition` endpoint + FE / CLI contract
 
-- [ ] 7.1 Add `GET /api/v1/edition` in
-  `platform/src/host/Comuki.Host/Editions/EditionsController.cs`
-  (or minimal-API equivalent — pick MVC for symmetry with the
-  other host endpoints; route constant goes in `ApiRoutes`); the
+- [x] 7.1 Add `GET /api/v1/edition` in
+  `platform/src/host/Comuki.Host/Editions/EditionsEndpoints.cs`
+  (minimal-API form — host endpoints are static classes, MVC was a stale guess;
+  follows the `SettingsEndpoints` / `ProjectsModuleEndpoints` pattern with
+  `MapGroup(ApiRoutes.Edition).WithTags("Editions")` and a private static
+  `GetAsync` handler); the
   response body is `{ tier: string, status: 'valid' | 'grace' |
   'expired' | 'absent', features: { key: string, available: bool
   }[], limits: { key: string, current: number, cap: number }[],
@@ -257,18 +259,21 @@ project).
   `add-worker-commit-attribution` reads the same way); verify
   the OpenAPI operation is in `artifacts/openapi.json` after a
   Debug build.
-- [ ] 7.2 Add the contract-only FE / CLI hook descriptions in
-  `dashboard/src/shared/editions/hooks.ts` (TypeScript:
-  `useFeature(FeatureKey): boolean`, `<FeatureGate feature=
-  FeatureKey fallback=ReactNode>: ReactNode` — both thin
-  wrappers over the generated registry + `/api/v1/edition`
-  fetch) and `cli/src/contracts/_generated/editions.ts` (a
-  placeholder module that re-exports the kubb-generated types
-  once the endpoint is in the OpenAPI schema); **both are
-  contract-only documentation in this change** — their bodies
-  are a follow-up change per `proposal.md`'s Non-goals; verify a
-  build that imports the placeholders compiles (the contract file
-  may be a single typed re-export).
+- [x] 7.2 Add the FE hook surface (`useEdition()`, `useFeature()`) and
+  the kit `<FeatureGate>` primitive; ship the CLI placeholder module.
+  Landed as REAL implementations, superseding the contract-only
+  plan in this revision: `dashboard/src/shared/editions/{model,queries}.ts`
+  carry the typed snapshot + TanStack Query hook + mapper over the
+  kubb-generated `getApiV1Edition` client (mock-mode serves
+  `COMMUNITY_EDITION_SNAPSHOT`); `dashboard/src/shared/ui/feature-gate.tsx`
+  is the presentational kit primitive (presentational; data via props
+  per AGENTS.md); `dashboard/src/domains/settings/ui/edition-panel.tsx`
+  wires one real `<FeatureGate feature="multi-repo">` consumer;
+  `cli/src/contracts/_generated/editions.ts` is a hand-placed typed module
+  mirroring the kubb-generated shape (the CLI's HTTP-tree regen will
+  replace it on next `bun run generate:contracts`). OpenAPI regen,
+  vitest unit tests for the gate + mapper + `useFeature`, and the
+  `EditionPanel` mount under the real-mode settings page all green.
 
 Deps: 3, 4. Files: `platform/src/host/Comuki.Host/Editions/**` (new
 subfolder), `dashboard/src/shared/editions/hooks.ts` (new,
@@ -280,7 +285,7 @@ platform/src/host/Comuki.Host/Comuki.Host.csproj -c Debug`;
 
 ## 8. Architecture tests + fixture licenses
 
-- [ ] 8.1 Extend `Comuki.Architecture.Tests` with three new test
+- [x] 8.1 Extend `Comuki.Architecture.Tests` with three new test
   classes:
   - `EditionsRegistryContainsEveryGateKeyShould` — reflection-
     scans every `[RequiresFeature]` / `[EnforceLimit]` /
@@ -291,15 +296,24 @@ platform/src/host/Comuki.Host/Comuki.Host.csproj -c Debug`;
   - `EveryPaidRegistryEntryIsGatedShould` — walks the registry;
     asserts every `Feature` with `MinimumRank > 0` has at least
     one gate call site (the reverse direction; without this,
-    a paid feature could sit in the registry unused).
-  - `CommunityEditionComposesCleanlyShould` — extends
-    `tests/unit/Comuki.Host.Unit.DiComposition/HostServiceProviderShould.cs:19`
-    with one case: build the full host service provider with a
-    Community (absent) license, force
-    `ValidateOnBuild = true` / `ValidateScopes = true`, assert
-    it validates — the whole point of "one codebase, one
-    binary" is that Community composes with zero paid services
-    registered.
+    a paid feature could sit in the registry unused). Ships with
+    a documented `pendingGateKeys` allowlist because no paid
+    feature ships with a real gate today (per `proposal.md`'s
+    Non-goals: implementing the paid features is out of scope for
+    this change; `Features.cs` doc-comments each row with the issue
+    that will gate it — #95, #100, #101, #163, #165). The companion
+    `AllowlistIsNotRotting` assertion fails the build the day a
+    real gate appears on a listed key, so the allowlist cannot rot.
+  - `CommunityEditionComposesCleanlyShould` — lives in
+    `tests/unit/Comuki.Host.Unit.DiComposition/` (sibling of
+    `HostServiceProviderShould`), as the task text specifies: the
+    original task said "extends `HostServiceProviderShould.cs:19`",
+    but DI-graph composition is a runtime assertion, not a
+    static-reflection assertion, so a sibling test class in the
+    DiComposition project keeps the separation; it builds the
+    full host with `Host:License:Path` deliberately absent,
+    forces `ValidateOnBuild + ValidateScopes`, and resolves
+    `IEdition` to assert `Current == Community / Status == Absent`.
 - [ ] 8.2 Add `TestLicenseBuilder` in `tests/unit/Comuki.Shared.Editions.Unit`
   (test-only keypair, fixtures `TestLicense.Community` /
   `TestLicense.With(Features.X)`); the production embedded

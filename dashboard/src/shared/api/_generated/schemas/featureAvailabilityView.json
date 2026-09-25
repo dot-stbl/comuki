@@ -1,0 +1,16 @@
+{
+  "required": ["key", "available"],
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "The closed-vocabulary feature key (dot.case; the same string the gate attribute carries)."
+    },
+    "available": {
+      "type": "boolean",
+      "description": "True when the current bool IEdition.Has(Feature feature) covers this key."
+    }
+  },
+  "description": "One feature's availability at the current edition. The view is honest\r\nabout every entry — including paid keys under Community, where\r\n`available` is `false` — so the dashboard can render the\r\nright disabled/locked affordance without a second call to the catalog.",
+  "x-readme-ref-name": "FeatureAvailabilityView"
+}

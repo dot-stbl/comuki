@@ -43,6 +43,7 @@
     <ProjectReference Include="..\..\platform\src\modules\Verify\Comuki.Modules.Verify.Infrastructure\Comuki.Modules.Verify.Infrastructure.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Artifacts\Comuki.Modules.Artifacts.Domain\Comuki.Modules.Artifacts.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
+    <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Editions\Comuki.Shared.Editions.csproj" />
     <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
   </ItemGroup>
 

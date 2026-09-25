@@ -66,6 +66,9 @@ public sealed class LicenseEdition(
             : limit.ValueFor(current.Current);
     }
 
+    /// <inheritdoc />
+    public DateTimeOffset? ExpiresAt => EnsureFresh().License?.Expiry;
+
     /// <summary>
     /// Returns the current snapshot, recomputing only when the throttle
     /// window has elapsed. Visible to the unit project via

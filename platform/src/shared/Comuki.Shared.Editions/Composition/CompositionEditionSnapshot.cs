@@ -74,4 +74,7 @@ internal sealed class CompositionEditionSnapshot : IEdition
             ? overrideValue
             : limit.ValueFor(Current);
     }
+
+    /// <inheritdoc />
+    public DateTimeOffset? ExpiresAt => license?.Expiry;
 }

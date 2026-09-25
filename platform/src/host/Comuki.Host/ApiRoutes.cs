@@ -181,6 +181,9 @@ public static class ApiRoutes
     /// <summary>Platform settings snapshot — existing options surfaced read-only.</summary>
     public const string Settings = "/api/v1/settings";
 
+    /// <summary>Anonymous edition snapshot — tier code, license status, capability flags, limits, build version (issue #164 §7, #70).</summary>
+    public const string Edition = "/api/v1/edition";
+
     /// <summary>Platform-wide cost rollup (all projects) over a day window.</summary>
     public const string Costs = "/api/v1/costs";
 

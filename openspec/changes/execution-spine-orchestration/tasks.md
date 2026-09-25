@@ -172,15 +172,15 @@ new `tests/integration/Comuki.Engine.Orchestration.Integration.Queue/OutboxDispa
 (or a new sibling `Comuki.Engine.Orchestration.Integration.Outbox` project if
 cohesion favors it — document the choice made in the PR description).
 
-- [ ] 6.1 `outbox_messages`/`inbox_receipts` tables, snake_case, under
+- [x] 6.1 `outbox_messages`/`inbox_receipts` tables, snake_case, under
       the orchestration schema, per `add-mission-cowork/architecture.md`
       decision #3 (epic task 2.4 infra half).
-- [ ] 6.2 `IOutbox` write-side port (enqueue in the same transaction as
+- [x] 6.2 `IOutbox` write-side port (enqueue in the same transaction as
       the caller's aggregate commit); `BackgroundService` dispatcher
       polling `FOR UPDATE SKIP LOCKED`, bounded retries, visible
       dead-letter state on exhausted retries — no Hangfire/Quartz.
-- [ ] 6.3 Inbox dedupe by message id (`inbox_receipts`) for consumers.
-- [ ] 6.4 Partial index on `outbox_messages` for undispatched rows
+- [x] 6.3 Inbox dedupe by message id (`inbox_receipts`) for consumers.
+- [x] 6.4 Partial index on `outbox_messages` for undispatched rows
       (`(dispatched_at, created_at)` filtered to `dispatched_at IS
       NULL`), matching the claim-path partial-index convention already
       used on `work_items`.
@@ -254,15 +254,15 @@ its `IRunLauncher` port declaration (find under
 `tests/integration/Comuki.Host.Integration.Runs/` (extend if a
 cross-module assertion is cleaner there).
 
-- [ ] 9.1 Give the admission call a stable message id (the ticket's
+- [x] 9.1 Give the admission call a stable message id (the ticket's
       admission/claim identity) and an inbox dedupe check on the
       Orchestration side before `Run.Create`/`WorkItem.Create` run
       (epic task 2.5).
-- [ ] 9.2 Retried delivery of the same message id creates at most one
+- [x] 9.2 Retried delivery of the same message id creates at most one
       Run; concurrent delivery of the same message id resolves to one
       Run with the losing caller observing the same Run id, not an
       error.
-- [ ] 9.3 `intake`'s own capability spec/outcome-label set is
+- [x] 9.3 `intake`'s own capability spec/outcome-label set is
       unchanged — this is an Orchestration-side guarantee only.
 
 **Acceptance:** an integration test delivers the same admission message

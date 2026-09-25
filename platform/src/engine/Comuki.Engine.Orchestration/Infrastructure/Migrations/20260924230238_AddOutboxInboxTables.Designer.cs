@@ -3,6 +3,7 @@ using System;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
 {
     [DbContext(typeof(OrchestrationDbContext))]
-    partial class OrchestrationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924230238_AddOutboxInboxTables")]
+    partial class AddOutboxInboxTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -254,11 +257,6 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("AdmissionMessageId")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("admission_message_id");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -287,11 +285,6 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_runs");
-
-                    b.HasIndex("AdmissionMessageId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_runs_admission_message_id")
-                        .HasFilter("admission_message_id IS NOT NULL");
 
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("ix_runs_updated_at");

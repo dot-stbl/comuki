@@ -124,13 +124,13 @@ a known-good token and rejects a tampered one.
 
 ## 4. API gating — `[RequiresFeature]` / `[EnforceLimit]` + filter + middleware
 
-- [ ] 4.1 Add `[RequiresFeature(Feature)]` / `[EnforceLimit(Limit)]`
+- [x] 4.1 Add `[RequiresFeature(Feature)]` / `[EnforceLimit(Limit)]`
   attributes in `Comuki.Shared.Editions.Gating` (modeled on
   `RequiresPermissionAttribute.cs:20`; constructor accepts the
   smart-typed `Feature` / `Limit` instance when achievable, else
   falls back to `nameof(Features.X)` per OQ1 with a code comment
   naming the future source-generator direction).
-- [ ] 4.2 Add `RequiresFeatureFilter : IAsyncResourceFilter`
+- [x] 4.2 Add `RequiresFeatureFilter : IAsyncResourceFilter`
   (modeled on `RequiresPermissionFilter.cs:33` — same `last wins`
   metadata ordering, `LastOrDefault()` on `EndpointMetadata`),
   `RequiresFeatureMiddleware` (modeled on
@@ -140,22 +140,27 @@ a known-good token and rejects a tampered one.
   `RequiresPermissionFilter.cs:79`); both paths produce the same
   `edition.feature_unavailable` 403 ProblemDetails with the
   `code` extension carrying the dot.case code.
-- [ ] 4.3 Add `.RequireFeature(Feature)` extension on
+- [x] 4.3 Add `.RequireFeature(Feature)` extension on
   `IEndpointConventionBuilder` (minimal-API path) that adds the
   same attribute-shaped metadata as the MVC `[RequiresFeature]`,
   so both paths read one demand type — no parallel demand shapes
   invented for MVC vs minimal API.
-- [ ] 4.4 Wire the filter (via `MvcOptions.Filters.Add<...>()` or
+- [x] 4.4 Wire the filter (via `MvcOptions.Filters.Add<...>()` or
   the existing `HostComposer` extension point) and the middleware
   (via `app.UseMiddleware<RequiresFeatureMiddleware>()`) in
   `HostComposer`; verify a Debug build emits
   `artifacts/openapi.json` with the new 403 `ProblemDetails`
   examples for any endpoint carrying `[RequiresFeature]`.
-- [ ] 4.5 Add one illustrative worked example: one paid endpoint
+- [x] 4.5 Add one illustrative worked example: one paid endpoint
   (any existing controller action — pick the cheapest), tagged
   with `[RequiresFeature(Features.X)]`, verified by a unit test
   that a Community request 403s with `code=edition.feature_unavailable`
-  and a paid-tier request passes through to the handler.
+  and a paid-tier request passes through to the handler. (Landed as
+  two worked examples: `[EnforceLimit("projects")]` on the real
+  Projects-create endpoint — chunk C — plus a test-only
+  `[RequiresFeature]` sample endpoint exercised by the Host
+  integration suite — chunk D; no shipped `Features.*` capability
+  has a real endpoint yet, per proposal.md's Non-goals.)
 
 Deps: 3. Files: `platform/src/shared/Comuki.Shared.Editions/Gating/**`
 (new), `platform/src/host/Comuki.Host/Editions/**` (new folder
@@ -168,7 +173,7 @@ full unit suite for the worked-example endpoint.
 
 ## 5. DI gating — `AddComukiModule<TModule>` + `[EditionFeature]` + `AddForEdition<TService>`
 
-- [ ] 5.1 Add `AddComukiModule<TModule>()` generic extension in
+- [x] 5.1 Add `AddComukiModule<TModule>()` generic extension in
   `Comuki.Shared.Editions.Gating` (reads class-level
   `[EditionFeature(Feature)]` on `TModule`, calls `IEdition.Has(...)`
   before invoking the module's concrete installer; on false,
@@ -177,18 +182,18 @@ full unit suite for the worked-example endpoint.
   it composes with the existing "one `AddXxxModule` extension per
   module" convention of
   `ProjectsApplicationExtensions.cs:24` and `ComputeInstaller.cs`).
-- [ ] 5.2 Add `AddForEdition<TService>(paid: Feature, use: Type,
+- [x] 5.2 Add `AddForEdition<TService>(paid: Feature, use: Type,
   otherwise: Type)` for interface-swap by current edition at
   composition time; Community always gets a real, working stub
   implementation, never null / throwing.
-- [ ] 5.3 Pick one existing module installer (the cheapest one)
+- [x] 5.3 Pick one existing module installer (the cheapest one)
   and update **only its installer file** to demonstrate the
   `AddComukiModule<TModule>` shape (e.g. wrap an existing
   `AddXxxModule(...)` call in `AddComukiModule<XxxModule>()` with a
   class-level `[EditionFeature(Features.X)]`); verify a unit test
   that building the DI graph with Community skips the inner
   installer and a paid tier runs it.
-- [ ] 5.4 Pick one existing paid/Community interface split (or
+- [x] 5.4 Pick one existing paid/Community interface split (or
   invent a minimal one in the test project if no real split
   exists) and demonstrate `AddForEdition<TService>`; verify the
   Community DI graph resolves the Community impl and the paid DI

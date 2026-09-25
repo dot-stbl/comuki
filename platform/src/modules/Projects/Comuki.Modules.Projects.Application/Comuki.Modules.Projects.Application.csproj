@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Comuki.Modules.Projects.Domain\Comuki.Modules.Projects.Domain.csproj" />
+    <ProjectReference Include="..\..\..\shared\Comuki.Shared.Editions\Comuki.Shared.Editions.csproj" />
   </ItemGroup>
 
 </Project>

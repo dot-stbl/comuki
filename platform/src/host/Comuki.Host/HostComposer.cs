@@ -68,11 +68,14 @@ using Comuki.Shared.Contracts.Artifacts;
 using Comuki.Shared.Contracts.Brain;
 using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Runs;
+using Comuki.Shared.Editions.Gating;
+using Comuki.Shared.Editions.Installers;
 using Comuki.Shared.Kernel.Secrets;
 using Comuki.Shared.Migrations;
 using Comuki.Shared.Redis;
 using Comuki.Shared.Telemetry.Installers;
 using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -176,6 +179,16 @@ internal static class HostComposer
                 serviceProvider.GetRequiredService<IVaultClient>(),
                 serviceProvider.GetRequiredService<ILogger<VaultSecretProvider>>(),
                 serviceProvider.GetRequiredService<IMemoryCache>()));
+
+        // Editions layer (issue #164 / add-editions-and-licensing, chunk
+        // C — wires chunks A and B into the real host): the license provider,
+        // hot-reloading IEdition, and the IEditionCapabilityRegistry every
+        // API / DI gate call site reads from. Placed after every secret
+        // provider the license path might reference is registered, before
+        // AddControlPlaneCatalogCore — DI resolves lazily so ordering does
+        // not functionally matter, but it stays near the other early
+        // cross-cutting registrations for the reader.
+        builder.Services.AddComukiEditions(builder.Configuration);
 
         builder.Services.AddControlPlaneCatalogCore(builder.Configuration);
 
@@ -440,6 +453,7 @@ internal static class HostComposer
         builder.Services.AddSingleton<IComukiWorker, BootstrapAdminComukiWorker>();
 
         builder.Services.AddControllers();
+        builder.Services.Configure<MvcOptions>(static options => options.Filters.Add<RequiresFeatureFilter>());
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ProviderExceptionHandler>();
 
@@ -616,6 +630,18 @@ internal static class HostComposer
         // the gate first and their resource filter stays as the
         // in-pipeline backstop.
         app.UseMiddleware<RequiresPermissionMiddleware>();
+
+        // Edition gate (issue #164 / add-editions-and-licensing, chunk C):
+        // the minimal-API counterpart to the RequiresFeatureFilter above.
+        // Reads [RequiresFeature] / [EnforceLimit] off the endpoint
+        // metadata, runs them through the shared EditionGate, and short-
+        // circuits with a 403 problem+json body on deny. Runs after the
+        // permission gate on purpose so a missing permission surfaces
+        // before a missing feature (both axes are independent and a single
+        // endpoint may carry either or both). MVC actions are covered by
+        // the RequiresFeatureFilter registered in
+        // builder.Services.Configure<MvcOptions> above.
+        app.UseMiddleware<RequiresFeatureMiddleware>();
 
         app.MapGet(ApiRoutes.Health, static () => Results.Ok(new { status = "ok" }));
 

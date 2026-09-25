@@ -15,5 +15,5 @@ namespace Comuki.Shared.Editions.Installers;
 internal static class ProductionEd25519PublicKey
 {
     /// <summary>32-byte Ed25519 verifying public key, base64-encoded.</summary>
-    public static readonly byte[] Value = Convert.FromBase64String("aDdzI6q/Yg7beg3WoLAg40yLQ4tanoFZqB0PPSufSzM=");
+    public static readonly byte[] Value = Convert.FromBase64String("t0/p6Muzc9hAhC+J8QsqwNEARH6liIb1GSow9aaak80=");
 }

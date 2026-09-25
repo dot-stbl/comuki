@@ -49,8 +49,11 @@ public sealed class RequiresFeatureMiddleware(RequestDelegate next)
             && EditionGate.EvaluateFeature(registry, edition, featureDemand.FeatureKey) is { } featureDenial)
         {
             context.Response.StatusCode = featureDenial.StatusCode;
-            context.Response.ContentType = "application/problem+json";
-            await context.Response.WriteAsJsonAsync(featureDenial.Problem);
+            // WriteAsJsonAsync's simple overload unconditionally resets
+            // Response.ContentType to "application/json" — passing the
+            // media type explicitly is the only way it sticks (found via
+            // the chunk D integration tests, which assert on it).
+            await context.Response.WriteAsJsonAsync(featureDenial.Problem, options: null, contentType: "application/problem+json", cancellationToken);
             return;
         }
 
@@ -63,8 +66,7 @@ public sealed class RequiresFeatureMiddleware(RequestDelegate next)
                 cancellationToken) is { } limitDenial)
         {
             context.Response.StatusCode = limitDenial.StatusCode;
-            context.Response.ContentType = "application/problem+json";
-            await context.Response.WriteAsJsonAsync(limitDenial.Problem);
+            await context.Response.WriteAsJsonAsync(limitDenial.Problem, options: null, contentType: "application/problem+json", cancellationToken);
             return;
         }
 

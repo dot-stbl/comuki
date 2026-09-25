@@ -1,4 +1,4 @@
-import { Check, Lock } from "lucide-react"
+import { Check, GitBranch, Lock } from "lucide-react"
 
 import { useEdition, useFeature } from "@/shared/editions/queries"
 import { FeatureGate, Section } from "@/shared/ui"
@@ -8,13 +8,17 @@ import styles from "./edition-panel.module.css"
 /**
  * The edition snapshot for the read-only settings page in real mode.
  *
- * Five rows, every value out of a closed vocabulary (`tier` / `status`
- * / capability keys / limit keys / semver), each row a one-line "what
+ * Every value out of a closed vocabulary (`tier` / `status` /
+ * capability keys / limit keys / semver), each row a one-line "what
  * we know" statement: no toggles, no buttons, no upgrade CTA. The
- * affordance for "I am missing this" lives on the locked
- * <see cref="FeatureGate"/> wrapping the paid-capabilities section, not
- * on the panel itself — a panel that offered upgrades would imply the
- * platform could grant them in-process, which it cannot.
+ * capability matrix is ALWAYS rendered — a Community reader should
+ * see every paid capability and its lock mark, so the page can answer
+ * "what would change under a paid license" without forcing a second
+ * call to the catalog. The locked affordance is reserved for the one
+ * piece of the panel where it is the honest reading: a paid-only
+ * action row (`multi-repo` — "connect repository"). This panel is
+ * read-only by design, so the action row is presentational and
+ * disabled, not a live button.
  */
 export function EditionPanel() {
   const query = useEdition()
@@ -91,29 +95,41 @@ export function EditionPanel() {
         </div>
       ) : null}
 
+      <ul className={styles.features} data-test="edition-features">
+        {snapshot.features.map((feature) => (
+          <li key={feature.key} className={styles.feature}>
+            <span className={styles.featureKey}>{feature.key}</span>
+            <span
+              className={styles.featureMark}
+              data-available={feature.available ? "yes" : "no"}
+              aria-label={
+                feature.available
+                  ? `${feature.key} is available`
+                  : `${feature.key} is not in this edition`
+              }
+            >
+              {feature.available ? (
+                <Check aria-hidden="true" />
+              ) : (
+                <Lock aria-hidden="true" />
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+
       <FeatureGate feature="multi-repo" available={multiRepo}>
-        <ul className={styles.features} data-test="edition-features">
-          {snapshot.features.map((feature) => (
-            <li key={feature.key} className={styles.feature}>
-              <span className={styles.featureKey}>{feature.key}</span>
-              <span
-                className={styles.featureMark}
-                data-available={feature.available ? "yes" : "no"}
-                aria-label={
-                  feature.available
-                    ? `${feature.key} is available`
-                    : `${feature.key} is not in this edition`
-                }
-              >
-                {feature.available ? (
-                  <Check aria-hidden="true" />
-                ) : (
-                  <Lock aria-hidden="true" />
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div
+          className={styles.row}
+          data-test="edition-multirepo-affordance"
+          aria-disabled="true"
+        >
+          <span className={styles.label}>
+            <GitBranch aria-hidden="true" className={styles.labelIcon} />
+            multi-repo
+          </span>
+          <span className={styles.value}>connect repository</span>
+        </div>
       </FeatureGate>
     </Section>
   )

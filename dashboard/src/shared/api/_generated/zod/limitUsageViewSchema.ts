@@ -13,7 +13,7 @@ export const limitUsageViewSchema = z
     key: z
       .string()
       .describe(
-        "The closed-vocabulary limit key (dot.case; the same string the gate attribute carries)."
+        "The closed-vocabulary limit key (lowercase kebab-case slug; the same string the gate attribute carries)."
       ),
     current: z
       .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])

@@ -37,13 +37,13 @@ export interface EditionLimitUsage {
 /**
  * The page's projection of the host's `/api/v1/edition` response.
  *
- * `expiresAt` is intentionally optional here, not nullable: a Community
- * license omits the property entirely so the page can branch on its
- * presence rather than its value. The kubb-generated wire DTO carries
- * it as `string | null` because the kubb JSON schema does not model
- * "property omitted" the way `JsonIgnoreCondition.WhenWritingNull`
- * does at the C# layer; the mapper at the edge translates the absent
- * wire to `undefined`.
+ * `expiresAt` is intentionally optional here, not nullable: the page
+ * branches on the property's presence rather than its value. The
+ * kubb-generated wire DTO carries it as `string | null` (the OpenAPI
+ * document declares the property as required+nullable), and the mapper
+ * at the edge translates `null` to `undefined` so the page renders
+ * "no expiry applies" the same way it did when the host used to
+ * `JsonIgnore(WhenWritingNull)` the property.
  */
 export interface EditionSnapshot {
   readonly tier: EditionTier

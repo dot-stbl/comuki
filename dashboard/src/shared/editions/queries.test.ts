@@ -2,7 +2,13 @@ import type { EditionView } from "@/shared/api/_generated/types/EditionView"
 import type { FeatureAvailabilityView } from "@/shared/api/_generated/types/FeatureAvailabilityView"
 import type { LimitUsageView } from "@/shared/api/_generated/types/LimitUsageView"
 
-import { useFeature, wireToSnapshot } from "@/shared/editions/queries"
+import {
+  isEditionStatus,
+  isEditionTier,
+  normalizeEditionStatus,
+  useFeature,
+  wireToSnapshot,
+} from "@/shared/editions/queries"
 import {
   COMMUNITY_EDITION_SNAPSHOT,
   type EditionSnapshot,
@@ -17,13 +23,15 @@ import { describe, expect, it } from "vitest"
 function wire(
   overrides: Partial<{
     expiresAt: string | null
+    tier: string
+    status: string
     limits: Partial<LimitUsageView>[]
     features: Partial<FeatureAvailabilityView>[]
   }> = {},
 ): EditionView {
   return {
-    tier: "team",
-    status: "valid",
+    tier: overrides.tier ?? "team",
+    status: overrides.status ?? "valid",
     version: "1.2.3",
     features: (overrides.features ?? [
       { key: "multi-repo", available: true },
@@ -54,7 +62,7 @@ describe("edition wire -> snapshot mapper", () => {
     expect(snapshot.limits[0]?.cap).toBe(10)
   })
 
-  it("Projects null expiresAt into undefined (omitted) so the page branches on presence", () => {
+  it("Projects null expiresAt into undefined so the page branches on presence (null vs omitted are now both 'no expiry applies')", () => {
     const snapshot = wireToSnapshot(wire({ expiresAt: null }))
 
     expect(snapshot.expiresAt).toBeUndefined()
@@ -69,6 +77,62 @@ describe("edition wire -> snapshot mapper", () => {
 
     expect(snapshot.limits[0]?.current).toBe(7)
     expect(snapshot.limits[0]?.cap).toBe(10)
+  })
+
+  it("Passes any string tier through unchanged (the tier union is open — closed-vocabulary only at 'community')", () => {
+    const snapshot = wireToSnapshot(wire({ tier: "team-extra" }))
+
+    expect(snapshot.tier).toBe("team-extra")
+  })
+
+  it("Falls back to the documented 'absent' status when the wire carries an unknown word", () => {
+    // A host that has rolled out a status the FE has not been taught
+    // should degrade the row, not throw — the partial-rollout scenario
+    // documented alongside normalizeEditionStatus.
+    const snapshot = wireToSnapshot(wire({ status: "scheduled-grace-2" }))
+
+    expect(snapshot.status).toBe("absent")
+  })
+
+  it("Passes every known status through the guard unchanged", () => {
+    for (const known of ["valid", "grace", "expired", "absent"]) {
+      expect(wireToSnapshot(wire({ status: known })).status).toBe(known)
+    }
+  })
+})
+
+describe("isEditionTier", () => {
+  it("Accepts every string tier value (the union is open)", () => {
+    expect(isEditionTier("community")).toBe(true)
+    expect(isEditionTier("team")).toBe(true)
+    expect(isEditionTier("anything-future")).toBe(true)
+  })
+})
+
+describe("isEditionStatus", () => {
+  it("Accepts every closed vocabulary word", () => {
+    for (const known of ["valid", "grace", "expired", "absent"]) {
+      expect(isEditionStatus(known)).toBe(true)
+    }
+  })
+
+  it("Rejects unknown words so the mapper has somewhere to fall back", () => {
+    expect(isEditionStatus("scheduled-grace-2")).toBe(false)
+    expect(isEditionStatus("")).toBe(false)
+  })
+})
+
+describe("normalizeEditionStatus", () => {
+  it("Round-trips the four known words", () => {
+    expect(normalizeEditionStatus("valid")).toBe("valid")
+    expect(normalizeEditionStatus("grace")).toBe("grace")
+    expect(normalizeEditionStatus("expired")).toBe("expired")
+    expect(normalizeEditionStatus("absent")).toBe("absent")
+  })
+
+  it("Degrades unknown words to the documented 'absent' fallback (no throw)", () => {
+    expect(normalizeEditionStatus("renewing")).toBe("absent")
+    expect(normalizeEditionStatus("")).toBe("absent")
   })
 })
 

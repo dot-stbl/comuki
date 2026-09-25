@@ -25,6 +25,9 @@
     <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Domain/Comuki.Modules.Projects.Domain.csproj" />
     <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Application/Comuki.Modules.Projects.Application.csproj" />
     <Project Path="platform/src/modules/Projects/Comuki.Modules.Projects.Infrastructure/Comuki.Modules.Projects.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Repositories/Comuki.Modules.Repositories.Domain/Comuki.Modules.Repositories.Domain.csproj" />
+    <Project Path="platform/src/modules/Repositories/Comuki.Modules.Repositories.Application/Comuki.Modules.Repositories.Application.csproj" />
+    <Project Path="platform/src/modules/Repositories/Comuki.Modules.Repositories.Infrastructure/Comuki.Modules.Repositories.Infrastructure.csproj" />
     <Project Path="platform/src/modules/Scheduler/Comuki.Modules.Scheduler.Domain/Comuki.Modules.Scheduler.Domain.csproj" />
     <Project Path="platform/src/modules/Scheduler/Comuki.Modules.Scheduler.Application/Comuki.Modules.Scheduler.Application.csproj" />
     <Project Path="platform/src/modules/Scheduler/Comuki.Modules.Scheduler.Infrastructure/Comuki.Modules.Scheduler.Infrastructure.csproj" />

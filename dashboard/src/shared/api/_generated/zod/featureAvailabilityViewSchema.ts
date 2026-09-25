@@ -13,7 +13,7 @@ export const featureAvailabilityViewSchema = z
     key: z
       .string()
       .describe(
-        "The closed-vocabulary feature key (dot.case; the same string the gate attribute carries)."
+        "The closed-vocabulary feature key (lowercase kebab-case slug; the same string the gate attribute carries)."
       ),
     available: z
       .boolean()

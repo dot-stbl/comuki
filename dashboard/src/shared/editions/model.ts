@@ -1,3 +1,5 @@
+import { Features, Limits } from "@/shared/editions/_generated/registry"
+
 /**
  * The closed vocabulary of edition statuses the host emits. Mirrors the
  * backend `LicenseStatus` smart-type's lowercase `Value` form so the
@@ -61,20 +63,16 @@ export interface EditionSnapshot {
  * every limit at the Community cap. The single source of truth for the
  * mock-first edition read — `useEdition` serves it verbatim when
  * `env.useMock` is on, so mock screens and tests never hand-roll a copy.
+ *
+ * The feature rows are driven from the codegen registry (the same keys
+ * the host gates against) so a feature added on the backend appears in
+ * the mock snapshot the next time codegen runs — no separate hand-keep
+ * of the eight keys this repo carried until 2026-09-26.
  */
 export const COMMUNITY_EDITION_SNAPSHOT: EditionSnapshot = {
   tier: "community",
   status: "absent",
-  features: [
-    { key: "enterprise-sso", available: false },
-    { key: "scale-isolation", available: false },
-    { key: "infra-memory", available: false },
-    { key: "background-llm-watchers", available: false },
-    { key: "agenteval", available: false },
-    { key: "white-label", available: false },
-    { key: "multi-repo", available: false },
-    { key: "worker-commit-attribution", available: false },
-  ],
-  limits: [{ key: "projects", current: 0, cap: 1 }],
+  features: Object.values(Features).map((key) => ({ key, available: false })),
+  limits: [{ key: Limits.Projects, current: 0, cap: 1 }],
   version: "dev",
 }

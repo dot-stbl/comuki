@@ -3,6 +3,10 @@ using Comuki.Host.Auth;
 using Comuki.Host.Security.ProductionSecrets;
 using Comuki.Modules.Artifacts.Infrastructure.Store;
 using Comuki.Modules.Identity.Application.Options;
+using Comuki.Shared.Editions.Catalog;
+using Comuki.Shared.Editions.Edition;
+using Comuki.Shared.Editions.Licensing.Status;
+using Comuki.Shared.Editions.Tiers;
 using Comuki.Shared.Kernel.Secrets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -395,6 +399,98 @@ public sealed class ProductionSecretValidatorShould : IDisposable
 
         findings.ShouldAllBe(static finding => finding.SeverityLevel == ProductionSecretFinding.Severity.Ok);
     }
+
+    [Fact(DisplayName = "Given Production + an Expired license, when Validate is called, then it throws with the license-expired message")]
+    public void ThrowWhenProductionLicenseIsExpired()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden());
+        services.AddSingleton<IEdition>(new StubEdition(LicenseStatus.Expired, "team"));
+
+        var exception = Should.Throw<InvalidOperationException>(
+            () => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+
+        exception.Message.ShouldContain("license expired past its grace period");
+    }
+
+    [Fact(DisplayName = "Given Production + a Valid Team-tier license, when Validate is called, then it returns silently")]
+    public void ReturnSilentlyWhenProductionLicenseIsValid()
+    {
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.EmailEnvVariable, "ops@example.com");
+        Environment.SetEnvironmentVariable(BootstrapAdminOptions.PasswordEnvVariable, "StrongProdP@ss-2026");
+
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden(),
+            apiKeyPepper: ProductionSecretsTestArtifacts.OverriddenApiKeyPepper,
+            workerTokenPepper: ProductionSecretsTestArtifacts.OverriddenWorkerTokenPepper);
+        services.AddSingleton<IEdition>(new StubEdition(LicenseStatus.Valid, "team"));
+
+        Should.NotThrow(() => ProductionSecretValidator.Validate(services.BuildServiceProvider()));
+    }
+
+    [Fact(DisplayName = "Given the audit, when the IEdition port is not composed, then the license.validity row is Ok (Community fallback)")]
+    public void LicenseValidityIsOkWhenEditionsNotComposed()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden());
+
+        var findings = ProductionSecretAudit.Collect(services.BuildServiceProvider());
+
+        var license = findings.Single(static finding => finding.Name == "license.validity");
+        license.SeverityLevel.ShouldBe(ProductionSecretFinding.Severity.Ok);
+        license.Detail.ShouldContain("editions not composed");
+    }
+
+    [Fact(DisplayName = "Given the audit + a Valid license, when collected, then the license.validity row is Ok and carries the tier code")]
+    public void LicenseValidityReportsTierOnValidLicense()
+    {
+        var services = ProductionSecretsTestServices.BuildServices(
+            Environments.Production,
+            ProductionSecretsTestArtifacts.AllOverridden());
+        services.AddSingleton<IEdition>(new StubEdition(LicenseStatus.Valid, "team"));
+
+        var findings = ProductionSecretAudit.Collect(services.BuildServiceProvider());
+
+        var license = findings.Single(static finding => finding.Name == "license.validity");
+        license.SeverityLevel.ShouldBe(ProductionSecretFinding.Severity.Ok);
+        license.Detail.ShouldContain("tier=team");
+    }
+}
+
+/// <summary>
+/// Minimal <see cref="IEdition"/> stub for the production-secret audit tests.
+/// Reports whatever <see cref="LicenseStatus"/> the test sets and a tier
+/// code from the closed <see cref="EditionTiers"/> catalog so the audit's
+/// "tier=&lt;code&gt;" wording can be verified without reaching for the
+/// production <c>Ed25519LicenseProvider</c> (the matching private key was
+/// deliberately discarded).
+/// </summary>
+/// <param name="status">The lifecycle position to report.</param>
+/// <param name="code">A tier code that resolves through <see cref="EditionTiers.TryGetByCode"/>.</param>
+file sealed class StubEdition(LicenseStatus status, string code) : IEdition
+{
+    private readonly LicenseStatus capturedStatus = status;
+
+    public EditionTier Current { get; } = EditionTiers.TryGetByCode(code, out var tier) ? tier : EditionTier.Community;
+
+    public LicenseStatus Status { get; } = status;
+
+    public bool IsDegraded => capturedStatus == LicenseStatus.Expired;
+
+    public bool Has(Feature feature)
+    {
+        return false;
+    }
+
+    public int Limit(Limit limit)
+    {
+        return 0;
+    }
+
+    public DateTimeOffset? ExpiresAt => null;
 }
 
 file static class ProductionSecretsTestServices

@@ -1,5 +1,6 @@
 import { Check, GitBranch, Lock } from "lucide-react"
 
+import { Features } from "@/shared/editions/_generated/registry"
 import { useEdition, useFeature } from "@/shared/editions/queries"
 import { FeatureGate, Section } from "@/shared/ui"
 
@@ -22,7 +23,7 @@ import styles from "./edition-panel.module.css"
  */
 export function EditionPanel() {
   const query = useEdition()
-  const multiRepo = useFeature(query.data, "multi-repo")
+  const multiRepo = useFeature(query.data, Features.MultiRepo)
 
   if (query.isPending) {
     return (
@@ -118,7 +119,7 @@ export function EditionPanel() {
         ))}
       </ul>
 
-      <FeatureGate feature="multi-repo" available={multiRepo}>
+      <FeatureGate feature={Features.MultiRepo} available={multiRepo}>
         <div
           className={styles.row}
           data-test="edition-multirepo-affordance"

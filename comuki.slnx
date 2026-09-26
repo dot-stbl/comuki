@@ -146,6 +146,7 @@
     <Project Path="tests/integration/Comuki.Shared.Filtering.Integration.Ef/Comuki.Shared.Filtering.Integration.Ef.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Knowledge.Integration/Comuki.Modules.Knowledge.Integration.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Compute/Comuki.Host.Integration.Compute.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Editions/Comuki.Host.Integration.Editions.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Settings/Comuki.Host.Integration.Settings.csproj" />
     <Project Path="tests/integration/Comuki.EndToEnd.AgentLoop/Comuki.EndToEnd.AgentLoop.csproj" />
   </Folder>
@@ -157,6 +158,7 @@
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Comuki.Codegen.Realtime/Comuki.Codegen.Realtime.csproj" />
+    <Project Path="tools/Comuki.Codegen.Editions/Comuki.Codegen.Editions.csproj" />
     <Project Path="tools/Comuki.License.Mint/Comuki.License.Mint.csproj" />
   </Folder>
 </Solution>

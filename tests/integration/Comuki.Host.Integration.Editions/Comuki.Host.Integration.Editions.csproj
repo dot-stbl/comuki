@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Comuki.Host.Unit.ProductionSecrets</RootNamespace>
+    <RootNamespace>Comuki.Host.Integration.Editions</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
@@ -11,13 +11,13 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Shouldly" />
-    <PackageReference Include="NSubstitute" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host\Comuki.Host.csproj" />
-    <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Editions\Comuki.Shared.Editions.csproj" />
+    <ProjectReference Include="..\Comuki.Host.Testing\Comuki.Host.Testing.csproj" />
   </ItemGroup>
 
 </Project>

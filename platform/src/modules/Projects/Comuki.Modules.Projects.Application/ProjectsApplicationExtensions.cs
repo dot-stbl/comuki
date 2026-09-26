@@ -1,4 +1,5 @@
 using Comuki.Modules.Projects.Application.Admission;
+using Comuki.Modules.Projects.Application.Attachments;
 using Comuki.Modules.Projects.Application.DomainTypes;
 using Comuki.Modules.Projects.Application.Editions;
 using Comuki.Modules.Projects.Application.Projects.Archive;
@@ -69,6 +70,11 @@ public static class ProjectsApplicationExtensions
         services.AddScoped<UpdateSettingsHandler>();
         services.AddScoped<GetProjectSettingsHandler>();
 
+        services.AddScoped<AttachRepositoryHandler>();
+        services.AddScoped<DetachRepositoryHandler>();
+        services.AddScoped<ListProjectAttachmentsHandler>();
+        services.AddScoped<ListRepositoryAttachmentsHandler>();
+
         // Scoped: it reads the scoped admission store (one EF context per
         // unit of work) on top of the singleton settings store + resolver.
         services.AddScoped<DomainTypeAdmissionService>();
@@ -76,6 +82,7 @@ public static class ProjectsApplicationExtensions
         services.AddScoped<IValidator<CreateProjectCommand>, CreateProjectValidator>();
         services.AddScoped<IValidator<UpdateProjectCommand>, UpdateProjectValidator>();
         services.AddScoped<IValidator<UpdateSettingsCommand>, UpdateSettingsValidator>();
+        services.AddScoped<IValidator<AttachRepositoryCommand>, AttachRepositoryValidator>();
 
         // Issue #164 worked example: the project-count quota provider that
         // backs the [EnforceLimit("projects")] gate on the projects-create

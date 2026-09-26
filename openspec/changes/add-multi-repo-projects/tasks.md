@@ -46,7 +46,7 @@ Postgres.
 
 ## 3. ProjectRepositoryAttachment (Projects module)
 
-- [ ] 3.1 Add `ProjectRepositoryAttachment` (role, access, optional credential
+- [x] 3.1 Add `ProjectRepositoryAttachment` (role, access, optional credential
   override) to `Comuki.Modules.Projects.Domain`, referencing `ProjectId`
   internally and a `RepositoryId` value (no reference to
   `Comuki.Modules.Repositories` implementation types — mirrors how
@@ -54,10 +54,10 @@ Postgres.
   cover attach/detach and that two attachments to the same Repository from
   different Projects are independent (spec scenario 1 and 2 of the ADDED
   "Project repository attachments" requirement).
-- [ ] 3.2 Add EF configuration + `dotnet ef` migration for
+- [x] 3.2 Add EF configuration + `dotnet ef` migration for
   `project_repository_attachments` in `ProjectsDbContext`; verify migrator
   applies cleanly alongside existing Projects tables.
-- [ ] 3.3 Add `IProjectRepositoryAttachmentStore` port + EF store +
+- [x] 3.3 Add `IProjectRepositoryAttachmentStore` port + EF store +
   `Application` command/query handlers (attach, detach, list-by-project,
   list-by-repository); verify integration test round-trip.
 

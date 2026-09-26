@@ -1,4 +1,5 @@
 using Comuki.Modules.Projects.Application;
+using Comuki.Modules.Projects.Application.Attachments;
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Application.Settings.DistributedCache;
@@ -68,6 +69,7 @@ public sealed class DistributedProjectSettingsCacheRegistrationShould
         services.AddSingleton(Substitute.For<IProjectStore>());
         services.AddSingleton(Substitute.For<IProjectSettingsStore>());
         services.AddSingleton(Substitute.For<IDomainTypeAdmissionStore>());
+        services.AddSingleton(Substitute.For<IProjectRepositoryAttachmentStore>());
         services.AddSingleton(Substitute.For<IEdition>());
         return services;
     }

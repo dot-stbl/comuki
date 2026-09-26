@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Application.Admission;
+using Comuki.Modules.Projects.Application.Attachments;
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Projects.Application.Projects.Archive;
 using Comuki.Modules.Projects.Application.Projects.Create;
@@ -8,6 +9,7 @@ using Comuki.Modules.Projects.Application.Projects.Queries;
 using Comuki.Modules.Projects.Application.Projects.Update;
 using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Application.Settings.Update;
+using Comuki.Modules.Projects.Domain.Attachments;
 using Comuki.Modules.Projects.Domain.DomainTypes;
 using Comuki.Modules.Projects.Domain.Projects;
 using Comuki.Modules.Projects.Domain.Settings;
@@ -503,6 +505,190 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         projectColumns["slug"].ShouldBe(new ColumnSpec("character varying", "NO"));
         projectColumns["description"].ShouldBe(new ColumnSpec("character varying", "YES"));
         projectColumns["profiles_git_url"].ShouldBe(new ColumnSpec("character varying", "YES"));
+    }
+
+    [Fact(DisplayName = "Given migrated project_repository_attachments, when columns are inspected, then ids are uuid, role and access are varchar, credential_override_ref is nullable varchar(256), timestamps are timestamptz, and the (project_id, repository_id) unique index + cascade FK exist")]
+    public async Task StoreProjectRepositoryAttachmentsColumnTypesAsync()
+    {
+        var columns = await QueryColumnsAsync(ProjectsDatabase.Schema, ProjectsDatabase.ProjectRepositoryAttachments);
+
+        columns["id"].ShouldBe(new ColumnSpec("uuid", "NO"));
+        columns["project_id"].ShouldBe(new ColumnSpec("uuid", "NO"));
+        columns["repository_id"].ShouldBe(new ColumnSpec("uuid", "NO"));
+        columns["role"].ShouldBe(new ColumnSpec("character varying", "NO"));
+        columns["access"].ShouldBe(new ColumnSpec("character varying", "NO"));
+        columns["credential_override_ref"].ShouldBe(new ColumnSpec("character varying", "YES"));
+        columns["created_at"].ShouldBe(new ColumnSpec("timestamp with time zone", "NO"));
+        columns["updated_at"].ShouldBe(new ColumnSpec("timestamp with time zone", "NO"));
+
+        var definitions = await QuerySingleColumnAsync(
+            $"SELECT indexdef FROM pg_indexes WHERE schemaname = '{ProjectsDatabase.Schema}' "
+            + $"AND tablename = '{ProjectsDatabase.ProjectRepositoryAttachments}'");
+        definitions.ShouldContain(static definition =>
+            definition.Contains("ux_project_repository_attachments_project_repository")
+            && definition.Contains("UNIQUE"));
+
+        var foreignKeys = await QuerySingleColumnAsync(
+            $"SELECT conname FROM pg_constraint WHERE conrelid = 'projects.{ProjectsDatabase.ProjectRepositoryAttachments}'::regclass "
+            + "AND contype = 'f' ORDER BY conname");
+        foreignKeys.ShouldContain(static name => name.StartsWith("fk_project_repository_attachments_projects_project_id"));
+
+        var cascadeAction = await QuerySingleColumnAsync(
+            $"SELECT confdeltype::text FROM pg_constraint WHERE conname LIKE 'fk_project_repository_attachments_projects_%' LIMIT 1");
+        // 'c' = CASCADE
+        cascadeAction.ShouldContain(static action => action == "c");
+    }
+
+    [Fact(DisplayName = "Given two Projects and one RepositoryId, when each Project attaches the Repository under a different role and access (spec scenario 1), then list-by-project returns each Project's own attachment, list-by-repository returns both, and Project A keeps its primary attachment unchanged")]
+    public async Task TwoProjectsAttachSameRepositoryIndependentlyAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var projectA = await CreateProjectAsync("attach-a", cancellationToken);
+        var projectB = await CreateProjectAsync("attach-b", cancellationToken);
+        var sharedRepository = RepositoryId.New();
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var handler = scope.ServiceProvider.GetRequiredService<AttachRepositoryHandler>();
+            await handler.HandleAsync(
+                new AttachRepositoryCommand(projectA, sharedRepository, "primary", AttachmentAccess.Write, null),
+                cancellationToken);
+            await handler.HandleAsync(
+                new AttachRepositoryCommand(projectB, sharedRepository, "library", AttachmentAccess.Read, "integration-b"),
+                cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var listA = scope.ServiceProvider.GetRequiredService<ListProjectAttachmentsHandler>();
+            var attachedToA = await listA.HandleAsync(projectA, cancellationToken);
+            attachedToA.Count.ShouldBe(1);
+            attachedToA[0].RepositoryId.ShouldBe(sharedRepository);
+            attachedToA[0].Role.ShouldBe("primary");
+            attachedToA[0].Access.ShouldBe(AttachmentAccess.Write);
+            attachedToA[0].CredentialOverrideRef.ShouldBeNull();
+
+            var listB = scope.ServiceProvider.GetRequiredService<ListProjectAttachmentsHandler>();
+            var attachedToB = await listB.HandleAsync(projectB, cancellationToken);
+            attachedToB.Count.ShouldBe(1);
+            attachedToB[0].RepositoryId.ShouldBe(sharedRepository);
+            attachedToB[0].Role.ShouldBe("library");
+            attachedToB[0].Access.ShouldBe(AttachmentAccess.Read);
+            attachedToB[0].CredentialOverrideRef.ShouldBe("integration-b");
+
+            var listByRepo = scope.ServiceProvider.GetRequiredService<ListRepositoryAttachmentsHandler>();
+            var allForRepo = await listByRepo.HandleAsync(sharedRepository, cancellationToken);
+            allForRepo.Count.ShouldBe(2);
+            allForRepo.Select(static view => view.ProjectId).ShouldBe([projectA, projectB], ignoreOrder: true);
+        }
+    }
+
+    [Fact(DisplayName = "Given two Projects attached to the same Repository, when one Project detaches (spec scenario 2), then the other Project's attachment is untouched, the Repository value-reference is intact, and re-attaching the detached Project succeeds")]
+    public async Task DetachingOneProjectLeavesOtherUntouchedAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var projectA = await CreateProjectAsync("detach-a", cancellationToken);
+        var projectB = await CreateProjectAsync("detach-b", cancellationToken);
+        var sharedRepository = RepositoryId.New();
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var attach = scope.ServiceProvider.GetRequiredService<AttachRepositoryHandler>();
+            await attach.HandleAsync(
+                new AttachRepositoryCommand(projectA, sharedRepository, "primary", AttachmentAccess.Write, null),
+                cancellationToken);
+            await attach.HandleAsync(
+                new AttachRepositoryCommand(projectB, sharedRepository, "library", AttachmentAccess.Read, "integration-b"),
+                cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var detach = scope.ServiceProvider.GetRequiredService<DetachRepositoryHandler>();
+            await detach.HandleAsync(new DetachRepositoryCommand(projectA, sharedRepository), cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IProjectRepositoryAttachmentStore>();
+            var storedForB = await store.FindAsync(projectB, sharedRepository, cancellationToken);
+            storedForB.ShouldNotBeNull();
+            storedForB.Role.ShouldBe(AttachmentRole.Library);
+            storedForB.Access.ShouldBe(AttachmentAccess.Read);
+            storedForB.CredentialOverrideRef.ShouldBe("integration-b");
+
+            var storedForA = await store.FindAsync(projectA, sharedRepository, cancellationToken);
+            storedForA.ShouldBeNull();
+        }
+
+        // re-attach Project A succeeds because the (project, repository) pair is free
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var attach = scope.ServiceProvider.GetRequiredService<AttachRepositoryHandler>();
+            var reattached = await attach.HandleAsync(
+                new AttachRepositoryCommand(projectA, sharedRepository, "service", AttachmentAccess.External, "integration-a"),
+                cancellationToken);
+            reattached.Role.ShouldBe("service");
+            reattached.Access.ShouldBe(AttachmentAccess.External);
+            reattached.CredentialOverrideRef.ShouldBe("integration-a");
+        }
+    }
+
+    [Fact(DisplayName = "Given an existing attachment, when the same (project, repository) pair is attached again, then ProjectRepositoryAttachmentConflictException is thrown")]
+    public async Task DuplicateAttachThroughHandlerRefusesAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var projectId = await CreateProjectAsync("attach-dup", cancellationToken);
+        var repositoryId = RepositoryId.New();
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var attach = scope.ServiceProvider.GetRequiredService<AttachRepositoryHandler>();
+            await attach.HandleAsync(
+                new AttachRepositoryCommand(projectId, repositoryId, "primary", AttachmentAccess.Write, null),
+                cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var attach = scope.ServiceProvider.GetRequiredService<AttachRepositoryHandler>();
+            await Should.ThrowAsync<ProjectRepositoryAttachmentConflictException>(
+                () => attach.HandleAsync(
+                    new AttachRepositoryCommand(projectId, repositoryId, "library", AttachmentAccess.Read, "integration-b"),
+                    cancellationToken));
+        }
+    }
+
+    [Fact(DisplayName = "Given a Project with two attachments, when the Project row is deleted, then the cascade FK takes both attachments with it")]
+    public async Task CascadeAttachmentsWithProjectAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var projectId = await CreateProjectAsync("attach-cascade", cancellationToken);
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var attach = scope.ServiceProvider.GetRequiredService<AttachRepositoryHandler>();
+            await attach.HandleAsync(
+                new AttachRepositoryCommand(projectId, RepositoryId.New(), "primary", AttachmentAccess.Write, null),
+                cancellationToken);
+            await attach.HandleAsync(
+                new AttachRepositoryCommand(projectId, RepositoryId.New(), "library", AttachmentAccess.Read, "integration-b"),
+                cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
+            await db.Projects.Where(project => project.Id == projectId).ExecuteDeleteAsync(cancellationToken);
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var store = scope.ServiceProvider.GetRequiredService<IProjectRepositoryAttachmentStore>();
+            var remaining = await store.ListByProjectAsync(projectId, cancellationToken);
+
+            remaining.ShouldBeEmpty();
+        }
     }
 
     private async Task<ProjectId> CreateProjectAsync(string slug, CancellationToken cancellationToken)

@@ -1,3 +1,4 @@
+using Comuki.Modules.Projects.Application.Attachments;
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
@@ -33,6 +34,7 @@ public static class ProjectsPersistenceExtensions
 
         services.AddScoped<IProjectStore, ProjectStore>();
         services.AddScoped<IDomainTypeAdmissionStore, DbDomainTypeAdmissionStore>();
+        services.AddScoped<IProjectRepositoryAttachmentStore, DbProjectRepositoryAttachmentStore>();
         services.AddSingleton<IProjectSettingsStore, DbProjectSettingsStore>();
         services.AddSingleton<IComukiWorker, ProjectSettingsCacheRefresherComukiWorker>();
 

@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react"
-import { expect, fn, userEvent } from "@storybook/test"
+import type { Meta, StoryObj } from "@storybook/react-vite"
+import { expect, fn, userEvent } from "storybook/test"
 
 import { toRunSummary, toWorkItemInspector } from "@/domains/runs/api/mappers"
 import { orderedItems, planGraph } from "@/domains/runs/model/work-items"

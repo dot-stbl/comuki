@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { ConnectSourcePage } from "@/domains/sources/pages/connect-source-page"
 import {

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { PROXY_SEED } from "@/shared/api/mock/models.seed"
 import { PROJECTS_SEED } from "@/shared/api/mock/session.seed"

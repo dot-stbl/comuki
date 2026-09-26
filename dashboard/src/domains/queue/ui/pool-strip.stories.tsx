@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { workerCounts } from "@/domains/queue/model/queue"
 import { WORKERS_SEED } from "@/shared/api/mock/queue.seed"

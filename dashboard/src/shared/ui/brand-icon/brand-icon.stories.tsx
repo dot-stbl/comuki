@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react"
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { BrandIcon, type BrandIconSize } from "./brand-icon"
 import { BRAND_IDS, BRAND_MARKS } from "./brand-marks"

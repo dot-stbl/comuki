@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { COST_SEED } from "@/shared/api/mock/cost.seed"
 import { toCostSummary } from "@/domains/cost/api/mappers"

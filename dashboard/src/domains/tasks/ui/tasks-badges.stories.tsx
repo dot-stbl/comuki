@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { PROVIDERS } from "@/domains/sources/model/providers"
 import type { ProviderKey } from "@/domains/sources/model/types"

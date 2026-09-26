@@ -1,4 +1,4 @@
-import type { Preview } from "@storybook/react"
+import type { Preview } from "@storybook/react-vite"
 
 import "../src/index.css"
 
@@ -15,7 +15,6 @@ const preview: Preview = {
         date: /Date$/,
       },
     },
-    // TODO(phase-7): add parameters.a11y block when @storybook/addon-a11y is re-enabled (SB 10 required)
     backgrounds: {
       default: "dark",
       values: [

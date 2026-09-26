@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
-import type { Meta, StoryObj } from "@storybook/react"
-import { expect, fn, userEvent, waitFor } from "@storybook/test"
+import type { Meta, StoryObj } from "@storybook/react-vite"
+import { expect, fn, userEvent, waitFor } from "storybook/test"
 import {
   createMemoryHistory,
   createRootRoute,

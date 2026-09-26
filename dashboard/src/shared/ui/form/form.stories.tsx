@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react"
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { ChoiceField } from "./choice-field"
 import { CopyButton } from "./copy-button"

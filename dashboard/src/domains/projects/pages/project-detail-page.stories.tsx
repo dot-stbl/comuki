@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from "react"
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import {
   createMemoryHistory,
@@ -8,7 +8,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
-import { expect, userEvent } from "@storybook/test"
+import { expect, userEvent } from "storybook/test"
 
 import { ProjectDetailPage } from "@/domains/projects/pages/project-detail-page"
 import { SessionProvider } from "@/shared/session"

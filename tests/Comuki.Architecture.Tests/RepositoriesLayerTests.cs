@@ -9,8 +9,9 @@ namespace Comuki.Architecture.Tests;
 /// Infrastructure wires EF, and no module reaches into the engine or the
 /// hosts. Sibling-module isolation matches the spec — no reference to
 /// Compute, Projects, or Orchestration implementations from anywhere in
-/// the Repositories module. The Application-layer test lands with
-/// workstream 2 once that assembly gains types.
+/// the Repositories module. The Application layer carries the persistence
+/// port (<c>IRepositoryStore</c>) and must reach Infrastructure only
+/// through DI in the host composition root.
 /// </summary>
 public sealed class RepositoriesLayerTests
 {
@@ -33,6 +34,31 @@ public sealed class RepositoriesLayerTests
             .ShouldNot()
             .HaveDependencyOnAny(
                 RepositoriesApplication,
+                RepositoriesInfrastructure,
+                Engine,
+                EngineCompute,
+                Host,
+                Translator,
+                Migrator,
+                "Comuki.Shared.Contracts",
+                ProjectsDomain,
+                ProjectsApplication,
+                ProjectsInfrastructure)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful, Failing(result));
+    }
+
+    [Fact]
+    public void RepositoriesApplicationMustNotDependOnOuterLayers()
+    {
+        // Application sits on Domain through ports only — never reaches
+        // EF, the engine or a host. The host composition root is the only
+        // place that may reference both Application and Infrastructure.
+        var result = Types
+            .InAssembly(typeof(Modules.Repositories.Application.Ports.IRepositoryStore).Assembly)
+            .ShouldNot()
+            .HaveDependencyOnAny(
                 RepositoriesInfrastructure,
                 Engine,
                 EngineCompute,

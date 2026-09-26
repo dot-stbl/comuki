@@ -91,6 +91,7 @@
     <Project Path="tests/unit/Comuki.Modules.Identity.Unit/Comuki.Modules.Identity.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Memory.Unit/Comuki.Modules.Memory.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Projects.Unit/Comuki.Modules.Projects.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Repositories.Unit/Comuki.Modules.Repositories.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Brain.Unit/Comuki.Host.Brain.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Chat.Unit/Comuki.Modules.Chat.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Costs.Unit/Comuki.Modules.Costs.Unit.csproj" />
@@ -124,6 +125,7 @@
     <Project Path="tests/integration/Comuki.Modules.Identity.Integration.Migrations/Comuki.Modules.Identity.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Memory.Integration.Migrations/Comuki.Modules.Memory.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.Migrations/Comuki.Modules.Projects.Integration.Migrations.csproj" />
+    <Project Path="tests/integration/Comuki.Modules.Repositories.Integration/Comuki.Modules.Repositories.Integration.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Projects.Integration.RedisCache/Comuki.Modules.Projects.Integration.RedisCache.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Intake.Integration.Migrations/Comuki.Modules.Intake.Integration.Migrations.csproj" />
     <Project Path="tests/integration/Comuki.Modules.Verify.Integration.Migrations/Comuki.Modules.Verify.Integration.Migrations.csproj" />

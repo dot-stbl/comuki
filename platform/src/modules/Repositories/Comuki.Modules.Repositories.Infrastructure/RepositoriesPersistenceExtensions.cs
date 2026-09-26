@@ -1,4 +1,6 @@
+using Comuki.Modules.Repositories.Application.Ports;
 using Comuki.Modules.Repositories.Infrastructure.Persistence;
+using Comuki.Modules.Repositories.Infrastructure.Persistence.Stores;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Comuki.Modules.Repositories.Infrastructure;
@@ -13,10 +15,11 @@ public static class RepositoriesPersistenceExtensions
     /// <c>DbContextFactory&lt;T&gt;</c> (Npgsql + snake_case + private
     /// migrations history <c>repositories.__comuki_repositories</c>
     /// configured through <see cref="RepositoriesDbContext.ApplyOptions"/>).
-    /// Host composition — the place that calls
+    /// The <see cref="IRepositoryStore"/> port from the Application layer
+    /// is wired to the EF <see cref="RepositoryStore"/> over the same
+    /// scoped context. Host composition — the place that calls
     /// <c>AddRepositoriesModule(connectionString)</c> from <c>HostComposer</c>
-    /// — lands in workstream 9; stores and any handlers arrive in
-    /// workstream 2 once the Application layer starts carrying ports.
+    /// — lands in workstream 9.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="connectionString"></param>
@@ -27,6 +30,8 @@ public static class RepositoriesPersistenceExtensions
     {
         services.AddDbContextFactory<RepositoriesDbContext>(options =>
             RepositoriesDbContext.ApplyOptions(options, connectionString));
+
+        services.AddScoped<IRepositoryStore, RepositoryStore>();
 
         return services;
     }

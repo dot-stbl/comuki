@@ -1,0 +1,37 @@
+/* The mark glyph. One box per size step, so an emoji, an image, a brand mark
+   and a lucide glyph all occupy the same cell real estate and the identity
+   column never changes width between rows. */
+
+.glyph {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.sm {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+.md {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+/* An emoji is text: the box sizes it by font, and the leading keeps it from
+   pushing the row apart. */
+.emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--t-body);
+  line-height: var(--lh-flat);
+  color: var(--text);
+}
+
+/* An image keeps the box's height and may run wider than square — a logo is
+   wider than it is tall, the same allowance BrandIcon makes. */
+img.glyph {
+  width: auto;
+  max-width: calc(var(--icon-xl) + var(--icon-md));
+  object-fit: contain;
+}

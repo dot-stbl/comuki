@@ -1,11 +1,14 @@
 import type {
+  CreateProjectInput,
   ProjectCostSummary,
   ProjectRow,
   ProjectSettings,
+  ProjectUpdate,
   UsageEvent,
 } from "@/domains/projects/model/types"
 import type { CreateProjectRequest } from "@/shared/api/_generated/types/CreateProjectRequest"
 import type { ProjectCostsView } from "@/shared/api/_generated/types/ProjectCostsView"
+import type { UpdateProjectRequest } from "@/shared/api/_generated/types/UpdateProjectRequest"
 import type { UpdateSettingsRequest } from "@/shared/api/_generated/types/UpdateSettingsRequest"
 import type { UsageEventView } from "@/shared/api/_generated/types/UsageEventView"
 import type { SeedProject } from "@/shared/api/mock/projects.seed"
@@ -31,32 +34,42 @@ import type { ProjectRef } from "@/shared/session"
 
 /** Wire shape of GET /api/v1/projects — a `ProjectView[]`. */
 interface ProjectView {
-  id: string
-  name: string
-  slug: string
-  description: string | null
-  profilesGitUrl: string | null
-  profilesGitRef: string | null
-  archived: boolean
-  archivedAt: string | null
-  createdAt: string
-  updatedAt: string
+  readonly id: string
+  readonly name: string
+  readonly slug: string
+  readonly description: string | null
+  readonly profilesGitUrl: string | null
+  readonly profilesGitRef: string | null
+  /**
+   * Identity fields — optional on the read because they postdate the
+   * contract: a view from before they existed (or a caching proxy in
+   * between) answers without the keys, and the mapper's tolerant defaults
+   * are the whole story on that path.
+   */
+  readonly icon?: string | null
+  readonly color?: string | null
+  /** The view always serves an array, never `null`; the default stays for version skew. */
+  readonly tags?: readonly string[] | null
+  readonly archived: boolean
+  readonly archivedAt: string | null
+  readonly createdAt: string
+  readonly updatedAt: string
 }
 
 /** Wire shape of GET /api/v1/projects/{id}/settings. */
 interface ProjectSettingsView {
-  projectId: string
-  minIdle: number
-  maxConcurrent: number
-  idleTtlSeconds: number | null
-  approveRequired: boolean
-  knowledgeEnabled: boolean
-  verifyEnabled: boolean
-  proxyEnabled: boolean
-  softBudgetUsdMicros: number | null
-  hardBudgetUsdMicros: number | null
-  updatedAt: string
-  version: number
+  readonly projectId: string
+  readonly minIdle: number
+  readonly maxConcurrent: number
+  readonly idleTtlSeconds: number | null
+  readonly approveRequired: boolean
+  readonly knowledgeEnabled: boolean
+  readonly verifyEnabled: boolean
+  readonly proxyEnabled: boolean
+  readonly softBudgetUsdMicros: number | null
+  readonly hardBudgetUsdMicros: number | null
+  readonly updatedAt: string
+  readonly version: number
 }
 
 const EMPTY_COSTS: UsageEvent[] = []
@@ -84,6 +97,15 @@ export function mapProjectViewToDetail(view: ProjectView): ProjectRow {
     gitProfileRepo: view.profilesGitUrl,
     createdAt: view.createdAt,
     archived: view.archived,
+    icon: view.icon ?? null,
+    color: view.color ?? null,
+    // Tolerant on purpose: the contract says "always an array", but a view
+    // shaped before the identity fields existed (or a proxy in between)
+    // answers without the key — `?? []` here is the one coercion the domain
+    // allows itself, because an absent list and an empty list read the same
+    // on a screen. The *mutation* direction preserves the distinction (D5);
+    // this read direction has no distinction to preserve.
+    tags: view.tags ?? [],
     activeRuns: 0,
     totalRuns: 0,
     spendToday: null,
@@ -247,6 +269,9 @@ export function toProjectRow(seed: SeedProject): ProjectRow {
     gitProfileRepo: seed.gitProfileRepo,
     createdAt: seed.createdAt,
     archived: false,
+    icon: seed.icon ?? null,
+    color: seed.color ?? null,
+    tags: seed.tags ?? [],
     activeRuns: 0,
     totalRuns: 0,
     spendToday: null,
@@ -263,7 +288,7 @@ export function toProjectRow(seed: SeedProject): ProjectRow {
  * "not configured" rather than as an error.
  */
 export function mapCreateProjectInputToCreateRequest(
-  input: CreateProjectInputLike
+  input: CreateProjectInput
 ): CreateProjectRequest {
   return {
     name: input.name,
@@ -271,12 +296,37 @@ export function mapCreateProjectInputToCreateRequest(
     description: null,
     profilesGitUrl: input.gitProfileRepo,
     profilesGitRef: null,
+    icon: input.icon,
+    color: input.color,
+    // The wire body type is mutable `string[]`; the domain input is a
+    // readonly list. The copy happens here, at the edge, and only here.
+    tags: [...input.tags],
   }
 }
 
-/** The form's domain input — re-declared here to avoid pulling in `model/types`. */
-interface CreateProjectInputLike {
-  name: string
-  slug: string
-  gitProfileRepo: string | null
+/**
+ * Domain patch → wire `UpdateProjectRequest`.
+ *
+ * The git fields ride as `null` — the platform's "untouched", same as every
+ * scalar this layer does not edit. The identity fields follow the same rule,
+ * with the one list-vs-scalar asymmetry called out by D5: `tags` passes
+ * through as-is, so an absent list stays **absent** (`undefined` is dropped
+ * by JSON.stringify, which is exactly "no key in the body" — the PATCH the
+ * host treats as "keep the stored tags") while an empty array survives as
+ * the empty array that clears them. This pass-through must never grow a
+ * `?? []`. The defensive copy widens the readonly domain list into the
+ * mutable one the wire type declares — shape for shape, absence included.
+ */
+export function mapProjectUpdateToUpdateRequest(
+  patch: ProjectUpdate
+): UpdateProjectRequest {
+  return {
+    name: patch.name,
+    description: patch.description,
+    profilesGitUrl: null,
+    profilesGitRef: null,
+    icon: patch.icon ?? null,
+    color: patch.color ?? null,
+    tags: patch.tags?.slice(),
+  }
 }

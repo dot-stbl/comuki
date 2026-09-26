@@ -43,9 +43,24 @@ const PROJECTS: SeedProject[] = [
     name: "Comuki platform",
     gitProfileRepo: "git@github.com:comuki/worker-profiles.git",
     createdAt: "2026-03-04",
+    // The full identity: a stored icon over a GitHub URL — the override has
+    // to win over the derivation — plus a colour and a vocabulary.
+    icon: "🛰️",
+    color: "#3c5a86",
+    tags: ["platform", "orchestration"],
   },
   {
-    // Created two days ago: no runs, no spend, no repository.
+    // GitLab-hosted and bare: the mark derives from the host, which is a
+    // real rendering path rather than a corner case.
+    id: "p_plexor",
+    slug: "plexor",
+    name: "Plexor",
+    gitProfileRepo: "git@gitlab.com:plexor/agent-profiles.git",
+    createdAt: "2026-05-19",
+    tags: ["agent"],
+  },
+  {
+    // Created two days ago: no runs, no spend, no repository, no identity.
     id: "p_vega",
     slug: "vega",
     name: "Vega",
@@ -117,8 +132,13 @@ describe("the registry row", () => {
     mount()
 
     // A blank cell reads as a rendering fault; a dash reads as a fact.
+    // Vega's four: nothing in flight, no runs, nothing spent, no tags — each
+    // absent the same way the derived columns were always absent.
     expect(await screen.findByText("vega")).toBeTruthy()
-    expect(screen.getAllByText("—").length).toBe(3)
+    const vegaDashes = [
+      ...findRow("vega").querySelectorAll('[class*="absent"]'),
+    ].filter((node) => node.textContent === "—")
+    expect(vegaDashes.length).toBe(4)
   })
 
   it("calls a missing repository what it actually is", async () => {
@@ -149,3 +169,79 @@ describe("the registry row", () => {
     expect(link?.getAttribute("href")).toBe("/projects/p_comuki")
   })
 })
+
+describe("the registry's identity column", () => {
+  it("shows a stored icon, and the stored icon wins over the derivation", async () => {
+    mount()
+
+    expect(await screen.findByText("🛰️")).toBeTruthy()
+    // comuki's repository is GitHub-hosted; the override means the row must
+    // not draw the Octocat. The only brand mark on screen is plexor's tanuki.
+    await screen.findByText("plexor")
+    const brands = [...document.querySelectorAll('[data-test="brand-icon"]')]
+    expect(brands.map((node) => node.getAttribute("data-brand"))).toEqual([
+      "gitlab",
+    ])
+  })
+
+  it("derives the GitLab mark from the repository host", async () => {
+    mount()
+
+    await screen.findByText("plexor")
+    const brands = [
+      ...document.querySelectorAll('[data-test="brand-icon"]'),
+    ].map((node) => node.getAttribute("data-brand"))
+
+    // plexor's repository is GitLab-hosted and it stores no icon, so the
+    // tanuki is derived. A GitHub-derived row appears in the page-level
+    // tests through the seed's GitHub-hosted projects.
+    expect(brands).toContain("gitlab")
+  })
+
+  it("renders the tags as chips and the bare row without them", async () => {
+    mount()
+
+    expect(await screen.findByText("🛰️")).toBeTruthy()
+    expect(screen.getByText("platform")).toBeTruthy()
+    expect(screen.getByText("orchestration")).toBeTruthy()
+    expect(screen.getByText("agent")).toBeTruthy()
+    // Vega has no vocabulary: the tags cell says so with the same dash every
+    // other absent fact gets, not with a blank — counted in the case above.
+    expect(
+      findRow("vega").querySelectorAll('[data-test="project-tag"]').length
+    ).toBe(0)
+  })
+
+  it("paints the accent dot from the row's stored colour", async () => {
+    mount()
+
+    await screen.findByText("comuki")
+    const identity = document.querySelector(
+      '[data-test="project-link"]'
+    )?.parentElement
+    // The one custom property (design D7): comuki's row carries it, and the
+    // stylesheet — not the markup — turns it into the dot. Vega's row, with
+    // no colour, carries no style at all — the dot falls back in CSS.
+    expect(identity?.getAttribute("style")).toContain("--project-accent")
+    expect(identity?.getAttribute("style")).toContain("#3c5a86")
+    const vegaRow = findRow("vega")
+    expect(
+      vegaRow
+        .querySelector('[data-test="project-link"]')
+        ?.parentElement?.getAttribute("style")
+    ).toBeNull()
+  })
+})
+
+/* The virtualized body renders rows in a portal measured against a fixed
+   port; this finds the row's <tr> once its slug link has appeared. */
+function findRow(slug: string): HTMLElement {
+  const link = [
+    ...document.querySelectorAll('[data-test="project-link"]'),
+  ].find((node) => node.textContent === slug)
+  const row = link?.closest("tr")
+  if (!row) {
+    throw new Error(`row ${slug} did not render`)
+  }
+  return row as HTMLElement
+}

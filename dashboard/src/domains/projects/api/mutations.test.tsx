@@ -49,11 +49,19 @@ describe("mutations.ts mock-first path", () => {
       name: "Vega clone",
       slug: "vega-clone",
       gitProfileRepo: null,
+      icon: "🌙",
+      color: null,
+      tags: ["test"],
     })
 
     expect(created.id).toBe("p_vega_clone")
     expect(created.slug).toBe("vega-clone")
     expect(created.name).toBe("Vega clone")
+    // The identity fields stick in the store the same way the handle does —
+    // a created project that lost its identity on the next refetch would be
+    // the mock drifting from the wire (design D9).
+    expect(created.icon).toBe("🌙")
+    expect(created.tags).toEqual(["test"])
     expect(created.activeRuns).toBe(0)
     expect(listSeedProjects().length).toBe(baseline + 1)
 

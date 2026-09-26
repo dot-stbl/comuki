@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { Plus, RotateCw } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -10,6 +11,7 @@ import {
   getProjectId,
 } from "@/domains/projects/ui/projects-columns"
 import tableStyles from "@/domains/projects/ui/projects-table.module.css"
+import { TagFilter } from "@/domains/projects/ui/tag-filter"
 import { formatCost } from "@/domains/runs/model/format"
 import { requestFailureMessage } from "@/shared/api/problem"
 import { useCan } from "@/shared/session"
@@ -58,6 +60,8 @@ export interface ProjectsPageProps {
  * the list is one row long.
  */
 export function ProjectsPage({ focus }: ProjectsPageProps) {
+  const { t } = useTranslation("projects")
+  const { t: tShell } = useTranslation("shell")
   const { data = [], isLoading, isError, error, refetch } = useProjectsQuery()
 
   // A platform act, asked without a project: platform roles alone answer for
@@ -78,11 +82,45 @@ export function ProjectsPage({ focus }: ProjectsPageProps) {
   const [sorting, setSorting] = useState<DataTableSorting>([])
   const [columnSizing, setColumnSizing] = useState<DataTableColumnSizing>({})
 
-  const columns = useMemo(() => createProjectColumns(), [])
-  const rows = useMemo(
-    () => applyDataFilters(data, filters, columns),
-    [data, filters, columns]
-  )
+  const columns = useMemo(() => createProjectColumns(t), [t])
+
+  // The registry's whole tag vocabulary, read off the loaded rows. There is
+  // no dictionary endpoint and none is wanted (design D6): the list is fully
+  // in memory, the vocabulary is what these rows carry, and the flip to a
+  // server-side filter is a recorded threshold rather than a default.
+  const distinctTags = useMemo(() => {
+    const tags = new Set<string>()
+    for (const project of data) {
+      for (const tag of project.tags) {
+        tags.add(tag)
+      }
+    }
+    return [...tags].sort()
+  }, [data])
+
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((current) =>
+      current.includes(tag)
+        ? current.filter((entry) => entry !== tag)
+        : [...current, tag]
+    )
+  }
+
+  const rows = useMemo(() => {
+    const textFiltered = applyDataFilters(data, filters, columns)
+    // AND semantics: a row shows when it carries *every* selected tag, so
+    // two tags intersect rather than union — the operator narrowing a list
+    // is subtracting, not adding. Composes with the text filter: both must
+    // match, and clearing either returns to what the other alone narrows.
+    if (selectedTags.length === 0) {
+      return textFiltered
+    }
+    return textFiltered.filter((project) =>
+      selectedTags.every((tag) => project.tags.includes(tag))
+    )
+  }, [data, filters, columns, selectedTags])
 
   const inFlight = useMemo(
     () => data.reduce((sum, project) => sum + project.activeRuns, 0),
@@ -100,17 +138,33 @@ export function ProjectsPage({ focus }: ProjectsPageProps) {
       padded={false}
       header={
         <PageHeader
-          breadcrumbs={[{ label: "platform" }, { label: "projects" }]}
-          title="Projects"
+          breadcrumbs={[
+            { label: tShell("crumb.platform") },
+            { label: tShell("crumb.projects") },
+          ]}
+          title={t("registry.title")}
           summary={
             ready ? (
-              <>
-                <span className={styles.strong}>{data.length}</span> projects
-                {" · "}
-                <span className={styles.strong}>{inFlight}</span> runs in flight
-                {" · "}
-                <span className={styles.strong}>{formatCost(spend)}</span> today
-              </>
+              /* The figures are values in their own voice and the words are
+                 prose in theirs, so the emphasis rides slot elements and the
+                 sentence — word order included — belongs to the locale. The
+                 counts stringify: a Trans slot holding a falsy child (a bare
+                 `0`) renders empty, and zero is a reading, not a blank. */
+              <Trans
+                ns="projects"
+                i18nKey="registry.summary"
+                components={{
+                  count: (
+                    <span className={styles.strong}>{String(data.length)}</span>
+                  ),
+                  runs: (
+                    <span className={styles.strong}>{String(inFlight)}</span>
+                  ),
+                  spend: (
+                    <span className={styles.strong}>{formatCost(spend)}</span>
+                  ),
+                }}
+              />
             ) : undefined
           }
           actions={
@@ -129,23 +183,23 @@ export function ProjectsPage({ focus }: ProjectsPageProps) {
               // carries the words. `aria-label` keeps the name either way —
               // a tooltip describes and never becomes the name.
               mayCreate.allowed ? (
-                <Tooltip content="New project">
+                <Tooltip content={t("registry.newProject")}>
                   <Link
                     to="/projects/new"
                     data-test="project-new"
-                    aria-label="New project"
+                    aria-label={t("registry.newProject")}
                     className={buttonClass({ size: "icon-sm" })}
                   >
                     <Plus aria-hidden="true" />
                   </Link>
                 </Tooltip>
               ) : (
-                <Tooltip content={mayCreate.denial ?? "New project"}>
+                <Tooltip content={mayCreate.denial ?? t("registry.newProject")}>
                   <Button
                     size="icon-sm"
                     data-test="project-new"
                     denied={mayCreate.denial}
-                    aria-label="New project"
+                    aria-label={t("registry.newProject")}
                   >
                     <Plus aria-hidden="true" />
                   </Button>
@@ -167,12 +221,19 @@ export function ProjectsPage({ focus }: ProjectsPageProps) {
                 onFiltersChange={setFilters}
                 columnVisibility={columnVisibility}
                 onColumnVisibilityChange={setColumnVisibility}
+                leading={
+                  <TagFilter
+                    availableTags={distinctTags}
+                    selectedTags={selectedTags}
+                    onToggleTag={toggleTag}
+                  />
+                }
                 trailing={
                   <span
                     className={tableStyles.count}
                     data-test="projects-count"
                   >
-                    {rows.length} shown
+                    {t("registry.count", { count: rows.length })}
                   </span>
                 }
               />
@@ -194,15 +255,15 @@ export function ProjectsPage({ focus }: ProjectsPageProps) {
         {isError ? (
           <ScreenState
             kind="error"
-            title="The registry did not load"
-            description={requestFailureMessage(error, "Unknown error")}
+            title={t("registry.errorTitle")}
+            description={requestFailureMessage(error, t("errors.unknown"))}
             inset="gutter"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="projects-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -228,9 +289,9 @@ export function ProjectsPage({ focus }: ProjectsPageProps) {
               columnSizing={columnSizing}
               onColumnSizingChange={setColumnSizing}
               emptyLabel={
-                hasActiveFilters(filters)
-                  ? "no projects match the current filters"
-                  : "no projects yet"
+                hasActiveFilters(filters) || selectedTags.length > 0
+                  ? t("registry.empty.filtered")
+                  : t("registry.empty.none")
               }
             />
           </div>

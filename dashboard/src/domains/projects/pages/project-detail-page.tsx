@@ -1,12 +1,25 @@
-import { useMemo, type ReactNode } from "react"
-import { ArrowLeft, ArrowRight, RotateCw } from "lucide-react"
+import { useMemo, useState, type ReactElement, type ReactNode } from "react"
+import { ArrowLeft, ArrowRight, Pencil, RotateCw } from "lucide-react"
 import { Link } from "@tanstack/react-router"
+import { Trans, useTranslation } from "react-i18next"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
 import { useIdentityQuery } from "@/domains/identity/api/queries"
 import { useProjectsQuery } from "@/domains/projects/api/queries"
+import { useUpdateProjectMutation } from "@/domains/projects/api/mutations"
 import type { ProjectRow } from "@/domains/projects/model/types"
+import type { ProjectsTranslator } from "@/domains/projects/ui/projects-columns"
+import {
+  markLabel,
+  resolveProjectMark,
+} from "@/domains/projects/model/identity"
+import {
+  ProjectIdentityEditor,
+  type ProjectIdentityPatch,
+} from "@/domains/projects/ui/project-identity-editor"
+import { ProjectMark } from "@/domains/projects/ui/project-mark"
+import { projectAccentStyle } from "@/domains/projects/ui/project-accent"
 import { useQueueQuery, useWorkersQuery } from "@/domains/queue/api/queries"
 import { formatCost } from "@/domains/runs/model/format"
 import { useSourcesQuery } from "@/domains/sources/api/queries"
@@ -18,6 +31,7 @@ import {
   Fact,
   FactList,
   ForbiddenState,
+  Notice,
   ScreenState,
   Section,
   Skeleton,
@@ -98,14 +112,16 @@ function handoffRows({
   connections,
   figure,
   pending,
+  t,
 }: {
   project: ProjectRow
   /** `null` while the queue board is still on its way. */
   queueItems: number | null
   queueWorkers: number | null
   connections: number | null
-  figure: (value: ReactNode) => ReactNode
+  figure: (value: string | number) => ReactElement
   pending: ReactNode
+  t: ProjectsTranslator
 }): Handoff[] {
   // The handle, not the id: the three lists that narrow on this match the
   // project *key* in their promoted text filter, because that is the value the
@@ -115,61 +131,84 @@ function handoffRows({
   return [
     {
       id: "runs",
-      what: "live runs",
+      what: t("handoff.runsWhat"),
       count: (
-        <>
-          {figure(project.activeRuns)} in flight of {figure(project.totalRuns)}{" "}
-          seen
-        </>
+        <Trans
+          ns="projects"
+          i18nKey="handoff.runsCount"
+          components={{
+            count: figure(project.activeRuns),
+            total: figure(project.totalRuns),
+          }}
+        />
       ),
-      note: "open the duty list narrowed to this project",
+      note: t("handoff.runsNote"),
       to: "/runs",
       search: q,
     },
     {
       id: "queue",
-      what: "queue & workers",
+      what: t("handoff.queueWhat"),
       count:
         queueItems === null || queueWorkers === null ? (
           pending
         ) : (
-          <>
-            {figure(queueItems)} work items · {figure(queueWorkers)} workers up
-          </>
+          <Trans
+            ns="projects"
+            i18nKey="handoff.queueCount"
+            components={{
+              items: figure(queueItems),
+              workers: figure(queueWorkers),
+            }}
+          />
         ),
-      note: "open the claim queue narrowed to this project",
+      note: t("handoff.queueNote"),
       to: "/queue",
       search: q,
     },
     {
       id: "sources",
-      what: "sources",
+      what: t("handoff.sourcesWhat"),
       count:
-        connections === null ? pending : <>{figure(connections)} connections</>,
-      note: "open the intake narrowed to this project",
+        connections === null ? (
+          pending
+        ) : (
+          <Trans
+            ns="projects"
+            i18nKey="handoff.sourcesCount"
+            components={{ count: figure(connections) }}
+          />
+        ),
+      note: t("handoff.sourcesNote"),
       to: "/sources",
       search: q,
     },
     {
       id: "cost",
-      what: "cost & failures",
+      what: t("handoff.costWhat"),
       count:
         project.spendToday === null ? (
           // Absent, not zero. A project the cost report has never heard of has
           // not spent nothing — it has not been measured, and `$0.00` would be
           // the screen telling an operator a two-day-old project is already
           // accounted for.
-          <>
-            <span className={styles.absent}>—</span> nothing attributed yet
-          </>
+          <Trans
+            ns="projects"
+            i18nKey="handoff.costNothing"
+            components={{ dash: <span className={styles.absent}>—</span> }}
+          />
         ) : (
-          <>{figure(formatCost(project.spendToday))} today</>
+          <Trans
+            ns="projects"
+            i18nKey="handoff.costToday"
+            components={{ spend: figure(formatCost(project.spendToday)) }}
+          />
         ),
       // The one row whose link is wider than its figure, and it says so. There
       // is no `?q=` for the cost report today and no honest way to invent one:
       // spend is attributed per application, and the screen behind this is the
       // platform's whole day.
-      note: "the figure is this project's — the report behind it is the platform's",
+      note: t("handoff.costNote"),
       to: "/cost",
       // No `q`: there is nothing over there that would read one.
       search: {},
@@ -197,6 +236,8 @@ function handoffRows({
  */
 export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
   const session = useSession()
+  const { t } = useTranslation("projects")
+  const { t: tShell } = useTranslation("shell")
   const { data = [], isLoading, isError, error, refetch } = useProjectsQuery()
 
   // Read unconditionally, gated on render. These are hooks, so a `useCan`
@@ -211,6 +252,18 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
   // Identity is a platform act: being project-admin of this very project must
   // not open the list of who else holds a role on it.
   const mayManageIdentity = useCan("identity.manage")
+
+  // Editing the record is a project act — asked against this project, so the
+  // same person can be an admin here and a viewer next door. Asked as a hook
+  // (not render-time `can`) because the edit affordance is chrome the page
+  // always draws, not a row that arrives with the data.
+  const mayEditRecord = useCan("projects.edit", projectId)
+
+  // The identity editor writes through the widened PATCH; three optional
+  // fields are not a page (design D8), so the editor opens under the facts it
+  // edits and closes when the write lands.
+  const updateProject = useUpdateProjectMutation()
+  const [editingIdentity, setEditingIdentity] = useState(false)
 
   const project = data.find((entry) => entry.id === projectId) ?? null
 
@@ -227,10 +280,15 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
       return []
     }
 
-    const figure = (value: ReactNode) => (
-      <span className={styles.figure}>{value}</span>
+    /* The figures stringify because a Trans slot holding a falsy child
+       (a bare `0`) renders empty — react-i18next drops it while walking
+       the node tree. A count of zero is a reading, not a blank. */
+    const figure = (value: string | number): ReactElement => (
+      <span className={styles.figure}>{String(value)}</span>
     )
-    const pending = <span className={styles.absent}>counting</span>
+    const pending = (
+      <span className={styles.absent}>{t("handoff.counting")}</span>
+    )
 
     const rows = handoffRows({
       project,
@@ -248,6 +306,7 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
         : null,
       figure,
       pending,
+      t,
     })
 
     const allowed: Record<string, boolean> = {
@@ -258,28 +317,33 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
     }
 
     return rows.filter((row) => allowed[row.id])
-  }, [project, queue.data, pool.data, sources.data, session])
+  }, [project, queue.data, pool.data, sources.data, session, t])
 
   return (
     <AppShell
       header={
         <PageHeader
           breadcrumbs={[
-            { label: "platform" },
-            { label: "projects", to: "/projects" },
+            { label: tShell("crumb.platform") },
+            { label: tShell("crumb.projects"), to: "/projects" },
             // The slug, not the display name: the crumb path is an address,
             // and the slug is the handle this project is known by everywhere
             // else in the product.
-            { label: project?.slug ?? "project" },
+            { label: project?.slug ?? t("detail.crumbFallback") },
           ]}
-          title={project?.name ?? "Project"}
+          title={project?.name ?? t("detail.fallbackTitle")}
           summary={
             project ? (
-              <>
-                <span className={styles.value}>{project.slug}</span>
-                {" · created "}
-                <span className={styles.value}>{project.createdAt}</span>
-              </>
+              <Trans
+                ns="projects"
+                i18nKey="detail.summary"
+                components={{
+                  slug: <span className={styles.value}>{project.slug}</span>,
+                  created: (
+                    <span className={styles.value}>{project.createdAt}</span>
+                  ),
+                }}
+              />
             ) : undefined
           }
         />
@@ -297,17 +361,17 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
         {isError ? (
           <ScreenState
             kind="error"
-            title="The registry did not load"
-            description={requestFailureMessage(error, "Unknown error")}
+            title={t("registry.errorTitle")}
+            description={requestFailureMessage(error, t("errors.unknown"))}
             /* `none`: the screen's own body already pays for its room, the
                way the record and the hand-offs below do. */
             inset="none"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="project-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -327,25 +391,25 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
              take back to whoever wrote it. */
           <ScreenState
             kind="notFound"
-            title="No project with that id"
+            title={t("detail.notFoundTitle")}
             description={
-              <>
-                The registry holds nothing under{" "}
-                <code className={styles.missing}>{projectId}</code>. A project
-                id out of an old link is the ordinary way to arrive here — an
-                address outlives the project it named, and the registry is where
-                the ones that still exist are.
-              </>
+              <Trans
+                ns="projects"
+                i18nKey="detail.notFoundDescription"
+                components={{
+                  id: <code className={styles.missing}>{projectId}</code>,
+                }}
+              />
             }
             inset="none"
             data-test="project-not-found"
             action={
-              <Tooltip content="Back to projects">
+              <Tooltip content={t("detail.notFoundBack")}>
                 <Link
                   to="/projects"
                   search={{}}
                   data-test="project-not-found-back"
-                  aria-label="Back to projects"
+                  aria-label={t("detail.notFoundBack")}
                   className={buttonClass({ size: "icon-sm" })}
                 >
                   <ArrowLeft aria-hidden="true" />
@@ -361,7 +425,7 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
 
             <Section
               id="project-record"
-              title="the project itself"
+              title={t("detail.factsSection")}
               data-test="project-facts"
             >
               {/* A definition list, hairline-bounded, no fill and no shadow:
@@ -369,40 +433,174 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
                   surface in this product is a boundary and a corner rather
                   than a card. */}
               <FactList framed>
-                <Fact name="slug">{project.slug}</Fact>
+                <Fact name={t("detail.fact.slug")}>{project.slug}</Fact>
                 {/* The one field on a project written for a reader. */}
-                <Fact name="name" voice="prose">
+                <Fact name={t("detail.fact.name")} voice="prose">
                   {project.name}
                 </Fact>
+                {/* The identity block: the mark (resolved, not just stored —
+                    the derivation is as much a fact about the project as the
+                    override), the accent as a dot and a value, and the
+                    vocabulary. The dot reads the same one custom property the
+                    registry's row sets; the words carry the meaning, the
+                    colour only reinforces it. */}
+                <Fact name={t("detail.fact.mark")}>
+                  <span
+                    className={styles.markFact}
+                    style={projectAccentStyle(project.color)}
+                  >
+                    <ProjectMark project={project} size="md" />
+                    <span className={styles.accentDot} aria-hidden="true" />
+                    <span>{markLabel(resolveProjectMark(project))}</span>
+                  </span>
+                </Fact>
+                {project.icon ? (
+                  <Fact name={t("identity.icon")} selectable>
+                    {project.icon}
+                  </Fact>
+                ) : (
+                  <Fact name={t("identity.icon")} absent>
+                    {t("detail.fact.iconAbsent")}
+                  </Fact>
+                )}
+                {project.color ? (
+                  <Fact name={t("identity.accentColour")} selectable>
+                    {project.color}
+                  </Fact>
+                ) : (
+                  <Fact name={t("identity.accentColour")} absent>
+                    {t("detail.fact.colourAbsent")}
+                  </Fact>
+                )}
+                {project.tags.length > 0 ? (
+                  <Fact name={t("identity.tags")}>
+                    <span
+                      className={styles.tagFact}
+                      style={projectAccentStyle(project.color)}
+                    >
+                      {project.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className={styles.tagChip}
+                          data-test="project-fact-tag"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </span>
+                  </Fact>
+                ) : (
+                  <Fact name={t("identity.tags")} absent>
+                    {t("detail.fact.tagsAbsent")}
+                  </Fact>
+                )}
                 {project.gitProfileRepo ? (
                   /* The one fact on this page somebody copies out of it, so it
-                     is selected as a unit rather than as part of a sentence —
-                     the same treatment the run id gets. */
-                  <Fact name="git profile repository" selectable>
+                      is selected as a unit rather than as part of a sentence —
+                      the same treatment the run id gets. */
+                  <Fact name={t("identity.repo")} selectable>
                     {project.gitProfileRepo}
                   </Fact>
                 ) : (
                   /* Not missing — running on the platform's own profiles, which
-                     is a legitimate way for a project to be configured. The
-                     registry column says it in exactly these words; two
-                     spellings of one fact is how the two screens start
-                     disagreeing. */
-                  <Fact name="git profile repository" absent>
-                    platform defaults
+                      is a legitimate way for a project to be configured. The
+                      registry column says it in exactly these words; two
+                      spellings of one fact is how the two screens start
+                      disagreeing. */
+                  <Fact name={t("identity.repo")} absent>
+                    {t("identity.platformDefaults")}
                   </Fact>
                 )}
-                <Fact name="created">{project.createdAt}</Fact>
+                <Fact name={t("detail.fact.created")}>{project.createdAt}</Fact>
               </FactList>
+
+              {/* The edit affordance — an act, so it stays visible and names
+                  what it needs rather than disappearing for a role that
+                  cannot use it. Three optional fields are not a page (design
+                  D8), so the editor opens under the facts it edits. */}
+              <div className={styles.identityBar}>
+                {editingIdentity ? null : mayEditRecord.allowed ? (
+                  <Tooltip content={t("detail.editIdentity")}>
+                    <Button
+                      size="sm"
+                      data-test="identity-edit"
+                      aria-label={t("detail.editIdentity")}
+                      onClick={() => {
+                        setEditingIdentity(true)
+                      }}
+                    >
+                      <Pencil aria-hidden="true" />
+                      {t("detail.editIdentity")}
+                    </Button>
+                  </Tooltip>
+                ) : (
+                  <Tooltip
+                    content={mayEditRecord.denial ?? t("detail.editIdentity")}
+                  >
+                    <Button
+                      size="sm"
+                      data-test="identity-edit"
+                      denied={mayEditRecord.denial}
+                    >
+                      <Pencil aria-hidden="true" />
+                      {t("detail.editIdentity")}
+                    </Button>
+                  </Tooltip>
+                )}
+              </div>
+
+              {editingIdentity ? (
+                <>
+                  {updateProject.error ? (
+                    <Notice tone="bad" data-test="identity-edit-failure">
+                      {requestFailureMessage(
+                        updateProject.error,
+                        t("detail.editIdentityFailure")
+                      )}
+                    </Notice>
+                  ) : null}
+                  <ProjectIdentityEditor
+                    project={project}
+                    busy={updateProject.isPending}
+                    onSave={(patch: ProjectIdentityPatch) => {
+                      // Only the identity fields ride the PATCH; name and
+                      // description go as `null` (untouched), and the tags
+                      // list goes exactly as edited — an emptied list is the
+                      // one clear this surface can honestly make (D5).
+                      updateProject.mutate(
+                        {
+                          projectId: project.id,
+                          patch: {
+                            name: null,
+                            description: null,
+                            icon: patch.icon,
+                            color: patch.color,
+                            tags: patch.tags,
+                          },
+                        },
+                        {
+                          onSuccess: () => {
+                            setEditingIdentity(false)
+                          },
+                        }
+                      )
+                    }}
+                    onCancel={() => {
+                      setEditingIdentity(false)
+                    }}
+                  />
+                </>
+              ) : null}
             </Section>
 
             {/* --- who holds which role on it --- */}
 
             <Section
               id="project-roles"
-              title="roles on this project"
+              title={t("detail.rolesSection")}
               note={
                 mayManageIdentity.allowed && identity.data
-                  ? `${grants.length} held`
+                  ? t("detail.rolesHeld", { count: grants.length })
                   : undefined
               }
               data-test="project-roles"
@@ -428,9 +626,7 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
                     </ul>
                   ) : (
                     <p className={styles.quiet} data-test="project-no-grants">
-                      Nobody holds a role on this project. Anyone who can reach
-                      it reaches it through a platform grant, which holds
-                      everywhere and is not listed here.
+                      {t("detail.rolesEmpty")}
                     </p>
                   )}
 
@@ -444,14 +640,14 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
                       className={styles.outLink}
                       data-test="project-grants-all"
                     >
-                      every assignment on this project
+                      {t("detail.rolesAll")}
                     </Link>
                     <Link
                       to="/identity/grants/new"
                       className={styles.outLink}
                       data-test="project-grant-new"
                     >
-                      grant a role
+                      {t("detail.rolesGrant")}
                     </Link>
                   </p>
                 </>
@@ -463,7 +659,7 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
                 <ForbiddenState
                   className={styles.forbidden}
                   needs={needsLabel("identity.manage")}
-                  subject="Roles on this project"
+                  subject={t("detail.rolesForbiddenSubject")}
                 />
               )}
             </Section>
@@ -486,7 +682,7 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
             {handoffs.length > 0 ? (
               <Section
                 id="project-elsewhere"
-                title="where this project's work is"
+                title={t("handoff.section")}
                 data-test="project-handoffs"
               >
                 <div className={styles.handoffs}>

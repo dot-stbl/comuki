@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
 import { slugify, validateSlug } from "@/domains/projects/model/slug"
 import type { CreateProjectInput } from "@/domains/projects/model/types"
+import { ColorField } from "@/domains/projects/ui/color-field"
+import { TagEntryField } from "@/domains/projects/ui/tag-entry-field"
 import { useCan } from "@/shared/session"
 import { Button, TextField } from "@/shared/ui"
 
@@ -18,13 +21,19 @@ export interface CreateProjectFormProps {
 }
 
 /**
- * Three fields, one of which is not prose.
+ * Six fields, one of which is not prose.
  *
  * The slug is the handle that shows up as a column in the runs list, the queue
  * and every role scope, so the form treats it as a value: it is proposed from
  * the name while nobody has touched it, it stops being proposed the instant
  * somebody does, and it is never silently rewritten. A handle the operator did
  * not choose is a handle they will not recognise where it lands.
+ *
+ * The three identity fields are optional and never refuse the submit: an icon
+ * is an emoji or an image URL exactly as typed, a colour paints the dot and
+ * the tag tint (never the interface), and tags are entered as chips — Enter
+ * or a comma commits one, Backspace on an empty field removes the last, and a
+ * duplicate is refused because the second copy says nothing the first did not.
  *
  * The submit is disabled for *busy* and for a missing name — the two things
  * that make the act impossible — and refuses on an invalid slug by showing the
@@ -33,7 +42,7 @@ export interface CreateProjectFormProps {
  * to prevent, one field over.
  *
  * No router, no shell, no mutation: the page above it owns all three. What is
- * left here is the three fields and the rules about them, which is the part
+ * left here is the fields and the rules about them, which is the part
  * worth testing on its own.
  */
 export function CreateProjectForm({
@@ -43,6 +52,8 @@ export function CreateProjectForm({
   onCancel,
   onDirtyChange,
 }: CreateProjectFormProps) {
+  const { t } = useTranslation("projects")
+
   // A platform act: it reads platform roles alone, so no project id goes in.
   // Being project-admin of three projects must never open this.
   const create = useCan("projects.create")
@@ -50,6 +61,9 @@ export function CreateProjectForm({
   const [name, setName] = useState("")
   const [slug, setSlug] = useState("")
   const [repo, setRepo] = useState("")
+  const [icon, setIcon] = useState("")
+  const [color, setColor] = useState<string | null>(null)
+  const [tags, setTags] = useState<string[]>([])
   const [slugTouched, setSlugTouched] = useState(false)
   const [attempted, setAttempted] = useState(false)
 
@@ -72,7 +86,13 @@ export function CreateProjectForm({
    */
   const showSlugError = (slugTouched || attempted) && slugError
 
-  const dirty = name !== "" || slug !== "" || repo !== ""
+  const dirty =
+    name !== "" ||
+    slug !== "" ||
+    repo !== "" ||
+    icon !== "" ||
+    color !== null ||
+    tags.length > 0
 
   useEffect(() => {
     onDirtyChange?.(dirty)
@@ -89,6 +109,9 @@ export function CreateProjectForm({
       name: trimmedName,
       slug: slug.trim(),
       gitProfileRepo: repo.trim() || null,
+      icon: icon.trim() || null,
+      color,
+      tags,
     })
   }
 
@@ -97,12 +120,12 @@ export function CreateProjectForm({
       <FormFields>
         <TextField
           id="project-name"
-          label="name"
+          label={t("form.nameLabel")}
           required
           autoFocus
           value={name}
           disabled={busy}
-          placeholder="what this project is, in a few words"
+          placeholder={t("form.namePlaceholder")}
           onValueChange={(next) => {
             setName(next)
             if (!slugTouched) {
@@ -113,14 +136,14 @@ export function CreateProjectForm({
 
         <TextField
           id="project-slug"
-          label="slug"
+          label={t("form.slugLabel")}
           required
           value={slug}
           disabled={busy}
           spellCheck={false}
           autoComplete="off"
-          placeholder="lowercase, hyphens, no spaces"
-          hint="Shown as a column in every list in the product. Lowercase letters, digits and hyphens."
+          placeholder={t("form.slugPlaceholder")}
+          hint={t("form.slugHint")}
           error={showSlugError ? slugError : null}
           onValueChange={(next) => {
             setSlugTouched(true)
@@ -130,14 +153,44 @@ export function CreateProjectForm({
 
         <TextField
           id="project-repo"
-          label="git profile repository"
+          label={t("identity.repo")}
           value={repo}
           disabled={busy}
           spellCheck={false}
           autoComplete="off"
-          placeholder="git@github.com:org/worker-profiles.git"
-          hint="Optional. Where this project's worker profiles are authored — leave it empty to run on the platform defaults."
+          placeholder={t("form.repoPlaceholder")}
+          hint={t("form.repoHint")}
           onValueChange={setRepo}
+        />
+
+        <TextField
+          id="project-icon"
+          label={t("identity.icon")}
+          value={icon}
+          disabled={busy}
+          spellCheck={false}
+          autoComplete="off"
+          placeholder={t("identity.iconPlaceholder")}
+          hint={t("form.iconHint")}
+          onValueChange={setIcon}
+        />
+
+        <ColorField
+          id="project-color"
+          label={t("identity.accentColour")}
+          value={color}
+          onValueChange={setColor}
+          clearLabel={t("form.colorClear")}
+          disabled={busy}
+          hint={t("form.colorHint")}
+        />
+
+        <TagEntryField
+          id="project-tags"
+          value={tags}
+          onValueChange={setTags}
+          disabled={busy}
+          hint={t("form.tagsHint")}
         />
       </FormFields>
 
@@ -149,7 +202,7 @@ export function CreateProjectForm({
           loading={busy}
           disabled={name.trim().length === 0}
         >
-          Create project
+          {t("form.submit")}
         </Button>
         <Button
           variant="secondary"
@@ -157,7 +210,7 @@ export function CreateProjectForm({
           disabled={busy}
           onClick={onCancel}
         >
-          Cancel
+          {t("actions.cancel")}
         </Button>
       </FormActions>
     </FormLayout>

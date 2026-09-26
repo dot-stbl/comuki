@@ -1,9 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import type { UseMutationResult } from "@tanstack/react-query"
 
 import {
   mapCreateProjectInputToCreateRequest,
   mapProjectSettingsToUpdateRequest,
   mapProjectSettingsViewToSettings,
+  mapProjectUpdateToUpdateRequest,
   mapProjectViewToDetail,
   toProjectRow,
 } from "@/domains/projects/api/mappers"
@@ -11,6 +13,7 @@ import type {
   CreateProjectInput,
   ProjectRow,
   ProjectSettings,
+  ProjectUpdate,
 } from "@/domains/projects/model/types"
 import { deleteApiV1ProjectsProjectid } from "@/shared/api/_generated/clients/deleteApiV1ProjectsProjectid"
 import { patchApiV1ProjectsProjectid } from "@/shared/api/_generated/clients/patchApiV1ProjectsProjectid"
@@ -53,54 +56,59 @@ import {
 
 async function createProject(input: CreateProjectInput): Promise<ProjectRow> {
   if (env.useMock) {
-    const created = createSeedProject({
-      name: input.name,
-      slug: input.slug,
-      gitProfileRepo: input.gitProfileRepo,
-    })
-    return toProjectRow(created)
+    return toProjectRow(
+      createSeedProject({
+        name: input.name,
+        slug: input.slug,
+        gitProfileRepo: input.gitProfileRepo,
+        icon: input.icon,
+        color: input.color,
+        tags: input.tags,
+      })
+    )
   }
-  const view = await postApiV1Projects(
-    mapCreateProjectInputToCreateRequest(input)
+  return mapProjectViewToDetail(
+    await postApiV1Projects(mapCreateProjectInputToCreateRequest(input))
   )
-  return mapProjectViewToDetail(view)
 }
 
 async function updateProject(
   projectId: string,
   patch: ProjectUpdate
 ): Promise<ProjectRow> {
-  const view = await patchApiV1ProjectsProjectid(projectId, {
-    name: patch.name,
-    description: patch.description,
-    profilesGitUrl: null,
-    profilesGitRef: null,
-  })
-  return mapProjectViewToDetail(view)
+  // The body's shape — including the absent-vs-empty tags distinction the
+  // wire makes for the one list field (design D5) — lives in the mapper,
+  // where it is pinned by tests rather than by reading this call site.
+  return mapProjectViewToDetail(
+    await patchApiV1ProjectsProjectid(
+      projectId,
+      mapProjectUpdateToUpdateRequest(patch)
+    )
+  )
 }
 
 async function updateSettings(
   projectId: string,
   settings: ProjectSettings
 ): Promise<ProjectSettings> {
-  const view = await putApiV1ProjectsProjectidSettings(
-    projectId,
-    mapProjectSettingsToUpdateRequest(settings)
+  return mapProjectSettingsViewToSettings(
+    await putApiV1ProjectsProjectidSettings(
+      projectId,
+      mapProjectSettingsToUpdateRequest(settings)
+    )
   )
-  return mapProjectSettingsViewToSettings(view)
 }
 
 async function deleteProject(projectId: string): Promise<void> {
   await deleteApiV1ProjectsProjectid(projectId)
 }
 
-/** The fields a `PATCH /api/v1/projects/{id}` accepts. Mirrors the wire DTO. */
-export interface ProjectUpdate {
-  name: string | null
-  description: string | null
-}
-
-export function useCreateProjectMutation() {
+export function useCreateProjectMutation(): UseMutationResult<
+  ProjectRow,
+  Error,
+  CreateProjectInput,
+  unknown
+> {
   const client = useQueryClient()
 
   return useMutation({
@@ -114,7 +122,12 @@ export function useCreateProjectMutation() {
   })
 }
 
-export function useUpdateProjectMutation() {
+export function useUpdateProjectMutation(): UseMutationResult<
+  ProjectRow,
+  Error,
+  { projectId: string; patch: ProjectUpdate },
+  unknown
+> {
   const client = useQueryClient()
 
   return useMutation({
@@ -142,7 +155,12 @@ export function useUpdateProjectMutation() {
   })
 }
 
-export function useUpdateProjectSettingsMutation() {
+export function useUpdateProjectSettingsMutation(): UseMutationResult<
+  ProjectSettings,
+  Error,
+  { projectId: string; settings: ProjectSettings },
+  unknown
+> {
   const client = useQueryClient()
 
   return useMutation({
@@ -159,7 +177,12 @@ export function useUpdateProjectSettingsMutation() {
   })
 }
 
-export function useDeleteProjectMutation() {
+export function useDeleteProjectMutation(): UseMutationResult<
+  void,
+  Error,
+  { projectId: string },
+  unknown
+> {
   const client = useQueryClient()
 
   return useMutation({

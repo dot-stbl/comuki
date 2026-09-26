@@ -13,7 +13,9 @@ export const postApiV1Projects200Schema = z.any()
 
 export const postApiV1ProjectsMutationRequestSchema = z
   .lazy(() => createProjectRequestSchema)
-  .describe("Wire body of POST /api/v1/projects.")
+  .describe(
+    "Wire body of POST /api/v1/projects. The slug is lower-case kebab-case\r\n(3–64 chars) and becomes the immutable URL key — a duplicate gets HTTP\r\n409. Icon is an opaque emoji or image URL (≤ 200 chars); color is a\r\n`#rrggbb` hex value stored lower-case; each tag is lower-case\r\nkebab (1–39 chars), at most 20 distinct."
+  )
 
 export const postApiV1ProjectsMutationResponseSchema = z.lazy(
   () => postApiV1Projects200Schema

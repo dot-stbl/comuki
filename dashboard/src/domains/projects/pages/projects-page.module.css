@@ -41,6 +41,9 @@
   color: var(--foreground);
 }
 
+/* The tag filter moved to `ui/tag-filter` with the toolbar chips it
+   renders — the styling travelled with the control, not with the page. */
+
 /* The error state is `ScreenState inset="gutter"` and the loading state is
    `Skeleton inset="gutter" fill`, both from the kit: `s8 s6` and `s6` on a
    box that grows into the list's room, which is what the hand-copied `.state`

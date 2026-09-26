@@ -35,6 +35,9 @@ function mount(roles: Role[], taken: string[] = []) {
     name: screen.getByLabelText(/^name/),
     slug: screen.getByLabelText(/^slug/) as HTMLInputElement,
     repo: screen.getByLabelText("git profile repository"),
+    icon: screen.getByLabelText(/^icon/),
+    colour: screen.getByLabelText("accent colour") as HTMLInputElement,
+    tags: screen.getByLabelText(/^tags/),
     create: screen.getByRole("button", { name: "Create project" }),
     cancel: screen.getByRole("button", { name: "Cancel" }),
   }
@@ -67,6 +70,11 @@ describe("creating a project", () => {
       name: "Payments Platform",
       slug: "payments-platform",
       gitProfileRepo: "git@github.com:acme/profiles.git",
+      // The identity fields ride along empty — an empty create is a real
+      // answer, not an incomplete one.
+      icon: null,
+      color: null,
+      tags: [],
     })
   })
 
@@ -80,6 +88,32 @@ describe("creating a project", () => {
       name: "Vega",
       slug: "vega",
       gitProfileRepo: null,
+      icon: null,
+      color: null,
+      tags: [],
+    })
+  })
+
+  it("carries the identity fields onto the create payload", () => {
+    const { name, icon, colour, tags, create, onCreate } = mount([
+      "platform-admin",
+    ])
+
+    fireEvent.change(name, { target: { value: "Comuki" } })
+    fireEvent.change(icon, { target: { value: "🛰️" } })
+    fireEvent.change(colour, { target: { value: "#3c5a86" } })
+    fireEvent.change(tags, { target: { value: "Web" } })
+    fireEvent.keyDown(tags, { key: "Enter" })
+    fireEvent.click(create)
+
+    expect(onCreate).toHaveBeenCalledWith({
+      name: "Comuki",
+      slug: "comuki",
+      gitProfileRepo: null,
+      icon: "🛰️",
+      color: "#3c5a86",
+      // Normalised on commit — the chip shows what every list will show.
+      tags: ["web"],
     })
   })
 
@@ -158,6 +192,114 @@ describe("creating a project", () => {
       target: { value: "Vega" },
     })
     expect(onDirtyChange).toHaveBeenLastCalledWith(true)
+  })
+
+  it("counts a chosen colour or a committed tag as worth keeping too", () => {
+    const onDirtyChange = vi.fn()
+    render(
+      <TestSession roles={["platform-admin"]}>
+        <CreateProjectForm
+          takenSlugs={[]}
+          onCreate={() => {}}
+          onCancel={() => {}}
+          onDirtyChange={onDirtyChange}
+        />
+      </TestSession>
+    )
+
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false)
+
+    const colour = screen.getByLabelText("accent colour")
+    fireEvent.change(colour, { target: { value: "#3c5a86" } })
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true)
+  })
+})
+
+describe("the tag entry", () => {
+  function mountTags() {
+    const onCreate = vi.fn()
+    render(
+      <TestSession roles={["platform-admin"]}>
+        <CreateProjectForm
+          takenSlugs={[]}
+          onCreate={onCreate}
+          onCancel={() => {}}
+        />
+      </TestSession>
+    )
+    return {
+      onCreate,
+      name: screen.getByLabelText(/^name/),
+      colour: screen.getByLabelText("accent colour"),
+      tags: screen.getByLabelText(/^tags/),
+      create: screen.getByRole("button", { name: "Create project" }),
+    }
+  }
+
+  it("commits a tag on Enter and on a comma, normalised", () => {
+    const { tags } = mountTags()
+
+    fireEvent.change(tags, { target: { value: "  Billing " } })
+    fireEvent.keyDown(tags, { key: "Enter" })
+    fireEvent.change(tags, { target: { value: "web," } })
+
+    expect(screen.getByText("billing")).toBeTruthy()
+    expect(screen.getByText("web")).toBeTruthy()
+    // The draft cleared both ways: by the Enter commit and by the comma.
+    expect((tags as HTMLInputElement).value).toBe("")
+  })
+
+  it("refuses a duplicate, whichever case it arrives in", () => {
+    const { tags } = mountTags()
+
+    fireEvent.change(tags, { target: { value: "web" } })
+    fireEvent.keyDown(tags, { key: "Enter" })
+    fireEvent.change(tags, { target: { value: "WEB" } })
+    fireEvent.keyDown(tags, { key: "Enter" })
+
+    // One chip, and the draft is dropped — the second copy said nothing the
+    // first did not.
+    expect(screen.getAllByText("web").length).toBe(1)
+    expect((tags as HTMLInputElement).value).toBe("")
+  })
+
+  it("removes the last chip on Backspace in an empty field", () => {
+    const { tags } = mountTags()
+
+    fireEvent.change(tags, { target: { value: "web" } })
+    fireEvent.keyDown(tags, { key: "Enter" })
+    fireEvent.change(tags, { target: { value: "billing" } })
+    fireEvent.keyDown(tags, { key: "Enter" })
+    fireEvent.keyDown(tags, { key: "Backspace" })
+
+    expect(screen.queryByText("billing")).toBeNull()
+    expect(screen.getByText("web")).toBeTruthy()
+  })
+
+  it("removes one chip by its own ×", () => {
+    const { tags } = mountTags()
+
+    fireEvent.change(tags, { target: { value: "web" } })
+    fireEvent.keyDown(tags, { key: "Enter" })
+    fireEvent.click(screen.getByRole("button", { name: "Remove tag web" }))
+
+    expect(screen.queryByText("web")).toBeNull()
+  })
+
+  it("never disables the submit over the identity fields", () => {
+    const { name, tags, colour, create } = mountTags()
+
+    // The submit's gate is the name and busy, nothing else — the identity
+    // fields are optional by contract, entered or not.
+    fireEvent.change(name, { target: { value: "Vega" } })
+    fireEvent.change(tags, { target: { value: "web" } })
+    fireEvent.keyDown(tags, { key: "Enter" })
+    fireEvent.change(colour, { target: { value: "#3c5a86" } })
+    expect(create.hasAttribute("disabled")).toBe(false)
+
+    // Clearing the name is the one empty that refuses the act.
+    fireEvent.change(name, { target: { value: "" } })
+    expect(create.hasAttribute("disabled")).toBe(true)
   })
 })
 

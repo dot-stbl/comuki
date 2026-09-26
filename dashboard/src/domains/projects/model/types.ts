@@ -1,22 +1,22 @@
 /** A project as the platform list shows it: the record plus what it is doing. */
 export interface ProjectRow {
-  id: string
+  readonly id: string
   /** The handle every other list in the product shows. A value, not a name. */
-  slug: string
-  name: string
-  gitProfileRepo: string | null
-  createdAt: string
+  readonly slug: string
+  readonly name: string
+  readonly gitProfileRepo: string | null
+  readonly createdAt: string
   /**
    * Whether the host has archived the project. The shared `["projects"]`
    * cache keeps archived rows on purpose — identity names grants against
    * them — while screen-facing hooks filter them out of what they return,
    * so a row the registry still knows is not a row the screens still show.
    */
-  archived: boolean
+  readonly archived: boolean
   /** Runs the swarm is standing on for this project right now. */
-  activeRuns: number
+  readonly activeRuns: number
   /** Every run this shift has seen for it, finished ones included. */
-  totalRuns: number
+  readonly totalRuns: number
   /**
    * Today's spend, or `null` when nothing has been attributed to the project.
    *
@@ -25,14 +25,52 @@ export interface ProjectRow {
    * heard of. A row that renders both as `$0.00` is telling the operator that a
    * new project is already accounted for.
    */
-  spendToday: number | null
+  readonly spendToday: number | null
+  /**
+   * The operator-chosen mark override — a single emoji or an image URL, opaque
+   * on the wire. `null` means no override, and the screen derives a brand mark
+   * from `gitProfileRepo`'s host instead (`model/identity.ts`).
+   */
+  readonly icon: string | null
+  /**
+   * The accent colour, stored and served as lower-case `#rrggbb`. Decoration
+   * only: it paints the dot beside the mark and tints the tag chips through the
+   * `--project-accent` custom property, never chrome. `null` falls back to the
+   * muted ink of the surface.
+   */
+  readonly color: string | null
+  /**
+   * What this project *is*, in the operator's own vocabulary — already
+   * normalised server-side (lowercase, deduplicated). Always an array on the
+   * view; a project with no tags carries `[]`, not `null`.
+   */
+  readonly tags: readonly string[]
 }
 
 export interface CreateProjectInput {
-  name: string
-  slug: string
+  readonly name: string
+  readonly slug: string
   /** `null` when the project runs on the platform's default profiles. */
-  gitProfileRepo: string | null
+  readonly gitProfileRepo: string | null
+  /** The identity fields — all optional, never a reason to refuse a create. */
+  readonly icon: string | null
+  readonly color: string | null
+  readonly tags: readonly string[]
+}
+
+/**
+ * The fields a `PATCH /api/v1/projects/{id}` accepts. Mirrors the wire DTO.
+ *
+ * The identity fields are optional *on the patch*: `icon`/`color` absent means
+ * untouched (same as `null`), and `tags` absent means untouched while `[]`
+ * clears — the distinction the wire makes for the one list field (design D5).
+ */
+export interface ProjectUpdate {
+  readonly name: string | null
+  readonly description: string | null
+  readonly icon?: string | null
+  readonly color?: string | null
+  readonly tags?: readonly string[]
 }
 
 /**

@@ -75,6 +75,11 @@ type Story = StoryObj<typeof DataTable>
  * days ago — the last row is the point: no runs, no spend, no profile
  * repository, and every derived column degrades to a dash or to the fact that
  * it is running on the platform defaults.
+ *
+ * The identity column reads the same seed: comuki wears its stored emoji,
+ * accent and vocabulary; plexor's mark derives from its GitLab host; atlas
+ * composes the neutral glyph with a colour and tags of its own; vega has
+ * nothing, and says so the same way it says it about everything else.
  */
 export const Seeded: Story = {
   render: () => (

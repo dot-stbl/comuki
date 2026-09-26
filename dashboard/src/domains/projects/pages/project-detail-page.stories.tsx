@@ -8,6 +8,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
+import { expect, userEvent } from "@storybook/test"
 
 import { ProjectDetailPage } from "@/domains/projects/pages/project-detail-page"
 import { SessionProvider } from "@/shared/session"
@@ -118,7 +119,8 @@ type Story = StoryObj<typeof ProjectDetailPage>
  * The live reading. `comuki` has a profile repository, runs in flight, a line
  * in the cost report, work in the queue, containers up and two people holding
  * a role on it — every fact on the page is present and every hand-off carries
- * a figure.
+ * a figure. It also carries the full identity: the stored satellite emoji,
+ * the accent beside it, and the vocabulary in the facts.
  */
 export const LiveReading: Story = {
   render: () => (
@@ -137,12 +139,28 @@ export const LiveReading: Story = {
  * *different* answer — the repository says `platform defaults` because that is
  * a legitimate configuration, the spend says a dash because it has not been
  * measured rather than because it is zero, and the roles region says in words
- * that a platform grant is how anyone reaches this project at all.
+ * that a platform grant is how anyone reaches this project at all. The
+ * identity degrades the same way: no override, no derivation to make, no
+ * colour, no vocabulary — the neutral mark and the muted dot.
  */
 export const EmptyReading: Story = {
   render: () => (
     <Frame roles={["platform-admin"]}>
       <ProjectDetailPage projectId="p_vega" />
+    </Frame>
+  ),
+}
+
+/**
+ * The derived reading: `plexor` stores no icon, so the mark comes from its
+ * GitLab host, and `atlas` composes the neutral glyph with a colour and tags
+ * but no override. Identity facts and the edit affordance (open to the
+ * platform admin this frame holds) sit under "the project itself".
+ */
+export const DerivedReading: Story = {
+  render: () => (
+    <Frame roles={["platform-admin"]}>
+      <ProjectDetailPage projectId="p_plexor" />
     </Frame>
   ),
 }
@@ -173,4 +191,37 @@ export const Missing: Story = {
       <ProjectDetailPage projectId="p_gone" />
     </Frame>
   ),
+}
+
+/**
+ * The identity editor open under the facts it edits. Pressing *edit
+ * identity* — the same affordance the live reading carries — swaps the bar
+ * for the three-field panel: the stored values pre-filled, "keep stored
+ * colour" as the refusal's wording (a patch's `null` leaves the field
+ * untouched, which is a different sentence from a create's "no colour"),
+ * and the tags editable as chips.
+ *
+ * Saving here would ride the real PATCH, which mock mode has no writer for —
+ * the panel's busy and failure readings belong to the mutation, not to this
+ * page's layout, and are left to the mutation's own contract.
+ */
+export const EditingIdentity: Story = {
+  render: () => (
+    <Frame roles={["platform-admin"]}>
+      <ProjectDetailPage projectId="p_comuki" />
+    </Frame>
+  ),
+  play: async ({ canvasElement }) => {
+    const edit = canvasElement.querySelector<HTMLElement>(
+      '[data-test="identity-edit"]'
+    )
+    if (!edit) {
+      throw new Error('[data-test="identity-edit"] not found in story canvas')
+    }
+
+    await userEvent.click(edit)
+    await expect(
+      canvasElement.querySelector('[data-test="identity-editor"]')
+    ).not.toBeNull()
+  },
 }

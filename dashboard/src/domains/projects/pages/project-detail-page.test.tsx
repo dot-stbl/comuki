@@ -7,14 +7,38 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  beforeAll,
+  beforeEach,
+  afterEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { ProjectDetailPage } from "@/domains/projects/pages/project-detail-page"
 import { ProjectsPage } from "@/domains/projects/pages/projects-page"
 import { resetSeedProjects } from "@/shared/api/mock/projects.store"
+import { i18n, loadLocale } from "@/shared/i18n"
 import type { Role } from "@/shared/session"
 import { TestSession } from "@/shared/session/test-session"
+
+/* The identity editor writes through `useUpdateProjectMutation`, which in a
+   test environment has no wire to reach. The mock below stands in for the
+   hook alone — the patch it receives is the contract under test, and the
+   success path is driven by invoking the callback the page passes, exactly
+   the way the real hook does. */
+const { identityMutate } = vi.hoisted(() => ({ identityMutate: vi.fn() }))
+
+vi.mock("@/domains/projects/api/mutations", () => ({
+  useUpdateProjectMutation: () => ({
+    mutate: identityMutate,
+    isPending: false,
+    error: null,
+  }),
+}))
 
 /* jsdom lays nothing out, and both screens under test depend on that: the
    registry's table body is virtualized, and the shell's rail is a resizable
@@ -46,6 +70,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   resetSeedProjects()
+  identityMutate.mockReset()
 })
 
 /* The rail links to every product screen, so a memory router that does not
@@ -203,6 +228,36 @@ describe("the page says what only it can say", () => {
     expect(facts?.textContent).toContain("2026-03-04")
   })
 
+  it("states the identity: the mark, the override, the accent, the vocabulary", async () => {
+    mount(["/projects/p_comuki"])
+
+    await screen.findByRole("heading", { name: "Comuki platform" })
+    const facts = at("project-facts")
+
+    // The mark fact names what was resolved — the stored override — and the
+    // facts carry the raw values beside it, so the words carry the meaning
+    // and the glyph and the dot only reinforce it.
+    expect(facts?.textContent).toContain("stored icon")
+    expect(facts?.textContent).toContain("🛰️")
+    expect(facts?.textContent).toContain("#3c5a86")
+    expect(facts?.textContent).toContain("platform")
+    expect(facts?.textContent).toContain("orchestration")
+    // The accent arrives as the one custom property (design D7), consumed by
+    // the stylesheet — never as an inline colour.
+    expect(facts?.getAttribute("style")).toBeNull()
+  })
+
+  it("says what the derived mark is, in words, for a project without an override", async () => {
+    mount(["/projects/p_plexor"])
+
+    await screen.findByRole("heading", { name: "Plexor" })
+
+    // No stored icon and a GitLab repository: the fact names the derivation
+    // rather than pretending no mark exists.
+    expect(at("project-facts")?.textContent).toContain("gitlab mark")
+    expect(at("project-facts")?.textContent).toContain("none stored")
+  })
+
   it("calls an absent repository what the registry already calls it", async () => {
     mount(["/projects/p_atlas"])
 
@@ -220,6 +275,129 @@ describe("the page says what only it can say", () => {
 
     expect(header?.textContent).toContain("atlas")
     expect(header?.textContent).toContain("2026-06-27")
+  })
+})
+
+describe("editing the identity", () => {
+  it("opens the editor and writes the patch through the mutation", async () => {
+    mount(["/projects/p_comuki"])
+
+    await screen.findByRole("heading", { name: "Comuki platform" })
+    fireEvent.click(at("identity-edit") as Element)
+
+    const editor = await waitFor(() => {
+      const found = at("identity-editor")
+      expect(found).not.toBeNull()
+      return found
+    })
+
+    // The editor starts from the stored values; a colour change and a new
+    // tag are the edit under test.
+    const colour = screen.getByLabelText("accent colour")
+    fireEvent.change(colour, { target: { value: "#8a3c5a" } })
+    const tags = screen.getByLabelText(/^tags/)
+    fireEvent.change(tags, { target: { value: "billing" } })
+    fireEvent.keyDown(tags, { key: "Enter" })
+    fireEvent.click(at("identity-editor-save") as Element)
+
+    expect(identityMutate).toHaveBeenCalledTimes(1)
+    expect(identityMutate).toHaveBeenCalledWith(
+      {
+        projectId: "p_comuki",
+        patch: {
+          // The record's other fields ride as null — untouched, the same
+          // pass-through the mutation has always made for the git fields.
+          name: null,
+          description: null,
+          icon: "🛰️",
+          color: "#8a3c5a",
+          tags: ["platform", "orchestration", "billing"],
+        },
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    )
+    expect(editor).toBeTruthy()
+  })
+
+  it("closes the editor when the write lands", async () => {
+    identityMutate.mockImplementation(
+      (_args: unknown, options?: { onSuccess?: () => void }) => {
+        options?.onSuccess?.()
+      }
+    )
+    mount(["/projects/p_comuki"])
+
+    await screen.findByRole("heading", { name: "Comuki platform" })
+    fireEvent.click(at("identity-edit") as Element)
+    await waitFor(() => expect(at("identity-editor")).not.toBeNull())
+    fireEvent.click(at("identity-editor-save") as Element)
+
+    await waitFor(() => expect(at("identity-editor")).toBeNull())
+  })
+
+  it("keeps the act visible and explains itself for a role that cannot edit", async () => {
+    // A viewer on the project and nothing on the platform: `projects.edit`
+    // is a project-admin act (the backend gates the PATCH on it), so the
+    // control refuses and names what it needs rather than disappearing.
+    mount(["/projects/p_atlas"], {
+      roles: [],
+      projectRoles: { p_atlas: ["viewer"] },
+    })
+
+    await screen.findByRole("heading", { name: "Atlas" })
+    const edit = at("identity-edit") as HTMLElement
+
+    expect(edit.getAttribute("aria-disabled")).toBe("true")
+    // Inside a kit tooltip the sentence is delivered by the tooltip, not by a
+    // native title — `data-denied` carries it on the element itself.
+    expect(edit.getAttribute("data-denied")).toContain("project-admin")
+    fireEvent.click(edit)
+    expect(at("identity-editor")).toBeNull()
+  })
+})
+
+describe("the tag filter in the registry", () => {
+  it("narrows to the rows carrying the selected tag", async () => {
+    mount(["/projects"])
+
+    await screen.findByText("Atlas")
+
+    // One tag: atlas is the only project carrying `billing`.
+    fireEvent.click(at("project-tag-filter-billing") as Element)
+    await waitFor(() =>
+      expect(at("projects-count")?.textContent).toBe("1 shown")
+    )
+    expect(screen.getByText("atlas")).toBeTruthy()
+    expect(screen.queryByText("comuki")).toBeNull()
+
+    // A second tag intersects rather than unions: no project carries both
+    // `billing` and `platform`, so the narrowed set is empty and says so as
+    // a filter outcome, not as "no projects yet".
+    fireEvent.click(at("project-tag-filter-platform") as Element)
+    await waitFor(() =>
+      expect(at("projects-count")?.textContent).toBe("0 shown")
+    )
+    expect(
+      screen.getByText("no projects match the current filters")
+    ).toBeTruthy()
+  })
+
+  it("composes with the text filter and clears back to it", async () => {
+    mount(["/projects"])
+
+    await screen.findByText("Atlas")
+    fireEvent.click(at("project-tag-filter-billing") as Element)
+    await waitFor(() =>
+      expect(at("projects-count")?.textContent).toBe("1 shown")
+    )
+
+    // Clearing the tag returns to the unfiltered list — four projects, the
+    // same state the toolbar's own filter would clear back to.
+    fireEvent.click(at("project-tag-filter-billing") as Element)
+    await waitFor(() =>
+      expect(at("projects-count")?.textContent).toBe("4 shown")
+    )
+    expect(screen.getByText("comuki")).toBeTruthy()
   })
 })
 
@@ -462,5 +640,40 @@ describe("an address that outlived the project it named", () => {
     expect(at("project-facts")).toBeNull()
     expect(at("project-handoffs")).toBeNull()
     expect(handoff("runs")).toBeNull()
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the registry's own
+   words arrive in russian while every value (slugs, figures, tags) stays as
+   it was. Language resets after the case so the file's other readings keep
+   their en posture. */
+describe("the registry in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the registry chrome and the filtered-empty state in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+    mount(["/projects"])
+
+    expect(await screen.findByRole("heading", { name: "Проекты" })).toBeTruthy()
+
+    // The same narrowing the en case drives: two tags no row carries both
+    // of, so the list empties out and says so — in russian, as a filter
+    // outcome rather than as "no projects yet".
+    await screen.findByText("Atlas")
+    fireEvent.click(at("project-tag-filter-billing") as Element)
+    await waitFor(() =>
+      expect(at("projects-count")?.textContent).toBe("1 показана")
+    )
+    fireEvent.click(at("project-tag-filter-platform") as Element)
+
+    await waitFor(() =>
+      expect(
+        screen.getByText("под фильтры не подходит ни один проект")
+      ).toBeTruthy()
+    )
   })
 })

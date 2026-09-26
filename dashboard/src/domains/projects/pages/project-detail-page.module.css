@@ -46,6 +46,54 @@
    dividers, the fixed name track, both voices, the copy-as-a-unit repo line and
    the faint "platform defaults" all live there. This sheet kept none of it. */
 
+/* The identity readings inside those facts: the mark with its accent dot, and
+   the tag chips. Same recipes the registry's row wears, so a project's
+   identity is one colour in both places it appears. */
+.markFact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-inline-size: 0;
+}
+
+.accentDot {
+  flex: none;
+  inline-size: var(--h-meter);
+  block-size: var(--h-meter);
+  border-radius: 50%;
+  background: var(--project-accent, var(--text-faint));
+}
+
+.tagFact {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+.tagChip {
+  padding: 0 var(--s2);
+  border-radius: var(--r-sm);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  line-height: var(--lh-flat);
+  color: var(--text-muted);
+  background: color-mix(
+    in oklab,
+    var(--project-accent, var(--text-faint)) 15%,
+    transparent
+  );
+}
+
+/* The bar the edit affordance sits on: an act under the facts it edits, not a
+   control inside them — the fact list is a data surface and stays one. */
+.identityBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: var(--s3);
+}
+
 /* --- roles --- */
 
 .grants {

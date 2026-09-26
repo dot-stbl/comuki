@@ -9,8 +9,12 @@
  *
  * Every message is a sentence about the one thing that is wrong, in the order
  * a person types them into trouble: nothing typed, then capitals, then spaces,
- * then anything else that is not a letter, a digit or a hyphen.
+ * then anything else that is not a letter, a digit or a hyphen. The sentences
+ * live in the projects locale catalogues (`slug.error.<rule>`) — this module
+ * cannot call `useTranslation`, so it reads the shared instance the way every
+ * non-component word map does.
  */
+import { i18n } from "@/shared/i18n"
 
 /** Long enough for `payments-platform`, short enough to stay a column. */
 export const SLUG_MAX = 40
@@ -57,28 +61,28 @@ export function validateSlug(
   const slug = value.trim()
 
   if (slug.length === 0) {
-    return "a slug is required"
+    return i18n.t("projects:slug.error.required")
   }
   if (/\s/.test(value)) {
-    return "no spaces — use a hyphen"
+    return i18n.t("projects:slug.error.spaces")
   }
   if (/[A-Z]/.test(slug)) {
-    return "slugs are lowercase"
+    return i18n.t("projects:slug.error.lowercase")
   }
   if (slug.length < SLUG_MIN) {
-    return `at least ${SLUG_MIN} characters`
+    return i18n.t("projects:slug.error.min", { min: SLUG_MIN })
   }
   if (slug.length > SLUG_MAX) {
-    return `at most ${SLUG_MAX} characters`
+    return i18n.t("projects:slug.error.max", { max: SLUG_MAX })
   }
   if (/^[-]|[-]$/.test(slug)) {
-    return "must start and end with a letter or digit"
+    return i18n.t("projects:slug.error.edges")
   }
   if (!SLUG_PATTERN.test(slug)) {
-    return "letters, digits and single hyphens only"
+    return i18n.t("projects:slug.error.pattern")
   }
   if (taken.includes(slug)) {
-    return "that slug is taken"
+    return i18n.t("projects:slug.error.taken")
   }
   return null
 }

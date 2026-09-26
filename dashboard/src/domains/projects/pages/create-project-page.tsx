@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { useNavigate, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { FormPage } from "@/app/layout/form-page"
@@ -36,6 +37,8 @@ import { ConfirmDialog, Notice } from "@/shared/ui"
 export function CreateProjectPage() {
   const navigate = useNavigate()
   const router = useRouter()
+  const { t } = useTranslation("projects")
+  const { t: tShell } = useTranslation("shell")
   const { data = [] } = useProjectsQuery()
   const createProject = useCreateProjectMutation()
 
@@ -57,7 +60,8 @@ export function CreateProjectPage() {
   const onCreate = (input: CreateProjectInput) => {
     createProject.mutate(input, {
       onSuccess: () => {
-        toast.success("Project created", { description: input.slug })
+        // The slug is data, not copy: it rides the toast verbatim.
+        toast.success(t("create.toastCreated"), { description: input.slug })
         guard.leave(() => {
           void navigate({
             to: "/projects",
@@ -71,13 +75,13 @@ export function CreateProjectPage() {
 
   return (
     <FormPage
-      title="New project"
+      title={t("create.title")}
       crumbs={[
-        { label: "platform" },
-        { label: "projects", to: "/projects" },
-        { label: "new" },
+        { label: tShell("crumb.platform") },
+        { label: tShell("crumb.projects"), to: "/projects" },
+        { label: t("create.crumb") },
       ]}
-      summary="A project owns its applications, its runs and its budget. The slug is the handle it is known by everywhere else."
+      summary={t("create.summary")}
     >
       {/* The create did not land. Said on the page, above the form, the way
           `create-task-page` says it — a failed mutation used to do nothing
@@ -87,9 +91,9 @@ export function CreateProjectPage() {
         <Notice tone="bad" data-test="create-failure">
           {requestFailureMessage(
             createProject.error,
-            "The project was not created."
+            t("create.failureFallback")
           )}{" "}
-          Nothing was created — what you typed is still exactly as you left it.
+          {t("create.failureTail")}
         </Notice>
       ) : null}
 
@@ -106,10 +110,10 @@ export function CreateProjectPage() {
           asks about something the operator did by accident. */}
       <ConfirmDialog
         open={guard.asking}
-        title="Leave without creating the project?"
-        body="The name, slug and repository you typed are not saved anywhere yet. Leaving this page drops them."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
+        title={t("create.guardTitle")}
+        body={t("create.guardBody")}
+        confirmLabel={t("create.guardConfirm")}
+        cancelLabel={t("create.guardCancel")}
         onConfirm={guard.discard}
         onCancel={guard.keep}
       />

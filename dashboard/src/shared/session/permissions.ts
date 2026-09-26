@@ -38,6 +38,7 @@ export type Permission =
   | "identity.manage"
   | "projects.view"
   | "projects.create"
+  | "projects.edit"
   | "compute.view"
   | "compute.manage"
   | "models.view"
@@ -72,6 +73,11 @@ const SCOPE: Record<Permission, "project" | "platform"> = {
   "identity.manage": "platform",
   "projects.view": "platform",
   "projects.create": "platform",
+  // Editing one project's record (the identity fields on the detail page) is
+  // a project act — the backend gates the PATCH on that project's admin, and
+  // creating a *new* one (above) is the platform act the two must not blur
+  // into. An operator who may create projects is not thereby admin of any.
+  "projects.edit": "project",
   "compute.view": "platform",
   "compute.manage": "platform",
   "models.view": "platform",
@@ -101,6 +107,7 @@ const PROJECT_ADMIN: Permission[] = [
   "cost.view",
   "settings.live",
   "settings.git",
+  "projects.edit",
 ]
 
 /**
@@ -113,6 +120,19 @@ const PROJECT_ADMIN: Permission[] = [
  * an operator who should make it gets an `approver` assignment on that project
  * rather than the power by default.
  */
+/**
+ * Narrows a key of the scope matrix back to the permission it is.
+ *
+ * `SCOPE` is a `Record<Permission, …>`, so its keys are exactly the union —
+ * but `Object.keys` answers `string[]`, and the gap between those two facts
+ * is where the old `as Permission[]` lived. A guard closes it without
+ * asserting: the check is against `SCOPE` itself, so a permission the matrix
+ * does not list cannot sneak through.
+ */
+function isPermission(value: string): value is Permission {
+  return value in SCOPE
+}
+
 const GRANTS: Record<Role, readonly Permission[]> = {
   viewer: VIEWER,
   member: MEMBER,
@@ -134,7 +154,7 @@ const GRANTS: Record<Role, readonly Permission[]> = {
     "models.manage",
     "observability.view",
   ],
-  "platform-admin": Object.keys(SCOPE) as Permission[],
+  "platform-admin": Object.keys(SCOPE).filter(isPermission),
 }
 
 /** Every role, in the order the requirements table lists them. */

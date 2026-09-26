@@ -5,6 +5,7 @@ import {
   mapCreateProjectInputToCreateRequest,
   mapProjectSettingsToUpdateRequest,
   mapProjectSettingsViewToSettings,
+  mapProjectUpdateToUpdateRequest,
   mapProjectViewToDetail,
   mapProjectsPageToSummaries,
   toProjectRow,
@@ -30,6 +31,9 @@ function projectViewFixture(
     description: null,
     profilesGitUrl: "git@github.com:comuki/worker-profiles.git",
     profilesGitRef: null,
+    icon: null,
+    color: null,
+    tags: [],
     archived: false,
     archivedAt: null,
     createdAt: "2026-03-04T00:00:00.000+00:00",
@@ -45,6 +49,9 @@ interface ProjectViewStub {
   description: string | null
   profilesGitUrl: string | null
   profilesGitRef: string | null
+  icon?: string | null
+  color?: string | null
+  tags?: string[] | null
   archived: boolean
   archivedAt: string | null
   createdAt: string
@@ -92,6 +99,39 @@ describe("mapProjectViewToDetail", () => {
     expect(row.activeRuns).toBe(0)
     expect(row.totalRuns).toBe(0)
     expect(row.spendToday).toBeNull()
+  })
+
+  it("carries the identity fields through verbatim", () => {
+    const row = mapProjectViewToDetail(
+      projectViewFixture({
+        icon: "🛰️",
+        color: "#3c5a86",
+        tags: ["web", "billing"],
+      })
+    )
+
+    expect(row.icon).toBe("🛰️")
+    expect(row.color).toBe("#3c5a86")
+    expect(row.tags).toEqual(["web", "billing"])
+  })
+
+  it("maps a legacy wire row — no identity keys at all — to null / null / []", () => {
+    // A view from before the fields existed: the stub drops the keys rather
+    // than spelling nulls, which is the shape an old host or a caching proxy
+    // can still hand back. The read direction has no absent-vs-empty
+    // distinction to preserve, so the tolerant defaults are the whole story.
+    const legacy = {
+      ...projectViewFixture(),
+      icon: undefined,
+      color: undefined,
+      tags: undefined,
+    }
+
+    const row = mapProjectViewToDetail(legacy)
+
+    expect(row.icon).toBeNull()
+    expect(row.color).toBeNull()
+    expect(row.tags).toEqual([])
   })
 })
 
@@ -311,6 +351,9 @@ describe("mapCreateProjectInputToCreateRequest", () => {
       name: "Vega",
       slug: "vega",
       gitProfileRepo: "git@github.com:org/repo.git",
+      icon: null,
+      color: null,
+      tags: [],
     })
 
     expect(body.name).toBe("Vega")
@@ -325,9 +368,77 @@ describe("mapCreateProjectInputToCreateRequest", () => {
       name: "Atlas",
       slug: "atlas",
       gitProfileRepo: null,
+      icon: null,
+      color: null,
+      tags: [],
     })
 
     expect(body.profilesGitUrl).toBeNull()
+  })
+
+  it("carries the identity fields onto the create body", () => {
+    const body = mapCreateProjectInputToCreateRequest({
+      name: "Comuki",
+      slug: "comuki",
+      gitProfileRepo: null,
+      icon: "🛰️",
+      color: "#3c5a86",
+      tags: ["web", "billing"],
+    })
+
+    expect(body.icon).toBe("🛰️")
+    expect(body.color).toBe("#3c5a86")
+    expect(body.tags).toEqual(["web", "billing"])
+  })
+})
+
+describe("mapProjectUpdateToUpdateRequest", () => {
+  it("sends an absent tags key as absent, not as an empty array", () => {
+    const body = mapProjectUpdateToUpdateRequest({
+      name: "Renamed",
+      description: null,
+      icon: undefined,
+      color: undefined,
+      tags: undefined,
+    })
+
+    // The wire's one list-vs-scalar asymmetry (design D5): an absent tags
+    // key leaves the stored tags untouched, `[]` clears them. `undefined`
+    // must survive as absence — JSON.stringify is what turns it into "no key
+    // in the body", so the assertion goes through the same door the wire
+    // does. The scalars go the other way: `null` is their "untouched", so
+    // they arrive spelled as null rather than dropped.
+    const onTheWire = JSON.parse(JSON.stringify(body))
+    expect(onTheWire).not.toHaveProperty("tags")
+    expect(onTheWire.icon).toBeNull()
+    expect(onTheWire.color).toBeNull()
+  })
+
+  it("keeps an explicit empty tags list — the one clear a PATCH can make", () => {
+    const body = mapProjectUpdateToUpdateRequest({
+      name: null,
+      description: null,
+      tags: [],
+    })
+
+    const onTheWire = JSON.parse(JSON.stringify(body))
+    expect(onTheWire.tags).toEqual([])
+  })
+
+  it("carries the identity fields through with null meaning untouched", () => {
+    const body = mapProjectUpdateToUpdateRequest({
+      name: null,
+      description: null,
+      icon: "🛰️",
+      color: "#3c5a86",
+      tags: ["web"],
+    })
+
+    expect(body.icon).toBe("🛰️")
+    expect(body.color).toBe("#3c5a86")
+    expect(body.tags).toEqual(["web"])
+    expect(body.profilesGitUrl).toBeNull()
+    expect(body.profilesGitRef).toBeNull()
   })
 })
 
@@ -346,8 +457,28 @@ describe("toProjectRow", () => {
     expect(row.name).toBe("Vega")
     expect(row.gitProfileRepo).toBeNull()
     expect(row.createdAt).toBe("2026-08-28")
+    expect(row.icon).toBeNull()
+    expect(row.color).toBeNull()
+    expect(row.tags).toEqual([])
     expect(row.activeRuns).toBe(0)
     expect(row.totalRuns).toBe(0)
     expect(row.spendToday).toBeNull()
+  })
+
+  it("carries a seeded identity through — mock and real rows stay shape-identical", () => {
+    const row = toProjectRow({
+      id: "p_comuki",
+      slug: "comuki",
+      name: "Comuki platform",
+      gitProfileRepo: "git@github.com:comuki/worker-profiles.git",
+      createdAt: "2026-03-04",
+      icon: "🛰️",
+      color: "#3c5a86",
+      tags: ["platform", "orchestration"],
+    })
+
+    expect(row.icon).toBe("🛰️")
+    expect(row.color).toBe("#3c5a86")
+    expect(row.tags).toEqual(["platform", "orchestration"])
   })
 })

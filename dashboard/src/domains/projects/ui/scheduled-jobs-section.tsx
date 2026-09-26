@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Pause, Play, Plus, RotateCw, Trash2 } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import {
   useCreateScheduledJobMutation,
@@ -67,6 +68,7 @@ export function ScheduledJobsSection({
   projectId,
   canEdit,
 }: ScheduledJobsSectionProps) {
+  const { t } = useTranslation("projects")
   const jobs = useScheduledJobsQuery(projectId)
   const createJob = useCreateScheduledJobMutation()
   const setEnabled = useSetScheduledJobEnabledMutation()
@@ -103,15 +105,15 @@ export function ScheduledJobsSection({
   return (
     <Section
       id="project-jobs"
-      title="scheduled jobs"
+      title={t("jobs.section")}
       note={
         jobs.data
-          ? `${jobs.data.length} configured`
+          ? t("jobs.configured", { count: jobs.data.length })
           : jobs.isError
             ? /* Not "counting": nothing is counting any more. */
-              "unknown"
+              t("jobs.unknown")
             : /* Absent while loading, not zero — see the cost hand-off. */
-              "counting"
+              t("jobs.counting")
       }
       data-test="project-jobs"
     >
@@ -124,7 +126,7 @@ export function ScheduledJobsSection({
         <Skeleton
           lines={SKELETON_WIDTHS}
           inset="none"
-          label="Loading scheduled jobs"
+          label={t("jobs.loading")}
           data-test="project-jobs-loading"
         />
       ) : null}
@@ -132,16 +134,16 @@ export function ScheduledJobsSection({
       {jobs.isError ? (
         <ScreenState
           kind="error"
-          title="The schedules did not load"
-          description={requestFailureMessage(jobs.error, "Unknown error")}
+          title={t("jobs.errorTitle")}
+          description={requestFailureMessage(jobs.error, t("errors.unknown"))}
           inset="none"
           data-test="project-jobs-error"
           action={
-            <Tooltip content="Retry">
+            <Tooltip content={t("actions.retry")}>
               <Button
                 size="icon-sm"
                 data-test="project-jobs-retry"
-                aria-label="Retry"
+                aria-label={t("actions.retry")}
                 onClick={() => {
                   void jobs.refetch()
                 }}
@@ -171,18 +173,18 @@ export function ScheduledJobsSection({
                 status={job.enabled ? "success" : "queued"}
                 size="sm"
               >
-                {job.enabled ? "enabled" : "paused"}
+                {job.enabled ? t("jobs.statusEnabled") : t("jobs.statusPaused")}
               </StatusBadge>
               {canEdit ? (
                 <span className={styles.jobActs}>
                   <Tooltip
-                    content={job.enabled ? "Pause schedule" : "Resume schedule"}
+                    content={job.enabled ? t("jobs.pause") : t("jobs.resume")}
                   >
                     <Button
                       size="icon-sm"
                       variant="ghost"
                       aria-label={
-                        job.enabled ? "Pause schedule" : "Resume schedule"
+                        job.enabled ? t("jobs.pause") : t("jobs.resume")
                       }
                       data-test={`job-toggle-${job.id}`}
                       disabled={setEnabled.isPending}
@@ -201,11 +203,11 @@ export function ScheduledJobsSection({
                       )}
                     </Button>
                   </Tooltip>
-                  <Tooltip content="Delete schedule">
+                  <Tooltip content={t("jobs.delete")}>
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      aria-label="Delete schedule"
+                      aria-label={t("jobs.delete")}
                       data-test={`job-delete-${job.id}`}
                       onClick={() => {
                         setPendingDelete(job)
@@ -224,8 +226,8 @@ export function ScheduledJobsSection({
       ) : jobs.data ? (
         <ScreenState
           kind="empty"
-          title="Nothing runs here on a clock"
-          description="No schedule starts work on this project on its own. Everything that runs here was filed or dispatched by a person."
+          title={t("jobs.emptyTitle")}
+          description={t("jobs.emptyDescription")}
           inset="none"
           data-test="project-jobs-empty"
         />
@@ -241,16 +243,16 @@ export function ScheduledJobsSection({
             }}
           >
             <Plus aria-hidden="true" />
-            Schedule a job
+            {t("jobs.create")}
           </Button>
         </div>
       ) : null}
 
       <FormDialog
         open={createOpen}
-        title="Schedule a job"
-        description="A cron entry the platform files on this project by itself — the brief becomes the ticket, the profile becomes the first step."
-        submitLabel="Schedule"
+        title={t("jobs.create")}
+        description={t("jobs.dialogDescription")}
+        submitLabel={t("jobs.dialogSubmit")}
         busy={createJob.isPending}
         submitDisabled={createInvalid}
         onSubmit={submitCreate}
@@ -261,44 +263,50 @@ export function ScheduledJobsSection({
         <div className={styles.form}>
           <CronField
             id="job-cron"
-            label="cron"
+            label={t("jobs.cronLabel")}
             value={cron}
             onValueChange={setCron}
-            hint="Five-field cron, in the project's own timezone policy. Pick a preset or compose the wire directly."
+            hint={t("jobs.cronHint")}
           />
           <TextField
             id="job-profile"
-            label="profile key"
+            label={t("jobs.profileLabel")}
             value={profileKey}
             onValueChange={setProfileKey}
-            placeholder="implementer"
-            hint="The work-item profile the run starts from — the catalog lives in the client's git."
+            placeholder={t("jobs.profilePlaceholder")}
+            hint={t("jobs.profileHint")}
           />
           <TextareaField
             id="job-brief"
-            label="brief json"
+            label={t("jobs.briefLabel")}
             voice="code"
             value={briefJson}
             onValueChange={setBriefJson}
-            hint="Stored verbatim. Nothing between this box and the host touches it."
+            hint={t("jobs.briefHint")}
           />
         </div>
       </FormDialog>
 
       <ConfirmDialog
         open={pendingDelete !== null}
-        title="Delete this schedule?"
+        title={t("jobs.deleteTitle")}
         body={
           pendingDelete ? (
-            <>
-              <code>{pendingDelete.cronExpression}</code> for{" "}
-              <code>{pendingDelete.profileKey}</code> stops firing and is
-              removed. Work already running because of it is not touched.
-            </>
+            /* The cron expression and the profile key are values; the
+               sentence around them is copy, so the code spans ride slots
+               and the words belong to the locale. */
+            <Trans
+              ns="projects"
+              i18nKey="jobs.deleteBody"
+              components={{
+                cron: <code>{pendingDelete.cronExpression}</code>,
+                profile: <code>{pendingDelete.profileKey}</code>,
+              }}
+            />
           ) : null
         }
-        confirmLabel="Delete schedule"
-        cancelLabel="Keep it"
+        confirmLabel={t("jobs.delete")}
+        cancelLabel={t("jobs.deleteCancel")}
         danger={true}
         onConfirm={() => {
           if (pendingDelete) {

@@ -20,15 +20,15 @@ import type { ProjectRow } from "./types"
 
 /** The part of a run this module reads. Everything optional, on purpose. */
 export interface RunFact {
-  projectId?: string
-  app?: string
-  status?: string
+  readonly projectId?: string
+  readonly app?: string
+  readonly status?: string
 }
 
 /** The part of a cost report row this module reads. */
 export interface CostFact {
-  app?: string
-  spend?: number
+  readonly app?: string
+  readonly spend?: number
 }
 
 /** The four statuses that mean the swarm is still standing on the run. */
@@ -81,20 +81,27 @@ export function buildProjectRows(
     spend.set(id, (spend.get(id) ?? 0) + cost.spend)
   }
 
-  return projects.map((project) => ({
-    id: project.id,
-    slug: project.slug,
-    name: project.name,
-    gitProfileRepo: project.gitProfileRepo,
-    createdAt: project.createdAt,
-    // The seed store has no archive — every mock project is a live one.
-    archived: false,
-    activeRuns: active.get(project.id) ?? 0,
-    totalRuns: total.get(project.id) ?? 0,
-    // Absent, not zero: a project the cost report has never heard of has not
-    // spent nothing, it has not been measured.
-    spendToday: spend.has(project.id)
-      ? (spend.get(project.id) as number)
-      : null,
-  }))
+  return projects.map((project) => {
+    const spent = spend.get(project.id)
+    return {
+      id: project.id,
+      slug: project.slug,
+      name: project.name,
+      gitProfileRepo: project.gitProfileRepo,
+      createdAt: project.createdAt,
+      // The identity fields pass through the join untouched — mock and real
+      // modes serve the same shape (design D9), and the tolerant `??` defaults
+      // cover a seed written before the fields existed.
+      icon: project.icon ?? null,
+      color: project.color ?? null,
+      tags: project.tags ?? [],
+      // The seed store has no archive — every mock project is a live one.
+      archived: false,
+      activeRuns: active.get(project.id) ?? 0,
+      totalRuns: total.get(project.id) ?? 0,
+      // Absent, not zero: a project the cost report has never heard of has not
+      // spent nothing, it has not been measured.
+      spendToday: spent === undefined ? null : spent,
+    }
+  })
 }

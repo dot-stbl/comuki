@@ -1,0 +1,42 @@
+/* The tag filter — the toolbar's leading slot. Chrome, so it is built from
+   the neutral ramp exactly like the rest of the bar: a toggle reads "on"
+   through the lane's own material (`data-active` swaps the fill), never
+   through a hue. The vocabulary it shows is data, but the control that
+   narrows by it is chrome, and the colourless rule draws the line between
+   them. */
+
+.tagFilter {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  flex: none;
+  max-inline-size: 40%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tagToggle {
+  flex: none;
+  padding: 0 var(--s2);
+  height: var(--h-button-sm);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  line-height: var(--lh-flat);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.tagToggle[data-active] {
+  background: var(--lane-alt);
+  border-color: var(--rule-strong);
+  color: var(--text);
+}
+
+.tagToggle:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}

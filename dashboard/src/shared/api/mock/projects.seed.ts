@@ -15,23 +15,31 @@
  */
 
 export interface SeedProject {
-  id: string
+  readonly id: string
   /**
    * The handle. It is what appears as a column in every other list in the
    * product, so it is a value rather than a name: lowercase, no spaces, and
    * stable once created.
    */
-  slug: string
+  readonly slug: string
   /** Prose. The only field on a project written for a reader. */
-  name: string
+  readonly name: string
   /**
    * Where this project's worker profiles live — prompt, skills and tools as
    * git, which is how a profile is authored. Optional: a project without one
    * runs on the platform's own defaults until somebody points it at a repo.
    */
-  gitProfileRepo: string | null
+  readonly gitProfileRepo: string | null
   /** ISO day. Dates are values and read in the data voice. */
-  createdAt: string
+  readonly createdAt: string
+  /**
+   * The identity fields, shaped exactly as the wire serves them (design D9 —
+   * mock and real modes stay shape-identical). Optional on the seed so a
+   * bare project spells its absence rather than its default.
+   */
+  readonly icon?: string | null
+  readonly color?: string | null
+  readonly tags?: readonly string[]
 }
 
 export const PLATFORM_PROJECTS_SEED: SeedProject[] = [
@@ -41,6 +49,11 @@ export const PLATFORM_PROJECTS_SEED: SeedProject[] = [
     name: "Comuki platform",
     gitProfileRepo: "git@github.com:comuki/worker-profiles.git",
     createdAt: "2026-03-04",
+    // The stored override: an emoji mark, an accent, a vocabulary. This is
+    // the row the identity fields exist for — everything on it renders.
+    icon: "🛰️",
+    color: "#3c5a86",
+    tags: ["platform", "orchestration"],
   },
   {
     id: "p_plexor",
@@ -48,6 +61,9 @@ export const PLATFORM_PROJECTS_SEED: SeedProject[] = [
     name: "Plexor",
     gitProfileRepo: "git@gitlab.com:plexor/agent-profiles.git",
     createdAt: "2026-05-19",
+    // GitLab-hosted and deliberately bare: the mark derives from the host,
+    // the dot and chips fall back to muted ink. Derivation is a real
+    // rendering path, not a corner case, and this row exercises it.
   },
   {
     // Running a full swarm on the platform defaults — the repository is
@@ -57,6 +73,10 @@ export const PLATFORM_PROJECTS_SEED: SeedProject[] = [
     name: "Atlas",
     gitProfileRepo: null,
     createdAt: "2026-06-27",
+    // Colour and tags without an icon: the neutral glyph wears the accent,
+    // proving the two identity channels compose rather than substitute.
+    color: "#6d5b4b",
+    tags: ["billing", "web"],
   },
   {
     // Two days old: no runs, no spend, no repository. Every derived column on

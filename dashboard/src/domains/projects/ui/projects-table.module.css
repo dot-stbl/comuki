@@ -1,6 +1,26 @@
 /* Cell-level styling for the platform registry. Rows are one line tall by
    contract, so anything that can run long truncates rather than wraps. */
 
+/* The identity group: the mark, its accent dot, and the handle. The dot is
+   the row's stored colour, read through the one custom property (design D7)
+   with the surface's muted ink under it when the project chose no colour.
+   The colour is decoration — the slug beside it is what identifies the row,
+   and a greyscale render loses nothing operative. */
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  min-inline-size: 0;
+}
+
+.accentDot {
+  flex: none;
+  inline-size: var(--h-meter);
+  block-size: var(--h-meter);
+  border-radius: 50%;
+  background: var(--project-accent, var(--text-faint));
+}
+
 /* The handle. It is the value every other list in the product shows, so it
    takes the data voice and it is the one thing on the row set at full strength
    — the name beside it is prose about it.
@@ -18,6 +38,38 @@
   font-family: var(--font-data);
   color: var(--text);
   text-decoration: none;
+}
+
+/* The project's vocabulary. Chips take the accent as a tint — the same
+   custom property the dot reads, mixed toward transparent so the chip stays
+   a quiet data mark rather than a coloured pill; a row without a colour tints
+   with the muted ink every consumer falls back to. */
+.tags {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tagChip {
+  flex: none;
+  max-inline-size: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 var(--s2);
+  border-radius: var(--r-sm);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  line-height: var(--lh-flat);
+  color: var(--text-muted);
+  background: color-mix(
+    in oklab,
+    var(--project-accent, var(--text-faint)) 15%,
+    transparent
+  );
 }
 
 .slug:hover {

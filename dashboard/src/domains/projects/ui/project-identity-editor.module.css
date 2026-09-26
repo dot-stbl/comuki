@@ -1,0 +1,18 @@
+/* The inline identity editor — a column of the three optional fields under
+   the facts it edits, and the actions that commit or drop them. */
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  max-inline-size: var(--measure-form);
+  margin-block-start: var(--s4);
+  padding-block-start: var(--s4);
+  border-block-start: var(--hairline) solid var(--rule);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}

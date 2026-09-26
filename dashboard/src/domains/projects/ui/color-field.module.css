@@ -1,0 +1,28 @@
+/* The colour picker row — the swatch leads, the refusal follows, and neither
+   displaces the other. */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+/* The native `<input type="color">` in the kit's control material. The UA
+   stylesheet draws it as a small rounded swatch with a border of its own; the
+   hairline, the corner and the height here put it on the same row as the
+   kit's own controls, and the padding clears the swatch from the edge so the
+   colour reads as chosen rather than as clipped. */
+.input {
+  inline-size: 2.5rem;
+  block-size: var(--h-button);
+  padding: var(--s1);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.input:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}

@@ -1,0 +1,93 @@
+/* Tag entry — the committed chips above a one-line input, so a growing
+   vocabulary wraps in its own box rather than pushing the form's other
+   fields around. */
+
+.tagField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A committed tag — a reading of what the operator said, not a control, so
+   it takes the data voice and the lane's own quiet material. The remove
+   control inside it is the one interactive part. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: 0 var(--s2);
+  height: var(--h-button-sm);
+  border-radius: var(--r-sm);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  line-height: var(--lh-flat);
+  color: var(--text-muted);
+  background: var(--lane-alt);
+}
+
+.chipText {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.remove svg {
+  inline-size: var(--icon-xs);
+  block-size: var(--icon-xs);
+}
+
+.remove:hover {
+  color: var(--text);
+}
+
+.remove:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+  border-radius: var(--r-xs);
+}
+
+/* The one-line input the chips are typed into — the kit text field's own
+   material, spelled here because it sits inside a composite control rather
+   than standing as a `TextField`. */
+.input {
+  inline-size: 100%;
+  height: var(--h-button);
+  padding: 0 var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+.input:focus-visible {
+  outline: var(--hairline) solid var(--ring);
+  outline-offset: var(--hairline);
+}

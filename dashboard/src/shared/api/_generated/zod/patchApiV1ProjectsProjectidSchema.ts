@@ -18,7 +18,7 @@ export const patchApiV1ProjectsProjectid200Schema = z.any()
 export const patchApiV1ProjectsProjectidMutationRequestSchema = z
   .lazy(() => updateProjectRequestSchema)
   .describe(
-    "Wire body of PATCH /api/v1/projects/{projectId} — null fields are left untouched."
+    "Wire body of PATCH /api/v1/projects/{projectId} — null fields are left\r\nuntouched; an empty tags array clears the list. Icon and color follow\r\nthe same shapes as on create (≤ 200 chars / `#rrggbb`)."
   )
 
 export const patchApiV1ProjectsProjectidMutationResponseSchema = z.lazy(

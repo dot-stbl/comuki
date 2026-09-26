@@ -25,9 +25,12 @@ export function findSeedProjectBySlug(slug: string): SeedProject | undefined {
 }
 
 export interface CreateSeedProjectInput {
-  name: string
-  slug: string
-  gitProfileRepo: string | null
+  readonly name: string
+  readonly slug: string
+  readonly gitProfileRepo: string | null
+  readonly icon: string | null
+  readonly color: string | null
+  readonly tags: readonly string[]
 }
 
 /**
@@ -45,6 +48,9 @@ export function createSeedProject(input: CreateSeedProjectInput): SeedProject {
     name: input.name,
     gitProfileRepo: input.gitProfileRepo,
     createdAt: new Date().toISOString().slice(0, 10),
+    icon: input.icon,
+    color: input.color,
+    tags: input.tags,
   }
   projects = [...projects, created]
   return created

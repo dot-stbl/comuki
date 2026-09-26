@@ -37,6 +37,19 @@ describe("the role matrix", () => {
     expect(rolesGranting("identity.manage")).toEqual(["platform-admin"])
   })
 
+  it("gives editing a project's record to its admins, not to platform ops", () => {
+    // The backend gates the PATCH on the project's admin; the create beside
+    // it is a platform act. An operator who may create projects is not
+    // thereby admin of any, so the two permissions must not blur.
+    expect(rolesGranting("projects.edit")).toEqual([
+      "project-admin",
+      "platform-admin",
+    ])
+    expect(roleGrants("operator", "projects.create")).toBe(true)
+    expect(roleGrants("operator", "projects.edit")).toBe(false)
+    expect(permissionScope("projects.edit")).toBe("project")
+  })
+
   it("gives the platform admin every act", () => {
     for (const permission of ROLES.flatMap((role) =>
       (

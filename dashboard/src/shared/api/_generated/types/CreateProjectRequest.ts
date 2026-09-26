@@ -4,7 +4,7 @@
  */
 
 /**
- * @description Wire body of POST /api/v1/projects.
+ * @description Wire body of POST /api/v1/projects. The slug is lower-case kebab-case\r\n(3–64 chars) and becomes the immutable URL key — a duplicate gets HTTP\r\n409. Icon is an opaque emoji or image URL (≤ 200 chars); color is a\r\n`#rrggbb` hex value stored lower-case; each tag is lower-case\r\nkebab (1–39 chars), at most 20 distinct.
  */
 export type CreateProjectRequest = {
   /**
@@ -27,4 +27,16 @@ export type CreateProjectRequest = {
    * @type null,string
    */
   profilesGitRef: string | null
+  /**
+   * @type null,string
+   */
+  icon?: string | null
+  /**
+   * @type null,string
+   */
+  color?: string | null
+  /**
+   * @type null,array
+   */
+  tags?: string[] | null
 }

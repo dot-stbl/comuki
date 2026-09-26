@@ -6,7 +6,7 @@
 import { z } from "zod/v4"
 
 /**
- * @description Wire body of PATCH /api/v1/projects/{projectId} — null fields are left untouched.
+ * @description Wire body of PATCH /api/v1/projects/{projectId} — null fields are left\r\nuntouched; an empty tags array clears the list. Icon and color follow\r\nthe same shapes as on create (≤ 200 chars / `#rrggbb`).
  */
 export const updateProjectRequestSchema = z
   .object({
@@ -14,7 +14,10 @@ export const updateProjectRequestSchema = z
     description: z.nullable(z.string()),
     profilesGitUrl: z.nullable(z.string()),
     profilesGitRef: z.nullable(z.string()),
+    icon: z.string().nullish(),
+    color: z.string().nullish(),
+    tags: z.array(z.string()).nullish(),
   })
   .describe(
-    "Wire body of PATCH /api/v1/projects/{projectId} — null fields are left untouched."
+    "Wire body of PATCH /api/v1/projects/{projectId} — null fields are left\r\nuntouched; an empty tags array clears the list. Icon and color follow\r\nthe same shapes as on create (≤ 200 chars / `#rrggbb`)."
   )
